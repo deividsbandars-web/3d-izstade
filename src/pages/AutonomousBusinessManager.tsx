@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { WorkflowEngine } from '../agents/system/workflows/WorkflowEngine';
 
 interface AutoBusiness {
   id: string;

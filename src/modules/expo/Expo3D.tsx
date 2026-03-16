@@ -29,7 +29,7 @@ const SKYLINE_DATA = Array.from({ length: 40 }).map(() => {
 });
 
 // --- WEBCAM TEXTURE COMPONENT ---
-function WebcamScreen({ position, rotation }: any) {
+export function _WebcamScreen({ position, rotation }: any) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [texture, setTexture] = useState<THREE.VideoTexture | null>(null);
 

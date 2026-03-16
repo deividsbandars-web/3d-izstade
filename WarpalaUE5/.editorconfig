@@ -11,3 +11,31 @@ trim_trailing_whitespace = true
 indent_style = tab
 indent_size = 4
 tab_width = 4
+
+# Unreal Engine Naming Conventions
+# https://docs.unrealengine.com/en-US/ProductionPipelines/DevelopmentSetup/CodingStandard/
+[*.{h,cpp}]
+cpp_indent_braces = false
+cpp_indent_multi_line_relative_to = statement_begin
+cpp_indent_within_parentheses = indent
+cpp_indent_preserve_within_parentheses = true
+cpp_indent_case_contents = true
+cpp_indent_case_labels = false
+cpp_indent_case_contents_when_block = true
+cpp_indent_lambda_braces_when_parameter = false
+cpp_indent_goto_labels = one_left
+cpp_indent_preprocessor = leftmost_column
+cpp_indent_access_specifiers = false
+cpp_indent_namespace_contents = true
+cpp_indent_preserve_macro_block = false
+
+# UE C++ Naming Convention Rules
+ue_naming_conventions_enable = true
+ue_naming_conventions_class_prefix_actor = A
+ue_naming_conventions_class_prefix_object = U
+ue_naming_conventions_class_prefix_widget = U
+ue_naming_conventions_struct_prefix = F
+ue_naming_conventions_enum_prefix = E
+ue_naming_conventions_interface_prefix = I
+ue_naming_conventions_template_prefix = T
+ue_naming_conventions_boolean_prefix = b

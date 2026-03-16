@@ -133,7 +133,7 @@ export const expoService = {
       if (niche.includes('sos') || niche.includes('emergency') || niche.includes('repair')) internalCategory = 'emergency';
 
       // 2. Atrodam atbilstošo sektoru
-      const { data: sectors } = await this.getSectors();
+      const sectors = await this.getSectors();
       const sector = sectors?.find(s => 
         niche.includes(s.name.toLowerCase()) ||
         s.name.toLowerCase().includes(niche)

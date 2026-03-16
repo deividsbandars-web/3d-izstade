@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { economySimulator, GlobalMarketState } from '../services/economySimulator';
+import { economySimulator, type GlobalMarketState } from '../services/economySimulator';
 
 export default function GlobalEconomySimulator() {
   const [market, setMarket] = useState<GlobalMarketState>(economySimulator.initializeGlobalMarket());
@@ -75,7 +75,7 @@ export default function GlobalEconomySimulator() {
                     <h3 style={{ margin: 0, fontSize: '1.1rem' }}>{city.name}</h3>
                     <span style={{ fontSize: '0.7rem', color: '#10b981', fontWeight: 800 }}>STABILITY: {city.stability.toFixed(2)}x</span>
                   </div>
-                  {Object.entries(city.nicheDemand).map(([niche, demand]) => (
+                  {Object.entries(city.nicheDemand).map(([niche, demand]: [string, any]) => (
                     <div key={niche} style={{ marginBottom: '10px' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: '#94a3b8' }}>
                         <span>{niche}</span>

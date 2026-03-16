@@ -174,7 +174,7 @@ export default function BoothRoom() {
       }
       try {
         // 1. Try fetching from the new unified 'booths' table via company_id or booth id
-        const { data: boothData, error: bError } = await supabase
+        const { data: boothData, error: _bError } = await supabase
           .from('booths')
           .select('*, company:companies(*)')
           .or(`id.eq.${id},company_id.eq.${id}`)
@@ -192,7 +192,7 @@ export default function BoothRoom() {
           });
           
           setOffers(boothData.products || []);
-          setAssets(boothData.services?.map((s: any, i: number) => ({
+          setAssets(boothData.services?.map((_s: any, i: number) => ({
             id: `service-${i}`,
             booth_id: boothData.id,
             asset_type: 'portfolio',

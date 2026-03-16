@@ -1,3 +1,19 @@
+export interface Product {
+  id: string;
+  name: string;
+  price: number;
+  quality: number;
+  margin: number;
+}
+
+export interface CityEconomy {
+  id: string;
+  name: string;
+  nicheDemand: Record<string, number>;
+  stability: number;
+  taxRate: number;
+}
+
 export interface CityPresence {
   cityId: string;
   localMarketingPower: number; // 0 to 1

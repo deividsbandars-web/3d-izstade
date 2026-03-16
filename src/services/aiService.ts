@@ -59,7 +59,7 @@ function getSimulatedResponse(prompt: string): string {
   return "Šī ir simulēta atbilde. Lai redzētu reālu AI, failā aiService.ts iestati IS_LIVE_AI = true.";
 }
 
-export async function generateAiVideo(prompt: string, style: string) {
+export async function generateAiVideo(_prompt: string, _style: string) {
   await new Promise(r => setTimeout(r, 3000));
   return {
     success: true,

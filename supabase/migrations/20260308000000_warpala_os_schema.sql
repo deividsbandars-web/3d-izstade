@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS companies (
     name TEXT NOT NULL,
     country TEXT DEFAULT 'LV',
     vat TEXT,
+    is_active BOOLEAN DEFAULT true,
     created_at TIMESTAMPTZ DEFAULT now()
 );
 
