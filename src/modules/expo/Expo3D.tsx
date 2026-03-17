@@ -17,6 +17,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../core/supabase';
 import { expoService } from '../../services/expoService';
 import { useGLTF } from '@react-three/drei';
+import PixelStreamingViewer from './PixelStreamingViewer';
 
 // --- STATIC DATA GENERATION (OUTSIDE RENDER) ---
 const SKYLINE_DATA = Array.from({ length: 40 }).map(() => {
@@ -304,7 +305,7 @@ const FALLBACK_COMPANIES = [
 
 // --- MAIN ---
 export default function Expo3D() {
-  const [mode, setMode] = useState<'menu' | 'walk' | 'fly'>('menu');
+  const [mode, setMode] = useState<'menu' | 'walk' | 'fly' | 'unreal'>('menu');
   const [data, setData] = useState<any>({ sectors: [], companies: [] });
   const [isLoading, setIsLoading] = useState(true);
   const [guests, setGuests] = useState<any[]>([]);
@@ -399,16 +400,30 @@ export default function Expo3D() {
           <div className="glass-card" style={{ padding: '60px 80px' }}>
             <h1 className="text-accent" style={{ fontSize: '5rem', fontWeight: 950, margin: 0 }}>WARPALA</h1>
             <h2 style={{ fontSize: '2rem', color: '#fff', marginBottom: '50px' }}>INDUSTRIĀLĀ METAVERSE</h2>
-            <div style={{ display: 'flex', gap: '20px' }}>
-              <button onClick={() => { setMode('walk'); setTimeout(() => document.body.requestPointerLock(), 100); }} className="btn-primary">🚶 WALK EXPO</button>
-              <button onClick={() => setMode('fly')} className="btn-glass">🦅 DRONE VIEW</button>
+            <div style={{ display: 'flex', gap: '20px', flexDirection: 'column' }}>
+              <div style={{ display: 'flex', gap: '20px', justifyContent: 'center' }}>
+                <button onClick={() => { setMode('walk'); setTimeout(() => document.body.requestPointerLock(), 100); }} className="btn-primary">🚶 WALK LITE (WEB3D)</button>
+                <button onClick={() => setMode('fly')} className="btn-glass">🦅 DRONE VIEW</button>
+              </div>
+              <button 
+                onClick={() => setMode('unreal')} 
+                style={{ padding: '15px 30px', background: 'linear-gradient(90deg, #10b981, #059669)', color: 'white', border: 'none', borderRadius: '8px', fontSize: '1.2rem', fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 0 20px rgba(16, 185, 129, 0.4)' }}
+              >
+                🎮 ENTER FULL UNREAL ENGINE CITY (PIXEL STREAM)
+              </button>
             </div>
             <button onClick={() => nav('/')} style={{ marginTop: '40px', background: 'transparent', color: '#94a3b8', border: 'none', cursor: 'pointer', fontWeight: 'bold' }}>← BACK TO OS DASHBOARD</button>
           </div>
         </div>
       )}
 
-      {mode !== 'menu' && (
+      {mode === 'unreal' && (
+        <div style={{ position: 'absolute', inset: 0, zIndex: 2000 }}>
+          <PixelStreamingViewer onClose={() => setMode('menu')} />
+        </div>
+      )}
+
+      {mode !== 'menu' && mode !== 'unreal' && (
         <>
           <div style={{ position: 'absolute', top: '30px', right: '30px', zIndex: 100, display: 'flex', gap: '15px' }}>
             <button 
@@ -438,60 +453,59 @@ export default function Expo3D() {
         </>
       )}
 
-      <Canvas 
-        shadows 
-        gl={{ antialias: true }} 
-        camera={{ position: [0, 50, 100], fov: 60 }}
-        onCreated={({ gl }) => {
-          // HOTFIX: Three.js r180+ removed getEnvironmentBlendMode, but older @react-three/drei versions still call it.
-          // This patches the specific renderer instance to prevent the crash in Environment and MeshReflectorMaterial.
-          if (gl.xr && typeof (gl.xr as any).getEnvironmentBlendMode !== 'function') {
-            (gl.xr as any).getEnvironmentBlendMode = () => 'opaque';
-          }
-        }}
-      >
-        <Suspense fallback={null}>
-          <Bvh firstHitOnly>
-            <color attach="background" args={['#020617']} />
-            <Sky sunPosition={[100, 20, 100]} />
-            <Environment preset="city" />
-            <ambientLight intensity={0.6} />
-            <directionalLight position={[10, 10, 10]} intensity={1.2} castShadow />
-            <hemisphereLight args={['#ffffff', '#444444', 0.5]} />
-            <fog attach="fog" args={['#020617', 10, 800]} />
+      {mode !== 'unreal' && (
+        <Canvas 
+          shadows 
+          gl={{ antialias: true }} 
+          camera={{ position: [0, 50, 100], fov: 60 }}
+          onCreated={({ gl }) => {
+            if (gl.xr && typeof (gl.xr as any).getEnvironmentBlendMode !== 'function') {
+              (gl.xr as any).getEnvironmentBlendMode = () => 'opaque';
+            }
+          }}
+        >
+          <Suspense fallback={null}>
+            <Bvh firstHitOnly>
+              <color attach="background" args={['#020617']} />
+              <Sky sunPosition={[100, 20, 100]} />
+              <Environment preset="city" />
+              <ambientLight intensity={0.6} />
+              <directionalLight position={[10, 10, 10]} intensity={1.2} castShadow />
+              <hemisphereLight args={['#ffffff', '#444444', 0.5]} />
+              <fog attach="fog" args={['#020617', 10, 800]} />
 
-            <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.1, -500]} receiveShadow>
-              <planeGeometry args={[2000, 2000]} />
-              <MeshReflectorMaterial blur={[300, 100]} resolution={1024} mixBlur={1} mixStrength={40} roughness={1} depthScale={1.2} minDepthThreshold={0.4} maxDepthThreshold={1.4} color="#0f172a" metalness={0.5} />
-            </mesh>
+              <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.1, -500]} receiveShadow>
+                <planeGeometry args={[2000, 2000]} />
+                <MeshReflectorMaterial blur={[300, 100]} resolution={1024} mixBlur={1} mixStrength={40} roughness={1} depthScale={1.2} minDepthThreshold={0.4} maxDepthThreshold={1.4} color="#0f172a" metalness={0.5} />
+              </mesh>
 
-            <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, -500]} receiveShadow><planeGeometry args={[25, 2000]} /><meshStandardMaterial color="#1e293b" roughness={0.8} /></mesh>
+              <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, -500]} receiveShadow><planeGeometry args={[25, 2000]} /><meshStandardMaterial color="#1e293b" roughness={0.8} /></mesh>
 
-            {crowd}
-            <Skyline />
-            {drones}
-            {neonPoles}
-            
-            <NavSign position={[-30, 5, 40]} text="← 2D CITY MAP" to="/city-map" />
-            <NavSign position={[30, 5, 40]} text="GLOBAL MARKET →" to="/marketplace" />
+              {crowd}
+              <Skyline />
+              {drones}
+              {neonPoles}
+              
+              <NavSign position={[-30, 5, 40]} text="← 2D CITY MAP" to="/city-map" />
+              <NavSign position={[30, 5, 40]} text="GLOBAL MARKET →" to="/marketplace" />
 
-            {/* <WebcamScreen position={[0, 15, 55]} rotation={[0, 0, 0]} /> */}
-            <Guests guests={guests} />
+              <Guests guests={guests} />
 
-            {data.sectors.map((s: any) => (
-              <group key={s.id} position={[0, 0, s.map_position?.z || -100]}>
-                <group position={[0, 28, 0]}><mesh castShadow><boxGeometry args={[35, 6, 2]} /><meshStandardMaterial color={s.color_theme} /></mesh><Text position={[0, 0, 1.1]} fontSize={2.5} color="#fff" fontWeight="black">{s.name.toUpperCase()}</Text></group>
-                {data.companies.filter((c: any) => c.sector_id === s.id).map((c: any, index: number) => {
-                  const side = index % 2 === 0 ? -1 : 1;
-                  return <DistrictBooth key={c.id} position={[side * 35, 0, Math.floor(index / 2) * -40]} rotation={[0, side === -1 ? Math.PI/2 : -Math.PI/2, 0]} company={c} color={s.color_theme} />;
-                })}
-              </group>
-            ))}
+              {data.sectors.map((s: any) => (
+                <group key={s.id} position={[0, 0, s.map_position?.z || -100]}>
+                  <group position={[0, 28, 0]}><mesh castShadow><boxGeometry args={[35, 6, 2]} /><meshStandardMaterial color={s.color_theme} /></mesh><Text position={[0, 0, 1.1]} fontSize={2.5} color="#fff" fontWeight="black">{s.name.toUpperCase()}</Text></group>
+                  {data.companies.filter((c: any) => c.sector_id === s.id).map((c: any, index: number) => {
+                    const side = index % 2 === 0 ? -1 : 1;
+                    return <DistrictBooth key={c.id} position={[side * 35, 0, Math.floor(index / 2) * -40]} rotation={[0, side === -1 ? Math.PI/2 : -Math.PI/2, 0]} company={c} color={s.color_theme} />;
+                  })}
+                </group>
+              ))}
 
-            <Player mode={mode} onMove={handleMyMove} />
-          </Bvh>
-        </Suspense>
-      </Canvas>
+              <Player mode={mode} onMove={handleMyMove} />
+            </Bvh>
+          </Suspense>
+        </Canvas>
+      )}
     </div>
   );
 }
