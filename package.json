@@ -12,7 +12,8 @@
     "worker:start": "cd backend-server && npm run worker"
   },
   "dependencies": {
-    "@epicgames-ps/lib-pixelstreamingfrontend-ui-ue5.5": "^1.3.1",
+    "@epicgames-ps/lib-pixelstreamingfrontend-ue5.7": "^0.2.2",
+    "@epicgames-ps/lib-pixelstreamingfrontend-ui-ue5.7": "^0.1.3",
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.5.0",
     "@react-three/postprocessing": "^3.0.4",
