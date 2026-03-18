@@ -1,4 +1,4 @@
-import { useState, Suspense, useEffect } from 'react';
+import { useState, Suspense, useEffect, useRef } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { 
   PointerLockControls, 
@@ -53,6 +53,7 @@ function Player() {
 export default function ProjectorRoom() {
   const [isL, setIsL] = useState(false);
   const nav = useNavigate();
+  const controlsRef = useRef<any>(null);
 
   return (
     <div style={{ width: '100vw', height: '100vh', background: '#000', position: 'relative' }}>
@@ -65,7 +66,7 @@ export default function ProjectorRoom() {
 
       <Canvas shadows camera={{ fov: 60, position: [0, 1.7, 30] }}>
         <Suspense fallback={null}>
-          <PointerLockControls onLock={() => setIsL(true)} onUnlock={() => setIsL(false)} />
+          <PointerLockControls ref={controlsRef} onLock={() => setIsL(true)} onUnlock={() => setIsL(false)} />
           <Stars radius={100} depth={50} count={5000} factor={4} />
           <ambientLight intensity={0.1} />
 
@@ -93,7 +94,7 @@ export default function ProjectorRoom() {
       {!isL && (
         <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', background: 'rgba(0,0,0,0.9)', zIndex: 10 }}>
           <h1 style={{ color: '#fff', fontSize: '3rem', fontWeight: 900, marginBottom: '20px' }}>CINEMATIC PROJECTOR ROOM</h1>
-          <button onClick={() => document.body.requestPointerLock()} className="btn-pro" style={{ padding: '20px 60px', background: '#3b82f6' }}>START PROJECTION</button>
+          <button onClick={() => controlsRef.current?.lock()} className="btn-pro" style={{ padding: '20px 60px', background: '#3b82f6' }}>START PROJECTION</button>
         </div>
       )}
     </div>

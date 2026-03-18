@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { supabase } from '../services/supabase.js';
+import { getSupabase } from '../services/supabase.js';
 
 /**
  * Middleware to protect Unreal Engine endpoints using a simple API Key.

@@ -404,6 +404,7 @@ function SpaceInstallation() {
 
 export default function DigitalGallery() {
   const [isL, setIsL] = useState(false);
+  const controlsRef = useRef<any>(null);
 
   return (
     <div style={{ width: '100vw', height: '100vh', position: 'relative', background: '#020617' }}>
@@ -411,7 +412,7 @@ export default function DigitalGallery() {
       
       <Canvas shadows camera={{ fov: 45, position: [0, 1.7, 60] }}>
         <Suspense fallback={null}>
-          <PointerLockControls onLock={() => setIsL(true)} onUnlock={() => setIsL(false)} />
+          <PointerLockControls ref={controlsRef} onLock={() => setIsL(true)} onUnlock={() => setIsL(false)} />
           <Stars radius={300} depth={100} count={10000} factor={4} />
           <ambientLight intensity={0.1} />
           <pointLight position={[0, 100, 0]} intensity={0.5} />
@@ -482,7 +483,7 @@ export default function DigitalGallery() {
       {!isL && (
         <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', background: 'rgba(0,0,0,0.8)', zIndex: 10 }}>
           <h1 style={{ color: '#fff', fontSize: '4rem', fontWeight: 950, marginBottom: '20px' }}>DIGITAL INFINITY</h1>
-          <button onClick={() => document.body.requestPointerLock()} className="btn-pro" style={{ padding: '20px 80px', background: '#8b5cf6', fontSize: '1.5rem' }}>START EXHIBITION</button>
+          <button onClick={() => controlsRef.current?.lock()} className="btn-pro" style={{ padding: '20px 80px', background: '#8b5cf6', fontSize: '1.5rem' }}>START EXHIBITION</button>
           <p style={{ color: '#fff', marginTop: '20px', opacity: 0.5 }}>Use WASD to move, Mouse to look</p>
         </div>
       )}

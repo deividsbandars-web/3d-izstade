@@ -1,17 +1,18 @@
+import './env.js';
+
+console.log("ENV TEST:", process.env.SUPABASE_URL);
+
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
-import dotenv from 'dotenv';
 import { router as apiRoutes } from './routes/api.js';
 import { landingRouter } from './routes/landing.js';
 import * as expoController from './controllers/expoController.js';
 import { ue5AuthMiddleware } from './middleware/ue5Auth.js';
 
-dotenv.config();
-
 const app = express();
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 3001;
 
 // Middleware
 app.use(helmet());

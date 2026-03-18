@@ -5,8 +5,8 @@ import { logger } from '../logging/logger.js';
 const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379';
 
 // We need two instances for pub/sub (one to publish, one to subscribe)
-export const pubClient = new Redis(redisUrl);
-export const subClient = new Redis(redisUrl);
+export const pubClient = new Redis(redisUrl, redisUrl.startsWith('redis://') && redisUrl.includes('upstash') ? { tls: { rejectUnauthorized: false } } : {});
+export const subClient = new Redis(redisUrl, redisUrl.startsWith('redis://') && redisUrl.includes('upstash') ? { tls: { rejectUnauthorized: false } } : {});
 
 pubClient.on('error', (err: Error) => logger.error('Redis PubClient', String(err)));
 subClient.on('error', (err: Error) => logger.error('Redis SubClient', String(err)));

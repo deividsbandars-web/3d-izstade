@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { supabase } from '../services/supabase.js';
+import { getSupabase } from '../services/supabase.js';
 import { analyticsTracker } from '../../src/backend/distribution/analyticsTracker.js';
 
 export const landingRouter = Router();
@@ -13,6 +13,9 @@ landingRouter.get('/:slug', async (req: Request, res: Response) => {
   const campaign = (req.query.c as string) || 'default';
 
   try {
+    const supabase = getSupabase();
+    if (!supabase) throw new Error("Supabase not configured");
+
     // 1. Fetch landing page data from Supabase
     const { data: page, error } = await supabase
       .from('landing_pages')

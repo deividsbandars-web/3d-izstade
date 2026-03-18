@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { supabase } from '../services/supabase.js';
+import { getSupabase } from '../services/supabase.js';
 
 // Define architecture styles to match UE5 enum
 enum EArchitectureStyle {
@@ -23,6 +23,9 @@ const getStyleEnum = (styleName: string): number => {
  */
 export const getCitiesList = async (req: Request, res: Response) => {
     try {
+        const supabase = getSupabase();
+        if (!supabase) throw new Error("Supabase not configured");
+
         const { data: cities, error } = await supabase
             .from('cities')
             .select('id, name, architecture_style, global_location')
@@ -30,7 +33,7 @@ export const getCitiesList = async (req: Request, res: Response) => {
 
         if (error) throw error;
 
-        const formattedCities = cities.map(c => ({
+        const formattedCities = cities.map((c: any) => ({
             id: c.id,
             name: c.name,
             style: getStyleEnum(c.architecture_style),
@@ -48,6 +51,9 @@ export const getCitiesList = async (req: Request, res: Response) => {
  */
 export const getExpoScene = async (req: Request, res: Response) => {
     try {
+        const supabase = getSupabase();
+        if (!supabase) throw new Error("Supabase not configured");
+
         const cityId = req.query.cityId as string;
 
         // 1. Fetch City Metadata
@@ -70,7 +76,7 @@ export const getExpoScene = async (req: Request, res: Response) => {
         if (sectorError) throw sectorError;
 
         // 3. Fetch Companies & Booths
-        const sectorIds = sectors.map(s => s.id);
+        const sectorIds = sectors.map((s: any) => s.id);
         const { data: companies, error: companyError } = await supabase
             .from('companies')
             .select('*, booths(*)')
@@ -87,13 +93,13 @@ export const getExpoScene = async (req: Request, res: Response) => {
                 style: getStyleEnum(city.architecture_style),
                 globalLocation: city.global_location
             },
-            sectors: sectors.map(s => ({
+            sectors: sectors.map((s: any) => ({
                 id: s.id,
                 name: s.name,
                 color_theme: s.color_theme,
                 map_position: s.map_position
             })),
-            companies: companies.map(c => ({
+            companies: companies.map((c: any) => ({
                 id: c.id,
                 sectorId: c.sector_id,
                 name: c.name,
@@ -102,7 +108,7 @@ export const getExpoScene = async (req: Request, res: Response) => {
                 activityScore: c.activity_score || 0.5,
                 activeEmployees: c.employee_count || 0
             })),
-            booths: companies.map(c => ({
+            booths: companies.map((c: any) => ({
                 id: c.booths?.id || `booth_${c.id}`,
                 companyId: c.id,
                 model_url: c.booths?.model_url || "L_Booth_Default",

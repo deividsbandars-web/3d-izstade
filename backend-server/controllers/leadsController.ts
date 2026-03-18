@@ -1,11 +1,14 @@
 import { Request, Response } from 'express';
 import { leadEngine } from '../../src/backend/leads/engine/leadEngine.js';
-import { supabase } from '../services/supabase.js';
+import { getSupabase } from '../services/supabase.js';
 import { analytics, errorMonitor } from '../observability/monitor.js';
 import { AuthRequest } from '../middleware/authMiddleware.js';
 
 export const getLeads = async (req: AuthRequest, res: Response) => {
   try {
+    const supabase = getSupabase();
+    if (!supabase) throw new Error("Supabase not configured");
+
     const { data, error } = await supabase
       .from('leads')
       .select('*')

@@ -18,7 +18,8 @@ const supabaseAnonKey = getEnv('SUPABASE_ANON_KEY');
 const createSafeClient = () => {
   try {
     if (!supabaseUrl || !supabaseAnonKey) {
-      console.warn('⚠️ SUPABASE CLIENT WARNING: Missing SUPABASE_URL or SUPABASE_ANON_KEY.');
+      // ignore in dev
+      // console.warn('⚠️ SUPABASE CLIENT WARNING: Missing SUPABASE_URL or SUPABASE_ANON_KEY.');
       // Fallback for development/UI work without throwing fatal application errors
       return createClient('https://dummy-fallback.supabase.co', 'dummy-key');
     }

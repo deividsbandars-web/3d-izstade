@@ -1,12 +1,10 @@
-import dotenv from 'dotenv';
+import './env.js';
 import { taskQueue } from '../src/backend/queue/taskQueue.js';
 import { logger } from '../src/backend/logging/logger.js';
 import { contentScheduler } from '../src/backend/distribution/contentScheduler.js';
 import { emailScheduler } from '../src/backend/sequences/emailScheduler.js';
 import { registerSubscribers } from './events/subscribers.js';
 import { registerRevenueSubscribers } from './events/revenueSubscribers.js';
-
-dotenv.config();
 
 console.log('👷 AI Agent Worker starting...');
 

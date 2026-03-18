@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { supabase } from '../services/supabase.js';
+import { getSupabase } from '../services/supabase.js';
 import { logger } from '../../src/backend/logging/logger.js';
 
 export interface AuthRequest extends Request {
@@ -25,6 +25,9 @@ export const authMiddleware = async (req: AuthRequest, res: Response, next: Next
   const token = authHeader.split(' ')[1];
 
   try {
+    const supabase = getSupabase();
+    if (!supabase) throw new Error("Supabase not configured");
+
     // Validate token with Supabase Auth
     const { data: { user }, error } = await supabase.auth.getUser(token);
 

@@ -29,48 +29,6 @@ const SKYLINE_DATA = Array.from({ length: 40 }).map(() => {
   };
 });
 
-// --- WEBCAM TEXTURE COMPONENT ---
-export function _WebcamScreen({ position, rotation }: any) {
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-  const [texture, setTexture] = useState<THREE.VideoTexture | null>(null);
-
-  useEffect(() => {
-    const video = document.createElement('video');
-    video.autoplay = true;
-    video.muted = true;
-    video.playsInline = true;
-    
-    navigator.mediaDevices.getUserMedia({ video: true })
-      .then(stream => {
-        video.srcObject = stream;
-        video.play();
-        videoRef.current = video;
-        setTexture(new THREE.VideoTexture(video));
-      })
-      .catch(err => {
-        if (err.name === 'NotFoundError') {
-          console.warn("Webcam not found, proceeding without video feed.");
-        } else {
-          console.error("Webcam error:", err);
-        }
-      });
-
-    return () => {
-      if (videoRef.current) {
-        const stream = videoRef.current.srcObject as MediaStream;
-        stream?.getTracks().forEach(track => track.stop());
-      }
-    };
-  }, []);
-
-  return texture ? (
-    <mesh position={position} rotation={rotation}>
-      <planeGeometry args={[16, 9]} />
-      <meshBasicMaterial map={texture} toneMapped={false} />
-    </mesh>
-  ) : null;
-}
-
 // --- NAV SIGN ---
 function NavSign({ position, text, to }: { position: [number, number, number], text: string, to: string }) {
   const nav = useNavigate();
@@ -289,7 +247,7 @@ function Player({ mode, onMove }: any) {
     }
   });
 
-  return mode === 'fly' ? <OrbitControls enablePan enableZoom enableRotate maxDistance={500} /> : <PointerLockControls />;
+  return mode === 'fly' ? <OrbitControls enablePan enableZoom enableRotate maxDistance={500} /> : (mode === 'walk' ? <PointerLockControls /> : null);
 }
 
 // --- FALLBACK DATA ---
@@ -402,7 +360,7 @@ export default function Expo3D() {
             <h2 style={{ fontSize: '2rem', color: '#fff', marginBottom: '50px' }}>INDUSTRIĀLĀ METAVERSE</h2>
             <div style={{ display: 'flex', gap: '20px', flexDirection: 'column' }}>
               <div style={{ display: 'flex', gap: '20px', justifyContent: 'center' }}>
-                <button onClick={() => { setMode('walk'); setTimeout(() => document.body.requestPointerLock(), 100); }} className="btn-primary">🚶 WALK LITE (WEB3D)</button>
+                <button onClick={() => setMode('walk')} className="btn-primary">🚶 WALK LITE (WEB3D)</button>
                 <button onClick={() => setMode('fly')} className="btn-glass">🦅 DRONE VIEW</button>
               </div>
               <button 

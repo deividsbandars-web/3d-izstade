@@ -19,7 +19,7 @@ export default function PixelStreamingViewer({
         // 1. Konfigurējam savienojumu (Signaling Server URL)
         const config = new Config({
             initialSettings: {
-                ss: 'ws://127.0.0.1:80',
+                ss: initialSignalingServerUrl,
                 AutoPlayVideo: true,
                 AutoConnect: true,
                 StartVideoMuted: true,
