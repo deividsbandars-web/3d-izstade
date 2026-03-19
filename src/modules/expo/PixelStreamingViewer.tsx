@@ -7,7 +7,8 @@ interface PixelStreamingViewerProps {
 }
 
 export default function PixelStreamingViewer({ 
-    initialSignalingServerUrl = 'ws://127.0.0.1:80',
+    initialSignalingServerUrl = import.meta.env.VITE_SIGNALING_SERVER_URL 
+      || 'ws://127.0.0.1:8888',
     onClose
 }: PixelStreamingViewerProps) {
     const videoContainerRef = useRef<HTMLDivElement>(null);
@@ -26,7 +27,10 @@ export default function PixelStreamingViewer({
                 AutoPlayVideo: true,
                 AutoConnect: true,
                 StartVideoMuted: true,
-                HoveringMouse: true,
+                WebRTCFPS: 60,
+                IceServers: JSON.parse(
+                    import.meta.env.VITE_ICE_SERVERS || '[]'
+                ),
             } as any
         });
 
@@ -69,6 +73,27 @@ export default function PixelStreamingViewer({
         } catch (e) {
             // Ignorējam ja neeksistē tips
         }
+
+        // Klausāmies Unreal Engine ziņojumus (Analytics)
+        ps.addResponseEventListener("ue_event", (response: string) => {
+            try {
+                const data = JSON.parse(response);
+                console.log("Saņemts UE notikums:", data);
+                
+                // Sūtam uz Backend analītiku
+                fetch('/api/analytics/track', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        userId: "00000000-0000-0000-0000-000000000000", // Pagaidu ID, līdz pieslēdz Auth
+                        payload: data
+                    })
+                }).catch(err => console.error("Analytics fetch error:", err));
+                
+            } catch (e) {
+                console.error("Kļūda apstrādājot UE ziņojumu", e);
+            }
+        });
 
         // Drošības pēc - ja pēc 5 sekundēm nav saraksta, mēģinām parasto connect
         const timer = setTimeout(() => {

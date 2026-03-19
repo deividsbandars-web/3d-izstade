@@ -1,5 +1,17 @@
 # Base image for building
-FROM node:20-alpine AS builder
+FROM node:22-alpine AS builder
+
+# Install build dependencies for native modules like 'canvas'
+RUN apk add --no-cache \
+    python3 \
+    make \
+    g++ \
+    pkgconfig \
+    pixman-dev \
+    cairo-dev \
+    pango-dev \
+    libjpeg-turbo-dev \
+    giflib-dev
 
 WORKDIR /app
 

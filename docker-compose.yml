@@ -1,29 +1,39 @@
 version: '3.8'
 
 services:
-  # The React Frontend / Main Application
+  # 1. Reverse Proxy (Gateway)
+  gateway:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deployment/configs/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - frontend
+      - backend
+      - signaling
+
+  # 2. React Frontend (Built Assets served via Nginx)
   frontend:
     build:
       context: .
       dockerfile: Dockerfile
-    ports:
-      - "80:80"
     environment:
       - VITE_SUPABASE_URL=${VITE_SUPABASE_URL}
       - VITE_SUPABASE_ANON_KEY=${VITE_SUPABASE_ANON_KEY}
-    depends_on:
-      - backend
+    expose:
+      - "80"
 
-  # API/Backend Layer (If extracted from Vite into a standalone Node server)
-  # Currently architectural preparation for Node backend
+  # 3. Node.js Backend API
   backend:
     image: node:20-alpine
     working_dir: /app
     volumes:
       - .:/app
-    command: npm run start:backend
-    ports:
-      - "3000:3000"
+    command: sh -c "cd backend-server && npm install && npm run dev"
+    expose:
+      - "3000"
     environment:
       - SUPABASE_URL=${SUPABASE_URL}
       - SUPABASE_SERVICE_KEY=${SUPABASE_SERVICE_KEY}
@@ -31,14 +41,51 @@ services:
       - GEMINI_API_KEY=${GEMINI_API_KEY}
       - STRIPE_SECRET=${STRIPE_SECRET}
       - REDIS_URL=redis://redis:6379
+    depends_on:
+      - redis
 
-  # Background Task Execution Worker (AI Agents)
+  # 4. UE 5.7 Pixel Streaming Signaling Server
+  # NOTE: User needs to copy Signaling Server files to ./deployment/signaling
+  signaling:
+    image: node:18-alpine
+    working_dir: /app
+    volumes:
+      - ./deployment/signaling:/app
+    command: sh -c "npm install && node dist/index.js --peerIp 0.0.0.0 --publicIp ${PUBLIC_IP:-127.0.0.1}"
+    ports:
+      - "8888:8888" # Signaling port
+    environment:
+      - TURN_SERVER_URL=turn:warpala@${PUBLIC_IP:-127.0.0.1}:3478
+      - TURN_SERVER_USER=warpala
+      - TURN_SERVER_PASS=warpala123
+
+  # 5. TURN/STUN Server (Coturn) for external WebRTC access
+  coturn:
+    image: coturn/coturn
+    ports:
+      - "3478:3478/udp"
+      - "3478:3478/tcp"
+      - "5349:5349/udp"
+      - "5349:5349/tcp"
+    volumes:
+      - ./deployment/configs/turnserver.conf:/etc/coturn/turnserver.conf:ro
+    network_mode: "host" # Required for proper TURN functionality
+
+  # 6. Redis for Task Queues & Sessions
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  # 7. Worker for AI Agents
   worker:
     image: node:20-alpine
     working_dir: /app
     volumes:
       - .:/app
-    command: npm run worker:start
+    command: sh -c "cd backend-server && npm install && npm run worker"
     environment:
       - SUPABASE_URL=${SUPABASE_URL}
       - SUPABASE_SERVICE_KEY=${SUPABASE_SERVICE_KEY}
@@ -47,14 +94,6 @@ services:
       - REDIS_URL=redis://redis:6379
     depends_on:
       - redis
-
-  # Redis for task queuing and fast caching
-  redis:
-    image: redis:alpine
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis_data:/data
 
 volumes:
   redis_data:

@@ -1,4 +1,4 @@
-import snoowrap from 'snoowrap';
+import { TSRAW } from 'tsraw';
 import { logger } from '../logging/logger.js';
 /**
  * Handles publishing to community-driven platforms like Reddit.
@@ -11,23 +11,31 @@ export const communityPublisher = {
         const { subreddit, title, text, url } = params;
         try {
             logger.info('CommunityPublisher', `Publishing to Reddit: r/${subreddit}`);
-            const r = new snoowrap({
-                userAgent: 'Warpala-OS/1.0',
-                clientId: process.env.REDDIT_CLIENT_ID,
-                clientSecret: process.env.REDDIT_CLIENT_SECRET,
-                username: process.env.REDDIT_USERNAME,
-                password: process.env.REDDIT_PASSWORD
+            const r = await TSRAW.init({
+                user_agent: 'Warpala-OS/1.0',
+                client_id: process.env.REDDIT_CLIENT_ID || '',
+                client_secret: process.env.REDDIT_CLIENT_SECRET || '',
+                username: process.env.REDDIT_USERNAME || '',
+                password: process.env.REDDIT_PASSWORD || ''
             });
             let submissionId = '';
             if (url) {
-                // @ts-expect-error - snoowrap types are cyclic here
-                const sub = await r.submitLink({ subredditName: subreddit, title, url });
-                submissionId = sub.id;
+                const res = await r.submit({
+                    sr: subreddit,
+                    title,
+                    url,
+                    kind: 'link'
+                });
+                submissionId = res.name || res.id || '';
             }
             else {
-                // @ts-expect-error - snoowrap types are cyclic here
-                const sub = await r.submitSelfpost({ subredditName: subreddit, title, text: text || '' });
-                submissionId = sub.id;
+                const res = await r.submit({
+                    sr: subreddit,
+                    title,
+                    text: text || '',
+                    kind: 'self'
+                });
+                submissionId = res.name || res.id || '';
             }
             return { success: true, id: submissionId };
         }

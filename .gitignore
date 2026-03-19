@@ -32,3 +32,8 @@ pazudusie faili/
 .gemini/
 *.png
 *.jpg
+
+# Lieli arhivi
+*.zip
+*.7z
+*.rar

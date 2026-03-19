@@ -5,6 +5,7 @@ import * as agentsController from '../controllers/agentsController.js';
 import * as marketplaceController from '../controllers/marketplaceController.js';
 import * as outreachController from '../controllers/outreachController.js';
 import * as expoController from '../controllers/expoController.js';
+import * as analyticsController from '../controllers/analyticsController.js';
 import { authMiddleware } from '../middleware/authMiddleware.js';
 import { rateLimitMiddleware } from '../middleware/rateLimit.js';
 
@@ -16,6 +17,8 @@ router.use(rateLimitMiddleware);
 /**
  * PUBLIC ROUTES (Defined BEFORE authMiddleware)
  */
+router.post('/analytics/track', analyticsController.trackAnalytics);
+
 router.get('/expo/scene', (req, res, next) => {
     console.log(`[ROUTE] Public Access: ${req.method} ${req.url}`);
     next();
