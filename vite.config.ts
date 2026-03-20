@@ -39,7 +39,19 @@ export default defineConfig({
       },
       workbox: {
         maximumFileSizeToCacheInBytes: 5000000
+      },
+      devOptions: {
+        enabled: false // IZSLEEDZAM CACHING IZSTRĀDES LAIKĀ!!!
       }
     })
   ],
+  server: {
+    proxy: {
+      '/api': 'http://localhost',
+      '/ws': {
+        target: 'ws://localhost',
+        ws: true
+      }
+    }
+  }
 })

@@ -1,6 +1,11 @@
-import './env.js';
+import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-console.log("ENV TEST:", process.env.SUPABASE_URL);
+// Load environment variables immediately before anything else
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
 import express from 'express';
 import cors from 'cors';
@@ -12,7 +17,7 @@ import * as expoController from './controllers/expoController.js';
 import { ue5AuthMiddleware } from './middleware/ue5Auth.js';
 
 const app = express();
-const port = process.env.PORT || 3001;
+const port = process.env.PORT || 3000;
 
 // Middleware
 app.use(helmet());

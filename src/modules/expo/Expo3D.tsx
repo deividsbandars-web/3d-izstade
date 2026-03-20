@@ -9,8 +9,8 @@ import {
   useVideoTexture,
   Bvh,
   Environment,
-  MeshReflectorMaterial,
-  Loader
+  Loader,
+  Center
 } from '@react-three/drei';
 import * as THREE from 'three';
 import { useNavigate } from 'react-router-dom';
@@ -19,71 +19,51 @@ import { expoService } from '../../services/expoService';
 import { useGLTF } from '@react-three/drei';
 import PixelStreamingViewer from './PixelStreamingViewer';
 
-// --- STATIC DATA GENERATION (OUTSIDE RENDER) ---
-const SKYLINE_DATA = Array.from({ length: 40 }).map(() => {
-  const randomHSL = () => Math.random() * 0.1 + 0.6;
-  return {
-    pos: [(Math.random() - 0.5) * 800, 0, -(Math.random() * 500 + 300)] as [number, number, number],
-    scale: [10 + Math.random() * 20, 20 + Math.random() * 100, 10 + Math.random() * 20] as [number, number, number],
-    color: new THREE.Color().setHSL(randomHSL(), 0.5, 0.1)
-  };
-});
+// --- PILSĒTAS 3D MODELIS (PHASE 1 - ROKU DARBS) ---
 
-// --- NAV SIGN ---
-function NavSign({ position, text, to }: { position: [number, number, number], text: string, to: string }) {
-  const nav = useNavigate();
+// 1. Dinamiskais Ielādētājs
+function DynamicModel({ url, position, scale = 1, rotation = [0, 0, 0] }: any) {
+  try {
+    const gltf = useGLTF(url) as any;
+    const clonedScene = React.useMemo(() => gltf.scene.clone(), [gltf.scene, url]);
+    
+    // <Center> ir vienīgais veids, kā garantēt, ka māja stāv uz zemes
+    return (
+      <Center position={position} bottom>
+        <primitive object={clonedScene} scale={scale} rotation={rotation} />
+      </Center>
+    );
+  } catch (e) {
+    console.error("Nevar ielādēt modeli:", url);
+    return null; 
+  }
+}
+
+// 2. TAVS PILSĒTAS PLĀNS
+const CITY_LAYOUT = [
+  // Izmantojam 0 kā Y asi, jo <Center> parūpēsies par pārējo
+  { id: 'londonas_maja', url: '/models/free_london_kinnaird_house.glb', position: [0, 0, 0], scale: 1, rotation: [0, 0, 0] },
+];
+
+function CityModel() {
   return (
-    <group position={position} onClick={() => nav(to)} onPointerOver={() => document.body.style.cursor = 'pointer'} onPointerOut={() => document.body.style.cursor = 'auto'}>
-      <mesh castShadow>
-        <boxGeometry args={[12, 5, 0.5]} />
-        <meshStandardMaterial color="#3b82f6" emissive="#3b82f6" emissiveIntensity={0.5} />
+    <Suspense fallback={null}>
+      {/* 2 Metrus augsts kubs (cilvēks) tieši centrā atskatei */}
+      <mesh position={[2, 1, 0]} castShadow>
+        <boxGeometry args={[1, 2, 1]} />
+        <meshStandardMaterial color="#ef4444" />
       </mesh>
-      <Text position={[0, 0, 0.3]} fontSize={1} color="#fff" fontWeight="black">{text}</Text>
-    </group>
-  );
-}
-
-// --- DRONE ---
-function Drone({ startZ }: { startZ: number }) {
-  const meshRef = useRef<THREE.Group>(null);
-  // Using stable state initializer function
-  const [targetX] = useState(() => (Math.random() - 0.5) * 40);
-  useFrame((state) => {
-    if (meshRef.current) {
-      const time = state.clock.elapsedTime;
-      meshRef.current.position.z = startZ + Math.sin(time * 0.2) * 100 - 200;
-      meshRef.current.position.x = targetX + Math.cos(time * 0.5) * 5;
-      meshRef.current.position.y = 15 + Math.sin(time * 2) * 0.5;
-      meshRef.current.rotation.z = Math.sin(time * 2) * 0.1;
-    }
-  });
-  return (
-    <group ref={meshRef}>
-      <mesh castShadow><boxGeometry args={[1.2, 0.3, 1.2]} /><meshStandardMaterial color="#0f172a" /></mesh>
-      {[[-0.6, -0.6], [0.6, -0.6], [-0.6, 0.6], [0.6, 0.6]].map((pos, i) => (
-        <mesh key={i} position={[pos[0], 0, pos[1]]}><sphereGeometry args={[0.15, 8, 8]} /><meshBasicMaterial color={i % 2 === 0 ? "#3b82f6" : "#ef4444"} toneMapped={false} /><pointLight intensity={1} distance={3} color={i % 2 === 0 ? "#3b82f6" : "#ef4444"} /></mesh>
+      
+      {CITY_LAYOUT.map((item) => (
+        <DynamicModel 
+          key={item.id} 
+          url={item.url} 
+          position={item.position} 
+          scale={item.scale} 
+          rotation={item.rotation} 
+        />
       ))}
-      <mesh position={[0, -0.5, 0]} castShadow><boxGeometry args={[0.6, 0.6, 0.6]} /><meshStandardMaterial color="#eab308" /></mesh>
-    </group>
-  );
-}
-
-// --- CILVĒKI ---
-function Person({ startPos, speed, color }: any) {
-  const meshRef = useRef<THREE.Group>(null);
-  useFrame((state, delta) => {
-    if (meshRef.current) {
-      meshRef.current.position.z += speed * delta;
-      if (meshRef.current.position.z < -800) meshRef.current.position.z = 100;
-      if (meshRef.current.position.z > 100) meshRef.current.position.z = -800;
-      meshRef.current.position.y = 1 + Math.sin(state.clock.elapsedTime * 10) * 0.05;
-    }
-  });
-  return (
-    <group ref={meshRef} position={[startPos[0], 1, startPos[2]]}>
-      <mesh castShadow><capsuleGeometry args={[0.3, 1, 4, 8]} /><meshStandardMaterial color={color} /></mesh>
-      <mesh position={[0, 0.8, 0]}><sphereGeometry args={[0.25, 8, 8]} /><meshStandardMaterial color="#ffdbac" /></mesh>
-    </group>
+    </Suspense>
   );
 }
 
@@ -198,23 +178,6 @@ function DistrictBooth({ position, rotation, company, color }: any) {
   );
 }
 
-// --- CITY SKYLINE ---
-function Skyline() {
-  return (
-    <group>{SKYLINE_DATA.map((b, i) => <mesh key={i} position={b.pos}><boxGeometry args={b.scale} /><meshStandardMaterial color={b.color} /></mesh>)}</group>
-  );
-}
-
-// --- NEON POLE ---
-function NeonPole({ position }: any) {
-  return (
-    <group position={position}>
-      <mesh castShadow position={[0, 10, 0]}><boxGeometry args={[0.5, 20, 0.5]} /><meshStandardMaterial color="#0f172a" /></mesh>
-      <mesh position={[0, 20, 0]}><sphereGeometry args={[0.8, 16, 16]} /><meshBasicMaterial color="#3b82f6" toneMapped={false} /><pointLight intensity={2} distance={20} color="#3b82f6" /></mesh>
-    </group>
-  );
-}
-
 // --- PLAYER ---
 function Player({ mode, onMove }: any) {
   const { camera } = useThree();
@@ -267,7 +230,7 @@ export default function Expo3D() {
   const [data, setData] = useState<any>({ sectors: [], companies: [] });
   const [isLoading, setIsLoading] = useState(true);
   const [guests, setGuests] = useState<any[]>([]);
-  const [playerPos, setPlayerPos] = useState<number[]>([0, 2, 80]);
+  const [playerPos, setPlayerPos] = useState<number[]>([0, 2, 10]); // Sākam daudz tuvāk (Z=10)
   const [isMicOn, setIsMicOn] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const channelRef = useRef<any>(null);
@@ -345,10 +308,6 @@ export default function Expo3D() {
     }
   };
 
-  const crowd = React.useMemo(() => Array.from({ length: 30 }).map((_, i) => <Person key={i} startPos={[(Math.random() - 0.5) * 20, 1, -(Math.random() * 800)]} speed={-(3 + Math.random() * 6)} color={new THREE.Color().setHSL(Math.random(), 0.7, 0.5)} />), []);
-  const drones = React.useMemo(() => Array.from({ length: 5 }).map((_, i) => <Drone key={i} startZ={i * -150} />), []);
-  const neonPoles = React.useMemo(() => [-1, 1].map(side => Array.from({ length: 10 }).map((_, i) => <NeonPole key={`${side}-${i}`} position={[side * 15, 0, i * -80 + 40]} />)), []);
-
   if (isLoading) return <Loader />;
 
   return (
@@ -415,7 +374,8 @@ export default function Expo3D() {
         <Canvas 
           shadows 
           gl={{ antialias: true }} 
-          camera={{ position: [0, 50, 100], fov: 60 }}
+          // Atbīdām kameru tālu atpakaļ (Z=50) un uz augšu (Y=10), lai redzētu kopskatu
+          camera={{ position: [0, 10, 50], fov: 60 }}
           onCreated={({ gl }) => {
             if (gl.xr && typeof (gl.xr as any).getEnvironmentBlendMode !== 'function') {
               (gl.xr as any).getEnvironmentBlendMode = () => 'opaque';
@@ -432,32 +392,28 @@ export default function Expo3D() {
               <hemisphereLight args={['#ffffff', '#444444', 0.5]} />
               <fog attach="fog" args={['#020617', 10, 800]} />
 
-              <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.1, -500]} receiveShadow>
+              {/* VIENKĀRŠA CIETA ZEME (Vairs nekāda atspīduma vai ūdens) */}
+              <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.1, 0]} receiveShadow>
                 <planeGeometry args={[2000, 2000]} />
-                <MeshReflectorMaterial blur={[300, 100]} resolution={1024} mixBlur={1} mixStrength={40} roughness={1} depthScale={1.2} minDepthThreshold={0.4} maxDepthThreshold={1.4} color="#0f172a" metalness={0.5} />
+                <meshStandardMaterial color="#2d3748" roughness={1} />
               </mesh>
 
-              <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, -500]} receiveShadow><planeGeometry args={[25, 2000]} /><meshStandardMaterial color="#1e293b" roughness={0.8} /></mesh>
-
-              {crowd}
-              <Skyline />
-              {drones}
-              {neonPoles}
+              <CityModel />
               
-              <NavSign position={[-30, 5, 40]} text="← 2D CITY MAP" to="/city-map" />
-              <NavSign position={[30, 5, 40]} text="GLOBAL MARKET →" to="/marketplace" />
-
               <Guests guests={guests} />
 
-              {data.sectors.map((s: any) => (
-                <group key={s.id} position={[0, 0, s.map_position?.z || -100]}>
-                  <group position={[0, 28, 0]}><mesh castShadow><boxGeometry args={[35, 6, 2]} /><meshStandardMaterial color={s.color_theme} /></mesh><Text position={[0, 0, 1.1]} fontSize={2.5} color="#fff" fontWeight="black">{s.name.toUpperCase()}</Text></group>
-                  {data.companies.filter((c: any) => c.sector_id === s.id).map((c: any, index: number) => {
-                    const side = index % 2 === 0 ? -1 : 1;
-                    return <DistrictBooth key={c.id} position={[side * 35, 0, Math.floor(index / 2) * -40]} rotation={[0, side === -1 ? Math.PI/2 : -Math.PI/2, 0]} company={c} color={s.color_theme} />;
-                  })}
-                </group>
-              ))}
+              {/* VECOS STENDUS PILNĪBĀ PASLĒPJAM (scale={0}), LAI TIE NEKĀDĀ VEIDĀ NEJAUKTOS AR JAUNO PILSĒTU */}
+              <group scale={0}>
+                {data.sectors.map((s: any) => (
+                  <group key={s.id} position={[0, 0, s.map_position?.z || -100]}>
+                    <group position={[0, 28, 0]}><mesh castShadow><boxGeometry args={[35, 6, 2]} /><meshStandardMaterial color={s.color_theme} /></mesh><Text position={[0, 0, 1.1]} fontSize={2.5} color="#fff" fontWeight="black">{s.name.toUpperCase()}</Text></group>
+                    {data.companies.filter((c: any) => c.sector_id === s.id).map((c: any, index: number) => {
+                      const side = index % 2 === 0 ? -1 : 1;
+                      return <DistrictBooth key={c.id} position={[side * 35, 0, Math.floor(index / 2) * -40]} rotation={[0, side === -1 ? Math.PI/2 : -Math.PI/2, 0]} company={c} color={s.color_theme} />;
+                    })}
+                  </group>
+                ))}
+              </group>
 
               <Player mode={mode} onMove={handleMyMove} />
             </Bvh>

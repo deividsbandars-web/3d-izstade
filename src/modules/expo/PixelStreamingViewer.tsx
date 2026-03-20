@@ -7,30 +7,29 @@ interface PixelStreamingViewerProps {
 }
 
 export default function PixelStreamingViewer({ 
-    initialSignalingServerUrl = import.meta.env.VITE_SIGNALING_SERVER_URL 
-      || 'ws://127.0.0.1:8888',
+    initialSignalingServerUrl,
     onClose
 }: PixelStreamingViewerProps) {
     const videoContainerRef = useRef<HTMLDivElement>(null);
     const [isConnected, setIsConnected] = useState(false);
+    const [status, setStatus] = useState('Gatavojas savienojumam...');
     const [availableStreamers, setAvailableStreamers] = useState<string[]>([]);
-    const [status, setStatus] = useState('Savienojas...');
     const psRef = useRef<PixelStreaming | null>(null);
+
+    // Vienmēr izmantojam lokālo tīklu šim projektam
+    // Pārlūkprogrammai (spēlētājam) ir jāslēdzas caur proxy (portu 80), nevis tieši pie streamer porta 8888
+    const url = initialSignalingServerUrl || `ws://${window.location.host}/ws/`;
 
     useEffect(() => {
         if (!videoContainerRef.current) return;
 
-        // 1. Konfigurācija (UE 5.7+ Pixel Streaming 2)
+        // 1. DROŠA KONFIGURĀCIJA
         const config = new Config({
             initialSettings: {
-                ss: initialSignalingServerUrl,
+                ss: url,
                 AutoPlayVideo: true,
-                AutoConnect: true,
+                AutoConnect: true, // Ļaujam bibliotēkai pašai savienoties, tagad kad maršruts ir pareizs
                 StartVideoMuted: true,
-                WebRTCFPS: 60,
-                IceServers: JSON.parse(
-                    import.meta.env.VITE_ICE_SERVERS || '[]'
-                ),
             } as any
         });
 
@@ -42,7 +41,6 @@ export default function PixelStreamingViewer({
 
         // 3. Notikumi
         ps.addEventListener('webRtcConnected', () => {
-            console.log("WebRTC Savienots!");
             setIsConnected(true);
             setStatus('Pieslēgts!');
         });
@@ -52,109 +50,73 @@ export default function PixelStreamingViewer({
             setStatus('Atvienots.');
         });
 
-        // Mēģinām abus eventus savietojamībai
+        // 4. KLAUSĀMIES SERVERI, LAI IZVĒLĒTOS STREAMER
         const onStreamerList = (event: any) => {
             const ids = event.streamers || (event.data && event.data.messageStreamerList && event.data.messageStreamerList.ids) || [];
             console.log("Saņemts saraksts:", ids);
             setAvailableStreamers(ids);
             if (ids.length > 0) {
-                const target = ids.find((id: string) => id.includes('Default')) || ids[0];
-                ps.config.setOptionSettingValue('StreamerId', target);
-                ps.connect();
+                setStatus(`Atrasti ${ids.length} kanāli. Gaida tavu klikšķi!`);
+            } else {
+                setStatus('Gaidu Unreal Engine (Streamer nav atrasts)...');
             }
         };
 
-        // @ts-ignore - Dažām bibliotēkas versijām ir streamerListMessage, citām streamerListChanged
+        // Dažādām versijām ir dažādi notikumu nosaukumi
+        // @ts-ignore
         ps.addEventListener('streamerListMessage', onStreamerList);
-        
         try {
             // @ts-ignore
             ps.addEventListener('streamerListChanged', onStreamerList);
         } catch (e) {
-            // Ignorējam ja neeksistē tips
+            // ignore
         }
 
-        // Klausāmies Unreal Engine ziņojumus (Analytics)
-        ps.addResponseEventListener("ue_event", (response: string) => {
-            try {
-                const data = JSON.parse(response);
-                console.log("Saņemts UE notikums:", data);
-                
-                // Sūtam uz Backend analītiku
-                fetch('/api/analytics/track', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        userId: "00000000-0000-0000-0000-000000000000", // Pagaidu ID, līdz pieslēdz Auth
-                        payload: data
-                    })
-                }).catch(err => console.error("Analytics fetch error:", err));
-                
-            } catch (e) {
-                console.error("Kļūda apstrādājot UE ziņojumu", e);
-            }
-        });
-
-        // Drošības pēc - ja pēc 5 sekundēm nav saraksta, mēģinām parasto connect
-        const timer = setTimeout(() => {
-            if (!isConnected) {
-                console.log("Mēģinu piespiedu savienojumu...");
-                ps.connect();
-            }
-        }, 5000);
-
         return () => {
-            clearTimeout(timer);
             ps.disconnect();
             psRef.current = null;
         };
-    }, [initialSignalingServerUrl]);
+    }, [url]);
+
+    const handleConnect = (streamerId: string) => {
+        if (!psRef.current) return;
+        setStatus(`Pieslēdzos pie ${streamerId}...`);
+        
+        // Bibliotēkas 5.7 versijā "StreamerId" iestatīšana automātiski nosūta "subscribe" ziņu
+        // serverim un sāk WebRTC rokasspiedienu. Mums nav jāsauc ne connect(), ne play().
+        // @ts-ignore
+        psRef.current.config.setOptionSettingValue('StreamerId', streamerId);
+    };
 
     return (
         <div style={{ width: '100%', height: '100%', position: 'relative', backgroundColor: '#000', overflow: 'hidden' }}>
-            {/* Video konteineris */}
             <div ref={videoContainerRef} style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }} />
 
-            {/* Overlays */}
             {!isConnected && (
                 <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'white', background: 'rgba(0,0,0,0.8)', zIndex: 50 }}>
                     <div className="spinner" style={{ width: '50px', height: '50px', border: '5px solid #3b82f6', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite', marginBottom: '20px' }} />
                     <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-                    
                     <h2 style={{ margin: '0 0 10px 0' }}>{status}</h2>
-                    <p style={{ color: '#94a3b8', fontSize: '0.9rem' }}>Serveris: {initialSignalingServerUrl}</p>
+                    <p style={{ color: '#94a3b8', fontSize: '0.9rem' }}>Serveris: {url}</p>
                     
                     {availableStreamers.length > 0 && (
-                        <div style={{ marginTop: '20px' }}>
-                            <p style={{ marginBottom: '10px' }}>Izvēlies kanālu:</p>
-                            <div style={{ display: 'flex', gap: '10px' }}>
-                                {availableStreamers.map(id => (
-                                    <button key={id} onClick={() => {
-                                        psRef.current?.config.setOptionSettingValue('StreamerId', id);
-                                        psRef.current?.connect();
-                                    }} style={{ padding: '10px 20px', background: '#3b82f6', border: 'none', borderRadius: '6px', color: 'white', fontWeight: 'bold', cursor: 'pointer' }}>
-                                        {id}
-                                    </button>
-                                ))}
-                            </div>
+                        <div style={{ marginTop: '20px', display: 'flex', gap: '10px' }}>
+                            {availableStreamers.map(id => (
+                                <button 
+                                    key={id} 
+                                    onClick={() => handleConnect(id)} 
+                                    style={{ padding: '10px 20px', background: '#3b82f6', border: 'none', borderRadius: '6px', color: 'white', fontWeight: 'bold', cursor: 'pointer' }}
+                                >
+                                    Palaist: {id}
+                                </button>
+                            ))}
                         </div>
                     )}
-
-                    <button 
-                        onClick={() => psRef.current?.connect()}
-                        style={{ marginTop: '30px', padding: '12px 24px', background: 'transparent', border: '2px solid white', color: 'white', borderRadius: '8px', cursor: 'pointer' }}
-                    >
-                        Mēģināt vēlreiz (Force Start)
-                    </button>
                 </div>
             )}
 
-            {/* Aizvērt pogu mēs vienmēr rādām virspusē */}
-            <button 
-                onClick={onClose}
-                style={{ position: 'absolute', top: '20px', left: '20px', zIndex: 100, padding: '10px 20px', background: 'rgba(239, 68, 68, 0.9)', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', boxShadow: '0 4px 15px rgba(0,0,0,0.3)' }}
-            >
-                ← ATPAKAĻ UZ IZVĒLNI
+            <button onClick={onClose} style={{ position: 'absolute', top: '20px', left: '20px', zIndex: 100, padding: '10px 20px', background: 'rgba(239, 68, 68, 0.9)', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>
+                ← ATPAKAĻ
             </button>
         </div>
     );

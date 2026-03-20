@@ -214,6 +214,17 @@ if (options.peer_options_file) {
     }
 
     options.peer_options = JSON.parse(fs.readFileSync(options.peer_options_file, 'utf-8'));
+} else if (typeof options.peer_options === 'string' && options.peer_options.trim() !== '') {
+    // FIX: Parse double-encoded stringified JSON from CLI or config
+    try {
+        options.peer_options = JSON.parse(options.peer_options);
+        // Sometimes it's double encoded, so we parse again if it's still a string
+        if (typeof options.peer_options === 'string') {
+             options.peer_options = JSON.parse(options.peer_options);
+        }
+    } catch (e) {
+        Logger.warn(`Failed to parse peer_options as JSON: ${e}`);
+    }
 } else if (options.peer_options) {
     Logger.warn(
         `The --peer_options cli flag has many issues with passing JSON data on the command line. It is recommended that you use --peer_options_file instead.`
