@@ -20,38 +20,69 @@ import { useGLTF } from '@react-three/drei';
 import PixelStreamingViewer from './PixelStreamingViewer';
 
 // --- PILSĒTAS 3D MODELIS (PHASE 1 - ROKU DARBS) ---
-
-// 1. Dinamiskais Ielādētājs
+// 1. Dinamiskais Ielādētājs ar "Rentgena" skatu debagošanai
 function DynamicModel({ url, position, scale = 1, rotation = [0, 0, 0] }: any) {
   try {
     const gltf = useGLTF(url) as any;
-    const clonedScene = React.useMemo(() => gltf.scene.clone(), [gltf.scene, url]);
-    
-    // <Center> ir vienīgais veids, kā garantēt, ka māja stāv uz zemes
+    const clonedScene = React.useMemo(() => {
+      const clone = gltf.scene.clone();
+      
+      // DIAGNOSTIKA: Izmēram modeļa īstos izmērus
+      const box = new THREE.Box3().setFromObject(clone);
+      const size = new THREE.Vector3();
+      box.getSize(size);
+      console.log(`Modelis [${url}] ir: ${size.x.toFixed(2)}m plats, ${size.y.toFixed(2)}m augsts.`);
+
+      // Piespiežam visas sienas būt redzamām
+      clone.traverse((child: any) => {
+        if (child.isMesh) {
+          child.material.side = THREE.DoubleSide;
+          child.castShadow = true;
+          child.receiveShadow = true;
+        }
+      });
+      return clone;
+    }, [gltf.scene, url]);
+
     return (
-      <Center position={position} bottom>
-        <primitive object={clonedScene} scale={scale} rotation={rotation} />
-      </Center>
+      <group position={position}>
+        <Center bottom>
+          <primitive object={clonedScene} scale={scale} rotation={rotation} />
+        </Center>
+        
+        {/* PĀRBAUDES KLUCIŅŠ: Ja tu redzi šo BALTO kluci, bet neredzi māju - fails ir par smagu vai bojāts */}
+        <mesh position={[0, 5, 0]}>
+          <boxGeometry args={[2, 10, 2]} />
+          <meshStandardMaterial color="white" />
+        </mesh>
+
+        <boxHelper args={[clonedScene, 'yellow']} />
+      </group>
     );
   } catch (e) {
-    console.error("Nevar ielādēt modeli:", url);
-    return null; 
+    console.error("Kļūda ielādējot:", url, e);
+    return (
+      <mesh position={position}>
+        <boxGeometry args={[5, 5, 5]} />
+        <meshStandardMaterial color="red" wireframe />
+      </mesh>
+    );
   }
 }
 
 // 2. TAVS PILSĒTAS PLĀNS
 const CITY_LAYOUT = [
-  // Izmantojam 0 kā Y asi, jo <Center> parūpēsies par pārējo
-  { id: 'londonas_maja', url: '/models/free_london_kinnaird_house.glb', position: [0, 0, 0], scale: 1, rotation: [0, 0, 0] },
+  { id: 'londonas_maja', url: '/models/free_london_kinnaird_house.glb', position: [0, 0, -20], scale: 100, rotation: [0, 0, 0] },
+  { id: 'ofiss_atlanta', url: '/models/free__atlanta_corperate_office_building.glb', position: [30, 0, -20], scale: 100, rotation: [0, 0, 0] },
 ];
 
 function CityModel() {
   return (
     <Suspense fallback={null}>
-      {/* 2 Metrus augsts kubs (cilvēks) tieši centrā atskatei */}
-      <mesh position={[2, 1, 0]} castShadow>
+      <gridHelper args={[100, 20]} position={[0, 0.05, 0]} />
+      <mesh position={[5, 1, -20]} castShadow>
         <boxGeometry args={[1, 2, 1]} />
-        <meshStandardMaterial color="#ef4444" />
+        <meshStandardMaterial color="lime" />
       </mesh>
       
       {CITY_LAYOUT.map((item) => (
@@ -73,7 +104,6 @@ function Guests({ guests }: { guests: any[] }) {
     <group>
       {guests.map(g => (
         <group key={g.id} position={g.position}>
-          {/* Speaking Aura */}
           {g.isSpeaking && (
             <mesh position={[0, 1.5, 0]}>
               <sphereGeometry args={[1.5, 16, 16]} />
@@ -110,7 +140,6 @@ function SafeVideo({ url }: { url: string | null }) {
 }
 
 // --- PAVILJONS ---
-// Custom component to handle model loading safely
 function ValidBoothModel({ url }: { url: string }) {
   const { scene } = useGLTF(url);
   return <primitive object={scene.clone()} position={[0, 0.2, 0]} />;
@@ -121,13 +150,11 @@ function DistrictBooth({ position, rotation, company, color }: any) {
   const [showForm, setShowForm] = useState(false);
   const [isCalling, setIsCalling] = useState(false);
   const nav = useNavigate();
-
-  const modelUrl = company.booth?.model_url || company['3d_model_url'];
+  const modelUrl = company?.booth?.model_url || company?.['3d_model_url'];
 
   return (
     <group position={position} rotation={rotation}>
       <mesh position={[0, 0.1, 0]} receiveShadow><boxGeometry args={[22, 0.2, 16]} /><meshStandardMaterial color="#ffffff" /></mesh>
-      
       <Suspense fallback={<mesh position={[0, 8, -7.5]} castShadow><boxGeometry args={[22, 16, 1]} /><meshStandardMaterial color="#1e293b" /></mesh>}>
         {modelUrl && modelUrl.endsWith('.glb') ? (
           <ValidBoothModel url={modelUrl} />
@@ -135,17 +162,14 @@ function DistrictBooth({ position, rotation, company, color }: any) {
           <mesh position={[0, 8, -7.5]} castShadow><boxGeometry args={[22, 16, 1]} /><meshStandardMaterial color="#1e293b" /></mesh>
         )}
       </Suspense>
-
       <mesh position={[0, 16.5, -7]} castShadow><boxGeometry args={[22, 3, 1.2]} /><meshStandardMaterial color={color} /></mesh>
-      <Text position={[0, 16.5, -6.3]} fontSize={1.5} color="#fff" fontWeight="black">{company.name.toUpperCase()}</Text>
-      
-      <mesh position={[0, 8, -6.9]} onClick={(e) => { e.stopPropagation(); window.open(company.website || '#', '_blank'); }} onPointerOver={() => document.body.style.cursor = 'pointer'} onPointerOut={() => document.body.style.cursor = 'auto'}>
+      <Text position={[0, 16.5, -6.3]} fontSize={1.5} color="#fff" fontWeight="black">{company?.name?.toUpperCase() || "BOOTH"}</Text>
+      <mesh position={[0, 8, -6.9]} onClick={(e) => { e.stopPropagation(); window.open(company?.website || '#', '_blank'); }} onPointerOver={() => document.body.style.cursor = 'pointer'} onPointerOut={() => document.body.style.cursor = 'auto'}>
         <planeGeometry args={[18, 10]} />
         <Suspense fallback={<meshStandardMaterial color="#000" />}>
-          <SafeVideo url={company.booth?.video_url || null} />
+          <SafeVideo url={company?.booth?.video_url || null} />
         </Suspense>
       </mesh>
-
       <group position={[0, 1.5, 5]} onPointerOver={() => setHovered(true)} onPointerOut={() => setHovered(false)} onClick={(e) => { e.stopPropagation(); setShowForm(true); }}>
         <mesh castShadow receiveShadow><boxGeometry args={[8, 3, 3]} /><meshStandardMaterial color="#f8fafc" /></mesh>
         <mesh position={[0, 1.6, 0]} rotation={[-0.2, 0, 0]} castShadow><boxGeometry args={[8.2, 0.5, 3.2]} /><meshStandardMaterial color={hovered ? color : "#0f172a"} /></mesh>
@@ -153,23 +177,11 @@ function DistrictBooth({ position, rotation, company, color }: any) {
         {(hovered || showForm) && (
           <Html position={[0, 5, 0]} center transform distanceFactor={10}>
             <div style={{ background: 'white', padding: '25px', borderRadius: '16px', border: `5px solid ${color}`, boxShadow: '0 15px 40px rgba(0,0,0,0.2)', width: '300px', textAlign: 'center' }} onClick={(e) => e.stopPropagation()}>
-              <h3 style={{ margin: '0 0 10px 0', color: '#000' }}>{company.name}</h3>
+              <h3 style={{ margin: '0 0 10px 0', color: '#000' }}>{company?.name || "Company"}</h3>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 <button onClick={() => setIsCalling(true)} style={{ width: '100%', padding: '12px', background: '#10b981', border: 'none', color: 'white', fontWeight: 'bold', borderRadius: '8px', cursor: 'pointer' }}>📞 LIVE VIDEO CALL</button>
-                <button onClick={() => nav(`/expo/booth/${company.id}`)} style={{ width: '100%', padding: '12px', background: color, border: 'none', color: 'white', fontWeight: 'bold', borderRadius: '8px', cursor: 'pointer' }}>ENTER 3D SPACE</button>
+                <button onClick={() => nav(`/expo/booth/${company?.id}`)} style={{ width: '100%', padding: '12px', background: color, border: 'none', color: 'white', fontWeight: 'bold', borderRadius: '8px', cursor: 'pointer' }}>ENTER 3D SPACE</button>
               </div>
-              {isCalling && (
-                <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: '400px', height: '300px', background: '#000', borderRadius: '20px', border: '2px solid #10b981', zIndex: 2000, overflow: 'hidden', boxShadow: '0 0 50px rgba(16, 185, 129, 0.5)' }}>
-                  <div style={{ position: 'absolute', top: '20px', left: '20px', color: '#fff', fontSize: '0.8rem', fontWeight: 800 }}>LIVE CONNECTION: SECURE</div>
-                  <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <div style={{ width: '80px', height: '80px', background: 'rgba(16, 185, 129, 0.2)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><span style={{ fontSize: '2rem' }}>👤</span></div>
-                  </div>
-                  <div style={{ position: 'absolute', bottom: '20px', width: '100%', display: 'flex', justifyContent: 'center', gap: '20px' }}>
-                    <button onClick={() => setIsCalling(false)} style={{ background: '#ef4444', border: 'none', width: '50px', height: '50px', borderRadius: '50%', cursor: 'pointer' }}>📵</button>
-                    <button style={{ background: 'rgba(255,255,255,0.1)', border: 'none', width: '50px', height: '50px', borderRadius: '50%', cursor: 'pointer' }}>🎤</button>
-                  </div>
-                </div>
-              )}
             </div>
           </Html>
         )}
@@ -230,7 +242,7 @@ export default function Expo3D() {
   const [data, setData] = useState<any>({ sectors: [], companies: [] });
   const [isLoading, setIsLoading] = useState(true);
   const [guests, setGuests] = useState<any[]>([]);
-  const [playerPos, setPlayerPos] = useState<number[]>([0, 2, 10]); // Sākam daudz tuvāk (Z=10)
+  const [playerPos, setPlayerPos] = useState<number[]>([0, 2, 10]);
   const [isMicOn, setIsMicOn] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const channelRef = useRef<any>(null);
@@ -240,65 +252,33 @@ export default function Expo3D() {
     async function loadData() {
       try {
         const [sectors, companies] = await Promise.all([expoService.getSectors(), expoService.getCompaniesWithBooths()]);
-        
-        if (!sectors || sectors.length === 0) {
-          throw new Error("No sectors found");
-        }
-        
+        if (!sectors || sectors.length === 0) throw new Error("No sectors found");
         setData({ sectors, companies });
       } catch (e) { 
         console.error("Using fallback data due to error:", e);
         setData({ sectors: FALLBACK_SECTORS, companies: FALLBACK_COMPANIES });
-      } finally { 
-        setIsLoading(false); 
-      }
+      } finally { setIsLoading(false); }
     }
     loadData();
   }, []);
 
-  // MULTIPLAYER & VOICE LOGIC
   useEffect(() => {
     if (mode !== 'menu') {
       const myId = Math.random().toString(36).substring(7);
       const myColor = new THREE.Color().setHSL(Math.random(), 0.8, 0.5).getStyle();
-      
-      const channel = supabase.channel('expo_room', {
-        config: { presence: { key: myId } },
-      });
-
+      const channel = supabase.channel('expo_room', { config: { presence: { key: myId } } });
       channel.on('presence', { event: 'sync' }, () => {
         const newState = channel.presenceState();
         const activeGuests = [];
-        for (const id in newState) {
-          if (id !== myId) activeGuests.push(newState[id][0]);
-        }
+        for (const id in newState) { if (id !== myId) activeGuests.push(newState[id][0]); }
         setGuests(activeGuests);
       }).subscribe(async (status) => {
-        if (status === 'SUBSCRIBED') {
-          await channel.track({ id: myId, position: [0, 2, 80], color: myColor, isSpeaking: false });
-        }
+        if (status === 'SUBSCRIBED') { await channel.track({ id: myId, position: [0, 2, 10], color: myColor, isSpeaking: false }); }
       });
-
       channelRef.current = { channel, myId, myColor };
       return () => { supabase.removeChannel(channel); };
     }
   }, [mode]);
-
-  // Voice Detection Simulation
-  useEffect(() => {
-    if (isMicOn) {
-      const interval = setInterval(() => {
-        // Simulējam balss aktivitāti (reālā dzīvē te būtu AudioContext analizators)
-        const speaking = Math.random() > 0.7;
-        setIsSpeaking(speaking);
-        if (channelRef.current) {
-          const { channel, myId, myColor } = channelRef.current;
-          channel.track({ id: myId, position: playerPos, color: myColor, isSpeaking: speaking });
-        }
-      }, 1000);
-      return () => clearInterval(interval);
-    }
-  }, [isMicOn, playerPos]);
 
   const handleMyMove = (pos: number[]) => {
     setPlayerPos(pos);
@@ -322,10 +302,7 @@ export default function Expo3D() {
                 <button onClick={() => setMode('walk')} className="btn-primary">🚶 WALK LITE (WEB3D)</button>
                 <button onClick={() => setMode('fly')} className="btn-glass">🦅 DRONE VIEW</button>
               </div>
-              <button 
-                onClick={() => setMode('unreal')} 
-                style={{ padding: '15px 30px', background: 'linear-gradient(90deg, #10b981, #059669)', color: 'white', border: 'none', borderRadius: '8px', fontSize: '1.2rem', fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 0 20px rgba(16, 185, 129, 0.4)' }}
-              >
+              <button onClick={() => setMode('unreal')} style={{ padding: '15px 30px', background: 'linear-gradient(90deg, #10b981, #059669)', color: 'white', border: 'none', borderRadius: '8px', fontSize: '1.2rem', fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 0 20px rgba(16, 185, 129, 0.4)' }}>
                 🎮 ENTER FULL UNREAL ENGINE CITY (PIXEL STREAM)
               </button>
             </div>
@@ -370,51 +347,27 @@ export default function Expo3D() {
         </>
       )}
 
-      {mode !== 'unreal' && (
-        <Canvas 
-          shadows 
-          gl={{ antialias: true }} 
-          // Atbīdām kameru tālu atpakaļ (Z=50) un uz augšu (Y=10), lai redzētu kopskatu
-          camera={{ position: [0, 10, 50], fov: 60 }}
-          onCreated={({ gl }) => {
-            if (gl.xr && typeof (gl.xr as any).getEnvironmentBlendMode !== 'function') {
-              (gl.xr as any).getEnvironmentBlendMode = () => 'opaque';
-            }
-          }}
-        >
+      {mode !== 'menu' && mode !== 'unreal' && (
+        <Canvas shadows gl={{ antialias: true }} camera={{ position: [0, 2, 10], fov: 60 }}>
           <Suspense fallback={null}>
             <Bvh firstHitOnly>
-              <color attach="background" args={['#020617']} />
               <Sky sunPosition={[100, 20, 100]} />
               <Environment preset="city" />
               <ambientLight intensity={0.6} />
               <directionalLight position={[10, 10, 10]} intensity={1.2} castShadow />
-              <hemisphereLight args={['#ffffff', '#444444', 0.5]} />
-              <fog attach="fog" args={['#020617', 10, 800]} />
-
-              {/* VIENKĀRŠA CIETA ZEME (Vairs nekāda atspīduma vai ūdens) */}
               <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.1, 0]} receiveShadow>
                 <planeGeometry args={[2000, 2000]} />
                 <meshStandardMaterial color="#2d3748" roughness={1} />
               </mesh>
-
               <CityModel />
-              
               <Guests guests={guests} />
-
-              {/* VECOS STENDUS PILNĪBĀ PASLĒPJAM (scale={0}), LAI TIE NEKĀDĀ VEIDĀ NEJAUKTOS AR JAUNO PILSĒTU */}
               <group scale={0}>
                 {data.sectors.map((s: any) => (
                   <group key={s.id} position={[0, 0, s.map_position?.z || -100]}>
-                    <group position={[0, 28, 0]}><mesh castShadow><boxGeometry args={[35, 6, 2]} /><meshStandardMaterial color={s.color_theme} /></mesh><Text position={[0, 0, 1.1]} fontSize={2.5} color="#fff" fontWeight="black">{s.name.toUpperCase()}</Text></group>
-                    {data.companies.filter((c: any) => c.sector_id === s.id).map((c: any, index: number) => {
-                      const side = index % 2 === 0 ? -1 : 1;
-                      return <DistrictBooth key={c.id} position={[side * 35, 0, Math.floor(index / 2) * -40]} rotation={[0, side === -1 ? Math.PI/2 : -Math.PI/2, 0]} company={c} color={s.color_theme} />;
-                    })}
+                    <DistrictBooth company={{}} color={s.color_theme} />
                   </group>
                 ))}
               </group>
-
               <Player mode={mode} onMove={handleMyMove} />
             </Bvh>
           </Suspense>
