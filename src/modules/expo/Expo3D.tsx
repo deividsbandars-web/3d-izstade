@@ -9,8 +9,7 @@ import {
   useVideoTexture,
   Bvh,
   Environment,
-  Loader,
-  Center
+  Loader
 } from '@react-three/drei';
 import * as THREE from 'three';
 import { useNavigate } from 'react-router-dom';
@@ -20,66 +19,50 @@ import { useGLTF } from '@react-three/drei';
 import PixelStreamingViewer from './PixelStreamingViewer';
 
 // --- PILSĒTAS 3D MODELIS (PHASE 1 - ROKU DARBS) ---
-// 1. Dinamiskais Ielādētājs ar "Rentgena" skatu debagošanai
-function DynamicModel({ url, position, scale = 1, rotation = [0, 0, 0] }: any) {
-  try {
-    const gltf = useGLTF(url) as any;
-    const clonedScene = React.useMemo(() => {
-      const clone = gltf.scene.clone();
-      
-      // DIAGNOSTIKA: Izmēram modeļa īstos izmērus
-      const box = new THREE.Box3().setFromObject(clone);
-      const size = new THREE.Vector3();
-      box.getSize(size);
-      console.log(`Modelis [${url}] ir: ${size.x.toFixed(2)}m plats, ${size.y.toFixed(2)}m augsts.`);
+// 1. Dinamiskais Ielādētājs
+function DynamicModel({ url, position, scale = 1, rotation = [0, 0, 0], yOffset = 0 }: any) {
+  const gltf = useGLTF(url) as any;
+  const clonedScene = React.useMemo(() => {
+    const clone = gltf.scene.clone();
+    const box = new THREE.Box3().setFromObject(clone);
+    const center = new THREE.Vector3();
+    box.getCenter(center);
 
-      // Piespiežam visas sienas būt redzamām
-      clone.traverse((child: any) => {
-        if (child.isMesh) {
-          child.material.side = THREE.DoubleSide;
-          child.castShadow = true;
-          child.receiveShadow = true;
-        }
-      });
-      return clone;
-    }, [gltf.scene, url]);
+    // Piezemējam un pieskaitām manuālo nobīdi (yOffset)
+    clone.position.set(-center.x, -box.min.y + yOffset, -center.z);
 
-    return (
-      <group position={position}>
-        <Center bottom>
-          <primitive object={clonedScene} scale={scale} rotation={rotation} />
-        </Center>
-        
-        {/* PĀRBAUDES KLUCIŅŠ: Ja tu redzi šo BALTO kluci, bet neredzi māju - fails ir par smagu vai bojāts */}
-        <mesh position={[0, 5, 0]}>
-          <boxGeometry args={[2, 10, 2]} />
-          <meshStandardMaterial color="white" />
-        </mesh>
+    clone.traverse((child: any) => {
+      if (child.isMesh) {
+        child.material.side = THREE.DoubleSide;
+        child.castShadow = true;
+        child.receiveShadow = true;
+      }
+    });
+    return clone;
+  }, [gltf.scene, yOffset]);
 
-        <boxHelper args={[clonedScene, 'yellow']} />
-      </group>
-    );
-  } catch (e) {
-    console.error("Kļūda ielādējot:", url, e);
-    return (
-      <mesh position={position}>
-        <boxGeometry args={[5, 5, 5]} />
-        <meshStandardMaterial color="red" wireframe />
-      </mesh>
-    );
-  }
+  // rotation tagad ir [x, y, z] masīvs
+  return (
+    <group position={position} rotation={rotation}>
+      <primitive object={clonedScene} scale={scale} />
+    </group>
+  );
 }
 
 // 2. TAVS PILSĒTAS PLĀNS
 const CITY_LAYOUT = [
-  { id: 'londonas_maja', url: '/models/free_london_kinnaird_house.glb', position: [0, 0, -20], scale: 100, rotation: [0, 0, 0] },
-  { id: 'ofiss_atlanta', url: '/models/free__atlanta_corperate_office_building.glb', position: [30, 0, -20], scale: 100, rotation: [0, 0, 0] },
+  // Londonas māja ir "šķība", tāpēc mēs to "iebāžam" zemē par 3 metriem (-3), 
+  // lai noslēptu to, ka viens stūris ir augstāks.
+  { id: 'londonas_maja', url: '/models/free_london_kinnaird_house.glb', position: [0, 0, -20], scale: 1, rotation: [0, 0, 0], yOffset: -3 },
+  { id: 'ofiss_atlanta', url: '/models/free__atlanta_corperate_office_building.glb', position: [60, 0, -20], scale: 1, rotation: [0, 0, 0], yOffset: 0 },
 ];
 
 function CityModel() {
   return (
     <Suspense fallback={null}>
-      <gridHelper args={[100, 20]} position={[0, 0.05, 0]} />
+      <gridHelper args={[200, 40]} position={[0, 0.05, 0]} />
+
+      {/* ZAĻŠ kubs (cilvēks) tieši centrā atskatei */}
       <mesh position={[5, 1, -20]} castShadow>
         <boxGeometry args={[1, 2, 1]} />
         <meshStandardMaterial color="lime" />
@@ -148,7 +131,6 @@ function ValidBoothModel({ url }: { url: string }) {
 function DistrictBooth({ position, rotation, company, color }: any) {
   const [hovered, setHovered] = useState(false);
   const [showForm, setShowForm] = useState(false);
-  const [isCalling, setIsCalling] = useState(false);
   const nav = useNavigate();
   const modelUrl = company?.booth?.model_url || company?.['3d_model_url'];
 
@@ -179,7 +161,7 @@ function DistrictBooth({ position, rotation, company, color }: any) {
             <div style={{ background: 'white', padding: '25px', borderRadius: '16px', border: `5px solid ${color}`, boxShadow: '0 15px 40px rgba(0,0,0,0.2)', width: '300px', textAlign: 'center' }} onClick={(e) => e.stopPropagation()}>
               <h3 style={{ margin: '0 0 10px 0', color: '#000' }}>{company?.name || "Company"}</h3>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <button onClick={() => setIsCalling(true)} style={{ width: '100%', padding: '12px', background: '#10b981', border: 'none', color: 'white', fontWeight: 'bold', borderRadius: '8px', cursor: 'pointer' }}>📞 LIVE VIDEO CALL</button>
+                <button style={{ width: '100%', padding: '12px', background: '#10b981', border: 'none', color: 'white', fontWeight: 'bold', borderRadius: '8px', cursor: 'pointer' }}>📞 LIVE VIDEO CALL</button>
                 <button onClick={() => nav(`/expo/booth/${company?.id}`)} style={{ width: '100%', padding: '12px', background: color, border: 'none', color: 'white', fontWeight: 'bold', borderRadius: '8px', cursor: 'pointer' }}>ENTER 3D SPACE</button>
               </div>
             </div>
@@ -244,7 +226,7 @@ export default function Expo3D() {
   const [guests, setGuests] = useState<any[]>([]);
   const [playerPos, setPlayerPos] = useState<number[]>([0, 2, 10]);
   const [isMicOn, setIsMicOn] = useState(false);
-  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [isSpeaking] = useState(false);
   const channelRef = useRef<any>(null);
   const nav = useNavigate();
 
