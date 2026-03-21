@@ -297,11 +297,20 @@ export default function Expo3D() {
     }
   }, [mode]);
 
+  const lastSyncTime = useRef(0);
+
   const handleMyMove = (pos: number[]) => {
     setPlayerPos(pos);
-    if (channelRef.current) {
-      const { channel, myId, myColor } = channelRef.current;
-      channel.track({ id: myId, position: pos, color: myColor, isSpeaking });
+    
+    const now = Date.now();
+    if (now - lastSyncTime.current > SYNC_THROTTLE) {
+      if (channelRef.current) {
+        const { channel, myId, myColor } = channelRef.current;
+        // ✅ Tīkla stabilitātei izmantojam quantizeVectorArray
+        const safePos = quantizeVectorArray(pos);
+        channel.track({ id: myId, position: safePos, color: myColor, isSpeaking });
+      }
+      lastSyncTime.current = now;
     }
   };
 
