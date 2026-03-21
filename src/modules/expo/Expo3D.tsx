@@ -262,7 +262,7 @@ export default function Expo3D() {
   const nav = useNavigate();
 
   // Audio and Interaction Hooks
-  useAmbientSound();
+  // useAmbientSound(); // 🔇 Izslēdzam lēto mūziku, kamēr neatradīsim premium pilsētas ambient skaņu
   const { activeZone, zoneSystem } = useZoneSystem(playerPos as any);
 
   useEffect(() => {
