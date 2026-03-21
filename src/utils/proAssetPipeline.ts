@@ -79,9 +79,25 @@ function optimizeMaterials(model: THREE.Object3D, type: AssetType) {
       
       child.receiveShadow = true;
 
-      if (child.material && (child.material.isMeshStandardMaterial || child.material.isMeshPhysicalMaterial)) {
+      if (child.material) {
+        // 🚀 BACKFACE CULLING FIX (Testējam DoubleSide, lai pazūd caurspīdīguma kļūdas)
+        if (Array.isArray(child.material)) {
+          child.material.forEach((m: any) => m.side = THREE.DoubleSide);
+        } else {
+          child.material.side = THREE.DoubleSide;
+        }
+      }
+
+      if (child.material && !Array.isArray(child.material) && (child.material.isMeshStandardMaterial || child.material.isMeshPhysicalMaterial)) {
         child.material.roughness = 0.7;
         child.material.metalness = 0.2;
+      } else if (Array.isArray(child.material)) {
+        child.material.forEach((m: any) => {
+          if (m.isMeshStandardMaterial || m.isMeshPhysicalMaterial) {
+            m.roughness = 0.7;
+            m.metalness = 0.2;
+          }
+        });
       }
     }
   });
