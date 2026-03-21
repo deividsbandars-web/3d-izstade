@@ -6,80 +6,98 @@ import {
   Text, 
   Html,
   Sky,
-  useVideoTexture,
-  Bvh,
   Environment,
-  Loader
+  Bvh,
+  Loader,
+  useVideoTexture
 } from '@react-three/drei';
+import { EffectComposer, Bloom } from '@react-three/postprocessing';
 import * as THREE from 'three';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../core/supabase';
 import { expoService } from '../../services/expoService';
 import { useGLTF } from '@react-three/drei';
 import PixelStreamingViewer from './PixelStreamingViewer';
-import { normalizeModel, snapVector3, snapRotation, quantizeVectorArray } from '../../utils/threeUtils';
+import { normalizeModel, quantizeVectorArray } from '../../utils/threeUtils';
+import { useZoneSystem } from '../../hooks/useZoneSystem';
+import { StreamingTrigger } from '../../components/StreamingTrigger';
+import { PixelStreamOverlay } from '../../components/PixelStreamOverlay';
+import { CityGenerator } from '../city/CityGenerator';
+import { BoothUI } from '../../components/BoothUI';
+import { useAmbientSound } from '../../hooks/useAmbientSound';
+
+import { processAssets } from '../../utils/proAssetPipeline';
 
 // WORLD SYSTEM CONSTANTS
-const GRID_SIZE = 10;
-const WORLD_ORIGIN = new THREE.Vector3(0, 0, 0);
 const SYNC_THROTTLE = 50; // ms
 
-// 1. Dinamiskais Ielādētājs - Versioned & World-Aware
-function DynamicModel({ url, position, rotation = [0, 0, 0] }: any) {
-  const gltf = useGLTF(url) as any;
-  const clonedScene = React.useMemo(() => {
-    const clone = gltf.scene.clone();
-    
-    // ✅ Versioned normalization
-    normalizeModel(clone);
+import * as SkeletonUtils from 'three/examples/jsm/utils/SkeletonUtils.js';
 
-    clone.traverse((child: any) => {
-      if (child.isMesh) {
-        child.material.side = THREE.DoubleSide;
-        child.castShadow = true;
-        child.receiveShadow = true;
-      }
-    });
-    return clone;
-  }, [gltf.scene]);
+// ... (other imports)
 
-  // ✅ WORLD-AWARE SNAPPING
-  const snappedPos = snapVector3(new THREE.Vector3(...position), GRID_SIZE, WORLD_ORIGIN);
-  const snappedRot: [number, number, number] = [
-    snapRotation(rotation[0]),
-    snapRotation(rotation[1]),
-    snapRotation(rotation[2])
-  ];
-
-  return (
-    <group position={snappedPos} rotation={snappedRot}>
-      <primitive object={clonedScene} />
-    </group>
-  );
-}
-
-// 2. TAVS PILSĒTAS PLĀNS - BEZ HACKIEM
-const CITY_LAYOUT = [
-  { id: 'londonas_maja', url: '/models/free_london_kinnaird_house.glb', position: [0, 0, -30], scale: 1, rotation: [0, 0, 0] },
-  { id: 'ofiss_atlanta', url: '/models/free__atlanta_corperate_office_building.glb', position: [70, 0, -30], scale: 1, rotation: [0, 0, 0] },
-  { id: 'iela_1', url: '/models/american_road.glb', position: [0, 0, 10], scale: 1, rotation: [0, 0, 0] }
+// 1. PRO ASSET POOL
+const ASSET_URLS = [
+  '/models/free_london_kinnaird_house.glb',
+  '/models/free__atlanta_corperate_office_building.glb',
+  '/models/european_buildings_asset_pack_3.glb',
+  '/models/american_road.glb',
+  '/models/american_road_intersection.glb',
+  '/models/victorian_street_lamp.glb',
+  '/models/trees_in_the_park_anthropos.glb',
+  '/models/default_booth.glb'
 ];
 
-function CityModel({ debug = false }: { debug?: boolean }) {
+// --- FALLBACK DATA ---
+const FALLBACK_SECTORS = [
+  { id: "1", name: "Construction", color_theme: "#3b82f6", map_position: { x: 0, y: 0, z: -100 } },
+  { id: "2", name: "Technology", color_theme: "#10b981", map_position: { x: 0, y: 0, z: -300 } }
+];
+
+const FALLBACK_COMPANIES = [
+  { id: "c1", name: "BuildMaster SIA", sector_id: "1", website: "https://warpala.com", booth: {} },
+  { id: "c2", name: "TechCorp Global", sector_id: "2", website: "https://warpala.com", booth: {} }
+];
+
+function CityModel({ debug = false, zoneSystem }: { debug?: boolean, zoneSystem?: any }) {
   const { scene } = useThree();
+  const [cityGenerated, setCityGenerated] = useState(false);
   
-  // Eksponējam scēnu globāli debagošanai
   React.useEffect(() => {
     (window as any).scene = scene;
-    console.log("🛠️ Scene exposed to window.scene");
   }, [scene]);
+
+  const gltfs = useGLTF(ASSET_URLS) as any[];
+
+  useEffect(() => {
+    if (!scene || cityGenerated || !gltfs || gltfs.length === 0) return;
+
+    // 1. Klonējam source modeļus (SAFE CLONE ar SkeletonUtils)
+    const rawModels = gltfs.map((gltf, i) => {
+      // 🚀 SAFE CLONE FIX: Novērš materiālu un skeletu kļūdas
+      const clone = SkeletonUtils.clone(gltf.scene);
+      clone.name = ASSET_URLS[i].split('/').pop() || `model_${i}`;
+      return clone;
+    });
+
+    const processed = processAssets(rawModels, ASSET_URLS);
+
+    // 🚀 AUTO ZONE BINDING: Padodam zoneSystem ģeneratoram
+    const generator = new CityGenerator(scene, processed, zoneSystem);
+    generator.generate({
+      gridSize: 15,
+      spacing: 12 
+    });
+    
+    setCityGenerated(true);
+    console.log("🏙️ AAA City Generated Successfully!");
+  }, [scene, cityGenerated, gltfs, zoneSystem]);
 
   return (
     <Suspense fallback={null}>
       {debug && (
         <>
-          <gridHelper args={[200, 40, '#ff0000', '#444444']} position={[0, 0.05, 0]} />
-          <axesHelper args={[50]} position={[0, 0.1, 0]} />
+          <gridHelper args={[500, 50, '#ff0000', '#444444']} position={[0, 0.05, 0]} />
+          <axesHelper args={[100]} position={[0, 0.1, 0]} />
         </>
       )}
 
@@ -88,17 +106,6 @@ function CityModel({ debug = false }: { debug?: boolean }) {
         <boxGeometry args={[1, 2, 1]} />
         <meshStandardMaterial color="lime" />
       </mesh>
-      
-      {CITY_LAYOUT.map((item) => (
-        <DynamicModel 
-          key={item.id} 
-          url={item.url} 
-          position={item.position} 
-          scale={item.scale} 
-          rotation={item.rotation}
-          debug={debug}
-        />
-      ))}
     </Suspense>
   );
 }
@@ -153,7 +160,6 @@ function ValidBoothModel({ url }: { url: string }) {
     return clone;
   }, [scene]);
 
-  // ❌ WRONG: <primitive object={normalizedScene} position={[0, 0.2, 0]} />
   // ✅ RIGHT: Izmantojam wrapper grupu pasaulei
   return (
     <group position={[0, 0.2, 0]}>
@@ -223,7 +229,7 @@ function Player({ mode, onMove }: any) {
 
   useFrame((_, delta) => {
     if (mode === 'walk') {
-      const speed = 20;
+      const speed = 12; // Cinematic speed
       let moved = false;
       if (mov.f) { camera.translateZ(-speed * delta); moved = true; }
       if (mov.b) { camera.translateZ(speed * delta); moved = true; }
@@ -238,19 +244,8 @@ function Player({ mode, onMove }: any) {
     }
   });
 
-  return mode === 'fly' ? <OrbitControls enablePan enableZoom enableRotate maxDistance={500} /> : (mode === 'walk' ? <PointerLockControls /> : null);
+  return mode === 'fly' ? <OrbitControls enablePan enableZoom enableRotate maxDistance={500} enableDamping dampingFactor={0.05} /> : (mode === 'walk' ? <PointerLockControls /> : null);
 }
-
-// --- FALLBACK DATA ---
-const FALLBACK_SECTORS = [
-  { id: "1", name: "Construction", color_theme: "#3b82f6", map_position: { x: 0, y: 0, z: -100 } },
-  { id: "2", name: "Technology", color_theme: "#10b981", map_position: { x: 0, y: 0, z: -300 } }
-];
-
-const FALLBACK_COMPANIES = [
-  { id: "c1", name: "BuildMaster SIA", sector_id: "1", website: "https://warpala.com", booth: {} },
-  { id: "c2", name: "TechCorp Global", sector_id: "2", website: "https://warpala.com", booth: {} }
-];
 
 // --- MAIN ---
 export default function Expo3D() {
@@ -260,10 +255,36 @@ export default function Expo3D() {
   const [isLoading, setIsLoading] = useState(true);
   const [guests, setGuests] = useState<any[]>([]);
   const [playerPos, setPlayerPos] = useState<number[]>([0, 2, 10]);
+  const [streamId, setStreamId] = useState<string | null>(null);
   const [isMicOn, setIsMicOn] = useState(false);
   const [isSpeaking] = useState(false);
   const channelRef = useRef<any>(null);
   const nav = useNavigate();
+
+  // Audio and Interaction Hooks
+  useAmbientSound();
+  const { activeZone, zoneSystem } = useZoneSystem(playerPos as any);
+
+  useEffect(() => {
+    zoneSystem.addZone({
+      id: "booth_1",
+      type: "pixelstream",
+      position: [10, 0, -5],
+      radius: 5,
+      streamId: "stream_001",
+    });
+
+    zoneSystem.addZone({
+      id: "booth_2",
+      type: "pixelstream",
+      position: [-15, 0, 8],
+      radius: 5,
+      streamId: "stream_002",
+    });
+  }, [zoneSystem]);
+
+  const handleEnterStream = (id: string) => setStreamId(id);
+  const handleCloseStream = () => setStreamId(null);
 
   useEffect(() => {
     async function loadData() {
@@ -306,7 +327,6 @@ export default function Expo3D() {
     if (now - lastSyncTime.current > SYNC_THROTTLE) {
       if (channelRef.current) {
         const { channel, myId, myColor } = channelRef.current;
-        // ✅ Tīkla stabilitātei izmantojam quantizeVectorArray
         const safePos = quantizeVectorArray(pos);
         channel.track({ id: myId, position: safePos, color: myColor, isSpeaking });
       }
@@ -364,7 +384,6 @@ export default function Expo3D() {
             <button onClick={() => { document.exitPointerLock(); setMode('menu'); }} style={{ background: 'white', padding: '12px 25px', borderRadius: '10px', border: 'none', fontWeight: 'bold', cursor: 'pointer' }}>EXIT TO LOBBY</button>
           </div>
 
-          {/* MINIMAP OVERLAY */}
           <div style={{ position: 'absolute', bottom: '30px', left: '30px', zIndex: 100, width: '200px', height: '200px', background: 'rgba(15, 23, 42, 0.8)', borderRadius: '50%', border: '2px solid rgba(59, 130, 246, 0.5)', overflow: 'hidden', backdropFilter: 'blur(5px)', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}>
             <div style={{ width: '100%', height: '100%', position: 'relative', background: 'radial-gradient(circle at center, rgba(59, 130, 246, 0.2) 0%, transparent 70%)' }}>
               <div style={{ position: 'absolute', top: '50%', left: '0', width: '100%', height: '1px', background: 'rgba(255,255,255,0.1)' }}></div>
@@ -376,6 +395,10 @@ export default function Expo3D() {
             </div>
             <div style={{ position: 'absolute', bottom: '10px', width: '100%', textAlign: 'center', fontSize: '0.6rem', color: '#94a3b8', fontWeight: 900, letterSpacing: '1px' }}>GPS: {Math.round(playerPos[0])}, {Math.round(playerPos[2])}</div>
           </div>
+
+          <StreamingTrigger zone={activeZone} onEnter={handleEnterStream} />
+          <PixelStreamOverlay streamId={streamId} onClose={handleCloseStream} />
+          <BoothUI visible={!!activeZone} zoneName={activeZone?.id} />
         </>
       )}
 
@@ -383,14 +406,28 @@ export default function Expo3D() {
         <Canvas shadows gl={{ antialias: true }} camera={{ position: [0, 2, 10], fov: 60 }}>
           <Suspense fallback={null}>
             <Bvh firstHitOnly>
-              <Sky sunPosition={[100, 20, 100]} />
+              <Sky distance={450000} sunPosition={[100, 20, 100]} inclination={0.49} azimuth={0.25} />
               <Environment preset="city" />
-              <ambientLight intensity={0.6} />
-              <directionalLight position={[10, 10, 10]} intensity={1.2} castShadow />
+              
+              <ambientLight intensity={0.3} />
+              <directionalLight 
+                position={[20, 30, 10]} 
+                intensity={1.5} 
+                castShadow 
+                shadow-mapSize={[2048, 2048]} 
+              />
+              <hemisphereLight args={["#87CEEB", "#222222", 0.5]} />
+              <fog attach="fog" args={["#0a0a0a", 80, 300]} />
+
+              <EffectComposer>
+                <Bloom intensity={0.5} luminanceThreshold={0.3} luminanceSmoothing={0.9} />
+              </EffectComposer>
+
               <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.1, 0]} receiveShadow>
                 <planeGeometry args={[2000, 2000]} />
-                <meshStandardMaterial color="#2d3748" roughness={1} />
+                <meshStandardMaterial color="#0a0a0a" roughness={0.8} metalness={0.1} />
               </mesh>
+
               <CityModel debug={debug} />
               <Guests guests={guests} />
               <group scale={0}>

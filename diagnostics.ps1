@@ -1,23 +1,27 @@
-"=== WARPALA FULL DIAGNOSTICS ===" | Out-File diagnostics_output.txt
+# WARPALA FULL SYSTEM DIAGNOSTICS
+Write-Output "=== WARPALA FULL DIAGNOSTICS ==="
+Write-Output "Date: $(Get-Date)"
 
-"`n== PROJECT STRUCTURE ==" | Out-File diagnostics_output.txt -Append
-tree /F | Out-File diagnostics_output.txt -Append
+Write-Output "`n== 1. PROJECT STRUCTURE =="
+Get-ChildItem -Path . -Exclude node_modules, .git | Select-Object Name
 
-"`n== DISK USAGE ==" | Out-File diagnostics_output.txt -Append
-Get-ChildItem -Recurse | Sort-Object Length -Descending | Select-Object -First 50 Name,Length | Out-File diagnostics_output.txt -Append
+Write-Output "`n== 2. ENGINE CORE FILES =="
+$coreFiles = @("src/modules/expo/Expo3D.tsx", "src/utils/threeUtils.ts", "src/utils/assetPipeline.ts")
+foreach ($f in $coreFiles) {
+    if (Test-Path $f) { Write-Output "✅ FOUND: $f" } else { Write-Output "❌ MISSING: $f" }
+}
 
-"`n== NPM BUILD ==" | Out-File diagnostics_output.txt -Append
-npm run build | Out-File diagnostics_output.txt -Append
+Write-Output "`n== 3. NPM STATUS =="
+npm --version | ForEach-Object { "NPM Version: $_" }
 
-"`n== TYPESCRIPT CHECK ==" | Out-File diagnostics_output.txt -Append
-npx tsc --noEmit | Out-File diagnostics_output.txt -Append
+Write-Output "`n== 4. RECENT GIT CHANGES =="
+git log -n 5 --oneline
 
-"`n== DOCKER STATUS ==" | Out-File diagnostics_output.txt -Append
-docker ps | Out-File diagnostics_output.txt -Append
+Write-Output "`n== 5. PORT STATUS =="
+$ports = @(5173, 3000, 8888)
+foreach ($port in $ports) {
+    $check = Test-NetConnection -ComputerName localhost -Port $port -InformationLevel Quiet
+    if ($check) { Write-Output "✅ Port ${port}: ACTIVE" } else { Write-Output "⚠️ Port ${port}: CLOSED" }
+}
 
-"`n== DOCKER LOGS ==" | Out-File diagnostics_output.txt -Append
-docker-compose logs | Out-File diagnostics_output.txt -Append
-
-"`n=== DONE ===" | Out-File diagnostics_output.txt -Append
-
-Write-Host "Diagnostics saved to diagnostics_output.txt"
+Write-Output "`n=== DIAGNOSTICS COMPLETE ==="
