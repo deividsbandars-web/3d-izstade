@@ -45,9 +45,14 @@ export class CityGenerator {
       for (let z = -gridSize; z < gridSize; z++) {
         if (this.isOccupied(x, z)) continue;
 
-        const offset = 50; // 🚀 GRID OFFSET FIX
-        let posX = x * spacing + offset;
-        let posZ = z * spacing + offset;
+        // 🚀 SAFE SPAWN ZONE
+        // Pārliecināmies, ka spēlētāja starta pozīcijā [0,5,10] nav nevienas ēkas
+        if (Math.abs(x) < 2 && Math.abs(z) < 2) {
+          continue;
+        }
+
+        let posX = x * spacing;
+        let posZ = z * spacing;
         const isRoad = this.isRoadZone(x, z);
 
         let targetType: AssetType;
