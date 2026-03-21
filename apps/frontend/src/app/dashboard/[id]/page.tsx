@@ -11,8 +11,8 @@ export default function SponsorDashboard() {
   useEffect(() => {
     const fetchData = async () => {
       const [sRes, bRes] = await Promise.all([
-        fetch(`http://localhost:3001/api/sponsor/${id}/stats`),
-        fetch(`http://localhost:3001/api/sponsor/${id}/billing`)
+        fetch(`http://localhost:3000/api/sponsor/${id}/stats`),
+        fetch(`http://localhost:3000/api/sponsor/${id}/billing`)
       ]);
       setStats(await sRes.json());
       setBilling(await bRes.json());

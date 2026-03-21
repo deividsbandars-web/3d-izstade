@@ -10,7 +10,7 @@ export default function ExpoPage() {
   useEffect(() => {
     const matchmake = async () => {
       try {
-        const res = await fetch('http://localhost:3001/api/matchmake');
+        const res = await fetch('http://localhost:3000/api/matchmake');
         if (!res.ok) throw new Error('Matchmaking failed');
         const data = await res.json();
         setMatchId(data.instanceId);

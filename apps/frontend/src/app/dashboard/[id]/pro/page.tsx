@@ -18,7 +18,7 @@ export default function ProDashboard() {
 
   useEffect(() => {
     const fetchData = async () => {
-      const baseUrl = 'http://localhost:3001/api';
+      const baseUrl = 'http://localhost:3000/api';
       const [oRes, aRes, bRes] = await Promise.all([
         fetch(`${baseUrl}/dashboard/overview?sponsorId=${id}`),
         fetch(`${baseUrl}/dashboard/analytics?sponsorId=${id}`),
@@ -32,7 +32,7 @@ export default function ProDashboard() {
   }, [id]);
 
   const handleUpgrade = async (priceId: string) => {
-    const res = await fetch('http://localhost:3001/api/stripe/create-checkout', {
+    const res = await fetch('http://localhost:3000/api/stripe/create-checkout', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ sponsorId: id, priceId })

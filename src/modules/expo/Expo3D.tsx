@@ -17,19 +17,18 @@ import { supabase } from '../../core/supabase';
 import { expoService } from '../../services/expoService';
 import { useGLTF } from '@react-three/drei';
 import PixelStreamingViewer from './PixelStreamingViewer';
+import { normalizeModel } from '../../utils/threeUtils';
 
 // --- PILSĒTAS 3D MODELIS (PHASE 1 - ROKU DARBS) ---
 // 1. Dinamiskais Ielādētājs
-function DynamicModel({ url, position, scale = 1, rotation = [0, 0, 0], yOffset = 0 }: any) {
+function DynamicModel({ url, position, scale = 1, rotation = [0, 0, 0], yOffset = 0, hasFoundation = false, debug = false }: any) {
   const gltf = useGLTF(url) as any;
   const clonedScene = React.useMemo(() => {
     const clone = gltf.scene.clone();
-    const box = new THREE.Box3().setFromObject(clone);
-    const center = new THREE.Vector3();
-    box.getCenter(center);
-
-    // Piezemējam un pieskaitām manuālo nobīdi (yOffset)
-    clone.position.set(-center.x, -box.min.y + yOffset, -center.z);
+    
+    // Normalize model: Center, Ground (Y=0), and apply manual yOffset
+    normalizeModel(clone);
+    clone.position.y += yOffset; // Add manual tweak if needed
 
     clone.traverse((child: any) => {
       if (child.isMesh) {
@@ -41,26 +40,62 @@ function DynamicModel({ url, position, scale = 1, rotation = [0, 0, 0], yOffset 
     return clone;
   }, [gltf.scene, yOffset]);
 
-  // rotation tagad ir [x, y, z] masīvs
   return (
     <group position={position} rotation={rotation}>
+      {hasFoundation && (
+        <mesh position={[0, 0.1, 0]} receiveShadow>
+          <boxGeometry args={[55, 0.5, 35]} />
+          <meshStandardMaterial color="#334155" roughness={0.8} />
+        </mesh>
+      )}
       <primitive object={clonedScene} scale={scale} />
+      {/* DZELTENA KASTE: Palīdzēs redzēt kāpēc iela lido */}
+      {debug && <boxHelper args={[clonedScene, 'yellow']} />}
     </group>
   );
 }
 
 // 2. TAVS PILSĒTAS PLĀNS
 const CITY_LAYOUT = [
-  // Londonas māja ir "šķība", tāpēc mēs to "iebāžam" zemē par 3 metriem (-3), 
-  // lai noslēptu to, ka viens stūris ir augstāks.
-  { id: 'londonas_maja', url: '/models/free_london_kinnaird_house.glb', position: [0, 0, -20], scale: 1, rotation: [0, 0, 0], yOffset: -3 },
-  { id: 'ofiss_atlanta', url: '/models/free__atlanta_corperate_office_building.glb', position: [60, 0, -20], scale: 1, rotation: [0, 0, 0], yOffset: 0 },
+  // Londonas māja - nolaista par 5 metriem, lai noslēptu šķībo apakšu
+  { 
+    id: 'londonas_maja', 
+    url: '/models/free_london_kinnaird_house.glb', 
+    position: [0, 0, -30], 
+    scale: 1, 
+    rotation: [0, 0, 0], 
+    yOffset: -5,
+    hasFoundation: true
+  },
+  // Atlanta Office - šī stāv uz 0
+  { 
+    id: 'ofiss_atlanta', 
+    url: '/models/free__atlanta_corperate_office_building.glb', 
+    position: [70, 0, -30], 
+    scale: 1, 
+    rotation: [0, 0, 0], 
+    yOffset: 0 
+  },
+  // IELA - Brutāli nolaista par 20 metriem, jo modelis "lido" virs savām koordinātām
+  {
+    id: 'iela_1',
+    url: '/models/american_road.glb',
+    position: [0, 0, 10],
+    scale: 1,
+    rotation: [0, 0, 0],
+    yOffset: -20
+  }
 ];
 
-function CityModel() {
+function CityModel({ debug = false }: { debug?: boolean }) {
   return (
     <Suspense fallback={null}>
-      <gridHelper args={[200, 40]} position={[0, 0.05, 0]} />
+      {debug && (
+        <>
+          <gridHelper args={[200, 40, '#ff0000', '#444444']} position={[0, 0.05, 0]} />
+          <axesHelper args={[50]} position={[0, 0.1, 0]} />
+        </>
+      )}
 
       {/* ZAĻŠ kubs (cilvēks) tieši centrā atskatei */}
       <mesh position={[5, 1, -20]} castShadow>
@@ -74,7 +109,8 @@ function CityModel() {
           url={item.url} 
           position={item.position} 
           scale={item.scale} 
-          rotation={item.rotation} 
+          rotation={item.rotation}
+          debug={debug}
         />
       ))}
     </Suspense>
@@ -125,7 +161,12 @@ function SafeVideo({ url }: { url: string | null }) {
 // --- PAVILJONS ---
 function ValidBoothModel({ url }: { url: string }) {
   const { scene } = useGLTF(url);
-  return <primitive object={scene.clone()} position={[0, 0.2, 0]} />;
+  const normalizedScene = React.useMemo(() => {
+    const clone = scene.clone();
+    normalizeModel(clone);
+    return clone;
+  }, [scene]);
+  return <primitive object={normalizedScene} position={[0, 0.2, 0]} />;
 }
 
 function DistrictBooth({ position, rotation, company, color }: any) {
@@ -221,6 +262,7 @@ const FALLBACK_COMPANIES = [
 // --- MAIN ---
 export default function Expo3D() {
   const [mode, setMode] = useState<'menu' | 'walk' | 'fly' | 'unreal'>('menu');
+  const [debug, setDebug] = useState(false);
   const [data, setData] = useState<any>({ sectors: [], companies: [] });
   const [isLoading, setIsLoading] = useState(true);
   const [guests, setGuests] = useState<any[]>([]);
@@ -308,6 +350,12 @@ export default function Expo3D() {
             >
               {isMicOn ? '🎙️ MIC ON' : '🔇 MIC OFF'}
             </button>
+            <button 
+              onClick={() => setDebug(!debug)} 
+              style={{ background: debug ? '#ef4444' : 'rgba(255,255,255,0.1)', padding: '12px 20px', borderRadius: '10px', color: '#fff', border: 'none', fontWeight: 'bold', cursor: 'pointer' }}
+            >
+              DEBUG: {debug ? 'ON' : 'OFF'}
+            </button>
             <div style={{ background: 'rgba(16, 185, 129, 0.2)', padding: '12px 20px', borderRadius: '10px', color: '#10b981', fontWeight: 'bold' }}>
               ONLINE: {guests.length + 1}
             </div>
@@ -341,7 +389,7 @@ export default function Expo3D() {
                 <planeGeometry args={[2000, 2000]} />
                 <meshStandardMaterial color="#2d3748" roughness={1} />
               </mesh>
-              <CityModel />
+              <CityModel debug={debug} />
               <Guests guests={guests} />
               <group scale={0}>
                 {data.sectors.map((s: any) => (
