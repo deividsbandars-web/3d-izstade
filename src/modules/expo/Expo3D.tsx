@@ -213,8 +213,10 @@ function DistrictBooth({ position, rotation, company, color }: any) {
 
 // --- PLAYER ---
 function Player({ mode, onMove }: any) {
-  const { camera } = useThree();
+  const { camera, scene } = useThree();
   const [mov, setMov] = useState({ f: false, b: false, l: false, r: false });
+  const raycaster = useRef(new THREE.Raycaster());
+  const moveVector = useRef(new THREE.Vector3());
   
   useEffect(() => {
     if (mode !== 'walk') return;
@@ -228,12 +230,41 @@ function Player({ mode, onMove }: any) {
 
   useFrame((_, delta) => {
     if (mode === 'walk') {
-      const speed = 12; // Cinematic speed
-      let moved = false;
-      if (mov.f) { camera.translateZ(-speed * delta); moved = true; }
-      if (mov.b) { camera.translateZ(speed * delta); moved = true; }
-      if (mov.l) { camera.translateX(-speed * delta); moved = true; }
-      if (mov.r) { camera.translateX(speed * delta); moved = true; }
+      const speed = 12 * delta; 
+      moveVector.current.set(0, 0, 0);
+      
+      if (mov.f) moveVector.current.z -= speed;
+      if (mov.b) moveVector.current.z += speed;
+      if (mov.l) moveVector.current.x -= speed;
+      if (mov.r) moveVector.current.x += speed;
+
+      const moved = moveVector.current.lengthSq() > 0;
+
+      if (moved) {
+        // 🚀 COLLISION PRE-CHECK
+        // Saglabājam kameras oriģinālo virzienu
+        moveVector.current.applyQuaternion(camera.quaternion);
+        moveVector.current.y = 0; // Novēršam lidošanu uz augšu/leju
+        
+        const dir = moveVector.current.clone().normalize();
+        
+        // 🚀 RAYCAST LOGIC
+        // Šaujam staru no kameras pozīcijas kustības virzienā
+        (raycaster.current as any).firstHitOnly = true; // BVH optimization
+        raycaster.current.set(camera.position, dir);
+        
+        const intersects = raycaster.current.intersectObjects(scene.children, true);
+        
+        // 🚀 VALIDATION: Ja priekšā ir siena tuvāk par 1.5m, bloķējam!
+        if (intersects.length > 0 && intersects[0].distance < 1.5) {
+          // Kustība bloķēta
+        } else {
+          // 🚀 APPLY MOVEMENT
+          camera.position.add(moveVector.current);
+        }
+      }
+
+      // 🚀 Y-AXIS OVERRIDE (Moved AFTER collision, removed dead code)
       camera.position.setY(5);
 
       if (moved && onMove && Date.now() - lastMoveTime.current > 200) {
