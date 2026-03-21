@@ -219,17 +219,6 @@ function Player({ mode, onMove }: any) {
   const [mov, setMov] = useState({ f: false, b: false, l: false, r: false });
   const raycaster = useRef(new THREE.Raycaster());
   const moveVector = useRef(new THREE.Vector3());
-
-  // 🚀 PERFORMANCE FIX: Cache collision meshes (runs once when scene is ready)
-  const collisionMeshes = React.useMemo(() => {
-    const meshes: THREE.Object3D[] = [];
-    scene.traverse((child: any) => {
-      if (child.isMesh && child.visible) {
-        meshes.push(child);
-      }
-    });
-    return meshes;
-  }, [scene]);
   
   useEffect(() => {
     if (mode !== 'walk') return;
@@ -259,21 +248,33 @@ function Player({ mode, onMove }: any) {
         moveVector.current.y = 0;
         
         const dir = moveVector.current.clone().normalize();
+        const right = new THREE.Vector3().crossVectors(dir, new THREE.Vector3(0, 1, 0)).normalize();
+        const left = right.clone().negate();
         
         // 🚀 3. ADD PLAYER RADIUS OFFSET
         const origin = camera.position.clone();
         origin.y -= 1; // simulate body center
         
-        // 🚀 RAYCAST LOGIC
-        (raycaster.current as any).firstHitOnly = true; 
-        raycaster.current.set(origin, dir);
-        
-        const intersects = raycaster.current.intersectObjects(collisionMeshes, false);
+        const checkCollision = (rayDir: THREE.Vector3) => {
+          raycaster.current.set(origin, rayDir);
+          const intersects = raycaster.current.intersectObjects(scene.children, true);
+          return intersects.find((hit) => hit.object.visible && hit.object.type !== "Line" && hit.object.type !== "Points");
+        };
+
+        // 🚀 RAYCAST LOGIC (Live BVH check - 3 Directions)
+        const hitForward = checkCollision(dir);
+        const hitRight = checkCollision(right);
+        const hitLeft = checkCollision(left);
+
+        const isBlocked = 
+          (hitForward && hitForward.distance < COLLISION_DISTANCE) ||
+          (hitRight && hitRight.distance < COLLISION_DISTANCE) ||
+          (hitLeft && hitLeft.distance < COLLISION_DISTANCE);
         
         // 🚀 2. FIX COLLISION DISTANCE (using 3.0 constant)
-        if (intersects.length > 0 && intersects[0].distance < COLLISION_DISTANCE) {
+        if (isBlocked) {
           // 🚀 4. ADD BACKWARD SAFETY
-          if (intersects[0].distance < COLLISION_DISTANCE * 0.5) {
+          if (hitForward && hitForward.distance < COLLISION_DISTANCE * 0.5) {
              camera.position.sub(dir.multiplyScalar(0.1));
           }
         } else {
