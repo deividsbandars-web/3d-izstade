@@ -20,15 +20,14 @@ import PixelStreamingViewer from './PixelStreamingViewer';
 import { normalizeModel } from '../../utils/threeUtils';
 
 // --- PILSĒTAS 3D MODELIS (PHASE 1 - ROKU DARBS) ---
-// 1. Dinamiskais Ielādētājs
-function DynamicModel({ url, position, scale = 1, rotation = [0, 0, 0], yOffset = 0, hasFoundation = false, debug = false }: any) {
+// 1. Dinamiskais Ielādētājs - TĪRS UN PAREIZS
+function DynamicModel({ url, position, scale = 1, rotation = [0, 0, 0], debug = false }: any) {
   const gltf = useGLTF(url) as any;
   const clonedScene = React.useMemo(() => {
     const clone = gltf.scene.clone();
     
-    // Normalize model: Center, Ground (Y=0), and apply manual yOffset
+    // Šis sakārto modeļa IEKŠIENI, nevis world pozīciju
     normalizeModel(clone);
-    clone.position.y += yOffset; // Add manual tweak if needed
 
     clone.traverse((child: any) => {
       if (child.isMesh) {
@@ -38,53 +37,22 @@ function DynamicModel({ url, position, scale = 1, rotation = [0, 0, 0], yOffset 
       }
     });
     return clone;
-  }, [gltf.scene, yOffset]);
+  }, [gltf.scene]);
 
+  // Tagad 'position' ir vienīgais, kas nosaka vietu pasaulē. Nav nekādu dubultu nobīžu!
   return (
-    <group position={position} rotation={rotation}>
-      {hasFoundation && (
-        <mesh position={[0, 0.1, 0]} receiveShadow>
-          <boxGeometry args={[55, 0.5, 35]} />
-          <meshStandardMaterial color="#334155" roughness={0.8} />
-        </mesh>
-      )}
-      <primitive object={clonedScene} scale={scale} />
-      {/* DZELTENA KASTE: Palīdzēs redzēt kāpēc iela lido */}
+    <group position={position} rotation={rotation} scale={scale}>
+      <primitive object={clonedScene} />
       {debug && <boxHelper args={[clonedScene, 'yellow']} />}
     </group>
   );
 }
 
-// 2. TAVS PILSĒTAS PLĀNS
+// 2. TAVS PILSĒTAS PLĀNS - BEZ HACKIEM
 const CITY_LAYOUT = [
-  // Londonas māja - nolaista par 5 metriem, lai noslēptu šķībo apakšu
-  { 
-    id: 'londonas_maja', 
-    url: '/models/free_london_kinnaird_house.glb', 
-    position: [0, 0, -30], 
-    scale: 1, 
-    rotation: [0, 0, 0], 
-    yOffset: -5,
-    hasFoundation: true
-  },
-  // Atlanta Office - šī stāv uz 0
-  { 
-    id: 'ofiss_atlanta', 
-    url: '/models/free__atlanta_corperate_office_building.glb', 
-    position: [70, 0, -30], 
-    scale: 1, 
-    rotation: [0, 0, 0], 
-    yOffset: 0 
-  },
-  // IELA - Brutāli nolaista par 20 metriem, jo modelis "lido" virs savām koordinātām
-  {
-    id: 'iela_1',
-    url: '/models/american_road.glb',
-    position: [0, 0, 10],
-    scale: 1,
-    rotation: [0, 0, 0],
-    yOffset: -20
-  }
+  { id: 'londonas_maja', url: '/models/free_london_kinnaird_house.glb', position: [0, 0, -30], scale: 1, rotation: [0, 0, 0] },
+  { id: 'ofiss_atlanta', url: '/models/free__atlanta_corperate_office_building.glb', position: [70, 0, -30], scale: 1, rotation: [0, 0, 0] },
+  { id: 'iela_1', url: '/models/american_road.glb', position: [0, 0, 10], scale: 1, rotation: [0, 0, 0] }
 ];
 
 function CityModel({ debug = false }: { debug?: boolean }) {
