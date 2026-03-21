@@ -234,7 +234,7 @@ function Player({ mode, onMove }: any) {
       if (mov.b) { camera.translateZ(speed * delta); moved = true; }
       if (mov.l) { camera.translateX(-speed * delta); moved = true; }
       if (mov.r) { camera.translateX(speed * delta); moved = true; }
-      camera.position.setY(2);
+      camera.position.setY(5);
 
       if (moved && onMove && Date.now() - lastMoveTime.current > 200) {
         lastMoveTime.current = Date.now();
