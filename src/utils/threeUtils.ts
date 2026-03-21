@@ -1,55 +1,78 @@
 import * as THREE from 'three';
 
+const NORMALIZATION_VERSION = "__normalized_v1";
+
 /**
- * PURE NORMALIZATION ENGINE
- * 1. Atrod modeļa patieso centru un apakšu.
- * 2. Nobīda IEKŠĒJO scēnu tā, lai (0,0,0) būtu modeļa pamatnes centrā.
- * 3. Neizmanto nekādus world-space hackus.
+ * PRODUCTION ENGINE NORMALIZATION
+ * 1. Versioned flags in userData for reliable cloning & state tracking.
+ * 2. Precision world matrix synchronization.
+ * 3. Subtree-safe pivot reset via immediate children offset.
  */
-export const normalizeModel = (model: THREE.Object3D, targetSize?: number) => {
-  model.updateMatrixWorld(true);
-  const box = new THREE.Box3().setFromObject(model);
-  const center = new THREE.Vector3();
+export const normalizeModel = (model: THREE.Object3D, targetSize = 20) => {
+  if (!model.userData) model.userData = {};
+  if (model.userData[NORMALIZATION_VERSION]) return;
+  model.userData[NORMALIZATION_VERSION] = true;
+
+  model.updateWorldMatrix(true, true);
+
+  let box = new THREE.Box3().setFromObject(model);
   const size = new THREE.Vector3();
-  
-  box.getCenter(center);
   box.getSize(size);
 
-  // LOKĀLĀ NOBĪDE: 
-  // Mēs neaiztiekam model.position, mēs aiztiekam bērnu elementus, 
-  // lai to vizuālais centrs sakristu ar modeļa lokālo nulli.
-  model.traverse((child) => {
-    if (child instanceof THREE.Mesh) {
-      // Šis ir kritiski: mēs nobīdām ģeometriju vai bērnus, 
-      // nevis pašu konteineru, ko kontrolē SceneManager.
-    }
+  const dominantAxis = Math.max(size.x, size.z);
+  const scaleMultiplier = dominantAxis > 0 ? targetSize / dominantAxis : 1;
+
+  const currentScale = model.scale.clone();
+  model.scale.set(
+    currentScale.x * scaleMultiplier,
+    currentScale.y * scaleMultiplier,
+    currentScale.z * scaleMultiplier
+  );
+
+  model.updateWorldMatrix(true, true);
+  box = new THREE.Box3().setFromObject(model);
+
+  const center = new THREE.Vector3();
+  box.getCenter(center);
+  const offset = new THREE.Vector3(center.x, box.min.y, center.z);
+
+  model.children.forEach((child) => {
+    child.position.sub(offset);
   });
 
-  // Vieglākais veids: ielikt scēnu jaunā grupā un nobīdīt to grupu
-  const pivot = new THREE.Group();
-  pivot.name = "NormalizedPivot";
-  
-  // Aprēķinām nobīdi
-  const offsetX = -center.x;
-  const offsetY = -box.min.y; // Šis garantē pamatni uz 0
-  const offsetZ = -center.z;
-
-  // Pārvietojam visus bērnus
-  const children = [...model.children];
-  children.forEach(child => {
-    child.position.x += offsetX;
-    child.position.y += offsetY;
-    child.position.z += offsetZ;
-  });
-
-  if (targetSize) {
-    const maxDim = Math.max(size.x, size.y, size.z);
-    if (maxDim > 0) {
-      const scale = targetSize / maxDim;
-      model.scale.setScalar(scale);
+  const EPS = 0.0001;
+  model.traverse((child: any) => {
+    if (child !== model && child.position) {
+      if (Math.abs(child.position.y) < EPS) child.position.y = 0;
+      if (Math.abs(child.position.x) < EPS) child.position.x = 0;
+      if (Math.abs(child.position.z) < EPS) child.position.z = 0;
     }
-  }
-
-  console.log(`[Normalized] ${model.name || 'Model'}: Base at Y=0, Centered on X/Z.`);
-  return { size, center };
+  });
 };
+
+/**
+ * WORLD SYSTEM: Origin-Aware Snapping
+ * Ensures snapping remains consistent even if world origin shifts.
+ */
+export const snapVector3 = (
+  pos: THREE.Vector3, 
+  gridSize = 10, 
+  origin = new THREE.Vector3(0, 0, 0)
+) => {
+  return new THREE.Vector3(
+    Math.round((pos.x - origin.x) / gridSize) * gridSize + origin.x,
+    Math.round((pos.y - origin.y) / gridSize) * gridSize + origin.y,
+    Math.round((pos.z - origin.z) / gridSize) * gridSize + origin.z
+  );
+};
+
+export const snapRotation = (r: number) => {
+  const STEP = Math.PI / 2;
+  return Math.round(r / STEP) * STEP;
+};
+
+/**
+ * NETWORK & MOTION SYSTEM: Quantization
+ */
+export const quantizeValue = (v: number) => Math.round(v * 1000) / 1000;
+export const quantizeVectorArray = (arr: number[]) => arr.map(v => quantizeValue(v));

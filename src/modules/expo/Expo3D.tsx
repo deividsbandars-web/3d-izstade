@@ -17,16 +17,20 @@ import { supabase } from '../../core/supabase';
 import { expoService } from '../../services/expoService';
 import { useGLTF } from '@react-three/drei';
 import PixelStreamingViewer from './PixelStreamingViewer';
-import { normalizeModel } from '../../utils/threeUtils';
+import { normalizeModel, snapVector3, snapRotation, quantizeVectorArray } from '../../utils/threeUtils';
 
-// --- PILSĒTAS 3D MODELIS (PHASE 1 - ROKU DARBS) ---
-// 1. Dinamiskais Ielādētājs - TĪRS UN PAREIZS
-function DynamicModel({ url, position, scale = 1, rotation = [0, 0, 0], debug = false }: any) {
+// WORLD SYSTEM CONSTANTS
+const GRID_SIZE = 10;
+const WORLD_ORIGIN = new THREE.Vector3(0, 0, 0);
+const SYNC_THROTTLE = 50; // ms
+
+// 1. Dinamiskais Ielādētājs - Versioned & World-Aware
+function DynamicModel({ url, position, rotation = [0, 0, 0] }: any) {
   const gltf = useGLTF(url) as any;
   const clonedScene = React.useMemo(() => {
     const clone = gltf.scene.clone();
     
-    // Šis sakārto modeļa IEKŠIENI, nevis world pozīciju
+    // ✅ Versioned normalization
     normalizeModel(clone);
 
     clone.traverse((child: any) => {
@@ -39,11 +43,17 @@ function DynamicModel({ url, position, scale = 1, rotation = [0, 0, 0], debug = 
     return clone;
   }, [gltf.scene]);
 
-  // Tagad 'position' ir vienīgais, kas nosaka vietu pasaulē. Nav nekādu dubultu nobīžu!
+  // ✅ WORLD-AWARE SNAPPING
+  const snappedPos = snapVector3(new THREE.Vector3(...position), GRID_SIZE, WORLD_ORIGIN);
+  const snappedRot: [number, number, number] = [
+    snapRotation(rotation[0]),
+    snapRotation(rotation[1]),
+    snapRotation(rotation[2])
+  ];
+
   return (
-    <group position={position} rotation={rotation} scale={scale}>
+    <group position={snappedPos} rotation={snappedRot}>
       <primitive object={clonedScene} />
-      {debug && <boxHelper args={[clonedScene, 'yellow']} />}
     </group>
   );
 }
@@ -56,6 +66,14 @@ const CITY_LAYOUT = [
 ];
 
 function CityModel({ debug = false }: { debug?: boolean }) {
+  const { scene } = useThree();
+  
+  // Eksponējam scēnu globāli debagošanai
+  React.useEffect(() => {
+    (window as any).scene = scene;
+    console.log("🛠️ Scene exposed to window.scene");
+  }, [scene]);
+
   return (
     <Suspense fallback={null}>
       {debug && (
@@ -131,10 +149,17 @@ function ValidBoothModel({ url }: { url: string }) {
   const { scene } = useGLTF(url);
   const normalizedScene = React.useMemo(() => {
     const clone = scene.clone();
-    normalizeModel(clone);
+    normalizeModel(clone); // Iestata lokālo nobīdi pamatnei
     return clone;
   }, [scene]);
-  return <primitive object={normalizedScene} position={[0, 0.2, 0]} />;
+
+  // ❌ WRONG: <primitive object={normalizedScene} position={[0, 0.2, 0]} />
+  // ✅ RIGHT: Izmantojam wrapper grupu pasaulei
+  return (
+    <group position={[0, 0.2, 0]}>
+      <primitive object={normalizedScene} />
+    </group>
+  );
 }
 
 function DistrictBooth({ position, rotation, company, color }: any) {
