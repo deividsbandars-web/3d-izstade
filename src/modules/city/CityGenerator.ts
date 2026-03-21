@@ -141,33 +141,44 @@ export class CityGenerator {
       const baseObj = this.objects.find(o => o.id === key);
       if (!baseObj) return;
 
-      // Atrodam pirmo derīgo Mesh no bāzes objekta
-      let mesh: THREE.Mesh | null = null;
+      // 🚀 MULTI-MESH FIX: Savācam visus meshus no modeļa (piem., logs + siena + jumts)
+      const meshes: THREE.Mesh[] = [];
       baseObj.object.traverse((child: any) => {
-        if (child.isMesh && !mesh) mesh = child;
+        if (child.isMesh) meshes.push(child);
       });
 
-      if (!mesh) return;
+      if (meshes.length === 0) return;
 
-      const instanced = instancer.createInstanceGroup(key, mesh, items.length);
-      
-      // 🎯 CLICK SUPPORT (Pro Workaround)
-      // Saglabājam instance datus, lai Raycaster varētu pateikt, kurš konkrēti ir uzklikšķināts
-      instanced.userData.instances = items;
+      // Izveidojam instanci katram atsevišķam materiālam/geometrijai
+      meshes.forEach((mesh, meshIndex) => {
+        const instanced = instancer.createInstanceGroup(`${key}_${meshIndex}`, mesh, items.length);
+        
+        // 🚀 SHADOW OPTIMIZATION: Lielās ēkas un dabu neatstājam kā ēnu metējus, lai taupītu FPS
+        if (baseObj.type === "building" || baseObj.type === "nature" || baseObj.type === "road") {
+          instanced.castShadow = false;
+        }
 
-      items.forEach((item, i) => {
-        instancer.setInstance(
-          instanced,
-          i,
-          new THREE.Vector3(...item.position),
-          item.rotation,
-          item.scaleVec
-        );
+        // 🎯 CLICK SUPPORT & METADATA
+        instanced.userData = {
+          type: baseObj.type,
+          sourceId: key,
+          instances: items
+        };
+
+        items.forEach((item, i) => {
+          instancer.setInstance(
+            instanced,
+            i,
+            new THREE.Vector3(...item.position),
+            item.rotation,
+            item.scaleVec
+          );
+        });
+
+        instancer.finalize(instanced);
       });
-
-      instancer.finalize(instanced);
     });
     
-    console.log(`[Instancing] Compressed ${Object.keys(instanceGroups).length} heavy asset groups into single draw calls.`);
+    console.log(`[Instancing] Compressed ${Object.keys(instanceGroups).length} heavy asset groups into multi-mesh draw calls.`);
   }
 }

@@ -9,15 +9,23 @@ export class InstancedCityLayer {
   }
 
   createInstanceGroup(key: string, base: THREE.Mesh, count: number) {
+    // 🚀 MATERIAL SHARING BUG FIX: Drošāka klonēšana
+    const material = Array.isArray(base.material) 
+      ? base.material.map(m => m.clone()) 
+      : (base.material as THREE.Material).clone();
+
     const instanced = new THREE.InstancedMesh(
       base.geometry,
-      base.material,
+      material,
       count
     );
 
     // DynamicDrawUsage pasaka GPU, ka matricas var tikt mainītas
     instanced.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
     
+    // 🚀 FRUSTUM CULLING BOOST
+    instanced.frustumCulled = true;
+
     // Saglabājam ēnas iestatījumus no bāzes modeļa
     instanced.castShadow = base.castShadow;
     instanced.receiveShadow = base.receiveShadow;
@@ -48,5 +56,19 @@ export class InstancedCityLayer {
     instanced.instanceMatrix.needsUpdate = true;
     // Pārrēķinām bounding box frustum culling (lai nerenderē, kad neskatās)
     instanced.computeBoundingSphere();
+  }
+
+  // 🚀 GPU MEMORY FIX: Droša atmiņas tīrīšana
+  dispose() {
+    this.meshes.forEach((instanced) => {
+      instanced.geometry.dispose();
+      if (Array.isArray(instanced.material)) {
+        instanced.material.forEach(m => m.dispose());
+      } else {
+        instanced.material.dispose();
+      }
+      this.scene.remove(instanced);
+    });
+    this.meshes.clear();
   }
 }
