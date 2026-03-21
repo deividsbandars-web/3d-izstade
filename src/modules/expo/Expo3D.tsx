@@ -24,7 +24,6 @@ import { StreamingTrigger } from '../../components/StreamingTrigger';
 import { PixelStreamOverlay } from '../../components/PixelStreamOverlay';
 import { CityGenerator } from '../city/CityGenerator';
 import { BoothUI } from '../../components/BoothUI';
-import { useAmbientSound } from '../../hooks/useAmbientSound';
 
 import { processAssets } from '../../utils/proAssetPipeline';
 
