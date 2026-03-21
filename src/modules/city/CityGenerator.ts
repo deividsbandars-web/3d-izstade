@@ -45,14 +45,20 @@ export class CityGenerator {
       for (let z = -gridSize; z < gridSize; z++) {
         if (this.isOccupied(x, z)) continue;
 
-        // 🚀 SAFE SPAWN ZONE
-        // Pārliecināmies, ka spēlētāja starta pozīcijā [0,5,10] nav nevienas ēkas
-        if (Math.abs(x) < 2 && Math.abs(z) < 2) {
-          continue;
-        }
+        const SPAWN_X = 0;
+        const SPAWN_Z = 10;
 
         let posX = x * spacing;
         let posZ = z * spacing;
+
+        // 🚀 SAFE SPAWN ZONE (Radius >= 20 units)
+        // Pārliecināmies, ka spēlētāja starta pozīcijā [0,5,10] ir pilnīgi tukšs laukums
+        if (
+          Math.abs(posX - SPAWN_X) < 20 &&
+          Math.abs(posZ - SPAWN_Z) < 20
+        ) {
+          continue;
+        }
         const isRoad = this.isRoadZone(x, z);
 
         let targetType: AssetType;

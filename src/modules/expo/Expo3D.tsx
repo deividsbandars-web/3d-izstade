@@ -219,6 +219,12 @@ function Player({ mode, onMove }: any) {
   const [mov, setMov] = useState({ f: false, b: false, l: false, r: false });
   const raycaster = useRef(new THREE.Raycaster());
   const moveVector = useRef(new THREE.Vector3());
+
+  // 🚀 FORCE CAMERA POSITION ON START
+  useEffect(() => {
+    camera.position.set(0, 5, 10);
+    console.log("CAMERA START:", camera.position);
+  }, [camera]);
   
   useEffect(() => {
     if (mode !== 'walk') return;
