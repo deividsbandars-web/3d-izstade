@@ -25,6 +25,8 @@ export class InstancedCityLayer {
     
     // 🚀 FRUSTUM CULLING BOOST
     instanced.frustumCulled = true;
+    // 🚀 BVH / RAYCAST PREP
+    instanced.raycast = THREE.InstancedMesh.prototype.raycast;
 
     // Saglabājam ēnas iestatījumus no bāzes modeļa
     instanced.castShadow = base.castShadow;
@@ -56,6 +58,8 @@ export class InstancedCityLayer {
     instanced.instanceMatrix.needsUpdate = true;
     // Pārrēķinām bounding box frustum culling (lai nerenderē, kad neskatās)
     instanced.computeBoundingSphere();
+    // 🚀 INSTANCE MATRIX FREEZE
+    instanced.matrixAutoUpdate = false;
   }
 
   // 🚀 GPU MEMORY FIX: Droša atmiņas tīrīšana

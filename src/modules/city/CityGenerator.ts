@@ -158,11 +158,18 @@ export class CityGenerator {
           instanced.castShadow = false;
         }
 
+        // 🚀 RENDER ORDER / Z-FIGHT FIX
+        if (baseObj.type === "road") {
+          instanced.renderOrder = -1;
+        }
+
         // 🎯 CLICK SUPPORT & METADATA
         instanced.userData = {
           type: baseObj.type,
           sourceId: key,
-          instances: items
+          instances: items,
+          // 🚀 INSTANCE ID MAPPING (click system foundation)
+          getInstanceData: (instanceId: number) => items[instanceId]
         };
 
         items.forEach((item, i) => {
