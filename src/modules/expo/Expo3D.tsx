@@ -212,11 +212,24 @@ function DistrictBooth({ position, rotation, company, color }: any) {
 }
 
 // --- PLAYER ---
+const COLLISION_DISTANCE = 3;
+
 function Player({ mode, onMove }: any) {
   const { camera, scene } = useThree();
   const [mov, setMov] = useState({ f: false, b: false, l: false, r: false });
   const raycaster = useRef(new THREE.Raycaster());
   const moveVector = useRef(new THREE.Vector3());
+
+  // 🚀 PERFORMANCE FIX: Cache collision meshes (runs once when scene is ready)
+  const collisionMeshes = React.useMemo(() => {
+    const meshes: THREE.Object3D[] = [];
+    scene.traverse((child: any) => {
+      if (child.isMesh && child.visible) {
+        meshes.push(child);
+      }
+    });
+    return meshes;
+  }, [scene]);
   
   useEffect(() => {
     if (mode !== 'walk') return;
@@ -242,29 +255,34 @@ function Player({ mode, onMove }: any) {
 
       if (moved) {
         // 🚀 COLLISION PRE-CHECK
-        // Saglabājam kameras oriģinālo virzienu
         moveVector.current.applyQuaternion(camera.quaternion);
-        moveVector.current.y = 0; // Novēršam lidošanu uz augšu/leju
+        moveVector.current.y = 0;
         
         const dir = moveVector.current.clone().normalize();
         
+        // 🚀 3. ADD PLAYER RADIUS OFFSET
+        const origin = camera.position.clone();
+        origin.y -= 1; // simulate body center
+        
         // 🚀 RAYCAST LOGIC
-        // Šaujam staru no kameras pozīcijas kustības virzienā
-        (raycaster.current as any).firstHitOnly = true; // BVH optimization
-        raycaster.current.set(camera.position, dir);
+        (raycaster.current as any).firstHitOnly = true; 
+        raycaster.current.set(origin, dir);
         
-        const intersects = raycaster.current.intersectObjects(scene.children, true);
+        const intersects = raycaster.current.intersectObjects(collisionMeshes, false);
         
-        // 🚀 VALIDATION: Ja priekšā ir siena tuvāk par 1.5m, bloķējam!
-        if (intersects.length > 0 && intersects[0].distance < 1.5) {
-          // Kustība bloķēta
+        // 🚀 2. FIX COLLISION DISTANCE (using 3.0 constant)
+        if (intersects.length > 0 && intersects[0].distance < COLLISION_DISTANCE) {
+          // 🚀 4. ADD BACKWARD SAFETY
+          if (intersects[0].distance < COLLISION_DISTANCE * 0.5) {
+             camera.position.sub(dir.multiplyScalar(0.1));
+          }
         } else {
           // 🚀 APPLY MOVEMENT
           camera.position.add(moveVector.current);
         }
       }
 
-      // 🚀 Y-AXIS OVERRIDE (Moved AFTER collision, removed dead code)
+      // 🚀 Y-AXIS OVERRIDE (Moved AFTER collision)
       camera.position.setY(5);
 
       if (moved && onMove && Date.now() - lastMoveTime.current > 200) {
