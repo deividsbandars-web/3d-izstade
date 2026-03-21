@@ -84,8 +84,8 @@ function CityModel({ debug = false, zoneSystem }: { debug?: boolean, zoneSystem?
     // 🚀 AUTO ZONE BINDING: Padodam zoneSystem ģeneratoram
     const generator = new CityGenerator(scene, processed, zoneSystem);
     generator.generate({
-      gridSize: 6, // SAMAZINĀTS NO 15 uz 6 (lai nesprāgtu dators bez instancing)
-      spacing: 15  // Nedaudz palielināts solis
+      gridSize: 15, // INSTANCING ENABLED: Varam droši atgriezties pie lielas pilsētas!
+      spacing: 12 
     });
     
     setCityGenerated(true);
