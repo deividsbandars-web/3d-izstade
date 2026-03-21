@@ -66,11 +66,17 @@ function normalizeAndFix(model: THREE.Object3D, type: AssetType) {
   return { fixedModel: model, finalSize: size };
 }
 
-// 3. MATERIAL OPTIMIZATION
-function optimizeMaterials(model: THREE.Object3D) {
+// 3. MATERIAL OPTIMIZATION & SHADOWS
+function optimizeMaterials(model: THREE.Object3D, type: AssetType) {
   model.traverse((child: any) => {
     if (child.isMesh) {
-      child.castShadow = true;
+      // 🚀 PERFORMANCE FIX: Tikai lielās ēkas met ēnas! (Ceļi un koki ir par smagu)
+      if (type === "building" || type === "landmark" || type === "booth") {
+        child.castShadow = true;
+      } else {
+        child.castShadow = false; 
+      }
+      
       child.receiveShadow = true;
 
       if (child.material && (child.material.isMeshStandardMaterial || child.material.isMeshPhysicalMaterial)) {
@@ -96,8 +102,8 @@ export function processAssets(models: THREE.Object3D[], names: string[]): Proces
     // C. Mērogojam un centrējam drošā veidā
     const { fixedModel, finalSize } = normalizeAndFix(model, type);
 
-    // D. Optimizējam materiālus
-    optimizeMaterials(fixedModel);
+    // D. Optimizējam materiālus un ēnas atbilstoši tipam
+    optimizeMaterials(fixedModel, type);
 
     return {
       id: `asset_${i}_${type}`,
