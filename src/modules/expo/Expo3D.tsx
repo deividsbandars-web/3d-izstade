@@ -43,8 +43,8 @@ const ASSET_URLS = [
   '/models/american_road.glb',
   '/models/american_road_intersection.glb',
   '/models/victorian_street_lamp.glb',
-  '/models/trees_in_the_park_anthropos.glb',
-  '/models/default_booth.glb'
+  '/models/trees_in_the_park_anthropos.glb'
+  // '/models/default_booth.glb' // ❌ BOJĀTS FAILS (Unexpected end of JSON input)
 ];
 
 // --- FALLBACK DATA ---
