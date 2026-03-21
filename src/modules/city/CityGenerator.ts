@@ -45,8 +45,9 @@ export class CityGenerator {
       for (let z = -gridSize; z < gridSize; z++) {
         if (this.isOccupied(x, z)) continue;
 
-        let posX = x * spacing;
-        let posZ = z * spacing;
+        const offset = 50; // 🚀 GRID OFFSET FIX
+        let posX = x * spacing + offset;
+        let posZ = z * spacing + offset;
         const isRoad = this.isRoadZone(x, z);
 
         let targetType: AssetType;

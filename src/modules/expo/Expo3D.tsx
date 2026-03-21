@@ -254,7 +254,7 @@ export default function Expo3D() {
   const [data, setData] = useState<any>({ sectors: [], companies: [] });
   const [isLoading, setIsLoading] = useState(true);
   const [guests, setGuests] = useState<any[]>([]);
-  const [playerPos, setPlayerPos] = useState<number[]>([0, 2, 10]);
+  const [playerPos, setPlayerPos] = useState<number[]>([0, 5, 10]);
   const [streamId, setStreamId] = useState<string | null>(null);
   const [isMicOn, setIsMicOn] = useState(false);
   const [isSpeaking] = useState(false);
