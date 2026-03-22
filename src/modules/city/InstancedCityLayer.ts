@@ -28,9 +28,9 @@ export class InstancedCityLayer {
     // 🚀 BVH / RAYCAST PREP
     instanced.raycast = THREE.InstancedMesh.prototype.raycast;
 
-    // Saglabājam ēnas iestatījumus no bāzes modeļa
-    instanced.castShadow = base.castShadow;
-    instanced.receiveShadow = base.receiveShadow;
+    // 🚀 GPU RELIEF FIX: Izslēdzam ēnas visiem instancētajiem objektiem
+    instanced.castShadow = false;
+    instanced.receiveShadow = false;
 
     this.scene.add(instanced);
     this.meshes.set(key, instanced);

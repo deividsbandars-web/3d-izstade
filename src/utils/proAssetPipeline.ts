@@ -59,9 +59,18 @@ function normalizeAndFix(model: THREE.Object3D, type: AssetType) {
   const center = new THREE.Vector3();
   box.getCenter(center);
   
-  // SAFE SHIFT: Apply offset to children, not root! (Novērš dubultās transformācijas)
-  const offset = new THREE.Vector3(center.x, box.min.y, center.z);
-  model.children.forEach((child) => child.position.sub(offset));
+  // 🚀 DEEP GROUNDING FIX (Apply to all nested meshes)
+  const minY = box.min.y;
+  model.traverse((child: any) => {
+    if (child !== model && child.isMesh) {
+      child.position.y -= minY;
+    }
+  });
+
+  // VERIFY GROUNDING
+  model.updateWorldMatrix(true, true);
+  const verifyBox = new THREE.Box3().setFromObject(model, true);
+  console.log(`[Grounding Verify] ${model.name || 'Model'}: Min Y = ${verifyBox.min.y.toFixed(4)} (Target: 0)`);
 
   return { fixedModel: model, finalSize: size };
 }
@@ -120,6 +129,19 @@ export function processAssets(models: THREE.Object3D[], names: string[]): Proces
 
     // D. Optimizējam materiālus un ēnas atbilstoši tipam
     optimizeMaterials(fixedModel, type);
+
+    // 🚀 DIAGNOSTIC LOGGING
+    fixedModel.updateWorldMatrix(true, true);
+    const finalBox = new THREE.Box3().setFromObject(fixedModel, true);
+    const finalCenter = new THREE.Vector3();
+    finalBox.getCenter(finalCenter);
+    
+    console.log(`--- DIAGNOSTIC: ${names[i]} ---`);
+    console.log(`Type: ${type}`);
+    console.log(`Final Size: X:${finalSize.x.toFixed(2)}, Y:${finalSize.y.toFixed(2)}, Z:${finalSize.z.toFixed(2)}`);
+    console.log(`Final Center: X:${finalCenter.x.toFixed(2)}, Y:${finalCenter.y.toFixed(2)}, Z:${finalCenter.z.toFixed(2)}`);
+    console.log(`Min Y (Ground Alignment): ${finalBox.min.y.toFixed(4)}`);
+    console.log(`----------------------------------`);
 
     return {
       id: `asset_${i}_${type}`,

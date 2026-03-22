@@ -11,7 +11,7 @@ import {
   Loader,
   useVideoTexture
 } from '@react-three/drei';
-import { EffectComposer, Bloom } from '@react-three/postprocessing';
+// import { EffectComposer, Bloom } from '@react-three/postprocessing';
 import * as THREE from 'three';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../core/supabase';
@@ -83,7 +83,7 @@ function CityModel({ debug = false, zoneSystem }: { debug?: boolean, zoneSystem?
     // 🚀 AUTO ZONE BINDING: Padodam zoneSystem ģeneratoram
     const generator = new CityGenerator(scene, processed, zoneSystem);
     generator.generate({
-      gridSize: 15, // INSTANCING ENABLED: Varam droši atgriezties pie lielas pilsētas!
+      gridSize: 8, // 🚀 REDUCED FOR GPU STABILITY
       spacing: 12 
     });
     
@@ -212,19 +212,38 @@ function DistrictBooth({ position, rotation, company, color }: any) {
 }
 
 // --- PLAYER ---
-const COLLISION_DISTANCE = 3;
+const PLAYER_RADIUS = 1.2;
 
 function Player({ mode, onMove }: any) {
   const { camera, scene } = useThree();
   const [mov, setMov] = useState({ f: false, b: false, l: false, r: false });
   const raycaster = useRef(new THREE.Raycaster());
   const moveVector = useRef(new THREE.Vector3());
+  const spawnChecked = useRef(false);
 
   // 🚀 FORCE CAMERA POSITION ON START
   useEffect(() => {
     camera.position.set(0, 5, 10);
     console.log("CAMERA START:", camera.position);
   }, [camera]);
+
+  // 🚀 SPAWN SAFETY CHECK (Runs after city is likely generated)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (spawnChecked.current) return;
+      
+      const downRay = new THREE.Raycaster(camera.position, new THREE.Vector3(0, -1, 0));
+      const intersects = downRay.intersectObjects(scene.children, true);
+      const hit = intersects.find(h => h.object.visible && h.object.type === 'Mesh');
+      
+      if (hit && hit.distance < 2) {
+        console.log("🚀 Spawn unsafe! Pushing player upward...");
+        camera.position.y += (2 - hit.distance) + 1;
+      }
+      spawnChecked.current = true;
+    }, 4500); // Wait for CityGenerator (4s)
+    return () => clearTimeout(timer);
+  }, [scene, camera]);
   
   useEffect(() => {
     if (mode !== 'walk') return;
@@ -249,47 +268,43 @@ function Player({ mode, onMove }: any) {
       const moved = moveVector.current.lengthSq() > 0;
 
       if (moved) {
-        // 🚀 COLLISION PRE-CHECK
-        moveVector.current.applyQuaternion(camera.quaternion);
-        moveVector.current.y = 0;
-        
-        const dir = moveVector.current.clone().normalize();
-        const right = new THREE.Vector3().crossVectors(dir, new THREE.Vector3(0, 1, 0)).normalize();
-        const left = right.clone().negate();
-        
-        // 🚀 3. ADD PLAYER RADIUS OFFSET
-        const origin = camera.position.clone();
-        origin.y -= 1; // simulate body center
-        
-        const checkCollision = (rayDir: THREE.Vector3) => {
-          raycaster.current.set(origin, rayDir);
+        // 🚀 1. SIMULATE NEXT POSITION
+        const moveDir = moveVector.current.clone().applyQuaternion(camera.quaternion);
+        moveDir.y = 0;
+        const nextPos = camera.position.clone().add(moveDir);
+        const origin = nextPos.clone();
+        origin.y -= 1; // Body center
+
+        // 🚀 2. MULTI-RAY SYSTEM (5 DIRECTIONS)
+        const checkCollision = (pos: THREE.Vector3, dir: THREE.Vector3) => {
+          raycaster.current.set(pos, dir);
           const intersects = raycaster.current.intersectObjects(scene.children, true);
-          return intersects.find((hit) => hit.object.visible && hit.object.type !== "Line" && hit.object.type !== "Points");
+          return intersects.find(h => h.object.visible && h.object.type === 'Mesh');
         };
 
-        // 🚀 RAYCAST LOGIC (Live BVH check - 3 Directions)
-        const hitForward = checkCollision(dir);
-        const hitRight = checkCollision(right);
-        const hitLeft = checkCollision(left);
+        const collisionDirs = [
+          new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion).setY(0).normalize(), // Fwd
+          new THREE.Vector3(0, 0, 1).applyQuaternion(camera.quaternion).setY(0).normalize(),  // Back
+          new THREE.Vector3(-1, 0, 0).applyQuaternion(camera.quaternion).setY(0).normalize(), // Left
+          new THREE.Vector3(1, 0, 0).applyQuaternion(camera.quaternion).setY(0).normalize(),  // Right
+          new THREE.Vector3(0, -1, 0) // Down
+        ];
 
-        const isBlocked = 
-          (hitForward && hitForward.distance < COLLISION_DISTANCE) ||
-          (hitRight && hitRight.distance < COLLISION_DISTANCE) ||
-          (hitLeft && hitLeft.distance < COLLISION_DISTANCE);
-        
-        // 🚀 2. FIX COLLISION DISTANCE (using 3.0 constant)
-        if (isBlocked) {
-          // 🚀 4. ADD BACKWARD SAFETY
-          if (hitForward && hitForward.distance < COLLISION_DISTANCE * 0.5) {
-             camera.position.sub(dir.multiplyScalar(0.1));
+        let isBlocked = false;
+        for (const d of collisionDirs) {
+          const hit = checkCollision(origin, d);
+          if (hit && hit.distance < PLAYER_RADIUS) {
+            isBlocked = true;
+            break;
           }
-        } else {
-          // 🚀 APPLY MOVEMENT
-          camera.position.add(moveVector.current);
+        }
+
+        if (!isBlocked) {
+          camera.position.add(moveDir);
         }
       }
 
-      // 🚀 Y-AXIS OVERRIDE (Moved AFTER collision)
+      // 🚀 Y-AXIS OVERRIDE
       camera.position.setY(5);
 
       if (moved && onMove && Date.now() - lastMoveTime.current > 200) {
@@ -464,21 +479,22 @@ export default function Expo3D() {
               <Sky distance={450000} sunPosition={[100, 20, 100]} inclination={0.49} azimuth={0.25} />
               <Environment preset="city" />
               
+              {/* --- PRO LIGHTING --- */}
               <ambientLight intensity={0.3} />
               <directionalLight 
                 position={[20, 30, 10]} 
                 intensity={1.5} 
-                castShadow 
-                shadow-mapSize={[2048, 2048]} 
+                castShadow={false} // 🚀 GPU RELIEF: Izslēdzam ēnas no galvenās gaismas
               />
               <hemisphereLight args={["#87CEEB", "#222222", 0.5]} />
               <fog attach="fog" args={["#0a0a0a", 80, 300]} />
 
-              <EffectComposer>
+              {/* 🚀 POST PROCESSING TEMPORARILY DISABLED FOR STABILITY */}
+              {/* <EffectComposer>
                 <Bloom intensity={0.5} luminanceThreshold={0.3} luminanceSmoothing={0.9} />
-              </EffectComposer>
+              </EffectComposer> */}
 
-              <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.1, 0]} receiveShadow>
+              <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.1, 0]} receiveShadow={false}>
                 <planeGeometry args={[2000, 2000]} />
                 <meshStandardMaterial color="#0a0a0a" roughness={0.8} metalness={0.1} />
               </mesh>
