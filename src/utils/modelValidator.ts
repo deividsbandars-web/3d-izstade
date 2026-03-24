@@ -1,9 +1,40 @@
 import * as THREE from 'three';
-import { normalizeModel } from './threeUtils';
+import { normalizeModel, type NormalizeModelOptions } from './threeUtils';
+import { isFiniteVector3 } from './threeUtils';
 
 interface ValidationOptions {
   autoFix?: boolean;
   targetSize?: number;
+  allowExtremeScale?: boolean;
+  normalize?: NormalizeModelOptions;
+}
+
+export interface ModelValidationReport {
+  isValid: boolean;
+  warnings: string[];
+  errors: string[];
+  fatalErrors: string[];
+  residualIssues: string[];
+  performance: {
+    vertices: number;
+    textures: number;
+    meshes: number;
+    materials: number;
+  };
+  geometry: {
+    size: THREE.Vector3;
+    center: THREE.Vector3;
+    min: THREE.Vector3;
+    max: THREE.Vector3;
+    footprint: {
+      width: number;
+      depth: number;
+    };
+    grounded: boolean;
+    centered: boolean;
+    hasFiniteBounds: boolean;
+    zeroSized: boolean;
+  };
 }
 
 /**
@@ -11,12 +42,15 @@ interface ValidationOptions {
  * Analyzes GLTF models for production readiness, performance bottlenecks, and geometric alignment.
  */
 export const validateModel = (scene: THREE.Object3D, options: ValidationOptions = {}) => {
-  const { autoFix = false, targetSize = 20 } = options;
-
-  // Ensure matrix world is calculated for accurate bounding box
-  scene.updateMatrixWorld(true);
+  const {
+    autoFix = false,
+    targetSize = 20,
+    allowExtremeScale = false,
+    normalize: normalizeOptions = {},
+  } = options;
 
   const getBoxData = (obj: THREE.Object3D) => {
+    obj.updateMatrixWorld(true);
     const box = new THREE.Box3().setFromObject(obj);
     const size = new THREE.Vector3();
     const center = new THREE.Vector3();
@@ -25,134 +59,159 @@ export const validateModel = (scene: THREE.Object3D, options: ValidationOptions 
     return { box, size, center, position: obj.position.clone() };
   };
 
-  const before = getBoxData(scene);
-  
-  // Metrics accumulation
-  let vertexCount = 0;
-  let meshCount = 0;
-  let hasUnbakedRotation = false;
-  const textures = new Set<THREE.Texture>();
+  const inspectScene = (): ModelValidationReport => {
+    const boxData = getBoxData(scene);
+    let vertexCount = 0;
+    let meshCount = 0;
+    let materialCount = 0;
+    let hasUnbakedRotation = false;
+    const textures = new Set<THREE.Texture>();
 
-  scene.traverse((child) => {
-    // 1. Mesh & Vertex Counting
-    if ((child as THREE.Mesh).isMesh) {
-      meshCount++;
-      const mesh = child as THREE.Mesh;
-      const geometry = mesh.geometry;
-      if (geometry.attributes.position) {
-        vertexCount += geometry.attributes.position.count;
-      }
+    scene.traverse((child) => {
+      if ((child as THREE.Mesh).isMesh) {
+        meshCount++;
+        const mesh = child as THREE.Mesh;
+        const geometry = mesh.geometry;
+        if (geometry.attributes.position) {
+          vertexCount += geometry.attributes.position.count;
+        }
 
-      // 2. Texture Analysis
-      const material = mesh.material as any;
-      if (material) {
-        const matArray = Array.isArray(material) ? material : [material];
-        matArray.forEach((m) => {
-          // Check all properties for textures (map, normalMap, roughnessMap, etc.)
-          Object.keys(m).forEach((key) => {
-            if (m[key] && (m[key] as THREE.Texture).isTexture) {
-              textures.add(m[key]);
-            }
+        const material = mesh.material as any;
+        if (material) {
+          const matArray = Array.isArray(material) ? material : [material];
+          materialCount += matArray.length;
+          matArray.forEach((m) => {
+            Object.keys(m).forEach((key) => {
+              if (m[key] && (m[key] as THREE.Texture).isTexture) {
+                textures.add(m[key]);
+              }
+            });
           });
-        });
+        }
+      }
+
+      if (child.rotation.x !== 0 || child.rotation.y !== 0 || child.rotation.z !== 0) {
+        hasUnbakedRotation = true;
+      }
+    });
+
+    const report: ModelValidationReport = {
+      isValid: true,
+      warnings: [],
+      errors: [],
+      fatalErrors: [],
+      residualIssues: [],
+      performance: {
+        vertices: vertexCount,
+        textures: textures.size,
+        meshes: meshCount,
+        materials: materialCount,
+      },
+      geometry: {
+        size: boxData.size.clone(),
+        center: boxData.center.clone(),
+        min: boxData.box.min.clone(),
+        max: boxData.box.max.clone(),
+        footprint: {
+          width: boxData.size.x,
+          depth: boxData.size.z,
+        },
+        grounded: Math.abs(boxData.box.min.y) <= 0.05,
+        centered: Math.abs(boxData.center.x) <= 0.1 && Math.abs(boxData.center.z) <= 0.1,
+        hasFiniteBounds: isFiniteVector3(boxData.size) && isFiniteVector3(boxData.center),
+        zeroSized: boxData.size.x <= 0.001 || boxData.size.y <= 0.001 || boxData.size.z <= 0.001,
+      },
+    };
+
+    const markFatal = (issue: string) => {
+      report.errors.push(issue);
+      report.fatalErrors.push(issue);
+      report.isValid = false;
+    };
+
+    const markResidual = (issue: string) => {
+      report.errors.push(issue);
+      report.residualIssues.push(issue);
+      report.isValid = false;
+    };
+
+    if (vertexCount > 300000) {
+      report.warnings.push('PERF_HIGH_POLY');
+    }
+
+    if (textures.size > 10) {
+      report.warnings.push('PERF_HIGH_TEXTURE_COUNT');
+    }
+
+    if (materialCount > 24) {
+      report.warnings.push('PERF_HIGH_MATERIAL_COUNT');
+    }
+
+    if (meshCount > 64) {
+      markFatal('PERF_HIGH_MESH_COUNT');
+    }
+
+    if (meshCount === 0) {
+      markFatal('GEO_NO_MESHES');
+    }
+
+    if (!report.geometry.hasFiniteBounds) {
+      markFatal('GEO_INVALID_BOUNDS');
+    }
+
+    if (report.geometry.zeroSized) {
+      markFatal('GEO_ZERO_SIZE');
+    }
+
+    if (!report.geometry.centered) {
+      markResidual('GEO_NOT_CENTERED');
+    }
+
+    if (!report.geometry.grounded) {
+      markResidual('GEO_NOT_GROUNDED');
+    }
+
+    if (hasUnbakedRotation) {
+      report.warnings.push('GEO_UNBAKED_ROTATION');
+    }
+
+    const maxDim = Math.max(boxData.size.x, boxData.size.y, boxData.size.z);
+    if (maxDim > 500 || maxDim < 0.1) {
+      if (allowExtremeScale) {
+        report.warnings.push('GEO_EXTREME_SCALE');
+      } else {
+        markFatal('GEO_EXTREME_SCALE');
       }
     }
 
-    // 3. Rotation Check (Unbaked rotations)
-    if (child.rotation.x !== 0 || child.rotation.y !== 0 || child.rotation.z !== 0) {
-      hasUnbakedRotation = true;
-    }
-  });
-
-  const results = {
-    isValid: true,
-    warnings: [] as string[],
-    performance: {
-      vertices: vertexCount,
-      textures: textures.size,
-      meshes: meshCount
-    }
+    return report;
   };
 
+  let results = inspectScene();
+
   console.group(`[Smart Validator] ${scene.name || 'Unnamed Asset'}`);
-
-  // --- PERFORMANCE VALIDATION ---
-  if (vertexCount > 300000) {
-    console.warn(`⚠️ HIGH POLYGON COUNT: ${vertexCount.toLocaleString()} vertices. Optimal is < 100k.`);
-    results.warnings.push("PERF_HIGH_POLY");
+  if (results.warnings.length > 0) {
+    results.warnings.forEach((warning) => console.warn(`⚠️ ${warning}`));
+  }
+  if (results.errors.length > 0) {
+    results.errors.forEach((error) => console.error(`❌ ${error}`));
   }
 
-  if (textures.size > 10) {
-    console.warn(`⚠️ HIGH TEXTURE COUNT: ${textures.size} unique textures. Consider atlas or shared materials.`);
-    results.warnings.push("PERF_HIGH_TEXTURE_COUNT");
-  }
-
-  // --- GEOMETRIC VALIDATION ---
-  
-  // Check for Mesh Existence
-  if (meshCount === 0) {
-    console.error("❌ INVALID MODEL: No meshes found in hierarchy.");
-    results.warnings.push("GEO_NO_MESHES");
-    results.isValid = false;
-  }
-
-  // Pivot Check (Horizontal)
-  if (Math.abs(before.center.x) > 0.1 || Math.abs(before.center.z) > 0.1) {
-    console.warn("⚠️ MODEL NOT CENTERED");
-    results.warnings.push("GEO_NOT_CENTERED");
-    results.isValid = false;
-  }
-
-  // Grounding Check (Vertical)
-  if (Math.abs(before.box.min.y) > 0.05) {
-    console.warn("⚠️ MODEL NOT GROUNDED (Y=0)");
-    results.warnings.push("GEO_NOT_GROUNDED");
-    results.isValid = false;
-  }
-
-  // Rotation Check
-  if (hasUnbakedRotation) {
-    console.warn("⚠️ MODEL HAS UNBAKED ROTATIONS (Traverse detected non-zero rotations)");
-    results.warnings.push("GEO_UNBAKED_ROTATION");
-  }
-
-  // Scale Check
-  const maxDim = Math.max(before.size.x, before.size.y, before.size.z);
-  if (maxDim > 500 || maxDim < 0.1) {
-    console.warn(`⚠️ EXTREME SCALE: ${maxDim.toFixed(2)}m. Expected range 0.1m - 500m.`);
-    results.warnings.push("GEO_EXTREME_SCALE");
-    results.isValid = false;
-  }
-
-  // --- AUTO-FIX LOGIC ---
   if (autoFix && !results.isValid) {
-    console.log("🔧 autoFix is TRUE. Normalizing model...");
-    normalizeModel(scene, targetSize);
-    
-    // Refresh data for comparison
-    scene.updateMatrixWorld(true);
-    const after = getBoxData(scene);
-
-    console.log("📊 COMPARISON (BEFORE vs AFTER):");
-    console.table({
-      "Metric": ["Bounding Box Size", "Center (X, Z)", "Min Y (Ground)", "Position Y"],
-      "BEFORE": [
-        `${before.size.x.toFixed(2)}, ${before.size.y.toFixed(2)}, ${before.size.z.toFixed(2)}`,
-        `${before.center.x.toFixed(2)}, ${before.center.z.toFixed(2)}`,
-        before.box.min.y.toFixed(2),
-        before.position.y.toFixed(2)
-      ],
-      "AFTER": [
-        `${after.size.x.toFixed(2)}, ${after.size.y.toFixed(2)}, ${after.size.z.toFixed(2)}`,
-        `${after.center.x.toFixed(2)}, ${after.center.z.toFixed(2)}`,
-        after.box.min.y.toFixed(2),
-        after.position.y.toFixed(2)
-      ]
-    });
+    console.log('🔧 autoFix is TRUE. Normalizing model...');
+    normalizeModel(scene, { targetSize, ...normalizeOptions });
+    results = inspectScene();
+    if (results.warnings.length > 0) {
+      results.warnings.forEach((warning) => console.warn(`⚠️ POST_FIX ${warning}`));
+    }
+    if (results.errors.length > 0) {
+      results.errors.forEach((error) => console.error(`❌ POST_FIX ${error}`));
+    }
   } else if (!results.isValid) {
-    console.log("💡 Suggestion: Call validateModel(scene, { autoFix: true }) to fix geometric alignment.");
+    console.log('💡 Suggestion: Call validateModel(scene, { autoFix: true }) to fix geometric alignment.');
   }
 
   console.groupEnd();
+
   return results;
 };

@@ -18,6 +18,7 @@ router.use(rateLimitMiddleware);
  * PUBLIC ROUTES (Defined BEFORE authMiddleware)
  */
 router.post('/analytics/track', analyticsController.trackAnalytics);
+router.get('/pixel-streaming/status', expoController.getPixelStreamingRuntimeStatus);
 
 router.get('/expo/scene', (req, res, next) => {
     console.log(`[ROUTE] Public Access: ${req.method} ${req.url}`);

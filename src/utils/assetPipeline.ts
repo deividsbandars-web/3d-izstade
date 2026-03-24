@@ -43,8 +43,13 @@ export const assetPipeline = {
         (gltf: any) => {
           const scene = gltf.scene as THREE.Group;
 
-          // 1. Validation Phase
-          validateModel(scene, { autoFix, targetSize });
+          const validationReport = validateModel(scene, { autoFix, targetSize });
+          scene.userData.validationReport = {
+            isValid: validationReport.isValid,
+            warnings: [...validationReport.warnings],
+            errors: [...validationReport.errors],
+            performance: { ...validationReport.performance },
+          };
 
           // 2. Deep Optimization Phase
           scene.traverse((child: THREE.Object3D) => {

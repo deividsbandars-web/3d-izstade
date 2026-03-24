@@ -1,92 +1,115 @@
 import { useEffect, useRef, useState } from 'react';
 import { Config, PixelStreaming } from '@epicgames-ps/lib-pixelstreamingfrontend-ue5.7';
+import { EXPO_MODE_COPY } from './state/expoRuntime';
+import type { PixelStreamingAvailability, PixelStreamingRuntimeConfig, PixelStreamingRuntimeStatus } from './services/pixelStreamingConfig';
 
 interface PixelStreamingViewerProps {
-    initialSignalingServerUrl?: string;
+    config: PixelStreamingRuntimeConfig;
+    availability: PixelStreamingAvailability;
+    runtimeStatus: PixelStreamingRuntimeStatus | null;
     onClose?: () => void;
 }
 
 export default function PixelStreamingViewer({ 
-    initialSignalingServerUrl,
+    config,
+    availability,
+    runtimeStatus,
     onClose
 }: PixelStreamingViewerProps) {
     const videoContainerRef = useRef<HTMLDivElement>(null);
     const [isConnected, setIsConnected] = useState(false);
-    const [status, setStatus] = useState('Gatavojas savienojumam...');
+    const [status, setStatus] = useState<string>(EXPO_MODE_COPY.premiumViewerConnecting);
     const [availableStreamers, setAvailableStreamers] = useState<string[]>([]);
     const psRef = useRef<PixelStreaming | null>(null);
+    const signalingUrl = config.signalingUrl;
 
-    // Vienmēr izmantojam lokālo tīklu šim projektam
-    // Pārlūkprogrammai (spēlētājam) ir jāslēdzas caur proxy (portu 80), nevis tieši pie streamer porta 8888
-    const url = initialSignalingServerUrl || `ws://${window.location.host}/ws/`;
+    function handleConnect(streamerId: string) {
+        if (!psRef.current) return;
+        setStatus(EXPO_MODE_COPY.premiumViewerConnectTo.replace('{streamerId}', streamerId));
+        psRef.current.config.setOptionSettingValue('StreamerId', streamerId);
+    }
 
     useEffect(() => {
-        if (!videoContainerRef.current) return;
+        let isActive = true;
 
-        // 1. DROŠA KONFIGURĀCIJA
-        const config = new Config({
+        if (!videoContainerRef.current || availability !== 'available') {
+            queueMicrotask(() => {
+                if (!isActive) return;
+                setIsConnected(false);
+                setAvailableStreamers([]);
+                setStatus(
+                    availability === 'unavailable'
+                        ? EXPO_MODE_COPY.premiumViewerUnavailable
+                        : EXPO_MODE_COPY.premiumViewerConnecting
+                );
+            });
+            return () => {
+                isActive = false;
+            };
+        }
+
+        const pixelStreamingConfig = new Config({
             initialSettings: {
-                ss: url,
+                ss: signalingUrl,
                 AutoPlayVideo: true,
-                AutoConnect: true, // Ļaujam bibliotēkai pašai savienoties, tagad kad maršruts ir pareizs
+                AutoConnect: true,
                 StartVideoMuted: true,
+                IceServers: config.iceServers,
+                StreamerId: runtimeStatus?.session.activeStreamerId || undefined,
             } as any
         });
 
-        // 2. Instance
-        const ps = new PixelStreaming(config, {
+        const ps = new PixelStreaming(pixelStreamingConfig, {
             videoElementParent: videoContainerRef.current
         });
         psRef.current = ps;
+        queueMicrotask(() => {
+            if (!isActive) return;
+            setStatus(EXPO_MODE_COPY.premiumViewerDiscovering);
+        });
 
-        // 3. Notikumi
         ps.addEventListener('webRtcConnected', () => {
             setIsConnected(true);
-            setStatus('Pieslēgts!');
+            setStatus(EXPO_MODE_COPY.premiumViewerConnected);
         });
 
         ps.addEventListener('webRtcDisconnected', () => {
             setIsConnected(false);
-            setStatus('Atvienots.');
+            setStatus(EXPO_MODE_COPY.premiumViewerDisconnected);
         });
 
-        // 4. KLAUSĀMIES SERVERI, LAI IZVĒLĒTOS STREAMER
         const onStreamerList = (event: any) => {
             const ids = event.streamers || (event.data && event.data.messageStreamerList && event.data.messageStreamerList.ids) || [];
             console.log("Saņemts saraksts:", ids);
             setAvailableStreamers(ids);
             if (ids.length > 0) {
-                setStatus(`Atrasti ${ids.length} kanāli. Gaida tavu klikšķi!`);
+                setStatus(EXPO_MODE_COPY.premiumViewerSelectStreamer.replace('{count}', String(ids.length)));
+                if (runtimeStatus?.session.activeStreamerId && ids.includes(runtimeStatus.session.activeStreamerId)) {
+                    handleConnect(runtimeStatus.session.activeStreamerId);
+                }
             } else {
-                setStatus('Gaidu Unreal Engine (Streamer nav atrasts)...');
+                setStatus(
+                    runtimeStatus?.signaling === 'signaling_up'
+                        ? EXPO_MODE_COPY.premiumViewerGatewayOnly
+                        : EXPO_MODE_COPY.premiumViewerDiscovering
+                );
             }
         };
 
-        // Dažādām versijām ir dažādi notikumu nosaukumi
-        // @ts-ignore
         ps.addEventListener('streamerListMessage', onStreamerList);
         try {
-            // @ts-ignore
+            // @ts-expect-error library event map is narrower than runtime events we receive from signaling
             ps.addEventListener('streamerListChanged', onStreamerList);
-        } catch (e) {
-            // ignore
+        } catch {
+            // ignore event compatibility differences between library versions
         }
 
         return () => {
+            isActive = false;
             ps.disconnect();
             psRef.current = null;
         };
-    }, [url]);
-
-    const handleConnect = (streamerId: string) => {
-        if (!psRef.current) return;
-        setStatus(`Pieslēdzos pie ${streamerId}...`);
-        
-        // Bibliotēkas 5.7 versijā "StreamerId" iestatīšana automātiski nosūta "subscribe" ziņu
-        // serverim un sāk WebRTC rokasspiedienu. Mums nav jāsauc ne connect(), ne play().
-        // @ts-ignore
-        psRef.current.config.setOptionSettingValue('StreamerId', streamerId);
-    };
+    }, [availability, signalingUrl, config.iceServers, runtimeStatus]);
 
     return (
         <div style={{ width: '100%', height: '100%', position: 'relative', backgroundColor: '#000', overflow: 'hidden' }}>
@@ -97,9 +120,21 @@ export default function PixelStreamingViewer({
                     <div className="spinner" style={{ width: '50px', height: '50px', border: '5px solid #3b82f6', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite', marginBottom: '20px' }} />
                     <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
                     <h2 style={{ margin: '0 0 10px 0' }}>{status}</h2>
-                    <p style={{ color: '#94a3b8', fontSize: '0.9rem' }}>Serveris: {url}</p>
+                    <p style={{ color: '#94a3b8', fontSize: '0.9rem' }}>Serveris: {signalingUrl}</p>
+                    {runtimeStatus?.session.activeStreamerId && (
+                        <p style={{ color: '#cbd5e1', fontSize: '0.9rem' }}>
+                            Active streamer: {runtimeStatus.session.activeStreamerId}
+                        </p>
+                    )}
+                    {availability === 'unavailable' && (
+                        <p style={{ color: '#fca5a5', fontSize: '0.95rem', maxWidth: '520px', textAlign: 'center' }}>
+                            {runtimeStatus?.signaling === 'signaling_up' && runtimeStatus?.streamer !== 'streamer_available'
+                                ? EXPO_MODE_COPY.premiumViewerGatewayOnly
+                                : EXPO_MODE_COPY.premiumViewerFallback}
+                        </p>
+                    )}
                     
-                    {availableStreamers.length > 0 && (
+                    {availability === 'available' && availableStreamers.length > 0 && (
                         <div style={{ marginTop: '20px', display: 'flex', gap: '10px' }}>
                             {availableStreamers.map(id => (
                                 <button 
@@ -107,7 +142,7 @@ export default function PixelStreamingViewer({
                                     onClick={() => handleConnect(id)} 
                                     style={{ padding: '10px 20px', background: '#3b82f6', border: 'none', borderRadius: '6px', color: 'white', fontWeight: 'bold', cursor: 'pointer' }}
                                 >
-                                    Palaist: {id}
+                                    {EXPO_MODE_COPY.premiumViewerLaunch.replace('{streamerId}', id)}
                                 </button>
                             ))}
                         </div>
