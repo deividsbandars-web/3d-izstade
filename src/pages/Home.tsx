@@ -73,6 +73,18 @@ export default function Home() {
         </Link>
       </div>
 
+      <div style={{ margin: '-20px auto 60px', maxWidth: '880px', display: 'grid', gap: '12px', textAlign: 'left' }}>
+        <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '16px', padding: '18px 20px', color: '#334155' }}>
+          <strong style={{ color: '#0f172a' }}>Publiskais ceļš:</strong> ieeja caur <span style={{ fontWeight: 800 }}>/expo-3d</span> atver lightweight Web3D pilsētu ar drošu pārlūka navigāciju.
+        </div>
+        <div style={{ background: '#ecfdf5', border: '1px solid #a7f3d0', borderRadius: '16px', padding: '18px 20px', color: '#065f46' }}>
+          <strong style={{ color: '#064e3b' }}>Premium ceļš:</strong> Unreal Pixel Streaming tiek palaists tikai no Expo lobby iekšējās premium pogas, nevis no nejaušiem triggeriem.
+        </div>
+        <div style={{ background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '16px', padding: '18px 20px', color: '#475569' }}>
+          <strong style={{ color: '#0f172a' }}>Fallback:</strong> ja premium straume nav pieejama, Web3D apskate un booth room paliek lietojami kā pilnvērtīgs expo maršruts.
+        </div>
+      </div>
+
       <div style={{ 
         display: 'grid', 
         gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', 

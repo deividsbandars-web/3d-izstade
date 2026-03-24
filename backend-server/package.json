@@ -7,7 +7,9 @@
     "dev": "tsx watch server.ts",
     "worker": "tsx worker.ts",
     "build": "tsc",
-    "start": "node dist/server.js"
+    "build:docker": "tsc -p tsconfig.docker.json",
+    "start": "node dist/server.js",
+    "start:docker": "node dist/server.docker.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.98.0",

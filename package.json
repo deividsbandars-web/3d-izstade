@@ -8,6 +8,7 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
+    "check:pixel-streaming": "node scripts/pixel-streaming-smoke-check.mjs",
     "start:backend": "cd backend-server && npm install && npm start",
     "worker:start": "cd backend-server && npm run worker"
   },

@@ -15,10 +15,16 @@ import { initInputHandler } from './InputHandler';
 import { Command, Option } from 'commander';
 import { initialize } from 'express-openapi';
 
-// eslint-disable-next-line  @typescript-eslint/no-unsafe-assignment
-const pjson = require('../package.json');
+type PackageJsonMetadata = {
+    name?: string;
+    description?: string;
+    version?: string;
+};
 
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-argument */
+const pjson = JSON.parse(
+    fs.readFileSync(path.resolve(__dirname, '..', 'package.json'), { encoding: 'utf8' })
+) as PackageJsonMetadata;
+
 // possible config file options
 let config_file: IProgramOptions = {};
 const configArgsParser = new Command()
@@ -51,10 +57,8 @@ if (!configArgsParser.no_config) {
 const program = new Command();
 program
     .name('node dist/index.js')
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-    .description(pjson.description)
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-    .version(pjson.version);
+    .description(pjson.description ?? 'Pixel Streaming signalling server')
+    .version(pjson.version ?? '0.0.0');
 
 // For any switch that doesn't take an argument, like --serve, its important to give it a default value.
 // Without the default, not supplying the default will mean the option is `undefined` in
@@ -185,6 +189,48 @@ program
 const cli_options: IProgramOptions = program.opts();
 const options: IProgramOptions = { ...cli_options };
 
+function parseEnvUrlList(name: string): string[] {
+    const rawValue = process.env[name];
+    if (!rawValue) {
+        return [];
+    }
+
+    return rawValue
+        .split(',')
+        .map((value) => value.trim())
+        .filter((value) => value.length > 0);
+}
+
+function buildPeerOptionsFromEnv() {
+    const stunUrls = parseEnvUrlList('STUN_SERVER_URLS');
+    const turnUrls = parseEnvUrlList('TURN_SERVER_URLS');
+    const turnUsername = process.env.TURN_USERNAME?.trim();
+    const turnPassword = process.env.TURN_PASSWORD?.trim();
+
+    if (stunUrls.length === 0 && turnUrls.length === 0) {
+        return null;
+    }
+
+    const iceServers: Array<Record<string, unknown>> = [];
+
+    if (stunUrls.length > 0) {
+        iceServers.push({ urls: stunUrls });
+    }
+
+    if (turnUrls.length > 0) {
+        const turnServer: Record<string, unknown> = { urls: turnUrls };
+
+        if (turnUsername && turnPassword) {
+            turnServer.username = turnUsername;
+            turnServer.credential = turnPassword;
+        }
+
+        iceServers.push(turnServer);
+    }
+
+    return { iceServers };
+}
+
 // save out new configuration (unless disabled)
 if (options.save) {
     // dont save certain options
@@ -207,6 +253,8 @@ InitLogging({
 });
 
 // read the peer_options_file
+const envPeerOptions = buildPeerOptionsFromEnv();
+
 if (options.peer_options_file) {
     if (!fs.existsSync(options.peer_options_file)) {
         Logger.error(`peer_options_file "${options.peer_options_file}" does not exist.`);
@@ -225,14 +273,23 @@ if (options.peer_options_file) {
     } catch (e) {
         Logger.warn(`Failed to parse peer_options as JSON: ${e}`);
     }
-} else if (options.peer_options) {
+} else if (options.peer_options && !envPeerOptions) {
     Logger.warn(
         `The --peer_options cli flag has many issues with passing JSON data on the command line. It is recommended that you use --peer_options_file instead.`
     );
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-Logger.info(`${pjson.name} v${pjson.version} starting...`);
+if (envPeerOptions) {
+    const overridingConfiguredPeerOptions = Boolean(options.peer_options) && !options.peer_options_file;
+    options.peer_options = envPeerOptions;
+    Logger.info(
+        overridingConfiguredPeerOptions
+            ? 'Overrode peer_options with STUN/TURN environment configuration.'
+            : 'Loaded peer_options from STUN/TURN environment configuration.'
+    );
+}
+
+Logger.info(`${pjson.name ?? 'wilbur'} v${pjson.version ?? '0.0.0'} starting...`);
 if (options.log_config) {
     Logger.info('Config:');
     for (const key in options) {

@@ -10,9 +10,9 @@ RUN npm ci
 
 COPY . .
 
-# Compile TypeScript
-RUN npx tsc
+# Compile only the compose-safe backend runtime
+RUN npm run build:docker
 
 EXPOSE 3000
 
-CMD ["node", "dist/server.js"]
+CMD ["npm", "run", "start:docker"]

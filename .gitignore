@@ -10,10 +10,12 @@ lerna-debug.log*
 node_modules
 dist
 dist-ssr
+dist-phase3f
 *.local
 .env
 .env.*
 !.env.example
+*.tsbuildinfo
 
 # Editor directories and files
 .vscode/*
@@ -27,6 +29,8 @@ dist-ssr
 *.sw?
 
 .vercel
+apps/frontend/.next
+diagnostics
 .aider*
 pazudusie faili/
 .gemini/

@@ -1,0 +1,23 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "outDir": "./dist",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true
+  },
+  "include": [
+    "server.docker.ts",
+    "routes/api.docker.ts",
+    "controllers/expoController.ts",
+    "middleware/ue5Auth.ts",
+    "services/pixelStreamingStatus.ts",
+    "services/supabase.ts",
+    "types.d.ts"
+  ],
+  "exclude": ["node_modules", "dist"]
+}

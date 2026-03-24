@@ -13,11 +13,22 @@ export const PixelStreamingViewer: React.FC<Props> = ({ initialStreamerId, signa
   const psRef = useRef<PixelStreaming | null>(null);
   const [streamerId, setStreamerId] = useState(initialStreamerId);
 
+  async function trackEvent(type: string, sponsorId: string) {
+    await fetch('/api/analytics/track', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        userId: 'anonymous', // Should be from auth
+        payload: { type, sponsorId }
+      })
+    });
+  }
+
   useEffect(() => {
-    if (!videoContainerRef.current) return;
+    const videoContainer = videoContainerRef.current;
+    if (!videoContainer) return;
 
     const config = new Config({
-      useFrontendSignallingServer: true,
       initialSettings: {
         SignallingServerUrl: signalingUrl,
         StreamerId: initialStreamerId,
@@ -26,18 +37,19 @@ export const PixelStreamingViewer: React.FC<Props> = ({ initialStreamerId, signa
           process.env.NEXT_PUBLIC_ICE_SERVERS || '[]'
         ),
       } as any
-    });
+    } as any);
 
     const ps = new PixelStreaming(config);
     psRef.current = ps;
+    const psAny = ps as any;
 
-    videoContainerRef.current.appendChild(ps.videoElement);
+    videoContainer.appendChild(psAny.videoElement);
 
     // Listen for streamer list changes
-    ps.addEventListener('streamerListChanged', (event: any) => {
+    psAny.addEventListener('streamerListChanged', (event: any) => {
       console.log('Streamer list changed:', event.detail.streamerList);
-      if (!streamerId && event.detail.streamerList.length > 0) {
-        setStreamerId(event.detail.streamerList[0]);
+      if (event.detail.streamerList.length > 0) {
+        setStreamerId((current) => current ?? event.detail.streamerList[0]);
       }
     });
 
@@ -57,29 +69,18 @@ export const PixelStreamingViewer: React.FC<Props> = ({ initialStreamerId, signa
 
     return () => {
       ps.disconnect();
-      if (videoContainerRef.current && ps.videoElement) {
-        videoContainerRef.current.removeChild(ps.videoElement);
+      if (psAny.videoElement && videoContainer.contains(psAny.videoElement)) {
+        videoContainer.removeChild(psAny.videoElement);
       }
     };
   }, [signalingUrl, initialStreamerId]);
-
-  const trackEvent = async (type: string, sponsorId: string) => {
-    await fetch('/api/track', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        userId: 'anonymous', // Should be from auth
-        payload: { type, sponsorId }
-      })
-    });
-  };
 
   return (
     <div className="relative w-full h-full bg-black overflow-hidden">
       <div ref={videoContainerRef} className="w-full h-full" />
       {!streamerId && (
         <div className="absolute inset-0 flex items-center justify-center text-white bg-black/50">
-          Waiting for streamer...
+          Waiting for streamer on secondary demo flow...
         </div>
       )}
     </div>

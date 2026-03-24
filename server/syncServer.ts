@@ -22,7 +22,7 @@ class SyncServer {
   private wss: WebSocketServer;
   private state: Map<string, ObjectState> = new Map();
 
-  constructor(port: number = 8888) {
+  constructor(port: number = 8890) {
     this.wss = new WebSocketServer({ port });
     this.init();
     console.log(`[SyncServer] running on port ${port}`);
@@ -59,12 +59,13 @@ class SyncServer {
       case 'create':
         this.state.set(msg.id, msg.data);
         break;
-      case 'transform':
+      case 'transform': {
         const current = this.state.get(msg.id);
         if (current) {
           this.state.set(msg.id, { ...current, ...msg.data });
         }
         break;
+      }
       case 'delete':
         this.state.delete(msg.id);
         break;
@@ -96,4 +97,4 @@ class SyncServer {
   }
 }
 
-new SyncServer();
+new SyncServer(Number(process.env.PORT) || 8890);

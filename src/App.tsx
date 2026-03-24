@@ -21,7 +21,6 @@ const AutonomousBusinessManager = lazy(() => import('./pages/AutonomousBusinessM
 const EconomySimulatorPage = lazy(() => import('./pages/EconomySimulatorPage'));
 const Onboarding = lazy(() => import('./pages/onboarding/OnboardingPage'));
 const WorkflowBuilder = lazy(() => import('./app/workflows/WorkflowBuilder'));
-const Expo3DPage = lazy(() => import('./pages/Expo3DPage'));
 
 // Moduļu ielāde
 const Dashboard = lazy(() => import('./modules/dashboard/Dashboard'));
@@ -122,7 +121,7 @@ export default function App() {
           </Route>
           
           <Route path="/expo-3d" element={<Suspense fallback={null}><Expo3D /></Suspense>} />
-          <Route path="/expo3d" element={<Suspense fallback={null}><Expo3DPage /></Suspense>} />
+          <Route path="/expo3d" element={<Navigate to="/expo-3d" replace />} />
           <Route path="/expo/booth/:id" element={<Suspense fallback={null}><BoothRoom /></Suspense>} />
           <Route path="/expo/showroom/:id" element={<Suspense fallback={null}><FurnitureShowroom /></Suspense>} />
           <Route path="/galerija" element={<Suspense fallback={null}><DigitalGallery /></Suspense>} />

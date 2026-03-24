@@ -1,40 +1,26 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { PixelStreamingViewer } from '@/components/PixelStreamingViewer';
 
 export default function ExpoPage() {
-  const [matchId, setMatchId] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const matchmake = async () => {
-      try {
-        const res = await fetch('http://localhost:3000/api/matchmake');
-        if (!res.ok) throw new Error('Matchmaking failed');
-        const data = await res.json();
-        setMatchId(data.instanceId);
-      } catch (err: any) {
-        setError(err.message);
-      }
-    };
-
-    matchmake();
-  }, []);
-
-  if (error) return <div className="p-8 text-red-500">Error: {error}</div>;
-  if (!matchId) return <div className="p-8">Searching for available instance...</div>;
+  const signalingUrl =
+    process.env.NEXT_PUBLIC_SIGNALING_URL ||
+    `${typeof window !== 'undefined' && window.location.protocol === 'https:' ? 'wss' : 'ws'}://${typeof window !== 'undefined' ? window.location.host : 'localhost'}/ws/`;
 
   return (
     <div className="flex flex-col h-screen">
       <header className="p-4 bg-gray-900 text-white flex justify-between items-center">
-        <h1 className="text-xl font-bold">Warpala 3D Expo</h1>
-        <div className="text-sm">Instance: {matchId}</div>
+        <div>
+          <h1 className="text-xl font-bold">Warpala 3D Expo Demo</h1>
+          <p className="text-xs text-gray-400">Secondary flow. Canonical expo runtime lives in the root Vite SPA.</p>
+          <p className="text-xs text-gray-500">This demo now relies on streamer discovery instead of a separate matchmaking endpoint.</p>
+        </div>
+        <div className="text-sm">Mode: Discovery</div>
       </header>
       <main className="flex-1 bg-black">
         <PixelStreamingViewer 
-          signalingUrl="ws://localhost:8888" 
-          initialStreamerId={matchId} 
+          signalingUrl={signalingUrl}
         />
       </main>
     </div>
