@@ -1,43 +1,108 @@
-version: '3.8'
-
 services:
-  # 1. Frontend (Vite SPA)
   frontend:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        VITE_SIGNALING_SERVER_URL: ${VITE_SIGNALING_SERVER_URL:-ws://localhost/ws/}
+        VITE_STUN_SERVER_URLS: ${STUN_SERVER_URLS:-stun:stun.l.google.com:19302}
+        VITE_TURN_SERVER_URLS: ${TURN_SERVER_URLS:-turn:127.0.0.1:3478?transport=udp,turn:127.0.0.1:3478?transport=tcp}
+        VITE_TURN_USERNAME: ${TURN_USERNAME:-pixelstream_user}
+        VITE_TURN_PASSWORD: ${TURN_PASSWORD:-change-me}
     ports:
       - "80:80"
-    environment:
-      - VITE_API_URL=http://localhost:3000
-      - VITE_WS_URL=ws://localhost:8888
     depends_on:
-      - backend
-      - sync-server
+      backend:
+        condition: service_healthy
+      signaling:
+        condition: service_healthy
+    restart: unless-stopped
 
-  # 2. Main API Backend
   backend:
     build:
       context: ./backend-server
       dockerfile: Dockerfile
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      SIGNALING_STATUS_BASE_URL: http://signaling
+      PIXEL_STREAMING_STATUS_TIMEOUT_MS: ${PIXEL_STREAMING_STATUS_TIMEOUT_MS:-2500}
+      SUPABASE_URL: ${SUPABASE_URL:-}
+      SUPABASE_SERVICE_KEY: ${SUPABASE_SERVICE_KEY:-}
+      SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY:-}
+      VITE_SUPABASE_URL: ${VITE_SUPABASE_URL:-}
+      VITE_SUPABASE_ANON_KEY: ${VITE_SUPABASE_ANON_KEY:-}
+      UE5_SECRET_KEY: ${UE5_SECRET_KEY:-warpala-ue5-bridge-2026}
     ports:
       - "3000:3000"
-    environment:
-      - PORT=3000
-      - SUPABASE_URL=${SUPABASE_URL}
-      - SUPABASE_KEY=${SUPABASE_ANON_KEY}
-    restart: always
+    depends_on:
+      signaling:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000/health >/dev/null 2>&1 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+    restart: unless-stopped
 
-  # 3. Real-time Sync Server (WebSockets)
+  signaling:
+    build:
+      context: ./deployment/signaling
+      dockerfile: Dockerfile
+    environment:
+      STUN_SERVER_URLS: ${STUN_SERVER_URLS:-stun:stun.l.google.com:19302}
+      TURN_SERVER_URLS: ${TURN_SERVER_URLS:-turn:127.0.0.1:3478?transport=udp,turn:127.0.0.1:3478?transport=tcp}
+      TURN_USERNAME: ${TURN_USERNAME:-pixelstream_user}
+      TURN_PASSWORD: ${TURN_PASSWORD:-change-me}
+    expose:
+      - "80"
+    ports:
+      - "8888:8888"
+      - "8889:8889"
+    depends_on:
+      turn:
+        condition: service_started
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1/api/status >/dev/null 2>&1 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 15s
+    restart: unless-stopped
+
+  turn:
+    image: coturn/coturn
+    entrypoint: ["turnserver"]
+    command:
+      - -c
+      - /etc/coturn/turnserver.conf
+      - --realm=${TURN_REALM:-warpala.local}
+      - --external-ip=${TURN_PUBLIC_IP:-127.0.0.1}
+      - --listening-ip=${TURN_LISTEN_IP:-0.0.0.0}
+      - --min-port=${TURN_MIN_PORT:-49160}
+      - --max-port=${TURN_MAX_PORT:-49200}
+      - --user=${TURN_USERNAME:-pixelstream_user}:${TURN_PASSWORD:-change-me}
+      - --no-tls
+      - --no-dtls
+    volumes:
+      - ./deployment/configs/turnserver.conf:/etc/coturn/turnserver.conf:ro
+    ports:
+      - "3478:3478/tcp"
+      - "3478:3478/udp"
+      - "49160-49200:49160-49200/tcp"
+      - "49160-49200:49160-49200/udp"
+    restart: unless-stopped
+
   sync-server:
     build:
       context: ./server
       dockerfile: Dockerfile
-    ports:
-      - "8888:8888"
     environment:
-      - PORT=8888
-    restart: always
+      PORT: 8890
+    ports:
+      - "8890:8890"
+    restart: unless-stopped
 
 networks:
   default:
