@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { getSupabase } from '../services/supabase.js';
-import { logger } from '../../src/backend/logging/logger.js';
+import { logger } from '../lib/logger.js';
 
 export interface AuthRequest extends Request {
   user?: {

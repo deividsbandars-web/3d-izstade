@@ -20,6 +20,7 @@ router.use(rateLimitMiddleware);
 router.post('/analytics/track', analyticsController.trackAnalytics);
 router.get('/pixel-streaming/status', expoController.getPixelStreamingRuntimeStatus);
 
+// Public read-only scene contract used by the Web3D client. Keep auth policy here only.
 router.get('/expo/scene', (req, res, next) => {
     console.log(`[ROUTE] Public Access: ${req.method} ${req.url}`);
     next();

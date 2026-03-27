@@ -30,7 +30,6 @@ app.use(express.json());
  * Hardened with X-Warpala-API-Key for production readiness.
  */
 app.get('/api/expo/cities', ue5AuthMiddleware, expoController.getCitiesList);
-app.get('/api/expo/scene', ue5AuthMiddleware, expoController.getExpoScene);
 
 // Other Routes
 app.use('/api', apiRoutes);
