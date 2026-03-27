@@ -8,11 +8,11 @@ import { useExpoPresence } from './hooks/useExpoPresence';
 import { useExpoSceneData } from './hooks/useExpoSceneData';
 import { usePixelStreamingStatus } from './hooks/usePixelStreamingStatus';
 import PixelStreamingViewer from './PixelStreamingViewer';
-import type { ExpoMode } from './state/expoRuntime';
+import { EXPO_DEBUG_DEFAULT, type ExpoMode } from './state/expoRuntime';
 
 export default function Expo3D() {
   const [mode, setMode] = useState<ExpoMode>('menu');
-  const [debug, setDebug] = useState(false);
+  const [debug, setDebug] = useState(EXPO_DEBUG_DEFAULT);
 
   const nav = useNavigate();
   const { data, isLoading } = useExpoSceneData();

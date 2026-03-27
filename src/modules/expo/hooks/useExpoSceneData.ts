@@ -1,11 +1,8 @@
 import { useEffect, useState } from 'react';
 import { expoService } from '../../../services/expoService';
-import { FALLBACK_COMPANIES, FALLBACK_SECTORS } from '../state/expoRuntime';
-
-interface ExpoSceneData {
-  sectors: any[];
-  companies: any[];
-}
+import { adaptBackendScenePayload, normalizeBooth, normalizeCompany, normalizeSector } from '../lib/sceneContract';
+import { buildDevFallbackScene, buildProductionSafeFallbackScene } from '../lib/sceneFallbacks';
+import type { ExpoSceneData } from '../types/scene';
 
 function getPublicExpoSceneEndpoint() {
   if (typeof window === 'undefined') {
@@ -13,51 +10,6 @@ function getPublicExpoSceneEndpoint() {
   }
 
   return `${window.location.origin}/api/expo/scene`;
-}
-
-function normalizeBoothRelation(value: any) {
-  if (Array.isArray(value)) {
-    return value[0] || null;
-  }
-
-  if (value && typeof value === 'object') {
-    return value;
-  }
-
-  return null;
-}
-
-function normalizeCompanies(companies: any[] = []) {
-  return companies.map((company) => ({
-    ...company,
-    sector_id: company.sector_id || company.sectorId || null,
-    booth: normalizeBoothRelation(company.booth ?? company.booths),
-  }));
-}
-
-function adaptBackendScenePayload(payload: any): ExpoSceneData {
-  const boothsByCompanyId = new Map<string, any>();
-
-  if (Array.isArray(payload?.booths)) {
-    payload.booths.forEach((booth: any) => {
-      const companyId = String(booth.companyId || booth.company_id || '');
-      if (companyId) {
-        boothsByCompanyId.set(companyId, booth);
-      }
-    });
-  }
-
-  const companies = Array.isArray(payload?.companies)
-    ? payload.companies.map((company: any) => ({
-        ...company,
-        sector_id: company.sector_id || company.sectorId || null,
-        booth: boothsByCompanyId.get(String(company.id)) || null,
-      }))
-    : [];
-
-  const sectors = Array.isArray(payload?.sectors) ? payload.sectors : [];
-
-  return { sectors, companies };
 }
 
 async function loadFromBackendContract(): Promise<ExpoSceneData> {
@@ -91,20 +43,28 @@ async function loadFromSupabaseService(): Promise<ExpoSceneData> {
   }
 
   return {
-    sectors,
-    companies: normalizeCompanies(companies),
-  };
-}
-
-function buildFallbackScene(): ExpoSceneData {
-  return {
-    sectors: FALLBACK_SECTORS,
-    companies: normalizeCompanies(FALLBACK_COMPANIES),
+    authPolicy: undefined,
+    cityInfo: null,
+    companies: Array.isArray(companies)
+      ? companies.map((company: any) => normalizeCompany(company, normalizeBooth(company?.booth ?? company?.booths, company)))
+      : [],
+    generatedAt: null,
+    releaseMode: 'sponsor-boulevard',
+    sceneVersion: 'expo-scene-supabase-fallback',
+    sectors: Array.isArray(sectors) ? sectors.map(normalizeSector).filter((sector) => sector.id.length > 0) : [],
   };
 }
 
 export function useExpoSceneData() {
-  const [data, setData] = useState<ExpoSceneData>({ sectors: [], companies: [] });
+  const [data, setData] = useState<ExpoSceneData>({
+    authPolicy: undefined,
+    cityInfo: null,
+    companies: [],
+    generatedAt: null,
+    releaseMode: 'sponsor-boulevard',
+    sceneVersion: 'expo-scene-backend-unavailable',
+    sectors: [],
+  });
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -119,7 +79,9 @@ export function useExpoSceneData() {
           }
           return;
         } catch (backendError) {
-          console.warn('Expo scene backend contract unavailable, falling back to direct Supabase client access.', backendError);
+          if (import.meta.env.DEV) {
+            console.warn('Expo scene backend contract unavailable, falling back to direct Supabase client access.', backendError);
+          }
         }
 
         try {
@@ -128,10 +90,19 @@ export function useExpoSceneData() {
             setData(supabaseScene);
           }
         } catch (supabaseError) {
-          console.error('Using fallback expo data due to scene loading error:', supabaseError);
-          if (isActive) {
-            setData(buildFallbackScene());
+          if (import.meta.env.DEV) {
+            console.error('Expo scene loading failed.', supabaseError);
           }
+          if (!isActive) {
+            return;
+          }
+
+          if (import.meta.env.DEV) {
+            setData(buildDevFallbackScene());
+            return;
+          }
+
+          setData(buildProductionSafeFallbackScene());
         }
       } finally {
         if (isActive) {

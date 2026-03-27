@@ -1,15 +1,36 @@
 export type ExpoMode = 'menu' | 'walk' | 'fly' | 'unreal';
-export const EXPO_CITY_QUALITY_TIER = 'balanced' as const;
+export type ExpoQualityPreset = 'performance' | 'balanced' | 'quality';
 
-export const EXPO_ASSET_URLS = [
-  '/models/free_london_kinnaird_house.glb',
-  '/models/free__atlanta_corperate_office_building.glb',
-  '/models/european_buildings_asset_pack_3.glb',
-  '/models/american_road.glb',
-  '/models/american_road_intersection.glb',
-  '/models/victorian_street_lamp.glb',
-  '/models/trees_in_the_park_anthropos.glb',
-] as const;
+export const EXPO_QUALITY_PRESETS = {
+  performance: {
+    enableFog: true,
+    enablePromenadeTexture: false,
+    enableSponsorBillboards: false,
+  },
+  balanced: {
+    enableFog: true,
+    enablePromenadeTexture: true,
+    enableSponsorBillboards: true,
+  },
+  quality: {
+    enableFog: true,
+    enablePromenadeTexture: true,
+    enableSponsorBillboards: true,
+  },
+} as const;
+
+export const EXPO_CITY_QUALITY_TIER: ExpoQualityPreset = 'balanced';
+export const EXPO_DEBUG_DEFAULT = false;
+export const EXPO_FEATURE_FLAGS = {
+  enableAnalytics: true,
+  enableLegacyCityFallback: false,
+  enableSceneGlobalsDebug: false,
+  enableSponsorBillboards: EXPO_QUALITY_PRESETS[EXPO_CITY_QUALITY_TIER].enableSponsorBillboards,
+  enablePromenadeTexture: EXPO_QUALITY_PRESETS[EXPO_CITY_QUALITY_TIER].enablePromenadeTexture,
+  enableFog: EXPO_QUALITY_PRESETS[EXPO_CITY_QUALITY_TIER].enableFog,
+} as const;
+
+export const EXPO_ASSET_URLS = [] as const;
 
 export const FALLBACK_SECTORS = [
   { id: '1', name: 'Construction', color_theme: '#3b82f6', map_position: { x: 0, y: 0, z: -100 } },
@@ -19,6 +40,64 @@ export const FALLBACK_SECTORS = [
 export const FALLBACK_COMPANIES = [
   { id: 'c1', name: 'BuildMaster SIA', sector_id: '1', website: 'https://warpala.com', booth: {} },
   { id: 'c2', name: 'TechCorp Global', sector_id: '2', website: 'https://warpala.com', booth: {} },
+];
+
+export const PRODUCTION_SAFE_SECTORS = [
+  { id: 'arrival-core', name: 'Arrival Sponsors', color_theme: '#2563eb', map_position: { x: 0, y: 0, z: -80 } },
+  { id: 'meetings', name: 'Meetings', color_theme: '#0f766e', map_position: { x: 0, y: 0, z: -180 } },
+];
+
+export const PRODUCTION_SAFE_COMPANIES = [
+  {
+    id: 'warpala-platform',
+    name: 'Warpala Platform',
+    slug: 'warpala-platform',
+    sector_id: 'arrival-core',
+    sponsorTier: 'hero',
+    boothType: 'hero',
+    priority: 100,
+    tagline: 'Platform overview, sponsor discovery, and live expo entry point.',
+    website: 'https://warpala.com',
+    bookingUrl: null,
+    ctaLabel: null,
+    logo_url: null,
+    posterUrl: null,
+    heroAssetUrl: null,
+    booth: {
+      id: 'booth-warpala-platform',
+      model_url: null,
+      video_url: null,
+      posterUrl: null,
+      heroAssetUrl: null,
+      ctaLabel: null,
+      boothType: 'hero',
+    },
+  },
+  {
+    id: 'sponsor-concierge',
+    name: 'Sponsor Concierge',
+    slug: 'sponsor-concierge',
+    sector_id: 'meetings',
+    sponsorTier: 'gold',
+    boothType: 'premium',
+    priority: 80,
+    tagline: 'Book sponsor meetings and navigate the boulevard without disruption.',
+    website: 'https://warpala.com/contact',
+    bookingUrl: 'https://warpala.com/contact',
+    ctaLabel: 'Book Meeting',
+    logo_url: null,
+    posterUrl: null,
+    heroAssetUrl: null,
+    booth: {
+      id: 'booth-sponsor-concierge',
+      model_url: null,
+      video_url: null,
+      posterUrl: null,
+      heroAssetUrl: null,
+      ctaLabel: 'Book Meeting',
+      boothType: 'premium',
+    },
+  },
 ];
 
 export const EXPO_MODE_COPY = {
