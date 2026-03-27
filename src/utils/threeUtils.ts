@@ -14,6 +14,16 @@ export interface NormalizeModelOptions {
 
 const ROAD_VERTICAL_ROTATION_TOLERANCE = 0.35;
 
+function shouldLogRoadNormalization() {
+  const runtime = globalThis as typeof globalThis & {
+    __ROAD_NORMALIZATION_DEBUG__?: boolean;
+    process?: { env?: { NODE_ENV?: string } };
+  };
+
+  const nodeEnv = runtime.process?.env?.NODE_ENV;
+  return runtime.__ROAD_NORMALIZATION_DEBUG__ === true || nodeEnv === 'test';
+}
+
 const normalizeAngle = (angle: number) => {
   const normalized = (angle + Math.PI) % (Math.PI * 2);
   return normalized < 0 ? normalized + Math.PI * 2 - Math.PI : normalized - Math.PI;
@@ -272,7 +282,7 @@ export const normalizeModel = (model: THREE.Object3D, options: number | Normaliz
     postNormalizeMinY: quantizeValue(postNormalizeBox.min.y),
     postNormalizeCenter: vectorToArray(postNormalizeCenter),
   };
-  if (assetType === 'road') {
+  if (assetType === 'road' && shouldLogRoadNormalization()) {
     console.log('[RoadNormalization]', model.name || 'Unnamed Road Asset', model.userData.normalization);
   }
   model.updateWorldMatrix(true, true);

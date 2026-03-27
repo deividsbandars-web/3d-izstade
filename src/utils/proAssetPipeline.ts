@@ -107,7 +107,6 @@ const FATAL_VALIDATION_ERRORS = new Set([
   "GEO_INVALID_BOUNDS",
   "GEO_ZERO_SIZE",
   "GEO_EXTREME_SCALE",
-  "PERF_HIGH_MESH_COUNT",
 ]);
 
 const ALLOWABLE_RESIDUAL_ISSUES = new Set<CityAssetResidualIssue>([
@@ -517,32 +516,45 @@ export function processAssets(models: THREE.Object3D[], names: string[]): Proces
     rejectedByReason,
   };
 
-  console.log("[CityAssetPipeline] Summary", summary);
+  if (shouldLogCityAssetPipeline()) {
+    console.log("[CityAssetPipeline] Summary", summary);
+  }
   const acceptedRoadModules = modules.filter((item) => item.category === "road");
   const rejectedRoadModules = rejected.filter((item) => item.category === "road");
-  console.log("[CityAssetPipeline][RoadPool]", {
-    acceptedRoadModules: acceptedRoadModules.length,
-    canonicalYawCandidate: acceptedRoadModules.filter((item) => item.transform.canonicalYawCandidate).length,
-    canonicalUpAxisVerified: acceptedRoadModules.filter((item) => item.transform.canonicalUpAxisVerified).length,
-    placementRoadFlattenPending: acceptedRoadModules.filter((item) => item.transform.placementRoadFlattenPending).length,
-    rejectedRoadModules: rejectedRoadModules.length,
-  });
-  if (rejectedRoadModules.length > 0) {
-    console.table(rejectedRoadModules.map((item) => ({
-      source: item.sourceName,
-      reasons: item.reasons.join(", "),
-      warnings: item.warnings.join(", "),
-    })));
-  }
-  if (rejected.length > 0) {
-    console.table(rejected.map((item) => ({
-      source: item.sourceName,
-      sourceKind: item.sourceKind,
-      category: item.category,
-      reasons: item.reasons.join(", "),
-      warnings: item.warnings.join(", "),
-    })));
+  if (shouldLogCityAssetPipeline()) {
+    console.log("[CityAssetPipeline][RoadPool]", {
+      acceptedRoadModules: acceptedRoadModules.length,
+      canonicalYawCandidate: acceptedRoadModules.filter((item) => item.transform.canonicalYawCandidate).length,
+      canonicalUpAxisVerified: acceptedRoadModules.filter((item) => item.transform.canonicalUpAxisVerified).length,
+      placementRoadFlattenPending: acceptedRoadModules.filter((item) => item.transform.placementRoadFlattenPending).length,
+      rejectedRoadModules: rejectedRoadModules.length,
+    });
+    if (rejectedRoadModules.length > 0) {
+      console.table(rejectedRoadModules.map((item) => ({
+        source: item.sourceName,
+        reasons: item.reasons.join(", "),
+        warnings: item.warnings.join(", "),
+      })));
+    }
+    if (rejected.length > 0) {
+      console.table(rejected.map((item) => ({
+        source: item.sourceName,
+        sourceKind: item.sourceKind,
+        category: item.category,
+        reasons: item.reasons.join(", "),
+        warnings: item.warnings.join(", "),
+      })));
+    }
   }
 
   return { modules, rejected, summary };
+}
+function shouldLogCityAssetPipeline() {
+  const runtime = globalThis as typeof globalThis & {
+    __CITY_ASSET_PIPELINE_DEBUG__?: boolean;
+    process?: { env?: { NODE_ENV?: string } };
+  };
+
+  const nodeEnv = runtime.process?.env?.NODE_ENV;
+  return runtime.__CITY_ASSET_PIPELINE_DEBUG__ === true || nodeEnv === "test";
 }

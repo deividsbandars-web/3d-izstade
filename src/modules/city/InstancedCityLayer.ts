@@ -43,7 +43,8 @@ export class InstancedCityLayer {
     index: number,
     position: THREE.Vector3,
     rotationY: number,
-    scaleVec: THREE.Vector3
+    scaleVec: THREE.Vector3,
+    localMatrix?: THREE.Matrix4
   ) {
     const matrix = new THREE.Matrix4();
     const quaternion = new THREE.Quaternion().setFromEuler(
@@ -51,6 +52,9 @@ export class InstancedCityLayer {
     );
 
     matrix.compose(position, quaternion, scaleVec);
+    if (localMatrix) {
+      matrix.multiply(localMatrix);
+    }
     instanced.setMatrixAt(index, matrix);
   }
 

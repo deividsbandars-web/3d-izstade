@@ -1,6 +1,5 @@
 import * as THREE from 'three';
-import { normalizeModel, type NormalizeModelOptions } from './threeUtils';
-import { isFiniteVector3 } from './threeUtils';
+import { isFiniteVector3, normalizeModel, type NormalizeModelOptions } from './threeUtils';
 
 interface ValidationOptions {
   autoFix?: boolean;
@@ -37,10 +36,16 @@ export interface ModelValidationReport {
   };
 }
 
-/**
- * Smart Model Validator & Optimizer
- * Analyzes GLTF models for production readiness, performance bottlenecks, and geometric alignment.
- */
+function shouldLogModelValidation() {
+  const runtime = globalThis as typeof globalThis & {
+    __CITY_VALIDATION_DEBUG__?: boolean;
+    process?: { env?: { NODE_ENV?: string } };
+  };
+
+  const nodeEnv = runtime.process?.env?.NODE_ENV;
+  return runtime.__CITY_VALIDATION_DEBUG__ === true || nodeEnv === 'test';
+}
+
 export const validateModel = (scene: THREE.Object3D, options: ValidationOptions = {}) => {
   const {
     autoFix = false,
@@ -69,7 +74,7 @@ export const validateModel = (scene: THREE.Object3D, options: ValidationOptions 
 
     scene.traverse((child) => {
       if ((child as THREE.Mesh).isMesh) {
-        meshCount++;
+        meshCount += 1;
         const mesh = child as THREE.Mesh;
         const geometry = mesh.geometry;
         if (geometry.attributes.position) {
@@ -80,10 +85,10 @@ export const validateModel = (scene: THREE.Object3D, options: ValidationOptions 
         if (material) {
           const matArray = Array.isArray(material) ? material : [material];
           materialCount += matArray.length;
-          matArray.forEach((m) => {
-            Object.keys(m).forEach((key) => {
-              if (m[key] && (m[key] as THREE.Texture).isTexture) {
-                textures.add(m[key]);
+          matArray.forEach((entry) => {
+            Object.keys(entry).forEach((key) => {
+              if (entry[key] && (entry[key] as THREE.Texture).isTexture) {
+                textures.add(entry[key]);
               }
             });
           });
@@ -148,7 +153,7 @@ export const validateModel = (scene: THREE.Object3D, options: ValidationOptions 
     }
 
     if (meshCount > 64) {
-      markFatal('PERF_HIGH_MESH_COUNT');
+      report.warnings.push('PERF_HIGH_MESH_COUNT');
     }
 
     if (meshCount === 0) {
@@ -189,29 +194,28 @@ export const validateModel = (scene: THREE.Object3D, options: ValidationOptions 
 
   let results = inspectScene();
 
-  console.group(`[Smart Validator] ${scene.name || 'Unnamed Asset'}`);
-  if (results.warnings.length > 0) {
-    results.warnings.forEach((warning) => console.warn(`⚠️ ${warning}`));
-  }
-  if (results.errors.length > 0) {
-    results.errors.forEach((error) => console.error(`❌ ${error}`));
-  }
+  const logValidationReport = (phase = 'initial') => {
+    if (!shouldLogModelValidation()) {
+      return;
+    }
 
-  if (autoFix && !results.isValid) {
-    console.log('🔧 autoFix is TRUE. Normalizing model...');
-    normalizeModel(scene, { targetSize, ...normalizeOptions });
-    results = inspectScene();
+    console.group(`[Smart Validator][${phase}] ${scene.name || 'Unnamed Asset'}`);
     if (results.warnings.length > 0) {
-      results.warnings.forEach((warning) => console.warn(`⚠️ POST_FIX ${warning}`));
+      results.warnings.forEach((warning) => console.warn(warning));
     }
     if (results.errors.length > 0) {
-      results.errors.forEach((error) => console.error(`❌ POST_FIX ${error}`));
+      results.errors.forEach((error) => console.error(error));
     }
-  } else if (!results.isValid) {
-    console.log('💡 Suggestion: Call validateModel(scene, { autoFix: true }) to fix geometric alignment.');
-  }
+    console.groupEnd();
+  };
 
-  console.groupEnd();
+  logValidationReport();
+
+  if (autoFix && !results.isValid) {
+    normalizeModel(scene, { targetSize, ...normalizeOptions });
+    results = inspectScene();
+    logValidationReport('post-fix');
+  }
 
   return results;
 };

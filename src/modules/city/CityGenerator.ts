@@ -77,8 +77,67 @@ type VisibleCoreRuntimeSummary = {
 
 const CITY_PLACEMENT_DEBUG = {
   disableInstancingForRoads: true,
-  disableInstancingForNature: true,
-  logPlacedInstances: true,
+  disableInstancingForNature: false,
+  logPlacedInstances: false,
+};
+
+function logCityGeneratorDebug(...args: unknown[]) {
+  const runtime = globalThis as typeof globalThis & {
+    __CITY_GENERATOR_DEBUG__?: boolean;
+    process?: { env?: { NODE_ENV?: string } };
+  };
+
+  const nodeEnv = runtime.process?.env?.NODE_ENV;
+  if (runtime.__CITY_GENERATOR_DEBUG__ === true || nodeEnv === "development" || nodeEnv === "test") {
+    console.log(...args);
+  }
+}
+
+function compareModuleBudgetCost(left: ProcessedAsset, right: ProcessedAsset) {
+  const leftRiskPenalty = getModulePlacementRiskPenalty(left);
+  const rightRiskPenalty = getModulePlacementRiskPenalty(right);
+
+  if (leftRiskPenalty !== rightRiskPenalty) {
+    return leftRiskPenalty - rightRiskPenalty;
+  }
+
+  const leftDelta = getModuleBudgetDelta(left);
+  const rightDelta = getModuleBudgetDelta(right);
+
+  if (leftDelta.vertices !== rightDelta.vertices) {
+    return leftDelta.vertices - rightDelta.vertices;
+  }
+
+  if (leftDelta.meshes !== rightDelta.meshes) {
+    return leftDelta.meshes - rightDelta.meshes;
+  }
+
+  return leftDelta.materials - rightDelta.materials;
+}
+
+function getModulePlacementRiskPenalty(module: ProcessedAsset) {
+  const warnings = module.validation?.warnings ?? [];
+  let penalty = 0;
+
+  if (warnings.includes("PERF_HIGH_MESH_COUNT")) {
+    penalty += 1000;
+  }
+
+  if (warnings.includes("PERF_HIGH_MATERIAL_COUNT")) {
+    penalty += 250;
+  }
+
+  if (warnings.includes("GEO_UNBAKED_ROTATION")) {
+    penalty += 100;
+  }
+
+  return penalty;
+}
+
+type StructuralPlacementCandidate = {
+  module: ProcessedAsset;
+  rotation: number;
+  targetType: "building" | "landmark";
 };
 
 export class CityGenerator {
@@ -87,6 +146,7 @@ export class CityGenerator {
   zoneSystem: ZoneSystem | null;
   occupied: Set<string> = new Set();
   activeInstancedGroupIds: Set<string> = new Set();
+  placedBySourceName: Record<string, number> = {};
   roadPoolDiagnosticsLogged = false;
   performanceBudget: CityPerformanceBudget = getCityPerformanceBudget('balanced');
   performanceUsage: CityPerformanceUsage = createInitialCityPerformanceUsage();
@@ -122,9 +182,12 @@ export class CityGenerator {
     this.placementSummary.skipped += 1;
     this.placementSummary.skippedByReason[reason] = (this.placementSummary.skippedByReason[reason] || 0) + 1;
   }
-  private markPlaced(type: AssetType) {
+  private markPlaced(type: AssetType, sourceName?: string) {
     this.placementSummary.placed += 1;
     this.placementSummary.placedByCategory[type] += 1;
+    if (sourceName) {
+      this.placedBySourceName[sourceName] = (this.placedBySourceName[sourceName] || 0) + 1;
+    }
   }
   private markBudgetSkip(reason: string) {
     this.markSkipped(reason);
@@ -143,7 +206,7 @@ export class CityGenerator {
     }
 
     const eligibleRoadModules = filtered.filter((module) =>
-      this.canUseVerifiedCanonicalYaw(module) || this.needsPlacementRoadFlatten(module)
+      this.canUseVerifiedCanonicalYaw(module)
     );
 
     if (!this.roadPoolDiagnosticsLogged) {
@@ -156,7 +219,7 @@ export class CityGenerator {
         finalEligibleRoadModules: eligibleRoadModules.length,
       };
       this.scene.userData.cityPlacementRoadPool = roadPoolSummary;
-      console.log("[CityPlacement][RoadPool]", roadPoolSummary);
+      logCityGeneratorDebug("[CityPlacement][RoadPool]", roadPoolSummary);
 
       excludedRoadModules.forEach((module) => {
         const normalization = module.object.userData?.normalization || null;
@@ -187,7 +250,7 @@ export class CityGenerator {
   private getVisibleFocusCell(spacing: number) {
     return {
       x: 0,
-      z: Math.round(-24 / spacing),
+      z: Math.round(-12 / spacing),
     };
   }
 
@@ -203,7 +266,7 @@ export class CityGenerator {
         isRoad: this.isRoadZone(focus.x, focus.z),
         visibleCoreRole: "road",
         preferredType: "road",
-        preferredSourceName: "american_road.glb",
+        preferredSourceName: "american_road_intersection.glb",
       },
       {
         x: focus.x,
@@ -234,6 +297,18 @@ export class CityGenerator {
 
   private isVisibleCoreSatisfied() {
     return this.visibleCoreSummary.road >= 3 && this.visibleCoreSummary.structure >= 1;
+  }
+
+  private shouldReserveNearFieldFramingSlot() {
+    return this.isVisibleCoreSatisfied() && this.placementSummary.placedByCategory.nature < 1;
+  }
+
+  private isNearFieldStreetDecorPocket(x: number, z: number, spacing: number) {
+    const focus = this.getVisibleFocusCell(spacing);
+    const dx = Math.abs(x - focus.x);
+    const dz = Math.abs(z - focus.z);
+
+    return !this.isRoadZone(x, z) && x < focus.x && dx <= 2 && dz <= 1;
   }
 
   private createVisibleCoreRuntimeSummary(cells: PlacementCellCandidate[]): VisibleCoreRuntimeSummary {
@@ -315,20 +390,37 @@ export class CityGenerator {
     const dx = Math.abs(cell.x - focus.x);
     const dz = Math.abs(cell.z - focus.z);
     const distance = dx + dz;
+    const zOffset = cell.z - focus.z;
+    const isStreetDecorPocket = this.isNearFieldStreetDecorPocket(cell.x, cell.z, spacing);
     const isFrontageCell = !cell.isRoad && dx <= 2 && dz <= 2;
-    const isPrimaryRoadCorridor = cell.isRoad && cell.x === focus.x && cell.z <= focus.z + 2;
-    const isSecondaryRoadCorridor = cell.isRoad && dx <= 4 && cell.z <= focus.z + 2;
-    const isForwardCell = cell.z <= focus.z + 2;
+    const isPrimaryRoadCorridor = cell.isRoad && cell.x === focus.x && zOffset >= -1 && zOffset <= 1;
+    const isSecondaryRoadCorridor = cell.isRoad && dx <= 4 && zOffset >= -2 && zOffset <= 2;
+    const isForwardCell = zOffset >= -2 && zOffset <= 2;
+    const reserveNearFieldFramingSlot = this.shouldReserveNearFieldFramingSlot();
 
-    const laneScore = isPrimaryRoadCorridor
-      ? 0
-      : isFrontageCell
-        ? 1
-        : isSecondaryRoadCorridor
-          ? 2
-          : isForwardCell
-            ? 3
-            : 4;
+    const laneScore = reserveNearFieldFramingSlot
+      ? isStreetDecorPocket
+        ? 0
+        : isFrontageCell
+          ? 1
+          : isPrimaryRoadCorridor
+            ? 2
+            : isSecondaryRoadCorridor
+              ? 3
+              : isForwardCell
+                ? 4
+                : 5
+      : isPrimaryRoadCorridor
+        ? 0
+        : isStreetDecorPocket
+          ? 1
+          : isFrontageCell
+            ? 2
+            : isSecondaryRoadCorridor
+              ? 3
+              : isForwardCell
+                ? 4
+                : 5;
 
     return {
       laneScore,
@@ -394,7 +486,18 @@ export class CityGenerator {
     const focus = this.getVisibleFocusCell(spacing);
     const dx = Math.abs(x - focus.x);
     const dz = Math.abs(z - focus.z);
+    const isStreetDecorPocket = this.isNearFieldStreetDecorPocket(x, z, spacing);
     const isFrontageCell = dx <= 2 && dz <= 2;
+
+    if (this.shouldReserveNearFieldFramingSlot() && isStreetDecorPocket) {
+      if (this.hasAcceptedModules("nature")) return "nature";
+      if (this.hasAcceptedModules("building")) return "building";
+      if (this.hasAcceptedModules("landmark")) return "landmark";
+    }
+
+    if (this.isVisibleCoreSatisfied() && isStreetDecorPocket && this.hasAcceptedModules("nature")) {
+      return "nature";
+    }
 
     if (isFrontageCell) {
       if (this.hasAcceptedModules("building")) return "building";
@@ -450,21 +553,25 @@ export class CityGenerator {
     return this.getModulesByType(type)
       .slice()
       .sort((left, right) => {
+        const leftPlacements = this.getSourcePlacementCount(left.sourceName);
+        const rightPlacements = this.getSourcePlacementCount(right.sourceName);
+        if (leftPlacements !== rightPlacements) {
+          return leftPlacements - rightPlacements;
+        }
+
+        const leftRiskPenalty = getModulePlacementRiskPenalty(left);
+        const rightRiskPenalty = getModulePlacementRiskPenalty(right);
+        if (leftRiskPenalty !== rightRiskPenalty) {
+          return leftRiskPenalty - rightRiskPenalty;
+        }
+
         const leftFootprint = left.footprint.width * left.footprint.depth;
         const rightFootprint = right.footprint.width * right.footprint.depth;
         if (leftFootprint !== rightFootprint) {
           return leftFootprint - rightFootprint;
         }
 
-        if (left.budget.vertices !== right.budget.vertices) {
-          return left.budget.vertices - right.budget.vertices;
-        }
-
-        if (left.budget.meshes !== right.budget.meshes) {
-          return left.budget.meshes - right.budget.meshes;
-        }
-
-        return left.budget.materials - right.budget.materials;
+        return compareModuleBudgetCost(left, right);
       });
   }
 
@@ -495,14 +602,99 @@ export class CityGenerator {
 
   private getVisibleCoreStructurePresentationScore(cell: { x: number; z: number }, spacing: number) {
     const focus = this.getVisibleFocusCell(spacing);
-    const preferredStructureZ = focus.z - 1;
+    const absOffsetX = Math.abs(cell.x - focus.x);
+    const preferredStructureZ = focus.z;
+    const preferredStreetFrameOffset = 2;
 
     return {
-      absX: Math.abs(cell.x - focus.x),
+      streetFrameDistance: Math.abs(absOffsetX - preferredStreetFrameOffset),
+      roadEdgePenalty: absOffsetX === 1 ? 1 : 0,
       zDistance: Math.abs(cell.z - preferredStructureZ),
       sideBias: cell.x >= focus.x ? 0 : 1,
+      absX: absOffsetX,
       z: cell.z,
     };
+  }
+
+  private getPlacedStructuralCount() {
+    return this.placementSummary.placedByCategory.building + this.placementSummary.placedByCategory.landmark;
+  }
+
+  private getSourcePlacementCount(sourceName: string) {
+    return this.placedBySourceName[sourceName] || 0;
+  }
+
+  private getStructuralPlacementFloor() {
+    return Math.max(3, Math.min(6, Math.floor(this.performanceBudget.maxCategoryCounts.building / 3)));
+  }
+
+  private findCompatibleStructuralPlacement(x: number, z: number, spacing: number): StructuralPlacementCandidate | null {
+    const structuralPlans = [
+      ...this.getStructuralModulesByType("building").map((module) => ({ targetType: "building" as const, module })),
+      ...this.getStructuralModulesByType("landmark").map((module) => ({ targetType: "landmark" as const, module })),
+    ];
+
+    for (const plan of structuralPlans) {
+      const rotation = this.findVisibleCoreStructureRotation(plan.module, x, z, spacing);
+      if (rotation !== null) {
+        return {
+          module: plan.module,
+          rotation,
+          targetType: plan.targetType,
+        };
+      }
+    }
+
+    return null;
+  }
+
+  private shouldPrioritizeStructuralPlacement(cell: PlacementCellCandidate, spacing: number) {
+    if (cell.isRoad) {
+      return false;
+    }
+
+    if (this.getPlacedStructuralCount() >= this.getStructuralPlacementFloor()) {
+      return false;
+    }
+
+    const focus = this.getVisibleFocusCell(spacing);
+    const dx = Math.abs(cell.x - focus.x);
+    const dz = Math.abs(cell.z - focus.z);
+
+    return dx <= 4 && dz <= 5;
+  }
+
+  private executeStructuralDensityPass(
+    cells: PlacementCellCandidate[],
+    spacing: number,
+    instanceGroups: Record<string, any[]>
+  ) {
+    const targetStructuralPlacements = this.getStructuralPlacementFloor();
+
+    for (const cell of cells) {
+      if (this.getPlacedStructuralCount() >= targetStructuralPlacements) {
+        return;
+      }
+
+      if (this.isOccupied(cell.x, cell.z) || !this.shouldPrioritizeStructuralPlacement(cell, spacing)) {
+        continue;
+      }
+
+      const structuralPlacement = this.findCompatibleStructuralPlacement(cell.x, cell.z, spacing);
+      if (!structuralPlacement) {
+        continue;
+      }
+
+      const placementResult = this.tryPlaceCell(cell, spacing, instanceGroups, {
+        targetTypeOverride: structuralPlacement.targetType,
+        moduleOverride: structuralPlacement.module,
+        rotationOverride: structuralPlacement.rotation,
+      });
+
+      if (!placementResult.placed && placementResult.reason?.startsWith('BUDGET_')) {
+        return;
+      }
+    }
   }
 
   private findVisibleCoreStructureRotation(module: ProcessedAsset, x: number, z: number, spacing: number) {
@@ -575,8 +767,12 @@ export class CityGenerator {
           const leftScore = this.getVisibleCoreStructurePresentationScore(left, spacing);
           const rightScore = this.getVisibleCoreStructurePresentationScore(right, spacing);
 
-          if (leftScore.absX !== rightScore.absX) {
-            return leftScore.absX - rightScore.absX;
+          if (leftScore.streetFrameDistance !== rightScore.streetFrameDistance) {
+            return leftScore.streetFrameDistance - rightScore.streetFrameDistance;
+          }
+
+          if (leftScore.roadEdgePenalty !== rightScore.roadEdgePenalty) {
+            return leftScore.roadEdgePenalty - rightScore.roadEdgePenalty;
           }
 
           if (leftScore.zDistance !== rightScore.zDistance) {
@@ -585,6 +781,10 @@ export class CityGenerator {
 
           if (leftScore.sideBias !== rightScore.sideBias) {
             return leftScore.sideBias - rightScore.sideBias;
+          }
+
+          if (leftScore.absX !== rightScore.absX) {
+            return leftScore.absX - rightScore.absX;
           }
 
           return leftScore.z - rightScore.z;
@@ -698,8 +898,16 @@ export class CityGenerator {
     return runtimeSummary;
   }
 
-  private pickModuleForCell(type: AssetType, x: number, z: number, cell?: PlacementCellCandidate): ProcessedAsset | undefined {
-    const filtered = this.getModulesByType(type);
+  private pickModuleForCell(
+    type: AssetType,
+    x: number,
+    z: number,
+    spacing: number,
+    cell?: PlacementCellCandidate
+  ): ProcessedAsset | undefined {
+    const filtered = type === "building" || type === "landmark"
+      ? this.getStructuralModulesByType(type)
+      : this.getModulesByType(type);
     if (filtered.length === 0) return undefined;
 
     const prioritized = filtered.slice().sort((left, right) => {
@@ -712,8 +920,9 @@ export class CityGenerator {
         }
       }
 
-      if (type === "road") {
-        const preferIntersection = x % 4 === 0 && z % 4 === 0;
+      if (type === "road" && !preferredSourceName) {
+        const focus = this.getVisibleFocusCell(spacing);
+        const preferIntersection = x === focus.x && z === focus.z;
         const leftIntersection = left.sourceName.toLowerCase().includes("intersection") ? 1 : 0;
         const rightIntersection = right.sourceName.toLowerCase().includes("intersection") ? 1 : 0;
 
@@ -722,17 +931,61 @@ export class CityGenerator {
         }
       }
 
-      return 0;
-    });
+      if (type === "nature") {
+        const nearFieldStreetDecor = this.isNearFieldStreetDecorPocket(x, z, spacing);
+        const scoreNatureModule = (module: ProcessedAsset) => {
+          const name = module.sourceName.toLowerCase();
+          const lampScore = /(lamp|light|pole)/.test(name) ? 1 : 0;
+          const treeScore = /(tree|park|forest|oak|pine)/.test(name) ? 1 : 0;
+          const flatPenalty = /(grass|bush|shrub|flower|ground)/.test(name) ? 1 : 0;
+          return { flatPenalty, lampScore, treeScore };
+        };
 
-    const startIndex = Math.floor(this.hashCell(x, z, 2) * prioritized.length);
+        const leftScore = scoreNatureModule(left);
+        const rightScore = scoreNatureModule(right);
 
-    for (let offset = 0; offset < prioritized.length; offset++) {
-      const candidate = prioritized[(startIndex + offset) % prioritized.length];
-      return candidate;
+        if (nearFieldStreetDecor) {
+          if (leftScore.lampScore !== rightScore.lampScore) {
+            return rightScore.lampScore - leftScore.lampScore;
+          }
+
+          if (leftScore.treeScore !== rightScore.treeScore) {
+            return rightScore.treeScore - leftScore.treeScore;
+          }
+
+          if (leftScore.flatPenalty !== rightScore.flatPenalty) {
+            return leftScore.flatPenalty - rightScore.flatPenalty;
+          }
+        } else {
+          if (leftScore.treeScore !== rightScore.treeScore) {
+            return rightScore.treeScore - leftScore.treeScore;
+          }
+
+          if (leftScore.lampScore !== rightScore.lampScore) {
+            return leftScore.lampScore - rightScore.lampScore;
+          }
+
+          if (leftScore.flatPenalty !== rightScore.flatPenalty) {
+            return leftScore.flatPenalty - rightScore.flatPenalty;
+          }
+        }
+      }
+
+        return compareModuleBudgetCost(left, right);
+      });
+
+    if (type === "building" || type === "landmark") {
+      const topCandidates = prioritized.slice(0, Math.min(3, prioritized.length));
+      const leastPlacedCount = Math.min(...topCandidates.map((candidate) => this.getSourcePlacementCount(candidate.sourceName)));
+      const diversifiedCandidates = topCandidates.filter((candidate) => (
+        this.getSourcePlacementCount(candidate.sourceName) === leastPlacedCount
+      ));
+      const seed = type === "building" ? 11 : 13;
+      const index = Math.floor(this.hashCell(x, z, seed) * diversifiedCandidates.length);
+      return diversifiedCandidates[index] ?? diversifiedCandidates[0];
     }
 
-    return undefined;
+    return prioritized[0];
   }
 
   private tryPlaceCell(
@@ -743,7 +996,7 @@ export class CityGenerator {
   ) {
     const { x, z, isRoad } = cell;
     const targetType = options?.targetTypeOverride || this.pickTargetType(cell, spacing);
-    const obj = options?.moduleOverride || this.pickModuleForCell(targetType, x, z, cell);
+    const obj = options?.moduleOverride || this.pickModuleForCell(targetType, x, z, spacing, cell);
 
     if (!obj) {
       const reason = `NO_MODULE_${targetType.toUpperCase()}`;
@@ -801,11 +1054,11 @@ export class CityGenerator {
 
       this.logPlacement(obj, placement.position, placement.rotationEuler, placement.scaleVec);
       this.markOccupiedRange(reservedRange);
-      this.markPlaced(targetType);
+      this.markPlaced(targetType, obj.sourceName);
       if (options?.recordVisibleCore) {
         this.recordVisibleCorePlacement(cell, targetType);
       }
-      this.commitBudgetUsage(obj, requiresNewInstancedGroup);
+      this.commitBudgetUsage(obj, requiresNewInstancedGroup, true);
 
       return { placed: true as const, targetType, sourceName: obj.sourceName };
     }
@@ -828,11 +1081,11 @@ export class CityGenerator {
     this.scene.add(clone);
     this.logPlacement(obj, placement.position, placement.rotationEuler, placement.scaleVec, clone, placementRoadNormalization);
     this.markOccupiedRange(reservedRange);
-    this.markPlaced(targetType);
+    this.markPlaced(targetType, obj.sourceName);
     if (options?.recordVisibleCore) {
       this.recordVisibleCorePlacement(cell, targetType);
     }
-    this.commitBudgetUsage(obj, false);
+    this.commitBudgetUsage(obj, false, false);
 
     if (targetType === "booth" && this.zoneSystem) {
       this.zoneSystem.addZone({
@@ -856,6 +1109,7 @@ export class CityGenerator {
   private shouldUseInstancing(module: ProcessedAsset) {
     if (module.category === "road" && CITY_PLACEMENT_DEBUG.disableInstancingForRoads) return false;
     if (module.category === "nature" && CITY_PLACEMENT_DEBUG.disableInstancingForNature) return false;
+    if (module.category === "road" && this.needsPlacementRoadFlatten(module)) return false;
     return module.category === "building" || module.category === "road" || module.category === "nature";
   }
 
@@ -1046,7 +1300,7 @@ export class CityGenerator {
       }
     }
 
-    console.log("[CityPlacement][Instance]", payload);
+    logCityGeneratorDebug("[CityPlacement][Instance]", payload);
   }
 
   private getPlacementDimensions(module: ProcessedAsset, rotation: number) {
@@ -1064,9 +1318,10 @@ export class CityGenerator {
 
     const maxFootprint = Math.max(module.footprint.width, module.footprint.depth);
     if (module.category === "landmark") return 2;
-    if (module.category === "building" && maxFootprint > spacing * 1.5) return 2;
+    if (module.category === "building" && maxFootprint > spacing * 1.75) return 2;
+    if (module.category === "building" && maxFootprint <= spacing * 1.25) return 0;
     if (module.category === "building") return 1;
-    if (module.category === "booth") return 1;
+    if (module.category === "booth") return 0;
     return 0;
   }
 
@@ -1139,20 +1394,14 @@ export class CityGenerator {
 
     return structuralModules
       .slice()
-      .sort((a, b) => {
-        if (a.budget.vertices !== b.budget.vertices) {
-          return a.budget.vertices - b.budget.vertices;
-        }
-        if (a.budget.meshes !== b.budget.meshes) {
-          return a.budget.meshes - b.budget.meshes;
-        }
-        return a.budget.materials - b.budget.materials;
-      })[0];
+      .sort((a, b) => compareModuleBudgetCost(a, b))[0];
   }
 
   private projectBudgetState(module: ProcessedAsset, requiresNewInstancedGroup: boolean, reservedStructuralModule?: ProcessedAsset | null) {
     const placedByCategory = { ...this.performanceUsage.placedByCategory };
-    const moduleDelta = getModuleBudgetDelta(module);
+    const moduleDelta = getModuleBudgetDelta(module, {
+      reuseGeometry: this.shouldUseInstancing(module) && !requiresNewInstancedGroup,
+    });
     let projectedPlacedModules = this.performanceUsage.placedModules + 1;
     let projectedInstancedGroups = this.performanceUsage.instancedGroups + (requiresNewInstancedGroup ? 1 : 0);
     let projectedVertices = this.performanceUsage.vertices + moduleDelta.vertices;
@@ -1162,16 +1411,23 @@ export class CityGenerator {
     placedByCategory[module.category] += 1;
 
     if (reservedStructuralModule) {
-      const reserveDelta = getModuleBudgetDelta(reservedStructuralModule);
+      const reserveReusesPendingInstancedGroup =
+        reservedStructuralModule.id === module.id &&
+        this.shouldUseInstancing(module) &&
+        requiresNewInstancedGroup;
+      const reserveNeedsInstancedGroup =
+        this.shouldUseInstancing(reservedStructuralModule) &&
+        !this.activeInstancedGroupIds.has(reservedStructuralModule.id) &&
+        !reserveReusesPendingInstancedGroup;
+      const reserveDelta = getModuleBudgetDelta(reservedStructuralModule, {
+        reuseGeometry: this.shouldUseInstancing(reservedStructuralModule) && !reserveNeedsInstancedGroup,
+      });
       projectedPlacedModules += 1;
       projectedVertices += reserveDelta.vertices;
       projectedMeshes += reserveDelta.meshes;
       projectedMaterials += reserveDelta.materials;
       placedByCategory[reservedStructuralModule.category] += 1;
 
-      const reserveNeedsInstancedGroup =
-        this.shouldUseInstancing(reservedStructuralModule) &&
-        !this.activeInstancedGroupIds.has(reservedStructuralModule.id);
       if (reserveNeedsInstancedGroup) {
         projectedInstancedGroups += 1;
       }
@@ -1232,30 +1488,30 @@ export class CityGenerator {
 
     if (reservedStructuralModule) {
       if (projected.projectedPlacedModules > this.performanceBudget.maxPlacedModules) {
-        return { accepted: false, reason: "BUDGET_RESERVE_STRUCTURAL" };
+        return { accepted: true as const, reservedStructuralDeferred: true };
       }
 
       for (const [category, count] of Object.entries(projected.placedByCategory) as Array<[AssetType, number]>) {
         const categoryLimit = this.performanceBudget.maxCategoryCounts[category];
         if (count > categoryLimit) {
-          return { accepted: false, reason: "BUDGET_RESERVE_STRUCTURAL" };
+          return { accepted: true as const, reservedStructuralDeferred: true };
         }
       }
 
       if (projected.projectedVertices > this.performanceBudget.maxVertices) {
-        return { accepted: false, reason: "BUDGET_RESERVE_STRUCTURAL" };
+        return { accepted: true as const, reservedStructuralDeferred: true };
       }
 
       if (projected.projectedMeshes > this.performanceBudget.maxMeshes) {
-        return { accepted: false, reason: "BUDGET_RESERVE_STRUCTURAL" };
+        return { accepted: true as const, reservedStructuralDeferred: true };
       }
 
       if (projected.projectedMaterials > this.performanceBudget.maxMaterials) {
-        return { accepted: false, reason: "BUDGET_RESERVE_STRUCTURAL" };
+        return { accepted: true as const, reservedStructuralDeferred: true };
       }
 
       if (projected.projectedInstancedGroups > this.performanceBudget.maxInstancedGroups) {
-        return { accepted: false, reason: "BUDGET_RESERVE_STRUCTURAL" };
+        return { accepted: true as const, reservedStructuralDeferred: true };
       }
 
       return { accepted: true as const, reservedStructuralCategory: reservedStructuralModule.category };
@@ -1264,8 +1520,10 @@ export class CityGenerator {
     return { accepted: true as const };
   }
 
-  private commitBudgetUsage(module: ProcessedAsset, createdNewInstancedGroup: boolean) {
-    const delta = getModuleBudgetDelta(module);
+  private commitBudgetUsage(module: ProcessedAsset, createdNewInstancedGroup: boolean, usedInstancing: boolean) {
+    const delta = getModuleBudgetDelta(module, {
+      reuseGeometry: usedInstancing && !createdNewInstancedGroup,
+    });
     this.performanceUsage.placedModules += 1;
     this.performanceUsage.vertices += delta.vertices;
     this.performanceUsage.meshes += delta.meshes;
@@ -1330,10 +1588,12 @@ export class CityGenerator {
     const visibleCoreRuntime = this.executeVisibleCorePass(spacing, instanceGroups);
 
     const placementCells = this.buildPlacementCells(effectiveGridSize, spacing);
+    this.executeStructuralDensityPass(placementCells, spacing, instanceGroups);
 
     for (const cell of placementCells) {
       const { x, z } = cell;
       if (this.isOccupied(x, z)) continue;
+
       this.tryPlaceCell(cell, spacing, instanceGroups);
     }
 
@@ -1342,15 +1602,21 @@ export class CityGenerator {
     Object.entries(instanceGroups).forEach(([key, items]) => {
       const baseObj = this.objects.find(o => o.id === key);
       if (!baseObj) return;
+      baseObj.object.updateWorldMatrix(true, true);
+      const baseRootInverseMatrix = baseObj.object.matrixWorld.clone().invert();
 
-      const meshes: THREE.Mesh[] = [];
+      const meshes: Array<{ mesh: THREE.Mesh; localMatrix: THREE.Matrix4 }> = [];
       baseObj.object.traverse((child: any) => {
-        if (child.isMesh) meshes.push(child);
+        if (child.isMesh) {
+          child.updateWorldMatrix(true, false);
+          const localMatrix = child.matrixWorld.clone().premultiply(baseRootInverseMatrix);
+          meshes.push({ mesh: child, localMatrix });
+        }
       });
 
       if (meshes.length === 0) return;
 
-      meshes.forEach((mesh, meshIndex) => {
+      meshes.forEach(({ mesh, localMatrix }, meshIndex) => {
         const instanced = instancer.createInstanceGroup(`${key}_${meshIndex}`, mesh, items.length);
 
         if (baseObj.category === "building" || baseObj.category === "nature" || baseObj.category === "road") {
@@ -1382,7 +1648,8 @@ export class CityGenerator {
             i,
             new THREE.Vector3(...item.position),
             item.rotation,
-            item.scaleVec
+            item.scaleVec,
+            localMatrix
           );
         });
 
@@ -1394,10 +1661,10 @@ export class CityGenerator {
     this.scene.userData.cityVisibleCore = visibleCoreRuntime;
     this.scene.userData.cityPlacement = this.placementSummary;
     this.scene.userData.cityPerformanceBudget = this.buildPerformanceSummary(gridSize, effectiveGridSize, spacing);
-    console.log("[CityPlacement][VisibleCore]", visibleCoreRuntime);
-    console.log("[CityPlacement] Summary", this.placementSummary);
-    console.log("[CityPerformanceBudget] Summary", this.scene.userData.cityPerformanceBudget);
-    console.log(`[Instancing] Compressed ${Object.keys(instanceGroups).length} heavy asset groups into multi-mesh draw calls.`);
+    logCityGeneratorDebug("[CityPlacement][VisibleCore]", visibleCoreRuntime);
+    logCityGeneratorDebug("[CityPlacement] Summary", this.placementSummary);
+    logCityGeneratorDebug("[CityPerformanceBudget] Summary", this.scene.userData.cityPerformanceBudget);
+    logCityGeneratorDebug(`[Instancing] Compressed ${Object.keys(instanceGroups).length} heavy asset groups into multi-mesh draw calls.`);
     return this.placementSummary;
   }
 }

@@ -15,8 +15,17 @@ export class ZoneSystem {
     this.zones.push(zone);
   }
 
+  removeZonesByPrefix(prefix: string) {
+    this.zones = this.zones.filter((zone) => !String(zone.id).startsWith(prefix));
+  }
+
+  replaceZonesByPrefix(prefix: string, nextZones: Zone[]) {
+    this.removeZonesByPrefix(prefix);
+    nextZones.forEach((zone) => this.addZone(zone));
+  }
+
   getZones() {
-    return this.zones;
+    return [...this.zones];
   }
 
   getActiveZone(playerPos: [number, number, number]) {
