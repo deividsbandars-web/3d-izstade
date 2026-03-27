@@ -15,6 +15,8 @@ import {
   trackExpoSectorEntered,
   trackExpoWebsiteOpened,
 } from '../lib/expoAnalytics';
+import { buildBoulevardArtPass } from '../lib/boulevardArtPass';
+import { buildSponsorScreenLayout, type SponsorScreenNode } from '../lib/sponsorScreenLayout';
 import { buildSponsorBoothPresentation, getSponsorNameFontSize, resolveSponsorCtaIntent, type SponsorBoothTemplate, type SponsorCta } from '../lib/sponsorBoothPresentation';
 import { EXPO_FEATURE_FLAGS, type ExpoMode } from '../state/expoRuntime';
 import { buildBoothPlacements, buildExpoPlayBounds, buildExpoSectorMarkers, replaceDistrictBoothZones } from '../sceneWorld';
@@ -464,52 +466,105 @@ function GroundPlane() {
   );
 }
 
-function ExpoPromenadeSurface() {
+function BoulevardGrassClusters({ clusters }: { clusters: ReturnType<typeof buildBoulevardArtPass>['grassClusters'] }) {
+  const { scene: grassScene } = useGLTF('/models/simple_grass_chunks.glb');
+  const instances = useMemo(() => (
+    clusters.map((cluster) => {
+      const clone = grassScene.clone(true);
+      clone.traverse((child) => {
+        child.userData[DISABLE_PLAYER_COLLISION_FLAG] = true;
+      });
+
+      return {
+        ...cluster,
+        object: clone,
+      };
+    })
+  ), [clusters, grassScene]);
+
+  return (
+    <group name="boulevard-grass-clusters">
+      {instances.map((cluster) => (
+        <primitive
+          key={cluster.id}
+          object={cluster.object}
+          position={cluster.position}
+          rotation={[0, cluster.rotationY, 0]}
+          scale={cluster.scale}
+        />
+      ))}
+    </group>
+  );
+}
+
+function BoulevardGroundArt({
+  boothPlacements,
+  sectorMarkers,
+}: {
+  boothPlacements: ReturnType<typeof buildBoothPlacements>;
+  sectorMarkers: ReturnType<typeof buildExpoSectorMarkers>;
+}) {
+  const artPass = useMemo(() => buildBoulevardArtPass(boothPlacements, sectorMarkers), [boothPlacements, sectorMarkers]);
   const walkwayTexture = useLoader(EXRLoader, '/textures/pergola_walkway_4k.exr');
   const mappedTexture = useMemo(() => {
     const texture = walkwayTexture.clone();
     texture.wrapS = THREE.RepeatWrapping;
     texture.wrapT = THREE.RepeatWrapping;
-    texture.repeat.set(2.4, 7.2);
     texture.needsUpdate = true;
     return texture;
   }, [walkwayTexture]);
 
   return (
-    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.041, -126]} receiveShadow>
-      <planeGeometry args={[48, 340]} />
-      <meshStandardMaterial
-        map={mappedTexture}
-        color="#cbd5e1"
-        roughness={0.82}
-        metalness={0.08}
-      />
-    </mesh>
+    <group name="boulevard-ground-art">
+      {artPass.surfaces.map((surface) => {
+        const usesWalkwayTexture = surface.kind === 'hero_path' || surface.kind === 'arrival_path';
+        const texture = usesWalkwayTexture ? mappedTexture.clone() : null;
+
+        if (texture && surface.textureRepeat) {
+          texture.repeat.set(...surface.textureRepeat);
+          texture.needsUpdate = true;
+        }
+
+        return (
+          <mesh
+            key={surface.id}
+            position={surface.position}
+            rotation={[-Math.PI / 2, 0, 0]}
+            receiveShadow
+          >
+            <planeGeometry args={surface.size} />
+            <meshStandardMaterial
+              color={surface.color}
+              map={texture ?? undefined}
+              metalness={surface.metalness}
+              opacity={surface.opacity ?? 1}
+              roughness={surface.roughness}
+              transparent={surface.opacity !== undefined}
+            />
+          </mesh>
+        );
+      })}
+      {EXPO_FEATURE_FLAGS.enableBoulevardGrassClusters && <BoulevardGrassClusters clusters={artPass.grassClusters} />}
+    </group>
   );
 }
 
 function ExpoDistrictPromenade({
+  boothPlacements,
   sectorMarkers,
 }: {
+  boothPlacements: ReturnType<typeof buildBoothPlacements>;
   sectorMarkers: ReturnType<typeof buildExpoSectorMarkers>;
 }) {
   return (
     <group name="expo-district-promenade">
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, -126]} receiveShadow>
-        <planeGeometry args={[156, 340]} />
-        <meshStandardMaterial color="#111827" roughness={0.92} metalness={0.04} />
-      </mesh>
-      {EXPO_FEATURE_FLAGS.enablePromenadeTexture && <ExpoPromenadeSurface />}
-      {[-24, -92, -160, -228].map((z) => (
-        <mesh key={`cross-strip-${z}`} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.05, z]} receiveShadow>
-          <planeGeometry args={[156, 12]} />
-          <meshStandardMaterial color="#0f172a" roughness={0.86} metalness={0.06} />
-        </mesh>
-      ))}
-      {Array.from({ length: 12 }, (_, index) => -34 - index * 26).map((z) => (
+      {EXPO_FEATURE_FLAGS.enableGroundArtPass && (
+        <BoulevardGroundArt boothPlacements={boothPlacements} sectorMarkers={sectorMarkers} />
+      )}
+      {Array.from({ length: 14 }, (_, index) => 8 - index * 28).map((z) => (
         <mesh key={`lane-${z}`} position={[0, 0.08, z]} rotation={[-Math.PI / 2, 0, 0]}>
           <planeGeometry args={[1.4, 12]} />
-          <meshStandardMaterial color="#e2e8f0" emissive="#e2e8f0" emissiveIntensity={0.08} />
+          <meshStandardMaterial color="#f8fafc" emissive="#cbd5e1" emissiveIntensity={0.1} />
         </mesh>
       ))}
       <ArrivalPlaza />
@@ -632,6 +687,37 @@ function SponsorTextureSurface({
   }, [texture]);
 
   return <meshStandardMaterial color={fallbackColor} map={mappedTexture} transparent opacity={opacity} toneMapped={false} />;
+}
+
+function ScreenTextureMaterial({ fallbackColor, url }: { fallbackColor: string; url: string }) {
+  const texture = useLoader(THREE.TextureLoader, url);
+  const mappedTexture = useMemo(() => {
+    const clone = texture.clone();
+    clone.colorSpace = THREE.SRGBColorSpace;
+    clone.needsUpdate = true;
+    return clone;
+  }, [texture]);
+
+  return <meshStandardMaterial color={fallbackColor} emissive={fallbackColor} emissiveIntensity={0.08} map={mappedTexture} toneMapped={false} />;
+}
+
+function SponsorScreenGraphic({
+  accentColor,
+  size,
+  url,
+}: {
+  accentColor: string;
+  size: [number, number];
+  url: string;
+}) {
+  return (
+    <mesh>
+      <planeGeometry args={size} />
+      <Suspense fallback={<meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={0.14} />}>
+        <ScreenTextureMaterial fallbackColor={accentColor} url={url} />
+      </Suspense>
+    </mesh>
+  );
 }
 
 function SponsorLogoPanel({ accentColor, fallbackText, url }: { accentColor: string; fallbackText: string; url: string | null }) {
@@ -893,6 +979,93 @@ function ArrivalPlaza() {
       <Text position={[0, 15.2, -15.6]} fontSize={3.6} color="#f8fafc" anchorX="center" anchorY="middle">WARPALA SPONSOR BOULEVARD</Text>
       <Text position={[0, 11.1, -17.4]} fontSize={1.05} color="#93c5fd" anchorX="center" anchorY="middle" maxWidth={48}>ARRIVE. DISCOVER SPONSORS. OPEN DEMOS. BOOK LIVE MEETINGS.</Text>
       <Text position={[0, 0.88, -1.8]} fontSize={1.2} color="#38bdf8" anchorX="center" anchorY="middle">START HERE</Text>
+    </group>
+  );
+}
+
+function SponsorScreenNodeView({ node }: { node: SponsorScreenNode }) {
+  if (node.kind === 'facade') {
+    return (
+      <group position={node.position} rotation={node.rotation}>
+        <mesh castShadow>
+          <boxGeometry args={[node.size[0] + 5, node.size[1] + 4, 1.8]} />
+          <meshStandardMaterial color="#07101a" metalness={0.22} roughness={0.72} />
+        </mesh>
+        <mesh position={[0, 0, 0.58]} castShadow>
+          <boxGeometry args={[node.size[0] + 1.4, node.size[1] + 1.2, 0.6]} />
+          <meshStandardMaterial color={node.accentColor} emissive={node.accentColor} emissiveIntensity={0.14} />
+        </mesh>
+        <group position={[0, 0, 0.94]}>
+          <SponsorScreenGraphic accentColor={node.accentColor} size={node.size} url={node.imageUrl} />
+        </group>
+        <Text position={[0, -(node.size[1] * 0.5) - 2.1, 1.1]} fontSize={1.15} color="#f8fafc" anchorX="center" anchorY="middle" maxWidth={node.size[0] - 4}>
+          {node.title.toUpperCase()}
+        </Text>
+      </group>
+    );
+  }
+
+  if (node.kind === 'medium_billboard') {
+    return (
+      <group position={node.position} rotation={node.rotation}>
+        <mesh position={[0, 0, 0]} castShadow>
+          <boxGeometry args={[node.size[0] + 1.6, node.size[1] + 1.1, 0.9]} />
+          <meshStandardMaterial color="#08111c" metalness={0.18} roughness={0.76} />
+        </mesh>
+        <group position={[0, 0, 0.52]}>
+          <SponsorScreenGraphic accentColor={node.accentColor} size={node.size} url={node.imageUrl} />
+        </group>
+        <mesh position={[0, -(node.size[1] * 0.5) - 1.8, 0]} castShadow>
+          <boxGeometry args={[0.85, 7.2, 0.85]} />
+          <meshStandardMaterial color="#111827" metalness={0.14} roughness={0.8} />
+        </mesh>
+        <Text position={[0, -(node.size[1] * 0.5) - 0.85, 0.6]} fontSize={0.58} color="#f8fafc" anchorX="center" anchorY="middle" maxWidth={node.size[0] - 1}>
+          {node.title.toUpperCase()}
+        </Text>
+      </group>
+    );
+  }
+
+  return (
+    <group position={node.position} rotation={node.rotation}>
+      <mesh castShadow>
+        <boxGeometry args={[node.size[0] + 1.1, node.size[1] + 1.4, 1.1]} />
+        <meshStandardMaterial color="#07101a" metalness={0.16} roughness={0.82} />
+      </mesh>
+      <group position={[0, 0.3, 0.58]}>
+        <SponsorScreenGraphic accentColor={node.accentColor} size={node.size} url={node.imageUrl} />
+      </group>
+      <mesh position={[0, -(node.size[1] * 0.5) - 1.2, 0]} castShadow>
+        <boxGeometry args={[1.05, 3.2, 1.05]} />
+        <meshStandardMaterial color={node.accentColor} emissive={node.accentColor} emissiveIntensity={0.12} />
+      </mesh>
+      <Text position={[0, (node.size[1] * 0.5) + 0.9, 0.7]} fontSize={0.46} color="#f8fafc" anchorX="center" anchorY="middle" maxWidth={node.size[0] + 0.5}>
+        {node.title.toUpperCase()}
+      </Text>
+    </group>
+  );
+}
+
+function SponsorScreenHierarchy({
+  boothPlacements,
+  sectorMarkers,
+}: {
+  boothPlacements: ReturnType<typeof buildBoothPlacements>;
+  sectorMarkers: ReturnType<typeof buildExpoSectorMarkers>;
+}) {
+  const layout = useMemo(() => buildSponsorScreenLayout(boothPlacements, sectorMarkers), [boothPlacements, sectorMarkers]);
+
+  return (
+    <group name="sponsor-screen-hierarchy">
+      {EXPO_FEATURE_FLAGS.enableFacadeScreens && layout.facadeScreens.map((node) => (
+        <SponsorScreenNodeView key={node.id} node={node} />
+      ))}
+      {layout.mediumScreens.map((node) => (
+        <SponsorScreenNodeView key={node.id} node={node} />
+      ))}
+      {EXPO_FEATURE_FLAGS.enableBoulevardGroundScreens && layout.groundScreens.map((node) => (
+        <SponsorScreenNodeView key={node.id} node={node} />
+      ))}
     </group>
   );
 }
@@ -1333,14 +1506,19 @@ export function ExpoWorldScene({ activeZone, data, debug, guests, mode, onMove, 
       <Canvas shadows gl={{ antialias: true }} camera={{ position: [0, 2, 10], fov: 60, far: 10000 }}>
         <Suspense fallback={null}>
             <Sky distance={450000} sunPosition={[100, 20, 100]} inclination={0.49} azimuth={0.25} />
-            <Environment preset="city" />
+            {EXPO_FEATURE_FLAGS.enableStreetEnvironmentLighting ? (
+              <Environment files="/models/modern_evening_street_4k.exr" />
+            ) : (
+              <Environment preset="city" />
+            )}
             <ambientLight intensity={0.3} />
             <directionalLight position={[20, 30, 10]} intensity={1.5} castShadow={false} />
             <hemisphereLight args={['#87CEEB', '#222222', 0.5]} />
             {EXPO_FEATURE_FLAGS.enableFog && <fog attach="fog" args={['#0a0a0a', 80, 300]} />}
 
             <GroundPlane />
-            <ExpoDistrictPromenade sectorMarkers={sectorMarkers} />
+            <ExpoDistrictPromenade boothPlacements={boothPlacements} sectorMarkers={sectorMarkers} />
+            <SponsorScreenHierarchy boothPlacements={boothPlacements} sectorMarkers={sectorMarkers} />
             {EXPO_FEATURE_FLAGS.enableSponsorBillboards && <SponsorBillboards placements={boothPlacements} />}
 
             <PrimitiveCityModel debug={debug} />

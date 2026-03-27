@@ -1,0 +1,50 @@
+﻿{
+    "environment":  [
+                        {
+                            "path":  "public/models/modern_evening_street_4k.exr",
+                            "usage":  "environment / reflections / lighting",
+                            "asset":  "modern_evening_street_4k.exr"
+                        },
+                        {
+                            "path":  "public/textures/pergola_walkway_4k.exr",
+                            "usage":  "temporary hero-path test material",
+                            "asset":  "pergola_walkway_4k.exr"
+                        }
+                    ],
+    "generated":  [
+                      {
+                          "path":  "public/textures/expo/screen-placeholders-4k",
+                          "variants":  [
+                                           "16:9 horizontal",
+                                           "9:16 vertical"
+                                       ],
+                          "asset":  "4K sponsor screen placeholder pack",
+                          "order":  4
+                      },
+                      {
+                          "path":  "public/textures/expo/hero-facade-screen-8k/hero_facade_screen_01.png",
+                          "asset":  "8K hero facade screen",
+                          "order":  5
+                      }
+                  ],
+    "downloaded":  [
+                       {
+                           "path":  "public/textures/expo/hero-paver-4k",
+                           "source":  "Poly Haven - Pavement 01 (CC0)",
+                           "asset":  "4K hero paver / stone promenade texture set",
+                           "order":  1
+                       },
+                       {
+                           "path":  "public/textures/expo/urban-grass-4k",
+                           "source":  "Poly Haven - Sparse Grass (CC0)",
+                           "asset":  "4K clean urban grass / landscaped strip texture",
+                           "order":  2
+                       },
+                       {
+                           "path":  "public/textures/expo/light-concrete-4k",
+                           "source":  "Poly Haven - Concrete Floor Worn 001 (CC0)",
+                           "asset":  "4K concrete / light sidewalk texture",
+                           "order":  3
+                       }
+                   ]
+}

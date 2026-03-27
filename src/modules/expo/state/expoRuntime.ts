@@ -3,19 +3,34 @@ export type ExpoQualityPreset = 'performance' | 'balanced' | 'quality';
 
 export const EXPO_QUALITY_PRESETS = {
   performance: {
+    enableBoulevardGrassClusters: false,
+    enableBoulevardGroundScreens: true,
+    enableFacadeScreens: true,
+    enableGroundArtPass: true,
     enableFog: true,
     enablePromenadeTexture: false,
     enableSponsorBillboards: false,
+    enableStreetEnvironmentLighting: true,
   },
   balanced: {
+    enableBoulevardGrassClusters: true,
+    enableBoulevardGroundScreens: true,
+    enableFacadeScreens: true,
+    enableGroundArtPass: true,
     enableFog: true,
     enablePromenadeTexture: true,
     enableSponsorBillboards: true,
+    enableStreetEnvironmentLighting: true,
   },
   quality: {
+    enableBoulevardGrassClusters: true,
+    enableBoulevardGroundScreens: true,
+    enableFacadeScreens: true,
+    enableGroundArtPass: true,
     enableFog: true,
     enablePromenadeTexture: true,
     enableSponsorBillboards: true,
+    enableStreetEnvironmentLighting: true,
   },
 } as const;
 
@@ -23,9 +38,14 @@ export const EXPO_CITY_QUALITY_TIER: ExpoQualityPreset = 'balanced';
 export const EXPO_DEBUG_DEFAULT = false;
 export const EXPO_FEATURE_FLAGS = {
   enableAnalytics: true,
+  enableBoulevardGrassClusters: EXPO_QUALITY_PRESETS[EXPO_CITY_QUALITY_TIER].enableBoulevardGrassClusters,
+  enableBoulevardGroundScreens: EXPO_QUALITY_PRESETS[EXPO_CITY_QUALITY_TIER].enableBoulevardGroundScreens,
+  enableFacadeScreens: EXPO_QUALITY_PRESETS[EXPO_CITY_QUALITY_TIER].enableFacadeScreens,
+  enableGroundArtPass: EXPO_QUALITY_PRESETS[EXPO_CITY_QUALITY_TIER].enableGroundArtPass,
   enableLegacyCityFallback: false,
   enableSceneGlobalsDebug: false,
   enableSponsorBillboards: EXPO_QUALITY_PRESETS[EXPO_CITY_QUALITY_TIER].enableSponsorBillboards,
+  enableStreetEnvironmentLighting: EXPO_QUALITY_PRESETS[EXPO_CITY_QUALITY_TIER].enableStreetEnvironmentLighting,
   enablePromenadeTexture: EXPO_QUALITY_PRESETS[EXPO_CITY_QUALITY_TIER].enablePromenadeTexture,
   enableFog: EXPO_QUALITY_PRESETS[EXPO_CITY_QUALITY_TIER].enableFog,
 } as const;
