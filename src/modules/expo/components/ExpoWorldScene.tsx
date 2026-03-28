@@ -493,18 +493,52 @@ function BoulevardGroundArt({
     () => buildBoulevardArtPass(boothPlacements, sectorMarkers, { showcase: EXPO_FEATURE_FLAGS.enableEnhancedBoulevardDetail }),
     [boothPlacements, sectorMarkers]
   );
-  const textures = useLoader(THREE.TextureLoader, [
-    '/textures/expo/hero-paver-4k/pavement_01_diff_4k.png',
-    '/textures/expo/hero-paver-4k/pavement_01_nor_gl_4k.png',
-    '/textures/expo/hero-paver-4k/pavement_01_rough_4k.png',
-    '/textures/expo/light-concrete-4k/concrete_floor_worn_001_diff_4k.png',
-    '/textures/expo/light-concrete-4k/concrete_floor_worn_001_nor_gl_4k.png',
-    '/textures/expo/light-concrete-4k/concrete_floor_worn_001_rough_4k.png',
-    '/textures/expo/urban-grass-4k/sparse_grass_diff_4k.png',
-    '/textures/expo/urban-grass-4k/sparse_grass_nor_gl_4k.png',
-    '/textures/expo/urban-grass-4k/sparse_grass_rough_4k.png',
-  ]);
+  const [textures, setTextures] = useState<THREE.Texture[] | null>(null);
+
+  useEffect(() => {
+    let isActive = true;
+    const loader = new THREE.TextureLoader();
+    const urls = [
+      '/textures/expo/hero-paver-4k/pavement_01_diff_4k.png',
+      '/textures/expo/hero-paver-4k/pavement_01_nor_gl_4k.png',
+      '/textures/expo/hero-paver-4k/pavement_01_rough_4k.png',
+      '/textures/expo/light-concrete-4k/concrete_floor_worn_001_diff_4k.png',
+      '/textures/expo/light-concrete-4k/concrete_floor_worn_001_nor_gl_4k.png',
+      '/textures/expo/light-concrete-4k/concrete_floor_worn_001_rough_4k.png',
+      '/textures/expo/urban-grass-4k/sparse_grass_diff_4k.png',
+      '/textures/expo/urban-grass-4k/sparse_grass_nor_gl_4k.png',
+      '/textures/expo/urban-grass-4k/sparse_grass_rough_4k.png',
+    ];
+
+    Promise.all(urls.map((url) => new Promise<THREE.Texture>((resolve, reject) => {
+      loader.load(url, resolve, undefined, reject);
+    })))
+      .then((loadedTextures) => {
+        if (!isActive) return;
+        setTextures(loadedTextures);
+      })
+      .catch((error) => {
+        if (!isActive) return;
+        if (import.meta.env.DEV) {
+          console.warn('Expo boulevard textures unavailable. Falling back to color-only boulevard materials.', error);
+        }
+        setTextures(null);
+      });
+
+    return () => {
+      isActive = false;
+    };
+  }, []);
+
   const materialMaps = useMemo(() => {
+    if (!textures) {
+      return {
+        hero_paver: null,
+        light_concrete: null,
+        urban_grass: null,
+      } as const;
+    }
+
     const configure = (texture: THREE.Texture, repeatX: number, repeatY: number) => {
       const clone = texture.clone();
       clone.wrapS = THREE.RepeatWrapping;
@@ -532,9 +566,9 @@ function BoulevardGroundArt({
         map: configure(textures[6], 2.4, 8),
         normalMap: configure(textures[7], 2.4, 8),
         roughnessMap: configure(textures[8], 2.4, 8),
-      },
-    };
-  }, [textures]);
+        },
+      };
+    }, [textures]);
   const surfaceTextureVariants = useMemo(() => {
     const variantCache = new Map<string, { map?: THREE.Texture; normalMap?: THREE.Texture; roughnessMap?: THREE.Texture }>();
     const buildVariant = (surface: ReturnType<typeof buildBoulevardArtPass>['surfaces'][number]) => {

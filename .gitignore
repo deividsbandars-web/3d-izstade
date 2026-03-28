@@ -39,6 +39,7 @@ pazudusie faili/
 .gemini/
 *.png
 *.jpg
+!public/textures/expo/**/*.png
 
 # Lieli arhivi
 *.zip
