@@ -496,6 +496,11 @@ function BoulevardGroundArt({
   const [textures, setTextures] = useState<THREE.Texture[] | null>(null);
 
   useEffect(() => {
+    if (!EXPO_FEATURE_FLAGS.enablePremiumGroundTextures) {
+      setTextures(null);
+      return () => undefined;
+    }
+
     let isActive = true;
     const loader = new THREE.TextureLoader();
     const urls = [
