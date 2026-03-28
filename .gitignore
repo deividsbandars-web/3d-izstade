@@ -31,6 +31,9 @@ dist-phase3f
 .vercel
 apps/frontend/.next
 diagnostics
+.tmp-*
+.tmp*
+supabase/.temp/
 .aider*
 pazudusie faili/
 .gemini/
@@ -41,3 +44,4 @@ pazudusie faili/
 *.zip
 *.7z
 *.rar
+.vercel

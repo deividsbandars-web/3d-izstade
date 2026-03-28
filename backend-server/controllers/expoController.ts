@@ -98,6 +98,23 @@ const normalizeNullableString = (value: unknown) => {
     return typeof value === 'string' && value.trim().length > 0 ? value.trim() : null;
 };
 
+const isPlaceholderMediaUrl = (value: string | null) => {
+    if (!value) {
+        return false;
+    }
+
+    return /big[\s_-]*buck[\s_-]*bunny|test-videos\.co\.uk|sample-videos\.com|samplelib\.com|via\.placeholder\.com|placehold\.co|dummyimage\.com/i.test(value);
+};
+
+const normalizeReleaseMediaUrl = (value: unknown) => {
+    const normalized = normalizeNullableString(value);
+    if (!normalized || isPlaceholderMediaUrl(normalized)) {
+        return null;
+    }
+
+    return normalized;
+};
+
 const normalizePriority = (value: unknown) => {
     const parsed = Number(value);
     return Number.isFinite(parsed) ? parsed : 0;
@@ -149,6 +166,21 @@ const normalizeCompanySlug = (company: any) => {
         .replace(/^-+|-+$/g, '');
 
     return normalizedName.length > 0 ? normalizedName : null;
+};
+
+const buildUniqueSlugMap = (companies: any[]) => {
+    const slugCounts = new Map<string, number>();
+    const slugMap = new Map<string, string>();
+
+    companies.forEach((company) => {
+        const baseSlug = normalizeCompanySlug(company) || `company-${String(company.id || '').toLowerCase()}`;
+        const count = slugCounts.get(baseSlug) ?? 0;
+        slugCounts.set(baseSlug, count + 1);
+        const uniqueSlug = count === 0 ? baseSlug : `${baseSlug}-${String(company.id || '').toLowerCase().slice(0, 8)}`;
+        slugMap.set(String(company.id), uniqueSlug);
+    });
+
+    return slugMap;
 };
 
 const sponsorTierWeight: Record<SponsorTier, number> = {
@@ -311,27 +343,30 @@ export const createGetExpoScene = (getSupabaseClient: typeof getSupabase) => asy
 
         if (companyError) throw companyError;
         const sortedCompanies = [...(companies || [])].sort(compareCompanies);
+        const uniqueSlugMap = buildUniqueSlugMap(sortedCompanies);
 
         // 4. Format Response for UE5
         const response = buildExpoSceneResponse({
             cityInfo: resolvedCity,
-            sectors: sectors.map((s: any) => ({
+            sectors: sectors
+                .map((s: any) => ({
                 id: s.id,
                 name: s.name,
                 color_theme: s.color_theme,
                 map_position: s.map_position
-            })),
+                }))
+                .sort((left: any, right: any) => String(left.id).localeCompare(String(right.id))),
             companies: sortedCompanies.map((c: any) => {
                 const sponsorTier = normalizeSponsorTier(c.sponsor_tier);
                 const booth = normalizeBoothRelation(c.booths);
                 const boothType = normalizeBoothType(c.booth_type ?? booth?.booth_type, sponsorTier);
-                const slug = normalizeCompanySlug(c);
+                const slug = uniqueSlugMap.get(String(c.id)) || normalizeCompanySlug(c);
 
                 return {
                 id: c.id,
                 sectorId: c.sector_id,
                 name: c.name,
-                logo_url: normalizeNullableString(c.logo_url),
+                logo_url: normalizeReleaseMediaUrl(c.logo_url),
                 slug,
                 tagline: normalizeNullableString(c.tagline),
                 website: normalizeNullableString(c.website),
@@ -340,8 +375,8 @@ export const createGetExpoScene = (getSupabaseClient: typeof getSupabase) => asy
                 priority: normalizePriority(c.priority),
                 boothType,
                 ctaLabel: normalizeNullableString(c.cta_label ?? booth?.cta_label),
-                posterUrl: normalizeNullableString(c.poster_url ?? booth?.poster_url),
-                heroAssetUrl: normalizeNullableString(c.hero_asset_url ?? booth?.hero_asset_url),
+                posterUrl: normalizeReleaseMediaUrl(c.poster_url ?? booth?.poster_url),
+                heroAssetUrl: normalizeReleaseMediaUrl(c.hero_asset_url ?? booth?.hero_asset_url),
                 currentRevenue: c.current_revenue || 0,
                 activityScore: c.activity_score || 0.5,
                 activeEmployees: c.employee_count || 0
@@ -354,12 +389,12 @@ export const createGetExpoScene = (getSupabaseClient: typeof getSupabase) => asy
                 id: booth?.id || `booth_${c.id}`,
                 companyId: c.id,
                 boothType: normalizeBoothType(c.booth_type ?? booth?.booth_type, sponsorTier),
-                model_url: normalizeNullableString(booth?.model_url),
-                video_url: normalizeNullableString(booth?.video_url),
-                posterUrl: normalizeNullableString(c.poster_url ?? booth?.poster_url),
-                heroAssetUrl: normalizeNullableString(c.hero_asset_url ?? booth?.hero_asset_url),
+                model_url: normalizeReleaseMediaUrl(booth?.model_url),
+                video_url: normalizeReleaseMediaUrl(booth?.video_url),
+                posterUrl: normalizeReleaseMediaUrl(c.poster_url ?? booth?.poster_url),
+                heroAssetUrl: normalizeReleaseMediaUrl(c.hero_asset_url ?? booth?.hero_asset_url),
                 ctaLabel: normalizeNullableString(c.cta_label ?? booth?.cta_label),
-                slug: normalizeCompanySlug(c)
+                slug: uniqueSlugMap.get(String(c.id)) || normalizeCompanySlug(c)
                 };
             })
         });

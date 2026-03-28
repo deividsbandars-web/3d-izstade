@@ -3,6 +3,9 @@ import { logger } from '../../logging/logger.js';
 import fs from 'fs';
 import path from 'path';
 
+const RELEASE_FALLBACK_MODEL_PATH = path.resolve(process.cwd(), 'public/models/construction_assets.glb');
+const RELEASE_FALLBACK_MODEL_URL = '/models/construction_assets.glb';
+
 export const assetPipeline = {
   /**
    * Pipeline to generate or copy a GLB model for a specific company,
@@ -17,7 +20,7 @@ export const assetPipeline = {
       const fileName = `${safeName}_booth_${Date.now()}.glb`;
 
       // 1. Read the base fallback model from public directory
-      const baseModelPath = path.resolve(process.cwd(), 'public/models/default_booth.glb');
+      const baseModelPath = RELEASE_FALLBACK_MODEL_PATH;
       
       let fileBuffer: Buffer;
       if (fs.existsSync(baseModelPath)) {
@@ -27,7 +30,7 @@ export const assetPipeline = {
         // In a true headless setup, we would use a library like 'glTF-Transform' to 
         // inject the logo texture and color theme into the binary buffer here.
         fileBuffer = Buffer.from(''); 
-        logger.warn('AssetPipeline', 'default_booth.glb not found, uploading empty buffer');
+        logger.warn('AssetPipeline', 'release fallback GLB not found, uploading empty buffer');
       }
 
       // 2. Upload to Supabase Storage
@@ -55,7 +58,7 @@ export const assetPipeline = {
     } catch (error) {
       logger.error('AssetPipeline', 'Failed to process asset', error);
       // Fallback to the local default model if storage upload fails
-      return '/models/default_booth.glb';
+      return RELEASE_FALLBACK_MODEL_URL;
     }
   }
 };

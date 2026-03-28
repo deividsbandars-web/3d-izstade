@@ -5,6 +5,7 @@ import * as agentsController from '../controllers/agentsController.js';
 import * as marketplaceController from '../controllers/marketplaceController.js';
 import * as outreachController from '../controllers/outreachController.js';
 import * as expoController from '../controllers/expoController.js';
+import * as expoLeadController from '../controllers/expoLeadController.js';
 import * as analyticsController from '../controllers/analyticsController.js';
 import { authMiddleware } from '../middleware/authMiddleware.js';
 import { rateLimitMiddleware } from '../middleware/rateLimit.js';
@@ -19,12 +20,10 @@ router.use(rateLimitMiddleware);
  */
 router.post('/analytics/track', analyticsController.trackAnalytics);
 router.get('/pixel-streaming/status', expoController.getPixelStreamingRuntimeStatus);
+router.post('/expo/lead', expoLeadController.captureExpoLead);
 
 // Public read-only scene contract used by the Web3D client. Keep auth policy here only.
-router.get('/expo/scene', (req, res, next) => {
-    console.log(`[ROUTE] Public Access: ${req.method} ${req.url}`);
-    next();
-}, expoController.getExpoScene);
+router.get('/expo/scene', expoController.getExpoScene);
 
 /**
  * PROTECTED ROUTES (Require Supabase JWT)

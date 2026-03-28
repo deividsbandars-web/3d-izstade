@@ -12,12 +12,16 @@ interface ExpoLobbyProps {
 export function ExpoLobby({ onSelectMode, onBack, premiumAvailability, premiumSignalingUrl, premiumRuntimeStatus }: ExpoLobbyProps) {
   const premiumStatusCopy = premiumAvailability === 'available'
     ? EXPO_MODE_COPY.premiumAvailable
+    : premiumAvailability === 'degraded'
+      ? EXPO_MODE_COPY.premiumDegraded
     : premiumAvailability === 'connecting'
       ? EXPO_MODE_COPY.premiumConnecting
       : EXPO_MODE_COPY.premiumUnavailable;
 
   const premiumButtonLabel = premiumAvailability === 'available'
     ? EXPO_MODE_COPY.premiumCta
+    : premiumAvailability === 'degraded'
+      ? EXPO_MODE_COPY.premiumDegradedCta
     : premiumAvailability === 'connecting'
       ? EXPO_MODE_COPY.premiumConnectingCta
       : EXPO_MODE_COPY.premiumUnavailableCta;
@@ -57,7 +61,7 @@ export function ExpoLobby({ onSelectMode, onBack, premiumAvailability, premiumSi
           </div>
           <div style={{ padding: '14px 18px', borderRadius: '12px', background: 'rgba(6, 78, 59, 0.45)', border: '1px solid rgba(16, 185, 129, 0.35)', color: '#d1fae5' }}>
             <strong style={{ color: '#fff' }}>{EXPO_MODE_COPY.premiumLabel}</strong> {EXPO_MODE_COPY.premiumDescription}
-            <div style={{ marginTop: '10px', fontSize: '0.95rem', color: premiumAvailability === 'unavailable' ? '#fecaca' : '#d1fae5' }}>
+            <div style={{ marginTop: '10px', fontSize: '0.95rem', color: premiumAvailability === 'unavailable' ? '#fecaca' : premiumAvailability === 'degraded' ? '#fde68a' : '#d1fae5' }}>
               <strong>{EXPO_MODE_COPY.premiumStatusLabel}</strong> {premiumStatusCopy}
             </div>
             <div style={{ marginTop: '10px', display: 'grid', gap: '4px', fontSize: '0.85rem', color: '#d1fae5' }}>
@@ -92,6 +96,8 @@ export function ExpoLobby({ onSelectMode, onBack, premiumAvailability, premiumSi
               padding: '15px 30px',
               background: premiumAvailability === 'available'
                 ? 'linear-gradient(90deg, #10b981, #059669)'
+                : premiumAvailability === 'degraded'
+                  ? 'linear-gradient(90deg, #a16207, #92400e)'
                 : 'linear-gradient(90deg, #475569, #334155)',
               color: 'white',
               border: 'none',

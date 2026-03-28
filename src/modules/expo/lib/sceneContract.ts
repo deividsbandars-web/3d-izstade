@@ -12,6 +12,23 @@ export function normalizeNullableString(value: unknown) {
   return typeof value === 'string' && value.trim().length > 0 ? value.trim() : null;
 }
 
+export function isPlaceholderMediaUrl(value: string | null) {
+  if (!value) {
+    return false;
+  }
+
+  return /big[\s_-]*buck[\s_-]*bunny|test-videos\.co\.uk|sample-videos\.com|samplelib\.com|via\.placeholder\.com|placehold\.co|dummyimage\.com/i.test(value);
+}
+
+export function normalizeReleaseMediaUrl(value: unknown) {
+  const normalized = normalizeNullableString(value);
+  if (!normalized || isPlaceholderMediaUrl(normalized)) {
+    return null;
+  }
+
+  return normalized;
+}
+
 export function normalizePriority(value: unknown) {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : 0;
@@ -81,12 +98,12 @@ export function normalizeBooth(rawBooth: any, fallbackCompany: any): ExpoSceneBo
     boothType: normalizeBoothType(rawBooth.boothType ?? rawBooth.booth_type ?? fallbackCompany?.boothType ?? fallbackCompany?.booth_type, sponsorTier),
     companyId,
     ctaLabel: normalizeNullableString(rawBooth.ctaLabel ?? rawBooth.cta_label ?? fallbackCompany?.ctaLabel ?? fallbackCompany?.cta_label),
-    heroAssetUrl: normalizeNullableString(rawBooth.heroAssetUrl ?? rawBooth.hero_asset_url ?? fallbackCompany?.heroAssetUrl ?? fallbackCompany?.hero_asset_url),
+    heroAssetUrl: normalizeReleaseMediaUrl(rawBooth.heroAssetUrl ?? rawBooth.hero_asset_url ?? fallbackCompany?.heroAssetUrl ?? fallbackCompany?.hero_asset_url),
     id: String(rawBooth.id || `booth_${companyId}`),
-    model_url: normalizeNullableString(rawBooth.model_url),
-    posterUrl: normalizeNullableString(rawBooth.posterUrl ?? rawBooth.poster_url ?? fallbackCompany?.posterUrl ?? fallbackCompany?.poster_url),
+    model_url: normalizeReleaseMediaUrl(rawBooth.model_url),
+    posterUrl: normalizeReleaseMediaUrl(rawBooth.posterUrl ?? rawBooth.poster_url ?? fallbackCompany?.posterUrl ?? fallbackCompany?.poster_url),
     slug: normalizeSlug(rawBooth.slug, fallbackCompany?.name),
-    video_url: normalizeNullableString(rawBooth.video_url),
+    video_url: normalizeReleaseMediaUrl(rawBooth.video_url),
   };
 }
 
@@ -111,11 +128,11 @@ export function normalizeCompany(company: any, booth: ExpoSceneBooth | null): Ex
     bookingUrl: normalizeNullableString(company?.bookingUrl ?? company?.booking_url),
     ctaLabel: normalizeNullableString(company?.ctaLabel ?? company?.cta_label ?? booth?.ctaLabel),
     currentRevenue: Number(company?.currentRevenue ?? company?.current_revenue ?? 0) || 0,
-    heroAssetUrl: normalizeNullableString(company?.heroAssetUrl ?? company?.hero_asset_url ?? booth?.heroAssetUrl),
+    heroAssetUrl: normalizeReleaseMediaUrl(company?.heroAssetUrl ?? company?.hero_asset_url ?? booth?.heroAssetUrl),
     id: String(company?.id || ''),
-    logo_url: normalizeNullableString(company?.logo_url),
+    logo_url: normalizeReleaseMediaUrl(company?.logo_url),
     name: String(company?.name || ''),
-    posterUrl: normalizeNullableString(company?.posterUrl ?? company?.poster_url ?? booth?.posterUrl),
+    posterUrl: normalizeReleaseMediaUrl(company?.posterUrl ?? company?.poster_url ?? booth?.posterUrl),
     priority: normalizePriority(company?.priority),
     sectorId: company?.sectorId ? String(company.sectorId) : (company?.sector_id ? String(company.sector_id) : null),
     sector_id: company?.sector_id ? String(company.sector_id) : (company?.sectorId ? String(company.sectorId) : null),
@@ -126,7 +143,50 @@ export function normalizeCompany(company: any, booth: ExpoSceneBooth | null): Ex
   };
 }
 
+function ensureUniqueCompanySlugs(companies: ExpoSceneCompany[], boothsByCompanyId: Map<string, ExpoSceneBooth>) {
+  const slugCounts = new Map<string, number>();
+
+  return companies.map((company) => {
+    const baseSlug = company.slug || normalizeSlug(company.name, company.name) || `company-${company.id}`;
+    const count = slugCounts.get(baseSlug) ?? 0;
+    slugCounts.set(baseSlug, count + 1);
+    const uniqueSlug = count === 0 ? baseSlug : `${baseSlug}-${company.id.toLowerCase().slice(0, 8)}`;
+    const booth = boothsByCompanyId.get(company.id);
+
+    const normalizedCompany = {
+      ...company,
+      slug: uniqueSlug,
+      booth: booth ? { ...booth, slug: uniqueSlug } : company.booth ? { ...company.booth, slug: uniqueSlug } : null,
+    };
+
+    if (booth) {
+      boothsByCompanyId.set(company.id, { ...booth, slug: uniqueSlug });
+    }
+
+    return normalizedCompany;
+  });
+}
+
+export function validateExpoSceneContractPayload(payload: Partial<ExpoSceneContract> | null | undefined) {
+  if (!payload || typeof payload !== 'object') {
+    throw new Error('EXPO_SCENE_INVALID_PAYLOAD');
+  }
+
+  if ('companies' in payload && !Array.isArray(payload.companies)) {
+    throw new Error('EXPO_SCENE_INVALID_COMPANIES');
+  }
+
+  if ('sectors' in payload && !Array.isArray(payload.sectors)) {
+    throw new Error('EXPO_SCENE_INVALID_SECTORS');
+  }
+
+  if ('booths' in payload && !Array.isArray(payload.booths)) {
+    throw new Error('EXPO_SCENE_INVALID_BOOTHS');
+  }
+}
+
 export function adaptBackendScenePayload(payload: Partial<ExpoSceneContract> | null | undefined): ExpoSceneData {
+  validateExpoSceneContractPayload(payload);
   const typedPayload = payload ?? {};
   const boothsByCompanyId = new Map<string, ExpoSceneBooth>();
 
@@ -143,8 +203,9 @@ export function adaptBackendScenePayload(payload: Partial<ExpoSceneContract> | n
     ? typedPayload.companies.map((company) => {
         const booth = boothsByCompanyId.get(String(company.id)) ?? normalizeBooth((company as any).booth ?? (company as any).booths, company);
         return normalizeCompany(company, booth);
-      })
+      }).filter((company) => company.id.length > 0 && company.name.length > 0)
     : [];
+  const normalizedCompanies = ensureUniqueCompanySlugs(companies, boothsByCompanyId);
 
   const sectors = Array.isArray(typedPayload.sectors)
     ? typedPayload.sectors.map(normalizeSector).filter((sector) => sector.id.length > 0)
@@ -160,7 +221,7 @@ export function adaptBackendScenePayload(payload: Partial<ExpoSceneContract> | n
           style: Number(typedPayload.cityInfo.style ?? 0) || 0,
         }
       : null,
-    companies,
+    companies: normalizedCompanies,
     generatedAt: typeof typedPayload.generatedAt === 'string' ? typedPayload.generatedAt : null,
     releaseMode: typedPayload.releaseMode === 'sponsor-boulevard' ? typedPayload.releaseMode : 'sponsor-boulevard',
     sceneVersion: typeof typedPayload.sceneVersion === 'string' ? typedPayload.sceneVersion : 'expo-scene-backend-unavailable',

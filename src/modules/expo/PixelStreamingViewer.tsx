@@ -40,6 +40,8 @@ export default function PixelStreamingViewer({
                 setStatus(
                     availability === 'unavailable'
                         ? EXPO_MODE_COPY.premiumViewerUnavailable
+                        : availability === 'degraded'
+                            ? EXPO_MODE_COPY.premiumViewerDegraded
                         : EXPO_MODE_COPY.premiumViewerConnecting
                 );
             });
@@ -126,9 +128,11 @@ export default function PixelStreamingViewer({
                             Active streamer: {runtimeStatus.session.activeStreamerId}
                         </p>
                     )}
-                    {availability === 'unavailable' && (
+                    {(availability === 'unavailable' || availability === 'degraded') && (
                         <p style={{ color: '#fca5a5', fontSize: '0.95rem', maxWidth: '520px', textAlign: 'center' }}>
-                            {runtimeStatus?.signaling === 'signaling_up' && runtimeStatus?.streamer !== 'streamer_available'
+                            {availability === 'degraded'
+                                ? EXPO_MODE_COPY.premiumViewerDegraded
+                                : runtimeStatus?.signaling === 'signaling_up' && runtimeStatus?.streamer !== 'streamer_available'
                                 ? EXPO_MODE_COPY.premiumViewerGatewayOnly
                                 : EXPO_MODE_COPY.premiumViewerFallback}
                         </p>

@@ -1,3 +1,5 @@
+import { getBackendRuntimeEnv } from '../config/runtimeEnv.js';
+
 export type PixelStreamingSignalingStatus = 'signaling_up' | 'signaling_down' | 'unknown';
 export type PixelStreamingStreamerStatus = 'streamer_available' | 'streamer_unavailable' | 'unknown';
 export type PixelStreamingTurnIceStatus = 'turn_configured' | 'turn_not_configured' | 'turn_unknown';
@@ -40,19 +42,16 @@ interface SignalingConfigPayload {
   protocolConfig?: unknown;
 }
 
-const DEFAULT_STATUS_BASE_URL = 'http://127.0.0.1';
-const DEFAULT_TIMEOUT_MS = 2500;
 const SIGNALING_STATUS_PATHS = ['/api/status', '/status'] as const;
 const SIGNALING_STREAMERS_PATHS = ['/api/streamers', '/streamers'] as const;
 const SIGNALING_CONFIG_PATHS = ['/api/config', '/config'] as const;
 
 function getStatusBaseUrl() {
-  return process.env.SIGNALING_STATUS_BASE_URL || DEFAULT_STATUS_BASE_URL;
+  return getBackendRuntimeEnv().signalingStatusBaseUrl;
 }
 
 function getTimeoutMs() {
-  const value = Number(process.env.PIXEL_STREAMING_STATUS_TIMEOUT_MS);
-  return Number.isFinite(value) && value > 0 ? value : DEFAULT_TIMEOUT_MS;
+  return getBackendRuntimeEnv().pixelStreamingStatusTimeoutMs;
 }
 
 async function fetchJson<T>(pathname: string): Promise<T> {

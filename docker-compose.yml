@@ -27,12 +27,9 @@ services:
       PORT: 3000
       SIGNALING_STATUS_BASE_URL: http://signaling
       PIXEL_STREAMING_STATUS_TIMEOUT_MS: ${PIXEL_STREAMING_STATUS_TIMEOUT_MS:-2500}
-      SUPABASE_URL: ${SUPABASE_URL:-}
-      SUPABASE_SERVICE_KEY: ${SUPABASE_SERVICE_KEY:-}
-      SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY:-}
-      VITE_SUPABASE_URL: ${VITE_SUPABASE_URL:-}
-      VITE_SUPABASE_ANON_KEY: ${VITE_SUPABASE_ANON_KEY:-}
-      UE5_SECRET_KEY: ${UE5_SECRET_KEY:-warpala-ue5-bridge-2026}
+      SUPABASE_URL: ${SUPABASE_URL:?SUPABASE_URL is required}
+      SUPABASE_SERVICE_KEY: ${SUPABASE_SERVICE_KEY:?SUPABASE_SERVICE_KEY is required}
+      UE5_SECRET_KEY: ${UE5_SECRET_KEY:?UE5_SECRET_KEY is required}
     ports:
       - "3000:3000"
     depends_on:
@@ -52,9 +49,9 @@ services:
       dockerfile: Dockerfile
     environment:
       STUN_SERVER_URLS: ${STUN_SERVER_URLS:-stun:stun.l.google.com:19302}
-      TURN_SERVER_URLS: ${TURN_SERVER_URLS:-turn:127.0.0.1:3478?transport=udp,turn:127.0.0.1:3478?transport=tcp}
-      TURN_USERNAME: ${TURN_USERNAME:-pixelstream_user}
-      TURN_PASSWORD: ${TURN_PASSWORD:-change-me}
+      TURN_SERVER_URLS: ${TURN_SERVER_URLS:?TURN_SERVER_URLS is required}
+      TURN_USERNAME: ${TURN_USERNAME:?TURN_USERNAME is required}
+      TURN_PASSWORD: ${TURN_PASSWORD:?TURN_PASSWORD is required}
     expose:
       - "80"
     ports:
@@ -82,7 +79,7 @@ services:
       - --listening-ip=${TURN_LISTEN_IP:-0.0.0.0}
       - --min-port=${TURN_MIN_PORT:-49260}
       - --max-port=${TURN_MAX_PORT:-49300}
-      - --user=${TURN_USERNAME:-pixelstream_user}:${TURN_PASSWORD:-change-me}
+      - --user=${TURN_USERNAME:?TURN_USERNAME is required}:${TURN_PASSWORD:?TURN_PASSWORD is required}
       - --no-tls
       - --no-dtls
     volumes:

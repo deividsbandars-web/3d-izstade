@@ -33,6 +33,7 @@ const pushedEvents: Array<Record<string, unknown>> = [];
 const dispatchedEvents: Event[] = [];
 const analyticsTrackCalls: Array<{ eventName: string; payload: Record<string, unknown> }> = [];
 const gtagCalls: Array<{ eventName: string; payload: Record<string, unknown> }> = [];
+const persistedEvents: Array<Record<string, unknown>> = [];
 const tracked = trackExpoAnalyticsEvent(
   'demo_room_entered',
   company,
@@ -46,12 +47,14 @@ const tracked = trackExpoAnalyticsEvent(
       return true;
     },
     gtag: (_command, eventName, payload) => gtagCalls.push({ eventName, payload }),
+    persist: (detail) => persistedEvents.push(detail),
   }
 );
 
 assert.equal(tracked.eventName, 'demo_room_entered');
 assert.equal(tracked.boothTemplate, 'standard_corner');
 assert.equal(dispatchedEvents.length, 1);
+assert.equal(persistedEvents[0]?.eventName, 'demo_room_entered');
 assert.deepEqual(pushedEvents[0], {
   boothId: null,
   boothTemplate: 'standard_corner',
@@ -61,6 +64,7 @@ assert.deepEqual(pushedEvents[0], {
   eventName: 'demo_room_entered',
   sectorId: null,
   sectorName: null,
+  sessionId: null,
   sponsorTier: 'gold',
 });
 assert.equal(analyticsTrackCalls[0]?.eventName, 'expo_demo_room_entered');
@@ -81,5 +85,6 @@ assert.deepEqual(analyticsTrackCalls[0]?.payload, {
   eventName: 'demo_room_entered',
   sectorId: null,
   sectorName: null,
+  sessionId: null,
   sponsorTier: 'gold',
 });

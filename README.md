@@ -1,73 +1,83 @@
-# React + TypeScript + Vite
+# Warpala Web3D Sponsor Expo
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Warpala is a sponsor-facing Web3D expo platform built around a deterministic sponsor boulevard, a static city backdrop, and a canonical sponsor scene contract served from `/api/expo/scene`.
 
-Currently, two official plugins are available:
+## Canonical release topology
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+There is exactly one release frontend and one release backend:
 
-## React Compiler
+- Frontend deployable: root Vite SPA in this repository
+- Backend deployable: `backend-server` Node service
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+Release baseline rules:
 
-## Expanding the ESLint configuration
+- The sponsor boulevard is the primary launch surface.
+- `/api/expo/scene` is the canonical scene source of truth.
+- Pixel Streaming is optional premium functionality and must never be required for sponsor baseline usability.
+- `apps/frontend` is not the canonical Web3D release runtime.
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## Release endpoints
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+Production:
+- Frontend origin: `https://www.30sek24.com`
+- Backend API origin: `https://api.30sek24.com`
+- Backend health: `https://api.30sek24.com/health`
+- Sponsor scene: `https://api.30sek24.com/api/expo/scene`
+- Pixel Streaming status: `https://api.30sek24.com/api/pixel-streaming/status`
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+Staging:
+- Frontend origin: `https://staging.30sek24.com`
+- Backend API origin: `https://api-staging.30sek24.com`
+- Backend health: `https://api-staging.30sek24.com/health`
+- Sponsor scene: `https://api-staging.30sek24.com/api/expo/scene`
+- Pixel Streaming status: `https://api-staging.30sek24.com/api/pixel-streaming/status`
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## Environment contract
+
+Frontend release builds must use:
+
+- `VITE_PUBLIC_API_BASE_URL`
+- `VITE_SIGNALING_SERVER_URL`
+- `VITE_STUN_SERVER_URLS`
+- `VITE_TURN_SERVER_URLS`
+- `VITE_TURN_USERNAME`
+- `VITE_TURN_PASSWORD`
+
+Backend release deploys must use:
+
+- `SUPABASE_URL`
+- `SUPABASE_SERVICE_KEY`
+- `PORT`
+- `NODE_ENV`
+- `SIGNALING_STATUS_BASE_URL`
+- `PIXEL_STREAMING_STATUS_TIMEOUT_MS`
+- `UE5_SECRET_KEY`
+
+See [WEB3D_EXPO_DEPLOYMENT_CONTRACT.md](C:/3d/docs/release/WEB3D_EXPO_DEPLOYMENT_CONTRACT.md) and [ADR-0001](C:/3d/docs/adr/ADR-0001-canonical-web3d-expo-release-topology.md).
+
+## Local development
+
+Frontend:
+```powershell
+npm install
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+Backend:
+```powershell
+cd backend-server
+npm install
+npm run start:docker
 ```
+
+Docker stack:
+```powershell
+docker compose up --build
+```
+
+## Release discipline
+
+- Do not point release builds at temporary tunnel hosts.
+- Do not reintroduce prototype/admin/editor booth flows into the sponsor release path.
+- Keep graceful degradation intact under backend and asset failure.
+- Prefer removing legacy release-path logic over preserving mixed compatibility behavior.

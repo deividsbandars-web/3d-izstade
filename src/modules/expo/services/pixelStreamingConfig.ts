@@ -1,4 +1,6 @@
-export type PixelStreamingAvailability = 'connecting' | 'available' | 'unavailable';
+import { getFrontendRuntimeEnv } from '../../../config/runtimeEnv';
+
+export type PixelStreamingAvailability = 'connecting' | 'available' | 'degraded' | 'unavailable';
 export type PixelStreamingSignalingStatus = 'signaling_up' | 'signaling_down' | 'unknown';
 export type PixelStreamingStreamerStatus = 'streamer_available' | 'streamer_unavailable' | 'unknown';
 export type PixelStreamingTurnIceStatus = 'turn_configured' | 'turn_not_configured' | 'turn_unknown';
@@ -32,74 +34,11 @@ export interface PixelStreamingRuntimeConfig {
 const DEFAULT_PROBE_TIMEOUT_MS = 2500;
 
 function getBrowserSignalingUrl() {
-  if (typeof window === 'undefined') {
-    return 'ws://localhost/ws/';
-  }
-
-  const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
-  return `${protocol}://${window.location.host}/ws/`;
+  return getFrontendRuntimeEnv().signalingUrl;
 }
 
 function getBrowserStatusEndpointUrl() {
-  if (typeof window === 'undefined') {
-    return 'http://localhost/api/pixel-streaming/status';
-  }
-
-  return `${window.location.origin}/api/pixel-streaming/status`;
-}
-
-function parseIceServers(rawValue: string | undefined) {
-  if (!rawValue?.trim()) {
-    return [];
-  }
-
-  try {
-    const parsed = JSON.parse(rawValue);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
-}
-
-function parseEnvUrlList(rawValue: string | undefined) {
-  if (!rawValue?.trim()) {
-    return [];
-  }
-
-  return rawValue
-    .split(',')
-    .map((value) => value.trim())
-    .filter((value) => value.length > 0);
-}
-
-function buildIceServersFromEnv() {
-  const stunUrls = parseEnvUrlList(import.meta.env.VITE_STUN_SERVER_URLS);
-  const turnUrls = parseEnvUrlList(import.meta.env.VITE_TURN_SERVER_URLS);
-  const turnUsername = import.meta.env.VITE_TURN_USERNAME?.trim();
-  const turnPassword = import.meta.env.VITE_TURN_PASSWORD?.trim();
-
-  if (stunUrls.length === 0 && turnUrls.length === 0) {
-    return [];
-  }
-
-  const iceServers: Array<Record<string, unknown>> = [];
-
-  if (stunUrls.length > 0) {
-    iceServers.push({ urls: stunUrls });
-  }
-
-  if (turnUrls.length > 0) {
-    const turnServer: Record<string, unknown> = { urls: turnUrls };
-
-    if (turnUsername && turnPassword) {
-      turnServer.username = turnUsername;
-      turnServer.credential = turnPassword;
-    }
-
-    iceServers.push(turnServer);
-  }
-
-  return iceServers;
+  return `${getFrontendRuntimeEnv().apiBaseUrl}/api/pixel-streaming/status`;
 }
 
 function resolveTurnIceStatusFromIceServers(iceServers: unknown[]): PixelStreamingTurnIceStatus {
@@ -125,14 +64,29 @@ function resolveTurnIceStatusFromIceServers(iceServers: unknown[]): PixelStreami
 }
 
 export function getPixelStreamingRuntimeConfig(): PixelStreamingRuntimeConfig {
-  const probeTimeoutMs = Number(import.meta.env.VITE_PIXEL_STREAMING_PROBE_TIMEOUT_MS) || DEFAULT_PROBE_TIMEOUT_MS;
-  const envIceServers = buildIceServersFromEnv();
+  const frontendRuntimeEnv = getFrontendRuntimeEnv();
+  const iceServers: Array<Record<string, unknown>> = [];
+
+  if (frontendRuntimeEnv.stunServerUrls.length > 0) {
+    iceServers.push({ urls: frontendRuntimeEnv.stunServerUrls });
+  }
+
+  if (frontendRuntimeEnv.turnServerUrls.length > 0) {
+    const turnServer: Record<string, unknown> = { urls: frontendRuntimeEnv.turnServerUrls };
+
+    if (frontendRuntimeEnv.turnUsername && frontendRuntimeEnv.turnPassword) {
+      turnServer.username = frontendRuntimeEnv.turnUsername;
+      turnServer.credential = frontendRuntimeEnv.turnPassword;
+    }
+
+    iceServers.push(turnServer);
+  }
 
   return {
-    signalingUrl: import.meta.env.VITE_SIGNALING_SERVER_URL?.trim() || getBrowserSignalingUrl(),
+    signalingUrl: getBrowserSignalingUrl(),
     statusEndpointUrl: getBrowserStatusEndpointUrl(),
-    iceServers: envIceServers.length > 0 ? envIceServers : parseIceServers(import.meta.env.VITE_ICE_SERVERS),
-    probeTimeoutMs,
+    iceServers,
+    probeTimeoutMs: frontendRuntimeEnv.pixelStreamingProbeTimeoutMs || DEFAULT_PROBE_TIMEOUT_MS,
   };
 }
 
@@ -183,6 +137,22 @@ export function buildFallbackPixelStreamingRuntimeStatus(
       activeStreamerId: null
     }
   };
+}
+
+export function derivePixelStreamingAvailability(status: PixelStreamingRuntimeStatus | null): PixelStreamingAvailability {
+  if (!status) {
+    return 'connecting';
+  }
+
+  if (status.readiness === 'session_ready' && status.streamer === 'streamer_available') {
+    return 'available';
+  }
+
+  if (status.signaling === 'signaling_up' || status.gatewayReachable) {
+    return 'degraded';
+  }
+
+  return 'unavailable';
 }
 
 export function probePixelStreamingAvailability(config: PixelStreamingRuntimeConfig): Promise<boolean> {

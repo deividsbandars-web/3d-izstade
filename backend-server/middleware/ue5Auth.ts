@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { getSupabase } from '../services/supabase.js';
+import { getBackendRuntimeEnv } from '../config/runtimeEnv.js';
 
 /**
  * Middleware to protect Unreal Engine endpoints using a simple API Key.
@@ -12,9 +12,7 @@ export const ue5AuthMiddleware = async (req: Request, res: Response, next: NextF
         return res.status(401).json({ error: 'UE5 API Key required' });
     }
 
-    // In a real scenario, we'd check against the `api_keys` table.
-    // For this prototype, we'll use a secret defined in .env or a hardcoded fallback.
-    const validKey = process.env.UE5_SECRET_KEY || 'warpala-ue5-bridge-2026';
+    const validKey = getBackendRuntimeEnv().ue5SecretKey;
 
     if (apiKey !== validKey) {
         return res.status(403).json({ error: 'Invalid UE5 API Key' });

@@ -27,11 +27,22 @@ jobs:
       - name: Run Linter
         run: npm run lint
 
+      - name: Check Expo Release Assets
+        run: npm run check:expo-release-assets
+
       - name: Build Project
         run: npm run build
         env:
+          VITE_PUBLIC_API_BASE_URL: ${{ secrets.VITE_PUBLIC_API_BASE_URL }}
+          VITE_SIGNALING_SERVER_URL: ${{ secrets.VITE_SIGNALING_SERVER_URL }}
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+
+      - name: Upload Expo Asset Budget Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: expo-release-asset-budget
+          path: diagnostics/reports/expo-release-asset-budget.json
 
   # Note: The Docker Deployment job is commented out below.
   # To enable it, you must add DOCKER_USERNAME and DOCKER_PASSWORD 

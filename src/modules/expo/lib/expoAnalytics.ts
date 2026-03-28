@@ -1,3 +1,5 @@
+import { getFrontendRuntimeEnv } from '../../../config/runtimeEnv';
+
 export type ExpoAnalyticsEventName =
   | 'scene_loaded'
   | 'sector_entered'
@@ -15,6 +17,7 @@ export type ExpoAnalyticsDetail = {
   eventName: ExpoAnalyticsEventName;
   sectorId?: string | null;
   sectorName?: string | null;
+  sessionId?: string | null;
   sponsorTier?: string | null;
 } & Record<string, unknown>;
 
@@ -24,7 +27,54 @@ export type ExpoAnalyticsTarget = {
   dataLayer?: Array<Record<string, unknown>>;
   dispatchEvent?: (event: Event) => boolean;
   gtag?: (command: 'event', eventName: string, payload: Record<string, unknown>) => void;
+  persist?: (detail: ExpoAnalyticsDetail) => void;
 };
+
+function createExpoSessionId() {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+
+  return `expo-${Date.now()}-${Math.random().toString(16).slice(2, 10)}`;
+}
+
+function getExpoSessionId() {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
+  const sessionStorageKey = 'warpala.expo.session_id';
+  const existing = window.sessionStorage.getItem(sessionStorageKey);
+  if (existing) {
+    return existing;
+  }
+
+  const next = createExpoSessionId();
+  window.sessionStorage.setItem(sessionStorageKey, next);
+  return next;
+}
+
+function persistExpoAnalytics(detail: ExpoAnalyticsDetail) {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  const endpoint = `${getFrontendRuntimeEnv().apiBaseUrl}/api/analytics/track`;
+  const payload = JSON.stringify({ payload: detail });
+
+  if (typeof navigator !== 'undefined' && typeof navigator.sendBeacon === 'function') {
+    const body = new Blob([payload], { type: 'application/json' });
+    navigator.sendBeacon(endpoint, body);
+    return;
+  }
+
+  void fetch(endpoint, {
+    body: payload,
+    headers: { 'Content-Type': 'application/json' },
+    keepalive: true,
+    method: 'POST',
+  }).catch(() => undefined);
+}
 
 export function createExpoAnalyticsDetail(
   eventName: ExpoAnalyticsEventName,
@@ -38,6 +88,7 @@ export function createExpoAnalyticsDetail(
     eventName,
     sectorId: (meta.sectorId as string | undefined) ?? company?.sectorId ?? company?.sector_id ?? null,
     sectorName: (meta.sectorName as string | undefined) ?? null,
+    sessionId: (meta.sessionId as string | undefined) ?? getExpoSessionId(),
     sponsorTier: company?.sponsorTier ?? null,
     ...meta,
   };
@@ -61,6 +112,7 @@ function getBrowserTarget(): ExpoAnalyticsTarget | null {
     dataLayer: Array.isArray((window as any).dataLayer) ? (window as any).dataLayer : undefined,
     dispatchEvent: (event) => window.dispatchEvent(event),
     gtag,
+    persist: persistExpoAnalytics,
   };
 }
 
@@ -89,6 +141,10 @@ export function trackExpoAnalyticsEvent(
 
   if (target?.gtag) {
     target.gtag('event', `expo_${eventName}`, detail);
+  }
+
+  if (target?.persist) {
+    target.persist(detail);
   }
 
   return detail;
@@ -121,4 +177,3 @@ export function trackExpoBookingClicked(company: any, meta: Record<string, unkno
 export function trackExpoDemoRoomEntered(company: any, meta: Record<string, unknown> = {}, target?: ExpoAnalyticsTarget | null) {
   return trackExpoAnalyticsEvent('demo_room_entered', company, meta, target);
 }
-

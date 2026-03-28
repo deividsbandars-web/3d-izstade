@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
   buildFallbackPixelStreamingRuntimeStatus,
+  derivePixelStreamingAvailability,
   fetchPixelStreamingRuntimeStatus,
   getPixelStreamingRuntimeConfig,
   probePixelStreamingAvailability,
@@ -42,14 +43,14 @@ export function usePixelStreamingStatus({ shouldProbe = true }: UsePixelStreamin
         if (!isActive) return;
 
         setRuntimeStatus(status);
-        setAvailability(status.readiness === 'session_ready' ? 'available' : 'unavailable');
+        setAvailability(derivePixelStreamingAvailability(status));
       } catch {
         const isReachable = await probePixelStreamingAvailability(config);
         if (!isActive) return;
 
         const fallbackStatus = buildFallbackPixelStreamingRuntimeStatus(isReachable, config);
         setRuntimeStatus(fallbackStatus);
-        setAvailability('unavailable');
+        setAvailability(derivePixelStreamingAvailability(fallbackStatus));
       }
     };
 
