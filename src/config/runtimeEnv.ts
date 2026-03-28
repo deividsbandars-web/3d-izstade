@@ -1,6 +1,6 @@
 export type FrontendRuntimeEnv = {
   apiBaseUrl: string;
-  signalingUrl: string;
+  signalingUrl: string | null;
   supabaseUrl: string;
   supabaseAnonKey: string;
   stunServerUrls: string[];
@@ -105,11 +105,13 @@ export function resolveFrontendRuntimeEnv(rawEnv: RawFrontendEnv): FrontendRunti
     'VITE_PUBLIC_API_BASE_URL',
     ['http:', 'https:']
   );
-  const signalingUrl = normalizeUrl(
-    normalizeRequiredString(signalingUrlRaw, 'VITE_SIGNALING_SERVER_URL'),
-    'VITE_SIGNALING_SERVER_URL',
-    ['ws:', 'wss:']
-  );
+  const signalingUrl = signalingUrlRaw
+    ? normalizeUrl(
+      signalingUrlRaw,
+      'VITE_SIGNALING_SERVER_URL',
+      ['ws:', 'wss:']
+    )
+    : null;
   const supabaseUrl = normalizeUrl(
     normalizeRequiredString(rawEnv.VITE_SUPABASE_URL, 'VITE_SUPABASE_URL'),
     'VITE_SUPABASE_URL',

@@ -5,7 +5,7 @@ interface ExpoLobbyProps {
   onSelectMode: (mode: ExpoMode) => void;
   onBack: () => void;
   premiumAvailability: PixelStreamingAvailability;
-  premiumSignalingUrl: string;
+  premiumSignalingUrl: string | null;
   premiumRuntimeStatus: PixelStreamingRuntimeStatus | null;
 }
 
@@ -76,9 +76,9 @@ export function ExpoLobby({ onSelectMode, onBack, premiumAvailability, premiumSi
                 <div><strong>{EXPO_MODE_COPY.premiumStatusWarningsLabel}</strong> {premiumRuntimeStatus.warnings.join(', ')}</div>
               ) : null}
             </div>
-            <div style={{ marginTop: '6px', fontSize: '0.8rem', color: '#a7f3d0', wordBreak: 'break-all' }}>
-              {EXPO_MODE_COPY.premiumServerLabel} {premiumSignalingUrl}
-            </div>
+              <div style={{ marginTop: '6px', fontSize: '0.8rem', color: '#a7f3d0', wordBreak: 'break-all' }}>
+                {EXPO_MODE_COPY.premiumServerLabel} {premiumSignalingUrl ?? 'Not configured'}
+              </div>
           </div>
           <div style={{ padding: '14px 18px', borderRadius: '12px', background: 'rgba(30, 41, 59, 0.7)', border: '1px solid rgba(148, 163, 184, 0.2)', color: '#cbd5e1' }}>
             <strong style={{ color: '#fff' }}>{EXPO_MODE_COPY.fallbackLabel}</strong> {EXPO_MODE_COPY.fallbackDescription}

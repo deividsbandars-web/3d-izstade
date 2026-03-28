@@ -21,7 +21,7 @@ export default function PixelStreamingViewer({
     const [status, setStatus] = useState<string>(EXPO_MODE_COPY.premiumViewerConnecting);
     const [availableStreamers, setAvailableStreamers] = useState<string[]>([]);
     const psRef = useRef<PixelStreaming | null>(null);
-    const signalingUrl = config.signalingUrl;
+    const signalingUrl = config.signalingUrl ?? 'Not configured';
 
     function handleConnect(streamerId: string) {
         if (!psRef.current) return;

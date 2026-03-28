@@ -25,7 +25,7 @@ export interface PixelStreamingRuntimeStatus {
 }
 
 export interface PixelStreamingRuntimeConfig {
-  signalingUrl: string;
+  signalingUrl: string | null;
   statusEndpointUrl: string;
   iceServers: unknown[];
   probeTimeoutMs: number;
@@ -116,21 +116,22 @@ export function buildFallbackPixelStreamingRuntimeStatus(
   config: PixelStreamingRuntimeConfig
 ): PixelStreamingRuntimeStatus {
   const turnIceStatus = resolveTurnIceStatusFromIceServers(config.iceServers);
+  const signalingConfigured = Boolean(config.signalingUrl);
 
   return {
-    signaling: signalingReachable ? 'signaling_up' : 'signaling_down',
+    signaling: signalingConfigured && signalingReachable ? 'signaling_up' : 'signaling_down',
     streamer: 'unknown',
     turn_ice: turnIceStatus,
-    readiness: signalingReachable ? 'session_not_ready' : 'unknown',
+    readiness: signalingConfigured && signalingReachable ? 'session_not_ready' : 'unknown',
     checkedAt: new Date().toISOString(),
     warnings: [
       'STATUS_ENDPOINT_UNAVAILABLE',
-      'USING_WEBSOCKET_FALLBACK',
+      ...(signalingConfigured ? ['USING_WEBSOCKET_FALLBACK'] : ['SIGNALING_URL_NOT_CONFIGURED']),
       ...(turnIceStatus === 'turn_not_configured' ? ['TURN_NOT_CONFIGURED'] : []),
       ...(turnIceStatus === 'turn_unknown' ? ['TURN_CONFIGURATION_UNKNOWN'] : []),
     ],
     streamerCount: null,
-    gatewayReachable: signalingReachable,
+    gatewayReachable: signalingConfigured && signalingReachable,
     session: {
       sessionMode: 'single_instance',
       selectionPolicy: 'first_available',
@@ -157,7 +158,7 @@ export function derivePixelStreamingAvailability(status: PixelStreamingRuntimeSt
 
 export function probePixelStreamingAvailability(config: PixelStreamingRuntimeConfig): Promise<boolean> {
   return new Promise((resolve) => {
-    if (typeof window === 'undefined' || typeof WebSocket === 'undefined') {
+    if (typeof window === 'undefined' || typeof WebSocket === 'undefined' || !config.signalingUrl) {
       resolve(false);
       return;
     }

@@ -28,11 +28,18 @@ assert.throws(() => resolveFrontendRuntimeEnv({
 
 assert.throws(() => resolveFrontendRuntimeEnv({
   VITE_PUBLIC_API_BASE_URL: 'https://api.30sek24.com',
-  VITE_SIGNALING_SERVER_URL: 'wss://api.30sek24.com/ws/',
   VITE_SUPABASE_URL: 'https://example.supabase.co',
   VITE_SUPABASE_ANON_KEY: 'anon-key',
   VITE_TURN_USERNAME: 'turn-user',
 }), /FRONTEND_ENV_INVALID_TURN_CREDENTIALS/);
+
+const optionalSignalingEnv = resolveFrontendRuntimeEnv({
+  VITE_PUBLIC_API_BASE_URL: 'https://api.30sek24.com',
+  VITE_SUPABASE_URL: 'https://example.supabase.co',
+  VITE_SUPABASE_ANON_KEY: 'anon-key',
+});
+
+assert.equal(optionalSignalingEnv.signalingUrl, null);
 
 const originalWindow = globalThis.window;
 Object.defineProperty(globalThis, 'window', {
