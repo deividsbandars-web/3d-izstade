@@ -1,53 +1,115 @@
 export type ExpoMode = 'menu' | 'walk' | 'fly' | 'unreal';
 export type ExpoQualityPreset = 'performance' | 'balanced' | 'quality';
 
+function normalizeExpoQualityPreset(value: string | null | undefined): ExpoQualityPreset | null {
+  if (!value) {
+    return null;
+  }
+
+  const normalized = String(value).trim().toLowerCase();
+  if (normalized === 'performance' || normalized === 'balanced' || normalized === 'quality') {
+    return normalized;
+  }
+
+  return null;
+}
+
+function resolveExpoQualityPreset(): ExpoQualityPreset {
+  const envPreset = normalizeExpoQualityPreset(import.meta.env.VITE_EXPO_QUALITY_PRESET);
+  if (envPreset) {
+    return envPreset;
+  }
+
+  if (typeof window !== 'undefined') {
+    const urlPreset = normalizeExpoQualityPreset(new URLSearchParams(window.location.search).get('expoQuality'));
+    if (urlPreset) {
+      return urlPreset;
+    }
+
+    const storedPreset = normalizeExpoQualityPreset(window.localStorage.getItem('warpala.expoQualityPreset'));
+    if (storedPreset) {
+      return storedPreset;
+    }
+  }
+
+  return 'balanced';
+}
+
 export const EXPO_QUALITY_PRESETS = {
   performance: {
+    enableAmbientMotionLayer: false,
     enableBoulevardGrassClusters: false,
     enableBoulevardGroundScreens: true,
+    enableCuratedSkylineRing: false,
+    enableDistrictAnchorNodes: true,
+    enableDistrictLandmarks: true,
+    enableEnhancedBoulevardDetail: false,
     enableFacadeScreens: true,
-    enableGroundArtPass: true,
     enableFog: true,
+    enableGroundArtPass: true,
+    enableLocalizedLightPools: false,
     enablePromenadeTexture: false,
+    enableShowcaseSkylineDensity: false,
     enableSponsorBillboards: false,
     enableStreetEnvironmentLighting: true,
   },
   balanced: {
+    enableAmbientMotionLayer: true,
     enableBoulevardGrassClusters: true,
     enableBoulevardGroundScreens: true,
+    enableCuratedSkylineRing: true,
+    enableDistrictAnchorNodes: true,
+    enableDistrictLandmarks: true,
+    enableEnhancedBoulevardDetail: false,
     enableFacadeScreens: true,
-    enableGroundArtPass: true,
     enableFog: true,
+    enableGroundArtPass: true,
+    enableLocalizedLightPools: true,
     enablePromenadeTexture: true,
+    enableShowcaseSkylineDensity: false,
     enableSponsorBillboards: true,
     enableStreetEnvironmentLighting: true,
   },
   quality: {
+    enableAmbientMotionLayer: true,
     enableBoulevardGrassClusters: true,
     enableBoulevardGroundScreens: true,
+    enableCuratedSkylineRing: true,
+    enableDistrictAnchorNodes: true,
+    enableDistrictLandmarks: true,
+    enableEnhancedBoulevardDetail: true,
     enableFacadeScreens: true,
-    enableGroundArtPass: true,
     enableFog: true,
+    enableGroundArtPass: true,
+    enableLocalizedLightPools: true,
     enablePromenadeTexture: true,
+    enableShowcaseSkylineDensity: true,
     enableSponsorBillboards: true,
     enableStreetEnvironmentLighting: true,
   },
 } as const;
 
-export const EXPO_CITY_QUALITY_TIER: ExpoQualityPreset = 'balanced';
+export const EXPO_CITY_QUALITY_TIER: ExpoQualityPreset = resolveExpoQualityPreset();
 export const EXPO_DEBUG_DEFAULT = false;
 export const EXPO_FEATURE_FLAGS = {
+  enableAmbientMotionLayer: EXPO_QUALITY_PRESETS[EXPO_CITY_QUALITY_TIER].enableAmbientMotionLayer,
   enableAnalytics: true,
   enableBoulevardGrassClusters: EXPO_QUALITY_PRESETS[EXPO_CITY_QUALITY_TIER].enableBoulevardGrassClusters,
   enableBoulevardGroundScreens: EXPO_QUALITY_PRESETS[EXPO_CITY_QUALITY_TIER].enableBoulevardGroundScreens,
+  enableCuratedSkylineRing: EXPO_QUALITY_PRESETS[EXPO_CITY_QUALITY_TIER].enableCuratedSkylineRing,
+  enableDistrictAnchorNodes: EXPO_QUALITY_PRESETS[EXPO_CITY_QUALITY_TIER].enableDistrictAnchorNodes,
+  enableDistrictLandmarks: EXPO_QUALITY_PRESETS[EXPO_CITY_QUALITY_TIER].enableDistrictLandmarks,
+  enableEnhancedBoulevardDetail: EXPO_QUALITY_PRESETS[EXPO_CITY_QUALITY_TIER].enableEnhancedBoulevardDetail,
   enableFacadeScreens: EXPO_QUALITY_PRESETS[EXPO_CITY_QUALITY_TIER].enableFacadeScreens,
+  enableFog: EXPO_QUALITY_PRESETS[EXPO_CITY_QUALITY_TIER].enableFog,
   enableGroundArtPass: EXPO_QUALITY_PRESETS[EXPO_CITY_QUALITY_TIER].enableGroundArtPass,
   enableLegacyCityFallback: false,
+  enableLocalizedLightPools: EXPO_QUALITY_PRESETS[EXPO_CITY_QUALITY_TIER].enableLocalizedLightPools,
+  enablePromenadeTexture: EXPO_QUALITY_PRESETS[EXPO_CITY_QUALITY_TIER].enablePromenadeTexture,
   enableSceneGlobalsDebug: false,
+  enableShowcaseSkylineDensity: EXPO_QUALITY_PRESETS[EXPO_CITY_QUALITY_TIER].enableShowcaseSkylineDensity,
   enableSponsorBillboards: EXPO_QUALITY_PRESETS[EXPO_CITY_QUALITY_TIER].enableSponsorBillboards,
   enableStreetEnvironmentLighting: EXPO_QUALITY_PRESETS[EXPO_CITY_QUALITY_TIER].enableStreetEnvironmentLighting,
-  enablePromenadeTexture: EXPO_QUALITY_PRESETS[EXPO_CITY_QUALITY_TIER].enablePromenadeTexture,
-  enableFog: EXPO_QUALITY_PRESETS[EXPO_CITY_QUALITY_TIER].enableFog,
 } as const;
 
 export const EXPO_ASSET_URLS = [] as const;
@@ -122,17 +184,17 @@ export const PRODUCTION_SAFE_COMPANIES = [
 
 export const EXPO_MODE_COPY = {
   title: 'WARPALA',
-  subtitle: 'INDUSTRIĀLĀ METAVERSE',
+  subtitle: 'INDUSTRIAL METAVERSE',
   publicLabel: 'Public / lightweight:',
-  publicDescription: 'WALK LITE un DRONE VIEW atver stabilo Web3D pilsētu pārlūkā.',
+  publicDescription: 'WALK LITE and DRONE VIEW open the stable Web3D city route.',
   premiumLabel: 'Premium / Unreal:',
-  premiumDescription: 'Pixel Streaming ieeja ir tikai viena, caur FULL UNREAL ENGINE CITY pogu.',
+  premiumDescription: 'Pixel Streaming stays optional and is entered only through FULL UNREAL ENGINE CITY.',
   fallbackLabel: 'Fallback:',
-  fallbackDescription: 'ja premium straume nav pieejama, vari turpināt apskati Web3D pilsētā un ieiet atsevišķos booth room.',
-  walkCta: '🚶 WALK LITE (WEB3D)',
-  flyCta: '🦅 DRONE VIEW',
-  premiumCta: '🎮 ENTER FULL UNREAL ENGINE CITY (PIXEL STREAM)',
-  backToDashboard: '← BACK TO OS DASHBOARD',
+  fallbackDescription: 'If premium streaming is unavailable, continue in Web3D and enter sponsor rooms individually.',
+  walkCta: 'WALK LITE (WEB3D)',
+  flyCta: 'DRONE VIEW',
+  premiumCta: 'ENTER FULL UNREAL ENGINE CITY (PIXEL STREAM)',
+  backToDashboard: 'BACK TO OS DASHBOARD',
   publicModeBadge: 'WEB3D PUBLIC MODE',
   exitToLobby: 'EXIT TO LOBBY',
   premiumStatusLabel: 'Premium Unreal status:',
@@ -140,37 +202,39 @@ export const EXPO_MODE_COPY = {
   premiumStreamerLabel: 'Streamer:',
   premiumTurnLabel: 'TURN/ICE:',
   premiumSessionLabel: 'Session:',
-  premiumAvailable: 'Pieejams. Vari atvērt Unreal Pixel Streaming.',
-  premiumDegraded: 'Premium Unreal gateway ir sasniedzams, bet sesija vēl nav release-ready. Web3D maršruts paliek primārais.',
-  premiumConnecting: 'Pārbauda premium Unreal gateway...',
-  premiumUnavailable: 'Premium Unreal šobrīd nav pieejams. Paliec Web3D režīmā un izmanto booth room kā fallback.',
-  premiumGatewayUp: 'signaling gateway sasniedzams',
-  premiumGatewayDown: 'signaling gateway nav sasniedzams',
-  premiumStreamerReady: 'dzīvs streamer ir gatavs',
-  premiumStreamerWaiting: 'gateway augšā, bet streamer vēl nav gatavs',
-  premiumTurnConfigured: 'TURN konfigurēts',
-  premiumTurnNotConfigured: 'TURN nav konfigurēts',
-  premiumTurnUnknown: 'TURN statuss nav droši nosakāms',
-  premiumSessionReady: 'single-instance sesija gatava',
-  premiumSessionNotReady: 'single-instance sesija vēl nav gatava',
-  premiumSessionUnknown: 'sesijas gatavība nav zināma',
+  premiumAvailable: 'Available. You can open Unreal Pixel Streaming.',
+  premiumDegraded: 'Premium Unreal gateway is reachable, but the session is not release-ready. Web3D remains primary.',
+  premiumConnecting: 'Checking premium Unreal gateway...',
+  premiumUnavailable: 'Premium Unreal is unavailable. Stay in Web3D mode and use sponsor rooms as fallback.',
+  premiumGatewayUp: 'signaling gateway reachable',
+  premiumGatewayDown: 'signaling gateway unreachable',
+  premiumStreamerReady: 'live streamer ready',
+  premiumStreamerWaiting: 'gateway up, streamer not ready yet',
+  premiumTurnConfigured: 'TURN configured',
+  premiumTurnNotConfigured: 'TURN not configured',
+  premiumTurnUnknown: 'TURN status unknown',
+  premiumSessionReady: 'single-instance session ready',
+  premiumSessionNotReady: 'single-instance session not ready',
+  premiumSessionUnknown: 'session readiness unknown',
   premiumUnavailableCta: 'PREMIUM UNREAL TEMPORARILY UNAVAILABLE',
   premiumDegradedCta: 'PREMIUM UNREAL DEGRADED',
   premiumConnectingCta: 'CHECKING PREMIUM UNREAL...',
   premiumServerLabel: 'Signaling route:',
-  premiumStatusCheckedAt: 'Pārbaudīts:',
-  premiumStatusWarningsLabel: 'Brīdinājumi:',
-  premiumViewerConnecting: 'Pārbauda premium Unreal pieejamību...',
-  premiumViewerUnavailable: 'Premium Unreal šobrīd nav pieejams.',
-  premiumViewerDegraded: 'Premium Unreal ir degradētā stāvoklī. Turpini sponsoru maršrutu Web3D režīmā.',
-  premiumViewerGatewayOnly: 'Gateway ir augšā, bet dzīvs streamer vēl nav pieejams.',
-  premiumViewerFallback: 'Paliec Web3D fallback režīmā vai atgriezies lobby, lai turpinātu expo bez straumes.',
-  premiumViewerDiscovering: 'Gaidu Unreal Engine straumeri...',
-  premiumViewerSelectStreamer: 'Atrasti {count} kanāli. Izvēlies premium straumi.',
-  premiumViewerConnected: 'Premium Unreal pieslēgts.',
-  premiumViewerDisconnected: 'Premium Unreal savienojums pārtrūka.',
-  premiumViewerConnectTo: 'Pieslēdzas pie {streamerId}...',
-  premiumViewerLaunch: 'Palaist: {streamerId}',
+  premiumStatusCheckedAt: 'Checked at:',
+  premiumStatusWarningsLabel: 'Warnings:',
+  premiumViewerConnecting: 'Checking premium Unreal availability...',
+  premiumViewerUnavailable: 'Premium Unreal is unavailable.',
+  premiumViewerDegraded: 'Premium Unreal is degraded. Continue the sponsor route in Web3D mode.',
+  premiumViewerGatewayOnly: 'Gateway is up, but no live streamer is available yet.',
+  premiumViewerFallback: 'Stay in Web3D fallback mode or return to the lobby to continue without streaming.',
+  premiumViewerDiscovering: 'Waiting for Unreal Engine streamer...',
+  premiumViewerSelectStreamer: 'Found {count} channels. Choose the premium stream.',
+  premiumViewerConnected: 'Premium Unreal connected.',
+  premiumViewerDisconnected: 'Premium Unreal connection dropped.',
+  premiumViewerConnectTo: 'Connecting to {streamerId}...',
+  premiumViewerLaunch: 'Launch: {streamerId}',
 } as const;
 
 export const EXPO_SYNC_THROTTLE = 50;
+
+

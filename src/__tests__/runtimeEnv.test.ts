@@ -33,3 +33,29 @@ assert.throws(() => resolveFrontendRuntimeEnv({
   VITE_SUPABASE_ANON_KEY: 'anon-key',
   VITE_TURN_USERNAME: 'turn-user',
 }), /FRONTEND_ENV_INVALID_TURN_CREDENTIALS/);
+
+const originalWindow = globalThis.window;
+Object.defineProperty(globalThis, 'window', {
+  configurable: true,
+  value: {
+    location: {
+      host: '127.0.0.1:5173',
+      origin: 'http://127.0.0.1:5173',
+      protocol: 'http:',
+    },
+  },
+});
+
+const devFallbackEnv = resolveFrontendRuntimeEnv({
+  DEV: true,
+  VITE_SUPABASE_URL: 'https://example.supabase.co',
+  VITE_SUPABASE_ANON_KEY: 'anon-key',
+});
+
+assert.equal(devFallbackEnv.apiBaseUrl, 'http://127.0.0.1:5173');
+assert.equal(devFallbackEnv.signalingUrl, 'ws://127.0.0.1:5173/ws');
+
+Object.defineProperty(globalThis, 'window', {
+  configurable: true,
+  value: originalWindow,
+});

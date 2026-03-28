@@ -1,4 +1,4 @@
-import { EXPO_MODE_COPY } from '../state/expoRuntime';
+import { EXPO_CITY_QUALITY_TIER, EXPO_MODE_COPY } from '../state/expoRuntime';
 
 interface ExpoWorldHudProps {
   debug: boolean;
@@ -28,7 +28,7 @@ export function ExpoWorldHud({
           onClick={onToggleMic}
           style={{ background: isMicOn ? '#10b981' : 'rgba(255,255,255,0.1)', padding: '12px 20px', borderRadius: '10px', color: '#fff', border: 'none', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px' }}
         >
-          {isMicOn ? '🎙️ MIC ON' : '🔇 MIC OFF'}
+          {isMicOn ? 'MIC ON' : 'MIC OFF'}
         </button>
         <button
           onClick={onToggleDebug}
@@ -41,6 +41,9 @@ export function ExpoWorldHud({
         </div>
         <div style={{ background: 'rgba(15, 23, 42, 0.8)', padding: '12px 20px', borderRadius: '10px', color: '#cbd5e1', fontWeight: 'bold' }}>
           {EXPO_MODE_COPY.publicModeBadge}
+        </div>
+        <div style={{ background: 'rgba(59, 130, 246, 0.18)', padding: '12px 20px', borderRadius: '10px', color: '#bfdbfe', fontWeight: 'bold' }}>
+          QUALITY: {EXPO_CITY_QUALITY_TIER.toUpperCase()}
         </div>
         <button onClick={onExit} style={{ background: 'white', padding: '12px 25px', borderRadius: '10px', border: 'none', fontWeight: 'bold', cursor: 'pointer' }}>
           {EXPO_MODE_COPY.exitToLobby}
@@ -63,3 +66,5 @@ export function ExpoWorldHud({
     </>
   );
 }
+
+

@@ -3,9 +3,15 @@ import { Canvas, useFrame, useLoader, useThree } from '@react-three/fiber';
 import { Environment, Html, Loader, OrbitControls, PointerLockControls, Sky, Text, useGLTF, useVideoTexture } from '@react-three/drei';
 import { useNavigate } from 'react-router-dom';
 import * as THREE from 'three';
-import { EXRLoader } from 'three/examples/jsm/loaders/EXRLoader.js';
 import { BoothUI } from '../../../components/BoothUI';
 import { normalizeModel } from '../../../utils/threeUtils';
+import { AmbientMotionLayer } from './AmbientMotionLayer';
+import { ArrivalReveal } from './ArrivalReveal';
+import { BoothArchitectureKit, getBoothArchitectureMetrics } from './BoothArchitectureKit';
+import { CuratedSkylineRing } from './CuratedSkylineRing';
+import { DistrictAnchorNodes } from './DistrictAnchorNodes';
+import { ExpoEvidenceProbe } from './ExpoEvidenceProbe';
+import { ExpoLandmarkLayer } from './ExpoLandmarkLayer';
 import {
   trackExpoBookingClicked,
   trackExpoBoothClicked,
@@ -18,8 +24,8 @@ import {
 import { buildBoulevardArtPass } from '../lib/boulevardArtPass';
 import { buildSponsorScreenLayout, type SponsorScreenNode } from '../lib/sponsorScreenLayout';
 import { buildSponsorBoothPresentation, getSponsorNameFontSize, resolveSponsorCtaIntent, type SponsorBoothTemplate, type SponsorCta } from '../lib/sponsorBoothPresentation';
-import { EXPO_FEATURE_FLAGS, type ExpoMode } from '../state/expoRuntime';
-import { buildBoothPlacements, buildExpoPlayBounds, buildExpoSectorMarkers, replaceDistrictBoothZones } from '../sceneWorld';
+import { EXPO_CITY_QUALITY_TIER, EXPO_FEATURE_FLAGS, type ExpoMode } from '../state/expoRuntime';
+import { buildBoothPlacements, buildExpoPlayBounds, buildExpoSectorMarkers, replaceDistrictBoothZones, type ExpoBoothPlacement } from '../sceneWorld';
 
 class SceneErrorBoundary extends React.Component<{ children: React.ReactNode; fallback: React.ReactNode }, { hasError: boolean }> {
   constructor(props: { children: React.ReactNode; fallback: React.ReactNode }) {
@@ -461,7 +467,7 @@ function GroundPlane() {
   return (
     <mesh ref={groundRef} rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.1, 0]} receiveShadow={false}>
       <planeGeometry args={[2000, 2000]} />
-      <meshStandardMaterial color="#0a0a0a" roughness={0.8} metalness={0.1} />
+      <meshStandardMaterial color="#0f1724" roughness={0.88} metalness={0.06} />
     </mesh>
   );
 }
@@ -504,25 +510,112 @@ function BoulevardGroundArt({
   boothPlacements: ReturnType<typeof buildBoothPlacements>;
   sectorMarkers: ReturnType<typeof buildExpoSectorMarkers>;
 }) {
-  const artPass = useMemo(() => buildBoulevardArtPass(boothPlacements, sectorMarkers), [boothPlacements, sectorMarkers]);
-  const walkwayTexture = useLoader(EXRLoader, '/textures/pergola_walkway_4k.exr');
-  const mappedTexture = useMemo(() => {
-    const texture = walkwayTexture.clone();
-    texture.wrapS = THREE.RepeatWrapping;
-    texture.wrapT = THREE.RepeatWrapping;
-    texture.needsUpdate = true;
-    return texture;
-  }, [walkwayTexture]);
+  const artPass = useMemo(
+    () => buildBoulevardArtPass(boothPlacements, sectorMarkers, { showcase: EXPO_FEATURE_FLAGS.enableEnhancedBoulevardDetail }),
+    [boothPlacements, sectorMarkers]
+  );
+  const textures = useLoader(THREE.TextureLoader, [
+    '/textures/expo/hero-paver-4k/pavement_01_diff_4k.png',
+    '/textures/expo/hero-paver-4k/pavement_01_nor_gl_4k.png',
+    '/textures/expo/hero-paver-4k/pavement_01_rough_4k.png',
+    '/textures/expo/light-concrete-4k/concrete_floor_worn_001_diff_4k.png',
+    '/textures/expo/light-concrete-4k/concrete_floor_worn_001_nor_gl_4k.png',
+    '/textures/expo/light-concrete-4k/concrete_floor_worn_001_rough_4k.png',
+    '/textures/expo/urban-grass-4k/sparse_grass_diff_4k.png',
+    '/textures/expo/urban-grass-4k/sparse_grass_nor_gl_4k.png',
+    '/textures/expo/urban-grass-4k/sparse_grass_rough_4k.png',
+  ]);
+  const materialMaps = useMemo(() => {
+    const configure = (texture: THREE.Texture, repeatX: number, repeatY: number) => {
+      const clone = texture.clone();
+      clone.wrapS = THREE.RepeatWrapping;
+      clone.wrapT = THREE.RepeatWrapping;
+      clone.repeat.set(repeatX, repeatY);
+      clone.colorSpace = texture === textures[0] || texture === textures[3] || texture === textures[6]
+        ? THREE.SRGBColorSpace
+        : THREE.NoColorSpace;
+      clone.needsUpdate = true;
+      return clone;
+    };
+
+    return {
+      hero_paver: {
+        map: configure(textures[0], 2.6, 8),
+        normalMap: configure(textures[1], 2.6, 8),
+        roughnessMap: configure(textures[2], 2.6, 8),
+      },
+      light_concrete: {
+        map: configure(textures[3], 1.8, 7),
+        normalMap: configure(textures[4], 1.8, 7),
+        roughnessMap: configure(textures[5], 1.8, 7),
+      },
+      urban_grass: {
+        map: configure(textures[6], 2.4, 8),
+        normalMap: configure(textures[7], 2.4, 8),
+        roughnessMap: configure(textures[8], 2.4, 8),
+      },
+    };
+  }, [textures]);
+  const surfaceTextureVariants = useMemo(() => {
+    const variantCache = new Map<string, { map?: THREE.Texture; normalMap?: THREE.Texture; roughnessMap?: THREE.Texture }>();
+    const buildVariant = (surface: ReturnType<typeof buildBoulevardArtPass>['surfaces'][number]) => {
+      if (!surface.textureRepeat) {
+        return null;
+      }
+
+      const maps = surface.materialKey === 'hero_paver'
+        ? materialMaps.hero_paver
+        : surface.materialKey === 'light_concrete'
+          ? materialMaps.light_concrete
+          : surface.materialKey === 'urban_grass'
+            ? materialMaps.urban_grass
+            : null;
+
+      if (!maps) {
+        return null;
+      }
+
+      const cacheKey = `${surface.materialKey}:${surface.textureRepeat[0]}:${surface.textureRepeat[1]}`;
+      if (!variantCache.has(cacheKey)) {
+        const cloneTexture = (texture: THREE.Texture | undefined) => {
+          if (!texture) {
+            return undefined;
+          }
+
+          const clone = texture.clone();
+          clone.repeat.set(...surface.textureRepeat!);
+          clone.needsUpdate = true;
+          return clone;
+        };
+
+        variantCache.set(cacheKey, {
+          map: cloneTexture(maps.map),
+          normalMap: cloneTexture(maps.normalMap),
+          roughnessMap: cloneTexture(maps.roughnessMap),
+        });
+      }
+
+      return variantCache.get(cacheKey) ?? null;
+    };
+
+    return new Map(artPass.surfaces.map((surface) => [surface.id, buildVariant(surface)]));
+  }, [artPass.surfaces, materialMaps]);
 
   return (
     <group name="boulevard-ground-art">
       {artPass.surfaces.map((surface) => {
-        const usesWalkwayTexture = surface.kind === 'hero_path' || surface.kind === 'arrival_path';
-        const texture = usesWalkwayTexture ? mappedTexture.clone() : null;
+        const maps = surface.materialKey === 'hero_paver'
+          ? materialMaps.hero_paver
+          : surface.materialKey === 'light_concrete'
+          ? materialMaps.light_concrete
+          : surface.materialKey === 'urban_grass'
+              ? materialMaps.urban_grass
+              : null;
+        const textureVariant = surfaceTextureVariants.get(surface.id) ?? null;
+        const shouldRenderLightPool = surface.kind !== 'light_pool' || EXPO_FEATURE_FLAGS.enableLocalizedLightPools;
 
-        if (texture && surface.textureRepeat) {
-          texture.repeat.set(...surface.textureRepeat);
-          texture.needsUpdate = true;
+        if (!shouldRenderLightPool) {
+          return null;
         }
 
         return (
@@ -535,9 +628,13 @@ function BoulevardGroundArt({
             <planeGeometry args={surface.size} />
             <meshStandardMaterial
               color={surface.color}
-              map={texture ?? undefined}
+              emissive={surface.emissive}
+              emissiveIntensity={surface.emissiveIntensity}
+              map={textureVariant?.map ?? maps?.map}
               metalness={surface.metalness}
+              normalMap={textureVariant?.normalMap ?? maps?.normalMap}
               opacity={surface.opacity ?? 1}
+              roughnessMap={textureVariant?.roughnessMap ?? maps?.roughnessMap}
               roughness={surface.roughness}
               transparent={surface.opacity !== undefined}
             />
@@ -545,6 +642,86 @@ function BoulevardGroundArt({
         );
       })}
       {EXPO_FEATURE_FLAGS.enableBoulevardGrassClusters && <BoulevardGrassClusters clusters={artPass.grassClusters} />}
+    </group>
+  );
+}
+
+function DistrictGatewayNode({ marker }: { marker: ReturnType<typeof buildExpoSectorMarkers>[number] }) {
+  const style = marker.districtTheme.gatewayStyle;
+  const accent = marker.color;
+
+  return (
+    <group position={marker.position}>
+      <mesh position={[0, 0.04, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+        <planeGeometry args={[18, 6]} />
+        <meshStandardMaterial color={marker.districtTheme.groundPalette.plaza} transparent opacity={0.14} />
+      </mesh>
+      {style === 'studio_portal' && (
+        <>
+          <mesh position={[0, 6.2, 0]} castShadow>
+            <boxGeometry args={[16, 10.5, 1.2]} />
+            <meshStandardMaterial color="#0f172a" metalness={0.12} roughness={0.82} />
+          </mesh>
+          <mesh position={[0, 6.4, 0.68]}>
+            <planeGeometry args={[13.5, 7.6]} />
+            <meshStandardMaterial color={accent} emissive={accent} emissiveIntensity={0.22} transparent opacity={0.16} />
+          </mesh>
+        </>
+      )}
+      {style === 'signal_frame' && (
+        <>
+          <mesh position={[-6, 6.4, 0]} castShadow>
+            <boxGeometry args={[1.2, 11.5, 1.4]} />
+            <meshStandardMaterial color={accent} emissive={accent} emissiveIntensity={0.18} />
+          </mesh>
+          <mesh position={[6, 6.4, 0]} castShadow>
+            <boxGeometry args={[1.2, 11.5, 1.4]} />
+            <meshStandardMaterial color={accent} emissive={accent} emissiveIntensity={0.18} />
+          </mesh>
+          <mesh position={[0, 11.3, 0]} castShadow>
+            <boxGeometry args={[14.2, 1, 1.5]} />
+            <meshStandardMaterial color="#0f172a" />
+          </mesh>
+        </>
+      )}
+      {style === 'forum_arch' && (
+        <>
+          <mesh position={[0, 6.8, 0]} castShadow>
+            <torusGeometry args={[6.1, 0.7, 18, 40, Math.PI]} />
+            <meshStandardMaterial color={accent} emissive={accent} emissiveIntensity={0.16} />
+          </mesh>
+          <mesh position={[-6.1, 3.5, 0]} castShadow>
+            <boxGeometry args={[1, 7, 1.2]} />
+            <meshStandardMaterial color="#1f2937" />
+          </mesh>
+          <mesh position={[6.1, 3.5, 0]} castShadow>
+            <boxGeometry args={[1, 7, 1.2]} />
+            <meshStandardMaterial color="#1f2937" />
+          </mesh>
+        </>
+      )}
+      {style === 'gallery_blade' && (
+        <>
+          <mesh position={[0, 6.6, 0]} castShadow>
+            <boxGeometry args={[4.2, 11.8, 1.1]} />
+            <meshStandardMaterial color="#0f172a" />
+          </mesh>
+          <mesh position={[0, 6.6, 0.7]}>
+            <planeGeometry args={[3.3, 9.8]} />
+            <meshStandardMaterial color={accent} emissive={accent} emissiveIntensity={0.18} transparent opacity={0.22} />
+          </mesh>
+        </>
+      )}
+      <Text position={[0, 7.8, 1.25]} fontSize={1.25} color="#f8fafc" anchorX="center" anchorY="middle" maxWidth={13}>
+        {marker.label.toUpperCase()}
+      </Text>
+      <Text position={[0, 4.7, 1.25]} fontSize={0.58} color="#cbd5e1" anchorX="center" anchorY="middle">
+        {marker.side === 'left' ? 'WEST HALL' : 'EAST HALL'}
+      </Text>
+      <mesh position={[marker.side === 'left' ? 12 : -12, 0.2, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[12, 3.2]} />
+        <meshStandardMaterial color={accent} transparent opacity={0.18} />
+      </mesh>
     </group>
   );
 }
@@ -567,28 +744,9 @@ function ExpoDistrictPromenade({
           <meshStandardMaterial color="#f8fafc" emissive="#cbd5e1" emissiveIntensity={0.1} />
         </mesh>
       ))}
-      <ArrivalPlaza />
+      <ArrivalReveal />
       {sectorMarkers.map((marker) => (
-        <group key={marker.id} position={marker.position}>
-          <mesh position={[0, 6, 0]} castShadow>
-            <boxGeometry args={[17, 10, 1.2]} />
-            <meshStandardMaterial color="#0f172a" metalness={0.12} roughness={0.82} />
-          </mesh>
-          <mesh position={[0, 6, 0.65]}>
-            <planeGeometry args={[14.5, 7.5]} />
-            <meshStandardMaterial color={marker.color} emissive={marker.color} emissiveIntensity={0.22} transparent opacity={0.16} />
-          </mesh>
-          <Text position={[0, 7.6, 1.25]} fontSize={1.45} color="#f8fafc" anchorX="center" anchorY="middle" maxWidth={13}>
-            {marker.label.toUpperCase()}
-          </Text>
-          <Text position={[0, 4.9, 1.25]} fontSize={0.72} color="#cbd5e1" anchorX="center" anchorY="middle">
-            {marker.side === 'left' ? 'WEST HALL' : 'EAST HALL'}
-          </Text>
-          <mesh position={[marker.side === 'left' ? 12 : -12, 0.2, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-            <planeGeometry args={[12, 3.2]} />
-            <meshStandardMaterial color={marker.color} transparent opacity={0.18} />
-          </mesh>
-        </group>
+        <DistrictGatewayNode key={marker.id} marker={marker} />
       ))}
     </group>
   );
@@ -654,16 +812,10 @@ function CustomBoothInsert({ template, url }: { template: SponsorBoothTemplate; 
     normalizeModel(clone);
     return clone;
   }, [scene]);
-
-  const insertScale = template === 'hero_pavilion' ? 2.4 : template === 'standard_corner' ? 1.8 : 1.35;
-  const insertPosition: [number, number, number] = template === 'hero_pavilion'
-    ? [0, 0.24, -3.6]
-    : template === 'standard_corner'
-      ? [-2.6, 0.2, -2.2]
-      : [0, 0.12, -1.8];
+  const metrics = getBoothArchitectureMetrics(template);
 
   return (
-    <group position={insertPosition} scale={[insertScale, insertScale, insertScale]}>
+    <group position={metrics.insertPosition} scale={[metrics.insertScale, metrics.insertScale, metrics.insertScale]}>
       <primitive object={normalizedScene} />
     </group>
   );
@@ -878,111 +1030,6 @@ function SponsorCtaStrip({
   );
 }
 
-function SponsorBoothShell({
-  accentColor,
-  template,
-}: {
-  accentColor: string;
-  template: SponsorBoothTemplate;
-}) {
-  if (template === 'hero_pavilion') {
-    return (
-      <group>
-        <mesh position={[0, 0.25, 0]} receiveShadow>
-          <boxGeometry args={[26, 0.5, 20]} />
-          <meshStandardMaterial color="#e2e8f0" />
-        </mesh>
-        <mesh position={[0, 10, -8.2]} castShadow>
-          <boxGeometry args={[24, 16, 1.1]} />
-          <meshStandardMaterial color="#0f172a" metalness={0.16} roughness={0.76} />
-        </mesh>
-        <mesh position={[0, 17.5, -1.8]} castShadow>
-          <boxGeometry args={[26, 1.1, 17]} />
-          <meshStandardMaterial color="#111827" metalness={0.14} roughness={0.72} />
-        </mesh>
-        <mesh position={[-12.2, 8.6, -1.8]} castShadow>
-          <boxGeometry args={[1.2, 17.2, 17]} />
-          <meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={0.18} />
-        </mesh>
-        <mesh position={[12.2, 8.6, -1.8]} castShadow>
-          <boxGeometry args={[1.2, 17.2, 17]} />
-          <meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={0.18} />
-        </mesh>
-      </group>
-    );
-  }
-
-  if (template === 'standard_corner') {
-    return (
-      <group>
-        <mesh position={[0, 0.22, 0]} receiveShadow>
-          <boxGeometry args={[20, 0.44, 16]} />
-          <meshStandardMaterial color="#dbe4ef" />
-        </mesh>
-        <mesh position={[0, 8.6, -6.3]} castShadow>
-          <boxGeometry args={[18, 13.5, 1]} />
-          <meshStandardMaterial color="#0f172a" metalness={0.14} roughness={0.76} />
-        </mesh>
-        <mesh position={[-8.5, 8.4, 0]} castShadow>
-          <boxGeometry args={[1, 13.2, 13]} />
-          <meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={0.16} />
-        </mesh>
-        <mesh position={[0, 14.8, -0.2]} castShadow>
-          <boxGeometry args={[18, 0.8, 13]} />
-          <meshStandardMaterial color="#111827" />
-        </mesh>
-      </group>
-    );
-  }
-
-  return (
-    <group>
-      <mesh position={[0, 0.16, 0]} receiveShadow>
-        <boxGeometry args={[14, 0.32, 10]} />
-        <meshStandardMaterial color="#e5edf7" />
-      </mesh>
-      <mesh position={[0, 5.8, -3.4]} castShadow>
-        <boxGeometry args={[12, 9, 0.9]} />
-        <meshStandardMaterial color="#0f172a" metalness={0.12} roughness={0.8} />
-      </mesh>
-      <mesh position={[0, 10.25, -0.4]} castShadow>
-        <boxGeometry args={[12, 0.7, 7.4]} />
-        <meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={0.16} />
-      </mesh>
-    </group>
-  );
-}
-
-function ArrivalPlaza() {
-  return (
-    <group name="arrival-plaza" position={[0, 0, 18]}>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.03, -12]} receiveShadow>
-        <planeGeometry args={[56, 34]} />
-        <meshStandardMaterial color="#0f172a" roughness={0.88} metalness={0.06} />
-      </mesh>
-      <mesh position={[0, 14, -18]} castShadow>
-        <boxGeometry args={[38, 1.2, 4]} />
-        <meshStandardMaterial color="#020617" metalness={0.18} roughness={0.76} />
-      </mesh>
-      <mesh position={[-18, 7.6, -18]} castShadow>
-        <boxGeometry args={[2, 15, 2]} />
-        <meshStandardMaterial color="#1e293b" metalness={0.24} roughness={0.68} />
-      </mesh>
-      <mesh position={[18, 7.6, -18]} castShadow>
-        <boxGeometry args={[2, 15, 2]} />
-        <meshStandardMaterial color="#1e293b" metalness={0.24} roughness={0.68} />
-      </mesh>
-      <mesh position={[0, 0.25, -2]} receiveShadow>
-        <cylinderGeometry args={[11.5, 13.5, 0.35, 40]} />
-        <meshStandardMaterial color="#131c2e" />
-      </mesh>
-      <Text position={[0, 15.2, -15.6]} fontSize={3.6} color="#f8fafc" anchorX="center" anchorY="middle">WARPALA SPONSOR BOULEVARD</Text>
-      <Text position={[0, 11.1, -17.4]} fontSize={1.05} color="#93c5fd" anchorX="center" anchorY="middle" maxWidth={48}>ARRIVE. DISCOVER SPONSORS. OPEN DEMOS. BOOK LIVE MEETINGS.</Text>
-      <Text position={[0, 0.88, -1.8]} fontSize={1.2} color="#38bdf8" anchorX="center" anchorY="middle">START HERE</Text>
-    </group>
-  );
-}
-
 function SponsorScreenNodeView({ node }: { node: SponsorScreenNode }) {
   if (node.kind === 'facade') {
     return (
@@ -1000,6 +1047,9 @@ function SponsorScreenNodeView({ node }: { node: SponsorScreenNode }) {
         </group>
         <Text position={[0, -(node.size[1] * 0.5) - 2.1, 1.1]} fontSize={1.15} color="#f8fafc" anchorX="center" anchorY="middle" maxWidth={node.size[0] - 4}>
           {node.title.toUpperCase()}
+        </Text>
+        <Text position={[0, -(node.size[1] * 0.5) - 3.7, 1.1]} fontSize={0.56} color="#cbd5e1" anchorX="center" anchorY="middle" maxWidth={node.size[0] - 6}>
+          {node.subtitle.toUpperCase()}
         </Text>
       </group>
     );
@@ -1021,6 +1071,9 @@ function SponsorScreenNodeView({ node }: { node: SponsorScreenNode }) {
         </mesh>
         <Text position={[0, -(node.size[1] * 0.5) - 0.85, 0.6]} fontSize={0.58} color="#f8fafc" anchorX="center" anchorY="middle" maxWidth={node.size[0] - 1}>
           {node.title.toUpperCase()}
+        </Text>
+        <Text position={[0, -(node.size[1] * 0.5) - 1.7, 0.6]} fontSize={0.32} color="#cbd5e1" anchorX="center" anchorY="middle" maxWidth={node.size[0] - 1.4}>
+          {node.subtitle.toUpperCase()}
         </Text>
       </group>
     );
@@ -1082,7 +1135,7 @@ function SponsorBillboards({ placements }: { placements: ReturnType<typeof build
     <group name="sponsor-billboards">
       {billboardPlacements.map((placement, index) => {
         const company = placement.company;
-        const presentation = buildSponsorBoothPresentation(company, company.booth, placement.nodeType);
+        const presentation = buildSponsorBoothPresentation(company, company.booth, placement.nodeType, { districtThemeId: placement.districtThemeId });
         const side = placement.position[0] < 0 ? -1 : 1;
         const billboardX = placement.position[0] + side * 18;
         const billboardZ = placement.position[2] + ((index % 2 === 0) ? 8 : -8);
@@ -1111,16 +1164,20 @@ function SponsorBillboards({ placements }: { placements: ReturnType<typeof build
   );
 }
 
-function DistrictBooth({ placement }: { placement: any }) {
+function DistrictBooth({ placement }: { placement: ExpoBoothPlacement }) {
   const nav = useNavigate();
   const company = placement.company;
   const booth = getNormalizedBooth(company);
-  const presentation = useMemo(() => buildSponsorBoothPresentation(company, booth, placement.nodeType), [booth, company, placement.nodeType]);
+  const presentation = useMemo(
+    () => buildSponsorBoothPresentation(company, booth, placement.nodeType, { districtThemeId: placement.districtThemeId }),
+    [booth, company, placement.districtThemeId, placement.nodeType]
+  );
   const [isPosterPlaying, setIsPosterPlaying] = useState(false);
   const boothColliderRef = useRef<THREE.Group>(null);
   usePlayerColliderRegistration(boothColliderRef, `district-booth-${String(company?.id || company?.name || 'unknown')}`);
 
   const nameFontSize = getSponsorNameFontSize(presentation.displayName);
+  const metrics = getBoothArchitectureMetrics(presentation.template);
   const onAction = (action: SponsorCta) => {
     const intent = resolveSponsorCtaIntent(action, presentation);
     if (!intent) {
@@ -1145,14 +1202,6 @@ function DistrictBooth({ placement }: { placement: any }) {
     window.open(intent.target, '_blank', 'noopener,noreferrer');
   };
 
-  const mediaWallPosition: [number, number, number] = presentation.template === 'hero_pavilion' ? [0, 8.8, -7.55] : presentation.template === 'standard_corner' ? [0, 7.8, -5.7] : [0, 5.5, -3.1];
-  const logoPanelPosition: [number, number, number] = presentation.template === 'compact_kiosk' ? [0, 8.15, 3.8] : [-7.4, 10.4, 3.8];
-  const ctaPosition: [number, number, number] = presentation.template === 'hero_pavilion' ? [0, 1.6, 6.4] : presentation.template === 'standard_corner' ? [0, 1.45, 5.8] : [0, 1.4, 3.2];
-  const taglinePosition: [number, number, number] = presentation.template === 'hero_pavilion' ? [0, 14.6, -7] : presentation.template === 'standard_corner' ? [0, 10.6, -5.3] : [0, 8.55, -2.6];
-  const titlePosition: [number, number, number] = presentation.template === 'hero_pavilion' ? [0, 17.6, -7] : presentation.template === 'standard_corner' ? [0, 13, -5.3] : [0, 10.8, -2.5];
-  const badgePosition: [number, number, number] = presentation.template === 'hero_pavilion' ? [0, 19.8, -7.1] : presentation.template === 'standard_corner' ? [0, 15.6, -5.2] : [0, 12.3, -2.4];
-  const colliderSize: [number, number, number] = presentation.template === 'hero_pavilion' ? [24, 18, 18] : presentation.template === 'standard_corner' ? [19, 15, 14] : [14, 10, 10];
-
   return (
     <group
       position={placement.position}
@@ -1169,22 +1218,22 @@ function DistrictBooth({ placement }: { placement: any }) {
       }}
     >
       <mesh position={[0, 0.03, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-        <planeGeometry args={presentation.template === 'hero_pavilion' ? [34, 26] : presentation.template === 'standard_corner' ? [28, 20] : [18, 14]} />
-        <meshStandardMaterial color={placement.color} transparent opacity={0.09} />
+        <planeGeometry args={metrics.footprintSize} />
+        <meshStandardMaterial color={placement.districtTheme.groundPalette.lightPool} transparent opacity={0.1} />
       </mesh>
       <group ref={boothColliderRef} name="district-booth-collider">
-        <mesh position={[0, colliderSize[1] / 2, 0]}>
-          <boxGeometry args={colliderSize} />
+        <mesh position={[0, metrics.colliderSize[1] / 2, 0]}>
+          <boxGeometry args={metrics.colliderSize} />
           <ColliderMaterial color="#2563eb" />
         </mesh>
       </group>
-      <SponsorBoothShell accentColor={placement.color} template={presentation.template} />
+      <BoothArchitectureKit accentColor={placement.color} template={presentation.template} />
       {presentation.customInsertUrl && (
         <Suspense fallback={null}>
           <CustomBoothInsert template={presentation.template} url={presentation.customInsertUrl} />
         </Suspense>
       )}
-      <group position={mediaWallPosition}>
+      <group position={metrics.mediaWallPosition}>
         <SponsorPosterPanel
           accentColor={placement.color}
           isPlaying={isPosterPlaying}
@@ -1204,23 +1253,23 @@ function DistrictBooth({ placement }: { placement: any }) {
           videoUrl={presentation.videoUrl}
         />
       </group>
-      <group position={logoPanelPosition}>
+      <group position={metrics.logoPanelPosition}>
         <mesh castShadow>
           <boxGeometry args={[4.4, 4.4, 0.6]} />
           <meshStandardMaterial color="#020617" />
         </mesh>
         <SponsorLogoPanel accentColor={placement.color} fallbackText={presentation.displayName.slice(0, 1).toUpperCase()} url={presentation.logoUrl} />
       </group>
-      <Text position={titlePosition} fontSize={nameFontSize} color="#f8fafc" anchorX="center" anchorY="middle" maxWidth={presentation.template === 'compact_kiosk' ? 10 : 14}>{presentation.displayName.toUpperCase()}</Text>
-      <Text position={taglinePosition} fontSize={presentation.template === 'compact_kiosk' ? 0.44 : 0.52} color="#cbd5e1" anchorX="center" anchorY="middle" maxWidth={presentation.template === 'compact_kiosk' ? 10 : 13}>{(presentation.tagline || '').toUpperCase()}</Text>
-      <SponsorBadge accentColor={placement.color} label={presentation.badgeLabel} position={badgePosition} />
-      <group position={ctaPosition}>
+      <Text position={metrics.titlePosition} fontSize={nameFontSize} color="#f8fafc" anchorX="center" anchorY="middle" maxWidth={metrics.titleMaxWidth}>{presentation.displayName.toUpperCase()}</Text>
+      <Text position={metrics.taglinePosition} fontSize={metrics.titleMaxWidth <= 10 ? 0.44 : 0.52} color="#cbd5e1" anchorX="center" anchorY="middle" maxWidth={Math.max(10, metrics.titleMaxWidth - 1)}>{(presentation.tagline || '').toUpperCase()}</Text>
+      <SponsorBadge accentColor={placement.color} label={presentation.badgeLabel} position={metrics.badgePosition} />
+      <group position={metrics.ctaPosition}>
         <SponsorCtaStrip actions={presentation.actions} color={placement.color} onAction={onAction} />
       </group>
       {placement.sectorName && (
-        <Text position={[0, 0.72, presentation.template === 'compact_kiosk' ? -4.8 : -8.9]} fontSize={0.44} color="#93c5fd" anchorX="center" anchorY="middle">{placement.sectorName.toUpperCase()}</Text>
+        <Text position={metrics.sectorLabelPosition} fontSize={0.44} color="#93c5fd" anchorX="center" anchorY="middle">{placement.sectorName.toUpperCase()}</Text>
       )}
-      {presentation.template === 'hero_pavilion' && (
+      {(presentation.template === 'hero_gallery' || presentation.template === 'hero_forum') && (
         <mesh position={[0, 0.4, 8.6]} receiveShadow>
           <boxGeometry args={[18, 0.12, 2]} />
           <meshStandardMaterial color={placement.color} emissive={placement.color} emissiveIntensity={0.16} />
@@ -1465,7 +1514,7 @@ export function ExpoWorldScene({ activeZone, data, debug, guests, mode, onMove, 
       viewedBoothsRef.current.add(boothKey);
       trackExpoBoothViewed(placement.company, {
         boothId: placement.company?.booth?.id ?? placement.id,
-        boothTemplate: buildSponsorBoothPresentation(placement.company, placement.company?.booth ?? null, placement.nodeType).template,
+        boothTemplate: buildSponsorBoothPresentation(placement.company, placement.company?.booth ?? null, placement.nodeType, { districtThemeId: placement.districtThemeId }).template,
         sectorName: placement.sectorName,
       });
     }
@@ -1522,6 +1571,27 @@ export function ExpoWorldScene({ activeZone, data, debug, guests, mode, onMove, 
             {EXPO_FEATURE_FLAGS.enableSponsorBillboards && <SponsorBillboards placements={boothPlacements} />}
 
             <PrimitiveCityModel debug={debug} />
+            {EXPO_FEATURE_FLAGS.enableCuratedSkylineRing && (
+              <SceneErrorBoundary fallback={null}>
+                <CuratedSkylineRing showcase={EXPO_FEATURE_FLAGS.enableShowcaseSkylineDensity} />
+              </SceneErrorBoundary>
+            )}
+            {EXPO_FEATURE_FLAGS.enableDistrictLandmarks && (
+              <ExpoLandmarkLayer boothPlacements={boothPlacements} sectorMarkers={sectorMarkers} />
+            )}
+            {EXPO_FEATURE_FLAGS.enableDistrictAnchorNodes && (
+              <DistrictAnchorNodes boothPlacements={boothPlacements} sectorMarkers={sectorMarkers} showcase={EXPO_FEATURE_FLAGS.enableEnhancedBoulevardDetail} />
+            )}
+            {EXPO_FEATURE_FLAGS.enableAmbientMotionLayer && <AmbientMotionLayer sectorMarkers={sectorMarkers} />}
+            <ExpoEvidenceProbe
+              activeZoneId={activeZone?.id ? String(activeZone.id) : null}
+              mode={mode}
+              playerPosition={playerPosition}
+              qualityPreset={EXPO_CITY_QUALITY_TIER}
+              sceneVersion={data?.sceneVersion ? String(data.sceneVersion) : null}
+              sectorCount={sectorCount}
+              sponsorCount={boothPlacements.length}
+            />
             <Guests guests={guests} />
 
             <group>
@@ -1536,7 +1606,7 @@ export function ExpoWorldScene({ activeZone, data, debug, guests, mode, onMove, 
             {boothPlacements.length === 0 && (
               <Html position={[0, 8, 0]} center>
                 <div style={{ background: 'rgba(15, 23, 42, 0.9)', color: 'white', padding: '16px 20px', borderRadius: '14px', border: '1px solid rgba(59, 130, 246, 0.35)', width: '320px', textAlign: 'center' }}>
-                  Sponsoru stendi vēl nav ielādēti. Pārbaudiet <code>/api/expo/scene</code> vai Supabase sektoru un uzņēmumu datus.
+                  Sponsor booths are not loaded yet. Check /api/expo/scene or the underlying Supabase sector and company data.
                 </div>
               </Html>
             )}
@@ -1559,3 +1629,7 @@ export function ExpoWorldScene({ activeZone, data, debug, guests, mode, onMove, 
 export function Expo3DLoader() {
   return <Loader />;
 }
+
+
+
+
