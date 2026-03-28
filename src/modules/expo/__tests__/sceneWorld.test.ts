@@ -163,12 +163,15 @@ assert.ok(startView.lookAt[2] < boulevardPlan.arrivalNode.position[2]);
 const walkRegions = buildExpoWalkRegions(multiPlacements);
 assert.ok(walkRegions.some((region) => region.type === 'arrival'));
 assert.ok(walkRegions.some((region) => region.type === 'spine'));
+assert.ok(walkRegions.some((region) => region.type === 'promenade'));
 assert.ok(walkRegions.some((region) => region.type === 'booth-pocket'));
 assert.ok(isPointWithinExpoWalkRegions({ x: 0, z: boulevardPlan.arrivalNode.position[2] + 8 }, walkRegions));
 assert.ok(isPointWithinExpoWalkRegions({ x: 0, z: -120 }, walkRegions));
 assert.ok(isPointWithinExpoWalkRegions({ x: -24, z: multiPlacements[0].position[2] - 4 }, walkRegions));
-assert.equal(isPointWithinExpoWalkRegions({ x: -58, z: multiPlacements[0].position[2] - 4 }, walkRegions), false);
-assert.equal(isPointWithinExpoWalkRegions({ x: 58, z: multiPlacements[1].position[2] - 2 }, walkRegions), false);
+assert.ok(isPointWithinExpoWalkRegions({ x: -52, z: multiPlacements[0].position[2] - 4 }, walkRegions));
+assert.ok(isPointWithinExpoWalkRegions({ x: 52, z: multiPlacements[1].position[2] - 2 }, walkRegions));
+assert.equal(isPointWithinExpoWalkRegions({ x: -74, z: multiPlacements[0].position[2] - 4 }, walkRegions), false);
+assert.equal(isPointWithinExpoWalkRegions({ x: 74, z: multiPlacements[1].position[2] - 2 }, walkRegions), false);
 
 const sectorMarkers = buildExpoSectorMarkers(sponsorData);
 assert.equal(sectorMarkers.length, 6);

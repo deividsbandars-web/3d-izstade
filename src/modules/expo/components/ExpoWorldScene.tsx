@@ -443,11 +443,8 @@ function Guests({ guests }: { guests: any[] }) {
 }
 
 function GroundPlane() {
-  const groundRef = useRef<THREE.Mesh>(null);
-  usePlayerColliderRegistration(groundRef, 'expo-ground');
-
   return (
-    <mesh ref={groundRef} rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.1, 0]} receiveShadow={false}>
+    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.1, 0]} receiveShadow={false}>
       <planeGeometry args={[2000, 2000]} />
       <meshStandardMaterial color="#0f1724" roughness={0.88} metalness={0.06} />
     </mesh>
@@ -766,14 +763,22 @@ function SpawnDebugOverlay({
               rotation={[-Math.PI / 2, 0, 0]}
             >
               <planeGeometry args={[region.maxX - region.minX, region.maxZ - region.minZ]} />
-              <meshBasicMaterial
-                color={region.type === 'arrival' ? '#38bdf8' : region.type === 'spine' ? '#22c55e' : '#eab308'}
-                transparent
-                opacity={region.type === 'booth-pocket' ? 0.09 : 0.14}
-                depthWrite={false}
-                toneMapped={false}
-              />
-            </mesh>
+                <meshBasicMaterial
+                  color={
+                    region.type === 'arrival'
+                      ? '#38bdf8'
+                      : region.type === 'spine'
+                        ? '#22c55e'
+                        : region.type === 'promenade'
+                          ? '#f97316'
+                          : '#eab308'
+                  }
+                  transparent
+                  opacity={region.type === 'booth-pocket' ? 0.09 : region.type === 'promenade' ? 0.1 : 0.14}
+                  depthWrite={false}
+                  toneMapped={false}
+                />
+              </mesh>
           ))}
           <mesh position={[0, 0.025, (playBounds.minZ + playBounds.maxZ) * 0.5]} rotation={[-Math.PI / 2, 0, 0]}>
             <planeGeometry args={[playBounds.maxX - playBounds.minX, playBounds.maxZ - playBounds.minZ]} />

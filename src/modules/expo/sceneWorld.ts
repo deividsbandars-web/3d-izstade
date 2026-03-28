@@ -71,7 +71,7 @@ export type ExpoWalkRegion = {
   maxZ: number;
   minX: number;
   minZ: number;
-  type: 'arrival' | 'spine' | 'booth-pocket' | 'sector-pocket';
+  type: 'arrival' | 'spine' | 'promenade' | 'booth-pocket' | 'sector-pocket';
 };
 
 export type ExpoStartView = {
@@ -279,16 +279,17 @@ export function buildExpoSponsorStartView(plan: Pick<SponsorBoulevardPlan, 'arri
 
 function buildBoothPocketRegion(placement: ExpoBoothPlacement, index: number): ExpoWalkRegion {
   const side = placement.position[0] < 0 ? -1 : 1;
-  const depth = placement.nodeType === 'hero_left' || placement.nodeType === 'hero_right' ? 28 : 22;
-  const width = placement.nodeType === 'endcap' ? 18 : 16;
-  const inwardEdge = side < 0 ? placement.position[0] + 4 : placement.position[0] - 4;
-  const outerEdge = side < 0 ? inwardEdge + width : inwardEdge - width;
+  const depth = placement.nodeType === 'hero_left' || placement.nodeType === 'hero_right' ? 30 : 24;
+  const outerEdge = side < 0
+    ? Math.max(-54, placement.position[0] - 6)
+    : Math.min(54, placement.position[0] + 6);
+  const innerEdge = side < 0 ? -14 : 14;
 
   return {
     id: `booth-pocket-${placement.id}-${index}`,
-    maxX: Math.max(inwardEdge, outerEdge),
-    maxZ: placement.position[2] + 12,
-    minX: Math.min(inwardEdge, outerEdge),
+    maxX: Math.max(innerEdge, outerEdge),
+    maxZ: placement.position[2] + 14,
+    minX: Math.min(innerEdge, outerEdge),
     minZ: placement.position[2] - depth,
     type: 'booth-pocket',
   };
@@ -305,21 +306,39 @@ export function buildExpoWalkRegions(boothPlacements: ExpoBoothPlacement[]): Exp
     };
 
   const arrivalRegion: ExpoWalkRegion = {
-    id: 'arrival-zone',
-    maxX: 36,
-    maxZ: footprint.maxZ,
-    minX: -36,
-    minZ: EXPO_BOULEVARD_LAYOUT.arrivalZ - 20,
-    type: 'arrival',
+      id: 'arrival-zone',
+      maxX: 64,
+      maxZ: footprint.maxZ,
+      minX: -64,
+      minZ: EXPO_BOULEVARD_LAYOUT.arrivalZ - 28,
+      type: 'arrival',
+    };
+  
+  const spineRegion: ExpoWalkRegion = {
+      id: 'central-spine',
+      maxX: 46,
+      maxZ: footprint.maxZ - 8,
+      minX: -46,
+      minZ: footprint.minZ + 10,
+      type: 'spine',
+    };
+
+  const leftPromenadeRegion: ExpoWalkRegion = {
+    id: 'left-promenade',
+    maxX: -10,
+    maxZ: footprint.maxZ - 6,
+    minX: Math.max(footprint.minX + 8, -58),
+    minZ: footprint.minZ + 16,
+    type: 'promenade',
   };
 
-  const spineRegion: ExpoWalkRegion = {
-    id: 'central-spine',
-    maxX: 24,
-    maxZ: footprint.maxZ - 18,
-    minX: -24,
-    minZ: footprint.minZ + 10,
-    type: 'spine',
+  const rightPromenadeRegion: ExpoWalkRegion = {
+    id: 'right-promenade',
+    maxX: Math.min(footprint.maxX - 8, 58),
+    maxZ: footprint.maxZ - 6,
+    minX: 10,
+    minZ: footprint.minZ + 16,
+    type: 'promenade',
   };
 
   const sectorPocketByCluster = new Map<number, ExpoWalkRegion>();
@@ -330,26 +349,28 @@ export function buildExpoWalkRegions(boothPlacements: ExpoBoothPlacement[]): Exp
     }
 
     const existing = sectorPocketByCluster.get(clusterIndex);
-    const next: ExpoWalkRegion = existing ?? {
-      id: `sector-pocket-${clusterIndex}`,
-      maxX: 30,
-      maxZ: placement.position[2] + 16,
-      minX: -30,
-      minZ: placement.position[2] - 34,
-      type: 'sector-pocket',
-    };
-
-    next.maxZ = Math.max(next.maxZ, placement.position[2] + 16);
-    next.minZ = Math.min(next.minZ, placement.position[2] - 34);
-    sectorPocketByCluster.set(clusterIndex, next);
-  });
-
+      const next: ExpoWalkRegion = existing ?? {
+        id: `sector-pocket-${clusterIndex}`,
+        maxX: 58,
+        maxZ: placement.position[2] + 22,
+        minX: -58,
+        minZ: placement.position[2] - 42,
+        type: 'sector-pocket',
+      };
+  
+      next.maxZ = Math.max(next.maxZ, placement.position[2] + 22);
+      next.minZ = Math.min(next.minZ, placement.position[2] - 42);
+      sectorPocketByCluster.set(clusterIndex, next);
+    });
+  
   return [
-    arrivalRegion,
-    spineRegion,
-    ...Array.from(sectorPocketByCluster.values()),
-    ...boothPlacements.map(buildBoothPocketRegion),
-  ];
+      arrivalRegion,
+      spineRegion,
+      leftPromenadeRegion,
+      rightPromenadeRegion,
+      ...Array.from(sectorPocketByCluster.values()),
+      ...boothPlacements.map(buildBoothPocketRegion),
+    ];
 }
 
 export function isPointWithinExpoWalkRegions(
