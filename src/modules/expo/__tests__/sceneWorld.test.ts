@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { ZoneSystem } from '../../../modules/city/ZoneSystem.js';
 import { buildSponsorBoulevardPlan, rankCompaniesForBoulevard, UNASSIGNED_SECTOR_ID } from '../lib/boulevardLayout.js';
-import { buildBoothPlacements, buildCuratedCityPlan, buildExpoGenerationSignature, buildExpoPlayBounds, buildExpoSectorMarkers, buildExpoWorldDiagnostics, createDistrictBoothZone, replaceDistrictBoothZones } from '../sceneWorld.js';
+import { buildBoothPlacements, buildCuratedCityPlan, buildExpoGenerationSignature, buildExpoPlayBounds, buildExpoSectorMarkers, buildExpoSponsorStartView, buildExpoWalkRegions, buildExpoWorldDiagnostics, createDistrictBoothZone, isPointWithinExpoWalkRegions, replaceDistrictBoothZones } from '../sceneWorld.js';
 import type { ExpoSceneCompany, ExpoSceneSector } from '../types/scene.js';
 
 const sponsorData = {
@@ -106,9 +106,12 @@ const singlePlacement = buildBoothPlacements({
 assert.equal(singlePlacement.length, 1);
 assert.deepEqual(createDistrictBoothZone(singlePlacement[0]).id, 'district-booth-company-3');
 assert.equal(multiPlacements[0].nodeType, 'hero_left');
+assert.equal(multiPlacements[0].districtThemeId, 'sponsor_gallery');
 assert.equal(multiPlacements[1].nodeType, 'endcap');
+assert.equal(multiPlacements[1].districtThemeId, 'sponsor_gallery');
 assert.equal(multiPlacements[2].nodeType, 'endcap');
 assert.equal(multiPlacements[4].sectorId, UNASSIGNED_SECTOR_ID);
+assert.equal(multiPlacements[4].districtThemeId, 'sponsor_gallery');
 assert.ok(Math.abs(multiPlacements[0].position[0]) >= 32);
 assert.ok(multiPlacements[0].position[2] <= -30);
 assert.ok(Math.abs(multiPlacements[0].rotation[1]) > 1);
@@ -150,10 +153,29 @@ assert.ok(playBounds.maxZ >= boulevardPlan.arrivalNode.position[2]);
 assert.ok(boulevardPlan.arrivalNode.position[0] >= playBounds.minX && boulevardPlan.arrivalNode.position[0] <= playBounds.maxX);
 assert.ok(boulevardPlan.arrivalNode.position[2] >= playBounds.minZ && boulevardPlan.arrivalNode.position[2] <= playBounds.maxZ);
 
+const startView = buildExpoSponsorStartView(boulevardPlan);
+assert.equal(startView.source, 'arrival-main');
+assert.equal(startView.position[0], 0);
+assert.equal(startView.position[1], 5);
+assert.ok(startView.position[2] > boulevardPlan.arrivalNode.position[2]);
+assert.ok(startView.lookAt[2] < boulevardPlan.arrivalNode.position[2]);
+
+const walkRegions = buildExpoWalkRegions(multiPlacements);
+assert.ok(walkRegions.some((region) => region.type === 'arrival'));
+assert.ok(walkRegions.some((region) => region.type === 'spine'));
+assert.ok(walkRegions.some((region) => region.type === 'booth-pocket'));
+assert.ok(isPointWithinExpoWalkRegions({ x: 0, z: boulevardPlan.arrivalNode.position[2] + 8 }, walkRegions));
+assert.ok(isPointWithinExpoWalkRegions({ x: 0, z: -120 }, walkRegions));
+assert.ok(isPointWithinExpoWalkRegions({ x: -24, z: multiPlacements[0].position[2] - 4 }, walkRegions));
+assert.equal(isPointWithinExpoWalkRegions({ x: -58, z: multiPlacements[0].position[2] - 4 }, walkRegions), false);
+assert.equal(isPointWithinExpoWalkRegions({ x: 58, z: multiPlacements[1].position[2] - 2 }, walkRegions), false);
+
 const sectorMarkers = buildExpoSectorMarkers(sponsorData);
 assert.equal(sectorMarkers.length, 6);
 assert.equal(sectorMarkers[0].side, 'left');
 assert.equal(sectorMarkers[1].side, 'right');
+assert.equal(sectorMarkers[0].districtThemeId, 'sponsor_gallery');
+assert.equal(sectorMarkers[2].districtThemeId, 'sponsor_gallery');
 
 const diagnostics = buildExpoWorldDiagnostics({
   assetUrls: ['a.glb', 'b.glb'],

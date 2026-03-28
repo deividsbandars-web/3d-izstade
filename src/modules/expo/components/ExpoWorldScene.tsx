@@ -7,7 +7,7 @@ import { BoothUI } from '../../../components/BoothUI';
 import { normalizeModel } from '../../../utils/threeUtils';
 import { AmbientMotionLayer } from './AmbientMotionLayer';
 import { ArrivalReveal } from './ArrivalReveal';
-import { BoothArchitectureKit, getBoothArchitectureMetrics } from './BoothArchitectureKit';
+import { BoothArchitectureKit, getBoothArchitectureMetrics, getBoothColliderSegments } from './BoothArchitectureKit';
 import { CuratedSkylineRing } from './CuratedSkylineRing';
 import { DistrictAnchorNodes } from './DistrictAnchorNodes';
 import { ExpoEvidenceProbe } from './ExpoEvidenceProbe';
@@ -24,8 +24,8 @@ import {
 import { buildBoulevardArtPass } from '../lib/boulevardArtPass';
 import { buildSponsorScreenLayout, type SponsorScreenNode } from '../lib/sponsorScreenLayout';
 import { buildSponsorBoothPresentation, getSponsorNameFontSize, resolveSponsorCtaIntent, type SponsorBoothTemplate, type SponsorCta } from '../lib/sponsorBoothPresentation';
-import { EXPO_CITY_QUALITY_TIER, EXPO_FEATURE_FLAGS, type ExpoMode } from '../state/expoRuntime';
-import { buildBoothPlacements, buildExpoPlayBounds, buildExpoSectorMarkers, replaceDistrictBoothZones, type ExpoBoothPlacement } from '../sceneWorld';
+import { EXPO_CITY_QUALITY_TIER, EXPO_FEATURE_FLAGS, EXPO_SPATIAL_DEBUG_FLAGS, type ExpoMode } from '../state/expoRuntime';
+import { buildBoothPlacements, buildExpoPlayBounds, buildExpoSectorMarkers, buildExpoSponsorStartView, buildExpoWalkRegions, buildSponsorBoulevardLayout, isPointWithinExpoWalkRegions, replaceDistrictBoothZones, type ExpoBoothPlacement, type ExpoStartView, type ExpoWalkRegion } from '../sceneWorld';
 
 class SceneErrorBoundary extends React.Component<{ children: React.ReactNode; fallback: React.ReactNode }, { hasError: boolean }> {
   constructor(props: { children: React.ReactNode; fallback: React.ReactNode }) {
@@ -100,15 +100,10 @@ function setSceneUserData(scene: THREE.Scene, key: string, value: unknown) {
 const PLAYER_COLLIDER_ROOTS_KEY = 'playerCollisionRoots';
 const PLAYER_COLLIDER_FLAG = 'playerCollider';
 const DISABLE_PLAYER_COLLISION_FLAG = 'disablePlayerCollision';
-const CITY_START_VIEW_KEY = 'cityStartView';
+const EXPO_START_VIEW_KEY = 'expoStartView';
 const PLAYER_COLLISION_TARGETS_CACHE_KEY = 'playerCollisionTargetsCache';
 const PLAYER_COLLISION_TARGETS_CACHE_VERSION_KEY = 'playerCollisionTargetsCacheVersion';
 const PLAYER_COLLISION_TARGETS_CACHE_RESOLVED_VERSION_KEY = 'playerCollisionTargetsCacheResolvedVersion';
-
-type CityStartView = {
-  position: [number, number, number];
-  lookAt: [number, number, number];
-};
 
 function isCollisionMesh(object: THREE.Object3D) {
   return Boolean((object as THREE.Mesh).isMesh || (object as THREE.InstancedMesh).isInstancedMesh);
@@ -206,27 +201,6 @@ function collectPlayerCollisionTargets(scene: THREE.Scene) {
   return resolvedTargets;
 }
 
-function buildStaticCityStartView(bounds: THREE.Box3, fovDegrees: number): CityStartView {
-  const center = bounds.getCenter(new THREE.Vector3());
-  const size = bounds.getSize(new THREE.Vector3());
-  const maxDim = Math.max(size.x, size.y, size.z, 1);
-  const halfFovRadians = THREE.MathUtils.degToRad(fovDegrees * 0.5);
-  const distance = (maxDim * 0.42) / Math.tan(Math.max(halfFovRadians, 0.1));
-
-  return {
-    position: [
-      center.x - distance * 0.28,
-      center.y + Math.max(14, size.y * 0.34),
-      center.z + distance * 0.52,
-    ],
-    lookAt: [
-      center.x,
-      center.y + Math.max(5, size.y * 0.1),
-      center.z,
-    ],
-  };
-}
-
 function usePlayerColliderRegistration<T extends THREE.Object3D>(ref: React.RefObject<T | null>, label: string) {
   const { scene } = useThree();
 
@@ -244,6 +218,14 @@ function logExpoWorldDebug(enabled: boolean, ...args: unknown[]) {
   if (enabled) {
     console.log(...args);
   }
+}
+
+function markScenicNonColliding(root: THREE.Object3D) {
+  root.userData.sceneLayerRole = 'scenic-non-colliding';
+  root.traverse((child) => {
+    child.userData.sceneLayerRole = 'scenic-non-colliding';
+    child.userData[DISABLE_PLAYER_COLLISION_FLAG] = true;
+  });
 }
 
 function PrimitiveCityModel({
@@ -274,6 +256,7 @@ function PrimitiveCityModel({
     clone.position.z -= normalizedCenter.z;
     clone.position.y -= normalizedMin.y;
     clone.updateMatrixWorld(true);
+    markScenicNonColliding(clone);
 
     return clone;
   }, [loadedCityScene]);
@@ -308,7 +291,6 @@ function PrimitiveCityModel({
         size: size.toArray(),
       },
     });
-    setSceneUserData(scene, CITY_START_VIEW_KEY, buildStaticCityStartView(bounds, 60));
   }, [cityRoot, scene]);
 
   return (
@@ -744,7 +726,7 @@ function ExpoDistrictPromenade({
           <meshStandardMaterial color="#f8fafc" emissive="#cbd5e1" emissiveIntensity={0.1} />
         </mesh>
       ))}
-      <ArrivalReveal />
+      {!EXPO_SPATIAL_DEBUG_FLAGS.disableArrivalReveal && <ArrivalReveal />}
       {sectorMarkers.map((marker) => (
         <DistrictGatewayNode key={marker.id} marker={marker} />
       ))}
@@ -761,6 +743,78 @@ function ColliderMaterial({ debug, color }: { debug?: boolean; color: string }) 
       depthWrite={false}
       toneMapped={false}
     />
+  );
+}
+
+function SpawnDebugOverlay({
+  playBounds,
+  startView,
+  walkRegions,
+}: {
+  playBounds: ReturnType<typeof buildExpoPlayBounds>;
+  startView: ExpoStartView;
+  walkRegions: ExpoWalkRegion[];
+}) {
+  return (
+    <group name="expo-spatial-debug-overlay">
+      {EXPO_SPATIAL_DEBUG_FLAGS.showWalkCorridor && (
+        <>
+          {walkRegions.map((region) => (
+            <mesh
+              key={region.id}
+              position={[(region.minX + region.maxX) * 0.5, 0.02, (region.minZ + region.maxZ) * 0.5]}
+              rotation={[-Math.PI / 2, 0, 0]}
+            >
+              <planeGeometry args={[region.maxX - region.minX, region.maxZ - region.minZ]} />
+              <meshBasicMaterial
+                color={region.type === 'arrival' ? '#38bdf8' : region.type === 'spine' ? '#22c55e' : '#eab308'}
+                transparent
+                opacity={region.type === 'booth-pocket' ? 0.09 : 0.14}
+                depthWrite={false}
+                toneMapped={false}
+              />
+            </mesh>
+          ))}
+          <mesh position={[0, 0.025, (playBounds.minZ + playBounds.maxZ) * 0.5]} rotation={[-Math.PI / 2, 0, 0]}>
+            <planeGeometry args={[playBounds.maxX - playBounds.minX, playBounds.maxZ - playBounds.minZ]} />
+            <meshBasicMaterial color="#ef4444" transparent opacity={0.04} depthWrite={false} toneMapped={false} />
+          </mesh>
+        </>
+      )}
+      {EXPO_SPATIAL_DEBUG_FLAGS.showSpawnMarkers && (
+        <>
+          <mesh position={[startView.position[0], 0.3, startView.position[2]]}>
+            <cylinderGeometry args={[0.55, 0.55, 0.6, 18]} />
+            <meshBasicMaterial color="#f97316" toneMapped={false} />
+          </mesh>
+          <mesh position={startView.lookAt}>
+            <sphereGeometry args={[0.9, 18, 18]} />
+            <meshBasicMaterial color="#22d3ee" toneMapped={false} />
+          </mesh>
+          <Text position={[startView.position[0], 2, startView.position[2]]} fontSize={0.9} color="#f8fafc" anchorX="center" anchorY="middle">
+            SPAWN
+          </Text>
+          <Text position={[startView.lookAt[0], startView.lookAt[1] + 2.2, startView.lookAt[2]]} fontSize={0.72} color="#f8fafc" anchorX="center" anchorY="middle">
+            START TARGET
+          </Text>
+        </>
+      )}
+    </group>
+  );
+}
+
+function BoothDebugShellFallback({ accentColor, metrics }: { accentColor: string; metrics: ReturnType<typeof getBoothArchitectureMetrics> }) {
+  return (
+    <group name="booth-debug-shell-fallback">
+      <mesh position={[0, metrics.colliderSize[1] * 0.34, 0]} castShadow>
+        <boxGeometry args={[metrics.footprintSize[0] * 0.78, metrics.colliderSize[1] * 0.68, metrics.footprintSize[1] * 0.72]} />
+        <meshStandardMaterial color="#0f172a" metalness={0.18} roughness={0.82} />
+      </mesh>
+      <mesh position={[0, metrics.colliderSize[1] * 0.58, (metrics.footprintSize[1] * 0.36) + 0.22]} castShadow>
+        <boxGeometry args={[metrics.footprintSize[0] * 0.64, 1.1, 0.44]} />
+        <meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={0.16} />
+      </mesh>
+    </group>
   );
 }
 
@@ -1178,6 +1232,7 @@ function DistrictBooth({ placement }: { placement: ExpoBoothPlacement }) {
 
   const nameFontSize = getSponsorNameFontSize(presentation.displayName);
   const metrics = getBoothArchitectureMetrics(presentation.template);
+  const colliderSegments = useMemo(() => getBoothColliderSegments(presentation.template), [presentation.template]);
   const onAction = (action: SponsorCta) => {
     const intent = resolveSponsorCtaIntent(action, presentation);
     if (!intent) {
@@ -1222,12 +1277,16 @@ function DistrictBooth({ placement }: { placement: ExpoBoothPlacement }) {
         <meshStandardMaterial color={placement.districtTheme.groundPalette.lightPool} transparent opacity={0.1} />
       </mesh>
       <group ref={boothColliderRef} name="district-booth-collider">
-        <mesh position={[0, metrics.colliderSize[1] / 2, 0]}>
-          <boxGeometry args={metrics.colliderSize} />
-          <ColliderMaterial color="#2563eb" />
-        </mesh>
+        {colliderSegments.map((segment) => (
+          <mesh key={segment.id} position={segment.position}>
+            <boxGeometry args={segment.size} />
+            <ColliderMaterial color="#2563eb" debug={EXPO_SPATIAL_DEBUG_FLAGS.showBoothColliderBoxes} />
+          </mesh>
+        ))}
       </group>
-      <BoothArchitectureKit accentColor={placement.color} template={presentation.template} />
+      {EXPO_SPATIAL_DEBUG_FLAGS.disableBoothArchitectureKit
+        ? <BoothDebugShellFallback accentColor={placement.color} metrics={metrics} />
+        : <BoothArchitectureKit accentColor={placement.color} template={presentation.template} />}
       {presentation.customInsertUrl && (
         <Suspense fallback={null}>
           <CustomBoothInsert template={presentation.template} url={presentation.customInsertUrl} />
@@ -1285,11 +1344,13 @@ function Player({
   debug = false,
   mode,
   onMove,
+  walkRegions,
 }: {
   bounds: { minX: number; maxX: number; minZ: number; maxZ: number };
   debug?: boolean;
   mode: ExpoMode;
   onMove: (pos: number[]) => void;
+  walkRegions: ExpoWalkRegion[];
 }) {
   const { camera, scene } = useThree();
   const [mov, setMov] = useState({ f: false, b: false, l: false, r: false });
@@ -1368,13 +1429,13 @@ function Player({
 
   useFrame((_, delta) => {
     if (!startFramingApplied.current) {
-      const startView = scene.userData[CITY_START_VIEW_KEY] as CityStartView | undefined;
+      const startView = scene.userData[EXPO_START_VIEW_KEY] as ExpoStartView | undefined;
       if (startView?.lookAt) {
         camera.position.set(...startView.position);
         camera.lookAt(...startView.lookAt);
         camera.updateMatrixWorld();
         startFramingApplied.current = true;
-        logExpoWorldDebug(debug, '[CityView][StartFraming]', startView);
+        logExpoWorldDebug(debug, '[ExpoView][StartFraming]', startView);
       }
     }
 
@@ -1422,7 +1483,7 @@ function Player({
         }
       }
 
-      if (!isBlocked) {
+      if (!isBlocked && isPointWithinExpoWalkRegions(nextPos, walkRegions)) {
         camera.position.add(moveDir);
       }
     }
@@ -1452,9 +1513,33 @@ interface ExpoWorldSceneProps {
   zoneSystem: any;
 }
 
+function SceneBridge({ startView }: { startView: ExpoStartView }) {
+  const { scene } = useThree();
+
+  useEffect(() => {
+    (window as unknown as { __expoSceneRef?: THREE.Scene }).__expoSceneRef = scene;
+    setSceneUserData(scene, EXPO_START_VIEW_KEY, startView);
+    setSceneUserData(scene, 'expoCollisionPolicy', {
+      containment: 'walk-regions + intentional booth blockers',
+      gameplayCritical: ['district-booth-collider'],
+      scenicNonColliding: ['realistic_city.glb', 'curated-skyline-ring', 'expo-landmark-layer', 'district-anchor-nodes'],
+    });
+
+    return () => {
+      if ((window as unknown as { __expoSceneRef?: THREE.Scene }).__expoSceneRef === scene) {
+        delete (window as unknown as { __expoSceneRef?: THREE.Scene }).__expoSceneRef;
+      }
+    };
+  }, [scene, startView]);
+
+  return null;
+}
+
 export function ExpoWorldScene({ activeZone, data, debug, guests, mode, onMove, zoneSystem }: ExpoWorldSceneProps) {
+  const boulevardPlan = useMemo(() => buildSponsorBoulevardLayout(data), [data]);
   const boothPlacements = useMemo(() => buildBoothPlacements(data), [data]);
   const sectorMarkers = useMemo(() => buildExpoSectorMarkers(data), [data]);
+  const startView = useMemo(() => buildExpoSponsorStartView(boulevardPlan), [boulevardPlan]);
   const sectorCount = useMemo(() => {
     if (!Array.isArray(data?.sectors)) {
       return 0;
@@ -1467,6 +1552,7 @@ export function ExpoWorldScene({ activeZone, data, debug, guests, mode, onMove, 
     ).size;
   }, [data]);
   const playBounds = useMemo(() => buildExpoPlayBounds(boothPlacements), [boothPlacements]);
+  const walkRegions = useMemo(() => buildExpoWalkRegions(boothPlacements), [boothPlacements]);
   const [playerPosition, setPlayerPosition] = useState<[number, number, number]>([0, 0, 0]);
   const sceneLoadedRef = useRef(false);
   const viewedBoothsRef = useRef<Set<string>>(new Set());
@@ -1553,6 +1639,7 @@ export function ExpoWorldScene({ activeZone, data, debug, guests, mode, onMove, 
     <>
       <BoothUI visible={!!activeZone} zoneName={activeZone?.id} />
       <Canvas shadows gl={{ antialias: true }} camera={{ position: [0, 2, 10], fov: 60, far: 10000 }}>
+        <SceneBridge startView={startView} />
         <Suspense fallback={null}>
             <Sky distance={450000} sunPosition={[100, 20, 100]} inclination={0.49} azimuth={0.25} />
             {EXPO_FEATURE_FLAGS.enableStreetEnvironmentLighting ? (
@@ -1567,19 +1654,26 @@ export function ExpoWorldScene({ activeZone, data, debug, guests, mode, onMove, 
 
             <GroundPlane />
             <ExpoDistrictPromenade boothPlacements={boothPlacements} sectorMarkers={sectorMarkers} />
+            {(EXPO_SPATIAL_DEBUG_FLAGS.showSpawnMarkers || EXPO_SPATIAL_DEBUG_FLAGS.showWalkCorridor) && (
+              <SpawnDebugOverlay playBounds={playBounds} startView={startView} walkRegions={walkRegions} />
+            )}
             <SponsorScreenHierarchy boothPlacements={boothPlacements} sectorMarkers={sectorMarkers} />
             {EXPO_FEATURE_FLAGS.enableSponsorBillboards && <SponsorBillboards placements={boothPlacements} />}
 
             <PrimitiveCityModel debug={debug} />
-            {EXPO_FEATURE_FLAGS.enableCuratedSkylineRing && (
+            {EXPO_FEATURE_FLAGS.enableCuratedSkylineRing && !EXPO_SPATIAL_DEBUG_FLAGS.disableCuratedSkylineRing && (
               <SceneErrorBoundary fallback={null}>
-                <CuratedSkylineRing showcase={EXPO_FEATURE_FLAGS.enableShowcaseSkylineDensity} />
+                <CuratedSkylineRing
+                  debugBounds={EXPO_SPATIAL_DEBUG_FLAGS.showSkylineBounds}
+                  showcase={EXPO_FEATURE_FLAGS.enableShowcaseSkylineDensity}
+                  walkRegions={walkRegions}
+                />
               </SceneErrorBoundary>
             )}
-            {EXPO_FEATURE_FLAGS.enableDistrictLandmarks && (
+            {EXPO_FEATURE_FLAGS.enableDistrictLandmarks && !EXPO_SPATIAL_DEBUG_FLAGS.disableExpoLandmarkLayer && (
               <ExpoLandmarkLayer boothPlacements={boothPlacements} sectorMarkers={sectorMarkers} />
             )}
-            {EXPO_FEATURE_FLAGS.enableDistrictAnchorNodes && (
+            {EXPO_FEATURE_FLAGS.enableDistrictAnchorNodes && !EXPO_SPATIAL_DEBUG_FLAGS.disableDistrictAnchorNodes && (
               <DistrictAnchorNodes boothPlacements={boothPlacements} sectorMarkers={sectorMarkers} showcase={EXPO_FEATURE_FLAGS.enableEnhancedBoulevardDetail} />
             )}
             {EXPO_FEATURE_FLAGS.enableAmbientMotionLayer && <AmbientMotionLayer sectorMarkers={sectorMarkers} />}
@@ -1619,6 +1713,7 @@ export function ExpoWorldScene({ activeZone, data, debug, guests, mode, onMove, 
                 setPlayerPosition([position[0], position[1], position[2]]);
                 onMove(position);
               }}
+              walkRegions={walkRegions}
             />
         </Suspense>
       </Canvas>

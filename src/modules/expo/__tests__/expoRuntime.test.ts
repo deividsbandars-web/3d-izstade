@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { EXPO_CITY_QUALITY_TIER, EXPO_QUALITY_PRESETS } from '../state/expoRuntime.js';
+import { EXPO_CITY_QUALITY_TIER, EXPO_QUALITY_PRESETS, EXPO_SPATIAL_DEBUG_FLAGS } from '../state/expoRuntime.js';
 
 assert.equal(EXPO_QUALITY_PRESETS.performance.enableShowcaseSkylineDensity, false);
 assert.equal(EXPO_QUALITY_PRESETS.balanced.enableShowcaseSkylineDensity, false);
@@ -14,4 +14,9 @@ assert.equal(EXPO_QUALITY_PRESETS.balanced.enableCuratedSkylineRing, true);
 assert.equal(EXPO_QUALITY_PRESETS.quality.enableCuratedSkylineRing, true);
 
 assert.ok(['performance', 'balanced', 'quality'].includes(EXPO_CITY_QUALITY_TIER));
+assert.equal(EXPO_SPATIAL_DEBUG_FLAGS.disableArrivalReveal, false);
+assert.equal(EXPO_SPATIAL_DEBUG_FLAGS.disableCuratedSkylineRing, false);
+assert.equal(EXPO_SPATIAL_DEBUG_FLAGS.disableExpoLandmarkLayer, false);
+assert.equal(EXPO_SPATIAL_DEBUG_FLAGS.disableDistrictAnchorNodes, false);
+assert.equal(EXPO_SPATIAL_DEBUG_FLAGS.disableBoothArchitectureKit, false);
 

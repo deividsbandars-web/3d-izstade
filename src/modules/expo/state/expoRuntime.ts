@@ -1,6 +1,23 @@
 export type ExpoMode = 'menu' | 'walk' | 'fly' | 'unreal';
 export type ExpoQualityPreset = 'performance' | 'balanced' | 'quality';
 
+function normalizeExpoDebugBoolean(value: string | null | undefined): boolean {
+  if (!value) {
+    return false;
+  }
+
+  const normalized = String(value).trim().toLowerCase();
+  return normalized === '1' || normalized === 'true' || normalized === 'yes' || normalized === 'on';
+}
+
+function resolveExpoDebugQueryFlag(paramName: string): boolean {
+  if (typeof window === 'undefined') {
+    return false;
+  }
+
+  return normalizeExpoDebugBoolean(new URLSearchParams(window.location.search).get(paramName));
+}
+
 function normalizeExpoQualityPreset(value: string | null | undefined): ExpoQualityPreset | null {
   if (!value) {
     return null;
@@ -15,7 +32,7 @@ function normalizeExpoQualityPreset(value: string | null | undefined): ExpoQuali
 }
 
 function resolveExpoQualityPreset(): ExpoQualityPreset {
-  const envPreset = normalizeExpoQualityPreset(import.meta.env.VITE_EXPO_QUALITY_PRESET);
+  const envPreset = normalizeExpoQualityPreset(import.meta.env?.VITE_EXPO_QUALITY_PRESET);
   if (envPreset) {
     return envPreset;
   }
@@ -110,6 +127,18 @@ export const EXPO_FEATURE_FLAGS = {
   enableShowcaseSkylineDensity: EXPO_QUALITY_PRESETS[EXPO_CITY_QUALITY_TIER].enableShowcaseSkylineDensity,
   enableSponsorBillboards: EXPO_QUALITY_PRESETS[EXPO_CITY_QUALITY_TIER].enableSponsorBillboards,
   enableStreetEnvironmentLighting: EXPO_QUALITY_PRESETS[EXPO_CITY_QUALITY_TIER].enableStreetEnvironmentLighting,
+} as const;
+
+export const EXPO_SPATIAL_DEBUG_FLAGS = {
+  disableArrivalReveal: resolveExpoDebugQueryFlag('expoDebugNoArrivalReveal'),
+  disableBoothArchitectureKit: resolveExpoDebugQueryFlag('expoDebugNoBoothArchitectureKit'),
+  disableCuratedSkylineRing: resolveExpoDebugQueryFlag('expoDebugNoCuratedSkylineRing'),
+  disableDistrictAnchorNodes: resolveExpoDebugQueryFlag('expoDebugNoDistrictAnchorNodes'),
+  disableExpoLandmarkLayer: resolveExpoDebugQueryFlag('expoDebugNoExpoLandmarkLayer'),
+  showBoothColliderBoxes: resolveExpoDebugQueryFlag('expoDebugBoothColliders'),
+  showSkylineBounds: resolveExpoDebugQueryFlag('expoDebugSkylineBounds'),
+  showSpawnMarkers: resolveExpoDebugQueryFlag('expoDebugSpawn'),
+  showWalkCorridor: resolveExpoDebugQueryFlag('expoDebugWalkCorridor'),
 } as const;
 
 export const EXPO_ASSET_URLS = [] as const;

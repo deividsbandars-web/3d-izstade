@@ -5,6 +5,12 @@ import {
   type ExpoPlacementNodeType,
   type SponsorBoulevardPlan,
 } from './lib/boulevardLayout.js';
+import {
+  buildDistrictThemeMap,
+  resolveDistrictThemeBySectorId,
+  type ExpoDistrictTheme,
+  type DistrictThemeId,
+} from './lib/districtTheme.js';
 import type { ExpoSceneCompany, ExpoSceneSector } from './types/scene.js';
 import type { Zone, ZoneSystem } from '../city/ZoneSystem.js';
 
@@ -14,6 +20,9 @@ export type ExpoBoothPlacement = {
   id: string;
   company: any;
   color: string;
+  clusterIndex?: number;
+  districtTheme: ExpoDistrictTheme;
+  districtThemeId: DistrictThemeId;
   layoutFootprint?: SponsorBoulevardPlan['footprint'];
   nodeType?: ExpoPlacementNodeType;
   position: [number, number, number];
@@ -29,6 +38,9 @@ export type ExpoSectorMarker = {
   id: string;
   label: string;
   color: string;
+  clusterIndex?: number;
+  districtTheme: ExpoDistrictTheme;
+  districtThemeId: DistrictThemeId;
   nodeType?: ExpoPlacementNodeType;
   position: [number, number, number];
   side: 'left' | 'right';
@@ -51,6 +63,21 @@ export type ExpoPlayBounds = {
   maxX: number;
   minZ: number;
   maxZ: number;
+};
+
+export type ExpoWalkRegion = {
+  id: string;
+  maxX: number;
+  maxZ: number;
+  minX: number;
+  minZ: number;
+  type: 'arrival' | 'spine' | 'booth-pocket' | 'sector-pocket';
+};
+
+export type ExpoStartView = {
+  lookAt: [number, number, number];
+  position: [number, number, number];
+  source: 'arrival-main';
 };
 
 export type CuratedCityPlacement = {
@@ -157,14 +184,20 @@ export function buildSponsorBoulevardLayout(data: any): SponsorBoulevardPlan {
   return buildSponsorBoulevardPlan(getSceneCompanies(data), getSceneSectors(data));
 }
 
+export function buildExpoDistrictThemes(data: any) {
+  return buildDistrictThemeMap(getSceneSectors(data));
+}
+
 export function buildBoothPlacements(data: any): ExpoBoothPlacement[] {
   const plan = buildSponsorBoulevardLayout(data);
   const companiesById = new Map(getSceneCompanies(data).map((company) => [String(company.id), company]));
+  const districtThemes = buildExpoDistrictThemes(data);
 
   const placements = plan.nodes
     .filter((node) => node.companyId)
     .map((node) => {
       const company = companiesById.get(String(node.companyId)) ?? { id: node.companyId };
+      const districtTheme = resolveDistrictThemeBySectorId(node.sectorId, districtThemes);
       const normalizedCompany = {
         ...company,
         booth: getNormalizedBooth(company),
@@ -172,8 +205,11 @@ export function buildBoothPlacements(data: any): ExpoBoothPlacement[] {
 
       return {
         boothType: normalizedCompany.boothType,
+        clusterIndex: node.clusterIndex,
         color: node.color,
         company: normalizedCompany,
+        districtTheme,
+        districtThemeId: districtTheme.id,
         id: String(node.companyId),
         layoutFootprint: plan.footprint,
         nodeType: node.nodeType,
@@ -190,15 +226,22 @@ export function buildBoothPlacements(data: any): ExpoBoothPlacement[] {
 }
 
 export function buildExpoSectorMarkers(data: any): ExpoSectorMarker[] {
-  return buildSponsorBoulevardLayout(data).sectorGateways.map((node) => ({
-    color: node.color,
-    id: node.id,
-    label: node.sectorLabel,
-    nodeType: node.nodeType,
-    position: node.position,
-    sectorId: node.sectorId,
-    side: node.position[0] < 0 ? 'left' : 'right',
-  }));
+  const districtThemes = buildExpoDistrictThemes(data);
+  return buildSponsorBoulevardLayout(data).sectorGateways.map((node) => {
+    const districtTheme = resolveDistrictThemeBySectorId(node.sectorId, districtThemes);
+    return {
+      clusterIndex: node.clusterIndex,
+      color: node.color,
+      districtTheme,
+      districtThemeId: districtTheme.id,
+      id: node.id,
+      label: node.sectorLabel,
+      nodeType: node.nodeType,
+      position: node.position,
+      sectorId: node.sectorId,
+      side: node.position[0] < 0 ? 'left' : 'right',
+    };
+  });
 }
 
 export function buildExpoPlayBounds(boothPlacements: ExpoBoothPlacement[]): ExpoPlayBounds {
@@ -221,6 +264,102 @@ export function buildExpoPlayBounds(boothPlacements: ExpoBoothPlacement[]): Expo
     minZ: Math.min(...allZs),
     maxZ: Math.max(...allZs),
   };
+}
+
+export function buildExpoSponsorStartView(plan: Pick<SponsorBoulevardPlan, 'arrivalNode' | 'footprint'>): ExpoStartView {
+  const centerX = (plan.footprint.minX + plan.footprint.maxX) * 0.5;
+  const arrivalZ = plan.arrivalNode.position[2];
+
+  return {
+    lookAt: [centerX, 3.6, arrivalZ - 22],
+    position: [centerX, 5, arrivalZ + 30],
+    source: 'arrival-main',
+  };
+}
+
+function buildBoothPocketRegion(placement: ExpoBoothPlacement, index: number): ExpoWalkRegion {
+  const side = placement.position[0] < 0 ? -1 : 1;
+  const depth = placement.nodeType === 'hero_left' || placement.nodeType === 'hero_right' ? 28 : 22;
+  const width = placement.nodeType === 'endcap' ? 18 : 16;
+  const inwardEdge = side < 0 ? placement.position[0] + 4 : placement.position[0] - 4;
+  const outerEdge = side < 0 ? inwardEdge + width : inwardEdge - width;
+
+  return {
+    id: `booth-pocket-${placement.id}-${index}`,
+    maxX: Math.max(inwardEdge, outerEdge),
+    maxZ: placement.position[2] + 12,
+    minX: Math.min(inwardEdge, outerEdge),
+    minZ: placement.position[2] - depth,
+    type: 'booth-pocket',
+  };
+}
+
+export function buildExpoWalkRegions(boothPlacements: ExpoBoothPlacement[]): ExpoWalkRegion[] {
+  const footprint = boothPlacements[0]?.layoutFootprint
+    ?? (boothPlacements as ExpoBoothPlacement[] & { footprint?: SponsorBoulevardPlan['footprint'] }).footprint
+    ?? {
+      maxX: EXPO_BOULEVARD_LAYOUT.standardX + EXPO_BOULEVARD_LAYOUT.playBoundsPaddingX,
+      maxZ: EXPO_BOULEVARD_LAYOUT.arrivalZ + EXPO_BOULEVARD_LAYOUT.playBoundsPaddingZ,
+      minX: -EXPO_BOULEVARD_LAYOUT.standardX - EXPO_BOULEVARD_LAYOUT.playBoundsPaddingX,
+      minZ: -EXPO_BOULEVARD_LAYOUT.standardZStartOffset - EXPO_BOULEVARD_LAYOUT.playBoundsPaddingZ,
+    };
+
+  const arrivalRegion: ExpoWalkRegion = {
+    id: 'arrival-zone',
+    maxX: 36,
+    maxZ: footprint.maxZ,
+    minX: -36,
+    minZ: EXPO_BOULEVARD_LAYOUT.arrivalZ - 20,
+    type: 'arrival',
+  };
+
+  const spineRegion: ExpoWalkRegion = {
+    id: 'central-spine',
+    maxX: 24,
+    maxZ: footprint.maxZ - 18,
+    minX: -24,
+    minZ: footprint.minZ + 10,
+    type: 'spine',
+  };
+
+  const sectorPocketByCluster = new Map<number, ExpoWalkRegion>();
+  boothPlacements.forEach((placement) => {
+    const clusterIndex = Number(placement.clusterIndex ?? -1);
+    if (clusterIndex < 0) {
+      return;
+    }
+
+    const existing = sectorPocketByCluster.get(clusterIndex);
+    const next: ExpoWalkRegion = existing ?? {
+      id: `sector-pocket-${clusterIndex}`,
+      maxX: 30,
+      maxZ: placement.position[2] + 16,
+      minX: -30,
+      minZ: placement.position[2] - 34,
+      type: 'sector-pocket',
+    };
+
+    next.maxZ = Math.max(next.maxZ, placement.position[2] + 16);
+    next.minZ = Math.min(next.minZ, placement.position[2] - 34);
+    sectorPocketByCluster.set(clusterIndex, next);
+  });
+
+  return [
+    arrivalRegion,
+    spineRegion,
+    ...Array.from(sectorPocketByCluster.values()),
+    ...boothPlacements.map(buildBoothPocketRegion),
+  ];
+}
+
+export function isPointWithinExpoWalkRegions(
+  point: { x: number; z: number } | [number, number],
+  regions: ExpoWalkRegion[]
+) {
+  const x = Array.isArray(point) ? point[0] : point.x;
+  const z = Array.isArray(point) ? point[1] : point.z;
+
+  return regions.some((region) => x >= region.minX && x <= region.maxX && z >= region.minZ && z <= region.maxZ);
 }
 
 export function createDistrictBoothZone(placement: ExpoBoothPlacement): Zone {
