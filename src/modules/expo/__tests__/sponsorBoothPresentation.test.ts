@@ -38,15 +38,18 @@ assert.equal(truncateSponsorText('Very long sponsor label that needs trimming', 
 assert.equal(getSponsorNameFontSize('Short Name'), 1.35);
 assert.equal(getSponsorNameFontSize('Name That Is Slightly Longer'), 1.05);
 
-assert.equal(pickSponsorBoothTemplate({ boothType: 'hero', nodeType: 'hero_left', sponsorTier: 'hero' }), 'hero_pavilion');
-assert.equal(pickSponsorBoothTemplate({ boothType: 'premium', nodeType: 'endcap', sponsorTier: 'gold' }), 'standard_corner');
-assert.equal(pickSponsorBoothTemplate({ boothType: 'poster', nodeType: 'standard_right', sponsorTier: 'bronze' }), 'compact_kiosk');
+assert.equal(pickSponsorBoothTemplate({ boothType: 'hero', districtThemeId: 'platform_corridor', nodeType: 'hero_left', sponsorTier: 'hero' }), 'hero_gallery');
+assert.equal(pickSponsorBoothTemplate({ boothType: 'hero', districtThemeId: 'meetings_forum', nodeType: 'hero_left', sponsorTier: 'hero' }), 'hero_forum');
+assert.equal(pickSponsorBoothTemplate({ boothType: 'premium', districtThemeId: 'design_district', nodeType: 'endcap', sponsorTier: 'gold' }), 'premium_spine');
+assert.equal(pickSponsorBoothTemplate({ boothType: 'premium', districtThemeId: 'meetings_forum', nodeType: 'endcap', sponsorTier: 'gold' }), 'premium_portal');
+assert.equal(pickSponsorBoothTemplate({ boothType: 'poster', districtThemeId: 'platform_corridor', nodeType: 'standard_right', sponsorTier: 'bronze' }), 'standard_arcade');
+assert.equal(pickSponsorBoothTemplate({ boothType: 'poster', districtThemeId: 'design_district', nodeType: 'standard_right', sponsorTier: 'bronze' }), 'standard_studio');
 
 const heroActions = buildSponsorCtas(heroCompany);
 assert.deepEqual(heroActions.map((action) => action.kind), ['website', 'booking', 'demo_room']);
 
-const heroPresentation = buildSponsorBoothPresentation(heroCompany, heroCompany.booth, 'hero_left');
-assert.equal(heroPresentation.template, 'hero_pavilion');
+const heroPresentation = buildSponsorBoothPresentation(heroCompany, heroCompany.booth, 'hero_left', { districtThemeId: 'platform_corridor' });
+assert.equal(heroPresentation.template, 'hero_gallery');
 assert.equal(heroPresentation.displayName, 'Extremely Long Baltic S...');
 assert.equal(heroPresentation.customInsertUrl, 'https://cdn.example.com/custom-booth.glb');
 assert.equal(heroPresentation.posterUrl, 'https://cdn.example.com/poster.png');
@@ -71,7 +74,7 @@ const compactPresentation = buildSponsorBoothPresentation({
   website: null,
 }, null, 'standard_right');
 
-assert.equal(compactPresentation.template, 'compact_kiosk');
+assert.equal(compactPresentation.template, 'standard_studio');
 assert.equal(compactPresentation.actions.length, 1);
 assert.equal(compactPresentation.actions[0].kind, 'demo_room');
 assert.equal(compactPresentation.customInsertUrl, null);
@@ -89,7 +92,7 @@ const placeholderCompany = {
   posterUrl: 'https://sample-videos.com/poster.png',
 };
 
-const placeholderPresentation = buildSponsorBoothPresentation(placeholderCompany, placeholderCompany.booth, 'hero_left');
+const placeholderPresentation = buildSponsorBoothPresentation(placeholderCompany, placeholderCompany.booth, 'hero_left', { districtThemeId: 'meetings_forum' });
 
 assert.equal(placeholderPresentation.logoUrl, null);
 assert.equal(placeholderPresentation.posterUrl, null);

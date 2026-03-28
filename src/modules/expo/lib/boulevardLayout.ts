@@ -22,6 +22,7 @@ export type BoulevardCompany = {
 export type BoulevardSector = Pick<ExpoSceneSector, 'color_theme' | 'id' | 'name'>;
 
 export type SponsorBoulevardNode = {
+  clusterIndex: number;
   color: string;
   companyId?: string;
   id: string;
@@ -186,6 +187,7 @@ export function rankCompaniesForBoulevard(
 
 function createGatewayNode(sectorId: string | null, sectorLabel: string, color: string, side: 'left' | 'right', z: number): SponsorBoulevardNode {
   return {
+    clusterIndex: -1,
     color,
     id: `gateway-${sectorId || UNASSIGNED_SECTOR_ID}-${side}`,
     nodeType: 'sector_gateway',
@@ -206,6 +208,7 @@ function createCompanyNode(
   rotationY: number
 ): SponsorBoulevardNode {
   return {
+    clusterIndex: 0,
     color,
     companyId: company.id,
     id: `${nodeType}-${company.id}`,
@@ -247,6 +250,7 @@ export function buildSponsorBoulevardPlan(
   const nodes: SponsorBoulevardNode[] = [];
   const sectorGateways: SponsorBoulevardNode[] = [];
   const arrivalNode: SponsorBoulevardNode = {
+    clusterIndex: -1,
     color: '#38bdf8',
     id: 'arrival-main',
     nodeType: 'arrival',
@@ -274,6 +278,7 @@ export function buildSponsorBoulevardPlan(
       'left',
       clusterBaseZ - EXPO_BOULEVARD_LAYOUT.gatewayZOffset
     );
+    leftGateway.clusterIndex = sectorIndex;
     const rightGateway = createGatewayNode(
       sectorKey === UNASSIGNED_SECTOR_ID ? null : sectorKey,
       sectorLabel,
@@ -281,6 +286,7 @@ export function buildSponsorBoulevardPlan(
       'right',
       clusterBaseZ - EXPO_BOULEVARD_LAYOUT.gatewayZOffset
     );
+    rightGateway.clusterIndex = sectorIndex;
     nodes.push(leftGateway, rightGateway);
     sectorGateways.push(leftGateway, rightGateway);
 
@@ -304,6 +310,7 @@ export function buildSponsorBoulevardPlan(
         clusterBaseZ - EXPO_BOULEVARD_LAYOUT.heroZOffset,
         Math.PI / 2
       ));
+      nodes[nodes.length - 1].clusterIndex = sectorIndex;
     }
     if (heroRight) {
       nodes.push(createCompanyNode(
@@ -314,6 +321,7 @@ export function buildSponsorBoulevardPlan(
         clusterBaseZ - EXPO_BOULEVARD_LAYOUT.heroZOffset,
         -Math.PI / 2
       ));
+      nodes[nodes.length - 1].clusterIndex = sectorIndex;
     }
 
     premiumCompanies.forEach((company, index) => {
@@ -327,6 +335,7 @@ export function buildSponsorBoulevardPlan(
         clusterBaseZ - 44 - row * EXPO_BOULEVARD_LAYOUT.standardZStep,
         side < 0 ? Math.PI / 2 : -Math.PI / 2
       ));
+      nodes[nodes.length - 1].clusterIndex = sectorIndex;
     });
 
     standardCompanies.forEach((company, index) => {
@@ -340,6 +349,7 @@ export function buildSponsorBoulevardPlan(
         clusterBaseZ - EXPO_BOULEVARD_LAYOUT.standardZStartOffset - row * EXPO_BOULEVARD_LAYOUT.standardZStep,
         isLeft ? Math.PI / 2 : -Math.PI / 2
       ));
+      nodes[nodes.length - 1].clusterIndex = sectorIndex;
     });
   });
 

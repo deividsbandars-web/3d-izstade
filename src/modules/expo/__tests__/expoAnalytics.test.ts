@@ -37,7 +37,7 @@ const persistedEvents: Array<Record<string, unknown>> = [];
 const tracked = trackExpoAnalyticsEvent(
   'demo_room_entered',
   company,
-  { boothTemplate: 'standard_corner' },
+  { boothTemplate: 'premium_spine' },
   {
     analyticsTrack: (eventName, payload) => analyticsTrackCalls.push({ eventName, payload }),
     createEvent: (eventDetail) => ({ type: 'expo:analytics', detail: eventDetail } as unknown as Event),
@@ -52,12 +52,12 @@ const tracked = trackExpoAnalyticsEvent(
 );
 
 assert.equal(tracked.eventName, 'demo_room_entered');
-assert.equal(tracked.boothTemplate, 'standard_corner');
+assert.equal(tracked.boothTemplate, 'premium_spine');
 assert.equal(dispatchedEvents.length, 1);
 assert.equal(persistedEvents[0]?.eventName, 'demo_room_entered');
 assert.deepEqual(pushedEvents[0], {
   boothId: null,
-  boothTemplate: 'standard_corner',
+  boothTemplate: 'premium_spine',
   companyId: 'company-1',
   companySlug: 'acme-industries',
   event: 'expo_demo_room_entered',
@@ -79,7 +79,7 @@ assert.equal(trackExpoBookingClicked(company, { bookingUrl: 'https://acme.exampl
 assert.equal(trackExpoDemoRoomEntered(company, { boothId: 'booth-1' }, { dataLayer: [] }).eventName, 'demo_room_entered');
 assert.deepEqual(analyticsTrackCalls[0]?.payload, {
   boothId: null,
-  boothTemplate: 'standard_corner',
+  boothTemplate: 'premium_spine',
   companyId: 'company-1',
   companySlug: 'acme-industries',
   eventName: 'demo_room_entered',

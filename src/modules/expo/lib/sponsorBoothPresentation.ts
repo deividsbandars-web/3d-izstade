@@ -1,6 +1,12 @@
 import type { ExpoSceneBooth, ExpoSceneCompany, SponsorTier } from '../types/scene';
 
-export type SponsorBoothTemplate = 'hero_pavilion' | 'standard_corner' | 'compact_kiosk';
+export type SponsorBoothTemplate =
+  | 'hero_gallery'
+  | 'hero_forum'
+  | 'premium_portal'
+  | 'premium_spine'
+  | 'standard_arcade'
+  | 'standard_studio';
 export type SponsorCtaKind = 'website' | 'booking' | 'demo_room';
 
 export type SponsorCta = {
@@ -72,22 +78,25 @@ export function getSponsorNameFontSize(name: string) {
 
 export function pickSponsorBoothTemplate({
   boothType,
+  districtThemeId,
   nodeType,
   sponsorTier,
 }: {
   boothType?: string | null;
+  districtThemeId?: string | null;
   nodeType?: string | null;
   sponsorTier?: SponsorTier | null;
 }): SponsorBoothTemplate {
+  const normalizedTheme = String(districtThemeId || '').trim().toLowerCase();
   if (nodeType === 'hero_left' || nodeType === 'hero_right' || sponsorTier === 'hero' || boothType === 'hero') {
-    return 'hero_pavilion';
+    return normalizedTheme.includes('meeting') ? 'hero_forum' : 'hero_gallery';
   }
 
   if (nodeType === 'endcap' || boothType === 'premium' || sponsorTier === 'platinum' || sponsorTier === 'gold') {
-    return 'standard_corner';
+    return normalizedTheme.includes('design') || normalizedTheme.includes('platform') ? 'premium_spine' : 'premium_portal';
   }
 
-  return 'compact_kiosk';
+  return normalizedTheme.includes('platform') || normalizedTheme.includes('meeting') ? 'standard_arcade' : 'standard_studio';
 }
 
 export function buildSponsorCtas(company: ExpoSceneCompany): SponsorCta[] {
@@ -134,7 +143,10 @@ function pickCustomInsertUrl(company: ExpoSceneCompany, booth: ExpoSceneBooth | 
 export function buildSponsorBoothPresentation(
   company: ExpoSceneCompany,
   booth: ExpoSceneBooth | null,
-  nodeType?: string | null
+  nodeType?: string | null,
+  context?: {
+    districtThemeId?: string | null;
+  }
 ): SponsorBoothPresentation {
   const displayName = truncateSponsorText(company.name, 26);
   const slugOrId = company.slug || company.id;
@@ -152,6 +164,7 @@ export function buildSponsorBoothPresentation(
     tagline: truncateSponsorText(company.tagline || 'Meet the team. Explore the offer. Book a live demo.', 64),
     template: pickSponsorBoothTemplate({
       boothType: company.boothType || booth?.boothType || null,
+      districtThemeId: context?.districtThemeId || null,
       nodeType,
       sponsorTier: company.sponsorTier,
     }),
