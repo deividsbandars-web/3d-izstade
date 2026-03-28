@@ -1,5 +1,5 @@
 import React, { Suspense, useEffect, useMemo, useRef, useState } from 'react';
-import { Canvas, useFrame, useLoader, useThree } from '@react-three/fiber';
+import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { Environment, Html, Loader, OrbitControls, PointerLockControls, Sky, Text, useGLTF, useVideoTexture } from '@react-three/drei';
 import { useNavigate } from 'react-router-dom';
 import * as THREE from 'three';
@@ -928,27 +928,75 @@ function SponsorTextureSurface({
   opacity?: number;
   url: string;
 }) {
-  const texture = useLoader(THREE.TextureLoader, url);
-  const mappedTexture = useMemo(() => {
-    const clone = texture.clone();
-    clone.colorSpace = THREE.SRGBColorSpace;
-    clone.needsUpdate = true;
-    return clone;
-  }, [texture]);
+  const [mappedTexture, setMappedTexture] = useState<THREE.Texture | null>(null);
 
-  return <meshStandardMaterial color={fallbackColor} map={mappedTexture} transparent opacity={opacity} toneMapped={false} />;
+  useEffect(() => {
+    let isActive = true;
+    const loader = new THREE.TextureLoader();
+
+    loader.load(
+      url,
+      (texture) => {
+        if (!isActive) {
+          return;
+        }
+
+        const clone = texture.clone();
+        clone.colorSpace = THREE.SRGBColorSpace;
+        clone.needsUpdate = true;
+        setMappedTexture(clone);
+      },
+      undefined,
+      () => {
+        if (!isActive) {
+          return;
+        }
+        setMappedTexture(null);
+      }
+    );
+
+    return () => {
+      isActive = false;
+    };
+  }, [url]);
+
+  return <meshStandardMaterial color={fallbackColor} map={mappedTexture ?? undefined} transparent opacity={opacity} toneMapped={false} />;
 }
 
 function ScreenTextureMaterial({ fallbackColor, url }: { fallbackColor: string; url: string }) {
-  const texture = useLoader(THREE.TextureLoader, url);
-  const mappedTexture = useMemo(() => {
-    const clone = texture.clone();
-    clone.colorSpace = THREE.SRGBColorSpace;
-    clone.needsUpdate = true;
-    return clone;
-  }, [texture]);
+  const [mappedTexture, setMappedTexture] = useState<THREE.Texture | null>(null);
 
-  return <meshStandardMaterial color={fallbackColor} emissive={fallbackColor} emissiveIntensity={0.08} map={mappedTexture} toneMapped={false} />;
+  useEffect(() => {
+    let isActive = true;
+    const loader = new THREE.TextureLoader();
+
+    loader.load(
+      url,
+      (texture) => {
+        if (!isActive) {
+          return;
+        }
+
+        const clone = texture.clone();
+        clone.colorSpace = THREE.SRGBColorSpace;
+        clone.needsUpdate = true;
+        setMappedTexture(clone);
+      },
+      undefined,
+      () => {
+        if (!isActive) {
+          return;
+        }
+        setMappedTexture(null);
+      }
+    );
+
+    return () => {
+      isActive = false;
+    };
+  }, [url]);
+
+  return <meshStandardMaterial color={fallbackColor} emissive={fallbackColor} emissiveIntensity={0.08} map={mappedTexture ?? undefined} toneMapped={false} />;
 }
 
 function SponsorScreenGraphic({
