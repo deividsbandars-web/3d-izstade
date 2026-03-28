@@ -25,7 +25,7 @@ import { buildBoulevardArtPass } from '../lib/boulevardArtPass';
 import { buildSponsorScreenLayout, type SponsorScreenNode } from '../lib/sponsorScreenLayout';
 import { buildSponsorBoothPresentation, getSponsorNameFontSize, resolveSponsorCtaIntent, type SponsorBoothTemplate, type SponsorCta } from '../lib/sponsorBoothPresentation';
 import { EXPO_CITY_QUALITY_TIER, EXPO_FEATURE_FLAGS, EXPO_SPATIAL_DEBUG_FLAGS, type ExpoMode } from '../state/expoRuntime';
-import { buildBoothPlacements, buildExpoPlayBounds, buildExpoSectorMarkers, buildExpoSponsorStartView, buildExpoWalkRegions, buildSponsorBoulevardLayout, isPointWithinExpoWalkRegions, replaceDistrictBoothZones, type ExpoBoothPlacement, type ExpoStartView, type ExpoWalkRegion } from '../sceneWorld';
+import { buildBoothPlacements, buildExpoPlayBounds, buildExpoSectorMarkers, buildExpoSponsorStartView, buildExpoWalkRegions, buildSponsorBoulevardLayout, replaceDistrictBoothZones, type ExpoBoothPlacement, type ExpoStartView, type ExpoWalkRegion } from '../sceneWorld';
 
 class SceneErrorBoundary extends React.Component<{ children: React.ReactNode; fallback: React.ReactNode }, { hasError: boolean }> {
   constructor(props: { children: React.ReactNode; fallback: React.ReactNode }) {
@@ -1436,13 +1436,11 @@ function Player({
   debug = false,
   mode,
   onMove,
-  walkRegions,
 }: {
   bounds: { minX: number; maxX: number; minZ: number; maxZ: number };
   debug?: boolean;
   mode: ExpoMode;
   onMove: (pos: number[]) => void;
-  walkRegions: ExpoWalkRegion[];
 }) {
   const { camera, scene } = useThree();
   const [mov, setMov] = useState({ f: false, b: false, l: false, r: false });
@@ -1575,7 +1573,7 @@ function Player({
         }
       }
 
-      if (!isBlocked && isPointWithinExpoWalkRegions(nextPos, walkRegions)) {
+      if (!isBlocked) {
         camera.position.add(moveDir);
       }
     }
@@ -1805,7 +1803,6 @@ export function ExpoWorldScene({ activeZone, data, debug, guests, mode, onMove, 
                 setPlayerPosition([position[0], position[1], position[2]]);
                 onMove(position);
               }}
-              walkRegions={walkRegions}
             />
         </Suspense>
       </Canvas>

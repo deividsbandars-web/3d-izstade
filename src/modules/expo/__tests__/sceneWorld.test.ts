@@ -146,10 +146,10 @@ assert.equal(curatedPlan.visibleCore.failedCoreCells.length, 0);
 
 const playBounds = buildExpoPlayBounds(multiPlacements);
 assert.deepEqual(playBounds, buildExpoPlayBounds(buildBoothPlacements(sponsorData)));
-assert.ok(playBounds.minX < -60);
-assert.ok(playBounds.maxX > 60);
-assert.ok(playBounds.minZ < -150);
-assert.ok(playBounds.maxZ >= boulevardPlan.arrivalNode.position[2]);
+assert.ok(playBounds.minX < -140);
+assert.ok(playBounds.maxX > 140);
+assert.ok(playBounds.minZ < -260);
+assert.ok(playBounds.maxZ >= boulevardPlan.arrivalNode.position[2] + 20);
 assert.ok(boulevardPlan.arrivalNode.position[0] >= playBounds.minX && boulevardPlan.arrivalNode.position[0] <= playBounds.maxX);
 assert.ok(boulevardPlan.arrivalNode.position[2] >= playBounds.minZ && boulevardPlan.arrivalNode.position[2] <= playBounds.maxZ);
 
@@ -167,11 +167,13 @@ assert.ok(walkRegions.some((region) => region.type === 'promenade'));
 assert.ok(walkRegions.some((region) => region.type === 'booth-pocket'));
 assert.ok(isPointWithinExpoWalkRegions({ x: 0, z: boulevardPlan.arrivalNode.position[2] + 8 }, walkRegions));
 assert.ok(isPointWithinExpoWalkRegions({ x: 0, z: -120 }, walkRegions));
+assert.ok(isPointWithinExpoWalkRegions({ x: -132, z: -120 }, walkRegions));
+assert.ok(isPointWithinExpoWalkRegions({ x: 132, z: -120 }, walkRegions));
 assert.ok(isPointWithinExpoWalkRegions({ x: -24, z: multiPlacements[0].position[2] - 4 }, walkRegions));
 assert.ok(isPointWithinExpoWalkRegions({ x: -52, z: multiPlacements[0].position[2] - 4 }, walkRegions));
 assert.ok(isPointWithinExpoWalkRegions({ x: 52, z: multiPlacements[1].position[2] - 2 }, walkRegions));
-assert.equal(isPointWithinExpoWalkRegions({ x: -74, z: multiPlacements[0].position[2] - 4 }, walkRegions), false);
-assert.equal(isPointWithinExpoWalkRegions({ x: 74, z: multiPlacements[1].position[2] - 2 }, walkRegions), false);
+assert.equal(isPointWithinExpoWalkRegions({ x: -220, z: multiPlacements[0].position[2] - 4 }, walkRegions), false);
+assert.equal(isPointWithinExpoWalkRegions({ x: 220, z: multiPlacements[1].position[2] - 2 }, walkRegions), false);
 
 const sectorMarkers = buildExpoSectorMarkers(sponsorData);
 assert.equal(sectorMarkers.length, 6);
