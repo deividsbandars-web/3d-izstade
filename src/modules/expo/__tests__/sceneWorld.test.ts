@@ -149,16 +149,16 @@ assert.equal(curatedPlan.visibleCore.failedCoreCells.length, 0);
 
 const playBounds = buildExpoPlayBounds(multiPlacements);
 assert.deepEqual(playBounds, buildExpoPlayBounds(buildBoothPlacements(sponsorData)));
-assert.ok(playBounds.minX <= -170);
-assert.ok(playBounds.maxX >= 170);
-assert.ok(playBounds.minZ <= -300);
-assert.ok(playBounds.maxZ >= boulevardPlan.arrivalNode.position[2] + 20);
+assert.ok(playBounds.minX <= -260);
+assert.ok(playBounds.maxX >= 260);
+assert.ok(playBounds.minZ <= -400);
+assert.ok(playBounds.maxZ >= boulevardPlan.arrivalNode.position[2] + 40);
 assert.ok(boulevardPlan.arrivalNode.position[0] >= playBounds.minX && boulevardPlan.arrivalNode.position[0] <= playBounds.maxX);
 assert.ok(boulevardPlan.arrivalNode.position[2] >= playBounds.minZ && boulevardPlan.arrivalNode.position[2] <= playBounds.maxZ);
 
-const compactSparseBounds = buildExpoPlayBounds(singlePlacement);
-assert.ok(compactSparseBounds.maxX - compactSparseBounds.minX < 360);
-assert.ok(compactSparseBounds.maxZ - compactSparseBounds.minZ < 320);
+const sparseWorldBounds = buildExpoPlayBounds(singlePlacement);
+assert.ok(sparseWorldBounds.maxX - sparseWorldBounds.minX >= 320);
+assert.ok(sparseWorldBounds.maxZ - sparseWorldBounds.minZ >= 240);
 
 const startView = buildExpoSponsorStartView(boulevardPlan);
 assert.equal(startView.source, 'arrival-main');
@@ -170,16 +170,20 @@ assert.ok(startView.lookAt[2] < boulevardPlan.arrivalNode.position[2]);
 const walkRegions = buildExpoWalkRegions(multiPlacements);
 assert.ok(walkRegions.some((region) => region.type === 'arrival'));
 assert.ok(walkRegions.some((region) => region.type === 'spine'));
+assert.ok(walkRegions.some((region) => region.type === 'secondary-loop'));
+assert.ok(walkRegions.some((region) => region.type === 'discovery-lane'));
+assert.ok(walkRegions.some((region) => region.type === 'scenic-edge'));
 assert.ok(walkRegions.some((region) => region.type === 'sector-pocket'));
 assert.ok(walkRegions.some((region) => region.type === 'booth-pocket'));
 assert.ok(isPointWithinExpoWalkRegions({ x: 0, z: boulevardPlan.arrivalNode.position[2] + 8 }, walkRegions));
 assert.ok(isPointWithinExpoWalkRegions({ x: 0, z: -120 }, walkRegions));
-assert.ok(isPointWithinExpoWalkRegions({ x: -24, z: multiPlacements[0].position[2] - 4 }, walkRegions));
-assert.ok(isPointWithinExpoWalkRegions({ x: -52, z: multiPlacements[0].position[2] - 4 }, walkRegions));
-assert.ok(isPointWithinExpoWalkRegions({ x: -52, z: multiPlacements[2].position[2] - 6 }, walkRegions));
-assert.equal(isPointWithinExpoWalkRegions({ x: -132, z: -120 }, walkRegions), false);
-assert.equal(isPointWithinExpoWalkRegions({ x: 132, z: -120 }, walkRegions), false);
-assert.equal(isPointWithinExpoWalkRegions({ x: 52, z: multiPlacements[1].position[2] - 2 }, walkRegions), false);
+assert.ok(isPointWithinExpoWalkRegions({ x: -44, z: multiPlacements[0].position[2] - 4 }, walkRegions));
+assert.ok(isPointWithinExpoWalkRegions({ x: -78, z: multiPlacements[0].position[2] - 4 }, walkRegions));
+assert.ok(isPointWithinExpoWalkRegions({ x: -116, z: -120 }, walkRegions));
+assert.ok(isPointWithinExpoWalkRegions({ x: 116, z: -120 }, walkRegions));
+assert.equal(isPointWithinExpoWalkRegions({ x: -170, z: -120 }, walkRegions), false);
+assert.equal(isPointWithinExpoWalkRegions({ x: 170, z: -120 }, walkRegions), false);
+assert.ok(isPointWithinExpoWalkRegions({ x: 52, z: multiPlacements[1].position[2] - 2 }, walkRegions));
 
 const rightSidePlacements = buildBoothPlacements({
   companies: [
@@ -192,7 +196,8 @@ const rightSidePlacements = buildBoothPlacements({
 });
 const rightSideWalkRegions = buildExpoWalkRegions(rightSidePlacements);
 assert.ok(isPointWithinExpoWalkRegions({ x: 32, z: -136 }, rightSideWalkRegions));
-assert.equal(isPointWithinExpoWalkRegions({ x: -52, z: -136 }, rightSideWalkRegions), false);
+assert.ok(isPointWithinExpoWalkRegions({ x: 78, z: -136 }, rightSideWalkRegions));
+assert.equal(isPointWithinExpoWalkRegions({ x: -170, z: -136 }, rightSideWalkRegions), false);
 
 const sectorMarkers = buildExpoSectorMarkers(sponsorData);
 assert.equal(sectorMarkers.length, 6);
