@@ -22,9 +22,9 @@ export function DistrictAnchorNodes({
           return null;
         }
 
-        const width = anchor.kind === 'meeting_lounge' ? 10 : anchor.kind === 'sector_pavilion' ? 12 : anchor.kind === 'networking_hub' ? 9.5 : 8;
-        const depth = anchor.kind === 'networking_hub' ? 7.2 : anchor.kind === 'sector_pavilion' ? 7.8 : anchor.kind === 'demo_gallery' ? 6.2 : 5.4;
-        const height = anchor.kind === 'sector_pavilion' ? 5.2 : anchor.kind === 'gateway_lantern' ? 3.2 : 3.6;
+        const width = anchor.kind === 'meeting_lounge' ? 10 : anchor.kind === 'sector_pavilion' ? 12 : anchor.kind === 'networking_hub' ? 9.5 : anchor.kind === 'photo_spot' ? 7.2 : 8;
+        const depth = anchor.kind === 'networking_hub' ? 7.2 : anchor.kind === 'sector_pavilion' ? 7.8 : anchor.kind === 'demo_gallery' ? 6.2 : anchor.kind === 'photo_spot' ? 3.4 : 5.4;
+        const height = anchor.kind === 'sector_pavilion' ? 5.2 : anchor.kind === 'gateway_lantern' ? 3.2 : anchor.kind === 'photo_spot' ? 4.4 : 3.6;
         const yOffset = anchor.kind === 'sector_pavilion' ? 2.6 : 1.8;
 
         return (
@@ -50,6 +50,25 @@ export function DistrictAnchorNodes({
                 <mesh position={[0, height - 0.2, 0]} castShadow>
                   <boxGeometry args={[width - 1.2, 0.9, 1.2]} />
                   <meshStandardMaterial color="#131c2e" />
+                </mesh>
+              </>
+            ) : anchor.kind === 'photo_spot' ? (
+              <>
+                <mesh position={[0, 2.1, -0.4]} castShadow>
+                  <torusGeometry args={[2.2, 0.22, 14, 32]} />
+                  <meshStandardMaterial color={anchor.accentColor} emissive={anchor.accentColor} emissiveIntensity={0.16} />
+                </mesh>
+                <mesh position={[-1.8, 1.9, 0]} castShadow>
+                  <boxGeometry args={[0.45, 4, 0.45]} />
+                  <meshStandardMaterial color="#131c2e" />
+                </mesh>
+                <mesh position={[1.8, 1.9, 0]} castShadow>
+                  <boxGeometry args={[0.45, 4, 0.45]} />
+                  <meshStandardMaterial color="#131c2e" />
+                </mesh>
+                <mesh position={[0, 0.9, 0.7]} castShadow>
+                  <boxGeometry args={[3.8, 0.34, 1.2]} />
+                  <meshStandardMaterial color={anchor.theme.groundPalette.baseField} metalness={0.08} roughness={0.88} />
                 </mesh>
               </>
             ) : (

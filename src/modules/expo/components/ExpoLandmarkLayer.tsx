@@ -8,34 +8,57 @@ function DistrictLandmarkNodeView({ anchor }: { anchor: ReturnType<typeof buildD
     return null;
   }
 
-  const baseWidth = anchor.kind === 'sector_pavilion' ? 10.8 : 8.4;
-  const baseHeight = anchor.kind === 'sector_pavilion' ? 8.4 : 7.2;
-  const plateWidth = anchor.kind === 'sector_pavilion' ? 9.8 : 7.8;
-  const sideColumnOffset = anchor.kind === 'sector_pavilion' ? 4.7 : 3.7;
+  const baseWidth = anchor.kind === 'sector_pavilion' ? 10.8 : anchor.kind === 'photo_spot' ? 6.2 : 8.4;
+  const baseHeight = anchor.kind === 'sector_pavilion' ? 8.4 : anchor.kind === 'photo_spot' ? 5.4 : 7.2;
+  const plateWidth = anchor.kind === 'sector_pavilion' ? 9.8 : anchor.kind === 'photo_spot' ? 5.2 : 7.8;
+  const sideColumnOffset = anchor.kind === 'sector_pavilion' ? 4.7 : anchor.kind === 'photo_spot' ? 2.8 : 3.7;
 
   return (
     <group position={anchor.position} rotation={[0, anchor.rotationY, 0]} scale={anchor.scale}>
       <mesh position={[0, 0.18, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-        <planeGeometry args={anchor.kind === 'sector_pavilion' ? [14, 10] : [12, 8]} />
+        <planeGeometry args={anchor.kind === 'sector_pavilion' ? [14, 10] : anchor.kind === 'photo_spot' ? [10, 7] : [12, 8]} />
         <meshStandardMaterial color={anchor.theme.groundPalette.plaza} transparent opacity={0.12} />
       </mesh>
-      <mesh position={[0, 3.8, 0]} castShadow>
-        <boxGeometry args={[baseWidth, baseHeight, anchor.kind === 'sector_pavilion' ? 1.8 : 1.4]} />
-        <meshStandardMaterial color="#0f172a" metalness={0.18} roughness={0.76} />
-      </mesh>
-      <mesh position={[0, 7.6, 0.76]} castShadow>
-        <boxGeometry args={[plateWidth, 0.7, 1.6]} />
-        <meshStandardMaterial color={anchor.accentColor} emissive={anchor.accentColor} emissiveIntensity={0.2} />
-      </mesh>
-      <mesh position={[-sideColumnOffset, 4.1, 0]} castShadow>
-        <boxGeometry args={[0.8, 8, 1.8]} />
-        <meshStandardMaterial color={anchor.accentColor} emissive={anchor.accentColor} emissiveIntensity={0.18} />
-      </mesh>
-      {anchor.kind !== 'gateway_lantern' && (
-        <mesh position={[sideColumnOffset + 0.1, 4.8, -1.6]} castShadow>
-          <cylinderGeometry args={[0.75, 0.9, 9.4, 16]} />
-          <meshStandardMaterial color="#1f2937" />
-        </mesh>
+      {anchor.kind === 'photo_spot' ? (
+        <>
+          <mesh position={[0, 2.4, 0]} castShadow>
+            <torusGeometry args={[2.2, 0.24, 14, 40]} />
+            <meshStandardMaterial color={anchor.accentColor} emissive={anchor.accentColor} emissiveIntensity={0.22} metalness={0.1} roughness={0.46} />
+          </mesh>
+          <mesh position={[-sideColumnOffset, 2.5, 0]} castShadow>
+            <boxGeometry args={[0.55, 5, 0.55]} />
+            <meshStandardMaterial color="#1f2937" />
+          </mesh>
+          <mesh position={[sideColumnOffset, 2.5, 0]} castShadow>
+            <boxGeometry args={[0.55, 5, 0.55]} />
+            <meshStandardMaterial color="#1f2937" />
+          </mesh>
+          <mesh position={[0, 1.1, 0.9]} castShadow>
+            <boxGeometry args={[4.8, 0.36, 1.4]} />
+            <meshStandardMaterial color={anchor.theme.groundPalette.baseField} metalness={0.08} roughness={0.88} />
+          </mesh>
+        </>
+      ) : (
+        <>
+          <mesh position={[0, 3.8, 0]} castShadow>
+            <boxGeometry args={[baseWidth, baseHeight, anchor.kind === 'sector_pavilion' ? 1.8 : 1.4]} />
+            <meshStandardMaterial color="#0f172a" metalness={0.18} roughness={0.76} />
+          </mesh>
+          <mesh position={[0, 7.6, 0.76]} castShadow>
+            <boxGeometry args={[plateWidth, 0.7, 1.6]} />
+            <meshStandardMaterial color={anchor.accentColor} emissive={anchor.accentColor} emissiveIntensity={0.2} />
+          </mesh>
+          <mesh position={[-sideColumnOffset, 4.1, 0]} castShadow>
+            <boxGeometry args={[0.8, 8, 1.8]} />
+            <meshStandardMaterial color={anchor.accentColor} emissive={anchor.accentColor} emissiveIntensity={0.18} />
+          </mesh>
+          {anchor.kind !== 'gateway_lantern' && (
+            <mesh position={[sideColumnOffset + 0.1, 4.8, -1.6]} castShadow>
+              <cylinderGeometry args={[0.75, 0.9, 9.4, 16]} />
+              <meshStandardMaterial color="#1f2937" />
+            </mesh>
+          )}
+        </>
       )}
       {anchor.kind === 'sector_pavilion' && (
         <mesh position={[0, 1.6, -1.8]} castShadow>
@@ -43,7 +66,7 @@ function DistrictLandmarkNodeView({ anchor }: { anchor: ReturnType<typeof buildD
           <meshStandardMaterial color={anchor.theme.groundPalette.baseField} metalness={0.08} roughness={0.88} />
         </mesh>
       )}
-      <Text position={[0, 4.7, 1.05]} fontSize={0.72} color="#f8fafc" anchorX="center" anchorY="middle" maxWidth={anchor.kind === 'sector_pavilion' ? 8.6 : 6.8}>
+      <Text position={[0, anchor.kind === 'photo_spot' ? 4.2 : 4.7, anchor.kind === 'photo_spot' ? 0.65 : 1.05]} fontSize={0.72} color="#f8fafc" anchorX="center" anchorY="middle" maxWidth={anchor.kind === 'sector_pavilion' ? 8.6 : anchor.kind === 'photo_spot' ? 5.2 : 6.8}>
         {anchor.label.toUpperCase()}
       </Text>
     </group>
