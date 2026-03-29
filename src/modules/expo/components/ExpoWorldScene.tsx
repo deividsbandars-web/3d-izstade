@@ -22,6 +22,7 @@ import {
   trackExpoWebsiteOpened,
 } from '../lib/expoAnalytics';
 import { buildBoulevardArtPass } from '../lib/boulevardArtPass';
+import { resolveExpoBackdropStrategy, sanitizeExpoBackdropCityScene, type ExpoBackdropStrategy } from '../lib/backdropSanitization';
 import { buildExpoCuratedPropPlacements, type ExpoCuratedPropKey } from '../lib/expoCuratedPropPlacement';
 import { resolveExpoTextureCandidateUrls } from '../lib/expoTexturePipeline';
 import { buildSponsorScreenLayout, type SponsorScreenNode } from '../lib/sponsorScreenLayout';
@@ -252,36 +253,22 @@ function loadTextureWithCandidateUrls(loader: THREE.TextureLoader, urls: string[
 
 function PrimitiveCityModel({
   debug = false,
+  strategy,
 }: {
   debug?: boolean;
+  strategy: ExpoBackdropStrategy;
 }) {
   const { scene } = useThree();
   const { scene: loadedCityScene } = useGLTF('/models/realistic_city.glb');
   const cityRoot = useMemo(() => {
     const clone = loadedCityScene.clone(true);
-    clone.updateMatrixWorld(true);
-
-    const initialBounds = new THREE.Box3().setFromObject(clone);
-    const initialSize = initialBounds.getSize(new THREE.Vector3());
-    const dominantSpan = Math.max(initialSize.x, initialSize.z, 1);
-    const targetSpan = 900;
-    const scaleFactor = THREE.MathUtils.clamp(targetSpan / dominantSpan, 0.001, 2);
-
-    clone.scale.multiplyScalar(scaleFactor);
-    clone.updateMatrixWorld(true);
-
-    const normalizedBounds = new THREE.Box3().setFromObject(clone);
-    const normalizedCenter = normalizedBounds.getCenter(new THREE.Vector3());
-    const normalizedMin = normalizedBounds.min.clone();
-
-    clone.position.x -= normalizedCenter.x;
-    clone.position.z -= normalizedCenter.z;
-    clone.position.y -= normalizedMin.y;
-    clone.updateMatrixWorld(true);
     markScenicNonColliding(clone);
+    const sanitized = sanitizeExpoBackdropCityScene(clone, strategy);
+    clone.userData.expoBackdropStrategy = strategy;
+    clone.userData.expoBackdropBounds = sanitized;
 
     return clone;
-  }, [loadedCityScene]);
+  }, [loadedCityScene, strategy]);
   useEffect(() => {
     if (debug && EXPO_FEATURE_FLAGS.enableSceneGlobalsDebug) {
       (window as any).scene = scene;
@@ -302,18 +289,25 @@ function PrimitiveCityModel({
       return;
     }
 
-    const bounds = new THREE.Box3().setFromObject(cityRoot);
-    const center = bounds.getCenter(new THREE.Vector3());
-    const size = bounds.getSize(new THREE.Vector3());
-    setSceneUserData(scene, 'cityAssetPipeline', {
-      mode: 'static-city-glb',
-      source: '/models/realistic_city.glb',
-      bounds: {
-        center: center.toArray(),
-        size: size.toArray(),
-      },
-    });
-  }, [cityRoot, scene]);
+      const bounds = new THREE.Box3().setFromObject(cityRoot);
+      const center = bounds.getCenter(new THREE.Vector3());
+      const size = bounds.getSize(new THREE.Vector3());
+      setSceneUserData(scene, 'cityAssetPipeline', {
+        mode: 'sanitized-city-shell',
+        source: '/models/realistic_city.glb',
+        bounds: {
+          center: center.toArray(),
+          size: size.toArray(),
+        },
+        strategy: {
+          cityShellOffsetY: strategy.cityShellOffsetY,
+          cityShellOffsetZ: strategy.cityShellOffsetZ,
+          cityShellOpacity: strategy.cityShellOpacity,
+          cityShellTargetSpan: strategy.cityShellTargetSpan,
+          skylineDensity: strategy.skylineDensity,
+        },
+      });
+  }, [cityRoot, scene, strategy]);
 
   return (
     <>
@@ -1777,6 +1771,13 @@ export function ExpoWorldScene({ activeZone, data, debug, guests, mode, onMove, 
   }, [data]);
   const playBounds = useMemo(() => buildExpoPlayBounds(boothPlacements), [boothPlacements]);
   const walkRegions = useMemo(() => buildExpoWalkRegions(boothPlacements), [boothPlacements]);
+  const backdropStrategy = useMemo(
+    () => resolveExpoBackdropStrategy({
+      qualityPreset: EXPO_CITY_QUALITY_TIER,
+      skylineRingEnabled: EXPO_FEATURE_FLAGS.enableCuratedSkylineRing,
+    }),
+    []
+  );
   const [playerPosition, setPlayerPosition] = useState<[number, number, number]>([0, 0, 0]);
   const sceneLoadedRef = useRef(false);
   const viewedBoothsRef = useRef<Set<string>>(new Set());
@@ -1884,12 +1885,12 @@ export function ExpoWorldScene({ activeZone, data, debug, guests, mode, onMove, 
             <SponsorScreenHierarchy boothPlacements={boothPlacements} sectorMarkers={sectorMarkers} />
             {EXPO_FEATURE_FLAGS.enableSponsorBillboards && <SponsorBillboards placements={boothPlacements} />}
 
-            <PrimitiveCityModel debug={debug} />
-            {EXPO_FEATURE_FLAGS.enableCuratedSkylineRing && !EXPO_SPATIAL_DEBUG_FLAGS.disableCuratedSkylineRing && (
+            {backdropStrategy.enableStaticCityShell && <PrimitiveCityModel debug={debug} strategy={backdropStrategy} />}
+            {backdropStrategy.enableCuratedSkylineRing && !EXPO_SPATIAL_DEBUG_FLAGS.disableCuratedSkylineRing && (
               <SceneErrorBoundary fallback={null}>
                 <CuratedSkylineRing
                   debugBounds={EXPO_SPATIAL_DEBUG_FLAGS.showSkylineBounds}
-                  showcase={EXPO_FEATURE_FLAGS.enableShowcaseSkylineDensity}
+                  density={backdropStrategy.skylineDensity}
                   walkRegions={walkRegions}
                 />
               </SceneErrorBoundary>

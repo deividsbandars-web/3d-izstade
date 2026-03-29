@@ -15,6 +15,12 @@ export type SkylinePlacementOutput = SkylinePlacementInput & {
   wasAdjusted: boolean;
 };
 
+const SKYLINE_SCALE_CAP: Record<SkylineAssetId, number> = {
+  atlanta: 5.4,
+  bridge: 5.8,
+  helix: 5.2,
+};
+
 function overlapsWalkRegions(position: [number, number, number], boundsSize: [number, number, number], walkRegions: ExpoWalkRegion[]) {
   const halfX = boundsSize[0] * 0.5;
   const halfZ = boundsSize[2] * 0.5;
@@ -42,7 +48,8 @@ export function sanitizeSkylinePlacements(
   const corridorMaxX = Math.max(...walkRegions.map((region) => region.maxX));
   const corridorMinX = Math.min(...walkRegions.map((region) => region.minX));
   const corridorMinZ = Math.min(...walkRegions.map((region) => region.minZ));
-  const clearance = 18;
+  const clearance = 28;
+  const minimumBackdropZ = corridorMinZ - 120;
 
   return placements.map((placement, index) => {
     const next = {
@@ -51,6 +58,18 @@ export function sanitizeSkylinePlacements(
       position: [...placement.position] as [number, number, number],
       wasAdjusted: false,
     };
+
+    const scaleCap = SKYLINE_SCALE_CAP[next.asset];
+    if (next.scale > scaleCap) {
+      const scaleFactor = scaleCap / next.scale;
+      next.scale = scaleCap;
+      next.boundsSize = [
+        Number((next.boundsSize[0] * scaleFactor).toFixed(3)),
+        Number((next.boundsSize[1] * scaleFactor).toFixed(3)),
+        Number((next.boundsSize[2] * scaleFactor).toFixed(3)),
+      ];
+      next.wasAdjusted = true;
+    }
 
     const shiftOutward = () => {
       const side = next.position[0] === 0 ? (index % 2 === 0 ? -1 : 1) : Math.sign(next.position[0]);
@@ -61,14 +80,23 @@ export function sanitizeSkylinePlacements(
       next.position[0] = safeX;
     };
 
+    const shiftBehindCorridor = () => {
+      const halfZ = next.boundsSize[2] * 0.5;
+      next.position[2] = Math.min(next.position[2], minimumBackdropZ - halfZ);
+    };
+
+    if (next.position[2] > minimumBackdropZ) {
+      shiftBehindCorridor();
+      next.wasAdjusted = true;
+    }
+
     if (overlapsWalkRegions(next.position, next.boundsSize, walkRegions)) {
       shiftOutward();
       next.wasAdjusted = true;
     }
 
     if (overlapsWalkRegions(next.position, next.boundsSize, walkRegions)) {
-      const halfZ = next.boundsSize[2] * 0.5;
-      next.position[2] = corridorMinZ - halfZ - clearance;
+      shiftBehindCorridor();
       next.wasAdjusted = true;
     }
 
@@ -80,7 +108,7 @@ export function sanitizeSkylinePlacements(
         Number((next.boundsSize[2] * 0.82).toFixed(3)),
       ];
       shiftOutward();
-      next.position[2] = corridorMinZ - (next.boundsSize[2] * 0.5) - clearance;
+      shiftBehindCorridor();
       next.wasAdjusted = true;
     }
 

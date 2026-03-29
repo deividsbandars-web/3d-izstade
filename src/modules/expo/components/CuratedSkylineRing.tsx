@@ -3,6 +3,7 @@ import { useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 import { normalizeModel } from '../../../utils/threeUtils';
 import type { ExpoWalkRegion } from '../sceneWorld';
+import type { ExpoBackdropDensity } from '../lib/backdropSanitization';
 import { sanitizeSkylinePlacements, type SkylineAssetId } from '../lib/skylinePlacement';
 
 type SkylinePlacement = {
@@ -13,23 +14,22 @@ type SkylinePlacement = {
 };
 
 const BASE_PLACEMENTS: SkylinePlacement[] = [
-  { asset: 'atlanta', position: [-248, 0, -132], rotationY: 0.3, scale: 7.1 },
-  { asset: 'helix', position: [0, 0, -318], rotationY: 0, scale: 6.4 },
-  { asset: 'bridge', position: [246, 0, -168], rotationY: -0.5, scale: 6.9 },
+  { asset: 'atlanta', position: [-286, 0, -268], rotationY: 0.26, scale: 5.2 },
+  { asset: 'helix', position: [0, 0, -388], rotationY: 0, scale: 4.8 },
+  { asset: 'bridge', position: [294, 0, -292], rotationY: -0.42, scale: 5.5 },
 ];
 
 const QUALITY_PLACEMENTS: SkylinePlacement[] = [
-  { asset: 'atlanta', position: [-182, 0, -246], rotationY: 0.92, scale: 5.4 },
-  { asset: 'bridge', position: [186, 0, -262], rotationY: -0.94, scale: 5.6 },
+  { asset: 'atlanta', position: [-362, 0, -356], rotationY: 0.74, scale: 4.4 },
 ];
 
 export function CuratedSkylineRing({
   debugBounds = false,
-  showcase = false,
+  density = 'minimal',
   walkRegions = [],
 }: {
   debugBounds?: boolean;
-  showcase?: boolean;
+  density?: ExpoBackdropDensity;
   walkRegions?: ExpoWalkRegion[];
 }) {
   const { scene: atlantaSource } = useGLTF('/models/free__atlanta_corperate_office_building.glb');
@@ -42,7 +42,7 @@ export function CuratedSkylineRing({
     helix: helixSource,
   }), [atlantaSource, bridgeSource, helixSource]);
 
-  const placements = showcase ? [...BASE_PLACEMENTS, ...QUALITY_PLACEMENTS] : BASE_PLACEMENTS;
+  const placements = density === 'standard' ? [...BASE_PLACEMENTS, ...QUALITY_PLACEMENTS] : BASE_PLACEMENTS;
   const instances = useMemo(() => {
     const measured = placements.map((placement, index) => {
       const clone = assetMap[placement.asset].clone(true);
