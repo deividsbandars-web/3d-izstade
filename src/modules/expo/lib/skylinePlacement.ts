@@ -1,6 +1,12 @@
 import type { ExpoWalkRegion } from '../sceneWorld';
 
-export type SkylineAssetId = 'atlanta' | 'bridge' | 'helix';
+export type SkylineAssetId =
+  | 'commercial_wide_a'
+  | 'commercial_wide_b'
+  | 'commercial_mid_f'
+  | 'commercial_tower_b'
+  | 'suburban_f'
+  | 'suburban_n';
 
 export type SkylinePlacementInput = {
   asset: SkylineAssetId;
@@ -16,9 +22,12 @@ export type SkylinePlacementOutput = SkylinePlacementInput & {
 };
 
 const SKYLINE_SCALE_CAP: Record<SkylineAssetId, number> = {
-  atlanta: 5.4,
-  bridge: 5.8,
-  helix: 5.2,
+  commercial_mid_f: 3.6,
+  commercial_tower_b: 2.8,
+  commercial_wide_a: 3.4,
+  commercial_wide_b: 3.4,
+  suburban_f: 2.5,
+  suburban_n: 2.5,
 };
 
 function overlapsWalkRegions(position: [number, number, number], boundsSize: [number, number, number], walkRegions: ExpoWalkRegion[]) {

@@ -14,13 +14,15 @@ type SkylinePlacement = {
 };
 
 const BASE_PLACEMENTS: SkylinePlacement[] = [
-  { asset: 'atlanta', position: [-286, 0, -268], rotationY: 0.26, scale: 5.2 },
-  { asset: 'helix', position: [0, 0, -388], rotationY: 0, scale: 4.8 },
-  { asset: 'bridge', position: [294, 0, -292], rotationY: -0.42, scale: 5.5 },
+  { asset: 'commercial_wide_a', position: [-318, 0, -332], rotationY: 0.08, scale: 3.2 },
+  { asset: 'commercial_mid_f', position: [0, 0, -428], rotationY: 0, scale: 3.4 },
+  { asset: 'commercial_wide_b', position: [328, 0, -346], rotationY: -0.08, scale: 3.2 },
 ];
 
 const QUALITY_PLACEMENTS: SkylinePlacement[] = [
-  { asset: 'atlanta', position: [-362, 0, -356], rotationY: 0.74, scale: 4.4 },
+  { asset: 'suburban_f', position: [-432, 0, -472], rotationY: 0.12, scale: 2.2 },
+  { asset: 'commercial_tower_b', position: [136, 0, -452], rotationY: -0.18, scale: 2.5 },
+  { asset: 'suburban_n', position: [438, 0, -486], rotationY: -0.1, scale: 2.2 },
 ];
 
 export function CuratedSkylineRing({
@@ -32,21 +34,27 @@ export function CuratedSkylineRing({
   density?: ExpoBackdropDensity;
   walkRegions?: ExpoWalkRegion[];
 }) {
-  const { scene: atlantaSource } = useGLTF('/models/free__atlanta_corperate_office_building.glb');
-  const { scene: bridgeSource } = useGLTF('/models/bridge_design.glb');
-  const { scene: helixSource } = useGLTF('/models/helix_bridge.glb');
+  const { scene: commercialWideASource } = useGLTF('/models/expo/skyline-candidates/low-detail-building-wide-a.glb');
+  const { scene: commercialWideBSource } = useGLTF('/models/expo/skyline-candidates/low-detail-building-wide-b.glb');
+  const { scene: commercialMidFSource } = useGLTF('/models/expo/skyline-candidates/low-detail-building-f.glb');
+  const { scene: commercialTowerBSource } = useGLTF('/models/expo/skyline-candidates/building-skyscraper-b.glb');
+  const { scene: suburbanFSource } = useGLTF('/models/expo/skyline-candidates/building-type-f.glb');
+  const { scene: suburbanNSource } = useGLTF('/models/expo/skyline-candidates/building-type-n.glb');
 
   const assetMap = useMemo(() => ({
-    atlanta: atlantaSource,
-    bridge: bridgeSource,
-    helix: helixSource,
-  }), [atlantaSource, bridgeSource, helixSource]);
+    commercial_mid_f: commercialMidFSource,
+    commercial_tower_b: commercialTowerBSource,
+    commercial_wide_a: commercialWideASource,
+    commercial_wide_b: commercialWideBSource,
+    suburban_f: suburbanFSource,
+    suburban_n: suburbanNSource,
+  }), [commercialMidFSource, commercialTowerBSource, commercialWideASource, commercialWideBSource, suburbanFSource, suburbanNSource]);
 
   const placements = density === 'standard' ? [...BASE_PLACEMENTS, ...QUALITY_PLACEMENTS] : BASE_PLACEMENTS;
   const instances = useMemo(() => {
     const measured = placements.map((placement, index) => {
       const clone = assetMap[placement.asset].clone(true);
-      normalizeModel(clone);
+      normalizeModel(clone, 20);
       clone.scale.setScalar(placement.scale);
       clone.updateMatrixWorld(true);
       const bounds = new THREE.Box3().setFromObject(clone);
@@ -66,8 +74,15 @@ export function CuratedSkylineRing({
 
     return sanitized.map((placement) => {
       const clone = assetMap[placement.asset].clone(true);
-      normalizeModel(clone);
+      normalizeModel(clone, 20);
       clone.scale.setScalar(placement.scale);
+      clone.traverse((child) => {
+        if ((child as THREE.Mesh).isMesh) {
+          const mesh = child as THREE.Mesh;
+          mesh.castShadow = false;
+          mesh.receiveShadow = false;
+        }
+      });
       clone.updateMatrixWorld(true);
       const bounds = new THREE.Box3().setFromObject(clone);
       const size = bounds.getSize(new THREE.Vector3());

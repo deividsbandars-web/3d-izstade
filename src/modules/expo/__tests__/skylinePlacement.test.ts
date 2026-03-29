@@ -9,17 +9,17 @@ const walkRegions: ExpoWalkRegion[] = [
 
 const sanitized = sanitizeSkylinePlacements([
   {
-    asset: 'atlanta',
+    asset: 'commercial_wide_a',
     boundsSize: [120, 160, 90],
-    id: 'atlanta-left',
+    id: 'commercial-left',
     position: [-20, 0, -80],
     rotationY: 0.3,
     scale: 8.4,
   },
   {
-    asset: 'bridge',
+    asset: 'commercial_tower_b',
     boundsSize: [90, 70, 80],
-    id: 'bridge-right',
+    id: 'tower-right',
     position: [18, 0, -40],
     rotationY: -0.2,
     scale: 6.4,

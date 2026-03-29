@@ -1,7 +1,125 @@
-import { Text } from '@react-three/drei';
+import { Text, useGLTF } from '@react-three/drei';
 import { useMemo } from 'react';
+import * as THREE from 'three';
+import { normalizeModel } from '../../../utils/threeUtils';
 import { buildDistrictLandmarkPlan } from '../lib/districtLandmarkPlan';
 import type { ExpoBoothPlacement, ExpoSectorMarker } from '../sceneWorld';
+
+const PROGRAMMED_FILLER_ASSET_URLS = {
+  construction_light: '/models/expo/props-candidates/construction-light.glb',
+  light_curved_double: '/models/expo/props-candidates/light-curved-double.glb',
+  lounge_chair: '/models/expo/props-candidates/loungeChair.glb',
+  lounge_design_sofa: '/models/expo/props-candidates/loungeDesignSofa.glb',
+  lounge_sofa: '/models/expo/props-candidates/loungeSofa.glb',
+  sign_highway_detailed: '/models/expo/props-candidates/sign-highway-detailed.glb',
+  sign_highway_wide: '/models/expo/props-candidates/sign-highway-wide.glb',
+  speaker: '/models/expo/props-candidates/speaker.glb',
+  table_coffee: '/models/expo/props-candidates/tableCoffee.glb',
+  table_round: '/models/expo/props-candidates/tableRound.glb',
+  television_modern: '/models/expo/props-candidates/televisionModern.glb',
+} as const;
+
+type ProgrammedFillerAssetKey = keyof typeof PROGRAMMED_FILLER_ASSET_URLS;
+
+type ProgrammedZoneAssetPlacement = {
+  asset: ProgrammedFillerAssetKey;
+  position: [number, number, number];
+  rotationY?: number;
+  scale?: number;
+};
+
+function cloneProgrammedAsset(source: THREE.Object3D, scale = 1) {
+  const clone = source.clone(true);
+  normalizeModel(clone, 4.8);
+  clone.scale.multiplyScalar(scale);
+  clone.traverse((child) => {
+    if ((child as THREE.Mesh).isMesh) {
+      const mesh = child as THREE.Mesh;
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+    }
+  });
+  clone.updateMatrixWorld(true);
+  return clone;
+}
+
+function buildZoneAssetPlacements(kind: ReturnType<typeof buildDistrictLandmarkPlan>['programmedZones'][number]['kind']): ProgrammedZoneAssetPlacement[] {
+  switch (kind) {
+    case 'arrival_plaza':
+      return [
+        { asset: 'sign_highway_wide', position: [0, 0.8, 1.2], scale: 0.92 },
+        { asset: 'light_curved_double', position: [-8.6, 0, -1.2], rotationY: Math.PI * 0.5, scale: 1.1 },
+        { asset: 'light_curved_double', position: [8.6, 0, -1.2], rotationY: -Math.PI * 0.5, scale: 1.1 },
+      ];
+    case 'networking_lounge_island':
+      return [
+        { asset: 'lounge_sofa', position: [-3.1, 0, -0.7], rotationY: Math.PI * 0.5, scale: 0.92 },
+        { asset: 'lounge_design_sofa', position: [3.1, 0, -0.7], rotationY: -Math.PI * 0.5, scale: 0.92 },
+        { asset: 'table_coffee', position: [0, 0, 0.8], scale: 0.9 },
+      ];
+    case 'meeting_pod':
+      return [
+        { asset: 'lounge_chair', position: [-2.2, 0, -0.3], rotationY: Math.PI * 0.18, scale: 0.92 },
+        { asset: 'lounge_chair', position: [2.2, 0, -0.3], rotationY: -Math.PI * 0.18, scale: 0.92 },
+        { asset: 'table_round', position: [0, 0, -0.2], scale: 0.95 },
+      ];
+    case 'demo_court':
+      return [
+        { asset: 'television_modern', position: [0, 0, -1.1], scale: 1.08 },
+        { asset: 'speaker', position: [-3.4, 0, -1.0], scale: 0.92 },
+        { asset: 'speaker', position: [3.4, 0, -1.0], scale: 0.92 },
+      ];
+    case 'info_pylon':
+      return [
+        { asset: 'sign_highway_detailed', position: [0, 0, 0], scale: 0.86 },
+        { asset: 'construction_light', position: [2.6, 0, -0.4], scale: 0.9 },
+      ];
+    case 'gallery_wall':
+      return [
+        { asset: 'sign_highway_wide', position: [0, 0.42, -0.7], scale: 1.06 },
+      ];
+    case 'scenic_promenade':
+      return [
+        { asset: 'light_curved_double', position: [-6.4, 0, 0], rotationY: Math.PI * 0.5, scale: 1.04 },
+        { asset: 'light_curved_double', position: [6.4, 0, 0], rotationY: -Math.PI * 0.5, scale: 1.04 },
+      ];
+    default:
+      return [];
+  }
+}
+
+function ProgrammedZoneAssetCluster({
+  assetMap,
+  zone,
+}: {
+  assetMap: Record<ProgrammedFillerAssetKey, THREE.Object3D>;
+  zone: ReturnType<typeof buildDistrictLandmarkPlan>['programmedZones'][number];
+}) {
+  const placements = useMemo(() => buildZoneAssetPlacements(zone.kind), [zone.kind]);
+  const instances = useMemo(
+    () => placements.map((placement, index) => ({
+      id: `${zone.id}-asset-${placement.asset}-${index}`,
+      object: cloneProgrammedAsset(assetMap[placement.asset], placement.scale),
+      position: placement.position,
+      rotationY: placement.rotationY ?? 0,
+    })),
+    [assetMap, placements, zone.id]
+  );
+
+  if (instances.length === 0) {
+    return null;
+  }
+
+  return (
+    <group position={[0, 0.02, 0]}>
+      {instances.map((instance) => (
+        <group key={instance.id} position={instance.position} rotation={[0, instance.rotationY, 0]}>
+          <primitive object={instance.object} />
+        </group>
+      ))}
+    </group>
+  );
+}
 
 function ProgrammedZoneView({ zone }: { zone: ReturnType<typeof buildDistrictLandmarkPlan>['programmedZones'][number] }) {
   const [width, depth] = zone.footprint;
@@ -121,12 +239,51 @@ export function ProgrammedFillerLayer({
   boothPlacements: ExpoBoothPlacement[];
   sectorMarkers: ExpoSectorMarker[];
 }) {
+  const { scene: constructionLightSource } = useGLTF(PROGRAMMED_FILLER_ASSET_URLS.construction_light);
+  const { scene: lightCurvedDoubleSource } = useGLTF(PROGRAMMED_FILLER_ASSET_URLS.light_curved_double);
+  const { scene: loungeChairSource } = useGLTF(PROGRAMMED_FILLER_ASSET_URLS.lounge_chair);
+  const { scene: loungeDesignSofaSource } = useGLTF(PROGRAMMED_FILLER_ASSET_URLS.lounge_design_sofa);
+  const { scene: loungeSofaSource } = useGLTF(PROGRAMMED_FILLER_ASSET_URLS.lounge_sofa);
+  const { scene: signHighwayDetailedSource } = useGLTF(PROGRAMMED_FILLER_ASSET_URLS.sign_highway_detailed);
+  const { scene: signHighwayWideSource } = useGLTF(PROGRAMMED_FILLER_ASSET_URLS.sign_highway_wide);
+  const { scene: speakerSource } = useGLTF(PROGRAMMED_FILLER_ASSET_URLS.speaker);
+  const { scene: tableCoffeeSource } = useGLTF(PROGRAMMED_FILLER_ASSET_URLS.table_coffee);
+  const { scene: tableRoundSource } = useGLTF(PROGRAMMED_FILLER_ASSET_URLS.table_round);
+  const { scene: televisionModernSource } = useGLTF(PROGRAMMED_FILLER_ASSET_URLS.television_modern);
   const plan = useMemo(() => buildDistrictLandmarkPlan(boothPlacements, sectorMarkers), [boothPlacements, sectorMarkers]);
+  const assetMap = useMemo(() => ({
+    construction_light: constructionLightSource,
+    light_curved_double: lightCurvedDoubleSource,
+    lounge_chair: loungeChairSource,
+    lounge_design_sofa: loungeDesignSofaSource,
+    lounge_sofa: loungeSofaSource,
+    sign_highway_detailed: signHighwayDetailedSource,
+    sign_highway_wide: signHighwayWideSource,
+    speaker: speakerSource,
+    table_coffee: tableCoffeeSource,
+    table_round: tableRoundSource,
+    television_modern: televisionModernSource,
+  }), [
+    constructionLightSource,
+    lightCurvedDoubleSource,
+    loungeChairSource,
+    loungeDesignSofaSource,
+    loungeSofaSource,
+    signHighwayDetailedSource,
+    signHighwayWideSource,
+    speakerSource,
+    tableCoffeeSource,
+    tableRoundSource,
+    televisionModernSource,
+  ]);
 
   return (
     <group name="programmed-filler-layer">
       {plan.programmedZones.map((zone) => (
-        <ProgrammedZoneView key={zone.id} zone={zone} />
+        <group key={zone.id}>
+          <ProgrammedZoneView zone={zone} />
+          <ProgrammedZoneAssetCluster assetMap={assetMap} zone={zone} />
+        </group>
       ))}
     </group>
   );
