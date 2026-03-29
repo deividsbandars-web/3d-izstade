@@ -22,6 +22,7 @@ import {
   trackExpoWebsiteOpened,
 } from '../lib/expoAnalytics';
 import { buildBoulevardArtPass } from '../lib/boulevardArtPass';
+import { buildExpoCuratedPropPlacements, type ExpoCuratedPropKey } from '../lib/expoCuratedPropPlacement';
 import { buildSponsorScreenLayout, type SponsorScreenNode } from '../lib/sponsorScreenLayout';
 import { buildSponsorBoothPresentation, getSponsorNameFontSize, resolveSponsorCtaIntent, type SponsorBoothTemplate, type SponsorCta } from '../lib/sponsorBoothPresentation';
 import { EXPO_CITY_QUALITY_TIER, EXPO_FEATURE_FLAGS, EXPO_SPATIAL_DEBUG_FLAGS, type ExpoMode } from '../state/expoRuntime';
@@ -449,6 +450,124 @@ function GroundPlane() {
       <meshStandardMaterial color="#0f1724" roughness={0.88} metalness={0.06} />
     </mesh>
   );
+}
+
+const EXPO_CURATED_PROP_URLS: Record<ExpoCuratedPropKey, string> = {
+  planter: '/models/expo/props/planter.glb',
+  bench: '/models/expo/props/bench.glb',
+  bench_cushion_low: '/models/expo/props/bench-cushion-low.glb',
+  light_square: '/models/expo/props/light-square.glb',
+  light_square_double: '/models/expo/props/light-square-double.glb',
+  light_curved: '/models/expo/props/light-curved.glb',
+  sign_highway: '/models/expo/props/sign-highway.glb',
+  sign_highway_wide: '/models/expo/props/sign-highway-wide.glb',
+  info_kiosk_base_computer_screen: '/models/expo/props/info-kiosk-base-computer-screen.glb',
+  tree_small: '/models/expo/props/tree-small.glb',
+  tree_large: '/models/expo/props/tree-large.glb',
+  bush: '/models/expo/props/bush.glb',
+  big_bush: '/models/expo/props/big-bush.glb',
+};
+
+function ExpoCuratedPropsLayer({
+  boothPlacements,
+  sectorMarkers,
+}: {
+  boothPlacements: ReturnType<typeof buildBoothPlacements>;
+  sectorMarkers: ReturnType<typeof buildExpoSectorMarkers>;
+}) {
+  const sourceScenes = {
+    planter: useGLTF(EXPO_CURATED_PROP_URLS.planter).scene,
+    bench: useGLTF(EXPO_CURATED_PROP_URLS.bench).scene,
+    bench_cushion_low: useGLTF(EXPO_CURATED_PROP_URLS.bench_cushion_low).scene,
+    light_square: useGLTF(EXPO_CURATED_PROP_URLS.light_square).scene,
+    light_square_double: useGLTF(EXPO_CURATED_PROP_URLS.light_square_double).scene,
+    light_curved: useGLTF(EXPO_CURATED_PROP_URLS.light_curved).scene,
+    sign_highway: useGLTF(EXPO_CURATED_PROP_URLS.sign_highway).scene,
+    sign_highway_wide: useGLTF(EXPO_CURATED_PROP_URLS.sign_highway_wide).scene,
+    info_kiosk_base_computer_screen: useGLTF(EXPO_CURATED_PROP_URLS.info_kiosk_base_computer_screen).scene,
+    tree_small: useGLTF(EXPO_CURATED_PROP_URLS.tree_small).scene,
+    tree_large: useGLTF(EXPO_CURATED_PROP_URLS.tree_large).scene,
+    bush: useGLTF(EXPO_CURATED_PROP_URLS.bush).scene,
+    big_bush: useGLTF(EXPO_CURATED_PROP_URLS.big_bush).scene,
+  } as const;
+
+  const placements = useMemo(
+    () => buildExpoCuratedPropPlacements(boothPlacements, sectorMarkers, { showcase: EXPO_FEATURE_FLAGS.enableEnhancedBoulevardDetail }),
+    [boothPlacements, sectorMarkers]
+  );
+
+  const instances = useMemo(() => (
+    placements.map((placement) => {
+      const clone = sourceScenes[placement.assetKey].clone(true);
+      markScenicNonColliding(clone);
+
+      return {
+        ...placement,
+        object: clone,
+      };
+    })
+  ), [placements, sourceScenes]);
+
+  return (
+    <group name="expo-curated-props-layer">
+      {instances.map((instance) => (
+        <group key={instance.id} position={instance.position} rotation={[0, instance.rotationY, 0]} scale={instance.scale}>
+          <primitive object={instance.object} />
+          <ExpoCuratedPropDecoration placement={instance} />
+        </group>
+      ))}
+    </group>
+  );
+}
+
+function ExpoCuratedPropDecoration({
+  placement,
+}: {
+  placement: ReturnType<typeof buildExpoCuratedPropPlacements>[number];
+}) {
+  if (placement.decorationKind === 'district-sign-wide') {
+    return (
+      <group position={[0, 10.6, 0.2]}>
+        <mesh castShadow>
+          <boxGeometry args={[8.8, 2.7, 0.22]} />
+          <meshStandardMaterial color="#08111f" emissive={placement.accentColor || '#2563eb'} emissiveIntensity={0.08} metalness={0.25} roughness={0.42} />
+        </mesh>
+        <mesh position={[0, -1.85, 0.12]} castShadow>
+          <boxGeometry args={[4.6, 0.55, 0.18]} />
+          <meshStandardMaterial color={placement.accentColor || '#2563eb'} emissive={placement.accentColor || '#2563eb'} emissiveIntensity={0.18} />
+        </mesh>
+        <Text position={[0, 0.38, 0.16]} fontSize={0.72} maxWidth={7.6} color="#f8fafc" anchorX="center" anchorY="middle">
+          {(placement.label || 'SPONSOR DISTRICT').toUpperCase()}
+        </Text>
+        <Text position={[0, -0.68, 0.16]} fontSize={0.28} maxWidth={7} color="#bfdbfe" anchorX="center" anchorY="middle">
+          {(placement.subLabel || 'WAYFINDING').toUpperCase()}
+        </Text>
+      </group>
+    );
+  }
+
+  if (placement.decorationKind === 'info-kiosk') {
+    return (
+      <group position={[0, 2.1, 0.42]}>
+        <mesh castShadow>
+          <boxGeometry args={[2.1, 1.3, 0.08]} />
+          <meshStandardMaterial color="#020617" emissive={placement.accentColor || '#0f766e'} emissiveIntensity={0.1} roughness={0.28} metalness={0.2} />
+        </mesh>
+        <mesh position={[0, 0.92, 0.03]} castShadow>
+          <boxGeometry args={[1.16, 0.22, 0.06]} />
+          <meshStandardMaterial color={placement.accentColor || '#0f766e'} emissive={placement.accentColor || '#0f766e'} emissiveIntensity={0.32} />
+        </mesh>
+        <Text position={[0, 0.15, 0.08]} fontSize={0.18} maxWidth={1.7} color="#f8fafc" anchorX="center" anchorY="middle">
+          {(placement.label || 'SPONSOR INFO').toUpperCase()}
+        </Text>
+        <Text position={[0, -0.34, 0.08]} fontSize={0.1} maxWidth={1.6} color="#cbd5e1" anchorX="center" anchorY="middle">
+          {(placement.subLabel || 'INFO DESK').toUpperCase()}
+        </Text>
+      </group>
+    );
+  }
+
+  return null;
 }
 
 function BoulevardGrassClusters({ clusters }: { clusters: ReturnType<typeof buildBoulevardArtPass>['grassClusters'] }) {
@@ -1762,6 +1881,11 @@ export function ExpoWorldScene({ activeZone, data, debug, guests, mode, onMove, 
             )}
             {EXPO_FEATURE_FLAGS.enableDistrictLandmarks && !EXPO_SPATIAL_DEBUG_FLAGS.disableExpoLandmarkLayer && (
               <ExpoLandmarkLayer boothPlacements={boothPlacements} sectorMarkers={sectorMarkers} />
+            )}
+            {EXPO_FEATURE_FLAGS.enableCuratedExpoProps && (
+              <SceneErrorBoundary fallback={null}>
+                <ExpoCuratedPropsLayer boothPlacements={boothPlacements} sectorMarkers={sectorMarkers} />
+              </SceneErrorBoundary>
             )}
             {EXPO_FEATURE_FLAGS.enableDistrictAnchorNodes && !EXPO_SPATIAL_DEBUG_FLAGS.disableDistrictAnchorNodes && (
               <DistrictAnchorNodes boothPlacements={boothPlacements} sectorMarkers={sectorMarkers} showcase={EXPO_FEATURE_FLAGS.enableEnhancedBoulevardDetail} />
