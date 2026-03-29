@@ -13,8 +13,22 @@ export type DistrictLandmarkNode = {
   theme: ExpoDistrictTheme;
 };
 
+export type ProgrammedFillerNode = {
+  accentColor: string;
+  footprint: [number, number];
+  id: string;
+  kind: 'arrival_info' | 'routing_lounge' | 'meeting_suite' | 'demo_corner' | 'info_point';
+  label: string;
+  position: [number, number, number];
+  rotationY: number;
+  sectorId: string | null;
+  subLabel: string;
+  theme: ExpoDistrictTheme;
+};
+
 export type DistrictLandmarkPlan = {
   anchors: DistrictLandmarkNode[];
+  programmedZones: ProgrammedFillerNode[];
   skylineBeacons: Array<{
     accentColor: string;
     id: string;
@@ -31,6 +45,29 @@ export type DistrictLandmarkValidation = {
 
 function average(values: number[]) {
   return values.length > 0 ? values.reduce((sum, value) => sum + value, 0) / values.length : 0;
+}
+
+function resolveFallbackTheme(source?: ExpoSectorMarker | ExpoBoothPlacement): ExpoDistrictTheme {
+  return source?.districtTheme ?? {
+    accentColor: '#38bdf8',
+    boothShellFamily: 'gallery',
+    gatewayStyle: 'studio_portal',
+    groundPalette: {
+      baseField: '#0f172a',
+      grass: '#16392f',
+      heroPath: '#d6dde8',
+      lightPool: '#8bd4ff',
+      plaza: '#cbd5e1',
+      secondaryPath: '#8ca0b3',
+      trim: '#38bdf8',
+    },
+    id: 'sponsor_gallery',
+    landmarkStyle: 'arrival_beacon',
+    lightLanguage: 'neutral-premium',
+    name: 'Arrival',
+    sectorId: null,
+    sectorLabel: 'Arrival',
+  };
 }
 
 function ensureAnchorClearance(
@@ -83,7 +120,9 @@ export function buildDistrictLandmarkPlan(
   });
 
   const anchors: DistrictLandmarkNode[] = [];
+  const programmedZones: ProgrammedFillerNode[] = [];
   const skylineBeacons: DistrictLandmarkPlan['skylineBeacons'] = [];
+  const defaultTheme = resolveFallbackTheme(sectorMarkers[0] ?? boothPlacements[0]);
 
   anchors.push({
     accentColor: '#38bdf8',
@@ -94,26 +133,20 @@ export function buildDistrictLandmarkPlan(
     rotationY: 0,
     scale: [1.2, 1.2, 1.2],
     sectorId: null,
-    theme: sectorMarkers[0]?.districtTheme ?? boothPlacements[0]?.districtTheme ?? {
-      accentColor: '#38bdf8',
-      boothShellFamily: 'gallery',
-      gatewayStyle: 'studio_portal',
-      groundPalette: {
-        baseField: '#0f172a',
-        grass: '#16392f',
-        heroPath: '#d6dde8',
-        lightPool: '#8bd4ff',
-        plaza: '#cbd5e1',
-        secondaryPath: '#8ca0b3',
-        trim: '#38bdf8',
-      },
-      id: 'sponsor_gallery',
-      landmarkStyle: 'arrival_beacon',
-      lightLanguage: 'neutral-premium',
-      name: 'Arrival',
-      sectorId: null,
-      sectorLabel: 'Arrival',
-    },
+    theme: defaultTheme,
+  });
+
+  programmedZones.push({
+    accentColor: '#38bdf8',
+    footprint: [18, 8],
+    id: 'programmed-arrival-info',
+    kind: 'arrival_info',
+    label: 'Arrival Lounge',
+    position: [0, 0, 24],
+    rotationY: 0,
+    sectorId: null,
+    subLabel: 'Wayfinding, registration, routing',
+    theme: defaultTheme,
   });
 
   sectorMarkers
@@ -130,6 +163,7 @@ export function buildDistrictLandmarkPlan(
         : marker.districtTheme.landmarkStyle === 'signal_bridge'
           ? 'networking_hub'
           : 'demo_gallery';
+      const sparseSector = placements.length <= 1;
 
       anchors.push({
         accentColor: marker.color,
@@ -143,6 +177,61 @@ export function buildDistrictLandmarkPlan(
         rotationY: marker.side === 'left' ? Math.PI * 0.14 : -Math.PI * 0.14,
         scale: marker.districtTheme.id === 'meetings_forum' ? [1.05, 1.05, 1.05] : [1, 1, 1],
         sectorId: marker.sectorId ?? null,
+        theme: marker.districtTheme,
+      });
+
+      if (sparseSector) {
+        anchors.push({
+          accentColor: marker.color,
+          id: `pavilion-${marker.id}`,
+          kind: 'sector_pavilion',
+          label: `${marker.label} Pavilion`,
+          position: ensureAnchorClearance([marker.side === 'left' ? -66 : 66, 0, meanZ + 8], placements, {
+            corridorHalfWidth: 26,
+            minDistance: 22,
+          }),
+          rotationY: marker.side === 'left' ? Math.PI * 0.09 : -Math.PI * 0.09,
+          scale: [0.94, 0.94, 0.94],
+          sectorId: marker.sectorId ?? null,
+          theme: marker.districtTheme,
+        });
+      }
+
+      const programmedKind: ProgrammedFillerNode['kind'] = marker.districtTheme.id === 'meetings_forum'
+        ? 'meeting_suite'
+        : marker.districtTheme.id === 'platform_corridor'
+          ? 'routing_lounge'
+          : sparseSector
+            ? 'info_point'
+            : 'demo_corner';
+      const programmedLabel = programmedKind === 'meeting_suite'
+        ? 'Meeting Suites'
+        : programmedKind === 'routing_lounge'
+          ? 'Routing Lounge'
+          : programmedKind === 'info_point'
+            ? 'Info Point'
+            : 'Demo Corner';
+      const programmedSubLabel = programmedKind === 'meeting_suite'
+        ? 'Book, wait, meet, continue'
+        : programmedKind === 'routing_lounge'
+          ? 'Route cues and quiet seating'
+          : programmedKind === 'info_point'
+            ? 'Info, agenda, sponsor pointers'
+            : 'Product loop and guided demo';
+
+      programmedZones.push({
+        accentColor: marker.color,
+        footprint: programmedKind === 'meeting_suite' ? [14, 7.5] : programmedKind === 'routing_lounge' ? [13, 6.5] : [12, 6],
+        id: `programmed-${marker.id}`,
+        kind: programmedKind,
+        label: programmedLabel,
+        position: ensureAnchorClearance([marker.side === 'left' ? -44 : 44, 0, meanZ + 18], placements, {
+          corridorHalfWidth: 22,
+          minDistance: 20,
+        }),
+        rotationY: marker.side === 'left' ? Math.PI * 0.06 : -Math.PI * 0.06,
+        sectorId: marker.sectorId ?? null,
+        subLabel: programmedSubLabel,
         theme: marker.districtTheme,
       });
 
@@ -169,6 +258,7 @@ export function buildDistrictLandmarkPlan(
 
   return {
     anchors,
+    programmedZones,
     skylineBeacons,
   };
 }
@@ -195,6 +285,21 @@ export function validateDistrictLandmarkPlan(
         }
       });
     });
+
+  plan.programmedZones.forEach((zone) => {
+    if (zone.kind !== 'arrival_info' && Math.abs(zone.position[0]) < 20) {
+      issues.push(`${zone.id}: corridor intrusion`);
+    }
+
+    boothPlacements.forEach((placement) => {
+      const dx = zone.position[0] - placement.position[0];
+      const dz = zone.position[2] - placement.position[2];
+      const distance = Math.sqrt((dx * dx) + (dz * dz));
+      if (distance < 16) {
+        issues.push(`${zone.id}: too close to booth ${placement.id}`);
+      }
+    });
+  });
 
   return {
     issues,

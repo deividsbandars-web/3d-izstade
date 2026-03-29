@@ -22,8 +22,10 @@ export function DistrictAnchorNodes({
           return null;
         }
 
-        const width = anchor.kind === 'meeting_lounge' ? 10 : 8;
-        const depth = anchor.kind === 'networking_hub' ? 7 : 5.4;
+        const width = anchor.kind === 'meeting_lounge' ? 10 : anchor.kind === 'sector_pavilion' ? 12 : anchor.kind === 'networking_hub' ? 9.5 : 8;
+        const depth = anchor.kind === 'networking_hub' ? 7.2 : anchor.kind === 'sector_pavilion' ? 7.8 : anchor.kind === 'demo_gallery' ? 6.2 : 5.4;
+        const height = anchor.kind === 'sector_pavilion' ? 5.2 : anchor.kind === 'gateway_lantern' ? 3.2 : 3.6;
+        const yOffset = anchor.kind === 'sector_pavilion' ? 2.6 : 1.8;
 
         return (
           <group key={`functional-${anchor.id}`} position={[anchor.position[0], 0, anchor.position[2] + 6]} rotation={[0, anchor.rotationY, 0]}>
@@ -31,15 +33,38 @@ export function DistrictAnchorNodes({
               <cylinderGeometry args={[width * 0.58, width * 0.7, 0.24, 26]} />
               <meshStandardMaterial color={anchor.theme.groundPalette.plaza} transparent opacity={0.14} />
             </mesh>
-            <mesh position={[0, 1.8, 0]} castShadow>
-              <boxGeometry args={[width, 3.6, depth]} />
-              <meshStandardMaterial color="#131c2e" metalness={0.16} roughness={0.78} />
-            </mesh>
-            <mesh position={[0, 3.2, depth * 0.5 + 0.24]} castShadow>
-              <boxGeometry args={[width - 1.2, 1.1, 0.5]} />
-              <meshStandardMaterial color={anchor.accentColor} emissive={anchor.accentColor} emissiveIntensity={0.16} />
-            </mesh>
-            <Text position={[0, 2.1, depth * 0.5 + 0.54]} fontSize={0.58} color="#f8fafc" anchorX="center" anchorY="middle" maxWidth={width - 1.4}>
+            {anchor.kind === 'sector_pavilion' ? (
+              <>
+                <mesh position={[0, yOffset, 0]} castShadow>
+                  <cylinderGeometry args={[width * 0.52, width * 0.56, 0.44, 28]} />
+                  <meshStandardMaterial color="#111827" metalness={0.16} roughness={0.78} />
+                </mesh>
+                <mesh position={[-width * 0.34, 1.9, 0]} castShadow>
+                  <boxGeometry args={[0.9, height, 1]} />
+                  <meshStandardMaterial color={anchor.accentColor} emissive={anchor.accentColor} emissiveIntensity={0.12} />
+                </mesh>
+                <mesh position={[width * 0.34, 1.9, 0]} castShadow>
+                  <boxGeometry args={[0.9, height, 1]} />
+                  <meshStandardMaterial color={anchor.accentColor} emissive={anchor.accentColor} emissiveIntensity={0.12} />
+                </mesh>
+                <mesh position={[0, height - 0.2, 0]} castShadow>
+                  <boxGeometry args={[width - 1.2, 0.9, 1.2]} />
+                  <meshStandardMaterial color="#131c2e" />
+                </mesh>
+              </>
+            ) : (
+              <>
+                <mesh position={[0, yOffset, 0]} castShadow>
+                  <boxGeometry args={[width, height, depth]} />
+                  <meshStandardMaterial color="#131c2e" metalness={0.16} roughness={0.78} />
+                </mesh>
+                <mesh position={[0, yOffset + 1.4, depth * 0.5 + 0.24]} castShadow>
+                  <boxGeometry args={[width - 1.2, 1.1, 0.5]} />
+                  <meshStandardMaterial color={anchor.accentColor} emissive={anchor.accentColor} emissiveIntensity={0.16} />
+                </mesh>
+              </>
+            )}
+            <Text position={[0, anchor.kind === 'sector_pavilion' ? 2.3 : 2.1, depth * 0.5 + 0.54]} fontSize={0.58} color="#f8fafc" anchorX="center" anchorY="middle" maxWidth={width - 1.4}>
               {anchor.label.toUpperCase()}
             </Text>
           </group>

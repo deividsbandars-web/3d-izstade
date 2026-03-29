@@ -12,6 +12,7 @@ import { CuratedSkylineRing } from './CuratedSkylineRing';
 import { DistrictAnchorNodes } from './DistrictAnchorNodes';
 import { ExpoEvidenceProbe } from './ExpoEvidenceProbe';
 import { ExpoLandmarkLayer } from './ExpoLandmarkLayer';
+import { ProgrammedFillerLayer } from './ProgrammedFillerLayer';
 import {
   trackExpoBookingClicked,
   trackExpoBoothClicked,
@@ -1967,6 +1968,7 @@ export function ExpoWorldScene({ activeZone, data, debug, guests, mode, onMove, 
             {EXPO_FEATURE_FLAGS.enableDistrictLandmarks && !EXPO_SPATIAL_DEBUG_FLAGS.disableExpoLandmarkLayer && (
               <ExpoLandmarkLayer boothPlacements={boothPlacements} sectorMarkers={sectorMarkers} />
             )}
+            <ProgrammedFillerLayer boothPlacements={boothPlacements} sectorMarkers={sectorMarkers} />
             {EXPO_FEATURE_FLAGS.enableCuratedExpoProps && (
               <SceneErrorBoundary fallback={null}>
                 <ExpoCuratedPropsLayer boothPlacements={boothPlacements} sectorMarkers={sectorMarkers} />
