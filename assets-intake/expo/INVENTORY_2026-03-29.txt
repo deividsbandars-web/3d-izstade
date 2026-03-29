@@ -1,0 +1,15 @@
+﻿Expo asset intake inventory (2026-03-29)
+
+Downloaded
+- Official KTX Software Windows installer
+- Kenney CC0 city packs: commercial, industrial, roads, suburban
+- ambientCG CC0 foliage textures: Grass004, LeafSet026
+
+Installed
+- @gltf-transform/cli in repo devDependencies
+
+Still pending
+- KTX Software local installation
+- final skyline pack selection
+- exact sponsor-facing prop subset extraction
+- sponsor content collection per sponsor

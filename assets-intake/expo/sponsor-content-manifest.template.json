@@ -1,0 +1,37 @@
+﻿{
+  "schemaVersion": 1,
+  "description": "Template for sponsor content intake before promotion into the release runtime.",
+  "sponsors": [
+    {
+      "slug": "example-sponsor",
+      "displayName": "Example Sponsor",
+      "tagline": "One-sentence sponsor value proposition.",
+      "ctaUrl": "https://example.com",
+      "logo": {
+        "type": "svg",
+        "path": "assets-intake/expo/sponsors/example-sponsor/logo.svg"
+      },
+      "landscapePoster": {
+        "path": "assets-intake/expo/sponsors/example-sponsor/poster-1920x1080.png",
+        "width": 1920,
+        "height": 1080
+      },
+      "verticalPoster": {
+        "path": "assets-intake/expo/sponsors/example-sponsor/poster-1080x1920.png",
+        "width": 1080,
+        "height": 1920
+      },
+      "videoLoop": {
+        "path": "assets-intake/expo/sponsors/example-sponsor/loop.mp4",
+        "durationSeconds": 20,
+        "muted": true
+      },
+      "heroGlbInsert": {
+        "path": null,
+        "optional": true
+      },
+      "status": "pending-validation",
+      "notes": ""
+    }
+  ]
+}

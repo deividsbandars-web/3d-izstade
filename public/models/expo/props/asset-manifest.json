@@ -1,0 +1,58 @@
+﻿[
+    {
+        "Name":  "bench-cushion-low.glb",
+        "Length":  10268
+    },
+    {
+        "Name":  "bench.glb",
+        "Length":  10756
+    },
+    {
+        "Name":  "big-bush.glb",
+        "Length":  76612
+    },
+    {
+        "Name":  "bush.glb",
+        "Length":  38412
+    },
+    {
+        "Name":  "info-kiosk-base-cabinet-television.glb",
+        "Length":  10524
+    },
+    {
+        "Name":  "info-kiosk-base-computer-screen.glb",
+        "Length":  6404
+    },
+    {
+        "Name":  "light-curved.glb",
+        "Length":  9496
+    },
+    {
+        "Name":  "light-square-double.glb",
+        "Length":  9216
+    },
+    {
+        "Name":  "light-square.glb",
+        "Length":  6996
+    },
+    {
+        "Name":  "planter.glb",
+        "Length":  20368
+    },
+    {
+        "Name":  "sign-highway-wide.glb",
+        "Length":  13984
+    },
+    {
+        "Name":  "sign-highway.glb",
+        "Length":  17308
+    },
+    {
+        "Name":  "tree-large.glb",
+        "Length":  5812
+    },
+    {
+        "Name":  "tree-small.glb",
+        "Length":  5812
+    }
+]

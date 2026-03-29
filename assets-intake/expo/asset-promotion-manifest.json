@@ -1,0 +1,115 @@
+﻿{
+    "date":  "2026-03-29",
+    "policy":  "CC0/commercial-safe only",
+    "stage":  "intake-approved-for-promotion",
+    "promoteModels":  [
+                          {
+                              "notes":  "Promote after runtime scale QA.",
+                              "target":  "public/models/expo/props/planter.glb",
+                              "source":  "assets-intake/expo/release-props-shortlist/planter.glb",
+                              "role":  "planter"
+                          },
+                          {
+                              "notes":  "Primary boulevard bench.",
+                              "target":  "public/models/expo/props/bench.glb",
+                              "source":  "assets-intake/expo/release-props-shortlist/bench.glb",
+                              "role":  "bench"
+                          },
+                          {
+                              "notes":  "Premium lounge bench variant.",
+                              "target":  "public/models/expo/props/bench-cushion-low.glb",
+                              "source":  "assets-intake/expo/release-props-shortlist/benchCushionLow.glb",
+                              "role":  "bench"
+                          },
+                          {
+                              "notes":  "Primary light rhythm piece.",
+                              "target":  "public/models/expo/props/light-square.glb",
+                              "source":  "assets-intake/expo/release-props-shortlist/light-square.glb",
+                              "role":  "light_pylon"
+                          },
+                          {
+                              "notes":  "Paired boulevard light.",
+                              "target":  "public/models/expo/props/light-square-double.glb",
+                              "source":  "assets-intake/expo/release-props-shortlist/light-square-double.glb",
+                              "role":  "light_pylon"
+                          },
+                          {
+                              "notes":  "Secondary light variant.",
+                              "target":  "public/models/expo/props/light-curved.glb",
+                              "source":  "assets-intake/expo/release-props-shortlist/light-curved.glb",
+                              "role":  "light_pylon"
+                          },
+                          {
+                              "notes":  "Needs sponsor-friendly panel art adaptation.",
+                              "target":  "public/models/expo/props/sign-highway.glb",
+                              "source":  "assets-intake/expo/release-props-shortlist/sign-highway.glb",
+                              "role":  "signage_stand"
+                          },
+                          {
+                              "notes":  "Preferred wayfinding stand after art adaptation.",
+                              "target":  "public/models/expo/props/sign-highway-wide.glb",
+                              "source":  "assets-intake/expo/release-props-shortlist/sign-highway-wide.glb",
+                              "role":  "signage_stand"
+                          },
+                          {
+                              "notes":  "Lean kiosk base option.",
+                              "target":  "public/models/expo/props/info-kiosk-base-computer-screen.glb",
+                              "source":  "assets-intake/expo/release-props-shortlist/info-kiosk-base-computerScreen.glb",
+                              "role":  "info_kiosk_base"
+                          },
+                          {
+                              "notes":  "Bulkier kiosk base option.",
+                              "target":  "public/models/expo/props/info-kiosk-base-cabinet-television.glb",
+                              "source":  "assets-intake/expo/release-props-shortlist/info-kiosk-base-cabinetTelevision.glb",
+                              "role":  "info_kiosk_base"
+                          },
+                          {
+                              "notes":  "Controlled tree framing.",
+                              "target":  "public/models/expo/props/tree-small.glb",
+                              "source":  "assets-intake/expo/release-props-shortlist/tree-small.glb",
+                              "role":  "small_tree"
+                          },
+                          {
+                              "notes":  "Promote only if scaled down in runtime.",
+                              "target":  "public/models/expo/props/tree-large.glb",
+                              "source":  "assets-intake/expo/release-props-shortlist/tree-large.glb",
+                              "role":  "small_tree"
+                          },
+                          {
+                              "notes":  "Converted shrub candidate.",
+                              "target":  "public/models/expo/props/bush.glb",
+                              "source":  "assets-intake/expo/release-props-shortlist/Bush.glb",
+                              "role":  "decorative_shrub_model"
+                          },
+                          {
+                              "notes":  "Converted larger shrub candidate.",
+                              "target":  "public/models/expo/props/big-bush.glb",
+                              "source":  "assets-intake/expo/release-props-shortlist/BigBush.glb",
+                              "role":  "decorative_shrub_model"
+                          }
+                      ],
+    "promoteTextures":  [
+                            {
+                                "notes":  "Promote after KTX/WebP conversion.",
+                                "target":  "public/textures/expo/foliage/grass004",
+                                "source":  "assets-intake/expo/foliage/ambientcg/Grass004_2K-JPG",
+                                "role":  "foliage_surface"
+                            },
+                            {
+                                "notes":  "Promote after KTX/WebP conversion.",
+                                "target":  "public/textures/expo/foliage/leafset026",
+                                "source":  "assets-intake/expo/foliage/ambientcg/LeafSet026_1K-JPG",
+                                "role":  "foliage_surface"
+                            }
+                        ],
+    "skylineDirection":  {
+                             "target":  "public/models/expo/skyline/",
+                             "source":  "assets-intake/expo/props/kenney/city-kit-commercial/Models/GLB format",
+                             "notes":  "Select only low-detail buildings and skyscrapers; do not promote entire pack blindly."
+                         },
+    "blockers":  [
+                     "KTX toolchain is downloaded but not fully installed or wired into the repo pipeline.",
+                     "Signage and kiosk bases still need sponsor-facing art treatment.",
+                     "All promoted assets still need runtime scale/perf QA before entering the release path."
+                 ]
+}

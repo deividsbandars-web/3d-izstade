@@ -1,0 +1,22 @@
+﻿Expo release props shortlist (2026-03-29)
+
+Shortlisted now:
+- planter.glb
+- bench.glb
+- benchCushionLow.glb
+- light-square.glb
+- light-square-double.glb
+- light-curved.glb
+- sign-highway.glb
+- sign-highway-wide.glb
+- info-kiosk-base-computerScreen.glb
+- info-kiosk-base-cabinetTelevision.glb
+- tree-small.glb
+- tree-large.glb
+- Bush.glb
+- BigBush.glb
+
+Still pending:
+- final KTX install
+- final kiosk art pass
+- runtime QA and optimization

@@ -1,0 +1,83 @@
+﻿{
+    "downloaded":  [
+                       {
+                           "license":  "Apache-2.0",
+                           "path":  "assets-intake/expo/tooling/KTX-Software-4.4.2-Windows-x64.exe",
+                           "name":  "KTX-Software-4.4.2-Windows-x64.exe",
+                           "source":  "https://github.com/KhronosGroup/KTX-Software/releases",
+                           "status":  "downloaded-not-installed"
+                       },
+                       {
+                           "license":  "CC0",
+                           "path":  "assets-intake/expo/props/kenney/kenney_city-kit-commercial_2.1.zip",
+                           "name":  "kenney_city-kit-commercial_2.1.zip",
+                           "source":  "https://kenney.nl/assets/city-kit-commercial",
+                           "status":  "downloaded-and-extracted"
+                       },
+                       {
+                           "license":  "CC0",
+                           "path":  "assets-intake/expo/props/kenney/kenney_city-kit-industrial_1.0.zip",
+                           "name":  "kenney_city-kit-industrial_1.0.zip",
+                           "source":  "https://kenney.nl/assets/city-kit-industrial",
+                           "status":  "downloaded-and-extracted"
+                       },
+                       {
+                           "license":  "CC0",
+                           "path":  "assets-intake/expo/props/kenney/kenney_city-kit-roads.zip",
+                           "name":  "kenney_city-kit-roads.zip",
+                           "source":  "https://kenney.nl/assets/city-kit-roads",
+                           "status":  "downloaded-and-extracted"
+                       },
+                       {
+                           "license":  "CC0",
+                           "path":  "assets-intake/expo/props/kenney/kenney_city-kit-suburban_20.zip",
+                           "name":  "kenney_city-kit-suburban_20.zip",
+                           "source":  "https://kenney.nl/assets/city-kit-suburban",
+                           "status":  "downloaded-and-extracted"
+                       },
+                       {
+                           "license":  "CC0",
+                           "path":  "assets-intake/expo/foliage/ambientcg/Grass004_2K-JPG.zip",
+                           "name":  "Grass004_2K-JPG.zip",
+                           "source":  "https://ambientcg.com/view?id=Grass004",
+                           "status":  "downloaded-and-extracted"
+                       },
+                       {
+                           "license":  "CC0",
+                           "path":  "assets-intake/expo/foliage/ambientcg/LeafSet026_1K-JPG.zip",
+                           "name":  "LeafSet026_1K-JPG.zip",
+                           "source":  "https://ambientcg.com/view?id=LeafSet026",
+                           "status":  "downloaded-and-extracted"
+                       }
+                   ],
+    "skylineCandidates":  [
+                              {
+                                  "license":  "CC0",
+                                  "status":  "sourcing-candidate",
+                                  "name":  "Schadowplatz HDRI",
+                                  "source":  "https://polyhaven.com/a/schadowplatz",
+                                  "role":  "urban lighting / skyline backdrop candidate"
+                              },
+                              {
+                                  "license":  "CC0",
+                                  "status":  "sourcing-candidate",
+                                  "name":  "Potted Plant 04",
+                                  "source":  "https://polyhaven.com/a/potted_plant_04",
+                                  "role":  "decorative planter candidate"
+                              }
+                          ],
+    "installed":  [
+                      {
+                          "status":  "installed-devDependency",
+                          "path":  "package.json",
+                          "name":  "@gltf-transform/cli",
+                          "role":  "GLB optimization pipeline"
+                      }
+                  ],
+    "nextValidation":  [
+                           "Review Kenney packs for exact bench/sign/light/signage/kiosk candidates",
+                           "Decide whether skyline should be HDRI-only or model-pack plus skyline shell",
+                           "Install KTX Software locally and wire scripts/optimize-gltf.mjs to the ktx toolchain",
+                           "Curate final sponsor-facing prop subset before promotion into public/"
+                       ]
+}

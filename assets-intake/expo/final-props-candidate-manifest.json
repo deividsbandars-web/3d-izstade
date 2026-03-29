@@ -1,0 +1,126 @@
+﻿{
+    "date":  "2026-03-29",
+    "policy":  "CC0/commercial-safe only",
+    "shortlistFolder":  "assets-intake/expo/release-props-shortlist",
+    "selectedCandidates":  [
+                               {
+                                   "status":  "shortlisted",
+                                   "path":  "assets-intake/expo/release-props-shortlist/planter.glb",
+                                   "asset":  "planter.glb",
+                                   "role":  "planter"
+                               },
+                               {
+                                   "status":  "shortlisted",
+                                   "path":  "assets-intake/expo/release-props-shortlist/bench.glb",
+                                   "asset":  "bench.glb",
+                                   "role":  "bench"
+                               },
+                               {
+                                   "status":  "shortlisted",
+                                   "path":  "assets-intake/expo/release-props-shortlist/benchCushionLow.glb",
+                                   "asset":  "benchCushionLow.glb",
+                                   "role":  "bench"
+                               },
+                               {
+                                   "status":  "shortlisted",
+                                   "path":  "assets-intake/expo/release-props-shortlist/light-square.glb",
+                                   "asset":  "light-square.glb",
+                                   "role":  "light_pylon"
+                               },
+                               {
+                                   "status":  "shortlisted",
+                                   "path":  "assets-intake/expo/release-props-shortlist/light-square-double.glb",
+                                   "asset":  "light-square-double.glb",
+                                   "role":  "light_pylon"
+                               },
+                               {
+                                   "status":  "shortlisted",
+                                   "path":  "assets-intake/expo/release-props-shortlist/light-curved.glb",
+                                   "asset":  "light-curved.glb",
+                                   "role":  "light_pylon"
+                               },
+                               {
+                                   "status":  "shortlisted-needs-branding",
+                                   "path":  "assets-intake/expo/release-props-shortlist/sign-highway.glb",
+                                   "asset":  "sign-highway.glb",
+                                   "role":  "signage_stand"
+                               },
+                               {
+                                   "status":  "shortlisted-needs-branding",
+                                   "path":  "assets-intake/expo/release-props-shortlist/sign-highway-wide.glb",
+                                   "asset":  "sign-highway-wide.glb",
+                                   "role":  "signage_stand"
+                               },
+                               {
+                                   "status":  "shortlisted",
+                                   "path":  "assets-intake/expo/release-props-shortlist/info-kiosk-base-computerScreen.glb",
+                                   "asset":  "info-kiosk-base-computerScreen.glb",
+                                   "role":  "info_kiosk_base"
+                               },
+                               {
+                                   "status":  "shortlisted",
+                                   "path":  "assets-intake/expo/release-props-shortlist/info-kiosk-base-cabinetTelevision.glb",
+                                   "asset":  "info-kiosk-base-cabinetTelevision.glb",
+                                   "role":  "info_kiosk_base"
+                               },
+                               {
+                                   "status":  "shortlisted",
+                                   "path":  "assets-intake/expo/release-props-shortlist/tree-small.glb",
+                                   "asset":  "tree-small.glb",
+                                   "role":  "small_tree"
+                               },
+                               {
+                                   "status":  "shortlisted-needs-scale-check",
+                                   "path":  "assets-intake/expo/release-props-shortlist/tree-large.glb",
+                                   "asset":  "tree-large.glb",
+                                   "role":  "small_tree"
+                               },
+                               {
+                                   "status":  "converted-shortlisted",
+                                   "path":  "assets-intake/expo/release-props-shortlist/Bush.glb",
+                                   "asset":  "Bush.glb",
+                                   "role":  "decorative_shrub_model"
+                               },
+                               {
+                                   "status":  "converted-shortlisted",
+                                   "path":  "assets-intake/expo/release-props-shortlist/BigBush.glb",
+                                   "asset":  "BigBush.glb",
+                                   "role":  "decorative_shrub_model"
+                               },
+                               {
+                                   "status":  "shortlisted-texture-source",
+                                   "path":  "assets-intake/expo/foliage/ambientcg/Grass004_2K-JPG",
+                                   "asset":  "Grass004_2K-JPG",
+                                   "role":  "foliage_surface"
+                               },
+                               {
+                                   "status":  "shortlisted-texture-source",
+                                   "path":  "assets-intake/expo/foliage/ambientcg/LeafSet026_1K-JPG",
+                                   "asset":  "LeafSet026_1K-JPG",
+                                   "role":  "foliage_surface"
+                               },
+                               {
+                                   "status":  "shortlisted-direction",
+                                   "path":  "assets-intake/expo/props/kenney/city-kit-commercial/Models/GLB format",
+                                   "asset":  "Kenney commercial low-detail + skyscraper set",
+                                   "role":  "skyline_direction"
+                               }
+                           ],
+    "remainingGaps":  [
+                          {
+                              "notes":  "Installer is downloaded, but KTX toolchain is not yet fully installed and wired.",
+                              "status":  "pending",
+                              "role":  "final_ktx_install"
+                          },
+                          {
+                              "notes":  "Need one chosen kiosk base with sponsor-safe screen/sign treatment.",
+                              "status":  "pending",
+                              "role":  "kiosk_art_pass"
+                          },
+                          {
+                              "notes":  "Shortlisted props still need scale, material, and perf QA in Expo runtime.",
+                              "status":  "pending",
+                              "role":  "runtime_validation"
+                          }
+                      ]
+}

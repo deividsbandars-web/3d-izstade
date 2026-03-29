@@ -12,6 +12,9 @@ assert.equal(EXPO_QUALITY_PRESETS.quality.enableEnhancedBoulevardDetail, true);
 assert.equal(EXPO_QUALITY_PRESETS.performance.enableCuratedSkylineRing, false);
 assert.equal(EXPO_QUALITY_PRESETS.balanced.enableCuratedSkylineRing, true);
 assert.equal(EXPO_QUALITY_PRESETS.quality.enableCuratedSkylineRing, true);
+assert.equal(EXPO_QUALITY_PRESETS.performance.enableCuratedExpoProps, false);
+assert.equal(EXPO_QUALITY_PRESETS.balanced.enableCuratedExpoProps, true);
+assert.equal(EXPO_QUALITY_PRESETS.quality.enableCuratedExpoProps, true);
 
 assert.ok(['performance', 'balanced', 'quality'].includes(EXPO_CITY_QUALITY_TIER));
 assert.equal(EXPO_SPATIAL_DEBUG_FLAGS.disableArrivalReveal, false);

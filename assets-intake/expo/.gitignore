@@ -1,0 +1,9 @@
+*
+!.gitignore
+!README.md
+!*.json
+!*.txt
+!sponsor-content-manifest.template.json
+!release-props-shortlist/
+release-props-shortlist/*
+!release-props-shortlist/manifest.json
