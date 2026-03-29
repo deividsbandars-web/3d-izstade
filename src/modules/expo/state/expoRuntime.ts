@@ -104,7 +104,7 @@ export const EXPO_QUALITY_PRESETS = {
     enableFog: true,
     enableGroundArtPass: true,
     enableLocalizedLightPools: true,
-    enablePremiumGroundTextures: false,
+    enablePremiumGroundTextures: true,
     enablePromenadeTexture: true,
     enableShowcaseSkylineDensity: true,
     enableSponsorBillboards: true,

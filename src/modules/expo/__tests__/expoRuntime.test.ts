@@ -8,6 +8,12 @@ assert.equal(EXPO_QUALITY_PRESETS.quality.enableShowcaseSkylineDensity, true);
 assert.equal(EXPO_QUALITY_PRESETS.performance.enableEnhancedBoulevardDetail, false);
 assert.equal(EXPO_QUALITY_PRESETS.balanced.enableEnhancedBoulevardDetail, false);
 assert.equal(EXPO_QUALITY_PRESETS.quality.enableEnhancedBoulevardDetail, true);
+assert.equal(EXPO_QUALITY_PRESETS.performance.enablePremiumGroundTextures, false);
+assert.equal(EXPO_QUALITY_PRESETS.balanced.enablePremiumGroundTextures, false);
+assert.equal(EXPO_QUALITY_PRESETS.quality.enablePremiumGroundTextures, true);
+assert.equal(EXPO_QUALITY_PRESETS.performance.enablePromenadeTexture, false);
+assert.equal(EXPO_QUALITY_PRESETS.balanced.enablePromenadeTexture, true);
+assert.equal(EXPO_QUALITY_PRESETS.quality.enablePromenadeTexture, true);
 
 assert.equal(EXPO_QUALITY_PRESETS.performance.enableCuratedSkylineRing, false);
 assert.equal(EXPO_QUALITY_PRESETS.balanced.enableCuratedSkylineRing, true);

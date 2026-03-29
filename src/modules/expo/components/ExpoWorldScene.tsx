@@ -24,6 +24,7 @@ import {
 import { buildBoulevardArtPass } from '../lib/boulevardArtPass';
 import { resolveExpoBackdropStrategy, sanitizeExpoBackdropCityScene, type ExpoBackdropStrategy } from '../lib/backdropSanitization';
 import { buildExpoCuratedPropPlacements, type ExpoCuratedPropKey } from '../lib/expoCuratedPropPlacement';
+import { getExpoGroundFallbackProfile, getExpoGroundTextureCandidates } from '../lib/expoGroundMaterialManifest';
 import { resolveExpoTextureCandidateUrls } from '../lib/expoTexturePipeline';
 import { buildSponsorScreenLayout, type SponsorScreenNode } from '../lib/sponsorScreenLayout';
 import { buildSponsorBoothPresentation, getSponsorNameFontSize, resolveSponsorCtaIntent, type SponsorBoothTemplate, type SponsorCta } from '../lib/sponsorBoothPresentation';
@@ -249,6 +250,41 @@ function loadTextureWithCandidateUrls(loader: THREE.TextureLoader, urls: string[
 
     tryNext();
   });
+}
+
+function buildGroundFallbackNormalMap(color: string, accentColor: string) {
+  const size = 64;
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const context = canvas.getContext('2d');
+  if (!context) {
+    return null;
+  }
+
+  context.fillStyle = color;
+  context.fillRect(0, 0, size, size);
+  context.strokeStyle = accentColor;
+  context.globalAlpha = 0.2;
+
+  for (let index = 0; index <= size; index += 8) {
+    context.beginPath();
+    context.moveTo(index, 0);
+    context.lineTo(index, size);
+    context.stroke();
+
+    context.beginPath();
+    context.moveTo(0, index);
+    context.lineTo(size, index);
+    context.stroke();
+  }
+
+  context.globalAlpha = 1;
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.wrapT = THREE.RepeatWrapping;
+  texture.needsUpdate = true;
+  return texture;
 }
 
 function PrimitiveCityModel({
@@ -638,15 +674,15 @@ function BoulevardGroundArt({
     let isActive = true;
     const loader = new THREE.TextureLoader();
     const urls = [
-      resolveExpoTextureCandidateUrls('/textures/expo/hero-paver-4k/pavement_01_diff_4k.png'),
-      resolveExpoTextureCandidateUrls('/textures/expo/hero-paver-4k/pavement_01_nor_gl_4k.png'),
-      resolveExpoTextureCandidateUrls('/textures/expo/hero-paver-4k/pavement_01_rough_4k.png'),
-      resolveExpoTextureCandidateUrls('/textures/expo/light-concrete-4k/concrete_floor_worn_001_diff_4k.png'),
-      resolveExpoTextureCandidateUrls('/textures/expo/light-concrete-4k/concrete_floor_worn_001_nor_gl_4k.png'),
-      resolveExpoTextureCandidateUrls('/textures/expo/light-concrete-4k/concrete_floor_worn_001_rough_4k.png'),
-      resolveExpoTextureCandidateUrls('/textures/expo/urban-grass-4k/sparse_grass_diff_4k.png'),
-      resolveExpoTextureCandidateUrls('/textures/expo/urban-grass-4k/sparse_grass_nor_gl_4k.png'),
-      resolveExpoTextureCandidateUrls('/textures/expo/urban-grass-4k/sparse_grass_rough_4k.png'),
+      getExpoGroundTextureCandidates('hero_paver')?.map ?? [],
+      getExpoGroundTextureCandidates('hero_paver')?.normalMap ?? [],
+      getExpoGroundTextureCandidates('hero_paver')?.roughnessMap ?? [],
+      getExpoGroundTextureCandidates('light_concrete')?.map ?? [],
+      getExpoGroundTextureCandidates('light_concrete')?.normalMap ?? [],
+      getExpoGroundTextureCandidates('light_concrete')?.roughnessMap ?? [],
+      getExpoGroundTextureCandidates('urban_grass')?.map ?? [],
+      getExpoGroundTextureCandidates('urban_grass')?.normalMap ?? [],
+      getExpoGroundTextureCandidates('urban_grass')?.roughnessMap ?? [],
     ];
 
     Promise.all(urls.map((candidateUrls) => loadTextureWithCandidateUrls(loader, candidateUrls)))
@@ -750,6 +786,36 @@ function BoulevardGroundArt({
 
     return new Map(artPass.surfaces.map((surface) => [surface.id, buildVariant(surface)]));
   }, [artPass.surfaces, materialMaps]);
+  const fallbackMaterialVariants = useMemo(() => {
+    const cache = new Map<string, { bumpMap: THREE.Texture | null; normalMap: THREE.Texture | null; roughness: number; metalness: number; emissiveIntensity: number; normalScale: THREE.Vector2; bumpScale: number }>();
+
+    artPass.surfaces.forEach((surface) => {
+      const cacheKey = `${surface.kind}:${surface.color}:${surface.emissive ?? 'none'}`;
+      if (cache.has(cacheKey)) {
+        return;
+      }
+
+      const accentColor = surface.emissive ?? surface.color;
+      const fallbackProfile = getExpoGroundFallbackProfile(surface.kind, surface.roughness, surface.metalness);
+      const texture = buildGroundFallbackNormalMap(surface.color, accentColor);
+      if (texture) {
+        texture.repeat.set(...(surface.textureRepeat ?? [1, 1]));
+        texture.needsUpdate = true;
+      }
+
+      cache.set(cacheKey, {
+        bumpMap: texture,
+        normalMap: texture ? texture.clone() : null,
+        roughness: fallbackProfile.roughness,
+        metalness: fallbackProfile.metalness,
+        emissiveIntensity: (surface.emissiveIntensity ?? 0) + fallbackProfile.emissiveIntensityBoost,
+        normalScale: fallbackProfile.normalScale,
+        bumpScale: fallbackProfile.bumpScale,
+      });
+    });
+
+    return cache;
+  }, [artPass.surfaces]);
 
   return (
     <group name="boulevard-ground-art">
@@ -779,13 +845,16 @@ function BoulevardGroundArt({
             <meshStandardMaterial
               color={surface.color}
               emissive={surface.emissive}
-              emissiveIntensity={surface.emissiveIntensity}
+              emissiveIntensity={maps || textureVariant ? surface.emissiveIntensity : fallbackMaterialVariants.get(`${surface.kind}:${surface.color}:${surface.emissive ?? 'none'}`)?.emissiveIntensity}
+              bumpMap={maps || textureVariant ? null : fallbackMaterialVariants.get(`${surface.kind}:${surface.color}:${surface.emissive ?? 'none'}`)?.bumpMap ?? undefined}
+              bumpScale={maps || textureVariant ? 0 : fallbackMaterialVariants.get(`${surface.kind}:${surface.color}:${surface.emissive ?? 'none'}`)?.bumpScale}
               map={textureVariant?.map ?? maps?.map}
-              metalness={surface.metalness}
-              normalMap={textureVariant?.normalMap ?? maps?.normalMap}
+              metalness={maps || textureVariant ? surface.metalness : fallbackMaterialVariants.get(`${surface.kind}:${surface.color}:${surface.emissive ?? 'none'}`)?.metalness}
+              normalMap={textureVariant?.normalMap ?? maps?.normalMap ?? fallbackMaterialVariants.get(`${surface.kind}:${surface.color}:${surface.emissive ?? 'none'}`)?.normalMap ?? undefined}
+              normalScale={maps || textureVariant ? undefined : fallbackMaterialVariants.get(`${surface.kind}:${surface.color}:${surface.emissive ?? 'none'}`)?.normalScale}
               opacity={surface.opacity ?? 1}
               roughnessMap={textureVariant?.roughnessMap ?? maps?.roughnessMap}
-              roughness={surface.roughness}
+              roughness={maps || textureVariant ? surface.roughness : fallbackMaterialVariants.get(`${surface.kind}:${surface.color}:${surface.emissive ?? 'none'}`)?.roughness}
               transparent={surface.opacity !== undefined}
             />
           </mesh>
