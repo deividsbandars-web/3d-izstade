@@ -73,6 +73,6 @@ assert.ok(firstLayout.mediumScreens.length <= 6);
 assert.ok(firstLayout.groundScreens.length >= 6);
 assert.ok(firstLayout.groundScreens.length <= 10);
 assert.ok(firstLayout.facadeScreens[0].position[2] > -10);
-assert.equal(firstLayout.facadeScreens[0].imageUrl, '/textures/expo/hero-facade-screen-8k/hero_facade_screen_01.png');
+assert.equal(firstLayout.facadeScreens[0].imageUrl, '/textures/expo-runtime/hero-facade-screen-8k/hero_facade_screen_01.webp');
 assert.ok(firstLayout.mediumScreens.every((screen) => typeof screen.imageUrl === 'string' && screen.imageUrl.length > 0));
 assert.ok(firstLayout.groundScreens.some((screen) => screen.title === 'Arrival'));

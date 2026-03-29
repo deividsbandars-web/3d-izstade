@@ -1,4 +1,4 @@
-﻿# Expo Asset Readiness Spec
+# Expo Asset Readiness Spec
 
 This document defines the minimum asset intake required to move the Warpala Web3D sponsor expo toward a stable enterprise release.
 
@@ -116,3 +116,4 @@ Recommended implementation order:
 If an asset pack is not ready:
 - do not partially mix it into release
 - keep the release path on a safe fallback until the full pack is validated
+

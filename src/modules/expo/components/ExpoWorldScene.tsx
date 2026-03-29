@@ -23,6 +23,7 @@ import {
 } from '../lib/expoAnalytics';
 import { buildBoulevardArtPass } from '../lib/boulevardArtPass';
 import { buildExpoCuratedPropPlacements, type ExpoCuratedPropKey } from '../lib/expoCuratedPropPlacement';
+import { resolveExpoTextureCandidateUrls } from '../lib/expoTexturePipeline';
 import { buildSponsorScreenLayout, type SponsorScreenNode } from '../lib/sponsorScreenLayout';
 import { buildSponsorBoothPresentation, getSponsorNameFontSize, resolveSponsorCtaIntent, type SponsorBoothTemplate, type SponsorCta } from '../lib/sponsorBoothPresentation';
 import { EXPO_CITY_QUALITY_TIER, EXPO_FEATURE_FLAGS, EXPO_SPATIAL_DEBUG_FLAGS, type ExpoMode } from '../state/expoRuntime';
@@ -226,6 +227,26 @@ function markScenicNonColliding(root: THREE.Object3D) {
   root.traverse((child) => {
     child.userData.sceneLayerRole = 'scenic-non-colliding';
     child.userData[DISABLE_PLAYER_COLLISION_FLAG] = true;
+  });
+}
+
+function loadTextureWithCandidateUrls(loader: THREE.TextureLoader, urls: string[]) {
+  return new Promise<THREE.Texture>((resolve, reject) => {
+    const queue = [...urls];
+
+    const tryNext = () => {
+      const nextUrl = queue.shift();
+      if (!nextUrl) {
+        reject(new Error(`Could not load any texture candidate: ${urls.join(', ')}`));
+        return;
+      }
+
+      loader.load(nextUrl, resolve, undefined, () => {
+        tryNext();
+      });
+    };
+
+    tryNext();
   });
 }
 
@@ -623,20 +644,18 @@ function BoulevardGroundArt({
     let isActive = true;
     const loader = new THREE.TextureLoader();
     const urls = [
-      '/textures/expo/hero-paver-4k/pavement_01_diff_4k.png',
-      '/textures/expo/hero-paver-4k/pavement_01_nor_gl_4k.png',
-      '/textures/expo/hero-paver-4k/pavement_01_rough_4k.png',
-      '/textures/expo/light-concrete-4k/concrete_floor_worn_001_diff_4k.png',
-      '/textures/expo/light-concrete-4k/concrete_floor_worn_001_nor_gl_4k.png',
-      '/textures/expo/light-concrete-4k/concrete_floor_worn_001_rough_4k.png',
-      '/textures/expo/urban-grass-4k/sparse_grass_diff_4k.png',
-      '/textures/expo/urban-grass-4k/sparse_grass_nor_gl_4k.png',
-      '/textures/expo/urban-grass-4k/sparse_grass_rough_4k.png',
+      resolveExpoTextureCandidateUrls('/textures/expo/hero-paver-4k/pavement_01_diff_4k.png'),
+      resolveExpoTextureCandidateUrls('/textures/expo/hero-paver-4k/pavement_01_nor_gl_4k.png'),
+      resolveExpoTextureCandidateUrls('/textures/expo/hero-paver-4k/pavement_01_rough_4k.png'),
+      resolveExpoTextureCandidateUrls('/textures/expo/light-concrete-4k/concrete_floor_worn_001_diff_4k.png'),
+      resolveExpoTextureCandidateUrls('/textures/expo/light-concrete-4k/concrete_floor_worn_001_nor_gl_4k.png'),
+      resolveExpoTextureCandidateUrls('/textures/expo/light-concrete-4k/concrete_floor_worn_001_rough_4k.png'),
+      resolveExpoTextureCandidateUrls('/textures/expo/urban-grass-4k/sparse_grass_diff_4k.png'),
+      resolveExpoTextureCandidateUrls('/textures/expo/urban-grass-4k/sparse_grass_nor_gl_4k.png'),
+      resolveExpoTextureCandidateUrls('/textures/expo/urban-grass-4k/sparse_grass_rough_4k.png'),
     ];
 
-    Promise.all(urls.map((url) => new Promise<THREE.Texture>((resolve, reject) => {
-      loader.load(url, resolve, undefined, reject);
-    })))
+    Promise.all(urls.map((candidateUrls) => loadTextureWithCandidateUrls(loader, candidateUrls)))
       .then((loadedTextures) => {
         if (!isActive) return;
         setTextures(loadedTextures);
@@ -1052,10 +1071,10 @@ function SponsorTextureSurface({
   useEffect(() => {
     let isActive = true;
     const loader = new THREE.TextureLoader();
+    const candidateUrls = resolveExpoTextureCandidateUrls(url);
 
-    loader.load(
-      url,
-      (texture) => {
+    loadTextureWithCandidateUrls(loader, candidateUrls)
+      .then((texture) => {
         if (!isActive) {
           return;
         }
@@ -1064,15 +1083,13 @@ function SponsorTextureSurface({
         clone.colorSpace = THREE.SRGBColorSpace;
         clone.needsUpdate = true;
         setMappedTexture(clone);
-      },
-      undefined,
-      () => {
+      })
+      .catch(() => {
         if (!isActive) {
           return;
         }
         setMappedTexture(null);
-      }
-    );
+      });
 
     return () => {
       isActive = false;
@@ -1088,10 +1105,10 @@ function ScreenTextureMaterial({ fallbackColor, url }: { fallbackColor: string; 
   useEffect(() => {
     let isActive = true;
     const loader = new THREE.TextureLoader();
+    const candidateUrls = resolveExpoTextureCandidateUrls(url);
 
-    loader.load(
-      url,
-      (texture) => {
+    loadTextureWithCandidateUrls(loader, candidateUrls)
+      .then((texture) => {
         if (!isActive) {
           return;
         }
@@ -1100,15 +1117,13 @@ function ScreenTextureMaterial({ fallbackColor, url }: { fallbackColor: string; 
         clone.colorSpace = THREE.SRGBColorSpace;
         clone.needsUpdate = true;
         setMappedTexture(clone);
-      },
-      undefined,
-      () => {
+      })
+      .catch(() => {
         if (!isActive) {
           return;
         }
         setMappedTexture(null);
-      }
-    );
+      });
 
     return () => {
       isActive = false;

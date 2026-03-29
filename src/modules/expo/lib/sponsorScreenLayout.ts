@@ -1,4 +1,5 @@
 import type { ExpoBoothPlacement, ExpoSectorMarker } from '../sceneWorld';
+import { resolveExpoRuntimeTextureUrl } from './expoTexturePipeline';
 
 export type SponsorScreenKind = 'facade' | 'medium_billboard' | 'ground_pylon';
 
@@ -24,19 +25,19 @@ export type SponsorScreenLayout = {
 };
 
 const HORIZONTAL_PLACEHOLDERS = [
-  '/textures/expo/screen-placeholders-4k/horizontal-16x9/screen_horizontal_01.png',
-  '/textures/expo/screen-placeholders-4k/horizontal-16x9/screen_horizontal_02.png',
-  '/textures/expo/screen-placeholders-4k/horizontal-16x9/screen_horizontal_03.png',
-  '/textures/expo/screen-placeholders-4k/horizontal-16x9/screen_horizontal_04.png',
+  resolveExpoRuntimeTextureUrl('/textures/expo/screen-placeholders-4k/horizontal-16x9/screen_horizontal_01.png')!,
+  resolveExpoRuntimeTextureUrl('/textures/expo/screen-placeholders-4k/horizontal-16x9/screen_horizontal_02.png')!,
+  resolveExpoRuntimeTextureUrl('/textures/expo/screen-placeholders-4k/horizontal-16x9/screen_horizontal_03.png')!,
+  resolveExpoRuntimeTextureUrl('/textures/expo/screen-placeholders-4k/horizontal-16x9/screen_horizontal_04.png')!,
 ] as const;
 
 const VERTICAL_PLACEHOLDERS = [
-  '/textures/expo/screen-placeholders-4k/vertical-9x16/screen_vertical_01.png',
-  '/textures/expo/screen-placeholders-4k/vertical-9x16/screen_vertical_02.png',
-  '/textures/expo/screen-placeholders-4k/vertical-9x16/screen_vertical_03.png',
+  resolveExpoRuntimeTextureUrl('/textures/expo/screen-placeholders-4k/vertical-9x16/screen_vertical_01.png')!,
+  resolveExpoRuntimeTextureUrl('/textures/expo/screen-placeholders-4k/vertical-9x16/screen_vertical_02.png')!,
+  resolveExpoRuntimeTextureUrl('/textures/expo/screen-placeholders-4k/vertical-9x16/screen_vertical_03.png')!,
 ] as const;
 
-const HERO_FACADE_SCREEN = '/textures/expo/hero-facade-screen-8k/hero_facade_screen_01.png';
+const HERO_FACADE_SCREEN = resolveExpoRuntimeTextureUrl('/textures/expo/hero-facade-screen-8k/hero_facade_screen_01.png')!;
 
 const SPONSOR_TIER_WEIGHT: Record<string, number> = {
   hero: 6,

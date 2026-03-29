@@ -1,0 +1,238 @@
+{
+  "generatedAt": "2026-03-29T05:33:00.521Z",
+  "ktx2": {
+    "enabled": false,
+    "note": "No KTX encoder detected on PATH. WebP runtime derivatives generated as the active release pipeline.",
+    "tool": null
+  },
+  "runtimeRoot": "/textures/expo-runtime",
+  "stats": {
+    "sourceBytes": 727452089,
+    "runtimeBytes": 28484800,
+    "savingsBytes": 698967289,
+    "savingsRatio": 0.9608,
+    "textureCount": 20
+  },
+  "textures": [
+    {
+      "profile": "hero-screen",
+      "runtimePath": "/textures/expo-runtime/hero-facade-screen-8k/hero_facade_screen_01.webp",
+      "runtimeSizeBytes": 74268,
+      "runtimeWidth": 4096,
+      "runtimeHeight": 2304,
+      "sourcePath": "/textures/expo/hero-facade-screen-8k/hero_facade_screen_01.png",
+      "sourceSizeBytes": 593374,
+      "sourceWidth": 7680,
+      "sourceHeight": 4320
+    },
+    {
+      "profile": "utility-map",
+      "runtimePath": "/textures/expo-runtime/hero-paver-4k/pavement_01_ao_4k.webp",
+      "runtimeSizeBytes": 677186,
+      "runtimeWidth": 2048,
+      "runtimeHeight": 2048,
+      "sourcePath": "/textures/expo/hero-paver-4k/pavement_01_ao_4k.png",
+      "sourceSizeBytes": 36697204,
+      "sourceWidth": 4096,
+      "sourceHeight": 4096
+    },
+    {
+      "profile": "base-color",
+      "runtimePath": "/textures/expo-runtime/hero-paver-4k/pavement_01_diff_4k.webp",
+      "runtimeSizeBytes": 704712,
+      "runtimeWidth": 2048,
+      "runtimeHeight": 2048,
+      "sourcePath": "/textures/expo/hero-paver-4k/pavement_01_diff_4k.png",
+      "sourceSizeBytes": 99079273,
+      "sourceWidth": 4096,
+      "sourceHeight": 4096
+    },
+    {
+      "profile": "normal-map",
+      "runtimePath": "/textures/expo-runtime/hero-paver-4k/pavement_01_nor_gl_4k.webp",
+      "runtimeSizeBytes": 4776832,
+      "runtimeWidth": 2048,
+      "runtimeHeight": 2048,
+      "sourcePath": "/textures/expo/hero-paver-4k/pavement_01_nor_gl_4k.png",
+      "sourceSizeBytes": 81266234,
+      "sourceWidth": 4096,
+      "sourceHeight": 4096
+    },
+    {
+      "profile": "utility-map",
+      "runtimePath": "/textures/expo-runtime/hero-paver-4k/pavement_01_rough_4k.webp",
+      "runtimeSizeBytes": 856640,
+      "runtimeWidth": 2048,
+      "runtimeHeight": 2048,
+      "sourcePath": "/textures/expo/hero-paver-4k/pavement_01_rough_4k.png",
+      "sourceSizeBytes": 35137616,
+      "sourceWidth": 4096,
+      "sourceHeight": 4096
+    },
+    {
+      "profile": "utility-map",
+      "runtimePath": "/textures/expo-runtime/light-concrete-4k/concrete_floor_worn_001_ao_4k.webp",
+      "runtimeSizeBytes": 509054,
+      "runtimeWidth": 2048,
+      "runtimeHeight": 2048,
+      "sourcePath": "/textures/expo/light-concrete-4k/concrete_floor_worn_001_ao_4k.png",
+      "sourceSizeBytes": 30056143,
+      "sourceWidth": 4096,
+      "sourceHeight": 4096
+    },
+    {
+      "profile": "base-color",
+      "runtimePath": "/textures/expo-runtime/light-concrete-4k/concrete_floor_worn_001_diff_4k.webp",
+      "runtimeSizeBytes": 194992,
+      "runtimeWidth": 2048,
+      "runtimeHeight": 2048,
+      "sourcePath": "/textures/expo/light-concrete-4k/concrete_floor_worn_001_diff_4k.png",
+      "sourceSizeBytes": 83327022,
+      "sourceWidth": 4096,
+      "sourceHeight": 4096
+    },
+    {
+      "profile": "normal-map",
+      "runtimePath": "/textures/expo-runtime/light-concrete-4k/concrete_floor_worn_001_nor_gl_4k.webp",
+      "runtimeSizeBytes": 7170360,
+      "runtimeWidth": 2048,
+      "runtimeHeight": 2048,
+      "sourcePath": "/textures/expo/light-concrete-4k/concrete_floor_worn_001_nor_gl_4k.png",
+      "sourceSizeBytes": 92237842,
+      "sourceWidth": 4096,
+      "sourceHeight": 4096
+    },
+    {
+      "profile": "utility-map",
+      "runtimePath": "/textures/expo-runtime/light-concrete-4k/concrete_floor_worn_001_rough_4k.webp",
+      "runtimeSizeBytes": 503976,
+      "runtimeWidth": 2048,
+      "runtimeHeight": 2048,
+      "sourcePath": "/textures/expo/light-concrete-4k/concrete_floor_worn_001_rough_4k.png",
+      "sourceSizeBytes": 39740790,
+      "sourceWidth": 4096,
+      "sourceHeight": 4096
+    },
+    {
+      "profile": "screen-placeholder-horizontal",
+      "runtimePath": "/textures/expo-runtime/screen-placeholders-4k/horizontal-16x9/screen_horizontal_01.webp",
+      "runtimeSizeBytes": 25518,
+      "runtimeWidth": 1920,
+      "runtimeHeight": 1080,
+      "sourcePath": "/textures/expo/screen-placeholders-4k/horizontal-16x9/screen_horizontal_01.png",
+      "sourceSizeBytes": 210886,
+      "sourceWidth": 3840,
+      "sourceHeight": 2160
+    },
+    {
+      "profile": "screen-placeholder-horizontal",
+      "runtimePath": "/textures/expo-runtime/screen-placeholders-4k/horizontal-16x9/screen_horizontal_02.webp",
+      "runtimeSizeBytes": 25870,
+      "runtimeWidth": 1920,
+      "runtimeHeight": 1080,
+      "sourcePath": "/textures/expo/screen-placeholders-4k/horizontal-16x9/screen_horizontal_02.png",
+      "sourceSizeBytes": 211286,
+      "sourceWidth": 3840,
+      "sourceHeight": 2160
+    },
+    {
+      "profile": "screen-placeholder-horizontal",
+      "runtimePath": "/textures/expo-runtime/screen-placeholders-4k/horizontal-16x9/screen_horizontal_03.webp",
+      "runtimeSizeBytes": 24198,
+      "runtimeWidth": 1920,
+      "runtimeHeight": 1080,
+      "sourcePath": "/textures/expo/screen-placeholders-4k/horizontal-16x9/screen_horizontal_03.png",
+      "sourceSizeBytes": 203718,
+      "sourceWidth": 3840,
+      "sourceHeight": 2160
+    },
+    {
+      "profile": "screen-placeholder-horizontal",
+      "runtimePath": "/textures/expo-runtime/screen-placeholders-4k/horizontal-16x9/screen_horizontal_04.webp",
+      "runtimeSizeBytes": 24996,
+      "runtimeWidth": 1920,
+      "runtimeHeight": 1080,
+      "sourcePath": "/textures/expo/screen-placeholders-4k/horizontal-16x9/screen_horizontal_04.png",
+      "sourceSizeBytes": 212351,
+      "sourceWidth": 3840,
+      "sourceHeight": 2160
+    },
+    {
+      "profile": "screen-placeholder-vertical",
+      "runtimePath": "/textures/expo-runtime/screen-placeholders-4k/vertical-9x16/screen_vertical_01.webp",
+      "runtimeSizeBytes": 14452,
+      "runtimeWidth": 1080,
+      "runtimeHeight": 1920,
+      "sourcePath": "/textures/expo/screen-placeholders-4k/vertical-9x16/screen_vertical_01.png",
+      "sourceSizeBytes": 207744,
+      "sourceWidth": 2160,
+      "sourceHeight": 3840
+    },
+    {
+      "profile": "screen-placeholder-vertical",
+      "runtimePath": "/textures/expo-runtime/screen-placeholders-4k/vertical-9x16/screen_vertical_02.webp",
+      "runtimeSizeBytes": 15172,
+      "runtimeWidth": 1080,
+      "runtimeHeight": 1920,
+      "sourcePath": "/textures/expo/screen-placeholders-4k/vertical-9x16/screen_vertical_02.png",
+      "sourceSizeBytes": 208851,
+      "sourceWidth": 2160,
+      "sourceHeight": 3840
+    },
+    {
+      "profile": "screen-placeholder-vertical",
+      "runtimePath": "/textures/expo-runtime/screen-placeholders-4k/vertical-9x16/screen_vertical_03.webp",
+      "runtimeSizeBytes": 16604,
+      "runtimeWidth": 1080,
+      "runtimeHeight": 1920,
+      "sourcePath": "/textures/expo/screen-placeholders-4k/vertical-9x16/screen_vertical_03.png",
+      "sourceSizeBytes": 210316,
+      "sourceWidth": 2160,
+      "sourceHeight": 3840
+    },
+    {
+      "profile": "utility-map",
+      "runtimePath": "/textures/expo-runtime/urban-grass-4k/sparse_grass_ao_4k.webp",
+      "runtimeSizeBytes": 1412528,
+      "runtimeWidth": 2048,
+      "runtimeHeight": 2048,
+      "sourcePath": "/textures/expo/urban-grass-4k/sparse_grass_ao_4k.png",
+      "sourceSizeBytes": 16165245,
+      "sourceWidth": 4096,
+      "sourceHeight": 4096
+    },
+    {
+      "profile": "base-color",
+      "runtimePath": "/textures/expo-runtime/urban-grass-4k/sparse_grass_diff_4k.webp",
+      "runtimeSizeBytes": 823158,
+      "runtimeWidth": 2048,
+      "runtimeHeight": 2048,
+      "sourcePath": "/textures/expo/urban-grass-4k/sparse_grass_diff_4k.png",
+      "sourceSizeBytes": 88965861,
+      "sourceWidth": 4096,
+      "sourceHeight": 4096
+    },
+    {
+      "profile": "normal-map",
+      "runtimePath": "/textures/expo-runtime/urban-grass-4k/sparse_grass_nor_gl_4k.webp",
+      "runtimeSizeBytes": 10442024,
+      "runtimeWidth": 2048,
+      "runtimeHeight": 2048,
+      "sourcePath": "/textures/expo/urban-grass-4k/sparse_grass_nor_gl_4k.png",
+      "sourceSizeBytes": 95660917,
+      "sourceWidth": 4096,
+      "sourceHeight": 4096
+    },
+    {
+      "profile": "utility-map",
+      "runtimePath": "/textures/expo-runtime/urban-grass-4k/sparse_grass_rough_4k.webp",
+      "runtimeSizeBytes": 192260,
+      "runtimeWidth": 2048,
+      "runtimeHeight": 2048,
+      "sourcePath": "/textures/expo/urban-grass-4k/sparse_grass_rough_4k.png",
+      "sourceSizeBytes": 27059416,
+      "sourceWidth": 4096,
+      "sourceHeight": 4096
+    }
+  ]
+}
