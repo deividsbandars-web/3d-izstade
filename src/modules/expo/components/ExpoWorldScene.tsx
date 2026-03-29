@@ -1199,24 +1199,60 @@ function ScreenTextureMaterial({ fallbackColor, url }: { fallbackColor: string; 
 
 function SponsorScreenGraphic({
   accentColor,
+  fallbackEyebrow,
+  fallbackMode = false,
+  fallbackMonogram,
   size,
   url,
 }: {
   accentColor: string;
+  fallbackEyebrow?: string;
+  fallbackMode?: boolean;
+  fallbackMonogram?: string;
   size: [number, number];
-  url: string;
+  url: string | null;
 }) {
   return (
-    <mesh>
-      <planeGeometry args={size} />
-      <Suspense fallback={<meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={0.14} />}>
-        <ScreenTextureMaterial fallbackColor={accentColor} url={url} />
-      </Suspense>
-    </mesh>
+    <group>
+      <mesh>
+        <planeGeometry args={size} />
+        {url ? (
+          <Suspense fallback={<meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={0.14} />}>
+            <ScreenTextureMaterial fallbackColor={accentColor} url={url} />
+          </Suspense>
+        ) : (
+          <meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={0.14} />
+        )}
+      </mesh>
+      {fallbackMode && (
+        <>
+          <mesh position={[0, 0, 0.02]}>
+            <planeGeometry args={[size[0] * 0.92, size[1] * 0.92]} />
+            <meshBasicMaterial color="#020617" transparent opacity={0.36} />
+          </mesh>
+          <Text position={[0, size[1] * 0.26, 0.05]} fontSize={Math.max(0.24, size[1] * 0.065)} color="#cbd5e1" anchorX="center" anchorY="middle" maxWidth={size[0] * 0.78}>
+            {(fallbackEyebrow || 'CURATED RUNTIME IDENTITY').toUpperCase()}
+          </Text>
+          <Text position={[0, -0.08, 0.05]} fontSize={Math.max(0.64, size[1] * 0.22)} color="#f8fafc" anchorX="center" anchorY="middle" maxWidth={size[0] * 0.56}>
+            {(fallbackMonogram || 'WP').toUpperCase()}
+          </Text>
+        </>
+      )}
+    </group>
   );
 }
 
-function SponsorLogoPanel({ accentColor, fallbackText, url }: { accentColor: string; fallbackText: string; url: string | null }) {
+function SponsorLogoPanel({
+  accentColor,
+  fallbackEyebrow,
+  fallbackText,
+  url,
+}: {
+  accentColor: string;
+  fallbackEyebrow?: string;
+  fallbackText: string;
+  url: string | null;
+}) {
   return (
     <group>
       <mesh position={[0, 0, 0.06]}>
@@ -1230,9 +1266,18 @@ function SponsorLogoPanel({ accentColor, fallbackText, url }: { accentColor: str
         )}
       </mesh>
       {!url && (
-        <Text position={[0, 0, 0.18]} fontSize={1.15} color={accentColor} anchorX="center" anchorY="middle" maxWidth={3.2}>
-          {fallbackText}
-        </Text>
+        <>
+          <mesh position={[0, 0, 0.1]}>
+            <planeGeometry args={[3.3, 3.3]} />
+            <meshBasicMaterial color="#020617" transparent opacity={0.1} />
+          </mesh>
+          <Text position={[0, 0.78, 0.18]} fontSize={0.22} color="#64748b" anchorX="center" anchorY="middle" maxWidth={2.9}>
+            {(fallbackEyebrow || 'CURATED BRAND').toUpperCase()}
+          </Text>
+          <Text position={[0, -0.06, 0.18]} fontSize={1.15} color={accentColor} anchorX="center" anchorY="middle" maxWidth={3.2}>
+            {fallbackText}
+          </Text>
+        </>
       )}
     </group>
   );
@@ -1240,12 +1285,16 @@ function SponsorLogoPanel({ accentColor, fallbackText, url }: { accentColor: str
 
 function SponsorPosterPanel({
   accentColor,
+  fallbackHeadline,
+  fallbackSupportLine,
   isPlaying,
   onTogglePlay,
   posterUrl,
   videoUrl,
 }: {
   accentColor: string;
+  fallbackHeadline?: string;
+  fallbackSupportLine?: string;
   isPlaying: boolean;
   onTogglePlay: () => void;
   posterUrl: string | null;
@@ -1286,6 +1335,27 @@ function SponsorPosterPanel({
           <meshStandardMaterial color="#0f172a" emissive={accentColor} emissiveIntensity={0.08} />
         )}
       </mesh>
+      {!posterUrl && !videoUrl && (
+        <group position={[0, 0, 0.08]}>
+          <mesh>
+            <planeGeometry args={[8.6, 4.8]} />
+            <meshBasicMaterial color="#020617" transparent opacity={0.18} />
+          </mesh>
+          <Text position={[0, 1.05, 0.08]} fontSize={0.62} color="#f8fafc" anchorX="center" anchorY="middle" maxWidth={7.6}>
+            {(fallbackHeadline || 'LIVE PRODUCT STORY').toUpperCase()}
+          </Text>
+          <Text position={[0, -0.2, 0.08]} fontSize={0.28} color="#cbd5e1" anchorX="center" anchorY="middle" maxWidth={7.4}>
+            {(fallbackSupportLine || 'MEET THE TEAM • FOLLOW THE CTA • ENTER THE DEMO ROOM').toUpperCase()}
+          </Text>
+          <mesh position={[0, -1.55, 0.1]}>
+            <planeGeometry args={[3.9, 0.7]} />
+            <meshBasicMaterial color={accentColor} transparent opacity={0.88} />
+          </mesh>
+          <Text position={[0, -1.55, 0.12]} fontSize={0.26} color="#f8fafc" anchorX="center" anchorY="middle">
+            CURATED PREVIEW
+          </Text>
+        </group>
+      )}
       <mesh position={[0, -3.3, 0.08]}>
         <planeGeometry args={[9.8, 0.9]} />
         <meshStandardMaterial color="#020617" metalness={0.08} roughness={0.84} />
@@ -1352,19 +1422,22 @@ function SponsorCtaStrip({
             <mesh
               onClick={(event) => {
                 event.stopPropagation();
+                if (action.disabled) {
+                  return;
+                }
                 onAction(action);
               }}
               onPointerOver={() => {
-                document.body.style.cursor = 'pointer';
+                document.body.style.cursor = action.disabled ? 'auto' : 'pointer';
               }}
               onPointerOut={() => {
                 document.body.style.cursor = 'auto';
               }}
             >
               <boxGeometry args={[3, 0.9, 1]} />
-              <meshStandardMaterial color={action.kind === 'demo_room' ? color : '#0f172a'} metalness={0.12} roughness={0.78} />
+              <meshStandardMaterial color={action.disabled ? '#1e293b' : action.kind === 'demo_room' ? color : '#0f172a'} metalness={0.12} roughness={0.78} />
             </mesh>
-            <Text position={[0, 0, 0.62]} fontSize={0.34} color="#f8fafc" anchorX="center" anchorY="middle" maxWidth={2.5}>
+            <Text position={[0, 0, 0.62]} fontSize={0.34} color={action.disabled ? '#94a3b8' : '#f8fafc'} anchorX="center" anchorY="middle" maxWidth={2.5}>
               {action.label.toUpperCase()}
             </Text>
           </group>
@@ -1387,7 +1460,7 @@ function SponsorScreenNodeView({ node }: { node: SponsorScreenNode }) {
           <meshStandardMaterial color={node.accentColor} emissive={node.accentColor} emissiveIntensity={0.14} />
         </mesh>
         <group position={[0, 0, 0.94]}>
-          <SponsorScreenGraphic accentColor={node.accentColor} size={node.size} url={node.imageUrl} />
+          <SponsorScreenGraphic accentColor={node.accentColor} fallbackEyebrow={node.fallbackEyebrow} fallbackMode={node.fallbackMode} fallbackMonogram={node.fallbackMonogram} size={node.size} url={node.imageUrl} />
         </group>
         <Text position={[0, -(node.size[1] * 0.5) - 2.1, 1.1]} fontSize={1.15} color="#f8fafc" anchorX="center" anchorY="middle" maxWidth={node.size[0] - 4}>
           {node.title.toUpperCase()}
@@ -1395,6 +1468,11 @@ function SponsorScreenNodeView({ node }: { node: SponsorScreenNode }) {
         <Text position={[0, -(node.size[1] * 0.5) - 3.7, 1.1]} fontSize={0.56} color="#cbd5e1" anchorX="center" anchorY="middle" maxWidth={node.size[0] - 6}>
           {node.subtitle.toUpperCase()}
         </Text>
+        {node.fallbackMode && (
+          <Text position={[0, (node.size[1] * 0.5) - 1.2, 1.1]} fontSize={0.52} color="#f8fafc" anchorX="center" anchorY="middle">
+            {node.ctaLabel.toUpperCase()}
+          </Text>
+        )}
       </group>
     );
   }
@@ -1407,7 +1485,7 @@ function SponsorScreenNodeView({ node }: { node: SponsorScreenNode }) {
           <meshStandardMaterial color="#08111c" metalness={0.18} roughness={0.76} />
         </mesh>
         <group position={[0, 0, 0.52]}>
-          <SponsorScreenGraphic accentColor={node.accentColor} size={node.size} url={node.imageUrl} />
+          <SponsorScreenGraphic accentColor={node.accentColor} fallbackEyebrow={node.fallbackEyebrow} fallbackMode={node.fallbackMode} fallbackMonogram={node.fallbackMonogram} size={node.size} url={node.imageUrl} />
         </group>
         <mesh position={[0, -(node.size[1] * 0.5) - 1.8, 0]} castShadow>
           <boxGeometry args={[0.85, 7.2, 0.85]} />
@@ -1419,6 +1497,11 @@ function SponsorScreenNodeView({ node }: { node: SponsorScreenNode }) {
         <Text position={[0, -(node.size[1] * 0.5) - 1.7, 0.6]} fontSize={0.32} color="#cbd5e1" anchorX="center" anchorY="middle" maxWidth={node.size[0] - 1.4}>
           {node.subtitle.toUpperCase()}
         </Text>
+        {node.fallbackMode && (
+          <Text position={[0, (node.size[1] * 0.5) - 0.62, 0.6]} fontSize={0.3} color="#f8fafc" anchorX="center" anchorY="middle">
+            {node.ctaLabel.toUpperCase()}
+          </Text>
+        )}
       </group>
     );
   }
@@ -1430,7 +1513,7 @@ function SponsorScreenNodeView({ node }: { node: SponsorScreenNode }) {
         <meshStandardMaterial color="#07101a" metalness={0.16} roughness={0.82} />
       </mesh>
       <group position={[0, 0.3, 0.58]}>
-        <SponsorScreenGraphic accentColor={node.accentColor} size={node.size} url={node.imageUrl} />
+        <SponsorScreenGraphic accentColor={node.accentColor} fallbackEyebrow={node.fallbackEyebrow} fallbackMode={node.fallbackMode} fallbackMonogram={node.fallbackMonogram} size={node.size} url={node.imageUrl} />
       </group>
       <mesh position={[0, -(node.size[1] * 0.5) - 1.2, 0]} castShadow>
         <boxGeometry args={[1.05, 3.2, 1.05]} />
@@ -1439,6 +1522,11 @@ function SponsorScreenNodeView({ node }: { node: SponsorScreenNode }) {
       <Text position={[0, (node.size[1] * 0.5) + 0.9, 0.7]} fontSize={0.46} color="#f8fafc" anchorX="center" anchorY="middle" maxWidth={node.size[0] + 0.5}>
         {node.title.toUpperCase()}
       </Text>
+      {node.fallbackMode && (
+        <Text position={[0, -(node.size[1] * 0.5) - 0.42, 0.7]} fontSize={0.24} color="#cbd5e1" anchorX="center" anchorY="middle" maxWidth={node.size[0] + 0.4}>
+          {node.ctaLabel.toUpperCase()}
+        </Text>
+      )}
     </group>
   );
 }
@@ -1585,6 +1673,8 @@ function DistrictBooth({ placement }: { placement: ExpoBoothPlacement }) {
       <group position={metrics.mediaWallPosition}>
         <SponsorPosterPanel
           accentColor={placement.color}
+          fallbackHeadline={presentation.fallbackIdentity.headline}
+          fallbackSupportLine={presentation.fallbackIdentity.supportLine}
           isPlaying={isPosterPlaying}
           onTogglePlay={() => {
             setIsPosterPlaying((value) => !value);
@@ -1607,7 +1697,7 @@ function DistrictBooth({ placement }: { placement: ExpoBoothPlacement }) {
           <boxGeometry args={[4.4, 4.4, 0.6]} />
           <meshStandardMaterial color="#020617" />
         </mesh>
-        <SponsorLogoPanel accentColor={placement.color} fallbackText={presentation.displayName.slice(0, 1).toUpperCase()} url={presentation.logoUrl} />
+        <SponsorLogoPanel accentColor={placement.color} fallbackEyebrow={presentation.fallbackIdentity.eyebrow} fallbackText={presentation.fallbackIdentity.monogram} url={presentation.logoUrl} />
       </group>
       <Text position={metrics.titlePosition} fontSize={nameFontSize} color="#f8fafc" anchorX="center" anchorY="middle" maxWidth={metrics.titleMaxWidth}>{presentation.displayName.toUpperCase()}</Text>
       <Text position={metrics.taglinePosition} fontSize={metrics.titleMaxWidth <= 10 ? 0.44 : 0.52} color="#cbd5e1" anchorX="center" anchorY="middle" maxWidth={Math.max(10, metrics.titleMaxWidth - 1)}>{(presentation.tagline || '').toUpperCase()}</Text>

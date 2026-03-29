@@ -10,6 +10,7 @@ export type SponsorBoothTemplate =
 export type SponsorCtaKind = 'website' | 'booking' | 'demo_room';
 
 export type SponsorCta = {
+  disabled?: boolean;
   kind: SponsorCtaKind;
   label: string;
   url?: string | null;
@@ -27,6 +28,13 @@ export type SponsorBoothPresentation = {
   customInsertUrl: string | null;
   demoRoomPath: string;
   displayName: string;
+  fallbackIdentity: {
+    eyebrow: string;
+    headline: string;
+    monogram: string;
+    supportLine: string;
+  };
+  hasBrandAssets: boolean;
   logoUrl: string | null;
   posterUrl: string | null;
   sponsorTier: SponsorTier;
@@ -76,6 +84,42 @@ export function getSponsorNameFontSize(name: string) {
   return 1.35;
 }
 
+function buildMonogram(name: string) {
+  const parts = name
+    .split(/[\s&/+-]+/)
+    .map((part) => part.trim())
+    .filter(Boolean);
+
+  if (parts.length === 0) {
+    return 'SP';
+  }
+
+  if (parts.length === 1) {
+    return parts[0].slice(0, 2).toUpperCase();
+  }
+
+  return `${parts[0][0] || ''}${parts[1][0] || ''}`.toUpperCase();
+}
+
+function buildFallbackIdentity(
+  company: ExpoSceneCompany,
+  booth: ExpoSceneBooth | null,
+  displayName: string
+) {
+  const companyRecord = company as unknown as Record<string, unknown>;
+  const boothRecord = booth as unknown as Record<string, unknown> | null;
+  const sectorLine = truncateSponsorText(String(companyRecord.sectorName || boothRecord?.sectorName || 'Expo District'), 28) || 'Expo District';
+  const tierLine = String(company.sponsorTier || 'standard').toUpperCase();
+  const sourceTagline = truncateSponsorText(company.tagline || String(boothRecord?.tagline || '') || 'Live demos, guided conversations, and a premium product walkthrough.', 72);
+
+  return {
+    eyebrow: `${tierLine} • ${sectorLine}`.toUpperCase(),
+    headline: truncateSponsorText(displayName, 24).toUpperCase(),
+    monogram: buildMonogram(displayName),
+    supportLine: sourceTagline || 'LIVE DEMOS • TEAM MEETUPS • PRODUCT STORIES',
+  };
+}
+
 export function pickSponsorBoothTemplate({
   boothType,
   districtThemeId,
@@ -104,13 +148,13 @@ export function buildSponsorCtas(company: ExpoSceneCompany): SponsorCta[] {
   const website = normalizeUrl(company.website);
   const booking = normalizeUrl(company.bookingUrl);
 
-  if (website) {
-    actions.push({ kind: 'website', label: 'Website', url: website });
-  }
+  actions.push(website
+    ? { kind: 'website', label: 'Website', url: website }
+    : { kind: 'website', label: 'Brand Story', disabled: true, url: null });
 
-  if (booking) {
-    actions.push({ kind: 'booking', label: company.ctaLabel || 'Book Meeting', url: booking });
-  }
+  actions.push(booking
+    ? { kind: 'booking', label: company.ctaLabel || 'Book Meeting', url: booking }
+    : { kind: 'booking', label: 'Talk To Team', disabled: true, url: null });
 
   actions.push({ kind: 'demo_room', label: 'Demo Room' });
   return actions;
@@ -120,6 +164,10 @@ export function resolveSponsorCtaIntent(
   action: SponsorCta,
   presentation: Pick<SponsorBoothPresentation, 'demoRoomPath'>
 ): SponsorCtaIntent {
+  if (action.disabled) {
+    return null;
+  }
+
   if (action.kind === 'demo_room') {
     return { type: 'navigate', target: presentation.demoRoomPath };
   }
@@ -150,25 +198,33 @@ export function buildSponsorBoothPresentation(
 ): SponsorBoothPresentation {
   const displayName = truncateSponsorText(company.name, 26);
   const slugOrId = company.slug || company.id;
+  const logoUrl = normalizeReleaseUrl(company.logo_url);
+  const posterUrl = normalizeReleaseUrl(company.posterUrl) || normalizeReleaseUrl(booth?.posterUrl);
+  const videoUrl = normalizeReleaseUrl(booth?.video_url);
+  const customInsertUrl = pickCustomInsertUrl(company, booth);
+  const fallbackIdentity = buildFallbackIdentity(company, booth, displayName);
+  const hasBrandAssets = Boolean(logoUrl || posterUrl || videoUrl || customInsertUrl);
 
   return {
     actions: buildSponsorCtas(company),
     badgeLabel: company.sponsorTier.toUpperCase(),
     bookingUrl: normalizeUrl(company.bookingUrl),
-    customInsertUrl: pickCustomInsertUrl(company, booth),
+    customInsertUrl,
     demoRoomPath: `/expo/booth/${slugOrId}`,
     displayName,
-    logoUrl: normalizeReleaseUrl(company.logo_url),
-    posterUrl: normalizeReleaseUrl(company.posterUrl) || normalizeReleaseUrl(booth?.posterUrl),
+    fallbackIdentity,
+    hasBrandAssets,
+    logoUrl,
+    posterUrl,
     sponsorTier: company.sponsorTier,
-    tagline: truncateSponsorText(company.tagline || 'Meet the team. Explore the offer. Book a live demo.', 64),
+    tagline: truncateSponsorText(company.tagline || fallbackIdentity.supportLine || 'Meet the team. Explore the offer. Book a live demo.', 64),
     template: pickSponsorBoothTemplate({
       boothType: company.boothType || booth?.boothType || null,
       districtThemeId: context?.districtThemeId || null,
       nodeType,
       sponsorTier: company.sponsorTier,
     }),
-    videoUrl: normalizeReleaseUrl(booth?.video_url),
+    videoUrl,
     website: normalizeUrl(company.website),
   };
 }
