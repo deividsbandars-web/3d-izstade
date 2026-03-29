@@ -28,6 +28,11 @@ assert.equal(rankedCompanies[4].sectorId, UNASSIGNED_SECTOR_ID);
 const boulevardPlan = buildSponsorBoulevardPlan(sponsorData.companies, sponsorData.sectors);
 assert.equal(boulevardPlan.arrivalNode.nodeType, 'arrival');
 assert.equal(boulevardPlan.sectorGateways.length, 6);
+assert.ok(boulevardPlan.nodes.some((node) => node.nodeType === 'anchor_plaza'));
+assert.ok(boulevardPlan.nodes.some((node) => node.nodeType === 'connector_corridor'));
+assert.ok(boulevardPlan.nodes.some((node) => node.nodeType === 'side_lane_node'));
+assert.ok(boulevardPlan.nodes.some((node) => node.nodeType === 'hero_forecourt'));
+assert.ok(boulevardPlan.nodes.some((node) => node.nodeType === 'programmed_filler'));
 assert.equal(boulevardPlan.nodes.find((node) => node.companyId === 'company-2')?.nodeType, 'hero_left');
 assert.equal(boulevardPlan.nodes.find((node) => node.companyId === 'company-3')?.nodeType, 'endcap');
 assert.equal(boulevardPlan.nodes.find((node) => node.companyId === 'company-1')?.nodeType, 'endcap');
@@ -61,9 +66,13 @@ assert.deepEqual(
     .map((node) => node.sectorLabel),
   ['Fintech', 'Fintech']
 );
+assert.ok(emptySectorPlan.nodes.some((node) => node.sectorId === 'sector-3' && node.nodeType === 'anchor_plaza'));
+assert.ok(emptySectorPlan.nodes.some((node) => node.sectorId === 'sector-3' && node.nodeType === 'connector_corridor'));
+assert.ok(emptySectorPlan.nodes.some((node) => node.sectorId === 'sector-3' && node.nodeType === 'side_lane_node'));
+assert.ok(emptySectorPlan.nodes.some((node) => node.sectorId === 'sector-3' && node.nodeType === 'programmed_filler'));
 const sector2GatewayZ = emptySectorPlan.sectorGateways.find((node) => node.sectorId === 'sector-2' && node.position[0] < 0)?.position[2] ?? 0;
 const sector3GatewayZ = emptySectorPlan.sectorGateways.find((node) => node.sectorId === 'sector-3' && node.position[0] < 0)?.position[2] ?? 0;
-assert.ok(Math.abs(sector3GatewayZ - sector2GatewayZ) < 100);
+assert.ok(Math.abs(sector3GatewayZ - sector2GatewayZ) < 120);
 
 const multiPlacements = buildBoothPlacements(sponsorData);
 const zoneSystem = new ZoneSystem();

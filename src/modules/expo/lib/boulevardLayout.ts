@@ -2,6 +2,11 @@ import type { BoothType, ExpoSceneSector, SponsorTier } from '../types/scene';
 
 export type ExpoPlacementNodeType =
   | 'arrival'
+  | 'anchor_plaza'
+  | 'connector_corridor'
+  | 'side_lane_node'
+  | 'hero_forecourt'
+  | 'programmed_filler'
   | 'hero_left'
   | 'hero_right'
   | 'standard_left'
@@ -63,18 +68,27 @@ export type SponsorBoulevardPlan = {
 
 export const EXPO_BOULEVARD_LAYOUT = {
   arrivalZ: 8,
+  anchorPlazaDepth: 22,
   clusterGapDepth: 28,
+  connectorX: 18,
+  connectorZOffset: 26,
   endcapX: 66,
   emptySectorDepth: 38,
   gatewayX: 92,
   gatewayZOffset: 10,
   heroX: 46,
   heroZOffset: 26,
+  heroForecourtDepth: 10,
+  programmedFillerX: 54,
+  programmedFillerZOffset: 30,
+  sectorPlazaWidthX: 72,
   laneMarginX: 36,
   playBoundsPaddingX: 30,
   playBoundsPaddingZ: 34,
   sectorClusterDepth: 138,
   sectorGatewayOnlyDepth: 22,
+  sideLaneX: 84,
+  sideLaneZOffset: 18,
   standardX: 32,
   standardZStartOffset: 58,
   standardZStep: 30,
@@ -204,7 +218,7 @@ function createGatewayNode(sectorId: string | null, sectorLabel: string, color: 
 
 function createCompanyNode(
   company: RankedBoulevardCompany,
-  nodeType: Exclude<ExpoPlacementNodeType, 'arrival' | 'sector_gateway'>,
+  nodeType: Exclude<ExpoPlacementNodeType, 'arrival' | 'sector_gateway' | 'anchor_plaza' | 'connector_corridor' | 'side_lane_node' | 'hero_forecourt' | 'programmed_filler'>,
   color: string,
   x: number,
   z: number,
@@ -222,6 +236,38 @@ function createCompanyNode(
     sectorId: company.sectorId,
     sectorLabel: company.sectorLabel,
     sponsorTier: company.sponsorTier,
+  };
+}
+
+function createProgrammedNode({
+  clusterIndex,
+  color,
+  id,
+  nodeType,
+  position,
+  rotationY,
+  sectorId,
+  sectorLabel,
+}: {
+  clusterIndex: number;
+  color: string;
+  id: string;
+  nodeType: Extract<ExpoPlacementNodeType, 'anchor_plaza' | 'connector_corridor' | 'side_lane_node' | 'hero_forecourt' | 'programmed_filler'>;
+  position: [number, number, number];
+  rotationY?: number;
+  sectorId: string | null;
+  sectorLabel: string;
+}): SponsorBoulevardNode {
+  return {
+    clusterIndex,
+    color,
+    id,
+    nodeType,
+    position,
+    priority: 0,
+    rotation: [0, rotationY ?? 0, 0],
+    sectorId,
+    sectorLabel,
   };
 }
 
@@ -245,12 +291,12 @@ function getSectorClusterDepth({
   );
 
   if (furthestContentOffset === 0) {
-    return EXPO_BOULEVARD_LAYOUT.emptySectorDepth;
+    return EXPO_BOULEVARD_LAYOUT.emptySectorDepth + EXPO_BOULEVARD_LAYOUT.anchorPlazaDepth;
   }
 
   return Math.max(
-    EXPO_BOULEVARD_LAYOUT.sectorGatewayOnlyDepth + EXPO_BOULEVARD_LAYOUT.clusterGapDepth,
-    furthestContentOffset + EXPO_BOULEVARD_LAYOUT.clusterGapDepth,
+    EXPO_BOULEVARD_LAYOUT.sectorGatewayOnlyDepth + EXPO_BOULEVARD_LAYOUT.clusterGapDepth + EXPO_BOULEVARD_LAYOUT.anchorPlazaDepth,
+    furthestContentOffset + EXPO_BOULEVARD_LAYOUT.clusterGapDepth + 18,
   );
 }
 
@@ -323,6 +369,58 @@ export function buildSponsorBoulevardPlan(
     nodes.push(leftGateway, rightGateway);
     sectorGateways.push(leftGateway, rightGateway);
 
+    nodes.push(
+      createProgrammedNode({
+        clusterIndex: sectorIndex,
+        color,
+        id: `anchor-plaza-${sectorKey}`,
+        nodeType: 'anchor_plaza',
+        position: [0, 0, clusterBaseZ - EXPO_BOULEVARD_LAYOUT.anchorPlazaDepth],
+        sectorId: sectorKey === UNASSIGNED_SECTOR_ID ? null : sectorKey,
+        sectorLabel,
+      }),
+      createProgrammedNode({
+        clusterIndex: sectorIndex,
+        color,
+        id: `connector-left-${sectorKey}`,
+        nodeType: 'connector_corridor',
+        position: [-EXPO_BOULEVARD_LAYOUT.connectorX, 0, clusterBaseZ - EXPO_BOULEVARD_LAYOUT.connectorZOffset],
+        rotationY: Math.PI / 2,
+        sectorId: sectorKey === UNASSIGNED_SECTOR_ID ? null : sectorKey,
+        sectorLabel,
+      }),
+      createProgrammedNode({
+        clusterIndex: sectorIndex,
+        color,
+        id: `connector-right-${sectorKey}`,
+        nodeType: 'connector_corridor',
+        position: [EXPO_BOULEVARD_LAYOUT.connectorX, 0, clusterBaseZ - EXPO_BOULEVARD_LAYOUT.connectorZOffset],
+        rotationY: -Math.PI / 2,
+        sectorId: sectorKey === UNASSIGNED_SECTOR_ID ? null : sectorKey,
+        sectorLabel,
+      }),
+      createProgrammedNode({
+        clusterIndex: sectorIndex,
+        color,
+        id: `side-lane-left-${sectorKey}`,
+        nodeType: 'side_lane_node',
+        position: [-EXPO_BOULEVARD_LAYOUT.sideLaneX, 0, clusterBaseZ - EXPO_BOULEVARD_LAYOUT.sideLaneZOffset],
+        rotationY: Math.PI / 2,
+        sectorId: sectorKey === UNASSIGNED_SECTOR_ID ? null : sectorKey,
+        sectorLabel,
+      }),
+      createProgrammedNode({
+        clusterIndex: sectorIndex,
+        color,
+        id: `side-lane-right-${sectorKey}`,
+        nodeType: 'side_lane_node',
+        position: [EXPO_BOULEVARD_LAYOUT.sideLaneX, 0, clusterBaseZ - EXPO_BOULEVARD_LAYOUT.sideLaneZOffset],
+        rotationY: -Math.PI / 2,
+        sectorId: sectorKey === UNASSIGNED_SECTOR_ID ? null : sectorKey,
+        sectorLabel,
+      }),
+    );
+
     const heroCompanies = group.filter((company) => company.sponsorTier === 'hero' || company.boothType === 'hero');
     const heroPrimary = heroCompanies.slice(0, 2);
     const heroOverflow = heroCompanies.slice(2);
@@ -335,6 +433,16 @@ export function buildSponsorBoulevardPlan(
     const heroLeft = heroPrimary[0];
     const heroRight = heroPrimary[1];
     if (heroLeft) {
+      nodes.push(createProgrammedNode({
+        clusterIndex: sectorIndex,
+        color,
+        id: `hero-forecourt-left-${heroLeft.id}`,
+        nodeType: 'hero_forecourt',
+        position: [-EXPO_BOULEVARD_LAYOUT.heroX, 0, clusterBaseZ - EXPO_BOULEVARD_LAYOUT.heroZOffset + EXPO_BOULEVARD_LAYOUT.heroForecourtDepth],
+        rotationY: Math.PI / 2,
+        sectorId: heroLeft.sectorId,
+        sectorLabel: heroLeft.sectorLabel,
+      }));
       nodes.push(createCompanyNode(
         heroLeft,
         'hero_left',
@@ -346,6 +454,16 @@ export function buildSponsorBoulevardPlan(
       nodes[nodes.length - 1].clusterIndex = sectorIndex;
     }
     if (heroRight) {
+      nodes.push(createProgrammedNode({
+        clusterIndex: sectorIndex,
+        color,
+        id: `hero-forecourt-right-${heroRight.id}`,
+        nodeType: 'hero_forecourt',
+        position: [EXPO_BOULEVARD_LAYOUT.heroX, 0, clusterBaseZ - EXPO_BOULEVARD_LAYOUT.heroZOffset + EXPO_BOULEVARD_LAYOUT.heroForecourtDepth],
+        rotationY: -Math.PI / 2,
+        sectorId: heroRight.sectorId,
+        sectorLabel: heroRight.sectorLabel,
+      }));
       nodes.push(createCompanyNode(
         heroRight,
         'hero_right',
@@ -384,6 +502,43 @@ export function buildSponsorBoulevardPlan(
       ));
       nodes[nodes.length - 1].clusterIndex = sectorIndex;
     });
+
+    if (group.length === 0) {
+      nodes.push(
+        createProgrammedNode({
+          clusterIndex: sectorIndex,
+          color,
+          id: `programmed-empty-a-${sectorKey}`,
+          nodeType: 'programmed_filler',
+          position: [-EXPO_BOULEVARD_LAYOUT.programmedFillerX, 0, clusterBaseZ - EXPO_BOULEVARD_LAYOUT.programmedFillerZOffset],
+          rotationY: Math.PI / 2,
+          sectorId: sectorKey === UNASSIGNED_SECTOR_ID ? null : sectorKey,
+          sectorLabel,
+        }),
+        createProgrammedNode({
+          clusterIndex: sectorIndex,
+          color,
+          id: `programmed-empty-b-${sectorKey}`,
+          nodeType: 'programmed_filler',
+          position: [EXPO_BOULEVARD_LAYOUT.programmedFillerX, 0, clusterBaseZ - EXPO_BOULEVARD_LAYOUT.programmedFillerZOffset],
+          rotationY: -Math.PI / 2,
+          sectorId: sectorKey === UNASSIGNED_SECTOR_ID ? null : sectorKey,
+          sectorLabel,
+        }),
+      );
+    } else if (group.length <= 2) {
+      nodes.push(
+        createProgrammedNode({
+          clusterIndex: sectorIndex,
+          color,
+          id: `programmed-sparse-${sectorKey}`,
+          nodeType: 'programmed_filler',
+          position: [0, 0, clusterBaseZ - EXPO_BOULEVARD_LAYOUT.programmedFillerZOffset - 8],
+          sectorId: sectorKey === UNASSIGNED_SECTOR_ID ? null : sectorKey,
+          sectorLabel,
+        }),
+      );
+    }
 
     clusterBaseZ -= getSectorClusterDepth({
       heroCount: heroPrimary.length,
