@@ -61,6 +61,9 @@ assert.deepEqual(
     .map((node) => node.sectorLabel),
   ['Fintech', 'Fintech']
 );
+const sector2GatewayZ = emptySectorPlan.sectorGateways.find((node) => node.sectorId === 'sector-2' && node.position[0] < 0)?.position[2] ?? 0;
+const sector3GatewayZ = emptySectorPlan.sectorGateways.find((node) => node.sectorId === 'sector-3' && node.position[0] < 0)?.position[2] ?? 0;
+assert.ok(Math.abs(sector3GatewayZ - sector2GatewayZ) < 100);
 
 const multiPlacements = buildBoothPlacements(sponsorData);
 const zoneSystem = new ZoneSystem();
@@ -146,12 +149,16 @@ assert.equal(curatedPlan.visibleCore.failedCoreCells.length, 0);
 
 const playBounds = buildExpoPlayBounds(multiPlacements);
 assert.deepEqual(playBounds, buildExpoPlayBounds(buildBoothPlacements(sponsorData)));
-assert.ok(playBounds.minX < -140);
-assert.ok(playBounds.maxX > 140);
-assert.ok(playBounds.minZ < -260);
+assert.ok(playBounds.minX <= -170);
+assert.ok(playBounds.maxX >= 170);
+assert.ok(playBounds.minZ <= -300);
 assert.ok(playBounds.maxZ >= boulevardPlan.arrivalNode.position[2] + 20);
 assert.ok(boulevardPlan.arrivalNode.position[0] >= playBounds.minX && boulevardPlan.arrivalNode.position[0] <= playBounds.maxX);
 assert.ok(boulevardPlan.arrivalNode.position[2] >= playBounds.minZ && boulevardPlan.arrivalNode.position[2] <= playBounds.maxZ);
+
+const compactSparseBounds = buildExpoPlayBounds(singlePlacement);
+assert.ok(compactSparseBounds.maxX - compactSparseBounds.minX < 360);
+assert.ok(compactSparseBounds.maxZ - compactSparseBounds.minZ < 320);
 
 const startView = buildExpoSponsorStartView(boulevardPlan);
 assert.equal(startView.source, 'arrival-main');
@@ -163,17 +170,29 @@ assert.ok(startView.lookAt[2] < boulevardPlan.arrivalNode.position[2]);
 const walkRegions = buildExpoWalkRegions(multiPlacements);
 assert.ok(walkRegions.some((region) => region.type === 'arrival'));
 assert.ok(walkRegions.some((region) => region.type === 'spine'));
-assert.ok(walkRegions.some((region) => region.type === 'promenade'));
+assert.ok(walkRegions.some((region) => region.type === 'sector-pocket'));
 assert.ok(walkRegions.some((region) => region.type === 'booth-pocket'));
 assert.ok(isPointWithinExpoWalkRegions({ x: 0, z: boulevardPlan.arrivalNode.position[2] + 8 }, walkRegions));
 assert.ok(isPointWithinExpoWalkRegions({ x: 0, z: -120 }, walkRegions));
-assert.ok(isPointWithinExpoWalkRegions({ x: -132, z: -120 }, walkRegions));
-assert.ok(isPointWithinExpoWalkRegions({ x: 132, z: -120 }, walkRegions));
 assert.ok(isPointWithinExpoWalkRegions({ x: -24, z: multiPlacements[0].position[2] - 4 }, walkRegions));
 assert.ok(isPointWithinExpoWalkRegions({ x: -52, z: multiPlacements[0].position[2] - 4 }, walkRegions));
-assert.ok(isPointWithinExpoWalkRegions({ x: 52, z: multiPlacements[1].position[2] - 2 }, walkRegions));
-assert.equal(isPointWithinExpoWalkRegions({ x: -220, z: multiPlacements[0].position[2] - 4 }, walkRegions), false);
-assert.equal(isPointWithinExpoWalkRegions({ x: 220, z: multiPlacements[1].position[2] - 2 }, walkRegions), false);
+assert.ok(isPointWithinExpoWalkRegions({ x: -52, z: multiPlacements[2].position[2] - 6 }, walkRegions));
+assert.equal(isPointWithinExpoWalkRegions({ x: -132, z: -120 }, walkRegions), false);
+assert.equal(isPointWithinExpoWalkRegions({ x: 132, z: -120 }, walkRegions), false);
+assert.equal(isPointWithinExpoWalkRegions({ x: 52, z: multiPlacements[1].position[2] - 2 }, walkRegions), false);
+
+const rightSidePlacements = buildBoothPlacements({
+  companies: [
+    { boothType: 'hero', id: 'hero-left', name: 'Hero Left', priority: 100, sector_id: 'sector-1', sponsorTier: 'hero', booth: { id: 'hero-left' } },
+    { boothType: 'hero', id: 'hero-right', name: 'Hero Right', priority: 95, sector_id: 'sector-1', sponsorTier: 'hero', booth: { id: 'hero-right' } },
+    { boothType: 'standard', id: 'sector2-left', name: 'Sector 2 Left', priority: 90, sector_id: 'sector-2', sponsorTier: 'silver', booth: { id: 'sector2-left' } },
+    { boothType: 'standard', id: 'sector2-right', name: 'Sector 2 Right', priority: 80, sector_id: 'sector-2', sponsorTier: 'silver', booth: { id: 'sector2-right' } },
+  ],
+  sectors: sponsorData.sectors,
+});
+const rightSideWalkRegions = buildExpoWalkRegions(rightSidePlacements);
+assert.ok(isPointWithinExpoWalkRegions({ x: 32, z: -136 }, rightSideWalkRegions));
+assert.equal(isPointWithinExpoWalkRegions({ x: -52, z: -136 }, rightSideWalkRegions), false);
 
 const sectorMarkers = buildExpoSectorMarkers(sponsorData);
 assert.equal(sectorMarkers.length, 6);

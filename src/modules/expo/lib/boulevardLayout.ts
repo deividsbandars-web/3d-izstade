@@ -63,7 +63,9 @@ export type SponsorBoulevardPlan = {
 
 export const EXPO_BOULEVARD_LAYOUT = {
   arrivalZ: 8,
+  clusterGapDepth: 28,
   endcapX: 66,
+  emptySectorDepth: 38,
   gatewayX: 92,
   gatewayZOffset: 10,
   heroX: 46,
@@ -72,6 +74,7 @@ export const EXPO_BOULEVARD_LAYOUT = {
   playBoundsPaddingX: 30,
   playBoundsPaddingZ: 34,
   sectorClusterDepth: 138,
+  sectorGatewayOnlyDepth: 22,
   standardX: 32,
   standardZStartOffset: 58,
   standardZStep: 30,
@@ -222,6 +225,35 @@ function createCompanyNode(
   };
 }
 
+function getSectorClusterDepth({
+  heroCount,
+  premiumCount,
+  standardCount,
+}: {
+  heroCount: number;
+  premiumCount: number;
+  standardCount: number;
+}) {
+  const premiumRows = Math.ceil(premiumCount / 2);
+  const standardRows = Math.ceil(standardCount / 2);
+  const furthestContentOffset = Math.max(
+    heroCount > 0 ? EXPO_BOULEVARD_LAYOUT.heroZOffset : 0,
+    premiumRows > 0 ? 44 + Math.max(0, premiumRows - 1) * EXPO_BOULEVARD_LAYOUT.standardZStep : 0,
+    standardRows > 0
+      ? EXPO_BOULEVARD_LAYOUT.standardZStartOffset + Math.max(0, standardRows - 1) * EXPO_BOULEVARD_LAYOUT.standardZStep
+      : 0,
+  );
+
+  if (furthestContentOffset === 0) {
+    return EXPO_BOULEVARD_LAYOUT.emptySectorDepth;
+  }
+
+  return Math.max(
+    EXPO_BOULEVARD_LAYOUT.sectorGatewayOnlyDepth + EXPO_BOULEVARD_LAYOUT.clusterGapDepth,
+    furthestContentOffset + EXPO_BOULEVARD_LAYOUT.clusterGapDepth,
+  );
+}
+
 export function buildSponsorBoulevardPlan(
   companies: BoulevardCompany[],
   sectors: BoulevardSector[]
@@ -263,13 +295,14 @@ export function buildSponsorBoulevardPlan(
 
   nodes.push(arrivalNode);
 
+  let clusterBaseZ = -18;
+
   orderedSectorKeys.forEach((sectorKey, sectorIndex) => {
     const group = sectorGroups.get(sectorKey) ?? [];
     const sectorLabel = sectorKey === UNASSIGNED_SECTOR_ID
       ? UNASSIGNED_SECTOR_LABEL
       : (sectorLabelById.get(sectorKey) ?? group[0]?.sectorLabel ?? UNASSIGNED_SECTOR_LABEL);
     const color = sectorColorById.get(sectorKey) || '#3b82f6';
-    const clusterBaseZ = -18 - sectorIndex * EXPO_BOULEVARD_LAYOUT.sectorClusterDepth;
 
     const leftGateway = createGatewayNode(
       sectorKey === UNASSIGNED_SECTOR_ID ? null : sectorKey,
@@ -350,6 +383,12 @@ export function buildSponsorBoulevardPlan(
         isLeft ? Math.PI / 2 : -Math.PI / 2
       ));
       nodes[nodes.length - 1].clusterIndex = sectorIndex;
+    });
+
+    clusterBaseZ -= getSectorClusterDepth({
+      heroCount: heroPrimary.length,
+      premiumCount: premiumCompanies.length,
+      standardCount: standardCompanies.length,
     });
   });
 
