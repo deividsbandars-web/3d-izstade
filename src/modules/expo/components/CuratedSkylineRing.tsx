@@ -14,15 +14,15 @@ type SkylinePlacement = {
 };
 
 const BASE_PLACEMENTS: SkylinePlacement[] = [
-  { asset: 'commercial_wide_a', position: [-318, 0, -332], rotationY: 0.08, scale: 3.2 },
-  { asset: 'commercial_mid_f', position: [0, 0, -428], rotationY: 0, scale: 3.4 },
-  { asset: 'commercial_wide_b', position: [328, 0, -346], rotationY: -0.08, scale: 3.2 },
+  { asset: 'commercial_wide_a', position: [-346, -2, -374], rotationY: 0.06, scale: 2.9 },
+  { asset: 'commercial_mid_f', position: [0, -4, -462], rotationY: 0, scale: 3.05 },
+  { asset: 'commercial_wide_b', position: [354, -2, -386], rotationY: -0.06, scale: 2.95 },
 ];
 
 const QUALITY_PLACEMENTS: SkylinePlacement[] = [
-  { asset: 'suburban_f', position: [-432, 0, -472], rotationY: 0.12, scale: 2.2 },
-  { asset: 'commercial_tower_b', position: [136, 0, -452], rotationY: -0.18, scale: 2.5 },
-  { asset: 'suburban_n', position: [438, 0, -486], rotationY: -0.1, scale: 2.2 },
+  { asset: 'suburban_f', position: [-454, -1, -522], rotationY: 0.08, scale: 2.05 },
+  { asset: 'commercial_tower_b', position: [188, -8, -528], rotationY: -0.16, scale: 2.15 },
+  { asset: 'suburban_n', position: [468, -1, -536], rotationY: -0.08, scale: 2.08 },
 ];
 
 export function CuratedSkylineRing({
@@ -81,6 +81,22 @@ export function CuratedSkylineRing({
           const mesh = child as THREE.Mesh;
           mesh.castShadow = false;
           mesh.receiveShadow = false;
+          const material = mesh.material;
+          const materials = Array.isArray(material) ? material : material ? [material] : [];
+          materials.forEach((entry) => {
+            const next = entry as THREE.MeshStandardMaterial;
+            if ('transparent' in next) {
+              next.transparent = true;
+              next.opacity = density === 'standard' ? 0.86 : 0.74;
+              next.depthWrite = false;
+            }
+            if ('roughness' in next) {
+              next.roughness = Math.max(0.88, Number(next.roughness || 0));
+            }
+            if ('metalness' in next) {
+              next.metalness = Math.min(0.08, Number(next.metalness || 0));
+            }
+          });
         }
       });
       clone.updateMatrixWorld(true);

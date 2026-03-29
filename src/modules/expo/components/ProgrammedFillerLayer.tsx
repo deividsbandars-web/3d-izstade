@@ -3,6 +3,7 @@ import { useMemo } from 'react';
 import * as THREE from 'three';
 import { normalizeModel } from '../../../utils/threeUtils';
 import { buildDistrictLandmarkPlan } from '../lib/districtLandmarkPlan';
+import type { ExpoQualityPreset } from '../state/expoRuntime';
 import type { ExpoBoothPlacement, ExpoSectorMarker } from '../sceneWorld';
 
 const PROGRAMMED_FILLER_ASSET_URLS = {
@@ -23,6 +24,7 @@ type ProgrammedFillerAssetKey = keyof typeof PROGRAMMED_FILLER_ASSET_URLS;
 
 type ProgrammedZoneAssetPlacement = {
   asset: ProgrammedFillerAssetKey;
+  quality: 'all' | 'quality-only';
   position: [number, number, number];
   rotationY?: number;
   scale?: number;
@@ -43,59 +45,76 @@ function cloneProgrammedAsset(source: THREE.Object3D, scale = 1) {
   return clone;
 }
 
-function buildZoneAssetPlacements(kind: ReturnType<typeof buildDistrictLandmarkPlan>['programmedZones'][number]['kind']): ProgrammedZoneAssetPlacement[] {
+function buildZoneAssetPlacements(
+  kind: ReturnType<typeof buildDistrictLandmarkPlan>['programmedZones'][number]['kind'],
+  qualityPreset: ExpoQualityPreset
+): ProgrammedZoneAssetPlacement[] {
+  const placements: ProgrammedZoneAssetPlacement[] = (() => {
   switch (kind) {
     case 'arrival_plaza':
       return [
-        { asset: 'sign_highway_wide', position: [0, 0.8, 1.2], scale: 0.92 },
-        { asset: 'light_curved_double', position: [-8.6, 0, -1.2], rotationY: Math.PI * 0.5, scale: 1.1 },
-        { asset: 'light_curved_double', position: [8.6, 0, -1.2], rotationY: -Math.PI * 0.5, scale: 1.1 },
+        { asset: 'sign_highway_wide', position: [0, 0.8, 1.2], quality: 'all', scale: 0.92 },
+        { asset: 'light_curved_double', position: [-8.6, 0, -1.2], quality: 'all', rotationY: Math.PI * 0.5, scale: 1.1 },
+        { asset: 'light_curved_double', position: [8.6, 0, -1.2], quality: 'all', rotationY: -Math.PI * 0.5, scale: 1.1 },
+        { asset: 'construction_light', position: [-4.2, 0, 2.2], quality: 'quality-only', scale: 0.78 },
+        { asset: 'construction_light', position: [4.2, 0, 2.2], quality: 'quality-only', scale: 0.78 },
       ];
     case 'networking_lounge_island':
       return [
-        { asset: 'lounge_sofa', position: [-3.1, 0, -0.7], rotationY: Math.PI * 0.5, scale: 0.92 },
-        { asset: 'lounge_design_sofa', position: [3.1, 0, -0.7], rotationY: -Math.PI * 0.5, scale: 0.92 },
-        { asset: 'table_coffee', position: [0, 0, 0.8], scale: 0.9 },
+        { asset: 'lounge_sofa', position: [-3.1, 0, -0.95], quality: 'all', rotationY: Math.PI * 0.5, scale: 0.92 },
+        { asset: 'lounge_design_sofa', position: [3.1, 0, -0.95], quality: 'all', rotationY: -Math.PI * 0.5, scale: 0.92 },
+        { asset: 'table_coffee', position: [0, 0, 0.35], quality: 'all', scale: 0.9 },
+        { asset: 'lounge_chair', position: [0, 0, 2.2], quality: 'quality-only', rotationY: Math.PI, scale: 0.84 },
       ];
     case 'meeting_pod':
       return [
-        { asset: 'lounge_chair', position: [-2.2, 0, -0.3], rotationY: Math.PI * 0.18, scale: 0.92 },
-        { asset: 'lounge_chair', position: [2.2, 0, -0.3], rotationY: -Math.PI * 0.18, scale: 0.92 },
-        { asset: 'table_round', position: [0, 0, -0.2], scale: 0.95 },
+        { asset: 'lounge_chair', position: [-2.2, 0, -0.45], quality: 'all', rotationY: Math.PI * 0.18, scale: 0.92 },
+        { asset: 'lounge_chair', position: [2.2, 0, -0.45], quality: 'all', rotationY: -Math.PI * 0.18, scale: 0.92 },
+        { asset: 'table_round', position: [0, 0, -0.4], quality: 'all', scale: 0.95 },
+        { asset: 'construction_light', position: [0, 0, 2.1], quality: 'quality-only', scale: 0.68 },
       ];
     case 'demo_court':
       return [
-        { asset: 'television_modern', position: [0, 0, -1.1], scale: 1.08 },
-        { asset: 'speaker', position: [-3.4, 0, -1.0], scale: 0.92 },
-        { asset: 'speaker', position: [3.4, 0, -1.0], scale: 0.92 },
+        { asset: 'television_modern', position: [0, 0, -1.45], quality: 'all', scale: 1.04 },
+        { asset: 'speaker', position: [-3.4, 0, -1.3], quality: 'all', scale: 0.86 },
+        { asset: 'speaker', position: [3.4, 0, -1.3], quality: 'all', scale: 0.86 },
+        { asset: 'sign_highway_detailed', position: [0, 0, 2.35], quality: 'quality-only', scale: 0.74 },
       ];
     case 'info_pylon':
       return [
-        { asset: 'sign_highway_detailed', position: [0, 0, 0], scale: 0.86 },
-        { asset: 'construction_light', position: [2.6, 0, -0.4], scale: 0.9 },
+        { asset: 'sign_highway_detailed', position: [0, 0, 0], quality: 'all', scale: 0.82 },
+        { asset: 'construction_light', position: [2.3, 0, -0.4], quality: 'quality-only', scale: 0.82 },
       ];
     case 'gallery_wall':
       return [
-        { asset: 'sign_highway_wide', position: [0, 0.42, -0.7], scale: 1.06 },
+        { asset: 'sign_highway_wide', position: [0, 0.42, -0.9], quality: 'all', scale: 1 },
       ];
     case 'scenic_promenade':
       return [
-        { asset: 'light_curved_double', position: [-6.4, 0, 0], rotationY: Math.PI * 0.5, scale: 1.04 },
-        { asset: 'light_curved_double', position: [6.4, 0, 0], rotationY: -Math.PI * 0.5, scale: 1.04 },
+        { asset: 'light_curved_double', position: [-6.8, 0, 0], quality: 'all', rotationY: Math.PI * 0.5, scale: 0.98 },
+        { asset: 'light_curved_double', position: [6.8, 0, 0], quality: 'all', rotationY: -Math.PI * 0.5, scale: 0.98 },
+        { asset: 'sign_highway_detailed', position: [0, 0, -1.6], quality: 'quality-only', scale: 0.72 },
       ];
     default:
       return [];
   }
+  })();
+
+  return qualityPreset === 'quality'
+    ? placements
+    : placements.filter((placement) => placement.quality === 'all');
 }
 
 function ProgrammedZoneAssetCluster({
   assetMap,
+  qualityPreset,
   zone,
 }: {
   assetMap: Record<ProgrammedFillerAssetKey, THREE.Object3D>;
+  qualityPreset: ExpoQualityPreset;
   zone: ReturnType<typeof buildDistrictLandmarkPlan>['programmedZones'][number];
 }) {
-  const placements = useMemo(() => buildZoneAssetPlacements(zone.kind), [zone.kind]);
+  const placements = useMemo(() => buildZoneAssetPlacements(zone.kind, qualityPreset), [qualityPreset, zone.kind]);
   const instances = useMemo(
     () => placements.map((placement, index) => ({
       id: `${zone.id}-asset-${placement.asset}-${index}`,
@@ -234,9 +253,11 @@ function ProgrammedZoneView({ zone }: { zone: ReturnType<typeof buildDistrictLan
 
 export function ProgrammedFillerLayer({
   boothPlacements,
+  qualityPreset,
   sectorMarkers,
 }: {
   boothPlacements: ExpoBoothPlacement[];
+  qualityPreset: ExpoQualityPreset;
   sectorMarkers: ExpoSectorMarker[];
 }) {
   const { scene: constructionLightSource } = useGLTF(PROGRAMMED_FILLER_ASSET_URLS.construction_light);
@@ -282,7 +303,7 @@ export function ProgrammedFillerLayer({
       {plan.programmedZones.map((zone) => (
         <group key={zone.id}>
           <ProgrammedZoneView zone={zone} />
-          <ProgrammedZoneAssetCluster assetMap={assetMap} zone={zone} />
+          <ProgrammedZoneAssetCluster assetMap={assetMap} qualityPreset={qualityPreset} zone={zone} />
         </group>
       ))}
     </group>
