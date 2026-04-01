@@ -3,8 +3,9 @@ import { useMemo } from 'react';
 import * as THREE from 'three';
 import { normalizeModel } from '../../../utils/threeUtils';
 import { buildDistrictLandmarkPlan } from '../lib/districtLandmarkPlan';
+import type { ExpoBoothPlacement, ExpoSectorMarker } from '../layout-engine';
 import type { ExpoQualityPreset } from '../state/expoRuntime';
-import type { ExpoBoothPlacement, ExpoSectorMarker } from '../sceneWorld';
+import type { ExpoDistrictProgramSummary } from '../world-contract';
 
 const PROGRAMMED_FILLER_ASSET_URLS = {
   construction_light: '/models/expo/props-candidates/construction-light.glb',
@@ -253,10 +254,12 @@ function ProgrammedZoneView({ zone }: { zone: ReturnType<typeof buildDistrictLan
 
 export function ProgrammedFillerLayer({
   boothPlacements,
+  districtPrograms,
   qualityPreset,
   sectorMarkers,
 }: {
   boothPlacements: ExpoBoothPlacement[];
+  districtPrograms: ExpoDistrictProgramSummary[];
   qualityPreset: ExpoQualityPreset;
   sectorMarkers: ExpoSectorMarker[];
 }) {
@@ -271,7 +274,7 @@ export function ProgrammedFillerLayer({
   const { scene: tableCoffeeSource } = useGLTF(PROGRAMMED_FILLER_ASSET_URLS.table_coffee);
   const { scene: tableRoundSource } = useGLTF(PROGRAMMED_FILLER_ASSET_URLS.table_round);
   const { scene: televisionModernSource } = useGLTF(PROGRAMMED_FILLER_ASSET_URLS.television_modern);
-  const plan = useMemo(() => buildDistrictLandmarkPlan(boothPlacements, sectorMarkers), [boothPlacements, sectorMarkers]);
+  const plan = useMemo(() => buildDistrictLandmarkPlan(boothPlacements, sectorMarkers, districtPrograms), [boothPlacements, districtPrograms, sectorMarkers]);
   const assetMap = useMemo(() => ({
     construction_light: constructionLightSource,
     light_curved_double: lightCurvedDoubleSource,

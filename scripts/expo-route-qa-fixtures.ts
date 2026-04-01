@@ -1,11 +1,6 @@
 import { buildSponsorBoulevardPlan } from '../src/modules/expo/lib/boulevardLayout.js';
-import {
-  buildBoothPlacements,
-  buildExpoPlayBounds,
-  buildExpoSponsorStartView,
-  buildExpoWalkRegions,
-  isPointWithinExpoWalkRegions,
-} from '../src/modules/expo/sceneWorld.js';
+import { isPointWithinExpoWalkRegions } from '../src/modules/expo/walk-region.js';
+import { buildExpoWorldContract } from '../src/modules/expo/world-contract.js';
 
 type FixtureScene = {
   companies: Array<Record<string, unknown>>;
@@ -55,10 +50,8 @@ const FIXTURES: Record<string, FixtureScene> = {
 
 function summarizeFixture(name: string, scene: FixtureScene) {
   const plan = buildSponsorBoulevardPlan(scene.companies as never[], scene.sectors as never[]);
-  const boothPlacements = buildBoothPlacements(scene);
-  const playBounds = buildExpoPlayBounds(boothPlacements);
-  const walkRegions = buildExpoWalkRegions(boothPlacements);
-  const startView = buildExpoSponsorStartView(plan);
+  const contract = buildExpoWorldContract(scene);
+  const { boothPlacements, districtPrograms, playBounds, qualityProfileInputs, routeContract, startView, visualProfile, walkRegions } = contract;
   const sectorGatewayZs = plan.sectorGateways
     .filter((node) => node.position[0] < 0)
     .map((node) => ({ sectorId: node.sectorId ?? 'unassigned', z: node.position[2] }));
@@ -75,6 +68,42 @@ function summarizeFixture(name: string, scene: FixtureScene) {
       spanZ: region.maxZ - region.minZ,
       type: region.type,
     })),
+    routeContract: {
+      arrivalZone: routeContract.arrivalZone.id,
+      boothPockets: routeContract.boothPockets.length,
+      centralSpine: routeContract.centralSpine.id,
+      discoveryLanes: routeContract.discoveryLanes.length,
+      scenicEdges: routeContract.scenicEdges.length,
+      secondaryLoops: routeContract.secondaryLoops.length,
+      sectorPockets: routeContract.sectorPockets.length,
+    },
+    districtPrograms: districtPrograms.map((district) => ({
+      authoredMomentCount: district.authoredMomentCount,
+      clusterIndex: district.clusterIndex,
+      depth: district.depth,
+      downgradeReason: district.downgradeReason,
+      expressionMode: district.expressionMode,
+      frontageIntensity: district.frontageIntensity,
+      isCommerciallyEligible: district.isCommerciallyEligible,
+      programNodeCount: district.programNodeCount,
+      programTargets: district.programTargets,
+      sectorId: district.sectorId ?? 'unassigned',
+      sectorLabel: district.sectorLabel,
+      sponsorBackedFrontCount: district.sponsorBackedFrontCount,
+      supportLevel: district.supportLevel,
+    })),
+    qualityProfileInputs,
+    visualProfile: {
+      districts: visualProfile.districts.map((district) => ({
+        expressionMode: district.expressionMode,
+        frontageIntensity: district.frontageIntensity,
+        groundBase: district.groundBase,
+        hudAccent: district.hudAccent,
+        sectorId: district.sectorId ?? 'unassigned',
+        skylineOpacity: district.skylineOpacity,
+      })),
+      global: visualProfile.global,
+    },
     checkpoints: {
       arrivalCenter: isPointWithinExpoWalkRegions({ x: 0, z: plan.arrivalNode.position[2] + 8 }, walkRegions),
       deepCenterSpine: isPointWithinExpoWalkRegions({ x: 0, z: Math.min(...boothPlacements.map((placement) => placement.position[2])) + 8 }, walkRegions),

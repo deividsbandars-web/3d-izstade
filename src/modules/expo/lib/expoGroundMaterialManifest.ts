@@ -23,9 +23,9 @@ const GROUND_TEXTURE_MANIFEST: Record<Exclude<BoulevardMaterialKey, 'dark_field'
     roughnessMap: resolveExpoTextureCandidateUrls('/textures/expo/hero-paver-4k/pavement_01_rough_4k.png'),
   },
   light_concrete: {
-    map: resolveExpoTextureCandidateUrls('/textures/expo/light-concrete-4k/concrete_floor_worn_001_diff_4k.png'),
-    normalMap: resolveExpoTextureCandidateUrls('/textures/expo/light-concrete-4k/concrete_floor_worn_001_nor_gl_4k.png'),
-    roughnessMap: resolveExpoTextureCandidateUrls('/textures/expo/light-concrete-4k/concrete_floor_worn_001_rough_4k.png'),
+    map: resolveExpoTextureCandidateUrls('/textures/expo/master-phase/concrete/concrete_diff_4k.png'),
+    normalMap: resolveExpoTextureCandidateUrls('/textures/expo/master-phase/concrete/concrete_nor_gl_4k.png'),
+    roughnessMap: resolveExpoTextureCandidateUrls('/textures/expo/master-phase/concrete/concrete_rough_4k.png'),
   },
   urban_grass: {
     map: resolveExpoTextureCandidateUrls('/textures/expo/urban-grass-4k/sparse_grass_diff_4k.png'),

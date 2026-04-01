@@ -1,4 +1,5 @@
 import { getFrontendRuntimeEnv } from '../../../config/runtimeEnv';
+import { reportExpoDevError } from '../lib/devErrorReporter';
 
 export type PixelStreamingAvailability = 'connecting' | 'available' | 'degraded' | 'unavailable';
 export type PixelStreamingSignalingStatus = 'signaling_up' | 'signaling_down' | 'unknown';
@@ -193,7 +194,10 @@ export function probePixelStreamingAvailability(config: PixelStreamingRuntimeCon
         window.clearTimeout(timeoutId);
         finish(event.wasClean && event.code === 1000);
       };
-    } catch {
+    } catch (error) {
+      reportExpoDevError('probePixelStreamingAvailability', error, {
+        signalingUrl: config.signalingUrl,
+      });
       window.clearTimeout(timeoutId);
       finish(false);
     }

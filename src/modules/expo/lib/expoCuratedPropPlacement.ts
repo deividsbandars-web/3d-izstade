@@ -1,4 +1,5 @@
-import type { ExpoBoothPlacement } from '../sceneWorld.js';
+import type { ExpoBoothPlacement } from '../layout-engine.js';
+import type { ExpoDistrictProgramSummary } from '../world-contract.js';
 
 export type ExpoCuratedPropKey =
   | 'planter'
@@ -28,6 +29,7 @@ export interface ExpoCuratedPropPlacement {
 }
 
 type SectorMarker = {
+  clusterIndex?: number;
   color: string;
   districtTheme: {
     accentColor: string;
@@ -36,6 +38,7 @@ type SectorMarker = {
   id: string;
   label: string;
   position: [number, number, number];
+  sectorId?: string | null;
   side: 'left' | 'right';
 };
 
@@ -46,6 +49,7 @@ function round3(value: number) {
 export function buildExpoCuratedPropPlacements(
   boothPlacements: ExpoBoothPlacement[],
   sectorMarkers: SectorMarker[],
+  districtPrograms: ExpoDistrictProgramSummary[] = [],
   options: { showcase?: boolean } = {}
 ) {
   const placements: ExpoCuratedPropPlacement[] = [];
@@ -53,6 +57,15 @@ export function buildExpoCuratedPropPlacements(
   const corridorHalfWidth = 34;
 
   sectorMarkers.forEach((marker, index) => {
+    const district = districtPrograms.find((entry) => entry.sectorId === marker.sectorId)
+      ?? districtPrograms.find((entry) => entry.clusterIndex === marker.clusterIndex)
+      ?? districtPrograms.find((entry) => entry.clusterIndex === index);
+    const roles = new Set((district?.programTargets ?? []).filter((target) => target.allocated > 0).map((target) => target.role));
+    const calmDistrict = district?.expressionMode === 'calm-dwell' || roles.has('meeting_pod') || roles.has('networking_lounge');
+    const scenicDistrict = district?.expressionMode === 'scenic' || (roles.has('scenic_showcase') && !roles.has('demo_stage'));
+    const orientationDistrict = district?.expressionMode === 'orientation';
+    const featureCourtDistrict = district?.expressionMode === 'feature-court';
+    const activeDistrict = district?.expressionMode === 'active-commercial';
     const side = marker.side === 'left' ? -1 : 1;
     const edgeX = side * (corridorHalfWidth + 12);
     const accentX = side * (corridorHalfWidth + 20);
@@ -78,28 +91,56 @@ export function buildExpoCuratedPropPlacements(
         subLabel: marker.districtTheme.name === marker.label ? 'SPONSOR DISTRICT' : marker.districtTheme.name,
       },
       {
-        assetKey: 'planter',
+        assetKey: calmDistrict ? 'bench_cushion_low' : orientationDistrict ? 'light_square_double' : 'planter',
         id: `sector-planter-${marker.id}`,
         position: [round3(accentX), 0, round3(marker.position[2] + 1.5)],
         rotationY: 0,
-        scale: 1.2,
+        scale: calmDistrict ? 1.05 : orientationDistrict ? 1.04 : 1.2,
       },
       {
-        assetKey: side === -1 ? 'tree_small' : 'bush',
+        assetKey: scenicDistrict || featureCourtDistrict ? (side === -1 ? 'tree_large' : 'big_bush') : side === -1 ? 'tree_small' : 'bush',
         id: `sector-greenery-${marker.id}`,
         position: [round3(side * (corridorHalfWidth + 30)), 0, round3(marker.position[2] - 10)],
         rotationY: 0,
-        scale: side === -1 ? 1.2 : 1.8,
+        scale: scenicDistrict || featureCourtDistrict ? 1.35 : side === -1 ? 1.2 : 1.8,
       }
     );
 
-    if (showcase) {
+    if (showcase || scenicDistrict || featureCourtDistrict) {
       placements.push({
         assetKey: 'light_curved',
         id: `sector-curved-light-${marker.id}`,
         position: [round3(side * (corridorHalfWidth + 26)), 0, round3(marker.position[2] + 18)],
         rotationY: side === -1 ? Math.PI * 0.35 : -Math.PI * 0.35,
-        scale: 1.1,
+        scale: scenicDistrict || featureCourtDistrict ? 1.24 : 1.1,
+      });
+    }
+
+    if (activeDistrict || orientationDistrict) {
+      placements.push({
+        assetKey: 'info_kiosk_base_computer_screen',
+        accentColor: marker.color || marker.districtTheme.accentColor,
+        decorationKind: 'info-kiosk',
+        id: `sector-info-${marker.id}`,
+        label: marker.label,
+        position: [round3(side * (corridorHalfWidth + 24)), 0, round3(marker.position[2] - 14)],
+        rotationY: signRotation,
+        scale: 0.96,
+        subLabel: activeDistrict ? 'LIVE PROGRAM' : 'WAYFINDING',
+      });
+    }
+
+    if (scenicDistrict || featureCourtDistrict) {
+      placements.push({
+        assetKey: 'sign_highway',
+        accentColor: marker.color || marker.districtTheme.accentColor,
+        decorationKind: 'district-sign',
+        id: `sector-portal-${marker.id}`,
+        label: scenicDistrict ? 'SCENIC WALK' : 'FEATURE COURT',
+        position: [round3(side * (corridorHalfWidth + 18)), 0, round3(marker.position[2] + 24)],
+        rotationY: signRotation,
+        scale: 0.92,
+        subLabel: scenicDistrict ? 'DISCOVERY EDGE' : 'SINGLE-FRONT MOMENT',
       });
     }
   });

@@ -110,7 +110,7 @@ function buildFallbackIdentity(
   const boothRecord = booth as unknown as Record<string, unknown> | null;
   const sectorLine = truncateSponsorText(String(companyRecord.sectorName || boothRecord?.sectorName || 'Expo District'), 28) || 'Expo District';
   const tierLine = String(company.sponsorTier || 'standard').toUpperCase();
-  const sourceTagline = truncateSponsorText(company.tagline || String(boothRecord?.tagline || '') || 'Live demos, guided conversations, and a premium product walkthrough.', 72);
+  const sourceTagline = truncateSponsorText(company.tagline || String(boothRecord?.tagline || '') || 'Live demos and guided product sessions.', 44);
 
   return {
     eyebrow: `${tierLine} • ${sectorLine}`.toUpperCase(),
@@ -149,14 +149,14 @@ export function buildSponsorCtas(company: ExpoSceneCompany): SponsorCta[] {
   const booking = normalizeUrl(company.bookingUrl);
 
   actions.push(website
-    ? { kind: 'website', label: 'Website', url: website }
-    : { kind: 'website', label: 'Brand Story', disabled: true, url: null });
+    ? { kind: 'website', label: 'Visit', url: website }
+    : { kind: 'website', label: 'Visit', disabled: true, url: null });
 
   actions.push(booking
-    ? { kind: 'booking', label: company.ctaLabel || 'Book Meeting', url: booking }
-    : { kind: 'booking', label: 'Talk To Team', disabled: true, url: null });
+    ? { kind: 'booking', label: company.ctaLabel || 'Meet', url: booking }
+    : { kind: 'booking', label: 'Meet', disabled: true, url: null });
 
-  actions.push({ kind: 'demo_room', label: 'Demo Room' });
+  actions.push({ kind: 'demo_room', label: 'Enter' });
   return actions;
 }
 
@@ -217,7 +217,7 @@ export function buildSponsorBoothPresentation(
     logoUrl,
     posterUrl,
     sponsorTier: company.sponsorTier,
-    tagline: truncateSponsorText(company.tagline || fallbackIdentity.supportLine || 'Meet the team. Explore the offer. Book a live demo.', 64),
+    tagline: truncateSponsorText(company.tagline || fallbackIdentity.supportLine || 'Meet the team. Explore the offer.', 30),
     template: pickSponsorBoothTemplate({
       boothType: company.boothType || booth?.boothType || null,
       districtThemeId: context?.districtThemeId || null,

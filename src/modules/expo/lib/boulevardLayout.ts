@@ -14,6 +14,20 @@ export type ExpoPlacementNodeType =
   | 'endcap'
   | 'sector_gateway';
 
+export type ExpoDistrictProgramRole =
+  | 'arrival_anchor'
+  | 'connector_left'
+  | 'connector_right'
+  | 'side_lane_left'
+  | 'side_lane_right'
+  | 'hero_forecourt_left'
+  | 'hero_forecourt_right'
+  | 'info_pavilion'
+  | 'networking_lounge'
+  | 'demo_stage'
+  | 'meeting_pod'
+  | 'scenic_showcase';
+
 export type BoulevardCompany = {
   boothType?: BoothType | null;
   id: string;
@@ -30,6 +44,7 @@ export type SponsorBoulevardNode = {
   clusterIndex: number;
   color: string;
   companyId?: string;
+  functionalRole?: ExpoDistrictProgramRole;
   id: string;
   nodeType: ExpoPlacementNodeType;
   position: [number, number, number];
@@ -38,6 +53,62 @@ export type SponsorBoulevardNode = {
   sectorId: string | null;
   sectorLabel: string;
   sponsorTier?: SponsorTier;
+};
+
+export type SponsorDistrictProgramQuota = {
+  allocated: number;
+  target: number;
+  role: ExpoDistrictProgramRole;
+};
+
+export type ExpoDistrictSupportLevel =
+  | 'empty'
+  | 'single-booth'
+  | 'supported'
+  | 'hero-supported';
+
+export type ExpoDistrictExpressionMode =
+  | 'active-commercial'
+  | 'calm-dwell'
+  | 'scenic'
+  | 'orientation'
+  | 'satellite'
+  | 'feature-court';
+
+export type ExpoDistrictDowngradeReason =
+  | 'empty-sector'
+  | 'single-booth-no-active-floor'
+  | 'insufficient-support-floor'
+  | 'calm-program-suppression'
+  | null;
+
+export type SponsorBoulevardDistrict = {
+  authoredMomentCount: number;
+  clusterIndex: number;
+  color: string;
+  companyCounts: {
+    hero: number;
+    premium: number;
+    standard: number;
+    total: number;
+  };
+  depth: number;
+  downgradeReason: ExpoDistrictDowngradeReason;
+  expressionMode: ExpoDistrictExpressionMode;
+  frontageIntensity: 0 | 1 | 2 | 3;
+  frontagePackage: {
+    hasGroundEngagement: boolean;
+    hasPrimaryScreenPlane: boolean;
+    hasSecondarySupport: boolean;
+  };
+  isCommerciallyEligible: boolean;
+  programNodeIds: string[];
+  programTargets: SponsorDistrictProgramQuota[];
+  sectorId: string | null;
+  sectorLabel: string;
+  sponsorBackedFrontCount: number;
+  supportLevel: ExpoDistrictSupportLevel;
+  supportingNodeCount: number;
 };
 
 export type RankedBoulevardCompany = {
@@ -56,6 +127,7 @@ export type RankedBoulevardCompany = {
 export type SponsorBoulevardPlan = {
   arrivalNode: SponsorBoulevardNode;
   companyOrder: RankedBoulevardCompany[];
+  districts: SponsorBoulevardDistrict[];
   footprint: {
     maxX: number;
     maxZ: number;
@@ -69,29 +141,29 @@ export type SponsorBoulevardPlan = {
 export const EXPO_BOULEVARD_LAYOUT = {
   arrivalZ: 8,
   anchorPlazaDepth: 22,
-  clusterGapDepth: 28,
-  connectorX: 18,
+  clusterGapDepth: 40,
+  connectorX: 26,
   connectorZOffset: 26,
-  endcapX: 66,
+  endcapX: 84,
   emptySectorDepth: 38,
-  gatewayX: 92,
+  gatewayX: 116,
   gatewayZOffset: 10,
-  heroX: 46,
-  heroZOffset: 26,
+  heroX: 62,
+  heroZOffset: 34,
   heroForecourtDepth: 10,
-  programmedFillerX: 54,
-  programmedFillerZOffset: 30,
-  sectorPlazaWidthX: 72,
-  laneMarginX: 36,
+  programmedFillerX: 78,
+  programmedFillerZOffset: 34,
+  sectorPlazaWidthX: 88,
+  laneMarginX: 44,
   playBoundsPaddingX: 30,
   playBoundsPaddingZ: 34,
   sectorClusterDepth: 138,
   sectorGatewayOnlyDepth: 22,
-  sideLaneX: 84,
+  sideLaneX: 110,
   sideLaneZOffset: 18,
-  standardX: 32,
-  standardZStartOffset: 58,
-  standardZStep: 30,
+  standardX: 48,
+  standardZStartOffset: 76,
+  standardZStep: 42,
 } as const;
 
 const SPONSOR_TIER_WEIGHT: Record<SponsorTier, number> = {
@@ -242,6 +314,7 @@ function createCompanyNode(
 function createProgrammedNode({
   clusterIndex,
   color,
+  functionalRole,
   id,
   nodeType,
   position,
@@ -251,6 +324,7 @@ function createProgrammedNode({
 }: {
   clusterIndex: number;
   color: string;
+  functionalRole: ExpoDistrictProgramRole;
   id: string;
   nodeType: Extract<ExpoPlacementNodeType, 'anchor_plaza' | 'connector_corridor' | 'side_lane_node' | 'hero_forecourt' | 'programmed_filler'>;
   position: [number, number, number];
@@ -261,6 +335,7 @@ function createProgrammedNode({
   return {
     clusterIndex,
     color,
+    functionalRole,
     id,
     nodeType,
     position,
@@ -271,7 +346,11 @@ function createProgrammedNode({
   };
 }
 
-function getSectorClusterDepth({
+function createProgramQuota(role: ExpoDistrictProgramRole, target: number): SponsorDistrictProgramQuota {
+  return { allocated: 0, role, target };
+}
+
+function buildDistrictProgramTargets({
   heroCount,
   premiumCount,
   standardCount,
@@ -280,20 +359,271 @@ function getSectorClusterDepth({
   premiumCount: number;
   standardCount: number;
 }) {
-  const premiumRows = Math.ceil(premiumCount / 2);
-  const standardRows = Math.ceil(standardCount / 2);
-  const furthestContentOffset = Math.max(
-    heroCount > 0 ? EXPO_BOULEVARD_LAYOUT.heroZOffset : 0,
-    premiumRows > 0 ? 44 + Math.max(0, premiumRows - 1) * EXPO_BOULEVARD_LAYOUT.standardZStep : 0,
-    standardRows > 0
-      ? EXPO_BOULEVARD_LAYOUT.standardZStartOffset + Math.max(0, standardRows - 1) * EXPO_BOULEVARD_LAYOUT.standardZStep
-      : 0,
-  );
+  const total = heroCount + premiumCount + standardCount;
+  const targets: SponsorDistrictProgramQuota[] = [
+    createProgramQuota('arrival_anchor', 1),
+    createProgramQuota('connector_left', 1),
+    createProgramQuota('connector_right', 1),
+    createProgramQuota('side_lane_left', 1),
+    createProgramQuota('side_lane_right', 1),
+    createProgramQuota('info_pavilion', 1),
+  ];
 
-  if (furthestContentOffset === 0) {
-    return EXPO_BOULEVARD_LAYOUT.emptySectorDepth + EXPO_BOULEVARD_LAYOUT.anchorPlazaDepth;
+  if (heroCount > 0) {
+    targets.push(createProgramQuota('hero_forecourt_left', Math.min(1, heroCount)));
+    if (heroCount > 1) {
+      targets.push(createProgramQuota('hero_forecourt_right', 1));
+    }
   }
 
+  if (heroCount + premiumCount > 0) {
+    targets.push(createProgramQuota('demo_stage', 1));
+  }
+
+  if (standardCount > 0) {
+    targets.push(createProgramQuota('meeting_pod', 1));
+  }
+
+  if (total <= 2) {
+    targets.push(createProgramQuota('networking_lounge', 1));
+  }
+
+  targets.push(createProgramQuota('scenic_showcase', total === 0 ? 2 : 1));
+  return targets;
+}
+
+function countSupportingNodes(targets: SponsorDistrictProgramQuota[]) {
+  return targets.reduce((sum, target) => {
+    if (target.role === 'info_pavilion' || target.role === 'networking_lounge' || target.role === 'meeting_pod' || target.role === 'demo_stage') {
+      return sum + target.target;
+    }
+    return sum;
+  }, 0);
+}
+
+function resolveDistrictSupportLevel(heroCount: number, total: number): ExpoDistrictSupportLevel {
+  if (total === 0) {
+    return 'empty';
+  }
+
+  if (total === 1) {
+    return 'single-booth';
+  }
+
+  return heroCount > 0 ? 'hero-supported' : 'supported';
+}
+
+function resolveDistrictExpression({
+  heroCount,
+  premiumCount,
+  standardCount,
+  supportingNodeCount,
+  targets,
+}: {
+  heroCount: number;
+  premiumCount: number;
+  standardCount: number;
+  supportingNodeCount: number;
+  targets: SponsorDistrictProgramQuota[];
+}) {
+  const sponsorBackedFrontCount = heroCount + premiumCount + standardCount;
+  const hasDemo = targets.some((target) => target.role === 'demo_stage' && target.target > 0);
+  const hasMeeting = targets.some((target) => target.role === 'meeting_pod' && target.target > 0);
+  const hasNetworking = targets.some((target) => target.role === 'networking_lounge' && target.target > 0);
+  const hasScenic = targets.some((target) => target.role === 'scenic_showcase' && target.target > 0);
+  const hasOrientation = targets.some((target) => target.role === 'info_pavilion' && target.target > 0);
+  const activeSupportFloorMet = sponsorBackedFrontCount >= 2 || (heroCount >= 1 && supportingNodeCount >= 1);
+  const supportLevel = resolveDistrictSupportLevel(heroCount, sponsorBackedFrontCount);
+
+  if (sponsorBackedFrontCount === 0) {
+    return {
+      authoredMomentCount: 2,
+      downgradeReason: 'empty-sector' as const,
+      expressionMode: hasScenic ? 'scenic' as const : 'orientation' as const,
+      frontageIntensity: 0 as const,
+      frontagePackage: {
+        hasGroundEngagement: false,
+        hasPrimaryScreenPlane: false,
+        hasSecondarySupport: hasOrientation,
+      },
+      isCommerciallyEligible: false,
+      sponsorBackedFrontCount,
+      supportLevel,
+      supportingNodeCount,
+    };
+  }
+
+  if (sponsorBackedFrontCount === 1) {
+    return {
+      authoredMomentCount: heroCount > 0 ? 3 : 2,
+      downgradeReason: 'single-booth-no-active-floor' as const,
+      expressionMode: heroCount > 0 ? 'feature-court' as const : hasScenic ? 'scenic' as const : 'satellite' as const,
+      frontageIntensity: heroCount > 0 ? 2 as const : 1 as const,
+      frontagePackage: {
+        hasGroundEngagement: true,
+        hasPrimaryScreenPlane: heroCount > 0,
+        hasSecondarySupport: true,
+      },
+      isCommerciallyEligible: false,
+      sponsorBackedFrontCount,
+      supportLevel,
+      supportingNodeCount,
+    };
+  }
+
+  if (!activeSupportFloorMet) {
+    return {
+      authoredMomentCount: hasScenic ? 2 : 1,
+      downgradeReason: 'insufficient-support-floor' as const,
+      expressionMode: hasScenic ? 'scenic' as const : 'satellite' as const,
+      frontageIntensity: 1 as const,
+      frontagePackage: {
+        hasGroundEngagement: true,
+        hasPrimaryScreenPlane: false,
+        hasSecondarySupport: true,
+      },
+      isCommerciallyEligible: false,
+      sponsorBackedFrontCount,
+      supportLevel,
+      supportingNodeCount,
+    };
+  }
+
+  if (!hasDemo && (hasMeeting || hasNetworking)) {
+    return {
+      authoredMomentCount: 2,
+      downgradeReason: 'calm-program-suppression' as const,
+      expressionMode: 'calm-dwell' as const,
+      frontageIntensity: 1 as const,
+      frontagePackage: {
+        hasGroundEngagement: true,
+        hasPrimaryScreenPlane: false,
+        hasSecondarySupport: true,
+      },
+      isCommerciallyEligible: false,
+      sponsorBackedFrontCount,
+      supportLevel,
+      supportingNodeCount,
+    };
+  }
+
+  return {
+    authoredMomentCount: hasScenic ? 2 : 1,
+    downgradeReason: null,
+    expressionMode: 'active-commercial' as const,
+    frontageIntensity: heroCount > 0 ? 3 as const : 2 as const,
+    frontagePackage: {
+      hasGroundEngagement: true,
+      hasPrimaryScreenPlane: true,
+      hasSecondarySupport: true,
+    },
+    isCommerciallyEligible: true,
+    sponsorBackedFrontCount,
+    supportLevel,
+    supportingNodeCount,
+  };
+}
+
+function buildProgrammedFillerNodes({
+  clusterBaseZ,
+  clusterIndex,
+  color,
+  sectorId,
+  sectorLabel,
+  targets,
+}: {
+  clusterBaseZ: number;
+  clusterIndex: number;
+  color: string;
+  sectorId: string | null;
+  sectorLabel: string;
+  targets: SponsorDistrictProgramQuota[];
+}) {
+  const nodes: SponsorBoulevardNode[] = [];
+
+  const pushNode = (id: string, position: [number, number, number], rotationY: number | undefined, functionalRole: ExpoDistrictProgramRole) => {
+    nodes.push(createProgrammedNode({
+      clusterIndex,
+      color,
+      functionalRole,
+      id,
+      nodeType: functionalRole.includes('forecourt') ? 'hero_forecourt' : functionalRole === 'arrival_anchor' ? 'anchor_plaza' : functionalRole.includes('connector') ? 'connector_corridor' : functionalRole.includes('side_lane') ? 'side_lane_node' : 'programmed_filler',
+      position,
+      rotationY,
+      sectorId,
+      sectorLabel,
+    }));
+  };
+
+  targets.forEach((target) => {
+    if (target.target <= 0) {
+      return;
+    }
+
+    switch (target.role) {
+      case 'arrival_anchor':
+        pushNode(`anchor-plaza-${sectorId ?? UNASSIGNED_SECTOR_ID}`, [0, 0, clusterBaseZ - EXPO_BOULEVARD_LAYOUT.anchorPlazaDepth], undefined, target.role);
+        break;
+      case 'connector_left':
+        pushNode(`connector-left-${sectorId ?? UNASSIGNED_SECTOR_ID}`, [-EXPO_BOULEVARD_LAYOUT.connectorX, 0, clusterBaseZ - EXPO_BOULEVARD_LAYOUT.connectorZOffset], Math.PI / 2, target.role);
+        break;
+      case 'connector_right':
+        pushNode(`connector-right-${sectorId ?? UNASSIGNED_SECTOR_ID}`, [EXPO_BOULEVARD_LAYOUT.connectorX, 0, clusterBaseZ - EXPO_BOULEVARD_LAYOUT.connectorZOffset], -Math.PI / 2, target.role);
+        break;
+      case 'side_lane_left':
+        pushNode(`side-lane-left-${sectorId ?? UNASSIGNED_SECTOR_ID}`, [-EXPO_BOULEVARD_LAYOUT.sideLaneX, 0, clusterBaseZ - EXPO_BOULEVARD_LAYOUT.sideLaneZOffset], Math.PI / 2, target.role);
+        break;
+      case 'side_lane_right':
+        pushNode(`side-lane-right-${sectorId ?? UNASSIGNED_SECTOR_ID}`, [EXPO_BOULEVARD_LAYOUT.sideLaneX, 0, clusterBaseZ - EXPO_BOULEVARD_LAYOUT.sideLaneZOffset], -Math.PI / 2, target.role);
+        break;
+      case 'hero_forecourt_left':
+        pushNode(`hero-forecourt-left-${sectorId ?? UNASSIGNED_SECTOR_ID}`, [-EXPO_BOULEVARD_LAYOUT.heroX, 0, clusterBaseZ - EXPO_BOULEVARD_LAYOUT.heroZOffset + EXPO_BOULEVARD_LAYOUT.heroForecourtDepth], Math.PI / 2, target.role);
+        break;
+      case 'hero_forecourt_right':
+        pushNode(`hero-forecourt-right-${sectorId ?? UNASSIGNED_SECTOR_ID}`, [EXPO_BOULEVARD_LAYOUT.heroX, 0, clusterBaseZ - EXPO_BOULEVARD_LAYOUT.heroZOffset + EXPO_BOULEVARD_LAYOUT.heroForecourtDepth], -Math.PI / 2, target.role);
+        break;
+      case 'info_pavilion':
+        pushNode(`program-info-${sectorId ?? UNASSIGNED_SECTOR_ID}`, [0, 0, clusterBaseZ - EXPO_BOULEVARD_LAYOUT.programmedFillerZOffset - 8], undefined, target.role);
+        break;
+      case 'networking_lounge':
+        pushNode(`program-network-${sectorId ?? UNASSIGNED_SECTOR_ID}`, [0, 0, clusterBaseZ - EXPO_BOULEVARD_LAYOUT.programmedFillerZOffset + 12], undefined, target.role);
+        break;
+      case 'demo_stage':
+        pushNode(`program-demo-${sectorId ?? UNASSIGNED_SECTOR_ID}`, [EXPO_BOULEVARD_LAYOUT.programmedFillerX, 0, clusterBaseZ - EXPO_BOULEVARD_LAYOUT.programmedFillerZOffset], -Math.PI / 2, target.role);
+        break;
+      case 'meeting_pod':
+        pushNode(`program-meeting-${sectorId ?? UNASSIGNED_SECTOR_ID}`, [-EXPO_BOULEVARD_LAYOUT.programmedFillerX, 0, clusterBaseZ - EXPO_BOULEVARD_LAYOUT.programmedFillerZOffset], Math.PI / 2, target.role);
+        break;
+      case 'scenic_showcase':
+        for (let index = 0; index < target.target; index += 1) {
+          const side = index % 2 === 0 ? -1 : 1;
+          pushNode(
+            `program-scenic-${sectorId ?? UNASSIGNED_SECTOR_ID}-${index}`,
+            [side * EXPO_BOULEVARD_LAYOUT.programmedFillerX, 0, clusterBaseZ - EXPO_BOULEVARD_LAYOUT.programmedFillerZOffset - 18],
+            side < 0 ? Math.PI / 2 : -Math.PI / 2,
+            target.role
+          );
+        }
+        break;
+    }
+  });
+
+  const allocatedCountByRole = nodes.reduce<Map<ExpoDistrictProgramRole, number>>((acc, node) => {
+    if (node.functionalRole) {
+      acc.set(node.functionalRole, (acc.get(node.functionalRole) ?? 0) + 1);
+    }
+    return acc;
+  }, new Map());
+
+  targets.forEach((target) => {
+    target.allocated = allocatedCountByRole.get(target.role) ?? 0;
+  });
+
+  return nodes;
+}
+
+function getSectorClusterDepth(nodeOffsets: number[]) {
+  const furthestContentOffset = nodeOffsets.length > 0 ? Math.max(...nodeOffsets) : EXPO_BOULEVARD_LAYOUT.anchorPlazaDepth;
   return Math.max(
     EXPO_BOULEVARD_LAYOUT.sectorGatewayOnlyDepth + EXPO_BOULEVARD_LAYOUT.clusterGapDepth + EXPO_BOULEVARD_LAYOUT.anchorPlazaDepth,
     furthestContentOffset + EXPO_BOULEVARD_LAYOUT.clusterGapDepth + 18,
@@ -326,6 +656,7 @@ export function buildSponsorBoulevardPlan(
   ];
 
   const nodes: SponsorBoulevardNode[] = [];
+  const districts: SponsorBoulevardDistrict[] = [];
   const sectorGateways: SponsorBoulevardNode[] = [];
   const arrivalNode: SponsorBoulevardNode = {
     clusterIndex: -1,
@@ -369,58 +700,6 @@ export function buildSponsorBoulevardPlan(
     nodes.push(leftGateway, rightGateway);
     sectorGateways.push(leftGateway, rightGateway);
 
-    nodes.push(
-      createProgrammedNode({
-        clusterIndex: sectorIndex,
-        color,
-        id: `anchor-plaza-${sectorKey}`,
-        nodeType: 'anchor_plaza',
-        position: [0, 0, clusterBaseZ - EXPO_BOULEVARD_LAYOUT.anchorPlazaDepth],
-        sectorId: sectorKey === UNASSIGNED_SECTOR_ID ? null : sectorKey,
-        sectorLabel,
-      }),
-      createProgrammedNode({
-        clusterIndex: sectorIndex,
-        color,
-        id: `connector-left-${sectorKey}`,
-        nodeType: 'connector_corridor',
-        position: [-EXPO_BOULEVARD_LAYOUT.connectorX, 0, clusterBaseZ - EXPO_BOULEVARD_LAYOUT.connectorZOffset],
-        rotationY: Math.PI / 2,
-        sectorId: sectorKey === UNASSIGNED_SECTOR_ID ? null : sectorKey,
-        sectorLabel,
-      }),
-      createProgrammedNode({
-        clusterIndex: sectorIndex,
-        color,
-        id: `connector-right-${sectorKey}`,
-        nodeType: 'connector_corridor',
-        position: [EXPO_BOULEVARD_LAYOUT.connectorX, 0, clusterBaseZ - EXPO_BOULEVARD_LAYOUT.connectorZOffset],
-        rotationY: -Math.PI / 2,
-        sectorId: sectorKey === UNASSIGNED_SECTOR_ID ? null : sectorKey,
-        sectorLabel,
-      }),
-      createProgrammedNode({
-        clusterIndex: sectorIndex,
-        color,
-        id: `side-lane-left-${sectorKey}`,
-        nodeType: 'side_lane_node',
-        position: [-EXPO_BOULEVARD_LAYOUT.sideLaneX, 0, clusterBaseZ - EXPO_BOULEVARD_LAYOUT.sideLaneZOffset],
-        rotationY: Math.PI / 2,
-        sectorId: sectorKey === UNASSIGNED_SECTOR_ID ? null : sectorKey,
-        sectorLabel,
-      }),
-      createProgrammedNode({
-        clusterIndex: sectorIndex,
-        color,
-        id: `side-lane-right-${sectorKey}`,
-        nodeType: 'side_lane_node',
-        position: [EXPO_BOULEVARD_LAYOUT.sideLaneX, 0, clusterBaseZ - EXPO_BOULEVARD_LAYOUT.sideLaneZOffset],
-        rotationY: -Math.PI / 2,
-        sectorId: sectorKey === UNASSIGNED_SECTOR_ID ? null : sectorKey,
-        sectorLabel,
-      }),
-    );
-
     const heroCompanies = group.filter((company) => company.sponsorTier === 'hero' || company.boothType === 'hero');
     const heroPrimary = heroCompanies.slice(0, 2);
     const heroOverflow = heroCompanies.slice(2);
@@ -429,20 +708,33 @@ export function buildSponsorBoulevardPlan(
       ...group.filter((company) => !heroCompanies.includes(company) && (company.boothType === 'premium' || company.sponsorTier === 'platinum' || company.sponsorTier === 'gold')),
     ];
     const standardCompanies = group.filter((company) => !heroCompanies.includes(company) && !premiumCompanies.includes(company));
+    const districtTargets = buildDistrictProgramTargets({
+      heroCount: heroPrimary.length,
+      premiumCount: premiumCompanies.length,
+      standardCount: standardCompanies.length,
+    });
+    const supportingNodeCount = countSupportingNodes(districtTargets);
+    const districtExpression = resolveDistrictExpression({
+      heroCount: heroPrimary.length,
+      premiumCount: premiumCompanies.length,
+      standardCount: standardCompanies.length,
+      supportingNodeCount,
+      targets: districtTargets,
+    });
+    const sectorId = sectorKey === UNASSIGNED_SECTOR_ID ? null : sectorKey;
+    const programmedNodes = buildProgrammedFillerNodes({
+      clusterBaseZ,
+      clusterIndex: sectorIndex,
+      color,
+      sectorId,
+      sectorLabel,
+      targets: districtTargets,
+    });
+    nodes.push(...programmedNodes);
 
     const heroLeft = heroPrimary[0];
     const heroRight = heroPrimary[1];
     if (heroLeft) {
-      nodes.push(createProgrammedNode({
-        clusterIndex: sectorIndex,
-        color,
-        id: `hero-forecourt-left-${heroLeft.id}`,
-        nodeType: 'hero_forecourt',
-        position: [-EXPO_BOULEVARD_LAYOUT.heroX, 0, clusterBaseZ - EXPO_BOULEVARD_LAYOUT.heroZOffset + EXPO_BOULEVARD_LAYOUT.heroForecourtDepth],
-        rotationY: Math.PI / 2,
-        sectorId: heroLeft.sectorId,
-        sectorLabel: heroLeft.sectorLabel,
-      }));
       nodes.push(createCompanyNode(
         heroLeft,
         'hero_left',
@@ -454,16 +746,6 @@ export function buildSponsorBoulevardPlan(
       nodes[nodes.length - 1].clusterIndex = sectorIndex;
     }
     if (heroRight) {
-      nodes.push(createProgrammedNode({
-        clusterIndex: sectorIndex,
-        color,
-        id: `hero-forecourt-right-${heroRight.id}`,
-        nodeType: 'hero_forecourt',
-        position: [EXPO_BOULEVARD_LAYOUT.heroX, 0, clusterBaseZ - EXPO_BOULEVARD_LAYOUT.heroZOffset + EXPO_BOULEVARD_LAYOUT.heroForecourtDepth],
-        rotationY: -Math.PI / 2,
-        sectorId: heroRight.sectorId,
-        sectorLabel: heroRight.sectorLabel,
-      }));
       nodes.push(createCompanyNode(
         heroRight,
         'hero_right',
@@ -503,48 +785,39 @@ export function buildSponsorBoulevardPlan(
       nodes[nodes.length - 1].clusterIndex = sectorIndex;
     });
 
-    if (group.length === 0) {
-      nodes.push(
-        createProgrammedNode({
-          clusterIndex: sectorIndex,
-          color,
-          id: `programmed-empty-a-${sectorKey}`,
-          nodeType: 'programmed_filler',
-          position: [-EXPO_BOULEVARD_LAYOUT.programmedFillerX, 0, clusterBaseZ - EXPO_BOULEVARD_LAYOUT.programmedFillerZOffset],
-          rotationY: Math.PI / 2,
-          sectorId: sectorKey === UNASSIGNED_SECTOR_ID ? null : sectorKey,
-          sectorLabel,
-        }),
-        createProgrammedNode({
-          clusterIndex: sectorIndex,
-          color,
-          id: `programmed-empty-b-${sectorKey}`,
-          nodeType: 'programmed_filler',
-          position: [EXPO_BOULEVARD_LAYOUT.programmedFillerX, 0, clusterBaseZ - EXPO_BOULEVARD_LAYOUT.programmedFillerZOffset],
-          rotationY: -Math.PI / 2,
-          sectorId: sectorKey === UNASSIGNED_SECTOR_ID ? null : sectorKey,
-          sectorLabel,
-        }),
-      );
-    } else if (group.length <= 2) {
-      nodes.push(
-        createProgrammedNode({
-          clusterIndex: sectorIndex,
-          color,
-          id: `programmed-sparse-${sectorKey}`,
-          nodeType: 'programmed_filler',
-          position: [0, 0, clusterBaseZ - EXPO_BOULEVARD_LAYOUT.programmedFillerZOffset - 8],
-          sectorId: sectorKey === UNASSIGNED_SECTOR_ID ? null : sectorKey,
-          sectorLabel,
-        }),
-      );
-    }
-
-    clusterBaseZ -= getSectorClusterDepth({
-      heroCount: heroPrimary.length,
-      premiumCount: premiumCompanies.length,
-      standardCount: standardCompanies.length,
+    const sectorNodeOffsets = [
+      ...programmedNodes.map((node) => Math.abs(clusterBaseZ - node.position[2])),
+      ...nodes
+        .filter((node) => node.clusterIndex === sectorIndex && node.companyId)
+        .map((node) => Math.abs(clusterBaseZ - node.position[2])),
+    ];
+    const districtDepth = getSectorClusterDepth(sectorNodeOffsets);
+    districts.push({
+      authoredMomentCount: districtExpression.authoredMomentCount,
+      clusterIndex: sectorIndex,
+      color,
+      companyCounts: {
+        hero: heroPrimary.length,
+        premium: premiumCompanies.length,
+        standard: standardCompanies.length,
+        total: group.length,
+      },
+      depth: districtDepth,
+      downgradeReason: districtExpression.downgradeReason,
+      expressionMode: districtExpression.expressionMode,
+      frontageIntensity: districtExpression.frontageIntensity,
+      frontagePackage: districtExpression.frontagePackage,
+      isCommerciallyEligible: districtExpression.isCommerciallyEligible,
+      programNodeIds: programmedNodes.map((node) => node.id),
+      programTargets: districtTargets,
+      sectorId,
+      sectorLabel,
+      sponsorBackedFrontCount: districtExpression.sponsorBackedFrontCount,
+      supportLevel: districtExpression.supportLevel,
+      supportingNodeCount: districtExpression.supportingNodeCount,
     });
+
+    clusterBaseZ -= districtDepth;
   });
 
   const footprintXs = nodes.map((node) => node.position[0]);
@@ -553,6 +826,7 @@ export function buildSponsorBoulevardPlan(
   return {
     arrivalNode,
     companyOrder: rankedCompanies,
+    districts,
     footprint: {
       maxX: Math.max(...footprintXs) + EXPO_BOULEVARD_LAYOUT.laneMarginX,
       maxZ: Math.max(...footprintZs) + EXPO_BOULEVARD_LAYOUT.playBoundsPaddingZ,

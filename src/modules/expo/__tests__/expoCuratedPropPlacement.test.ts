@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
-import { buildBoothPlacements, buildExpoSectorMarkers } from '../sceneWorld.js';
 import { buildExpoCuratedPropPlacements } from '../lib/expoCuratedPropPlacement.js';
+import { buildExpoWorldContract } from '../world-contract.js';
 
 const sponsorData = {
   companies: [
@@ -14,11 +14,10 @@ const sponsorData = {
   ],
 };
 
-const placements = buildBoothPlacements(sponsorData as any);
-const markers = buildExpoSectorMarkers(sponsorData as any);
+const { boothPlacements: placements, districtPrograms, sectorMarkers: markers } = buildExpoWorldContract(sponsorData as any);
 
-const balancedProps = buildExpoCuratedPropPlacements(placements, markers, { showcase: false });
-const showcaseProps = buildExpoCuratedPropPlacements(placements, markers, { showcase: true });
+const balancedProps = buildExpoCuratedPropPlacements(placements, markers, districtPrograms, { showcase: false });
+const showcaseProps = buildExpoCuratedPropPlacements(placements, markers, districtPrograms, { showcase: true });
 
 assert.ok(balancedProps.length > 0);
 assert.ok(showcaseProps.length > balancedProps.length);
@@ -29,5 +28,6 @@ assert.ok(balancedProps.some((entry) => entry.assetKey === 'sign_highway_wide'))
 assert.ok(balancedProps.some((entry) => entry.assetKey === 'info_kiosk_base_computer_screen'));
 assert.ok(balancedProps.some((entry) => entry.decorationKind === 'district-sign-wide' && entry.label === 'Platform Partners'));
 assert.ok(balancedProps.some((entry) => entry.decorationKind === 'info-kiosk' && entry.label === 'Warpala Platform'));
+assert.ok(balancedProps.some((entry) => entry.decorationKind === 'info-kiosk' && entry.subLabel === 'LIVE PROGRAM'));
 assert.ok(showcaseProps.some((entry) => entry.assetKey === 'tree_large'));
 assert.equal(new Set(showcaseProps.map((entry) => entry.id)).size, showcaseProps.length);

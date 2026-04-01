@@ -1,4 +1,5 @@
-import type { ExpoBoothPlacement, ExpoSectorMarker } from '../sceneWorld';
+import type { ExpoBoothPlacement, ExpoSectorMarker } from '../layout-engine';
+import type { ExpoDistrictProgramSummary } from '../world-contract';
 import { resolveExpoRuntimeTextureUrl } from './expoTexturePipeline';
 import { buildSponsorBoothPresentation } from './sponsorBoothPresentation';
 
@@ -24,6 +25,12 @@ export type SponsorScreenNode = {
 };
 
 export type SponsorScreenLayout = {
+  districtFrontage: Record<string, {
+    hasGroundEngagement: boolean;
+    hasPrimaryScreenPlane: boolean;
+    hasSecondarySupport: boolean;
+    intensity: number;
+  }>;
   facadeScreens: SponsorScreenNode[];
   groundScreens: SponsorScreenNode[];
   mediumScreens: SponsorScreenNode[];
@@ -115,85 +122,96 @@ function pickSubtitle(placement: ExpoBoothPlacement | null, fallback: string) {
   return String(placement?.company?.tagline || placement?.sectorName || fallback);
 }
 
+function getDistrictRoles(
+  sectorId: string | null | undefined,
+  clusterIndex: number | undefined,
+  districtPrograms: ExpoDistrictProgramSummary[]
+) {
+  const district = (sectorId ? districtPrograms.find((entry) => entry.sectorId === sectorId) : undefined)
+    ?? districtPrograms.find((entry) => entry.clusterIndex === clusterIndex);
+  return new Set((district?.programTargets ?? []).filter((target) => target.allocated > 0).map((target) => target.role));
+}
+
+function getDistrictSummary(
+  sectorId: string | null | undefined,
+  clusterIndex: number | undefined,
+  districtPrograms: ExpoDistrictProgramSummary[]
+) {
+  return (sectorId ? districtPrograms.find((entry) => entry.sectorId === sectorId) : undefined)
+    ?? districtPrograms.find((entry) => entry.clusterIndex === clusterIndex)
+    ?? null;
+}
+
+function hasScreenEligibleBrandAssets(placement: ExpoBoothPlacement) {
+  const company = placement.company;
+  return Boolean(company?.posterUrl || company?.heroAssetUrl || company?.logo_url);
+}
+
 export function buildSponsorScreenLayout(
   boothPlacements: ExpoBoothPlacement[],
-  sectorMarkers: ExpoSectorMarker[]
+  sectorMarkers: ExpoSectorMarker[],
+  districtPrograms: ExpoDistrictProgramSummary[] = []
 ): SponsorScreenLayout {
-  const rankedPlacements = [...boothPlacements].sort(comparePlacements);
+  const rankedPlacements = [...boothPlacements].sort((left, right) => {
+    const leftRoles = getDistrictRoles(left.sectorId, left.clusterIndex, districtPrograms);
+    const rightRoles = getDistrictRoles(right.sectorId, right.clusterIndex, districtPrograms);
+    const leftBias = (leftRoles.has('demo_stage') ? 3 : 0) + (leftRoles.has('info_pavilion') ? 2 : 0) - (leftRoles.has('scenic_showcase') ? 1 : 0);
+    const rightBias = (rightRoles.has('demo_stage') ? 3 : 0) + (rightRoles.has('info_pavilion') ? 2 : 0) - (rightRoles.has('scenic_showcase') ? 1 : 0);
+    if (rightBias !== leftBias) {
+      return rightBias - leftBias;
+    }
+    return comparePlacements(left, right);
+  });
+
+  const activeEligiblePlacements = rankedPlacements.filter((placement) => getDistrictSummary(placement.sectorId, placement.clusterIndex, districtPrograms)?.expressionMode === 'active-commercial');
   const footprint = deriveFootprint(boothPlacements);
   const centerX = (footprint.minX + footprint.maxX) * 0.5;
-  const heroFacadeSources = rankedPlacements.slice(0, 3);
-  const mediumSources = rankedPlacements.slice(0, Math.min(6, Math.max(4, rankedPlacements.length)));
-  const groundBoothSources = rankedPlacements
-    .filter((placement) => placement.nodeType === 'hero_left' || placement.nodeType === 'hero_right' || placement.nodeType === 'endcap')
-    .slice(0, 5);
 
-  const facadeScreens: SponsorScreenNode[] = [
-    {
-      accentColor: heroFacadeSources[0]?.color || '#22c55e',
-      ctaLabel: heroFacadeSources[0] ? buildSponsorBoothPresentation(heroFacadeSources[0].company, heroFacadeSources[0].company.booth ?? null, heroFacadeSources[0].nodeType, { districtThemeId: heroFacadeSources[0].districtThemeId }).actions.find((action) => !action.disabled)?.label || 'Demo Room' : 'Demo Room',
-      companyId: heroFacadeSources[0]?.company?.id ?? null,
-      fallbackEyebrow: heroFacadeSources[0] ? buildSponsorBoothPresentation(heroFacadeSources[0].company, heroFacadeSources[0].company.booth ?? null, heroFacadeSources[0].nodeType, { districtThemeId: heroFacadeSources[0].districtThemeId }).fallbackIdentity.eyebrow : 'HERO • SPONSOR AXIS',
-      fallbackMonogram: heroFacadeSources[0] ? buildSponsorBoothPresentation(heroFacadeSources[0].company, heroFacadeSources[0].company.booth ?? null, heroFacadeSources[0].nodeType, { districtThemeId: heroFacadeSources[0].districtThemeId }).fallbackIdentity.monogram : 'WP',
-      fallbackMode: heroFacadeSources[0] ? !buildSponsorBoothPresentation(heroFacadeSources[0].company, heroFacadeSources[0].company.booth ?? null, heroFacadeSources[0].nodeType, { districtThemeId: heroFacadeSources[0].districtThemeId }).hasBrandAssets : true,
-      id: 'facade-screen-hero',
-      imageUrl: pickScreenImage(heroFacadeSources[0] ?? null, 'facade', 0, heroFacadeSources[0] ? buildSponsorBoothPresentation(heroFacadeSources[0].company, heroFacadeSources[0].company.booth ?? null, heroFacadeSources[0].nodeType, { districtThemeId: heroFacadeSources[0].districtThemeId }).hasBrandAssets : false),
-      kind: 'facade',
-      position: [centerX, 34, Math.min(22, footprint.maxZ - 8)],
-      priority: Number(heroFacadeSources[0]?.priority || 100),
-      rotation: [0, Math.PI, 0],
-      sectorName: heroFacadeSources[0]?.sectorName || null,
-      size: [46, 26],
-      subtitle: pickSubtitle(heroFacadeSources[0] ?? null, 'Sponsor boulevard hero axis'),
-      title: pickTitle(heroFacadeSources[0] ?? null, 'Warpala Platform'),
-    },
-    {
-      accentColor: heroFacadeSources[1]?.color || '#38bdf8',
-      ctaLabel: heroFacadeSources[1] ? buildSponsorBoothPresentation(heroFacadeSources[1].company, heroFacadeSources[1].company.booth ?? null, heroFacadeSources[1].nodeType, { districtThemeId: heroFacadeSources[1].districtThemeId }).actions.find((action) => !action.disabled)?.label || 'Demo Room' : 'Explore',
-      companyId: heroFacadeSources[1]?.company?.id ?? null,
-      fallbackEyebrow: heroFacadeSources[1] ? buildSponsorBoothPresentation(heroFacadeSources[1].company, heroFacadeSources[1].company.booth ?? null, heroFacadeSources[1].nodeType, { districtThemeId: heroFacadeSources[1].districtThemeId }).fallbackIdentity.eyebrow : 'MEETINGS • DISCOVERY',
-      fallbackMonogram: heroFacadeSources[1] ? buildSponsorBoothPresentation(heroFacadeSources[1].company, heroFacadeSources[1].company.booth ?? null, heroFacadeSources[1].nodeType, { districtThemeId: heroFacadeSources[1].districtThemeId }).fallbackIdentity.monogram : 'ME',
-      fallbackMode: heroFacadeSources[1] ? !buildSponsorBoothPresentation(heroFacadeSources[1].company, heroFacadeSources[1].company.booth ?? null, heroFacadeSources[1].nodeType, { districtThemeId: heroFacadeSources[1].districtThemeId }).hasBrandAssets : true,
-      id: 'facade-screen-west',
-      imageUrl: pickScreenImage(heroFacadeSources[1] ?? null, 'facade', 1, heroFacadeSources[1] ? buildSponsorBoothPresentation(heroFacadeSources[1].company, heroFacadeSources[1].company.booth ?? null, heroFacadeSources[1].nodeType, { districtThemeId: heroFacadeSources[1].districtThemeId }).hasBrandAssets : false),
-      kind: 'facade',
-      position: [centerX - 118, 28, -58],
-      priority: Number(heroFacadeSources[1]?.priority || 80),
-      rotation: [0, 0.82, 0],
-      sectorName: heroFacadeSources[1]?.sectorName || null,
-      size: [32, 18],
-      subtitle: pickSubtitle(heroFacadeSources[1] ?? null, 'Meetings and sponsor discovery'),
-      title: pickTitle(heroFacadeSources[1] ?? null, 'Meeting Cluster'),
-    },
-    {
-      accentColor: heroFacadeSources[2]?.color || '#f59e0b',
-      ctaLabel: heroFacadeSources[2] ? buildSponsorBoothPresentation(heroFacadeSources[2].company, heroFacadeSources[2].company.booth ?? null, heroFacadeSources[2].nodeType, { districtThemeId: heroFacadeSources[2].districtThemeId }).actions.find((action) => !action.disabled)?.label || 'Demo Room' : 'Connect',
-      companyId: heroFacadeSources[2]?.company?.id ?? null,
-      fallbackEyebrow: heroFacadeSources[2] ? buildSponsorBoothPresentation(heroFacadeSources[2].company, heroFacadeSources[2].company.booth ?? null, heroFacadeSources[2].nodeType, { districtThemeId: heroFacadeSources[2].districtThemeId }).fallbackIdentity.eyebrow : 'SPONSOR • NETWORK',
-      fallbackMonogram: heroFacadeSources[2] ? buildSponsorBoothPresentation(heroFacadeSources[2].company, heroFacadeSources[2].company.booth ?? null, heroFacadeSources[2].nodeType, { districtThemeId: heroFacadeSources[2].districtThemeId }).fallbackIdentity.monogram : 'SN',
-      fallbackMode: heroFacadeSources[2] ? !buildSponsorBoothPresentation(heroFacadeSources[2].company, heroFacadeSources[2].company.booth ?? null, heroFacadeSources[2].nodeType, { districtThemeId: heroFacadeSources[2].districtThemeId }).hasBrandAssets : true,
-      id: 'facade-screen-east',
-      imageUrl: pickScreenImage(heroFacadeSources[2] ?? null, 'facade', 2, heroFacadeSources[2] ? buildSponsorBoothPresentation(heroFacadeSources[2].company, heroFacadeSources[2].company.booth ?? null, heroFacadeSources[2].nodeType, { districtThemeId: heroFacadeSources[2].districtThemeId }).hasBrandAssets : false),
-      kind: 'facade',
-      position: [centerX + 124, 30, -104],
-      priority: Number(heroFacadeSources[2]?.priority || 70),
-      rotation: [0, -0.88, 0],
-      sectorName: heroFacadeSources[2]?.sectorName || null,
-      size: [34, 19],
-      subtitle: pickSubtitle(heroFacadeSources[2] ?? null, 'Premium sponsor placements'),
-      title: pickTitle(heroFacadeSources[2] ?? null, 'Sponsor Network'),
-    },
-  ];
+  const facadeLayouts = [
+    { id: 'facade-screen-hero', position: [centerX, 34, Math.min(22, footprint.maxZ - 8)] as [number, number, number], rotation: [0, Math.PI, 0] as [number, number, number], size: [46, 26] as [number, number] },
+    { id: 'facade-screen-side', position: [centerX - 112, 28, -58] as [number, number, number], rotation: [0, 0.82, 0] as [number, number, number], size: [32, 18] as [number, number] },
+  ] as const;
 
-  const mediumScreens: SponsorScreenNode[] = mediumSources.map((placement, index) => {
+  const facadeScreens: SponsorScreenNode[] = activeEligiblePlacements
+    .filter((placement) => hasScreenEligibleBrandAssets(placement))
+    .slice(0, facadeLayouts.length)
+    .map((placement, index) => {
     const presentation = buildSponsorBoothPresentation(placement.company, placement.company.booth ?? null, placement.nodeType, { districtThemeId: placement.districtThemeId });
-    const side = placement.position[0] < 0 ? -1 : 1;
-    const row = Math.floor(index / 2);
-    const zOffset = (index % 2 === 0 ? 6 : -10);
+    const layout = facadeLayouts[index];
 
     return {
       accentColor: placement.color,
-      ctaLabel: presentation.actions.find((action) => !action.disabled)?.label || 'Demo Room',
+      ctaLabel: presentation.actions.find((action) => !action.disabled)?.label || 'Open',
+      companyId: placement.company?.id ?? null,
+      fallbackEyebrow: presentation.fallbackIdentity.eyebrow,
+      fallbackMonogram: presentation.fallbackIdentity.monogram,
+      fallbackMode: !presentation.hasBrandAssets,
+      id: layout.id,
+      imageUrl: pickScreenImage(placement, 'facade', index, presentation.hasBrandAssets),
+      kind: 'facade',
+      position: layout.position,
+      priority: Number(placement.priority || 0),
+      rotation: layout.rotation,
+      sectorName: placement.sectorName || null,
+      size: layout.size,
+      subtitle: pickSubtitle(placement, 'Sponsor frontage'),
+      title: pickTitle(placement, 'Sponsor'),
+    };
+    });
+
+  const mediumScreens: SponsorScreenNode[] = activeEligiblePlacements
+    .filter((placement) => placement.nodeType === 'hero_left' || placement.nodeType === 'hero_right' || placement.nodeType === 'endcap')
+    .filter((placement) => hasScreenEligibleBrandAssets(placement))
+    .slice(0, 1)
+    .map((placement, index) => {
+    const presentation = buildSponsorBoothPresentation(placement.company, placement.company.booth ?? null, placement.nodeType, { districtThemeId: placement.districtThemeId });
+    const side = placement.position[0] < 0 ? -1 : 1;
+    const row = Math.floor(index / 2);
+    const zOffset = index % 2 === 0 ? 6 : -10;
+
+    return {
+      accentColor: placement.color,
+      ctaLabel: presentation.actions.find((action) => !action.disabled)?.label || 'Open',
       companyId: placement.company?.id ?? null,
       fallbackEyebrow: presentation.fallbackIdentity.eyebrow,
       fallbackMonogram: presentation.fallbackIdentity.monogram,
@@ -201,63 +219,21 @@ export function buildSponsorScreenLayout(
       id: `medium-screen-${placement.id}`,
       imageUrl: pickScreenImage(placement, 'medium_billboard', index, presentation.hasBrandAssets),
       kind: 'medium_billboard',
-      position: [placement.position[0] + (side * 22), 8.8 + (row * 0.5), placement.position[2] + zOffset] as [number, number, number],
+      position: [placement.position[0] + (side * 14), 7.1 + (row * 0.35), placement.position[2] + (zOffset * 0.8)],
       priority: Number(placement.priority || 0),
       rotation: [0, side < 0 ? 1.08 : -1.08, 0],
       sectorName: placement.sectorName || null,
-      size: [11.5, 6.6],
-      subtitle: pickSubtitle(placement, 'Premium boulevard messaging'),
+      size: [8.2, 4.6],
+      subtitle: pickSubtitle(placement, 'Sponsor frontage'),
       title: pickTitle(placement, 'Sponsor Screen'),
     };
-  });
-
-  while (mediumScreens.length < 4) {
-    const index = mediumScreens.length;
-    const side = index % 2 === 0 ? -1 : 1;
-    mediumScreens.push({
-      accentColor: side < 0 ? '#38bdf8' : '#22c55e',
-      ctaLabel: side < 0 ? 'Explore' : 'Meet Team',
-      companyId: null,
-      fallbackEyebrow: side < 0 ? 'SPONSOR AXIS' : 'BOULEVARD INFO',
-      fallbackMonogram: side < 0 ? 'SA' : 'BI',
-      fallbackMode: true,
-      id: `medium-screen-generic-${index}`,
-      imageUrl: HORIZONTAL_PLACEHOLDERS[index % HORIZONTAL_PLACEHOLDERS.length],
-      kind: 'medium_billboard',
-      position: [centerX + (side * 84), 9.2, footprint.maxZ - 46 - (index * 42)] as [number, number, number],
-      priority: 10 - index,
-      rotation: [0, side < 0 ? 1.02 : -1.02, 0],
-      sectorName: null,
-      size: [11.5, 6.6],
-      subtitle: 'Premium sponsor boulevard messaging',
-      title: side < 0 ? 'Sponsor Axis' : 'Boulevard Info',
     });
-  }
-
-  const markerGroundScreens = sectorMarkers.slice(0, 3).map((marker, index) => ({
-    accentColor: marker.color,
-    ctaLabel: 'Route',
-    companyId: null,
-    fallbackEyebrow: `${marker.label.toUpperCase()} • DISTRICT`,
-    fallbackMonogram: marker.label.slice(0, 2).toUpperCase(),
-    fallbackMode: true,
-    id: `ground-screen-marker-${marker.id}`,
-    imageUrl: VERTICAL_PLACEHOLDERS[index % VERTICAL_PLACEHOLDERS.length],
-    kind: 'ground_pylon' as const,
-    position: [marker.position[0] + (marker.side === 'left' ? 16 : -16), 2.6, marker.position[2] + 6] as [number, number, number],
-    priority: 20 - index,
-    rotation: [0, marker.side === 'left' ? 1.18 : -1.18, 0] as [number, number, number],
-    sectorName: marker.label,
-    size: [3.6, 6.4] as [number, number],
-    subtitle: marker.side === 'left' ? 'West hall routing' : 'East hall routing',
-    title: marker.label,
-  }));
 
   const arrivalGroundScreen: SponsorScreenNode = {
     accentColor: '#22c55e',
     ctaLabel: 'Enter',
     companyId: null,
-    fallbackEyebrow: 'ARRIVAL • EXPO CITY',
+    fallbackEyebrow: 'ARRIVAL',
     fallbackMonogram: 'AR',
     fallbackMode: true,
     id: 'ground-screen-arrival',
@@ -272,56 +248,79 @@ export function buildSponsorScreenLayout(
     title: 'Arrival',
   };
 
-  const boothGroundScreens = groundBoothSources.map((placement, index) => {
-    const presentation = buildSponsorBoothPresentation(placement.company, placement.company.booth ?? null, placement.nodeType, { districtThemeId: placement.districtThemeId });
-    const side = placement.position[0] < 0 ? -1 : 1;
-    return {
-      accentColor: placement.color,
-      ctaLabel: presentation.actions.find((action) => !action.disabled)?.label || 'Demo Room',
-      companyId: placement.company?.id ?? null,
-      fallbackEyebrow: presentation.fallbackIdentity.eyebrow,
-      fallbackMonogram: presentation.fallbackIdentity.monogram,
-      fallbackMode: !presentation.hasBrandAssets,
-      id: `ground-screen-${placement.id}`,
-      imageUrl: pickScreenImage(placement, 'ground_pylon', index, presentation.hasBrandAssets),
-      kind: 'ground_pylon' as const,
-    position: [placement.position[0] + (side * 10), 2.5, placement.position[2] + 7] as [number, number, number],
-      priority: Number(placement.priority || 0),
-      rotation: [0, side < 0 ? 0.9 : -0.9, 0] as [number, number, number],
-      sectorName: placement.sectorName || null,
-      size: [3.2, 5.8] as [number, number],
-      subtitle: pickSubtitle(placement, 'Open booth and continue'),
-      title: pickTitle(placement, 'Sponsor'),
-    };
-  });
+  const markerGroundScreens: SponsorScreenNode[] = sectorMarkers.slice(0, 3).flatMap((marker, index) => {
+    const district = getDistrictSummary(marker.sectorId, marker.clusterIndex, districtPrograms);
+    const roles = getDistrictRoles(marker.sectorId, marker.clusterIndex, districtPrograms);
+    const activeDistrict = district?.expressionMode === 'active-commercial' || roles.has('demo_stage') || roles.has('info_pavilion');
+    if (!activeDistrict) {
+      return [];
+    }
 
-  const groundScreens = [arrivalGroundScreen, ...markerGroundScreens, ...boothGroundScreens].slice(0, 10);
-  while (groundScreens.length < 6) {
-    const index = groundScreens.length;
-    const side = index % 2 === 0 ? -1 : 1;
-      groundScreens.push({
-      accentColor: side < 0 ? '#22c55e' : '#f59e0b',
-      ctaLabel: side < 0 ? 'Browse' : 'Meetings',
+    return [{
+      accentColor: marker.color,
+      ctaLabel: 'Live',
       companyId: null,
-      fallbackEyebrow: side < 0 ? 'DIRECTORY • WEST' : 'MEETINGS • EAST',
-      fallbackMonogram: side < 0 ? 'DW' : 'ME',
+      fallbackEyebrow: `${marker.label.toUpperCase()} • PROGRAM`,
+      fallbackMonogram: marker.label.slice(0, 2).toUpperCase(),
       fallbackMode: true,
-      id: `ground-screen-generic-${index}`,
+      id: `ground-screen-marker-${marker.id}`,
       imageUrl: VERTICAL_PLACEHOLDERS[index % VERTICAL_PLACEHOLDERS.length],
       kind: 'ground_pylon',
-      position: [centerX + (side * 26), 2.5, footprint.maxZ - 24 - (index * 24)] as [number, number, number],
-      priority: 5 - index,
-      rotation: [0, side < 0 ? 0.68 : -0.68, 0],
-      sectorName: null,
-      size: [3.2, 5.8],
-      subtitle: 'Directory and sponsor routing',
-      title: side < 0 ? 'Directory' : 'Meetings',
+      position: [marker.position[0] + (marker.side === 'left' ? 16 : -16), 2.6, marker.position[2] + 6],
+      priority: 20 - index,
+      rotation: [0, marker.side === 'left' ? 1.18 : -1.18, 0],
+      sectorName: marker.label,
+      size: [3.6, 6.4],
+      subtitle: 'Live demos and active routing',
+      title: `${marker.label} Live`,
+    }];
+  });
+
+  const boothGroundScreens: SponsorScreenNode[] = rankedPlacements
+    .filter((placement) => placement.nodeType === 'hero_left' || placement.nodeType === 'hero_right' || placement.nodeType === 'endcap')
+    .filter((placement) => getDistrictSummary(placement.sectorId, placement.clusterIndex, districtPrograms)?.expressionMode === 'active-commercial')
+    .filter((placement) => hasScreenEligibleBrandAssets(placement))
+    .slice(0, 3)
+    .map((placement, index) => {
+      const presentation = buildSponsorBoothPresentation(placement.company, placement.company.booth ?? null, placement.nodeType, { districtThemeId: placement.districtThemeId });
+      const side = placement.position[0] < 0 ? -1 : 1;
+
+      return {
+        accentColor: placement.color,
+        ctaLabel: presentation.actions.find((action) => !action.disabled)?.label || 'Live Demo',
+        companyId: placement.company?.id ?? null,
+        fallbackEyebrow: `${presentation.fallbackIdentity.eyebrow} • LIVE`,
+        fallbackMonogram: presentation.fallbackIdentity.monogram,
+        fallbackMode: !presentation.hasBrandAssets,
+        id: `ground-screen-${placement.id}`,
+        imageUrl: pickScreenImage(placement, 'ground_pylon', index, presentation.hasBrandAssets),
+        kind: 'ground_pylon',
+        position: [placement.position[0] + (side * 10), 2.5, placement.position[2] + 7],
+        priority: Number(placement.priority || 0),
+        rotation: [0, side < 0 ? 0.9 : -0.9, 0],
+        sectorName: placement.sectorName || null,
+        size: [3.2, 5.8],
+        subtitle: pickSubtitle(placement, 'Open booth and join the live program'),
+        title: pickTitle(placement, 'Sponsor'),
+      };
     });
-  }
+
+  const groundScreens = [arrivalGroundScreen, ...markerGroundScreens, ...boothGroundScreens].slice(0, 6);
+
+  const districtFrontage = Object.fromEntries(districtPrograms.map((district) => {
+    const key = district.sectorId ?? `cluster-${district.clusterIndex}`;
+    return [key, {
+      hasGroundEngagement: district.frontagePackage.hasGroundEngagement,
+      hasPrimaryScreenPlane: district.expressionMode === 'active-commercial' && (facadeScreens.some((screen) => screen.sectorName === district.sectorLabel) || mediumScreens.some((screen) => screen.sectorName === district.sectorLabel)),
+      hasSecondarySupport: district.frontagePackage.hasSecondarySupport && (mediumScreens.some((screen) => screen.sectorName === district.sectorLabel) || groundScreens.some((screen) => screen.sectorName === district.sectorLabel)),
+      intensity: district.frontageIntensity,
+    }];
+  }));
 
   return {
+    districtFrontage,
     facadeScreens,
     groundScreens,
-    mediumScreens: mediumScreens.slice(0, 6),
+    mediumScreens: mediumScreens.slice(0, 2),
   };
 }

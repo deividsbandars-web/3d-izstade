@@ -1,87 +1,101 @@
-import { Text } from '@react-three/drei';
+function ArrivalConcreteMaterial({
+  color = '#e8eef4',
+  roughness = 0.7,
+  metalness = 0.05,
+}: {
+  color?: string;
+  roughness?: number;
+  metalness?: number;
+}) {
+  return <meshStandardMaterial color={color} metalness={metalness} roughness={roughness} />;
+}
+
+function ArrivalMetalMaterial({
+  color = '#5f7286',
+  roughness = 0.56,
+}: {
+  color?: string;
+  roughness?: number;
+}) {
+  return <meshStandardMaterial color={color} metalness={0.22} roughness={roughness} />;
+}
 
 export function ArrivalReveal() {
   return (
     <group name="arrival-reveal" position={[0, 0, 18]}>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.035, -10]} receiveShadow>
-        <planeGeometry args={[68, 44]} />
-        <meshStandardMaterial color="#101a2d" roughness={0.84} metalness={0.08} />
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, -10]} receiveShadow>
+        <planeGeometry args={[92, 64]} />
+        <ArrivalConcreteMaterial color="#eef3f7" roughness={0.76} metalness={0.04} />
       </mesh>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.06, -1.8]} receiveShadow>
-        <ringGeometry args={[10.4, 15.6, 64]} />
-        <meshStandardMaterial color="#1c2b40" emissive="#1c2b40" emissiveIntensity={0.06} transparent opacity={0.82} />
+
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.04, -6]} receiveShadow>
+        <planeGeometry args={[18, 52]} />
+        <ArrivalConcreteMaterial color="#dde5ed" roughness={0.58} metalness={0.06} />
       </mesh>
-      <mesh position={[0, 0.32, -4.5]} receiveShadow>
-        <cylinderGeometry args={[12.2, 15.6, 0.42, 56]} />
-        <meshStandardMaterial color="#152235" metalness={0.18} roughness={0.74} />
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.05, -8]} receiveShadow>
+        <ringGeometry args={[10.8, 17.2, 72]} />
+        <ArrivalMetalMaterial color="#94a8bc" roughness={0.52} />
       </mesh>
-      <mesh position={[0, 0.12, 6.5]} rotation={[-Math.PI / 2, 0, 0]}>
-        <planeGeometry args={[15.2, 3.6]} />
-        <meshBasicMaterial color="#38bdf8" transparent opacity={0.06} />
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.06, 5.8]}>
+        <planeGeometry args={[10.8, 18]} />
+        <meshStandardMaterial color="#94d8ff" emissive="#94d8ff" emissiveIntensity={0.08} transparent opacity={0.18} />
       </mesh>
-      <mesh position={[0, 12.8, -20]} castShadow>
-        <boxGeometry args={[40, 1, 3.2]} />
-        <meshStandardMaterial color="#07101d" metalness={0.2} roughness={0.72} />
+
+      <mesh position={[-13.8, 2.8, 6.4]} castShadow>
+        <boxGeometry args={[1.2, 5.6, 12.4]} />
+        <ArrivalMetalMaterial color="#314556" roughness={0.64} />
       </mesh>
-      <mesh position={[-20.5, 8.8, -20]} castShadow>
-        <boxGeometry args={[2.1, 17.6, 2]} />
-        <meshStandardMaterial color="#1d2b40" />
+      <mesh position={[13.8, 2.8, 6.4]} castShadow>
+        <boxGeometry args={[1.2, 5.6, 12.4]} />
+        <ArrivalMetalMaterial color="#314556" roughness={0.64} />
       </mesh>
-      <mesh position={[20.5, 8.8, -20]} castShadow>
-        <boxGeometry args={[2.1, 17.6, 2]} />
-        <meshStandardMaterial color="#1d2b40" />
+      <mesh position={[-9.8, 1.25, 3.2]} castShadow>
+        <boxGeometry args={[6.4, 2.5, 6.2]} />
+        <ArrivalConcreteMaterial color="#e5ebf1" roughness={0.62} metalness={0.03} />
       </mesh>
-      <mesh position={[0, 15.4, -19.6]} castShadow>
-        <torusGeometry args={[20.4, 0.48, 18, 72, Math.PI]} />
-        <meshStandardMaterial color="#38bdf8" emissive="#38bdf8" emissiveIntensity={0.16} />
+      <mesh position={[9.8, 1.25, 3.2]} castShadow>
+        <boxGeometry args={[6.4, 2.5, 6.2]} />
+        <ArrivalConcreteMaterial color="#e5ebf1" roughness={0.62} metalness={0.03} />
       </mesh>
-      <mesh position={[-13.8, 4.8, -6.6]} castShadow>
-        <boxGeometry args={[1.2, 8.2, 1.2]} />
-        <meshStandardMaterial color="#0f172a" metalness={0.2} roughness={0.66} />
+
+      <mesh position={[-16.5, 7.6, -17.4]} castShadow>
+        <boxGeometry args={[2.2, 15.2, 2.4]} />
+        <ArrivalMetalMaterial color="#243849" roughness={0.58} />
       </mesh>
-      <mesh position={[13.8, 4.8, -6.6]} castShadow>
-        <boxGeometry args={[1.2, 8.2, 1.2]} />
-        <meshStandardMaterial color="#0f172a" metalness={0.2} roughness={0.66} />
+      <mesh position={[16.5, 7.6, -17.4]} castShadow>
+        <boxGeometry args={[2.2, 15.2, 2.4]} />
+        <ArrivalMetalMaterial color="#243849" roughness={0.58} />
       </mesh>
-      <mesh position={[0, 8.9, -5.8]} castShadow>
-        <cylinderGeometry args={[1.24, 1.7, 16.2, 24]} />
-        <meshStandardMaterial color="#0f172a" metalness={0.18} roughness={0.7} />
+      <mesh position={[0, 12.5, -17.4]} castShadow>
+        <boxGeometry args={[35.8, 1.1, 2.8]} />
+        <ArrivalMetalMaterial color="#2b4255" roughness={0.54} />
       </mesh>
-      <mesh position={[0, 16.1, -5.8]} castShadow>
-        <octahedronGeometry args={[2.4, 0]} />
-        <meshStandardMaterial color="#93c5fd" emissive="#60a5fa" emissiveIntensity={0.28} />
+      <mesh position={[0, 14.1, -16.6]}>
+        <planeGeometry args={[22, 3]} />
+        <meshStandardMaterial color="#8ecfff" emissive="#8ecfff" emissiveIntensity={0.14} transparent opacity={0.13} />
       </mesh>
-      <mesh position={[0, 0.2, 6.5]} rotation={[-Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[4.8, 7.8, 40]} />
-        <meshBasicMaterial color="#38bdf8" transparent opacity={0.12} />
+
+      <mesh position={[0, 2.4, -5.2]} castShadow>
+        <cylinderGeometry args={[1.1, 1.6, 8.4, 24]} />
+        <ArrivalMetalMaterial color="#31485b" roughness={0.56} />
       </mesh>
-      <mesh position={[0, 1.2, 6.5]} receiveShadow rotation={[-Math.PI / 2, 0, 0]}>
-        <planeGeometry args={[14, 2.4]} />
-        <meshStandardMaterial color="#38bdf8" emissive="#38bdf8" emissiveIntensity={0.2} transparent opacity={0.3} />
+      <mesh position={[0, 7.2, -5.2]} castShadow>
+        <octahedronGeometry args={[1.9, 0]} />
+        <meshStandardMaterial color="#b8ddff" emissive="#7bc7ff" emissiveIntensity={0.18} />
       </mesh>
-      <mesh position={[-18.2, 0.12, 6.4]} rotation={[-Math.PI / 2, 0, 0]}>
-        <planeGeometry args={[7.2, 0.38]} />
-        <meshBasicMaterial color="#38bdf8" transparent opacity={0.2} />
+
+      <mesh position={[0, 0.12, 10.6]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[8.8, 0.52]} />
+        <meshBasicMaterial color="#8ed6ff" transparent opacity={0.14} />
       </mesh>
-      <mesh position={[18.2, 0.12, 6.4]} rotation={[-Math.PI / 2, 0, 0]}>
-        <planeGeometry args={[7.2, 0.38]} />
-        <meshBasicMaterial color="#38bdf8" transparent opacity={0.2} />
+      <mesh position={[0, 0.12, -0.6]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[7.6, 0.32]} />
+        <meshBasicMaterial color="#8ed6ff" transparent opacity={0.1} />
       </mesh>
-      <Text position={[0, 18.1, -18]} fontSize={0.72} color="#7dd3fc" anchorX="center" anchorY="middle">
-        EXPO CITY ARRIVAL
-      </Text>
-      <Text position={[0, 15.7, -18]} fontSize={3.5} color="#f8fafc" anchorX="center" anchorY="middle">
-        WARPALA SPONSOR BOULEVARD
-      </Text>
-      <Text position={[0, 11.8, -18.9]} fontSize={0.92} color="#bfdbfe" anchorX="center" anchorY="middle" maxWidth={40}>
-        ARRIVE. DISCOVER SPONSORS. OPEN DEMOS. BOOK LIVE MEETINGS.
-      </Text>
-      <Text position={[0, 1.02, -3.4]} fontSize={0.92} color="#dbeafe" anchorX="center" anchorY="middle">
-        ARRIVAL PLAZA
-      </Text>
-      <Text position={[0, 0.88, 6.5]} fontSize={0.7} color="#0f172a" anchorX="center" anchorY="middle">
-        MAIN SPONSOR AXIS
-      </Text>
+      <mesh position={[0, 0.12, -12.6]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[6.8, 0.24]} />
+        <meshBasicMaterial color="#8ed6ff" transparent opacity={0.08} />
+      </mesh>
     </group>
   );
 }

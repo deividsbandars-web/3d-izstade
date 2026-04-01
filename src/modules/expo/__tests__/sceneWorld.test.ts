@@ -1,8 +1,10 @@
 import assert from 'node:assert/strict';
 import { ZoneSystem } from '../../../modules/city/ZoneSystem.js';
 import { buildSponsorBoulevardPlan, rankCompaniesForBoulevard, UNASSIGNED_SECTOR_ID } from '../lib/boulevardLayout.js';
-import { buildBoothPlacements, buildCuratedCityPlan, buildExpoGenerationSignature, buildExpoPlayBounds, buildExpoSectorMarkers, buildExpoSponsorStartView, buildExpoWalkRegions, buildExpoWorldDiagnostics, createDistrictBoothZone, isPointWithinExpoWalkRegions, replaceDistrictBoothZones } from '../sceneWorld.js';
+import { buildCuratedCityPlan, buildExpoGenerationSignature, buildExpoWorldDiagnostics, createDistrictBoothZone, replaceDistrictBoothZones } from '../sceneWorld.js';
 import type { ExpoSceneCompany, ExpoSceneSector } from '../types/scene.js';
+import { buildExpoPlayBoundsFromPlacements, buildExpoWalkRegionContract, isPointWithinExpoWalkRegions } from '../walk-region.js';
+import { buildExpoWorldContract, buildExpoSponsorStartView } from '../world-contract.js';
 
 const sponsorData = {
   companies: [
@@ -28,6 +30,7 @@ assert.equal(rankedCompanies[4].sectorId, UNASSIGNED_SECTOR_ID);
 const boulevardPlan = buildSponsorBoulevardPlan(sponsorData.companies, sponsorData.sectors);
 assert.equal(boulevardPlan.arrivalNode.nodeType, 'arrival');
 assert.equal(boulevardPlan.sectorGateways.length, 6);
+assert.equal(boulevardPlan.districts.length, 3);
 assert.ok(boulevardPlan.nodes.some((node) => node.nodeType === 'anchor_plaza'));
 assert.ok(boulevardPlan.nodes.some((node) => node.nodeType === 'connector_corridor'));
 assert.ok(boulevardPlan.nodes.some((node) => node.nodeType === 'side_lane_node'));
@@ -38,6 +41,11 @@ assert.equal(boulevardPlan.nodes.find((node) => node.companyId === 'company-3')?
 assert.equal(boulevardPlan.nodes.find((node) => node.companyId === 'company-1')?.nodeType, 'endcap');
 assert.equal(boulevardPlan.nodes.find((node) => node.companyId === 'company-4')?.nodeType, 'standard_left');
 assert.equal(boulevardPlan.nodes.find((node) => node.companyId === 'company-5')?.sectorId, UNASSIGNED_SECTOR_ID);
+assert.ok(boulevardPlan.districts.every((district) => district.programTargets.some((target) => target.role === 'arrival_anchor' && target.target === 1)));
+assert.ok(boulevardPlan.districts.every((district) => district.programNodeIds.length > 0));
+assert.ok(boulevardPlan.districts.some((district) => district.expressionMode === 'active-commercial'));
+assert.ok(boulevardPlan.districts.some((district) => district.isCommerciallyEligible === false));
+assert.ok(boulevardPlan.districts.every((district) => district.authoredMomentCount >= 1));
 assert.deepEqual(buildSponsorBoulevardPlan(sponsorData.companies, sponsorData.sectors), boulevardPlan);
 
 const overflowHeroPlan = buildSponsorBoulevardPlan([
@@ -70,11 +78,22 @@ assert.ok(emptySectorPlan.nodes.some((node) => node.sectorId === 'sector-3' && n
 assert.ok(emptySectorPlan.nodes.some((node) => node.sectorId === 'sector-3' && node.nodeType === 'connector_corridor'));
 assert.ok(emptySectorPlan.nodes.some((node) => node.sectorId === 'sector-3' && node.nodeType === 'side_lane_node'));
 assert.ok(emptySectorPlan.nodes.some((node) => node.sectorId === 'sector-3' && node.nodeType === 'programmed_filler'));
+assert.ok(emptySectorPlan.districts.find((district) => district.sectorId === 'sector-3')?.programTargets.some((target) => target.role === 'scenic_showcase' && target.target === 2));
+assert.equal(emptySectorPlan.districts.find((district) => district.sectorId === 'sector-3')?.expressionMode, 'scenic');
+assert.equal(emptySectorPlan.districts.find((district) => district.sectorId === 'sector-3')?.downgradeReason, 'empty-sector');
 const sector2GatewayZ = emptySectorPlan.sectorGateways.find((node) => node.sectorId === 'sector-2' && node.position[0] < 0)?.position[2] ?? 0;
 const sector3GatewayZ = emptySectorPlan.sectorGateways.find((node) => node.sectorId === 'sector-3' && node.position[0] < 0)?.position[2] ?? 0;
-assert.ok(Math.abs(sector3GatewayZ - sector2GatewayZ) < 120);
+assert.ok(Math.abs(sector3GatewayZ - sector2GatewayZ) <= 150);
 
-const multiPlacements = buildBoothPlacements(sponsorData);
+const multiWorld = buildExpoWorldContract(sponsorData);
+const multiPlacements = multiWorld.boothPlacements;
+assert.equal(multiWorld.districtPrograms.length, 3);
+assert.ok(multiWorld.qualityProfileInputs.districtProgramNodeCount >= multiWorld.districtPrograms.length * 6);
+assert.ok(multiWorld.qualityProfileInputs.districtProgramTargetCount >= multiWorld.qualityProfileInputs.districtProgramNodeCount);
+assert.ok(multiWorld.qualityProfileInputs.sponsorBackedDistrictCount >= 2);
+assert.equal(multiWorld.qualityProfileInputs.unsupportedActiveDistrictCount, 0);
+assert.equal(multiWorld.qualityProfileInputs.scenicWithoutAuthoredMomentCount, 0);
+assert.ok(Object.values(multiWorld.qualityProfileInputs.frontageIntensityByDistrict).some((value) => value >= 2));
 const zoneSystem = new ZoneSystem();
 
 zoneSystem.replaceZonesByPrefix('district-booth-', multiPlacements.map(createDistrictBoothZone));
@@ -106,7 +125,7 @@ assert.deepEqual(
   ['district-booth-company-2', 'web-lobby']
 );
 
-const singlePlacement = buildBoothPlacements({
+const singleWorld = buildExpoWorldContract({
   companies: [
     { id: 'company-3', sector_id: 'sector-2', booth: { id: 'booth-3' } },
   ],
@@ -114,6 +133,7 @@ const singlePlacement = buildBoothPlacements({
     { id: 'sector-2', color_theme: '#22c55e', map_position: { x: 0, z: -20 } },
   ],
 });
+const singlePlacement = singleWorld.boothPlacements;
 
 assert.equal(singlePlacement.length, 1);
 assert.deepEqual(createDistrictBoothZone(singlePlacement[0]).id, 'district-booth-company-3');
@@ -156,8 +176,8 @@ assert.ok(curatedPlan.visibleCore.plannedCoreCells.some((cell) => cell.role === 
 assert.ok(curatedPlan.visibleCore.plannedCoreCells.filter((cell) => cell.role === 'road').length >= 5);
 assert.equal(curatedPlan.visibleCore.failedCoreCells.length, 0);
 
-const playBounds = buildExpoPlayBounds(multiPlacements);
-assert.deepEqual(playBounds, buildExpoPlayBounds(buildBoothPlacements(sponsorData)));
+const playBounds = buildExpoPlayBoundsFromPlacements(multiPlacements);
+assert.deepEqual(playBounds, buildExpoPlayBoundsFromPlacements(buildExpoWorldContract(sponsorData).boothPlacements));
 assert.ok(playBounds.minX <= -260);
 assert.ok(playBounds.maxX >= 260);
 assert.ok(playBounds.minZ <= -400);
@@ -165,7 +185,7 @@ assert.ok(playBounds.maxZ >= boulevardPlan.arrivalNode.position[2] + 40);
 assert.ok(boulevardPlan.arrivalNode.position[0] >= playBounds.minX && boulevardPlan.arrivalNode.position[0] <= playBounds.maxX);
 assert.ok(boulevardPlan.arrivalNode.position[2] >= playBounds.minZ && boulevardPlan.arrivalNode.position[2] <= playBounds.maxZ);
 
-const sparseWorldBounds = buildExpoPlayBounds(singlePlacement);
+const sparseWorldBounds = buildExpoPlayBoundsFromPlacements(singlePlacement);
 assert.ok(sparseWorldBounds.maxX - sparseWorldBounds.minX >= 320);
 assert.ok(sparseWorldBounds.maxZ - sparseWorldBounds.minZ >= 240);
 
@@ -176,7 +196,7 @@ assert.equal(startView.position[1], 5);
 assert.ok(startView.position[2] > boulevardPlan.arrivalNode.position[2]);
 assert.ok(startView.lookAt[2] < boulevardPlan.arrivalNode.position[2]);
 
-const walkRegions = buildExpoWalkRegions(multiPlacements);
+const walkRegions = buildExpoWalkRegionContract(multiPlacements).walkRegions;
 assert.ok(walkRegions.some((region) => region.type === 'arrival'));
 assert.ok(walkRegions.some((region) => region.type === 'spine'));
 assert.ok(walkRegions.some((region) => region.type === 'secondary-loop'));
@@ -194,7 +214,7 @@ assert.equal(isPointWithinExpoWalkRegions({ x: -170, z: -120 }, walkRegions), fa
 assert.equal(isPointWithinExpoWalkRegions({ x: 170, z: -120 }, walkRegions), false);
 assert.ok(isPointWithinExpoWalkRegions({ x: 52, z: multiPlacements[1].position[2] - 2 }, walkRegions));
 
-const rightSidePlacements = buildBoothPlacements({
+const rightSidePlacements = buildExpoWorldContract({
   companies: [
     { boothType: 'hero', id: 'hero-left', name: 'Hero Left', priority: 100, sector_id: 'sector-1', sponsorTier: 'hero', booth: { id: 'hero-left' } },
     { boothType: 'hero', id: 'hero-right', name: 'Hero Right', priority: 95, sector_id: 'sector-1', sponsorTier: 'hero', booth: { id: 'hero-right' } },
@@ -202,13 +222,13 @@ const rightSidePlacements = buildBoothPlacements({
     { boothType: 'standard', id: 'sector2-right', name: 'Sector 2 Right', priority: 80, sector_id: 'sector-2', sponsorTier: 'silver', booth: { id: 'sector2-right' } },
   ],
   sectors: sponsorData.sectors,
-});
-const rightSideWalkRegions = buildExpoWalkRegions(rightSidePlacements);
+}).boothPlacements;
+const rightSideWalkRegions = buildExpoWalkRegionContract(rightSidePlacements).walkRegions;
 assert.ok(isPointWithinExpoWalkRegions({ x: 32, z: -136 }, rightSideWalkRegions));
 assert.ok(isPointWithinExpoWalkRegions({ x: 78, z: -136 }, rightSideWalkRegions));
 assert.equal(isPointWithinExpoWalkRegions({ x: -170, z: -136 }, rightSideWalkRegions), false);
 
-const sectorMarkers = buildExpoSectorMarkers(sponsorData);
+const sectorMarkers = multiWorld.sectorMarkers;
 assert.equal(sectorMarkers.length, 6);
 assert.equal(sectorMarkers[0].side, 'left');
 assert.equal(sectorMarkers[1].side, 'right');

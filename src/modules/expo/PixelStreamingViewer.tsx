@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Config, PixelStreaming } from '@epicgames-ps/lib-pixelstreamingfrontend-ue5.7';
+import { reportExpoDevError } from './lib/devErrorReporter';
 import { EXPO_MODE_COPY } from './state/expoRuntime';
 import type { PixelStreamingAvailability, PixelStreamingRuntimeConfig, PixelStreamingRuntimeStatus } from './services/pixelStreamingConfig';
 
@@ -102,8 +103,10 @@ export default function PixelStreamingViewer({
         try {
             // @ts-expect-error library event map is narrower than runtime events we receive from signaling
             ps.addEventListener('streamerListChanged', onStreamerList);
-        } catch {
-            // ignore event compatibility differences between library versions
+        } catch (error) {
+            reportExpoDevError('PixelStreamingViewer.streamerListChanged', error, {
+                signalingUrl,
+            });
         }
 
         return () => {

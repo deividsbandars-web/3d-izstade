@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useZoneSystem } from '../../hooks/useZoneSystem';
 import { ExpoLobby } from './components/ExpoLobby';
@@ -8,7 +8,20 @@ import { useExpoPresence } from './hooks/useExpoPresence';
 import { useExpoSceneData } from './hooks/useExpoSceneData';
 import { usePixelStreamingStatus } from './hooks/usePixelStreamingStatus';
 import PixelStreamingViewer from './PixelStreamingViewer';
+import { reportExpoDevError } from './lib/devErrorReporter';
 import { EXPO_DEBUG_DEFAULT, type ExpoMode } from './state/expoRuntime';
+import { buildExpoWorldContract } from './world-contract';
+
+function isExpoIgnorablePointerLockError(error: unknown) {
+  const message = error instanceof Error
+    ? error.message
+    : typeof error === 'string'
+      ? error
+      : '';
+
+  return message.includes('Pointer lock cannot be acquired immediately after the user has exited the lock')
+    || message.includes('Target Element removed from DOM');
+}
 
 export default function Expo3D() {
   const [mode, setMode] = useState<ExpoMode>('menu');
@@ -16,9 +29,40 @@ export default function Expo3D() {
 
   const nav = useNavigate();
   const { data, isLoading } = useExpoSceneData();
+  const worldContract = useMemo(() => buildExpoWorldContract(data), [data]);
   const pixelStreamingStatus = usePixelStreamingStatus();
   const { guests, playerPos, isMicOn, isSpeaking, setIsMicOn, handlePlayerMove } = useExpoPresence(mode);
   const { activeZone, zoneSystem } = useZoneSystem(playerPos as any);
+
+  useEffect(() => {
+    if (!import.meta.env.DEV) {
+      return;
+    }
+
+    const onError = (event: ErrorEvent) => {
+      reportExpoDevError('window.error', event.error ?? event.message, {
+        colno: event.colno,
+        filename: event.filename,
+        lineno: event.lineno,
+      });
+    };
+
+    const onUnhandledRejection = (event: PromiseRejectionEvent) => {
+      if (isExpoIgnorablePointerLockError(event.reason)) {
+        event.preventDefault();
+        return;
+      }
+      reportExpoDevError('window.unhandledrejection', event.reason);
+    };
+
+    window.addEventListener('error', onError);
+    window.addEventListener('unhandledrejection', onUnhandledRejection);
+
+    return () => {
+      window.removeEventListener('error', onError);
+      window.removeEventListener('unhandledrejection', onUnhandledRejection);
+    };
+  }, []);
 
   if (isLoading) return <Expo3DLoader />;
 
@@ -59,6 +103,7 @@ export default function Expo3D() {
             isMicOn={isMicOn}
             isSpeaking={isSpeaking}
             playerPos={playerPos}
+            visualProfile={worldContract.visualProfile}
             onToggleMic={() => setIsMicOn((value) => !value)}
             onToggleDebug={() => setDebug((value) => !value)}
             onExit={() => {
@@ -68,11 +113,12 @@ export default function Expo3D() {
           />
           <ExpoWorldScene
             activeZone={activeZone}
-            data={data}
             debug={debug}
             guests={guests}
             mode={mode}
             onMove={handlePlayerMove}
+            sceneVersion={data?.sceneVersion ? String(data.sceneVersion) : null}
+            worldContract={worldContract}
             zoneSystem={zoneSystem}
           />
         </>

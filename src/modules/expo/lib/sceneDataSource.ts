@@ -1,11 +1,32 @@
 import { expoService } from '../../../services/expoService';
 import { getFrontendRuntimeEnv } from '../../../config/runtimeEnv';
+import { reportExpoDevError } from './devErrorReporter';
 import { adaptBackendScenePayload, normalizeBooth, normalizeCompany, normalizeSector } from './sceneContract';
 import { buildDevFallbackScene, buildProductionSafeFallbackScene } from './sceneFallbacks';
 import type { ExpoSceneData } from '../types/scene';
 
 export function getPublicExpoSceneEndpoint() {
   return `${getFrontendRuntimeEnv().apiBaseUrl}/api/expo/scene`;
+}
+
+function isLocalOrigin(value: string) {
+  try {
+    const url = new URL(value);
+    return url.hostname === 'localhost' || url.hostname === '127.0.0.1';
+  } catch (error) {
+    if (import.meta.env.DEV) {
+      reportExpoDevError('sceneDataSource.isLocalOrigin', error, { value });
+    }
+    return false;
+  }
+}
+
+export function shouldPreferLocalExpoDataSource() {
+  if (!import.meta.env.DEV) {
+    return false;
+  }
+
+  return isLocalOrigin(getFrontendRuntimeEnv().apiBaseUrl);
 }
 
 export async function loadExpoSceneFromBackendContract(): Promise<ExpoSceneData> {
@@ -52,9 +73,24 @@ export async function loadExpoSceneFromSupabaseService(): Promise<ExpoSceneData>
 }
 
 export async function loadExpoSceneForRelease(): Promise<ExpoSceneData> {
+  if (shouldPreferLocalExpoDataSource()) {
+    try {
+      return await loadExpoSceneFromSupabaseService();
+    } catch (supabaseError) {
+      reportExpoDevError('sceneDataSource.loadExpoSceneForRelease.localSupabase', supabaseError);
+      console.error('Expo local scene loading failed. Falling back to seeded Expo scene.', supabaseError);
+      return buildDevFallbackScene();
+    }
+  }
+
   try {
     return await loadExpoSceneFromBackendContract();
   } catch (backendError) {
+    if (import.meta.env.DEV) {
+      reportExpoDevError('sceneDataSource.loadExpoSceneForRelease.backendContract', backendError, {
+        endpoint: getPublicExpoSceneEndpoint(),
+      });
+    }
     if (import.meta.env.DEV) {
       console.warn('Expo scene backend contract unavailable.', backendError);
     }
@@ -64,6 +100,7 @@ export async function loadExpoSceneForRelease(): Promise<ExpoSceneData> {
     try {
       return await loadExpoSceneFromSupabaseService();
     } catch (supabaseError) {
+      reportExpoDevError('sceneDataSource.loadExpoSceneForRelease.devSupabaseFallback', supabaseError);
       console.error('Expo scene loading failed.', supabaseError);
       return buildDevFallbackScene();
     }

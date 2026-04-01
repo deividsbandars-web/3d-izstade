@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { reportExpoDevError } from '../lib/devErrorReporter';
 import {
   buildFallbackPixelStreamingRuntimeStatus,
   derivePixelStreamingAvailability,
@@ -44,7 +45,11 @@ export function usePixelStreamingStatus({ shouldProbe = true }: UsePixelStreamin
 
         setRuntimeStatus(status);
         setAvailability(derivePixelStreamingAvailability(status));
-      } catch {
+      } catch (error) {
+        reportExpoDevError('usePixelStreamingStatus.fetchPixelStreamingRuntimeStatus', error, {
+          signalingUrl: config.signalingUrl,
+          statusEndpointUrl: config.statusEndpointUrl,
+        });
         const isReachable = await probePixelStreamingAvailability(config);
         if (!isActive) return;
 

@@ -49,7 +49,8 @@ export function resolveExpoBackdropStrategy({
     cityShellOpacity: qualityPreset === 'quality' ? 0.32 : 0.24,
     cityShellTargetSpan: qualityPreset === 'quality' ? 760 : 660,
     enableCuratedSkylineRing: skylineRingEnabled,
-    enableStaticCityShell: true,
+    // Final authored Expo path uses the quieter skyline ring only.
+    enableStaticCityShell: false,
     skylineDensity: SKYLINE_DENSITY_BY_PRESET[qualityPreset],
   };
 }

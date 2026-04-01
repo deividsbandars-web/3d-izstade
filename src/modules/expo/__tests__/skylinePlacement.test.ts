@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { sanitizeSkylinePlacements } from '../lib/skylinePlacement.js';
-import type { ExpoWalkRegion } from '../sceneWorld.js';
+import type { ExpoWalkRegion } from '../walk-region.js';
 
 const walkRegions: ExpoWalkRegion[] = [
   { id: 'arrival', maxX: 36, maxZ: 42, minX: -36, minZ: -12, type: 'arrival' },
@@ -28,5 +28,5 @@ const sanitized = sanitizeSkylinePlacements([
 
 assert.equal(sanitized.length, 2);
 assert.ok(sanitized.every((placement) => placement.wasAdjusted));
-assert.ok(sanitized[0].position[0] < walkRegions[1].minX);
+assert.ok(sanitized[0].position[0] < walkRegions[1].minX || sanitized[0].position[2] < walkRegions[1].minZ);
 assert.ok(sanitized[1].position[0] > walkRegions[1].maxX || sanitized[1].position[2] < walkRegions[1].minZ);

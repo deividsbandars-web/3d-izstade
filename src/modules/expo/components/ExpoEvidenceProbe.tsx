@@ -1,6 +1,7 @@
 import { useFrame } from '@react-three/fiber';
 import { useEffect, useRef } from 'react';
 import type { ExpoQualityPreset } from '../state/expoRuntime';
+import type { ExpoWorldQualityProfileInputs } from '../world-contract';
 
 declare global {
   interface Window {
@@ -14,6 +15,7 @@ declare global {
       mode: string;
       playerPosition: [number, number, number];
       qualityPreset: ExpoQualityPreset;
+      qualityProfileInputs: ExpoWorldQualityProfileInputs;
       sceneVersion: string | null;
       sectorCount: number;
       sponsorCount: number;
@@ -46,6 +48,7 @@ export function ExpoEvidenceProbe({
   mode,
   playerPosition,
   qualityPreset,
+  qualityProfileInputs,
   sceneVersion,
   sectorCount,
   sponsorCount,
@@ -54,6 +57,7 @@ export function ExpoEvidenceProbe({
   mode: string;
   playerPosition: [number, number, number];
   qualityPreset: ExpoQualityPreset;
+  qualityProfileInputs: ExpoWorldQualityProfileInputs;
   sceneVersion: string | null;
   sectorCount: number;
   sponsorCount: number;
@@ -71,37 +75,44 @@ export function ExpoEvidenceProbe({
       }
       frameCountRef.current += 1;
     }
-
-    const samples = fpsSamplesRef.current;
-    const averageFps = samples.length > 0
-      ? samples.reduce((sum, value) => sum + value, 0) / samples.length
-      : 0;
-    const fps1Low = percentile(samples, 0.01);
-    const memory = performance.memory;
-
-    window.__WARPALA_EXPO_EVIDENCE__ = {
-      activeZoneId,
-      averageFps: Number(averageFps.toFixed(2)),
-      frameSamples: frameCountRef.current,
-      fps1Low: Number(fps1Low.toFixed(2)),
-      heapLimitBytes: memory?.jsHeapSizeLimit ?? null,
-      heapUsedBytes: memory?.usedJSHeapSize ?? null,
-      mode,
-      playerPosition,
-      qualityPreset,
-      sceneVersion,
-      sectorCount,
-      sponsorCount,
-      timestamp: new Date().toISOString(),
-      uptimeMs: Number((performance.now() - startedAt.current).toFixed(0)),
-    };
   });
 
   useEffect(() => {
+    const publishEvidence = () => {
+      const samples = fpsSamplesRef.current;
+      const averageFps = samples.length > 0
+        ? samples.reduce((sum, value) => sum + value, 0) / samples.length
+        : 0;
+      const fps1Low = percentile(samples, 0.01);
+      const memory = performance.memory;
+
+      window.__WARPALA_EXPO_EVIDENCE__ = {
+        activeZoneId,
+        averageFps: Number(averageFps.toFixed(2)),
+        frameSamples: frameCountRef.current,
+        fps1Low: Number(fps1Low.toFixed(2)),
+        heapLimitBytes: memory?.jsHeapSizeLimit ?? null,
+        heapUsedBytes: memory?.usedJSHeapSize ?? null,
+        mode,
+        playerPosition,
+        qualityPreset,
+        qualityProfileInputs,
+        sceneVersion,
+        sectorCount,
+        sponsorCount,
+        timestamp: new Date().toISOString(),
+        uptimeMs: Number((performance.now() - startedAt.current).toFixed(0)),
+      };
+    };
+
+    publishEvidence();
+    const intervalId = window.setInterval(publishEvidence, 250);
+
     return () => {
+      window.clearInterval(intervalId);
       delete window.__WARPALA_EXPO_EVIDENCE__;
     };
-  }, []);
+  }, [activeZoneId, mode, playerPosition, qualityPreset, qualityProfileInputs, sceneVersion, sectorCount, sponsorCount]);
 
   return null;
 }

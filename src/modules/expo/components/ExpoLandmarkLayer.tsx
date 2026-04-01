@@ -1,7 +1,8 @@
 import { Text } from '@react-three/drei';
 import { useMemo } from 'react';
 import { buildDistrictLandmarkPlan } from '../lib/districtLandmarkPlan';
-import type { ExpoBoothPlacement, ExpoSectorMarker } from '../sceneWorld';
+import type { ExpoBoothPlacement, ExpoSectorMarker } from '../layout-engine';
+import type { ExpoDistrictProgramSummary } from '../world-contract';
 
 function DistrictLandmarkNodeView({ anchor }: { anchor: ReturnType<typeof buildDistrictLandmarkPlan>['anchors'][number] }) {
   if (anchor.kind === 'arrival_beacon') {
@@ -75,12 +76,14 @@ function DistrictLandmarkNodeView({ anchor }: { anchor: ReturnType<typeof buildD
 
 export function ExpoLandmarkLayer({
   boothPlacements,
+  districtPrograms,
   sectorMarkers,
 }: {
   boothPlacements: ExpoBoothPlacement[];
+  districtPrograms: ExpoDistrictProgramSummary[];
   sectorMarkers: ExpoSectorMarker[];
 }) {
-  const plan = useMemo(() => buildDistrictLandmarkPlan(boothPlacements, sectorMarkers), [boothPlacements, sectorMarkers]);
+  const plan = useMemo(() => buildDistrictLandmarkPlan(boothPlacements, sectorMarkers, districtPrograms), [boothPlacements, districtPrograms, sectorMarkers]);
 
   return (
     <group name="expo-landmark-layer">

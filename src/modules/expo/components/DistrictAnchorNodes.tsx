@@ -1,18 +1,21 @@
 import { Text } from '@react-three/drei';
 import { useMemo } from 'react';
 import { buildDistrictLandmarkPlan } from '../lib/districtLandmarkPlan';
-import type { ExpoBoothPlacement, ExpoSectorMarker } from '../sceneWorld';
+import type { ExpoBoothPlacement, ExpoSectorMarker } from '../layout-engine';
+import type { ExpoDistrictProgramSummary } from '../world-contract';
 
 export function DistrictAnchorNodes({
   boothPlacements,
+  districtPrograms,
   sectorMarkers,
   showcase = false,
 }: {
   boothPlacements: ExpoBoothPlacement[];
+  districtPrograms: ExpoDistrictProgramSummary[];
   sectorMarkers: ExpoSectorMarker[];
   showcase?: boolean;
 }) {
-  const plan = useMemo(() => buildDistrictLandmarkPlan(boothPlacements, sectorMarkers), [boothPlacements, sectorMarkers]);
+  const plan = useMemo(() => buildDistrictLandmarkPlan(boothPlacements, sectorMarkers, districtPrograms), [boothPlacements, districtPrograms, sectorMarkers]);
   const anchors = showcase ? plan.anchors : plan.anchors.filter((anchor) => anchor.kind !== 'gateway_lantern');
 
   return (

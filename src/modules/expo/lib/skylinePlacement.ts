@@ -1,4 +1,4 @@
-import type { ExpoWalkRegion } from '../sceneWorld';
+import type { ExpoWalkRegion } from '../walk-region';
 
 export type SkylineAssetId =
   | 'commercial_wide_a'

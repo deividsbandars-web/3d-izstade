@@ -1,10 +1,9 @@
 import { useMemo } from 'react';
-import { useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
-import { normalizeModel } from '../../../utils/threeUtils';
-import type { ExpoWalkRegion } from '../sceneWorld';
 import type { ExpoBackdropDensity } from '../lib/backdropSanitization';
 import { sanitizeSkylinePlacements, type SkylineAssetId } from '../lib/skylinePlacement';
+import type { ExpoWalkRegion } from '../walk-region';
+import type { ExpoWorldVisualProfile } from '../world-contract';
 
 type SkylinePlacement = {
   asset: SkylineAssetId;
@@ -14,55 +13,72 @@ type SkylinePlacement = {
 };
 
 const BASE_PLACEMENTS: SkylinePlacement[] = [
-  { asset: 'commercial_wide_a', position: [-346, -2, -374], rotationY: 0.06, scale: 2.9 },
-  { asset: 'commercial_mid_f', position: [0, -4, -462], rotationY: 0, scale: 3.05 },
-  { asset: 'commercial_wide_b', position: [354, -2, -386], rotationY: -0.06, scale: 2.95 },
+  { asset: 'commercial_wide_a', position: [-412, -2, -536], rotationY: 0.02, scale: 1.12 },
+  { asset: 'commercial_mid_f', position: [0, -3, -612], rotationY: 0, scale: 1.08 },
+  { asset: 'commercial_wide_b', position: [412, -2, -544], rotationY: -0.02, scale: 1.12 },
 ];
 
 const QUALITY_PLACEMENTS: SkylinePlacement[] = [
-  { asset: 'suburban_f', position: [-454, -1, -522], rotationY: 0.08, scale: 2.05 },
-  { asset: 'commercial_tower_b', position: [188, -8, -528], rotationY: -0.16, scale: 2.15 },
-  { asset: 'suburban_n', position: [468, -1, -536], rotationY: -0.08, scale: 2.08 },
+  { asset: 'suburban_f', position: [-528, -1, -676], rotationY: 0.04, scale: 0.84 },
+  { asset: 'commercial_tower_b', position: [212, -7, -692], rotationY: -0.05, scale: 0.88 },
+  { asset: 'suburban_n', position: [548, -1, -684], rotationY: -0.04, scale: 0.84 },
 ];
+
+const SKYLINE_BOXES: Record<SkylineAssetId, [number, number, number]> = {
+  commercial_mid_f: [54, 126, 34],
+  commercial_tower_b: [34, 164, 28],
+  commercial_wide_a: [84, 148, 36],
+  commercial_wide_b: [86, 154, 38],
+  suburban_f: [42, 78, 24],
+  suburban_n: [40, 72, 24],
+};
+
+function createSkylineBlock(
+  asset: SkylineAssetId,
+  scale: number,
+  color: string,
+  opacity: number
+) {
+  const size = SKYLINE_BOXES[asset];
+  const geometry = new THREE.BoxGeometry(size[0], size[1], size[2]);
+  const material = new THREE.MeshStandardMaterial({
+    color,
+    depthWrite: false,
+    metalness: 0.02,
+    opacity,
+    roughness: 0.94,
+    transparent: true,
+  });
+  const mesh = new THREE.Mesh(geometry, material);
+  mesh.castShadow = false;
+  mesh.receiveShadow = false;
+  mesh.scale.setScalar(scale);
+  mesh.position.set(0, (size[1] * scale) * 0.5, 0);
+  return mesh;
+}
 
 export function CuratedSkylineRing({
   debugBounds = false,
   density = 'minimal',
+  visualProfile,
   walkRegions = [],
 }: {
   debugBounds?: boolean;
   density?: ExpoBackdropDensity;
+  visualProfile: ExpoWorldVisualProfile;
   walkRegions?: ExpoWalkRegion[];
 }) {
-  const { scene: commercialWideASource } = useGLTF('/models/expo/skyline-candidates/low-detail-building-wide-a.glb');
-  const { scene: commercialWideBSource } = useGLTF('/models/expo/skyline-candidates/low-detail-building-wide-b.glb');
-  const { scene: commercialMidFSource } = useGLTF('/models/expo/skyline-candidates/low-detail-building-f.glb');
-  const { scene: commercialTowerBSource } = useGLTF('/models/expo/skyline-candidates/building-skyscraper-b.glb');
-  const { scene: suburbanFSource } = useGLTF('/models/expo/skyline-candidates/building-type-f.glb');
-  const { scene: suburbanNSource } = useGLTF('/models/expo/skyline-candidates/building-type-n.glb');
+  const placements = useMemo(
+    () => (density === 'standard' ? [...BASE_PLACEMENTS, ...QUALITY_PLACEMENTS] : BASE_PLACEMENTS),
+    [density]
+  );
 
-  const assetMap = useMemo(() => ({
-    commercial_mid_f: commercialMidFSource,
-    commercial_tower_b: commercialTowerBSource,
-    commercial_wide_a: commercialWideASource,
-    commercial_wide_b: commercialWideBSource,
-    suburban_f: suburbanFSource,
-    suburban_n: suburbanNSource,
-  }), [commercialMidFSource, commercialTowerBSource, commercialWideASource, commercialWideBSource, suburbanFSource, suburbanNSource]);
-
-  const placements = density === 'standard' ? [...BASE_PLACEMENTS, ...QUALITY_PLACEMENTS] : BASE_PLACEMENTS;
   const instances = useMemo(() => {
     const measured = placements.map((placement, index) => {
-      const clone = assetMap[placement.asset].clone(true);
-      normalizeModel(clone, 20);
-      clone.scale.setScalar(placement.scale);
-      clone.updateMatrixWorld(true);
-      const bounds = new THREE.Box3().setFromObject(clone);
-      const size = bounds.getSize(new THREE.Vector3());
-
+      const size = SKYLINE_BOXES[placement.asset];
       return {
         asset: placement.asset,
-        boundsSize: size.toArray() as [number, number, number],
+        boundsSize: [size[0] * placement.scale, size[1] * placement.scale, size[2] * placement.scale] as [number, number, number],
         id: `skyline-${placement.asset}-${index}`,
         position: placement.position,
         rotationY: placement.rotationY,
@@ -72,46 +88,29 @@ export function CuratedSkylineRing({
 
     const sanitized = sanitizeSkylinePlacements(measured, walkRegions);
 
-    return sanitized.map((placement) => {
-      const clone = assetMap[placement.asset].clone(true);
-      normalizeModel(clone, 20);
-      clone.scale.setScalar(placement.scale);
-      clone.traverse((child) => {
-        if ((child as THREE.Mesh).isMesh) {
-          const mesh = child as THREE.Mesh;
-          mesh.castShadow = false;
-          mesh.receiveShadow = false;
-          const material = mesh.material;
-          const materials = Array.isArray(material) ? material : material ? [material] : [];
-          materials.forEach((entry) => {
-            const next = entry as THREE.MeshStandardMaterial;
-            if ('transparent' in next) {
-              next.transparent = true;
-              next.opacity = density === 'standard' ? 0.86 : 0.74;
-              next.depthWrite = false;
-            }
-            if ('roughness' in next) {
-              next.roughness = Math.max(0.88, Number(next.roughness || 0));
-            }
-            if ('metalness' in next) {
-              next.metalness = Math.min(0.08, Number(next.metalness || 0));
-            }
-          });
-        }
-      });
-      clone.updateMatrixWorld(true);
-      const bounds = new THREE.Box3().setFromObject(clone);
-      const size = bounds.getSize(new THREE.Vector3());
-      const center = bounds.getCenter(new THREE.Vector3());
+    return sanitized.map((placement, index) => {
+      const districtProfile = visualProfile.districts[Math.min(visualProfile.districts.length - 1, index)] ?? visualProfile.districts[0];
+      const profileScale = Math.min(0.82, districtProfile?.skylineScale ?? 0.76);
+      const opacity = Math.max(0.06, (density === 'standard' ? 0.12 : 0.08) * (districtProfile?.skylineOpacity ?? 0.5));
+      const object = createSkylineBlock(
+        placement.asset,
+        placement.scale * profileScale,
+        visualProfile.global.skylineColor,
+        opacity
+      );
 
       return {
         ...placement,
-        boundsCenter: center.toArray() as [number, number, number],
-        boundsSize: size.toArray() as [number, number, number],
-        object: clone,
+        boundsCenter: [0, (SKYLINE_BOXES[placement.asset][1] * placement.scale * profileScale) * 0.5, 0] as [number, number, number],
+        boundsSize: [
+          SKYLINE_BOXES[placement.asset][0] * placement.scale * profileScale,
+          SKYLINE_BOXES[placement.asset][1] * placement.scale * profileScale,
+          SKYLINE_BOXES[placement.asset][2] * placement.scale * profileScale,
+        ] as [number, number, number],
+        object,
       };
     });
-  }, [assetMap, placements, walkRegions]);
+  }, [density, placements, visualProfile, walkRegions]);
 
   return (
     <group name="curated-skyline-ring">
