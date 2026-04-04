@@ -47,6 +47,10 @@ const recordBySlug = resolveSponsorRoomRecord(scene, 'hero-one');
 assert.ok(recordBySlug);
 assert.equal(recordBySlug?.company.id, 'company-1');
 assert.equal(recordBySlug?.sectorName, 'Platform Partners');
+assert.equal(recordBySlug?.streamingLevel, 'Level_Booth_booth-1');
+assert.ok(recordBySlug?.preferredStreamerIds.includes('booth-booth-1'));
+assert.ok(recordBySlug?.preferredStreamerIds.includes('booth-hero-one'));
+assert.ok(recordBySlug?.preferredStreamerIds.includes('Level_Booth_booth-1'));
 
 const recordByBoothId = resolveSponsorRoomRecord(scene, 'booth-1');
 assert.ok(recordByBoothId);

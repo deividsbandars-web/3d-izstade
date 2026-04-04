@@ -6,16 +6,21 @@ import {
   fetchPixelStreamingRuntimeStatus,
   getPixelStreamingRuntimeConfig,
   probePixelStreamingAvailability,
+  type PixelStreamingBoothContext,
   type PixelStreamingAvailability,
   type PixelStreamingRuntimeStatus
 } from '../services/pixelStreamingConfig';
 
 interface UsePixelStreamingStatusOptions {
+  boothContext?: PixelStreamingBoothContext;
   shouldProbe?: boolean;
 }
 
-export function usePixelStreamingStatus({ shouldProbe = true }: UsePixelStreamingStatusOptions = {}) {
-  const config = useMemo(() => getPixelStreamingRuntimeConfig(), []);
+export function usePixelStreamingStatus({ boothContext, shouldProbe = true }: UsePixelStreamingStatusOptions = {}) {
+  const config = useMemo(
+    () => getPixelStreamingRuntimeConfig(boothContext),
+    [boothContext]
+  );
   const [availability, setAvailability] = useState<PixelStreamingAvailability>(shouldProbe ? 'connecting' : 'unavailable');
   const [runtimeStatus, setRuntimeStatus] = useState<PixelStreamingRuntimeStatus | null>(null);
 

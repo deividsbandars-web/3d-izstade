@@ -115,8 +115,8 @@ export function buildExpoSponsorStartView(plan: Pick<SponsorBoulevardPlan, 'arri
   const arrivalZ = plan.arrivalNode.position[2];
 
   return {
-    lookAt: [centerX, 3.6, arrivalZ - 22],
-    position: [centerX, 5, arrivalZ + 30],
+    lookAt: [centerX, 3.6, arrivalZ - 46],
+    position: [centerX, 8.2, arrivalZ + 182],
     source: 'arrival-main',
   };
 }

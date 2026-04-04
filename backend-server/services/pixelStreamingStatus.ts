@@ -7,7 +7,7 @@ export type PixelStreamingReadinessStatus = 'session_ready' | 'session_not_ready
 
 export interface PixelStreamingSessionContract {
   sessionMode: 'single_instance';
-  selectionPolicy: 'first_available';
+  selectionPolicy: 'first_available' | 'booth_preferred';
   activeStreamerId: string | null;
 }
 
@@ -33,6 +33,11 @@ interface SignalingStatusPayload {
 interface SignalingStreamerPayload {
   streamerId?: string;
   streaming?: boolean;
+  ready?: boolean;
+  boothId?: string;
+  slug?: string;
+  streamingLevel?: string;
+  shared?: boolean;
 }
 
 interface SignalingConfigPayload {
@@ -46,12 +51,109 @@ const SIGNALING_STATUS_PATHS = ['/api/status', '/status'] as const;
 const SIGNALING_STREAMERS_PATHS = ['/api/streamers', '/streamers'] as const;
 const SIGNALING_CONFIG_PATHS = ['/api/config', '/config'] as const;
 
+export interface PixelStreamingStatusRequestContext {
+  boothId?: string | null;
+  slug?: string | null;
+  streamingLevel?: string | null;
+  allowSharedFallback?: boolean;
+}
+
 function getStatusBaseUrl() {
   return getBackendRuntimeEnv().signalingStatusBaseUrl;
 }
 
 function getTimeoutMs() {
   return getBackendRuntimeEnv().pixelStreamingStatusTimeoutMs;
+}
+
+function normalizeToken(value: string | null | undefined) {
+  return String(value || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+function hasBoothContext(context?: PixelStreamingStatusRequestContext) {
+  return Boolean(context?.boothId || context?.slug || context?.streamingLevel);
+}
+
+function slotMatchesToken(slotValue: string | null | undefined, requestValue: string | null | undefined) {
+  const normalizedSlotValue = normalizeToken(slotValue);
+  const normalizedRequestValue = normalizeToken(requestValue);
+  return Boolean(normalizedSlotValue && normalizedRequestValue && normalizedSlotValue === normalizedRequestValue);
+}
+
+function scoreStreamerSlot(slot: SignalingStreamerPayload, context?: PixelStreamingStatusRequestContext) {
+  if (!context) {
+    return slot.streaming ? 100 : 0;
+  }
+  if (slotMatchesToken(slot.streamingLevel, context.streamingLevel)) {
+    return 400;
+  }
+  if (slotMatchesToken(slot.boothId, context.boothId)) {
+    return 300;
+  }
+  if (slotMatchesToken(slot.slug, context.slug)) {
+    return 200;
+  }
+  if (slot.shared) {
+    return 100;
+  }
+  return slot.streaming ? 50 : 0;
+}
+
+function sortSlotsByResolutionPriority(slots: SignalingStreamerPayload[], context?: PixelStreamingStatusRequestContext) {
+  return [...slots].sort((left, right) => scoreStreamerSlot(right, context) - scoreStreamerSlot(left, context));
+}
+
+function resolveStreamerSelection(
+  streamersPayload: SignalingStreamerPayload[] | null,
+  context?: PixelStreamingStatusRequestContext
+) {
+  if (!Array.isArray(streamersPayload) || streamersPayload.length === 0) {
+    return {
+      activeStreamer: null,
+      selectionPolicy: hasBoothContext(context) ? ('booth_preferred' as const) : ('first_available' as const),
+      usedSharedFallback: false,
+    };
+  }
+
+  const sortedSlots = sortSlotsByResolutionPriority(streamersPayload, context);
+  const preferredSlot = sortedSlots.find((slot) => scoreStreamerSlot(slot, context) >= 200 && slot.ready !== false);
+  if (preferredSlot) {
+    return {
+      activeStreamer: preferredSlot,
+      selectionPolicy: 'booth_preferred' as const,
+      usedSharedFallback: false,
+    };
+  }
+
+  if (context?.allowSharedFallback !== false) {
+    const sharedSlot = sortedSlots.find((slot) => slot.shared && slot.ready !== false);
+    if (sharedSlot) {
+      return {
+        activeStreamer: sharedSlot,
+        selectionPolicy: 'first_available' as const,
+        usedSharedFallback: true,
+      };
+    }
+  }
+
+  const firstStreamingSlot = sortedSlots.find((slot) => slot.streaming && slot.ready !== false);
+  if (firstStreamingSlot && !hasBoothContext(context)) {
+    return {
+      activeStreamer: firstStreamingSlot,
+      selectionPolicy: 'first_available' as const,
+      usedSharedFallback: false,
+    };
+  }
+
+  return {
+    activeStreamer: null,
+    selectionPolicy: hasBoothContext(context) ? ('booth_preferred' as const) : ('first_available' as const),
+    usedSharedFallback: false,
+  };
 }
 
 async function fetchJson<T>(pathname: string): Promise<T> {
@@ -132,7 +234,7 @@ function getTurnIceStatus(configPayload: SignalingConfigPayload | null): PixelSt
   return hasTurn ? 'turn_configured' : 'turn_not_configured';
 }
 
-export async function getPixelStreamingStatus(): Promise<PixelStreamingStatusResponse> {
+export async function getPixelStreamingStatus(context?: PixelStreamingStatusRequestContext): Promise<PixelStreamingStatusResponse> {
   const checkedAt = new Date().toISOString();
   const warnings: string[] = [];
 
@@ -157,9 +259,8 @@ export async function getPixelStreamingStatus(): Promise<PixelStreamingStatusRes
       ? streamersPayload.length
       : null;
 
-  const activeStreamer = Array.isArray(streamersPayload)
-    ? streamersPayload.find((streamer) => streamer.streaming)
-    : undefined;
+  const streamerSelection = resolveStreamerSelection(streamersPayload, context);
+  const activeStreamer = streamerSelection.activeStreamer;
 
   const signaling: PixelStreamingSignalingStatus = gatewayReachable ? 'signaling_up' : 'signaling_down';
   const streamer: PixelStreamingStreamerStatus = Array.isArray(streamersPayload)
@@ -184,6 +285,9 @@ export async function getPixelStreamingStatus(): Promise<PixelStreamingStatusRes
   if (streamer === 'streamer_unavailable') {
     warnings.push('NO_ACTIVE_STREAMER');
   }
+  if (streamerSelection.usedSharedFallback) {
+    warnings.push('FALLBACK_SHARED_STREAM');
+  }
 
   return {
     signaling,
@@ -196,7 +300,7 @@ export async function getPixelStreamingStatus(): Promise<PixelStreamingStatusRes
     gatewayReachable,
     session: {
       sessionMode: 'single_instance',
-      selectionPolicy: 'first_available',
+      selectionPolicy: streamerSelection.selectionPolicy,
       activeStreamerId: activeStreamer?.streamerId || null
     }
   };

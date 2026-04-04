@@ -6,7 +6,7 @@ services:
       args:
         VITE_SIGNALING_SERVER_URL: ${VITE_SIGNALING_SERVER_URL:-ws://localhost/ws/}
         VITE_STUN_SERVER_URLS: ${STUN_SERVER_URLS:-stun:stun.l.google.com:19302}
-        VITE_TURN_SERVER_URLS: ${TURN_SERVER_URLS:-turn:127.0.0.1:3478?transport=udp,turn:127.0.0.1:3478?transport=tcp}
+        VITE_TURN_SERVER_URLS: ${TURN_SERVER_URLS:-turn:${TURN_PUBLIC_HOST:-localhost}:3478?transport=udp,turn:${TURN_PUBLIC_HOST:-localhost}:3478?transport=tcp}
         VITE_TURN_USERNAME: ${TURN_USERNAME:-pixelstream_user}
         VITE_TURN_PASSWORD: ${TURN_PASSWORD:-change-me}
     ports:
@@ -75,10 +75,10 @@ services:
       - -c
       - /etc/coturn/turnserver.conf
       - --realm=${TURN_REALM:-warpala.local}
-      - --external-ip=${TURN_PUBLIC_IP:-127.0.0.1}
+      - --external-ip=${TURN_PUBLIC_IP:?TURN_PUBLIC_IP is required}
       - --listening-ip=${TURN_LISTEN_IP:-0.0.0.0}
       - --min-port=${TURN_MIN_PORT:-49260}
-      - --max-port=${TURN_MAX_PORT:-49300}
+      - --max-port=${TURN_MAX_PORT:-49279}
       - --user=${TURN_USERNAME:?TURN_USERNAME is required}:${TURN_PASSWORD:?TURN_PASSWORD is required}
       - --no-tls
       - --no-dtls
@@ -87,8 +87,8 @@ services:
     ports:
       - "3478:3478/tcp"
       - "3478:3478/udp"
-      - "49260-49300:49260-49300/tcp"
-      - "49260-49300:49260-49300/udp"
+      - "${TURN_MIN_PORT:-49260}-${TURN_MAX_PORT:-49279}:${TURN_MIN_PORT:-49260}-${TURN_MAX_PORT:-49279}/tcp"
+      - "${TURN_MIN_PORT:-49260}-${TURN_MAX_PORT:-49279}:${TURN_MIN_PORT:-49260}-${TURN_MAX_PORT:-49279}/udp"
     restart: unless-stopped
 
   sync-server:

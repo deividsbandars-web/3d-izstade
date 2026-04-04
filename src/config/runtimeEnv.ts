@@ -85,7 +85,7 @@ function deriveDevApiBaseUrl() {
     return null;
   }
 
-  return window.location.origin;
+  return `${window.location.protocol}//${window.location.hostname}:3000`;
 }
 
 function deriveDevSignalingUrl() {
@@ -144,7 +144,7 @@ let cachedFrontendRuntimeEnv: FrontendRuntimeEnv | null = null;
 
 export function getFrontendRuntimeEnv() {
   if (!cachedFrontendRuntimeEnv) {
-    cachedFrontendRuntimeEnv = resolveFrontendRuntimeEnv(import.meta.env);
+    cachedFrontendRuntimeEnv = resolveFrontendRuntimeEnv(((import.meta as { env?: RawFrontendEnv }).env) ?? {});
   }
 
   return cachedFrontendRuntimeEnv;

@@ -1,4 +1,5 @@
 import { buildSponsorBoothPresentation, resolveSponsorCtaIntent } from './sponsorBoothPresentation';
+import { buildBoothStreamingLevel, getPreferredBoothStreamerIds } from '../services/pixelStreamingBoothSession';
 import type { ExpoSceneCompany, ExpoSceneData } from '../types/scene';
 
 export type SponsorRoomRecord = {
@@ -6,8 +7,10 @@ export type SponsorRoomRecord = {
   brochureUrl: string | null;
   company: ExpoSceneCompany;
   presentation: ReturnType<typeof buildSponsorBoothPresentation>;
+  preferredStreamerIds: string[];
   sectorName: string | null;
   slugOrId: string;
+  streamingLevel: string | null;
 };
 
 function normalizeRouteToken(value: string | undefined) {
@@ -37,14 +40,19 @@ export function resolveSponsorRoomRecord(scene: ExpoSceneData, routeId: string |
   const presentation = buildSponsorBoothPresentation(company, company.booth);
   const sectorId = company.sectorId ?? company.sector_id ?? null;
   const sectorName = scene.sectors.find((sector) => sector.id === sectorId)?.name ?? null;
-
-  return {
+  const baseRecord = {
     boothId: company.booth?.id ?? null,
     brochureUrl: presentation.posterUrl,
     company,
     presentation,
     sectorName,
     slugOrId: company.slug || company.id,
+    streamingLevel: buildBoothStreamingLevel(company.booth?.id ?? null),
+  };
+
+  return {
+    ...baseRecord,
+    preferredStreamerIds: getPreferredBoothStreamerIds(baseRecord),
   };
 }
 

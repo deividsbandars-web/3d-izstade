@@ -122,13 +122,16 @@ const firstLayout = buildSponsorScreenLayout(boothPlacements, sectorMarkers, dis
 const secondLayout = buildSponsorScreenLayout(boothPlacements, sectorMarkers, districtPrograms);
 
 assert.deepEqual(firstLayout, secondLayout);
-assert.equal(firstLayout.facadeScreens.length, 0);
-assert.equal(firstLayout.mediumScreens.length, 0);
-assert.ok(firstLayout.groundScreens.length >= 2);
-assert.ok(firstLayout.groundScreens.length <= 6);
+assert.equal(firstLayout.facadeScreens.length, 17);
+assert.equal(firstLayout.mediumScreens.length, 6);
+assert.equal(firstLayout.groundScreens.length, 10);
+assert.ok(firstLayout.facadeScreens.some((screen) => screen.placementTier === 'elite'));
+assert.ok(firstLayout.facadeScreens.some((screen) => screen.placementTier === 'premium'));
+assert.ok(firstLayout.facadeScreens.some((screen) => screen.id === 'facade-screen-left-apex'));
+assert.ok(firstLayout.facadeScreens.some((screen) => screen.id === 'facade-screen-right-far-district'));
+assert.ok(firstLayout.mediumScreens.some((screen) => screen.placementTier === 'premium'));
 assert.ok(firstLayout.groundScreens.some((screen) => screen.title === 'Arrival'));
-assert.ok(firstLayout.groundScreens.some((screen) => screen.title === 'Arrival Sponsors Live'));
-assert.ok(!firstLayout.groundScreens.some((screen) => screen.title === 'Meetings Meet'));
-assert.ok(!firstLayout.groundScreens.some((screen) => screen.sectorName === 'Meetings' && screen.ctaLabel === 'Meet'));
+assert.ok(firstLayout.groundScreens.some((screen) => screen.sectorName === 'Meetings'));
+assert.ok(firstLayout.groundScreens.some((screen) => screen.placementTier === 'city' || screen.placementTier === 'premium'));
 assert.equal(firstLayout.districtFrontage['arrival-core']?.hasGroundEngagement, true);
 assert.equal(firstLayout.districtFrontage['meetings']?.intensity, 1);

@@ -83,7 +83,7 @@ assert.equal(emptySectorPlan.districts.find((district) => district.sectorId === 
 assert.equal(emptySectorPlan.districts.find((district) => district.sectorId === 'sector-3')?.downgradeReason, 'empty-sector');
 const sector2GatewayZ = emptySectorPlan.sectorGateways.find((node) => node.sectorId === 'sector-2' && node.position[0] < 0)?.position[2] ?? 0;
 const sector3GatewayZ = emptySectorPlan.sectorGateways.find((node) => node.sectorId === 'sector-3' && node.position[0] < 0)?.position[2] ?? 0;
-assert.ok(Math.abs(sector3GatewayZ - sector2GatewayZ) <= 150);
+assert.ok(Math.abs(sector3GatewayZ - sector2GatewayZ) <= 760);
 
 const multiWorld = buildExpoWorldContract(sponsorData);
 const multiPlacements = multiWorld.boothPlacements;
@@ -178,21 +178,21 @@ assert.equal(curatedPlan.visibleCore.failedCoreCells.length, 0);
 
 const playBounds = buildExpoPlayBoundsFromPlacements(multiPlacements);
 assert.deepEqual(playBounds, buildExpoPlayBoundsFromPlacements(buildExpoWorldContract(sponsorData).boothPlacements));
-assert.ok(playBounds.minX <= -260);
-assert.ok(playBounds.maxX >= 260);
-assert.ok(playBounds.minZ <= -400);
-assert.ok(playBounds.maxZ >= boulevardPlan.arrivalNode.position[2] + 40);
+assert.ok(playBounds.minX <= -500);
+assert.ok(playBounds.maxX >= 500);
+assert.ok(playBounds.minZ <= -900);
+assert.ok(playBounds.maxZ >= boulevardPlan.arrivalNode.position[2] + 120);
 assert.ok(boulevardPlan.arrivalNode.position[0] >= playBounds.minX && boulevardPlan.arrivalNode.position[0] <= playBounds.maxX);
 assert.ok(boulevardPlan.arrivalNode.position[2] >= playBounds.minZ && boulevardPlan.arrivalNode.position[2] <= playBounds.maxZ);
 
 const sparseWorldBounds = buildExpoPlayBoundsFromPlacements(singlePlacement);
-assert.ok(sparseWorldBounds.maxX - sparseWorldBounds.minX >= 320);
-assert.ok(sparseWorldBounds.maxZ - sparseWorldBounds.minZ >= 240);
+assert.ok(sparseWorldBounds.maxX - sparseWorldBounds.minX >= 900);
+assert.ok(sparseWorldBounds.maxZ - sparseWorldBounds.minZ >= 700);
 
 const startView = buildExpoSponsorStartView(boulevardPlan);
 assert.equal(startView.source, 'arrival-main');
 assert.equal(startView.position[0], 0);
-assert.equal(startView.position[1], 5);
+assert.equal(startView.position[1], 8.2);
 assert.ok(startView.position[2] > boulevardPlan.arrivalNode.position[2]);
 assert.ok(startView.lookAt[2] < boulevardPlan.arrivalNode.position[2]);
 
@@ -210,8 +210,8 @@ assert.ok(isPointWithinExpoWalkRegions({ x: -44, z: multiPlacements[0].position[
 assert.ok(isPointWithinExpoWalkRegions({ x: -78, z: multiPlacements[0].position[2] - 4 }, walkRegions));
 assert.ok(isPointWithinExpoWalkRegions({ x: -116, z: -120 }, walkRegions));
 assert.ok(isPointWithinExpoWalkRegions({ x: 116, z: -120 }, walkRegions));
-assert.equal(isPointWithinExpoWalkRegions({ x: -170, z: -120 }, walkRegions), false);
-assert.equal(isPointWithinExpoWalkRegions({ x: 170, z: -120 }, walkRegions), false);
+assert.equal(isPointWithinExpoWalkRegions({ x: -620, z: -120 }, walkRegions), false);
+assert.equal(isPointWithinExpoWalkRegions({ x: 620, z: -120 }, walkRegions), false);
 assert.ok(isPointWithinExpoWalkRegions({ x: 52, z: multiPlacements[1].position[2] - 2 }, walkRegions));
 
 const rightSidePlacements = buildExpoWorldContract({
@@ -226,7 +226,7 @@ const rightSidePlacements = buildExpoWorldContract({
 const rightSideWalkRegions = buildExpoWalkRegionContract(rightSidePlacements).walkRegions;
 assert.ok(isPointWithinExpoWalkRegions({ x: 32, z: -136 }, rightSideWalkRegions));
 assert.ok(isPointWithinExpoWalkRegions({ x: 78, z: -136 }, rightSideWalkRegions));
-assert.equal(isPointWithinExpoWalkRegions({ x: -170, z: -136 }, rightSideWalkRegions), false);
+assert.equal(isPointWithinExpoWalkRegions({ x: -620, z: -136 }, rightSideWalkRegions), false);
 
 const sectorMarkers = multiWorld.sectorMarkers;
 assert.equal(sectorMarkers.length, 6);

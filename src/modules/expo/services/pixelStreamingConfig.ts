@@ -9,8 +9,14 @@ export type PixelStreamingReadinessStatus = 'session_ready' | 'session_not_ready
 
 export interface PixelStreamingSessionContract {
   sessionMode: 'single_instance';
-  selectionPolicy: 'first_available';
+  selectionPolicy: 'first_available' | 'booth_preferred';
   activeStreamerId: string | null;
+}
+
+export interface PixelStreamingBoothContext {
+  boothId?: string | null;
+  slugOrId?: string | null;
+  streamingLevel?: string | null;
 }
 
 export interface PixelStreamingRuntimeStatus {
@@ -25,9 +31,22 @@ export interface PixelStreamingRuntimeStatus {
   session: PixelStreamingSessionContract;
 }
 
+export interface PixelStreamingSessionReservationResponse {
+  boothId: string | null;
+  sessionId: string | null;
+  streamerId: string | null;
+  status: 'ready' | 'pending';
+  selectionPolicy: 'first_available' | 'booth_preferred';
+  expiresAt: string | null;
+  warnings: string[];
+  runtimeStatus: PixelStreamingRuntimeStatus;
+}
+
 export interface PixelStreamingRuntimeConfig {
+  boothContext?: PixelStreamingBoothContext;
   signalingUrl: string | null;
   statusEndpointUrl: string;
+  sessionEndpointUrl: string;
   iceServers: unknown[];
   probeTimeoutMs: number;
 }
@@ -38,8 +57,36 @@ function getBrowserSignalingUrl() {
   return getFrontendRuntimeEnv().signalingUrl;
 }
 
-function getBrowserStatusEndpointUrl() {
-  return `${getFrontendRuntimeEnv().apiBaseUrl}/api/pixel-streaming/status`;
+export function buildPixelStreamingStatusEndpointUrl(apiBaseUrl: string, boothContext?: PixelStreamingBoothContext) {
+  const url = new URL(`${apiBaseUrl}/api/pixel-streaming/status`);
+  if (boothContext?.boothId) {
+    url.searchParams.set('boothId', boothContext.boothId);
+  }
+  if (boothContext?.slugOrId) {
+    url.searchParams.set('slug', boothContext.slugOrId);
+  }
+  if (boothContext?.streamingLevel) {
+    url.searchParams.set('streamingLevel', boothContext.streamingLevel);
+  }
+  return url.toString();
+}
+
+function getBrowserStatusEndpointUrl(boothContext?: PixelStreamingBoothContext) {
+  const apiBaseUrl =
+    (import.meta as { env?: { DEV?: boolean } }).env?.DEV && typeof window !== 'undefined'
+      ? `${window.location.protocol}//${window.location.hostname}:3000`
+      : getFrontendRuntimeEnv().apiBaseUrl;
+
+  return buildPixelStreamingStatusEndpointUrl(apiBaseUrl, boothContext);
+}
+
+function getBrowserSessionEndpointUrl() {
+  const apiBaseUrl =
+    (import.meta as { env?: { DEV?: boolean } }).env?.DEV && typeof window !== 'undefined'
+      ? `${window.location.protocol}//${window.location.hostname}:3000`
+      : getFrontendRuntimeEnv().apiBaseUrl;
+
+  return `${apiBaseUrl}/api/pixel-streaming/session`;
 }
 
 function resolveTurnIceStatusFromIceServers(iceServers: unknown[]): PixelStreamingTurnIceStatus {
@@ -64,7 +111,7 @@ function resolveTurnIceStatusFromIceServers(iceServers: unknown[]): PixelStreami
   return hasTurn ? 'turn_configured' : 'turn_not_configured';
 }
 
-export function getPixelStreamingRuntimeConfig(): PixelStreamingRuntimeConfig {
+export function getPixelStreamingRuntimeConfig(boothContext?: PixelStreamingBoothContext): PixelStreamingRuntimeConfig {
   const frontendRuntimeEnv = getFrontendRuntimeEnv();
   const iceServers: Array<Record<string, unknown>> = [];
 
@@ -84,8 +131,10 @@ export function getPixelStreamingRuntimeConfig(): PixelStreamingRuntimeConfig {
   }
 
   return {
+    boothContext,
     signalingUrl: getBrowserSignalingUrl(),
-    statusEndpointUrl: getBrowserStatusEndpointUrl(),
+    statusEndpointUrl: getBrowserStatusEndpointUrl(boothContext),
+    sessionEndpointUrl: getBrowserSessionEndpointUrl(),
     iceServers,
     probeTimeoutMs: frontendRuntimeEnv.pixelStreamingProbeTimeoutMs || DEFAULT_PROBE_TIMEOUT_MS,
   };
@@ -93,7 +142,7 @@ export function getPixelStreamingRuntimeConfig(): PixelStreamingRuntimeConfig {
 
 export async function fetchPixelStreamingRuntimeStatus(config: PixelStreamingRuntimeConfig): Promise<PixelStreamingRuntimeStatus> {
   const controller = new AbortController();
-  const timeoutId = window.setTimeout(() => controller.abort(), config.probeTimeoutMs);
+  const timeoutId = globalThis.setTimeout(() => controller.abort(), config.probeTimeoutMs);
 
   try {
     const response = await fetch(config.statusEndpointUrl, {
@@ -108,7 +157,7 @@ export async function fetchPixelStreamingRuntimeStatus(config: PixelStreamingRun
 
     return await response.json() as PixelStreamingRuntimeStatus;
   } finally {
-    window.clearTimeout(timeoutId);
+    globalThis.clearTimeout(timeoutId);
   }
 }
 
@@ -135,10 +184,44 @@ export function buildFallbackPixelStreamingRuntimeStatus(
     gatewayReachable: signalingConfigured && signalingReachable,
     session: {
       sessionMode: 'single_instance',
-      selectionPolicy: 'first_available',
+      selectionPolicy: config.boothContext ? 'booth_preferred' : 'first_available',
       activeStreamerId: null
     }
   };
+}
+
+export async function reservePixelStreamingSession(
+  config: PixelStreamingRuntimeConfig,
+  payload: {
+    boothId?: string | null;
+    slug?: string | null;
+    streamingLevel?: string | null;
+    sessionId?: string | null;
+    allowSharedFallback?: boolean;
+  }
+): Promise<PixelStreamingSessionReservationResponse> {
+  const controller = new AbortController();
+  const timeoutId = globalThis.setTimeout(() => controller.abort(), config.probeTimeoutMs);
+
+  try {
+    const response = await fetch(config.sessionEndpointUrl, {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+      signal: controller.signal,
+    });
+
+    if (!response.ok) {
+      throw new Error(`SESSION_HTTP_${response.status}`);
+    }
+
+    return await response.json() as PixelStreamingSessionReservationResponse;
+  } finally {
+    globalThis.clearTimeout(timeoutId);
+  }
 }
 
 export function derivePixelStreamingAvailability(status: PixelStreamingRuntimeStatus | null): PixelStreamingAvailability {

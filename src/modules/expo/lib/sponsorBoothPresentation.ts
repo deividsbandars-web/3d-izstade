@@ -23,6 +23,7 @@ export type SponsorCtaIntent =
 
 export type SponsorBoothPresentation = {
   actions: SponsorCta[];
+  adTier: 'elite' | 'premium' | 'standard' | 'support';
   badgeLabel: string;
   bookingUrl: string | null;
   customInsertUrl: string | null;
@@ -37,12 +38,42 @@ export type SponsorBoothPresentation = {
   hasBrandAssets: boolean;
   logoUrl: string | null;
   posterUrl: string | null;
+  showcaseMode: 'immersive' | 'hero-object' | 'product' | 'support';
   sponsorTier: SponsorTier;
   tagline: string | null;
   template: SponsorBoothTemplate;
   videoUrl: string | null;
   website: string | null;
 };
+
+export function isPremiumStreamingTier(adTier: SponsorBoothPresentation['adTier']) {
+  return adTier === 'elite' || adTier === 'premium';
+}
+
+function buildBoothBadgeLabel(adTier: SponsorBoothPresentation['adTier'], sponsorTier: SponsorTier) {
+  if (adTier === 'elite') {
+    return 'UNREAL ELITE';
+  }
+  if (adTier === 'premium') {
+    return 'PREMIUM LIVE';
+  }
+  return sponsorTier.toUpperCase();
+}
+
+function buildPresentationTagline(
+  adTier: SponsorBoothPresentation['adTier'],
+  company: ExpoSceneCompany,
+  fallbackIdentity: SponsorBoothPresentation['fallbackIdentity']
+) {
+  const sourceTagline = truncateSponsorText(company.tagline || fallbackIdentity.supportLine || 'Meet the team. Explore the offer.', 34);
+  if (adTier === 'elite') {
+    return sourceTagline || 'UNREAL POWERED BUYER SUITE';
+  }
+  if (adTier === 'premium') {
+    return sourceTagline || 'LIVE PREMIUM PRODUCT ROOM';
+  }
+  return truncateSponsorText(company.tagline || fallbackIdentity.supportLine || 'Meet the team. Explore the offer.', 30);
+}
 
 function normalizeUrl(value: unknown) {
   return typeof value === 'string' && value.trim().length > 0 ? value.trim() : null;
@@ -147,16 +178,18 @@ export function buildSponsorCtas(company: ExpoSceneCompany): SponsorCta[] {
   const actions: SponsorCta[] = [];
   const website = normalizeUrl(company.website);
   const booking = normalizeUrl(company.bookingUrl);
+  const sponsorTier = company.sponsorTier;
+  const isTopTier = sponsorTier === 'hero' || sponsorTier === 'platinum' || sponsorTier === 'gold';
 
-  actions.push(website
-    ? { kind: 'website', label: 'Visit', url: website }
-    : { kind: 'website', label: 'Visit', disabled: true, url: null });
+  if (website) {
+    actions.push({ kind: 'website', label: isTopTier ? 'Open Website' : 'Visit Website', url: website });
+  }
 
-  actions.push(booking
-    ? { kind: 'booking', label: company.ctaLabel || 'Meet', url: booking }
-    : { kind: 'booking', label: 'Meet', disabled: true, url: null });
+  if (booking) {
+    actions.push({ kind: 'booking', label: company.ctaLabel || (isTopTier ? 'Book Meeting' : 'Meet Team'), url: booking });
+  }
 
-  actions.push({ kind: 'demo_room', label: 'Enter' });
+  actions.push({ kind: 'demo_room', label: isTopTier ? 'Launch Premium Room' : 'Open Showroom' });
   return actions;
 }
 
@@ -204,26 +237,48 @@ export function buildSponsorBoothPresentation(
   const customInsertUrl = pickCustomInsertUrl(company, booth);
   const fallbackIdentity = buildFallbackIdentity(company, booth, displayName);
   const hasBrandAssets = Boolean(logoUrl || posterUrl || videoUrl || customInsertUrl);
+  const template = pickSponsorBoothTemplate({
+    boothType: company.boothType || booth?.boothType || null,
+    districtThemeId: context?.districtThemeId || null,
+    nodeType,
+    sponsorTier: company.sponsorTier,
+  });
+  const adTier: SponsorBoothPresentation['adTier'] =
+    template === 'hero_gallery' || template === 'hero_forum'
+      ? 'elite'
+      : template === 'premium_portal' || template === 'premium_spine'
+        ? 'premium'
+        : template === 'standard_arcade'
+          ? 'standard'
+          : 'support';
+  const showcaseMode: SponsorBoothPresentation['showcaseMode'] =
+    template === 'hero_gallery' || template === 'hero_forum'
+      ? 'immersive'
+      : template === 'premium_portal' || template === 'premium_spine'
+        ? 'hero-object'
+        : template === 'standard_arcade'
+        ? 'product'
+          : 'support';
+  const demoRoomPath = isPremiumStreamingTier(adTier)
+    ? `/expo/booth/${slugOrId}/stream`
+    : `/expo/booth/${slugOrId}`;
 
   return {
     actions: buildSponsorCtas(company),
-    badgeLabel: company.sponsorTier.toUpperCase(),
+    adTier,
+    badgeLabel: buildBoothBadgeLabel(adTier, company.sponsorTier),
     bookingUrl: normalizeUrl(company.bookingUrl),
     customInsertUrl,
-    demoRoomPath: `/expo/booth/${slugOrId}`,
+    demoRoomPath,
     displayName,
     fallbackIdentity,
     hasBrandAssets,
     logoUrl,
     posterUrl,
+    showcaseMode,
     sponsorTier: company.sponsorTier,
-    tagline: truncateSponsorText(company.tagline || fallbackIdentity.supportLine || 'Meet the team. Explore the offer.', 30),
-    template: pickSponsorBoothTemplate({
-      boothType: company.boothType || booth?.boothType || null,
-      districtThemeId: context?.districtThemeId || null,
-      nodeType,
-      sponsorTier: company.sponsorTier,
-    }),
+    tagline: buildPresentationTagline(adTier, company, fallbackIdentity),
+    template,
     videoUrl,
     website: normalizeUrl(company.website),
   };

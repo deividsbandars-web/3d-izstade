@@ -15,9 +15,10 @@ const productionPresentations = productionFallback.companies.map((company) => (
 ));
 
 assert.ok(productionPresentations.every((presentation) => presentation.actions.length > 0));
-assert.ok(productionPresentations.every((presentation) => presentation.posterUrl === null));
 assert.ok(productionPresentations.every((presentation) => presentation.videoUrl === null));
-assert.ok(productionPresentations.every((presentation) => presentation.logoUrl === null));
+assert.ok(productionPresentations.some((presentation) => presentation.posterUrl !== null));
+assert.ok(productionPresentations.some((presentation) => presentation.logoUrl !== null));
+assert.ok(productionPresentations.some((presentation) => presentation.customInsertUrl !== null));
 
 const devFallback = buildDevFallbackScene();
 

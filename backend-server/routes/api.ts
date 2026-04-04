@@ -20,6 +20,7 @@ router.use(rateLimitMiddleware);
  */
 router.post('/analytics/track', analyticsController.trackAnalytics);
 router.get('/pixel-streaming/status', expoController.getPixelStreamingRuntimeStatus);
+router.post('/pixel-streaming/session', expoController.createPixelStreamingSession);
 router.post('/expo/lead', expoLeadController.captureExpoLead);
 
 // Public read-only scene contract used by the Web3D client. Keep auth policy here only.

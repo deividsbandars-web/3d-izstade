@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { getSupabase } from '../services/supabase.js';
 import { getPixelStreamingStatus } from '../services/pixelStreamingStatus.js';
+import { reservePixelStreamingSession } from '../services/pixelStreamingSessionBroker.js';
 
 export const EXPO_SCENE_AUTH_POLICY = 'public-readonly';
 export const EXPO_SCENE_VERSION = 'expo-scene-v2-sponsor';
@@ -411,9 +412,23 @@ export const createGetExpoScene = (getSupabaseClient: typeof getSupabase) => asy
 
 export const getExpoScene = createGetExpoScene(getSupabase);
 
-export const getPixelStreamingRuntimeStatus = async (_req: Request, res: Response) => {
+export const getPixelStreamingRuntimeStatus = async (req: Request, res: Response) => {
     try {
-        const status = await getPixelStreamingStatus();
+        const boothId = typeof req.query.boothId === 'string' && req.query.boothId.trim().length > 0
+            ? req.query.boothId.trim()
+            : null;
+        const slug = typeof req.query.slug === 'string' && req.query.slug.trim().length > 0
+            ? req.query.slug.trim()
+            : null;
+        const streamingLevel = typeof req.query.streamingLevel === 'string' && req.query.streamingLevel.trim().length > 0
+            ? req.query.streamingLevel.trim()
+            : null;
+
+        const status = await getPixelStreamingStatus({
+            boothId,
+            slug,
+            streamingLevel,
+        });
         res.status(200).json(status);
     } catch (error: any) {
         console.error("PixelStreamingStatus Error:", error);
@@ -428,9 +443,29 @@ export const getPixelStreamingRuntimeStatus = async (_req: Request, res: Respons
             gatewayReachable: false,
             session: {
                 sessionMode: 'single_instance',
-                selectionPolicy: 'first_available',
+                selectionPolicy: 'booth_preferred',
                 activeStreamerId: null
             }
+        });
+    }
+};
+
+export const createPixelStreamingSession = async (req: Request, res: Response) => {
+    try {
+        const body = (req.body && typeof req.body === 'object') ? req.body as Record<string, unknown> : {};
+        const session = await reservePixelStreamingSession({
+            boothId: typeof body.boothId === 'string' && body.boothId.trim().length > 0 ? body.boothId.trim() : null,
+            slug: typeof body.slug === 'string' && body.slug.trim().length > 0 ? body.slug.trim() : null,
+            streamingLevel: typeof body.streamingLevel === 'string' && body.streamingLevel.trim().length > 0 ? body.streamingLevel.trim() : null,
+            sessionId: typeof body.sessionId === 'string' && body.sessionId.trim().length > 0 ? body.sessionId.trim() : null,
+            allowSharedFallback: body.allowSharedFallback !== false,
+        });
+
+        res.status(session.status === 'ready' ? 200 : 202).json(session);
+    } catch (error: any) {
+        console.error("PixelStreamingSession Error:", error);
+        res.status(500).json({
+            error: 'PIXEL_STREAMING_SESSION_FAILED',
         });
     }
 };

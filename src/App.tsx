@@ -46,6 +46,7 @@ const Expo3D = lazy(() => import('./modules/expo/Expo3D'));
 const DigitalGallery = lazy(() => import('./modules/expo/DigitalGallery'));
 const ProjectorRoom = lazy(() => import('./modules/expo/ProjectorRoom'));
 const BoothRoom = lazy(() => import('./pages/expo/BoothRoom'));
+const BoothStreamRoom = lazy(() => import('./pages/expo/BoothStreamRoom'));
 const CompanyAdmin = lazy(() => import('./pages/expo/CompanyAdmin'));
 const Marketplace = lazy(() => import('./modules/expo/Marketplace'));
 const UrgentServices = lazy(() => import('./modules/expo/UrgentServices'));
@@ -123,6 +124,7 @@ export default function App() {
           <Route path="/expo-3d" element={<Suspense fallback={null}><Expo3D /></Suspense>} />
           <Route path="/expo3d" element={<Navigate to="/expo-3d" replace />} />
           <Route path="/expo/booth/:id" element={<Suspense fallback={null}><BoothRoom /></Suspense>} />
+          <Route path="/expo/booth/:id/stream" element={<Suspense fallback={null}><BoothStreamRoom /></Suspense>} />
           <Route path="/expo/showroom/:id" element={<Suspense fallback={null}><FurnitureShowroom /></Suspense>} />
           <Route path="/galerija" element={<Suspense fallback={null}><DigitalGallery /></Suspense>} />
           <Route path="/projekcija" element={<Suspense fallback={null}><ProjectorRoom /></Suspense>} />

@@ -37,6 +37,9 @@ export type ExpoWalkRegionPlacementInput = {
 export type ExpoWalkRegionContract = {
   arrivalZone: ExpoWalkRegion;
   centralSpine: ExpoWalkRegion;
+  rearCampusLink: ExpoWalkRegion;
+  rearCampusPlaza: ExpoWalkRegion;
+  rearCampusInterior: ExpoWalkRegion;
   secondaryLoops: ExpoWalkRegion[];
   discoveryLanes: ExpoWalkRegion[];
   sectorPockets: ExpoWalkRegion[];
@@ -75,10 +78,10 @@ export function buildExpoPlayBoundsFromPlacements(
   const allZs = boothZs.length > 0 ? [...boothZs, resolvedFootprint.minZ, resolvedFootprint.maxZ] : [resolvedFootprint.minZ, resolvedFootprint.maxZ];
 
   return {
-    minX: Math.min(...allXs) - 132,
-    maxX: Math.max(...allXs) + 132,
-    minZ: Math.min(...allZs) - 148,
-    maxZ: Math.max(...allZs) + 64,
+    minX: Math.min(...allXs) - 5200,
+    maxX: Math.max(...allXs) + 5200,
+    minZ: Math.min(...allZs) - 6400,
+    maxZ: Math.max(...allZs) + 320,
   };
 }
 
@@ -86,16 +89,16 @@ function buildBoothPocketRegion(placement: ExpoWalkRegionPlacementInput, index: 
   const side = placement.position[0] < 0 ? -1 : 1;
   const depth = placement.nodeType === 'hero_left' || placement.nodeType === 'hero_right' ? 26 : 20;
   const outerEdge = side < 0
-    ? Math.max(-84, placement.position[0] - 6)
-    : Math.min(84, placement.position[0] + 6);
-  const innerEdge = side < 0 ? -18 : 18;
+    ? Math.max(-128, placement.position[0] - 8)
+    : Math.min(128, placement.position[0] + 8);
+  const innerEdge = side < 0 ? -24 : 24;
 
   return {
     id: `booth-pocket-${placement.id}-${index}`,
     maxX: Math.max(innerEdge, outerEdge),
-    maxZ: placement.position[2] + 10,
+    maxZ: placement.position[2] + 34,
     minX: Math.min(innerEdge, outerEdge),
-    minZ: placement.position[2] - depth,
+    minZ: placement.position[2] - (depth + 28),
     type: 'booth-pocket',
   };
 }
@@ -112,10 +115,10 @@ function buildSectorPocketRegion(clusterIndex: number, placements: ExpoWalkRegio
 
   return {
     id: `sector-pocket-${clusterIndex}`,
-    maxX: Math.min(112, hasRight ? maxBoothX + 22 : 24),
-    maxZ: maxBoothZ + 20,
-    minX: Math.max(-112, hasLeft ? minBoothX - 22 : -24),
-    minZ: minBoothZ - 40,
+    maxX: Math.min(420, hasRight ? maxBoothX + 96 : 96),
+    maxZ: maxBoothZ + 96,
+    minX: Math.max(-420, hasLeft ? minBoothX - 96 : -96),
+    minZ: minBoothZ - 168,
     type: 'sector-pocket',
   };
 }
@@ -125,8 +128,8 @@ function buildSecondaryLoopRegions(footprint: SponsorBoulevardPlan['footprint'])
   const maxRouteZ = EXPO_BOULEVARD_LAYOUT.arrivalZ - 16;
 
   return [
-    { id: 'secondary-loop-left', maxX: -30, maxZ: maxRouteZ, minX: -116, minZ: minRouteZ, type: 'secondary-loop' },
-    { id: 'secondary-loop-right', maxX: 116, maxZ: maxRouteZ, minX: 30, minZ: minRouteZ, type: 'secondary-loop' },
+    { id: 'secondary-loop-left', maxX: -58, maxZ: maxRouteZ, minX: -372, minZ: minRouteZ, type: 'secondary-loop' },
+    { id: 'secondary-loop-right', maxX: 372, maxZ: maxRouteZ, minX: 58, minZ: minRouteZ, type: 'secondary-loop' },
   ];
 }
 
@@ -135,8 +138,8 @@ function buildScenicEdgeRegions(footprint: SponsorBoulevardPlan['footprint']): E
   const maxRouteZ = EXPO_BOULEVARD_LAYOUT.arrivalZ - 26;
 
   return [
-    { id: 'scenic-edge-left', maxX: -118, maxZ: maxRouteZ, minX: -168, minZ: minRouteZ, type: 'scenic-edge' },
-    { id: 'scenic-edge-right', maxX: 168, maxZ: maxRouteZ, minX: 118, minZ: minRouteZ, type: 'scenic-edge' },
+    { id: 'scenic-edge-left', maxX: -372, maxZ: maxRouteZ, minX: -572, minZ: minRouteZ, type: 'scenic-edge' },
+    { id: 'scenic-edge-right', maxX: 572, maxZ: maxRouteZ, minX: 372, minZ: minRouteZ, type: 'scenic-edge' },
   ];
 }
 
@@ -152,10 +155,10 @@ function buildDiscoveryLaneRegions(clusterIndex: number, placements: ExpoWalkReg
   if (xs.some((x) => x < 0)) {
     lanes.push({
       id: `discovery-lane-left-${clusterIndex}`,
-      maxX: Math.min(-24, minBoothX + 12),
-      maxZ: maxBoothZ + 12,
-      minX: Math.max(-122, minBoothX - 28),
-      minZ: minBoothZ - 22,
+      maxX: Math.min(-48, minBoothX + 34),
+      maxZ: maxBoothZ + 68,
+      minX: Math.max(-392, minBoothX - 132),
+      minZ: minBoothZ - 84,
       type: 'discovery-lane',
     });
   }
@@ -163,10 +166,10 @@ function buildDiscoveryLaneRegions(clusterIndex: number, placements: ExpoWalkReg
   if (xs.some((x) => x > 0)) {
     lanes.push({
       id: `discovery-lane-right-${clusterIndex}`,
-      maxX: Math.min(122, maxBoothX + 28),
-      maxZ: maxBoothZ + 12,
-      minX: Math.max(24, maxBoothX - 12),
-      minZ: minBoothZ - 22,
+      maxX: Math.min(392, maxBoothX + 132),
+      maxZ: maxBoothZ + 68,
+      minX: Math.max(48, maxBoothX - 34),
+      minZ: minBoothZ - 84,
       type: 'discovery-lane',
     });
   }
@@ -182,19 +185,43 @@ export function buildExpoWalkRegionContract(
   const playBounds = buildExpoPlayBoundsFromPlacements(boothPlacements, resolvedFootprint);
   const arrivalZone: ExpoWalkRegion = {
     id: 'arrival-zone',
-    maxX: 86,
-    maxZ: playBounds.maxZ - 10,
-    minX: -86,
-    minZ: EXPO_BOULEVARD_LAYOUT.arrivalZ - 52,
+    maxX: 320,
+    maxZ: playBounds.maxZ - 18,
+    minX: -320,
+    minZ: EXPO_BOULEVARD_LAYOUT.arrivalZ - 196,
     type: 'arrival',
   };
   const centralSpine: ExpoWalkRegion = {
     id: 'central-spine',
-    maxX: 28,
-    maxZ: resolvedFootprint.maxZ - 12,
-    minX: -28,
-    minZ: resolvedFootprint.minZ - 24,
+    maxX: 76,
+    maxZ: resolvedFootprint.maxZ - 20,
+    minX: -76,
+    minZ: resolvedFootprint.minZ - 128,
     type: 'spine',
+  };
+  const rearCampusLink: ExpoWalkRegion = {
+    id: 'rear-campus-link',
+    maxX: 1320,
+    maxZ: resolvedFootprint.minZ - 64,
+    minX: -1320,
+    minZ: resolvedFootprint.minZ - 2320,
+    type: 'promenade',
+  };
+  const rearCampusPlaza: ExpoWalkRegion = {
+    id: 'rear-campus-plaza',
+    maxX: 4200,
+    maxZ: resolvedFootprint.minZ - 2200,
+    minX: -4200,
+    minZ: resolvedFootprint.minZ - 5200,
+    type: 'sector-pocket',
+  };
+  const rearCampusInterior: ExpoWalkRegion = {
+    id: 'rear-campus-interior',
+    maxX: 4300,
+    maxZ: resolvedFootprint.minZ - 1120,
+    minX: -4300,
+    minZ: resolvedFootprint.minZ - 3600,
+    type: 'promenade',
   };
 
   const sectorPlacementsByCluster = new Map<number, ExpoWalkRegionPlacementInput[]>();
@@ -219,12 +246,15 @@ export function buildExpoWalkRegionContract(
   return {
     arrivalZone,
     centralSpine,
+    rearCampusLink,
+    rearCampusPlaza,
+    rearCampusInterior,
     secondaryLoops,
     discoveryLanes,
     sectorPockets,
     scenicEdges,
     boothPockets,
-    walkRegions: [arrivalZone, centralSpine, ...secondaryLoops, ...discoveryLanes, ...sectorPockets, ...scenicEdges, ...boothPockets],
+    walkRegions: [arrivalZone, centralSpine, rearCampusLink, rearCampusPlaza, rearCampusInterior, ...secondaryLoops, ...discoveryLanes, ...sectorPockets, ...scenicEdges, ...boothPockets],
   };
 }
 

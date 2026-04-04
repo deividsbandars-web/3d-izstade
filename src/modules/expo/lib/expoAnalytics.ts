@@ -59,6 +59,10 @@ function persistExpoAnalytics(detail: ExpoAnalyticsDetail) {
     return;
   }
 
+  if (import.meta.env.DEV) {
+    return;
+  }
+
   const endpoint = `${getFrontendRuntimeEnv().apiBaseUrl}/api/analytics/track`;
   const payload = JSON.stringify({ payload: detail });
 

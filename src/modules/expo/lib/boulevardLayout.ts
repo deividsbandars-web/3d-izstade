@@ -139,31 +139,31 @@ export type SponsorBoulevardPlan = {
 };
 
 export const EXPO_BOULEVARD_LAYOUT = {
-  arrivalZ: 8,
-  anchorPlazaDepth: 22,
-  clusterGapDepth: 40,
-  connectorX: 26,
-  connectorZOffset: 26,
-  endcapX: 84,
-  emptySectorDepth: 38,
-  gatewayX: 116,
-  gatewayZOffset: 10,
-  heroX: 62,
-  heroZOffset: 34,
-  heroForecourtDepth: 10,
-  programmedFillerX: 78,
-  programmedFillerZOffset: 34,
-  sectorPlazaWidthX: 88,
-  laneMarginX: 44,
-  playBoundsPaddingX: 30,
-  playBoundsPaddingZ: 34,
-  sectorClusterDepth: 138,
-  sectorGatewayOnlyDepth: 22,
-  sideLaneX: 110,
-  sideLaneZOffset: 18,
-  standardX: 48,
-  standardZStartOffset: 76,
-  standardZStep: 42,
+  arrivalZ: 20,
+  anchorPlazaDepth: 84,
+  clusterGapDepth: 212,
+  connectorX: 92,
+  connectorZOffset: 78,
+  endcapX: 108,
+  emptySectorDepth: 192,
+  gatewayX: 372,
+  gatewayZOffset: 34,
+  heroX: 82,
+  heroZOffset: 138,
+  heroForecourtDepth: 54,
+  programmedFillerX: 404,
+  programmedFillerZOffset: 146,
+  sectorPlazaWidthX: 348,
+  laneMarginX: 212,
+  playBoundsPaddingX: 196,
+  playBoundsPaddingZ: 236,
+  sectorClusterDepth: 592,
+  sectorGatewayOnlyDepth: 132,
+  sideLaneX: 372,
+  sideLaneZOffset: 58,
+  standardX: 86,
+  standardZStartOffset: 318,
+  standardZStep: 146,
 } as const;
 
 const SPONSOR_TIER_WEIGHT: Record<SponsorTier, number> = {
@@ -672,7 +672,7 @@ export function buildSponsorBoulevardPlan(
 
   nodes.push(arrivalNode);
 
-  let clusterBaseZ = -18;
+  let clusterBaseZ = -42;
 
   orderedSectorKeys.forEach((sectorKey, sectorIndex) => {
     const group = sectorGroups.get(sectorKey) ?? [];

@@ -47,6 +47,8 @@ assert.equal(pickSponsorBoothTemplate({ boothType: 'poster', districtThemeId: 'd
 
 const heroActions = buildSponsorCtas(heroCompany);
 assert.deepEqual(heroActions.map((action) => action.kind), ['website', 'booking', 'demo_room']);
+assert.equal(heroActions[0].label, 'Open Website');
+assert.equal(heroActions[2].label, 'Launch Premium Room');
 
 const heroPresentation = buildSponsorBoothPresentation(heroCompany, heroCompany.booth, 'hero_left', { districtThemeId: 'platform_corridor' });
 assert.equal(heroPresentation.template, 'hero_gallery');
@@ -55,10 +57,11 @@ assert.equal(heroPresentation.customInsertUrl, 'https://cdn.example.com/custom-b
 assert.equal(heroPresentation.posterUrl, 'https://cdn.example.com/poster.png');
 assert.equal(heroPresentation.videoUrl, 'https://cdn.example.com/demo.mp4');
 assert.equal(heroPresentation.actions[1].label, 'Book Strategy Session');
-assert.equal(heroPresentation.demoRoomPath, '/expo/booth/hero-one');
+assert.equal(heroPresentation.badgeLabel, 'UNREAL ELITE');
+assert.equal(heroPresentation.demoRoomPath, '/expo/booth/hero-one/stream');
 assert.deepEqual(resolveSponsorCtaIntent(heroPresentation.actions[0], heroPresentation), { type: 'external', target: 'https://hero.example.com' });
 assert.deepEqual(resolveSponsorCtaIntent(heroPresentation.actions[1], heroPresentation), { type: 'external', target: 'https://cal.example.com/hero-one' });
-assert.deepEqual(resolveSponsorCtaIntent(heroPresentation.actions[2], heroPresentation), { type: 'navigate', target: '/expo/booth/hero-one' });
+assert.deepEqual(resolveSponsorCtaIntent(heroPresentation.actions[2], heroPresentation), { type: 'navigate', target: '/expo/booth/hero-one/stream' });
 
 const compactPresentation = buildSponsorBoothPresentation({
   ...heroCompany,
@@ -77,6 +80,8 @@ const compactPresentation = buildSponsorBoothPresentation({
 assert.equal(compactPresentation.template, 'standard_studio');
 assert.equal(compactPresentation.actions.length, 1);
 assert.equal(compactPresentation.actions[0].kind, 'demo_room');
+assert.equal(compactPresentation.actions[0].label, 'Open Showroom');
+assert.equal(compactPresentation.badgeLabel, 'BRONZE');
 assert.equal(compactPresentation.customInsertUrl, null);
 assert.deepEqual(resolveSponsorCtaIntent(compactPresentation.actions[0], compactPresentation), { type: 'navigate', target: '/expo/booth/hero-1' });
 

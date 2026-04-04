@@ -13,15 +13,39 @@ type SkylinePlacement = {
 };
 
 const BASE_PLACEMENTS: SkylinePlacement[] = [
-  { asset: 'commercial_wide_a', position: [-412, -2, -536], rotationY: 0.02, scale: 1.12 },
-  { asset: 'commercial_mid_f', position: [0, -3, -612], rotationY: 0, scale: 1.08 },
-  { asset: 'commercial_wide_b', position: [412, -2, -544], rotationY: -0.02, scale: 1.12 },
+  { asset: 'commercial_wide_a', position: [-1540, -2, -862], rotationY: 0.03, scale: 1.46 },
+  { asset: 'commercial_wide_b', position: [-1130, -2, -734], rotationY: 0.02, scale: 1.28 },
+  { asset: 'commercial_mid_f', position: [-712, -3, -1038], rotationY: 0.01, scale: 1.24 },
+  { asset: 'commercial_tower_b', position: [-228, -10, -1340], rotationY: 0.01, scale: 1.12 },
+  { asset: 'commercial_wide_a', position: [0, -6, -1116], rotationY: 0, scale: 1.22 },
+  { asset: 'commercial_tower_b', position: [246, -10, -1380], rotationY: -0.01, scale: 1.1 },
+  { asset: 'commercial_mid_f', position: [742, -3, -1046], rotationY: -0.01, scale: 1.22 },
+  { asset: 'commercial_wide_b', position: [1148, -2, -742], rotationY: -0.02, scale: 1.3 },
+  { asset: 'commercial_wide_a', position: [1552, -2, -874], rotationY: -0.03, scale: 1.48 },
 ];
 
 const QUALITY_PLACEMENTS: SkylinePlacement[] = [
-  { asset: 'suburban_f', position: [-528, -1, -676], rotationY: 0.04, scale: 0.84 },
-  { asset: 'commercial_tower_b', position: [212, -7, -692], rotationY: -0.05, scale: 0.88 },
-  { asset: 'suburban_n', position: [548, -1, -684], rotationY: -0.04, scale: 0.84 },
+  { asset: 'suburban_f', position: [-1840, -1, -1046], rotationY: 0.05, scale: 1.12 },
+  { asset: 'commercial_wide_a', position: [-1268, -2, -1478], rotationY: 0.04, scale: 1.2 },
+  { asset: 'commercial_tower_b', position: [-838, -8, -1674], rotationY: 0.03, scale: 1.1 },
+  { asset: 'suburban_n', position: [-438, -1, -1548], rotationY: 0.02, scale: 1.12 },
+  { asset: 'commercial_tower_b', position: [0, -8, -1768], rotationY: 0, scale: 1.16 },
+  { asset: 'suburban_f', position: [456, -1, -1554], rotationY: -0.02, scale: 1.12 },
+  { asset: 'commercial_tower_b', position: [844, -8, -1686], rotationY: -0.03, scale: 1.1 },
+  { asset: 'commercial_wide_b', position: [1274, -2, -1494], rotationY: -0.04, scale: 1.22 },
+  { asset: 'suburban_f', position: [1848, -1, -1064], rotationY: -0.05, scale: 1.12 },
+];
+
+const DEPTH_PLACEMENTS: SkylinePlacement[] = [
+  { asset: 'commercial_wide_a', position: [-2120, -2, -1860], rotationY: 0.04, scale: 1.34 },
+  { asset: 'commercial_tower_b', position: [-1540, -10, -2140], rotationY: 0.03, scale: 1.22 },
+  { asset: 'commercial_mid_f', position: [-980, -4, -1960], rotationY: 0.02, scale: 1.18 },
+  { asset: 'suburban_n', position: [-420, -1, -2080], rotationY: 0.01, scale: 1.08 },
+  { asset: 'commercial_tower_b', position: [0, -10, -2280], rotationY: 0, scale: 1.26 },
+  { asset: 'suburban_n', position: [446, -1, -2096], rotationY: -0.01, scale: 1.08 },
+  { asset: 'commercial_mid_f', position: [1016, -4, -1974], rotationY: -0.02, scale: 1.18 },
+  { asset: 'commercial_tower_b', position: [1580, -10, -2160], rotationY: -0.03, scale: 1.22 },
+  { asset: 'commercial_wide_a', position: [2150, -2, -1888], rotationY: -0.04, scale: 1.34 },
 ];
 
 const SKYLINE_BOXES: Record<SkylineAssetId, [number, number, number]> = {
@@ -69,7 +93,7 @@ export function CuratedSkylineRing({
   walkRegions?: ExpoWalkRegion[];
 }) {
   const placements = useMemo(
-    () => (density === 'standard' ? [...BASE_PLACEMENTS, ...QUALITY_PLACEMENTS] : BASE_PLACEMENTS),
+    () => (density === 'standard' ? [...BASE_PLACEMENTS, ...QUALITY_PLACEMENTS, ...DEPTH_PLACEMENTS] : BASE_PLACEMENTS),
     [density]
   );
 
@@ -90,8 +114,8 @@ export function CuratedSkylineRing({
 
     return sanitized.map((placement, index) => {
       const districtProfile = visualProfile.districts[Math.min(visualProfile.districts.length - 1, index)] ?? visualProfile.districts[0];
-      const profileScale = Math.min(0.82, districtProfile?.skylineScale ?? 0.76);
-      const opacity = Math.max(0.06, (density === 'standard' ? 0.12 : 0.08) * (districtProfile?.skylineOpacity ?? 0.5));
+      const profileScale = Math.min(0.96, districtProfile?.skylineScale ?? 0.84);
+      const opacity = Math.max(0.08, (density === 'standard' ? 0.16 : 0.1) * (districtProfile?.skylineOpacity ?? 0.5));
       const object = createSkylineBlock(
         placement.asset,
         placement.scale * profileScale,

@@ -1,6 +1,3 @@
-import { useTexture } from '@react-three/drei';
-import { useMemo } from 'react';
-import * as THREE from 'three';
 import type { SponsorBoothTemplate } from '../lib/sponsorBoothPresentation';
 import type { ExpoDistrictExpressionMode } from '../lib/boulevardLayout';
 
@@ -146,122 +143,20 @@ function PremiumSurface({
   return <meshStandardMaterial color={color ?? tone.shell} metalness={0.08} roughness={0.42} />;
 }
 
-function configureRepeatedTexture(texture: THREE.Texture | null | undefined, repeat: [number, number], color = false) {
-  if (!texture) {
-    return undefined;
-  }
-
-  const clone = texture.clone();
-  clone.wrapS = THREE.RepeatWrapping;
-  clone.wrapT = THREE.RepeatWrapping;
-  clone.repeat.set(repeat[0], repeat[1]);
-  clone.colorSpace = color ? THREE.SRGBColorSpace : THREE.NoColorSpace;
-  clone.needsUpdate = true;
-  return clone;
-}
-
-function useRepeatedTextureSet({
-  colorUrl,
-  normalUrl,
-  repeat,
-  roughnessUrl,
-}: {
-  colorUrl: string;
-  normalUrl: string;
-  repeat: [number, number];
-  roughnessUrl: string;
-}) {
-  const textures = useTexture({
-    map: colorUrl,
-    normalMap: normalUrl,
-    roughnessMap: roughnessUrl,
-  });
-  return useMemo(() => {
-    return {
-      map: configureRepeatedTexture(textures.map, repeat, true),
-      normalMap: configureRepeatedTexture(textures.normalMap, repeat),
-      roughnessMap: configureRepeatedTexture(textures.roughnessMap, repeat),
-    };
-  }, [repeat, textures.map, textures.normalMap, textures.roughnessMap]);
-}
-
-function useRepeatedMetalTextureSet({
-  colorUrl,
-  metalnessUrl,
-  normalUrl,
-  repeat,
-  roughnessUrl,
-}: {
-  colorUrl: string;
-  metalnessUrl: string;
-  normalUrl: string;
-  repeat: [number, number];
-  roughnessUrl: string;
-}) {
-  const textures = useTexture({
-    map: colorUrl,
-    metalnessMap: metalnessUrl,
-    normalMap: normalUrl,
-    roughnessMap: roughnessUrl,
-  });
-  return useMemo(() => {
-    return {
-      map: configureRepeatedTexture(textures.map, repeat, true),
-      metalnessMap: configureRepeatedTexture(textures.metalnessMap, repeat),
-      normalMap: configureRepeatedTexture(textures.normalMap, repeat),
-      roughnessMap: configureRepeatedTexture(textures.roughnessMap, repeat),
-    };
-  }, [repeat, textures.map, textures.metalnessMap, textures.normalMap, textures.roughnessMap]);
-}
-
 function ConcreteMasterMaterial() {
-  const textures = useRepeatedTextureSet({
-    colorUrl: '/textures/expo/master-phase/concrete/concrete_diff_4k.png',
-    normalUrl: '/textures/expo/master-phase/concrete/concrete_nor_gl_4k.png',
-    repeat: [2.2, 2.2],
-    roughnessUrl: '/textures/expo/master-phase/concrete/concrete_rough_4k.png',
-  });
-
-  return <meshStandardMaterial color="#e8eef4" map={textures.map} metalness={0.04} normalMap={textures.normalMap} roughness={0.72} roughnessMap={textures.roughnessMap} />;
+  return <meshStandardMaterial color="#e8eef4" metalness={0.04} roughness={0.72} />;
 }
 
 function FactoryWallMaterial() {
-  const textures = useRepeatedTextureSet({
-    colorUrl: '/textures/expo/master-phase/factory-wall/factory_wall_diff_4k.png',
-    normalUrl: '/textures/expo/master-phase/factory-wall/factory_wall_nor_gl_4k.png',
-    repeat: [2.4, 1.4],
-    roughnessUrl: '/textures/expo/master-phase/factory-wall/factory_wall_rough_4k.png',
-  });
-
-  return <meshStandardMaterial color="#5f7688" map={textures.map} metalness={0.14} normalMap={textures.normalMap} roughness={0.66} roughnessMap={textures.roughnessMap} />;
+  return <meshStandardMaterial color="#5f7688" metalness={0.14} roughness={0.66} />;
 }
 
 function MetalTrimMaterial({ variant = '045' }: { variant?: '045' | '046' }) {
-  const textures = useRepeatedMetalTextureSet({
-    colorUrl: variant === '045'
-      ? '/textures/expo/master-phase/metal-045/Metal045A_4K-JPG_Color.jpg'
-      : '/textures/expo/master-phase/metal-046/Metal046A_4K-JPG_Color.jpg',
-    metalnessUrl: variant === '045'
-      ? '/textures/expo/master-phase/metal-045/Metal045A_4K-JPG_Metalness.jpg'
-      : '/textures/expo/master-phase/metal-046/Metal046A_4K-JPG_Metalness.jpg',
-    normalUrl: variant === '045'
-      ? '/textures/expo/master-phase/metal-045/Metal045A_4K-JPG_NormalGL.jpg'
-      : '/textures/expo/master-phase/metal-046/Metal046A_4K-JPG_NormalGL.jpg',
-    repeat: [1.4, 1.4],
-    roughnessUrl: variant === '045'
-      ? '/textures/expo/master-phase/metal-045/Metal045A_4K-JPG_Roughness.jpg'
-      : '/textures/expo/master-phase/metal-046/Metal046A_4K-JPG_Roughness.jpg',
-  });
-
   return (
     <meshStandardMaterial
       color={variant === '045' ? '#ccd6e2' : '#60748a'}
-      map={textures.map}
       metalness={0.4}
-      metalnessMap={textures.metalnessMap}
-      normalMap={textures.normalMap}
       roughness={0.58}
-      roughnessMap={textures.roughnessMap}
     />
   );
 }
@@ -303,61 +198,77 @@ export function getBoothColliderSegments(template: SponsorBoothTemplate): BoothC
 function ActiveFrontage({ accentColor }: { accentColor: string }) {
   return (
     <group>
-      <mesh position={[0, 0.14, 1.1]} receiveShadow>
-        <boxGeometry args={[19.6, 0.32, 10.4]} />
+      <mesh position={[0, 0.12, 1.4]} receiveShadow>
+        <boxGeometry args={[21.4, 0.24, 12.2]} />
         <ConcreteMasterMaterial />
       </mesh>
-      <mesh position={[0, 0.34, 5.95]} receiveShadow>
-        <boxGeometry args={[11.8, 0.18, 1.42]} />
-        <meshStandardMaterial color="#31536f" emissive={accentColor} emissiveIntensity={0.025} roughness={0.56} metalness={0.18} />
+      <mesh position={[0, 5.2, -1.2]} castShadow>
+        <boxGeometry args={[18.6, 10.8, 10.8]} />
+        <ConcreteMasterMaterial />
       </mesh>
-      <mesh position={[0, 5.2, -0.5]} castShadow>
-        <boxGeometry args={[16.2, 10.6, 9.8]} />
+      <mesh position={[0, 6.3, -5.95]} castShadow>
+        <boxGeometry args={[16.6, 8.6, 1.08]} />
         <FactoryWallMaterial />
       </mesh>
-      <mesh position={[0, 5.9, -5.4]} castShadow>
-        <boxGeometry args={[15.2, 10.2, 1.2]} />
+      <mesh position={[0, 5.1, 3.9]} castShadow>
+        <boxGeometry args={[13.2, 9.6, 2.9]} />
         <PremiumSurface visualTone="active-commercial" />
       </mesh>
-      <mesh position={[0, 11.2, -0.4]} castShadow>
-        <boxGeometry args={[16.6, 0.82, 9.4]} />
+      <mesh position={[0, 11.0, -0.55]} castShadow>
+        <boxGeometry args={[19.4, 0.92, 11.2]} />
         <MetalTrimMaterial variant="046" />
       </mesh>
-      <mesh position={[0, 2.65, 1.95]} castShadow>
-        <boxGeometry args={[13.8, 0.42, 6.8]} />
+      <mesh position={[0, 13.4, -1.8]} castShadow>
+        <boxGeometry args={[16.4, 1.28, 8.4]} />
+        <PremiumSurface visualTone="active-commercial" />
+      </mesh>
+      <mesh position={[0, 1.9, 5.95]} castShadow>
+        <boxGeometry args={[15.6, 3.0, 1.5]} />
         <ConcreteMasterMaterial />
       </mesh>
-      <mesh position={[0, 1.9, 4.55]} castShadow>
-        <boxGeometry args={[11.2, 2.8, 1.18]} />
-        <ConcreteMasterMaterial />
-      </mesh>
-      <mesh position={[-8.2, 5.8, -0.2]} rotation={[0, 0.16, 0]} castShadow>
-        <boxGeometry args={[1.2, 10.9, 10.9]} />
+      <mesh position={[-8.95, 5.35, -0.1]} rotation={[0, 0.08, 0]} castShadow>
+        <boxGeometry args={[1.52, 10.1, 10.2]} />
         <MetalTrimMaterial variant="046" />
       </mesh>
-      <mesh position={[8.2, 5.8, -0.2]} rotation={[0, -0.16, 0]} castShadow>
-        <boxGeometry args={[1.2, 10.9, 10.9]} />
+      <mesh position={[8.95, 5.35, -0.1]} rotation={[0, -0.08, 0]} castShadow>
+        <boxGeometry args={[1.52, 10.1, 10.2]} />
         <MetalTrimMaterial variant="046" />
       </mesh>
-      <mesh position={[-5.8, 2.35, 5.35]} castShadow>
-        <boxGeometry args={[2.8, 4.5, 1.35]} />
-        <MetalTrimMaterial variant="045" />
-      </mesh>
-      <mesh position={[5.8, 2.35, 5.35]} castShadow>
-        <boxGeometry args={[2.8, 4.5, 1.35]} />
-        <MetalTrimMaterial variant="045" />
-      </mesh>
-      <mesh position={[0, 8.75, -4.7]} castShadow>
-        <boxGeometry args={[15.85, 4.95, 0.14]} />
-        <MetalTrimMaterial variant="045" />
-      </mesh>
-      <mesh position={[0, 9.35, 3.45]} castShadow>
-        <boxGeometry args={[6.2, 3.1, 0.92]} />
+      <mesh position={[-6.25, 3.15, 4.8]} castShadow>
+        <boxGeometry args={[2.1, 4.8, 1.84]} />
         <FactoryWallMaterial />
       </mesh>
-      <mesh position={[0, 6.5, -0.9]} castShadow>
-        <boxGeometry args={[18.8, 0.22, 0.22]} />
-        <meshStandardMaterial color="#4f7290" emissive={accentColor} emissiveIntensity={0.018} roughness={0.6} metalness={0.22} />
+      <mesh position={[6.25, 3.15, 4.8]} castShadow>
+        <boxGeometry args={[2.1, 4.8, 1.84]} />
+        <FactoryWallMaterial />
+      </mesh>
+      <mesh position={[0, 8.95, 0.7]} castShadow>
+        <boxGeometry args={[11.6, 1.28, 6.6]} />
+        <MetalTrimMaterial variant="046" />
+      </mesh>
+      <mesh position={[-10.9, 4.9, 1.8]} castShadow>
+        <boxGeometry args={[2.2, 8.4, 6.8]} />
+        <PremiumSurface visualTone="active-commercial" />
+      </mesh>
+      <mesh position={[10.9, 4.9, 1.8]} castShadow>
+        <boxGeometry args={[2.2, 8.4, 6.8]} />
+        <PremiumSurface visualTone="active-commercial" />
+      </mesh>
+      <mesh position={[-8.6, 9.2, 2.6]} castShadow>
+        <boxGeometry args={[4.8, 1.1, 4.4]} />
+        <MetalTrimMaterial variant="045" />
+      </mesh>
+      <mesh position={[8.6, 9.2, 2.6]} castShadow>
+        <boxGeometry args={[4.8, 1.1, 4.4]} />
+        <MetalTrimMaterial variant="045" />
+      </mesh>
+      <mesh position={[0, 6.1, 5.15]} castShadow>
+        <boxGeometry args={[7.4, 1.8, 1.2]} />
+        <MetalTrimMaterial variant="045" />
+      </mesh>
+      <mesh position={[0, 1.02, 6.15]} receiveShadow>
+        <boxGeometry args={[14.2, 0.12, 0.74]} />
+        <meshStandardMaterial color="#4c647a" emissive={accentColor} emissiveIntensity={0.01} roughness={0.72} metalness={0.18} />
       </mesh>
     </group>
   );
@@ -367,41 +278,61 @@ function CalmFrontage({ accentColor }: { accentColor: string }) {
   const tone = resolveToneSurface('calm-dwell');
   return (
     <group>
-      <mesh position={[0, 0.14, 0.9]} receiveShadow>
-        <boxGeometry args={[15.4, 0.24, 9.8]} />
+      <mesh position={[0, 0.12, 0.8]} receiveShadow>
+        <boxGeometry args={[16.8, 0.22, 10.8]} />
         <ConcreteMasterMaterial />
       </mesh>
-      <mesh position={[0, 4.4, -0.3]} castShadow>
-        <boxGeometry args={[12.4, 8.2, 8.8]} />
+      <mesh position={[0, 4.8, -0.9]} castShadow>
+        <boxGeometry args={[11.8, 8.8, 10.4]} />
         <ConcreteMasterMaterial />
       </mesh>
-      <mesh position={[0, 4.85, -4.6]} castShadow>
-        <boxGeometry args={[11.4, 7.4, 1]} />
+      <mesh position={[0, 5.05, -5.85]} castShadow>
+        <boxGeometry args={[10.4, 7.4, 1.04]} />
         <PremiumSurface visualTone="calm-dwell" />
       </mesh>
-      <mesh position={[-5.4, 4.5, 0.4]} rotation={[0, 0.1, 0]} castShadow>
-        <boxGeometry args={[0.98, 8.4, 8.8]} />
+      <mesh position={[-5.95, 4.65, 0.4]} rotation={[0, 0.05, 0]} castShadow>
+        <boxGeometry args={[1.28, 8.9, 10.2]} />
         <ShellMaterial color={accentColor} emissiveIntensity={tone.glow} visualTone="calm-dwell" />
       </mesh>
-      <mesh position={[5.4, 4.5, 0.4]} rotation={[0, -0.1, 0]} castShadow>
-        <boxGeometry args={[0.98, 8.4, 8.8]} />
+      <mesh position={[5.95, 4.65, 0.4]} rotation={[0, -0.05, 0]} castShadow>
+        <boxGeometry args={[1.28, 8.9, 10.2]} />
         <ShellMaterial color={accentColor} emissiveIntensity={tone.glow} visualTone="calm-dwell" />
       </mesh>
-      <mesh position={[0, 8.9, -0.1]} castShadow>
-        <boxGeometry args={[12.8, 0.72, 8.1]} />
+      <mesh position={[0, 9.15, -0.45]} castShadow>
+        <boxGeometry args={[12.6, 0.74, 9.4]} />
         <MetalTrimMaterial variant="046" />
       </mesh>
-      <mesh position={[0, 1.75, 3.7]} castShadow>
-        <boxGeometry args={[8.2, 2.7, 0.92]} />
+      <mesh position={[0, 10.8, -1.2]} castShadow>
+        <boxGeometry args={[9.6, 1.12, 6.8]} />
+        <PremiumSurface visualTone="calm-dwell" />
+      </mesh>
+      <mesh position={[0, 3.45, 4.55]} castShadow>
+        <boxGeometry args={[7.6, 5.8, 1.14]} />
+        <PremiumSurface visualTone="calm-dwell" />
+      </mesh>
+      <mesh position={[-3.95, 2.85, 3.05]} castShadow>
+        <boxGeometry args={[2.4, 4.8, 2.2]} />
         <ConcreteMasterMaterial />
       </mesh>
-      <mesh position={[0, 0.38, 4.7]} receiveShadow>
-        <boxGeometry args={[6.2, 0.08, 1.1]} />
-        <meshStandardMaterial color="#517a76" emissive={accentColor} emissiveIntensity={0.015} roughness={0.62} metalness={0.12} />
+      <mesh position={[3.95, 2.85, 3.05]} castShadow>
+        <boxGeometry args={[2.4, 4.8, 2.2]} />
+        <ConcreteMasterMaterial />
       </mesh>
-      <mesh position={[0, 7.2, 3.2]} castShadow>
-        <boxGeometry args={[5.2, 2.2, 0.8]} />
+      <mesh position={[0, 1.0, 5.35]} receiveShadow>
+        <boxGeometry args={[7.2, 0.1, 0.72]} />
+        <meshStandardMaterial color="#58756f" emissive={accentColor} emissiveIntensity={0.008} roughness={0.74} metalness={0.1} />
+      </mesh>
+      <mesh position={[0, 7.55, 3.1]} castShadow>
+        <boxGeometry args={[5.8, 1.7, 0.84]} />
         <MetalTrimMaterial variant="046" />
+      </mesh>
+      <mesh position={[-7.4, 3.4, 1.9]} castShadow>
+        <boxGeometry args={[1.48, 5.6, 5.4]} />
+        <PremiumSurface visualTone="calm-dwell" />
+      </mesh>
+      <mesh position={[7.4, 3.4, 1.9]} castShadow>
+        <boxGeometry args={[1.48, 5.6, 5.4]} />
+        <PremiumSurface visualTone="calm-dwell" />
       </mesh>
     </group>
   );
@@ -412,40 +343,52 @@ function SupportFrontage({ accentColor }: { accentColor: string }) {
   return (
     <group>
       <mesh position={[0, 0.12, 0.6]} receiveShadow>
-        <boxGeometry args={[13.2, 0.22, 8.6]} />
+        <boxGeometry args={[13.8, 0.22, 8.8]} />
         <ConcreteMasterMaterial />
       </mesh>
-      <mesh position={[0, 4.0, -0.2]} castShadow>
-        <boxGeometry args={[10.2, 7.2, 7.4]} />
+      <mesh position={[0, 4.2, -0.85]} castShadow>
+        <boxGeometry args={[10.2, 7.8, 8.8]} />
         <ConcreteMasterMaterial />
       </mesh>
-      <mesh position={[0, 4.3, -3.75]} castShadow>
-        <boxGeometry args={[9.4, 6.3, 0.82]} />
+      <mesh position={[0, 4.45, -4.65]} castShadow>
+        <boxGeometry args={[8.6, 6.5, 0.84]} />
         <PremiumSurface color={tone.shell} visualTone="orientation" />
       </mesh>
-      <mesh position={[0, 7.85, -0.15]} castShadow>
-        <boxGeometry args={[10.8, 0.56, 6.8]} />
+      <mesh position={[0, 7.95, -0.45]} castShadow>
+        <boxGeometry args={[10.4, 0.62, 7.8]} />
         <MetalTrimMaterial variant="046" />
       </mesh>
-      <mesh position={[-4.5, 3.7, 0.35]} rotation={[0, 0.08, 0]} castShadow>
-        <boxGeometry args={[0.82, 6.9, 6.9]} />
+      <mesh position={[0, 9.35, -1.1]} castShadow>
+        <boxGeometry args={[8.2, 0.92, 5.4]} />
+        <PremiumSurface color="#eef2f5" visualTone="orientation" />
+      </mesh>
+      <mesh position={[-4.8, 3.9, 0.2]} rotation={[0, 0.06, 0]} castShadow>
+        <boxGeometry args={[1.1, 7.2, 8.2]} />
         <ShellMaterial color={accentColor} emissiveIntensity={tone.glow} visualTone="orientation" />
       </mesh>
-      <mesh position={[4.5, 3.7, 0.35]} rotation={[0, -0.08, 0]} castShadow>
-        <boxGeometry args={[0.82, 6.9, 6.9]} />
+      <mesh position={[4.8, 3.9, 0.2]} rotation={[0, -0.06, 0]} castShadow>
+        <boxGeometry args={[1.1, 7.2, 8.2]} />
         <ShellMaterial color={accentColor} emissiveIntensity={tone.glow} visualTone="orientation" />
       </mesh>
-      <mesh position={[0, 1.42, 3.85]} castShadow>
-        <boxGeometry args={[6.2, 2.1, 0.88]} />
+      <mesh position={[0, 2.35, 4.4]} castShadow>
+        <boxGeometry args={[7.6, 3.7, 1.08]} />
         <ConcreteMasterMaterial />
       </mesh>
-      <mesh position={[0, 0.38, 3.9]} receiveShadow>
-        <boxGeometry args={[5.4, 0.08, 1.05]} />
-        <meshStandardMaterial color="#5c6978" emissive={accentColor} emissiveIntensity={0.012} roughness={0.68} metalness={0.12} />
+      <mesh position={[0, 0.92, 4.6]} receiveShadow>
+        <boxGeometry args={[6.2, 0.12, 0.94]} />
+        <meshStandardMaterial color="#667585" emissive={accentColor} emissiveIntensity={0.01} roughness={0.72} metalness={0.12} />
       </mesh>
-      <mesh position={[0, 6.2, 2.95]} castShadow>
-        <boxGeometry args={[4.2, 1.7, 0.72]} />
+      <mesh position={[0, 6.45, 2.95]} castShadow>
+        <boxGeometry args={[4.8, 1.8, 0.82]} />
         <MetalTrimMaterial variant="046" />
+      </mesh>
+      <mesh position={[-6.2, 2.7, 1.8]} castShadow>
+        <boxGeometry args={[1.22, 4.8, 4.4]} />
+        <PremiumSurface color="#eef2f5" visualTone="orientation" />
+      </mesh>
+      <mesh position={[6.2, 2.7, 1.8]} castShadow>
+        <boxGeometry args={[1.22, 4.8, 4.4]} />
+        <PremiumSurface color="#eef2f5" visualTone="orientation" />
       </mesh>
     </group>
   );

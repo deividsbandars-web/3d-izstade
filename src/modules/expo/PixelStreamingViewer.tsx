@@ -7,6 +7,7 @@ import type { PixelStreamingAvailability, PixelStreamingRuntimeConfig, PixelStre
 interface PixelStreamingViewerProps {
     config: PixelStreamingRuntimeConfig;
     availability: PixelStreamingAvailability;
+    preferredStreamerIds?: string[];
     runtimeStatus: PixelStreamingRuntimeStatus | null;
     onClose?: () => void;
 }
@@ -14,6 +15,7 @@ interface PixelStreamingViewerProps {
 export default function PixelStreamingViewer({ 
     config,
     availability,
+    preferredStreamerIds = [],
     runtimeStatus,
     onClose
 }: PixelStreamingViewerProps) {
@@ -23,6 +25,10 @@ export default function PixelStreamingViewer({
     const [availableStreamers, setAvailableStreamers] = useState<string[]>([]);
     const psRef = useRef<PixelStreaming | null>(null);
     const signalingUrl = config.signalingUrl ?? 'Not configured';
+
+    function normalizeStreamerId(value: string) {
+        return String(value).trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+    }
 
     function handleConnect(streamerId: string) {
         if (!psRef.current) return;
@@ -87,7 +93,14 @@ export default function PixelStreamingViewer({
             setAvailableStreamers(ids);
             if (ids.length > 0) {
                 setStatus(EXPO_MODE_COPY.premiumViewerSelectStreamer.replace('{count}', String(ids.length)));
-                if (runtimeStatus?.session.activeStreamerId && ids.includes(runtimeStatus.session.activeStreamerId)) {
+                const normalizedIds = new Map(ids.map((id: string) => [normalizeStreamerId(id), id]));
+                const preferredId = preferredStreamerIds
+                    .map((id) => normalizedIds.get(normalizeStreamerId(id)) || null)
+                    .find((id) => Boolean(id));
+
+                if (preferredId) {
+                    handleConnect(preferredId);
+                } else if (runtimeStatus?.session.activeStreamerId && ids.includes(runtimeStatus.session.activeStreamerId)) {
                     handleConnect(runtimeStatus.session.activeStreamerId);
                 }
             } else {
@@ -114,7 +127,7 @@ export default function PixelStreamingViewer({
             ps.disconnect();
             psRef.current = null;
         };
-    }, [availability, signalingUrl, config.iceServers, runtimeStatus]);
+    }, [availability, signalingUrl, config.iceServers, preferredStreamerIds, runtimeStatus]);
 
     return (
         <div style={{ width: '100%', height: '100%', position: 'relative', backgroundColor: '#000', overflow: 'hidden' }}>
