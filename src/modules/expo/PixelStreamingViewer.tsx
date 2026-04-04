@@ -88,12 +88,13 @@ export default function PixelStreamingViewer({
         });
 
         const onStreamerList = (event: any) => {
-            const ids = event.streamers || (event.data && event.data.messageStreamerList && event.data.messageStreamerList.ids) || [];
+            const rawIds = event.streamers || (event.data && event.data.messageStreamerList && event.data.messageStreamerList.ids) || [];
+            const ids = Array.isArray(rawIds) ? rawIds.filter((value): value is string => typeof value === 'string') : [];
             console.log("Saņemts saraksts:", ids);
             setAvailableStreamers(ids);
             if (ids.length > 0) {
                 setStatus(EXPO_MODE_COPY.premiumViewerSelectStreamer.replace('{count}', String(ids.length)));
-                const normalizedIds = new Map(ids.map((id: string) => [normalizeStreamerId(id), id]));
+                const normalizedIds = new Map(ids.map((id) => [normalizeStreamerId(id), id] as const));
                 const preferredId = preferredStreamerIds
                     .map((id) => normalizedIds.get(normalizeStreamerId(id)) || null)
                     .find((id) => Boolean(id));

@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { buildDistrictLandmarkPlan, validateDistrictLandmarkPlan } from '../lib/districtLandmarkPlan.js';
 import { resolveDistrictThemeForSector } from '../lib/districtTheme.js';
+import { createExpoSceneCompany } from './testFactories.js';
 import type { ExpoBoothPlacement, ExpoSectorMarker } from '../layout-engine.js';
 import type { ExpoDistrictProgramSummary } from '../world-contract.js';
 
@@ -12,7 +13,7 @@ const boothPlacements: ExpoBoothPlacement[] = [
     boothType: 'hero',
     clusterIndex: 0,
     color: '#2563eb',
-    company: { id: 'hero', name: 'Hero' },
+    company: createExpoSceneCompany({ id: 'hero', name: 'Hero', boothType: 'hero', sponsorTier: 'hero' }),
     districtTheme: platformTheme,
     districtThemeId: platformTheme.id,
     id: 'hero',
@@ -26,7 +27,7 @@ const boothPlacements: ExpoBoothPlacement[] = [
     boothType: 'premium',
     clusterIndex: 1,
     color: '#0f766e',
-    company: { id: 'meeting', name: 'Meeting' },
+    company: createExpoSceneCompany({ id: 'meeting', name: 'Meeting', boothType: 'premium', sponsorTier: 'gold' }),
     districtTheme: meetingsTheme,
     districtThemeId: meetingsTheme.id,
     id: 'meeting',
@@ -88,14 +89,13 @@ const districtPrograms: ExpoDistrictProgramSummary[] = [
       hasSecondarySupport: true,
     },
     isCommerciallyEligible: true,
-    footprintDepth: 24,
-    footprintWidth: 68,
     programNodeCount: 2,
     programTargets: [
       { allocated: 1, requested: 1, role: 'arrival_anchor' },
       { allocated: 1, requested: 1, role: 'info_pavilion' },
     ],
     sectorId: 'platform',
+    sectorLabel: 'Platform Partners',
     sponsorBackedFrontCount: 2,
     supportLevel: 'supported',
     supportingNodeCount: 1,
@@ -113,8 +113,6 @@ const districtPrograms: ExpoDistrictProgramSummary[] = [
       hasSecondarySupport: true,
     },
     isCommerciallyEligible: false,
-    footprintDepth: 32,
-    footprintWidth: 76,
     programNodeCount: 3,
     programTargets: [
       { allocated: 1, requested: 1, role: 'meeting_pod' },
@@ -122,6 +120,7 @@ const districtPrograms: ExpoDistrictProgramSummary[] = [
       { allocated: 1, requested: 1, role: 'scenic_showcase' },
     ],
     sectorId: 'meetings',
+    sectorLabel: 'Meetings & Demos',
     sponsorBackedFrontCount: 1,
     supportLevel: 'single-booth',
     supportingNodeCount: 2,

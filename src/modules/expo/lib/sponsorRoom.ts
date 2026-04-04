@@ -45,6 +45,7 @@ export function resolveSponsorRoomRecord(scene: ExpoSceneData, routeId: string |
     brochureUrl: presentation.posterUrl,
     company,
     presentation,
+    preferredStreamerIds: [] as string[],
     sectorName,
     slugOrId: company.slug || company.id,
     streamingLevel: buildBoothStreamingLevel(company.booth?.id ?? null),

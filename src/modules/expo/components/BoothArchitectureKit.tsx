@@ -123,11 +123,9 @@ function resolveToneSurface(visualTone: ExpoDistrictExpressionMode) {
 function ShellMaterial({
   color,
   emissiveIntensity = 0.02,
-  visualTone = 'active-commercial',
 }: {
   color: string;
   emissiveIntensity?: number;
-  visualTone?: ExpoDistrictExpressionMode;
 }) {
   return <meshStandardMaterial color={color} emissive={color} emissiveIntensity={emissiveIntensity} metalness={0.1} roughness={0.68} />;
 }
@@ -292,11 +290,11 @@ function CalmFrontage({ accentColor }: { accentColor: string }) {
       </mesh>
       <mesh position={[-5.95, 4.65, 0.4]} rotation={[0, 0.05, 0]} castShadow>
         <boxGeometry args={[1.28, 8.9, 10.2]} />
-        <ShellMaterial color={accentColor} emissiveIntensity={tone.glow} visualTone="calm-dwell" />
+        <ShellMaterial color={accentColor} emissiveIntensity={tone.glow} />
       </mesh>
       <mesh position={[5.95, 4.65, 0.4]} rotation={[0, -0.05, 0]} castShadow>
         <boxGeometry args={[1.28, 8.9, 10.2]} />
-        <ShellMaterial color={accentColor} emissiveIntensity={tone.glow} visualTone="calm-dwell" />
+        <ShellMaterial color={accentColor} emissiveIntensity={tone.glow} />
       </mesh>
       <mesh position={[0, 9.15, -0.45]} castShadow>
         <boxGeometry args={[12.6, 0.74, 9.4]} />
@@ -364,11 +362,11 @@ function SupportFrontage({ accentColor }: { accentColor: string }) {
       </mesh>
       <mesh position={[-4.8, 3.9, 0.2]} rotation={[0, 0.06, 0]} castShadow>
         <boxGeometry args={[1.1, 7.2, 8.2]} />
-        <ShellMaterial color={accentColor} emissiveIntensity={tone.glow} visualTone="orientation" />
+        <ShellMaterial color={accentColor} emissiveIntensity={tone.glow} />
       </mesh>
       <mesh position={[4.8, 3.9, 0.2]} rotation={[0, -0.06, 0]} castShadow>
         <boxGeometry args={[1.1, 7.2, 8.2]} />
-        <ShellMaterial color={accentColor} emissiveIntensity={tone.glow} visualTone="orientation" />
+        <ShellMaterial color={accentColor} emissiveIntensity={tone.glow} />
       </mesh>
       <mesh position={[0, 2.35, 4.4]} castShadow>
         <boxGeometry args={[7.6, 3.7, 1.08]} />

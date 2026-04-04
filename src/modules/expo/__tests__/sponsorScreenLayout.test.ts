@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { resolveDistrictThemeForSector } from '../lib/districtTheme.js';
 import { buildSponsorScreenLayout } from '../lib/sponsorScreenLayout.js';
+import { createExpoSceneCompany } from './testFactories.js';
 import type { ExpoBoothPlacement, ExpoSectorMarker } from '../layout-engine.js';
 import type { ExpoDistrictProgramSummary } from '../world-contract.js';
 
@@ -12,7 +13,7 @@ const boothPlacements: ExpoBoothPlacement[] = [
     boothType: 'hero',
     clusterIndex: 0,
     color: '#22c55e',
-    company: { id: 'hero-1', name: 'Warpala Platform', posterUrl: null, logo_url: null, sponsorTier: 'hero', tagline: 'Hero arrival experience' },
+    company: createExpoSceneCompany({ id: 'hero-1', name: 'Warpala Platform', boothType: 'hero', posterUrl: null, logo_url: null, sponsorTier: 'hero', tagline: 'Hero arrival experience' }),
     districtTheme: platformTheme,
     districtThemeId: platformTheme.id,
     id: 'hero-1',
@@ -28,7 +29,7 @@ const boothPlacements: ExpoBoothPlacement[] = [
     boothType: 'premium',
     clusterIndex: 1,
     color: '#38bdf8',
-    company: { id: 'gold-1', name: 'Sponsor Concierge', posterUrl: null, logo_url: null, sponsorTier: 'gold', tagline: 'Meetings and routing' },
+    company: createExpoSceneCompany({ id: 'gold-1', name: 'Sponsor Concierge', boothType: 'premium', posterUrl: null, logo_url: null, sponsorTier: 'gold', tagline: 'Meetings and routing' }),
     districtTheme: meetingsTheme,
     districtThemeId: meetingsTheme.id,
     id: 'gold-1',
@@ -44,7 +45,7 @@ const boothPlacements: ExpoBoothPlacement[] = [
     boothType: 'standard',
     clusterIndex: 1,
     color: '#f59e0b',
-    company: { id: 'std-1', name: 'Demo Room Access', posterUrl: null, logo_url: null, sponsorTier: 'silver', tagline: 'Enter live booth rooms' },
+    company: createExpoSceneCompany({ id: 'std-1', name: 'Demo Room Access', boothType: 'standard', posterUrl: null, logo_url: null, sponsorTier: 'silver', tagline: 'Enter live booth rooms' }),
     districtTheme: meetingsTheme,
     districtThemeId: meetingsTheme.id,
     id: 'std-1',
@@ -78,14 +79,13 @@ const districtPrograms: ExpoDistrictProgramSummary[] = [
       hasSecondarySupport: true,
     },
     isCommerciallyEligible: true,
-    footprintDepth: 24,
-    footprintWidth: 72,
     programNodeCount: 2,
     programTargets: [
       { allocated: 1, requested: 1, role: 'arrival_anchor' },
       { allocated: 1, requested: 1, role: 'info_pavilion' },
     ],
     sectorId: 'arrival-core',
+    sectorLabel: 'Arrival Sponsors',
     sponsorBackedFrontCount: 2,
     supportLevel: 'hero-supported',
     supportingNodeCount: 1,
@@ -103,8 +103,6 @@ const districtPrograms: ExpoDistrictProgramSummary[] = [
       hasSecondarySupport: true,
     },
     isCommerciallyEligible: false,
-    footprintDepth: 34,
-    footprintWidth: 80,
     programNodeCount: 3,
     programTargets: [
       { allocated: 1, requested: 1, role: 'meeting_pod' },
@@ -112,6 +110,7 @@ const districtPrograms: ExpoDistrictProgramSummary[] = [
       { allocated: 1, requested: 1, role: 'scenic_showcase' },
     ],
     sectorId: 'meetings',
+    sectorLabel: 'Meetings',
     sponsorBackedFrontCount: 1,
     supportLevel: 'single-booth',
     supportingNodeCount: 2,

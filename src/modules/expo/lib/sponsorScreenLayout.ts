@@ -144,11 +144,6 @@ function getDistrictSummary(
     ?? null;
 }
 
-function hasScreenEligibleBrandAssets(placement: ExpoBoothPlacement) {
-  const company = placement.company;
-  return Boolean(company?.posterUrl || company?.heroAssetUrl || company?.logo_url);
-}
-
 function cyclePickPlacement<T>(placements: T[], index: number): T | null {
   if (placements.length === 0) {
     return null;
@@ -200,7 +195,7 @@ export function buildSponsorScreenLayout(
     ? [...activeEligiblePlacements, ...rankedPlacements.filter((placement) => !activeEligiblePlacements.includes(placement))]
     : rankedPlacements;
 
-  const facadeScreens: SponsorScreenNode[] = facadeLayouts
+  const facadeScreens = facadeLayouts
     .map((layout, index) => {
     const placement = cyclePickPlacement(facadeSourcePlacements, index);
     if (!placement) {
@@ -226,9 +221,9 @@ export function buildSponsorScreenLayout(
       size: layout.size,
       subtitle: pickSubtitle(placement, 'Sponsor frontage'),
       title: pickTitle(placement, 'Sponsor'),
-    };
+    } satisfies SponsorScreenNode;
     })
-    .filter((node): node is SponsorScreenNode => Boolean(node));
+    .filter((node): node is NonNullable<typeof node> => node !== null);
 
   const mediumScreens: SponsorScreenNode[] = rankedPlacements
     .flatMap((placement, placementIndex) => {
@@ -261,7 +256,7 @@ export function buildSponsorScreenLayout(
         size: isElite ? ([24, 13.6] as [number, number]) : ([18, 10.2] as [number, number]),
         subtitle: pickSubtitle(placement, 'City sponsor showcase'),
         title: pickTitle(placement, 'Sponsor showcase'),
-      };
+      } satisfies SponsorScreenNode;
     });
 
   const arrivalGroundScreen: SponsorScreenNode = {
@@ -300,7 +295,7 @@ export function buildSponsorScreenLayout(
       id: `ground-screen-${marker.id}`,
       imageUrl: placement ? pickScreenImage(placement, 'ground_pylon', index, Boolean(presentation?.hasBrandAssets)) : VERTICAL_PLACEHOLDERS[index % VERTICAL_PLACEHOLDERS.length],
       kind: 'ground_pylon' as const,
-      placementTier: presentation?.adTier === 'elite' ? 'premium' : 'city',
+      placementTier: (presentation?.adTier === 'elite' ? 'premium' : 'city') as SponsorPlacementTier,
       position: [marker.position[0] + (marker.side === 'left' ? -26 : 26), 3.4, marker.position[2] + 18] as [number, number, number],
       priority: Number(placement?.priority || 10),
       rotation: [0, marker.side === 'left' ? 0.22 : -0.22, 0] as [number, number, number],
@@ -308,7 +303,7 @@ export function buildSponsorScreenLayout(
       size: presentation?.adTier === 'elite' ? ([5.4, 9.4] as [number, number]) : ([4.4, 7.8] as [number, number]),
       subtitle: placement ? pickSubtitle(placement, 'District sponsor') : 'District sponsor',
       title: placement ? pickTitle(placement, marker.label) : marker.label,
-    };
+    } satisfies SponsorScreenNode;
   });
 
   const boulevardGroundScreens = rankedPlacements.flatMap((placement, placementIndex) => {
@@ -328,7 +323,7 @@ export function buildSponsorScreenLayout(
       id: `ground-screen-boulevard-${placement.id}-${index}`,
       imageUrl: pickScreenImage(placement, 'ground_pylon', index + 1, presentation.hasBrandAssets),
       kind: 'ground_pylon' as const,
-      placementTier: presentation.adTier === 'elite' || presentation.adTier === 'premium' ? 'premium' : 'city',
+      placementTier: (presentation.adTier === 'elite' || presentation.adTier === 'premium' ? 'premium' : 'city') as SponsorPlacementTier,
       position: [placement.position[0] + (side * zoneOffset), 6.4, placement.position[2] - 42] as [number, number, number],
       priority: Number(placement.priority || 0),
       rotation: [0, side < 0 ? 0.28 : -0.28, 0] as [number, number, number],
@@ -336,7 +331,7 @@ export function buildSponsorScreenLayout(
       size: presentation.adTier === 'elite' ? ([8.4, 14.8] as [number, number]) : ([6.6, 11.6] as [number, number]),
       subtitle: pickSubtitle(placement, 'Boulevard sponsor'),
       title: pickTitle(placement, 'Sponsor boulevard'),
-    };
+    } satisfies SponsorScreenNode;
   });
 
   const groundScreens = [arrivalGroundScreen, ...districtGroundScreens, ...boulevardGroundScreens];

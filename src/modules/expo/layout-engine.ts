@@ -39,7 +39,7 @@ export type ExpoSectorMarker = {
 };
 
 function getNormalizedBooth(company: ExpoSceneCompany) {
-  const rawBooth = company?.booth ?? company?.booths ?? null;
+  const rawBooth = company?.booth ?? null;
 
   if (Array.isArray(rawBooth)) {
     return rawBooth[0] || null;

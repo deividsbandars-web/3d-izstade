@@ -293,7 +293,7 @@ function buildGroundFallbackNormalMap(color: string, accentColor: string) {
   return texture;
 }
 
-function PrimitiveCityModel({
+export function PrimitiveCityModel({
   debug = false,
   strategy,
 }: {
@@ -467,10 +467,10 @@ function LegacyCityModel({
 
 */
 
-function Guests({ guests }: { guests: any[] }) {
+export function Guests({ guests: _guests }: { guests: any[] }) {
   return (
     <group>
-      {guests.map((guest) => (
+      {_guests.map((guest: any) => (
         <group key={guest.id} position={guest.position}>
           {guest.isSpeaking && (
             <mesh position={[0, 1.5, 0]}>
@@ -590,7 +590,7 @@ function selectVisibleBoothPlacements(
   });
 }
 
-function ExpoCuratedPropsLayer({
+export function ExpoCuratedPropsLayer({
   boothPlacements,
   districtPrograms,
   sectorMarkers,
@@ -717,7 +717,7 @@ function ExpoCuratedPropDecoration({
   return null;
 }
 
-function BoulevardGrassClusters({ clusters }: { clusters: ReturnType<typeof buildBoulevardArtPass>['grassClusters'] }) {
+export function BoulevardGrassClusters({ clusters }: { clusters: ReturnType<typeof buildBoulevardArtPass>['grassClusters'] }) {
   const { scene: grassScene } = useGLTF('/models/simple_grass_chunks.glb');
   const instances = useMemo(() => (
     clusters.map((cluster) => {
@@ -971,7 +971,7 @@ function ExpoAxisMaterial({
   return <meshStandardMaterial color={color} metalness={metalness} roughness={roughness} />;
 }
 
-function DistrictGatewayNode({ marker }: { marker: ExpoSectorMarker }) {
+export function DistrictGatewayNode({ marker }: { marker: ExpoSectorMarker }) {
   const style = marker.districtTheme.gatewayStyle;
   const accent = marker.color;
 
@@ -1245,7 +1245,7 @@ function filterReservedSponsorFrontageEntries<T extends { position: [number, num
   return entries.filter((entry) => !isInsideSponsorFrontageReserve(entry.position, boothPlacements, options));
 }
 
-function getStadiumReserve(boothPlacements: ExpoBoothPlacement[]) {
+function getStadiumReserve(_boothPlacements: ExpoBoothPlacement[]) {
   return {
     // Stadium planning is paused until the target zone is mapped correctly in
     // live review. Keep the reserve effectively disabled so we do not wipe out
@@ -1325,7 +1325,9 @@ function ExpoCityRuntimeModules({
       const center = bounds.getCenter(new THREE.Vector3());
       const currentHeight = Math.max(1, size.y);
       const currentSpan = Math.max(1, size.x, size.z);
-      const scale = entry.targetSpan ? (entry.targetSpan / currentSpan) : (entry.targetHeight / currentHeight);
+      const scale = ('targetSpan' in entry && typeof entry.targetSpan === 'number')
+        ? (entry.targetSpan / currentSpan)
+        : (entry.targetHeight / currentHeight);
 
       clone.position.sub(center);
       clone.position.y += size.y * 0.5;
@@ -2910,19 +2912,24 @@ function ExpoCityForeground({
         .filter((mass) => !overlapsStadiumReserve(mass.position, stadiumReserve, mass.size))
         .map((mass) => (
         <group key={mass.id} position={mass.position}>
+          {(() => {
+            const enrichedMass = mass as typeof mass & { emissive?: string; emissiveIntensity?: number; trim?: string };
+            return (
           <mesh castShadow={enableHeavyShadows} receiveShadow>
             <boxGeometry args={mass.size} />
             <ExpoArchitecturalMassMaterial
               fallbackColor={mass.color}
               repeat={[Math.max(1.2, mass.size[0] / 180), Math.max(1.2, mass.size[2] / 180)]}
-              emissive={'emissive' in mass ? mass.emissive : '#000000'}
-              emissiveIntensity={'emissiveIntensity' in mass ? mass.emissiveIntensity : 0}
+              emissive={typeof enrichedMass.emissive === 'string' ? enrichedMass.emissive : '#000000'}
+              emissiveIntensity={typeof enrichedMass.emissiveIntensity === 'number' ? enrichedMass.emissiveIntensity : 0}
             />
           </mesh>
+            );
+          })()}
           {'trim' in mass && (
             <mesh position={[0, mass.size[1] * 0.5 + 0.18, 0]} castShadow={enableHeavyShadows}>
               <boxGeometry args={[Math.max(4, mass.size[0] * 0.72), 0.22, Math.max(3, mass.size[2] * 0.74)]} />
-              <meshStandardMaterial color={mass.trim} metalness={0.18} roughness={0.58} />
+              <meshStandardMaterial color={typeof (mass as { trim?: string }).trim === 'string' ? (mass as { trim?: string }).trim : '#d7e2ea'} metalness={0.18} roughness={0.58} />
             </mesh>
           )}
         </group>
@@ -2972,11 +2979,11 @@ function ExpoCityForeground({
         'radius' in node ? (
           <group key={node.id} position={node.position}>
             <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-              <cylinderGeometry args={[node.radius, node.radius, 0.9, 28]} />
+              <cylinderGeometry args={[node.radius ?? 1, node.radius ?? 1, 0.9, 28]} />
               <meshStandardMaterial color={node.color} roughness={0.66} metalness={0.08} />
             </mesh>
             <mesh position={[0, 0.28, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-              <ringGeometry args={[node.radius * 0.58, node.radius * 0.86, 28]} />
+              <ringGeometry args={[(node.radius ?? 1) * 0.58, (node.radius ?? 1) * 0.86, 28]} />
               <meshStandardMaterial color={node.ring} roughness={0.42} metalness={0.16} />
             </mesh>
           </group>
@@ -4299,13 +4306,13 @@ function SponsorScreenHierarchy({
   );
 }
 
-function SponsorBillboards({ placements }: { placements: ExpoBoothPlacement[]; }) {
+export function SponsorBillboards({ placements: _placements }: { placements: ExpoBoothPlacement[]; }) {
   const billboardPlacements = useMemo(() => (
-    [...placements]
+    [..._placements]
       .filter((placement) => placement.nodeType === 'hero_left' || placement.nodeType === 'hero_right' || placement.nodeType === 'endcap')
       .sort((left, right) => (Number(right.priority || 0) - Number(left.priority || 0)))
       .slice(0, 6)
-  ), [placements]);
+  ), [_placements]);
 
   return (
     <group name="sponsor-billboards">
@@ -4825,8 +4832,8 @@ function SceneBridge({ startView }: { startView: ExpoStartView }) {
   return null;
 }
 
-export function ExpoWorldScene({ activeZone, debug, guests, mode, onMove, sceneVersion, worldContract, zoneSystem }: ExpoWorldSceneProps) {
-  const { boothPlacements, districtPrograms, plan: boulevardPlan, playBounds, qualityProfileInputs, sectorMarkers, startView, visualProfile, walkRegions } = worldContract;
+export function ExpoWorldScene({ activeZone, debug, guests: _guests, mode, onMove, sceneVersion, worldContract, zoneSystem }: ExpoWorldSceneProps) {
+  const { boothPlacements, districtPrograms, plan: _boulevardPlan, playBounds, qualityProfileInputs, sectorMarkers, startView, visualProfile, walkRegions } = worldContract;
   const visibleBoothPlacements = useMemo(
     () => selectVisibleBoothPlacements(boothPlacements, districtPrograms),
     [boothPlacements, districtPrograms]

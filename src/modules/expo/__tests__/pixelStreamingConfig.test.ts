@@ -31,6 +31,7 @@ const boothAwareFallback = buildFallbackPixelStreamingRuntimeStatus(true, {
   boothContext: { boothId: 'booth-1', slugOrId: 'hero-one', streamingLevel: 'Level_Booth_booth-1' },
   iceServers: [],
   probeTimeoutMs: 2500,
+  sessionEndpointUrl: 'https://warpala.example/api/pixel-streaming/session',
   signalingUrl: 'wss://warpala.example/ws/',
   statusEndpointUrl: boothAwareUrl,
 });
