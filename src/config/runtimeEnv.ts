@@ -88,6 +88,15 @@ function deriveDevApiBaseUrl() {
   return `${window.location.protocol}//${window.location.hostname}:3000`;
 }
 
+function isLocalDevWindow() {
+  if (typeof window === 'undefined') {
+    return false;
+  }
+
+  const hostname = window.location.hostname;
+  return hostname === 'localhost' || hostname === '127.0.0.1';
+}
+
 function deriveDevSignalingUrl() {
   if (typeof window === 'undefined') {
     return null;
@@ -98,8 +107,13 @@ function deriveDevSignalingUrl() {
 }
 
 export function resolveFrontendRuntimeEnv(rawEnv: RawFrontendEnv): FrontendRuntimeEnv {
-  const apiBaseUrlRaw = rawEnv.VITE_PUBLIC_API_BASE_URL || (rawEnv.DEV ? deriveDevApiBaseUrl() ?? undefined : undefined);
-  const signalingUrlRaw = rawEnv.VITE_SIGNALING_SERVER_URL || (rawEnv.DEV ? deriveDevSignalingUrl() ?? undefined : undefined);
+  const useLocalDevOverrides = Boolean(rawEnv.DEV && isLocalDevWindow());
+  const apiBaseUrlRaw = useLocalDevOverrides
+    ? deriveDevApiBaseUrl() ?? undefined
+    : rawEnv.VITE_PUBLIC_API_BASE_URL || (rawEnv.DEV ? deriveDevApiBaseUrl() ?? undefined : undefined);
+  const signalingUrlRaw = useLocalDevOverrides
+    ? deriveDevSignalingUrl() ?? undefined
+    : rawEnv.VITE_SIGNALING_SERVER_URL || (rawEnv.DEV ? deriveDevSignalingUrl() ?? undefined : undefined);
   const apiBaseUrl = normalizeUrl(
     normalizeRequiredString(apiBaseUrlRaw, 'VITE_PUBLIC_API_BASE_URL'),
     'VITE_PUBLIC_API_BASE_URL',

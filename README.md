@@ -72,8 +72,16 @@ npm run start:docker
 
 Docker stack:
 ```powershell
-docker compose up --build
+Copy-Item .env.docker.example .env.docker
+docker compose --env-file .env.docker up -d --build
 ```
+
+Docker compose secrets:
+- Root `docker compose` does not read `backend-server/.env` for `${...}` interpolation.
+- Keep backend-only secrets in `/.env.docker`, not in frontend `VITE_*` variables.
+- `/.env.docker` is local-only and ignored by git through `.env.*`.
+- Frontend `VITE_*` values remain separate and are only for public client/runtime configuration.
+- For the Dockerized frontend build, set `VITE_PUBLIC_API_BASE_URL` and `VITE_SIGNALING_SERVER_URL` in `/.env.docker` as explicit public endpoints.
 
 ## Release discipline
 

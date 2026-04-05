@@ -4,7 +4,8 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        VITE_SIGNALING_SERVER_URL: ${VITE_SIGNALING_SERVER_URL:-ws://localhost/ws/}
+        VITE_PUBLIC_API_BASE_URL: ${VITE_PUBLIC_API_BASE_URL:?VITE_PUBLIC_API_BASE_URL is required}
+        VITE_SIGNALING_SERVER_URL: ${VITE_SIGNALING_SERVER_URL:?VITE_SIGNALING_SERVER_URL is required}
         VITE_STUN_SERVER_URLS: ${STUN_SERVER_URLS:-stun:stun.l.google.com:19302}
         VITE_TURN_SERVER_URLS: ${TURN_SERVER_URLS:-turn:${TURN_PUBLIC_HOST:-localhost}:3478?transport=udp,turn:${TURN_PUBLIC_HOST:-localhost}:3478?transport=tcp}
         VITE_TURN_USERNAME: ${TURN_USERNAME:-pixelstream_user}

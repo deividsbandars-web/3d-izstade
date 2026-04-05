@@ -59,7 +59,7 @@ const devFallbackEnv = resolveFrontendRuntimeEnv({
   VITE_SUPABASE_ANON_KEY: 'anon-key',
 });
 
-assert.equal(devFallbackEnv.apiBaseUrl, 'http://127.0.0.1:5173');
+assert.equal(devFallbackEnv.apiBaseUrl, 'http://127.0.0.1:3000');
 assert.equal(devFallbackEnv.signalingUrl, 'ws://127.0.0.1:5173/ws');
 
 Object.defineProperty(globalThis, 'window', {
