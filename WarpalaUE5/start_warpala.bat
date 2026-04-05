@@ -6,18 +6,44 @@ color 0A
 set "UE_EDITOR=C:\Program Files\Epic Games\UE_5.7\Engine\Binaries\Win64\UnrealEditor.exe"
 set "UE_PROJECT=C:\3d\WarpalaUE5\WarpalaUE5.uproject"
 set "UE_MAP=/Game/Warpala/Maps/WarpalaCity_Main"
-set "SIGNALING_HOST=127.0.0.1"
+set "API_ORIGIN=https://api.30sek24.com"
+set "SIGNALING_HOST=api.30sek24.com"
 set "SIGNALING_STREAMER_PORT=8888"
 set "PIXEL_STREAMING_CONNECTION_URL=ws://%SIGNALING_HOST%:%SIGNALING_STREAMER_PORT%"
-set "BACKEND_STATUS_URL=http://127.0.0.1/api/pixel-streaming/status"
+set "BACKEND_STATUS_URL=%API_ORIGIN%/api/pixel-streaming/status"
+set "BROWSER_GATEWAY_URL=%API_ORIGIN%"
 set "EXIT_CODE=0"
 set "NO_PAUSE=0"
+set "LOCAL_MODE=0"
 
-if /I "%~1"=="--no-pause" set "NO_PAUSE=1"
+for %%A in (%*) do (
+    if /I "%%~A"=="--no-pause" set "NO_PAUSE=1"
+    if /I "%%~A"=="--local" set "LOCAL_MODE=1"
+)
+
+if defined WARPALA_API_ORIGIN set "API_ORIGIN=%WARPALA_API_ORIGIN%"
+if defined WARPALA_SIGNALING_HOST set "SIGNALING_HOST=%WARPALA_SIGNALING_HOST%"
+if defined WARPALA_SIGNALING_STREAMER_PORT set "SIGNALING_STREAMER_PORT=%WARPALA_SIGNALING_STREAMER_PORT%"
+if defined WARPALA_BACKEND_STATUS_URL set "BACKEND_STATUS_URL=%WARPALA_BACKEND_STATUS_URL%"
+if defined WARPALA_BROWSER_GATEWAY_URL set "BROWSER_GATEWAY_URL=%WARPALA_BROWSER_GATEWAY_URL%"
+
+if "%LOCAL_MODE%"=="1" (
+    set "API_ORIGIN=http://127.0.0.1:3000"
+    set "SIGNALING_HOST=127.0.0.1"
+    set "SIGNALING_STREAMER_PORT=8888"
+    set "BACKEND_STATUS_URL=http://127.0.0.1:3000/api/pixel-streaming/status"
+    set "BROWSER_GATEWAY_URL=http://127.0.0.1"
+)
+
+set "PIXEL_STREAMING_CONNECTION_URL=ws://%SIGNALING_HOST%:%SIGNALING_STREAMER_PORT%"
 
 echo ================================================
 echo   WARPALA CITY - PIXEL STREAMING LAUNCHER
 echo ================================================
+echo.
+echo       API origin       : %API_ORIGIN%
+echo       Browser gateway  : %BROWSER_GATEWAY_URL%
+echo       Status endpoint  : %BACKEND_STATUS_URL%
 echo.
 
 if not exist "%UE_EDITOR%" (
@@ -44,7 +70,7 @@ if errorlevel 1 (
 echo [1/3] Startejam WarpalaUE5 ar Pixel Streaming ...
 echo       UE project       : %UE_PROJECT%
 echo       Direct streamer  : %PIXEL_STREAMING_CONNECTION_URL%
-echo       Browser gateway  : http://127.0.0.1 ^(premium uses /ws/ only for browser clients^)
+echo       Browser gateway  : %BROWSER_GATEWAY_URL% ^(premium uses /ws/ only for browser clients^)
 start "" "%UE_EDITOR%" "%UE_PROJECT%" -game -map=%UE_MAP% -ResX=1280 -ResY=720 -AudioMixer -PixelStreamingConnectionURL="%PIXEL_STREAMING_CONNECTION_URL%" -RenderOffScreen -dx12 -unattended
 
 echo [2/3] Gaidam lidz premium runtime statuss kļust session_ready ...
