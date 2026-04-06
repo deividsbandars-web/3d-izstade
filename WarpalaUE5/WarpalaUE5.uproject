@@ -5,6 +5,11 @@
 	"Description": "",
 	"Modules": [
 		{
+			"Name": "WarpalaUE5",
+			"Type": "Runtime",
+			"LoadingPhase": "Default"
+		},
+		{
 			"Name": "WarpalaCity",
 			"Type": "Runtime",
 			"LoadingPhase": "Default"
@@ -50,7 +55,7 @@
 		},
 		{
 			"Name": "VisualStudioTools",
-			"Enabled": true,
+			"Enabled": false,
 			"SupportedTargetPlatforms": [
 				"Win64"
 			],
@@ -62,7 +67,7 @@
 		},
 		{
 			"Name": "PixelStreaming2",
-			"Enabled": true
+			"Enabled": false
 		}
 	]
 }

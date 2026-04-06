@@ -519,8 +519,6 @@ const EXPO_CURATED_PROP_URLS: Record<ExpoCuratedPropKey, string> = {
   sign_highway: '/models/expo/props/sign-highway.glb',
   sign_highway_wide: '/models/expo/props/sign-highway-wide.glb',
   info_kiosk_base_computer_screen: '/models/expo/props/info-kiosk-base-computer-screen.glb',
-  tree_small: '/models/expo/props/tree-small.glb',
-  tree_large: '/models/expo/props/tree-large.glb',
   bush: '/models/expo/props/bush.glb',
   big_bush: '/models/expo/props/big-bush.glb',
 };
@@ -608,8 +606,6 @@ export function ExpoCuratedPropsLayer({
   const signHighwayScene = useGLTF(EXPO_CURATED_PROP_URLS.sign_highway).scene;
   const signHighwayWideScene = useGLTF(EXPO_CURATED_PROP_URLS.sign_highway_wide).scene;
   const infoKioskScene = useGLTF(EXPO_CURATED_PROP_URLS.info_kiosk_base_computer_screen).scene;
-  const treeSmallScene = useGLTF(EXPO_CURATED_PROP_URLS.tree_small).scene;
-  const treeLargeScene = useGLTF(EXPO_CURATED_PROP_URLS.tree_large).scene;
   const bushScene = useGLTF(EXPO_CURATED_PROP_URLS.bush).scene;
   const bigBushScene = useGLTF(EXPO_CURATED_PROP_URLS.big_bush).scene;
   const sourceScenes = useMemo(() => ({
@@ -622,8 +618,6 @@ export function ExpoCuratedPropsLayer({
     sign_highway: signHighwayScene,
     sign_highway_wide: signHighwayWideScene,
     info_kiosk_base_computer_screen: infoKioskScene,
-    tree_small: treeSmallScene,
-    tree_large: treeLargeScene,
     bush: bushScene,
     big_bush: bigBushScene,
   } as const), [
@@ -638,8 +632,6 @@ export function ExpoCuratedPropsLayer({
     planterScene,
     signHighwayScene,
     signHighwayWideScene,
-    treeLargeScene,
-    treeSmallScene,
   ]);
 
   const placements = useMemo(
@@ -1156,50 +1148,6 @@ function ExpoDistrictPromenade({
   );
 }
 
-const EXPO_CITY_RUNTIME_MODULES = [
-  { id: 'industrial-a', url: '/models/expo-city/industrial/building-a.glb', targetHeight: 116 },
-  { id: 'industrial-b', url: '/models/expo-city/industrial/building-b.glb', targetHeight: 148 },
-  { id: 'industrial-l', url: '/models/expo-city/industrial/building-l.glb', targetHeight: 98 },
-  { id: 'industrial-q', url: '/models/expo-city/industrial/building-q.glb', targetHeight: 134 },
-  { id: 'industrial-r', url: '/models/expo-city/industrial/building-r.glb', targetHeight: 156 },
-  { id: 'industrial-t', url: '/models/expo-city/industrial/building-t.glb', targetHeight: 118 },
-  { id: 'commercial-i', url: '/models/expo-city/commercial/building-i.glb', targetHeight: 122 },
-  { id: 'commercial-j', url: '/models/expo-city/commercial/building-j.glb', targetHeight: 198 },
-  { id: 'commercial-k', url: '/models/expo-city/commercial/building-k.glb', targetHeight: 184 },
-  { id: 'commercial-m', url: '/models/expo-city/commercial/building-m.glb', targetHeight: 164 },
-  { id: 'commercial-n', url: '/models/expo-city/commercial/building-n.glb', targetHeight: 176 },
-  { id: 'commercial-low-a', url: '/models/expo-city/commercial/low-detail-building-a.glb', targetHeight: 58 },
-  { id: 'commercial-low-b', url: '/models/expo-city/commercial/low-detail-building-b.glb', targetHeight: 62 },
-  { id: 'commercial-low-g', url: '/models/expo-city/commercial/low-detail-building-g.glb', targetHeight: 66 },
-  { id: 'commercial-low-h', url: '/models/expo-city/commercial/low-detail-building-h.glb', targetHeight: 78 },
-  { id: 'commercial-low-j', url: '/models/expo-city/commercial/low-detail-building-j.glb', targetHeight: 68 },
-  { id: 'commercial-wide-a', url: '/models/expo-city/commercial/low-detail-building-wide-a.glb', targetHeight: 68 },
-  { id: 'commercial-wide-b', url: '/models/expo-city/commercial/low-detail-building-wide-b.glb', targetHeight: 74 },
-  { id: 'road-straight', url: '/models/expo-city/roads/road-straight.glb', targetHeight: 1.6, targetSpan: 88 },
-  { id: 'road-split', url: '/models/expo-city/roads/road-split.glb', targetHeight: 2.2, targetSpan: 98 },
-  { id: 'road-side-entry', url: '/models/expo-city/roads/road-side-entry.glb', targetHeight: 1.8, targetSpan: 86 },
-  { id: 'road-side-exit', url: '/models/expo-city/roads/road-side-exit.glb', targetHeight: 1.8, targetSpan: 86 },
-  { id: 'road-curve-intersection', url: '/models/expo-city/roads/road-curve-intersection.glb', targetHeight: 2.1, targetSpan: 96 },
-  { id: 'road-intersection-path', url: '/models/expo-city/roads/road-intersection-path.glb', targetHeight: 1.8, targetSpan: 74 },
-  { id: 'road-end-round', url: '/models/expo-city/roads/road-end-round.glb', targetHeight: 2, targetSpan: 82 },
-  { id: 'road-roundabout', url: '/models/expo-city/roads/road-roundabout.glb', targetHeight: 2.4, targetSpan: 124 },
-  { id: 'road-crossroad-path', url: '/models/expo-city/roads/road-crossroad-path.glb', targetHeight: 1.8, targetSpan: 72 },
-  { id: 'road-curve-pavement', url: '/models/expo-city/roads/road-curve-pavement.glb', targetHeight: 1.8, targetSpan: 76 },
-  { id: 'road-light-curved', url: '/models/expo-city/roads/light-curved.glb', targetHeight: 18 },
-  { id: 'road-light-curved-double', url: '/models/expo-city/roads/light-curved-double.glb', targetHeight: 22 },
-  { id: 'tower-a', url: '/models/expo-city/commercial/building-skyscraper-a.glb', targetHeight: 188 },
-  { id: 'tower-b', url: '/models/expo-city/commercial/building-skyscraper-b.glb', targetHeight: 206 },
-  { id: 'tower-c', url: '/models/expo-city/commercial/building-skyscraper-c.glb', targetHeight: 214 },
-  { id: 'tower-d', url: '/models/expo-city/commercial/building-skyscraper-d.glb', targetHeight: 248 },
-  { id: 'tower-e', url: '/models/expo-city/commercial/building-skyscraper-e.glb', targetHeight: 176 },
-] as const;
-
-type ExpoCityRuntimeModuleId = (typeof EXPO_CITY_RUNTIME_MODULES)[number]['id'];
-
-const EXPO_CITY_RUNTIME_MODULE_MAP = Object.fromEntries(
-  EXPO_CITY_RUNTIME_MODULES.map((entry) => [entry.id, entry])
-) as Record<ExpoCityRuntimeModuleId, (typeof EXPO_CITY_RUNTIME_MODULES)[number]>;
-
 function isInsideSponsorFrontageReserve(
   point: [number, number, number],
   boothPlacements: ExpoBoothPlacement[],
@@ -1286,324 +1234,6 @@ function overlapsStadiumReserve(
   }
 
   return isInsideStadiumReserve(point, reserve);
-}
-
-function getRuntimeModuleReserveFootprint(moduleId: ExpoCityRuntimeModuleId, scale: number): [number, number] {
-  const module = EXPO_CITY_RUNTIME_MODULE_MAP[moduleId];
-  if (!module) {
-    return [120 * scale, 120 * scale];
-  }
-
-  if ('targetSpan' in module && typeof module.targetSpan === 'number') {
-    const span = module.targetSpan * scale;
-    return [span, span];
-  }
-
-  const span = Math.max(72, module.targetHeight * 0.78) * scale;
-  return [span, span];
-}
-
-function ExpoCityRuntimeModules({
-  boothPlacements,
-  districtPrograms,
-}: {
-  boothPlacements: ExpoBoothPlacement[];
-  districtPrograms: ExpoDistrictProgramSummary[];
-}) {
-  const moduleGltfs = useGLTF(EXPO_CITY_RUNTIME_MODULES.map((entry) => entry.url)) as { scene: THREE.Group }[];
-
-  const normalizedAssets = useMemo(() => {
-    return EXPO_CITY_RUNTIME_MODULES.reduce<Record<ExpoCityRuntimeModuleId, THREE.Group>>((accumulator, entry, index) => {
-      const sourceScene = moduleGltfs[index]?.scene;
-      if (!sourceScene) {
-        return accumulator;
-      }
-
-      const clone = sourceScene.clone(true);
-      const bounds = new THREE.Box3().setFromObject(clone);
-      const size = bounds.getSize(new THREE.Vector3());
-      const center = bounds.getCenter(new THREE.Vector3());
-      const currentHeight = Math.max(1, size.y);
-      const currentSpan = Math.max(1, size.x, size.z);
-      const scale = ('targetSpan' in entry && typeof entry.targetSpan === 'number')
-        ? (entry.targetSpan / currentSpan)
-        : (entry.targetHeight / currentHeight);
-
-      clone.position.sub(center);
-      clone.position.y += size.y * 0.5;
-      clone.scale.setScalar(scale);
-      clone.traverse((child) => {
-        if ((child as THREE.Mesh).isMesh) {
-          child.castShadow = false;
-          child.receiveShadow = true;
-        }
-      });
-
-      accumulator[entry.id] = clone;
-      return accumulator;
-    }, {} as Record<ExpoCityRuntimeModuleId, THREE.Group>);
-  }, [moduleGltfs]);
-
-  const placements = useMemo(() => {
-    const stadiumReserve = getStadiumReserve(boothPlacements);
-    const rawPlacements = districtPrograms.flatMap((district, districtIndex) => {
-      const baseZ = -196 - (districtIndex * 548);
-      const isActive = district.expressionMode === 'active-commercial';
-      const isCalm = district.expressionMode === 'calm-dwell';
-      const leftFront = isActive ? 'commercial-i' : isCalm ? 'industrial-r' : 'commercial-low-h';
-      const rightFront = isActive ? 'commercial-j' : isCalm ? 'industrial-t' : 'commercial-low-j';
-      const leftTower = isActive ? 'tower-d' : isCalm ? 'industrial-q' : 'tower-e';
-      const rightTower = isActive ? 'tower-b' : isCalm ? 'commercial-m' : 'tower-a';
-
-      return [
-        {
-          id: `${district.sectorId ?? district.clusterIndex}-module-left-forecourt-a`,
-          moduleId: (isActive ? 'commercial-low-a' : isCalm ? 'industrial-b' : 'commercial-low-g') as ExpoCityRuntimeModuleId,
-          position: [-182, 0, baseZ + 286] as [number, number, number],
-          rotationY: 0.02,
-          scale: isActive ? 1.18 : isCalm ? 0.98 : 0.92,
-        },
-        {
-          id: `${district.sectorId ?? district.clusterIndex}-module-right-forecourt-a`,
-          moduleId: (isActive ? 'commercial-low-b' : isCalm ? 'industrial-a' : 'commercial-low-h') as ExpoCityRuntimeModuleId,
-          position: [182, 0, baseZ + 272] as [number, number, number],
-          rotationY: Math.PI - 0.02,
-          scale: isActive ? 1.14 : isCalm ? 0.96 : 0.9,
-        },
-        {
-          id: `${district.sectorId ?? district.clusterIndex}-module-left-forecourt-b`,
-          moduleId: (isActive ? 'commercial-k' : isCalm ? 'industrial-l' : 'commercial-wide-a') as ExpoCityRuntimeModuleId,
-          position: [-274, 0, baseZ + 332] as [number, number, number],
-          rotationY: 0.01,
-          scale: isActive ? 0.76 : isCalm ? 0.92 : 0.94,
-        },
-        {
-          id: `${district.sectorId ?? district.clusterIndex}-module-right-forecourt-b`,
-          moduleId: (isActive ? 'commercial-m' : isCalm ? 'commercial-wide-a' : 'industrial-r') as ExpoCityRuntimeModuleId,
-          position: [274, 0, baseZ + 318] as [number, number, number],
-          rotationY: Math.PI - 0.01,
-          scale: isActive ? 0.74 : isCalm ? 0.88 : 0.78,
-        },
-        {
-          id: `${district.sectorId ?? district.clusterIndex}-module-left-front`,
-          moduleId: leftFront as ExpoCityRuntimeModuleId,
-          position: [-308, 0, baseZ + 118] as [number, number, number],
-          rotationY: 0,
-          scale: isActive ? 1.1 : isCalm ? 0.92 : 0.88,
-        },
-        {
-          id: `${district.sectorId ?? district.clusterIndex}-module-right-front`,
-          moduleId: rightFront as ExpoCityRuntimeModuleId,
-          position: [308, 0, baseZ + 96] as [number, number, number],
-          rotationY: Math.PI,
-          scale: isActive ? 0.94 : isCalm ? 0.9 : 0.84,
-        },
-        {
-          id: `${district.sectorId ?? district.clusterIndex}-module-left-mid`,
-          moduleId: (isActive ? 'commercial-k' : isCalm ? 'industrial-b' : 'commercial-wide-a') as ExpoCityRuntimeModuleId,
-          position: [-432, 0, baseZ - 84] as [number, number, number],
-          rotationY: 0.08,
-          scale: isActive ? 0.86 : isCalm ? 1 : 1.18,
-        },
-        {
-          id: `${district.sectorId ?? district.clusterIndex}-module-right-mid`,
-          moduleId: (isActive ? 'commercial-n' : isCalm ? 'industrial-q' : 'commercial-wide-b') as ExpoCityRuntimeModuleId,
-          position: [432, 0, baseZ - 114] as [number, number, number],
-          rotationY: -0.08,
-          scale: isActive ? 0.84 : isCalm ? 0.98 : 1.12,
-        },
-        {
-          id: `${district.sectorId ?? district.clusterIndex}-module-left-near`,
-          moduleId: (isActive ? 'commercial-wide-b' : isCalm ? 'industrial-l' : 'commercial-wide-b') as ExpoCityRuntimeModuleId,
-          position: [-218, 0, baseZ + 228] as [number, number, number],
-          rotationY: 0.02,
-          scale: isActive ? 1.32 : isCalm ? 0.88 : 1.06,
-        },
-        {
-          id: `${district.sectorId ?? district.clusterIndex}-module-right-near`,
-          moduleId: (isActive ? 'commercial-m' : isCalm ? 'commercial-wide-b' : 'industrial-a') as ExpoCityRuntimeModuleId,
-          position: [224, 0, baseZ + 212] as [number, number, number],
-          rotationY: -0.02,
-          scale: isActive ? 0.88 : isCalm ? 0.96 : 0.82,
-        },
-        {
-          id: `${district.sectorId ?? district.clusterIndex}-module-left-tower`,
-          moduleId: leftTower as ExpoCityRuntimeModuleId,
-          position: [-564, 0, baseZ - 264] as [number, number, number],
-          rotationY: 0.03,
-          scale: isActive ? 1.06 : isCalm ? 0.94 : 0.88,
-        },
-        {
-          id: `${district.sectorId ?? district.clusterIndex}-module-right-tower`,
-          moduleId: rightTower as ExpoCityRuntimeModuleId,
-          position: [564, 0, baseZ - 286] as [number, number, number],
-          rotationY: -0.03,
-          scale: isActive ? 1.02 : isCalm ? 0.92 : 0.86,
-        },
-        {
-          id: `${district.sectorId ?? district.clusterIndex}-module-left-plaza`,
-          moduleId: 'road-roundabout' as ExpoCityRuntimeModuleId,
-          position: [-182, 0, baseZ + 34] as [number, number, number],
-          rotationY: 0,
-          scale: isActive ? 1.28 : isCalm ? 0.96 : 0.88,
-        },
-        {
-          id: `${district.sectorId ?? district.clusterIndex}-module-right-plaza`,
-          moduleId: (isActive ? 'road-crossroad-path' : 'road-curve-pavement') as ExpoCityRuntimeModuleId,
-          position: [176, 0, baseZ + 22] as [number, number, number],
-          rotationY: Math.PI * 0.5,
-          scale: isActive ? 1.46 : isCalm ? 1.22 : 1.08,
-        },
-        {
-          id: `${district.sectorId ?? district.clusterIndex}-module-left-quarter`,
-          moduleId: (isActive ? 'commercial-j' : isCalm ? 'industrial-r' : 'commercial-low-h') as ExpoCityRuntimeModuleId,
-          position: [-716, 0, baseZ - 112] as [number, number, number],
-          rotationY: 0.02,
-          scale: isActive ? 0.92 : isCalm ? 0.8 : 1.08,
-        },
-        {
-          id: `${district.sectorId ?? district.clusterIndex}-module-right-quarter`,
-          moduleId: (isActive ? 'commercial-n' : isCalm ? 'industrial-t' : 'commercial-low-j') as ExpoCityRuntimeModuleId,
-          position: [724, 0, baseZ - 148] as [number, number, number],
-          rotationY: -0.02,
-          scale: isActive ? 0.88 : isCalm ? 0.86 : 1.02,
-        },
-        {
-          id: `${district.sectorId ?? district.clusterIndex}-module-left-rear-wide`,
-          moduleId: (isActive ? 'commercial-wide-b' : isCalm ? 'commercial-wide-a' : 'commercial-wide-b') as ExpoCityRuntimeModuleId,
-          position: [-512, 0, baseZ - 402] as [number, number, number],
-          rotationY: 0,
-          scale: isActive ? 1.92 : isCalm ? 1.34 : 1.46,
-        },
-        {
-          id: `${district.sectorId ?? district.clusterIndex}-module-right-rear-wide`,
-          moduleId: (isActive ? 'commercial-wide-b' : isCalm ? 'commercial-wide-a' : 'commercial-wide-b') as ExpoCityRuntimeModuleId,
-          position: [512, 0, baseZ - 438] as [number, number, number],
-          rotationY: Math.PI,
-          scale: isActive ? 1.84 : isCalm ? 1.3 : 1.42,
-        },
-        {
-          id: `${district.sectorId ?? district.clusterIndex}-module-left-avenue-a`,
-          moduleId: (isActive ? 'commercial-low-g' : isCalm ? 'commercial-low-a' : 'commercial-low-h') as ExpoCityRuntimeModuleId,
-          position: [-786, 0, baseZ + 168] as [number, number, number],
-          rotationY: 0,
-          scale: isActive ? 1.16 : isCalm ? 0.94 : 0.88,
-        },
-        {
-          id: `${district.sectorId ?? district.clusterIndex}-module-left-avenue-b`,
-          moduleId: (isActive ? 'commercial-wide-a' : isCalm ? 'commercial-wide-a' : 'commercial-wide-b') as ExpoCityRuntimeModuleId,
-          position: [-842, 0, baseZ - 12] as [number, number, number],
-          rotationY: 0.02,
-          scale: isActive ? 1.68 : isCalm ? 1.34 : 1.18,
-        },
-        {
-          id: `${district.sectorId ?? district.clusterIndex}-module-left-avenue-c`,
-          moduleId: (isActive ? 'commercial-k' : isCalm ? 'commercial-low-g' : 'tower-e') as ExpoCityRuntimeModuleId,
-          position: [-916, 0, baseZ - 258] as [number, number, number],
-          rotationY: 0.04,
-          scale: isActive ? 0.72 : isCalm ? 0.84 : 0.74,
-        },
-        {
-          id: `${district.sectorId ?? district.clusterIndex}-module-right-avenue-a`,
-          moduleId: (isActive ? 'commercial-low-b' : isCalm ? 'commercial-low-a' : 'commercial-low-j') as ExpoCityRuntimeModuleId,
-          position: [786, 0, baseZ + 154] as [number, number, number],
-          rotationY: Math.PI,
-          scale: isActive ? 1.12 : isCalm ? 0.92 : 1.1,
-        },
-        {
-          id: `${district.sectorId ?? district.clusterIndex}-module-right-avenue-b`,
-          moduleId: (isActive ? 'commercial-wide-b' : isCalm ? 'commercial-wide-a' : 'commercial-wide-b') as ExpoCityRuntimeModuleId,
-          position: [846, 0, baseZ - 18] as [number, number, number],
-          rotationY: Math.PI - 0.02,
-          scale: isActive ? 1.6 : isCalm ? 1.28 : 1.14,
-        },
-        {
-          id: `${district.sectorId ?? district.clusterIndex}-module-right-avenue-c`,
-          moduleId: (isActive ? 'commercial-m' : isCalm ? 'commercial-low-g' : 'tower-a') as ExpoCityRuntimeModuleId,
-          position: [924, 0, baseZ - 246] as [number, number, number],
-          rotationY: Math.PI - 0.04,
-          scale: isActive ? 0.7 : isCalm ? 0.78 : 0.68,
-        },
-        {
-          id: `${district.sectorId ?? district.clusterIndex}-module-left-side-entry`,
-          moduleId: (isActive ? 'road-side-entry' : isCalm ? 'road-intersection-path' : 'road-end-round') as ExpoCityRuntimeModuleId,
-          position: [-318, 0, baseZ + 184] as [number, number, number],
-          rotationY: 0,
-          scale: isActive ? 1.3 : isCalm ? 1.14 : 1.08,
-        },
-        {
-          id: `${district.sectorId ?? district.clusterIndex}-module-right-side-entry`,
-          moduleId: (isActive ? 'road-side-exit' : isCalm ? 'road-curve-intersection' : 'road-end-round') as ExpoCityRuntimeModuleId,
-          position: [318, 0, baseZ + 176] as [number, number, number],
-          rotationY: Math.PI,
-          scale: isActive ? 1.3 : isCalm ? 1.12 : 1.04,
-        },
-        {
-          id: `${district.sectorId ?? district.clusterIndex}-module-center-split`,
-          moduleId: (isActive ? 'road-split' : isCalm ? 'road-intersection-path' : 'road-end-round') as ExpoCityRuntimeModuleId,
-          position: [0, 0, baseZ - 84] as [number, number, number],
-          rotationY: Math.PI,
-          scale: isActive ? 1.34 : isCalm ? 1.18 : 1.08,
-        },
-        {
-          id: `${district.sectorId ?? district.clusterIndex}-module-center-straight`,
-          moduleId: (isActive ? 'road-straight' : isCalm ? 'road-curve-pavement' : 'road-intersection-path') as ExpoCityRuntimeModuleId,
-          position: [0, 0, baseZ - 236] as [number, number, number],
-          rotationY: Math.PI * 0.5,
-          scale: isActive ? 1.66 : isCalm ? 1.36 : 1.22,
-        },
-        {
-          id: `${district.sectorId ?? district.clusterIndex}-module-left-light`,
-          moduleId: (isActive ? 'road-light-curved-double' : 'road-light-curved') as ExpoCityRuntimeModuleId,
-          position: [-136, 0, baseZ + 122] as [number, number, number],
-          rotationY: 0,
-          scale: isActive ? 1.06 : 1.12,
-        },
-        {
-          id: `${district.sectorId ?? district.clusterIndex}-module-right-light`,
-          moduleId: (isActive ? 'road-light-curved-double' : 'road-light-curved') as ExpoCityRuntimeModuleId,
-          position: [136, 0, baseZ + 116] as [number, number, number],
-          rotationY: Math.PI,
-          scale: isActive ? 1.06 : 1.12,
-        },
-      ];
-    });
-    return rawPlacements.filter((placement) => (
-      !isInsideSponsorFrontageReserve(placement.position, boothPlacements, {
-        frontDepth: 620,
-        rearDepth: 300,
-        sideWidth: 340,
-        radius: 420,
-      }) &&
-      !overlapsStadiumReserve(
-        placement.position,
-        stadiumReserve,
-        getRuntimeModuleReserveFootprint(placement.moduleId, placement.scale)
-      )
-    ));
-  }, [boothPlacements, districtPrograms]);
-
-  return (
-    <group name="expo-city-runtime-modules">
-      {placements.map((placement) => {
-        const asset = normalizedAssets[placement.moduleId];
-        if (!asset) {
-          return null;
-        }
-
-        return (
-          <group
-            key={placement.id}
-            position={placement.position}
-            rotation={[0, placement.rotationY, 0]}
-            scale={[placement.scale, placement.scale, placement.scale]}
-          >
-            <primitive object={asset.clone(true)} />
-          </group>
-        );
-      })}
-    </group>
-  );
 }
 
 function ExpoCityForeground({
@@ -2845,14 +2475,13 @@ function ExpoCityForeground({
     [districtTowerClusters]
   );
 
-  return (
-    <group name="expo-city-foreground">
-      <ExpoCityRuntimeModules boothPlacements={boothPlacements} districtPrograms={districtPrograms} />
-      {cityStreetMoments.filter((street) => !overlapsStadiumReserve(street.position, stadiumReserve, street.size)).map((street) => (
-        <mesh key={street.id} position={street.position} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-          <planeGeometry args={street.size} />
-          <meshStandardMaterial color={street.color} map={cityRoadMap} normalMap={cityRoadNormal} roughnessMap={cityRoadRough} normalScale={new THREE.Vector2(0.44, 0.44)} roughness={0.82} metalness={0.05} />
-        </mesh>
+    return (
+      <group name="expo-city-foreground">
+        {cityStreetMoments.filter((street) => !overlapsStadiumReserve(street.position, stadiumReserve, street.size)).map((street) => (
+          <mesh key={street.id} position={street.position} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+            <planeGeometry args={street.size} />
+            <meshStandardMaterial color={street.color} map={cityRoadMap} normalMap={cityRoadNormal} roughnessMap={cityRoadRough} normalScale={new THREE.Vector2(0.44, 0.44)} roughness={0.82} metalness={0.05} />
+          </mesh>
       ))}
       {cityBranchMoments.filter((branch) => !overlapsStadiumReserve(branch.position, stadiumReserve, branch.size)).map((branch) => (
         <mesh key={branch.id} position={branch.position} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>

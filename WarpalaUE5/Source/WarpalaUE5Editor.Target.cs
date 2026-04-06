@@ -7,6 +7,6 @@ public class WarpalaUE5EditorTarget : TargetRules
     {
         Type = TargetType.Editor;
         DefaultBuildSettings = BuildSettingsVersion.Latest;
-        ExtraModuleNames.AddRange(new string[] { "WarpalaExpo", "WarpalaCity", "WarpalaNetworking", "WarpalaAI", "WarpalaTraffic" });
+        ExtraModuleNames.AddRange(new string[] { "WarpalaUE5", "WarpalaExpo", "WarpalaCity", "WarpalaNetworking", "WarpalaAI", "WarpalaTraffic", "WarpalaSimulation" });
     }
 }

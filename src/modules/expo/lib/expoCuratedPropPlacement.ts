@@ -11,8 +11,6 @@ export type ExpoCuratedPropKey =
   | 'sign_highway'
   | 'sign_highway_wide'
   | 'info_kiosk_base_computer_screen'
-  | 'tree_small'
-  | 'tree_large'
   | 'bush'
   | 'big_bush';
 
@@ -98,11 +96,11 @@ export function buildExpoCuratedPropPlacements(
         scale: calmDistrict ? 1.05 : orientationDistrict ? 1.04 : 1.2,
       },
       {
-        assetKey: scenicDistrict || featureCourtDistrict ? (side === -1 ? 'tree_large' : 'big_bush') : side === -1 ? 'tree_small' : 'bush',
+        assetKey: scenicDistrict || featureCourtDistrict ? (side === -1 ? 'light_curved' : 'big_bush') : side === -1 ? 'planter' : 'bush',
         id: `sector-greenery-${marker.id}`,
         position: [round3(side * (corridorHalfWidth + 30)), 0, round3(marker.position[2] - 10)],
         rotationY: 0,
-        scale: scenicDistrict || featureCourtDistrict ? 1.35 : side === -1 ? 1.2 : 1.8,
+        scale: scenicDistrict || featureCourtDistrict ? 1.18 : side === -1 ? 1.1 : 1.8,
       }
     );
 
@@ -201,11 +199,11 @@ export function buildExpoCuratedPropPlacements(
 
     if (showcase && placement.nodeType === 'endcap') {
       placements.push({
-        assetKey: 'tree_large',
-        id: `endcap-tree-${placement.id}`,
+        assetKey: 'light_curved',
+        id: `endcap-feature-${placement.id}`,
         position: [round3(edgeDeepX + (side * 4)), 0, round3(placement.position[2] - 20)],
         rotationY: 0,
-        scale: 0.9,
+        scale: 1.06,
       });
     }
   });

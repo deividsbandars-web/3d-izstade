@@ -1,11 +1,9 @@
 @echo off
 setlocal
-title Warpala Pixel Streaming Launcher
+title Warpala Packaged Pixel Streaming Launcher
 color 0A
 
-set "UE_EDITOR=C:\Program Files\Epic Games\UE_5.7\Engine\Binaries\Win64\UnrealEditor.exe"
-set "UE_PROJECT=C:\3d\WarpalaUE5\WarpalaUE5.uproject"
-set "UE_MAP=/Game/Warpala/Maps/WarpalaCity_Main"
+set "PACKAGED_EXE=C:\3d\WarpalaUE5\Saved\Autosaves\Windows\WarpalaUE5.exe"
 set "API_ORIGIN=https://api.30sek24.com"
 set "SIGNALING_HOST=api.30sek24.com"
 set "SIGNALING_STREAMER_PORT=8888"
@@ -21,6 +19,7 @@ for %%A in (%*) do (
     if /I "%%~A"=="--local" set "LOCAL_MODE=1"
 )
 
+if defined WARPALA_PACKAGED_EXE set "PACKAGED_EXE=%WARPALA_PACKAGED_EXE%"
 if defined WARPALA_API_ORIGIN set "API_ORIGIN=%WARPALA_API_ORIGIN%"
 if defined WARPALA_SIGNALING_HOST set "SIGNALING_HOST=%WARPALA_SIGNALING_HOST%"
 if defined WARPALA_SIGNALING_STREAMER_PORT set "SIGNALING_STREAMER_PORT=%WARPALA_SIGNALING_STREAMER_PORT%"
@@ -38,22 +37,18 @@ if "%LOCAL_MODE%"=="1" (
 set "PIXEL_STREAMING_CONNECTION_URL=ws://%SIGNALING_HOST%:%SIGNALING_STREAMER_PORT%"
 
 echo ================================================
-echo   WARPALA CITY - PIXEL STREAMING LAUNCHER
+echo   WARPALA PACKAGED PIXEL STREAMING LAUNCHER
 echo ================================================
 echo.
+echo       Packaged exe     : %PACKAGED_EXE%
 echo       API origin       : %API_ORIGIN%
 echo       Browser gateway  : %BROWSER_GATEWAY_URL%
 echo       Status endpoint  : %BACKEND_STATUS_URL%
 echo.
 
-if not exist "%UE_EDITOR%" (
-    echo [ERROR] Unreal Editor nav atrasts: %UE_EDITOR%
-    set "EXIT_CODE=1"
-    goto :finish
-)
-
-if not exist "%UE_PROJECT%" (
-    echo [ERROR] Unreal projekts nav atrasts: %UE_PROJECT%
+if not exist "%PACKAGED_EXE%" (
+    echo [ERROR] Packaged build nav atrasts: %PACKAGED_EXE%
+    echo [HINT] Vispirms uztaisi Windows package no Unreal projekta.
     set "EXIT_CODE=1"
     goto :finish
 )
@@ -62,21 +57,20 @@ echo [0/3] Gaidam signaling streamer socketu uz %SIGNALING_HOST%:%SIGNALING_STRE
 powershell -NoProfile -ExecutionPolicy Bypass -Command "$deadline=(Get-Date).AddSeconds(60); while((Get-Date) -lt $deadline){ try { $client = New-Object System.Net.Sockets.TcpClient; $async = $client.BeginConnect('%SIGNALING_HOST%', %SIGNALING_STREAMER_PORT%, $null, $null); if($async.AsyncWaitHandle.WaitOne(1000, $false) -and $client.Connected){ $client.EndConnect($async); $client.Close(); exit 0 } $client.Close() } catch {} Start-Sleep -Seconds 1 } exit 1"
 if errorlevel 1 (
     echo [ERROR] Signaling streamer ports nav sasniedzams uz %PIXEL_STREAMING_CONNECTION_URL%
-    echo [HINT] Vispirms palaid docker compose up -d --build
+    echo [HINT] Vispirms parbaudi VPS docker stack un api.30sek24.com.
     set "EXIT_CODE=1"
     goto :finish
 )
 
-echo [1/3] Startejam WarpalaUE5 ar Pixel Streaming ...
-echo       UE project       : %UE_PROJECT%
+echo [1/3] Startejam packaged Warpala build ar Pixel Streaming ...
 echo       Direct streamer  : %PIXEL_STREAMING_CONNECTION_URL%
-echo       Browser gateway  : %BROWSER_GATEWAY_URL% ^(premium uses /ws/ only for browser clients^)
-start "" "%UE_EDITOR%" "%UE_PROJECT%" -game -map=%UE_MAP% -ResX=1280 -ResY=720 -AudioMixer -PixelStreamingURL="%PIXEL_STREAMING_CONNECTION_URL%" -PixelStreamingConnectionURL="%PIXEL_STREAMING_CONNECTION_URL%" -RenderOffScreen -dx12 -unattended
+echo       Browser gateway  : %BROWSER_GATEWAY_URL%
+start "" "%PACKAGED_EXE%" -ResX=1280 -ResY=720 -AudioMixer -PixelStreamingURL="%PIXEL_STREAMING_CONNECTION_URL%" -PixelStreamingConnectionURL="%PIXEL_STREAMING_CONNECTION_URL%" -RenderOffScreen -dx12 -Unattended -log
 
-echo [2/3] Gaidam lidz premium runtime statuss kļust session_ready ...
+echo [2/3] Gaidam lidz premium runtime statuss klust session_ready ...
 powershell -NoProfile -ExecutionPolicy Bypass -Command "$deadline=(Get-Date).AddSeconds(90); do { try { $status = Invoke-RestMethod -Uri '%BACKEND_STATUS_URL%' -TimeoutSec 5; $activeStreamerId = if ($status.session -and $status.session.activeStreamerId) { $status.session.activeStreamerId } else { 'none' }; Write-Host ('[WAIT] signaling=' + $status.signaling + ' streamer=' + $status.streamer + ' readiness=' + $status.readiness + ' activeStreamerId=' + $activeStreamerId); if ($status.readiness -eq 'session_ready') { exit 0 } } catch { Write-Host ('[WAIT] status fetch failed: ' + $_.Exception.Message) } Start-Sleep -Seconds 5 } while((Get-Date) -lt $deadline); exit 1"
 if errorlevel 1 (
-    echo [WARN] Session_ready netika sasniegts 90 sekunzu laikaa. Paradu pēdejo redzamo statusu.
+    echo [WARN] Session_ready netika sasniegts 90 sekunzu laikaa. Paradu pedejo redzamo statusu.
 )
 
 echo [3/3] Parbaudam premium runtime status ...
@@ -87,10 +81,10 @@ if errorlevel 1 (
 
 echo.
 echo ================================================
-echo   Pixel Streaming launcher pabeigts.
+echo   Packaged Pixel Streaming launcher pabeigts.
 echo   Ja streamer joprojam nav pieejams, skaties:
-echo   - docker compose logs signaling
-echo   - WarpalaUE5\\Saved\\Logs\\WarpalaUE5.log
+echo   - docker compose logs signaling uz VPS
+echo   - packaged build logus
 echo ================================================
 echo.
 
@@ -99,6 +93,5 @@ if "%NO_PAUSE%"=="1" (
     endlocal & exit /b %EXIT_CODE%
 )
 
-echo Lai apturetu - aizver so logu un apturi Docker konteinerus.
 pause
 endlocal & exit /b %EXIT_CODE%

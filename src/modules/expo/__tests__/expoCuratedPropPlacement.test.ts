@@ -29,5 +29,5 @@ assert.ok(balancedProps.some((entry) => entry.assetKey === 'info_kiosk_base_comp
 assert.ok(balancedProps.some((entry) => entry.decorationKind === 'district-sign-wide' && entry.label === 'Platform Partners'));
 assert.ok(balancedProps.some((entry) => entry.decorationKind === 'info-kiosk' && entry.label === 'Warpala Platform'));
 assert.ok(balancedProps.some((entry) => entry.decorationKind === 'info-kiosk' && entry.subLabel === 'LIVE PROGRAM'));
-assert.ok(showcaseProps.some((entry) => entry.assetKey === 'tree_large'));
+assert.ok(showcaseProps.some((entry) => entry.assetKey === 'light_curved'));
 assert.equal(new Set(showcaseProps.map((entry) => entry.id)).size, showcaseProps.length);

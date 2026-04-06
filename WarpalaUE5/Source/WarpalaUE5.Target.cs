@@ -7,6 +7,6 @@ public class WarpalaUE5Target : TargetRules
     {
         Type = TargetType.Game;
         DefaultBuildSettings = BuildSettingsVersion.Latest;
-        ExtraModuleNames.AddRange(new string[] { "WarpalaExpo", "WarpalaCity", "WarpalaNetworking", "WarpalaAI", "WarpalaTraffic" });
+        ExtraModuleNames.AddRange(new string[] { "WarpalaUE5", "WarpalaExpo", "WarpalaCity", "WarpalaNetworking", "WarpalaAI", "WarpalaTraffic", "WarpalaSimulation" });
     }
 }
