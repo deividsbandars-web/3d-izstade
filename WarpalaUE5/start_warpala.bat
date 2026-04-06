@@ -71,7 +71,7 @@ echo [1/3] Startejam WarpalaUE5 ar Pixel Streaming ...
 echo       UE project       : %UE_PROJECT%
 echo       Direct streamer  : %PIXEL_STREAMING_CONNECTION_URL%
 echo       Browser gateway  : %BROWSER_GATEWAY_URL% ^(premium uses /ws/ only for browser clients^)
-start "" "%UE_EDITOR%" "%UE_PROJECT%" -game -map=%UE_MAP% -ResX=1280 -ResY=720 -AudioMixer -PixelStreamingURL="%PIXEL_STREAMING_CONNECTION_URL%" -PixelStreamingConnectionURL="%PIXEL_STREAMING_CONNECTION_URL%" -RenderOffScreen -dx12 -unattended
+start "" "%UE_EDITOR%" "%UE_PROJECT%" -game -map=%UE_MAP% -ResX=1280 -ResY=720 -AudioMixer -PixelStreamingConnectionURL="%PIXEL_STREAMING_CONNECTION_URL%" -RenderOffScreen -dx12 -unattended
 
 echo [2/3] Gaidam lidz premium runtime statuss kļust session_ready ...
 powershell -NoProfile -ExecutionPolicy Bypass -Command "$deadline=(Get-Date).AddSeconds(90); do { try { $status = Invoke-RestMethod -Uri '%BACKEND_STATUS_URL%' -TimeoutSec 5; $activeStreamerId = if ($status.session -and $status.session.activeStreamerId) { $status.session.activeStreamerId } else { 'none' }; Write-Host ('[WAIT] signaling=' + $status.signaling + ' streamer=' + $status.streamer + ' readiness=' + $status.readiness + ' activeStreamerId=' + $activeStreamerId); if ($status.readiness -eq 'session_ready') { exit 0 } } catch { Write-Host ('[WAIT] status fetch failed: ' + $_.Exception.Message) } Start-Sleep -Seconds 5 } while((Get-Date) -lt $deadline); exit 1"

@@ -141,11 +141,11 @@ function resolveStreamerSelection(
   }
 
   const firstStreamingSlot = sortedSlots.find((slot) => slot.streaming && slot.ready !== false);
-  if (firstStreamingSlot && !hasBoothContext(context)) {
+  if (firstStreamingSlot && (context?.allowSharedFallback !== false || !hasBoothContext(context))) {
     return {
       activeStreamer: firstStreamingSlot,
       selectionPolicy: 'first_available' as const,
-      usedSharedFallback: false,
+      usedSharedFallback: hasBoothContext(context),
     };
   }
 

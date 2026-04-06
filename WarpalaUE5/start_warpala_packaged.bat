@@ -3,7 +3,7 @@ setlocal
 title Warpala Packaged Pixel Streaming Launcher
 color 0A
 
-set "PACKAGED_EXE=C:\3d\WarpalaUE5\Saved\Autosaves\Windows\WarpalaUE5.exe"
+set "PACKAGED_EXE=C:\3d\WarpalaUE5\Saved\Windows\WarpalaUE5.exe"
 set "API_ORIGIN=https://api.30sek24.com"
 set "SIGNALING_HOST=api.30sek24.com"
 set "SIGNALING_STREAMER_PORT=8888"
@@ -65,7 +65,7 @@ if errorlevel 1 (
 echo [1/3] Startejam packaged Warpala build ar Pixel Streaming ...
 echo       Direct streamer  : %PIXEL_STREAMING_CONNECTION_URL%
 echo       Browser gateway  : %BROWSER_GATEWAY_URL%
-start "" "%PACKAGED_EXE%" -ResX=1280 -ResY=720 -AudioMixer -PixelStreamingURL="%PIXEL_STREAMING_CONNECTION_URL%" -PixelStreamingConnectionURL="%PIXEL_STREAMING_CONNECTION_URL%" -RenderOffScreen -dx12 -Unattended -log
+start "" "%PACKAGED_EXE%" -ResX=1280 -ResY=720 -AudioMixer -PixelStreamingConnectionURL="%PIXEL_STREAMING_CONNECTION_URL%" -RenderOffScreen -dx12 -Unattended -log
 
 echo [2/3] Gaidam lidz premium runtime statuss klust session_ready ...
 powershell -NoProfile -ExecutionPolicy Bypass -Command "$deadline=(Get-Date).AddSeconds(90); do { try { $status = Invoke-RestMethod -Uri '%BACKEND_STATUS_URL%' -TimeoutSec 5; $activeStreamerId = if ($status.session -and $status.session.activeStreamerId) { $status.session.activeStreamerId } else { 'none' }; Write-Host ('[WAIT] signaling=' + $status.signaling + ' streamer=' + $status.streamer + ' readiness=' + $status.readiness + ' activeStreamerId=' + $activeStreamerId); if ($status.readiness -eq 'session_ready') { exit 0 } } catch { Write-Host ('[WAIT] status fetch failed: ' + $_.Exception.Message) } Start-Sleep -Seconds 5 } while((Get-Date) -lt $deadline); exit 1"

@@ -63,11 +63,11 @@
 		},
 		{
 			"Name": "PixelStreaming",
-			"Enabled": true
+			"Enabled": false
 		},
 		{
 			"Name": "PixelStreaming2",
-			"Enabled": false
+			"Enabled": true
 		}
 	]
 }
