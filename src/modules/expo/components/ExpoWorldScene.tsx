@@ -4265,6 +4265,7 @@ function DistrictBooth({
   );
 }
 const PLAYER_RADIUS = 1.2;
+const PLAYER_WALK_SPEED = 60;
 
 function Player({
   bounds,
@@ -4368,7 +4369,7 @@ function Player({
       return;
     }
 
-    const speed = 120 * delta;
+    const speed = PLAYER_WALK_SPEED * delta;
     moveVector.current.set(0, 0, 0);
 
     if (mov.f) moveVector.current.z -= speed;
