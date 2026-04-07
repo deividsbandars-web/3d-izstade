@@ -275,7 +275,7 @@ export function buildSponsorScreenLayout(
     title: 'Arrival',
   };
 
-  const districtGroundScreens = sectorMarkers.slice(0, 12).map((marker, index) => {
+  const districtGroundScreens = sectorMarkers.filter((_, index) => index % 2 === 0).slice(0, 6).map((marker, index) => {
     const placement = rankedPlacements[index % Math.max(1, rankedPlacements.length)] ?? null;
     const presentation = placement
       ? buildSponsorBoothPresentation(placement.company, placement.company.booth ?? null, placement.nodeType, { districtThemeId: placement.districtThemeId })

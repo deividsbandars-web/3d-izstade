@@ -3806,15 +3806,15 @@ function SponsorScreenHierarchy({
     if (EXPO_FEATURE_FLAGS.enableShowcaseSkylineDensity) {
       return available;
     }
-    return available.filter((node, index) => node.placementTier === 'elite' || node.placementTier === 'premium' || index % 2 === 0);
+    return available.filter((node, index) => node.placementTier === 'elite' || node.placementTier === 'premium' || index % 3 === 0);
   }, [layout.facadeScreens, stadiumReserve]);
   const mediumNodes = useMemo(() => {
     const available = layout.mediumScreens.filter((node) => !overlapsStadiumReserve(node.position, stadiumReserve, node.size));
-    return EXPO_FEATURE_FLAGS.enableShowcaseSkylineDensity ? available : available.slice(0, 8);
+    return EXPO_FEATURE_FLAGS.enableShowcaseSkylineDensity ? available : available.slice(0, 6);
   }, [layout.mediumScreens, stadiumReserve]);
   const groundNodes = useMemo(() => {
     const available = layout.groundScreens.filter((node) => !overlapsStadiumReserve(node.position, stadiumReserve, node.size));
-    return EXPO_FEATURE_FLAGS.enableShowcaseSkylineDensity ? available : available.slice(0, 8);
+    return EXPO_FEATURE_FLAGS.enableShowcaseSkylineDensity ? available : available.slice(0, 4);
   }, [layout.groundScreens, stadiumReserve]);
   const visibleFacadeNodes = useMemo(() => {
     if (EXPO_FEATURE_FLAGS.enableShowcaseSkylineDensity) {
@@ -3827,10 +3827,10 @@ function SponsorScreenHierarchy({
       const distanceSq = (dx * dx) + (dz * dz);
       const maxDistance =
         node.placementTier === 'elite'
-          ? 2600
+          ? 2200
           : node.placementTier === 'premium'
-            ? 1900
-            : 1200;
+            ? 1500
+            : 900;
       return distanceSq <= maxDistance * maxDistance;
     });
   }, [facadeNodes, playerPosition]);
@@ -3840,7 +3840,7 @@ function SponsorScreenHierarchy({
       : mediumNodes.filter((node) => {
           const dx = node.position[0] - playerPosition[0];
           const dz = node.position[2] - playerPosition[2];
-          return (dx * dx) + (dz * dz) <= 1150 * 1150;
+          return (dx * dx) + (dz * dz) <= 900 * 900;
         })
   ), [mediumNodes, playerPosition]);
   const visibleGroundNodes = useMemo(() => (
@@ -3849,7 +3849,7 @@ function SponsorScreenHierarchy({
       : groundNodes.filter((node) => {
           const dx = node.position[0] - playerPosition[0];
           const dz = node.position[2] - playerPosition[2];
-          return (dx * dx) + (dz * dz) <= 980 * 980;
+          return (dx * dx) + (dz * dz) <= 720 * 720;
         })
   ), [groundNodes, playerPosition]);
   return (
