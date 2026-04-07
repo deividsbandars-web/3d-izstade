@@ -2457,37 +2457,80 @@ function ExpoCityForeground({
       const isActive = district.expressionMode === 'active-commercial';
       const isCalm = district.expressionMode === 'calm-dwell';
       const isScenic = district.expressionMode === 'scenic' || district.expressionMode === 'feature-court';
-      const xBands = isActive ? [172, 268, 388] : isCalm ? [142, 226, 312] : [196, 304, 428];
-      const zBands = [baseZ + 84, baseZ - 92, baseZ - 248, baseZ - 392, baseZ - 556];
-      const towerHeights = isActive
-        ? [68, 112, 176, 96, 148, 212]
+      const towerPalette = isActive
+        ? { hero: '#5a7080', mid: '#647887', support: '#728391' }
         : isCalm
-          ? [42, 68, 98, 58, 82, 116]
-          : [34, 52, 74, 44, 64, 88];
+          ? { hero: '#657987', mid: '#718391', support: '#81919d' }
+          : { hero: '#5f7281', mid: '#6f808d', support: '#7d8c97' };
+      const heroHeight = isActive ? 228 : isCalm ? 154 : 184;
+      const midHeight = isActive ? 168 : isCalm ? 118 : 138;
+      const supportHeight = isActive ? 102 : isCalm ? 74 : 88;
+      const rearSupportHeight = isActive ? 132 : isCalm ? 94 : 108;
 
       return [-1, 1].flatMap((side) => {
-        return xBands.flatMap((xBand, xIndex) => {
-          return zBands.map((zBand, zIndex) => {
-            const towerHeight = towerHeights[(xIndex + zIndex) % towerHeights.length];
-            const width = isActive ? (xIndex === 1 ? 26 : 22) : isCalm ? 18 : 16;
-            const depth = isActive ? (zIndex % 2 === 0 ? 20 : 16) : isCalm ? 16 : 14;
-            const tierColor = isActive
-              ? (zIndex % 2 === 0 ? '#627687' : '#556876')
-              : isCalm
-                ? '#6c7f8e'
-                : '#728491';
-
-            return {
-              id: `${district.sectorId ?? district.clusterIndex}-tower-${side}-${xIndex}-${zIndex}`,
-              position: [xBand * side, towerHeight * 0.5, zBand] as [number, number, number],
-              size: [width, towerHeight, depth] as [number, number, number],
-              color: tierColor,
-              emissive: visual.districtGlow,
-              emissiveIntensity: isActive ? 0.012 : 0.006,
-              crownColor: isScenic ? visual.shellAccent : visual.groundAccent,
-            };
-          });
-        });
+        const sideRotationBias = side < 0 ? -1 : 1;
+        return [
+          {
+            id: `${district.sectorId ?? district.clusterIndex}-tower-hero-${side}`,
+            position: [side * 446, heroHeight * 0.5, baseZ - 318] as [number, number, number],
+            size: [isActive ? 42 : 36, heroHeight, isActive ? 30 : 26] as [number, number, number],
+            color: towerPalette.hero,
+            emissive: visual.districtGlow,
+            emissiveIntensity: isActive ? 0.016 : 0.008,
+            crownColor: isScenic ? visual.shellAccent : visual.groundAccent,
+            towerRole: 'hero' as const,
+            screenReady: true,
+            silhouetteBias: sideRotationBias,
+          },
+          {
+            id: `${district.sectorId ?? district.clusterIndex}-tower-mid-front-${side}`,
+            position: [side * 286, midHeight * 0.5, baseZ - 132] as [number, number, number],
+            size: [isActive ? 28 : 24, midHeight, isActive ? 22 : 18] as [number, number, number],
+            color: towerPalette.mid,
+            emissive: visual.districtGlow,
+            emissiveIntensity: isActive ? 0.012 : 0.006,
+            crownColor: visual.groundAccent,
+            towerRole: 'mid' as const,
+            screenReady: true,
+            silhouetteBias: sideRotationBias,
+          },
+          {
+            id: `${district.sectorId ?? district.clusterIndex}-tower-mid-rear-${side}`,
+            position: [side * 612, midHeight * 0.5, baseZ - 564] as [number, number, number],
+            size: [isActive ? 30 : 26, midHeight + (isActive ? 18 : 12), isActive ? 24 : 20] as [number, number, number],
+            color: towerPalette.mid,
+            emissive: visual.districtGlow,
+            emissiveIntensity: isActive ? 0.012 : 0.006,
+            crownColor: visual.groundAccent,
+            towerRole: 'mid' as const,
+            screenReady: true,
+            silhouetteBias: sideRotationBias,
+          },
+          {
+            id: `${district.sectorId ?? district.clusterIndex}-tower-support-front-${side}`,
+            position: [side * 196, supportHeight * 0.5, baseZ + 42] as [number, number, number],
+            size: [isActive ? 18 : 16, supportHeight, isActive ? 16 : 14] as [number, number, number],
+            color: towerPalette.support,
+            emissive: visual.districtGlow,
+            emissiveIntensity: isActive ? 0.006 : 0.003,
+            crownColor: visual.shellAccent,
+            towerRole: 'support' as const,
+            screenReady: false,
+            silhouetteBias: sideRotationBias,
+          },
+          {
+            id: `${district.sectorId ?? district.clusterIndex}-tower-support-rear-${side}`,
+            position: [side * 782, rearSupportHeight * 0.5, baseZ - 742] as [number, number, number],
+            size: [isActive ? 22 : 18, rearSupportHeight, isActive ? 18 : 16] as [number, number, number],
+            color: towerPalette.support,
+            emissive: visual.districtGlow,
+            emissiveIntensity: isActive ? 0.006 : 0.003,
+            crownColor: visual.shellAccent,
+            towerRole: 'support' as const,
+            screenReady: false,
+            silhouetteBias: sideRotationBias,
+          },
+        ];
       });
     });
     return filterReservedSponsorFrontageEntries(entries, boothPlacements, { frontDepth: 680, rearDepth: 320, sideWidth: 380, radius: 520 });
@@ -2620,6 +2663,21 @@ function ExpoCityForeground({
       ))}
       {visibleDistrictTowerClusters.filter((tower) => !overlapsStadiumReserve(tower.position, stadiumReserve, tower.size)).map((tower) => (
         <group key={tower.id} position={tower.position}>
+          {(() => {
+            const enrichedTower = tower as typeof tower & {
+              towerRole?: 'hero' | 'mid' | 'support';
+              screenReady?: boolean;
+              silhouetteBias?: number;
+            };
+            const towerRole = enrichedTower.towerRole ?? 'support';
+            const silhouetteBias = enrichedTower.silhouetteBias ?? 1;
+            const upperHeight = towerRole === 'hero' ? tower.size[1] * 0.28 : towerRole === 'mid' ? tower.size[1] * 0.22 : tower.size[1] * 0.16;
+            const upperWidth = towerRole === 'hero' ? tower.size[0] * 0.68 : towerRole === 'mid' ? tower.size[0] * 0.76 : tower.size[0] * 0.84;
+            const upperDepth = towerRole === 'hero' ? tower.size[2] * 0.68 : towerRole === 'mid' ? tower.size[2] * 0.76 : tower.size[2] * 0.84;
+            const beaconHeight = towerRole === 'hero' ? 18 : towerRole === 'mid' ? 10 : 0;
+
+            return (
+              <>
           <mesh castShadow={enableHeavyShadows} receiveShadow>
             <boxGeometry args={tower.size} />
             <ExpoArchitecturalMassMaterial
@@ -2629,10 +2687,33 @@ function ExpoCityForeground({
               emissiveIntensity={tower.emissiveIntensity}
             />
           </mesh>
-          <mesh position={[0, (tower.size[1] * 0.5) + 0.6, 0]} castShadow={enableHeavyShadows}>
-            <boxGeometry args={[tower.size[0] * 0.7, 1.2, tower.size[2] * 0.7]} />
+          <mesh position={[silhouetteBias * tower.size[0] * 0.08, tower.size[1] * 0.18, 0]} castShadow={enableHeavyShadows} receiveShadow>
+            <boxGeometry args={[upperWidth, upperHeight, upperDepth]} />
+            <ExpoArchitecturalMassMaterial
+              fallbackColor={towerRole === 'hero' ? '#8ea3b3' : towerRole === 'mid' ? '#90a1ad' : '#93a4af'}
+              emissive={tower.emissive}
+              emissiveIntensity={towerRole === 'hero' ? 0.008 : 0.004}
+            />
+          </mesh>
+          {towerRole === 'hero' && (
+            <mesh position={[-silhouetteBias * tower.size[0] * 0.12, tower.size[1] * 0.34, 0]} castShadow={enableHeavyShadows} receiveShadow>
+              <boxGeometry args={[tower.size[0] * 0.44, tower.size[1] * 0.14, tower.size[2] * 0.44]} />
+              <ExpoArchitecturalMassMaterial fallbackColor="#d7e2ea" emissive={tower.emissive} emissiveIntensity={0.01} />
+            </mesh>
+          )}
+          <mesh position={[0, (tower.size[1] * 0.5) + 0.8, 0]} castShadow={enableHeavyShadows}>
+            <boxGeometry args={[tower.size[0] * (towerRole === 'support' ? 0.78 : 0.64), towerRole === 'hero' ? 1.8 : 1.2, tower.size[2] * (towerRole === 'support' ? 0.78 : 0.64)]} />
             <meshStandardMaterial color={tower.crownColor} metalness={0.12} roughness={0.52} />
           </mesh>
+          {beaconHeight > 0 && (
+            <mesh position={[0, (tower.size[1] * 0.5) + beaconHeight * 0.5 + 2.4, 0]} castShadow={enableHeavyShadows}>
+              <boxGeometry args={[tower.size[0] * 0.14, beaconHeight, tower.size[2] * 0.14]} />
+              <meshStandardMaterial color={tower.crownColor} emissive={tower.crownColor} emissiveIntensity={0.12} metalness={0.18} roughness={0.42} />
+            </mesh>
+          )}
+              </>
+            );
+          })()}
         </group>
       ))}
       {civicTreeRows.filter((tree) => !isInsideStadiumReserve(tree.position, stadiumReserve)).map((tree) => (
