@@ -1,6 +1,6 @@
 import React, { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { AdaptiveDpr, AdaptiveEvents, Environment, Html, Loader, OrbitControls, PointerLockControls, Sky, Text, useGLTF, useTexture, useVideoTexture } from '@react-three/drei';
+import { AdaptiveDpr, AdaptiveEvents, Environment, Html, Loader, OrbitControls, PointerLockControls, Sky, Text, useGLTF, useVideoTexture } from '@react-three/drei';
 import { useNavigate } from 'react-router-dom';
 import * as THREE from 'three';
 import { BoothUI } from '../../../components/BoothUI';
@@ -3283,66 +3283,28 @@ function ScreenTextureMaterial({ fallbackColor, url }: { fallbackColor: string; 
   return <meshBasicMaterial color={fallbackColor} map={mappedTexture ?? undefined} toneMapped={false} />;
 }
 
-function useRepeatedExpoTexture(
-  url: string,
-  repeat: [number, number],
-  colorSpace: THREE.ColorSpace = THREE.NoColorSpace
-) {
-  const texture = useTexture(url);
-
-  return useMemo(() => {
-    const clone = texture.clone();
-    clone.wrapS = THREE.RepeatWrapping;
-    clone.wrapT = THREE.RepeatWrapping;
-    clone.repeat.set(repeat[0], repeat[1]);
-    clone.colorSpace = colorSpace;
-    clone.needsUpdate = true;
-    return clone;
-  }, [colorSpace, repeat, texture]);
-}
-
 function ExpoRuntimeSurfaceMaterial({
   fallbackColor,
-  repeat,
-  surface,
+  repeat: _repeat,
+  surface: _surface,
 }: {
   fallbackColor: string;
   repeat: [number, number];
   surface: 'concrete' | 'paver' | 'grass';
 }) {
-  const concreteMap = useRepeatedExpoTexture('/textures/expo-runtime/light-concrete-4k/concrete_floor_worn_001_diff_4k.webp', repeat, THREE.SRGBColorSpace);
-  const concreteNormal = useRepeatedExpoTexture('/textures/expo-runtime/light-concrete-4k/concrete_floor_worn_001_nor_gl_4k.webp', repeat);
-  const concreteRough = useRepeatedExpoTexture('/textures/expo-runtime/light-concrete-4k/concrete_floor_worn_001_rough_4k.webp', repeat);
-  const paverMap = useRepeatedExpoTexture('/textures/expo-runtime/hero-paver-4k/pavement_01_diff_4k.webp', repeat, THREE.SRGBColorSpace);
-  const paverNormal = useRepeatedExpoTexture('/textures/expo-runtime/hero-paver-4k/pavement_01_nor_gl_4k.webp', repeat);
-  const paverRough = useRepeatedExpoTexture('/textures/expo-runtime/hero-paver-4k/pavement_01_rough_4k.webp', repeat);
-  const grassMap = useRepeatedExpoTexture('/textures/expo-runtime/urban-grass-4k/sparse_grass_diff_4k.webp', repeat, THREE.SRGBColorSpace);
-  const grassNormal = useRepeatedExpoTexture('/textures/expo-runtime/urban-grass-4k/sparse_grass_nor_gl_4k.webp', repeat);
-  const grassRough = useRepeatedExpoTexture('/textures/expo-runtime/urban-grass-4k/sparse_grass_rough_4k.webp', repeat);
-
-  const maps = surface === 'concrete'
-    ? { map: concreteMap, normal: concreteNormal, rough: concreteRough, roughness: 0.76, metalness: 0.04, normalScale: new THREE.Vector2(0.36, 0.36) }
-    : surface === 'paver'
-      ? { map: paverMap, normal: paverNormal, rough: paverRough, roughness: 0.64, metalness: 0.08, normalScale: new THREE.Vector2(0.58, 0.58) }
-      : { map: grassMap, normal: grassNormal, rough: grassRough, roughness: 0.92, metalness: 0.02, normalScale: new THREE.Vector2(0.42, 0.42) };
-
   return (
     <meshStandardMaterial
       color={fallbackColor}
-      map={maps.map}
-      normalMap={maps.normal}
-      roughnessMap={maps.rough}
-      normalScale={maps.normalScale}
-      roughness={maps.roughness}
-      metalness={maps.metalness}
+      roughness={0.76}
+      metalness={0.04}
     />
   );
 }
 
 function ExpoArchitecturalMassMaterial({
   fallbackColor,
-  repeat = [1.8, 1.8],
-  surface = 'concrete',
+  repeat: _repeat = [1.8, 1.8],
+  surface: _surface = 'concrete',
   emissive = '#000000',
   emissiveIntensity = 0,
 }: {
@@ -3352,35 +3314,11 @@ function ExpoArchitecturalMassMaterial({
   emissive?: string;
   emissiveIntensity?: number;
 }) {
-  const map = useRepeatedExpoTexture(
-    surface === 'paver'
-      ? '/textures/expo-runtime/hero-paver-4k/pavement_01_diff_4k.webp'
-      : '/textures/expo-runtime/light-concrete-4k/concrete_floor_worn_001_diff_4k.webp',
-    repeat,
-    THREE.SRGBColorSpace
-  );
-  const normal = useRepeatedExpoTexture(
-    surface === 'paver'
-      ? '/textures/expo-runtime/hero-paver-4k/pavement_01_nor_gl_4k.webp'
-      : '/textures/expo-runtime/light-concrete-4k/concrete_floor_worn_001_nor_gl_4k.webp',
-    repeat
-  );
-  const rough = useRepeatedExpoTexture(
-    surface === 'paver'
-      ? '/textures/expo-runtime/hero-paver-4k/pavement_01_rough_4k.webp'
-      : '/textures/expo-runtime/light-concrete-4k/concrete_floor_worn_001_rough_4k.webp',
-    repeat
-  );
-
   return (
     <meshStandardMaterial
       color={fallbackColor}
-      map={map}
-      normalMap={normal}
-      roughnessMap={rough}
-      normalScale={surface === 'paver' ? new THREE.Vector2(0.48, 0.48) : new THREE.Vector2(0.24, 0.24)}
-      roughness={surface === 'paver' ? 0.68 : 0.78}
-      metalness={surface === 'paver' ? 0.08 : 0.05}
+      roughness={0.76}
+      metalness={0.05}
       emissive={emissive}
       emissiveIntensity={emissiveIntensity}
     />
