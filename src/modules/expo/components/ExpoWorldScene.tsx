@@ -3252,7 +3252,7 @@ function SponsorTextureSurface({
     };
   }, [url]);
 
-  return <meshStandardMaterial color={fallbackColor} map={mappedTexture ?? undefined} transparent opacity={opacity} toneMapped={false} />;
+  return <meshBasicMaterial color={fallbackColor} map={mappedTexture ?? undefined} transparent opacity={opacity} toneMapped={false} />;
 }
 
 function ScreenTextureMaterial({ fallbackColor, url }: { fallbackColor: string; url: string }) {
@@ -3286,7 +3286,7 @@ function ScreenTextureMaterial({ fallbackColor, url }: { fallbackColor: string; 
     };
   }, [url]);
 
-  return <meshStandardMaterial color={fallbackColor} emissive={fallbackColor} emissiveIntensity={0.08} map={mappedTexture ?? undefined} toneMapped={false} />;
+  return <meshBasicMaterial color={fallbackColor} map={mappedTexture ?? undefined} toneMapped={false} />;
 }
 
 function useRepeatedExpoTexture(
@@ -4578,9 +4578,7 @@ export function ExpoWorldScene({ activeZone, debug, guests: _guests, mode, onMov
             <GroundPlane visualProfile={visualProfile} />
             <ExpoDistrictPromenade boothPlacements={boothPlacements} sectorMarkers={sectorMarkers} />
             <ExpoCityForeground boothPlacements={visibleBoothPlacements} districtPrograms={districtPrograms} visualProfile={visualProfile} />
-            {EXPO_CITY_QUALITY_TIER === 'quality' && (
-              <ExpoRearCampus boothPlacements={visibleBoothPlacements} playerPosition={playerPosition} visualProfile={visualProfile} />
-            )}
+            <ExpoRearCampus boothPlacements={visibleBoothPlacements} playerPosition={playerPosition} visualProfile={visualProfile} />
             {EXPO_FEATURE_FLAGS.enableCuratedSkylineRing && (
               <CuratedSkylineRing
                 density={EXPO_FEATURE_FLAGS.enableShowcaseSkylineDensity ? 'standard' : 'minimal'}
@@ -4613,14 +4611,12 @@ export function ExpoWorldScene({ activeZone, debug, guests: _guests, mode, onMov
                 ))}
               </group>
 
-              {EXPO_CITY_QUALITY_TIER === 'quality' && (
-                <SponsorScreenHierarchy
-                  boothPlacements={visibleBoothPlacements}
-                  districtPrograms={districtPrograms}
-                  playerPosition={playerPosition}
-                  sectorMarkers={sectorMarkers}
-                />
-              )}
+              <SponsorScreenHierarchy
+                boothPlacements={visibleBoothPlacements}
+                districtPrograms={districtPrograms}
+                playerPosition={playerPosition}
+                sectorMarkers={sectorMarkers}
+              />
 
               {visibleBoothPlacements.length === 0 && (
                 <Html position={[0, 8, 0]} center>
