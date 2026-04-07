@@ -15,10 +15,20 @@ export interface ExpoSceneBooth {
   boothType: BoothType;
   companyId: string;
   ctaLabel: string | null;
+  featuredAssetDescription?: string | null;
+  featuredAssetTitle?: string | null;
+  featuredAssetType?: string | null;
+  featuredAssetUrl?: string | null;
   heroAssetUrl: string | null;
+  heroScreenImageUrl?: string | null;
+  heroScreenText?: string | null;
+  heroScreenTitle?: string | null;
+  heroScreenType?: string | null;
+  heroScreenVideoUrl?: string | null;
   id: string;
   model_url: string | null;
   posterUrl: string | null;
+  showroomEnabled?: boolean;
   slug: string | null;
   video_url: string | null;
 }

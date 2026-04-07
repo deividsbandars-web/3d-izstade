@@ -18,10 +18,20 @@ type ExpoSceneResponse = {
         boothType: BoothType;
         companyId: string;
         ctaLabel: string | null;
+        featuredAssetDescription?: string | null;
+        featuredAssetTitle?: string | null;
+        featuredAssetType?: string | null;
+        featuredAssetUrl?: string | null;
         heroAssetUrl: string | null;
+        heroScreenImageUrl?: string | null;
+        heroScreenText?: string | null;
+        heroScreenTitle?: string | null;
+        heroScreenType?: string | null;
+        heroScreenVideoUrl?: string | null;
         id: string;
         model_url: string | null;
         posterUrl: string | null;
+        showroomEnabled?: boolean;
         slug: string | null;
         video_url: string | null;
     }>;
@@ -394,6 +404,16 @@ export const createGetExpoScene = (getSupabaseClient: typeof getSupabase) => asy
                 video_url: normalizeReleaseMediaUrl(booth?.video_url),
                 posterUrl: normalizeReleaseMediaUrl(c.poster_url ?? booth?.poster_url),
                 heroAssetUrl: normalizeReleaseMediaUrl(c.hero_asset_url ?? booth?.hero_asset_url),
+                showroomEnabled: booth?.showroom_enabled === true,
+                heroScreenType: normalizeNullableString(booth?.hero_screen_type),
+                heroScreenImageUrl: normalizeReleaseMediaUrl(booth?.hero_screen_image_url),
+                heroScreenVideoUrl: normalizeReleaseMediaUrl(booth?.hero_screen_video_url),
+                heroScreenTitle: normalizeNullableString(booth?.hero_screen_title),
+                heroScreenText: normalizeNullableString(booth?.hero_screen_text),
+                featuredAssetType: normalizeNullableString(booth?.featured_asset_type),
+                featuredAssetUrl: normalizeReleaseMediaUrl(booth?.featured_asset_url),
+                featuredAssetTitle: normalizeNullableString(booth?.featured_asset_title),
+                featuredAssetDescription: normalizeNullableString(booth?.featured_asset_description),
                 ctaLabel: normalizeNullableString(c.cta_label ?? booth?.cta_label),
                 slug: uniqueSlugMap.get(String(c.id)) || normalizeCompanySlug(c)
                 };
