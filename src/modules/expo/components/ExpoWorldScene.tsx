@@ -2795,6 +2795,215 @@ function ExpoCityForeground({
   );
 }
 
+void ExpoCityForeground;
+
+function CleanExpoCitySkeleton({
+  boothPlacements,
+  districtPrograms,
+  visualProfile,
+}: {
+  boothPlacements: ExpoBoothPlacement[];
+  districtPrograms: ExpoDistrictProgramSummary[];
+  visualProfile: ExpoWorldVisualProfile;
+}) {
+  const stadiumReserve = useMemo(() => getStadiumReserve(boothPlacements), [boothPlacements]);
+  const districtStride = 548;
+
+  const arrivalPlanes = useMemo(() => ([
+    { id: 'arrival-main', position: [0, 0.018, 64] as [number, number, number], size: [260, 220] as [number, number], color: '#eef4f7' },
+    { id: 'arrival-spine', position: [0, 0.02, -84] as [number, number, number], size: [96, 520] as [number, number], color: '#dde7ef' },
+    { id: 'arrival-left', position: [-168, 0.018, -18] as [number, number, number], size: [146, 264] as [number, number], color: '#d6e2ea' },
+    { id: 'arrival-right', position: [168, 0.018, -18] as [number, number, number], size: [146, 264] as [number, number], color: '#d6e2ea' },
+  ]), []);
+
+  const mediaWallBlocks = useMemo(() => {
+    const entries = districtPrograms.slice(0, Math.max(3, districtPrograms.length)).flatMap((district, districtIndex) => {
+      const baseZ = -160 - (districtIndex * districtStride);
+      return [
+        {
+          id: `${district.sectorId ?? district.clusterIndex}-media-left-wall`,
+          position: [-356, 42, baseZ + 36] as [number, number, number],
+          size: [132, 84, 20] as [number, number, number],
+          color: '#5a6d7e',
+        },
+        {
+          id: `${district.sectorId ?? district.clusterIndex}-media-left-support`,
+          position: [-438, 28, baseZ - 104] as [number, number, number],
+          size: [72, 56, 64] as [number, number, number],
+          color: '#6f818e',
+        },
+        {
+          id: `${district.sectorId ?? district.clusterIndex}-media-left-anchor`,
+          position: [-292, 14, baseZ - 198] as [number, number, number],
+          size: [94, 28, 88] as [number, number, number],
+          color: '#718390',
+        },
+      ];
+    });
+
+    return filterReservedSponsorFrontageEntries(entries, boothPlacements, { frontDepth: 480, rearDepth: 180, sideWidth: 220, radius: 280 });
+  }, [districtPrograms, boothPlacements]);
+
+  const showcasePlazas = useMemo(() => {
+    const entries = districtPrograms.slice(0, Math.max(3, districtPrograms.length)).flatMap((district, districtIndex) => {
+      const baseZ = -182 - (districtIndex * districtStride);
+      return [
+        { id: `${district.sectorId ?? district.clusterIndex}-showcase-main`, position: [0, 0.019, baseZ + 148] as [number, number, number], size: [176, 82] as [number, number], color: '#f0f5f8' },
+        { id: `${district.sectorId ?? district.clusterIndex}-showcase-left`, position: [-134, 0.018, baseZ + 66] as [number, number, number], size: [82, 108] as [number, number], color: '#dfe8ee' },
+        { id: `${district.sectorId ?? district.clusterIndex}-showcase-right`, position: [134, 0.018, baseZ + 52] as [number, number, number], size: [82, 108] as [number, number], color: '#dfe8ee' },
+      ];
+    });
+
+    return filterReservedSponsorFrontageEntries(entries, boothPlacements, { frontDepth: 420, rearDepth: 180, sideWidth: 180, radius: 220 });
+  }, [districtPrograms, boothPlacements]);
+
+  const rightSupportBlocks = useMemo(() => {
+    const entries = districtPrograms.slice(0, Math.max(3, districtPrograms.length)).flatMap((district, districtIndex) => {
+      const baseZ = -196 - (districtIndex * districtStride);
+      return [
+        {
+          id: `${district.sectorId ?? district.clusterIndex}-right-support-front`,
+          position: [332, 20, baseZ + 72] as [number, number, number],
+          size: [84, 40, 78] as [number, number, number],
+          color: '#6d808d',
+        },
+        {
+          id: `${district.sectorId ?? district.clusterIndex}-right-support-rear`,
+          position: [452, 48, baseZ - 214] as [number, number, number],
+          size: [112, 96, 118] as [number, number, number],
+          color: '#80929f',
+        },
+      ];
+    });
+
+    return filterReservedSponsorFrontageEntries(entries, boothPlacements, { frontDepth: 540, rearDepth: 220, sideWidth: 280, radius: 340 });
+  }, [districtPrograms, boothPlacements]);
+
+  const discoveryEdgeBlocks = useMemo(() => {
+    const districtCount = Math.max(1, districtPrograms.length);
+    const endBaseZ = -196 - ((districtCount - 1) * districtStride) - 860;
+
+    return [
+      {
+        id: 'discovery-anchor-left',
+        position: [-768, 82, endBaseZ] as [number, number, number],
+        size: [176, 164, 148] as [number, number, number],
+        color: '#81919d',
+      },
+      {
+        id: 'discovery-anchor-right',
+        position: [768, 88, endBaseZ - 64] as [number, number, number],
+        size: [188, 176, 156] as [number, number, number],
+        color: '#8394a0',
+      },
+      {
+        id: 'discovery-hero-plinth',
+        position: [0, 28, endBaseZ - 142] as [number, number, number],
+        size: [248, 56, 74] as [number, number, number],
+        color: '#94a6b2',
+      },
+      {
+        id: 'discovery-landmark-wall',
+        position: [0, 76, endBaseZ - 224] as [number, number, number],
+        size: [168, 152, 28] as [number, number, number],
+        color: '#5d7282',
+      },
+    ];
+  }, [districtPrograms.length]);
+
+  const cleanTowerLandmarks = useMemo(() => {
+    const entries = districtPrograms.slice(0, Math.max(3, districtPrograms.length)).flatMap((district, districtIndex) => {
+      const baseZ = -196 - (districtIndex * districtStride);
+      return [
+        {
+          id: `${district.sectorId ?? district.clusterIndex}-hero-tower-left`,
+          position: [-532, 106, baseZ - 284] as [number, number, number],
+          baseSize: [46, 212, 34] as [number, number, number],
+          upperSize: [34, 86, 26] as [number, number, number],
+          color: '#617583',
+          crownColor: visualProfile.global.hudAccent,
+        },
+        {
+          id: `${district.sectorId ?? district.clusterIndex}-hero-tower-right`,
+          position: [532, 116, baseZ - 332] as [number, number, number],
+          baseSize: [52, 232, 38] as [number, number, number],
+          upperSize: [38, 96, 28] as [number, number, number],
+          color: '#647887',
+          crownColor: visualProfile.global.hudAccent,
+        },
+        {
+          id: `${district.sectorId ?? district.clusterIndex}-mid-tower-left`,
+          position: [-262, 74, baseZ - 96] as [number, number, number],
+          baseSize: [30, 148, 24] as [number, number, number],
+          upperSize: [22, 54, 18] as [number, number, number],
+          color: '#718391',
+          crownColor: '#d7e2ea',
+        },
+        {
+          id: `${district.sectorId ?? district.clusterIndex}-mid-tower-right`,
+          position: [262, 70, baseZ - 128] as [number, number, number],
+          baseSize: [30, 140, 24] as [number, number, number],
+          upperSize: [22, 48, 18] as [number, number, number],
+          color: '#718391',
+          crownColor: '#d7e2ea',
+        },
+      ];
+    });
+
+    return filterReservedSponsorFrontageEntries(entries, boothPlacements, { frontDepth: 620, rearDepth: 260, sideWidth: 300, radius: 420 });
+  }, [districtPrograms, boothPlacements, visualProfile.global.hudAccent]);
+
+  return (
+    <group name="clean-expo-city-skeleton">
+      {arrivalPlanes.map((plane) => (
+        <mesh key={plane.id} position={plane.position} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+          <planeGeometry args={plane.size} />
+          <meshStandardMaterial color={plane.color} roughness={0.72} metalness={0.04} />
+        </mesh>
+      ))}
+
+      {[...showcasePlazas]
+        .filter((plane) => !overlapsStadiumReserve(plane.position, stadiumReserve, plane.size))
+        .map((plane) => (
+          <mesh key={plane.id} position={plane.position} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+            <planeGeometry args={plane.size} />
+            <meshStandardMaterial color={plane.color} roughness={0.7} metalness={0.04} />
+          </mesh>
+        ))}
+
+      {[...mediaWallBlocks, ...rightSupportBlocks, ...discoveryEdgeBlocks]
+        .filter((mass) => !overlapsStadiumReserve(mass.position, stadiumReserve, mass.size))
+        .map((mass) => (
+          <group key={mass.id} position={mass.position}>
+            <mesh castShadow receiveShadow>
+              <boxGeometry args={mass.size} />
+              <ExpoArchitecturalMassMaterial fallbackColor={mass.color} />
+            </mesh>
+          </group>
+        ))}
+
+      {cleanTowerLandmarks
+        .filter((tower) => !overlapsStadiumReserve(tower.position, stadiumReserve, tower.baseSize))
+        .map((tower) => (
+          <group key={tower.id} position={tower.position}>
+            <mesh castShadow receiveShadow>
+              <boxGeometry args={tower.baseSize} />
+              <ExpoArchitecturalMassMaterial fallbackColor={tower.color} emissive={tower.crownColor} emissiveIntensity={0.01} />
+            </mesh>
+            <mesh position={[0, tower.baseSize[1] * 0.24, 0]} castShadow receiveShadow>
+              <boxGeometry args={tower.upperSize} />
+              <ExpoArchitecturalMassMaterial fallbackColor="#94a6b2" emissive={tower.crownColor} emissiveIntensity={0.012} />
+            </mesh>
+            <mesh position={[0, (tower.baseSize[1] * 0.5) + 2.2, 0]} castShadow>
+              <boxGeometry args={[tower.baseSize[0] * 0.62, 1.8, tower.baseSize[2] * 0.62]} />
+              <meshStandardMaterial color={tower.crownColor} metalness={0.12} roughness={0.44} />
+            </mesh>
+          </group>
+        ))}
+    </group>
+  );
+}
+
 function ExpoRearCampus({
   boothPlacements,
   playerPosition,
@@ -4647,7 +4856,7 @@ export function ExpoWorldScene({ activeZone, debug, guests: _guests, mode, onMov
 
             <GroundPlane visualProfile={visualProfile} />
             <ExpoDistrictPromenade boothPlacements={boothPlacements} sectorMarkers={sectorMarkers} />
-            <ExpoCityForeground boothPlacements={visibleBoothPlacements} districtPrograms={districtPrograms} visualProfile={visualProfile} />
+            <CleanExpoCitySkeleton boothPlacements={visibleBoothPlacements} districtPrograms={districtPrograms} visualProfile={visualProfile} />
             <ExpoRearCampus boothPlacements={visibleBoothPlacements} playerPosition={playerPosition} visualProfile={visualProfile} />
             {EXPO_FEATURE_FLAGS.enableCuratedSkylineRing && (
               <CuratedSkylineRing
