@@ -226,17 +226,13 @@ export function buildSponsorScreenLayout(
     .filter((node): node is NonNullable<typeof node> => node !== null);
 
   const mediumScreens: SponsorScreenNode[] = rankedPlacements
-    .flatMap((placement, placementIndex) => {
-      const variants = placementIndex < 4 ? 2 : 1;
-      return Array.from({ length: variants }, (_, variantIndex) => ({ placement, index: placementIndex * 2 + variantIndex }));
-    })
-    .slice(0, 24)
-    .map(({ placement, index }) => {
+    .slice(0, 10)
+    .map((placement, index) => {
       const presentation = buildSponsorBoothPresentation(placement.company, placement.company.booth ?? null, placement.nodeType, { districtThemeId: placement.districtThemeId });
       const side = placement.position[0] < 0 ? -1 : 1;
-      const laneOffset = index % 4 === 0 ? 124 : index % 4 === 1 ? 176 : index % 4 === 2 ? 232 : 292;
+      const laneOffset = [164, 248, 336, 428][index % 4] ?? 248;
       const isElite = presentation.adTier === 'elite';
-      const depthOffset = 34 + Math.floor(index / 2) * 62;
+      const depthOffset = 48 + Math.floor(index / 2) * 112;
 
       return {
         accentColor: placement.color,
@@ -306,35 +302,7 @@ export function buildSponsorScreenLayout(
     } satisfies SponsorScreenNode;
   });
 
-  const boulevardGroundScreens = rankedPlacements.flatMap((placement, placementIndex) => {
-    const variants = placementIndex < 3 ? 2 : 1;
-    return Array.from({ length: variants }, (_, variantIndex) => ({ placement, index: placementIndex * 2 + variantIndex }));
-  }).slice(0, 14).map(({ placement, index }) => {
-    const presentation = buildSponsorBoothPresentation(placement.company, placement.company.booth ?? null, placement.nodeType, { districtThemeId: placement.districtThemeId });
-    const side = placement.position[0] < 0 ? -1 : 1;
-    const zoneOffset = 188 + (index % 2) * 72;
-    return {
-      accentColor: placement.color,
-      ctaLabel: presentation.actions.find((action) => !action.disabled)?.label || 'Discover',
-      companyId: placement.company?.id ?? null,
-      fallbackEyebrow: presentation.fallbackIdentity.eyebrow,
-      fallbackMonogram: presentation.fallbackIdentity.monogram,
-      fallbackMode: !presentation.hasBrandAssets,
-      id: `ground-screen-boulevard-${placement.id}-${index}`,
-      imageUrl: pickScreenImage(placement, 'ground_pylon', index + 1, presentation.hasBrandAssets),
-      kind: 'ground_pylon' as const,
-      placementTier: (presentation.adTier === 'elite' || presentation.adTier === 'premium' ? 'premium' : 'city') as SponsorPlacementTier,
-      position: [placement.position[0] + (side * zoneOffset), 6.4, placement.position[2] - 42] as [number, number, number],
-      priority: Number(placement.priority || 0),
-      rotation: [0, side < 0 ? 0.28 : -0.28, 0] as [number, number, number],
-      sectorName: placement.sectorName || null,
-      size: presentation.adTier === 'elite' ? ([8.4, 14.8] as [number, number]) : ([6.6, 11.6] as [number, number]),
-      subtitle: pickSubtitle(placement, 'Boulevard sponsor'),
-      title: pickTitle(placement, 'Sponsor boulevard'),
-    } satisfies SponsorScreenNode;
-  });
-
-  const groundScreens = [arrivalGroundScreen, ...districtGroundScreens, ...boulevardGroundScreens];
+  const groundScreens = [arrivalGroundScreen, ...districtGroundScreens];
 
   const districtFrontage = Object.fromEntries(districtPrograms.map((district) => {
     const key = district.sectorId ?? `cluster-${district.clusterIndex}`;

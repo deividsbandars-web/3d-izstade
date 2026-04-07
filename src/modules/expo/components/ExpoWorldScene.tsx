@@ -1246,14 +1246,7 @@ function ExpoCityForeground({
   visualProfile: ExpoWorldVisualProfile;
 }) {
   const enableHeavyShadows = EXPO_FEATURE_FLAGS.enableShowcaseSkylineDensity;
-  const useGroundTextures = EXPO_FEATURE_FLAGS.enablePromenadeTexture;
   const stadiumReserve = useMemo(() => getStadiumReserve(boothPlacements), [boothPlacements]);
-  const cityRoadMap = useRepeatedExpoTexture('/textures/expo-runtime/hero-paver-4k/pavement_01_diff_4k.webp', [2.2, 6.2], THREE.SRGBColorSpace);
-  const cityRoadNormal = useRepeatedExpoTexture('/textures/expo-runtime/hero-paver-4k/pavement_01_nor_gl_4k.webp', [2.2, 6.2]);
-  const cityRoadRough = useRepeatedExpoTexture('/textures/expo-runtime/hero-paver-4k/pavement_01_rough_4k.webp', [2.2, 6.2]);
-  const cityPlazaMap = useRepeatedExpoTexture('/textures/expo-runtime/light-concrete-4k/concrete_floor_worn_001_diff_4k.webp', [2.8, 2.8], THREE.SRGBColorSpace);
-  const cityPlazaNormal = useRepeatedExpoTexture('/textures/expo-runtime/light-concrete-4k/concrete_floor_worn_001_nor_gl_4k.webp', [2.8, 2.8]);
-  const cityPlazaRough = useRepeatedExpoTexture('/textures/expo-runtime/light-concrete-4k/concrete_floor_worn_001_rough_4k.webp', [2.8, 2.8]);
   const cityStreetMoments = useMemo(() => {
     const entries = districtPrograms.flatMap((district, districtIndex) => {
       const baseZ = -196 - (districtIndex * 548);
@@ -2481,61 +2474,61 @@ function ExpoCityForeground({
         {cityStreetMoments.filter((street) => !overlapsStadiumReserve(street.position, stadiumReserve, street.size)).map((street) => (
           <mesh key={street.id} position={street.position} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
             <planeGeometry args={street.size} />
-            <meshStandardMaterial color={street.color} map={useGroundTextures ? cityRoadMap : undefined} normalMap={useGroundTextures ? cityRoadNormal : undefined} roughnessMap={useGroundTextures ? cityRoadRough : undefined} normalScale={useGroundTextures ? new THREE.Vector2(0.44, 0.44) : undefined} roughness={0.82} metalness={0.05} />
+            <meshStandardMaterial color={street.color} roughness={0.82} metalness={0.05} />
           </mesh>
       ))}
       {cityBranchMoments.filter((branch) => !overlapsStadiumReserve(branch.position, stadiumReserve, branch.size)).map((branch) => (
         <mesh key={branch.id} position={branch.position} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
           <planeGeometry args={branch.size} />
-          <meshStandardMaterial color={branch.color} map={useGroundTextures ? cityPlazaMap : undefined} normalMap={useGroundTextures ? cityPlazaNormal : undefined} roughnessMap={useGroundTextures ? cityPlazaRough : undefined} normalScale={useGroundTextures ? new THREE.Vector2(0.28, 0.28) : undefined} roughness={0.76} metalness={0.04} />
+          <meshStandardMaterial color={branch.color} roughness={0.76} metalness={0.04} />
         </mesh>
       ))}
       {districtCharacterCourts.filter((court) => !overlapsStadiumReserve(court.position, stadiumReserve, court.size)).map((court) => (
         <mesh key={court.id} position={court.position} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
           <planeGeometry args={court.size} />
-          <meshStandardMaterial color={court.color} map={useGroundTextures ? cityPlazaMap : undefined} normalMap={useGroundTextures ? cityPlazaNormal : undefined} roughnessMap={useGroundTextures ? cityPlazaRough : undefined} normalScale={useGroundTextures ? new THREE.Vector2(0.24, 0.24) : undefined} roughness={0.72} metalness={0.04} />
+          <meshStandardMaterial color={court.color} roughness={0.72} metalness={0.04} />
         </mesh>
       ))}
       {avenueQuarterPlazas.filter((plaza) => !overlapsStadiumReserve(plaza.position, stadiumReserve, plaza.size)).map((plaza) => (
         <mesh key={plaza.id} position={plaza.position} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
           <planeGeometry args={plaza.size} />
-          <meshStandardMaterial color={plaza.color} map={useGroundTextures ? cityPlazaMap : undefined} normalMap={useGroundTextures ? cityPlazaNormal : undefined} roughnessMap={useGroundTextures ? cityPlazaRough : undefined} normalScale={useGroundTextures ? new THREE.Vector2(0.24, 0.24) : undefined} roughness={0.68} metalness={0.04} />
+          <meshStandardMaterial color={plaza.color} roughness={0.68} metalness={0.04} />
         </mesh>
       ))}
       {boulevardSidePlazas.filter((plaza) => !overlapsStadiumReserve(plaza.position, stadiumReserve, plaza.size)).map((plaza) => (
         <mesh key={plaza.id} position={plaza.position} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
           <planeGeometry args={plaza.size} />
-          <meshStandardMaterial color={plaza.color} map={useGroundTextures ? cityPlazaMap : undefined} normalMap={useGroundTextures ? cityPlazaNormal : undefined} roughnessMap={useGroundTextures ? cityPlazaRough : undefined} normalScale={useGroundTextures ? new THREE.Vector2(0.22, 0.22) : undefined} roughness={0.7} metalness={0.04} />
+          <meshStandardMaterial color={plaza.color} roughness={0.7} metalness={0.04} />
         </mesh>
       ))}
       {boulevardMedianPlazas.filter((plaza) => !overlapsStadiumReserve(plaza.position, stadiumReserve, plaza.size)).map((plaza) => (
         <mesh key={plaza.id} position={plaza.position} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
           <planeGeometry args={plaza.size} />
-          <meshStandardMaterial color={plaza.color} map={useGroundTextures ? cityRoadMap : undefined} normalMap={useGroundTextures ? cityRoadNormal : undefined} roughnessMap={useGroundTextures ? cityRoadRough : undefined} normalScale={useGroundTextures ? new THREE.Vector2(0.2, 0.2) : undefined} roughness={0.66} metalness={0.06} />
+          <meshStandardMaterial color={plaza.color} roughness={0.66} metalness={0.06} />
         </mesh>
       ))}
       {districtCharacterPromenades.filter((plaza) => !overlapsStadiumReserve(plaza.position, stadiumReserve, plaza.size)).map((plaza) => (
         <mesh key={plaza.id} position={plaza.position} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
           <planeGeometry args={plaza.size} />
-          <meshStandardMaterial color={plaza.color} map={useGroundTextures ? cityPlazaMap : undefined} normalMap={useGroundTextures ? cityPlazaNormal : undefined} roughnessMap={useGroundTextures ? cityPlazaRough : undefined} normalScale={useGroundTextures ? new THREE.Vector2(0.24, 0.24) : undefined} roughness={0.68} metalness={0.04} />
+          <meshStandardMaterial color={plaza.color} roughness={0.68} metalness={0.04} />
         </mesh>
       ))}
       {districtMonetizationPockets.filter((plaza) => !overlapsStadiumReserve(plaza.position, stadiumReserve, plaza.size)).map((plaza) => (
         <mesh key={plaza.id} position={plaza.position} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
           <planeGeometry args={plaza.size} />
-          <meshStandardMaterial color={plaza.color} map={useGroundTextures ? cityRoadMap : undefined} normalMap={useGroundTextures ? cityRoadNormal : undefined} roughnessMap={useGroundTextures ? cityRoadRough : undefined} normalScale={useGroundTextures ? new THREE.Vector2(0.24, 0.24) : undefined} roughness={0.64} metalness={0.06} />
+          <meshStandardMaterial color={plaza.color} roughness={0.64} metalness={0.06} />
         </mesh>
       ))}
       {districtTransitionPockets.filter((plaza) => !overlapsStadiumReserve(plaza.position, stadiumReserve, plaza.size)).map((plaza) => (
         <mesh key={plaza.id} position={plaza.position} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
           <planeGeometry args={plaza.size} />
-          <meshStandardMaterial color={plaza.color} map={useGroundTextures ? cityPlazaMap : undefined} normalMap={useGroundTextures ? cityPlazaNormal : undefined} roughnessMap={useGroundTextures ? cityPlazaRough : undefined} normalScale={useGroundTextures ? new THREE.Vector2(0.24, 0.24) : undefined} roughness={0.66} metalness={0.04} />
+          <meshStandardMaterial color={plaza.color} roughness={0.66} metalness={0.04} />
         </mesh>
       ))}
       {districtTransitionBands.filter((band) => !overlapsStadiumReserve(band.position, stadiumReserve, band.size)).map((band) => (
         <mesh key={band.id} position={band.position} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
           <planeGeometry args={band.size} />
-          <meshStandardMaterial color={band.color} map={useGroundTextures ? cityRoadMap : undefined} normalMap={useGroundTextures ? cityRoadNormal : undefined} roughnessMap={useGroundTextures ? cityRoadRough : undefined} normalScale={useGroundTextures ? new THREE.Vector2(0.18, 0.18) : undefined} roughness={0.7} metalness={0.05} />
+          <meshStandardMaterial color={band.color} roughness={0.7} metalness={0.05} />
         </mesh>
       ))}
       {[...districtMasses, ...districtCharacterMasses, ...cityQuarterBands, ...promenadeEdgeBands, ...districtThresholdFrames, ...districtTransitionFrames, ...districtMonetizationFrames, ...cityStitchMasses, ...visibleDeepBackdropMasses]
