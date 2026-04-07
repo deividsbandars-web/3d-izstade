@@ -4555,9 +4555,9 @@ export function ExpoWorldScene({ activeZone, debug, guests: _guests, mode, onMov
       <BoothUI visible={debug && !!activeZone} zoneName={activeZone?.id} />
       <Canvas
         shadows={EXPO_CITY_QUALITY_TIER === 'quality'}
-        dpr={EXPO_CITY_QUALITY_TIER === 'quality' ? [0.85, 1.2] : [0.65, 0.95]}
+        dpr={EXPO_CITY_QUALITY_TIER === 'quality' ? [0.85, 1.2] : [0.55, 0.8]}
         gl={{ antialias: false, powerPreference: 'high-performance' }}
-        performance={{ min: EXPO_CITY_QUALITY_TIER === 'quality' ? 0.5 : 0.7 }}
+        performance={{ min: EXPO_CITY_QUALITY_TIER === 'quality' ? 0.5 : 0.85 }}
         camera={{ position: [0, 2, 10], fov: 60, far: 10000 }}
       >
         <SceneBridge startView={startView} />
