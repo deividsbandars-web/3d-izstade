@@ -258,6 +258,40 @@ function loadTextureWithCandidateUrls(loader: THREE.TextureLoader, urls: string[
   });
 }
 
+const EXPO_TEXTURE_CACHE = new Map<string, THREE.Texture | null>();
+const EXPO_TEXTURE_PROMISE_CACHE = new Map<string, Promise<THREE.Texture | null>>();
+
+function loadCachedExpoTexture(url: string) {
+  const cachedTexture = EXPO_TEXTURE_CACHE.get(url);
+  if (cachedTexture !== undefined) {
+    return Promise.resolve(cachedTexture);
+  }
+
+  const cachedPromise = EXPO_TEXTURE_PROMISE_CACHE.get(url);
+  if (cachedPromise) {
+    return cachedPromise;
+  }
+
+  const loader = new THREE.TextureLoader();
+  const candidateUrls = resolveExpoTextureCandidateUrls(url);
+  const promise = loadTextureWithCandidateUrls(loader, candidateUrls)
+    .then((texture) => {
+      texture.colorSpace = THREE.SRGBColorSpace;
+      texture.needsUpdate = true;
+      EXPO_TEXTURE_CACHE.set(url, texture);
+      EXPO_TEXTURE_PROMISE_CACHE.delete(url);
+      return texture;
+    })
+    .catch(() => {
+      EXPO_TEXTURE_CACHE.set(url, null);
+      EXPO_TEXTURE_PROMISE_CACHE.delete(url);
+      return null;
+    });
+
+  EXPO_TEXTURE_PROMISE_CACHE.set(url, promise);
+  return promise;
+}
+
 function buildGroundFallbackNormalMap(color: string, accentColor: string) {
   const size = 64;
   const canvas = document.createElement('canvas');
@@ -3220,19 +3254,12 @@ function SponsorTextureSurface({
 
   useEffect(() => {
     let isActive = true;
-    const loader = new THREE.TextureLoader();
-    const candidateUrls = resolveExpoTextureCandidateUrls(url);
-
-    loadTextureWithCandidateUrls(loader, candidateUrls)
+    loadCachedExpoTexture(url)
       .then((texture) => {
         if (!isActive) {
           return;
         }
-
-        const clone = texture.clone();
-        clone.colorSpace = THREE.SRGBColorSpace;
-        clone.needsUpdate = true;
-        setMappedTexture(clone);
+        setMappedTexture(texture);
       })
       .catch(() => {
         if (!isActive) {
@@ -3254,19 +3281,12 @@ function ScreenTextureMaterial({ fallbackColor, url }: { fallbackColor: string; 
 
   useEffect(() => {
     let isActive = true;
-    const loader = new THREE.TextureLoader();
-    const candidateUrls = resolveExpoTextureCandidateUrls(url);
-
-    loadTextureWithCandidateUrls(loader, candidateUrls)
+    loadCachedExpoTexture(url)
       .then((texture) => {
         if (!isActive) {
           return;
         }
-
-        const clone = texture.clone();
-        clone.colorSpace = THREE.SRGBColorSpace;
-        clone.needsUpdate = true;
-        setMappedTexture(clone);
+        setMappedTexture(texture);
       })
       .catch(() => {
         if (!isActive) {
@@ -4217,6 +4237,7 @@ function Player({
   const spawnChecked = useRef(false);
   const startFramingApplied = useRef(false);
   const lastMoveTime = useRef(0);
+  const lastReportedPosition = useRef<[number, number, number]>([0, 0, 0]);
 
   useEffect(() => {
     camera.position.set(-8, 5, 10);
@@ -4350,9 +4371,17 @@ function Player({
     camera.position.setX(Math.min(bounds.maxX, Math.max(bounds.minX, camera.position.x)));
     camera.position.setZ(Math.min(bounds.maxZ, Math.max(bounds.minZ, camera.position.z)));
 
-    if (moved && Date.now() - lastMoveTime.current > 200) {
-      lastMoveTime.current = Date.now();
-      onMove([camera.position.x, camera.position.y, camera.position.z]);
+    if (moved) {
+      const now = Date.now();
+      const dx = camera.position.x - lastReportedPosition.current[0];
+      const dz = camera.position.z - lastReportedPosition.current[2];
+      const distanceSq = (dx * dx) + (dz * dz);
+
+      if (now - lastMoveTime.current > 450 || distanceSq > 28 * 28) {
+        lastMoveTime.current = now;
+        lastReportedPosition.current = [camera.position.x, camera.position.y, camera.position.z];
+        onMove(lastReportedPosition.current);
+      }
     }
   });
 
