@@ -4554,10 +4554,10 @@ export function ExpoWorldScene({ activeZone, debug, guests: _guests, mode, onMov
     <>
       <BoothUI visible={debug && !!activeZone} zoneName={activeZone?.id} />
       <Canvas
-        shadows
-        dpr={[0.75, 1.1]}
+        shadows={EXPO_CITY_QUALITY_TIER === 'quality'}
+        dpr={EXPO_CITY_QUALITY_TIER === 'quality' ? [0.85, 1.2] : [0.65, 0.95]}
         gl={{ antialias: false, powerPreference: 'high-performance' }}
-        performance={{ min: 0.4 }}
+        performance={{ min: EXPO_CITY_QUALITY_TIER === 'quality' ? 0.5 : 0.7 }}
         camera={{ position: [0, 2, 10], fov: 60, far: 10000 }}
       >
         <SceneBridge startView={startView} />
@@ -4568,12 +4568,12 @@ export function ExpoWorldScene({ activeZone, debug, guests: _guests, mode, onMov
             {EXPO_FEATURE_FLAGS.enableStreetEnvironmentLighting ? (
               <Environment files="/models/modern_evening_street_4k.exr" />
             ) : (
-              <Environment preset="city" />
+              <Environment preset="park" />
             )}
-            <ambientLight intensity={0.3} />
-            <directionalLight position={[20, 30, 10]} intensity={1.5} castShadow={false} />
-            <hemisphereLight args={['#87CEEB', '#222222', 0.5]} />
-            {EXPO_FEATURE_FLAGS.enableFog && <fog attach="fog" args={['#0a0a0a', 80, 300]} />}
+            <ambientLight intensity={0.55} />
+            <directionalLight position={[20, 34, 14]} intensity={2.15} castShadow={false} />
+            <hemisphereLight args={['#d7ecff', '#7f8ea3', 1.05]} />
+            {EXPO_FEATURE_FLAGS.enableFog && <fog attach="fog" args={['#9eb6d4', 180, 520]} />}
 
             <GroundPlane visualProfile={visualProfile} />
             <ExpoDistrictPromenade boothPlacements={boothPlacements} sectorMarkers={sectorMarkers} />
