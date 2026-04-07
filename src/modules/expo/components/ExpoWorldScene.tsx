@@ -2502,6 +2502,7 @@ function ExpoCityForeground({
     () => (EXPO_FEATURE_FLAGS.enableShowcaseSkylineDensity ? districtTowerClusters : districtTowerClusters.filter((_, index) => index % 2 === 0)),
     [districtTowerClusters]
   );
+  const enableLegacyClutterLayers = false;
 
     return (
       <group name="expo-city-foreground">
@@ -2565,7 +2566,33 @@ function ExpoCityForeground({
           <meshStandardMaterial color={band.color} roughness={0.7} metalness={0.05} />
         </mesh>
       ))}
-      {[...districtMasses, ...districtCharacterMasses, ...cityQuarterBands, ...promenadeEdgeBands, ...districtThresholdFrames, ...districtTransitionFrames, ...districtMonetizationFrames, ...cityStitchMasses, ...visibleDeepBackdropMasses]
+      {[...districtMasses, ...visibleDeepBackdropMasses]
+        .filter((mass) => !overlapsStadiumReserve(mass.position, stadiumReserve, mass.size))
+        .map((mass) => (
+        <group key={mass.id} position={mass.position}>
+          {(() => {
+            const enrichedMass = mass as typeof mass & { emissive?: string; emissiveIntensity?: number; trim?: string };
+            return (
+          <mesh castShadow={enableHeavyShadows} receiveShadow>
+            <boxGeometry args={mass.size} />
+            <ExpoArchitecturalMassMaterial
+              fallbackColor={mass.color}
+              repeat={[Math.max(1.2, mass.size[0] / 180), Math.max(1.2, mass.size[2] / 180)]}
+              emissive={typeof enrichedMass.emissive === 'string' ? enrichedMass.emissive : '#000000'}
+              emissiveIntensity={typeof enrichedMass.emissiveIntensity === 'number' ? enrichedMass.emissiveIntensity : 0}
+            />
+          </mesh>
+            );
+          })()}
+          {'trim' in mass && (
+            <mesh position={[0, mass.size[1] * 0.5 + 0.18, 0]} castShadow={enableHeavyShadows}>
+              <boxGeometry args={[Math.max(4, mass.size[0] * 0.72), 0.22, Math.max(3, mass.size[2] * 0.74)]} />
+              <meshStandardMaterial color={typeof (mass as { trim?: string }).trim === 'string' ? (mass as { trim?: string }).trim : '#d7e2ea'} metalness={0.18} roughness={0.58} />
+            </mesh>
+          )}
+        </group>
+      ))}
+      {enableLegacyClutterLayers && [...districtCharacterMasses, ...cityQuarterBands, ...promenadeEdgeBands, ...districtThresholdFrames, ...districtTransitionFrames, ...districtMonetizationFrames, ...cityStitchMasses]
         .filter((mass) => !overlapsStadiumReserve(mass.position, stadiumReserve, mass.size))
         .map((mass) => (
         <group key={mass.id} position={mass.position}>
