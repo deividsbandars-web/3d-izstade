@@ -1125,13 +1125,13 @@ function ExpoDistrictPromenade({
           </mesh>
         </group>
       ))}
-      {Array.from({ length: laneCount }, (_, index) => laneStartZ - index * laneStep).map((z) => (
+      {EXPO_FEATURE_FLAGS.enableEnhancedBoulevardDetail && Array.from({ length: laneCount }, (_, index) => laneStartZ - index * laneStep).map((z) => (
         <mesh key={`lane-${z}`} position={[0, 0.08, z]} rotation={[-Math.PI / 2, 0, 0]}>
           <planeGeometry args={[3.8, 10.8]} />
           <meshStandardMaterial color="#e2e8f0" emissive="#cbd5e1" emissiveIntensity={0.04} transparent opacity={0.88} />
         </mesh>
       ))}
-      {Array.from({ length: laneCount - 2 }, (_, index) => laneStartZ - 36 - index * laneStep).map((z) => (
+      {EXPO_FEATURE_FLAGS.enableEnhancedBoulevardDetail && Array.from({ length: laneCount - 2 }, (_, index) => laneStartZ - 36 - index * laneStep).map((z) => (
         <group key={`side-wayfinding-${z}`}>
           <mesh position={[-sidePromenadeX, 0.052, z]} rotation={[-Math.PI / 2, 0, 0]}>
             <planeGeometry args={[3.2, 11.2]} />
