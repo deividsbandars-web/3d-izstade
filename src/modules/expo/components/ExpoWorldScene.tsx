@@ -4578,12 +4578,16 @@ export function ExpoWorldScene({ activeZone, debug, guests: _guests, mode, onMov
             <GroundPlane visualProfile={visualProfile} />
             <ExpoDistrictPromenade boothPlacements={boothPlacements} sectorMarkers={sectorMarkers} />
             <ExpoCityForeground boothPlacements={visibleBoothPlacements} districtPrograms={districtPrograms} visualProfile={visualProfile} />
-            <ExpoRearCampus boothPlacements={visibleBoothPlacements} playerPosition={playerPosition} visualProfile={visualProfile} />
-            <CuratedSkylineRing
-              density={EXPO_FEATURE_FLAGS.enableShowcaseSkylineDensity ? 'standard' : 'minimal'}
-              visualProfile={visualProfile}
-              walkRegions={walkRegions}
-            />
+            {EXPO_CITY_QUALITY_TIER === 'quality' && (
+              <ExpoRearCampus boothPlacements={visibleBoothPlacements} playerPosition={playerPosition} visualProfile={visualProfile} />
+            )}
+            {EXPO_FEATURE_FLAGS.enableCuratedSkylineRing && (
+              <CuratedSkylineRing
+                density={EXPO_FEATURE_FLAGS.enableShowcaseSkylineDensity ? 'standard' : 'minimal'}
+                visualProfile={visualProfile}
+                walkRegions={walkRegions}
+              />
+            )}
             {(EXPO_SPATIAL_DEBUG_FLAGS.showSpawnMarkers || EXPO_SPATIAL_DEBUG_FLAGS.showWalkCorridor) && (
               <SpawnDebugOverlay playBounds={playBounds} startView={startView} walkRegions={walkRegions} />
             )}
@@ -4609,12 +4613,14 @@ export function ExpoWorldScene({ activeZone, debug, guests: _guests, mode, onMov
                 ))}
               </group>
 
-              <SponsorScreenHierarchy
-                boothPlacements={visibleBoothPlacements}
-                districtPrograms={districtPrograms}
-                playerPosition={playerPosition}
-                sectorMarkers={sectorMarkers}
-              />
+              {EXPO_CITY_QUALITY_TIER === 'quality' && (
+                <SponsorScreenHierarchy
+                  boothPlacements={visibleBoothPlacements}
+                  districtPrograms={districtPrograms}
+                  playerPosition={playerPosition}
+                  sectorMarkers={sectorMarkers}
+                />
+              )}
 
               {visibleBoothPlacements.length === 0 && (
                 <Html position={[0, 8, 0]} center>
