@@ -3911,6 +3911,48 @@ function BoothDebugShellFallback({ accentColor, metrics }: { accentColor: string
   );
 }
 
+function OpenBoothPavilion({
+  accentColor,
+  metrics,
+}: {
+  accentColor: string;
+  metrics: ReturnType<typeof getBoothArchitectureMetrics>;
+}) {
+  const width = metrics.footprintSize[0] * 0.72;
+  const depth = metrics.footprintSize[1] * 0.58;
+  const postHeight = Math.max(6.2, metrics.colliderSize[1] * 0.58);
+  const postOffsetX = (width * 0.5) - 1.2;
+  const postOffsetZ = (depth * 0.5) - 1;
+
+  return (
+    <group name="booth-open-pavilion">
+      <mesh position={[0, 0.12, 0.4]} receiveShadow>
+        <boxGeometry args={[width, 0.24, depth]} />
+        <meshStandardMaterial color="#e5edf4" metalness={0.04} roughness={0.74} />
+      </mesh>
+      {[
+        [-postOffsetX, postHeight * 0.5, -postOffsetZ],
+        [postOffsetX, postHeight * 0.5, -postOffsetZ],
+        [-postOffsetX, postHeight * 0.5, postOffsetZ],
+        [postOffsetX, postHeight * 0.5, postOffsetZ],
+      ].map((position, index) => (
+        <mesh key={`pavilion-post-${index}`} position={position as [number, number, number]} castShadow receiveShadow>
+          <boxGeometry args={[0.42, postHeight, 0.42]} />
+          <meshStandardMaterial color="#6c8190" metalness={0.18} roughness={0.58} />
+        </mesh>
+      ))}
+      <mesh position={[0, postHeight + 0.22, 0]} castShadow receiveShadow>
+        <boxGeometry args={[width + 1.4, 0.32, depth * 0.74]} />
+        <meshStandardMaterial color="#c9d6df" metalness={0.1} roughness={0.46} />
+      </mesh>
+      <mesh position={[0, postHeight + 0.42, (depth * 0.5) - 0.2]} castShadow>
+        <boxGeometry args={[width * 0.82, 0.16, 0.22]} />
+        <meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={0.1} roughness={0.42} metalness={0.16} />
+      </mesh>
+    </group>
+  );
+}
+
 /* Legacy city collision layer is quarantined from the release path.
 function CityCollisionLayer({ debug = false }: { debug?: boolean }) {
   const { scene } = useThree();
@@ -4739,6 +4781,8 @@ function DistrictBooth({
   const districtVisual = getDistrictVisualProfile(placement.sectorId, placement.clusterIndex, visualProfile);
   const isEliteBooth = presentation.adTier === 'elite';
   const isPremiumBooth = presentation.adTier === 'premium';
+  const isHeroNode = placement.nodeType === 'hero_left' || placement.nodeType === 'hero_right';
+  const useOpenPavilionShell = !isHeroNode;
   const stageScale = isEliteBooth ? 1.28 : isPremiumBooth ? 1.14 : 1;
   const mediaWallScale = isEliteBooth ? 1.16 : isPremiumBooth ? 1.08 : 1;
   const sidePanelScale = isEliteBooth ? 1.12 : isPremiumBooth ? 1.06 : 1;
@@ -4819,7 +4863,9 @@ function DistrictBooth({
       </group>
       {EXPO_SPATIAL_DEBUG_FLAGS.disableBoothArchitectureKit
         ? <BoothDebugShellFallback accentColor={placement.color} metrics={metrics} />
-        : <BoothArchitectureKit accentColor={districtVisual.shellAccent} template={presentation.template} visualTone={districtVisual.expressionMode} />}
+        : useOpenPavilionShell
+          ? <OpenBoothPavilion accentColor={districtVisual.shellAccent} metrics={metrics} />
+          : <BoothArchitectureKit accentColor={districtVisual.shellAccent} template={presentation.template} visualTone={districtVisual.expressionMode} />}
       {presentation.customInsertUrl && showRichMedia && (
         <Suspense fallback={null}>
           <CustomBoothInsert template={presentation.template} url={presentation.customInsertUrl} />
@@ -4862,6 +4908,7 @@ function DistrictBooth({
           )}
         </group>
       </group>
+      {isHeroNode && (
       <group position={[metrics.mediaWallPosition[0], metrics.mediaWallPosition[1], metrics.mediaWallPosition[2] + 0.46]}>
         {(isEliteBooth || isPremiumBooth) && showRichMedia && (
           <>
@@ -4903,12 +4950,13 @@ function DistrictBooth({
           </mesh>
         )}
       </group>
-      {showRichMedia && (
+      )}
+      {isHeroNode && showRichMedia && (
         <group position={[metrics.logoPanelPosition[0], metrics.logoPanelPosition[1], metrics.logoPanelPosition[2] - 0.28]}>
           <SponsorLogoPanel accentColor={placement.color} fallbackText={presentation.fallbackIdentity.monogram} url={presentation.logoUrl} />
         </group>
       )}
-      {showRichMedia && (
+      {isHeroNode && showRichMedia && (
       <group position={[-sidePanelOffsetX, metrics.mediaWallPosition[1] + 0.36, metrics.mediaWallPosition[2] + (isEliteBooth ? 1.74 : 1.42)]}>
         <mesh castShadow>
           <boxGeometry args={[2.5 * sidePanelScale, 5.8 * sidePanelScale, 0.34]} />
@@ -4926,7 +4974,7 @@ function DistrictBooth({
         </mesh>
       </group>
       )}
-      {showRichMedia && (
+      {isHeroNode && showRichMedia && (
       <group position={[sidePanelOffsetX, metrics.mediaWallPosition[1] + 0.36, metrics.mediaWallPosition[2] + (isEliteBooth ? 1.74 : 1.42)]}>
         <mesh castShadow>
           <boxGeometry args={[2.5 * sidePanelScale, 5.8 * sidePanelScale, 0.34]} />
