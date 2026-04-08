@@ -3082,15 +3082,15 @@ function ExpoRearCampus({
           {[-1, 1].flatMap((xSide) =>
             ([-1, 1] as const).map((zSide) => (
               <group key={`rear-campus-simplified-tower-${xSide}-${zSide}`} position={[xSide * towerX, 0, zSide * towerZ]}>
-                <mesh position={[0, 1020, 0]} receiveShadow>
+                <mesh position={[0, 880, 0]} receiveShadow>
                   <boxGeometry args={[88, 1760, 88]} />
                   <ExpoArchitecturalMassMaterial fallbackColor="#708496" repeat={[1.2, 1.2]} />
                 </mesh>
-                <mesh position={[0, 1620, zSide > 0 ? -40 : 40]} rotation={[0, zSide > 0 ? Math.PI : 0, 0]}>
+                <mesh position={[0, 1480, zSide > 0 ? -40 : 40]} rotation={[0, zSide > 0 ? Math.PI : 0, 0]}>
                   <planeGeometry args={[620, 420]} />
                   <meshStandardMaterial color={accent} emissive={accent} emissiveIntensity={0.28} roughness={0.18} metalness={0.18} />
                 </mesh>
-                <mesh position={[xSide > 0 ? -40 : 40, 1620, 0]} rotation={[0, xSide > 0 ? Math.PI * 0.5 : -Math.PI * 0.5, 0]}>
+                <mesh position={[xSide > 0 ? -40 : 40, 1480, 0]} rotation={[0, xSide > 0 ? Math.PI * 0.5 : -Math.PI * 0.5, 0]}>
                   <planeGeometry args={[620, 420]} />
                   <meshStandardMaterial color={accent} emissive={accent} emissiveIntensity={0.28} roughness={0.18} metalness={0.18} />
                 </mesh>
@@ -3267,51 +3267,51 @@ function ExpoRearCampus({
         {[-1, 1].flatMap((xSide) =>
           ([-1, 1] as const).map((zSide) => (
             <group key={`rear-campus-light-tower-${xSide}-${zSide}`} position={[xSide * towerX, 0, zSide * towerZ]}>
-              <mesh position={[0, 1020, 0]} castShadow={enableHeavyShadows} receiveShadow>
+              <mesh position={[0, 880, 0]} castShadow={enableHeavyShadows} receiveShadow>
                 <boxGeometry args={[96, 1760, 96]} />
                 <ExpoArchitecturalMassMaterial fallbackColor="#677d93" repeat={[1.2, 1.2]} />
               </mesh>
-              <mesh position={[0, 1840, 0]} castShadow={enableHeavyShadows} receiveShadow>
+              <mesh position={[0, 1700, 0]} castShadow={enableHeavyShadows} receiveShadow>
                 <boxGeometry args={[224, 56, 224]} />
                 <ExpoArchitecturalMassMaterial fallbackColor="#a8bac7" repeat={[1.4, 1.4]} />
               </mesh>
-              <mesh position={[0, 1620, 0]} castShadow={enableHeavyShadows} receiveShadow>
+              <mesh position={[0, 1480, 0]} castShadow={enableHeavyShadows} receiveShadow>
                 <boxGeometry args={[560, 392, 64]} />
                 <meshStandardMaterial color="#1f3140" metalness={0.12} roughness={0.52} />
               </mesh>
-              <mesh position={[0, 1620, 0]} castShadow={enableHeavyShadows} receiveShadow rotation={[0, Math.PI * 0.5, 0]}>
+              <mesh position={[0, 1480, 0]} castShadow={enableHeavyShadows} receiveShadow rotation={[0, Math.PI * 0.5, 0]}>
                 <boxGeometry args={[560, 392, 64]} />
                 <meshStandardMaterial color="#1f3140" metalness={0.12} roughness={0.52} />
               </mesh>
-              <mesh position={[0, 1620, -36]}>
+              <mesh position={[0, 1480, -36]}>
                 <planeGeometry args={[720, 480]} />
                 <meshStandardMaterial color={accent} emissive={accent} emissiveIntensity={0.34} roughness={0.18} metalness={0.18} />
               </mesh>
-              <mesh position={[0, 1620, 36]} rotation={[0, Math.PI, 0]}>
+              <mesh position={[0, 1480, 36]} rotation={[0, Math.PI, 0]}>
                 <planeGeometry args={[720, 480]} />
                 <meshStandardMaterial color={accent} emissive={accent} emissiveIntensity={0.34} roughness={0.18} metalness={0.18} />
               </mesh>
-              <mesh position={[-36, 1620, 0]} rotation={[0, -Math.PI * 0.5, 0]}>
+              <mesh position={[-36, 1480, 0]} rotation={[0, -Math.PI * 0.5, 0]}>
                 <planeGeometry args={[720, 480]} />
                 <meshStandardMaterial color={accent} emissive={accent} emissiveIntensity={0.34} roughness={0.18} metalness={0.18} />
               </mesh>
-              <mesh position={[36, 1620, 0]} rotation={[0, Math.PI * 0.5, 0]}>
+              <mesh position={[36, 1480, 0]} rotation={[0, Math.PI * 0.5, 0]}>
                 <planeGeometry args={[720, 480]} />
                 <meshStandardMaterial color={accent} emissive={accent} emissiveIntensity={0.34} roughness={0.18} metalness={0.18} />
               </mesh>
-              <mesh position={[0, 1468, -32]}>
+              <mesh position={[0, 1328, -32]}>
                 <planeGeometry args={[620, 400]} />
                 <meshStandardMaterial color={accent} emissive={accent} emissiveIntensity={0.26} roughness={0.22} metalness={0.18} />
               </mesh>
-              <mesh position={[0, 1468, 32]} rotation={[0, Math.PI, 0]}>
+              <mesh position={[0, 1328, 32]} rotation={[0, Math.PI, 0]}>
                 <planeGeometry args={[620, 400]} />
                 <meshStandardMaterial color={accent} emissive={accent} emissiveIntensity={0.26} roughness={0.22} metalness={0.18} />
               </mesh>
-              <mesh position={[-32, 1468, 0]} rotation={[0, -Math.PI * 0.5, 0]}>
+              <mesh position={[-32, 1328, 0]} rotation={[0, -Math.PI * 0.5, 0]}>
                 <planeGeometry args={[620, 400]} />
                 <meshStandardMaterial color={accent} emissive={accent} emissiveIntensity={0.26} roughness={0.22} metalness={0.18} />
               </mesh>
-              <mesh position={[32, 1468, 0]} rotation={[0, Math.PI * 0.5, 0]}>
+              <mesh position={[32, 1328, 0]} rotation={[0, Math.PI * 0.5, 0]}>
                 <planeGeometry args={[620, 400]} />
                 <meshStandardMaterial color={accent} emissive={accent} emissiveIntensity={0.26} roughness={0.22} metalness={0.18} />
               </mesh>
