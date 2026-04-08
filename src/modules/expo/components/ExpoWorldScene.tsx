@@ -3089,6 +3089,34 @@ function CleanExpoCitySkeleton({
     return filterReservedSponsorFrontageEntries(entries, boothPlacements, { frontDepth: 420, rearDepth: 180, sideWidth: 180, radius: 220 });
   }, [districtPrograms, boothPlacements]);
 
+  const showcaseForumTerraces = useMemo(() => {
+    const entries = districtPrograms.slice(0, Math.max(3, districtPrograms.length)).flatMap((district, districtIndex) => {
+      const baseZ = -196 - (districtIndex * districtStride);
+      return [
+        {
+          id: `${district.sectorId ?? district.clusterIndex}-forum-terrace-lower`,
+          position: [0, 0, baseZ + 126] as [number, number, number],
+          size: [286, 18, 128] as [number, number, number],
+          color: '#e2ebf1',
+        },
+        {
+          id: `${district.sectorId ?? district.clusterIndex}-forum-terrace-mid`,
+          position: [0, 0, baseZ + 84] as [number, number, number],
+          size: [214, 18, 84] as [number, number, number],
+          color: '#d4e0e8',
+        },
+        {
+          id: `${district.sectorId ?? district.clusterIndex}-forum-terrace-upper`,
+          position: [0, 0, baseZ + 42] as [number, number, number],
+          size: [148, 18, 54] as [number, number, number],
+          color: '#c6d4de',
+        },
+      ];
+    });
+
+    return filterReservedSponsorFrontageEntries(entries, boothPlacements, { frontDepth: 420, rearDepth: 180, sideWidth: 180, radius: 220 });
+  }, [districtPrograms, boothPlacements]);
+
   const discoveryEdgeBlocks = useMemo(() => {
     const districtCount = Math.max(1, districtPrograms.length);
     const endBaseZ = -196 - ((districtCount - 1) * districtStride) - 860;
@@ -3200,6 +3228,59 @@ function CleanExpoCitySkeleton({
     ];
   }, [districtPrograms.length, districtStride]);
 
+  const civicWaterCourt = useMemo(() => ([
+    {
+      id: 'arrival-water-court-main',
+      position: [0, 0.026, -6] as [number, number, number],
+      size: [118, 228] as [number, number],
+      color: '#9fd3e7',
+    },
+    {
+      id: 'arrival-water-court-left',
+      position: [-182, 0.026, 22] as [number, number, number],
+      size: [52, 126] as [number, number],
+      color: '#9fd3e7',
+    },
+    {
+      id: 'arrival-water-court-right',
+      position: [182, 0.026, 12] as [number, number, number],
+      size: [52, 126] as [number, number],
+      color: '#9fd3e7',
+    },
+  ]), []);
+
+  const discoverySkybridge = useMemo(() => {
+    const districtCount = Math.max(1, districtPrograms.length);
+    const endBaseZ = -196 - ((districtCount - 1) * districtStride) - 900;
+
+    return [
+      {
+        id: 'discovery-skybridge-left-pylon',
+        position: [-282, 0, endBaseZ + 48] as [number, number, number],
+        size: [48, 196, 48] as [number, number, number],
+        color: '#7c92a1',
+      },
+      {
+        id: 'discovery-skybridge-right-pylon',
+        position: [282, 0, endBaseZ + 20] as [number, number, number],
+        size: [48, 196, 48] as [number, number, number],
+        color: '#7c92a1',
+      },
+      {
+        id: 'discovery-skybridge-span',
+        position: [0, 0, endBaseZ + 34] as [number, number, number],
+        size: [612, 28, 42] as [number, number, number],
+        color: '#c4d1d9',
+      },
+      {
+        id: 'discovery-skybridge-underdeck',
+        position: [0, 0, endBaseZ + 34] as [number, number, number],
+        size: [440, 12, 58] as [number, number, number],
+        color: '#8ea2af',
+      },
+    ];
+  }, [districtPrograms.length, districtStride]);
+
   const cleanTowerLandmarks = useMemo(() => {
     const entries = districtPrograms.slice(0, Math.max(3, districtPrograms.length)).flatMap((district, districtIndex) => {
       const baseZ = -196 - (districtIndex * districtStride);
@@ -3260,7 +3341,14 @@ function CleanExpoCitySkeleton({
           </mesh>
         ))}
 
-      {[...arrivalGatewayBlocks, ...arrivalLandmarkBlocks, ...arrivalSupportBlocks, ...boulevardEdgeBlocks, ...mediaWallBlocks, ...mediaWallSupportBlocks, ...showcaseLandmarkBlocks, ...showcaseHeroLandmarks, ...rightSupportBlocks, ...supportEdgeBlocks, ...discoveryEdgeBlocks, ...discoveryLandmarks, ...discoverySupportTerraces]
+      {civicWaterCourt.map((plane) => (
+        <mesh key={plane.id} position={plane.position} rotation={[-Math.PI / 2, 0, 0]}>
+          <planeGeometry args={plane.size} />
+          <meshStandardMaterial color={plane.color} emissive={plane.color} emissiveIntensity={0.08} roughness={0.22} metalness={0.12} transparent opacity={0.92} />
+        </mesh>
+      ))}
+
+      {[...arrivalGatewayBlocks, ...arrivalLandmarkBlocks, ...arrivalSupportBlocks, ...boulevardEdgeBlocks, ...mediaWallBlocks, ...mediaWallSupportBlocks, ...showcaseLandmarkBlocks, ...showcaseHeroLandmarks, ...showcaseForumTerraces, ...rightSupportBlocks, ...supportEdgeBlocks, ...discoveryEdgeBlocks, ...discoveryLandmarks, ...discoverySupportTerraces, ...discoverySkybridge]
         .filter((mass) => !overlapsStadiumReserve(mass.position, stadiumReserve, mass.size))
         .map((mass) => (
           <group key={mass.id} position={[mass.position[0], 0, mass.position[2]]}>
