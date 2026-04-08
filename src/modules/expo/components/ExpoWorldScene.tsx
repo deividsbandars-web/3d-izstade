@@ -2816,6 +2816,27 @@ function CleanExpoCitySkeleton({
     { id: 'arrival-right', position: [168, 0.018, -18] as [number, number, number], size: [146, 264] as [number, number], color: '#d6e2ea' },
   ]), []);
 
+  const promenadeAxisPlanes = useMemo(() => {
+    const districtCount = Math.max(3, districtPrograms.length);
+    return Array.from({ length: districtCount }, (_, districtIndex) => {
+      const baseZ = -178 - (districtIndex * districtStride);
+      return [
+        {
+          id: `promenade-axis-main-${districtIndex}`,
+          position: [0, 0.02, baseZ + 16] as [number, number, number],
+          size: [148, 262] as [number, number],
+          color: '#edf3f7',
+        },
+        {
+          id: `promenade-axis-cross-${districtIndex}`,
+          position: [0, 0.019, baseZ + 126] as [number, number, number],
+          size: [328, 84] as [number, number],
+          color: '#e2ebf1',
+        },
+      ];
+    }).flat();
+  }, [districtPrograms.length, districtStride]);
+
   const arrivalGatewayBlocks = useMemo(() => ([
     {
       id: 'arrival-gateway-left',
@@ -3005,6 +3026,74 @@ function CleanExpoCitySkeleton({
     return filterReservedSponsorFrontageEntries(entries, boothPlacements, { frontDepth: 420, rearDepth: 180, sideWidth: 180, radius: 220 });
   }, [districtPrograms, boothPlacements]);
 
+  const boothForecourtPlanes = useMemo(() => {
+    const entries = districtPrograms.slice(0, Math.max(3, districtPrograms.length)).flatMap((district, districtIndex) => {
+      const baseZ = -186 - (districtIndex * districtStride);
+      return [
+        {
+          id: `${district.sectorId ?? district.clusterIndex}-booth-court-left-main`,
+          position: [-238, 0.019, baseZ + 42] as [number, number, number],
+          size: [124, 182] as [number, number],
+          color: '#eef4f8',
+        },
+        {
+          id: `${district.sectorId ?? district.clusterIndex}-booth-court-left-pocket`,
+          position: [-334, 0.018, baseZ - 58] as [number, number, number],
+          size: [108, 126] as [number, number],
+          color: '#dce7ee',
+        },
+        {
+          id: `${district.sectorId ?? district.clusterIndex}-booth-court-right-main`,
+          position: [238, 0.019, baseZ + 34] as [number, number, number],
+          size: [124, 182] as [number, number],
+          color: '#eef4f8',
+        },
+        {
+          id: `${district.sectorId ?? district.clusterIndex}-booth-court-right-pocket`,
+          position: [334, 0.018, baseZ - 66] as [number, number, number],
+          size: [108, 126] as [number, number],
+          color: '#dce7ee',
+        },
+      ];
+    });
+
+    return filterReservedSponsorFrontageEntries(entries, boothPlacements, { frontDepth: 340, rearDepth: 160, sideWidth: 160, radius: 180 });
+  }, [districtPrograms, boothPlacements, districtStride]);
+
+  const boothNodePavilions = useMemo(() => {
+    const entries = districtPrograms.slice(0, Math.max(3, districtPrograms.length)).flatMap((district, districtIndex) => {
+      const baseZ = -196 - (districtIndex * districtStride);
+      return [
+        {
+          id: `${district.sectorId ?? district.clusterIndex}-booth-pavilion-left-anchor`,
+          position: [-258, 0, baseZ + 22] as [number, number, number],
+          size: [76, 26, 96] as [number, number, number],
+          color: '#a8b8c4',
+        },
+        {
+          id: `${district.sectorId ?? district.clusterIndex}-booth-pavilion-left-tower`,
+          position: [-318, 0, baseZ + 96] as [number, number, number],
+          size: [28, 104, 28] as [number, number, number],
+          color: '#7f93a1',
+        },
+        {
+          id: `${district.sectorId ?? district.clusterIndex}-booth-pavilion-right-anchor`,
+          position: [258, 0, baseZ + 18] as [number, number, number],
+          size: [76, 26, 96] as [number, number, number],
+          color: '#a8b8c4',
+        },
+        {
+          id: `${district.sectorId ?? district.clusterIndex}-booth-pavilion-right-tower`,
+          position: [318, 0, baseZ + 88] as [number, number, number],
+          size: [28, 104, 28] as [number, number, number],
+          color: '#7f93a1',
+        },
+      ];
+    });
+
+    return filterReservedSponsorFrontageEntries(entries, boothPlacements, { frontDepth: 340, rearDepth: 180, sideWidth: 160, radius: 200 });
+  }, [districtPrograms, boothPlacements, districtStride]);
+
   const rightSupportBlocks = useMemo(() => {
     const entries = districtPrograms.slice(0, Math.max(3, districtPrograms.length)).flatMap((district, districtIndex) => {
       const baseZ = -196 - (districtIndex * districtStride);
@@ -3032,20 +3121,26 @@ function CleanExpoCitySkeleton({
       const baseZ = -196 - (districtIndex * districtStride);
       return [
         {
-          id: `${district.sectorId ?? district.clusterIndex}-showcase-plinth`,
-          position: [0, 0, baseZ - 24] as [number, number, number],
-          size: [184, 36, 86] as [number, number, number],
+          id: `${district.sectorId ?? district.clusterIndex}-showcase-plinth-left`,
+          position: [-112, 0, baseZ - 18] as [number, number, number],
+          size: [104, 30, 82] as [number, number, number],
+          color: '#a0b0bc',
+        },
+        {
+          id: `${district.sectorId ?? district.clusterIndex}-showcase-plinth-right`,
+          position: [112, 0, baseZ - 24] as [number, number, number],
+          size: [104, 30, 82] as [number, number, number],
           color: '#a0b0bc',
         },
         {
           id: `${district.sectorId ?? district.clusterIndex}-showcase-beacon-left`,
-          position: [-86, 0, baseZ + 112] as [number, number, number],
+          position: [-126, 0, baseZ + 112] as [number, number, number],
           size: [32, 96, 32] as [number, number, number],
           color: '#8799a6',
         },
         {
           id: `${district.sectorId ?? district.clusterIndex}-showcase-beacon-right`,
-          position: [86, 0, baseZ + 102] as [number, number, number],
+          position: [126, 0, baseZ + 102] as [number, number, number],
           size: [32, 88, 32] as [number, number, number],
           color: '#8799a6',
         },
@@ -3060,27 +3155,39 @@ function CleanExpoCitySkeleton({
       const baseZ = -196 - (districtIndex * districtStride);
       return [
         {
-          id: `${district.sectorId ?? district.clusterIndex}-showcase-hero-arch-left`,
-          position: [-168, 0, baseZ - 8] as [number, number, number],
-          size: [44, 188, 44] as [number, number, number],
+          id: `${district.sectorId ?? district.clusterIndex}-showcase-hero-left-spire`,
+          position: [-208, 0, baseZ - 18] as [number, number, number],
+          size: [42, 196, 42] as [number, number, number],
           color: '#7f92a0',
         },
         {
-          id: `${district.sectorId ?? district.clusterIndex}-showcase-hero-arch-right`,
-          position: [168, 0, baseZ - 8] as [number, number, number],
-          size: [44, 188, 44] as [number, number, number],
+          id: `${district.sectorId ?? district.clusterIndex}-showcase-hero-right-spire`,
+          position: [208, 0, baseZ - 14] as [number, number, number],
+          size: [42, 188, 42] as [number, number, number],
           color: '#7f92a0',
         },
         {
-          id: `${district.sectorId ?? district.clusterIndex}-showcase-hero-arch-lintel`,
-          position: [0, 0, baseZ - 8] as [number, number, number],
-          size: [336, 28, 40] as [number, number, number],
+          id: `${district.sectorId ?? district.clusterIndex}-showcase-hero-left-cap`,
+          position: [-208, 0, baseZ - 18] as [number, number, number],
+          size: [20, 56, 20] as [number, number, number],
           color: '#bcc8d0',
         },
         {
-          id: `${district.sectorId ?? district.clusterIndex}-showcase-hero-sculpture`,
-          position: [0, 0, baseZ - 68] as [number, number, number],
-          size: [62, 124, 62] as [number, number, number],
+          id: `${district.sectorId ?? district.clusterIndex}-showcase-hero-right-cap`,
+          position: [208, 0, baseZ - 14] as [number, number, number],
+          size: [20, 52, 20] as [number, number, number],
+          color: '#bcc8d0',
+        },
+        {
+          id: `${district.sectorId ?? district.clusterIndex}-showcase-hero-sculpture-left`,
+          position: [-74, 0, baseZ - 84] as [number, number, number],
+          size: [48, 116, 48] as [number, number, number],
+          color: '#93a6b2',
+        },
+        {
+          id: `${district.sectorId ?? district.clusterIndex}-showcase-hero-sculpture-right`,
+          position: [74, 0, baseZ - 96] as [number, number, number],
+          size: [48, 116, 48] as [number, number, number],
           color: '#93a6b2',
         },
       ];
@@ -3135,18 +3242,30 @@ function CleanExpoCitySkeleton({
         color: '#8394a0',
       },
       {
-        id: 'discovery-hero-plinth',
-        position: [0, 28, endBaseZ - 142] as [number, number, number],
-        size: [248, 56, 74] as [number, number, number],
-        color: '#94a6b2',
-      },
-      {
-        id: 'discovery-landmark-wall',
-        position: [0, 76, endBaseZ - 224] as [number, number, number],
-        size: [168, 152, 28] as [number, number, number],
-        color: '#5d7282',
-      },
-    ];
+        id: 'discovery-hero-plinth-left',
+        position: [-124, 28, endBaseZ - 138] as [number, number, number],
+        size: [132, 56, 74] as [number, number, number],
+          color: '#94a6b2',
+        },
+        {
+          id: 'discovery-hero-plinth-right',
+          position: [124, 28, endBaseZ - 166] as [number, number, number],
+          size: [132, 56, 74] as [number, number, number],
+          color: '#94a6b2',
+        },
+        {
+          id: 'discovery-landmark-wall-left',
+          position: [-226, 76, endBaseZ - 236] as [number, number, number],
+          size: [114, 152, 28] as [number, number, number],
+          color: '#5d7282',
+        },
+        {
+          id: 'discovery-landmark-wall-right',
+          position: [226, 74, endBaseZ - 264] as [number, number, number],
+          size: [114, 148, 28] as [number, number, number],
+          color: '#5d7282',
+        },
+      ];
   }, [districtPrograms.length]);
 
   const supportEdgeBlocks = useMemo(() => {
@@ -3332,7 +3451,14 @@ function CleanExpoCitySkeleton({
         </mesh>
       ))}
 
-      {[...showcasePlazas]
+      {promenadeAxisPlanes.map((plane) => (
+        <mesh key={plane.id} position={plane.position} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+          <planeGeometry args={plane.size} />
+          <meshStandardMaterial color={plane.color} roughness={0.68} metalness={0.04} />
+        </mesh>
+      ))}
+
+      {[...showcasePlazas, ...boothForecourtPlanes]
         .filter((plane) => !overlapsStadiumReserve(plane.position, stadiumReserve, plane.size))
         .map((plane) => (
           <mesh key={plane.id} position={plane.position} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
@@ -3348,7 +3474,7 @@ function CleanExpoCitySkeleton({
         </mesh>
       ))}
 
-      {[...arrivalGatewayBlocks, ...arrivalLandmarkBlocks, ...arrivalSupportBlocks, ...boulevardEdgeBlocks, ...mediaWallBlocks, ...mediaWallSupportBlocks, ...showcaseLandmarkBlocks, ...showcaseHeroLandmarks, ...showcaseForumTerraces, ...rightSupportBlocks, ...supportEdgeBlocks, ...discoveryEdgeBlocks, ...discoveryLandmarks, ...discoverySupportTerraces, ...discoverySkybridge]
+      {[...arrivalGatewayBlocks, ...arrivalLandmarkBlocks, ...arrivalSupportBlocks, ...boulevardEdgeBlocks, ...mediaWallBlocks, ...mediaWallSupportBlocks, ...showcaseLandmarkBlocks, ...showcaseHeroLandmarks, ...showcaseForumTerraces, ...boothNodePavilions, ...rightSupportBlocks, ...supportEdgeBlocks, ...discoveryEdgeBlocks, ...discoveryLandmarks, ...discoverySupportTerraces, ...discoverySkybridge]
         .filter((mass) => !overlapsStadiumReserve(mass.position, stadiumReserve, mass.size))
         .map((mass) => (
           <group key={mass.id} position={[mass.position[0], 0, mass.position[2]]}>
@@ -3401,6 +3527,12 @@ function ExpoRearCampus({
   const perimeterHalfX = 2860;
   const perimeterBackZ = -2500;
   const enableHeavyShadows = EXPO_FEATURE_FLAGS.enableShowcaseSkylineDensity;
+  const stadiumForecourts = [
+    { id: 'stadium-forecourt-left-main', position: [-860, 5.98, campusCenterZ + 520] as [number, number, number], size: [680, 980] as [number, number], color: '#eef4f8' },
+    { id: 'stadium-forecourt-left-inner', position: [-520, 6.02, campusCenterZ + 140] as [number, number, number], size: [320, 520] as [number, number], color: '#dfe8ee' },
+    { id: 'stadium-forecourt-right-main', position: [860, 5.98, campusCenterZ + 520] as [number, number, number], size: [680, 980] as [number, number], color: '#eef4f8' },
+    { id: 'stadium-forecourt-right-inner', position: [520, 6.02, campusCenterZ + 120] as [number, number, number], size: [320, 520] as [number, number], color: '#dfe8ee' },
+  ] as const;
   return (
     <group name="expo-rear-campus">
       <mesh position={[0, 0.02, routeEndZ + 240]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
@@ -3427,6 +3559,12 @@ function ExpoRearCampus({
         <planeGeometry args={[1960, 640]} />
         <ExpoRuntimeSurfaceMaterial fallbackColor="#d8e4ec" repeat={[4.2, 1.8]} surface="paver" />
       </mesh>
+      {stadiumForecourts.map((plane) => (
+        <mesh key={plane.id} position={plane.position} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+          <planeGeometry args={plane.size} />
+          <meshStandardMaterial color={plane.color} roughness={0.72} metalness={0.04} />
+        </mesh>
+      ))}
       <group position={[0, 0, campusCenterZ]}>
         <mesh position={[0, 6.08, -40]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
           <circleGeometry args={[3080, 112]} />
