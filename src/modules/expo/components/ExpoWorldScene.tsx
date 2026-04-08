@@ -2837,6 +2837,27 @@ function CleanExpoCitySkeleton({
     },
   ]), []);
 
+  const arrivalLandmarkBlocks = useMemo(() => ([
+    {
+      id: 'arrival-landmark-pylon-left',
+      position: [-324, 0, 96] as [number, number, number],
+      size: [58, 248, 58] as [number, number, number],
+      color: '#7c909f',
+    },
+    {
+      id: 'arrival-landmark-pylon-right',
+      position: [324, 0, 96] as [number, number, number],
+      size: [58, 248, 58] as [number, number, number],
+      color: '#7c909f',
+    },
+    {
+      id: 'arrival-landmark-bridge',
+      position: [0, 0, 96] as [number, number, number],
+      size: [548, 34, 52] as [number, number, number],
+      color: '#b4c3cc',
+    },
+  ]), []);
+
   const boulevardEdgeBlocks = useMemo(() => {
     const districtCount = Math.max(3, districtPrograms.length);
     return Array.from({ length: districtCount }, (_, districtIndex) => {
@@ -2973,6 +2994,40 @@ function CleanExpoCitySkeleton({
     return filterReservedSponsorFrontageEntries(entries, boothPlacements, { frontDepth: 420, rearDepth: 180, sideWidth: 180, radius: 220 });
   }, [districtPrograms, boothPlacements]);
 
+  const showcaseHeroLandmarks = useMemo(() => {
+    const entries = districtPrograms.slice(0, Math.max(3, districtPrograms.length)).flatMap((district, districtIndex) => {
+      const baseZ = -196 - (districtIndex * districtStride);
+      return [
+        {
+          id: `${district.sectorId ?? district.clusterIndex}-showcase-hero-arch-left`,
+          position: [-168, 0, baseZ - 8] as [number, number, number],
+          size: [44, 188, 44] as [number, number, number],
+          color: '#7f92a0',
+        },
+        {
+          id: `${district.sectorId ?? district.clusterIndex}-showcase-hero-arch-right`,
+          position: [168, 0, baseZ - 8] as [number, number, number],
+          size: [44, 188, 44] as [number, number, number],
+          color: '#7f92a0',
+        },
+        {
+          id: `${district.sectorId ?? district.clusterIndex}-showcase-hero-arch-lintel`,
+          position: [0, 0, baseZ - 8] as [number, number, number],
+          size: [336, 28, 40] as [number, number, number],
+          color: '#bcc8d0',
+        },
+        {
+          id: `${district.sectorId ?? district.clusterIndex}-showcase-hero-sculpture`,
+          position: [0, 0, baseZ - 68] as [number, number, number],
+          size: [62, 124, 62] as [number, number, number],
+          color: '#93a6b2',
+        },
+      ];
+    });
+
+    return filterReservedSponsorFrontageEntries(entries, boothPlacements, { frontDepth: 420, rearDepth: 180, sideWidth: 180, radius: 220 });
+  }, [districtPrograms, boothPlacements]);
+
   const discoveryEdgeBlocks = useMemo(() => {
     const districtCount = Math.max(1, districtPrograms.length);
     const endBaseZ = -196 - ((districtCount - 1) * districtStride) - 860;
@@ -3024,6 +3079,38 @@ function CleanExpoCitySkeleton({
         },
       ];
     }).flat();
+  }, [districtPrograms.length, districtStride]);
+
+  const discoveryLandmarks = useMemo(() => {
+    const districtCount = Math.max(1, districtPrograms.length);
+    const endBaseZ = -196 - ((districtCount - 1) * districtStride) - 980;
+
+    return [
+      {
+        id: 'discovery-spire-main',
+        position: [0, 0, endBaseZ] as [number, number, number],
+        size: [84, 324, 84] as [number, number, number],
+        color: '#6f8594',
+      },
+      {
+        id: 'discovery-spire-cap',
+        position: [0, 0, endBaseZ] as [number, number, number],
+        size: [34, 104, 34] as [number, number, number],
+        color: '#c3d0d8',
+      },
+      {
+        id: 'discovery-flank-left',
+        position: [-214, 0, endBaseZ + 92] as [number, number, number],
+        size: [92, 142, 58] as [number, number, number],
+        color: '#8da0ad',
+      },
+      {
+        id: 'discovery-flank-right',
+        position: [214, 0, endBaseZ + 64] as [number, number, number],
+        size: [92, 148, 58] as [number, number, number],
+        color: '#8da0ad',
+      },
+    ];
   }, [districtPrograms.length, districtStride]);
 
   const cleanTowerLandmarks = useMemo(() => {
@@ -3086,7 +3173,7 @@ function CleanExpoCitySkeleton({
           </mesh>
         ))}
 
-      {[...arrivalGatewayBlocks, ...boulevardEdgeBlocks, ...mediaWallBlocks, ...showcaseLandmarkBlocks, ...rightSupportBlocks, ...supportEdgeBlocks, ...discoveryEdgeBlocks]
+      {[...arrivalGatewayBlocks, ...arrivalLandmarkBlocks, ...boulevardEdgeBlocks, ...mediaWallBlocks, ...showcaseLandmarkBlocks, ...showcaseHeroLandmarks, ...rightSupportBlocks, ...supportEdgeBlocks, ...discoveryEdgeBlocks, ...discoveryLandmarks]
         .filter((mass) => !overlapsStadiumReserve(mass.position, stadiumReserve, mass.size))
         .map((mass) => (
           <group key={mass.id} position={[mass.position[0], 0, mass.position[2]]}>
