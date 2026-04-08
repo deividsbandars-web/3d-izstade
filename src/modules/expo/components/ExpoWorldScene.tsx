@@ -3368,6 +3368,82 @@ function CleanExpoCitySkeleton({
     },
   ]), []);
 
+  const sideBoothBoulevards = useMemo(() => {
+    const districtCount = Math.max(3, districtPrograms.length);
+    return Array.from({ length: districtCount }, (_, districtIndex) => {
+      const baseZ = -196 - (districtIndex * districtStride);
+      return [
+        {
+          id: `booth-boulevard-left-${districtIndex}`,
+          position: [-268, 0, baseZ - 18] as [number, number, number],
+          size: [82, 22, 436] as [number, number, number],
+          color: '#cfdbe3',
+        },
+        {
+          id: `booth-boulevard-right-${districtIndex}`,
+          position: [268, 0, baseZ - 28] as [number, number, number],
+          size: [82, 22, 436] as [number, number, number],
+          color: '#cfdbe3',
+        },
+        {
+          id: `booth-boulevard-left-canopy-${districtIndex}`,
+          position: [-268, 0, baseZ - 16] as [number, number, number],
+          size: [96, 14, 248] as [number, number, number],
+          color: '#8ea2af',
+        },
+        {
+          id: `booth-boulevard-right-canopy-${districtIndex}`,
+          position: [268, 0, baseZ - 24] as [number, number, number],
+          size: [96, 14, 248] as [number, number, number],
+          color: '#8ea2af',
+        },
+      ];
+    }).flat();
+  }, [districtPrograms.length, districtStride]);
+
+  const signatureMegaLandmarks = useMemo(() => {
+    const districtCount = Math.max(1, districtPrograms.length);
+    const boulevardCenterZ = -196 - (Math.min(1, districtCount - 1) * districtStride) - 122;
+    return [
+      {
+        id: 'signature-mega-pylon-left',
+        position: [-418, 0, boulevardCenterZ + 24] as [number, number, number],
+        size: [72, 362, 72] as [number, number, number],
+        color: '#748998',
+      },
+      {
+        id: 'signature-mega-pylon-right',
+        position: [418, 0, boulevardCenterZ - 18] as [number, number, number],
+        size: [72, 348, 72] as [number, number, number],
+        color: '#748998',
+      },
+      {
+        id: 'signature-mega-span',
+        position: [0, 0, boulevardCenterZ] as [number, number, number],
+        size: [924, 36, 84] as [number, number, number],
+        color: '#c4d1d9',
+      },
+      {
+        id: 'signature-mega-underdeck',
+        position: [0, 0, boulevardCenterZ + 12] as [number, number, number],
+        size: [628, 18, 102] as [number, number, number],
+        color: '#8fa2af',
+      },
+      {
+        id: 'signature-mega-spire-left',
+        position: [-142, 0, boulevardCenterZ - 112] as [number, number, number],
+        size: [42, 214, 42] as [number, number, number],
+        color: '#8ca0ae',
+      },
+      {
+        id: 'signature-mega-spire-right',
+        position: [142, 0, boulevardCenterZ - 136] as [number, number, number],
+        size: [42, 196, 42] as [number, number, number],
+        color: '#8ca0ae',
+      },
+    ];
+  }, [districtPrograms.length, districtStride]);
+
   const discoverySkybridge = useMemo(() => {
     const districtCount = Math.max(1, districtPrograms.length);
     const endBaseZ = -196 - ((districtCount - 1) * districtStride) - 900;
@@ -3474,7 +3550,7 @@ function CleanExpoCitySkeleton({
         </mesh>
       ))}
 
-      {[...arrivalGatewayBlocks, ...arrivalLandmarkBlocks, ...arrivalSupportBlocks, ...boulevardEdgeBlocks, ...mediaWallBlocks, ...mediaWallSupportBlocks, ...showcaseLandmarkBlocks, ...showcaseHeroLandmarks, ...showcaseForumTerraces, ...boothNodePavilions, ...rightSupportBlocks, ...supportEdgeBlocks, ...discoveryEdgeBlocks, ...discoveryLandmarks, ...discoverySupportTerraces, ...discoverySkybridge]
+      {[...arrivalGatewayBlocks, ...arrivalLandmarkBlocks, ...arrivalSupportBlocks, ...boulevardEdgeBlocks, ...mediaWallBlocks, ...mediaWallSupportBlocks, ...showcaseLandmarkBlocks, ...showcaseHeroLandmarks, ...showcaseForumTerraces, ...sideBoothBoulevards, ...boothNodePavilions, ...signatureMegaLandmarks, ...rightSupportBlocks, ...supportEdgeBlocks, ...discoveryEdgeBlocks, ...discoveryLandmarks, ...discoverySupportTerraces, ...discoverySkybridge]
         .filter((mass) => !overlapsStadiumReserve(mass.position, stadiumReserve, mass.size))
         .map((mass) => (
           <group key={mass.id} position={[mass.position[0], 0, mass.position[2]]}>
