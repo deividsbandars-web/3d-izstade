@@ -3418,15 +3418,27 @@ function CleanExpoCitySkeleton({
         color: '#748998',
       },
       {
-        id: 'signature-mega-span',
-        position: [0, 0, boulevardCenterZ] as [number, number, number],
-        size: [924, 36, 84] as [number, number, number],
+        id: 'signature-mega-left-bridge-wing',
+        position: [-236, 0, boulevardCenterZ + 12] as [number, number, number],
+        size: [324, 28, 54] as [number, number, number],
         color: '#c4d1d9',
       },
       {
-        id: 'signature-mega-underdeck',
-        position: [0, 0, boulevardCenterZ + 12] as [number, number, number],
-        size: [628, 18, 102] as [number, number, number],
+        id: 'signature-mega-right-bridge-wing',
+        position: [236, 0, boulevardCenterZ - 10] as [number, number, number],
+        size: [324, 28, 54] as [number, number, number],
+        color: '#c4d1d9',
+      },
+      {
+        id: 'signature-mega-left-plinth',
+        position: [-236, 0, boulevardCenterZ + 88] as [number, number, number],
+        size: [184, 18, 92] as [number, number, number],
+        color: '#8fa2af',
+      },
+      {
+        id: 'signature-mega-right-plinth',
+        position: [236, 0, boulevardCenterZ - 84] as [number, number, number],
+        size: [184, 18, 92] as [number, number, number],
         color: '#8fa2af',
       },
       {

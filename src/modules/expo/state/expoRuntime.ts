@@ -43,9 +43,13 @@ function resolveExpoQualityPreset(): ExpoQualityPreset {
       return urlPreset;
     }
 
-    const storedPreset = normalizeExpoQualityPreset(window.localStorage.getItem('warpala.expoQualityPreset'));
-    if (storedPreset) {
-      return storedPreset;
+    // Production should be visually predictable unless an explicit URL override is used.
+    // Local storage presets are kept only for local/dev iteration.
+    if (import.meta.env.DEV) {
+      const storedPreset = normalizeExpoQualityPreset(window.localStorage.getItem('warpala.expoQualityPreset'));
+      if (storedPreset) {
+        return storedPreset;
+      }
     }
   }
 
