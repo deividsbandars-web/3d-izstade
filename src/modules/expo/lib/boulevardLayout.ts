@@ -525,14 +525,14 @@ function resolveDistrictExpression({
 }
 
 function buildProgrammedFillerNodes({
-  clusterBaseZ,
+  center,
   clusterIndex,
   color,
   sectorId,
   sectorLabel,
   targets,
 }: {
-  clusterBaseZ: number;
+  center: { x: number; z: number; lane: 'left' | 'right' | 'center' };
   clusterIndex: number;
   color: string;
   sectorId: string | null;
@@ -562,45 +562,69 @@ function buildProgrammedFillerNodes({
 
     switch (target.role) {
       case 'arrival_anchor':
-        pushNode(`anchor-plaza-${sectorId ?? UNASSIGNED_SECTOR_ID}`, [0, 0, clusterBaseZ - EXPO_BOULEVARD_LAYOUT.anchorPlazaDepth], undefined, target.role);
+        pushNode(`anchor-plaza-${sectorId ?? UNASSIGNED_SECTOR_ID}`, getProgrammedNodePosition(center, target.role).position, undefined, target.role);
         break;
       case 'connector_left':
-        pushNode(`connector-left-${sectorId ?? UNASSIGNED_SECTOR_ID}`, [-EXPO_BOULEVARD_LAYOUT.connectorX, 0, clusterBaseZ - EXPO_BOULEVARD_LAYOUT.connectorZOffset], Math.PI / 2, target.role);
+        {
+          const result = getProgrammedNodePosition(center, target.role);
+          pushNode(`connector-left-${sectorId ?? UNASSIGNED_SECTOR_ID}`, result.position, result.rotationY, target.role);
+        }
         break;
       case 'connector_right':
-        pushNode(`connector-right-${sectorId ?? UNASSIGNED_SECTOR_ID}`, [EXPO_BOULEVARD_LAYOUT.connectorX, 0, clusterBaseZ - EXPO_BOULEVARD_LAYOUT.connectorZOffset], -Math.PI / 2, target.role);
+        {
+          const result = getProgrammedNodePosition(center, target.role);
+          pushNode(`connector-right-${sectorId ?? UNASSIGNED_SECTOR_ID}`, result.position, result.rotationY, target.role);
+        }
         break;
       case 'side_lane_left':
-        pushNode(`side-lane-left-${sectorId ?? UNASSIGNED_SECTOR_ID}`, [-EXPO_BOULEVARD_LAYOUT.sideLaneX, 0, clusterBaseZ - EXPO_BOULEVARD_LAYOUT.sideLaneZOffset], Math.PI / 2, target.role);
+        {
+          const result = getProgrammedNodePosition(center, target.role);
+          pushNode(`side-lane-left-${sectorId ?? UNASSIGNED_SECTOR_ID}`, result.position, result.rotationY, target.role);
+        }
         break;
       case 'side_lane_right':
-        pushNode(`side-lane-right-${sectorId ?? UNASSIGNED_SECTOR_ID}`, [EXPO_BOULEVARD_LAYOUT.sideLaneX, 0, clusterBaseZ - EXPO_BOULEVARD_LAYOUT.sideLaneZOffset], -Math.PI / 2, target.role);
+        {
+          const result = getProgrammedNodePosition(center, target.role);
+          pushNode(`side-lane-right-${sectorId ?? UNASSIGNED_SECTOR_ID}`, result.position, result.rotationY, target.role);
+        }
         break;
       case 'hero_forecourt_left':
-        pushNode(`hero-forecourt-left-${sectorId ?? UNASSIGNED_SECTOR_ID}`, [-EXPO_BOULEVARD_LAYOUT.heroX, 0, clusterBaseZ - EXPO_BOULEVARD_LAYOUT.heroZOffset + EXPO_BOULEVARD_LAYOUT.heroForecourtDepth], Math.PI / 2, target.role);
+        {
+          const result = getProgrammedNodePosition(center, target.role);
+          pushNode(`hero-forecourt-left-${sectorId ?? UNASSIGNED_SECTOR_ID}`, result.position, result.rotationY, target.role);
+        }
         break;
       case 'hero_forecourt_right':
-        pushNode(`hero-forecourt-right-${sectorId ?? UNASSIGNED_SECTOR_ID}`, [EXPO_BOULEVARD_LAYOUT.heroX, 0, clusterBaseZ - EXPO_BOULEVARD_LAYOUT.heroZOffset + EXPO_BOULEVARD_LAYOUT.heroForecourtDepth], -Math.PI / 2, target.role);
+        {
+          const result = getProgrammedNodePosition(center, target.role);
+          pushNode(`hero-forecourt-right-${sectorId ?? UNASSIGNED_SECTOR_ID}`, result.position, result.rotationY, target.role);
+        }
         break;
       case 'info_pavilion':
-        pushNode(`program-info-${sectorId ?? UNASSIGNED_SECTOR_ID}`, [0, 0, clusterBaseZ - EXPO_BOULEVARD_LAYOUT.programmedFillerZOffset - 8], undefined, target.role);
+        pushNode(`program-info-${sectorId ?? UNASSIGNED_SECTOR_ID}`, getProgrammedNodePosition(center, target.role).position, undefined, target.role);
         break;
       case 'networking_lounge':
-        pushNode(`program-network-${sectorId ?? UNASSIGNED_SECTOR_ID}`, [0, 0, clusterBaseZ - EXPO_BOULEVARD_LAYOUT.programmedFillerZOffset + 12], undefined, target.role);
+        pushNode(`program-network-${sectorId ?? UNASSIGNED_SECTOR_ID}`, getProgrammedNodePosition(center, target.role).position, undefined, target.role);
         break;
       case 'demo_stage':
-        pushNode(`program-demo-${sectorId ?? UNASSIGNED_SECTOR_ID}`, [EXPO_BOULEVARD_LAYOUT.programmedFillerX, 0, clusterBaseZ - EXPO_BOULEVARD_LAYOUT.programmedFillerZOffset], -Math.PI / 2, target.role);
+        {
+          const result = getProgrammedNodePosition(center, target.role);
+          pushNode(`program-demo-${sectorId ?? UNASSIGNED_SECTOR_ID}`, result.position, result.rotationY, target.role);
+        }
         break;
       case 'meeting_pod':
-        pushNode(`program-meeting-${sectorId ?? UNASSIGNED_SECTOR_ID}`, [-EXPO_BOULEVARD_LAYOUT.programmedFillerX, 0, clusterBaseZ - EXPO_BOULEVARD_LAYOUT.programmedFillerZOffset], Math.PI / 2, target.role);
+        {
+          const result = getProgrammedNodePosition(center, target.role);
+          pushNode(`program-meeting-${sectorId ?? UNASSIGNED_SECTOR_ID}`, result.position, result.rotationY, target.role);
+        }
         break;
       case 'scenic_showcase':
         for (let index = 0; index < target.target; index += 1) {
-          const side = index % 2 === 0 ? -1 : 1;
+          const result = getProgrammedNodePosition(center, target.role, index);
           pushNode(
             `program-scenic-${sectorId ?? UNASSIGNED_SECTOR_ID}-${index}`,
-            [side * EXPO_BOULEVARD_LAYOUT.programmedFillerX, 0, clusterBaseZ - EXPO_BOULEVARD_LAYOUT.programmedFillerZOffset - 18],
-            side < 0 ? Math.PI / 2 : -Math.PI / 2,
+            result.position,
+            result.rotationY,
             target.role
           );
         }
@@ -628,6 +652,77 @@ function getSectorClusterDepth(nodeOffsets: number[]) {
     EXPO_BOULEVARD_LAYOUT.sectorGatewayOnlyDepth + EXPO_BOULEVARD_LAYOUT.clusterGapDepth + EXPO_BOULEVARD_LAYOUT.anchorPlazaDepth,
     furthestContentOffset + EXPO_BOULEVARD_LAYOUT.clusterGapDepth + 18,
   );
+}
+
+function getDistrictNodeCenter(clusterIndex: number, totalDistrictCount: number): { x: number; z: number; lane: 'left' | 'right' | 'center' } {
+  const baseZ = -220 - (clusterIndex * 446);
+  if (totalDistrictCount >= 3 && clusterIndex === totalDistrictCount - 1) {
+    return {
+      x: 0,
+      z: baseZ - 120,
+      lane: 'center',
+    };
+  }
+
+  const isLeft = clusterIndex % 2 === 0;
+  return {
+    x: isLeft ? -298 : 298,
+    z: baseZ - (isLeft ? 18 : 94),
+    lane: isLeft ? 'left' : 'right',
+  };
+}
+
+function getDistrictGatewayPositions(center: { x: number; z: number; lane: 'left' | 'right' | 'center' }) {
+  if (center.lane === 'center') {
+    return {
+      left: [-188, 0, center.z + 88] as [number, number, number],
+      right: [188, 0, center.z + 88] as [number, number, number],
+    };
+  }
+
+  return {
+    left: [-154, 0, center.z + 96] as [number, number, number],
+    right: [154, 0, center.z + 96] as [number, number, number],
+  };
+}
+
+function getProgrammedNodePosition(
+  center: { x: number; z: number; lane: 'left' | 'right' | 'center' },
+  role: ExpoDistrictProgramRole,
+  scenicIndex = 0
+): { position: [number, number, number]; rotationY?: number } {
+  switch (role) {
+    case 'arrival_anchor':
+      return { position: [center.x, 0, center.z + 128] };
+    case 'connector_left':
+      return { position: [center.x - 118, 0, center.z + 42], rotationY: Math.PI / 2 };
+    case 'connector_right':
+      return { position: [center.x + 118, 0, center.z + 42], rotationY: -Math.PI / 2 };
+    case 'side_lane_left':
+      return { position: [center.x - (center.lane === 'center' ? 224 : 168), 0, center.z - 22], rotationY: Math.PI / 2 };
+    case 'side_lane_right':
+      return { position: [center.x + (center.lane === 'center' ? 224 : 168), 0, center.z - 22], rotationY: -Math.PI / 2 };
+    case 'hero_forecourt_left':
+      return { position: [center.x - (center.lane === 'center' ? 126 : 56), 0, center.z + 24], rotationY: Math.PI / 2 };
+    case 'hero_forecourt_right':
+      return { position: [center.x + (center.lane === 'center' ? 126 : 56), 0, center.z + 24], rotationY: -Math.PI / 2 };
+    case 'info_pavilion':
+      return { position: [center.x, 0, center.z - 102] };
+    case 'networking_lounge':
+      return { position: [center.x, 0, center.z - 150] };
+    case 'demo_stage':
+      return { position: [center.x + (center.lane === 'center' ? 246 : 172), 0, center.z - 108], rotationY: -Math.PI / 2 };
+    case 'meeting_pod':
+      return { position: [center.x - (center.lane === 'center' ? 246 : 172), 0, center.z - 108], rotationY: Math.PI / 2 };
+    case 'scenic_showcase': {
+      const side = scenicIndex % 2 === 0 ? -1 : 1;
+      const xOffset = center.lane === 'center' ? 286 : 212;
+      return {
+        position: [center.x + side * xOffset, 0, center.z - 142 - (Math.floor(scenicIndex / 2) * 22)],
+        rotationY: side < 0 ? Math.PI / 2 : -Math.PI / 2,
+      };
+    }
+  }
 }
 
 export function buildSponsorBoulevardPlan(
@@ -676,27 +771,31 @@ export function buildSponsorBoulevardPlan(
 
   orderedSectorKeys.forEach((sectorKey, sectorIndex) => {
     const group = sectorGroups.get(sectorKey) ?? [];
+    const districtCenter = getDistrictNodeCenter(sectorIndex, orderedSectorKeys.length);
     const sectorLabel = sectorKey === UNASSIGNED_SECTOR_ID
       ? UNASSIGNED_SECTOR_LABEL
       : (sectorLabelById.get(sectorKey) ?? group[0]?.sectorLabel ?? UNASSIGNED_SECTOR_LABEL);
     const color = sectorColorById.get(sectorKey) || '#3b82f6';
 
+    const gatewayPositions = getDistrictGatewayPositions(districtCenter);
     const leftGateway = createGatewayNode(
       sectorKey === UNASSIGNED_SECTOR_ID ? null : sectorKey,
       sectorLabel,
       color,
       'left',
-      clusterBaseZ - EXPO_BOULEVARD_LAYOUT.gatewayZOffset
+      gatewayPositions.left[2]
     );
     leftGateway.clusterIndex = sectorIndex;
+    leftGateway.position = gatewayPositions.left;
     const rightGateway = createGatewayNode(
       sectorKey === UNASSIGNED_SECTOR_ID ? null : sectorKey,
       sectorLabel,
       color,
       'right',
-      clusterBaseZ - EXPO_BOULEVARD_LAYOUT.gatewayZOffset
+      gatewayPositions.right[2]
     );
     rightGateway.clusterIndex = sectorIndex;
+    rightGateway.position = gatewayPositions.right;
     nodes.push(leftGateway, rightGateway);
     sectorGateways.push(leftGateway, rightGateway);
 
@@ -723,7 +822,7 @@ export function buildSponsorBoulevardPlan(
     });
     const sectorId = sectorKey === UNASSIGNED_SECTOR_ID ? null : sectorKey;
     const programmedNodes = buildProgrammedFillerNodes({
-      clusterBaseZ,
+      center: districtCenter,
       clusterIndex: sectorIndex,
       color,
       sectorId,
@@ -739,8 +838,8 @@ export function buildSponsorBoulevardPlan(
         heroLeft,
         'hero_left',
         color,
-        -EXPO_BOULEVARD_LAYOUT.heroX,
-        clusterBaseZ - EXPO_BOULEVARD_LAYOUT.heroZOffset,
+        districtCenter.x - (districtCenter.lane === 'center' ? 146 : 56),
+        districtCenter.z - 34,
         Math.PI / 2
       ));
       nodes[nodes.length - 1].clusterIndex = sectorIndex;
@@ -750,8 +849,8 @@ export function buildSponsorBoulevardPlan(
         heroRight,
         'hero_right',
         color,
-        EXPO_BOULEVARD_LAYOUT.heroX,
-        clusterBaseZ - EXPO_BOULEVARD_LAYOUT.heroZOffset,
+        districtCenter.x + (districtCenter.lane === 'center' ? 146 : 56),
+        districtCenter.z - 34,
         -Math.PI / 2
       ));
       nodes[nodes.length - 1].clusterIndex = sectorIndex;
@@ -764,8 +863,8 @@ export function buildSponsorBoulevardPlan(
         company,
         'endcap',
         color,
-        side * EXPO_BOULEVARD_LAYOUT.endcapX,
-        clusterBaseZ - 44 - row * EXPO_BOULEVARD_LAYOUT.standardZStep,
+        districtCenter.x + side * (districtCenter.lane === 'center' ? 236 : 118),
+        districtCenter.z - 28 - row * 112,
         side < 0 ? Math.PI / 2 : -Math.PI / 2
       ));
       nodes[nodes.length - 1].clusterIndex = sectorIndex;
@@ -778,8 +877,8 @@ export function buildSponsorBoulevardPlan(
         company,
         isLeft ? 'standard_left' : 'standard_right',
         color,
-        isLeft ? -EXPO_BOULEVARD_LAYOUT.standardX : EXPO_BOULEVARD_LAYOUT.standardX,
-        clusterBaseZ - EXPO_BOULEVARD_LAYOUT.standardZStartOffset - row * EXPO_BOULEVARD_LAYOUT.standardZStep,
+        districtCenter.x + (isLeft ? -74 : 74),
+        districtCenter.z - 126 - row * 104,
         isLeft ? Math.PI / 2 : -Math.PI / 2
       ));
       nodes[nodes.length - 1].clusterIndex = sectorIndex;
