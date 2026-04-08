@@ -1099,11 +1099,11 @@ function ExpoDistrictPromenade({
   }, [boothPlacements]);
   const centerZ = (footprint.minZ + footprint.maxZ) * 0.5;
   const promenadeLength = Math.max(1320, (footprint.maxZ - footprint.minZ) + 520);
-  const promenadeWidth = 72;
-  const innerRunwayWidth = 18;
-  const shoulderWidth = 18;
-  const sidePromenadeWidth = 28;
-  const sidePromenadeX = 68;
+  const promenadeWidth = 108;
+  const innerRunwayWidth = 28;
+  const shoulderWidth = 22;
+  const sidePromenadeWidth = 92;
+  const sidePromenadeX = 252;
   const laneStep = 92;
   const laneCount = Math.max(10, Math.floor((promenadeLength - 80) / laneStep));
   const laneStartZ = footprint.maxZ - 28;
@@ -1137,11 +1137,11 @@ function ExpoDistrictPromenade({
       </mesh>
       <mesh position={[-sidePromenadeX, 0.031, centerZ - 24]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
         <planeGeometry args={[sidePromenadeWidth, promenadeLength - 120]} />
-        <ExpoAxisMaterial color="#d6dde5" roughness={0.72} metalness={0.03} />
+        <ExpoAxisMaterial color="#dce6ed" roughness={0.68} metalness={0.03} />
       </mesh>
       <mesh position={[sidePromenadeX, 0.031, centerZ - 24]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
         <planeGeometry args={[sidePromenadeWidth, promenadeLength - 120]} />
-        <ExpoAxisMaterial color="#d6dde5" roughness={0.72} metalness={0.03} />
+        <ExpoAxisMaterial color="#dce6ed" roughness={0.68} metalness={0.03} />
       </mesh>
       {plazaOffsets.map((z, index) => (
         <group key={`city-plaza-${z}`}>
