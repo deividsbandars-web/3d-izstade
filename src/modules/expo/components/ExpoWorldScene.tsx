@@ -2974,8 +2974,8 @@ function CleanExpoCitySkeleton({
       {[...mediaWallBlocks, ...rightSupportBlocks, ...discoveryEdgeBlocks]
         .filter((mass) => !overlapsStadiumReserve(mass.position, stadiumReserve, mass.size))
         .map((mass) => (
-          <group key={mass.id} position={mass.position}>
-            <mesh castShadow receiveShadow>
+          <group key={mass.id} position={[mass.position[0], 0, mass.position[2]]}>
+            <mesh castShadow receiveShadow position={[0, mass.size[1] * 0.5, 0]}>
               <boxGeometry args={mass.size} />
               <ExpoArchitecturalMassMaterial fallbackColor={mass.color} />
             </mesh>
