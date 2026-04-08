@@ -3066,27 +3066,27 @@ function CleanExpoCitySkeleton({
       return [
         {
           id: `${district.sectorId ?? district.clusterIndex}-booth-pavilion-left-anchor`,
-          position: [-258, 0, baseZ + 22] as [number, number, number],
-          size: [76, 26, 96] as [number, number, number],
-          color: '#a8b8c4',
+          position: [-258, 0, baseZ + 28] as [number, number, number],
+          size: [58, 8, 58] as [number, number, number],
+          color: '#c9d6de',
         },
         {
           id: `${district.sectorId ?? district.clusterIndex}-booth-pavilion-left-tower`,
-          position: [-318, 0, baseZ + 96] as [number, number, number],
-          size: [28, 104, 28] as [number, number, number],
-          color: '#7f93a1',
+          position: [-318, 0, baseZ + 102] as [number, number, number],
+          size: [18, 54, 18] as [number, number, number],
+          color: '#8ea2af',
         },
         {
           id: `${district.sectorId ?? district.clusterIndex}-booth-pavilion-right-anchor`,
-          position: [258, 0, baseZ + 18] as [number, number, number],
-          size: [76, 26, 96] as [number, number, number],
-          color: '#a8b8c4',
+          position: [258, 0, baseZ + 24] as [number, number, number],
+          size: [58, 8, 58] as [number, number, number],
+          color: '#c9d6de',
         },
         {
           id: `${district.sectorId ?? district.clusterIndex}-booth-pavilion-right-tower`,
-          position: [318, 0, baseZ + 88] as [number, number, number],
-          size: [28, 104, 28] as [number, number, number],
-          color: '#7f93a1',
+          position: [318, 0, baseZ + 94] as [number, number, number],
+          size: [18, 54, 18] as [number, number, number],
+          color: '#8ea2af',
         },
       ];
     });
@@ -3374,27 +3374,39 @@ function CleanExpoCitySkeleton({
       const baseZ = -196 - (districtIndex * districtStride);
       return [
         {
-          id: `booth-boulevard-left-${districtIndex}`,
-          position: [-268, 0, baseZ - 18] as [number, number, number],
-          size: [82, 22, 436] as [number, number, number],
-          color: '#cfdbe3',
+          id: `booth-boulevard-left-plinth-a-${districtIndex}`,
+          position: [-268, 0, baseZ + 64] as [number, number, number],
+          size: [84, 8, 124] as [number, number, number],
+          color: '#d5e0e7',
         },
         {
-          id: `booth-boulevard-right-${districtIndex}`,
-          position: [268, 0, baseZ - 28] as [number, number, number],
-          size: [82, 22, 436] as [number, number, number],
-          color: '#cfdbe3',
+          id: `booth-boulevard-left-plinth-b-${districtIndex}`,
+          position: [-312, 0, baseZ - 118] as [number, number, number],
+          size: [62, 10, 92] as [number, number, number],
+          color: '#c3d1db',
         },
         {
-          id: `booth-boulevard-left-canopy-${districtIndex}`,
-          position: [-268, 0, baseZ - 16] as [number, number, number],
-          size: [96, 14, 248] as [number, number, number],
+          id: `booth-boulevard-right-plinth-a-${districtIndex}`,
+          position: [268, 0, baseZ + 56] as [number, number, number],
+          size: [84, 8, 124] as [number, number, number],
+          color: '#d5e0e7',
+        },
+        {
+          id: `booth-boulevard-right-plinth-b-${districtIndex}`,
+          position: [312, 0, baseZ - 126] as [number, number, number],
+          size: [62, 10, 92] as [number, number, number],
+          color: '#c3d1db',
+        },
+        {
+          id: `booth-boulevard-left-beacon-${districtIndex}`,
+          position: [-224, 0, baseZ - 6] as [number, number, number],
+          size: [14, 72, 14] as [number, number, number],
           color: '#8ea2af',
         },
         {
-          id: `booth-boulevard-right-canopy-${districtIndex}`,
-          position: [268, 0, baseZ - 24] as [number, number, number],
-          size: [96, 14, 248] as [number, number, number],
+          id: `booth-boulevard-right-beacon-${districtIndex}`,
+          position: [224, 0, baseZ - 14] as [number, number, number],
+          size: [14, 72, 14] as [number, number, number],
           color: '#8ea2af',
         },
       ];
