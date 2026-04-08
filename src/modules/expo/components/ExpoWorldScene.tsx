@@ -2985,16 +2985,16 @@ function CleanExpoCitySkeleton({
       {cleanTowerLandmarks
         .filter((tower) => !overlapsStadiumReserve(tower.position, stadiumReserve, tower.baseSize))
         .map((tower) => (
-          <group key={tower.id} position={tower.position}>
-            <mesh castShadow receiveShadow>
+          <group key={tower.id} position={[tower.position[0], 0, tower.position[2]]}>
+            <mesh castShadow receiveShadow position={[0, tower.baseSize[1] * 0.5, 0]}>
               <boxGeometry args={tower.baseSize} />
               <ExpoArchitecturalMassMaterial fallbackColor={tower.color} emissive={tower.crownColor} emissiveIntensity={0.01} />
             </mesh>
-            <mesh position={[0, tower.baseSize[1] * 0.24, 0]} castShadow receiveShadow>
+            <mesh position={[0, tower.baseSize[1] + (tower.upperSize[1] * 0.5) - 18, 0]} castShadow receiveShadow>
               <boxGeometry args={tower.upperSize} />
               <ExpoArchitecturalMassMaterial fallbackColor="#94a6b2" emissive={tower.crownColor} emissiveIntensity={0.012} />
             </mesh>
-            <mesh position={[0, (tower.baseSize[1] * 0.5) + 2.2, 0]} castShadow>
+            <mesh position={[0, tower.baseSize[1] + tower.upperSize[1] - 8, 0]} castShadow>
               <boxGeometry args={[tower.baseSize[0] * 0.62, 1.8, tower.baseSize[2] * 0.62]} />
               <meshStandardMaterial color={tower.crownColor} metalness={0.12} roughness={0.44} />
             </mesh>
@@ -4204,6 +4204,8 @@ function SponsorScreenHierarchy({
   );
 }
 
+void SponsorScreenHierarchy;
+
 export function SponsorBillboards({ placements: _placements }: { placements: ExpoBoothPlacement[]; }) {
   const billboardPlacements = useMemo(() => (
     [..._placements]
@@ -4889,13 +4891,6 @@ export function ExpoWorldScene({ activeZone, debug, guests: _guests, mode, onMov
                   />
                 ))}
               </group>
-
-              <SponsorScreenHierarchy
-                boothPlacements={visibleBoothPlacements}
-                districtPrograms={districtPrograms}
-                playerPosition={playerPosition}
-                sectorMarkers={sectorMarkers}
-              />
 
               {visibleBoothPlacements.length === 0 && (
                 <Html position={[0, 8, 0]} center>
