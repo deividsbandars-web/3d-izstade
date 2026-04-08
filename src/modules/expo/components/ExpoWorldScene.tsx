@@ -3208,11 +3208,9 @@ function CleanExpoCitySkeleton({
 
 function ExpoRearCampus({
   boothPlacements,
-  playerPosition,
   visualProfile,
 }: {
   boothPlacements: ExpoBoothPlacement[];
-  playerPosition: [number, number, number];
   visualProfile: ExpoWorldVisualProfile;
 }) {
   const campusColliderRef = useRef<THREE.Group>(null);
@@ -3222,88 +3220,12 @@ function ExpoRearCampus({
   const campusCenterZ = minZ - 1480;
   const accent = visualProfile.global.hudAccent;
   usePlayerColliderRegistration(campusColliderRef, 'rear-campus-collider');
-  const frontStandZ = 1500;
-  const sideStandX = 1160;
   const backStandZ = -1700;
   const towerX = 1520;
   const towerZ = 1500;
-  const frontStandOffsetX = 900;
-  const frontStandRotation = 0.18;
-  const sideStandRotation = Math.PI * 0.05;
   const perimeterHalfX = 2860;
   const perimeterBackZ = -2500;
   const enableHeavyShadows = EXPO_FEATURE_FLAGS.enableShowcaseSkylineDensity;
-  const campusDistanceToPlayer = Math.hypot(playerPosition[0], playerPosition[2] - campusCenterZ);
-  const useSimplifiedCampus = !EXPO_FEATURE_FLAGS.enableShowcaseSkylineDensity && campusDistanceToPlayer > 1600;
-
-  const renderStandTiers = (
-    tiers: Array<{ position: [number, number, number]; rotation?: [number, number, number]; size: [number, number, number]; color: string }>
-  ) =>
-    tiers.map((tier, index) => (
-      <mesh
-        key={`stand-tier-${index}`}
-        position={tier.position}
-        rotation={tier.rotation ?? [0, 0, 0]}
-        castShadow={enableHeavyShadows}
-        receiveShadow
-      >
-        <boxGeometry args={tier.size} />
-        <ExpoArchitecturalMassMaterial
-          fallbackColor={tier.color}
-          repeat={[Math.max(1.2, tier.size[0] / 260), Math.max(1.2, tier.size[2] / 260)]}
-        />
-      </mesh>
-    ));
-
-  if (useSimplifiedCampus) {
-    return (
-      <group name="expo-rear-campus-simplified">
-        <mesh position={[0, 0.02, routeEndZ + 240]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-          <planeGeometry args={[1180, 2760]} />
-          <ExpoRuntimeSurfaceMaterial fallbackColor="#e4ebf1" repeat={[2.4, 7.8]} surface="paver" />
-        </mesh>
-        <group position={[0, 0, campusCenterZ]}>
-          <mesh position={[0, 6.08, -40]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-            <circleGeometry args={[3080, 112]} />
-            <ExpoRuntimeSurfaceMaterial fallbackColor="#94a7b6" repeat={[6.8, 6.8]} surface="concrete" />
-          </mesh>
-          <mesh position={[0, 6.3, -40]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-            <circleGeometry args={[2120, 88]} />
-            <ExpoRuntimeSurfaceMaterial fallbackColor="#ffffff" repeat={[4.8, 4.8]} surface="concrete" />
-          </mesh>
-          {[-1, 1].map((side) => (
-            <mesh key={`rear-campus-simplified-stand-${side}`} position={[side * 980, 180, 160]} rotation={[0, side < 0 ? sideStandRotation : -sideStandRotation, 0]} receiveShadow>
-              <boxGeometry args={[620, 360, 2480]} />
-              <ExpoArchitecturalMassMaterial fallbackColor="#a7b7c4" repeat={[2.4, 7.2]} />
-            </mesh>
-          ))}
-          <mesh position={[0, 236, backStandZ]} rotation={[-0.16, 0, 0]} receiveShadow>
-            <boxGeometry args={[3440, 420, 760]} />
-            <ExpoArchitecturalMassMaterial fallbackColor="#a6b6c3" repeat={[8.2, 2.2]} />
-          </mesh>
-          {[-1, 1].flatMap((xSide) =>
-            ([-1, 1] as const).map((zSide) => (
-              <group key={`rear-campus-simplified-tower-${xSide}-${zSide}`} position={[xSide * towerX, 0, zSide * towerZ]}>
-                <mesh position={[0, 880, 0]} receiveShadow>
-                  <boxGeometry args={[88, 1760, 88]} />
-                  <ExpoArchitecturalMassMaterial fallbackColor="#708496" repeat={[1.2, 1.2]} />
-                </mesh>
-                <mesh position={[0, 1480, zSide > 0 ? -40 : 40]} rotation={[0, zSide > 0 ? Math.PI : 0, 0]}>
-                  <planeGeometry args={[620, 420]} />
-                  <meshStandardMaterial color={accent} emissive={accent} emissiveIntensity={0.28} roughness={0.18} metalness={0.18} />
-                </mesh>
-                <mesh position={[xSide > 0 ? -40 : 40, 1480, 0]} rotation={[0, xSide > 0 ? Math.PI * 0.5 : -Math.PI * 0.5, 0]}>
-                  <planeGeometry args={[620, 420]} />
-                  <meshStandardMaterial color={accent} emissive={accent} emissiveIntensity={0.28} roughness={0.18} metalness={0.18} />
-                </mesh>
-              </group>
-            ))
-          )}
-        </group>
-      </group>
-    );
-  }
-
   return (
     <group name="expo-rear-campus">
       <mesh position={[0, 0.02, routeEndZ + 240]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
@@ -3330,18 +3252,6 @@ function ExpoRearCampus({
         <planeGeometry args={[1960, 640]} />
         <ExpoRuntimeSurfaceMaterial fallbackColor="#d8e4ec" repeat={[4.2, 1.8]} surface="paver" />
       </mesh>
-      {[-1, 1].map((side) => (
-        <group key={`rear-campus-entry-pylon-${side}`} position={[side * 760, 0, campusCenterZ + 1120]}>
-          <mesh position={[0, 142, 0]} castShadow={enableHeavyShadows} receiveShadow>
-            <boxGeometry args={[112, 284, 112]} />
-            <ExpoArchitecturalMassMaterial fallbackColor="#7f94a6" repeat={[1.2, 1.2]} />
-          </mesh>
-            <mesh position={[0, 236, side > 0 ? -58 : 58]} rotation={[0, side > 0 ? Math.PI : 0, 0]}>
-              <planeGeometry args={[280, 164]} />
-            <meshStandardMaterial color={accent} emissive={accent} emissiveIntensity={0.24} roughness={0.2} metalness={0.16} />
-          </mesh>
-        </group>
-      ))}
       <group position={[0, 0, campusCenterZ]}>
         <mesh position={[0, 6.08, -40]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
           <circleGeometry args={[3080, 112]} />
@@ -3359,93 +3269,74 @@ function ExpoRearCampus({
           <ringGeometry args={[1860, 2000, 96]} />
           <ExpoRuntimeSurfaceMaterial fallbackColor="#9eb2c0" repeat={[4.8, 4.8]} surface="paver" />
         </mesh>
+        <mesh position={[0, 26, -40]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+          <ringGeometry args={[2440, 2720, 96]} />
+          <meshStandardMaterial color="#cbd8e0" roughness={0.56} metalness={0.06} />
+        </mesh>
         {[-1, 1].map((side) => (
-          <group key={`rear-campus-front-stand-${side}`} position={[side * frontStandOffsetX, 0, frontStandZ]}>
-            {renderStandTiers([
-              { position: [0, 96, 0], rotation: [frontStandRotation, side * -0.04, 0], size: [1340, 192, 720], color: '#a4b6c4' },
-              { position: [0, 232, -88], rotation: [0.26, side * -0.04, 0], size: [1120, 124, 560], color: '#ccd8e1' },
-              { position: [0, 340, -152], rotation: [0.32, side * -0.04, 0], size: [880, 104, 420], color: '#eef4f8' },
-            ])}
-            <mesh position={[0, 188, 212]} rotation={[0.04, side * -0.04, 0]}>
-              <boxGeometry args={[1180, 54, 56]} />
-              <meshStandardMaterial color={accent} emissive={accent} emissiveIntensity={0.16} roughness={0.24} metalness={0.14} />
+          <group key={`rear-campus-gateway-${side}`} position={[side * 1260, 0, 980]}>
+            <mesh position={[0, 168, 0]} castShadow={enableHeavyShadows} receiveShadow>
+              <boxGeometry args={[126, 336, 126]} />
+              <ExpoArchitecturalMassMaterial fallbackColor="#8095a6" repeat={[1.2, 1.2]} />
             </mesh>
-            <mesh position={[0, 264, 146]} rotation={[0.12, side * -0.04, 0]}>
-              <boxGeometry args={[940, 28, 44]} />
-              <meshStandardMaterial color="#d7e4ec" roughness={0.42} metalness={0.08} />
+            <mesh position={[0, 296, 0]} castShadow={enableHeavyShadows} receiveShadow>
+              <boxGeometry args={[224, 34, 78]} />
+              <ExpoArchitecturalMassMaterial fallbackColor="#c8d4dc" repeat={[1.4, 1.2]} />
             </mesh>
-            {[-220, 220].map((aisleX) => (
-              <mesh key={`rear-campus-front-aisle-${side}-${aisleX}`} position={[aisleX, 212, 44]} rotation={[0.2, side * -0.04, 0]}>
-                <boxGeometry args={[48, 182, 560]} />
-                <meshStandardMaterial color="#e9f0f5" roughness={0.38} metalness={0.06} />
-              </mesh>
-            ))}
           </group>
         ))}
         {[-1, 1].map((side) => (
-          <group key={`rear-campus-side-stand-${side}`} position={[side * sideStandX, 0, -80]}>
-            {renderStandTiers([
-              { position: [0, 160, 0], rotation: [0, side < 0 ? sideStandRotation : -sideStandRotation, 0], size: [660, 320, 2560], color: '#9eb1c0' },
-              { position: [side < 0 ? -52 : 52, 320, 0], rotation: [0, side < 0 ? sideStandRotation : -sideStandRotation, 0], size: [540, 128, 2160], color: '#c8d5de' },
-              { position: [side < 0 ? -90 : 90, 434, 0], rotation: [0, side < 0 ? sideStandRotation : -sideStandRotation, 0], size: [400, 96, 1760], color: '#edf3f7' },
-            ])}
-            <mesh position={[side < 0 ? 196 : -196, 224, 0]} rotation={[0, side < 0 ? sideStandRotation : -sideStandRotation, 0]}>
-              <boxGeometry args={[54, 72, 1980]} />
-              <meshStandardMaterial color={accent} emissive={accent} emissiveIntensity={0.14} roughness={0.24} metalness={0.14} />
+          <group key={`rear-campus-side-wall-${side}`} position={[side * 1540, 0, -260]}>
+            <mesh position={[0, 188, 0]} castShadow={enableHeavyShadows} receiveShadow>
+              <boxGeometry args={[188, 376, 2780]} />
+              <ExpoArchitecturalMassMaterial fallbackColor="#97a9b6" repeat={[1.8, 7.8]} />
             </mesh>
-            <mesh position={[side < 0 ? 132 : -132, 300, 0]} rotation={[0, side < 0 ? sideStandRotation : -sideStandRotation, 0]}>
-              <boxGeometry args={[36, 30, 1620]} />
-              <meshStandardMaterial color="#d9e5ec" roughness={0.44} metalness={0.08} />
+            <mesh position={[side > 0 ? -74 : 74, 264, 0]} castShadow={enableHeavyShadows} receiveShadow>
+              <boxGeometry args={[42, 124, 2120]} />
+              <meshStandardMaterial color={accent} emissive={accent} emissiveIntensity={0.16} roughness={0.22} metalness={0.16} />
             </mesh>
-            {[-540, 0, 540].map((aisleZ) => (
-              <mesh
-                key={`rear-campus-side-aisle-${side}-${aisleZ}`}
-                position={[side < 0 ? 48 : -48, 246, aisleZ]}
-                rotation={[0, side < 0 ? sideStandRotation : -sideStandRotation, 0]}
-              >
-                <boxGeometry args={[72, 212, 86]} />
-                <meshStandardMaterial color="#e8eff4" roughness={0.4} metalness={0.06} />
-              </mesh>
-            ))}
           </group>
         ))}
-        {renderStandTiers([
-          { position: [0, 208, backStandZ], rotation: [-0.16, 0, 0], size: [3640, 416, 740], color: '#9fb1bf' },
-          { position: [0, 378, backStandZ - 112], rotation: [-0.22, 0, 0], size: [3080, 152, 580], color: '#c9d6df' },
-          { position: [0, 500, backStandZ - 192], rotation: [-0.28, 0, 0], size: [2580, 112, 430], color: '#edf3f7' },
-        ])}
-        <mesh position={[0, 24, -40]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-          <ringGeometry args={[2720, 2860, 96]} />
-          <meshStandardMaterial color="#c8d6df" roughness={0.58} metalness={0.06} />
-        </mesh>
-        <mesh position={[0, 30, -40]} rotation={[-Math.PI / 2, 0, 0]}>
-          <ringGeometry args={[2860, 2960, 96]} />
-          <meshStandardMaterial color="#f7fbfd" emissive="#f7fbfd" emissiveIntensity={0.08} roughness={0.24} metalness={0.08} />
-        </mesh>
-        {[-760, 0, 760].map((aisleX) => (
-          <mesh key={`rear-campus-back-aisle-${aisleX}`} position={[aisleX, 286, backStandZ + 78]} rotation={[-0.18, 0, 0]}>
-            <boxGeometry args={[86, 232, 520]} />
-            <meshStandardMaterial color="#e8eef4" roughness={0.38} metalness={0.06} />
+        <group position={[0, 0, backStandZ + 180]}>
+          <mesh position={[0, 208, 0]} rotation={[-0.08, 0, 0]} castShadow={enableHeavyShadows} receiveShadow>
+            <boxGeometry args={[3260, 416, 920]} />
+            <ExpoArchitecturalMassMaterial fallbackColor="#9eb1bf" repeat={[8.2, 2.4]} />
           </mesh>
-        ))}
-        <mesh position={[0, 292, backStandZ + 244]} rotation={[-0.08, 0, 0]}>
-          <boxGeometry args={[2780, 64, 60]} />
-          <meshStandardMaterial color={accent} emissive={accent} emissiveIntensity={0.18} roughness={0.24} metalness={0.14} />
-        </mesh>
-        <mesh position={[0, 342, backStandZ + 284]} rotation={[-0.12, 0, 0]}>
-          <planeGeometry args={[1320, 220]} />
-          <meshStandardMaterial color={accent} emissive={accent} emissiveIntensity={0.26} roughness={0.2} metalness={0.16} />
-        </mesh>
-        {[-1, 1].map((side) => (
-          <mesh
-            key={`rear-campus-inner-ribbon-${side}`}
-            position={[side * (sideStandX - 186), 264, -60]}
-            rotation={[0, side < 0 ? Math.PI * 0.5 : -Math.PI * 0.5, 0]}
-          >
-            <planeGeometry args={[980, 160]} />
-            <meshStandardMaterial color={accent} emissive={accent} emissiveIntensity={0.2} roughness={0.2} metalness={0.16} />
+          <mesh position={[0, 378, -88]} rotation={[-0.12, 0, 0]} castShadow={enableHeavyShadows} receiveShadow>
+            <boxGeometry args={[2680, 144, 640]} />
+            <ExpoArchitecturalMassMaterial fallbackColor="#c9d5de" repeat={[6.8, 1.8]} />
           </mesh>
-        ))}
+          <mesh position={[0, 498, -146]} rotation={[-0.16, 0, 0]} castShadow={enableHeavyShadows} receiveShadow>
+            <boxGeometry args={[2140, 104, 420]} />
+            <ExpoArchitecturalMassMaterial fallbackColor="#eef4f7" repeat={[5.4, 1.4]} />
+          </mesh>
+          <mesh position={[0, 306, 264]} rotation={[-0.06, 0, 0]}>
+            <boxGeometry args={[2480, 48, 56]} />
+            <meshStandardMaterial color={accent} emissive={accent} emissiveIntensity={0.16} roughness={0.24} metalness={0.14} />
+          </mesh>
+        </group>
+        {[-1, 1].flatMap((xSide) =>
+          ([-1, 1] as const).map((zSide) => (
+            <group key={`rear-campus-landmark-tower-${xSide}-${zSide}`} position={[xSide * towerX, 0, zSide * towerZ]}>
+              <mesh position={[0, 620, 0]} castShadow={enableHeavyShadows} receiveShadow>
+                <boxGeometry args={[132, 1240, 132]} />
+                <ExpoArchitecturalMassMaterial fallbackColor="#708596" repeat={[1.4, 1.4]} />
+              </mesh>
+              <mesh position={[0, 1170, 0]} castShadow={enableHeavyShadows} receiveShadow>
+                <boxGeometry args={[248, 76, 248]} />
+                <ExpoArchitecturalMassMaterial fallbackColor="#b7c5ce" repeat={[1.6, 1.6]} />
+              </mesh>
+              <mesh position={[0, 960, zSide > 0 ? -44 : 44]} rotation={[0, zSide > 0 ? Math.PI : 0, 0]}>
+                <planeGeometry args={[660, 360]} />
+                <meshStandardMaterial color={accent} emissive={accent} emissiveIntensity={0.24} roughness={0.18} metalness={0.18} />
+              </mesh>
+              <mesh position={[xSide > 0 ? -44 : 44, 960, 0]} rotation={[0, xSide > 0 ? Math.PI * 0.5 : -Math.PI * 0.5, 0]}>
+                <planeGeometry args={[660, 360]} />
+                <meshStandardMaterial color={accent} emissive={accent} emissiveIntensity={0.24} roughness={0.18} metalness={0.18} />
+              </mesh>
+            </group>
+          ))
+        )}
         <mesh position={[0, 10, 760]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
           <planeGeometry args={[1380, 1880]} />
           <ExpoRuntimeSurfaceMaterial fallbackColor="#edf3f7" repeat={[3.6, 4.2]} surface="concrete" />
@@ -3466,88 +3357,22 @@ function ExpoRearCampus({
           <boxGeometry args={[5760, 48, 60]} />
           <ExpoArchitecturalMassMaterial fallbackColor="#c1d0d9" repeat={[9.8, 1.2]} />
         </mesh>
-        {[-1, 1].flatMap((xSide) =>
-          ([-1, 1] as const).map((zSide) => (
-            <group key={`rear-campus-light-tower-${xSide}-${zSide}`} position={[xSide * towerX, 0, zSide * towerZ]}>
-              <mesh position={[0, 880, 0]} castShadow={enableHeavyShadows} receiveShadow>
-                <boxGeometry args={[96, 1760, 96]} />
-                <ExpoArchitecturalMassMaterial fallbackColor="#677d93" repeat={[1.2, 1.2]} />
-              </mesh>
-              <mesh position={[0, 1700, 0]} castShadow={enableHeavyShadows} receiveShadow>
-                <boxGeometry args={[224, 56, 224]} />
-                <ExpoArchitecturalMassMaterial fallbackColor="#a8bac7" repeat={[1.4, 1.4]} />
-              </mesh>
-              <mesh position={[0, 1480, 0]} castShadow={enableHeavyShadows} receiveShadow>
-                <boxGeometry args={[560, 392, 64]} />
-                <meshStandardMaterial color="#1f3140" metalness={0.12} roughness={0.52} />
-              </mesh>
-              <mesh position={[0, 1480, 0]} castShadow={enableHeavyShadows} receiveShadow rotation={[0, Math.PI * 0.5, 0]}>
-                <boxGeometry args={[560, 392, 64]} />
-                <meshStandardMaterial color="#1f3140" metalness={0.12} roughness={0.52} />
-              </mesh>
-              <mesh position={[0, 1480, -36]}>
-                <planeGeometry args={[720, 480]} />
-                <meshStandardMaterial color={accent} emissive={accent} emissiveIntensity={0.34} roughness={0.18} metalness={0.18} />
-              </mesh>
-              <mesh position={[0, 1480, 36]} rotation={[0, Math.PI, 0]}>
-                <planeGeometry args={[720, 480]} />
-                <meshStandardMaterial color={accent} emissive={accent} emissiveIntensity={0.34} roughness={0.18} metalness={0.18} />
-              </mesh>
-              <mesh position={[-36, 1480, 0]} rotation={[0, -Math.PI * 0.5, 0]}>
-                <planeGeometry args={[720, 480]} />
-                <meshStandardMaterial color={accent} emissive={accent} emissiveIntensity={0.34} roughness={0.18} metalness={0.18} />
-              </mesh>
-              <mesh position={[36, 1480, 0]} rotation={[0, Math.PI * 0.5, 0]}>
-                <planeGeometry args={[720, 480]} />
-                <meshStandardMaterial color={accent} emissive={accent} emissiveIntensity={0.34} roughness={0.18} metalness={0.18} />
-              </mesh>
-              <mesh position={[0, 1328, -32]}>
-                <planeGeometry args={[620, 400]} />
-                <meshStandardMaterial color={accent} emissive={accent} emissiveIntensity={0.26} roughness={0.22} metalness={0.18} />
-              </mesh>
-              <mesh position={[0, 1328, 32]} rotation={[0, Math.PI, 0]}>
-                <planeGeometry args={[620, 400]} />
-                <meshStandardMaterial color={accent} emissive={accent} emissiveIntensity={0.26} roughness={0.22} metalness={0.18} />
-              </mesh>
-              <mesh position={[-32, 1328, 0]} rotation={[0, -Math.PI * 0.5, 0]}>
-                <planeGeometry args={[620, 400]} />
-                <meshStandardMaterial color={accent} emissive={accent} emissiveIntensity={0.26} roughness={0.22} metalness={0.18} />
-              </mesh>
-              <mesh position={[32, 1328, 0]} rotation={[0, Math.PI * 0.5, 0]}>
-                <planeGeometry args={[620, 400]} />
-                <meshStandardMaterial color={accent} emissive={accent} emissiveIntensity={0.26} roughness={0.22} metalness={0.18} />
-              </mesh>
-            </group>
-          ))
-        )}
-        {[-1, 1].map((side) => (
-          <mesh key={`rear-campus-front-concourse-ribbon-${side}`} position={[side * 980, 164, 1200]} rotation={[0.08, side * -0.04, 0]}>
-            <boxGeometry args={[980, 42, 48]} />
-            <meshStandardMaterial color={accent} emissive={accent} emissiveIntensity={0.14} roughness={0.24} metalness={0.14} />
-          </mesh>
-        ))}
-        {[-1, 1].map((side) => (
-          <mesh key={`rear-campus-upper-crown-${side}`} position={[side * 1220, 456, 1040]} rotation={[0.18, side * -0.04, 0]}>
-            <boxGeometry args={[860, 34, 42]} />
-            <meshStandardMaterial color="#f1f6f9" emissive="#f1f6f9" emissiveIntensity={0.06} roughness={0.22} metalness={0.08} />
-          </mesh>
-        ))}
       </group>
       <group ref={campusColliderRef} name="rear-campus-collider">
         {[-1, 1].map((side) => (
-          <mesh key={`rear-campus-side-stand-collider-${side}`} position={[side * sideStandX, 160, campusCenterZ - 80]} rotation={[0, side < 0 ? sideStandRotation : -sideStandRotation, 0]}>
-            <boxGeometry args={[460, 320, 2560]} />
+          <mesh key={`rear-campus-side-stand-collider-${side}`} position={[side * 1540, 188, campusCenterZ - 260]} rotation={[0, 0, 0]}>
+            <boxGeometry args={[188, 376, 2780]} />
             <ColliderMaterial color="#f97316" />
           </mesh>
         ))}
         {[-1, 1].map((side) => (
-          <mesh key={`rear-campus-front-stand-collider-${side}`} position={[side * frontStandOffsetX, 96, campusCenterZ + frontStandZ]} rotation={[frontStandRotation, side * -0.04, 0]}>
-            <boxGeometry args={[1340, 192, 720]} />
+          <mesh key={`rear-campus-gateway-collider-${side}`} position={[side * 1260, 168, campusCenterZ + 980]} rotation={[0, 0, 0]}>
+            <boxGeometry args={[126, 336, 126]} />
             <ColliderMaterial color="#f97316" />
           </mesh>
         ))}
-        <mesh position={[0, 208, campusCenterZ + backStandZ]} rotation={[-0.16, 0, 0]}>
-          <boxGeometry args={[3640, 416, 740]} />
+        <mesh position={[0, 208, campusCenterZ + backStandZ + 180]} rotation={[-0.08, 0, 0]}>
+          <boxGeometry args={[3260, 416, 920]} />
           <ColliderMaterial color="#f97316" />
         </mesh>
       </group>
@@ -5061,7 +4886,7 @@ export function ExpoWorldScene({ activeZone, debug, guests: _guests, mode, onMov
             <GroundPlane visualProfile={visualProfile} />
             <ExpoDistrictPromenade boothPlacements={boothPlacements} sectorMarkers={sectorMarkers} />
             <CleanExpoCitySkeleton boothPlacements={visibleBoothPlacements} districtPrograms={districtPrograms} visualProfile={visualProfile} />
-            <ExpoRearCampus boothPlacements={visibleBoothPlacements} playerPosition={playerPosition} visualProfile={visualProfile} />
+            <ExpoRearCampus boothPlacements={visibleBoothPlacements} visualProfile={visualProfile} />
             {EXPO_FEATURE_FLAGS.enableCuratedSkylineRing && (
               <CuratedSkylineRing
                 density={EXPO_FEATURE_FLAGS.enableShowcaseSkylineDensity ? 'standard' : 'minimal'}
