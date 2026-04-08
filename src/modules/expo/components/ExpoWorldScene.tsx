@@ -2858,6 +2858,33 @@ function CleanExpoCitySkeleton({
     },
   ]), []);
 
+  const arrivalSupportBlocks = useMemo(() => ([
+    {
+      id: 'arrival-support-left-outer',
+      position: [-472, 0, 24] as [number, number, number],
+      size: [164, 96, 212] as [number, number, number],
+      color: '#9dafbb',
+    },
+    {
+      id: 'arrival-support-right-outer',
+      position: [472, 0, 12] as [number, number, number],
+      size: [164, 104, 224] as [number, number, number],
+      color: '#9dafbb',
+    },
+    {
+      id: 'arrival-support-left-inner',
+      position: [-286, 0, -82] as [number, number, number],
+      size: [112, 62, 148] as [number, number, number],
+      color: '#b8c5ce',
+    },
+    {
+      id: 'arrival-support-right-inner',
+      position: [286, 0, -96] as [number, number, number],
+      size: [112, 62, 148] as [number, number, number],
+      color: '#b8c5ce',
+    },
+  ]), []);
+
   const boulevardEdgeBlocks = useMemo(() => {
     const districtCount = Math.max(3, districtPrograms.length);
     return Array.from({ length: districtCount }, (_, districtIndex) => {
@@ -2929,6 +2956,40 @@ function CleanExpoCitySkeleton({
     });
 
     return filterReservedSponsorFrontageEntries(entries, boothPlacements, { frontDepth: 480, rearDepth: 180, sideWidth: 220, radius: 280 });
+  }, [districtPrograms, boothPlacements]);
+
+  const mediaWallSupportBlocks = useMemo(() => {
+    const entries = districtPrograms.slice(0, Math.max(3, districtPrograms.length)).flatMap((district, districtIndex) => {
+      const baseZ = -160 - (districtIndex * districtStride);
+      return [
+        {
+          id: `${district.sectorId ?? district.clusterIndex}-media-left-buttress-a`,
+          position: [-518, 0, baseZ + 54] as [number, number, number],
+          size: [104, 146, 92] as [number, number, number],
+          color: '#8396a3',
+        },
+        {
+          id: `${district.sectorId ?? district.clusterIndex}-media-left-buttress-b`,
+          position: [-486, 0, baseZ - 188] as [number, number, number],
+          size: [86, 118, 124] as [number, number, number],
+          color: '#8da0ad',
+        },
+        {
+          id: `${district.sectorId ?? district.clusterIndex}-media-right-buttress-a`,
+          position: [518, 0, baseZ + 28] as [number, number, number],
+          size: [104, 146, 92] as [number, number, number],
+          color: '#8396a3',
+        },
+        {
+          id: `${district.sectorId ?? district.clusterIndex}-media-right-buttress-b`,
+          position: [486, 0, baseZ - 212] as [number, number, number],
+          size: [86, 118, 124] as [number, number, number],
+          color: '#8da0ad',
+        },
+      ];
+    });
+
+    return filterReservedSponsorFrontageEntries(entries, boothPlacements, { frontDepth: 500, rearDepth: 200, sideWidth: 240, radius: 300 });
   }, [districtPrograms, boothPlacements]);
 
   const showcasePlazas = useMemo(() => {
@@ -3113,6 +3174,32 @@ function CleanExpoCitySkeleton({
     ];
   }, [districtPrograms.length, districtStride]);
 
+  const discoverySupportTerraces = useMemo(() => {
+    const districtCount = Math.max(1, districtPrograms.length);
+    const endBaseZ = -196 - ((districtCount - 1) * districtStride) - 860;
+
+    return [
+      {
+        id: 'discovery-terrace-left',
+        position: [-364, 0, endBaseZ + 168] as [number, number, number],
+        size: [244, 84, 168] as [number, number, number],
+        color: '#a4b5c0',
+      },
+      {
+        id: 'discovery-terrace-right',
+        position: [364, 0, endBaseZ + 142] as [number, number, number],
+        size: [244, 92, 168] as [number, number, number],
+        color: '#a4b5c0',
+      },
+      {
+        id: 'discovery-terrace-center',
+        position: [0, 0, endBaseZ + 86] as [number, number, number],
+        size: [320, 54, 124] as [number, number, number],
+        color: '#c7d3db',
+      },
+    ];
+  }, [districtPrograms.length, districtStride]);
+
   const cleanTowerLandmarks = useMemo(() => {
     const entries = districtPrograms.slice(0, Math.max(3, districtPrograms.length)).flatMap((district, districtIndex) => {
       const baseZ = -196 - (districtIndex * districtStride);
@@ -3173,7 +3260,7 @@ function CleanExpoCitySkeleton({
           </mesh>
         ))}
 
-      {[...arrivalGatewayBlocks, ...arrivalLandmarkBlocks, ...boulevardEdgeBlocks, ...mediaWallBlocks, ...showcaseLandmarkBlocks, ...showcaseHeroLandmarks, ...rightSupportBlocks, ...supportEdgeBlocks, ...discoveryEdgeBlocks, ...discoveryLandmarks]
+      {[...arrivalGatewayBlocks, ...arrivalLandmarkBlocks, ...arrivalSupportBlocks, ...boulevardEdgeBlocks, ...mediaWallBlocks, ...mediaWallSupportBlocks, ...showcaseLandmarkBlocks, ...showcaseHeroLandmarks, ...rightSupportBlocks, ...supportEdgeBlocks, ...discoveryEdgeBlocks, ...discoveryLandmarks, ...discoverySupportTerraces]
         .filter((mass) => !overlapsStadiumReserve(mass.position, stadiumReserve, mass.size))
         .map((mass) => (
           <group key={mass.id} position={[mass.position[0], 0, mass.position[2]]}>
