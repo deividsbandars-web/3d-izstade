@@ -3297,6 +3297,20 @@ function ExpoRearCampus({
             </mesh>
           </group>
         ))}
+        {[-1, 1].flatMap((side) =>
+          [-760, 180, 1080].map((zOffset, index) => (
+            <group key={`rear-campus-side-pavilion-${side}-${index}`} position={[side * 1160, 0, zOffset]}>
+              <mesh position={[0, 84, 0]} castShadow={enableHeavyShadows} receiveShadow>
+                <boxGeometry args={[244, 168, 188]} />
+                <ExpoArchitecturalMassMaterial fallbackColor={index === 1 ? '#aebdc8' : '#a2b4c0'} repeat={[1.6, 1.6]} />
+              </mesh>
+              <mesh position={[0, 164, side > 0 ? -58 : 58]} castShadow={enableHeavyShadows} receiveShadow>
+                <boxGeometry args={[184, 24, 48]} />
+                <meshStandardMaterial color={accent} emissive={accent} emissiveIntensity={0.12} roughness={0.24} metalness={0.14} />
+              </mesh>
+            </group>
+          ))
+        )}
         <group position={[0, 0, backStandZ + 180]}>
           <mesh position={[0, 208, 0]} rotation={[-0.08, 0, 0]} castShadow={enableHeavyShadows} receiveShadow>
             <boxGeometry args={[3260, 416, 920]} />
@@ -3315,6 +3329,30 @@ function ExpoRearCampus({
             <meshStandardMaterial color={accent} emissive={accent} emissiveIntensity={0.16} roughness={0.24} metalness={0.14} />
           </mesh>
         </group>
+        {[-1120, 1120].map((x) => (
+          <group key={`rear-campus-concourse-node-${x}`} position={[x, 0, 620]}>
+            <mesh position={[0, 72, 0]} castShadow={enableHeavyShadows} receiveShadow>
+              <boxGeometry args={[188, 144, 188]} />
+              <ExpoArchitecturalMassMaterial fallbackColor="#a5b6c1" repeat={[1.4, 1.4]} />
+            </mesh>
+            <mesh position={[0, 138, 0]} castShadow={enableHeavyShadows} receiveShadow>
+              <boxGeometry args={[132, 18, 132]} />
+              <ExpoArchitecturalMassMaterial fallbackColor="#dbe5ec" repeat={[1.2, 1.2]} />
+            </mesh>
+          </group>
+        ))}
+        {[-1, 1].map((side) => (
+          <group key={`rear-campus-terrace-${side}`} position={[side * 520, 0, -1160]}>
+            <mesh position={[0, 54, 0]} castShadow={enableHeavyShadows} receiveShadow>
+              <boxGeometry args={[540, 108, 260]} />
+              <ExpoArchitecturalMassMaterial fallbackColor="#a9bac5" repeat={[2.2, 1.8]} />
+            </mesh>
+            <mesh position={[0, 114, -42]} castShadow={enableHeavyShadows} receiveShadow>
+              <boxGeometry args={[420, 24, 168]} />
+              <ExpoArchitecturalMassMaterial fallbackColor="#d3dee6" repeat={[1.8, 1.2]} />
+            </mesh>
+          </group>
+        ))}
         {[-1, 1].flatMap((xSide) =>
           ([-1, 1] as const).map((zSide) => (
             <group key={`rear-campus-landmark-tower-${xSide}-${zSide}`} position={[xSide * towerX, 0, zSide * towerZ]}>
