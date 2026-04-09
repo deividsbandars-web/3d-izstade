@@ -3375,18 +3375,6 @@ function ExpoRearCampus({
             </mesh>
           </group>
         ))}
-        {[-1, 1].map((side) => (
-          <group key={`rear-campus-side-wall-${side}`} position={[side * 1540, 0, -260]}>
-            <mesh position={[0, 188, 0]} castShadow={enableHeavyShadows} receiveShadow>
-              <boxGeometry args={[188, 376, 2780]} />
-              <ExpoArchitecturalMassMaterial fallbackColor="#97a9b6" repeat={[1.8, 7.8]} />
-            </mesh>
-            <mesh position={[side > 0 ? -74 : 74, 264, 0]} castShadow={enableHeavyShadows} receiveShadow>
-              <boxGeometry args={[42, 124, 2120]} />
-              <meshStandardMaterial color={accent} emissive={accent} emissiveIntensity={0.16} roughness={0.22} metalness={0.16} />
-            </mesh>
-          </group>
-        ))}
         {[-1, 1].flatMap((side) =>
           [-760, 180, 1080].map((zOffset, index) => (
             <group key={`rear-campus-side-pavilion-${side}-${index}`} position={[side * 1160, 0, zOffset]}>
@@ -3487,12 +3475,6 @@ function ExpoRearCampus({
         </mesh>
       </group>
       <group ref={campusColliderRef} name="rear-campus-collider">
-        {[-1, 1].map((side) => (
-          <mesh key={`rear-campus-side-stand-collider-${side}`} position={[side * 1540, 188, campusCenterZ - 260]} rotation={[0, 0, 0]}>
-            <boxGeometry args={[188, 376, 2780]} />
-            <ColliderMaterial color="#f97316" />
-          </mesh>
-        ))}
         {[-1, 1].map((side) => (
           <mesh key={`rear-campus-gateway-collider-${side}`} position={[side * 1260, 168, campusCenterZ + 980]} rotation={[0, 0, 0]}>
             <boxGeometry args={[126, 336, 126]} />
