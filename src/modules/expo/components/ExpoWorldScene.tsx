@@ -4999,6 +4999,7 @@ interface ExpoWorldSceneProps {
   mode: ExpoMode;
   onMove: (pos: number[]) => void;
   sceneVersion: string | null;
+  startViewOverride?: ExpoStartView | null;
   worldContract: ExpoWorldContract;
   zoneSystem: any;
 }
@@ -5025,8 +5026,9 @@ function SceneBridge({ startView }: { startView: ExpoStartView }) {
   return null;
 }
 
-export function ExpoWorldScene({ activeZone, debug, guests: _guests, mobileMoveIntent, mode, onMove, sceneVersion, worldContract, zoneSystem }: ExpoWorldSceneProps) {
+export function ExpoWorldScene({ activeZone, debug, guests: _guests, mobileMoveIntent, mode, onMove, sceneVersion, startViewOverride, worldContract, zoneSystem }: ExpoWorldSceneProps) {
   const { boothPlacements, districtPrograms, plan: _boulevardPlan, playBounds, qualityProfileInputs, sectorMarkers, startView, visualProfile, walkRegions } = worldContract;
+  const effectiveStartView = startViewOverride ?? startView;
   const visibleBoothPlacements = useMemo(
     () => selectVisibleBoothPlacements(boothPlacements, districtPrograms),
     [boothPlacements, districtPrograms]
@@ -5124,7 +5126,7 @@ export function ExpoWorldScene({ activeZone, debug, guests: _guests, mobileMoveI
         performance={{ min: EXPO_CITY_QUALITY_TIER === 'quality' ? 0.5 : 0.85 }}
         camera={{ position: [0, 2, 10], fov: 60, far: 10000 }}
       >
-        <SceneBridge startView={startView} />
+        <SceneBridge startView={effectiveStartView} />
         <Suspense fallback={null}>
             <AdaptiveDpr />
             <AdaptiveEvents />

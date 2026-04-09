@@ -10,6 +10,7 @@ import { usePixelStreamingStatus } from './hooks/usePixelStreamingStatus';
 import PixelStreamingViewer from './PixelStreamingViewer';
 import { reportExpoDevError } from './lib/devErrorReporter';
 import { EXPO_DEBUG_DEFAULT, type ExpoMode } from './state/expoRuntime';
+import type { ExpoStartView } from './world-contract';
 import { buildExpoWorldContract } from './world-contract';
 
 function isExpoIgnorablePointerLockError(error: unknown) {
@@ -31,6 +32,42 @@ export default function Expo3D() {
   const nav = useNavigate();
   const { data, isLoading } = useExpoSceneData();
   const worldContract = useMemo(() => buildExpoWorldContract(data), [data]);
+  const focusStartView = useMemo<ExpoStartView | null>(() => {
+    if (typeof window === 'undefined') {
+      return null;
+    }
+
+    const focus = new URLSearchParams(window.location.search).get('focus');
+    if (!focus) {
+      return null;
+    }
+
+    const normalizedFocus = focus.trim().toLowerCase();
+    const placement = worldContract.boothPlacements.find((entry) => {
+      const companySlug = String(entry.company?.slug || '').toLowerCase();
+      const companyId = String(entry.company?.id || '').toLowerCase();
+      const boothSlug = String((entry.company?.booth as { slug?: string | null } | null)?.slug || '').toLowerCase();
+      return companySlug === normalizedFocus || companyId === normalizedFocus || boothSlug === normalizedFocus;
+    });
+
+    if (!placement) {
+      return null;
+    }
+
+    const yaw = placement.rotation?.[1] ?? 0;
+    const forwardX = Math.sin(yaw);
+    const forwardZ = Math.cos(yaw);
+
+    return {
+      lookAt: [placement.position[0], 3.4, placement.position[2]],
+      position: [
+        placement.position[0] - (forwardX * 34),
+        5,
+        placement.position[2] - (forwardZ * 34),
+      ],
+      source: 'arrival-main',
+    };
+  }, [worldContract.boothPlacements]);
   const pixelStreamingStatus = usePixelStreamingStatus();
   const { guests, playerPos, isMicOn, isSpeaking, setIsMicOn, handlePlayerMove } = useExpoPresence(mode);
   const { activeZone, zoneSystem } = useZoneSystem(playerPos as any);
@@ -124,6 +161,7 @@ export default function Expo3D() {
             mode={mode}
             onMove={handlePlayerMove}
             sceneVersion={data?.sceneVersion ? String(data.sceneVersion) : null}
+            startViewOverride={focusStartView}
             worldContract={worldContract}
             zoneSystem={zoneSystem}
           />
