@@ -3602,16 +3602,21 @@ function BoothDebugShellFallback({ accentColor, metrics }: { accentColor: string
 
 function OpenBoothPavilion({
   accentColor,
+  fallbackText,
   metrics,
+  screenUrl,
 }: {
   accentColor: string;
+  fallbackText: string;
   metrics: ReturnType<typeof getBoothArchitectureMetrics>;
+  screenUrl: string | null;
 }) {
   const width = metrics.footprintSize[0] * 0.72;
   const depth = metrics.footprintSize[1] * 0.58;
   const postHeight = Math.max(6.2, metrics.colliderSize[1] * 0.58);
   const postOffsetX = (width * 0.5) - 1.2;
   const postOffsetZ = (depth * 0.5) - 1;
+  const rearScreenZ = -((depth * 0.5) - 0.56);
 
   return (
     <group name="booth-open-pavilion">
@@ -3638,6 +3643,27 @@ function OpenBoothPavilion({
         <boxGeometry args={[width * 0.82, 0.16, 0.22]} />
         <meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={0.1} roughness={0.42} metalness={0.16} />
       </mesh>
+      <group position={[0, postHeight * 0.56, rearScreenZ]}>
+        <mesh castShadow receiveShadow>
+          <boxGeometry args={[width * 0.58, 4.92, 0.24]} />
+          <meshStandardMaterial color="#08111c" metalness={0.12} roughness={0.58} />
+        </mesh>
+        <mesh position={[0, 0, 0.16]}>
+          <planeGeometry args={[width * 0.5, 4.16]} />
+          {screenUrl ? (
+            <Suspense fallback={<meshStandardMaterial color="#0f172a" emissive={accentColor} emissiveIntensity={0.08} />}>
+              <SponsorTextureSurface fallbackColor="#0f172a" url={screenUrl} />
+            </Suspense>
+          ) : (
+            <meshStandardMaterial color="#0f172a" emissive={accentColor} emissiveIntensity={0.08} />
+          )}
+        </mesh>
+        {!screenUrl && (
+          <Text position={[0, -0.04, 0.24]} fontSize={0.68} color={accentColor} anchorX="center" anchorY="middle" maxWidth={2.8}>
+            {fallbackText}
+          </Text>
+        )}
+      </group>
     </group>
   );
 }
@@ -4553,7 +4579,7 @@ function DistrictBooth({
       {EXPO_SPATIAL_DEBUG_FLAGS.disableBoothArchitectureKit
         ? <BoothDebugShellFallback accentColor={placement.color} metrics={metrics} />
         : useOpenPavilionShell
-          ? <OpenBoothPavilion accentColor={districtVisual.shellAccent} metrics={metrics} />
+          ? <OpenBoothPavilion accentColor={districtVisual.shellAccent} fallbackText={presentation.fallbackIdentity.monogram} metrics={metrics} screenUrl={presentation.posterUrl || presentation.logoUrl} />
           : <BoothArchitectureKit accentColor={districtVisual.shellAccent} template={presentation.template} visualTone={districtVisual.expressionMode} />}
       {presentation.customInsertUrl && showRichMedia && (
         <Suspense fallback={null}>
