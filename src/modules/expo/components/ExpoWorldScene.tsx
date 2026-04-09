@@ -4632,19 +4632,21 @@ function DistrictBooth({
   const metrics = getBoothArchitectureMetrics(presentation.template);
   const colliderSegments = useMemo(() => getBoothColliderSegments(presentation.template), [presentation.template]);
   const districtVisual = getDistrictVisualProfile(placement.sectorId, placement.clusterIndex, visualProfile);
+  const isHeroTemplate = presentation.template === 'hero_gallery' || presentation.template === 'hero_forum';
+  const isHeroBooth = company?.sponsorTier === 'hero' || booth?.boothType === 'hero' || isHeroTemplate;
   const isEliteBooth = presentation.adTier === 'elite';
   const isPremiumBooth = presentation.adTier === 'premium';
   const isHeroNode = placement.nodeType === 'hero_left' || placement.nodeType === 'hero_right';
-  const featureTier = isHeroNode ? 'hero' : isEliteBooth ? 'elite' : isPremiumBooth ? 'premium' : 'standard';
+  const featureTier = (isHeroBooth || isHeroNode) ? 'hero' : isEliteBooth ? 'elite' : isPremiumBooth ? 'premium' : 'standard';
   const isFeatureBooth = featureTier !== 'standard';
   const isHeroFeature = featureTier === 'hero';
   const isEliteFeature = featureTier === 'elite';
-  const stageScale = isEliteBooth ? 1.28 : isPremiumBooth ? 1.14 : 1;
-  const frontApronWidth = isEliteBooth ? 20 : isPremiumBooth ? 17 : 0;
-  const frontApronDepth = isEliteBooth ? 3.6 : isPremiumBooth ? 2.8 : 0;
-  const showTagline = (presentation.hasBrandAssets || isEliteBooth || isPremiumBooth) && districtVisual.expressionMode === 'active-commercial' && presentation.template !== 'standard_studio';
-  const showBadge = (presentation.hasBrandAssets || isEliteBooth || isPremiumBooth) && districtVisual.expressionMode === 'active-commercial';
-  const showPremiumEyebrow = isEliteBooth || isPremiumBooth;
+  const stageScale = isHeroFeature ? 1.5 : isEliteFeature ? 1.28 : isPremiumBooth ? 1.14 : 1;
+  const frontApronWidth = isHeroFeature ? 24 : isEliteFeature ? 20 : isPremiumBooth ? 17 : 0;
+  const frontApronDepth = isHeroFeature ? 4.2 : isEliteFeature ? 3.6 : isPremiumBooth ? 2.8 : 0;
+  const showTagline = (presentation.hasBrandAssets || isHeroFeature || isEliteBooth || isPremiumBooth) && districtVisual.expressionMode === 'active-commercial' && presentation.template !== 'standard_studio';
+  const showBadge = (presentation.hasBrandAssets || isHeroFeature || isEliteBooth || isPremiumBooth) && districtVisual.expressionMode === 'active-commercial';
+  const showPremiumEyebrow = isHeroFeature || isEliteBooth || isPremiumBooth;
   const distanceToPlayer = Math.hypot(playerPosition[0] - placement.position[0], playerPosition[2] - placement.position[2]);
   const showDetailedText = EXPO_FEATURE_FLAGS.enableShowcaseSkylineDensity || distanceToPlayer < 760;
   const showFullBoothUi = EXPO_FEATURE_FLAGS.enableShowcaseSkylineDensity || distanceToPlayer < 540 || isEliteBooth || isPremiumBooth;
@@ -4723,7 +4725,7 @@ function DistrictBooth({
           <CustomBoothInsert template={presentation.template} url={presentation.customInsertUrl} />
         </Suspense>
       )}
-      {(isEliteBooth || isPremiumBooth) && (
+      {isFeatureBooth && (
         <group position={[0, 0, 7.4]}>
           <mesh position={[0, 0.08, 0]} receiveShadow>
             <boxGeometry args={[frontApronWidth, 0.16, frontApronDepth]} />
@@ -4756,7 +4758,7 @@ function DistrictBooth({
           <cylinderGeometry args={[3.52 * stageScale, 3.84 * stageScale, 0.12, 28]} />
           <meshStandardMaterial color={placement.color} emissive={placement.color} emissiveIntensity={0.08} roughness={0.48} />
         </mesh>
-        {(isEliteBooth || isPremiumBooth) && (
+        {isFeatureBooth && (
           <mesh position={[0, 0.9, 0]} receiveShadow>
             <cylinderGeometry args={[4.34 * stageScale, 4.64 * stageScale, 0.14, 28]} />
             <meshStandardMaterial color="#0f1a28" metalness={0.2} roughness={0.52} />
