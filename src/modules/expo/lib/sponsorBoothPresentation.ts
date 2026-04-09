@@ -243,8 +243,9 @@ export function buildSponsorBoothPresentation(
     nodeType,
     sponsorTier: company.sponsorTier,
   });
+  const sponsorTier = company.sponsorTier;
   const adTier: SponsorBoothPresentation['adTier'] =
-    template === 'hero_gallery' || template === 'hero_forum'
+    template === 'hero_gallery' || template === 'hero_forum' || sponsorTier === 'platinum'
       ? 'elite'
       : template === 'premium_portal' || template === 'premium_spine'
         ? 'premium'

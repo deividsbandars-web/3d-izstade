@@ -3585,19 +3585,22 @@ function BoothDebugShellFallback({ accentColor, metrics }: { accentColor: string
 function OpenBoothPavilion({
   accentColor,
   fallbackText,
-  hero = false,
   metrics,
   screenUrl,
+  tier = 'standard',
 }: {
   accentColor: string;
   fallbackText: string;
-  hero?: boolean;
   metrics: ReturnType<typeof getBoothArchitectureMetrics>;
   screenUrl: string | null;
+  tier?: 'standard' | 'premium' | 'elite' | 'hero';
 }) {
-  const width = metrics.footprintSize[0] * (hero ? 0.82 : 0.72);
-  const depth = metrics.footprintSize[1] * (hero ? 0.64 : 0.58);
-  const postHeight = Math.max(hero ? 7.4 : 6.2, metrics.colliderSize[1] * (hero ? 0.64 : 0.58));
+  const isHero = tier === 'hero';
+  const isElite = tier === 'elite';
+  const isPremium = tier === 'premium';
+  const width = metrics.footprintSize[0] * (isHero ? 0.82 : isElite ? 0.78 : isPremium ? 0.75 : 0.72);
+  const depth = metrics.footprintSize[1] * (isHero ? 0.64 : isElite ? 0.61 : isPremium ? 0.6 : 0.58);
+  const postHeight = Math.max(isHero ? 7.4 : isElite ? 6.9 : isPremium ? 6.5 : 6.2, metrics.colliderSize[1] * (isHero ? 0.64 : isElite ? 0.61 : isPremium ? 0.59 : 0.58));
   const postOffsetX = (width * 0.5) - 1.2;
   const postOffsetZ = (depth * 0.5) - 1;
   const rearScreenZ = -((depth * 0.5) - 0.56);
@@ -3607,30 +3610,30 @@ function OpenBoothPavilion({
 
   return (
     <group name="booth-open-pavilion">
-      {hero && (
-        <group position={[0, (haloHeight * 0.5) + 0.52, haloZ]}>
+      {(isHero || isElite) && (
+        <group position={[0, (haloHeight * 0.5) + (isHero ? 0.52 : 0.38), haloZ]}>
           <mesh castShadow receiveShadow>
-            <boxGeometry args={[haloWidth, 0.28, 0.32]} />
+            <boxGeometry args={[isHero ? haloWidth : haloWidth - 1.2, 0.28, 0.32]} />
             <meshStandardMaterial color="#cbd8e3" metalness={0.16} roughness={0.34} />
           </mesh>
           <mesh position={[0, 0, 0.1]}>
-            <boxGeometry args={[haloWidth - 1.1, 0.1, 0.14]} />
+            <boxGeometry args={[isHero ? haloWidth - 1.1 : haloWidth - 2.1, 0.1, 0.14]} />
             <meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={0.16} roughness={0.28} metalness={0.12} />
           </mesh>
-          <mesh position={[-((haloWidth * 0.5) - 0.14), -(haloHeight * 0.5), 0]} castShadow receiveShadow>
-            <boxGeometry args={[0.28, haloHeight, 0.32]} />
+          <mesh position={[-(((isHero ? haloWidth : haloWidth - 1.2) * 0.5) - 0.14), -(haloHeight * 0.5), 0]} castShadow receiveShadow>
+            <boxGeometry args={[0.28, isHero ? haloHeight : haloHeight - 1.1, 0.32]} />
             <meshStandardMaterial color="#cbd8e3" metalness={0.16} roughness={0.34} />
           </mesh>
-          <mesh position={[-((haloWidth * 0.5) - 0.14), -(haloHeight * 0.5), 0.1]}>
-            <boxGeometry args={[0.1, haloHeight - 1.1, 0.14]} />
+          <mesh position={[-(((isHero ? haloWidth : haloWidth - 1.2) * 0.5) - 0.14), -(haloHeight * 0.5), 0.1]}>
+            <boxGeometry args={[0.1, isHero ? haloHeight - 1.1 : haloHeight - 2.1, 0.14]} />
             <meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={0.18} roughness={0.26} metalness={0.12} />
           </mesh>
-          <mesh position={[(haloWidth * 0.5) - 0.14, -(haloHeight * 0.5), 0]} castShadow receiveShadow>
-            <boxGeometry args={[0.28, haloHeight, 0.32]} />
+          <mesh position={[(((isHero ? haloWidth : haloWidth - 1.2) * 0.5) - 0.14), -(haloHeight * 0.5), 0]} castShadow receiveShadow>
+            <boxGeometry args={[0.28, isHero ? haloHeight : haloHeight - 1.1, 0.32]} />
             <meshStandardMaterial color="#cbd8e3" metalness={0.16} roughness={0.34} />
           </mesh>
-          <mesh position={[(haloWidth * 0.5) - 0.14, -(haloHeight * 0.5), 0.1]}>
-            <boxGeometry args={[0.1, haloHeight - 1.1, 0.14]} />
+          <mesh position={[(((isHero ? haloWidth : haloWidth - 1.2) * 0.5) - 0.14), -(haloHeight * 0.5), 0.1]}>
+            <boxGeometry args={[0.1, isHero ? haloHeight - 1.1 : haloHeight - 2.1, 0.14]} />
             <meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={0.18} roughness={0.26} metalness={0.12} />
           </mesh>
         </group>
@@ -3651,20 +3654,32 @@ function OpenBoothPavilion({
         </mesh>
       ))}
       <mesh position={[0, postHeight + 0.22, 0]} castShadow receiveShadow>
-        <boxGeometry args={[width + (hero ? 2.4 : 1.4), hero ? 0.38 : 0.32, depth * (hero ? 0.82 : 0.74)]} />
+        <boxGeometry args={[width + (isHero ? 2.4 : isElite ? 2.1 : isPremium ? 1.8 : 1.4), isHero ? 0.38 : isElite ? 0.36 : 0.32, depth * (isHero ? 0.82 : isElite ? 0.8 : isPremium ? 0.78 : 0.74)]} />
         <meshStandardMaterial color="#c9d6df" metalness={0.1} roughness={0.46} />
       </mesh>
       <mesh position={[0, postHeight + 0.42, (depth * 0.5) - 0.2]} castShadow>
         <boxGeometry args={[width * 0.82, 0.16, 0.22]} />
         <meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={0.1} roughness={0.42} metalness={0.16} />
       </mesh>
+      {(isPremium || isElite) && (
+        <>
+          <mesh position={[-postOffsetX, postHeight * 0.76, postOffsetZ - 0.1]} castShadow receiveShadow>
+            <boxGeometry args={[0.18, isElite ? 3.4 : 2.4, 1.1]} />
+            <meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={isElite ? 0.18 : 0.12} roughness={0.3} metalness={0.14} />
+          </mesh>
+          <mesh position={[postOffsetX, postHeight * 0.76, postOffsetZ - 0.1]} castShadow receiveShadow>
+            <boxGeometry args={[0.18, isElite ? 3.4 : 2.4, 1.1]} />
+            <meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={isElite ? 0.18 : 0.12} roughness={0.3} metalness={0.14} />
+          </mesh>
+        </>
+      )}
       <group position={[0, postHeight * 0.56, rearScreenZ]}>
         <mesh castShadow receiveShadow>
-          <boxGeometry args={[width * (hero ? 0.64 : 0.58), hero ? 5.42 : 4.92, 0.24]} />
+          <boxGeometry args={[width * (isHero ? 0.64 : isElite ? 0.61 : isPremium ? 0.6 : 0.58), isHero ? 5.42 : isElite ? 5.18 : isPremium ? 5.04 : 4.92, 0.24]} />
           <meshStandardMaterial color="#08111c" metalness={0.12} roughness={0.58} />
         </mesh>
         <mesh position={[0, 0, 0.16]}>
-          <planeGeometry args={[width * (hero ? 0.56 : 0.5), hero ? 4.56 : 4.16]} />
+          <planeGeometry args={[width * (isHero ? 0.56 : isElite ? 0.54 : isPremium ? 0.52 : 0.5), isHero ? 4.56 : isElite ? 4.34 : isPremium ? 4.24 : 4.16]} />
           {screenUrl ? (
             <Suspense fallback={<meshStandardMaterial color="#0f172a" emissive={accentColor} emissiveIntensity={0.08} />}>
               <SponsorTextureSurface fallbackColor="#0f172a" url={screenUrl} />
@@ -4619,7 +4634,7 @@ function DistrictBooth({
       </group>
       {EXPO_SPATIAL_DEBUG_FLAGS.disableBoothArchitectureKit
         ? <BoothDebugShellFallback accentColor={placement.color} metrics={metrics} />
-        : <OpenBoothPavilion accentColor={districtVisual.shellAccent} fallbackText={presentation.fallbackIdentity.monogram} hero={isHeroNode} metrics={metrics} screenUrl={presentation.posterUrl || presentation.logoUrl} />}
+        : <OpenBoothPavilion accentColor={districtVisual.shellAccent} fallbackText={presentation.fallbackIdentity.monogram} metrics={metrics} screenUrl={presentation.posterUrl || presentation.logoUrl} tier={featureTier} />}
       {presentation.customInsertUrl && showRichMedia && (
         <Suspense fallback={null}>
           <CustomBoothInsert template={presentation.template} url={presentation.customInsertUrl} />
