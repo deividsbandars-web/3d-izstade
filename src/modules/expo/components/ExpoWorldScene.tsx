@@ -3619,9 +3619,40 @@ function OpenBoothPavilion({
   const postOffsetX = (width * 0.5) - 1.2;
   const postOffsetZ = (depth * 0.5) - 1;
   const rearScreenZ = -((depth * 0.5) - 0.56);
+  const haloWidth = width + 4.8;
+  const haloHeight = postHeight + 3.2;
+  const haloZ = rearScreenZ - 0.78;
 
   return (
     <group name="booth-open-pavilion">
+      {hero && (
+        <group position={[0, (haloHeight * 0.5) + 0.52, haloZ]}>
+          <mesh castShadow receiveShadow>
+            <boxGeometry args={[haloWidth, 0.28, 0.32]} />
+            <meshStandardMaterial color="#cbd8e3" metalness={0.16} roughness={0.34} />
+          </mesh>
+          <mesh position={[0, 0, 0.1]}>
+            <boxGeometry args={[haloWidth - 1.1, 0.1, 0.14]} />
+            <meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={0.16} roughness={0.28} metalness={0.12} />
+          </mesh>
+          <mesh position={[-((haloWidth * 0.5) - 0.14), -(haloHeight * 0.5), 0]} castShadow receiveShadow>
+            <boxGeometry args={[0.28, haloHeight, 0.32]} />
+            <meshStandardMaterial color="#cbd8e3" metalness={0.16} roughness={0.34} />
+          </mesh>
+          <mesh position={[-((haloWidth * 0.5) - 0.14), -(haloHeight * 0.5), 0.1]}>
+            <boxGeometry args={[0.1, haloHeight - 1.1, 0.14]} />
+            <meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={0.18} roughness={0.26} metalness={0.12} />
+          </mesh>
+          <mesh position={[(haloWidth * 0.5) - 0.14, -(haloHeight * 0.5), 0]} castShadow receiveShadow>
+            <boxGeometry args={[0.28, haloHeight, 0.32]} />
+            <meshStandardMaterial color="#cbd8e3" metalness={0.16} roughness={0.34} />
+          </mesh>
+          <mesh position={[(haloWidth * 0.5) - 0.14, -(haloHeight * 0.5), 0.1]}>
+            <boxGeometry args={[0.1, haloHeight - 1.1, 0.14]} />
+            <meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={0.18} roughness={0.26} metalness={0.12} />
+          </mesh>
+        </group>
+      )}
       <mesh position={[0, 0.12, 0.4]} receiveShadow>
         <boxGeometry args={[width, 0.24, depth]} />
         <meshStandardMaterial color="#e5edf4" metalness={0.04} roughness={0.74} />
