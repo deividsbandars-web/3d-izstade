@@ -3607,6 +3607,11 @@ function OpenBoothPavilion({
   const haloWidth = width + 4.8;
   const haloHeight = postHeight + 3.2;
   const haloZ = rearScreenZ - 0.78;
+  const premiumPortalWidth = width + 3.8;
+  const premiumPortalHeight = postHeight + 2.2;
+  const eliteMonolithHeight = postHeight + 4.2;
+  const eliteMonolithOffsetX = (width * 0.5) + 2.6;
+  const eliteMonolithZ = rearScreenZ + 0.36;
 
   return (
     <group name="booth-open-pavilion">
@@ -3642,6 +3647,56 @@ function OpenBoothPavilion({
         <boxGeometry args={[width, 0.24, depth]} />
         <meshStandardMaterial color="#e5edf4" metalness={0.04} roughness={0.74} />
       </mesh>
+      {isPremium && !isElite && !isHero && (
+        <group position={[0, premiumPortalHeight * 0.5, 2.4]}>
+          <mesh castShadow receiveShadow>
+            <boxGeometry args={[premiumPortalWidth, 0.28, 0.34]} />
+            <meshStandardMaterial color="#d8e4ec" metalness={0.16} roughness={0.34} />
+          </mesh>
+          <mesh position={[0, 0, 0.12]}>
+            <boxGeometry args={[premiumPortalWidth - 0.9, 0.12, 0.14]} />
+            <meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={0.18} roughness={0.22} metalness={0.12} />
+          </mesh>
+          {[-1, 1].map((side) => (
+            <group key={`premium-portal-leg-${side}`} position={[side * ((premiumPortalWidth * 0.5) - 0.26), -(premiumPortalHeight * 0.5), 0]}>
+              <mesh castShadow receiveShadow>
+                <boxGeometry args={[0.52, premiumPortalHeight, 0.34]} />
+                <meshStandardMaterial color="#d8e4ec" metalness={0.16} roughness={0.34} />
+              </mesh>
+              <mesh position={[0, 0, 0.12]}>
+                <boxGeometry args={[0.16, premiumPortalHeight - 1.2, 0.12]} />
+                <meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={0.18} roughness={0.2} metalness={0.1} />
+              </mesh>
+            </group>
+          ))}
+        </group>
+      )}
+      {isElite && !isHero && (
+        <group>
+          {[-1, 1].map((side) => (
+            <group key={`elite-monolith-${side}`} position={[side * eliteMonolithOffsetX, eliteMonolithHeight * 0.5, eliteMonolithZ]}>
+              <mesh castShadow receiveShadow>
+                <boxGeometry args={[1.22, eliteMonolithHeight, depth * 0.42]} />
+                <meshStandardMaterial color="#d9e5ed" metalness={0.18} roughness={0.3} />
+              </mesh>
+              <mesh position={[0, 0.2, 0.18]}>
+                <boxGeometry args={[0.22, eliteMonolithHeight - 1.1, depth * 0.18]} />
+                <meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={0.22} roughness={0.18} metalness={0.12} />
+              </mesh>
+            </group>
+          ))}
+          <group position={[0, eliteMonolithHeight + 0.44, eliteMonolithZ + 0.12]}>
+            <mesh castShadow receiveShadow>
+              <boxGeometry args={[width + 7.2, 0.42, 0.46]} />
+              <meshStandardMaterial color="#dbe7ee" metalness={0.18} roughness={0.28} />
+            </mesh>
+            <mesh position={[0, 0, 0.14]}>
+              <boxGeometry args={[width + 6.2, 0.16, 0.16]} />
+              <meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={0.22} roughness={0.16} metalness={0.12} />
+            </mesh>
+          </group>
+        </group>
+      )}
       {[
         [-postOffsetX, postHeight * 0.5, -postOffsetZ],
         [postOffsetX, postHeight * 0.5, -postOffsetZ],
