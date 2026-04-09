@@ -3297,11 +3297,6 @@ function ExpoRearCampus({
   const campusCenterZ = minZ - 1480;
   const accent = visualProfile.global.hudAccent;
   usePlayerColliderRegistration(campusColliderRef, 'rear-campus-collider');
-  const backStandZ = -1700;
-  const towerX = 1520;
-  const towerZ = 1500;
-  const perimeterHalfX = 2860;
-  const perimeterBackZ = -2500;
   const enableHeavyShadows = EXPO_FEATURE_FLAGS.enableShowcaseSkylineDensity;
   const stadiumForecourts = [
     { id: 'stadium-forecourt-left-main', position: [-860, 5.98, campusCenterZ + 520] as [number, number, number], size: [680, 980] as [number, number], color: '#eef4f8' },
@@ -3309,6 +3304,18 @@ function ExpoRearCampus({
     { id: 'stadium-forecourt-right-main', position: [860, 5.98, campusCenterZ + 520] as [number, number, number], size: [680, 980] as [number, number], color: '#eef4f8' },
     { id: 'stadium-forecourt-right-inner', position: [520, 6.02, campusCenterZ + 120] as [number, number, number], size: [320, 520] as [number, number], color: '#dfe8ee' },
   ] as const;
+  const stadiumSidePavilions = [
+    { id: 'rear-campus-side-pavilion-left-front', position: [-1180, 0, campusCenterZ + 980] as [number, number, number], size: [220, 156, 180] as [number, number, number], accentSide: 1 },
+    { id: 'rear-campus-side-pavilion-left-rear', position: [-980, 0, campusCenterZ - 980] as [number, number, number], size: [280, 184, 220] as [number, number, number], accentSide: 1 },
+    { id: 'rear-campus-side-pavilion-right-front', position: [1180, 0, campusCenterZ + 980] as [number, number, number], size: [220, 156, 180] as [number, number, number], accentSide: -1 },
+    { id: 'rear-campus-side-pavilion-right-rear', position: [980, 0, campusCenterZ - 980] as [number, number, number], size: [280, 184, 220] as [number, number, number], accentSide: -1 },
+  ] as const;
+  const stadiumLandmarkTowers = [
+    { id: 'rear-campus-landmark-left', position: [-1420, 0, campusCenterZ - 220] as [number, number, number] },
+    { id: 'rear-campus-landmark-right', position: [1420, 0, campusCenterZ - 220] as [number, number, number] },
+  ] as const;
+  const stadiumBackWallZ = campusCenterZ - 1520;
+
   return (
     <group name="expo-rear-campus">
       <mesh position={[0, 0.02, routeEndZ + 240]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
@@ -3374,39 +3381,25 @@ function ExpoRearCampus({
             </mesh>
           </group>
         ))}
-        {[-1, 1].flatMap((side) =>
-          [-760, 180, 1080].map((zOffset, index) => (
-            <group key={`rear-campus-side-pavilion-${side}-${index}`} position={[side * 1160, 0, zOffset]}>
-              <mesh position={[0, 84, 0]} castShadow={enableHeavyShadows} receiveShadow>
-                <boxGeometry args={[244, 168, 188]} />
-                <ExpoArchitecturalMassMaterial fallbackColor={index === 1 ? '#aebdc8' : '#a2b4c0'} repeat={[1.6, 1.6]} />
-              </mesh>
-              <mesh position={[0, 164, side > 0 ? -58 : 58]} castShadow={enableHeavyShadows} receiveShadow>
-                <boxGeometry args={[184, 24, 48]} />
-                <meshStandardMaterial color={accent} emissive={accent} emissiveIntensity={0.12} roughness={0.24} metalness={0.14} />
-              </mesh>
-            </group>
-          ))
-        )}
-        <group position={[0, 0, backStandZ + 180]}>
+        <group position={[0, 0, -1520]}>
           <mesh position={[0, 208, 0]} rotation={[-0.08, 0, 0]} castShadow={enableHeavyShadows} receiveShadow>
-            <boxGeometry args={[3260, 416, 920]} />
+            <boxGeometry args={[2860, 416, 860]} />
             <ExpoArchitecturalMassMaterial fallbackColor="#9eb1bf" repeat={[8.2, 2.4]} />
           </mesh>
           <mesh position={[0, 378, -88]} rotation={[-0.12, 0, 0]} castShadow={enableHeavyShadows} receiveShadow>
-            <boxGeometry args={[2680, 144, 640]} />
+            <boxGeometry args={[2360, 144, 580]} />
             <ExpoArchitecturalMassMaterial fallbackColor="#c9d5de" repeat={[6.8, 1.8]} />
           </mesh>
           <mesh position={[0, 498, -146]} rotation={[-0.16, 0, 0]} castShadow={enableHeavyShadows} receiveShadow>
-            <boxGeometry args={[2140, 104, 420]} />
+            <boxGeometry args={[1880, 104, 380]} />
             <ExpoArchitecturalMassMaterial fallbackColor="#eef4f7" repeat={[5.4, 1.4]} />
           </mesh>
           <mesh position={[0, 306, 264]} rotation={[-0.06, 0, 0]}>
-            <boxGeometry args={[2480, 48, 56]} />
+            <boxGeometry args={[2160, 48, 56]} />
             <meshStandardMaterial color={accent} emissive={accent} emissiveIntensity={0.16} roughness={0.24} metalness={0.14} />
           </mesh>
         </group>
-        {[-1120, 1120].map((x) => (
+        {[-980, 980].map((x) => (
           <group key={`rear-campus-concourse-node-${x}`} position={[x, 0, 620]}>
             <mesh position={[0, 72, 0]} castShadow={enableHeavyShadows} receiveShadow>
               <boxGeometry args={[188, 144, 188]} />
@@ -3418,8 +3411,20 @@ function ExpoRearCampus({
             </mesh>
           </group>
         ))}
+        {stadiumSidePavilions.map((pavilion) => (
+          <group key={pavilion.id} position={pavilion.position}>
+            <mesh position={[0, pavilion.size[1] * 0.5, 0]} castShadow={enableHeavyShadows} receiveShadow>
+              <boxGeometry args={pavilion.size} />
+              <ExpoArchitecturalMassMaterial fallbackColor="#a7b8c4" repeat={[2, 1.8]} />
+            </mesh>
+            <mesh position={[0, pavilion.size[1] + 18, pavilion.accentSide * 22]} castShadow={enableHeavyShadows} receiveShadow>
+              <boxGeometry args={[pavilion.size[0] * 0.7, 22, 44]} />
+              <meshStandardMaterial color={accent} emissive={accent} emissiveIntensity={0.14} roughness={0.22} metalness={0.12} />
+            </mesh>
+          </group>
+        ))}
         {[-1, 1].map((side) => (
-          <group key={`rear-campus-terrace-${side}`} position={[side * 520, 0, -1160]}>
+          <group key={`rear-campus-terrace-${side}`} position={[side * 560, 0, -1160]}>
             <mesh position={[0, 54, 0]} castShadow={enableHeavyShadows} receiveShadow>
               <boxGeometry args={[540, 108, 260]} />
               <ExpoArchitecturalMassMaterial fallbackColor="#a9bac5" repeat={[2.2, 1.8]} />
@@ -3430,28 +3435,22 @@ function ExpoRearCampus({
             </mesh>
           </group>
         ))}
-        {[-1, 1].flatMap((xSide) =>
-          ([-1, 1] as const).map((zSide) => (
-            <group key={`rear-campus-landmark-tower-${xSide}-${zSide}`} position={[xSide * towerX, 0, zSide * towerZ]}>
-              <mesh position={[0, 620, 0]} castShadow={enableHeavyShadows} receiveShadow>
-                <boxGeometry args={[132, 1240, 132]} />
-                <ExpoArchitecturalMassMaterial fallbackColor="#708596" repeat={[1.4, 1.4]} />
-              </mesh>
-              <mesh position={[0, 1170, 0]} castShadow={enableHeavyShadows} receiveShadow>
-                <boxGeometry args={[248, 76, 248]} />
-                <ExpoArchitecturalMassMaterial fallbackColor="#b7c5ce" repeat={[1.6, 1.6]} />
-              </mesh>
-              <mesh position={[0, 960, zSide > 0 ? -44 : 44]} rotation={[0, zSide > 0 ? Math.PI : 0, 0]}>
-                <planeGeometry args={[660, 360]} />
-                <meshStandardMaterial color={accent} emissive={accent} emissiveIntensity={0.24} roughness={0.18} metalness={0.18} />
-              </mesh>
-              <mesh position={[xSide > 0 ? -44 : 44, 960, 0]} rotation={[0, xSide > 0 ? Math.PI * 0.5 : -Math.PI * 0.5, 0]}>
-                <planeGeometry args={[660, 360]} />
-                <meshStandardMaterial color={accent} emissive={accent} emissiveIntensity={0.24} roughness={0.18} metalness={0.18} />
-              </mesh>
-            </group>
-          ))
-        )}
+        {stadiumLandmarkTowers.map((tower) => (
+          <group key={tower.id} position={tower.position}>
+            <mesh position={[0, 420, 0]} castShadow={enableHeavyShadows} receiveShadow>
+              <boxGeometry args={[116, 840, 116]} />
+              <ExpoArchitecturalMassMaterial fallbackColor="#708596" repeat={[1.4, 1.4]} />
+            </mesh>
+            <mesh position={[0, 804, 0]} castShadow={enableHeavyShadows} receiveShadow>
+              <boxGeometry args={[220, 64, 220]} />
+              <ExpoArchitecturalMassMaterial fallbackColor="#b7c5ce" repeat={[1.6, 1.6]} />
+            </mesh>
+            <mesh position={[0, 640, 38]}>
+              <planeGeometry args={[420, 220]} />
+              <meshStandardMaterial color={accent} emissive={accent} emissiveIntensity={0.2} roughness={0.18} metalness={0.18} />
+            </mesh>
+          </group>
+        ))}
         <mesh position={[0, 10, 760]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
           <planeGeometry args={[1380, 1880]} />
           <ExpoRuntimeSurfaceMaterial fallbackColor="#edf3f7" repeat={[3.6, 4.2]} surface="concrete" />
@@ -3459,18 +3458,6 @@ function ExpoRearCampus({
         <mesh position={[0, 12, 60]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
           <planeGeometry args={[1320, 920]} />
           <ExpoRuntimeSurfaceMaterial fallbackColor="#f6fafc" repeat={[3.2, 2.6]} surface="paver" />
-        </mesh>
-        {[-1, 1].map((side) => (
-          <group key={`rear-campus-perimeter-side-${side}`} position={[side * perimeterHalfX, 0, -120]}>
-            <mesh position={[0, 24, 0]} castShadow={enableHeavyShadows} receiveShadow>
-              <boxGeometry args={[54, 48, 4340]} />
-              <ExpoArchitecturalMassMaterial fallbackColor="#c1d0d9" repeat={[1.2, 8.8]} />
-            </mesh>
-          </group>
-        ))}
-        <mesh position={[0, 24, perimeterBackZ]} castShadow={enableHeavyShadows} receiveShadow>
-          <boxGeometry args={[5760, 48, 60]} />
-          <ExpoArchitecturalMassMaterial fallbackColor="#c1d0d9" repeat={[9.8, 1.2]} />
         </mesh>
       </group>
       <group ref={campusColliderRef} name="rear-campus-collider">
@@ -3480,8 +3467,8 @@ function ExpoRearCampus({
             <ColliderMaterial color="#f97316" />
           </mesh>
         ))}
-        <mesh position={[0, 208, campusCenterZ + backStandZ + 180]} rotation={[-0.08, 0, 0]}>
-          <boxGeometry args={[3260, 416, 920]} />
+        <mesh position={[0, 208, stadiumBackWallZ]} rotation={[-0.08, 0, 0]}>
+          <boxGeometry args={[2860, 416, 860]} />
           <ColliderMaterial color="#f97316" />
         </mesh>
       </group>
