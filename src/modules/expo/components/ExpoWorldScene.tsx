@@ -4652,6 +4652,18 @@ function DistrictBooth({
         </group>
       )}
       <group position={[0, 0, 1.48]}>
+        {isHeroNode && (
+          <>
+            <mesh position={[0, 0.18, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+              <ringGeometry args={[4.9 * stageScale, 5.9 * stageScale, 48]} />
+              <meshBasicMaterial color={placement.color} transparent opacity={0.24} side={THREE.DoubleSide} />
+            </mesh>
+            <mesh position={[0, 0.2, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+              <ringGeometry args={[6.2 * stageScale, 6.8 * stageScale, 56]} />
+              <meshBasicMaterial color="#dbeafe" transparent opacity={0.12} side={THREE.DoubleSide} />
+            </mesh>
+          </>
+        )}
         <mesh position={[0, 0.32, 0]} receiveShadow>
           <cylinderGeometry args={[3.9 * stageScale, 4.5 * stageScale, 0.46, 28]} />
           <meshStandardMaterial color="#0a1220" metalness={0.12} roughness={0.68} />
