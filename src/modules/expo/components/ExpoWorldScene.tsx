@@ -3701,6 +3701,28 @@ function OpenBoothPavilion({
   );
 }
 
+function formatExpoDisplayName(name: string) {
+  const cleaned = (name || '').trim().toUpperCase();
+  if (!cleaned) {
+    return { lines: ['EXPO'], fontScale: 1 };
+  }
+
+  const words = cleaned.split(/\s+/);
+  if (words.length === 1 || cleaned.length <= 14) {
+    return { lines: [cleaned], fontScale: cleaned.length > 12 ? 0.92 : 1 };
+  }
+
+  const midpoint = Math.ceil(words.length / 2);
+  const first = words.slice(0, midpoint).join(' ');
+  const second = words.slice(midpoint).join(' ');
+  const longest = Math.max(first.length, second.length);
+
+  return {
+    lines: [first, second],
+    fontScale: longest > 14 ? 0.78 : longest > 10 ? 0.88 : 1,
+  };
+}
+
 /* Legacy city collision layer is quarantined from the release path.
 function CityCollisionLayer({ debug = false }: { debug?: boolean }) {
   const { scene } = useThree();
@@ -4497,7 +4519,9 @@ export function SponsorBillboards({ placements: _placements }: { placements: Exp
                 <meshStandardMaterial color={placement.color} emissive={placement.color} emissiveIntensity={0.12} />
               )}
             </mesh>
-            <Text position={[0, -3.2, 0.54]} fontSize={0.52} color="#f8fafc" anchorX="center" anchorY="middle" maxWidth={8.4}>{presentation.displayName.toUpperCase()}</Text>
+            <Text position={[0, -3.2, 0.54]} fontSize={0.44 * formatExpoDisplayName(presentation.displayName).fontScale} lineHeight={1.05} color="#f8fafc" anchorX="center" anchorY="middle" maxWidth={7.6}>
+              {formatExpoDisplayName(presentation.displayName).lines.join('\n')}
+            </Text>
           </group>
         );
       })}
@@ -4544,6 +4568,7 @@ function DistrictBooth({
   const infoBandWidth = Math.max(8.8, metrics.titleMaxWidth + (isEliteBooth ? 4.6 : isPremiumBooth ? 3.4 : 2.2));
   const infoBandHeight = showTagline ? (isEliteBooth ? 3.72 : isPremiumBooth ? 3.24 : 2.56) : (isEliteBooth ? 2.7 : isPremiumBooth ? 2.24 : 1.76);
   const infoBandZ = metrics.titlePosition[2] - 0.24;
+  const heroName = formatExpoDisplayName(presentation.displayName);
   const openShowcaseRoom = () => {
     if (EXPO_FEATURE_FLAGS.enableAnalytics) {
       trackExpoDemoRoomEntered(company, { boothId: booth?.id ?? placement.id, boothTemplate: presentation.template, sectorName: placement.sectorName });
@@ -4651,6 +4676,21 @@ function DistrictBooth({
           )}
         </group>
       </group>
+      {isHeroNode && (
+        <group position={[0, metrics.colliderSize[1] + 4.8, -0.22]}>
+          <mesh castShadow>
+            <boxGeometry args={[12.8, 2.48, 0.5]} />
+            <meshStandardMaterial color="#08111c" metalness={0.12} roughness={0.42} />
+          </mesh>
+          <mesh position={[0, -0.86, 0.16]} castShadow>
+            <boxGeometry args={[10.6, 0.14, 0.14]} />
+            <meshStandardMaterial color={placement.color} emissive={placement.color} emissiveIntensity={0.14} roughness={0.3} />
+          </mesh>
+          <Text position={[0, heroName.lines.length > 1 ? 0.18 : 0.02, 0.28]} fontSize={0.7 * heroName.fontScale} lineHeight={0.92} color="#f8fafc" anchorX="center" anchorY="middle" maxWidth={10.8}>
+            {heroName.lines.join('\n')}
+          </Text>
+        </group>
+      )}
       <mesh position={[0, metrics.titlePosition[1] - 0.82, infoBandZ - 0.04]} castShadow>
         <boxGeometry args={[infoBandWidth + 1.46, infoBandHeight + 0.72, 0.48]} />
         <meshStandardMaterial color="#08111c" metalness={0.08} roughness={0.58} />
@@ -4679,7 +4719,7 @@ function DistrictBooth({
         <boxGeometry args={[0.24, infoBandHeight + 0.42, 0.18]} />
         <meshStandardMaterial color={placement.color} emissive={placement.color} emissiveIntensity={0.06} />
       </mesh>
-      {showDetailedText && (
+      {showDetailedText && !isHeroNode && (
         <Text position={metrics.titlePosition} fontSize={nameFontSize * 0.84} color="#f8fafc" anchorX="center" anchorY="middle" maxWidth={metrics.titleMaxWidth - 1.1}>{presentation.displayName.toUpperCase()}</Text>
       )}
       {showTagline && showDetailedText && (
