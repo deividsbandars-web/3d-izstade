@@ -4555,7 +4555,10 @@ function DistrictBooth({
   const isEliteBooth = presentation.adTier === 'elite';
   const isPremiumBooth = presentation.adTier === 'premium';
   const isHeroNode = placement.nodeType === 'hero_left' || placement.nodeType === 'hero_right';
-  const isFeatureBooth = isHeroNode || isEliteBooth || isPremiumBooth;
+  const featureTier = isHeroNode ? 'hero' : isEliteBooth ? 'elite' : isPremiumBooth ? 'premium' : 'standard';
+  const isFeatureBooth = featureTier !== 'standard';
+  const isHeroFeature = featureTier === 'hero';
+  const isEliteFeature = featureTier === 'elite';
   const stageScale = isEliteBooth ? 1.28 : isPremiumBooth ? 1.14 : 1;
   const frontApronWidth = isEliteBooth ? 20 : isPremiumBooth ? 17 : 0;
   const frontApronDepth = isEliteBooth ? 3.6 : isPremiumBooth ? 2.8 : 0;
@@ -4656,12 +4659,12 @@ function DistrictBooth({
         {isFeatureBooth && (
           <>
             <mesh position={[0, 0.18, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-              <ringGeometry args={[(isHeroNode ? 4.9 : 4.2) * stageScale, (isHeroNode ? 5.9 : 5.1) * stageScale, 48]} />
-              <meshBasicMaterial color={placement.color} transparent opacity={isHeroNode ? 0.24 : 0.16} side={THREE.DoubleSide} />
+              <ringGeometry args={[(isHeroFeature ? 4.9 : isEliteFeature ? 4.5 : 4.2) * stageScale, (isHeroFeature ? 5.9 : isEliteFeature ? 5.45 : 5.1) * stageScale, 48]} />
+              <meshBasicMaterial color={placement.color} transparent opacity={isHeroFeature ? 0.24 : isEliteFeature ? 0.2 : 0.16} side={THREE.DoubleSide} />
             </mesh>
             <mesh position={[0, 0.2, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-              <ringGeometry args={[(isHeroNode ? 6.2 : 5.4) * stageScale, (isHeroNode ? 6.8 : 5.9) * stageScale, 56]} />
-              <meshBasicMaterial color="#dbeafe" transparent opacity={isHeroNode ? 0.12 : 0.08} side={THREE.DoubleSide} />
+              <ringGeometry args={[(isHeroFeature ? 6.2 : isEliteFeature ? 5.8 : 5.4) * stageScale, (isHeroFeature ? 6.8 : isEliteFeature ? 6.3 : 5.9) * stageScale, 56]} />
+              <meshBasicMaterial color="#dbeafe" transparent opacity={isHeroFeature ? 0.12 : isEliteFeature ? 0.1 : 0.08} side={THREE.DoubleSide} />
             </mesh>
           </>
         )}
@@ -4690,29 +4693,29 @@ function DistrictBooth({
         </group>
       </group>
       {isFeatureBooth && (
-        <group position={[0, metrics.colliderSize[1] + (isHeroNode ? 4.8 : 4.2), -0.22]}>
+        <group position={[0, metrics.colliderSize[1] + (isHeroFeature ? 4.8 : isEliteFeature ? 4.5 : 4.2), -0.22]}>
           <mesh castShadow>
-            <boxGeometry args={[isHeroNode ? 12.8 : 10.4, isHeroNode ? 2.48 : 1.94, 0.5]} />
+            <boxGeometry args={[isHeroFeature ? 12.8 : isEliteFeature ? 11.4 : 10.4, isHeroFeature ? 2.48 : isEliteFeature ? 2.16 : 1.94, 0.5]} />
             <meshStandardMaterial color="#08111c" metalness={0.12} roughness={0.42} />
           </mesh>
-          <mesh position={[0, isHeroNode ? -0.86 : -0.66, 0.16]} castShadow>
-            <boxGeometry args={[isHeroNode ? 10.6 : 8.2, 0.14, 0.14]} />
+          <mesh position={[0, isHeroFeature ? -0.86 : isEliteFeature ? -0.76 : -0.66, 0.16]} castShadow>
+            <boxGeometry args={[isHeroFeature ? 10.6 : isEliteFeature ? 9.2 : 8.2, 0.14, 0.14]} />
             <meshStandardMaterial color={placement.color} emissive={placement.color} emissiveIntensity={0.14} roughness={0.3} />
           </mesh>
-          <Text position={[0, heroName.lines.length > 1 ? (isHeroNode ? 0.18 : 0.12) : (isHeroNode ? 0.02 : -0.02), 0.28]} fontSize={(isHeroNode ? 0.7 : 0.56) * heroName.fontScale} lineHeight={0.92} color="#f8fafc" anchorX="center" anchorY="middle" maxWidth={isHeroNode ? 10.8 : 8.4}>
+          <Text position={[0, heroName.lines.length > 1 ? (isHeroFeature ? 0.18 : isEliteFeature ? 0.15 : 0.12) : (isHeroFeature ? 0.02 : isEliteFeature ? 0 : -0.02), 0.28]} fontSize={(isHeroFeature ? 0.7 : isEliteFeature ? 0.62 : 0.56) * heroName.fontScale} lineHeight={0.92} color="#f8fafc" anchorX="center" anchorY="middle" maxWidth={isHeroFeature ? 10.8 : isEliteFeature ? 9.3 : 8.4}>
             {heroName.lines.join('\n')}
           </Text>
-          <group position={[0, isHeroNode ? -2.92 : -2.28, 0.04]}>
+          <group position={[0, isHeroFeature ? -2.92 : isEliteFeature ? -2.58 : -2.28, 0.04]}>
             <mesh castShadow>
-              <cylinderGeometry args={[isHeroNode ? 1.54 : 1.18, isHeroNode ? 1.54 : 1.18, 0.16, 40]} />
+              <cylinderGeometry args={[isHeroFeature ? 1.54 : isEliteFeature ? 1.34 : 1.18, isHeroFeature ? 1.54 : isEliteFeature ? 1.34 : 1.18, 0.16, 40]} />
               <meshStandardMaterial color="#09111b" metalness={0.12} roughness={0.4} />
             </mesh>
             <mesh position={[0, 0, 0.09]}>
-              <cylinderGeometry args={[isHeroNode ? 1.28 : 0.96, isHeroNode ? 1.28 : 0.96, 0.08, 40]} />
+              <cylinderGeometry args={[isHeroFeature ? 1.28 : isEliteFeature ? 1.12 : 0.96, isHeroFeature ? 1.28 : isEliteFeature ? 1.12 : 0.96, 0.08, 40]} />
               <meshStandardMaterial color={placement.color} emissive={placement.color} emissiveIntensity={0.16} roughness={0.24} metalness={0.12} />
             </mesh>
             <mesh position={[0, 0, 0.14]}>
-              <circleGeometry args={[isHeroNode ? 1.08 : 0.82, 40]} />
+              <circleGeometry args={[isHeroFeature ? 1.08 : isEliteFeature ? 0.96 : 0.82, 40]} />
               {presentation.logoUrl ? (
                 <Suspense fallback={<meshStandardMaterial color="#0f172a" emissive={placement.color} emissiveIntensity={0.08} />}>
                   <SponsorTextureSurface fallbackColor="#0f172a" url={presentation.logoUrl} />
@@ -4722,7 +4725,7 @@ function DistrictBooth({
               )}
             </mesh>
             {!presentation.logoUrl && (
-              <Text position={[0, -0.04, 0.22]} fontSize={isHeroNode ? 0.48 : 0.38} color="#f8fafc" anchorX="center" anchorY="middle" maxWidth={isHeroNode ? 1.5 : 1.1}>
+              <Text position={[0, -0.04, 0.22]} fontSize={isHeroFeature ? 0.48 : isEliteFeature ? 0.42 : 0.38} color="#f8fafc" anchorX="center" anchorY="middle" maxWidth={isHeroFeature ? 1.5 : isEliteFeature ? 1.28 : 1.1}>
                 {presentation.fallbackIdentity.monogram}
               </Text>
             )}
