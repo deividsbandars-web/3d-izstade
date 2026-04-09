@@ -4,7 +4,6 @@ import { AdaptiveDpr, AdaptiveEvents, Environment, Html, Loader, OrbitControls, 
 import { useNavigate } from 'react-router-dom';
 import * as THREE from 'three';
 import { BoothUI } from '../../../components/BoothUI';
-import { normalizeModel } from '../../../utils/threeUtils';
 import { ArrivalReveal } from './ArrivalReveal';
 import { getBoothArchitectureMetrics, getBoothColliderSegments } from './BoothArchitectureKit';
 import { CuratedSkylineRing } from './CuratedSkylineRing';
@@ -24,7 +23,7 @@ import { buildExpoCuratedPropPlacements, type ExpoCuratedPropKey } from '../lib/
 import { getExpoGroundFallbackProfile, getExpoGroundTextureCandidates } from '../lib/expoGroundMaterialManifest';
 import { resolveExpoTextureCandidateUrls } from '../lib/expoTexturePipeline';
 import { buildSponsorScreenLayout, type SponsorScreenNode } from '../lib/sponsorScreenLayout';
-import { buildSponsorBoothPresentation, getSponsorNameFontSize, resolveSponsorCtaIntent, type SponsorBoothTemplate, type SponsorCta } from '../lib/sponsorBoothPresentation';
+import { buildSponsorBoothPresentation, getSponsorNameFontSize, resolveSponsorCtaIntent, type SponsorCta } from '../lib/sponsorBoothPresentation';
 import type { ExpoSectorMarker } from '../layout-engine';
 import { EXPO_CITY_QUALITY_TIER, EXPO_FEATURE_FLAGS, EXPO_SPATIAL_DEBUG_FLAGS, type ExpoMode } from '../state/expoRuntime';
 import { replaceDistrictBoothZones } from '../sceneWorld-support';
@@ -3794,22 +3793,6 @@ function SafeVideo({ url }: { url: string }) {
   return <meshBasicMaterial map={texture} toneMapped={false} />;
 }
 
-function CustomBoothInsert({ template, url }: { template: SponsorBoothTemplate; url: string }) {
-  const { scene } = useGLTF(url);
-  const normalizedScene = React.useMemo(() => {
-    const clone = scene.clone();
-    normalizeModel(clone);
-    return clone;
-  }, [scene]);
-  const metrics = getBoothArchitectureMetrics(template);
-
-  return (
-    <group position={metrics.insertPosition} scale={[metrics.insertScale, metrics.insertScale, metrics.insertScale]}>
-      <primitive object={normalizedScene} />
-    </group>
-  );
-}
-
 function SponsorShowcaseObject({
   accentColor,
   fallbackMonogram,
@@ -4600,7 +4583,6 @@ function DistrictBooth({
   const distanceToPlayer = Math.hypot(playerPosition[0] - placement.position[0], playerPosition[2] - placement.position[2]);
   const showDetailedText = EXPO_FEATURE_FLAGS.enableShowcaseSkylineDensity || distanceToPlayer < 760;
   const showFullBoothUi = EXPO_FEATURE_FLAGS.enableShowcaseSkylineDensity || distanceToPlayer < 540 || isEliteBooth || isPremiumBooth;
-  const showRichMedia = EXPO_FEATURE_FLAGS.enableShowcaseSkylineDensity || distanceToPlayer < 460 || isEliteBooth || isPremiumBooth;
   const infoBandWidth = Math.max(8.8, metrics.titleMaxWidth + (isEliteBooth ? 4.6 : isPremiumBooth ? 3.4 : 2.2));
   const infoBandHeight = showTagline ? (isEliteBooth ? 3.72 : isPremiumBooth ? 3.24 : 2.56) : (isEliteBooth ? 2.7 : isPremiumBooth ? 2.24 : 1.76);
   const infoBandZ = metrics.titlePosition[2] - 0.24;
@@ -4670,11 +4652,6 @@ function DistrictBooth({
       {EXPO_SPATIAL_DEBUG_FLAGS.disableBoothArchitectureKit
         ? <BoothDebugShellFallback accentColor={placement.color} metrics={metrics} />
         : <OpenBoothPavilion accentColor={districtVisual.shellAccent} fallbackText={presentation.fallbackIdentity.monogram} metrics={metrics} screenUrl={presentation.posterUrl || presentation.logoUrl} tier={featureTier} />}
-      {presentation.customInsertUrl && showRichMedia && (
-        <Suspense fallback={null}>
-          <CustomBoothInsert template={presentation.template} url={presentation.customInsertUrl} />
-        </Suspense>
-      )}
       {isFeatureBooth && (
         <group position={[0, 0, 7.4]}>
           <mesh position={[0, 0.08, 0]} receiveShadow>
@@ -4715,13 +4692,11 @@ function DistrictBooth({
           </mesh>
         )}
         <group position={[0, 3.1, 0]}>
-          {!presentation.customInsertUrl && (
-            <SponsorShowcaseObject
-              accentColor={placement.color}
-              fallbackMonogram={presentation.fallbackIdentity.monogram}
-              mode={presentation.showcaseMode}
-            />
-          )}
+          <SponsorShowcaseObject
+            accentColor={placement.color}
+            fallbackMonogram={presentation.fallbackIdentity.monogram}
+            mode={presentation.showcaseMode}
+          />
         </group>
       </group>
       {isFeatureBooth && (
