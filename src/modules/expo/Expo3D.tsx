@@ -29,6 +29,13 @@ export default function Expo3D() {
   const [debug, setDebug] = useState(EXPO_DEBUG_DEFAULT);
   const [mobileMoveIntent, setMobileMoveIntent] = useState({ f: false, b: false, l: false, r: false });
   const [devFocusSlug, setDevFocusSlug] = useState<string | null>('__use_url__');
+  const [devLayerStates, setDevLayerStates] = useState({
+    booths: true,
+    city: true,
+    promenade: true,
+    skyline: true,
+    stadium: true,
+  });
 
   const nav = useNavigate();
   const { data, isLoading } = useExpoSceneData();
@@ -183,11 +190,13 @@ export default function Expo3D() {
               focusedName: focusedPlacement?.company?.name ?? null,
               focusedSlug: focusedPlacement?.company?.slug ?? effectiveFocusSlug ?? null,
               focusedTier: focusedPlacement?.company?.sponsorTier ?? null,
+              layerStates: devLayerStates,
               onClearFocus: () => setDevFocusSlug(''),
               onFocusElite: verificationTargets.elite ? () => setDevFocusSlug(String(verificationTargets.elite?.company?.slug || verificationTargets.elite?.company?.id || '')) : undefined,
               onFocusHero: verificationTargets.hero ? () => setDevFocusSlug(String(verificationTargets.hero?.company?.slug || verificationTargets.hero?.company?.id || '')) : undefined,
               onFocusPremium: verificationTargets.premium ? () => setDevFocusSlug(String(verificationTargets.premium?.company?.slug || verificationTargets.premium?.company?.id || '')) : undefined,
-              renderMarker: 'LOCAL-VERIFY-V1',
+              onToggleLayer: (layer) => setDevLayerStates((value) => ({ ...value, [layer]: !value[layer] })),
+              renderMarker: 'LOCAL-VERIFY-V2',
               sceneVersion: data?.sceneVersion ? String(data.sceneVersion) : null,
             } : null}
             onToggleMic={() => setIsMicOn((value) => !value)}
@@ -206,6 +215,7 @@ export default function Expo3D() {
             onMove={handlePlayerMove}
             sceneVersion={data?.sceneVersion ? String(data.sceneVersion) : null}
             startViewOverride={focusStartView}
+            runtimeLayerToggles={import.meta.env.DEV ? devLayerStates : undefined}
             worldContract={worldContract}
             zoneSystem={zoneSystem}
           />

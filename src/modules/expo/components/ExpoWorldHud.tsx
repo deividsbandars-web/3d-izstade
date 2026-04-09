@@ -8,6 +8,8 @@ interface ExpoWorldHudProps {
   devVerification?: {
     companyCount?: number;
     dataMode?: string | null;
+    layerStates?: Record<string, boolean>;
+    onToggleLayer?: (layer: 'promenade' | 'city' | 'stadium' | 'booths' | 'skyline') => void;
     renderMarker: string;
     focusedSlug: string | null;
     focusedName: string | null;
@@ -135,6 +137,13 @@ export function ExpoWorldHud({
               <div>NAME: {devVerification.focusedName || 'free roam'}</div>
               <div>TIER: {(devVerification.focusedTier || 'none').toUpperCase()}</div>
               <div>DATA: {(devVerification.dataMode || 'unknown').toUpperCase()} / {devVerification.companyCount ?? 0} COMPANIES</div>
+              {devVerification.layerStates && (
+                <div>
+                  LAYERS:
+                  {' '}
+                  {Object.entries(devVerification.layerStates).map(([key, value]) => `${key.toUpperCase()}:${value ? 'ON' : 'OFF'}`).join('  ')}
+                </div>
+              )}
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '8px' }}>
               <button onClick={devVerification.onFocusHero} style={{ ...primaryPanelStyle, padding: '10px 12px', borderRadius: '12px', cursor: 'pointer', fontWeight: 800, border: '1px solid rgba(255,255,255,0.08)' }}>HERO</button>
@@ -142,6 +151,15 @@ export function ExpoWorldHud({
               <button onClick={devVerification.onFocusElite} style={{ ...primaryPanelStyle, padding: '10px 12px', borderRadius: '12px', cursor: 'pointer', fontWeight: 800, border: '1px solid rgba(255,255,255,0.08)' }}>ELITE</button>
               <button onClick={devVerification.onClearFocus} style={{ ...primaryPanelStyle, padding: '10px 12px', borderRadius: '12px', cursor: 'pointer', fontWeight: 800, border: '1px solid rgba(255,255,255,0.08)' }}>CLEAR</button>
             </div>
+            {devVerification.onToggleLayer && (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '8px' }}>
+                <button onClick={() => devVerification.onToggleLayer?.('promenade')} style={{ ...primaryPanelStyle, padding: '9px 10px', borderRadius: '12px', cursor: 'pointer', fontWeight: 800, border: '1px solid rgba(255,255,255,0.08)' }}>PROM</button>
+                <button onClick={() => devVerification.onToggleLayer?.('city')} style={{ ...primaryPanelStyle, padding: '9px 10px', borderRadius: '12px', cursor: 'pointer', fontWeight: 800, border: '1px solid rgba(255,255,255,0.08)' }}>CITY</button>
+                <button onClick={() => devVerification.onToggleLayer?.('stadium')} style={{ ...primaryPanelStyle, padding: '9px 10px', borderRadius: '12px', cursor: 'pointer', fontWeight: 800, border: '1px solid rgba(255,255,255,0.08)' }}>STADIUM</button>
+                <button onClick={() => devVerification.onToggleLayer?.('booths')} style={{ ...primaryPanelStyle, padding: '9px 10px', borderRadius: '12px', cursor: 'pointer', fontWeight: 800, border: '1px solid rgba(255,255,255,0.08)' }}>BOOTHS</button>
+                <button onClick={() => devVerification.onToggleLayer?.('skyline')} style={{ ...primaryPanelStyle, padding: '9px 10px', borderRadius: '12px', cursor: 'pointer', fontWeight: 800, border: '1px solid rgba(255,255,255,0.08)', gridColumn: 'span 2' }}>SKYLINE</button>
+              </div>
+            )}
           </div>
         )}
       </div>

@@ -5017,6 +5017,13 @@ interface ExpoWorldSceneProps {
   mobileMoveIntent?: { f: boolean; b: boolean; l: boolean; r: boolean };
   mode: ExpoMode;
   onMove: (pos: number[]) => void;
+  runtimeLayerToggles?: {
+    booths: boolean;
+    city: boolean;
+    promenade: boolean;
+    skyline: boolean;
+    stadium: boolean;
+  };
   sceneVersion: string | null;
   startViewOverride?: ExpoStartView | null;
   worldContract: ExpoWorldContract;
@@ -5045,9 +5052,16 @@ function SceneBridge({ startView }: { startView: ExpoStartView }) {
   return null;
 }
 
-export function ExpoWorldScene({ activeZone, debug, guests: _guests, mobileMoveIntent, mode, onMove, sceneVersion, startViewOverride, worldContract, zoneSystem }: ExpoWorldSceneProps) {
+export function ExpoWorldScene({ activeZone, debug, guests: _guests, mobileMoveIntent, mode, onMove, runtimeLayerToggles, sceneVersion, startViewOverride, worldContract, zoneSystem }: ExpoWorldSceneProps) {
   const { boothPlacements, districtPrograms, plan: _boulevardPlan, playBounds, qualityProfileInputs, sectorMarkers, startView, visualProfile, walkRegions } = worldContract;
   const effectiveStartView = startViewOverride ?? startView;
+  const layerToggles = runtimeLayerToggles ?? {
+    booths: true,
+    city: true,
+    promenade: true,
+    skyline: true,
+    stadium: true,
+  };
   const visibleBoothPlacements = useMemo(
     () => selectVisibleBoothPlacements(boothPlacements, districtPrograms),
     [boothPlacements, districtPrograms]
@@ -5161,10 +5175,10 @@ export function ExpoWorldScene({ activeZone, debug, guests: _guests, mobileMoveI
             {EXPO_FEATURE_FLAGS.enableFog && <fog attach="fog" args={['#9eb6d4', 180, 520]} />}
 
             <GroundPlane visualProfile={visualProfile} />
-            <ExpoDistrictPromenade boothPlacements={boothPlacements} sectorMarkers={sectorMarkers} />
-            <CleanExpoCitySkeleton boothPlacements={visibleBoothPlacements} districtPrograms={districtPrograms} visualProfile={visualProfile} />
-            <ExpoRearCampus boothPlacements={visibleBoothPlacements} visualProfile={visualProfile} />
-            {EXPO_FEATURE_FLAGS.enableCuratedSkylineRing && (
+            {layerToggles.promenade && <ExpoDistrictPromenade boothPlacements={boothPlacements} sectorMarkers={sectorMarkers} />}
+            {layerToggles.city && <CleanExpoCitySkeleton boothPlacements={visibleBoothPlacements} districtPrograms={districtPrograms} visualProfile={visualProfile} />}
+            {layerToggles.stadium && <ExpoRearCampus boothPlacements={visibleBoothPlacements} visualProfile={visualProfile} />}
+            {layerToggles.skyline && EXPO_FEATURE_FLAGS.enableCuratedSkylineRing && (
               <CuratedSkylineRing
                 density={EXPO_FEATURE_FLAGS.enableShowcaseSkylineDensity ? 'standard' : 'minimal'}
                 visualProfile={visualProfile}
@@ -5185,7 +5199,7 @@ export function ExpoWorldScene({ activeZone, debug, guests: _guests, mobileMoveI
               sectorCount={sectorCount}
               sponsorCount={qualityProfileInputs.boothCount}
             />
-              <group>
+              {layerToggles.booths && <group>
                 {visibleBoothPlacements.map((placement) => (
                   <DistrictBooth
                     key={placement.id}
@@ -5194,9 +5208,9 @@ export function ExpoWorldScene({ activeZone, debug, guests: _guests, mobileMoveI
                     visualProfile={visualProfile}
                   />
                 ))}
-              </group>
+              </group>}
 
-              {visibleBoothPlacements.length === 0 && (
+              {layerToggles.booths && visibleBoothPlacements.length === 0 && (
                 <Html position={[0, 8, 0]} center>
                   <div style={{ background: 'rgba(15, 23, 42, 0.9)', color: 'white', padding: '16px 20px', borderRadius: '14px', border: '1px solid rgba(59, 130, 246, 0.35)', width: '320px', textAlign: 'center' }}>
                     Sponsor booths are not loaded yet. Check /api/expo/scene or the underlying Supabase sector and company data.
