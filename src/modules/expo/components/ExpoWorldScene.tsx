@@ -1077,7 +1077,7 @@ export function DistrictGatewayNode({ marker }: { marker: ExpoSectorMarker }) {
 
 function ExpoDistrictPromenade({
   boothPlacements,
-  sectorMarkers,
+  sectorMarkers: _sectorMarkers,
 }: {
   boothPlacements: ExpoBoothPlacement[];
   sectorMarkers: ExpoSectorMarker[];
@@ -1116,9 +1116,6 @@ function ExpoDistrictPromenade({
 
   return (
     <group name="expo-district-promenade">
-      {EXPO_FEATURE_FLAGS.enableGroundArtPass && (
-        <BoulevardGroundArt boothPlacements={boothPlacements} sectorMarkers={sectorMarkers} />
-      )}
       <mesh position={[0, 0.03, centerZ]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
         <planeGeometry args={[promenadeWidth, promenadeLength]} />
         <ExpoAxisMaterial color="#dce3eb" roughness={0.58} metalness={0.05} />
@@ -1181,6 +1178,8 @@ function ExpoDistrictPromenade({
     </group>
   );
 }
+
+void BoulevardGroundArt;
 
 function isInsideSponsorFrontageReserve(
   point: [number, number, number],
