@@ -6,7 +6,7 @@ import * as THREE from 'three';
 import { BoothUI } from '../../../components/BoothUI';
 import { normalizeModel } from '../../../utils/threeUtils';
 import { ArrivalReveal } from './ArrivalReveal';
-import { BoothArchitectureKit, getBoothArchitectureMetrics, getBoothColliderSegments } from './BoothArchitectureKit';
+import { getBoothArchitectureMetrics, getBoothColliderSegments } from './BoothArchitectureKit';
 import { CuratedSkylineRing } from './CuratedSkylineRing';
 import { ExpoEvidenceProbe } from './ExpoEvidenceProbe';
 import {
@@ -3603,17 +3603,19 @@ function BoothDebugShellFallback({ accentColor, metrics }: { accentColor: string
 function OpenBoothPavilion({
   accentColor,
   fallbackText,
+  hero = false,
   metrics,
   screenUrl,
 }: {
   accentColor: string;
   fallbackText: string;
+  hero?: boolean;
   metrics: ReturnType<typeof getBoothArchitectureMetrics>;
   screenUrl: string | null;
 }) {
-  const width = metrics.footprintSize[0] * 0.72;
-  const depth = metrics.footprintSize[1] * 0.58;
-  const postHeight = Math.max(6.2, metrics.colliderSize[1] * 0.58);
+  const width = metrics.footprintSize[0] * (hero ? 0.82 : 0.72);
+  const depth = metrics.footprintSize[1] * (hero ? 0.64 : 0.58);
+  const postHeight = Math.max(hero ? 7.4 : 6.2, metrics.colliderSize[1] * (hero ? 0.64 : 0.58));
   const postOffsetX = (width * 0.5) - 1.2;
   const postOffsetZ = (depth * 0.5) - 1;
   const rearScreenZ = -((depth * 0.5) - 0.56);
@@ -3636,20 +3638,28 @@ function OpenBoothPavilion({
         </mesh>
       ))}
       <mesh position={[0, postHeight + 0.22, 0]} castShadow receiveShadow>
-        <boxGeometry args={[width + 1.4, 0.32, depth * 0.74]} />
+        <boxGeometry args={[width + (hero ? 2.4 : 1.4), hero ? 0.38 : 0.32, depth * (hero ? 0.82 : 0.74)]} />
         <meshStandardMaterial color="#c9d6df" metalness={0.1} roughness={0.46} />
       </mesh>
       <mesh position={[0, postHeight + 0.42, (depth * 0.5) - 0.2]} castShadow>
         <boxGeometry args={[width * 0.82, 0.16, 0.22]} />
         <meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={0.1} roughness={0.42} metalness={0.16} />
       </mesh>
+      <mesh position={[(width * 0.5) - 0.7, postHeight * 0.72, 0.18]} castShadow receiveShadow rotation={[0, 0, 0.08]}>
+        <boxGeometry args={[hero ? 0.54 : 0.44, hero ? 6.2 : 5.2, depth * 0.62]} />
+        <meshStandardMaterial color="#7f93a1" metalness={0.18} roughness={0.5} />
+      </mesh>
+      <mesh position={[(width * 0.5) - 0.38, postHeight * 0.92, 0.22]} castShadow>
+        <boxGeometry args={[0.18, hero ? 3.8 : 3.1, depth * 0.52]} />
+        <meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={0.14} roughness={0.36} metalness={0.18} />
+      </mesh>
       <group position={[0, postHeight * 0.56, rearScreenZ]}>
         <mesh castShadow receiveShadow>
-          <boxGeometry args={[width * 0.58, 4.92, 0.24]} />
+          <boxGeometry args={[width * (hero ? 0.64 : 0.58), hero ? 5.42 : 4.92, 0.24]} />
           <meshStandardMaterial color="#08111c" metalness={0.12} roughness={0.58} />
         </mesh>
         <mesh position={[0, 0, 0.16]}>
-          <planeGeometry args={[width * 0.5, 4.16]} />
+          <planeGeometry args={[width * (hero ? 0.56 : 0.5), hero ? 4.56 : 4.16]} />
           {screenUrl ? (
             <Suspense fallback={<meshStandardMaterial color="#0f172a" emissive={accentColor} emissiveIntensity={0.08} />}>
               <SponsorTextureSurface fallbackColor="#0f172a" url={screenUrl} />
@@ -4497,7 +4507,6 @@ function DistrictBooth({
   const isEliteBooth = presentation.adTier === 'elite';
   const isPremiumBooth = presentation.adTier === 'premium';
   const isHeroNode = placement.nodeType === 'hero_left' || placement.nodeType === 'hero_right';
-  const useOpenPavilionShell = !isHeroNode;
   const stageScale = isEliteBooth ? 1.28 : isPremiumBooth ? 1.14 : 1;
   const mediaWallScale = isEliteBooth ? 1.16 : isPremiumBooth ? 1.08 : 1;
   const sidePanelScale = isEliteBooth ? 1.12 : isPremiumBooth ? 1.06 : 1;
@@ -4578,9 +4587,7 @@ function DistrictBooth({
       </group>
       {EXPO_SPATIAL_DEBUG_FLAGS.disableBoothArchitectureKit
         ? <BoothDebugShellFallback accentColor={placement.color} metrics={metrics} />
-        : useOpenPavilionShell
-          ? <OpenBoothPavilion accentColor={districtVisual.shellAccent} fallbackText={presentation.fallbackIdentity.monogram} metrics={metrics} screenUrl={presentation.posterUrl || presentation.logoUrl} />
-          : <BoothArchitectureKit accentColor={districtVisual.shellAccent} template={presentation.template} visualTone={districtVisual.expressionMode} />}
+        : <OpenBoothPavilion accentColor={districtVisual.shellAccent} fallbackText={presentation.fallbackIdentity.monogram} hero={isHeroNode} metrics={metrics} screenUrl={presentation.posterUrl || presentation.logoUrl} />}
       {presentation.customInsertUrl && showRichMedia && (
         <Suspense fallback={null}>
           <CustomBoothInsert template={presentation.template} url={presentation.customInsertUrl} />
