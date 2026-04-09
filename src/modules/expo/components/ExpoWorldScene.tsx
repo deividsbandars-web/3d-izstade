@@ -2939,85 +2939,9 @@ function CleanExpoCitySkeleton({
     }).flat();
   }, [districtPrograms.length, districtStride]);
 
-  const mediaWallBlocks = useMemo(() => {
-    const entries = districtPrograms.slice(0, Math.max(3, districtPrograms.length)).flatMap((district, districtIndex) => {
-      const baseZ = -160 - (districtIndex * districtStride);
-      return [
-        {
-          id: `${district.sectorId ?? district.clusterIndex}-media-left-block-a`,
-          position: [-562, 34, baseZ + 84] as [number, number, number],
-          size: [72, 68, 28] as [number, number, number],
-          color: '#627686',
-        },
-        {
-          id: `${district.sectorId ?? district.clusterIndex}-media-left-block-b`,
-          position: [-488, 22, baseZ - 64] as [number, number, number],
-          size: [56, 44, 52] as [number, number, number],
-          color: '#718492',
-        },
-        {
-          id: `${district.sectorId ?? district.clusterIndex}-media-left-anchor`,
-          position: [-426, 12, baseZ - 206] as [number, number, number],
-          size: [52, 24, 44] as [number, number, number],
-          color: '#7f93a0',
-        },
-        {
-          id: `${district.sectorId ?? district.clusterIndex}-media-right-block-a`,
-          position: [562, 32, baseZ + 72] as [number, number, number],
-          size: [72, 64, 28] as [number, number, number],
-          color: '#627686',
-        },
-        {
-          id: `${district.sectorId ?? district.clusterIndex}-media-right-block-b`,
-          position: [494, 24, baseZ - 86] as [number, number, number],
-          size: [58, 48, 54] as [number, number, number],
-          color: '#718492',
-        },
-        {
-          id: `${district.sectorId ?? district.clusterIndex}-media-right-anchor`,
-          position: [432, 12, baseZ - 214] as [number, number, number],
-          size: [52, 24, 44] as [number, number, number],
-          color: '#7f93a0',
-        },
-      ];
-    });
+  const mediaWallBlocks = useMemo(() => [], []);
 
-    return filterReservedSponsorFrontageEntries(entries, boothPlacements, { frontDepth: 480, rearDepth: 180, sideWidth: 220, radius: 280 });
-  }, [districtPrograms, boothPlacements]);
-
-  const mediaWallSupportBlocks = useMemo(() => {
-    const entries = districtPrograms.slice(0, Math.max(3, districtPrograms.length)).flatMap((district, districtIndex) => {
-      const baseZ = -160 - (districtIndex * districtStride);
-      return [
-        {
-          id: `${district.sectorId ?? district.clusterIndex}-media-left-buttress-a`,
-          position: [-646, 0, baseZ + 116] as [number, number, number],
-          size: [64, 118, 64] as [number, number, number],
-          color: '#879aa7',
-        },
-        {
-          id: `${district.sectorId ?? district.clusterIndex}-media-left-buttress-b`,
-          position: [-602, 0, baseZ - 228] as [number, number, number],
-          size: [52, 92, 72] as [number, number, number],
-          color: '#91a4b0',
-        },
-        {
-          id: `${district.sectorId ?? district.clusterIndex}-media-right-buttress-a`,
-          position: [646, 0, baseZ + 104] as [number, number, number],
-          size: [64, 118, 64] as [number, number, number],
-          color: '#879aa7',
-        },
-        {
-          id: `${district.sectorId ?? district.clusterIndex}-media-right-buttress-b`,
-          position: [606, 0, baseZ - 236] as [number, number, number],
-          size: [52, 92, 72] as [number, number, number],
-          color: '#91a4b0',
-        },
-      ];
-    });
-
-    return filterReservedSponsorFrontageEntries(entries, boothPlacements, { frontDepth: 500, rearDepth: 200, sideWidth: 240, radius: 300 });
-  }, [districtPrograms, boothPlacements]);
+  const mediaWallSupportBlocks = useMemo(() => [], []);
 
   const showcasePlazas = useMemo(() => {
     const entries = districtPrograms.slice(0, Math.max(3, districtPrograms.length)).flatMap((district, districtIndex) => {
@@ -3032,73 +2956,9 @@ function CleanExpoCitySkeleton({
     return filterReservedSponsorFrontageEntries(entries, boothPlacements, { frontDepth: 420, rearDepth: 180, sideWidth: 180, radius: 220 });
   }, [districtPrograms, boothPlacements]);
 
-  const boothForecourtPlanes = useMemo(() => {
-    const entries = districtPrograms.slice(0, Math.max(3, districtPrograms.length)).flatMap((district, districtIndex) => {
-      const baseZ = -186 - (districtIndex * districtStride);
-      return [
-        {
-          id: `${district.sectorId ?? district.clusterIndex}-booth-court-left-main`,
-          position: [-238, 0.019, baseZ + 42] as [number, number, number],
-          size: [124, 182] as [number, number],
-          color: '#eef4f8',
-        },
-        {
-          id: `${district.sectorId ?? district.clusterIndex}-booth-court-left-pocket`,
-          position: [-334, 0.018, baseZ - 58] as [number, number, number],
-          size: [108, 126] as [number, number],
-          color: '#dce7ee',
-        },
-        {
-          id: `${district.sectorId ?? district.clusterIndex}-booth-court-right-main`,
-          position: [238, 0.019, baseZ + 34] as [number, number, number],
-          size: [124, 182] as [number, number],
-          color: '#eef4f8',
-        },
-        {
-          id: `${district.sectorId ?? district.clusterIndex}-booth-court-right-pocket`,
-          position: [334, 0.018, baseZ - 66] as [number, number, number],
-          size: [108, 126] as [number, number],
-          color: '#dce7ee',
-        },
-      ];
-    });
+  const boothForecourtPlanes = useMemo(() => [], []);
 
-    return filterReservedSponsorFrontageEntries(entries, boothPlacements, { frontDepth: 340, rearDepth: 160, sideWidth: 160, radius: 180 });
-  }, [districtPrograms, boothPlacements, districtStride]);
-
-  const boothNodePavilions = useMemo(() => {
-    const entries = districtPrograms.slice(0, Math.max(3, districtPrograms.length)).flatMap((district, districtIndex) => {
-      const baseZ = -196 - (districtIndex * districtStride);
-      return [
-        {
-          id: `${district.sectorId ?? district.clusterIndex}-booth-pavilion-left-anchor`,
-          position: [-258, 0, baseZ + 28] as [number, number, number],
-          size: [58, 8, 58] as [number, number, number],
-          color: '#c9d6de',
-        },
-        {
-          id: `${district.sectorId ?? district.clusterIndex}-booth-pavilion-left-tower`,
-          position: [-318, 0, baseZ + 102] as [number, number, number],
-          size: [18, 54, 18] as [number, number, number],
-          color: '#8ea2af',
-        },
-        {
-          id: `${district.sectorId ?? district.clusterIndex}-booth-pavilion-right-anchor`,
-          position: [258, 0, baseZ + 24] as [number, number, number],
-          size: [58, 8, 58] as [number, number, number],
-          color: '#c9d6de',
-        },
-        {
-          id: `${district.sectorId ?? district.clusterIndex}-booth-pavilion-right-tower`,
-          position: [318, 0, baseZ + 94] as [number, number, number],
-          size: [18, 54, 18] as [number, number, number],
-          color: '#8ea2af',
-        },
-      ];
-    });
-
-    return filterReservedSponsorFrontageEntries(entries, boothPlacements, { frontDepth: 340, rearDepth: 180, sideWidth: 160, radius: 200 });
-  }, [districtPrograms, boothPlacements, districtStride]);
+  const boothNodePavilions = useMemo(() => [], []);
 
   const rightSupportBlocks = useMemo(() => {
     const entries = districtPrograms.slice(0, Math.max(3, districtPrograms.length)).flatMap((district, districtIndex) => {
@@ -3374,50 +3234,7 @@ function CleanExpoCitySkeleton({
     },
   ]), []);
 
-  const sideBoothBoulevards = useMemo(() => {
-    const districtCount = Math.max(3, districtPrograms.length);
-    return Array.from({ length: districtCount }, (_, districtIndex) => {
-      const baseZ = -196 - (districtIndex * districtStride);
-      return [
-        {
-          id: `booth-boulevard-left-plinth-a-${districtIndex}`,
-          position: [-268, 0, baseZ + 64] as [number, number, number],
-          size: [84, 8, 124] as [number, number, number],
-          color: '#d5e0e7',
-        },
-        {
-          id: `booth-boulevard-left-plinth-b-${districtIndex}`,
-          position: [-312, 0, baseZ - 118] as [number, number, number],
-          size: [62, 10, 92] as [number, number, number],
-          color: '#c3d1db',
-        },
-        {
-          id: `booth-boulevard-right-plinth-a-${districtIndex}`,
-          position: [268, 0, baseZ + 56] as [number, number, number],
-          size: [84, 8, 124] as [number, number, number],
-          color: '#d5e0e7',
-        },
-        {
-          id: `booth-boulevard-right-plinth-b-${districtIndex}`,
-          position: [312, 0, baseZ - 126] as [number, number, number],
-          size: [62, 10, 92] as [number, number, number],
-          color: '#c3d1db',
-        },
-        {
-          id: `booth-boulevard-left-beacon-${districtIndex}`,
-          position: [-224, 0, baseZ - 6] as [number, number, number],
-          size: [14, 72, 14] as [number, number, number],
-          color: '#8ea2af',
-        },
-        {
-          id: `booth-boulevard-right-beacon-${districtIndex}`,
-          position: [224, 0, baseZ - 14] as [number, number, number],
-          size: [14, 72, 14] as [number, number, number],
-          color: '#8ea2af',
-        },
-      ];
-    }).flat();
-  }, [districtPrograms.length, districtStride]);
+  const sideBoothBoulevards = useMemo(() => [], []);
 
   const signatureMegaLandmarks = useMemo(() => {
     const districtCount = Math.max(1, districtPrograms.length);
