@@ -2858,53 +2858,9 @@ function CleanExpoCitySkeleton({
     },
   ]), []);
 
-  const arrivalLandmarkBlocks = useMemo(() => ([
-    {
-      id: 'arrival-landmark-pylon-left',
-      position: [-324, 0, 96] as [number, number, number],
-      size: [58, 248, 58] as [number, number, number],
-      color: '#7c909f',
-    },
-    {
-      id: 'arrival-landmark-pylon-right',
-      position: [324, 0, 96] as [number, number, number],
-      size: [58, 248, 58] as [number, number, number],
-      color: '#7c909f',
-    },
-    {
-      id: 'arrival-landmark-bridge',
-      position: [0, 0, 96] as [number, number, number],
-      size: [548, 34, 52] as [number, number, number],
-      color: '#b4c3cc',
-    },
-  ]), []);
+  const arrivalLandmarkBlocks = useMemo(() => [], []);
 
-  const arrivalSupportBlocks = useMemo(() => ([
-    {
-      id: 'arrival-support-left-outer',
-      position: [-472, 0, 24] as [number, number, number],
-      size: [164, 96, 212] as [number, number, number],
-      color: '#9dafbb',
-    },
-    {
-      id: 'arrival-support-right-outer',
-      position: [472, 0, 12] as [number, number, number],
-      size: [164, 104, 224] as [number, number, number],
-      color: '#9dafbb',
-    },
-    {
-      id: 'arrival-support-left-inner',
-      position: [-286, 0, -82] as [number, number, number],
-      size: [112, 62, 148] as [number, number, number],
-      color: '#b8c5ce',
-    },
-    {
-      id: 'arrival-support-right-inner',
-      position: [286, 0, -96] as [number, number, number],
-      size: [112, 62, 148] as [number, number, number],
-      color: '#b8c5ce',
-    },
-  ]), []);
+  const arrivalSupportBlocks = useMemo(() => [], []);
 
   const boulevardEdgeBlocks = useMemo(() => {
     const districtCount = Math.max(3, districtPrograms.length);
@@ -2982,113 +2938,11 @@ function CleanExpoCitySkeleton({
     return filterReservedSponsorFrontageEntries(entries, boothPlacements, { frontDepth: 540, rearDepth: 220, sideWidth: 280, radius: 340 });
   }, [districtPrograms, boothPlacements]);
 
-  const showcaseLandmarkBlocks = useMemo(() => {
-    const entries = districtPrograms.slice(0, Math.max(3, districtPrograms.length)).flatMap((district, districtIndex) => {
-      const baseZ = -196 - (districtIndex * districtStride);
-      return [
-        {
-          id: `${district.sectorId ?? district.clusterIndex}-showcase-plinth-left`,
-          position: [-112, 0, baseZ - 18] as [number, number, number],
-          size: [104, 30, 82] as [number, number, number],
-          color: '#a0b0bc',
-        },
-        {
-          id: `${district.sectorId ?? district.clusterIndex}-showcase-plinth-right`,
-          position: [112, 0, baseZ - 24] as [number, number, number],
-          size: [104, 30, 82] as [number, number, number],
-          color: '#a0b0bc',
-        },
-        {
-          id: `${district.sectorId ?? district.clusterIndex}-showcase-beacon-left`,
-          position: [-126, 0, baseZ + 112] as [number, number, number],
-          size: [32, 96, 32] as [number, number, number],
-          color: '#8799a6',
-        },
-        {
-          id: `${district.sectorId ?? district.clusterIndex}-showcase-beacon-right`,
-          position: [126, 0, baseZ + 102] as [number, number, number],
-          size: [32, 88, 32] as [number, number, number],
-          color: '#8799a6',
-        },
-      ];
-    });
+  const showcaseLandmarkBlocks = useMemo(() => [], []);
 
-    return filterReservedSponsorFrontageEntries(entries, boothPlacements, { frontDepth: 420, rearDepth: 180, sideWidth: 180, radius: 220 });
-  }, [districtPrograms, boothPlacements]);
+  const showcaseHeroLandmarks = useMemo(() => [], []);
 
-  const showcaseHeroLandmarks = useMemo(() => {
-    const entries = districtPrograms.slice(0, Math.max(3, districtPrograms.length)).flatMap((district, districtIndex) => {
-      const baseZ = -196 - (districtIndex * districtStride);
-      return [
-        {
-          id: `${district.sectorId ?? district.clusterIndex}-showcase-hero-left-spire`,
-          position: [-208, 0, baseZ - 18] as [number, number, number],
-          size: [42, 196, 42] as [number, number, number],
-          color: '#7f92a0',
-        },
-        {
-          id: `${district.sectorId ?? district.clusterIndex}-showcase-hero-right-spire`,
-          position: [208, 0, baseZ - 14] as [number, number, number],
-          size: [42, 188, 42] as [number, number, number],
-          color: '#7f92a0',
-        },
-        {
-          id: `${district.sectorId ?? district.clusterIndex}-showcase-hero-left-cap`,
-          position: [-208, 0, baseZ - 18] as [number, number, number],
-          size: [20, 56, 20] as [number, number, number],
-          color: '#bcc8d0',
-        },
-        {
-          id: `${district.sectorId ?? district.clusterIndex}-showcase-hero-right-cap`,
-          position: [208, 0, baseZ - 14] as [number, number, number],
-          size: [20, 52, 20] as [number, number, number],
-          color: '#bcc8d0',
-        },
-        {
-          id: `${district.sectorId ?? district.clusterIndex}-showcase-hero-sculpture-left`,
-          position: [-74, 0, baseZ - 84] as [number, number, number],
-          size: [48, 116, 48] as [number, number, number],
-          color: '#93a6b2',
-        },
-        {
-          id: `${district.sectorId ?? district.clusterIndex}-showcase-hero-sculpture-right`,
-          position: [74, 0, baseZ - 96] as [number, number, number],
-          size: [48, 116, 48] as [number, number, number],
-          color: '#93a6b2',
-        },
-      ];
-    });
-
-    return filterReservedSponsorFrontageEntries(entries, boothPlacements, { frontDepth: 420, rearDepth: 180, sideWidth: 180, radius: 220 });
-  }, [districtPrograms, boothPlacements]);
-
-  const showcaseForumTerraces = useMemo(() => {
-    const entries = districtPrograms.slice(0, Math.max(3, districtPrograms.length)).flatMap((district, districtIndex) => {
-      const baseZ = -196 - (districtIndex * districtStride);
-      return [
-        {
-          id: `${district.sectorId ?? district.clusterIndex}-forum-terrace-lower`,
-          position: [0, 0, baseZ + 126] as [number, number, number],
-          size: [286, 18, 128] as [number, number, number],
-          color: '#e2ebf1',
-        },
-        {
-          id: `${district.sectorId ?? district.clusterIndex}-forum-terrace-mid`,
-          position: [0, 0, baseZ + 84] as [number, number, number],
-          size: [214, 18, 84] as [number, number, number],
-          color: '#d4e0e8',
-        },
-        {
-          id: `${district.sectorId ?? district.clusterIndex}-forum-terrace-upper`,
-          position: [0, 0, baseZ + 42] as [number, number, number],
-          size: [148, 18, 54] as [number, number, number],
-          color: '#c6d4de',
-        },
-      ];
-    });
-
-    return filterReservedSponsorFrontageEntries(entries, boothPlacements, { frontDepth: 420, rearDepth: 180, sideWidth: 180, radius: 220 });
-  }, [districtPrograms, boothPlacements]);
+  const showcaseForumTerraces = useMemo(() => [], []);
 
   const discoveryEdgeBlocks = useMemo(() => {
     const districtCount = Math.max(1, districtPrograms.length);
