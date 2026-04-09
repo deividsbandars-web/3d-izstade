@@ -4689,6 +4689,31 @@ function DistrictBooth({
           <Text position={[0, heroName.lines.length > 1 ? 0.18 : 0.02, 0.28]} fontSize={0.7 * heroName.fontScale} lineHeight={0.92} color="#f8fafc" anchorX="center" anchorY="middle" maxWidth={10.8}>
             {heroName.lines.join('\n')}
           </Text>
+          <group position={[0, -2.92, 0.04]}>
+            <mesh castShadow>
+              <cylinderGeometry args={[1.54, 1.54, 0.16, 40]} />
+              <meshStandardMaterial color="#09111b" metalness={0.12} roughness={0.4} />
+            </mesh>
+            <mesh position={[0, 0, 0.09]}>
+              <cylinderGeometry args={[1.28, 1.28, 0.08, 40]} />
+              <meshStandardMaterial color={placement.color} emissive={placement.color} emissiveIntensity={0.16} roughness={0.24} metalness={0.12} />
+            </mesh>
+            <mesh position={[0, 0, 0.14]}>
+              <circleGeometry args={[1.08, 40]} />
+              {presentation.logoUrl ? (
+                <Suspense fallback={<meshStandardMaterial color="#0f172a" emissive={placement.color} emissiveIntensity={0.08} />}>
+                  <SponsorTextureSurface fallbackColor="#0f172a" url={presentation.logoUrl} />
+                </Suspense>
+              ) : (
+                <meshStandardMaterial color="#0f172a" emissive={placement.color} emissiveIntensity={0.08} />
+              )}
+            </mesh>
+            {!presentation.logoUrl && (
+              <Text position={[0, -0.04, 0.22]} fontSize={0.48} color="#f8fafc" anchorX="center" anchorY="middle" maxWidth={1.5}>
+                {presentation.fallbackIdentity.monogram}
+              </Text>
+            )}
+          </group>
         </group>
       )}
       <mesh position={[0, metrics.titlePosition[1] - 0.82, infoBandZ - 0.04]} castShadow>
