@@ -1382,25 +1382,11 @@ function ExpoCityForeground({
   }, [districtPrograms, boothPlacements]);
 
   const civicTreeRows = useMemo(() => {
-    const entries = districtPrograms.flatMap((district, districtIndex) => {
-      const baseZ = -196 - (districtIndex * 548);
-      const leftX = [-208, -254, -318];
-      const rightX = [208, 254, 318];
-      const zs = [baseZ + 162, baseZ + 42, baseZ - 122];
-
-      return [
-        ...leftX.flatMap((x, xIndex) => zs.map((z, zIndex) => ({
-          id: `${district.sectorId ?? district.clusterIndex}-tree-left-${xIndex}-${zIndex}`,
-          position: [x, 0, z] as [number, number, number],
-        }))),
-        ...rightX.flatMap((x, xIndex) => zs.map((z, zIndex) => ({
-          id: `${district.sectorId ?? district.clusterIndex}-tree-right-${xIndex}-${zIndex}`,
-          position: [x, 0, z - 18] as [number, number, number],
-        }))),
-      ];
-    });
-    return filterReservedSponsorFrontageEntries(entries, boothPlacements, { frontDepth: 340, rearDepth: 140, sideWidth: 180, radius: 220 });
-  }, [districtPrograms, boothPlacements]);
+    return [] as Array<{
+      id: string;
+      position: [number, number, number];
+    }>;
+  }, []);
 
   const districtCharacterMasses = useMemo(() => {
     const entries = districtPrograms.flatMap((district, districtIndex) => {
@@ -2416,38 +2402,16 @@ function ExpoCityForeground({
   }, [districtPrograms, visualProfile]);
 
   const parkMoments = useMemo(() => {
-    const entries = districtPrograms.flatMap((district, districtIndex) => {
-      const baseZ = -196 - (districtIndex * 548);
-      const parkZ = baseZ - 24;
-      const isScenic = district.expressionMode === 'scenic' || district.expressionMode === 'feature-court';
-      const isCalm = district.expressionMode === 'calm-dwell';
-      const parkWidth = isScenic ? 176 : isCalm ? 138 : 104;
-      const parkDepth = isScenic ? 92 : isCalm ? 66 : 48;
-      const sideX = isScenic ? 248 : 208;
-
-      return [
-        {
-          id: `${district.sectorId ?? district.clusterIndex}-park-left`,
-          position: [-sideX, 0.012, parkZ] as [number, number, number],
-          size: [parkWidth, parkDepth] as [number, number],
-          color: isScenic ? '#7b927d' : '#7f8f81',
-          pathColor: '#cfd8de',
-          ringColor: '#31414d',
-          hasTrees: true,
-        },
-        {
-          id: `${district.sectorId ?? district.clusterIndex}-park-right`,
-          position: [sideX, 0.012, parkZ - 18] as [number, number, number],
-          size: [parkWidth - 10, Math.max(18, parkDepth - 4)] as [number, number],
-          color: isScenic ? '#76907b' : '#7a897d',
-          pathColor: '#c8d1d8',
-          ringColor: '#2e3d47',
-          hasTrees: isScenic || isCalm,
-        },
-      ];
-    });
-    return filterReservedSponsorFrontageEntries(entries, boothPlacements, { frontDepth: 320, rearDepth: 120, sideWidth: 180, radius: 220 });
-  }, [districtPrograms, boothPlacements]);
+    return [] as Array<{
+      color: string;
+      hasTrees: boolean;
+      id: string;
+      pathColor: string;
+      position: [number, number, number];
+      ringColor: string;
+      size: [number, number];
+    }>;
+  }, []);
 
   const districtTowerClusters = useMemo(() => {
     const entries = districtPrograms.flatMap((district, districtIndex) => {
