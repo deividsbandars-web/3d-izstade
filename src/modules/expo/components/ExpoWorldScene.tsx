@@ -4744,11 +4744,13 @@ const PLAYER_WALK_SPEED = 48;
 function Player({
   bounds,
   debug = false,
+  mobileMoveIntent,
   mode,
   onMove,
 }: {
   bounds: { minX: number; maxX: number; minZ: number; maxZ: number };
   debug?: boolean;
+  mobileMoveIntent?: { f: boolean; b: boolean; l: boolean; r: boolean };
   mode: ExpoMode;
   onMove: (pos: number[]) => void;
 }) {
@@ -4847,10 +4849,10 @@ function Player({
     const speed = PLAYER_WALK_SPEED * delta;
     moveVector.current.set(0, 0, 0);
 
-    if (mov.f) moveVector.current.z -= speed;
-    if (mov.b) moveVector.current.z += speed;
-    if (mov.l) moveVector.current.x -= speed;
-    if (mov.r) moveVector.current.x += speed;
+    if (mov.f || mobileMoveIntent?.f) moveVector.current.z -= speed;
+    if (mov.b || mobileMoveIntent?.b) moveVector.current.z += speed;
+    if (mov.l || mobileMoveIntent?.l) moveVector.current.x -= speed;
+    if (mov.r || mobileMoveIntent?.r) moveVector.current.x += speed;
 
     const moved = moveVector.current.lengthSq() > 0;
 
@@ -4916,6 +4918,7 @@ interface ExpoWorldSceneProps {
   activeZone: any;
   debug: boolean;
   guests: any[];
+  mobileMoveIntent?: { f: boolean; b: boolean; l: boolean; r: boolean };
   mode: ExpoMode;
   onMove: (pos: number[]) => void;
   sceneVersion: string | null;
@@ -4945,7 +4948,7 @@ function SceneBridge({ startView }: { startView: ExpoStartView }) {
   return null;
 }
 
-export function ExpoWorldScene({ activeZone, debug, guests: _guests, mode, onMove, sceneVersion, worldContract, zoneSystem }: ExpoWorldSceneProps) {
+export function ExpoWorldScene({ activeZone, debug, guests: _guests, mobileMoveIntent, mode, onMove, sceneVersion, worldContract, zoneSystem }: ExpoWorldSceneProps) {
   const { boothPlacements, districtPrograms, plan: _boulevardPlan, playBounds, qualityProfileInputs, sectorMarkers, startView, visualProfile, walkRegions } = worldContract;
   const visibleBoothPlacements = useMemo(
     () => selectVisibleBoothPlacements(boothPlacements, districtPrograms),
@@ -5106,6 +5109,7 @@ export function ExpoWorldScene({ activeZone, debug, guests: _guests, mode, onMov
             <Player
               bounds={playBounds}
               debug={debug}
+              mobileMoveIntent={mobileMoveIntent}
               mode={mode}
               onMove={(position) => {
                 setPlayerPosition([position[0], position[1], position[2]]);

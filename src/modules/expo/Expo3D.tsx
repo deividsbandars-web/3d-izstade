@@ -26,6 +26,7 @@ function isExpoIgnorablePointerLockError(error: unknown) {
 export default function Expo3D() {
   const [mode, setMode] = useState<ExpoMode>('menu');
   const [debug, setDebug] = useState(EXPO_DEBUG_DEFAULT);
+  const [mobileMoveIntent, setMobileMoveIntent] = useState({ f: false, b: false, l: false, r: false });
 
   const nav = useNavigate();
   const { data, isLoading } = useExpoSceneData();
@@ -33,6 +34,7 @@ export default function Expo3D() {
   const pixelStreamingStatus = usePixelStreamingStatus();
   const { guests, playerPos, isMicOn, isSpeaking, setIsMicOn, handlePlayerMove } = useExpoPresence(mode);
   const { activeZone, zoneSystem } = useZoneSystem(playerPos as any);
+  const isTouchDevice = typeof window !== 'undefined' && ('ontouchstart' in window || navigator.maxTouchPoints > 0);
 
   useEffect(() => {
     if (!import.meta.env.DEV) {
@@ -102,7 +104,10 @@ export default function Expo3D() {
             guests={guests}
             isMicOn={isMicOn}
             isSpeaking={isSpeaking}
+            isTouchDevice={isTouchDevice}
+            onMoveTouch={setMobileMoveIntent}
             playerPos={playerPos}
+            sectorMarkers={worldContract.sectorMarkers}
             visualProfile={worldContract.visualProfile}
             onToggleMic={() => setIsMicOn((value) => !value)}
             onToggleDebug={() => setDebug((value) => !value)}
@@ -115,6 +120,7 @@ export default function Expo3D() {
             activeZone={activeZone}
             debug={debug}
             guests={guests}
+            mobileMoveIntent={mobileMoveIntent}
             mode={mode}
             onMove={handlePlayerMove}
             sceneVersion={data?.sceneVersion ? String(data.sceneVersion) : null}

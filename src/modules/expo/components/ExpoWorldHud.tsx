@@ -1,5 +1,6 @@
 import type { CSSProperties } from 'react';
 import { EXPO_CITY_QUALITY_TIER, EXPO_MODE_COPY } from '../state/expoRuntime';
+import type { ExpoSectorMarker } from '../layout-engine';
 import type { ExpoWorldVisualProfile } from '../world-contract';
 
 interface ExpoWorldHudProps {
@@ -7,7 +8,10 @@ interface ExpoWorldHudProps {
   guests: any[];
   isMicOn: boolean;
   isSpeaking: boolean;
+  isTouchDevice?: boolean;
+  onMoveTouch?: (intent: { f: boolean; b: boolean; l: boolean; r: boolean }) => void;
   playerPos: number[];
+  sectorMarkers: ExpoSectorMarker[];
   visualProfile: ExpoWorldVisualProfile;
   onToggleMic: () => void;
   onToggleDebug: () => void;
@@ -19,13 +23,27 @@ export function ExpoWorldHud({
   guests,
   isMicOn,
   isSpeaking,
+  isTouchDevice = false,
+  onMoveTouch,
   playerPos,
+  sectorMarkers,
   visualProfile,
   onToggleMic,
   onToggleDebug,
   onExit,
 }: ExpoWorldHudProps) {
   const radarSize = debug ? 220 : 208;
+  const nearestMarker = sectorMarkers.reduce<ExpoSectorMarker | null>((nearest, marker) => {
+    if (!nearest) {
+      return marker;
+    }
+    const currentDistance = Math.hypot(marker.position[0] - playerPos[0], marker.position[2] - playerPos[2]);
+    const nearestDistance = Math.hypot(nearest.position[0] - playerPos[0], nearest.position[2] - playerPos[2]);
+    return currentDistance < nearestDistance ? marker : nearest;
+  }, null);
+  const nearestMarkerDistance = nearestMarker
+    ? Math.round(Math.hypot(nearestMarker.position[0] - playerPos[0], nearestMarker.position[2] - playerPos[2]))
+    : null;
   const primaryPanelStyle: CSSProperties = {
     backdropFilter: 'blur(14px)',
     background: `linear-gradient(180deg, ${visualProfile.global.hudPanel}, rgba(14, 22, 34, 0.72))`,
@@ -79,8 +97,10 @@ export function ExpoWorldHud({
         </button>
         <div style={{ ...primaryPanelStyle, padding: '14px 18px', minWidth: '140px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
           <div style={{ fontSize: '0.64rem', letterSpacing: '0.16em', color: '#b7c4d5', fontWeight: 800 }}>BOULEVARD</div>
-          <div style={{ marginTop: '3px', fontSize: '0.9rem', fontWeight: 800, color: '#f8fafc' }}>Arrival open</div>
-          <div style={{ marginTop: '4px', fontSize: '0.72rem', color: '#94a3b8', fontWeight: 700 }}>Move ahead, explore left and right</div>
+          <div style={{ marginTop: '3px', fontSize: '0.9rem', fontWeight: 800, color: '#f8fafc' }}>{nearestMarker?.label || 'Arrival open'}</div>
+          <div style={{ marginTop: '4px', fontSize: '0.72rem', color: '#94a3b8', fontWeight: 700 }}>
+            {nearestMarkerDistance !== null ? `${nearestMarkerDistance}u ahead` : 'Move ahead, explore left and right'}
+          </div>
         </div>
         <button onClick={onExit} style={{ background: 'linear-gradient(180deg, #f8fafc, #e2e8f0)', padding: '0 22px', borderRadius: '16px', border: 'none', fontWeight: 800, cursor: 'pointer', color: '#0f172a', boxShadow: '0 14px 32px rgba(226, 232, 240, 0.18)' }}>
           {EXPO_MODE_COPY.exitToLobby}
@@ -91,6 +111,23 @@ export function ExpoWorldHud({
         <div style={{ width: '100%', height: '100%', position: 'relative', background: `radial-gradient(circle at center, ${visualProfile.global.hudAccent}30 0%, rgba(15, 23, 42, 0.04) 70%)` }}>
           <div style={{ position: 'absolute', top: '50%', left: '0', width: '100%', height: '1px', background: 'rgba(255,255,255,0.1)' }}></div>
           <div style={{ position: 'absolute', top: '0', left: '50%', width: '1px', height: '100%', background: 'rgba(255,255,255,0.1)' }}></div>
+          {sectorMarkers.slice(0, 12).map((marker) => (
+            <div
+              key={marker.id}
+              style={{
+                position: 'absolute',
+                top: `${Math.min(Math.max(50 + (marker.position[2] / 1000) * 100, 4), 96)}%`,
+                left: `${Math.min(Math.max(50 + (marker.position[0] / 2000) * 100, 4), 96)}%`,
+                width: marker.id === nearestMarker?.id ? '10px' : '7px',
+                height: marker.id === nearestMarker?.id ? '10px' : '7px',
+                background: marker.color,
+                borderRadius: '50%',
+                transform: 'translate(-50%, -50%)',
+                boxShadow: marker.id === nearestMarker?.id ? `0 0 14px ${marker.color}` : 'none',
+                opacity: marker.id === nearestMarker?.id ? 1 : 0.72,
+              }}
+            />
+          ))}
           <div style={{ position: 'absolute', top: `${Math.min(Math.max(50 + (playerPos[2] / 1000) * 100, 5), 95)}%`, left: `${Math.min(Math.max(50 + (playerPos[0] / 200) * 100, 5), 95)}%`, width: '10px', height: '10px', background: isSpeaking ? '#10b981' : '#fff', borderRadius: '50%', transform: 'translate(-50%, -50%)', boxShadow: isSpeaking ? '0 0 15px #10b981' : '0 0 14px rgba(255,255,255,0.24)' }}></div>
           {guests.map((guest) => (
             <div key={guest.id} style={{ position: 'absolute', top: `${Math.min(Math.max(50 + (guest.position[2] / 1000) * 100, 5), 95)}%`, left: `${Math.min(Math.max(50 + (guest.position[0] / 200) * 100, 5), 95)}%`, width: '8px', height: '8px', background: guest.isSpeaking ? '#10b981' : (guest.color || '#3b82f6'), borderRadius: '50%', transform: 'translate(-50%, -50%)', boxShadow: guest.isSpeaking ? '0 0 10px #10b981' : 'none' }}></div>
@@ -106,6 +143,41 @@ export function ExpoWorldHud({
           POSITION {Math.round(playerPos[0])}, {Math.round(playerPos[2])}
         </div>
       </div>
+
+      {isTouchDevice && onMoveTouch && (
+        <div style={{ position: 'absolute', right: '24px', bottom: '24px', zIndex: 110, display: 'grid', gridTemplateColumns: '72px 72px 72px', gridTemplateRows: '72px 72px 72px', gap: '10px' }}>
+          <div />
+          <button
+            onTouchStart={() => onMoveTouch({ f: true, b: false, l: false, r: false })}
+            onTouchEnd={() => onMoveTouch({ f: false, b: false, l: false, r: false })}
+            onMouseDown={() => onMoveTouch({ f: true, b: false, l: false, r: false })}
+            onMouseUp={() => onMoveTouch({ f: false, b: false, l: false, r: false })}
+            style={{ ...primaryPanelStyle, borderRadius: '18px', border: 'none', fontWeight: 900, fontSize: '1.2rem' }}
+          >↑</button>
+          <div />
+          <button
+            onTouchStart={() => onMoveTouch({ f: false, b: false, l: true, r: false })}
+            onTouchEnd={() => onMoveTouch({ f: false, b: false, l: false, r: false })}
+            onMouseDown={() => onMoveTouch({ f: false, b: false, l: true, r: false })}
+            onMouseUp={() => onMoveTouch({ f: false, b: false, l: false, r: false })}
+            style={{ ...primaryPanelStyle, borderRadius: '18px', border: 'none', fontWeight: 900, fontSize: '1.2rem' }}
+          >←</button>
+          <button
+            onTouchStart={() => onMoveTouch({ f: false, b: true, l: false, r: false })}
+            onTouchEnd={() => onMoveTouch({ f: false, b: false, l: false, r: false })}
+            onMouseDown={() => onMoveTouch({ f: false, b: true, l: false, r: false })}
+            onMouseUp={() => onMoveTouch({ f: false, b: false, l: false, r: false })}
+            style={{ ...primaryPanelStyle, borderRadius: '18px', border: 'none', fontWeight: 900, fontSize: '1.2rem' }}
+          >↓</button>
+          <button
+            onTouchStart={() => onMoveTouch({ f: false, b: false, l: false, r: true })}
+            onTouchEnd={() => onMoveTouch({ f: false, b: false, l: false, r: false })}
+            onMouseDown={() => onMoveTouch({ f: false, b: false, l: false, r: true })}
+            onMouseUp={() => onMoveTouch({ f: false, b: false, l: false, r: false })}
+            style={{ ...primaryPanelStyle, borderRadius: '18px', border: 'none', fontWeight: 900, fontSize: '1.2rem' }}
+          >→</button>
+        </div>
+      )}
     </>
   );
 }
