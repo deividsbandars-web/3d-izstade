@@ -167,27 +167,30 @@ export function getBoothArchitectureMetrics(template: SponsorBoothTemplate) {
 // eslint-disable-next-line react-refresh/only-export-components
 export function getBoothColliderSegments(template: SponsorBoothTemplate): BoothColliderSegment[] {
   const metrics = getBoothArchitectureMetrics(template);
-  const height = Math.max(6, metrics.colliderSize[1] * 0.94);
-  const sideDepth = Math.max(6.2, metrics.footprintSize[1] * 0.62);
-  const sideThickness = Math.max(0.85, metrics.colliderSize[0] * 0.06);
-  const rearThickness = Math.max(0.95, metrics.colliderSize[2] * 0.08);
-  const sideX = (metrics.footprintSize[0] * 0.5) - (sideThickness * 0.5) - 0.9;
-  const rearZ = -(metrics.footprintSize[1] * 0.5) + (rearThickness * 0.5) + 1.2;
+  const isHero = template.startsWith('hero_');
+  const isPremium = template.startsWith('premium_');
+  const height = Math.max(5.4, metrics.colliderSize[1] * (isHero ? 0.86 : isPremium ? 0.82 : 0.78));
+  const sideDepth = Math.max(isHero ? 4.4 : isPremium ? 3.6 : 2.8, metrics.footprintSize[1] * (isHero ? 0.28 : isPremium ? 0.22 : 0.16));
+  const sideThickness = Math.max(0.62, metrics.colliderSize[0] * 0.045);
+  const rearThickness = Math.max(0.72, metrics.colliderSize[2] * 0.06);
+  const sideX = (metrics.footprintSize[0] * 0.5) - (sideThickness * 0.5) - 0.44;
+  const rearZ = -(metrics.footprintSize[1] * 0.5) + (rearThickness * 0.5) + 0.72;
+  const sideZ = rearZ + (sideDepth * 0.5) + 0.22;
 
   return [
     {
       id: 'rear',
       position: [0, height * 0.5, rearZ],
-      size: [Math.max(8, metrics.footprintSize[0] * 0.72), height, rearThickness],
+      size: [Math.max(6.4, metrics.footprintSize[0] * (isHero ? 0.62 : isPremium ? 0.58 : 0.52)), height, rearThickness],
     },
     {
       id: 'left',
-      position: [-sideX, height * 0.5, -0.6],
+      position: [-sideX, height * 0.5, sideZ],
       size: [sideThickness, height, sideDepth],
     },
     {
       id: 'right',
-      position: [sideX, height * 0.5, -0.6],
+      position: [sideX, height * 0.5, sideZ],
       size: [sideThickness, height, sideDepth],
     },
   ];

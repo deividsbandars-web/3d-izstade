@@ -87,18 +87,18 @@ export function buildExpoPlayBoundsFromPlacements(
 
 function buildBoothPocketRegion(placement: ExpoWalkRegionPlacementInput, index: number): ExpoWalkRegion {
   const side = placement.position[0] < 0 ? -1 : 1;
-  const depth = placement.nodeType === 'hero_left' || placement.nodeType === 'hero_right' ? 26 : 20;
+  const depth = placement.nodeType === 'hero_left' || placement.nodeType === 'hero_right' ? 34 : 28;
   const outerEdge = side < 0
-    ? Math.max(-128, placement.position[0] - 8)
-    : Math.min(128, placement.position[0] + 8);
-  const innerEdge = side < 0 ? -24 : 24;
+    ? Math.max(-560, placement.position[0] - 54)
+    : Math.min(560, placement.position[0] + 54);
+  const innerEdge = side < 0 ? -112 : 112;
 
   return {
     id: `booth-pocket-${placement.id}-${index}`,
     maxX: Math.max(innerEdge, outerEdge),
-    maxZ: placement.position[2] + 34,
+    maxZ: placement.position[2] + 46,
     minX: Math.min(innerEdge, outerEdge),
-    minZ: placement.position[2] - (depth + 28),
+    minZ: placement.position[2] - (depth + 42),
     type: 'booth-pocket',
   };
 }
@@ -115,10 +115,10 @@ function buildSectorPocketRegion(clusterIndex: number, placements: ExpoWalkRegio
 
   return {
     id: `sector-pocket-${clusterIndex}`,
-    maxX: Math.min(420, hasRight ? maxBoothX + 96 : 96),
-    maxZ: maxBoothZ + 96,
-    minX: Math.max(-420, hasLeft ? minBoothX - 96 : -96),
-    minZ: minBoothZ - 168,
+    maxX: Math.min(620, hasRight ? maxBoothX + 148 : 148),
+    maxZ: maxBoothZ + 128,
+    minX: Math.max(-620, hasLeft ? minBoothX - 148 : -148),
+    minZ: minBoothZ - 212,
     type: 'sector-pocket',
   };
 }
@@ -128,8 +128,8 @@ function buildSecondaryLoopRegions(footprint: SponsorBoulevardPlan['footprint'])
   const maxRouteZ = EXPO_BOULEVARD_LAYOUT.arrivalZ - 16;
 
   return [
-    { id: 'secondary-loop-left', maxX: -58, maxZ: maxRouteZ, minX: -372, minZ: minRouteZ, type: 'secondary-loop' },
-    { id: 'secondary-loop-right', maxX: 372, maxZ: maxRouteZ, minX: 58, minZ: minRouteZ, type: 'secondary-loop' },
+    { id: 'secondary-loop-left', maxX: -96, maxZ: maxRouteZ, minX: -472, minZ: minRouteZ, type: 'secondary-loop' },
+    { id: 'secondary-loop-right', maxX: 472, maxZ: maxRouteZ, minX: 96, minZ: minRouteZ, type: 'secondary-loop' },
   ];
 }
 
@@ -138,8 +138,8 @@ function buildScenicEdgeRegions(footprint: SponsorBoulevardPlan['footprint']): E
   const maxRouteZ = EXPO_BOULEVARD_LAYOUT.arrivalZ - 26;
 
   return [
-    { id: 'scenic-edge-left', maxX: -372, maxZ: maxRouteZ, minX: -572, minZ: minRouteZ, type: 'scenic-edge' },
-    { id: 'scenic-edge-right', maxX: 572, maxZ: maxRouteZ, minX: 372, minZ: minRouteZ, type: 'scenic-edge' },
+    { id: 'scenic-edge-left', maxX: -472, maxZ: maxRouteZ, minX: -720, minZ: minRouteZ, type: 'scenic-edge' },
+    { id: 'scenic-edge-right', maxX: 720, maxZ: maxRouteZ, minX: 472, minZ: minRouteZ, type: 'scenic-edge' },
   ];
 }
 
@@ -155,10 +155,10 @@ function buildDiscoveryLaneRegions(clusterIndex: number, placements: ExpoWalkReg
   if (xs.some((x) => x < 0)) {
     lanes.push({
       id: `discovery-lane-left-${clusterIndex}`,
-      maxX: Math.min(-48, minBoothX + 34),
-      maxZ: maxBoothZ + 68,
-      minX: Math.max(-392, minBoothX - 132),
-      minZ: minBoothZ - 84,
+      maxX: Math.min(-84, minBoothX + 48),
+      maxZ: maxBoothZ + 92,
+      minX: Math.max(-560, minBoothX - 168),
+      minZ: minBoothZ - 108,
       type: 'discovery-lane',
     });
   }
@@ -166,10 +166,10 @@ function buildDiscoveryLaneRegions(clusterIndex: number, placements: ExpoWalkReg
   if (xs.some((x) => x > 0)) {
     lanes.push({
       id: `discovery-lane-right-${clusterIndex}`,
-      maxX: Math.min(392, maxBoothX + 132),
-      maxZ: maxBoothZ + 68,
-      minX: Math.max(48, maxBoothX - 34),
-      minZ: minBoothZ - 84,
+      maxX: Math.min(560, maxBoothX + 168),
+      maxZ: maxBoothZ + 92,
+      minX: Math.max(84, maxBoothX - 48),
+      minZ: minBoothZ - 108,
       type: 'discovery-lane',
     });
   }
@@ -185,17 +185,17 @@ export function buildExpoWalkRegionContract(
   const playBounds = buildExpoPlayBoundsFromPlacements(boothPlacements, resolvedFootprint);
   const arrivalZone: ExpoWalkRegion = {
     id: 'arrival-zone',
-    maxX: 320,
+    maxX: 420,
     maxZ: playBounds.maxZ - 18,
-    minX: -320,
+    minX: -420,
     minZ: EXPO_BOULEVARD_LAYOUT.arrivalZ - 196,
     type: 'arrival',
   };
   const centralSpine: ExpoWalkRegion = {
     id: 'central-spine',
-    maxX: 76,
+    maxX: 156,
     maxZ: resolvedFootprint.maxZ - 20,
-    minX: -76,
+    minX: -156,
     minZ: resolvedFootprint.minZ - 128,
     type: 'spine',
   };
