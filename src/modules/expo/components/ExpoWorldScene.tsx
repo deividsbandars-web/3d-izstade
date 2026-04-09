@@ -4878,12 +4878,14 @@ function Player({
   mobileMoveIntent,
   mode,
   onMove,
+  startView,
 }: {
   bounds: { minX: number; maxX: number; minZ: number; maxZ: number };
   debug?: boolean;
   mobileMoveIntent?: { f: boolean; b: boolean; l: boolean; r: boolean };
   mode: ExpoMode;
   onMove: (pos: number[]) => void;
+  startView: ExpoStartView;
 }) {
   const { camera, scene } = useThree();
   const [mov, setMov] = useState({ f: false, b: false, l: false, r: false });
@@ -4899,6 +4901,16 @@ function Player({
     camera.lookAt(0, 3, -24);
     logExpoWorldDebug(debug, 'CAMERA START:', camera.position);
   }, [camera, debug]);
+
+  useEffect(() => {
+    startFramingApplied.current = false;
+    spawnChecked.current = false;
+    camera.position.set(...startView.position);
+    camera.lookAt(...startView.lookAt);
+    camera.updateMatrixWorld();
+    lastReportedPosition.current = [startView.position[0], startView.position[1], startView.position[2]];
+    logExpoWorldDebug(debug, '[ExpoView][StartViewChanged]', startView);
+  }, [camera, debug, startView]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -5249,6 +5261,7 @@ export function ExpoWorldScene({ activeZone, debug, guests: _guests, mobileMoveI
                 setPlayerPosition([position[0], position[1], position[2]]);
                 onMove(position);
               }}
+              startView={effectiveStartView}
             />
         </Suspense>
       </Canvas>

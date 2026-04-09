@@ -28,16 +28,25 @@ export default function Expo3D() {
   const [mode, setMode] = useState<ExpoMode>('menu');
   const [debug, setDebug] = useState(EXPO_DEBUG_DEFAULT);
   const [mobileMoveIntent, setMobileMoveIntent] = useState({ f: false, b: false, l: false, r: false });
+  const [devFocusSlug, setDevFocusSlug] = useState<string | null>('__use_url__');
 
   const nav = useNavigate();
   const { data, isLoading } = useExpoSceneData();
   const worldContract = useMemo(() => buildExpoWorldContract(data), [data]);
+  const initialUrlFocus = useMemo(() => {
+    if (typeof window === 'undefined') {
+      return null;
+    }
+
+    return new URLSearchParams(window.location.search).get('focus');
+  }, []);
+  const effectiveFocusSlug = devFocusSlug === '__use_url__' ? initialUrlFocus : devFocusSlug;
   const focusStartView = useMemo<ExpoStartView | null>(() => {
     if (typeof window === 'undefined') {
       return null;
     }
 
-    const focus = new URLSearchParams(window.location.search).get('focus');
+    const focus = effectiveFocusSlug;
     if (!focus) {
       return null;
     }
@@ -67,7 +76,29 @@ export default function Expo3D() {
       ],
       source: 'arrival-main',
     };
+  }, [effectiveFocusSlug, worldContract.boothPlacements]);
+  const verificationTargets = useMemo(() => {
+    const hero = worldContract.boothPlacements.find((entry) => String(entry.company?.sponsorTier || '').toLowerCase() === 'hero');
+    const elite = worldContract.boothPlacements.find((entry) => String(entry.company?.sponsorTier || '').toLowerCase() === 'platinum');
+    const premium = worldContract.boothPlacements.find((entry) => {
+      const tier = String(entry.company?.sponsorTier || '').toLowerCase();
+      return tier === 'gold' || tier === 'premium';
+    });
+    return { elite, hero, premium };
   }, [worldContract.boothPlacements]);
+  const focusedPlacement = useMemo(() => {
+    if (!effectiveFocusSlug) {
+      return null;
+    }
+
+    const normalizedFocus = effectiveFocusSlug.trim().toLowerCase();
+    return worldContract.boothPlacements.find((entry) => {
+      const companySlug = String(entry.company?.slug || '').toLowerCase();
+      const companyId = String(entry.company?.id || '').toLowerCase();
+      const boothSlug = String((entry.company?.booth as { slug?: string | null } | null)?.slug || '').toLowerCase();
+      return companySlug === normalizedFocus || companyId === normalizedFocus || boothSlug === normalizedFocus;
+    }) ?? null;
+  }, [effectiveFocusSlug, worldContract.boothPlacements]);
   const pixelStreamingStatus = usePixelStreamingStatus();
   const { guests, playerPos, isMicOn, isSpeaking, setIsMicOn, handlePlayerMove } = useExpoPresence(mode);
   const { activeZone, zoneSystem } = useZoneSystem(playerPos as any);
@@ -146,6 +177,17 @@ export default function Expo3D() {
             playerPos={playerPos}
             sectorMarkers={worldContract.sectorMarkers}
             visualProfile={worldContract.visualProfile}
+            devVerification={import.meta.env.DEV ? {
+              focusedName: focusedPlacement?.company?.name ?? null,
+              focusedSlug: focusedPlacement?.company?.slug ?? effectiveFocusSlug ?? null,
+              focusedTier: focusedPlacement?.company?.sponsorTier ?? null,
+              onClearFocus: () => setDevFocusSlug(''),
+              onFocusElite: verificationTargets.elite ? () => setDevFocusSlug(String(verificationTargets.elite?.company?.slug || verificationTargets.elite?.company?.id || '')) : undefined,
+              onFocusHero: verificationTargets.hero ? () => setDevFocusSlug(String(verificationTargets.hero?.company?.slug || verificationTargets.hero?.company?.id || '')) : undefined,
+              onFocusPremium: verificationTargets.premium ? () => setDevFocusSlug(String(verificationTargets.premium?.company?.slug || verificationTargets.premium?.company?.id || '')) : undefined,
+              renderMarker: 'LOCAL-VERIFY-V1',
+              sceneVersion: data?.sceneVersion ? String(data.sceneVersion) : null,
+            } : null}
             onToggleMic={() => setIsMicOn((value) => !value)}
             onToggleDebug={() => setDebug((value) => !value)}
             onExit={() => {

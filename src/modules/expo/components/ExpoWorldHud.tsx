@@ -5,6 +5,17 @@ import type { ExpoWorldVisualProfile } from '../world-contract';
 
 interface ExpoWorldHudProps {
   debug: boolean;
+  devVerification?: {
+    renderMarker: string;
+    focusedSlug: string | null;
+    focusedName: string | null;
+    focusedTier: string | null;
+    sceneVersion: string | null;
+    onFocusHero?: () => void;
+    onFocusPremium?: () => void;
+    onFocusElite?: () => void;
+    onClearFocus?: () => void;
+  } | null;
   guests: any[];
   isMicOn: boolean;
   isSpeaking: boolean;
@@ -20,6 +31,7 @@ interface ExpoWorldHudProps {
 
 export function ExpoWorldHud({
   debug,
+  devVerification = null,
   guests,
   isMicOn,
   isSpeaking,
@@ -105,6 +117,30 @@ export function ExpoWorldHud({
         <button onClick={onExit} style={{ background: 'linear-gradient(180deg, #f8fafc, #e2e8f0)', padding: '0 22px', borderRadius: '16px', border: 'none', fontWeight: 800, cursor: 'pointer', color: '#0f172a', boxShadow: '0 14px 32px rgba(226, 232, 240, 0.18)' }}>
           {EXPO_MODE_COPY.exitToLobby}
         </button>
+        {devVerification && (
+          <div style={{ ...primaryPanelStyle, minWidth: '320px', maxWidth: '360px', padding: '14px 18px', display: 'flex', flexDirection: 'column', gap: '10px', border: '1px solid rgba(248, 113, 113, 0.45)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
+              <div>
+                <div style={{ fontSize: '0.62rem', letterSpacing: '0.18em', fontWeight: 900, color: '#fda4af' }}>LOCAL VERIFY</div>
+                <div style={{ fontSize: '0.9rem', fontWeight: 800, color: '#f8fafc' }}>{devVerification.renderMarker}</div>
+              </div>
+              <div style={{ padding: '6px 10px', borderRadius: '999px', background: 'rgba(248, 113, 113, 0.14)', color: '#fecdd3', fontWeight: 800, fontSize: '0.68rem', letterSpacing: '0.08em' }}>
+                {devVerification.sceneVersion || 'no-scene-version'}
+              </div>
+            </div>
+            <div style={{ fontSize: '0.76rem', color: '#cbd5e1', fontWeight: 700, lineHeight: 1.45 }}>
+              <div>FOCUS: {devVerification.focusedSlug || 'none'}</div>
+              <div>NAME: {devVerification.focusedName || 'free roam'}</div>
+              <div>TIER: {(devVerification.focusedTier || 'none').toUpperCase()}</div>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '8px' }}>
+              <button onClick={devVerification.onFocusHero} style={{ ...primaryPanelStyle, padding: '10px 12px', borderRadius: '12px', cursor: 'pointer', fontWeight: 800, border: '1px solid rgba(255,255,255,0.08)' }}>HERO</button>
+              <button onClick={devVerification.onFocusPremium} style={{ ...primaryPanelStyle, padding: '10px 12px', borderRadius: '12px', cursor: 'pointer', fontWeight: 800, border: '1px solid rgba(255,255,255,0.08)' }}>PREMIUM</button>
+              <button onClick={devVerification.onFocusElite} style={{ ...primaryPanelStyle, padding: '10px 12px', borderRadius: '12px', cursor: 'pointer', fontWeight: 800, border: '1px solid rgba(255,255,255,0.08)' }}>ELITE</button>
+              <button onClick={devVerification.onClearFocus} style={{ ...primaryPanelStyle, padding: '10px 12px', borderRadius: '12px', cursor: 'pointer', fontWeight: 800, border: '1px solid rgba(255,255,255,0.08)' }}>CLEAR</button>
+            </div>
+          </div>
+        )}
       </div>
 
       <div style={{ position: 'absolute', bottom: '26px', left: '26px', zIndex: 100, width: `${radarSize}px`, height: `${radarSize}px`, background: `linear-gradient(180deg, ${visualProfile.global.hudPanel}, rgba(15, 23, 42, 0.7))`, borderRadius: '50%', border: `1px solid ${visualProfile.global.hudAccent}44`, overflow: 'hidden', backdropFilter: 'blur(10px)', boxShadow: '0 18px 48px rgba(0,0,0,0.45)' }}>
