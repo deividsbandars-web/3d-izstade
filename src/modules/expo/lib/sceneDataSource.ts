@@ -29,6 +29,15 @@ export function shouldPreferLocalExpoDataSource() {
   return isLocalOrigin(getFrontendRuntimeEnv().apiBaseUrl);
 }
 
+function getDevExpoDataMode() {
+  if (typeof window === 'undefined') {
+    return 'seeded';
+  }
+
+  const mode = new URLSearchParams(window.location.search).get('expoData');
+  return mode === 'live' ? 'live' : 'seeded';
+}
+
 export async function loadExpoSceneFromBackendContract(): Promise<ExpoSceneData> {
   const response = await fetch(getPublicExpoSceneEndpoint(), {
     method: 'GET',
@@ -73,6 +82,10 @@ export async function loadExpoSceneFromSupabaseService(): Promise<ExpoSceneData>
 }
 
 export async function loadExpoSceneForRelease(): Promise<ExpoSceneData> {
+  if (import.meta.env.DEV && getDevExpoDataMode() === 'seeded') {
+    return buildProductionSafeFallbackScene();
+  }
+
   if (shouldPreferLocalExpoDataSource()) {
     try {
       return await loadExpoSceneFromSupabaseService();

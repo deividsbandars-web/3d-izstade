@@ -6,6 +6,8 @@ import type { ExpoWorldVisualProfile } from '../world-contract';
 interface ExpoWorldHudProps {
   debug: boolean;
   devVerification?: {
+    companyCount?: number;
+    dataMode?: string | null;
     renderMarker: string;
     focusedSlug: string | null;
     focusedName: string | null;
@@ -132,6 +134,7 @@ export function ExpoWorldHud({
               <div>FOCUS: {devVerification.focusedSlug || 'none'}</div>
               <div>NAME: {devVerification.focusedName || 'free roam'}</div>
               <div>TIER: {(devVerification.focusedTier || 'none').toUpperCase()}</div>
+              <div>DATA: {(devVerification.dataMode || 'unknown').toUpperCase()} / {devVerification.companyCount ?? 0} COMPANIES</div>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '8px' }}>
               <button onClick={devVerification.onFocusHero} style={{ ...primaryPanelStyle, padding: '10px 12px', borderRadius: '12px', cursor: 'pointer', fontWeight: 800, border: '1px solid rgba(255,255,255,0.08)' }}>HERO</button>

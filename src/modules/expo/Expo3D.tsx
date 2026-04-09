@@ -178,6 +178,8 @@ export default function Expo3D() {
             sectorMarkers={worldContract.sectorMarkers}
             visualProfile={worldContract.visualProfile}
             devVerification={import.meta.env.DEV ? {
+              companyCount: worldContract.boothPlacements.length,
+              dataMode: effectiveFocusSlug === initialUrlFocus ? 'seeded-local' : 'seeded-local',
               focusedName: focusedPlacement?.company?.name ?? null,
               focusedSlug: focusedPlacement?.company?.slug ?? effectiveFocusSlug ?? null,
               focusedTier: focusedPlacement?.company?.sponsorTier ?? null,
