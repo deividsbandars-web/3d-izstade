@@ -3645,14 +3645,6 @@ function OpenBoothPavilion({
         <boxGeometry args={[width * 0.82, 0.16, 0.22]} />
         <meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={0.1} roughness={0.42} metalness={0.16} />
       </mesh>
-      <mesh position={[(width * 0.5) - 0.7, postHeight * 0.72, 0.18]} castShadow receiveShadow rotation={[0, 0, 0.08]}>
-        <boxGeometry args={[hero ? 0.54 : 0.44, hero ? 6.2 : 5.2, depth * 0.62]} />
-        <meshStandardMaterial color="#7f93a1" metalness={0.18} roughness={0.5} />
-      </mesh>
-      <mesh position={[(width * 0.5) - 0.38, postHeight * 0.92, 0.22]} castShadow>
-        <boxGeometry args={[0.18, hero ? 3.8 : 3.1, depth * 0.52]} />
-        <meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={0.14} roughness={0.36} metalness={0.18} />
-      </mesh>
       <group position={[0, postHeight * 0.56, rearScreenZ]}>
         <mesh castShadow receiveShadow>
           <boxGeometry args={[width * (hero ? 0.64 : 0.58), hero ? 5.42 : 4.92, 0.24]} />
@@ -3992,6 +3984,7 @@ function SponsorLogoPanel({
     </group>
   );
 }
+void SponsorLogoPanel;
 
 function SponsorPosterPanel({
   accentColor,
@@ -4116,6 +4109,7 @@ function SponsorPosterPanel({
     </group>
   );
 }
+void SponsorPosterPanel;
 
 function getNormalizedBooth(company: any) {
   const rawBooth = company?.booth ?? company?.booths ?? null;
@@ -4496,7 +4490,6 @@ function DistrictBooth({
     () => buildSponsorBoothPresentation(company, booth, placement.nodeType, { districtThemeId: placement.districtThemeId }),
     [booth, company, placement.districtThemeId, placement.nodeType]
   );
-  const [isPosterPlaying, setIsPosterPlaying] = useState(false);
   const boothColliderRef = useRef<THREE.Group>(null);
   usePlayerColliderRegistration(boothColliderRef, `district-booth-${String(company?.id || company?.name || 'unknown')}`);
 
@@ -4508,9 +4501,6 @@ function DistrictBooth({
   const isPremiumBooth = presentation.adTier === 'premium';
   const isHeroNode = placement.nodeType === 'hero_left' || placement.nodeType === 'hero_right';
   const stageScale = isEliteBooth ? 1.28 : isPremiumBooth ? 1.14 : 1;
-  const mediaWallScale = isEliteBooth ? 1.16 : isPremiumBooth ? 1.08 : 1;
-  const sidePanelScale = isEliteBooth ? 1.12 : isPremiumBooth ? 1.06 : 1;
-  const sidePanelOffsetX = (isEliteBooth ? 8.4 : isPremiumBooth ? 7.5 : 6.9) * sidePanelScale;
   const frontApronWidth = isEliteBooth ? 20 : isPremiumBooth ? 17 : 0;
   const frontApronDepth = isEliteBooth ? 3.6 : isPremiumBooth ? 2.8 : 0;
   const showTagline = (presentation.hasBrandAssets || isEliteBooth || isPremiumBooth) && districtVisual.expressionMode === 'active-commercial' && presentation.template !== 'standard_studio';
@@ -4630,90 +4620,6 @@ function DistrictBooth({
           )}
         </group>
       </group>
-      {isHeroNode && (
-      <group position={[metrics.mediaWallPosition[0], metrics.mediaWallPosition[1], metrics.mediaWallPosition[2] + 0.46]}>
-        {(isEliteBooth || isPremiumBooth) && showRichMedia && (
-          <>
-            <mesh position={[0, 0, -0.22]} castShadow>
-              <boxGeometry args={[11.8 * mediaWallScale, 8.4 * mediaWallScale, 0.56]} />
-              <meshStandardMaterial color="#08111c" metalness={0.14} roughness={0.66} />
-            </mesh>
-            <mesh position={[0, 4.5 * mediaWallScale, -0.06]} castShadow>
-              <boxGeometry args={[8.2 * mediaWallScale, 0.58, 0.36]} />
-              <meshStandardMaterial color={placement.color} emissive={placement.color} emissiveIntensity={0.14} roughness={0.52} metalness={0.18} />
-            </mesh>
-          </>
-        )}
-        {showRichMedia ? (
-          <SponsorPosterPanel
-            accentColor={placement.color}
-            fallbackHeadline={presentation.fallbackIdentity.headline}
-            fallbackSupportLine={presentation.fallbackIdentity.supportLine}
-            isPlaying={isPosterPlaying}
-            onTogglePlay={() => {
-              setIsPosterPlaying((value) => !value);
-              if (EXPO_FEATURE_FLAGS.enableAnalytics) {
-                trackExpoBoothClicked(company, {
-                  boothId: booth?.id ?? placement.id,
-                  boothTemplate: presentation.template,
-                  mediaAction: isPosterPlaying ? 'poster_pause' : 'poster_play',
-                  hasVideo: Boolean(presentation.videoUrl),
-                  interactionArea: 'media',
-                });
-              }
-            }}
-            posterUrl={presentation.posterUrl}
-            videoUrl={presentation.videoUrl}
-          />
-        ) : (
-          <mesh position={[0, 0, 0.12]}>
-            <boxGeometry args={[8.8, 6.4, 0.18]} />
-            <meshStandardMaterial color={placement.color} emissive={placement.color} emissiveIntensity={0.12} roughness={0.32} metalness={0.12} />
-          </mesh>
-        )}
-      </group>
-      )}
-      {isHeroNode && showRichMedia && (
-        <group position={[metrics.logoPanelPosition[0], metrics.logoPanelPosition[1], metrics.logoPanelPosition[2] - 0.28]}>
-          <SponsorLogoPanel accentColor={placement.color} fallbackText={presentation.fallbackIdentity.monogram} url={presentation.logoUrl} />
-        </group>
-      )}
-      {isHeroNode && showRichMedia && (
-      <group position={[-sidePanelOffsetX, metrics.mediaWallPosition[1] + 0.36, metrics.mediaWallPosition[2] + (isEliteBooth ? 1.74 : 1.42)]}>
-        <mesh castShadow>
-          <boxGeometry args={[2.5 * sidePanelScale, 5.8 * sidePanelScale, 0.34]} />
-          <meshStandardMaterial color="#08111c" metalness={0.12} roughness={0.58} />
-        </mesh>
-        <mesh position={[0, 0, 0.22]}>
-          <planeGeometry args={[2.18 * sidePanelScale, 5.32 * sidePanelScale]} />
-          {presentation.logoUrl ? (
-            <Suspense fallback={<meshStandardMaterial color={placement.color} emissive={placement.color} emissiveIntensity={0.08} />}>
-              <SponsorTextureSurface fallbackColor="#101827" url={presentation.logoUrl} />
-            </Suspense>
-          ) : (
-            <meshStandardMaterial color="#0f172a" emissive={placement.color} emissiveIntensity={0.08} />
-          )}
-        </mesh>
-      </group>
-      )}
-      {isHeroNode && showRichMedia && (
-      <group position={[sidePanelOffsetX, metrics.mediaWallPosition[1] + 0.36, metrics.mediaWallPosition[2] + (isEliteBooth ? 1.74 : 1.42)]}>
-        <mesh castShadow>
-          <boxGeometry args={[2.5 * sidePanelScale, 5.8 * sidePanelScale, 0.34]} />
-          <meshStandardMaterial color="#08111c" metalness={0.12} roughness={0.58} />
-        </mesh>
-        <mesh position={[0, 0, 0.22]}>
-          <planeGeometry args={[2.18 * sidePanelScale, 5.32 * sidePanelScale]} />
-          {presentation.posterUrl ? (
-            <Suspense fallback={<meshStandardMaterial color="#101827" emissive={placement.color} emissiveIntensity={0.08} />}>
-              <SponsorTextureSurface fallbackColor="#101827" url={presentation.posterUrl} />
-            </Suspense>
-          ) : (
-            <meshStandardMaterial color="#0f172a" emissive={placement.color} emissiveIntensity={0.08} />
-          )}
-        </mesh>
-      </group>
-      )}
       <mesh position={[0, metrics.titlePosition[1] - 0.82, infoBandZ - 0.04]} castShadow>
         <boxGeometry args={[infoBandWidth + 1.46, infoBandHeight + 0.72, 0.48]} />
         <meshStandardMaterial color="#08111c" metalness={0.08} roughness={0.58} />
@@ -4879,7 +4785,8 @@ function Player({
       return;
     }
 
-    const speed = PLAYER_WALK_SPEED * delta;
+    const stableDelta = Math.min(delta, 1 / 30);
+    const speed = PLAYER_WALK_SPEED * stableDelta;
     moveVector.current.set(0, 0, 0);
 
     if (mov.f || mobileMoveIntent?.f) moveVector.current.z -= speed;
@@ -4944,7 +4851,7 @@ function Player({
 
   return mode === 'fly'
     ? <OrbitControls enablePan enableZoom enableRotate maxDistance={500} enableDamping dampingFactor={0.05} />
-    : (mode === 'walk' ? <PointerLockControls onUnlock={() => document.body.style.cursor = 'auto'} /> : null);
+    : (mode === 'walk' ? <PointerLockControls onUnlock={() => document.body.style.cursor = 'auto'} pointerSpeed={0.45} /> : null);
 }
 
 interface ExpoWorldSceneProps {
