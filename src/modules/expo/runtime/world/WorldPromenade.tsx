@@ -1,8 +1,6 @@
 import { useMemo } from 'react';
 import type { ExpoSectorMarker } from '../../layout-engine';
 import type { ExpoBoothPlacement } from '../../layout-engine';
-import { EXPO_SPATIAL_DEBUG_FLAGS } from '../../state/expoRuntime';
-import { ArrivalReveal } from '../../components/ArrivalReveal';
 import type { ExpoWorldVisualProfile } from '../../world-contract';
 
 function ExpoAxisMaterial({
@@ -96,7 +94,6 @@ export function WorldPromenade({
           </mesh>
         </group>
       ))}
-      {!EXPO_SPATIAL_DEBUG_FLAGS.disableArrivalReveal && <ArrivalReveal />}
     </group>
   );
 }

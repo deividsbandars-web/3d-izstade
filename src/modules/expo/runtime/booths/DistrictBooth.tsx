@@ -71,6 +71,7 @@ export function DistrictBooth({
 
   return (
     <group
+      name={`booth:${placement.id}`}
       position={placement.position}
       rotation={placement.rotation}
       onClick={(event) => {

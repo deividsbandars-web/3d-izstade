@@ -77,16 +77,31 @@ export function WorldCityMasses({
             mass.id.includes('showcase') ||
             mass.id.includes('discovery') ||
             mass.id.includes('signature-mega');
+          const isCenterLane = Math.abs(mass.position[0]) <= 220;
+          const isThinHorizontalShelf = mass.size[1] <= 18 && mass.size[0] >= 72 && mass.size[2] <= 32;
+          const isSlenderVertical =
+            mass.size[1] >= 54 &&
+            (mass.size[0] <= 20 || mass.size[2] <= 20);
+          const isFrontCourtLike =
+            mass.id.includes('court') ||
+            mass.id.includes('band') ||
+            mass.id.includes('apron') ||
+            mass.id.includes('link') ||
+            mass.id.includes('dais');
+          const suppressDecorativeStack =
+            (isCenterLane && isThinHorizontalShelf) ||
+            (isCenterLane && isFrontCourtLike) ||
+            isSlenderVertical;
           const isLowPlinth = mass.size[1] <= 24;
-          const isNodeLike = mass.id.includes('node') || mass.id.includes('beacon') || mass.id.includes('threshold');
-          const isMarkerLike = mass.id.includes('marker') || mass.id.includes('terminal');
-          const hasHorizontalCap = mass.size[1] > 18 && mass.size[0] > 20 && mass.size[2] > 20;
-          const hasSideInset = mass.size[1] > 28 && mass.size[0] >= 42 && mass.size[2] >= 18;
-          const hasRearSpine = mass.size[1] > 40 && mass.size[0] >= 18 && mass.size[2] >= 14;
-          const hasFrontWing = isSignature && mass.size[0] >= 28 && mass.size[1] > 24;
+          const hasHorizontalCap = !suppressDecorativeStack && mass.size[1] > 18 && mass.size[0] > 20 && mass.size[2] > 20;
+          const hasSideInset = !suppressDecorativeStack && mass.size[1] > 28 && mass.size[0] >= 42 && mass.size[2] >= 18;
+          const hasRearSpine = !suppressDecorativeStack && mass.size[1] > 40 && mass.size[0] >= 18 && mass.size[2] >= 14;
+          const hasFrontWing = !suppressDecorativeStack && isSignature && mass.size[0] >= 28 && mass.size[1] > 24;
+          const hasNodeTop = false;
+          const hasMarkerTop = false;
 
           return (
-            <group key={mass.id} position={[mass.position[0], 0, mass.position[2]]}>
+            <group key={mass.id} name={`city-mass:${mass.id}`} position={[mass.position[0], 0, mass.position[2]]}>
               <mesh castShadow receiveShadow position={[0, mass.size[1] * 0.5, 0]}>
                 <boxGeometry args={mass.size} />
                 <WorldArchitecturalMassMaterial
@@ -101,7 +116,7 @@ export function WorldCityMasses({
                   <meshStandardMaterial color="#dbe5eb" roughness={0.46} metalness={0.14} />
                 </mesh>
               )}
-              {isSignature && mass.size[1] > 24 && (
+              {isSignature && !suppressDecorativeStack && mass.size[1] > 24 && (
                 <mesh position={[0, mass.size[1] * 0.28, mass.size[2] * 0.18]} castShadow>
                   <boxGeometry args={[Math.max(12, mass.size[0] * 0.28), Math.max(8, mass.size[1] * 0.08), Math.max(6, mass.size[2] * 0.1)]} />
                   <meshStandardMaterial color="#f4f8fb" emissive="#d7eef9" emissiveIntensity={0.02} roughness={0.32} metalness={0.18} />
@@ -119,25 +134,25 @@ export function WorldCityMasses({
                   </mesh>
                 </>
               )}
-              {isSignature && mass.size[1] > 48 && (
+              {isSignature && !suppressDecorativeStack && mass.size[1] > 48 && (
                 <mesh position={[0, mass.size[1] * 0.62, 0]} castShadow>
                   <boxGeometry args={[Math.max(8, mass.size[0] * 0.16), Math.max(18, mass.size[1] * 0.18), Math.max(8, mass.size[2] * 0.16)]} />
                   <meshStandardMaterial color="#edf4f8" emissive="#d6eef8" emissiveIntensity={0.02} roughness={0.38} metalness={0.16} />
                 </mesh>
               )}
-              {isNodeLike && mass.size[1] > 16 && (
+              {hasNodeTop && (
                 <mesh position={[0, mass.size[1] + 10, 0]} castShadow>
                   <boxGeometry args={[Math.max(8, mass.size[0] * 0.24), 12, Math.max(8, mass.size[2] * 0.24)]} />
                   <meshStandardMaterial color="#eef4f8" emissive="#cbe7f5" emissiveIntensity={0.03} roughness={0.34} metalness={0.14} />
                 </mesh>
               )}
-              {isMarkerLike && mass.size[1] > 18 && (
+              {hasMarkerTop && (
                 <mesh position={[0, mass.size[1] * 0.46, -mass.size[2] * 0.16]} castShadow>
                   <boxGeometry args={[Math.max(6, mass.size[0] * 0.18), Math.max(16, mass.size[1] * 0.22), Math.max(6, mass.size[2] * 0.12)]} />
                   <meshStandardMaterial color="#f4f8fb" emissive="#d7eef9" emissiveIntensity={0.035} roughness={0.3} metalness={0.18} />
                 </mesh>
               )}
-              {isMarkerLike && mass.size[1] > 18 && (
+              {hasMarkerTop && (
                 <mesh position={[0, mass.size[1] + 4, 0]} castShadow>
                   <boxGeometry args={[Math.max(10, mass.size[0] * 0.34), 6, Math.max(8, mass.size[2] * 0.22)]} />
                   <meshStandardMaterial color="#eef4f8" emissive="#d7eef9" emissiveIntensity={0.028} roughness={0.3} metalness={0.18} />

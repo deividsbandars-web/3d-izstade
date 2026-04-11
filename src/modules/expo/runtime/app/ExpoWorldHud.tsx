@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import type { CSSProperties } from 'react';
 import { EXPO_CITY_QUALITY_TIER, EXPO_MODE_COPY } from '../../state/expoRuntime';
 import type { ExpoSectorMarker } from '../../layout-engine';
@@ -6,10 +7,22 @@ import type { ExpoWorldVisualProfile } from '../../world-contract';
 interface ExpoWorldHudProps {
   debug: boolean;
   devVerification?: {
+    buildStamp?: string | null;
+    centerStack?: string[];
+    clickTarget?: string | null;
+    clickStack?: string[];
     companyCount?: number;
+    centerTarget?: string | null;
     dataMode?: string | null;
+    inspector?: Array<{
+      distance: number;
+      id: string;
+      layer: string;
+    }>;
     layerStates?: Record<string, boolean>;
     onToggleLayer?: (layer: 'promenade' | 'city' | 'stadium' | 'booths' | 'skyline') => void;
+    sectionStates?: Record<string, boolean>;
+    onToggleSection?: (section: 'arrival' | 'left' | 'middle' | 'right' | 'stadium') => void;
     renderMarker: string;
     focusedSlug: string | null;
     focusedName: string | null;
@@ -48,6 +61,7 @@ export function ExpoWorldHud({
   onToggleDebug,
   onExit,
 }: ExpoWorldHudProps) {
+  const [copyStatus, setCopyStatus] = useState<'idle' | 'copied' | 'failed'>('idle');
   const radarSize = debug ? 220 : 208;
   const orderedMarkers = [...sectorMarkers].sort((left, right) => {
     const leftDistance = Math.hypot(left.position[0] - playerPos[0], left.position[2] - playerPos[2]);
@@ -78,6 +92,20 @@ export function ExpoWorldHud({
     borderRadius: '18px',
     boxShadow: '0 18px 48px rgba(2, 6, 23, 0.38)',
     color: '#f8fafc',
+  };
+  const copyClickTarget = async () => {
+    if (!devVerification?.clickTarget) {
+      setCopyStatus('failed');
+      window.setTimeout(() => setCopyStatus('idle'), 1200);
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(devVerification.clickTarget);
+      setCopyStatus('copied');
+    } catch {
+      setCopyStatus('failed');
+    }
+    window.setTimeout(() => setCopyStatus('idle'), 1200);
   };
 
   return (
@@ -179,9 +207,33 @@ export function ExpoWorldHud({
             </div>
             <div style={{ fontSize: '0.76rem', color: '#cbd5e1', fontWeight: 700, lineHeight: 1.45 }}>
               <div>FOCUS: {devVerification.focusedSlug || 'none'}</div>
+              <div>BUILD: {devVerification.buildStamp || 'unknown'}</div>
               <div>NAME: {devVerification.focusedName || 'free roam'}</div>
               <div>TIER: {(devVerification.focusedTier || 'none').toUpperCase()}</div>
+              <div>CENTER: {devVerification.centerTarget || 'none'}</div>
+              {devVerification.centerStack && devVerification.centerStack.length > 0 && (
+                <div>
+                  CENTER STACK:
+                  {' '}
+                  {devVerification.centerStack.join('  |  ')}
+                </div>
+              )}
+              <div>CLICK: {devVerification.clickTarget || 'none'}</div>
+              {devVerification.clickStack && devVerification.clickStack.length > 0 && (
+                <div>
+                  CLICK STACK:
+                  {' '}
+                  {devVerification.clickStack.join('  |  ')}
+                </div>
+              )}
               <div>DATA: {(devVerification.dataMode || 'unknown').toUpperCase()} / {devVerification.companyCount ?? 0} COMPANIES</div>
+              {devVerification.inspector && devVerification.inspector.length > 0 && (
+                <div>
+                  INSPECT:
+                  {' '}
+                  {devVerification.inspector.map((entry) => `${entry.layer}:${entry.id}(${entry.distance}u)`).join('  |  ')}
+                </div>
+              )}
               {devVerification.layerStates && (
                 <div>
                   LAYERS:
@@ -189,6 +241,24 @@ export function ExpoWorldHud({
                   {Object.entries(devVerification.layerStates).map(([key, value]) => `${key.toUpperCase()}:${value ? 'ON' : 'OFF'}`).join('  ')}
                 </div>
               )}
+              {devVerification.sectionStates && (
+                <div>
+                  SECTIONS:
+                  {' '}
+                  {Object.entries(devVerification.sectionStates).map(([key, value]) => `${key.toUpperCase()}:${value ? 'ON' : 'OFF'}`).join('  ')}
+                </div>
+              )}
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) auto', gap: '8px', alignItems: 'center' }}>
+              <button
+                onClick={copyClickTarget}
+                style={{ ...primaryPanelStyle, padding: '9px 12px', borderRadius: '12px', cursor: 'pointer', fontWeight: 800, border: '1px solid rgba(255,255,255,0.08)' }}
+              >
+                COPY CLICK ID
+              </button>
+              <div style={{ fontSize: '0.68rem', fontWeight: 800, color: copyStatus === 'copied' ? '#86efac' : copyStatus === 'failed' ? '#fecaca' : '#94a3b8' }}>
+                {copyStatus === 'copied' ? 'COPIED' : copyStatus === 'failed' ? 'NO ID' : 'READY'}
+              </div>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '8px' }}>
               <button onClick={devVerification.onFocusHero} style={{ ...primaryPanelStyle, padding: '10px 12px', borderRadius: '12px', cursor: 'pointer', fontWeight: 800, border: '1px solid rgba(255,255,255,0.08)' }}>HERO</button>
@@ -203,6 +273,15 @@ export function ExpoWorldHud({
                 <button onClick={() => devVerification.onToggleLayer?.('stadium')} style={{ ...primaryPanelStyle, padding: '9px 10px', borderRadius: '12px', cursor: 'pointer', fontWeight: 800, border: '1px solid rgba(255,255,255,0.08)' }}>STADIUM</button>
                 <button onClick={() => devVerification.onToggleLayer?.('booths')} style={{ ...primaryPanelStyle, padding: '9px 10px', borderRadius: '12px', cursor: 'pointer', fontWeight: 800, border: '1px solid rgba(255,255,255,0.08)' }}>BOOTHS</button>
                 <button onClick={() => devVerification.onToggleLayer?.('skyline')} style={{ ...primaryPanelStyle, padding: '9px 10px', borderRadius: '12px', cursor: 'pointer', fontWeight: 800, border: '1px solid rgba(255,255,255,0.08)', gridColumn: 'span 2' }}>SKYLINE</button>
+              </div>
+            )}
+            {devVerification.onToggleSection && (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '8px' }}>
+                <button onClick={() => devVerification.onToggleSection?.('arrival')} style={{ ...primaryPanelStyle, padding: '9px 10px', borderRadius: '12px', cursor: 'pointer', fontWeight: 800, border: '1px solid rgba(255,255,255,0.08)' }}>ARR</button>
+                <button onClick={() => devVerification.onToggleSection?.('left')} style={{ ...primaryPanelStyle, padding: '9px 10px', borderRadius: '12px', cursor: 'pointer', fontWeight: 800, border: '1px solid rgba(255,255,255,0.08)' }}>LEFT</button>
+                <button onClick={() => devVerification.onToggleSection?.('middle')} style={{ ...primaryPanelStyle, padding: '9px 10px', borderRadius: '12px', cursor: 'pointer', fontWeight: 800, border: '1px solid rgba(255,255,255,0.08)' }}>MID</button>
+                <button onClick={() => devVerification.onToggleSection?.('right')} style={{ ...primaryPanelStyle, padding: '9px 10px', borderRadius: '12px', cursor: 'pointer', fontWeight: 800, border: '1px solid rgba(255,255,255,0.08)' }}>RIGHT</button>
+                <button onClick={() => devVerification.onToggleSection?.('stadium')} style={{ ...primaryPanelStyle, padding: '9px 10px', borderRadius: '12px', cursor: 'pointer', fontWeight: 800, border: '1px solid rgba(255,255,255,0.08)', gridColumn: 'span 2' }}>STADIUM</button>
               </div>
             )}
           </div>

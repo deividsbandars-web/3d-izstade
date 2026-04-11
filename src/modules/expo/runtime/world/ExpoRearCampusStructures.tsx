@@ -42,6 +42,27 @@ export function ExpoRearCampusStructures({
   sidePavilions: CampusPavilion[];
   towers: CampusTower[];
 }) {
+  const hiddenStructureIds = new Set([
+    'stadium-structure:rear-campus-axis-terminal--1',
+    'stadium-structure:rear-campus-axis-terminal-1',
+    'stadium-structure:rear-campus-axis-center-1608',
+    'stadium-structure:rear-campus-axis-center-1180',
+    'stadium-structure:rear-campus-axis-beacon--1',
+    'stadium-structure:rear-campus-axis-beacon-1',
+    'stadium-structure:rear-campus-axis-front-node--1',
+    'stadium-structure:rear-campus-axis-front-node-1',
+    'stadium-structure:rear-campus-axis-pylon-1',
+    'stadium-structure:rear-campus-axis-pylon--1',
+    'stadium-structure:rear-campus-axis-canopy--1',
+    'stadium-structure:rear-campus-forecourt-blade-1',
+    'stadium-structure:rear-campus-forecourt-blade--1',
+    'stadium-structure:rear-campus-event-blade-1',
+    'stadium-structure:rear-campus-event-blade--1',
+    'stadium-structure:rear-campus-axis-canopy-1',
+    'stadium-structure:rear-campus-center-threshold--1',
+    'stadium-structure:rear-campus-center-threshold-1',
+    'stadium-structure:rear-campus-center-node-1',
+  ]);
   const leftFeed = screenFeeds[0] ?? null;
   const rightFeed = screenFeeds[1] ?? screenFeeds[0] ?? null;
   const bowlFeed = screenFeeds[2] ?? screenFeeds[1] ?? screenFeeds[0] ?? null;
@@ -49,14 +70,10 @@ export function ExpoRearCampusStructures({
   return (
     <group position={[0, 0, campusCenterZ]}>
       {[-1, 1].map((side) => (
-        <group key={`rear-campus-gateway-${side}`} position={[side * 1260, 0, 980]}>
+        <group key={`rear-campus-gateway-${side}`} name={`stadium-structure:rear-campus-gateway-${side}`} position={[side * 1260, 0, 980]}>
           <mesh position={[0, 168, 0]} castShadow={enableHeavyShadows} receiveShadow>
             <boxGeometry args={[126, 336, 126]} />
             <CampusMassMaterial color="#8095a6" />
-          </mesh>
-          <mesh position={[0, 296, 0]} castShadow={enableHeavyShadows} receiveShadow>
-            <boxGeometry args={[224, 34, 78]} />
-            <CampusMassMaterial color="#c8d4dc" />
           </mesh>
         </group>
       ))}
@@ -97,20 +114,16 @@ export function ExpoRearCampusStructures({
       </group>
 
       {[-980, 980].map((x) => (
-        <group key={`rear-campus-concourse-node-${x}`} position={[x, 0, 620]}>
+        <group key={`rear-campus-concourse-node-${x}`} name={`stadium-structure:rear-campus-concourse-node-${x}`} position={[x, 0, 620]}>
           <mesh position={[0, 72, 0]} castShadow={enableHeavyShadows} receiveShadow>
             <boxGeometry args={[188, 144, 188]} />
             <CampusMassMaterial color="#a5b6c1" />
-          </mesh>
-          <mesh position={[0, 138, 0]} castShadow={enableHeavyShadows} receiveShadow>
-            <boxGeometry args={[132, 18, 132]} />
-            <CampusMassMaterial color="#dbe5ec" />
           </mesh>
         </group>
       ))}
 
       {[-1, 1].map((side) => (
-        <group key={`rear-campus-concourse-gallery-${side}`} position={[side * 612, 0, 822]}>
+        <group key={`rear-campus-concourse-gallery-${side}`} name={`stadium-structure:rear-campus-concourse-gallery-${side}`} position={[side * 612, 0, 822]}>
           <mesh position={[0, 32, 0]} castShadow={enableHeavyShadows} receiveShadow>
             <boxGeometry args={[142, 64, 52]} />
             <CampusMassMaterial color="#d7e3ea" />
@@ -122,8 +135,8 @@ export function ExpoRearCampusStructures({
         </group>
       ))}
 
-      {[-1, 1].map((side) => (
-        <group key={`rear-campus-event-blade-${side}`} position={[side * 540, 0, 820]}>
+      {[-1, 1].filter((side) => !hiddenStructureIds.has(`stadium-structure:rear-campus-event-blade-${side}`)).map((side) => (
+        <group key={`rear-campus-event-blade-${side}`} name={`stadium-structure:rear-campus-event-blade-${side}`} position={[side * 540, 0, 820]}>
           <mesh position={[0, 124, 0]} rotation={[0, 0, side * 0.08]} castShadow={enableHeavyShadows} receiveShadow>
             <boxGeometry args={[42, 248, 24]} />
             <CampusMassMaterial color="#d8e3ea" emissive={accent} emissiveIntensity={0.06} />
@@ -131,8 +144,8 @@ export function ExpoRearCampusStructures({
         </group>
       ))}
 
-      {[-1, 1].map((side) => (
-        <group key={`rear-campus-forecourt-blade-${side}`} position={[side * 248, 0, 1260]}>
+      {[-1, 1].filter((side) => !hiddenStructureIds.has(`stadium-structure:rear-campus-forecourt-blade-${side}`)).map((side) => (
+        <group key={`rear-campus-forecourt-blade-${side}`} name={`stadium-structure:rear-campus-forecourt-blade-${side}`} position={[side * 248, 0, 1260]}>
           <mesh position={[0, 112, 0]} rotation={[0, 0, side * 0.12]} castShadow={enableHeavyShadows} receiveShadow>
             <boxGeometry args={[28, 224, 22]} />
             <CampusMassMaterial color="#e3edf3" emissive={accent} emissiveIntensity={0.08} />
@@ -141,7 +154,7 @@ export function ExpoRearCampusStructures({
       ))}
 
       {[-1, 1].map((side) => (
-        <group key={`rear-campus-entry-plinth-${side}`} position={[side * 420, 0, 1080]}>
+        <group key={`rear-campus-entry-plinth-${side}`} name={`stadium-structure:rear-campus-entry-plinth-${side}`} position={[side * 420, 0, 1080]}>
           <mesh position={[0, 24, 0]} castShadow={enableHeavyShadows} receiveShadow>
             <boxGeometry args={[212, 48, 84]} />
             <CampusMassMaterial color="#d9e4eb" />
@@ -153,17 +166,17 @@ export function ExpoRearCampusStructures({
         </group>
       ))}
 
-      {[-1, 1].map((side) => (
-        <group key={`rear-campus-axis-pylon-${side}`} position={[side * 142, 0, 1328]}>
+      {[-1, 1].filter((side) => !hiddenStructureIds.has(`stadium-structure:rear-campus-axis-pylon-${side}`)).map((side) => (
+        <group key={`rear-campus-axis-pylon-${side}`} name={`stadium-structure:rear-campus-axis-pylon-${side}`} position={[side * 188, 0, 1328]}>
           <mesh position={[0, 72, 0]} castShadow={enableHeavyShadows} receiveShadow>
-            <boxGeometry args={[24, 112, 18]} />
+            <boxGeometry args={[18, 92, 14]} />
             <CampusMassMaterial color="#e7eef3" emissive={accent} emissiveIntensity={0.05} />
           </mesh>
         </group>
       ))}
 
-      {[-1, 1].map((side) => (
-        <group key={`rear-campus-axis-canopy-${side}`} position={[side * 286, 0, 1210]}>
+      {[-1, 1].filter((side) => !hiddenStructureIds.has(`stadium-structure:rear-campus-axis-canopy-${side}`)).map((side) => (
+        <group key={`rear-campus-axis-canopy-${side}`} name={`stadium-structure:rear-campus-axis-canopy-${side}`} position={[side * 286, 0, 1210]}>
           <mesh position={[0, 28, 0]} castShadow={enableHeavyShadows} receiveShadow>
             <boxGeometry args={[104, 22, 52]} />
             <CampusMassMaterial color="#e4ecf1" />
@@ -175,141 +188,113 @@ export function ExpoRearCampusStructures({
         </group>
       ))}
 
-      {[-1, 1].map((side) => (
-        <group key={`rear-campus-axis-front-node-${side}`} position={[side * 168, 0, 1258]}>
+      {[-1, 1].filter((side) => !hiddenStructureIds.has(`stadium-structure:rear-campus-axis-front-node-${side}`)).map((side) => (
+        <group key={`rear-campus-axis-front-node-${side}`} name={`stadium-structure:rear-campus-axis-front-node-${side}`} position={[side * 224, 0, 1258]}>
           <mesh position={[0, 22, 0]} castShadow={enableHeavyShadows} receiveShadow>
-            <boxGeometry args={[62, 32, 28]} />
+            <boxGeometry args={[46, 24, 22]} />
             <CampusMassMaterial color="#edf4f8" />
           </mesh>
           <mesh position={[0, 64, 0]} castShadow={enableHeavyShadows} receiveShadow>
-            <boxGeometry args={[14, 40, 10]} />
+            <boxGeometry args={[10, 30, 8]} />
             <CampusMassMaterial color="#97aab6" emissive={accent} emissiveIntensity={0.05} />
-          </mesh>
-          <mesh position={[0, 92, 0]} castShadow={enableHeavyShadows} receiveShadow>
-            <boxGeometry args={[72, 6, 12]} />
-            <CampusMassMaterial color="#f4f8fb" emissive={accent} emissiveIntensity={0.04} />
           </mesh>
         </group>
       ))}
 
-      {[-1, 1].map((side) => (
-        <group key={`rear-campus-axis-beacon-${side}`} position={[side * 108, 0, 1468]}>
+      {[-1, 1].filter((side) => !hiddenStructureIds.has(`stadium-structure:rear-campus-axis-beacon-${side}`)).map((side) => (
+        <group key={`rear-campus-axis-beacon-${side}`} name={`stadium-structure:rear-campus-axis-beacon-${side}`} position={[side * 156, 0, 1468]}>
           <mesh position={[0, 56, 0]} castShadow={enableHeavyShadows} receiveShadow>
-            <boxGeometry args={[14, 84, 14]} />
+            <boxGeometry args={[12, 68, 12]} />
             <CampusMassMaterial color="#edf4f8" emissive={accent} emissiveIntensity={0.06} />
           </mesh>
         </group>
       ))}
 
-      {[-1, 1].map((side) => (
-        <group key={`rear-campus-axis-terminal-${side}`} position={[side * 168, 0, 1540]}>
+      {[-1, 1].filter((side) => !hiddenStructureIds.has(`stadium-structure:rear-campus-axis-terminal-${side}`)).map((side) => (
+        <group key={`rear-campus-axis-terminal-${side}`} name={`stadium-structure:rear-campus-axis-terminal-${side}`} position={[side * 238, 0, 1540]}>
           <mesh position={[0, 28, 0]} castShadow={enableHeavyShadows} receiveShadow>
-            <boxGeometry args={[68, 42, 30]} />
+            <boxGeometry args={[52, 30, 24]} />
             <CampusMassMaterial color="#e8eff4" />
           </mesh>
           <mesh position={[0, 84, 0]} castShadow={enableHeavyShadows} receiveShadow>
-            <boxGeometry args={[16, 42, 12]} />
+            <boxGeometry args={[12, 32, 10]} />
             <CampusMassMaterial color="#97aab6" emissive={accent} emissiveIntensity={0.05} />
           </mesh>
-          <mesh position={[0, 116, 0]} castShadow={enableHeavyShadows} receiveShadow>
-            <boxGeometry args={[78, 8, 14]} />
+          <mesh position={[side * 24, 54, 0]} castShadow={enableHeavyShadows} receiveShadow>
+            <boxGeometry args={[8, 42, 8]} />
             <CampusMassMaterial color="#edf4f8" emissive={accent} emissiveIntensity={0.04} />
           </mesh>
-          <mesh position={[0, 142, 0]} castShadow={enableHeavyShadows} receiveShadow>
-            <boxGeometry args={[42, 6, 10]} />
-            <CampusMassMaterial color="#f7fbfd" emissive={accent} emissiveIntensity={0.04} />
-          </mesh>
-          <mesh position={[side * 28, 64, 0]} castShadow={enableHeavyShadows} receiveShadow>
-            <boxGeometry args={[10, 56, 10]} />
-            <CampusMassMaterial color="#edf4f8" emissive={accent} emissiveIntensity={0.04} />
-          </mesh>
-          <mesh position={[-side * 28, 64, -4]} castShadow={enableHeavyShadows} receiveShadow>
-            <boxGeometry args={[8, 38, 8]} />
+          <mesh position={[-side * 24, 52, -4]} castShadow={enableHeavyShadows} receiveShadow>
+            <boxGeometry args={[6, 28, 6]} />
             <CampusMassMaterial color="#dbe6ed" emissive={accent} emissiveIntensity={0.03} />
           </mesh>
         </group>
       ))}
 
-      <group position={[0, 0, 1608]}>
+      {!hiddenStructureIds.has('stadium-structure:rear-campus-axis-center-1608') && (
+      <group name="stadium-structure:rear-campus-axis-center-1608" position={[0, 0, 1608]}>
         <mesh position={[0, 22, 0]} castShadow={enableHeavyShadows} receiveShadow>
-          <boxGeometry args={[108, 32, 24]} />
+          <boxGeometry args={[72, 22, 18]} />
           <CampusMassMaterial color="#edf4f8" />
         </mesh>
-        <mesh position={[0, 12, 0]} castShadow={enableHeavyShadows} receiveShadow>
-          <boxGeometry args={[156, 8, 34]} />
+        <mesh position={[0, 10, 0]} castShadow={enableHeavyShadows} receiveShadow>
+          <boxGeometry args={[112, 6, 24]} />
           <CampusMassMaterial color="#f4f8fb" emissive={accent} emissiveIntensity={0.02} />
         </mesh>
         <mesh position={[0, 72, 0]} castShadow={enableHeavyShadows} receiveShadow>
-          <boxGeometry args={[20, 42, 10]} />
+          <boxGeometry args={[14, 30, 8]} />
           <CampusMassMaterial color="#97aab6" emissive={accent} emissiveIntensity={0.05} />
         </mesh>
-        <mesh position={[-78, 48, 0]} castShadow={enableHeavyShadows} receiveShadow>
-          <boxGeometry args={[16, 48, 12]} />
+        <mesh position={[-92, 42, 0]} castShadow={enableHeavyShadows} receiveShadow>
+          <boxGeometry args={[12, 34, 10]} />
           <CampusMassMaterial color="#e8eff4" emissive={accent} emissiveIntensity={0.04} />
         </mesh>
-        <mesh position={[78, 48, 0]} castShadow={enableHeavyShadows} receiveShadow>
-          <boxGeometry args={[16, 48, 12]} />
+        <mesh position={[92, 42, 0]} castShadow={enableHeavyShadows} receiveShadow>
+          <boxGeometry args={[12, 34, 10]} />
           <CampusMassMaterial color="#e8eff4" emissive={accent} emissiveIntensity={0.04} />
         </mesh>
-        <mesh position={[0, 100, -6]} castShadow={enableHeavyShadows} receiveShadow>
-          <boxGeometry args={[96, 8, 12]} />
-          <CampusMassMaterial color="#edf4f8" emissive={accent} emissiveIntensity={0.04} />
-        </mesh>
-        <mesh position={[0, 128, -8]} castShadow={enableHeavyShadows} receiveShadow>
-          <boxGeometry args={[16, 34, 10]} />
+        <mesh position={[0, 110, -8]} castShadow={enableHeavyShadows} receiveShadow>
+          <boxGeometry args={[10, 24, 8]} />
           <CampusMassMaterial color="#97aab6" emissive={accent} emissiveIntensity={0.05} />
         </mesh>
-        <mesh position={[0, 156, -8]} castShadow={enableHeavyShadows} receiveShadow>
-          <boxGeometry args={[86, 8, 10]} />
-          <CampusMassMaterial color="#f4f8fb" emissive={accent} emissiveIntensity={0.04} />
-        </mesh>
-        <mesh position={[-56, 88, -4]} castShadow={enableHeavyShadows} receiveShadow>
-          <boxGeometry args={[12, 66, 12]} />
+        <mesh position={[-76, 74, -4]} castShadow={enableHeavyShadows} receiveShadow>
+          <boxGeometry args={[8, 46, 8]} />
           <CampusMassMaterial color="#edf4f8" emissive={accent} emissiveIntensity={0.04} />
         </mesh>
-        <mesh position={[56, 88, -4]} castShadow={enableHeavyShadows} receiveShadow>
-          <boxGeometry args={[12, 66, 12]} />
+        <mesh position={[76, 74, -4]} castShadow={enableHeavyShadows} receiveShadow>
+          <boxGeometry args={[8, 46, 8]} />
           <CampusMassMaterial color="#edf4f8" emissive={accent} emissiveIntensity={0.04} />
         </mesh>
       </group>
+      )}
 
-      <group position={[0, 0, 1180]}>
+      {!hiddenStructureIds.has('stadium-structure:rear-campus-axis-center-1180') && (
+      <group name="stadium-structure:rear-campus-axis-center-1180" position={[0, 0, 1180]}>
         <mesh position={[0, 18, 0]} castShadow={enableHeavyShadows} receiveShadow>
-          <boxGeometry args={[196, 26, 40]} />
+          <boxGeometry args={[128, 18, 28]} />
           <CampusMassMaterial color="#e5edf2" />
         </mesh>
         <mesh position={[0, 74, 0]} castShadow={enableHeavyShadows} receiveShadow>
-          <boxGeometry args={[44, 54, 14]} />
+          <boxGeometry args={[28, 38, 12]} />
           <CampusMassMaterial color="#93a7b4" emissive={accent} emissiveIntensity={0.05} />
         </mesh>
-        <mesh position={[0, 108, -26]} castShadow={enableHeavyShadows} receiveShadow>
-          <boxGeometry args={[248, 12, 24]} />
-          <CampusMassMaterial color="#dbe6ed" />
-        </mesh>
-        <mesh position={[0, 146, -28]} castShadow={enableHeavyShadows} receiveShadow>
-          <boxGeometry args={[156, 8, 14]} />
-          <CampusMassMaterial color="#edf4f8" emissive={accent} emissiveIntensity={0.04} />
-        </mesh>
-        <mesh position={[0, 176, -30]} castShadow={enableHeavyShadows} receiveShadow>
-          <boxGeometry args={[52, 48, 10]} />
+        <mesh position={[0, 146, -30]} castShadow={enableHeavyShadows} receiveShadow>
+          <boxGeometry args={[34, 32, 8]} />
           <CampusMassMaterial color="#d8e3ea" emissive={accent} emissiveIntensity={0.05} />
         </mesh>
-        <mesh position={[0, 208, -32]} castShadow={enableHeavyShadows} receiveShadow>
-          <boxGeometry args={[92, 8, 12]} />
-          <CampusMassMaterial color="#f4f8fb" emissive={accent} emissiveIntensity={0.04} />
-        </mesh>
-        <mesh position={[-118, 46, 8]} castShadow={enableHeavyShadows} receiveShadow>
-          <boxGeometry args={[18, 44, 14]} />
+        <mesh position={[-154, 38, 8]} castShadow={enableHeavyShadows} receiveShadow>
+          <boxGeometry args={[12, 30, 10]} />
           <CampusMassMaterial color="#edf4f8" emissive={accent} emissiveIntensity={0.04} />
         </mesh>
-        <mesh position={[118, 46, 0]} castShadow={enableHeavyShadows} receiveShadow>
-          <boxGeometry args={[18, 44, 14]} />
+        <mesh position={[154, 38, 0]} castShadow={enableHeavyShadows} receiveShadow>
+          <boxGeometry args={[12, 30, 10]} />
           <CampusMassMaterial color="#edf4f8" emissive={accent} emissiveIntensity={0.04} />
         </mesh>
       </group>
+      )}
 
-      {[-1, 1].map((side) => (
-        <group key={`rear-campus-center-node-${side}`} position={[side * 286, 0, 928]}>
+      {[-1, 1].filter((side) => !hiddenStructureIds.has(`stadium-structure:rear-campus-center-node-${side}`)).map((side) => (
+        <group key={`rear-campus-center-node-${side}`} name={`stadium-structure:rear-campus-center-node-${side}`} position={[side * 286, 0, 928]}>
           <mesh position={[0, 32, 0]} castShadow={enableHeavyShadows} receiveShadow>
             <boxGeometry args={[128, 64, 58]} />
             <CampusMassMaterial color="#d9e4eb" />
@@ -318,15 +303,11 @@ export function ExpoRearCampusStructures({
             <boxGeometry args={[34, 72, 16]} />
             <CampusMassMaterial color="#93a7b4" emissive={accent} emissiveIntensity={0.05} />
           </mesh>
-          <mesh position={[0, 122, 0]} castShadow={enableHeavyShadows} receiveShadow>
-            <boxGeometry args={[144, 8, 18]} />
-            <CampusMassMaterial color="#f4f8fb" emissive={accent} emissiveIntensity={0.04} />
-          </mesh>
         </group>
       ))}
 
-      {[-1, 1].map((side) => (
-        <group key={`rear-campus-center-threshold-${side}`} position={[side * 118, 0, 1042]}>
+      {[-1, 1].filter((side) => !hiddenStructureIds.has(`stadium-structure:rear-campus-center-threshold-${side}`)).map((side) => (
+        <group key={`rear-campus-center-threshold-${side}`} name={`stadium-structure:rear-campus-center-threshold-${side}`} position={[side * 118, 0, 1042]}>
           <mesh position={[0, 18, 0]} castShadow={enableHeavyShadows} receiveShadow>
             <boxGeometry args={[74, 36, 34]} />
             <CampusMassMaterial color="#e7eef3" />
@@ -339,7 +320,7 @@ export function ExpoRearCampusStructures({
       ))}
 
       {[-1, 1].map((side) => (
-        <group key={`rear-campus-axis-gallery-node-${side}`} position={[side * 412, 0, 1080]}>
+        <group key={`rear-campus-axis-gallery-node-${side}`} name={`stadium-structure:rear-campus-axis-gallery-node-${side}`} position={[side * 412, 0, 1080]}>
           <mesh position={[0, 26, 0]} castShadow={enableHeavyShadows} receiveShadow>
             <boxGeometry args={[96, 52, 42]} />
             <CampusMassMaterial color="#e3ebf0" />
@@ -352,46 +333,38 @@ export function ExpoRearCampusStructures({
       ))}
 
       {[-1, 1].map((side) => (
-        <group key={`rear-campus-inner-portal-${side}`} position={[side * 518, 0, 934]}>
+        <group key={`rear-campus-inner-portal-${side}`} name={`stadium-structure:rear-campus-inner-portal-${side}`} position={[side * 518, 0, 934]}>
           <mesh position={[0, 58, 0]} castShadow={enableHeavyShadows} receiveShadow>
             <boxGeometry args={[38, 116, 20]} />
             <CampusMassMaterial color="#edf4f8" emissive={accent} emissiveIntensity={0.05} />
-          </mesh>
-          <mesh position={[0, 114, 0]} castShadow={enableHeavyShadows} receiveShadow>
-            <boxGeometry args={[108, 14, 18]} />
-            <CampusMassMaterial color="#dbe6ed" />
           </mesh>
         </group>
       ))}
 
       {sidePavilions.map((pavilion) => (
-        <group key={pavilion.id} position={pavilion.position}>
+        <group key={pavilion.id} name={`stadium-pavilion:${pavilion.id}`} position={pavilion.position}>
           <mesh position={[0, pavilion.size[1] * 0.5, 0]} castShadow={enableHeavyShadows} receiveShadow>
             <boxGeometry args={pavilion.size} />
             <CampusMassMaterial color="#a7b8c4" />
           </mesh>
-          <mesh position={[0, pavilion.size[1] + 18, pavilion.accentSide * 22]} castShadow={enableHeavyShadows} receiveShadow>
-            <boxGeometry args={[pavilion.size[0] * 0.7, 22, 44]} />
+          <mesh position={[0, pavilion.size[1] + 6, pavilion.accentSide * 18]} castShadow={enableHeavyShadows} receiveShadow>
+            <boxGeometry args={[pavilion.size[0] * 0.62, 12, 36]} />
             <meshStandardMaterial color={accent} emissive={accent} emissiveIntensity={0.14} roughness={0.22} metalness={0.12} />
           </mesh>
         </group>
       ))}
 
       {[-1, 1].map((side) => (
-        <group key={`rear-campus-terrace-${side}`} position={[side * 560, 0, -1160]}>
+        <group key={`rear-campus-terrace-${side}`} name={`stadium-structure:rear-campus-terrace-${side}`} position={[side * 560, 0, -1160]}>
           <mesh position={[0, 54, 0]} castShadow={enableHeavyShadows} receiveShadow>
             <boxGeometry args={[540, 108, 260]} />
             <CampusMassMaterial color="#a9bac5" />
-          </mesh>
-          <mesh position={[0, 114, -42]} castShadow={enableHeavyShadows} receiveShadow>
-            <boxGeometry args={[420, 24, 168]} />
-            <CampusMassMaterial color="#d3dee6" />
           </mesh>
         </group>
       ))}
 
       {towers.map((tower) => (
-        <group key={tower.id} position={tower.position}>
+        <group key={tower.id} name={`stadium-tower:${tower.id}`} position={tower.position}>
           <mesh position={[0, 26, 0]} castShadow={enableHeavyShadows} receiveShadow>
             <boxGeometry args={[188, 52, 146]} />
             <CampusMassMaterial color="#d8e3ea" />
@@ -400,8 +373,8 @@ export function ExpoRearCampusStructures({
             <boxGeometry args={[96, 576, 96]} />
             <CampusMassMaterial color="#708596" />
           </mesh>
-          <mesh position={[0, 552, 0]} castShadow={enableHeavyShadows} receiveShadow>
-            <boxGeometry args={[168, 42, 168]} />
+          <mesh position={[0, 546, 0]} castShadow={enableHeavyShadows} receiveShadow>
+            <boxGeometry args={[132, 24, 132]} />
             <CampusMassMaterial color="#b7c5ce" />
           </mesh>
           {tower.id.includes('left') && leftFeed && (

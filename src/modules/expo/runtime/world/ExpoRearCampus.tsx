@@ -1,4 +1,4 @@
-import { useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import type { ExpoBoothPlacement } from '../../layout-engine';
 import type { ExpoWorldVisualProfile } from '../../world-contract';
@@ -48,6 +48,36 @@ export function ExpoRearCampus({
       })),
     [boothPlacements]
   );
+  const filteredStadiumForecourts = useMemo(
+    () => stadiumForecourts.filter((plane) => plane.id !== 'stadium-forecourt-axis-pad-right'),
+    [stadiumForecourts]
+  );
+  const filteredStadiumSidePavilions = useMemo(
+    () => stadiumSidePavilions.filter((pavilion) => pavilion.id !== 'rear-campus-axis-front-right'),
+    [stadiumSidePavilions]
+  );
+
+  useEffect(() => {
+    const stadiumEntries = [
+      ...filteredStadiumForecourts.map((plane) => ({ id: plane.id, layer: 'stadium-plane', position: plane.position })),
+      ...filteredStadiumSidePavilions.map((pavilion) => ({ id: pavilion.id, layer: 'stadium-pavilion', position: pavilion.position })),
+      ...stadiumLandmarkTowers.map((tower) => ({ id: tower.id, layer: 'stadium-tower', position: tower.position })),
+      { id: 'stadium-bowl', layer: 'stadium-structure', position: [0, 0, campusCenterZ - 1520] as [number, number, number] },
+      { id: 'stadium-axis-center-1180', layer: 'stadium-structure', position: [0, 0, 1180] as [number, number, number] },
+      { id: 'stadium-axis-center-1608', layer: 'stadium-structure', position: [0, 0, 1608] as [number, number, number] },
+    ];
+
+    window.__WARPALA_EXPO_INSPECT_SOURCES__ = {
+      ...(window.__WARPALA_EXPO_INSPECT_SOURCES__ ?? {}),
+      stadium: stadiumEntries,
+    };
+
+    return () => {
+      if (window.__WARPALA_EXPO_INSPECT_SOURCES__) {
+        window.__WARPALA_EXPO_INSPECT_SOURCES__.stadium = [];
+      }
+    };
+  }, [campusCenterZ, filteredStadiumForecourts, filteredStadiumSidePavilions, stadiumLandmarkTowers]);
 
   return (
     <group name="expo-rear-campus">
@@ -75,7 +105,7 @@ export function ExpoRearCampus({
         <planeGeometry args={[1960, 640]} />
         <ExpoRuntimeSurfaceMaterial fallbackColor="#d8e4ec" repeat={[4.2, 1.8]} surface="paver" />
       </mesh>
-      {stadiumForecourts.map((plane) => (
+      {filteredStadiumForecourts.map((plane) => (
         <mesh key={plane.id} position={plane.position} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
           <planeGeometry args={plane.size} />
           <meshStandardMaterial color={plane.color} roughness={0.72} metalness={0.04} />
@@ -109,7 +139,7 @@ export function ExpoRearCampus({
         campusCenterZ={campusCenterZ}
         enableHeavyShadows={enableHeavyShadows}
         screenFeeds={stadiumScreenFeeds}
-        sidePavilions={stadiumSidePavilions}
+        sidePavilions={filteredStadiumSidePavilions}
         towers={stadiumLandmarkTowers}
       />
       <mesh position={[0, 10, 760]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>

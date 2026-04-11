@@ -13,6 +13,8 @@ import { EXPO_DEBUG_DEFAULT, type ExpoMode } from '../../state/expoRuntime';
 import type { ExpoStartView } from '../../world-contract';
 import { buildExpoWorldContract } from '../../world-contract';
 
+const LOCAL_BUILD_STAMP = `LOCAL-${new Date().toISOString().replace('T', ' ').slice(0, 19)}`;
+
 function isExpoIgnorablePointerLockError(error: unknown) {
   const message = error instanceof Error
     ? error.message
@@ -28,12 +30,23 @@ export default function Expo3D() {
   const [mode, setMode] = useState<ExpoMode>('menu');
   const [debug, setDebug] = useState(EXPO_DEBUG_DEFAULT);
   const [mobileMoveIntent, setMobileMoveIntent] = useState({ f: false, b: false, l: false, r: false });
+  const [devClickTarget, setDevClickTarget] = useState<string | null>(null);
+  const [devClickStack, setDevClickStack] = useState<string[]>([]);
   const [devFocusSlug, setDevFocusSlug] = useState<string | null>('__use_url__');
+  const [devCenterTarget, setDevCenterTarget] = useState<string | null>(null);
+  const [devCenterStack, setDevCenterStack] = useState<string[]>([]);
   const [devLayerStates, setDevLayerStates] = useState({
     booths: true,
     city: true,
     promenade: true,
     skyline: true,
+    stadium: true,
+  });
+  const [devSectionStates, setDevSectionStates] = useState({
+    arrival: true,
+    left: true,
+    middle: true,
+    right: true,
     stadium: true,
   });
 
@@ -110,6 +123,60 @@ export default function Expo3D() {
   const { guests, playerPos, isMicOn, isSpeaking, setIsMicOn, handlePlayerMove } = useExpoPresence(mode);
   const { activeZone, zoneSystem } = useZoneSystem(playerPos as any);
   const isTouchDevice = typeof window !== 'undefined' && ('ontouchstart' in window || navigator.maxTouchPoints > 0);
+  const inspector = useMemo(() => {
+    if (typeof window === 'undefined') {
+      return [];
+    }
+
+    const [playerX, , playerZ] = playerPos as [number, number, number];
+    const sources = window.__WARPALA_EXPO_INSPECT_SOURCES__;
+    const entries = [
+      ...(sources?.city ?? []),
+      ...(sources?.stadium ?? []),
+      ...worldContract.boothPlacements.map((placement) => ({
+        id: placement.id,
+        layer: 'booth',
+        position: placement.position,
+      })),
+    ];
+
+    return entries
+      .map((entry) => ({
+        distance: Math.round(Math.hypot(entry.position[0] - playerX, entry.position[2] - playerZ)),
+        id: entry.id,
+        layer: entry.layer,
+      }))
+      .sort((left, right) => left.distance - right.distance)
+      .slice(0, 3);
+  }, [playerPos, worldContract.boothPlacements]);
+  useEffect(() => {
+    if (typeof window === 'undefined' || !import.meta.env.DEV) {
+      return;
+    }
+
+    const readCenterTarget = () => {
+      const value = (window as unknown as { __WARPALA_EXPO_CENTER_TARGET__?: string | null }).__WARPALA_EXPO_CENTER_TARGET__ ?? null;
+      setDevCenterTarget((current) => (current === value ? current : value));
+      const centerStackValue = (window as unknown as { __WARPALA_EXPO_CENTER_STACK__?: string[] }).__WARPALA_EXPO_CENTER_STACK__ ?? [];
+      setDevCenterStack((current) => (
+        current.length === centerStackValue.length && current.every((entry, index) => entry === centerStackValue[index])
+          ? current
+          : centerStackValue
+      ));
+      const clickValue = (window as unknown as { __WARPALA_EXPO_CLICK_TARGET__?: string | null }).__WARPALA_EXPO_CLICK_TARGET__ ?? null;
+      setDevClickTarget((current) => (current === clickValue ? current : clickValue));
+      const clickStackValue = (window as unknown as { __WARPALA_EXPO_CLICK_STACK__?: string[] }).__WARPALA_EXPO_CLICK_STACK__ ?? [];
+      setDevClickStack((current) => (
+        current.length === clickStackValue.length && current.every((value, index) => value === clickStackValue[index])
+          ? current
+          : clickStackValue
+      ));
+    };
+
+    readCenterTarget();
+    const intervalId = window.setInterval(readCenterTarget, 120);
+    return () => window.clearInterval(intervalId);
+  }, []);
 
   useEffect(() => {
     if (!import.meta.env.DEV) {
@@ -185,13 +252,26 @@ export default function Expo3D() {
             sectorMarkers={worldContract.sectorMarkers}
             visualProfile={worldContract.visualProfile}
             devVerification={import.meta.env.DEV ? {
+              buildStamp: LOCAL_BUILD_STAMP,
               companyCount: worldContract.boothPlacements.length,
+              centerTarget: devCenterTarget,
+              centerStack: devCenterStack,
+              clickTarget: devClickTarget,
+              clickStack: devClickStack,
               dataMode: effectiveFocusSlug === initialUrlFocus ? 'seeded-local' : 'seeded-local',
               focusedName: focusedPlacement?.company?.name ?? null,
               focusedSlug: focusedPlacement?.company?.slug ?? effectiveFocusSlug ?? null,
               focusedTier: focusedPlacement?.company?.sponsorTier ?? null,
+              inspector,
               layerStates: devLayerStates,
+              sectionStates: devSectionStates,
               onToggleLayer: (layer) => setDevLayerStates((value) => ({ ...value, [layer]: !value[layer] })),
+              onToggleSection: (section) => {
+                setDevSectionStates((value) => ({ ...value, [section]: !value[section] }));
+                if (section === 'stadium') {
+                  setDevLayerStates((value) => ({ ...value, stadium: !value.stadium }));
+                }
+              },
               renderMarker: 'LOCAL-VERIFY-V2',
               sceneVersion: data?.sceneVersion ? String(data.sceneVersion) : null,
               onClearFocus: () => setDevFocusSlug(''),
@@ -216,6 +296,7 @@ export default function Expo3D() {
             sceneVersion={data?.sceneVersion ? String(data.sceneVersion) : null}
             startViewOverride={focusStartView}
             runtimeLayerToggles={import.meta.env.DEV ? devLayerStates : undefined}
+            runtimeSectionToggles={import.meta.env.DEV ? devSectionStates : undefined}
             worldContract={worldContract}
             zoneSystem={zoneSystem}
           />

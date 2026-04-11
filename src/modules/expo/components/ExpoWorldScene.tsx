@@ -2404,10 +2404,33 @@ interface ExpoWorldSceneProps {
     skyline: boolean;
     stadium: boolean;
   };
+  runtimeSectionToggles?: {
+    arrival: boolean;
+    left: boolean;
+    middle: boolean;
+    right: boolean;
+    stadium: boolean;
+  };
   sceneVersion: string | null;
   startViewOverride?: ExpoStartView | null;
   worldContract: ExpoWorldContract;
   zoneSystem: any;
+}
+
+function matchesCitySection(
+  position: [number, number, number],
+  toggles: { arrival: boolean; left: boolean; middle: boolean; right: boolean }
+) {
+  if (position[2] > 120) {
+    return toggles.arrival;
+  }
+  if (position[0] < -260) {
+    return toggles.left;
+  }
+  if (position[0] > 260) {
+    return toggles.right;
+  }
+  return toggles.middle;
 }
 
 function SceneBridge({ startView }: { startView: ExpoStartView }) {
@@ -2432,7 +2455,117 @@ function SceneBridge({ startView }: { startView: ExpoStartView }) {
   return null;
 }
 
-export function ExpoWorldScene({ activeZone, debug, guests: _guests, mobileMoveIntent, mode, onMove, runtimeLayerToggles, sceneVersion, startViewOverride, worldContract, zoneSystem }: ExpoWorldSceneProps) {
+function CenterScreenInspector() {
+  const { camera, scene } = useThree();
+  const raycasterRef = useRef(new THREE.Raycaster());
+  const directionRef = useRef(new THREE.Vector2(0, 0));
+  const frameRef = useRef(0);
+
+  useFrame(() => {
+    frameRef.current += 1;
+    if (frameRef.current % 8 !== 0) {
+      return;
+    }
+
+    raycasterRef.current.setFromCamera(directionRef.current, camera);
+    const intersections = raycasterRef.current.intersectObjects(scene.children, true);
+    const hit = intersections.find((entry) => {
+      let current: THREE.Object3D | null = entry.object;
+      while (current) {
+        if (current.name && current.name.includes(':')) {
+          return true;
+        }
+        current = current.parent;
+      }
+      return false;
+    });
+
+    if (!hit) {
+      (window as unknown as { __WARPALA_EXPO_CENTER_TARGET__?: string | null }).__WARPALA_EXPO_CENTER_TARGET__ = null;
+      (window as unknown as { __WARPALA_EXPO_CENTER_STACK__?: string[] }).__WARPALA_EXPO_CENTER_STACK__ = [];
+      return;
+    }
+    const centerStack = intersections
+      .map((entry) => {
+        let current: THREE.Object3D | null = entry.object;
+        while (current) {
+          if (current.name && current.name.includes(':')) {
+            return current.name;
+          }
+          current = current.parent;
+        }
+        return null;
+      })
+      .filter((value): value is string => Boolean(value))
+      .filter((value, index, array) => array.indexOf(value) === index)
+      .slice(0, 5);
+
+    (window as unknown as { __WARPALA_EXPO_CENTER_STACK__?: string[] }).__WARPALA_EXPO_CENTER_STACK__ = centerStack;
+    (window as unknown as { __WARPALA_EXPO_CENTER_TARGET__?: string | null }).__WARPALA_EXPO_CENTER_TARGET__ = centerStack[0] ?? null;
+  });
+
+  return null;
+}
+
+function ClickInspector() {
+  const { camera, gl, scene } = useThree();
+  const raycasterRef = useRef(new THREE.Raycaster());
+
+  useEffect(() => {
+    const handlePointerDown = (event: PointerEvent) => {
+      if (!import.meta.env.DEV) {
+        return;
+      }
+
+      const rect = gl.domElement.getBoundingClientRect();
+      if (
+        event.clientX < rect.left ||
+        event.clientX > rect.right ||
+        event.clientY < rect.top ||
+        event.clientY > rect.bottom
+      ) {
+        return;
+      }
+
+      const ndc = new THREE.Vector2(
+        ((event.clientX - rect.left) / rect.width) * 2 - 1,
+        -(((event.clientY - rect.top) / rect.height) * 2 - 1),
+      );
+
+      raycasterRef.current.setFromCamera(ndc, camera);
+      const intersections = raycasterRef.current.intersectObjects(scene.children, true);
+      const clickStack = intersections
+        .map((entry) => {
+          let current: THREE.Object3D | null = entry.object;
+          while (current) {
+            if (current.name && current.name.includes(':')) {
+              return current.name;
+            }
+            current = current.parent;
+          }
+          return null;
+        })
+        .filter((value): value is string => Boolean(value))
+        .filter((value, index, array) => array.indexOf(value) === index)
+        .slice(0, 5);
+
+      (window as unknown as { __WARPALA_EXPO_CLICK_STACK__?: string[] }).__WARPALA_EXPO_CLICK_STACK__ = clickStack;
+
+      if (clickStack.length === 0) {
+        (window as unknown as { __WARPALA_EXPO_CLICK_TARGET__?: string | null }).__WARPALA_EXPO_CLICK_TARGET__ = null;
+        return;
+      }
+      (window as unknown as { __WARPALA_EXPO_CLICK_TARGET__?: string | null }).__WARPALA_EXPO_CLICK_TARGET__ = clickStack[0] ?? null;
+    };
+
+    window.addEventListener('pointerdown', handlePointerDown);
+    return () => window.removeEventListener('pointerdown', handlePointerDown);
+  }, [camera, gl, scene]);
+
+  return null;
+}
+
+export function ExpoWorldScene({ activeZone, debug, guests: _guests, mobileMoveIntent, mode, onMove, runtimeLayerToggles, runtimeSectionToggles, sceneVersion, startViewOverride, worldContract, zoneSystem }: ExpoWorldSceneProps) {
   const { boothPlacements, districtPrograms, plan: _boulevardPlan, playBounds, qualityProfileInputs, sectorMarkers, startView, visualProfile, walkRegions } = worldContract;
   const effectiveStartView = startViewOverride ?? startView;
   const layerToggles = runtimeLayerToggles ?? {
@@ -2442,9 +2575,20 @@ export function ExpoWorldScene({ activeZone, debug, guests: _guests, mobileMoveI
     skyline: true,
     stadium: true,
   };
+  const sectionToggles = runtimeSectionToggles ?? {
+    arrival: true,
+    left: true,
+    middle: true,
+    right: true,
+    stadium: true,
+  };
   const visibleBoothPlacements = useMemo(
     () => selectVisibleBoothPlacements(boothPlacements, districtPrograms),
     [boothPlacements, districtPrograms]
+  );
+  const sectionVisibleBoothPlacements = useMemo(
+    () => visibleBoothPlacements.filter((placement) => matchesCitySection(placement.position, sectionToggles)),
+    [sectionToggles, visibleBoothPlacements]
   );
   const sectorCount = qualityProfileInputs.sectorCount;
   const [playerPosition, setPlayerPosition] = useState<[number, number, number]>([0, 0, 0]);
@@ -2540,6 +2684,8 @@ export function ExpoWorldScene({ activeZone, debug, guests: _guests, mobileMoveI
         camera={{ position: [0, 2, 10], fov: 60, far: 10000 }}
       >
         <SceneBridge startView={effectiveStartView} />
+        <CenterScreenInspector />
+        <ClickInspector />
         <Suspense fallback={null}>
             <AdaptiveDpr />
             <AdaptiveEvents />
@@ -2555,19 +2701,20 @@ export function ExpoWorldScene({ activeZone, debug, guests: _guests, mobileMoveI
             {EXPO_FEATURE_FLAGS.enableFog && <fog attach="fog" args={['#9eb6d4', 180, 520]} />}
 
             <WorldGroundPlane visualProfile={visualProfile} />
-            {layerToggles.promenade && <WorldPromenade boothPlacements={boothPlacements} sectorMarkers={sectorMarkers} visualProfile={visualProfile} />}
+            {layerToggles.promenade && <WorldPromenade boothPlacements={sectionVisibleBoothPlacements} sectorMarkers={sectorMarkers} visualProfile={visualProfile} />}
             {layerToggles.city && (
               <WorldCitySkeleton
-                boothPlacements={visibleBoothPlacements}
+                boothPlacements={sectionVisibleBoothPlacements}
                 districtPrograms={districtPrograms}
                 playerPosition={playerPosition}
+                sectionToggles={sectionToggles}
                 visualProfile={visualProfile}
               />
             )}
-            {layerToggles.stadium && <ExpoRearCampus boothPlacements={visibleBoothPlacements} visualProfile={visualProfile} />}
+            {layerToggles.stadium && sectionToggles.stadium && <ExpoRearCampus boothPlacements={sectionVisibleBoothPlacements} visualProfile={visualProfile} />}
             {(layerToggles.city || layerToggles.booths) && (
               <WorldWayfinding
-                boothPlacements={visibleBoothPlacements}
+                boothPlacements={sectionVisibleBoothPlacements}
                 playerPosition={playerPosition}
                 sectorMarkers={sectorMarkers}
               />
@@ -2594,7 +2741,7 @@ export function ExpoWorldScene({ activeZone, debug, guests: _guests, mobileMoveI
               sponsorCount={qualityProfileInputs.boothCount}
             />
               {layerToggles.booths && <group>
-                {visibleBoothPlacements.map((placement) => (
+                {sectionVisibleBoothPlacements.map((placement) => (
                   <RuntimeDistrictBooth
                     key={placement.id}
                     districtVisual={getDistrictVisualProfile(placement.sectorId, placement.clusterIndex, visualProfile)}
@@ -2604,7 +2751,7 @@ export function ExpoWorldScene({ activeZone, debug, guests: _guests, mobileMoveI
                 ))}
               </group>}
 
-              {layerToggles.booths && visibleBoothPlacements.length === 0 && (
+              {layerToggles.booths && sectionVisibleBoothPlacements.length === 0 && (
                 <Html position={[0, 8, 0]} center>
                   <div style={{ background: 'rgba(15, 23, 42, 0.9)', color: 'white', padding: '16px 20px', borderRadius: '14px', border: '1px solid rgba(59, 130, 246, 0.35)', width: '320px', textAlign: 'center' }}>
                     Sponsor booths are not loaded yet. Check /api/expo/scene or the underlying Supabase sector and company data.

@@ -560,6 +560,20 @@ function buildProgrammedFillerNodes({
       return;
     }
 
+    if (
+      clusterIndex === 0 &&
+      (
+        target.role === 'info_pavilion' ||
+        target.role === 'networking_lounge' ||
+        target.role === 'demo_stage' ||
+        target.role === 'meeting_pod' ||
+        target.role === 'scenic_showcase'
+      )
+    ) {
+      target.allocated = 0;
+      return;
+    }
+
     switch (target.role) {
       case 'arrival_anchor':
         pushNode(`anchor-plaza-${sectorId ?? UNASSIGNED_SECTOR_ID}`, getProgrammedNodePosition(center, target.role).position, undefined, target.role);
@@ -726,16 +740,42 @@ function getProgrammedNodePosition(
     case 'hero_forecourt_right':
       return { position: [center.x + (center.lane === 'center' ? 184 : 104), 0, center.z + 42], rotationY: -Math.PI / 2 };
     case 'info_pavilion':
-      return { position: [center.x, 0, center.z - 128] };
+      return {
+        position: [
+          center.x + (center.lane === 'center' ? (center.z > -300 ? 268 : 204) : 0),
+          0,
+          center.z - (center.z > -300 ? 186 : 148),
+        ],
+      };
     case 'networking_lounge':
-      return { position: [center.x, 0, center.z - 186] };
+      return {
+        position: [
+          center.x - (center.lane === 'center' ? (center.z > -300 ? 286 : 212) : 0),
+          0,
+          center.z - (center.z > -300 ? 238 : 208),
+        ],
+      };
     case 'demo_stage':
-      return { position: [center.x + (center.lane === 'center' ? 322 : 248), 0, center.z - 126], rotationY: -Math.PI / 2 };
+      return {
+        position: [
+          center.x + (center.lane === 'center' ? (center.z > -300 ? 452 : 396) : 248),
+          0,
+          center.z - (center.z > -300 ? 166 : 126),
+        ],
+        rotationY: -Math.PI / 2,
+      };
     case 'meeting_pod':
-      return { position: [center.x - (center.lane === 'center' ? 322 : 248), 0, center.z - 126], rotationY: Math.PI / 2 };
+      return {
+        position: [
+          center.x - (center.lane === 'center' ? (center.z > -300 ? 452 : 396) : 248),
+          0,
+          center.z - (center.z > -300 ? 166 : 126),
+        ],
+        rotationY: Math.PI / 2,
+      };
     case 'scenic_showcase': {
       const side = scenicIndex % 2 === 0 ? -1 : 1;
-      const xOffset = center.lane === 'center' ? 364 : 284;
+      const xOffset = center.lane === 'center' ? 452 : 284;
       return {
         position: [center.x + side * xOffset, 0, center.z - 176 - (Math.floor(scenicIndex / 2) * 28)],
         rotationY: side < 0 ? Math.PI / 2 : -Math.PI / 2,
@@ -854,7 +894,7 @@ export function buildSponsorBoulevardPlan(
     const heroLeft = heroPrimary[0];
     const heroRight = heroPrimary[1];
     if (heroLeft) {
-      const heroOffset = districtTierBand === 'showcase' ? 236 : districtTierBand === 'discovery' ? 224 : districtCenter.lane === 'center' ? 208 : 132;
+      const heroOffset = districtTierBand === 'showcase' ? 278 : districtTierBand === 'discovery' ? 336 : districtCenter.lane === 'center' ? 312 : 132;
       nodes.push(createCompanyNode(
         heroLeft,
         'hero_left',
@@ -866,7 +906,7 @@ export function buildSponsorBoulevardPlan(
       nodes[nodes.length - 1].clusterIndex = sectorIndex;
     }
     if (heroRight) {
-      const heroOffset = districtTierBand === 'showcase' ? 236 : districtTierBand === 'discovery' ? 224 : districtCenter.lane === 'center' ? 208 : 132;
+      const heroOffset = districtTierBand === 'showcase' ? 278 : districtTierBand === 'discovery' ? 336 : districtCenter.lane === 'center' ? 312 : 132;
       nodes.push(createCompanyNode(
         heroRight,
         'hero_right',
@@ -882,9 +922,9 @@ export function buildSponsorBoulevardPlan(
       const side = index % 2 === 0 ? -1 : 1;
       const row = Math.floor(index / 2);
       const premiumRadius =
-        districtTierBand === 'discovery' ? (districtCenter.lane === 'center' ? 452 : 348)
+        districtTierBand === 'discovery' ? (districtCenter.lane === 'center' ? 526 : 348)
         : districtTierBand === 'showcase' ? (districtCenter.lane === 'center' ? 408 : 324)
-        : districtCenter.lane === 'center' ? 384 : 298;
+        : districtCenter.lane === 'center' ? 436 : 298;
       const premiumBaseZ =
         districtTierBand === 'arrival' ? districtCenter.z - 26
         : districtTierBand === 'showcase' ? districtCenter.z - 24
@@ -908,7 +948,7 @@ export function buildSponsorBoulevardPlan(
       const standardOffset =
         districtTierBand === 'arrival' ? 166
         : districtTierBand === 'showcase' ? 224
-        : districtTierBand === 'discovery' ? 246
+        : districtTierBand === 'discovery' ? 318
         : 198;
       const standardBaseZ =
         districtTierBand === 'arrival' ? districtCenter.z - 122
