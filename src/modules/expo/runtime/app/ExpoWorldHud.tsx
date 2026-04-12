@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
 import { EXPO_CITY_QUALITY_TIER, EXPO_MODE_COPY } from '../../state/expoRuntime';
 import type { ExpoSectorMarker } from '../../layout-engine';
@@ -13,7 +13,10 @@ interface ExpoWorldHudProps {
     clickStack?: string[];
     companyCount?: number;
     centerTarget?: string | null;
+    captureSafe?: boolean;
     dataMode?: string | null;
+    targetBasket?: string[];
+    markedPoint?: [number, number, number] | null;
     inspector?: Array<{
       distance: number;
       id: string;
@@ -31,6 +34,12 @@ interface ExpoWorldHudProps {
     onFocusHero?: () => void;
     onFocusPremium?: () => void;
     onFocusElite?: () => void;
+    onTeleportStadium?: () => void;
+    onSetMark?: () => void;
+    onToggleCaptureSafe?: () => void;
+    onAddClickTarget?: () => void;
+    onAddClickStack?: () => void;
+    onClearTargetBasket?: () => void;
     onClearFocus?: () => void;
   } | null;
   guests: any[];
@@ -62,6 +71,10 @@ export function ExpoWorldHud({
   onExit,
 }: ExpoWorldHudProps) {
   const [copyStatus, setCopyStatus] = useState<'idle' | 'copied' | 'failed'>('idle');
+  const [joystickOffset, setJoystickOffset] = useState({ x: 0, y: 0 });
+  const joystickRef = useRef<HTMLDivElement | null>(null);
+  const targetBasket = devVerification?.targetBasket ?? [];
+  const recentTargets = targetBasket.slice(-3);
   const radarSize = debug ? 220 : 208;
   const orderedMarkers = [...sectorMarkers].sort((left, right) => {
     const leftDistance = Math.hypot(left.position[0] - playerPos[0], left.position[2] - playerPos[2]);
@@ -106,6 +119,68 @@ export function ExpoWorldHud({
       setCopyStatus('failed');
     }
     window.setTimeout(() => setCopyStatus('idle'), 1200);
+  };
+
+  const copyText = async (value: string | null) => {
+    if (!value) {
+      setCopyStatus('failed');
+      window.setTimeout(() => setCopyStatus('idle'), 1200);
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopyStatus('copied');
+    } catch {
+      setCopyStatus('failed');
+    }
+    window.setTimeout(() => setCopyStatus('idle'), 1200);
+  };
+
+  const copyCenterTarget = async () => {
+    await copyText(devVerification?.centerTarget || null);
+  };
+
+  const copyClickStack = async () => {
+    await copyText(devVerification?.clickStack && devVerification.clickStack.length > 0 ? devVerification.clickStack.join(', ') : null);
+  };
+
+  const copyCenterStack = async () => {
+    await copyText(devVerification?.centerStack && devVerification.centerStack.length > 0 ? devVerification.centerStack.join(', ') : null);
+  };
+
+  const copyTargetBasket = async () => {
+    await copyText(devVerification?.targetBasket && devVerification.targetBasket.length > 0 ? devVerification.targetBasket.join(', ') : null);
+  };
+
+  const updateJoystickIntent = (clientX: number, clientY: number) => {
+    if (!joystickRef.current || !onMoveTouch) {
+      return;
+    }
+
+    const rect = joystickRef.current.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    const rawX = clientX - centerX;
+    const rawY = clientY - centerY;
+    const maxRadius = rect.width * 0.28;
+    const distance = Math.hypot(rawX, rawY);
+    const clampRatio = distance > maxRadius ? maxRadius / distance : 1;
+    const offsetX = rawX * clampRatio;
+    const offsetY = rawY * clampRatio;
+    const threshold = maxRadius * 0.35;
+
+    setJoystickOffset({ x: offsetX, y: offsetY });
+    onMoveTouch({
+      f: offsetY < -threshold,
+      b: offsetY > threshold,
+      l: offsetX < -threshold,
+      r: offsetX > threshold,
+    });
+  };
+
+  const resetJoystickIntent = () => {
+    setJoystickOffset({ x: 0, y: 0 });
+    onMoveTouch?.({ f: false, b: false, l: false, r: false });
   };
 
   return (
@@ -226,7 +301,15 @@ export function ExpoWorldHud({
                   {devVerification.clickStack.join('  |  ')}
                 </div>
               )}
+              <div>
+                MARK:
+                {' '}
+                {devVerification.markedPoint
+                  ? `${Math.round(devVerification.markedPoint[0])}, ${Math.round(devVerification.markedPoint[1])}, ${Math.round(devVerification.markedPoint[2])}`
+                  : 'none'}
+              </div>
               <div>DATA: {(devVerification.dataMode || 'unknown').toUpperCase()} / {devVerification.companyCount ?? 0} COMPANIES</div>
+              <div>CAPTURE SAFE: {devVerification.captureSafe ? 'ON' : 'OFF'}</div>
               {devVerification.inspector && devVerification.inspector.length > 0 && (
                 <div>
                   INSPECT:
@@ -261,10 +344,41 @@ export function ExpoWorldHud({
               </div>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '8px' }}>
+              <button onClick={copyCenterTarget} style={{ ...primaryPanelStyle, padding: '9px 12px', borderRadius: '12px', cursor: 'pointer', fontWeight: 800, border: '1px solid rgba(255,255,255,0.08)' }}>COPY CENTER</button>
+              <button onClick={copyClickStack} style={{ ...primaryPanelStyle, padding: '9px 12px', borderRadius: '12px', cursor: 'pointer', fontWeight: 800, border: '1px solid rgba(255,255,255,0.08)' }}>COPY CLICK STACK</button>
+              <button onClick={copyCenterStack} style={{ ...primaryPanelStyle, padding: '9px 12px', borderRadius: '12px', cursor: 'pointer', fontWeight: 800, border: '1px solid rgba(255,255,255,0.08)', gridColumn: 'span 2' }}>COPY CENTER STACK</button>
+            </div>
+            <div style={{ ...primaryPanelStyle, padding: '10px 12px', borderRadius: '12px', display: 'grid', gap: '6px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
+                <div style={{ fontSize: '0.76rem', fontWeight: 800, color: '#f8fafc' }}>TARGET BASKET</div>
+                <div style={{ fontSize: '0.72rem', fontWeight: 800, color: targetBasket.length > 0 ? '#86efac' : '#94a3b8' }}>
+                  {targetBasket.length} SELECTED
+                </div>
+              </div>
+              {recentTargets.length > 0 ? (
+                <div style={{ fontSize: '0.7rem', color: '#cbd5e1', lineHeight: 1.4 }}>
+                  {recentTargets.map((entry, index) => (
+                    <div key={`${entry}-${index}`}>{entry}</div>
+                  ))}
+                </div>
+              ) : (
+                <div style={{ fontSize: '0.7rem', color: '#94a3b8' }}>No targets selected</div>
+              )}
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '8px' }}>
+              <button onClick={devVerification.onAddClickTarget} style={{ ...primaryPanelStyle, padding: '9px 12px', borderRadius: '12px', cursor: 'pointer', fontWeight: 800, border: '1px solid rgba(255,255,255,0.08)' }}>ADD 1</button>
+              <button onClick={devVerification.onAddClickStack} style={{ ...primaryPanelStyle, padding: '9px 12px', borderRadius: '12px', cursor: 'pointer', fontWeight: 800, border: '1px solid rgba(255,255,255,0.08)' }}>ADD STACK</button>
+              <button onClick={copyTargetBasket} style={{ ...primaryPanelStyle, padding: '9px 12px', borderRadius: '12px', cursor: 'pointer', fontWeight: 800, border: '1px solid rgba(255,255,255,0.08)' }}>COPY LIST</button>
+              <button onClick={devVerification.onClearTargetBasket} style={{ ...primaryPanelStyle, padding: '9px 12px', borderRadius: '12px', cursor: 'pointer', fontWeight: 800, border: '1px solid rgba(255,255,255,0.08)' }}>CLEAR</button>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '8px' }}>
               <button onClick={devVerification.onFocusHero} style={{ ...primaryPanelStyle, padding: '10px 12px', borderRadius: '12px', cursor: 'pointer', fontWeight: 800, border: '1px solid rgba(255,255,255,0.08)' }}>HERO</button>
               <button onClick={devVerification.onFocusPremium} style={{ ...primaryPanelStyle, padding: '10px 12px', borderRadius: '12px', cursor: 'pointer', fontWeight: 800, border: '1px solid rgba(255,255,255,0.08)' }}>PREMIUM</button>
               <button onClick={devVerification.onFocusElite} style={{ ...primaryPanelStyle, padding: '10px 12px', borderRadius: '12px', cursor: 'pointer', fontWeight: 800, border: '1px solid rgba(255,255,255,0.08)' }}>ELITE</button>
+              <button onClick={devVerification.onTeleportStadium} style={{ ...primaryPanelStyle, padding: '10px 12px', borderRadius: '12px', cursor: 'pointer', fontWeight: 800, border: '1px solid rgba(255,255,255,0.08)' }}>STADIUM JUMP</button>
+              <button onClick={devVerification.onSetMark} style={{ ...primaryPanelStyle, padding: '10px 12px', borderRadius: '12px', cursor: 'pointer', fontWeight: 800, border: '1px solid rgba(255,255,255,0.08)' }}>SET MARK</button>
               <button onClick={devVerification.onClearFocus} style={{ ...primaryPanelStyle, padding: '10px 12px', borderRadius: '12px', cursor: 'pointer', fontWeight: 800, border: '1px solid rgba(255,255,255,0.08)' }}>CLEAR</button>
+              <button onClick={devVerification.onToggleCaptureSafe} style={{ ...primaryPanelStyle, padding: '10px 12px', borderRadius: '12px', cursor: 'pointer', fontWeight: 800, border: '1px solid rgba(255,255,255,0.08)', gridColumn: 'span 2' }}>CAPTURE SAFE</button>
             </div>
             {devVerification.onToggleLayer && (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '8px' }}>
@@ -326,35 +440,112 @@ export function ExpoWorldHud({
       </div>
 
       {isTouchDevice && onMoveTouch && (
+        <div
+          style={{
+            position: 'absolute',
+            right: '24px',
+            bottom: '24px',
+            zIndex: 111,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '10px',
+          }}
+        >
+          <div style={{ fontSize: '0.68rem', fontWeight: 800, letterSpacing: '0.12em', color: '#cbd5e1' }}>
+            MOVE
+          </div>
+          <div
+            ref={joystickRef}
+            onTouchStart={(event) => {
+              const touch = event.touches[0];
+              if (!touch) return;
+              updateJoystickIntent(touch.clientX, touch.clientY);
+            }}
+            onTouchMove={(event) => {
+              const touch = event.touches[0];
+              if (!touch) return;
+              updateJoystickIntent(touch.clientX, touch.clientY);
+            }}
+            onTouchEnd={resetJoystickIntent}
+            onTouchCancel={resetJoystickIntent}
+            onMouseDown={(event) => updateJoystickIntent(event.clientX, event.clientY)}
+            onMouseMove={(event) => {
+              if ((event.buttons & 1) !== 1) {
+                return;
+              }
+              updateJoystickIntent(event.clientX, event.clientY);
+            }}
+            onMouseUp={resetJoystickIntent}
+            onMouseLeave={resetJoystickIntent}
+            style={{
+              ...primaryPanelStyle,
+              width: '148px',
+              height: '148px',
+              borderRadius: '999px',
+              border: '1px solid rgba(255,255,255,0.08)',
+              position: 'relative',
+              touchAction: 'none',
+              userSelect: 'none',
+              background: 'radial-gradient(circle at center, rgba(248, 250, 252, 0.08) 0%, rgba(15, 23, 42, 0.82) 72%)',
+            }}
+          >
+            <div
+              style={{
+                position: 'absolute',
+                inset: '18px',
+                borderRadius: '999px',
+                border: '1px dashed rgba(148, 163, 184, 0.38)',
+              }}
+            />
+            <div
+              style={{
+                position: 'absolute',
+                left: '50%',
+                top: '50%',
+                width: '60px',
+                height: '60px',
+                borderRadius: '999px',
+                transform: `translate(calc(-50% + ${joystickOffset.x}px), calc(-50% + ${joystickOffset.y}px))`,
+                background: 'linear-gradient(180deg, rgba(248, 250, 252, 0.96), rgba(203, 213, 225, 0.92))',
+                boxShadow: '0 10px 26px rgba(2, 6, 23, 0.38)',
+                border: '1px solid rgba(15, 23, 42, 0.08)',
+              }}
+            />
+          </div>
+        </div>
+      )}
+
+      {false && isTouchDevice && onMoveTouch && (
         <div style={{ position: 'absolute', right: '24px', bottom: '24px', zIndex: 110, display: 'grid', gridTemplateColumns: '72px 72px 72px', gridTemplateRows: '72px 72px 72px', gap: '10px' }}>
           <div />
           <button
-            onTouchStart={() => onMoveTouch({ f: true, b: false, l: false, r: false })}
-            onTouchEnd={() => onMoveTouch({ f: false, b: false, l: false, r: false })}
-            onMouseDown={() => onMoveTouch({ f: true, b: false, l: false, r: false })}
-            onMouseUp={() => onMoveTouch({ f: false, b: false, l: false, r: false })}
+            onTouchStart={() => onMoveTouch?.({ f: true, b: false, l: false, r: false })}
+            onTouchEnd={() => onMoveTouch?.({ f: false, b: false, l: false, r: false })}
+            onMouseDown={() => onMoveTouch?.({ f: true, b: false, l: false, r: false })}
+            onMouseUp={() => onMoveTouch?.({ f: false, b: false, l: false, r: false })}
             style={{ ...primaryPanelStyle, borderRadius: '18px', border: 'none', fontWeight: 900, fontSize: '1.2rem' }}
           >↑</button>
           <div />
           <button
-            onTouchStart={() => onMoveTouch({ f: false, b: false, l: true, r: false })}
-            onTouchEnd={() => onMoveTouch({ f: false, b: false, l: false, r: false })}
-            onMouseDown={() => onMoveTouch({ f: false, b: false, l: true, r: false })}
-            onMouseUp={() => onMoveTouch({ f: false, b: false, l: false, r: false })}
+            onTouchStart={() => onMoveTouch?.({ f: false, b: false, l: true, r: false })}
+            onTouchEnd={() => onMoveTouch?.({ f: false, b: false, l: false, r: false })}
+            onMouseDown={() => onMoveTouch?.({ f: false, b: false, l: true, r: false })}
+            onMouseUp={() => onMoveTouch?.({ f: false, b: false, l: false, r: false })}
             style={{ ...primaryPanelStyle, borderRadius: '18px', border: 'none', fontWeight: 900, fontSize: '1.2rem' }}
           >←</button>
           <button
-            onTouchStart={() => onMoveTouch({ f: false, b: true, l: false, r: false })}
-            onTouchEnd={() => onMoveTouch({ f: false, b: false, l: false, r: false })}
-            onMouseDown={() => onMoveTouch({ f: false, b: true, l: false, r: false })}
-            onMouseUp={() => onMoveTouch({ f: false, b: false, l: false, r: false })}
+            onTouchStart={() => onMoveTouch?.({ f: false, b: true, l: false, r: false })}
+            onTouchEnd={() => onMoveTouch?.({ f: false, b: false, l: false, r: false })}
+            onMouseDown={() => onMoveTouch?.({ f: false, b: true, l: false, r: false })}
+            onMouseUp={() => onMoveTouch?.({ f: false, b: false, l: false, r: false })}
             style={{ ...primaryPanelStyle, borderRadius: '18px', border: 'none', fontWeight: 900, fontSize: '1.2rem' }}
           >↓</button>
           <button
-            onTouchStart={() => onMoveTouch({ f: false, b: false, l: false, r: true })}
-            onTouchEnd={() => onMoveTouch({ f: false, b: false, l: false, r: false })}
-            onMouseDown={() => onMoveTouch({ f: false, b: false, l: false, r: true })}
-            onMouseUp={() => onMoveTouch({ f: false, b: false, l: false, r: false })}
+            onTouchStart={() => onMoveTouch?.({ f: false, b: false, l: false, r: true })}
+            onTouchEnd={() => onMoveTouch?.({ f: false, b: false, l: false, r: false })}
+            onMouseDown={() => onMoveTouch?.({ f: false, b: false, l: false, r: true })}
+            onMouseUp={() => onMoveTouch?.({ f: false, b: false, l: false, r: false })}
             style={{ ...primaryPanelStyle, borderRadius: '18px', border: 'none', fontWeight: 900, fontSize: '1.2rem' }}
           >→</button>
         </div>
