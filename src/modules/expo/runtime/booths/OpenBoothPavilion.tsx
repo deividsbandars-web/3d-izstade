@@ -26,19 +26,19 @@ export function OpenBoothPavilion({
   const isHero = tier === 'hero';
   const isElite = tier === 'elite';
   const isPremium = tier === 'premium';
-  const width = metrics.footprintSize[0] * (isHero ? 0.82 : isElite ? 0.78 : isPremium ? 0.75 : 0.72);
-  const depth = metrics.footprintSize[1] * (isHero ? 0.64 : isElite ? 0.61 : isPremium ? 0.6 : 0.58);
-  const postHeight = Math.max(isHero ? 7.4 : isElite ? 6.9 : isPremium ? 6.5 : 6.2, metrics.colliderSize[1] * (isHero ? 0.64 : isElite ? 0.61 : isPremium ? 0.59 : 0.58));
-  const postOffsetX = (width * 0.5) - 1.2;
-  const postOffsetZ = (depth * 0.5) - 1;
+  const width = metrics.footprintSize[0] * (isHero ? 0.98 : isElite ? 0.92 : isPremium ? 0.84 : 0.78);
+  const depth = metrics.footprintSize[1] * (isHero ? 0.76 : isElite ? 0.72 : isPremium ? 0.68 : 0.62);
+  const postHeight = Math.max(isHero ? 9.4 : isElite ? 8.4 : isPremium ? 7.3 : 6.7, metrics.colliderSize[1] * (isHero ? 0.78 : isElite ? 0.72 : isPremium ? 0.66 : 0.61));
+  const postOffsetX = (width * 0.5) - (isHero ? 1.52 : isElite ? 1.36 : isPremium ? 1.24 : 1.1);
+  const postOffsetZ = (depth * 0.5) - (isHero ? 1.26 : isElite ? 1.16 : isPremium ? 1.06 : 0.94);
   const rearScreenZ = -((depth * 0.5) - 0.56);
-  const haloWidth = width + 4.8;
-  const haloHeight = postHeight + 3.2;
+  const haloWidth = width + (isHero ? 8.4 : 7.2);
+  const haloHeight = postHeight + (isHero ? 4.8 : 4.2);
   const haloZ = rearScreenZ - 0.78;
-  const premiumPortalWidth = width + 3.8;
-  const premiumPortalHeight = postHeight + 2.2;
-  const eliteMonolithHeight = postHeight + 4.2;
-  const eliteMonolithOffsetX = (width * 0.5) + 2.6;
+  const premiumPortalWidth = width + 5.4;
+  const premiumPortalHeight = postHeight + 3.2;
+  const eliteMonolithHeight = postHeight + 5.8;
+  const eliteMonolithOffsetX = (width * 0.5) + 3.6;
   const eliteMonolithZ = rearScreenZ + 0.36;
 
   return (
@@ -53,7 +53,7 @@ export function OpenBoothPavilion({
         />
       )}
       <mesh position={[0, 0.12, 0.4]} receiveShadow>
-        <boxGeometry args={[width, 0.24, depth]} />
+        <boxGeometry args={[width, 0.28, depth]} />
         <meshStandardMaterial color="#e5edf4" metalness={0.04} roughness={0.74} />
       </mesh>
       {isPremium && !isElite && !isHero && (
@@ -80,19 +80,19 @@ export function OpenBoothPavilion({
         [postOffsetX, postHeight * 0.5, postOffsetZ],
       ].map((position, index) => (
         <mesh key={`pavilion-post-${index}`} position={position as [number, number, number]} castShadow receiveShadow>
-          <boxGeometry args={[0.42, postHeight, 0.42]} />
+          <boxGeometry args={[isHero ? 0.56 : isElite ? 0.52 : isPremium ? 0.48 : 0.44, postHeight, isHero ? 0.56 : isElite ? 0.52 : isPremium ? 0.48 : 0.44]} />
           <meshStandardMaterial color="#6c8190" metalness={0.18} roughness={0.58} />
         </mesh>
       ))}
       <mesh position={[0, postHeight + 0.22, 0]} castShadow receiveShadow>
-        <boxGeometry args={[width + (isHero ? 2.4 : isElite ? 2.1 : isPremium ? 1.8 : 1.4), isHero ? 0.38 : isElite ? 0.36 : 0.32, depth * (isHero ? 0.82 : isElite ? 0.8 : isPremium ? 0.78 : 0.74)]} />
+        <boxGeometry args={[width + (isHero ? 4.4 : isElite ? 3.8 : isPremium ? 2.8 : 1.8), isHero ? 0.52 : isElite ? 0.48 : isPremium ? 0.4 : 0.34, depth * (isHero ? 0.92 : isElite ? 0.88 : isPremium ? 0.84 : 0.78)]} />
         <meshStandardMaterial color="#c9d6df" metalness={0.1} roughness={0.46} />
       </mesh>
       {isElite && (
         <EliteRoofCrown accentColor={accentColor} depth={depth} postHeight={postHeight} width={width} />
       )}
       <mesh position={[0, postHeight + 0.42, (depth * 0.5) - 0.2]} castShadow>
-        <boxGeometry args={[width * 0.82, 0.16, 0.22]} />
+        <boxGeometry args={[width * (isHero ? 0.92 : isElite ? 0.88 : isPremium ? 0.86 : 0.82), 0.16, 0.22]} />
         <meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={0.1} roughness={0.42} metalness={0.16} />
       </mesh>
       {(isPremium || isElite) && (
@@ -106,11 +106,11 @@ export function OpenBoothPavilion({
       )}
       <group position={[0, postHeight * 0.56, rearScreenZ]}>
         <mesh castShadow receiveShadow>
-          <boxGeometry args={[width * (isHero ? 0.64 : isElite ? 0.61 : isPremium ? 0.6 : 0.58), isHero ? 5.42 : isElite ? 5.18 : isPremium ? 5.04 : 4.92, 0.24]} />
+          <boxGeometry args={[width * (isHero ? 0.72 : isElite ? 0.68 : isPremium ? 0.64 : 0.6), isHero ? 6.3 : isElite ? 5.96 : isPremium ? 5.5 : 5.1, 0.24]} />
           <meshStandardMaterial color="#08111c" metalness={0.12} roughness={0.58} />
         </mesh>
         <mesh position={[0, 0, 0.16]}>
-          <planeGeometry args={[width * (isHero ? 0.56 : isElite ? 0.54 : isPremium ? 0.52 : 0.5), isHero ? 4.56 : isElite ? 4.34 : isPremium ? 4.24 : 4.16]} />
+          <planeGeometry args={[width * (isHero ? 0.64 : isElite ? 0.6 : isPremium ? 0.56 : 0.52), isHero ? 5.42 : isElite ? 5.02 : isPremium ? 4.68 : 4.32]} />
           {screenUrl ? (
             <Suspense fallback={<meshStandardMaterial color="#0f172a" emissive={accentColor} emissiveIntensity={0.08} />}>
               <SponsorTextureSurface fallbackColor="#0f172a" url={screenUrl} />

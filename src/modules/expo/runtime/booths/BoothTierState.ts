@@ -70,9 +70,9 @@ export function buildBoothTierState({
   const isFeatureBooth = featureTier !== 'standard';
   const isHeroFeature = featureTier === 'hero';
   const isEliteFeature = featureTier === 'elite';
-  const stageScale = isHeroFeature ? 1.5 : isEliteFeature ? 1.28 : isPremiumBooth ? 1.14 : 1;
-  const frontApronWidth = isHeroFeature ? 24 : isEliteFeature ? 20 : isPremiumBooth ? 17 : 0;
-  const frontApronDepth = isHeroFeature ? 4.2 : isEliteFeature ? 3.6 : isPremiumBooth ? 2.8 : 0;
+  const stageScale = isHeroFeature ? 1.82 : isEliteFeature ? 1.56 : isPremiumBooth ? 1.3 : 1.08;
+  const frontApronWidth = isHeroFeature ? 30 : isEliteFeature ? 25 : isPremiumBooth ? 20.5 : 0;
+  const frontApronDepth = isHeroFeature ? 5.6 : isEliteFeature ? 4.6 : isPremiumBooth ? 3.5 : 0;
   const showTagline =
     (presentation.hasBrandAssets || isHeroFeature || isEliteBooth || isPremiumBooth) &&
     districtVisual.expressionMode === 'active-commercial' &&
@@ -83,9 +83,11 @@ export function buildBoothTierState({
   const showPremiumEyebrow = isHeroFeature || isEliteBooth || isPremiumBooth;
   const distanceToPlayer = Math.hypot(playerPosition[0] - position[0], playerPosition[2] - position[2]);
   const showDetailedText = skylineDensityEnabled || distanceToPlayer < 760;
-  const showFullBoothUi = skylineDensityEnabled || distanceToPlayer < 540 || isEliteBooth || isPremiumBooth;
-  const infoBandWidth = Math.max(8.8, metricsTitleMaxWidth + (isEliteBooth ? 4.6 : isPremiumBooth ? 3.4 : 2.2));
-  const infoBandHeight = showTagline ? (isEliteBooth ? 3.72 : isPremiumBooth ? 3.24 : 2.56) : (isEliteBooth ? 2.7 : isPremiumBooth ? 2.24 : 1.76);
+  const showFullBoothUi = skylineDensityEnabled || distanceToPlayer < 540 || isHeroFeature || isEliteBooth || isPremiumBooth;
+  const infoBandWidth = Math.max(10.2, metricsTitleMaxWidth + (isEliteBooth ? 6.1 : isPremiumBooth ? 4.5 : 2.8));
+  const infoBandHeight = showTagline
+    ? (isEliteBooth ? 4.36 : isPremiumBooth ? 3.72 : 2.86)
+    : (isEliteBooth ? 3.08 : isPremiumBooth ? 2.52 : 1.92);
 
   return {
     distanceToPlayer,

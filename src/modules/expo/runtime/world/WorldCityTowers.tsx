@@ -70,6 +70,8 @@ export function WorldCityTowers({
 }) {
   const hiddenTowerIds = new Set([
     'meetings-hero-tower-right',
+    '75c36ca5-1c8e-4bd7-b61c-7cafd988fcf1-support-tower-right',
+    '1a459ffc-d447-4899-97e5-7af7b562487d-outer-support-tower-right',
   ]);
   return (
     <>

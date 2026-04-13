@@ -53,15 +53,66 @@ export function ExpoRearCampus({
     [stadiumForecourts]
   );
   const filteredStadiumSidePavilions = useMemo(
-    () => stadiumSidePavilions.filter((pavilion) => pavilion.id !== 'rear-campus-axis-front-right'),
+    () => {
+      const hiddenPavilionIds = new Set([
+        'rear-campus-side-pavilion-left-front',
+        'rear-campus-side-pavilion-left-rear',
+        'rear-campus-event-pavilion-left',
+        'rear-campus-axis-gallery-left',
+        'rear-campus-axis-front-left',
+        'rear-campus-event-pavilion-right',
+        'rear-campus-axis-gallery-right',
+        'rear-campus-side-pavilion-right-front',
+        'rear-campus-side-pavilion-right-rear',
+        'rear-campus-axis-front-right',
+      ]);
+
+      return stadiumSidePavilions.filter((pavilion) => !hiddenPavilionIds.has(pavilion.id));
+    },
     [stadiumSidePavilions]
   );
+  const filteredStadiumLandmarkTowers = useMemo(
+    () => {
+      const hiddenTowerIds = new Set([
+        'rear-campus-landmark-left',
+        'rear-campus-landmark-right',
+        'rear-campus-landmark-center-left',
+        'rear-campus-landmark-center-right',
+      ]);
+
+      return stadiumLandmarkTowers.filter((tower) => !hiddenTowerIds.has(tower.id));
+    },
+    [stadiumLandmarkTowers]
+  );
+  const campusPerimeterHalfWidth = 3060;
+  const campusPerimeterFrontZ = campusCenterZ + 2140;
+  const campusPerimeterRearZ = campusCenterZ - 2140;
+  const campusPerimeterCenterZ = (campusPerimeterFrontZ + campusPerimeterRearZ) * 0.5;
+  const campusPerimeterDepth = campusPerimeterFrontZ - campusPerimeterRearZ;
 
   useEffect(() => {
     const stadiumEntries = [
       ...filteredStadiumForecourts.map((plane) => ({ id: plane.id, layer: 'stadium-plane', position: plane.position })),
       ...filteredStadiumSidePavilions.map((pavilion) => ({ id: pavilion.id, layer: 'stadium-pavilion', position: pavilion.position })),
-      ...stadiumLandmarkTowers.map((tower) => ({ id: tower.id, layer: 'stadium-tower', position: tower.position })),
+      ...filteredStadiumLandmarkTowers.map((tower) => ({ id: tower.id, layer: 'stadium-tower', position: tower.position })),
+      { id: 'rear-campus-arc-bastion-right', layer: 'stadium-structure', position: [1180, 0, campusCenterZ + 864] as [number, number, number] },
+      { id: 'rear-campus-center-event-island', layer: 'stadium-structure', position: [0, 0, campusCenterZ - 1296] as [number, number, number] },
+      { id: 'rear-campus-bowl-center-deck', layer: 'stadium-structure', position: [0, 212, campusCenterZ - 972] as [number, number, number] },
+      { id: 'rear-campus-stage-monolith-canopy', layer: 'stadium-structure', position: [47, 0, -3018] as [number, number, number] },
+      { id: 'rear-campus-mega-civic-hall', layer: 'stadium-structure', position: [-2490, 0, -3670] as [number, number, number] },
+      { id: 'rear-campus-void-courtyard-monument', layer: 'stadium-structure', position: [-1971, 0, -2894] as [number, number, number] },
+      { id: 'rear-campus-linked-mini-skyline', layer: 'stadium-structure', position: [-2537, 0, -4977] as [number, number, number] },
+      { id: 'rear-campus-titan-frame-gate', layer: 'stadium-structure', position: [-682, 0, 396] as [number, number, number] },
+      { id: 'rear-campus-linear-civic-terrace', layer: 'stadium-structure', position: [-1684, 0, -1430] as [number, number, number] },
+      { id: 'rear-campus-bridge-linked-campus', layer: 'stadium-structure', position: [-1343, 0, -3449] as [number, number, number] },
+      { id: 'rear-campus-petal-tower', layer: 'stadium-structure', position: [2340, 0, -4577] as [number, number, number] },
+      { id: 'rear-campus-helix-spire', layer: 'stadium-structure', position: [2439, 0, -1432] as [number, number, number] },
+      { id: 'rear-campus-grand-prism-citadel', layer: 'stadium-structure', position: [-1033, 0, -1902] as [number, number, number] },
+      { id: 'rear-campus-split-wall-gate', layer: 'stadium-structure', position: [-836, 0, -1427] as [number, number, number] },
+      { id: 'rear-campus-terrace-signal-court', layer: 'stadium-structure', position: [-864, 0, -936] as [number, number, number] },
+      { id: 'rear-campus-needle-crown-skyscraper', layer: 'stadium-structure', position: [892, 0, -611] as [number, number, number] },
+      { id: 'rear-campus-sky-slab-tower', layer: 'stadium-structure', position: [1087, 0, -1329] as [number, number, number] },
+      { id: 'rear-campus-twin-void-monolith', layer: 'stadium-structure', position: [1340, 0, -3242] as [number, number, number] },
       { id: 'stadium-bowl', layer: 'stadium-structure', position: [0, 0, campusCenterZ - 1520] as [number, number, number] },
       { id: 'stadium-axis-center-1180', layer: 'stadium-structure', position: [0, 0, 1180] as [number, number, number] },
       { id: 'stadium-axis-center-1608', layer: 'stadium-structure', position: [0, 0, 1608] as [number, number, number] },
@@ -77,7 +128,7 @@ export function ExpoRearCampus({
         window.__WARPALA_EXPO_INSPECT_SOURCES__.stadium = [];
       }
     };
-  }, [campusCenterZ, filteredStadiumForecourts, filteredStadiumSidePavilions, stadiumLandmarkTowers]);
+  }, [campusCenterZ, filteredStadiumForecourts, filteredStadiumLandmarkTowers, filteredStadiumSidePavilions]);
 
   return (
     <group name="expo-rear-campus">
@@ -85,13 +136,25 @@ export function ExpoRearCampus({
         <planeGeometry args={[1180, 2760]} />
         <ExpoRuntimeSurfaceMaterial fallbackColor="#e4ebf1" repeat={[2.4, 7.8]} surface="paver" />
       </mesh>
-      <mesh position={[0, 0.02, campusCenterZ]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-        <planeGeometry args={[6200, 4400]} />
+      <mesh position={[-220, 0.02, campusCenterZ - 120]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+        <planeGeometry args={[7600, 5600]} />
         <ExpoRuntimeSurfaceMaterial fallbackColor="#edf3f8" repeat={[11.2, 8.2]} surface="concrete" />
       </mesh>
       <mesh position={[0, 0.024, campusCenterZ + 820]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
         <planeGeometry args={[2600, 1500]} />
         <ExpoRuntimeSurfaceMaterial fallbackColor="#f6fafc" repeat={[5.2, 3.2]} surface="concrete" />
+      </mesh>
+      <mesh position={[1016, 0.03, -466]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+        <planeGeometry args={[720, 520]} />
+        <ExpoRuntimeSurfaceMaterial fallbackColor="#eef4f8" repeat={[2.8, 2.2]} surface="concrete" />
+      </mesh>
+      <mesh position={[920, 0.03, -930]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+        <planeGeometry args={[980, 760]} />
+        <ExpoRuntimeSurfaceMaterial fallbackColor="#edf3f7" repeat={[3.4, 2.8]} surface="concrete" />
+      </mesh>
+      <mesh position={[-1272, 0.03, -1042]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+        <planeGeometry args={[860, 620]} />
+        <ExpoRuntimeSurfaceMaterial fallbackColor="#eef4f8" repeat={[3.0, 2.4]} surface="concrete" />
       </mesh>
       <mesh position={[0, 5.2, routeEndZ]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
         <planeGeometry args={[1240, 220]} />
@@ -104,6 +167,38 @@ export function ExpoRearCampus({
       <mesh position={[0, 6.34, campusCenterZ + 980]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
         <planeGeometry args={[1960, 640]} />
         <ExpoRuntimeSurfaceMaterial fallbackColor="#d8e4ec" repeat={[4.2, 1.8]} surface="paver" />
+      </mesh>
+      <mesh position={[0, 0.026, campusPerimeterCenterZ]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+        <planeGeometry args={[campusPerimeterHalfWidth * 2, campusPerimeterDepth]} />
+        <ExpoRuntimeSurfaceMaterial fallbackColor="#edf3f8" repeat={[11.6, 8.6]} surface="concrete" />
+      </mesh>
+      <mesh position={[0, 16, campusPerimeterRearZ]} receiveShadow>
+        <boxGeometry args={[campusPerimeterHalfWidth * 2, 32, 20]} />
+        <meshStandardMaterial color="#d5e0e8" emissive={accent} emissiveIntensity={0.04} roughness={0.7} metalness={0.05} />
+      </mesh>
+      <mesh position={[-campusPerimeterHalfWidth, 15, campusPerimeterCenterZ]} receiveShadow>
+        <boxGeometry args={[18, 30, campusPerimeterDepth]} />
+        <meshStandardMaterial color="#dde8ef" emissive={accent} emissiveIntensity={0.04} roughness={0.7} metalness={0.05} />
+      </mesh>
+      <mesh position={[campusPerimeterHalfWidth, 15, campusPerimeterCenterZ]} receiveShadow>
+        <boxGeometry args={[18, 30, campusPerimeterDepth]} />
+        <meshStandardMaterial color="#dde8ef" emissive={accent} emissiveIntensity={0.04} roughness={0.7} metalness={0.05} />
+      </mesh>
+      <mesh name="stadium-structure:rear-campus-front-left-connector" position={[-2390, 16, campusPerimeterFrontZ]} receiveShadow>
+        <boxGeometry args={[1340, 32, 18]} />
+        <meshStandardMaterial color="#dde8ef" emissive={accent} emissiveIntensity={0.04} roughness={0.7} metalness={0.05} />
+      </mesh>
+      <mesh name="stadium-structure:rear-campus-front-left-connector-cap" position={[-2390, 33, campusPerimeterFrontZ]} receiveShadow>
+        <boxGeometry args={[1220, 2, 4]} />
+        <meshStandardMaterial color="#f4fbff" emissive={accent} emissiveIntensity={0.08} roughness={0.56} metalness={0.06} />
+      </mesh>
+      <mesh name="stadium-structure:rear-campus-front-right-connector" position={[2390, 16, campusPerimeterFrontZ]} receiveShadow>
+        <boxGeometry args={[1340, 32, 18]} />
+        <meshStandardMaterial color="#dde8ef" emissive={accent} emissiveIntensity={0.04} roughness={0.7} metalness={0.05} />
+      </mesh>
+      <mesh name="stadium-structure:rear-campus-front-right-connector-cap" position={[2390, 33, campusPerimeterFrontZ]} receiveShadow>
+        <boxGeometry args={[1220, 2, 4]} />
+        <meshStandardMaterial color="#f4fbff" emissive={accent} emissiveIntensity={0.08} roughness={0.56} metalness={0.06} />
       </mesh>
       {filteredStadiumForecourts.map((plane) => (
         <mesh key={plane.id} position={plane.position} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
@@ -140,8 +235,478 @@ export function ExpoRearCampus({
         enableHeavyShadows={enableHeavyShadows}
         screenFeeds={stadiumScreenFeeds}
         sidePavilions={filteredStadiumSidePavilions}
-        towers={stadiumLandmarkTowers}
+        towers={filteredStadiumLandmarkTowers}
       />
+      <group name="stadium-structure:rear-campus-stage-monolith-canopy" position={[47, 0, -3018]}>
+        <mesh position={[0, 10, 0]} receiveShadow>
+          <boxGeometry args={[564, 16, 176]} />
+          <meshStandardMaterial color="#d5e0e8" roughness={0.74} metalness={0.04} emissive={accent} emissiveIntensity={0.025} />
+        </mesh>
+        <mesh position={[0, 28, 0]} receiveShadow>
+          <boxGeometry args={[316, 12, 84]} />
+          <meshStandardMaterial color="#eef4f8" roughness={0.62} metalness={0.06} emissive={accent} emissiveIntensity={0.05} />
+        </mesh>
+        <mesh position={[-164, 116, 0]} castShadow={enableHeavyShadows} receiveShadow>
+          <boxGeometry args={[52, 232, 36]} />
+          <meshStandardMaterial color="#cad8e2" roughness={0.7} metalness={0.05} emissive={accent} emissiveIntensity={0.04} />
+        </mesh>
+        <mesh position={[164, 116, 0]} castShadow={enableHeavyShadows} receiveShadow>
+          <boxGeometry args={[52, 232, 36]} />
+          <meshStandardMaterial color="#cad8e2" roughness={0.7} metalness={0.05} emissive={accent} emissiveIntensity={0.04} />
+        </mesh>
+        <mesh position={[0, 212, 0]} castShadow={enableHeavyShadows} receiveShadow>
+          <boxGeometry args={[428, 18, 52]} />
+          <meshStandardMaterial color="#f3f7fa" roughness={0.56} metalness={0.06} emissive={accent} emissiveIntensity={0.07} />
+        </mesh>
+        <mesh position={[0, 126, 0]} castShadow={enableHeavyShadows} receiveShadow>
+          <boxGeometry args={[86, 164, 58]} />
+          <meshStandardMaterial color="#91a6b4" roughness={0.66} metalness={0.05} emissive={accent} emissiveIntensity={0.08} />
+        </mesh>
+        <mesh position={[0, 244, 0]} castShadow={enableHeavyShadows} receiveShadow>
+          <boxGeometry args={[126, 14, 28]} />
+          <meshStandardMaterial color="#eef4f8" roughness={0.58} metalness={0.06} emissive={accent} emissiveIntensity={0.08} />
+        </mesh>
+        <mesh position={[-108, 34, 0]} castShadow={enableHeavyShadows} receiveShadow>
+          <boxGeometry args={[48, 18, 48]} />
+          <meshStandardMaterial color="#f3f7fa" roughness={0.62} metalness={0.04} emissive={accent} emissiveIntensity={0.04} />
+        </mesh>
+        <mesh position={[108, 34, 0]} castShadow={enableHeavyShadows} receiveShadow>
+          <boxGeometry args={[48, 18, 48]} />
+          <meshStandardMaterial color="#f3f7fa" roughness={0.62} metalness={0.04} emissive={accent} emissiveIntensity={0.04} />
+        </mesh>
+      </group>
+      <group name="stadium-structure:rear-campus-mega-civic-hall" position={[-2490, 0, -3670]}>
+        <mesh position={[0, 6, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+          <planeGeometry args={[980, 620]} />
+          <ExpoRuntimeSurfaceMaterial fallbackColor="#edf3f7" repeat={[3.8, 2.6]} surface="concrete" />
+        </mesh>
+        <mesh position={[0, 18, 0]} receiveShadow>
+          <boxGeometry args={[724, 28, 324]} />
+          <meshStandardMaterial color="#d8e2ea" roughness={0.74} metalness={0.04} emissive={accent} emissiveIntensity={0.025} />
+        </mesh>
+        <mesh position={[0, 136, 0]} castShadow={enableHeavyShadows} receiveShadow>
+          <boxGeometry args={[428, 236, 196]} />
+          <meshStandardMaterial color="#eef4f8" roughness={0.62} metalness={0.06} emissive={accent} emissiveIntensity={0.05} />
+        </mesh>
+        <mesh position={[-214, 94, 0]} castShadow={enableHeavyShadows} receiveShadow>
+          <boxGeometry args={[152, 152, 142]} />
+          <meshStandardMaterial color="#c8d5df" roughness={0.68} metalness={0.05} emissive={accent} emissiveIntensity={0.04} />
+        </mesh>
+        <mesh position={[214, 94, 0]} castShadow={enableHeavyShadows} receiveShadow>
+          <boxGeometry args={[152, 152, 142]} />
+          <meshStandardMaterial color="#c8d5df" roughness={0.68} metalness={0.05} emissive={accent} emissiveIntensity={0.04} />
+        </mesh>
+        <mesh position={[0, 264, 0]} castShadow={enableHeavyShadows} receiveShadow>
+          <boxGeometry args={[488, 18, 216]} />
+          <meshStandardMaterial color="#f5fbff" roughness={0.54} metalness={0.08} emissive={accent} emissiveIntensity={0.08} />
+        </mesh>
+        <mesh position={[0, 312, -12]} castShadow={enableHeavyShadows} receiveShadow>
+          <boxGeometry args={[292, 56, 118]} />
+          <meshStandardMaterial color="#90a5b3" roughness={0.66} metalness={0.05} emissive={accent} emissiveIntensity={0.07} />
+        </mesh>
+        <mesh position={[0, 346, -88]} castShadow={enableHeavyShadows} receiveShadow>
+          <boxGeometry args={[196, 12, 18]} />
+          <meshStandardMaterial color="#f2f7fb" roughness={0.5} metalness={0.08} emissive={accent} emissiveIntensity={0.1} />
+        </mesh>
+      </group>
+      <group name="stadium-structure:rear-campus-void-courtyard-monument" position={[-1971, 0, -2894]}>
+        <mesh position={[0, 6, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+          <planeGeometry args={[920, 640]} />
+          <ExpoRuntimeSurfaceMaterial fallbackColor="#edf3f7" repeat={[3.4, 2.4]} surface="concrete" />
+        </mesh>
+        <mesh position={[0, 16, 0]} receiveShadow>
+          <boxGeometry args={[612, 22, 348]} />
+          <meshStandardMaterial color="#d9e3ea" roughness={0.74} metalness={0.04} emissive={accent} emissiveIntensity={0.025} />
+        </mesh>
+        <mesh position={[-188, 188, 0]} castShadow={enableHeavyShadows} receiveShadow>
+          <boxGeometry args={[144, 376, 132]} />
+          <meshStandardMaterial color="#eef4f8" roughness={0.6} metalness={0.06} emissive={accent} emissiveIntensity={0.06} />
+        </mesh>
+        <mesh position={[188, 188, 0]} castShadow={enableHeavyShadows} receiveShadow>
+          <boxGeometry args={[144, 376, 132]} />
+          <meshStandardMaterial color="#c6d3dd" roughness={0.66} metalness={0.05} emissive={accent} emissiveIntensity={0.05} />
+        </mesh>
+        <mesh position={[0, 188, -108]} castShadow={enableHeavyShadows} receiveShadow>
+          <boxGeometry args={[236, 376, 116]} />
+          <meshStandardMaterial color="#d2dee7" roughness={0.64} metalness={0.05} emissive={accent} emissiveIntensity={0.05} />
+        </mesh>
+        <mesh position={[0, 188, 108]} castShadow={enableHeavyShadows} receiveShadow>
+          <boxGeometry args={[236, 376, 116]} />
+          <meshStandardMaterial color="#d2dee7" roughness={0.64} metalness={0.05} emissive={accent} emissiveIntensity={0.05} />
+        </mesh>
+        <mesh position={[0, 386, 0]} castShadow={enableHeavyShadows} receiveShadow>
+          <boxGeometry args={[236, 20, 236]} />
+          <meshStandardMaterial color="#f4f9fc" roughness={0.52} metalness={0.08} emissive={accent} emissiveIntensity={0.09} />
+        </mesh>
+        <mesh position={[0, 92, 0]} castShadow={enableHeavyShadows} receiveShadow>
+          <boxGeometry args={[118, 18, 118]} />
+          <meshStandardMaterial color="#8fa5b2" roughness={0.66} metalness={0.05} emissive={accent} emissiveIntensity={0.08} />
+        </mesh>
+      </group>
+      <group name="stadium-structure:rear-campus-linked-mini-skyline" position={[-2537, 0, -4977]}>
+        <mesh position={[0, 6, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+          <planeGeometry args={[1140, 760]} />
+          <ExpoRuntimeSurfaceMaterial fallbackColor="#edf3f7" repeat={[4.2, 2.8]} surface="concrete" />
+        </mesh>
+        <mesh position={[0, 12, 0]} receiveShadow>
+          <boxGeometry args={[744, 18, 312]} />
+          <meshStandardMaterial color="#d9e3ea" roughness={0.74} metalness={0.04} emissive={accent} emissiveIntensity={0.024} />
+        </mesh>
+        <mesh position={[-286, 102, -38]} castShadow={enableHeavyShadows} receiveShadow>
+          <boxGeometry args={[88, 204, 92]} />
+          <meshStandardMaterial color="#c6d3dd" roughness={0.68} metalness={0.05} emissive={accent} emissiveIntensity={0.04} />
+        </mesh>
+        <mesh position={[-134, 156, 42]} castShadow={enableHeavyShadows} receiveShadow>
+          <boxGeometry args={[102, 312, 96]} />
+          <meshStandardMaterial color="#eef4f8" roughness={0.62} metalness={0.06} emissive={accent} emissiveIntensity={0.05} />
+        </mesh>
+        <mesh position={[28, 222, -8]} castShadow={enableHeavyShadows} receiveShadow>
+          <boxGeometry args={[112, 444, 102]} />
+          <meshStandardMaterial color="#d5e0e8" roughness={0.64} metalness={0.05} emissive={accent} emissiveIntensity={0.05} />
+        </mesh>
+        <mesh position={[188, 176, 36]} castShadow={enableHeavyShadows} receiveShadow>
+          <boxGeometry args={[94, 352, 94]} />
+          <meshStandardMaterial color="#eef4f8" roughness={0.6} metalness={0.06} emissive={accent} emissiveIntensity={0.05} />
+        </mesh>
+        <mesh position={[336, 124, -22]} castShadow={enableHeavyShadows} receiveShadow>
+          <boxGeometry args={[82, 248, 88]} />
+          <meshStandardMaterial color="#c4d2dc" roughness={0.66} metalness={0.05} emissive={accent} emissiveIntensity={0.04} />
+        </mesh>
+        <mesh position={[-206, 214, 2]} castShadow={enableHeavyShadows} receiveShadow>
+          <boxGeometry args={[138, 16, 34]} />
+          <meshStandardMaterial color="#f4f9fc" roughness={0.54} metalness={0.08} emissive={accent} emissiveIntensity={0.08} />
+        </mesh>
+        <mesh position={[106, 286, 10]} castShadow={enableHeavyShadows} receiveShadow>
+          <boxGeometry args={[168, 16, 36]} />
+          <meshStandardMaterial color="#f4f9fc" roughness={0.54} metalness={0.08} emissive={accent} emissiveIntensity={0.08} />
+        </mesh>
+        <mesh position={[260, 186, 6]} castShadow={enableHeavyShadows} receiveShadow>
+          <boxGeometry args={[120, 14, 32]} />
+          <meshStandardMaterial color="#f1f7fa" roughness={0.56} metalness={0.06} emissive={accent} emissiveIntensity={0.07} />
+        </mesh>
+        <mesh position={[-56, 54, 0]} castShadow={enableHeavyShadows} receiveShadow>
+          <boxGeometry args={[96, 18, 72]} />
+          <meshStandardMaterial color="#90a5b2" roughness={0.66} metalness={0.05} emissive={accent} emissiveIntensity={0.08} />
+        </mesh>
+        <mesh position={[154, 54, -12]} castShadow={enableHeavyShadows} receiveShadow>
+          <boxGeometry args={[82, 16, 58]} />
+          <meshStandardMaterial color="#90a5b2" roughness={0.66} metalness={0.05} emissive={accent} emissiveIntensity={0.08} />
+        </mesh>
+      </group>
+      <group name="stadium-structure:rear-campus-titan-frame-gate" position={[-682, 0, 396]}>
+        <mesh position={[0, 8, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+          <planeGeometry args={[760, 420]} />
+          <ExpoRuntimeSurfaceMaterial fallbackColor="#edf3f7" repeat={[2.8, 1.8]} surface="concrete" />
+        </mesh>
+        <mesh position={[0, 16, 0]} receiveShadow>
+          <boxGeometry args={[412, 20, 146]} />
+          <meshStandardMaterial color="#d9e3ea" roughness={0.74} metalness={0.04} emissive={accent} emissiveIntensity={0.024} />
+        </mesh>
+        <mesh position={[-188, 204, 0]} castShadow={enableHeavyShadows} receiveShadow>
+          <boxGeometry args={[56, 408, 52]} />
+          <meshStandardMaterial color="#c7d4de" roughness={0.68} metalness={0.05} emissive={accent} emissiveIntensity={0.04} />
+        </mesh>
+        <mesh position={[188, 204, 0]} castShadow={enableHeavyShadows} receiveShadow>
+          <boxGeometry args={[56, 408, 52]} />
+          <meshStandardMaterial color="#c7d4de" roughness={0.68} metalness={0.05} emissive={accent} emissiveIntensity={0.04} />
+        </mesh>
+        <mesh position={[0, 404, 0]} castShadow={enableHeavyShadows} receiveShadow>
+          <boxGeometry args={[468, 20, 58]} />
+          <meshStandardMaterial color="#f5fbff" roughness={0.54} metalness={0.08} emissive={accent} emissiveIntensity={0.08} />
+        </mesh>
+        <mesh position={[0, 142, 0]} castShadow={enableHeavyShadows} receiveShadow>
+          <boxGeometry args={[96, 124, 34]} />
+          <meshStandardMaterial color="#92a6b4" roughness={0.66} metalness={0.05} emissive={accent} emissiveIntensity={0.07} />
+        </mesh>
+      </group>
+      <group name="stadium-structure:rear-campus-linear-civic-terrace" position={[-1684, 0, -1430]}>
+        <mesh position={[0, 5, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+          <planeGeometry args={[1080, 440]} />
+          <ExpoRuntimeSurfaceMaterial fallbackColor="#edf3f7" repeat={[3.8, 1.8]} surface="concrete" />
+        </mesh>
+        <mesh position={[0, 10, 0]} receiveShadow>
+          <boxGeometry args={[868, 16, 188]} />
+          <meshStandardMaterial color="#dbe5ec" roughness={0.74} metalness={0.04} emissive={accent} emissiveIntensity={0.024} />
+        </mesh>
+        <mesh position={[0, 24, 0]} receiveShadow>
+          <boxGeometry args={[656, 12, 124]} />
+          <meshStandardMaterial color="#eef4f8" roughness={0.64} metalness={0.05} emissive={accent} emissiveIntensity={0.04} />
+        </mesh>
+        <mesh position={[0, 42, 0]} receiveShadow>
+          <boxGeometry args={[428, 10, 86]} />
+          <meshStandardMaterial color="#f4f9fc" roughness={0.56} metalness={0.06} emissive={accent} emissiveIntensity={0.06} />
+        </mesh>
+        <mesh position={[-318, 22, 0]} castShadow={enableHeavyShadows} receiveShadow>
+          <boxGeometry args={[64, 32, 64]} />
+          <meshStandardMaterial color="#f1f6fa" roughness={0.6} metalness={0.04} emissive={accent} emissiveIntensity={0.04} />
+        </mesh>
+        <mesh position={[318, 22, 0]} castShadow={enableHeavyShadows} receiveShadow>
+          <boxGeometry args={[64, 32, 64]} />
+          <meshStandardMaterial color="#f1f6fa" roughness={0.6} metalness={0.04} emissive={accent} emissiveIntensity={0.04} />
+        </mesh>
+        <mesh position={[0, 86, 0]} castShadow={enableHeavyShadows} receiveShadow>
+          <boxGeometry args={[34, 132, 34]} />
+          <meshStandardMaterial color="#8ea4b2" roughness={0.66} metalness={0.05} emissive={accent} emissiveIntensity={0.08} />
+        </mesh>
+      </group>
+      <group name="stadium-structure:rear-campus-bridge-linked-campus" position={[-1343, 0, -3449]}>
+        <mesh position={[0, 6, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+          <planeGeometry args={[1040, 620]} />
+          <ExpoRuntimeSurfaceMaterial fallbackColor="#edf3f7" repeat={[3.6, 2.2]} surface="concrete" />
+        </mesh>
+        <mesh position={[-214, 116, -24]} castShadow={enableHeavyShadows} receiveShadow>
+          <boxGeometry args={[176, 228, 132]} />
+          <meshStandardMaterial color="#c8d5df" roughness={0.68} metalness={0.05} emissive={accent} emissiveIntensity={0.04} />
+        </mesh>
+        <mesh position={[0, 176, 0]} castShadow={enableHeavyShadows} receiveShadow>
+          <boxGeometry args={[224, 348, 154]} />
+          <meshStandardMaterial color="#eef4f8" roughness={0.62} metalness={0.06} emissive={accent} emissiveIntensity={0.05} />
+        </mesh>
+        <mesh position={[236, 134, 28]} castShadow={enableHeavyShadows} receiveShadow>
+          <boxGeometry args={[188, 264, 136]} />
+          <meshStandardMaterial color="#d5e0e8" roughness={0.64} metalness={0.05} emissive={accent} emissiveIntensity={0.05} />
+        </mesh>
+        <mesh position={[-108, 228, -8]} castShadow={enableHeavyShadows} receiveShadow>
+          <boxGeometry args={[192, 18, 54]} />
+          <meshStandardMaterial color="#f4f9fc" roughness={0.54} metalness={0.08} emissive={accent} emissiveIntensity={0.08} />
+        </mesh>
+        <mesh position={[118, 264, 8]} castShadow={enableHeavyShadows} receiveShadow>
+          <boxGeometry args={[208, 18, 54]} />
+          <meshStandardMaterial color="#f4f9fc" roughness={0.54} metalness={0.08} emissive={accent} emissiveIntensity={0.08} />
+        </mesh>
+        <mesh position={[0, 72, 0]} castShadow={enableHeavyShadows} receiveShadow>
+          <boxGeometry args={[128, 18, 42]} />
+          <meshStandardMaterial color="#90a5b2" roughness={0.66} metalness={0.05} emissive={accent} emissiveIntensity={0.08} />
+        </mesh>
+      </group>
+      <group name="stadium-structure:rear-campus-petal-tower" position={[2340, 0, -4577]}>
+        <mesh position={[0, 6, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+          <planeGeometry args={[560, 560]} />
+          <ExpoRuntimeSurfaceMaterial fallbackColor="#edf3f7" repeat={[2.2, 2.2]} surface="concrete" />
+        </mesh>
+        <mesh position={[0, 12, 0]} receiveShadow>
+          <cylinderGeometry args={[98, 118, 20, 32]} />
+          <meshStandardMaterial color="#d9e3ea" roughness={0.74} metalness={0.04} emissive={accent} emissiveIntensity={0.024} />
+        </mesh>
+        <mesh position={[0, 262, 0]} castShadow={enableHeavyShadows} receiveShadow>
+          <cylinderGeometry args={[34, 46, 524, 28]} />
+          <meshStandardMaterial color="#eef4f8" roughness={0.6} metalness={0.06} emissive={accent} emissiveIntensity={0.06} />
+        </mesh>
+        <mesh position={[0, 198, 56]} rotation={[0.18, 0, 0]} castShadow={enableHeavyShadows} receiveShadow>
+          <cylinderGeometry args={[18, 34, 336, 20]} />
+          <meshStandardMaterial color="#c9d6e0" roughness={0.64} metalness={0.05} emissive={accent} emissiveIntensity={0.05} />
+        </mesh>
+        <mesh position={[48, 214, -20]} rotation={[0.08, 0, -0.72]} castShadow={enableHeavyShadows} receiveShadow>
+          <cylinderGeometry args={[16, 30, 372, 20]} />
+          <meshStandardMaterial color="#d4dfe7" roughness={0.64} metalness={0.05} emissive={accent} emissiveIntensity={0.05} />
+        </mesh>
+        <mesh position={[-46, 208, -26]} rotation={[0.08, 0, 0.72]} castShadow={enableHeavyShadows} receiveShadow>
+          <cylinderGeometry args={[16, 30, 356, 20]} />
+          <meshStandardMaterial color="#d4dfe7" roughness={0.64} metalness={0.05} emissive={accent} emissiveIntensity={0.05} />
+        </mesh>
+        <mesh position={[0, 472, 0]} castShadow={enableHeavyShadows} receiveShadow>
+          <cylinderGeometry args={[14, 22, 96, 20]} />
+          <meshStandardMaterial color="#f4f9fc" roughness={0.5} metalness={0.08} emissive={accent} emissiveIntensity={0.1} />
+        </mesh>
+        <mesh position={[0, 548, 0]} castShadow={enableHeavyShadows} receiveShadow>
+          <sphereGeometry args={[26, 20, 20]} />
+          <meshStandardMaterial color="#f7fcff" roughness={0.42} metalness={0.12} emissive={accent} emissiveIntensity={0.14} />
+        </mesh>
+      </group>
+      <group name="stadium-structure:rear-campus-helix-spire" position={[2439, 0, -1432]}>
+        <mesh position={[0, 6, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+          <planeGeometry args={[620, 620]} />
+          <ExpoRuntimeSurfaceMaterial fallbackColor="#edf3f7" repeat={[2.4, 2.4]} surface="concrete" />
+        </mesh>
+        <mesh position={[0, 12, 0]} receiveShadow>
+          <cylinderGeometry args={[112, 132, 20, 36]} />
+          <meshStandardMaterial color="#d9e3ea" roughness={0.74} metalness={0.04} emissive={accent} emissiveIntensity={0.024} />
+        </mesh>
+        <mesh position={[0, 312, 0]} castShadow={enableHeavyShadows} receiveShadow>
+          <cylinderGeometry args={[26, 42, 624, 24]} />
+          <meshStandardMaterial color="#eef4f8" roughness={0.58} metalness={0.08} emissive={accent} emissiveIntensity={0.06} />
+        </mesh>
+        <mesh position={[0, 112, 0]} rotation={[0.08, 0, 0.42]} castShadow={enableHeavyShadows} receiveShadow>
+          <boxGeometry args={[228, 14, 22]} />
+          <meshStandardMaterial color="#f4f9fc" roughness={0.52} metalness={0.1} emissive={accent} emissiveIntensity={0.09} />
+        </mesh>
+        <mesh position={[0, 212, 0]} rotation={[0.08, 0, 1.08]} castShadow={enableHeavyShadows} receiveShadow>
+          <boxGeometry args={[252, 14, 22]} />
+          <meshStandardMaterial color="#d3dee6" roughness={0.56} metalness={0.08} emissive={accent} emissiveIntensity={0.08} />
+        </mesh>
+        <mesh position={[0, 318, 0]} rotation={[0.08, 0, 1.82]} castShadow={enableHeavyShadows} receiveShadow>
+          <boxGeometry args={[272, 14, 22]} />
+          <meshStandardMaterial color="#f4f9fc" roughness={0.52} metalness={0.1} emissive={accent} emissiveIntensity={0.09} />
+        </mesh>
+        <mesh position={[0, 426, 0]} rotation={[0.08, 0, 2.46]} castShadow={enableHeavyShadows} receiveShadow>
+          <boxGeometry args={[246, 14, 22]} />
+          <meshStandardMaterial color="#d3dee6" roughness={0.56} metalness={0.08} emissive={accent} emissiveIntensity={0.08} />
+        </mesh>
+        <mesh position={[0, 536, 0]} rotation={[0.08, 0, 3.1]} castShadow={enableHeavyShadows} receiveShadow>
+          <boxGeometry args={[214, 12, 20]} />
+          <meshStandardMaterial color="#f4f9fc" roughness={0.52} metalness={0.1} emissive={accent} emissiveIntensity={0.1} />
+        </mesh>
+        <mesh position={[0, 676, 0]} castShadow={enableHeavyShadows} receiveShadow>
+          <cylinderGeometry args={[8, 16, 172, 18]} />
+          <meshStandardMaterial color="#93a8b5" roughness={0.56} metalness={0.1} emissive={accent} emissiveIntensity={0.1} />
+        </mesh>
+        <mesh position={[0, 784, 0]} castShadow={enableHeavyShadows} receiveShadow>
+          <octahedronGeometry args={[28, 0]} />
+          <meshStandardMaterial color="#f7fcff" roughness={0.4} metalness={0.14} emissive={accent} emissiveIntensity={0.16} />
+        </mesh>
+      </group>
+      <group name="stadium-structure:rear-campus-grand-prism-citadel" position={[-1033, 0, -1902]}>
+        <mesh position={[0, 14, 0]} receiveShadow>
+          <boxGeometry args={[596, 20, 224]} />
+          <meshStandardMaterial color="#d8e2ea" roughness={0.74} metalness={0.04} emissive={accent} emissiveIntensity={0.025} />
+        </mesh>
+        <mesh position={[-118, 176, -16]} rotation={[0, 0, -0.12]} castShadow={enableHeavyShadows} receiveShadow>
+          <boxGeometry args={[114, 352, 72]} />
+          <meshStandardMaterial color="#c6d4de" roughness={0.68} metalness={0.05} emissive={accent} emissiveIntensity={0.04} />
+        </mesh>
+        <mesh position={[34, 228, 18]} rotation={[0, 0, 0.08]} castShadow={enableHeavyShadows} receiveShadow>
+          <boxGeometry args={[126, 456, 84]} />
+          <meshStandardMaterial color="#edf4f8" roughness={0.62} metalness={0.06} emissive={accent} emissiveIntensity={0.06} />
+        </mesh>
+        <mesh position={[172, 142, 6]} rotation={[0, 0, 0.2]} castShadow={enableHeavyShadows} receiveShadow>
+          <boxGeometry args={[68, 284, 52]} />
+          <meshStandardMaterial color="#b9c9d5" roughness={0.66} metalness={0.05} emissive={accent} emissiveIntensity={0.05} />
+        </mesh>
+      </group>
+      <group name="stadium-structure:rear-campus-split-wall-gate" position={[-836, 0, -1427]}>
+        <mesh position={[0, 10, 0]} receiveShadow>
+          <boxGeometry args={[548, 16, 192]} />
+          <meshStandardMaterial color="#d9e3ea" roughness={0.74} metalness={0.04} emissive={accent} emissiveIntensity={0.025} />
+        </mesh>
+        <mesh position={[-124, 188, 0]} castShadow={enableHeavyShadows} receiveShadow>
+          <boxGeometry args={[84, 376, 42]} />
+          <meshStandardMaterial color="#c5d3dd" roughness={0.68} metalness={0.05} emissive={accent} emissiveIntensity={0.04} />
+        </mesh>
+        <mesh position={[124, 206, 0]} castShadow={enableHeavyShadows} receiveShadow>
+          <boxGeometry args={[92, 412, 44]} />
+          <meshStandardMaterial color="#eef4f8" roughness={0.62} metalness={0.06} emissive={accent} emissiveIntensity={0.06} />
+        </mesh>
+        <mesh position={[0, 72, 0]} castShadow={enableHeavyShadows} receiveShadow>
+          <boxGeometry args={[188, 28, 28]} />
+          <meshStandardMaterial color="#91a6b3" roughness={0.66} metalness={0.05} emissive={accent} emissiveIntensity={0.07} />
+        </mesh>
+      </group>
+      <group name="stadium-structure:rear-campus-terrace-signal-court" position={[-864, 0, -936]}>
+        <mesh position={[0, 8, 0]} receiveShadow>
+          <boxGeometry args={[404, 14, 132]} />
+          <meshStandardMaterial color="#dbe5ec" roughness={0.74} metalness={0.04} emissive={accent} emissiveIntensity={0.025} />
+        </mesh>
+        <mesh position={[0, 20, 0]} receiveShadow>
+          <boxGeometry args={[276, 10, 84]} />
+          <meshStandardMaterial color="#eef4f8" roughness={0.64} metalness={0.05} emissive={accent} emissiveIntensity={0.04} />
+        </mesh>
+        <mesh position={[0, 68, 0]} castShadow={enableHeavyShadows} receiveShadow>
+          <boxGeometry args={[34, 120, 34]} />
+          <meshStandardMaterial color="#8fa5b3" roughness={0.68} metalness={0.05} emissive={accent} emissiveIntensity={0.08} />
+        </mesh>
+        <mesh position={[-104, 32, 0]} castShadow={enableHeavyShadows} receiveShadow>
+          <boxGeometry args={[40, 24, 40]} />
+          <meshStandardMaterial color="#f0f5f8" roughness={0.62} metalness={0.04} emissive={accent} emissiveIntensity={0.04} />
+        </mesh>
+        <mesh position={[104, 32, 0]} castShadow={enableHeavyShadows} receiveShadow>
+          <boxGeometry args={[40, 24, 40]} />
+          <meshStandardMaterial color="#f0f5f8" roughness={0.62} metalness={0.04} emissive={accent} emissiveIntensity={0.04} />
+        </mesh>
+      </group>
+      <group name="stadium-structure:rear-campus-needle-crown-skyscraper" position={[892, 0, -611]}>
+        <mesh position={[0, 4, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+          <planeGeometry args={[420, 300]} />
+          <ExpoRuntimeSurfaceMaterial fallbackColor="#edf3f7" repeat={[1.8, 1.4]} surface="concrete" />
+        </mesh>
+        <mesh position={[0, 12, 0]} receiveShadow>
+          <boxGeometry args={[188, 18, 128]} />
+          <meshStandardMaterial color="#d9e3ea" roughness={0.74} metalness={0.04} emissive={accent} emissiveIntensity={0.024} />
+        </mesh>
+        <mesh position={[0, 172, 0]} castShadow={enableHeavyShadows} receiveShadow>
+          <boxGeometry args={[84, 344, 52]} />
+          <meshStandardMaterial color="#eef4f8" roughness={0.62} metalness={0.06} emissive={accent} emissiveIntensity={0.05} />
+        </mesh>
+        <mesh position={[0, 396, 0]} castShadow={enableHeavyShadows} receiveShadow>
+          <boxGeometry args={[58, 104, 34]} />
+          <meshStandardMaterial color="#c8d6e0" roughness={0.66} metalness={0.05} emissive={accent} emissiveIntensity={0.06} />
+        </mesh>
+        <mesh position={[0, 574, 0]} castShadow={enableHeavyShadows} receiveShadow>
+          <cylinderGeometry args={[8, 12, 252, 16]} />
+          <meshStandardMaterial color="#94a8b5" roughness={0.58} metalness={0.08} emissive={accent} emissiveIntensity={0.08} />
+        </mesh>
+        <mesh position={[0, 722, 0]} castShadow={enableHeavyShadows} receiveShadow>
+          <octahedronGeometry args={[26, 0]} />
+          <meshStandardMaterial color="#f5fbff" roughness={0.42} metalness={0.12} emissive={accent} emissiveIntensity={0.12} />
+        </mesh>
+        <mesh position={[-34, 442, 0]} castShadow={enableHeavyShadows} receiveShadow>
+          <boxGeometry args={[12, 96, 12]} />
+          <meshStandardMaterial color="#eef4f8" roughness={0.6} metalness={0.05} emissive={accent} emissiveIntensity={0.05} />
+        </mesh>
+        <mesh position={[34, 458, 0]} castShadow={enableHeavyShadows} receiveShadow>
+          <boxGeometry args={[12, 128, 12]} />
+          <meshStandardMaterial color="#eef4f8" roughness={0.6} metalness={0.05} emissive={accent} emissiveIntensity={0.05} />
+        </mesh>
+      </group>
+      <group name="stadium-structure:rear-campus-sky-slab-tower" position={[1087, 0, -1329]}>
+        <mesh position={[0, 4, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+          <planeGeometry args={[520, 340]} />
+          <ExpoRuntimeSurfaceMaterial fallbackColor="#eef4f8" repeat={[2.2, 1.6]} surface="concrete" />
+        </mesh>
+        <mesh position={[0, 10, 0]} receiveShadow>
+          <boxGeometry args={[224, 16, 136]} />
+          <meshStandardMaterial color="#d9e3ea" roughness={0.74} metalness={0.04} emissive={accent} emissiveIntensity={0.024} />
+        </mesh>
+        <mesh position={[0, 156, 0]} castShadow={enableHeavyShadows} receiveShadow>
+          <boxGeometry args={[72, 312, 46]} />
+          <meshStandardMaterial color="#eef4f8" roughness={0.62} metalness={0.06} emissive={accent} emissiveIntensity={0.05} />
+        </mesh>
+        <mesh position={[0, 286, 20]} castShadow={enableHeavyShadows} receiveShadow>
+          <boxGeometry args={[168, 18, 96]} />
+          <meshStandardMaterial color="#f3f7fa" roughness={0.56} metalness={0.06} emissive={accent} emissiveIntensity={0.07} />
+        </mesh>
+        <mesh position={[0, 438, -12]} castShadow={enableHeavyShadows} receiveShadow>
+          <boxGeometry args={[212, 20, 112]} />
+          <meshStandardMaterial color="#dde8ef" roughness={0.58} metalness={0.06} emissive={accent} emissiveIntensity={0.08} />
+        </mesh>
+        <mesh position={[0, 592, 14]} castShadow={enableHeavyShadows} receiveShadow>
+          <boxGeometry args={[156, 16, 88]} />
+          <meshStandardMaterial color="#f5fbff" roughness={0.52} metalness={0.08} emissive={accent} emissiveIntensity={0.09} />
+        </mesh>
+        <mesh position={[0, 694, 0]} castShadow={enableHeavyShadows} receiveShadow>
+          <boxGeometry args={[40, 172, 24]} />
+          <meshStandardMaterial color="#97aab7" roughness={0.62} metalness={0.06} emissive={accent} emissiveIntensity={0.08} />
+        </mesh>
+      </group>
+      <group name="stadium-structure:rear-campus-twin-void-monolith" position={[1340, 0, -3242]}>
+        <mesh position={[0, 4, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+          <planeGeometry args={[560, 360]} />
+          <ExpoRuntimeSurfaceMaterial fallbackColor="#edf3f7" repeat={[2.4, 1.8]} surface="concrete" />
+        </mesh>
+        <mesh position={[0, 12, 0]} receiveShadow>
+          <boxGeometry args={[276, 18, 168]} />
+          <meshStandardMaterial color="#d8e2ea" roughness={0.74} metalness={0.04} emissive={accent} emissiveIntensity={0.024} />
+        </mesh>
+        <mesh position={[-82, 244, 0]} castShadow={enableHeavyShadows} receiveShadow>
+          <boxGeometry args={[72, 488, 44]} />
+          <meshStandardMaterial color="#eef4f8" roughness={0.6} metalness={0.06} emissive={accent} emissiveIntensity={0.06} />
+        </mesh>
+        <mesh position={[82, 232, 0]} castShadow={enableHeavyShadows} receiveShadow>
+          <boxGeometry args={[64, 464, 44]} />
+          <meshStandardMaterial color="#c6d3dd" roughness={0.66} metalness={0.05} emissive={accent} emissiveIntensity={0.05} />
+        </mesh>
+        <mesh position={[0, 92, 0]} castShadow={enableHeavyShadows} receiveShadow>
+          <boxGeometry args={[92, 18, 30]} />
+          <meshStandardMaterial color="#91a6b3" roughness={0.66} metalness={0.05} emissive={accent} emissiveIntensity={0.08} />
+        </mesh>
+        <mesh position={[0, 494, 0]} castShadow={enableHeavyShadows} receiveShadow>
+          <boxGeometry args={[118, 14, 24]} />
+          <meshStandardMaterial color="#f4f8fb" roughness={0.52} metalness={0.08} emissive={accent} emissiveIntensity={0.09} />
+        </mesh>
+        <mesh position={[0, 586, 0]} castShadow={enableHeavyShadows} receiveShadow>
+          <boxGeometry args={[22, 168, 22]} />
+          <meshStandardMaterial color="#9aaeb9" roughness={0.62} metalness={0.06} emissive={accent} emissiveIntensity={0.08} />
+        </mesh>
+      </group>
       <mesh position={[0, 10, 760]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
         <planeGeometry args={[1380, 1880]} />
         <ExpoRuntimeSurfaceMaterial fallbackColor="#edf3f7" repeat={[3.6, 4.2]} surface="concrete" />
