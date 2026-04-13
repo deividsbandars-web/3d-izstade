@@ -29,12 +29,13 @@ function isExpoIgnorablePointerLockError(error: unknown) {
 export default function Expo3D() {
   const [mode, setMode] = useState<ExpoMode>('menu');
   const [debug, setDebug] = useState(EXPO_DEBUG_DEFAULT);
-  const [mobileMoveIntent, setMobileMoveIntent] = useState({ f: false, b: false, l: false, r: false });
+  const [mobileMoveIntent, setMobileMoveIntent] = useState({ f: false, b: false, l: false, r: false, s: false });
   const [devClickTarget, setDevClickTarget] = useState<string | null>(null);
   const [devClickStack, setDevClickStack] = useState<string[]>([]);
   const [devFocusSlug, setDevFocusSlug] = useState<string | null>('__use_url__');
   const [devCenterTarget, setDevCenterTarget] = useState<string | null>(null);
   const [devCenterStack, setDevCenterStack] = useState<string[]>([]);
+  const [markedPoint, setMarkedPoint] = useState<[number, number, number] | null>(null);
   const [devLayerStates, setDevLayerStates] = useState({
     booths: true,
     city: true,
@@ -264,7 +265,12 @@ export default function Expo3D() {
               focusedTier: focusedPlacement?.company?.sponsorTier ?? null,
               inspector,
               layerStates: devLayerStates,
+              markedPoint,
               sectionStates: devSectionStates,
+              onSetMark: () => {
+                const [x, y, z] = playerPos as [number, number, number];
+                setMarkedPoint([x, y, z]);
+              },
               onToggleLayer: (layer) => setDevLayerStates((value) => ({ ...value, [layer]: !value[layer] })),
               onToggleSection: (section) => {
                 setDevSectionStates((value) => ({ ...value, [section]: !value[section] }));

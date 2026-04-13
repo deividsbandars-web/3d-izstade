@@ -449,14 +449,14 @@ function selectVisibleBoothPlacements(
     });
 
     const visibleLimit = district?.expressionMode === 'active-commercial'
-      ? 2
+      ? 4
       : district?.expressionMode === 'calm-dwell'
-        ? 1
+        ? 2
         : district?.expressionMode === 'feature-court'
-          ? 1
+          ? 3
           : district?.expressionMode === 'scenic' || district?.expressionMode === 'satellite' || district?.expressionMode === 'orientation'
-            ? 1
-            : 1;
+            ? 2
+            : 2;
 
     return rankedPlacements.slice(0, Math.min(visibleLimit, rankedPlacements.length));
   });
@@ -2166,6 +2166,7 @@ function CityCollisionLayer({ debug = false }: { debug?: boolean }) {
 
 const PLAYER_RADIUS = 0.92;
 const PLAYER_WALK_SPEED = 66;
+const PLAYER_SPRINT_MULTIPLIER = 1.8;
 
 function Player({
   bounds,
@@ -2177,13 +2178,13 @@ function Player({
 }: {
   bounds: { minX: number; maxX: number; minZ: number; maxZ: number };
   debug?: boolean;
-  mobileMoveIntent?: { f: boolean; b: boolean; l: boolean; r: boolean };
+  mobileMoveIntent?: { f: boolean; b: boolean; l: boolean; r: boolean; s?: boolean };
   mode: ExpoMode;
   onMove: (pos: number[]) => void;
   startView: ExpoStartView;
 }) {
   const { camera, scene } = useThree();
-  const [mov, setMov] = useState({ f: false, b: false, l: false, r: false });
+  const [mov, setMov] = useState({ f: false, b: false, l: false, r: false, s: false });
   const raycaster = useRef(new THREE.Raycaster());
   const desiredMoveVector = useRef(new THREE.Vector3());
   const moveVelocity = useRef(new THREE.Vector3());
@@ -2246,6 +2247,8 @@ function Player({
         case 'KeyS': setMov((value) => ({ ...value, b: true })); break;
         case 'KeyA': setMov((value) => ({ ...value, l: true })); break;
         case 'KeyD': setMov((value) => ({ ...value, r: true })); break;
+        case 'ShiftLeft':
+        case 'ShiftRight': setMov((value) => ({ ...value, s: true })); break;
       }
     };
 
@@ -2255,6 +2258,8 @@ function Player({
         case 'KeyS': setMov((value) => ({ ...value, b: false })); break;
         case 'KeyA': setMov((value) => ({ ...value, l: false })); break;
         case 'KeyD': setMov((value) => ({ ...value, r: false })); break;
+        case 'ShiftLeft':
+        case 'ShiftRight': setMov((value) => ({ ...value, s: false })); break;
       }
     };
 
@@ -2286,7 +2291,8 @@ function Player({
     }
 
     const stableDelta = Math.min(delta, 1 / 90);
-    const speed = PLAYER_WALK_SPEED * stableDelta;
+    const sprintMultiplier = mov.s || mobileMoveIntent?.s ? PLAYER_SPRINT_MULTIPLIER : 1;
+    const speed = PLAYER_WALK_SPEED * sprintMultiplier * stableDelta;
     desiredMoveVector.current.set(0, 0, 0);
 
     if (mov.f || mobileMoveIntent?.f) desiredMoveVector.current.z -= speed;
@@ -2394,7 +2400,7 @@ interface ExpoWorldSceneProps {
   activeZone: any;
   debug: boolean;
   guests: any[];
-  mobileMoveIntent?: { f: boolean; b: boolean; l: boolean; r: boolean };
+  mobileMoveIntent?: { f: boolean; b: boolean; l: boolean; r: boolean; s?: boolean };
   mode: ExpoMode;
   onMove: (pos: number[]) => void;
   runtimeLayerToggles?: {
@@ -2404,6 +2410,8 @@ interface ExpoWorldSceneProps {
     skyline: boolean;
     stadium: boolean;
   };
+  runtimeCaptureSafe?: boolean;
+  runtimeHighlightedTargets?: string[];
   runtimeSectionToggles?: {
     arrival: boolean;
     left: boolean;
@@ -2565,7 +2573,72 @@ function ClickInspector() {
   return null;
 }
 
-export function ExpoWorldScene({ activeZone, debug, guests: _guests, mobileMoveIntent, mode, onMove, runtimeLayerToggles, runtimeSectionToggles, sceneVersion, startViewOverride, worldContract, zoneSystem }: ExpoWorldSceneProps) {
+function TargetBasketHighlighter({ targets }: { targets: string[] }) {
+  const { scene } = useThree();
+
+  useEffect(() => {
+    const originals = new Map<THREE.Material, { emissive?: THREE.Color; emissiveIntensity?: number }>();
+    const activeTargets = new Set(targets);
+
+    const highlightMaterial = (material: THREE.Material) => {
+      const emissiveMaterial = material as THREE.MeshStandardMaterial;
+      if (!('emissive' in emissiveMaterial)) {
+        return;
+      }
+      if (!originals.has(material)) {
+        originals.set(material, {
+          emissive: emissiveMaterial.emissive?.clone?.(),
+          emissiveIntensity: emissiveMaterial.emissiveIntensity,
+        });
+      }
+      emissiveMaterial.emissive = new THREE.Color('#ff3b30');
+      emissiveMaterial.emissiveIntensity = Math.max(emissiveMaterial.emissiveIntensity || 0, 0.8);
+    };
+
+    scene.traverse((object) => {
+      let current: THREE.Object3D | null = object;
+      let matched = false;
+      while (current) {
+        if (current.name && activeTargets.has(current.name)) {
+          matched = true;
+          break;
+        }
+        current = current.parent;
+      }
+
+      if (!matched) {
+        return;
+      }
+
+      const mesh = object as THREE.Mesh;
+      if (!mesh.material) {
+        return;
+      }
+
+      if (Array.isArray(mesh.material)) {
+        mesh.material.forEach(highlightMaterial);
+      } else {
+        highlightMaterial(mesh.material);
+      }
+    });
+
+    return () => {
+      originals.forEach((value, material) => {
+        const emissiveMaterial = material as THREE.MeshStandardMaterial;
+        if ('emissive' in emissiveMaterial && value.emissive) {
+          emissiveMaterial.emissive.copy(value.emissive);
+        }
+        if ('emissiveIntensity' in emissiveMaterial && typeof value.emissiveIntensity === 'number') {
+          emissiveMaterial.emissiveIntensity = value.emissiveIntensity;
+        }
+      });
+    };
+  }, [scene, targets]);
+
+  return null;
+}
+
+export function ExpoWorldScene({ activeZone, debug, guests: _guests, mobileMoveIntent, mode, onMove, runtimeLayerToggles, runtimeCaptureSafe = false, runtimeHighlightedTargets = [], runtimeSectionToggles, sceneVersion, startViewOverride, worldContract, zoneSystem }: ExpoWorldSceneProps) {
   const { boothPlacements, districtPrograms, plan: _boulevardPlan, playBounds, qualityProfileInputs, sectorMarkers, startView, visualProfile, walkRegions } = worldContract;
   const effectiveStartView = startViewOverride ?? startView;
   const layerToggles = runtimeLayerToggles ?? {
@@ -2678,7 +2751,7 @@ export function ExpoWorldScene({ activeZone, debug, guests: _guests, mobileMoveI
       <BoothUI visible={debug && !!activeZone} zoneName={activeZone?.id} />
       <Canvas
         shadows={EXPO_CITY_QUALITY_TIER === 'quality'}
-        dpr={EXPO_CITY_QUALITY_TIER === 'quality' ? [0.85, 1.2] : [0.55, 0.8]}
+        dpr={runtimeCaptureSafe ? 1 : (EXPO_CITY_QUALITY_TIER === 'quality' ? [0.85, 1.2] : [0.55, 0.8])}
         gl={{ antialias: false, powerPreference: 'high-performance' }}
         performance={{ min: EXPO_CITY_QUALITY_TIER === 'quality' ? 0.5 : 0.85 }}
         camera={{ position: [0, 2, 10], fov: 60, far: 10000 }}
@@ -2686,18 +2759,25 @@ export function ExpoWorldScene({ activeZone, debug, guests: _guests, mobileMoveI
         <SceneBridge startView={effectiveStartView} />
         <CenterScreenInspector />
         <ClickInspector />
+        <TargetBasketHighlighter targets={runtimeHighlightedTargets} />
         <Suspense fallback={null}>
-            <AdaptiveDpr />
-            <AdaptiveEvents />
-            <Sky distance={450000} sunPosition={[100, 20, 100]} inclination={0.49} azimuth={0.25} />
-            {EXPO_FEATURE_FLAGS.enableStreetEnvironmentLighting ? (
-              <Environment files="/models/modern_evening_street_4k.exr" />
+            {!runtimeCaptureSafe && <AdaptiveDpr />}
+            {!runtimeCaptureSafe && <AdaptiveEvents />}
+            {runtimeCaptureSafe ? (
+              <color attach="background" args={['#d8e4ef']} />
             ) : (
-              <Environment preset="park" />
+              <Sky distance={450000} sunPosition={[100, 20, 100]} inclination={0.49} azimuth={0.25} />
             )}
-            <ambientLight intensity={0.55} />
-            <directionalLight position={[20, 34, 14]} intensity={2.15} castShadow={false} />
-            <hemisphereLight args={['#d7ecff', '#7f8ea3', 1.05]} />
+            {!runtimeCaptureSafe && (
+              EXPO_FEATURE_FLAGS.enableStreetEnvironmentLighting ? (
+                <Environment files="/models/modern_evening_street_4k.exr" />
+              ) : (
+                <Environment preset="park" />
+              )
+            )}
+            <ambientLight intensity={runtimeCaptureSafe ? 0.24 : 0.55} />
+            <directionalLight position={[20, 34, 14]} intensity={runtimeCaptureSafe ? 0.92 : 2.15} castShadow={false} />
+            <hemisphereLight args={['#d7ecff', '#7f8ea3', runtimeCaptureSafe ? 0.42 : 1.05]} />
             {EXPO_FEATURE_FLAGS.enableFog && <fog attach="fog" args={['#9eb6d4', 180, 520]} />}
 
             <WorldGroundPlane visualProfile={visualProfile} />

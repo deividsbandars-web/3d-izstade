@@ -46,7 +46,7 @@ interface ExpoWorldHudProps {
   isMicOn: boolean;
   isSpeaking: boolean;
   isTouchDevice?: boolean;
-  onMoveTouch?: (intent: { f: boolean; b: boolean; l: boolean; r: boolean }) => void;
+  onMoveTouch?: (intent: { f: boolean; b: boolean; l: boolean; r: boolean; s: boolean }) => void;
   playerPos: number[];
   sectorMarkers: ExpoSectorMarker[];
   visualProfile: ExpoWorldVisualProfile;
@@ -72,6 +72,8 @@ export function ExpoWorldHud({
 }: ExpoWorldHudProps) {
   const [copyStatus, setCopyStatus] = useState<'idle' | 'copied' | 'failed'>('idle');
   const [joystickOffset, setJoystickOffset] = useState({ x: 0, y: 0 });
+  const [isSprintActive, setIsSprintActive] = useState(false);
+  const [mobileOptionsOpen, setMobileOptionsOpen] = useState(false);
   const joystickRef = useRef<HTMLDivElement | null>(null);
   const targetBasket = devVerification?.targetBasket ?? [];
   const recentTargets = targetBasket.slice(-3);
@@ -152,6 +154,22 @@ export function ExpoWorldHud({
     await copyText(devVerification?.targetBasket && devVerification.targetBasket.length > 0 ? devVerification.targetBasket.join(', ') : null);
   };
 
+  const emitJoystickIntent = (offsetX: number, offsetY: number, sprint: boolean) => {
+    if (!onMoveTouch || !joystickRef.current) {
+      return;
+    }
+
+    const maxRadius = joystickRef.current.getBoundingClientRect().width * 0.28;
+    const threshold = maxRadius * 0.35;
+    onMoveTouch({
+      f: offsetY < -threshold,
+      b: offsetY > threshold,
+      l: offsetX < -threshold,
+      r: offsetX > threshold,
+      s: sprint,
+    });
+  };
+
   const updateJoystickIntent = (clientX: number, clientY: number) => {
     if (!joystickRef.current || !onMoveTouch) {
       return;
@@ -175,16 +193,49 @@ export function ExpoWorldHud({
       b: offsetY > threshold,
       l: offsetX < -threshold,
       r: offsetX > threshold,
+      s: isSprintActive,
     });
   };
 
   const resetJoystickIntent = () => {
     setJoystickOffset({ x: 0, y: 0 });
-    onMoveTouch?.({ f: false, b: false, l: false, r: false });
+    onMoveTouch?.({ f: false, b: false, l: false, r: false, s: isSprintActive });
+  };
+
+  const setSprintActive = (active: boolean) => {
+    setIsSprintActive(active);
+    emitJoystickIntent(joystickOffset.x, joystickOffset.y, active);
   };
 
   return (
     <>
+      {isTouchDevice && (
+        <button
+          onClick={() => setMobileOptionsOpen((value) => !value)}
+          style={{
+            position: 'absolute',
+            top: '18px',
+            right: '18px',
+            zIndex: 112,
+            width: '52px',
+            height: '52px',
+            borderRadius: '999px',
+            border: '1px solid rgba(255,255,255,0.12)',
+            background: mobileOptionsOpen ? 'rgba(15, 23, 42, 0.72)' : 'rgba(15, 23, 42, 0.38)',
+            color: '#f8fafc',
+            backdropFilter: 'blur(10px)',
+            boxShadow: '0 10px 24px rgba(2, 6, 23, 0.28)',
+            fontSize: '1.1rem',
+            fontWeight: 900,
+            lineHeight: 1,
+            cursor: 'pointer',
+          }}
+        >
+          ...
+        </button>
+      )}
+
+      {(!isTouchDevice || mobileOptionsOpen) && (
       <div style={{ position: 'absolute', top: '26px', right: '26px', zIndex: 100, display: 'flex', gap: '14px', alignItems: 'stretch', maxWidth: 'calc(100vw - 52px)', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
         <div style={{ ...primaryPanelStyle, minWidth: '280px', padding: '14px 18px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
@@ -401,7 +452,9 @@ export function ExpoWorldHud({
           </div>
         )}
       </div>
+      )}
 
+      {(!isTouchDevice || mobileOptionsOpen) && (
       <div style={{ position: 'absolute', bottom: '26px', left: '26px', zIndex: 100, width: `${radarSize}px`, height: `${radarSize}px`, background: `linear-gradient(180deg, ${visualProfile.global.hudPanel}, rgba(15, 23, 42, 0.7))`, borderRadius: '50%', border: `1px solid ${visualProfile.global.hudAccent}44`, overflow: 'hidden', backdropFilter: 'blur(10px)', boxShadow: '0 18px 48px rgba(0,0,0,0.45)' }}>
         <div style={{ width: '100%', height: '100%', position: 'relative', background: `radial-gradient(circle at center, ${visualProfile.global.hudAccent}30 0%, rgba(15, 23, 42, 0.04) 70%)` }}>
           <div style={{ position: 'absolute', top: '50%', left: '0', width: '100%', height: '1px', background: 'rgba(255,255,255,0.1)' }}></div>
@@ -438,6 +491,7 @@ export function ExpoWorldHud({
           POSITION {Math.round(playerPos[0])}, {Math.round(playerPos[2])}
         </div>
       </div>
+      )}
 
       {isTouchDevice && onMoveTouch && (
         <div
@@ -452,9 +506,28 @@ export function ExpoWorldHud({
             gap: '10px',
           }}
         >
-          <div style={{ fontSize: '0.68rem', fontWeight: 800, letterSpacing: '0.12em', color: '#cbd5e1' }}>
-            MOVE
-          </div>
+          <button
+            onTouchStart={() => setSprintActive(true)}
+            onTouchEnd={() => setSprintActive(false)}
+            onTouchCancel={() => setSprintActive(false)}
+            onMouseDown={() => setSprintActive(true)}
+            onMouseUp={() => setSprintActive(false)}
+            onMouseLeave={() => setSprintActive(false)}
+            style={{
+              ...primaryPanelStyle,
+              padding: '8px 14px',
+              minWidth: '104px',
+              borderRadius: '999px',
+              border: '1px solid rgba(255,255,255,0.08)',
+              fontWeight: 900,
+              letterSpacing: '0.08em',
+              background: isSprintActive
+                ? 'linear-gradient(180deg, rgba(239, 68, 68, 0.86), rgba(185, 28, 28, 0.82))'
+                : primaryPanelStyle.background,
+            }}
+          >
+            SPRINT
+          </button>
           <div
             ref={joystickRef}
             onTouchStart={(event) => {
@@ -520,32 +593,32 @@ export function ExpoWorldHud({
         <div style={{ position: 'absolute', right: '24px', bottom: '24px', zIndex: 110, display: 'grid', gridTemplateColumns: '72px 72px 72px', gridTemplateRows: '72px 72px 72px', gap: '10px' }}>
           <div />
           <button
-            onTouchStart={() => onMoveTouch?.({ f: true, b: false, l: false, r: false })}
-            onTouchEnd={() => onMoveTouch?.({ f: false, b: false, l: false, r: false })}
-            onMouseDown={() => onMoveTouch?.({ f: true, b: false, l: false, r: false })}
-            onMouseUp={() => onMoveTouch?.({ f: false, b: false, l: false, r: false })}
+            onTouchStart={() => onMoveTouch?.({ f: true, b: false, l: false, r: false, s: false })}
+            onTouchEnd={() => onMoveTouch?.({ f: false, b: false, l: false, r: false, s: false })}
+            onMouseDown={() => onMoveTouch?.({ f: true, b: false, l: false, r: false, s: false })}
+            onMouseUp={() => onMoveTouch?.({ f: false, b: false, l: false, r: false, s: false })}
             style={{ ...primaryPanelStyle, borderRadius: '18px', border: 'none', fontWeight: 900, fontSize: '1.2rem' }}
           >↑</button>
           <div />
           <button
-            onTouchStart={() => onMoveTouch?.({ f: false, b: false, l: true, r: false })}
-            onTouchEnd={() => onMoveTouch?.({ f: false, b: false, l: false, r: false })}
-            onMouseDown={() => onMoveTouch?.({ f: false, b: false, l: true, r: false })}
-            onMouseUp={() => onMoveTouch?.({ f: false, b: false, l: false, r: false })}
+            onTouchStart={() => onMoveTouch?.({ f: false, b: false, l: true, r: false, s: false })}
+            onTouchEnd={() => onMoveTouch?.({ f: false, b: false, l: false, r: false, s: false })}
+            onMouseDown={() => onMoveTouch?.({ f: false, b: false, l: true, r: false, s: false })}
+            onMouseUp={() => onMoveTouch?.({ f: false, b: false, l: false, r: false, s: false })}
             style={{ ...primaryPanelStyle, borderRadius: '18px', border: 'none', fontWeight: 900, fontSize: '1.2rem' }}
           >←</button>
           <button
-            onTouchStart={() => onMoveTouch?.({ f: false, b: true, l: false, r: false })}
-            onTouchEnd={() => onMoveTouch?.({ f: false, b: false, l: false, r: false })}
-            onMouseDown={() => onMoveTouch?.({ f: false, b: true, l: false, r: false })}
-            onMouseUp={() => onMoveTouch?.({ f: false, b: false, l: false, r: false })}
+            onTouchStart={() => onMoveTouch?.({ f: false, b: true, l: false, r: false, s: false })}
+            onTouchEnd={() => onMoveTouch?.({ f: false, b: false, l: false, r: false, s: false })}
+            onMouseDown={() => onMoveTouch?.({ f: false, b: true, l: false, r: false, s: false })}
+            onMouseUp={() => onMoveTouch?.({ f: false, b: false, l: false, r: false, s: false })}
             style={{ ...primaryPanelStyle, borderRadius: '18px', border: 'none', fontWeight: 900, fontSize: '1.2rem' }}
           >↓</button>
           <button
-            onTouchStart={() => onMoveTouch?.({ f: false, b: false, l: false, r: true })}
-            onTouchEnd={() => onMoveTouch?.({ f: false, b: false, l: false, r: false })}
-            onMouseDown={() => onMoveTouch?.({ f: false, b: false, l: false, r: true })}
-            onMouseUp={() => onMoveTouch?.({ f: false, b: false, l: false, r: false })}
+            onTouchStart={() => onMoveTouch?.({ f: false, b: false, l: false, r: true, s: false })}
+            onTouchEnd={() => onMoveTouch?.({ f: false, b: false, l: false, r: false, s: false })}
+            onMouseDown={() => onMoveTouch?.({ f: false, b: false, l: false, r: true, s: false })}
+            onMouseUp={() => onMoveTouch?.({ f: false, b: false, l: false, r: false, s: false })}
             style={{ ...primaryPanelStyle, borderRadius: '18px', border: 'none', fontWeight: 900, fontSize: '1.2rem' }}
           >→</button>
         </div>
