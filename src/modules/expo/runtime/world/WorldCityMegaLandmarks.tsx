@@ -10,7 +10,7 @@ type WorldCityMegaLandmarksProps = {
 };
 
 function LandmarkMaterial({
-  color,
+  color: _color,
   emissive = '#000000',
   emissiveIntensity = 0,
 }: {
@@ -18,13 +18,18 @@ function LandmarkMaterial({
   emissive?: string;
   emissiveIntensity?: number;
 }) {
+  const resolvedColor = emissiveIntensity >= 0.08
+    ? '#818d96'
+    : emissiveIntensity >= 0.03
+      ? '#727f89'
+      : '#646f79';
   return (
     <meshStandardMaterial
-      color={color}
+      color={resolvedColor}
       emissive={emissive}
       emissiveIntensity={emissiveIntensity}
       metalness={0.12}
-      roughness={0.42}
+      roughness={0.56}
     />
   );
 }
@@ -473,13 +478,9 @@ export function WorldCityMegaLandmarks({
 
       {sectionToggles.right && (
         <group name="mega-landmark:right-skyfold-citadel" position={rightCitadelBase}>
-          <mesh name="mega-landmark:right-outer-ground-plane" position={[308, 0.018, -116]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-            <planeGeometry args={[1240, 1480]} />
+          <mesh name="mega-landmark:right-outer-ground-plane" position={[260, 0.028, -56]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+            <planeGeometry args={[1840, 2480]} />
             <LandmarkMaterial color="#edf3f7" emissive="#67e8f9" emissiveIntensity={0.002} />
-          </mesh>
-          <mesh name="mega-landmark:right-citadel-ground-plane-front" position={[148, 0.06, 116]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-            <planeGeometry args={[760, 560]} />
-            <LandmarkMaterial color="#edf3f7" emissive="#67e8f9" emissiveIntensity={0.004} />
           </mesh>
           <mesh name="mega-landmark:right-citadel-plinth" position={[0, 10, 0]}>
             <boxGeometry args={[248, 12, 62]} />
@@ -628,8 +629,8 @@ export function WorldCityMegaLandmarks({
 
       {sectionToggles.left && (
         <group name="mega-landmark:left-disc-habitat" position={leftDiscBase}>
-          <mesh name="mega-landmark:left-outer-ground-plane" position={[-1180, 0.018, -220]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-            <planeGeometry args={[3240, 3560]} />
+          <mesh name="mega-landmark:left-outer-ground-plane" position={[-1080, 0.028, -118]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+            <planeGeometry args={[3560, 3920]} />
             <LandmarkMaterial color="#edf3f7" emissive="#67e8f9" emissiveIntensity={0.002} />
           </mesh>
           <mesh name="mega-landmark:left-disc-forecourt-side-right" position={[212, 3, 238]}>
@@ -698,10 +699,6 @@ export function WorldCityMegaLandmarks({
 
       {sectionToggles.left && (
         <group name="mega-landmark:left-grand-rampart" position={leftRampartBase}>
-          <mesh name="mega-landmark:left-rampart-ground-plane-front" position={[-84, 0.06, 168]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-            <planeGeometry args={[920, 620]} />
-            <LandmarkMaterial color="#edf3f7" emissive="#67e8f9" emissiveIntensity={0.004} />
-          </mesh>
           <mesh name="mega-landmark:left-rampart-base" position={[0, 10, 0]}>
             <boxGeometry args={[286, 12, 58]} />
             <LandmarkMaterial color="#e7eef4" emissive="#67e8f9" emissiveIntensity={0.018} />

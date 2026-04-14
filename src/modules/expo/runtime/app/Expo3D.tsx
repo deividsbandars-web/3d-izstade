@@ -15,6 +15,20 @@ import { buildExpoWorldContract } from '../../world-contract';
 
 const LOCAL_BUILD_STAMP = `LOCAL-${new Date().toISOString().replace('T', ' ').slice(0, 19)}`;
 
+function detectTouchDevice() {
+  if (typeof window === 'undefined') {
+    return false;
+  }
+
+  const coarsePointer = window.matchMedia?.('(pointer: coarse)').matches ?? false;
+  const noHover = window.matchMedia?.('(hover: none)').matches ?? false;
+  const maxTouchPoints = navigator.maxTouchPoints > 0;
+  const touchStart = 'ontouchstart' in window;
+  const mobileUA = /android|iphone|ipad|ipod|mobile/i.test(navigator.userAgent);
+
+  return coarsePointer || noHover || maxTouchPoints || touchStart || mobileUA;
+}
+
 function isExpoIgnorablePointerLockError(error: unknown) {
   const message = error instanceof Error
     ? error.message
@@ -123,7 +137,7 @@ export default function Expo3D() {
   const pixelStreamingStatus = usePixelStreamingStatus();
   const { guests, playerPos, isMicOn, isSpeaking, setIsMicOn, handlePlayerMove } = useExpoPresence(mode);
   const { activeZone, zoneSystem } = useZoneSystem(playerPos as any);
-  const isTouchDevice = typeof window !== 'undefined' && ('ontouchstart' in window || navigator.maxTouchPoints > 0);
+  const [isTouchDevice, setIsTouchDevice] = useState(() => detectTouchDevice());
   const inspector = useMemo(() => {
     if (typeof window === 'undefined') {
       return [];
@@ -206,6 +220,20 @@ export default function Expo3D() {
     return () => {
       window.removeEventListener('error', onError);
       window.removeEventListener('unhandledrejection', onUnhandledRejection);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    const refreshTouchDevice = () => setIsTouchDevice(detectTouchDevice());
+    refreshTouchDevice();
+    window.addEventListener('resize', refreshTouchDevice);
+
+    return () => {
+      window.removeEventListener('resize', refreshTouchDevice);
     };
   }, []);
 

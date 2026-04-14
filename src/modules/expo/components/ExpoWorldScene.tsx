@@ -2766,7 +2766,7 @@ export function ExpoWorldScene({ activeZone, debug, guests: _guests, mobileMoveI
             {runtimeCaptureSafe ? (
               <color attach="background" args={['#d8e4ef']} />
             ) : (
-              <Sky distance={450000} sunPosition={[100, 20, 100]} inclination={0.49} azimuth={0.25} />
+              <Sky distance={450000} sunPosition={[56, 10, 42]} inclination={0.42} azimuth={0.18} />
             )}
             {!runtimeCaptureSafe && (
               EXPO_FEATURE_FLAGS.enableStreetEnvironmentLighting ? (
@@ -2775,10 +2775,10 @@ export function ExpoWorldScene({ activeZone, debug, guests: _guests, mobileMoveI
                 <Environment preset="park" />
               )
             )}
-            <ambientLight intensity={runtimeCaptureSafe ? 0.24 : 0.55} />
-            <directionalLight position={[20, 34, 14]} intensity={runtimeCaptureSafe ? 0.92 : 2.15} castShadow={false} />
-            <hemisphereLight args={['#d7ecff', '#7f8ea3', runtimeCaptureSafe ? 0.42 : 1.05]} />
-            {EXPO_FEATURE_FLAGS.enableFog && <fog attach="fog" args={['#9eb6d4', 180, 520]} />}
+            <ambientLight intensity={runtimeCaptureSafe ? 0.16 : 0.24} />
+            <directionalLight position={[16, 26, 10]} intensity={runtimeCaptureSafe ? 0.66 : 0.96} castShadow={false} />
+            <hemisphereLight args={['#94a8b8', '#4f5d69', runtimeCaptureSafe ? 0.24 : 0.36]} />
+            {EXPO_FEATURE_FLAGS.enableFog && <fog attach="fog" args={['#748392', 230, 620]} />}
 
             <WorldGroundPlane visualProfile={visualProfile} />
             {layerToggles.promenade && <WorldPromenade boothPlacements={sectionVisibleBoothPlacements} sectorMarkers={sectorMarkers} visualProfile={visualProfile} />}

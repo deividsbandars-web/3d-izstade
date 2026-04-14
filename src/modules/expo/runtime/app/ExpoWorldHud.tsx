@@ -74,6 +74,7 @@ export function ExpoWorldHud({
   const [joystickOffset, setJoystickOffset] = useState({ x: 0, y: 0 });
   const [isSprintActive, setIsSprintActive] = useState(false);
   const [mobileOptionsOpen, setMobileOptionsOpen] = useState(false);
+  const [mobileMapOpen, setMobileMapOpen] = useState(false);
   const joystickRef = useRef<HTMLDivElement | null>(null);
   const targetBasket = devVerification?.targetBasket ?? [];
   const recentTargets = targetBasket.slice(-3);
@@ -210,6 +211,30 @@ export function ExpoWorldHud({
   return (
     <>
       {isTouchDevice && (
+        <>
+        <button
+          onClick={() => setMobileMapOpen((value) => !value)}
+          style={{
+            position: 'absolute',
+            top: '18px',
+            right: '80px',
+            zIndex: 112,
+            width: '52px',
+            height: '52px',
+            borderRadius: '999px',
+            border: '1px solid rgba(255,255,255,0.12)',
+            background: mobileMapOpen ? 'rgba(15, 23, 42, 0.72)' : 'rgba(15, 23, 42, 0.38)',
+            color: '#f8fafc',
+            backdropFilter: 'blur(10px)',
+            boxShadow: '0 10px 24px rgba(2, 6, 23, 0.28)',
+            fontSize: '0.86rem',
+            fontWeight: 900,
+            lineHeight: 1,
+            cursor: 'pointer',
+          }}
+        >
+          MAP
+        </button>
         <button
           onClick={() => setMobileOptionsOpen((value) => !value)}
           style={{
@@ -233,6 +258,7 @@ export function ExpoWorldHud({
         >
           ...
         </button>
+        </>
       )}
 
       {(!isTouchDevice || mobileOptionsOpen) && (
@@ -454,7 +480,7 @@ export function ExpoWorldHud({
       </div>
       )}
 
-      {(!isTouchDevice || mobileOptionsOpen) && (
+      {(!isTouchDevice || mobileMapOpen) && (
       <div style={{ position: 'absolute', bottom: '26px', left: '26px', zIndex: 100, width: `${radarSize}px`, height: `${radarSize}px`, background: `linear-gradient(180deg, ${visualProfile.global.hudPanel}, rgba(15, 23, 42, 0.7))`, borderRadius: '50%', border: `1px solid ${visualProfile.global.hudAccent}44`, overflow: 'hidden', backdropFilter: 'blur(10px)', boxShadow: '0 18px 48px rgba(0,0,0,0.45)' }}>
         <div style={{ width: '100%', height: '100%', position: 'relative', background: `radial-gradient(circle at center, ${visualProfile.global.hudAccent}30 0%, rgba(15, 23, 42, 0.04) 70%)` }}>
           <div style={{ position: 'absolute', top: '50%', left: '0', width: '100%', height: '1px', background: 'rgba(255,255,255,0.1)' }}></div>
@@ -497,19 +523,94 @@ export function ExpoWorldHud({
         <div
           style={{
             position: 'absolute',
-            right: '24px',
+            left: '24px',
             bottom: '24px',
             zIndex: 111,
             display: 'flex',
-            flexDirection: 'column',
+            flexDirection: 'row',
             alignItems: 'center',
-            gap: '10px',
+            gap: '14px',
           }}
         >
+          <div
+            ref={joystickRef}
+            onTouchStart={(event) => {
+              event.preventDefault();
+              const touch = event.touches[0];
+              if (!touch) return;
+              updateJoystickIntent(touch.clientX, touch.clientY);
+            }}
+            onTouchMove={(event) => {
+              event.preventDefault();
+              const touch = event.touches[0];
+              if (!touch) return;
+              updateJoystickIntent(touch.clientX, touch.clientY);
+            }}
+            onTouchEnd={(event) => {
+              event.preventDefault();
+              resetJoystickIntent();
+            }}
+            onTouchCancel={(event) => {
+              event.preventDefault();
+              resetJoystickIntent();
+            }}
+            onMouseDown={(event) => updateJoystickIntent(event.clientX, event.clientY)}
+            onMouseMove={(event) => {
+              if ((event.buttons & 1) !== 1) {
+                return;
+              }
+              updateJoystickIntent(event.clientX, event.clientY);
+            }}
+            onMouseUp={resetJoystickIntent}
+            onMouseLeave={resetJoystickIntent}
+            style={{
+              ...primaryPanelStyle,
+              width: '172px',
+              height: '172px',
+              borderRadius: '999px',
+              border: '1px solid rgba(255,255,255,0.08)',
+              position: 'relative',
+              touchAction: 'none',
+              userSelect: 'none',
+              background: 'radial-gradient(circle at center, rgba(248, 250, 252, 0.08) 0%, rgba(15, 23, 42, 0.82) 72%)',
+            }}
+          >
+            <div
+              style={{
+                position: 'absolute',
+                inset: '20px',
+                borderRadius: '999px',
+                border: '1px dashed rgba(148, 163, 184, 0.38)',
+              }}
+            />
+            <div
+              style={{
+                position: 'absolute',
+                left: '50%',
+                top: '50%',
+                width: '68px',
+                height: '68px',
+                borderRadius: '999px',
+                transform: `translate(calc(-50% + ${joystickOffset.x}px), calc(-50% + ${joystickOffset.y}px))`,
+                background: 'linear-gradient(180deg, rgba(248, 250, 252, 0.96), rgba(203, 213, 225, 0.92))',
+                boxShadow: '0 10px 26px rgba(2, 6, 23, 0.38)',
+                border: '1px solid rgba(15, 23, 42, 0.08)',
+              }}
+            />
+          </div>
           <button
-            onTouchStart={() => setSprintActive(true)}
-            onTouchEnd={() => setSprintActive(false)}
-            onTouchCancel={() => setSprintActive(false)}
+            onTouchStart={(event) => {
+              event.preventDefault();
+              setSprintActive(true);
+            }}
+            onTouchEnd={(event) => {
+              event.preventDefault();
+              setSprintActive(false);
+            }}
+            onTouchCancel={(event) => {
+              event.preventDefault();
+              setSprintActive(false);
+            }}
             onMouseDown={() => setSprintActive(true)}
             onMouseUp={() => setSprintActive(false)}
             onMouseLeave={() => setSprintActive(false)}
@@ -528,64 +629,6 @@ export function ExpoWorldHud({
           >
             SPRINT
           </button>
-          <div
-            ref={joystickRef}
-            onTouchStart={(event) => {
-              const touch = event.touches[0];
-              if (!touch) return;
-              updateJoystickIntent(touch.clientX, touch.clientY);
-            }}
-            onTouchMove={(event) => {
-              const touch = event.touches[0];
-              if (!touch) return;
-              updateJoystickIntent(touch.clientX, touch.clientY);
-            }}
-            onTouchEnd={resetJoystickIntent}
-            onTouchCancel={resetJoystickIntent}
-            onMouseDown={(event) => updateJoystickIntent(event.clientX, event.clientY)}
-            onMouseMove={(event) => {
-              if ((event.buttons & 1) !== 1) {
-                return;
-              }
-              updateJoystickIntent(event.clientX, event.clientY);
-            }}
-            onMouseUp={resetJoystickIntent}
-            onMouseLeave={resetJoystickIntent}
-            style={{
-              ...primaryPanelStyle,
-              width: '148px',
-              height: '148px',
-              borderRadius: '999px',
-              border: '1px solid rgba(255,255,255,0.08)',
-              position: 'relative',
-              touchAction: 'none',
-              userSelect: 'none',
-              background: 'radial-gradient(circle at center, rgba(248, 250, 252, 0.08) 0%, rgba(15, 23, 42, 0.82) 72%)',
-            }}
-          >
-            <div
-              style={{
-                position: 'absolute',
-                inset: '18px',
-                borderRadius: '999px',
-                border: '1px dashed rgba(148, 163, 184, 0.38)',
-              }}
-            />
-            <div
-              style={{
-                position: 'absolute',
-                left: '50%',
-                top: '50%',
-                width: '60px',
-                height: '60px',
-                borderRadius: '999px',
-                transform: `translate(calc(-50% + ${joystickOffset.x}px), calc(-50% + ${joystickOffset.y}px))`,
-                background: 'linear-gradient(180deg, rgba(248, 250, 252, 0.96), rgba(203, 213, 225, 0.92))',
-                boxShadow: '0 10px 26px rgba(2, 6, 23, 0.38)',
-                border: '1px solid rgba(15, 23, 42, 0.08)',
-              }}
-            />
-          </div>
         </div>
       )}
 

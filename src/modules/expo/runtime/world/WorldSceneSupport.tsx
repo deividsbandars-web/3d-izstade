@@ -84,7 +84,7 @@ export function ColliderMaterial({ debug, color }: { debug?: boolean; color: str
 }
 
 export function ExpoRuntimeSurfaceMaterial({
-  fallbackColor,
+  fallbackColor: _fallbackColor,
   repeat: _repeat,
   surface: _surface,
 }: {
@@ -92,17 +92,24 @@ export function ExpoRuntimeSurfaceMaterial({
   repeat: [number, number];
   surface: 'concrete' | 'paver' | 'grass';
 }) {
+  const color = _surface === 'paver'
+    ? '#6f7c86'
+    : _surface === 'grass'
+      ? '#637768'
+      : '#7c8891';
+  const roughness = _surface === 'paver' ? 0.72 : _surface === 'grass' ? 0.88 : 0.78;
+
   return (
     <meshStandardMaterial
-      color={fallbackColor}
-      roughness={0.76}
+      color={color}
+      roughness={roughness}
       metalness={0.04}
     />
   );
 }
 
 export function ExpoArchitecturalMassMaterial({
-  fallbackColor,
+  fallbackColor: _fallbackColor,
   repeat: _repeat = [1.8, 1.8],
   surface: _surface = 'concrete',
   emissive = '#000000',
@@ -114,10 +121,12 @@ export function ExpoArchitecturalMassMaterial({
   emissive?: string;
   emissiveIntensity?: number;
 }) {
+  const color = _surface === 'paver' ? '#77848d' : '#86929b';
+
   return (
     <meshStandardMaterial
-      color={fallbackColor}
-      roughness={0.76}
+      color={color}
+      roughness={0.74}
       metalness={0.05}
       emissive={emissive}
       emissiveIntensity={emissiveIntensity}
