@@ -1,5 +1,6 @@
 import type { ExpoBoothPlacement } from '../../layout-engine';
 import type { ExpoDistrictProgramSummary, ExpoWorldVisualProfile } from '../../world-contract';
+import { buildRearCampusMetrics } from './ExpoRearCampusLayout';
 
 export type CityPlane = {
   id: string;
@@ -55,12 +56,21 @@ export type CityScreenAssignment = {
   tier: 'elite' | 'hero' | 'premium';
 };
 
-export function getWorldCityStadiumReserve(_boothPlacements: ExpoBoothPlacement[]) {
+export type StadiumReserve = {
+  centerX: number;
+  centerZ: number;
+  halfWidth: number;
+  halfDepth: number;
+};
+
+export function getWorldCityStadiumReserve(boothPlacements: ExpoBoothPlacement[]): StadiumReserve {
+  const { campusCenterZ } = buildRearCampusMetrics(boothPlacements);
+
   return {
-    centerX: -10000,
-    centerZ: -10000,
-    halfWidth: 1,
-    halfDepth: 1,
+    centerX: 0,
+    centerZ: campusCenterZ - 800,
+    halfWidth: 2300,
+    halfDepth: 1500,
   };
 }
 

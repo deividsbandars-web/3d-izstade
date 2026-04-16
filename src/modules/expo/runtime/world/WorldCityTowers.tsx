@@ -1,9 +1,4 @@
-type StadiumReserve = {
-  centerX: number;
-  centerZ: number;
-  halfWidth: number;
-  halfDepth: number;
-};
+import type { StadiumReserve } from './WorldCitySkeletonLayout';
 
 type CityTower = {
   id: string;

@@ -1,5 +1,7 @@
 import * as THREE from 'three';
 
+import type { StadiumReserve } from './WorldCitySkeletonLayout';
+
 type CityScreenSocket = {
   color: string;
   frameSize: [number, number];
@@ -8,13 +10,6 @@ type CityScreenSocket = {
   position: [number, number, number];
   rotation: [number, number, number];
   surfaceId: string;
-};
-
-type StadiumReserve = {
-  centerX: number;
-  centerZ: number;
-  halfWidth: number;
-  halfDepth: number;
 };
 
 function overlapsStadiumReserve(

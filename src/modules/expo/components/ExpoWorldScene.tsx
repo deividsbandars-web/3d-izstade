@@ -34,6 +34,7 @@ import type {
   ExpoWorldVisualProfile,
 } from '../world-contract';
 import type { ExpoBoothPlacement } from '../layout-engine';
+import { getWorldCityStadiumReserve, type StadiumReserve } from '../runtime/world/WorldCitySkeletonLayout';
 
 class SceneErrorBoundary extends React.Component<{ children: React.ReactNode; fallback: React.ReactNode }, { hasError: boolean }> {
   constructor(props: { children: React.ReactNode; fallback: React.ReactNode }) {
@@ -507,19 +508,7 @@ function filterReservedSponsorFrontageEntries<T extends { position: [number, num
   return entries.filter((entry) => !isInsideSponsorFrontageReserve(entry.position, boothPlacements, options));
 }
 
-function getStadiumReserve(_boothPlacements: ExpoBoothPlacement[]) {
-  return {
-    // Stadium planning is paused until the target zone is mapped correctly in
-    // live review. Keep the reserve effectively disabled so we do not wipe out
-    // unrelated city fabric while iterating on the corner selection.
-    centerX: -10000,
-    centerZ: -10000,
-    halfWidth: 1,
-    halfDepth: 1,
-  };
-}
-
-function isInsideStadiumReserve(point: [number, number, number], reserve: ReturnType<typeof getStadiumReserve>) {
+function isInsideStadiumReserve(point: [number, number, number], reserve: StadiumReserve) {
   return (
     Math.abs(point[0] - reserve.centerX) <= reserve.halfWidth &&
     Math.abs(point[2] - reserve.centerZ) <= reserve.halfDepth
@@ -528,7 +517,7 @@ function isInsideStadiumReserve(point: [number, number, number], reserve: Return
 
 function overlapsStadiumReserve(
   point: [number, number, number],
-  reserve: ReturnType<typeof getStadiumReserve>,
+  reserve: StadiumReserve,
   footprint?: [number, number] | [number, number, number] | number
 ) {
   if (typeof footprint === 'number') {
@@ -560,7 +549,7 @@ function ExpoCityForeground({
   visualProfile: ExpoWorldVisualProfile;
 }) {
   const enableHeavyShadows = EXPO_FEATURE_FLAGS.enableShowcaseSkylineDensity;
-  const stadiumReserve = useMemo(() => getStadiumReserve(boothPlacements), [boothPlacements]);
+  const stadiumReserve = useMemo(() => getWorldCityStadiumReserve(boothPlacements), [boothPlacements]);
   const cityStreetMoments = useMemo(() => {
     const entries = districtPrograms.flatMap((district, districtIndex) => {
       const baseZ = -196 - (districtIndex * 548);
