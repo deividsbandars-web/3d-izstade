@@ -26,7 +26,6 @@ import { WorldCityMegaLandmarks } from './WorldCityMegaLandmarks';
 import { WorldCityPlanes } from './WorldCityPlanes';
 import { WorldCityTowers } from './WorldCityTowers';
 import { WorldCityWaterCourt } from './WorldCityWaterCourt';
-import type { CityMass, CityPlane } from './WorldCitySkeletonLayout';
 
 declare global {
   interface Window {
@@ -36,89 +35,6 @@ declare global {
     };
   }
 }
-
-const CENTRAL_CLUTTER_PLANE_PATTERNS = [
-  'arrival-terminal',
-  'showcase-front-carpet',
-  'showcase-center-carpet',
-  'showcase-threshold-band',
-  'showcase-gallery-band',
-  'booth-forecourt-center',
-  'booth-connector',
-  'booth-mid-pad',
-  'booth-inner-carpet',
-  'promenade-axis-inner-carpet',
-  'promenade-axis-center-carpet',
-  'promenade-axis-front-carpet',
-  'promenade-axis-outer-left',
-  'promenade-axis-outer-right',
-  'promenade-axis-threshold',
-  'promenade-axis-terminal',
-  'promenade-axis-transition',
-  'promenade-axis-endcap',
-];
-
-const CENTRAL_CLUTTER_MASS_PATTERNS = [
-  'gateway-mid-plinth',
-  'gateway-front',
-  'gateway-inner',
-  'gateway-rear-band',
-  'gateway-lintel',
-  'gateway-node',
-  'gateway-outer',
-  'showcase-forum-plinth',
-  'showcase-terrace',
-  'showcase-obelisk',
-  'showcase-dais',
-  'showcase-forum-rear',
-  'showcase-wing',
-  'showcase-outer-marker',
-  'showcase-front-threshold-center',
-  'media-wall-bridge',
-  'media-wall-plinth',
-  'media-wall-apron',
-  'media-wall-gallery',
-  'media-wall-center-link',
-  'media-wall-front-node',
-  'media-wall-forecourt-band',
-  'media-wall-front-threshold',
-  'media-wall-outer-marker',
-  'media-wall-side-dais',
-  'discovery-axis-plinth',
-  'discovery-front-threshold-center',
-  'discovery-front-court',
-  'discovery-terrace-center',
-  'discovery-terrace-center-step',
-  'discovery-viewing-step',
-  'discovery-approach-plinth',
-  'discovery-overlook-band',
-  'discovery-overlook-center-band',
-  'discovery-overlook-anchor',
-  'discovery-inner-step',
-  'discovery-side-node',
-  'discovery-outer-platform',
-  'discovery-observatory-plinth',
-  'discovery-observatory-front-pad',
-  'discovery-observatory-wing',
-  'discovery-observatory-rear-band',
-  'discovery-observatory-side-left',
-  'discovery-observatory-side-right',
-  'discovery-observatory-rear-anchor-left',
-  'discovery-observatory-rear-anchor-right',
-  'media-wall-node-left',
-  'media-wall-node-right',
-  'media-wall-rear-node-left',
-  'media-wall-rear-node-right',
-  'center-transition-rear-left',
-  'center-transition-rear-right',
-  'signature-mega-front-court',
-  'signature-mega-dais',
-  'signature-mega-outer-node',
-  'support-band',
-  'support-link',
-  'support-center-marker',
-  'support-transition-court',
-];
 
 const HIDDEN_CITY_MASS_IDS = new Set([
   'arrival-gateway-lintel',
@@ -303,35 +219,6 @@ const HIDDEN_CITY_PLANE_IDS = new Set([
   'arrival-mid-carpet',
 ]);
 
-const RESIDUAL_CITY_MASS_PATTERNS = [
-  'support-edge-left-',
-  'support-edge-right-',
-  'support-edge-node-left-',
-  'support-edge-node-right-',
-  'support-edge-rear-link-left-',
-  'support-edge-rear-link-right-',
-  'support-edge-outer-band-left-',
-  'support-edge-outer-band-right-',
-  'support-edge-mid-link-left-',
-  'support-edge-mid-link-right-',
-  'media-wall-spine-left-',
-  'media-wall-spine-right-',
-  'media-wall-outer-marker-left-',
-  'media-wall-outer-marker-right-',
-];
-
-function isCentralClutterPlane(plane: CityPlane) {
-  return Math.abs(plane.position[0]) <= 220 && CENTRAL_CLUTTER_PLANE_PATTERNS.some((pattern) => plane.id.includes(pattern));
-}
-
-function isCentralClutterMass(mass: CityMass) {
-  return Math.abs(mass.position[0]) <= 220 && CENTRAL_CLUTTER_MASS_PATTERNS.some((pattern) => mass.id.includes(pattern));
-}
-
-function isResidualMass(mass: CityMass) {
-  return RESIDUAL_CITY_MASS_PATTERNS.some((pattern) => mass.id.includes(pattern));
-}
-
 export function WorldCitySkeleton({
   boothPlacements,
   districtPrograms,
@@ -428,15 +315,15 @@ export function WorldCitySkeleton({
     return sectionToggles.middle;
   };
   const filteredPromenadeAxisPlanes = useMemo(
-    () => promenadeAxisPlanes.filter((plane) => !isCentralClutterPlane(plane) && !HIDDEN_CITY_PLANE_IDS.has(plane.id) && isVisibleSection(plane.position)),
+    () => promenadeAxisPlanes.filter((plane) => !HIDDEN_CITY_PLANE_IDS.has(plane.id) && isVisibleSection(plane.position)),
     [promenadeAxisPlanes, sectionToggles]
   );
   const filteredShowcasePlazas = useMemo(
-    () => showcasePlazas.filter((plane) => !isCentralClutterPlane(plane) && !HIDDEN_CITY_PLANE_IDS.has(plane.id) && isVisibleSection(plane.position)),
+    () => showcasePlazas.filter((plane) => !HIDDEN_CITY_PLANE_IDS.has(plane.id) && isVisibleSection(plane.position)),
     [sectionToggles, showcasePlazas]
   );
   const filteredBoothForecourtPlanes = useMemo(
-    () => boothForecourtPlanes.filter((plane) => !isCentralClutterPlane(plane) && !HIDDEN_CITY_PLANE_IDS.has(plane.id) && isVisibleSection(plane.position)),
+    () => boothForecourtPlanes.filter((plane) => !HIDDEN_CITY_PLANE_IDS.has(plane.id) && isVisibleSection(plane.position)),
     [boothForecourtPlanes, sectionToggles]
   );
   const filteredMasses = useMemo(
@@ -453,7 +340,7 @@ export function WorldCitySkeleton({
       ...discoverySupportTerraces,
       ...discoveryObservatory,
       ...discoverySkybridge,
-    ]).filter((mass) => !isCentralClutterMass(mass) && !isResidualMass(mass) && !HIDDEN_CITY_MASS_IDS.has(mass.id) && isVisibleSection(mass.position)),
+    ]).filter((mass) => !HIDDEN_CITY_MASS_IDS.has(mass.id) && isVisibleSection(mass.position)),
     [
       arrivalGatewayBlocks,
       boulevardEdgeBlocks,
@@ -471,7 +358,7 @@ export function WorldCitySkeleton({
     ]
   );
   const filteredArrivalPlanes = useMemo(
-    () => arrivalPlanes.filter((plane) => !HIDDEN_CITY_PLANE_IDS.has(plane.id) && !isCentralClutterPlane(plane) && isVisibleSection(plane.position)),
+    () => arrivalPlanes.filter((plane) => !HIDDEN_CITY_PLANE_IDS.has(plane.id) && isVisibleSection(plane.position)),
     [arrivalPlanes, sectionToggles]
   );
   const filteredTowerLandmarks = useMemo(

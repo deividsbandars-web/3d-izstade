@@ -119,8 +119,125 @@ function filterReservedSponsorFrontageEntries<T extends { position: [number, num
   return entries.filter((entry) => !isInsideSponsorFrontageReserve(entry.position, boothPlacements, options));
 }
 
+const NON_STRUCTURAL_PLANE_PATTERNS = [
+  'arrival-terminal',
+  'showcase-front-carpet',
+  'showcase-center-carpet',
+  'showcase-threshold-band',
+  'showcase-gallery-band',
+  'booth-forecourt-center',
+  'booth-connector',
+  'booth-mid-pad',
+  'booth-inner-carpet',
+  'promenade-axis-inner-carpet',
+  'promenade-axis-center-carpet',
+  'promenade-axis-front-carpet',
+  'promenade-axis-outer-left',
+  'promenade-axis-outer-right',
+  'promenade-axis-threshold',
+  'promenade-axis-terminal',
+  'promenade-axis-transition',
+  'promenade-axis-endcap',
+];
+
+const NON_STRUCTURAL_MASS_PATTERNS = [
+  'gateway-mid-plinth',
+  'gateway-front',
+  'gateway-inner',
+  'gateway-rear-band',
+  'gateway-lintel',
+  'gateway-node',
+  'gateway-outer',
+  'showcase-forum-plinth',
+  'showcase-terrace',
+  'showcase-obelisk',
+  'showcase-dais',
+  'showcase-forum-rear',
+  'showcase-wing',
+  'showcase-outer-marker',
+  'showcase-front-threshold-center',
+  'media-wall-bridge',
+  'media-wall-plinth',
+  'media-wall-apron',
+  'media-wall-gallery',
+  'media-wall-center-link',
+  'media-wall-front-node',
+  'media-wall-forecourt-band',
+  'media-wall-front-threshold',
+  'media-wall-outer-marker',
+  'media-wall-side-dais',
+  'discovery-axis-plinth',
+  'discovery-front-threshold-center',
+  'discovery-front-court',
+  'discovery-terrace-center',
+  'discovery-terrace-center-step',
+  'discovery-viewing-step',
+  'discovery-approach-plinth',
+  'discovery-overlook-band',
+  'discovery-overlook-center-band',
+  'discovery-overlook-anchor',
+  'discovery-inner-step',
+  'discovery-side-node',
+  'discovery-outer-platform',
+  'discovery-observatory-plinth',
+  'discovery-observatory-front-pad',
+  'discovery-observatory-wing',
+  'discovery-observatory-rear-band',
+  'discovery-observatory-side-left',
+  'discovery-observatory-side-right',
+  'discovery-observatory-rear-anchor-left',
+  'discovery-observatory-rear-anchor-right',
+  'media-wall-node-left',
+  'media-wall-node-right',
+  'media-wall-rear-node-left',
+  'media-wall-rear-node-right',
+  'center-transition-rear-left',
+  'center-transition-rear-right',
+  'signature-mega-front-court',
+  'signature-mega-dais',
+  'signature-mega-outer-node',
+  'support-band',
+  'support-link',
+  'support-center-marker',
+  'support-transition-court',
+  'support-edge-left-',
+  'support-edge-right-',
+  'support-edge-node-left-',
+  'support-edge-node-right-',
+  'support-edge-rear-link-left-',
+  'support-edge-rear-link-right-',
+  'support-edge-outer-band-left-',
+  'support-edge-outer-band-right-',
+  'support-edge-mid-link-left-',
+  'support-edge-mid-link-right-',
+  'media-wall-spine-left-',
+  'media-wall-spine-right-',
+  'media-wall-outer-marker-left-',
+  'media-wall-outer-marker-right-',
+];
+
+function filterStructuralCityPlanes(planes: CityPlane[]) {
+  return planes.filter((plane) => {
+    const isCentralDecorative =
+      Math.abs(plane.position[0]) <= 220 &&
+      NON_STRUCTURAL_PLANE_PATTERNS.some((pattern) => plane.id.includes(pattern));
+
+    return !isCentralDecorative;
+  });
+}
+
+function filterStructuralCityMasses(masses: CityMass[]) {
+  return masses.filter((mass) => {
+    const isClutterLike = NON_STRUCTURAL_MASS_PATTERNS.some((pattern) => mass.id.includes(pattern));
+    const isCentralDecorative = Math.abs(mass.position[0]) <= 220 && isClutterLike;
+    const isResidualSupportStrip = mass.id.includes('support-edge-') || mass.id.includes('media-wall-spine-');
+
+    return !isCentralDecorative && !isResidualSupportStrip;
+  });
+}
+
 export function buildArrivalPlanes(): CityPlane[] {
-  return [
+  return filterStructuralCityPlanes([
     { id: 'arrival-main', position: [0, 0.018, 64], size: [320, 240], color: '#eef4f7' },
     { id: 'arrival-spine', position: [0, 0.02, -84], size: [124, 540], color: '#dde7ef' },
     { id: 'arrival-left', position: [-208, 0.018, -18], size: [172, 284], color: '#d6e2ea' },
@@ -141,11 +258,11 @@ export function buildArrivalPlanes(): CityPlane[] {
     { id: 'arrival-front-carpet-left', position: [-126, 0.019, 154], size: [56, 18], color: '#f4f8fb' },
     { id: 'arrival-front-carpet-right', position: [126, 0.019, 148], size: [56, 18], color: '#f4f8fb' },
     { id: 'arrival-mid-carpet', position: [0, 0.019, 170], size: [74, 16], color: '#f6fafc' },
-  ] as CityPlane[];
+  ] as CityPlane[]);
 }
 
 export function buildPromenadeAxisPlanes(districtCount: number, districtStride: number): CityPlane[] {
-  return Array.from({ length: Math.max(3, districtCount) }, (_, districtIndex) => {
+  return filterStructuralCityPlanes(Array.from({ length: Math.max(3, districtCount) }, (_, districtIndex) => {
     const baseZ = -178 - (districtIndex * districtStride);
     return [
       { id: `promenade-axis-main-${districtIndex}`, position: [0, 0.02, baseZ + 16], size: [188, 286], color: '#edf3f7' },
@@ -171,11 +288,11 @@ export function buildPromenadeAxisPlanes(districtCount: number, districtStride: 
       { id: `promenade-axis-transition-left-${districtIndex}`, position: [-128, 0.019, baseZ - 172], size: [36, 24], color: '#eef4f8' },
       { id: `promenade-axis-transition-right-${districtIndex}`, position: [128, 0.019, baseZ - 182], size: [36, 24], color: '#eef4f8' },
     ] as CityPlane[];
-  }).flat();
+  }).flat());
 }
 
 export function buildArrivalGatewayBlocks(): CityMass[] {
-  return [
+  return filterStructuralCityMasses([
     { id: 'arrival-gateway-left', position: [-498, 0, 172], size: [86, 196, 58], color: '#7d919f' },
     { id: 'arrival-gateway-right', position: [498, 0, 172], size: [86, 196, 58], color: '#7d919f' },
     { id: 'arrival-gateway-lintel', position: [0, 0, 218], size: [452, 18, 28], color: '#c7d3db' },
@@ -191,11 +308,11 @@ export function buildArrivalGatewayBlocks(): CityMass[] {
     { id: 'arrival-gateway-front-right', position: [168, 0, 280], size: [16, 36, 14], color: '#dde6ec' },
     { id: 'arrival-gateway-inner-left', position: [-98, 0, 258], size: [12, 28, 12], color: '#e4ecf1' },
     { id: 'arrival-gateway-inner-right', position: [98, 0, 252], size: [12, 28, 12], color: '#e4ecf1' },
-  ] as CityMass[];
+  ] as CityMass[]);
 }
 
 export function buildBoulevardEdgeBlocks(districtCount: number, districtStride: number): CityMass[] {
-  return Array.from({ length: Math.max(3, districtCount) }, (_, districtIndex) => {
+  return filterStructuralCityMasses(Array.from({ length: Math.max(3, districtCount) }, (_, districtIndex) => {
     const baseZ = -168 - (districtIndex * districtStride);
     return [
       { id: `boulevard-edge-left-${districtIndex}`, position: [-228, 0, baseZ + 28], size: [8, 2.8, 108], color: '#dfe8ee' },
@@ -209,7 +326,7 @@ export function buildBoulevardEdgeBlocks(districtCount: number, districtStride: 
       { id: `boulevard-mid-node-left-${districtIndex}`, position: [-252, 0, baseZ + 172], size: [12, 12, 14], color: '#e2eaf0' },
       { id: `boulevard-mid-node-right-${districtIndex}`, position: [252, 0, baseZ + 162], size: [12, 12, 14], color: '#e2eaf0' },
     ] as CityMass[];
-  }).flat();
+  }).flat());
 }
 
 export function buildShowcasePlazas(
@@ -241,14 +358,16 @@ export function buildShowcasePlazas(
     ] as CityPlane[];
   });
 
-  return filterReservedSponsorFrontageEntries(entries, boothPlacements, { frontDepth: 380, rearDepth: 160, sideWidth: 160, radius: 200 });
+  return filterStructuralCityPlanes(
+    filterReservedSponsorFrontageEntries(entries, boothPlacements, { frontDepth: 380, rearDepth: 160, sideWidth: 160, radius: 200 })
+  );
 }
 
 export function buildShowcaseMonuments(
   districtPrograms: ExpoDistrictProgramSummary[],
   districtStride: number
 ): CityMass[] {
-  return districtPrograms.slice(0, Math.max(3, districtPrograms.length)).flatMap((district, districtIndex) => {
+  return filterStructuralCityMasses(districtPrograms.slice(0, Math.max(3, districtPrograms.length)).flatMap((district, districtIndex) => {
     const baseZ = -182 - (districtIndex * districtStride);
     return [
       {
@@ -348,7 +467,7 @@ export function buildShowcaseMonuments(
         color: '#e7eef3',
       },
     ] as CityMass[];
-  });
+  }));
 }
 
 export function buildBoothForecourtPlanes(
@@ -458,12 +577,14 @@ export function buildBoothForecourtPlanes(
     ] as CityPlane[];
   });
 
-  return filterReservedSponsorFrontageEntries(entries, boothPlacements, {
-    frontDepth: 300,
-    rearDepth: 140,
-    sideWidth: 120,
-    radius: 180,
-  });
+  return filterStructuralCityPlanes(
+    filterReservedSponsorFrontageEntries(entries, boothPlacements, {
+      frontDepth: 300,
+      rearDepth: 140,
+      sideWidth: 120,
+      radius: 180,
+    })
+  );
 }
 
 export function buildRightSupportBlocks(
@@ -492,11 +613,13 @@ export function buildRightSupportBlocks(
     ] as CityMass[];
   });
 
-  return filterReservedSponsorFrontageEntries(entries, boothPlacements, { frontDepth: 540, rearDepth: 220, sideWidth: 280, radius: 340 });
+  return filterStructuralCityMasses(
+    filterReservedSponsorFrontageEntries(entries, boothPlacements, { frontDepth: 540, rearDepth: 220, sideWidth: 280, radius: 340 })
+  );
 }
 
 export function buildMediaWallLandmarks(districtCount: number, districtStride: number): CityMass[] {
-  return Array.from({ length: Math.max(3, districtCount) }, (_, districtIndex) => {
+  return filterStructuralCityMasses(Array.from({ length: Math.max(3, districtCount) }, (_, districtIndex) => {
     const baseZ = -214 - (districtIndex * districtStride);
     return [
       {
@@ -692,7 +815,7 @@ export function buildMediaWallLandmarks(districtCount: number, districtStride: n
         color: '#e3ebf0',
       },
     ] as CityMass[];
-  }).flat();
+  }).flat());
 }
 
 export function buildMediaWallSurfaces(districtCount: number, districtStride: number): CityScreenSurface[] {
@@ -749,7 +872,7 @@ export function buildMediaWallSurfaces(districtCount: number, districtStride: nu
 
 export function buildDiscoveryEdgeBlocks(districtCount: number, districtStride: number): CityMass[] {
   const endBaseZ = -196 - ((Math.max(1, districtCount) - 1) * districtStride) - 860;
-  return [
+  return filterStructuralCityMasses([
     { id: 'discovery-anchor-left', position: [-764, 64, endBaseZ + 42], size: [96, 108, 82], color: '#81919d' },
     { id: 'discovery-anchor-right', position: [764, 68, endBaseZ - 8], size: [96, 116, 82], color: '#8394a0' },
     { id: 'discovery-hero-plinth-left', position: [-198, 18, endBaseZ - 122], size: [78, 24, 42], color: '#94a6b2' },
@@ -757,11 +880,11 @@ export function buildDiscoveryEdgeBlocks(districtCount: number, districtStride: 
     { id: 'discovery-axis-plinth', position: [0, 14, endBaseZ + 64], size: [168, 18, 38], color: '#cfdbe3' },
     { id: 'discovery-overlook-left', position: [-326, 0, endBaseZ + 146], size: [74, 16, 36], color: '#d6e1e8' },
     { id: 'discovery-overlook-right', position: [326, 0, endBaseZ + 128], size: [74, 16, 36], color: '#d6e1e8' },
-    ] as CityMass[];
+    ] as CityMass[]);
 }
 
 export function buildSupportEdgeBlocks(districtCount: number, districtStride: number): CityMass[] {
-  return Array.from({ length: Math.max(3, districtCount) }, (_, districtIndex) => {
+  return filterStructuralCityMasses(Array.from({ length: Math.max(3, districtCount) }, (_, districtIndex) => {
     const baseZ = -244 - (districtIndex * districtStride);
     return [
       { id: `support-edge-left-${districtIndex}`, position: [-1048, 0, baseZ - 64], size: [74, 58, 88], color: '#97a7b2' },
@@ -775,12 +898,12 @@ export function buildSupportEdgeBlocks(districtCount: number, districtStride: nu
       { id: `support-edge-mid-link-left-${districtIndex}`, position: [-1036, 0, baseZ + 186], size: [22, 22, 18], color: '#e8eff4' },
       { id: `support-edge-mid-link-right-${districtIndex}`, position: [1036, 0, baseZ + 170], size: [22, 22, 18], color: '#e8eff4' },
     ] as CityMass[];
-  }).flat();
+  }).flat());
 }
 
 export function buildDiscoveryLandmarks(districtCount: number, districtStride: number): CityMass[] {
   const endBaseZ = -196 - ((Math.max(1, districtCount) - 1) * districtStride) - 980;
-  return [
+  return filterStructuralCityMasses([
     { id: 'discovery-spire-main', position: [0, 0, endBaseZ], size: [74, 318, 74], color: '#6f8594' },
     { id: 'discovery-spire-cap', position: [0, 0, endBaseZ], size: [28, 86, 28], color: '#c3d0d8' },
     { id: 'discovery-spire-collar', position: [0, 0, endBaseZ + 16], size: [118, 14, 28], color: '#d6e0e7' },
@@ -791,12 +914,12 @@ export function buildDiscoveryLandmarks(districtCount: number, districtStride: n
     { id: 'discovery-front-threshold-center', position: [0, 0, endBaseZ + 156], size: [12, 24, 10], color: '#edf4f8' },
     { id: 'discovery-front-court-left', position: [-156, 0, endBaseZ + 182], size: [44, 12, 18], color: '#eef4f8' },
     { id: 'discovery-front-court-right', position: [156, 0, endBaseZ + 174], size: [44, 12, 18], color: '#eef4f8' },
-  ] as CityMass[];
+  ] as CityMass[]);
 }
 
 export function buildDiscoverySupportTerraces(districtCount: number, districtStride: number): CityMass[] {
   const endBaseZ = -196 - ((Math.max(1, districtCount) - 1) * districtStride) - 860;
-  return [
+  return filterStructuralCityMasses([
     { id: 'discovery-terrace-left', position: [-418, 0, endBaseZ + 198], size: [126, 38, 92], color: '#a4b5c0' },
     { id: 'discovery-terrace-right', position: [418, 0, endBaseZ + 174], size: [126, 42, 92], color: '#a4b5c0' },
     { id: 'discovery-terrace-center', position: [0, 0, endBaseZ + 148], size: [212, 18, 72], color: '#c7d3db' },
@@ -815,12 +938,12 @@ export function buildDiscoverySupportTerraces(districtCount: number, districtStr
     { id: 'discovery-inner-step-right', position: [88, 0, endBaseZ + 278], size: [48, 8, 20], color: '#e5edf2' },
     { id: 'discovery-outer-platform-left', position: [-412, 0, endBaseZ + 362], size: [72, 12, 26], color: '#dde6ec' },
     { id: 'discovery-outer-platform-right', position: [412, 0, endBaseZ + 346], size: [72, 12, 26], color: '#dde6ec' },
-  ] as CityMass[];
+  ] as CityMass[]);
 }
 
 export function buildDiscoveryObservatory(districtCount: number, districtStride: number): CityMass[] {
   const endBaseZ = -196 - ((Math.max(1, districtCount) - 1) * districtStride) - 1080;
-  return [
+  return filterStructuralCityMasses([
     { id: 'discovery-observatory-plinth', position: [0, 0, endBaseZ + 86], size: [188, 16, 62], color: '#d9e2e8' },
     { id: 'discovery-observatory-neck', position: [0, 0, endBaseZ + 36], size: [28, 96, 28], color: '#8fa2af' },
     { id: 'discovery-observatory-deck', position: [0, 0, endBaseZ], size: [148, 12, 30], color: '#c6d2da' },
@@ -834,7 +957,7 @@ export function buildDiscoveryObservatory(districtCount: number, districtStride:
     { id: 'discovery-observatory-front-pad', position: [0, 0, endBaseZ + 144], size: [42, 8, 14], color: '#edf3f7' },
     { id: 'discovery-observatory-rear-anchor-left', position: [-94, 0, endBaseZ - 74], size: [18, 40, 16], color: '#dce5eb' },
     { id: 'discovery-observatory-rear-anchor-right', position: [94, 0, endBaseZ - 80], size: [18, 40, 16], color: '#dce5eb' },
-  ] as CityMass[];
+  ] as CityMass[]);
 }
 
 export function buildCivicWaterCourt(): CityPlane[] {
@@ -848,7 +971,7 @@ export function buildCivicWaterCourt(): CityPlane[] {
 export function buildSignatureMegaLandmarks(districtCount: number, districtStride: number): CityMass[] {
   const signatureDistrictIndex = Math.min(1, Math.max(0, districtCount - 1));
   const boulevardCenterZ = -196 - (signatureDistrictIndex * districtStride) - 122;
-  return [
+  return filterStructuralCityMasses([
     { id: 'signature-mega-front-court', position: [0, 0, boulevardCenterZ - 72], size: [112, 8, 22], color: '#e5edf2' },
     { id: 'signature-mega-pylon-left', position: [-694, 0, boulevardCenterZ + 26], size: [48, 246, 48], color: '#748998' },
     { id: 'signature-mega-pylon-right', position: [694, 0, boulevardCenterZ - 18], size: [48, 238, 48], color: '#748998' },
@@ -857,18 +980,18 @@ export function buildSignatureMegaLandmarks(districtCount: number, districtStrid
     { id: 'signature-mega-dais-right', position: [162, 0, boulevardCenterZ - 190], size: [62, 12, 28], color: '#dbe4ea' },
     { id: 'signature-mega-outer-node-left', position: [-286, 0, boulevardCenterZ - 148], size: [26, 54, 20], color: '#d6e0e7' },
     { id: 'signature-mega-outer-node-right', position: [286, 0, boulevardCenterZ - 162], size: [26, 54, 20], color: '#d6e0e7' },
-  ] as CityMass[];
+  ] as CityMass[]);
 }
 
 export function buildDiscoverySkybridge(districtCount: number, districtStride: number): CityMass[] {
   const endBaseZ = -196 - ((Math.max(1, districtCount) - 1) * districtStride) - 900;
-  return [
+  return filterStructuralCityMasses([
     { id: 'discovery-skybridge-left-pylon', position: [-438, 0, endBaseZ + 48], size: [34, 138, 34], color: '#7c92a1' },
     { id: 'discovery-skybridge-right-pylon', position: [438, 0, endBaseZ + 20], size: [34, 138, 34], color: '#7c92a1' },
     { id: 'discovery-skybridge-span', position: [0, 0, endBaseZ + 34], size: [436, 16, 24], color: '#c4d1d9' },
     { id: 'discovery-skybridge-anchor-left', position: [-552, 0, endBaseZ + 84], size: [28, 58, 22], color: '#d6e1e8' },
     { id: 'discovery-skybridge-anchor-right', position: [552, 0, endBaseZ + 58], size: [28, 58, 22], color: '#d6e1e8' },
-    ] as CityMass[];
+    ] as CityMass[]);
 }
 
 export function buildCleanTowerLandmarks(
