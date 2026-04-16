@@ -73,6 +73,8 @@ export function WorldCityTowers({
   const hiddenTowerIds = new Set([
     'meetings-hero-tower-right',
     '75c36ca5-1c8e-4bd7-b61c-7cafd988fcf1-support-tower-right',
+    '75c36ca5-1c8e-4bd7-b61c-7cafd988fcf1-support-tower-left',
+    '1a459ffc-d447-4899-97e5-7af7b562487d-support-tower-left',
     '1a459ffc-d447-4899-97e5-7af7b562487d-outer-support-tower-right',
   ]);
   return (
@@ -118,29 +120,29 @@ export function WorldCityTowers({
                 emissiveIntensity={0.012}
               />
             </mesh>
-            <mesh position={[side * (tower.baseSize[0] * 0.34), tower.baseSize[1] * 0.58, 0]} receiveShadow>
-              <boxGeometry args={[tower.baseSize[0] * 0.12, finHeight, tower.baseSize[2] * 0.42]} />
+            <mesh position={[side * (tower.baseSize[0] * 0.38), tower.baseSize[1] * 0.58, 0]} receiveShadow>
+              <boxGeometry args={[tower.baseSize[0] * 0.16, finHeight, tower.baseSize[2] * 0.48]} />
               <WorldArchitecturalMassMaterial
-                fallbackColor="#dbe5eb"
+                fallbackColor="#6f7b85"
                 emissive={tower.crownColor}
-                emissiveIntensity={0.018}
+                emissiveIntensity={0.026}
               />
             </mesh>
             <mesh position={[0, tower.baseSize[1] * 0.58, -tower.baseSize[2] * 0.28]} receiveShadow>
-              <boxGeometry args={[tower.baseSize[0] * 0.34, rearFinHeight, tower.baseSize[2] * 0.14]} />
+              <boxGeometry args={[tower.baseSize[0] * 0.42, rearFinHeight, tower.baseSize[2] * 0.18]} />
               <WorldArchitecturalMassMaterial
-                fallbackColor="#cfdae2"
+                fallbackColor="#65717b"
                 emissive={tower.crownColor}
-                emissiveIntensity={isSupport ? 0.006 : 0.012}
+                emissiveIntensity={isSupport ? 0.01 : 0.018}
               />
             </mesh>
             {!isSupport && (
-              <mesh position={[-side * (tower.baseSize[0] * 0.18), tower.baseSize[1] * 0.32, 0]} receiveShadow>
-                <boxGeometry args={[tower.baseSize[0] * 0.32, tower.baseSize[1] * 0.18, tower.baseSize[2] * 0.34]} />
+              <mesh position={[-side * (tower.baseSize[0] * 0.22), tower.baseSize[1] * 0.32, 0]} receiveShadow>
+                <boxGeometry args={[tower.baseSize[0] * 0.38, tower.baseSize[1] * 0.2, tower.baseSize[2] * 0.4]} />
                 <WorldArchitecturalMassMaterial
-                  fallbackColor="#cad7df"
+                  fallbackColor="#5f6a73"
                   emissive={tower.crownColor}
-                  emissiveIntensity={isHero ? 0.012 : 0.006}
+                  emissiveIntensity={isHero ? 0.018 : 0.01}
                 />
               </mesh>
             )}
@@ -153,24 +155,24 @@ export function WorldCityTowers({
             {isHero && (
               <mesh position={[0, tower.baseSize[1] + (tower.upperSize[1] * 0.48), 0]} receiveShadow>
               <boxGeometry args={[tower.upperSize[0] * 1.08, midBandHeight, tower.upperSize[2] * 0.34]} />
-              <meshStandardMaterial color="#91a0ab" emissive={tower.crownColor} emissiveIntensity={isSupport ? 0.008 : 0.014} roughness={0.46} metalness={0.18} />
+              <meshStandardMaterial color="#6d7983" emissive={tower.crownColor} emissiveIntensity={isSupport ? 0.01 : 0.02} roughness={0.5} metalness={0.14} />
               </mesh>
             )}
             {isHero && (
               <mesh position={[0, tower.baseSize[1] + tower.upperSize[1] + 6, 0]} receiveShadow>
               <boxGeometry args={[tower.upperSize[0] * 0.78, crownBandHeight, tower.upperSize[2] * 0.78]} />
-              <meshStandardMaterial color="#8a99a4" emissive={tower.crownColor} emissiveIntensity={isHero ? 0.02 : 0.01} roughness={0.46} metalness={0.18} />
+              <meshStandardMaterial color="#66727c" emissive={tower.crownColor} emissiveIntensity={isHero ? 0.026 : 0.014} roughness={0.5} metalness={0.14} />
               </mesh>
             )}
             {isHero && (
               <>
                 <mesh position={[side * (tower.upperSize[0] * 0.36), tower.baseSize[1] + tower.upperSize[1] + 3, 0]} receiveShadow>
                   <boxGeometry args={[tower.upperSize[0] * 0.14, crownBandHeight + 6, tower.upperSize[2] * 0.26]} />
-                  <meshStandardMaterial color="#91a0ab" emissive={tower.crownColor} emissiveIntensity={isHero ? 0.014 : 0.008} roughness={0.46} metalness={0.16} />
+                  <meshStandardMaterial color="#6e7b84" emissive={tower.crownColor} emissiveIntensity={isHero ? 0.02 : 0.01} roughness={0.5} metalness={0.14} />
                 </mesh>
                 <mesh position={[-side * (tower.upperSize[0] * 0.26), tower.baseSize[1] + tower.upperSize[1] - 2, -tower.upperSize[2] * 0.12]} receiveShadow>
                   <boxGeometry args={[tower.upperSize[0] * 0.18, crownBandHeight + 4, tower.upperSize[2] * 0.18]} />
-                  <meshStandardMaterial color="#86959f" emissive={tower.crownColor} emissiveIntensity={isHero ? 0.01 : 0.006} roughness={0.48} metalness={0.14} />
+                  <meshStandardMaterial color="#5e6973" emissive={tower.crownColor} emissiveIntensity={isHero ? 0.016 : 0.008} roughness={0.52} metalness={0.12} />
                 </mesh>
               </>
             )}

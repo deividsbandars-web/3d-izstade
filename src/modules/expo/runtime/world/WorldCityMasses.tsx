@@ -98,9 +98,6 @@ export function WorldCityMasses({
               mass.id.includes('terrace') ||
               mass.id.includes('plinth') ||
               (mass.size[0] * mass.size[2] >= 2200));
-          const isLeftSectionLowGroundLike =
-            mass.position[0] < -260 &&
-            mass.size[1] <= 42;
           const suppressDecorativeStack =
             (isCenterLane && isThinHorizontalShelf) ||
             (isCenterLane && isFrontCourtLike) ||
@@ -113,7 +110,7 @@ export function WorldCityMasses({
           const hasNodeTop = false;
           const hasMarkerTop = false;
 
-          if (isGroundLikePlinth || isLeftSectionLowGroundLike) {
+          if (isGroundLikePlinth) {
             return null;
           }
 

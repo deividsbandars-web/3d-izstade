@@ -65,6 +65,7 @@ export function WorldCityMegaLandmarks({
     'mega-landmark:media-spire-right',
     'mega-landmark:media-side-accent-right',
     'mega-landmark:media-side-accent-left',
+    'mega-landmark:media-outer-accent-left',
     'mega-landmark:discovery-base',
     'mega-landmark:discovery-plinth',
     'mega-landmark:discovery-support-left',
@@ -85,11 +86,11 @@ export function WorldCityMegaLandmarks({
     'mega-landmark:right-skybridge-side-fin-left',
     'mega-landmark:showcase-outer-accent-right',
     'mega-landmark:showcase-support-right',
-    'mega-landmark:left-broken-wall-marker',
-    'mega-landmark:left-split-crown-fin-right',
     'mega-landmark:left-split-crown-fin-left',
+    'mega-landmark:left-split-crown-fin-right',
+    
     'mega-landmark:showcase-outer-accent-left',
-    'mega-landmark:left-cantilever-fin-left',
+    
     'mega-landmark:discovery-spine-base',
     'mega-landmark:discovery-spine-left-garden',
     'mega-landmark:discovery-spine-ribbon',
