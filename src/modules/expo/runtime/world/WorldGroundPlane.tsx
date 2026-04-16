@@ -1,10 +1,11 @@
 import type { ExpoWorldVisualProfile } from '../../world-contract';
 
 export function WorldGroundPlane({ visualProfile }: { visualProfile: ExpoWorldVisualProfile }) {
+  void visualProfile;
   return (
-    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.1, 0]} receiveShadow={false}>
-      <planeGeometry args={[2000, 2000]} />
-      <meshStandardMaterial color={visualProfile.global.groundBase} roughness={0.82} metalness={0.04} />
+    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.16, -1800]} receiveShadow={false}>
+      <planeGeometry args={[16000, 16000]} />
+      <meshStandardMaterial color="#6f7c85" roughness={0.97} metalness={0.01} />
     </mesh>
   );
 }

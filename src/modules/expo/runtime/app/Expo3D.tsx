@@ -50,6 +50,7 @@ export default function Expo3D() {
   const [devCenterTarget, setDevCenterTarget] = useState<string | null>(null);
   const [devCenterStack, setDevCenterStack] = useState<string[]>([]);
   const [markedPoint, setMarkedPoint] = useState<[number, number, number] | null>(null);
+  const [targetBasket, setTargetBasket] = useState<string[]>([]);
   const [devLayerStates, setDevLayerStates] = useState({
     booths: true,
     city: true,
@@ -294,7 +295,29 @@ export default function Expo3D() {
               inspector,
               layerStates: devLayerStates,
               markedPoint,
+              targetBasket,
               sectionStates: devSectionStates,
+              onAddClickTarget: () => {
+                if (!devClickTarget) {
+                  return;
+                }
+                setTargetBasket((current) => (current.includes(devClickTarget) ? current : [...current, devClickTarget]));
+              },
+              onAddClickStack: () => {
+                if (!devClickStack || devClickStack.length === 0) {
+                  return;
+                }
+                setTargetBasket((current) => {
+                  const next = [...current];
+                  devClickStack.forEach((entry) => {
+                    if (!next.includes(entry)) {
+                      next.push(entry);
+                    }
+                  });
+                  return next;
+                });
+              },
+              onClearTargetBasket: () => setTargetBasket([]),
               onSetMark: () => {
                 const [x, y, z] = playerPos as [number, number, number];
                 setMarkedPoint([x, y, z]);

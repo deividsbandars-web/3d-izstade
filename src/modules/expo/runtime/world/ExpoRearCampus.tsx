@@ -23,7 +23,7 @@ export function ExpoRearCampus({
   visualProfile: ExpoWorldVisualProfile;
 }) {
   const campusColliderRef = useRef<THREE.Group>(null);
-  const { routeEndZ, campusCenterZ, stadiumBackWallZ } = useMemo(
+  const { campusCenterZ, stadiumBackWallZ } = useMemo(
     () => buildRearCampusMetrics(boothPlacements),
     [boothPlacements]
   );
@@ -48,10 +48,7 @@ export function ExpoRearCampus({
       })),
     [boothPlacements]
   );
-  const filteredStadiumForecourts = useMemo(
-    () => stadiumForecourts.filter((plane) => plane.id !== 'stadium-forecourt-axis-pad-right'),
-    [stadiumForecourts]
-  );
+  const filteredStadiumForecourts = useMemo<typeof stadiumForecourts>(() => [], [stadiumForecourts]);
   const filteredStadiumSidePavilions = useMemo(
     () => {
       const hiddenPavilionIds = new Set([
@@ -132,33 +129,9 @@ export function ExpoRearCampus({
 
   return (
     <group name="expo-rear-campus">
-      <mesh position={[0, 0.02, routeEndZ + 240]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-        <planeGeometry args={[1180, 2760]} />
-        <ExpoRuntimeSurfaceMaterial fallbackColor="#98a4ad" repeat={[2.4, 7.8]} surface="paver" />
-      </mesh>
-      <mesh position={[-120, 0.02, campusCenterZ - 80]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-        <planeGeometry args={[8200, 6200]} />
-        <ExpoRuntimeSurfaceMaterial fallbackColor="#98a4ad" repeat={[11.2, 8.2]} surface="concrete" />
-      </mesh>
-      <mesh position={[0, 0.024, campusCenterZ + 820]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-        <planeGeometry args={[2600, 1500]} />
-        <ExpoRuntimeSurfaceMaterial fallbackColor="#84919a" repeat={[5.2, 3.2]} surface="concrete" />
-      </mesh>
-      <mesh position={[0, 5.2, routeEndZ]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-        <planeGeometry args={[1240, 220]} />
-        <ExpoRuntimeSurfaceMaterial fallbackColor="#6f7b84" repeat={[3.4, 1.1]} surface="paver" />
-      </mesh>
-      <mesh position={[0, 5.92, campusCenterZ + 540]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-        <planeGeometry args={[1380, 2140]} />
-        <ExpoRuntimeSurfaceMaterial fallbackColor="#c2cdd5" repeat={[3.4, 4.4]} surface="concrete" />
-      </mesh>
-      <mesh position={[0, 6.34, campusCenterZ + 980]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-        <planeGeometry args={[1960, 640]} />
-        <ExpoRuntimeSurfaceMaterial fallbackColor="#d8e4ec" repeat={[4.2, 1.8]} surface="paver" />
-      </mesh>
-      <mesh position={[0, 0.026, campusPerimeterCenterZ]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-        <planeGeometry args={[campusPerimeterHalfWidth * 2, campusPerimeterDepth]} />
-        <ExpoRuntimeSurfaceMaterial fallbackColor="#b4c0c9" repeat={[11.6, 8.6]} surface="concrete" />
+      <mesh position={[-80, 0.02, campusCenterZ - 420]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+        <planeGeometry args={[7200, 4400]} />
+        <ExpoRuntimeSurfaceMaterial fallbackColor="#6f7c85" repeat={[9.4, 5.8]} surface="concrete" />
       </mesh>
       <mesh position={[0, 16, campusPerimeterRearZ]} receiveShadow>
         <boxGeometry args={[campusPerimeterHalfWidth * 2, 32, 20]} />
@@ -189,31 +162,38 @@ export function ExpoRearCampus({
         <meshStandardMaterial color="#98a4ad" emissive={accent} emissiveIntensity={0.03} roughness={0.66} metalness={0.06} />
       </mesh>
       {filteredStadiumForecourts.map((plane) => (
-        <mesh key={plane.id} position={plane.position} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+        <mesh key={plane.id} position={plane.position} rotation={[-Math.PI / 2, 0, 0]} receiveShadow renderOrder={12}>
           <planeGeometry args={plane.size} />
-          <meshStandardMaterial color={plane.color} roughness={0.72} metalness={0.04} />
+          <meshStandardMaterial
+            color={plane.color}
+            roughness={0.72}
+            metalness={0.04}
+            polygonOffset
+            polygonOffsetFactor={-2}
+            polygonOffsetUnits={-2}
+          />
         </mesh>
       ))}
       <group position={[0, 0, campusCenterZ]}>
         <mesh position={[0, 6.08, -40]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
           <circleGeometry args={[3080, 112]} />
-          <ExpoRuntimeSurfaceMaterial fallbackColor="#94a7b6" repeat={[6.8, 6.8]} surface="concrete" />
+          <ExpoRuntimeSurfaceMaterial fallbackColor="#6f7c85" repeat={[6.4, 6.4]} surface="concrete" />
         </mesh>
         <mesh position={[0, 6.3, -40]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
           <circleGeometry args={[2120, 88]} />
-          <ExpoRuntimeSurfaceMaterial fallbackColor="#ffffff" repeat={[4.8, 4.8]} surface="concrete" />
+          <ExpoRuntimeSurfaceMaterial fallbackColor="#6f7c85" repeat={[4.6, 4.6]} surface="concrete" />
         </mesh>
         <mesh position={[0, 6.54, -40]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
           <ringGeometry args={[2120, 2540, 96]} />
-          <ExpoRuntimeSurfaceMaterial fallbackColor="#d8e3ea" repeat={[5.8, 5.8]} surface="paver" />
+          <ExpoRuntimeSurfaceMaterial fallbackColor="#6f7c85" repeat={[5.2, 5.2]} surface="paver" />
         </mesh>
         <mesh position={[0, 6.82, -40]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
           <ringGeometry args={[1860, 2000, 96]} />
-          <ExpoRuntimeSurfaceMaterial fallbackColor="#9eb2c0" repeat={[4.8, 4.8]} surface="paver" />
+          <ExpoRuntimeSurfaceMaterial fallbackColor="#6f7c85" repeat={[4.2, 4.2]} surface="paver" />
         </mesh>
         <mesh position={[0, 26, -40]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
           <ringGeometry args={[2440, 2720, 96]} />
-          <meshStandardMaterial color="#cbd8e0" roughness={0.56} metalness={0.06} />
+          <meshStandardMaterial color="#6f7c85" roughness={0.97} metalness={0.01} />
         </mesh>
       </group>
 
@@ -324,10 +304,6 @@ export function ExpoRearCampus({
         </mesh>
       </group>
       <group name="stadium-structure:rear-campus-linked-mini-skyline" position={[-2537, 0, -4977]}>
-        <mesh position={[0, 6, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-          <planeGeometry args={[1140, 760]} />
-          <ExpoRuntimeSurfaceMaterial fallbackColor="#98a4ad" repeat={[4.2, 2.8]} surface="concrete" />
-        </mesh>
         <mesh position={[0, 12, 0]} receiveShadow>
           <boxGeometry args={[744, 18, 312]} />
           <meshStandardMaterial color="#84919a" roughness={0.74} metalness={0.04} emissive={accent} emissiveIntensity={0.024} />
@@ -374,10 +350,6 @@ export function ExpoRearCampus({
         </mesh>
       </group>
       <group name="stadium-structure:rear-campus-titan-frame-gate" position={[-682, 0, 396]}>
-        <mesh position={[0, 8, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-          <planeGeometry args={[760, 420]} />
-          <ExpoRuntimeSurfaceMaterial fallbackColor="#98a4ad" repeat={[2.8, 1.8]} surface="concrete" />
-        </mesh>
         <mesh position={[0, 16, 0]} receiveShadow>
           <boxGeometry args={[412, 20, 146]} />
           <meshStandardMaterial color="#84919a" roughness={0.74} metalness={0.04} emissive={accent} emissiveIntensity={0.024} />
@@ -400,10 +372,6 @@ export function ExpoRearCampus({
         </mesh>
       </group>
       <group name="stadium-structure:rear-campus-linear-civic-terrace" position={[-1684, 0, -1430]}>
-        <mesh position={[0, 5, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-          <planeGeometry args={[1080, 440]} />
-          <ExpoRuntimeSurfaceMaterial fallbackColor="#98a4ad" repeat={[3.8, 1.8]} surface="concrete" />
-        </mesh>
         <mesh position={[0, 10, 0]} receiveShadow>
           <boxGeometry args={[868, 16, 188]} />
           <meshStandardMaterial color="#84919a" roughness={0.74} metalness={0.04} emissive={accent} emissiveIntensity={0.024} />
@@ -663,14 +631,6 @@ export function ExpoRearCampus({
           <meshStandardMaterial color="#98a4ad" roughness={0.62} metalness={0.06} emissive={accent} emissiveIntensity={0.08} />
         </mesh>
       </group>
-      <mesh position={[0, 10, 760]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-        <planeGeometry args={[1380, 1880]} />
-        <ExpoRuntimeSurfaceMaterial fallbackColor="#98a4ad" repeat={[3.6, 4.2]} surface="concrete" />
-      </mesh>
-      <mesh position={[0, 12, 60]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-        <planeGeometry args={[1320, 920]} />
-        <ExpoRuntimeSurfaceMaterial fallbackColor="#98a4ad" repeat={[3.2, 2.6]} surface="paver" />
-      </mesh>
       <group ref={campusColliderRef} name="rear-campus-collider">
         {[-1, 1].map((side) => (
           <mesh key={`rear-campus-gateway-collider-${side}`} position={[side * 1260, 168, campusCenterZ + 980]} rotation={[0, 0, 0]}>

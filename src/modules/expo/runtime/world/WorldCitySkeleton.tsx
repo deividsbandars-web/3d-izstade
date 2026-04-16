@@ -6,7 +6,6 @@ import {
   buildArrivalPlanes,
   buildBoothForecourtPlanes,
   buildBoulevardEdgeBlocks,
-  buildCivicWaterCourt,
   buildCleanTowerLandmarks,
   buildDiscoveryEdgeBlocks,
   buildDiscoveryLandmarks,
@@ -257,6 +256,14 @@ const HIDDEN_CITY_MASS_IDS = new Set([
   'media-wall-flank-left-1',
   'boulevard-rear-node-right-1',
   'discovery-flank-left',
+  'boulevard-edge-right-0',
+  'boulevard-edge-left-0',
+  'boulevard-edge-left-1',
+  'boulevard-edge-right-1',
+  'media-wall-rear-node-right-0',
+  'boulevard-rear-node-right-0',
+  'boulevard-edge-left-2',
+  'boulevard-edge-right-2',
 ]);
 
 const HIDDEN_CITY_PLANE_IDS = new Set([
@@ -273,6 +280,19 @@ const HIDDEN_CITY_PLANE_IDS = new Set([
   'promenade-axis-right-pocket-0',
   'arrival-entry-right',
   'arrival-forecourt',
+  'arrival-entry-ribbon',
+  'arrival-side-band-left',
+  'arrival-side-band-right',
+  'arrival-court-left',
+  'arrival-court-right',
+  'arrival-outer-band-left',
+  'arrival-outer-band-right',
+  'arrival-terminal-left',
+  'arrival-terminal-right',
+  'arrival-inner-carpet',
+  'arrival-front-carpet-left',
+  'arrival-front-carpet-right',
+  'arrival-mid-carpet',
 ]);
 
 const RESIDUAL_CITY_MASS_PATTERNS = [
@@ -375,7 +395,6 @@ export function WorldCitySkeleton({
     () => buildDiscoveryObservatory(districtPrograms.length, districtStride),
     [districtPrograms.length, districtStride]
   );
-  const civicWaterCourt = useMemo(() => buildCivicWaterCourt(), []);
   const signatureMegaLandmarks = useMemo(
     () => buildSignatureMegaLandmarks(districtPrograms.length, districtStride),
     [districtPrograms.length, districtStride]
@@ -447,10 +466,6 @@ export function WorldCitySkeleton({
     () => arrivalPlanes.filter((plane) => !HIDDEN_CITY_PLANE_IDS.has(plane.id) && !isCentralClutterPlane(plane) && isVisibleSection(plane.position)),
     [arrivalPlanes, sectionToggles]
   );
-  const filteredCivicWaterCourt = useMemo(
-    () => civicWaterCourt.filter((plane) => isVisibleSection(plane.position)),
-    [civicWaterCourt, sectionToggles]
-  );
   const filteredTowerLandmarks = useMemo(
     () => cleanTowerLandmarks.filter((tower) => isVisibleSection(tower.position)),
     [cleanTowerLandmarks, sectionToggles]
@@ -514,7 +529,7 @@ export function WorldCitySkeleton({
         boothForecourtPlanes={filteredBoothForecourtPlanes}
         stadiumReserve={stadiumReserve}
       />
-      <WorldCityWaterCourt planes={filteredCivicWaterCourt} />
+      <WorldCityWaterCourt planes={[]} />
       <WorldCityMasses
         masses={filteredMasses}
         stadiumReserve={stadiumReserve}
