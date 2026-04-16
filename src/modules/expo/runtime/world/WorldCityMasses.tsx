@@ -1,8 +1,10 @@
 import type { StadiumReserve } from './WorldCitySkeletonLayout';
 
 type CityMass = {
+  decorPolicy?: 'signature' | 'standard' | 'none';
   id: string;
   position: [number, number, number];
+  role?: 'signature' | 'ground' | 'support-strip' | 'slender-vertical' | 'structural';
   size: [number, number, number];
   color: string;
 };
@@ -68,40 +70,24 @@ export function WorldCityMasses({
       {masses
         .filter((mass) => !overlapsStadiumReserve(mass.position, stadiumReserve, mass.size))
         .map((mass) => {
-          const isSignature =
-            mass.id.includes('gateway') ||
-            mass.id.includes('media-wall') ||
-            mass.id.includes('showcase') ||
-            mass.id.includes('discovery') ||
-            mass.id.includes('signature-mega');
+          const role = mass.role ?? 'structural';
+          const decorPolicy = mass.decorPolicy ?? 'standard';
+          const isSignature = role === 'signature';
           const isCenterLane = Math.abs(mass.position[0]) <= 220;
           const isThinHorizontalShelf = mass.size[1] <= 18 && mass.size[0] >= 72 && mass.size[2] <= 32;
-          const isSlenderVertical =
-            mass.size[1] >= 54 &&
-            (mass.size[0] <= 20 || mass.size[2] <= 20);
-          const isFrontCourtLike =
-            mass.id.includes('court') ||
-            mass.id.includes('band') ||
-            mass.id.includes('apron') ||
-            mass.id.includes('link') ||
-            mass.id.includes('dais');
-          const isGroundLikePlinth =
-            mass.size[1] <= 24 &&
-            (isFrontCourtLike ||
-              mass.id.includes('threshold') ||
-              mass.id.includes('platform') ||
-              mass.id.includes('terrace') ||
-              mass.id.includes('plinth') ||
-              (mass.size[0] * mass.size[2] >= 2200));
+          const isSlenderVertical = role === 'slender-vertical';
+          const isSupportStrip = role === 'support-strip';
+          const isGroundLikePlinth = role === 'ground';
           const suppressDecorativeStack =
             (isCenterLane && isThinHorizontalShelf) ||
-            (isCenterLane && isFrontCourtLike) ||
-            isSlenderVertical;
+            (isCenterLane && isSupportStrip) ||
+            isSlenderVertical ||
+            decorPolicy === 'none';
           const isLowPlinth = mass.size[1] <= 24;
           const hasHorizontalCap = !suppressDecorativeStack && mass.size[1] > 18 && mass.size[0] > 20 && mass.size[2] > 20;
           const hasSideInset = !suppressDecorativeStack && mass.size[1] > 28 && mass.size[0] >= 42 && mass.size[2] >= 18;
           const hasRearSpine = !suppressDecorativeStack && mass.size[1] > 40 && mass.size[0] >= 18 && mass.size[2] >= 14;
-          const hasFrontWing = !suppressDecorativeStack && isSignature && mass.size[0] >= 28 && mass.size[1] > 24;
+          const hasFrontWing = !suppressDecorativeStack && decorPolicy === 'signature' && mass.size[0] >= 28 && mass.size[1] > 24;
           const hasNodeTop = false;
           const hasMarkerTop = false;
 

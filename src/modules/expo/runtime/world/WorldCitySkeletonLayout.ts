@@ -14,6 +14,8 @@ export type CityMass = {
   position: [number, number, number];
   size: [number, number, number];
   color: string;
+  role?: 'signature' | 'ground' | 'support-strip' | 'slender-vertical' | 'structural';
+  decorPolicy?: 'signature' | 'standard' | 'none';
 };
 
 export type CityTower = {
@@ -233,6 +235,58 @@ function filterStructuralCityMasses(masses: CityMass[]) {
     const isResidualSupportStrip = mass.id.includes('support-edge-') || mass.id.includes('media-wall-spine-');
 
     return !isCentralDecorative && !isResidualSupportStrip;
+  }).map((mass) => {
+    const isSignature =
+      mass.id.includes('gateway') ||
+      mass.id.includes('media-wall') ||
+      mass.id.includes('showcase') ||
+      mass.id.includes('discovery') ||
+      mass.id.includes('signature-mega');
+    const isFrontCourtLike =
+      mass.id.includes('court') ||
+      mass.id.includes('band') ||
+      mass.id.includes('apron') ||
+      mass.id.includes('link') ||
+      mass.id.includes('dais');
+    const isGroundLikePlinth =
+      mass.size[1] <= 24 &&
+      (isFrontCourtLike ||
+        mass.id.includes('threshold') ||
+        mass.id.includes('platform') ||
+        mass.id.includes('terrace') ||
+        mass.id.includes('plinth') ||
+        (mass.size[0] * mass.size[2] >= 2200));
+    const isSlenderVertical =
+      mass.size[1] >= 54 &&
+      (mass.size[0] <= 20 || mass.size[2] <= 20);
+    const isSupportStrip =
+      isFrontCourtLike ||
+      mass.id.includes('support-band') ||
+      mass.id.includes('support-link') ||
+      mass.id.includes('support-center-marker');
+
+    const role: CityMass['role'] = isGroundLikePlinth
+      ? 'ground'
+      : isSupportStrip
+        ? 'support-strip'
+        : isSlenderVertical
+          ? 'slender-vertical'
+          : isSignature
+            ? 'signature'
+            : 'structural';
+
+    const decorPolicy: CityMass['decorPolicy'] =
+      role === 'ground' || role === 'support-strip' || role === 'slender-vertical'
+        ? 'none'
+        : role === 'signature'
+          ? 'signature'
+          : 'standard';
+
+    return {
+      ...mass,
+      role,
+      decorPolicy,
+    };
   });
 }
 
