@@ -4,7 +4,11 @@ import { buildExpoLayoutEngine } from '../../layout-engine';
 import { reportExpoDevError } from '../../lib/devErrorReporter';
 import { adaptBackendScenePayload, normalizeBooth, normalizeCompany, normalizeSector } from './sceneContract';
 import { buildDevFallbackScene, buildProductionSafeFallbackScene } from './sceneFallbacks';
-import type { ExpoSceneData } from '../../types/scene';
+import {
+  EXPO_SCENE_CONTRACT_VERSION,
+  EXPO_SCENE_RELEASE_MODE,
+  type ExpoSceneData,
+} from '../../types/scene';
 
 export function getPublicExpoSceneEndpoint() {
   return `${getFrontendRuntimeEnv().apiBaseUrl}/api/expo/scene`;
@@ -97,8 +101,8 @@ export async function loadExpoSceneFromSupabaseService(): Promise<ExpoSceneData>
       ? companies.map((company: any) => normalizeCompany(company, normalizeBooth(company?.booth ?? company?.booths, company)))
       : [],
     generatedAt: null,
-    releaseMode: 'sponsor-boulevard',
-    sceneVersion: 'expo-scene-supabase-fallback',
+    releaseMode: EXPO_SCENE_RELEASE_MODE,
+    sceneVersion: `${EXPO_SCENE_CONTRACT_VERSION}-supabase-fallback`,
     sectors: Array.isArray(sectors) ? sectors.map(normalizeSector).filter((sector) => sector.id.length > 0) : [],
   };
 

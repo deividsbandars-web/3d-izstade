@@ -1,4 +1,9 @@
 import { supabase } from '../core/supabase';
+import {
+  EXPO_SCENE_CANONICAL_DISTRICTS,
+  EXPO_SCENE_CONTRACT_VERSION,
+  EXPO_SCENE_RELEASE_MODE,
+} from '../modules/expo/types/scene';
 
 export interface Sector {
   id: string;
@@ -28,6 +33,12 @@ export interface Booth {
   services: any[];
   products: any[];
 }
+
+export const EXPO_SCENE_SERVICE_META = {
+  canonicalDistricts: [...EXPO_SCENE_CANONICAL_DISTRICTS],
+  contractVersion: EXPO_SCENE_CONTRACT_VERSION,
+  releaseMode: EXPO_SCENE_RELEASE_MODE,
+} as const;
 
 export const expoService = {
   // Iegūt visus sektorus

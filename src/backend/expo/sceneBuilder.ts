@@ -1,5 +1,10 @@
 import { supabaseClient } from '../../lib/supabaseClient.js';
 import { logger } from '../logging/logger.js';
+import {
+  EXPO_SCENE_CONTRACT_VERSION,
+  EXPO_SCENE_RELEASE_MODE,
+  type ExpoSceneContract,
+} from '../../modules/expo/types/scene.js';
 
 export const sceneBuilder = {
   /**
@@ -19,26 +24,32 @@ export const sceneBuilder = {
       if (companiesResult.error) throw new Error(`Failed to load companies: ${companiesResult.error.message}`);
       if (boothsResult.error) throw new Error(`Failed to load booths: ${boothsResult.error.message}`);
 
-      // Assemble structured data
+      const booths = boothsResult.data || [];
       const sectors = sectorsResult.data || [];
-      const boothsData = boothsResult.data || [];
       const companies = (companiesResult.data || []).map(company => {
-        const companyBooth = boothsData.find(b => b.company_id === company.id);
+        const companyBooth = booths.find(b => b.company_id === company.id);
         return {
           ...company,
           booth: companyBooth || {}
         };
       });
-
-      // Extract unique assets for preloading
-      const assets = boothsData
-        .map(b => b.model_url)
-        .filter(url => url && url.endsWith('.glb'));
-
-      const sceneData = {
-        sectors,
+      const sceneData: ExpoSceneContract = {
+        authPolicy: 'public-readonly',
+        booths: booths.map((booth: any) => ({
+          ...booth,
+          companyId: String(booth.companyId || booth.company_id || ''),
+        })),
+        cityInfo: {
+          globalLocation: null,
+          id: 'warpala-expo-city',
+          name: 'Warpala Expo',
+          style: 0,
+        },
         companies,
-        assets: [...new Set(assets)] // unique assets
+        generatedAt: new Date().toISOString(),
+        releaseMode: EXPO_SCENE_RELEASE_MODE,
+        sceneVersion: EXPO_SCENE_CONTRACT_VERSION,
+        sectors,
       };
 
       logger.info('SceneBuilder', `Scene built with ${sectors.length} sectors and ${companies.length} companies.`);

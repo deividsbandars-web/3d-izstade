@@ -1,4 +1,8 @@
 import { supabaseClient, handleSupabaseError } from '../../lib/supabaseClient';
+import {
+  EXPO_SCENE_CONTRACT_VERSION,
+  EXPO_SCENE_RELEASE_MODE,
+} from '../../modules/expo/types/scene';
 
 export interface ExpoBooth {
   id?: string;
@@ -11,6 +15,11 @@ export interface ExpoBooth {
   created_at?: string;
   updated_at?: string;
 }
+
+export const EXPO_BACKEND_SERVICE_META = {
+  contractVersion: EXPO_SCENE_CONTRACT_VERSION,
+  releaseMode: EXPO_SCENE_RELEASE_MODE,
+} as const;
 
 export const expoService = {
   /**

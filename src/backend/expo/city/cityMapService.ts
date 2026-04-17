@@ -1,5 +1,6 @@
 import { supabaseClient } from '../../../lib/supabaseClient';
 import { logger } from '../../logging/logger';
+import { EXPO_SCENE_CANONICAL_DISTRICTS } from '../../../modules/expo/types/scene';
 
 export const cityMapService = {
   /**
@@ -34,17 +35,7 @@ export const cityMapService = {
    */
   async getDistricts() {
     try {
-      // Pre-defined structural districts
-      const defaultDistricts = [
-        'architecture', 
-        'construction', 
-        'materials', 
-        'design', 
-        'real_estate',
-        'tech',
-        'logistics'
-      ];
-      return { data: defaultDistricts, error: null };
+      return { data: [...EXPO_SCENE_CANONICAL_DISTRICTS], error: null };
     } catch (error) {
       logger.error('CityMapService', 'Failed to get districts', error);
       return { data: null, error: String(error) };
