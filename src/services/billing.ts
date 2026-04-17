@@ -1,23 +1,13 @@
-// Frontend exposure for SaaS Monetization
-import { planService } from '../backend/billing/plans/planService';
-import { creditService } from '../backend/billing/credits/creditService';
-import { paymentService } from '../backend/billing/payments/paymentService';
+import { serverApiGet, serverApiPost } from './serverApi';
 
 export const BillingAPI = {
-  // Plan Management
-  getPlanLimits: planService.getPlanLimits,
-  getUserPlan: planService.getUserPlan,
-  upgradePlan: async (userId: string, newPlan: string) => {
-     // In a real flow, this initiates checkout. For quick test usage, direct upgrade.
-     return await paymentService.upgradePlan(userId, newPlan);
-  },
-
-  // Credit Management
-  getCreditBalance: creditService.getCreditBalance,
-  buyCredits: async (userId: string, packageId: string) => {
-    return await paymentService.createCheckoutSession(userId, packageId, 'credits');
-  },
-  
-  // Checkout
-  createCheckoutSession: paymentService.createCheckoutSession
+  getPlanLimits: async (planId: string) => serverApiGet(`/api/billing/plans/${planId}/limits`),
+  getUserPlan: async (userId: string) => serverApiGet(`/api/billing/users/${userId}/plan`),
+  upgradePlan: async (userId: string, newPlan: string) =>
+    serverApiPost('/api/billing/upgrade', { userId, newPlan }),
+  getCreditBalance: async (userId: string) => ({ data: await serverApiGet(`/api/billing/users/${userId}/credits`), error: null }),
+  buyCredits: async (userId: string, packageId: string) =>
+    serverApiPost('/api/billing/credits/checkout', { userId, packageId }),
+  createCheckoutSession: async (userId: string, productId: string, kind: string) =>
+    serverApiPost('/api/billing/checkout', { userId, productId, kind }),
 };

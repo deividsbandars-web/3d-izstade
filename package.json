@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "build:expo-textures": "node scripts/build-expo-texture-pipeline.mjs",
+    "check:source-boundaries": "node scripts/check-source-boundaries.mjs",
     "check:expo-release-assets": "node scripts/check-expo-release-assets.mjs",
     "check:expo-texture-pipeline": "node scripts/check-expo-texture-pipeline.mjs",
     "qa:expo-routes": "npx tsx scripts/expo-route-qa-fixtures.ts",

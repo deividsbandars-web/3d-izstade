@@ -1,32 +1,26 @@
-// Frontend exposure for backend expo service
-import { expoService } from '../backend/expo/expoService';
-import { boothService } from '../backend/expo/booths/boothService';
-import { cityMapService } from '../backend/expo/city/cityMapService';
-import { expoSceneService } from '../backend/expo/scenes/expoSceneService';
-import { boothAnalytics } from '../backend/expo/analytics/boothAnalytics';
+import { serverApiGet, serverApiPatch, serverApiPost } from './serverApi';
 
-// Combine Phase 3 and Phase 10 APIs for Booth Data
 export const ExpoDataAPI = {
-  createBooth: boothService.createBooth, // Upgraded to Phase 10
-  updateBooth: boothService.updateBooth, // Upgraded to Phase 10
-  getBooth: boothService.getBooth,
-  getBooths: boothService.listBooths, // List all
-  getBoothStats: boothAnalytics.getBoothStats,
-  
-  // Backwards compatibility with Phase 3
-  getBoothById: expoService.getBoothById,
+  createBooth: async (payload: unknown) => serverApiPost('/api/expo/booths', payload),
+  updateBooth: async (boothId: string, payload: unknown) => serverApiPatch(`/api/expo/booths/${boothId}`, payload),
+  getBooth: async (boothId: string) => serverApiGet(`/api/expo/booths/${boothId}`),
+  getBooths: async () => serverApiGet('/api/expo/booths'),
+  getBoothStats: async (boothId: string): Promise<{ data: any; error: null }> => ({
+    data: await serverApiGet(`/api/expo/analytics/booths/${boothId}`),
+    error: null,
+  }),
+  getBoothById: async (boothId: string) => serverApiGet(`/api/expo/booths/${boothId}`),
 };
 
-// Phase 10 City Map API
 export const CityMapAPI = {
-  getExpoCity: cityMapService.getCityMap,
-  getDistricts: cityMapService.getDistricts,
-  assignBoothToDistrict: cityMapService.assignBoothToDistrict,
+  getExpoCity: async () => serverApiGet('/api/expo/city'),
+  getDistricts: async () => serverApiGet('/api/expo/city/districts'),
+  assignBoothToDistrict: async (boothId: string, districtName: string) =>
+    serverApiPatch(`/api/expo/city/booths/${boothId}/district`, { districtName }),
 };
 
 export const UnrealEngineAPI = {
-  // Phase 10 specialized scene JSON outputs
-  getSceneData: expoSceneService.getSceneData,
-  getBoothScene: expoSceneService.getBoothScene,
-  getCityMap: expoSceneService.getCityScene,
+  getSceneData: async () => serverApiGet('/api/expo/scene'),
+  getBoothScene: async (boothId: string) => serverApiGet(`/api/expo/scenes/booth/${boothId}`),
+  getCityMap: async () => serverApiGet('/api/expo/scenes/city'),
 };

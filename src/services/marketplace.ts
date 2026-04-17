@@ -1,17 +1,10 @@
-// Frontend exposure for AI Agent Marketplace
-import { agentRegistry } from '../backend/marketplace/agents/agentRegistry';
-import { workflowMarketplace } from '../backend/marketplace/workflows/workflowMarketplace';
-import { templateService } from '../backend/marketplace/templates/templateService';
-import { installService } from '../backend/marketplace/installService';
+import { serverApiGet, serverApiPost } from './serverApi';
 
 export const MarketplaceAPI = {
-  // Browsing
-  getAgents: agentRegistry.getAvailableAgents,
-  getWorkflows: workflowMarketplace.getAvailableWorkflows,
-  getTemplates: templateService.getAvailableTemplates,
-
-  // Installation
-  installAgent: installService.installAgent,
-  installWorkflow: installService.installWorkflow,
-  installTemplate: installService.installTemplate
+  getAgents: async (): Promise<{ data: any[]; error: null }> => ({ data: await serverApiGet<any[]>('/api/marketplace/agents'), error: null }),
+  getWorkflows: async (): Promise<{ data: any[]; error: null }> => ({ data: await serverApiGet<any[]>('/api/marketplace/workflows'), error: null }),
+  getTemplates: async (): Promise<{ data: any[]; error: null }> => ({ data: await serverApiGet<any[]>('/api/marketplace/templates'), error: null }),
+  installAgent: async (userId: string, agentId: string) => ({ success: true, data: await serverApiPost('/api/marketplace/install/agent', { userId, agentId }), error: null }),
+  installWorkflow: async (userId: string, workflowId: string) => ({ success: true, data: await serverApiPost('/api/marketplace/install/workflow', { userId, workflowId }), error: null }),
+  installTemplate: async (userId: string, templateId: string) => ({ success: true, data: await serverApiPost('/api/marketplace/install/template', { userId, templateId }), error: null }),
 };

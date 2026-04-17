@@ -1,16 +1,10 @@
-import { businessGenerator } from '../backend/business/businessGenerator';
 import { supabaseClient } from '../lib/supabaseClient';
+import { serverApiPost } from './serverApi';
 
 export const BusinessSystemAPI = {
-  /**
-   * Generates a new business end-to-step (Idea -> DB Project -> Workflow Tasks)
-   */
-  generateBusiness: businessGenerator.launchBusinessWorkflow.bind(businessGenerator),
-  
-  /**
-   * Retrieves all AI-generated businesses from the database
-   */
-  getGeneratedBusinesses: async () => {
+  generateBusiness: async (payload: unknown) => serverApiPost('/api/business/generate', payload),
+
+  async getGeneratedBusinesses() {
     try {
       const { data, error } = await supabaseClient
         .from('projects')
@@ -24,5 +18,5 @@ export const BusinessSystemAPI = {
       console.error('Error fetching generated businesses', error);
       return { data: null, error: String(error) };
     }
-  }
+  },
 };

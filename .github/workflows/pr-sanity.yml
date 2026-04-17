@@ -21,5 +21,8 @@ jobs:
       - name: Install Dependencies
         run: npm ci
 
+      - name: Source Boundary Hygiene
+        run: npm run check:source-boundaries
+
       - name: TypeScript Build
         run: npx tsc -b
