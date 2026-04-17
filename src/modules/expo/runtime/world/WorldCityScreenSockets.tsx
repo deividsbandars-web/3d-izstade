@@ -63,7 +63,7 @@ export function WorldCityScreenSockets({
           return distanceSq <= maxDistance * maxDistance;
         })
         .map((socket) => (
-          <group key={socket.id} position={socket.position} rotation={socket.rotation}>
+          <group key={socket.id} name={`world-city-screen-socket:${socket.kind}:${socket.id}`} position={socket.position} rotation={socket.rotation}>
             <mesh>
               <planeGeometry args={socket.frameSize} />
               <meshBasicMaterial color={socket.color} transparent opacity={socket.kind === 'hero_wall' ? 0.1 : 0.07} />

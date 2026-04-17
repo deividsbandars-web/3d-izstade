@@ -22,6 +22,19 @@ type CityScreenSocket = {
   surfaceId: string;
 };
 
+function getWorldScreenSemantic(socketKind: CityScreenSocket['kind']) {
+  switch (socketKind) {
+    case 'hero_wall':
+      return { chip: 'CITY LANDMARK', mode: 'landmark' as const };
+    case 'tower_crown':
+      return { chip: 'TOWER BEACON', mode: 'beacon' as const };
+    case 'tower_side':
+      return { chip: 'CITY SIGNAL', mode: 'signal' as const };
+    default:
+      return { chip: 'DISTRICT SCREEN', mode: 'wayfinding' as const };
+  }
+}
+
 function getTierAccent(tier: CityScreenAssignment['tier']) {
   switch (tier) {
     case 'hero':
@@ -61,17 +74,23 @@ export function WorldCityScreenAssignments({
         }
 
         const tierAccent = getTierAccent(assignment.tier);
+        const semantic = getWorldScreenSemantic(socket.kind);
         const frameWidth = socket.frameSize[0] * 0.8;
         const frameHeight = socket.frameSize[1] * 0.8;
         const hasVisualAsset = Boolean(assignment.imageUrl);
         const frameInset = assignment.tier === 'hero' ? 0.94 : assignment.tier === 'elite' ? 0.93 : 0.92;
         const frameBorderOpacity = assignment.tier === 'hero' ? 0.95 : assignment.tier === 'elite' ? 0.82 : 0.7;
-        const frameGlowOpacity = assignment.tier === 'hero' ? 0.18 : assignment.tier === 'elite' ? 0.13 : 0.09;
+        const frameGlowOpacity =
+          semantic.mode === 'landmark'
+            ? (assignment.tier === 'hero' ? 0.18 : assignment.tier === 'elite' ? 0.13 : 0.09)
+            : semantic.mode === 'beacon'
+              ? 0.12
+              : 0.08;
         const subtitleY = hasVisualAsset ? -(frameHeight * 0.39) : -(frameHeight * 0.34);
         const tierBadgeY = hasVisualAsset ? frameHeight * 0.4 : frameHeight * 0.34;
 
         return (
-          <group key={assignment.id} position={socket.position} rotation={socket.rotation}>
+          <group key={assignment.id} name={`world-city-screen:${semantic.mode}:${assignment.id}`} position={socket.position} rotation={socket.rotation}>
             <mesh position={[0, 0, 0.04]}>
               <planeGeometry args={[frameWidth, frameHeight]} />
               <meshBasicMaterial color="#08111c" transparent opacity={0.84} />
@@ -102,6 +121,19 @@ export function WorldCityScreenAssignments({
               outlineColor="#020617"
               outlineWidth={0.04}
               position={[0, tierBadgeY, 0.08]}
+            >
+              {semantic.chip}
+            </Text>
+            <Text
+              anchorX="center"
+              anchorY="top"
+              color="#cbd5e1"
+              fontSize={Math.max(0.2, frameHeight * 0.036)}
+              maxWidth={frameWidth * 0.82}
+              outlineBlur={0.12}
+              outlineColor="#020617"
+              outlineWidth={0.03}
+              position={[0, tierBadgeY - Math.max(0.36, frameHeight * 0.08), 0.08]}
             >
               {assignment.tier.toUpperCase()}
             </Text>

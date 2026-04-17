@@ -44,6 +44,7 @@ export function BoothVisualAssembly({
   const nameFontSize = getSponsorNameFontSize(presentation.displayName);
   const heroName = formatExpoDisplayName(presentation.displayName);
   const infoBandZ = metrics.titlePosition[2] - 0.24;
+  const boothPresentationScreenUrl = presentation.posterUrl ?? null;
 
   return (
     <>
@@ -65,7 +66,7 @@ export function BoothVisualAssembly({
           accentColor={tierState.districtVisual.shellAccent}
           fallbackText={fallbackMonogram}
           metrics={metrics}
-          screenUrl={presentation.posterUrl ?? presentation.logoUrl ?? null}
+          screenUrl={boothPresentationScreenUrl}
           tier={tierState.featureTier}
         />
       )}

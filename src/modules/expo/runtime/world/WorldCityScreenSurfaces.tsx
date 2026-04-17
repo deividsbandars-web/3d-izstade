@@ -61,7 +61,7 @@ export function WorldCityScreenSurfaces({
           return distanceSq <= maxDistance * maxDistance;
         })
         .map((surface) => (
-          <group key={surface.id} position={surface.position}>
+          <group key={surface.id} name={`world-city-screen-surface:${surface.role}:${surface.id}`} position={surface.position}>
             <mesh position={[0, 0, surface.size[2] * 0.5]}>
               <planeGeometry args={[surface.size[0], surface.size[1]]} />
               <meshStandardMaterial
