@@ -7,6 +7,7 @@ import {
   HeroOrEliteHalo,
   PremiumOrEliteBlades,
   PremiumPortalShell,
+  TierScreenFrame,
 } from './BoothTierShells';
 import { SponsorTextureSurface } from './BoothTextureMaterials';
 
@@ -40,6 +41,13 @@ export function OpenBoothPavilion({
   const eliteMonolithHeight = postHeight + 5.8;
   const eliteMonolithOffsetX = (width * 0.5) + 3.6;
   const eliteMonolithZ = rearScreenZ + 0.36;
+  const screenFrameWidth = width * (isHero ? 0.82 : isElite ? 0.76 : isPremium ? 0.72 : 0.62);
+  const screenFrameHeight = isHero ? 7.2 : isElite ? 6.4 : isPremium ? 5.6 : 4.8;
+  const screenSurfaceWidth = width * (isHero ? 0.74 : isElite ? 0.68 : isPremium ? 0.62 : 0.52);
+  const screenSurfaceHeight = isHero ? 6.16 : isElite ? 5.46 : isPremium ? 4.82 : 4.18;
+  const lowerMediaShelfWidth = width * (isHero ? 0.64 : isElite ? 0.58 : isPremium ? 0.52 : 0.44);
+  const lowerMediaShelfDepth = isHero ? 0.3 : isElite ? 0.26 : isPremium ? 0.22 : 0.18;
+  const lowerMediaShelfY = -(screenFrameHeight * 0.5) - (isHero ? 0.26 : isElite ? 0.22 : 0.16);
 
   return (
     <group name="booth-open-pavilion">
@@ -105,12 +113,18 @@ export function OpenBoothPavilion({
         />
       )}
       <group position={[0, postHeight * 0.56, rearScreenZ]}>
+        <TierScreenFrame
+          accentColor={accentColor}
+          screenHeight={screenFrameHeight}
+          screenWidth={screenFrameWidth}
+          tier={tier}
+        />
         <mesh castShadow receiveShadow>
-          <boxGeometry args={[width * (isHero ? 0.72 : isElite ? 0.68 : isPremium ? 0.64 : 0.6), isHero ? 6.3 : isElite ? 5.96 : isPremium ? 5.5 : 5.1, 0.24]} />
+          <boxGeometry args={[screenFrameWidth, screenFrameHeight, 0.24]} />
           <meshStandardMaterial color="#08111c" metalness={0.12} roughness={0.58} />
         </mesh>
         <mesh position={[0, 0, 0.16]}>
-          <planeGeometry args={[width * (isHero ? 0.64 : isElite ? 0.6 : isPremium ? 0.56 : 0.52), isHero ? 5.42 : isElite ? 5.02 : isPremium ? 4.68 : 4.32]} />
+          <planeGeometry args={[screenSurfaceWidth, screenSurfaceHeight]} />
           {screenUrl ? (
             <Suspense fallback={<meshStandardMaterial color="#0f172a" emissive={accentColor} emissiveIntensity={0.08} />}>
               <SponsorTextureSurface fallbackColor="#0f172a" url={screenUrl} />
@@ -119,8 +133,19 @@ export function OpenBoothPavilion({
             <meshStandardMaterial color="#0f172a" emissive={accentColor} emissiveIntensity={0.08} />
           )}
         </mesh>
+        <mesh position={[0, lowerMediaShelfY, 0.1]} castShadow receiveShadow>
+          <boxGeometry args={[lowerMediaShelfWidth, 0.12, lowerMediaShelfDepth]} />
+          <meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={isHero ? 0.14 : isElite ? 0.1 : 0.06} roughness={0.24} metalness={0.12} />
+        </mesh>
         {!screenUrl && (
-          <Text position={[0, -0.04, 0.24]} fontSize={0.68} color={accentColor} anchorX="center" anchorY="middle" maxWidth={2.8}>
+          <Text
+            position={[0, -0.04, 0.24]}
+            fontSize={isHero ? 0.84 : isElite ? 0.76 : isPremium ? 0.7 : 0.62}
+            color={accentColor}
+            anchorX="center"
+            anchorY="middle"
+            maxWidth={isHero ? 4.2 : isElite ? 3.8 : isPremium ? 3.2 : 2.6}
+          >
             {fallbackText}
           </Text>
         )}

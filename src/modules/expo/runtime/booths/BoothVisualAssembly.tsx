@@ -71,6 +71,7 @@ export function BoothVisualAssembly({
       )}
       <BoothFeatureApron
         accentColor={tierState.districtVisual.shellAccent}
+        contractTier={tierState.contractTier}
         districtGlow={tierState.districtVisual.districtGlow}
         frontApronDepth={tierState.frontApronDepth}
         frontApronWidth={tierState.frontApronWidth}
@@ -87,6 +88,7 @@ export function BoothVisualAssembly({
       />
       <BoothFeatureHeader
         accentColor={accentColor}
+        contractTier={tierState.contractTier}
         fallbackMonogram={fallbackMonogram}
         heroName={heroName}
         isEliteFeature={tierState.isEliteFeature}

@@ -80,12 +80,22 @@ export function SponsorCtaStrip({ actions, color, onAction }: { actions: Sponsor
   );
 }
 
-export function BoothFeatureApron({ accentColor, districtGlow, frontApronDepth, frontApronWidth, isFeatureBooth }: { accentColor: string; districtGlow: string; frontApronDepth: number; frontApronWidth: number; isFeatureBooth: boolean }) {
+export function BoothFeatureApron({ accentColor, contractTier, districtGlow, frontApronDepth, frontApronWidth, isFeatureBooth }: { accentColor: string; contractTier: 'common' | 'premium' | 'elite' | 'hero'; districtGlow: string; frontApronDepth: number; frontApronWidth: number; isFeatureBooth: boolean }) {
   if (!isFeatureBooth) return null;
+  const isHero = contractTier === 'hero';
+  const isElite = contractTier === 'elite';
+  const upperBandWidth = frontApronWidth * (isHero ? 0.84 : isElite ? 0.8 : 0.78);
+  const upperBandDepth = frontApronDepth * (isHero ? 0.52 : isElite ? 0.48 : 0.44);
   return (
     <group position={[0, 0, 7.4]}>
       <mesh position={[0, 0.08, 0]} receiveShadow><boxGeometry args={[frontApronWidth, 0.16, frontApronDepth]} /><meshStandardMaterial color="#e4edf4" metalness={0.04} roughness={0.72} /></mesh>
-      <mesh position={[0, 0.24, 0]} receiveShadow><boxGeometry args={[frontApronWidth * 0.78, 0.08, frontApronDepth * 0.44]} /><meshStandardMaterial color={accentColor} emissive={districtGlow} emissiveIntensity={0.08} roughness={0.54} metalness={0.16} /></mesh>
+      <mesh position={[0, 0.24, 0]} receiveShadow><boxGeometry args={[upperBandWidth, 0.08, upperBandDepth]} /><meshStandardMaterial color={accentColor} emissive={districtGlow} emissiveIntensity={isHero ? 0.12 : isElite ? 0.1 : 0.08} roughness={0.54} metalness={0.16} /></mesh>
+      {(isHero || isElite) && (
+        <mesh position={[0, 0.34, 0]} receiveShadow>
+          <boxGeometry args={[frontApronWidth * (isHero ? 0.58 : 0.52), 0.05, frontApronDepth * (isHero ? 0.22 : 0.18)]} />
+          <meshStandardMaterial color="#f8fbfe" emissive={accentColor} emissiveIntensity={isHero ? 0.1 : 0.06} roughness={0.32} metalness={0.12} />
+        </mesh>
+      )}
     </group>
   );
 }
@@ -105,8 +115,10 @@ export function BoothFeatureStage({ accentColor, fallbackMonogram, isEliteFeatur
   );
 }
 
-export function BoothFeatureHeader({ accentColor, fallbackMonogram, heroName, isEliteFeature, isFeatureBooth, isHeroFeature, logoUrl, metricsColliderHeight }: { accentColor: string; fallbackMonogram: string; heroName: { lines: string[]; fontScale: number }; isEliteFeature: boolean; isFeatureBooth: boolean; isHeroFeature: boolean; logoUrl: string | null; metricsColliderHeight: number }) {
+export function BoothFeatureHeader({ accentColor, contractTier, fallbackMonogram, heroName, isEliteFeature, isFeatureBooth, isHeroFeature, logoUrl, metricsColliderHeight }: { accentColor: string; contractTier: 'common' | 'premium' | 'elite' | 'hero'; fallbackMonogram: string; heroName: { lines: string[]; fontScale: number }; isEliteFeature: boolean; isFeatureBooth: boolean; isHeroFeature: boolean; logoUrl: string | null; metricsColliderHeight: number }) {
   if (!isFeatureBooth) return null;
+  const isHero = contractTier === 'hero';
+  const isElite = contractTier === 'elite';
   return (
     <group position={[0, metricsColliderHeight + (isHeroFeature ? 4.8 : isEliteFeature ? 4.5 : 4.2), -0.22]}>
       <mesh castShadow><boxGeometry args={[isHeroFeature ? 12.8 : isEliteFeature ? 11.4 : 10.4, isHeroFeature ? 2.48 : isEliteFeature ? 2.16 : 1.94, 0.5]} /><meshStandardMaterial color="#08111c" metalness={0.12} roughness={0.42} /></mesh>
@@ -121,6 +133,12 @@ export function BoothFeatureHeader({ accentColor, fallbackMonogram, heroName, is
         </mesh>
         {!logoUrl && <Text position={[0, -0.04, 0.22]} fontSize={isHeroFeature ? 0.48 : isEliteFeature ? 0.42 : 0.38} color="#f8fafc" anchorX="center" anchorY="middle" maxWidth={isHeroFeature ? 1.5 : isEliteFeature ? 1.28 : 1.1}>{fallbackMonogram}</Text>}
       </group>
+      {(isHero || isElite) && (
+        <mesh position={[0, isHero ? -4.02 : -3.54, 0.02]} castShadow>
+          <boxGeometry args={[isHero ? 8.8 : 7.4, 0.12, 0.16]} />
+          <meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={isHero ? 0.14 : 0.1} roughness={0.24} metalness={0.12} />
+        </mesh>
+      )}
     </group>
   );
 }
