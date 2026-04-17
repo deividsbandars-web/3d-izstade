@@ -9,6 +9,93 @@ type WorldCityMegaLandmarksProps = {
   };
 };
 
+type LandmarkCompositionGroup =
+  | 'arrival'
+  | 'showcase'
+  | 'media'
+  | 'discovery'
+  | 'right-citadel'
+  | 'right-skybridge'
+  | 'right-halo'
+  | 'left-crown'
+  | 'left-disc'
+  | 'left-rampart'
+  | 'left-cantilever'
+  | 'left-monolith'
+  | 'left-broken-wall';
+
+const HIDDEN_LANDMARK_COMPOSITION: Record<LandmarkCompositionGroup, string[]> = {
+  arrival: [
+    'mega-landmark:arrival-base',
+    'mega-landmark:arrival-plinth',
+    'mega-landmark:arrival-core',
+    'mega-landmark:arrival-support-left',
+    'mega-landmark:arrival-support-right',
+    'mega-landmark:arrival-accent-left',
+    'mega-landmark:arrival-accent-right',
+  ],
+  showcase: [
+    'mega-landmark:showcase-support-right',
+    'mega-landmark:showcase-side-accent-left',
+    'mega-landmark:showcase-side-accent-right',
+    'mega-landmark:showcase-outer-accent-left',
+    'mega-landmark:showcase-outer-accent-right',
+  ],
+  media: [
+    'mega-landmark:media-base',
+    'mega-landmark:media-plinth',
+    'mega-landmark:media-support-left',
+    'mega-landmark:media-support-right',
+    'mega-landmark:media-spire-left',
+    'mega-landmark:media-spire-right',
+    'mega-landmark:media-side-accent-left',
+    'mega-landmark:media-side-accent-right',
+    'mega-landmark:media-outer-accent-left',
+    'mega-landmark:media-outer-accent-right',
+  ],
+  discovery: [
+    'mega-landmark:discovery-base',
+    'mega-landmark:discovery-plinth',
+    'mega-landmark:discovery-support-left',
+    'mega-landmark:discovery-support-right',
+    'mega-landmark:discovery-outer-accent-left',
+    'mega-landmark:discovery-outer-accent-right',
+    'mega-landmark:discovery-side-accent-left',
+    'mega-landmark:discovery-side-accent-right',
+    'mega-landmark:discovery-spine-base',
+    'mega-landmark:discovery-spine-left-garden',
+    'mega-landmark:discovery-spine-ribbon',
+  ],
+  'right-citadel': [
+    'mega-landmark:right-citadel-fin-left',
+    'mega-landmark:right-citadel-fin-right',
+  ],
+  'right-skybridge': [
+    'mega-landmark:right-skybridge-side-fin-left',
+    'mega-landmark:right-skybridge-side-fin-right',
+    'mega-landmark:right-skybridge-terrace-left',
+    'mega-landmark:right-skybridge-terrace-right',
+  ],
+  'right-halo': [
+    'mega-landmark:right-media-halo-plinth',
+    'mega-landmark:right-media-halo-fin-left',
+    'mega-landmark:right-media-halo-fin-right',
+  ],
+  'left-crown': [
+    'mega-landmark:left-split-crown-fin-left',
+    'mega-landmark:left-split-crown-fin-right',
+  ],
+  'left-disc': [],
+  'left-rampart': [],
+  'left-cantilever': [],
+  'left-monolith': [],
+  'left-broken-wall': [],
+};
+
+function buildHiddenLandmarkParts() {
+  return new Set(Object.values(HIDDEN_LANDMARK_COMPOSITION).flat());
+}
+
 function LandmarkMaterial({
   color: _color,
   emissive = '#000000',
@@ -47,54 +134,7 @@ export function WorldCityMegaLandmarks({
   districtStride,
   sectionToggles = { arrival: true, left: true, middle: true, right: true },
 }: WorldCityMegaLandmarksProps) {
-  const hiddenLandmarkParts = new Set([
-    'mega-landmark:arrival-base',
-    'mega-landmark:arrival-plinth',
-    'mega-landmark:arrival-core',
-    'mega-landmark:arrival-support-left',
-    'mega-landmark:arrival-support-right',
-    'mega-landmark:arrival-accent-left',
-    'mega-landmark:arrival-accent-right',
-    'mega-landmark:showcase-side-accent-right',
-    'mega-landmark:media-spire-left',
-    'mega-landmark:showcase-side-accent-left',
-    'mega-landmark:media-base',
-    'mega-landmark:media-plinth',
-    'mega-landmark:media-support-left',
-    'mega-landmark:media-support-right',
-    'mega-landmark:media-spire-right',
-    'mega-landmark:media-side-accent-right',
-    'mega-landmark:media-side-accent-left',
-    'mega-landmark:media-outer-accent-left',
-    'mega-landmark:discovery-base',
-    'mega-landmark:discovery-plinth',
-    'mega-landmark:discovery-support-left',
-    'mega-landmark:discovery-support-right',
-    'mega-landmark:discovery-outer-accent-left',
-    'mega-landmark:discovery-outer-accent-right',
-    'mega-landmark:discovery-side-accent-left',
-    'mega-landmark:discovery-side-accent-right',
-    'mega-landmark:media-outer-accent-right',
-    'mega-landmark:right-media-halo-fin-left',
-    'mega-landmark:right-media-halo-plinth',
-    'mega-landmark:right-media-halo-fin-right',
-    'mega-landmark:right-citadel-fin-left',
-    'mega-landmark:right-citadel-fin-right',
-    'mega-landmark:right-skybridge-side-fin-right',
-    'mega-landmark:right-skybridge-terrace-right',
-    'mega-landmark:right-skybridge-terrace-left',
-    'mega-landmark:right-skybridge-side-fin-left',
-    'mega-landmark:showcase-outer-accent-right',
-    'mega-landmark:showcase-support-right',
-    'mega-landmark:left-split-crown-fin-left',
-    'mega-landmark:left-split-crown-fin-right',
-    
-    'mega-landmark:showcase-outer-accent-left',
-    
-    'mega-landmark:discovery-spine-base',
-    'mega-landmark:discovery-spine-left-garden',
-    'mega-landmark:discovery-spine-ribbon',
-  ]);
+  const hiddenLandmarkParts = buildHiddenLandmarkParts();
   const arrivalBaseZ = 256;
   const showcaseBaseZ = -72;
   const discoveryBaseZ = -196 - ((Math.max(1, districtCount) - 1) * districtStride) - 1080;
