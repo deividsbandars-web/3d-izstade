@@ -81,9 +81,9 @@ Mounted through [api.ts](/C:/3d/backend-server/routes/api.ts) and [server.ts](/C
 
 | Wrapper Route | Status | Notes |
 | --- | --- | --- |
-| `POST /api/leads` | missing | Wrapper exists, server route does not. |
-| `PATCH /api/leads/:id` | missing | Wrapper exists, server route does not. |
-| `POST /api/leads/by-source` | missing | Wrapper exists, server route does not. |
+| `POST /api/leads` | implemented | Protected route now mounted. |
+| `PATCH /api/leads/:id` | implemented | Protected route now mounted as `/api/leads/:leadId`. |
+| `POST /api/leads/by-source` | implemented | Protected route now mounted. |
 | `POST /api/leads/generate` | implemented | Mounted. |
 
 ### Marketplace
@@ -101,39 +101,39 @@ Mounted through [api.ts](/C:/3d/backend-server/routes/api.ts) and [server.ts](/C
 
 | Wrapper Route | Status | Notes |
 | --- | --- | --- |
-| `GET /api/billing/plans/:id/limits` | missing | No controller or route mounted. |
-| `GET /api/billing/users/:id/plan` | missing | No controller or route mounted. |
-| `POST /api/billing/upgrade` | missing | No controller or route mounted. |
-| `GET /api/billing/users/:id/credits` | missing | No controller or route mounted. |
-| `POST /api/billing/credits/checkout` | missing | No controller or route mounted. |
-| `POST /api/billing/checkout` | missing | No controller or route mounted. |
+| `GET /api/billing/plans/:id/limits` | implemented | Protected route now mounted as `/api/billing/plans/:planId/limits`. |
+| `GET /api/billing/users/:id/plan` | implemented | Protected route now mounted as `/api/billing/users/:userId/plan`. |
+| `POST /api/billing/upgrade` | implemented | Protected route now mounted. |
+| `GET /api/billing/users/:id/credits` | implemented | Protected route now mounted as `/api/billing/users/:userId/credits`. |
+| `POST /api/billing/credits/checkout` | implemented | Protected route now mounted. |
+| `POST /api/billing/checkout` | implemented | Protected route now mounted. |
 
 ### Platform
 
 | Wrapper Route | Status | Notes |
 | --- | --- | --- |
-| `GET /api/platform/metrics` | missing | Domain metrics exist, no route/controller. |
-| `GET /api/platform/health` | missing | Could be bridged partly from `/health`, but wrapper path does not exist. |
-| `POST /api/platform/optimization/lead-conversion` | missing | Domain optimizer exists, no route/controller. |
-| `POST /api/platform/optimization/niches` | missing | Domain optimizer exists, no route/controller. |
-| `POST /api/platform/optimization/agent-tasks` | missing | Domain optimizer exists, no route/controller. |
+| `GET /api/platform/metrics` | implemented | Protected route now mounted. |
+| `GET /api/platform/health` | implemented | Protected route now mounted. |
+| `POST /api/platform/optimization/lead-conversion` | implemented | Protected route now mounted. |
+| `POST /api/platform/optimization/niches` | implemented | Protected route now mounted. |
+| `POST /api/platform/optimization/agent-tasks` | implemented | Protected route now mounted. |
 
 ### Business
 
 | Wrapper Route | Status | Notes |
 | --- | --- | --- |
-| `POST /api/business/generate` | missing | Domain business generator exists, no route/controller. |
+| `POST /api/business/generate` | implemented | Protected route now mounted. |
 
 ### Growth
 
 | Wrapper Route | Status | Notes |
 | --- | --- | --- |
-| `POST /api/growth/niches` | missing | No mounted route. |
-| `POST /api/growth/landing-page` | missing | No mounted route. |
-| `POST /api/growth/keyword-clusters` | missing | No mounted route. |
-| `POST /api/growth/blog-post` | missing | No mounted route. |
-| `POST /api/growth/social-content` | missing | No mounted route. |
-| `POST /api/growth/capture-lead` | missing | No mounted route. |
+| `POST /api/growth/niches` | implemented | Protected route now mounted. |
+| `POST /api/growth/landing-page` | implemented | Protected route now mounted. |
+| `POST /api/growth/keyword-clusters` | implemented | Protected route now mounted. |
+| `POST /api/growth/blog-post` | implemented | Protected route now mounted. |
+| `POST /api/growth/social-content` | implemented | Protected route now mounted. |
+| `POST /api/growth/capture-lead` | implemented | Protected route now mounted. |
 
 ### Workflows
 
@@ -169,17 +169,10 @@ Mounted through [api.ts](/C:/3d/backend-server/routes/api.ts) and [server.ts](/C
 
 ### Partial / mismatched
 
-- `platform.health`
-  - server has `/health`
-  - frontend expects `/api/platform/health`
-
 ### Missing high-priority release blockers
 
-1. Expo booth/city scene CRUD routes
-2. Billing routes
-3. Platform metrics/optimization routes
-4. Business and growth routes
-5. Lead CRUD parity routes
+1. None in the current browser wrapper inventory covered by `src/services/*`
+2. Remaining risk is route quality, auth behavior, and runtime correctness rather than raw endpoint absence
 
 ## Recommended Implementation Order
 
@@ -202,24 +195,25 @@ Mounted through [api.ts](/C:/3d/backend-server/routes/api.ts) and [server.ts](/C
 - Marketplace
   - completed in Wave 1
 - Platform
-  - metrics
-  - health
-  - optimization endpoints
+  - completed
+    - metrics
+    - health
+    - optimization endpoints
 
 ### Wave 3: monetization and growth
 
-- Billing
-- Business generation
-- Growth generation endpoints
-- Lead CRUD parity
+- completed
+  - Billing
+  - Business generation
+  - Growth generation endpoints
+  - Lead CRUD parity
 
 ## Phase-9 Readiness Impact
 
-Phase 9 should not be treated as fully honest release acceptance until the remaining commercial service routes are closed.
+Phase 9 can now begin from an API coverage standpoint, because the current browser wrapper inventory no longer points at missing backend routes.
 
 Reason:
 
 - P8-T2 correctly moved the browser behind an API boundary.
-- Wave 1 is now materially closed.
-- But several commercial service boundaries still terminate in missing HTTP routes.
-- Without closing that gap, release acceptance would still document a system whose architectural direction is correct but whose operational API surface remains incomplete.
+- Wave 1 and the remaining commercial service waves are now materially closed at the route coverage level.
+- Remaining release risk is no longer “missing endpoint coverage”; it is correctness, auth behavior, runtime integration quality, and acceptance evidence.

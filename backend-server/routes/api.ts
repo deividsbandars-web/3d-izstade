@@ -11,6 +11,10 @@ import * as analyticsController from '../controllers/analyticsController.js';
 import * as aiController from '../controllers/aiController.js';
 import * as automationController from '../controllers/automationController.js';
 import * as workflowsController from '../controllers/workflowsController.js';
+import * as billingController from '../controllers/billingController.js';
+import * as platformController from '../controllers/platformController.js';
+import * as businessController from '../controllers/businessController.js';
+import * as growthController from '../controllers/growthController.js';
 import { authMiddleware } from '../middleware/authMiddleware.js';
 import { rateLimitMiddleware } from '../middleware/rateLimit.js';
 
@@ -55,8 +59,35 @@ protectedRouter.get('/expo/scenes/city', expoDataController.getCityScene);
 
 // Leads
 protectedRouter.get('/leads', leadsController.getLeads);
+protectedRouter.post('/leads', leadsController.createLead);
+protectedRouter.patch('/leads/:leadId', leadsController.updateLead);
+protectedRouter.post('/leads/by-source', leadsController.getLeadsBySource);
 protectedRouter.post('/leads/generate', leadsController.generateLeads);
 protectedRouter.post('/leads/capture', leadsController.captureLead); // This was incorrectly protected before
+
+// Billing
+protectedRouter.get('/billing/plans/:planId/limits', billingController.getPlanLimits);
+protectedRouter.get('/billing/users/:userId/plan', billingController.getUserPlan);
+protectedRouter.post('/billing/upgrade', billingController.upgradePlan);
+protectedRouter.get('/billing/users/:userId/credits', billingController.getCreditBalance);
+protectedRouter.post('/billing/credits/checkout', billingController.buyCredits);
+protectedRouter.post('/billing/checkout', billingController.createCheckoutSession);
+
+// Platform
+protectedRouter.get('/platform/metrics', platformController.getPlatformMetrics);
+protectedRouter.get('/platform/health', platformController.getPlatformHealth);
+protectedRouter.post('/platform/optimization/lead-conversion', platformController.analyzeLeadConversion);
+protectedRouter.post('/platform/optimization/niches', platformController.suggestBetterNiches);
+protectedRouter.post('/platform/optimization/agent-tasks', platformController.optimizeAgentTasks);
+
+// Business + Growth
+protectedRouter.post('/business/generate', businessController.generateBusiness);
+protectedRouter.post('/growth/niches', growthController.findProfitableNiches);
+protectedRouter.post('/growth/landing-page', growthController.generateLandingPage);
+protectedRouter.post('/growth/keyword-clusters', growthController.generateKeywordClusters);
+protectedRouter.post('/growth/blog-post', growthController.generateBlogPost);
+protectedRouter.post('/growth/social-content', growthController.generateSocialContent);
+protectedRouter.post('/growth/capture-lead', growthController.captureGrowthLead);
 
 // Agents
 protectedRouter.post('/agents/run', agentsController.runAgentTask);
