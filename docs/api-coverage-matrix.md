@@ -29,8 +29,20 @@ Mounted through [api.ts](/C:/3d/backend-server/routes/api.ts) and [server.ts](/C
 | `POST` | `/api/leads/generate` | implemented | `leadsController.generateLeads` |
 | `POST` | `/api/leads/capture` | implemented | `leadsController.captureLead` |
 | `POST` | `/api/agents/run` | implemented | `agentsController.runAgentTask` |
+| `POST` | `/api/ai-estimate` | implemented | `aiController.estimateWithAi` |
+| `POST` | `/api/ai/respond` | implemented | `aiController.respondWithAi` |
+| `POST` | `/api/ai/video` | implemented | `aiController.generateAiVideo` |
+| `POST` | `/api/automation/business-workflow` | implemented | `automationController.startBusinessWorkflow` |
+| `POST` | `/api/workflows/execute` | implemented | `workflowsController.executeWorkflow` |
+| `POST` | `/api/workflows/validate` | implemented | `workflowsController.validateWorkflow` |
+| `GET` | `/api/workflows/:workflowId` | implemented | `workflowsController.getWorkflowDefinition` |
 | `GET` | `/api/marketplace/agents` | implemented | `marketplaceController.getMarketplaceAgents` |
-| `POST` | `/api/marketplace/install` | partial | `marketplaceController.installAgent` |
+| `GET` | `/api/marketplace/workflows` | implemented | `marketplaceController.getMarketplaceWorkflows` |
+| `GET` | `/api/marketplace/templates` | implemented | `marketplaceController.getMarketplaceTemplates` |
+| `POST` | `/api/marketplace/install` | implemented | `marketplaceController.installAgent` |
+| `POST` | `/api/marketplace/install/agent` | implemented | `marketplaceController.installAgent` |
+| `POST` | `/api/marketplace/install/workflow` | implemented | `marketplaceController.installWorkflow` |
+| `POST` | `/api/marketplace/install/template` | implemented | `marketplaceController.installTemplate` |
 | `POST` | `/api/outreach/email` | implemented | `outreachController.sendEmail` |
 
 ## Frontend Wrapper Coverage
@@ -39,15 +51,15 @@ Mounted through [api.ts](/C:/3d/backend-server/routes/api.ts) and [server.ts](/C
 
 | Wrapper Route | Status | Notes |
 | --- | --- | --- |
-| `POST /api/ai-estimate` | missing | Required by `src/services/aiService.ts`. |
-| `POST /api/ai/respond` | missing | Required by `src/services/aiService.ts` and `src/agents/baseAgent.ts`. |
-| `POST /api/ai/video` | missing | Required by `src/services/aiService.ts`. |
+| `POST /api/ai-estimate` | implemented | Backed by `backend-server/controllers/aiController.ts`. |
+| `POST /api/ai/respond` | implemented | Protected route; browser helper now attaches Supabase bearer token when present. |
+| `POST /api/ai/video` | implemented | Backed by `backend-server/controllers/aiController.ts`. |
 
 ### Automation
 
 | Wrapper Route | Status | Notes |
 | --- | --- | --- |
-| `POST /api/automation/business-workflow` | missing | Required by `src/services/automation.ts`. |
+| `POST /api/automation/business-workflow` | implemented | Backed by `workflowEngine.startBusinessWorkflow`. |
 
 ### Expo
 
@@ -79,11 +91,11 @@ Mounted through [api.ts](/C:/3d/backend-server/routes/api.ts) and [server.ts](/C
 | Wrapper Route | Status | Notes |
 | --- | --- | --- |
 | `GET /api/marketplace/agents` | implemented | Mounted. |
-| `GET /api/marketplace/workflows` | missing | Domain workflow marketplace exists, no route/controller. |
-| `GET /api/marketplace/templates` | missing | No mounted route. |
-| `POST /api/marketplace/install/agent` | missing | Wrapper path does not match current server route. |
-| `POST /api/marketplace/install/workflow` | missing | No mounted route. |
-| `POST /api/marketplace/install/template` | missing | No mounted route. |
+| `GET /api/marketplace/workflows` | implemented | Route now mounted. |
+| `GET /api/marketplace/templates` | implemented | Route now mounted. |
+| `POST /api/marketplace/install/agent` | implemented | Route now mounted with path parity. |
+| `POST /api/marketplace/install/workflow` | implemented | Route now mounted. |
+| `POST /api/marketplace/install/template` | implemented | Route now mounted. |
 
 ### Billing
 
@@ -127,9 +139,9 @@ Mounted through [api.ts](/C:/3d/backend-server/routes/api.ts) and [server.ts](/C
 
 | Wrapper Route | Status | Notes |
 | --- | --- | --- |
-| `POST /api/workflows/execute` | missing | Domain runner/validator exists, no route/controller. |
-| `POST /api/workflows/validate` | missing | Domain runner/validator exists, no route/controller. |
-| `GET /api/workflows/:id` | missing | No mounted route. |
+| `POST /api/workflows/execute` | implemented | Route now mounted. |
+| `POST /api/workflows/validate` | implemented | Route now mounted. |
+| `GET /api/workflows/:id` | implemented | Route now mounted as `/api/workflows/:workflowId`. |
 
 ## Coverage Summary
 
@@ -142,41 +154,42 @@ Mounted through [api.ts](/C:/3d/backend-server/routes/api.ts) and [server.ts](/C
 - `leads.generate`
 - `leads.capture`
 - `agents.run`
+- `ai-estimate`
+- `ai.respond`
+- `ai.video`
+- `automation.business-workflow`
 - `marketplace.agents`
+- `marketplace.workflows`
+- `marketplace.templates`
+- `marketplace.install.*`
+- `workflows.execute`
+- `workflows.validate`
+- `workflows.read`
 - `outreach.email`
 
 ### Partial / mismatched
 
-- `marketplace.install`
-  - server has `/api/marketplace/install`
-  - frontend expects `/api/marketplace/install/agent`
 - `platform.health`
   - server has `/health`
   - frontend expects `/api/platform/health`
 
 ### Missing high-priority release blockers
 
-1. AI routes
-2. Expo booth/city scene CRUD routes
-3. Workflow execute/validate/read routes
-4. Billing routes
-5. Platform metrics/optimization routes
-6. Business and growth routes
+1. Expo booth/city scene CRUD routes
+2. Billing routes
+3. Platform metrics/optimization routes
+4. Business and growth routes
+5. Lead CRUD parity routes
 
 ## Recommended Implementation Order
 
 ### Wave 1: unblock current hardened wrappers
 
-- AI
-  - `/api/ai-estimate`
-  - `/api/ai/respond`
-  - `/api/ai/video`
-- Automation
-  - `/api/automation/business-workflow`
-- Workflows
-  - `/api/workflows/execute`
-  - `/api/workflows/validate`
-  - `/api/workflows/:id`
+- completed
+  - AI
+  - automation business workflow
+  - workflow execute/validate/read
+  - marketplace workflow/template/install parity
 
 ### Wave 2: commercial operating surface
 
@@ -205,10 +218,11 @@ Mounted through [api.ts](/C:/3d/backend-server/routes/api.ts) and [server.ts](/C
 
 ## Phase-9 Readiness Impact
 
-Phase 9 should not be treated as fully honest release acceptance until at least Wave 1 is closed.
+Phase 9 should not be treated as fully honest release acceptance until at least Wave 2 commercial routes are closed.
 
 Reason:
 
 - P8-T2 correctly moved the browser behind an API boundary.
-- But many of those new boundaries still terminate in missing HTTP routes.
-- Without closing that gap, release acceptance would be documenting a system whose architectural direction is correct but whose operational API surface is incomplete.
+- Wave 1 is now materially closed.
+- But several commercial and operational boundaries still terminate in missing HTTP routes.
+- Without closing that gap, release acceptance would still document a system whose architectural direction is correct but whose operational API surface remains incomplete.
