@@ -135,7 +135,40 @@ export type SponsorBoulevardPlan = {
     minZ: number;
   };
   nodes: SponsorBoulevardNode[];
+  placementDiagnostics: SponsorPlacementDiagnostics;
   sectorGateways: SponsorBoulevardNode[];
+  slotBankVersion: string;
+};
+
+export type SponsorPlacementValidationReason =
+  | 'slot-missing'
+  | 'inside-stadium-reserve'
+  | 'inside-blocked-geometry-pocket'
+  | 'outside-approved-lane-envelope';
+
+export type SponsorPlacementRejection = {
+  blockedPocketId?: string | null;
+  boothType: BoothType;
+  clusterIndex: number;
+  companyId: string;
+  companyName: string;
+  districtBand: DistrictTierBand;
+  lane: DistrictLane;
+  nodeType?: SponsorBoulevardNode['nodeType'];
+  position?: [number, number, number] | null;
+  reason: SponsorPlacementValidationReason;
+  sectorId: string | null;
+  sectorLabel: string;
+  slotId?: string | null;
+  sponsorTier: SponsorTier;
+};
+
+export type SponsorPlacementDiagnostics = {
+  acceptedCompanyNodeCount: number;
+  candidateCompanyNodeCount: number;
+  rejectedCompanyNodeCount: number;
+  rejectedNodes: SponsorPlacementRejection[];
+  rejectedReasonCounts: Record<SponsorPlacementValidationReason, number>;
   slotBankVersion: string;
 };
 
@@ -149,6 +182,22 @@ type CuratedCompanySlot = {
   slotId: string;
   xOffset: number;
   zOffset: number;
+};
+
+type StadiumReserve = {
+  centerX: number;
+  centerZ: number;
+  halfDepth: number;
+  halfWidth: number;
+};
+
+type BlockedGeometryPocket = {
+  id: string;
+  maxX: number;
+  maxZ: number;
+  minX: number;
+  minZ: number;
+  note: string;
 };
 
 export const EXPO_BOULEVARD_LAYOUT = {
@@ -193,6 +242,40 @@ export const UNASSIGNED_SECTOR_LABEL = 'Unassigned Sponsors';
 const CURATED_SLOT_BANK_VERSION = '2026-04-17-v1';
 
 const ENABLE_LEGACY_BOOTH_FORMULA_FALLBACK = false;
+
+const EMPTY_PLACEMENT_REASON_COUNTS: Record<SponsorPlacementValidationReason, number> = {
+  'inside-blocked-geometry-pocket': 0,
+  'inside-stadium-reserve': 0,
+  'outside-approved-lane-envelope': 0,
+  'slot-missing': 0,
+};
+
+const BOOTH_BLOCKED_GEOMETRY_POCKETS: readonly BlockedGeometryPocket[] = [
+  {
+    id: 'rear-campus-bowl-center',
+    minX: -1800,
+    maxX: 1800,
+    minZ: -6200,
+    maxZ: -2400,
+    note: 'Central rear-campus bowl and stadium approach zone.',
+  },
+  {
+    id: 'rear-campus-left-perimeter',
+    minX: -3200,
+    maxX: -1600,
+    minZ: -5200,
+    maxZ: -1800,
+    note: 'Left rear-campus perimeter and connector wall zone.',
+  },
+  {
+    id: 'rear-campus-right-perimeter',
+    minX: 1600,
+    maxX: 3200,
+    minZ: -5200,
+    maxZ: -1800,
+    note: 'Right rear-campus perimeter and connector wall zone.',
+  },
+];
 
 const CURATED_COMPANY_SLOT_BANK: Record<DistrictTierBand, Record<DistrictLane, Record<CompanySlotKind, CuratedCompanySlot[]>>> = {
   arrival: {
@@ -885,6 +968,122 @@ function getCuratedCompanySlots(
   return CURATED_COMPANY_SLOT_BANK[band][lane][kind];
 }
 
+function buildPlanFootprint(nodes: SponsorBoulevardNode[]) {
+  const footprintXs = nodes.map((node) => node.position[0]);
+  const footprintZs = nodes.map((node) => node.position[2]);
+
+  return {
+    maxX: Math.max(...footprintXs) + EXPO_BOULEVARD_LAYOUT.laneMarginX,
+    maxZ: Math.max(...footprintZs) + EXPO_BOULEVARD_LAYOUT.playBoundsPaddingZ,
+    minX: Math.min(...footprintXs) - EXPO_BOULEVARD_LAYOUT.laneMarginX,
+    minZ: Math.min(...footprintZs) - EXPO_BOULEVARD_LAYOUT.playBoundsPaddingZ,
+  };
+}
+
+function buildBoothPlacementReserveFromFootprint(footprint: SponsorBoulevardPlan['footprint']): StadiumReserve {
+  const campusCenterZ = footprint.minZ - 1480;
+
+  return {
+    centerX: 0,
+    centerZ: campusCenterZ - 800,
+    halfWidth: 2300,
+    halfDepth: 1500,
+  };
+}
+
+function isInsideStadiumReserve(
+  position: [number, number, number],
+  reserve: StadiumReserve
+) {
+  return (
+    position[0] >= reserve.centerX - reserve.halfWidth
+    && position[0] <= reserve.centerX + reserve.halfWidth
+    && position[2] >= reserve.centerZ - reserve.halfDepth
+    && position[2] <= reserve.centerZ + reserve.halfDepth
+  );
+}
+
+function getBlockedGeometryPocket(
+  position: [number, number, number]
+): BlockedGeometryPocket | null {
+  return (
+    BOOTH_BLOCKED_GEOMETRY_POCKETS.find((pocket) =>
+      position[0] >= pocket.minX
+      && position[0] <= pocket.maxX
+      && position[2] >= pocket.minZ
+      && position[2] <= pocket.maxZ
+    )
+    ?? null
+  );
+}
+
+function isInsideApprovedLaneEnvelope(
+  center: { x: number; z: number; lane: DistrictLane },
+  position: [number, number, number]
+) {
+  const localX = position[0] - center.x;
+  const localZ = position[2] - center.z;
+  const maxAbsX = center.lane === 'center' ? 560 : 360;
+  const minZ = center.lane === 'center' ? -640 : -560;
+  const maxZ = center.lane === 'center' ? 80 : 96;
+
+  return Math.abs(localX) <= maxAbsX && localZ >= minZ && localZ <= maxZ;
+}
+
+function createPlacementRejection(
+  company: RankedBoulevardCompany,
+  clusterIndex: number,
+  districtBand: DistrictTierBand,
+  lane: DistrictLane,
+  reason: SponsorPlacementValidationReason,
+  options?: {
+    blockedPocketId?: string | null;
+    node?: SponsorBoulevardNode;
+    slotId?: string | null;
+  }
+): SponsorPlacementRejection {
+  return {
+    blockedPocketId: options?.blockedPocketId ?? null,
+    boothType: company.boothType,
+    clusterIndex,
+    companyId: company.id,
+    companyName: company.name,
+    districtBand,
+    lane,
+    nodeType: options?.node?.nodeType,
+    position: options?.node?.position ?? null,
+    reason,
+    sectorId: company.sectorId,
+    sectorLabel: company.sectorLabel,
+    slotId: options?.slotId ?? null,
+    sponsorTier: company.sponsorTier,
+  };
+}
+
+function validateCompanyNodePlacement(
+  node: SponsorBoulevardNode,
+  center: { x: number; z: number; lane: DistrictLane },
+  reserve: StadiumReserve
+): { blockedPocketId?: string | null; reason: SponsorPlacementValidationReason | null } {
+  if (!isInsideApprovedLaneEnvelope(center, node.position)) {
+    return { reason: 'outside-approved-lane-envelope' };
+  }
+
+  if (isInsideStadiumReserve(node.position, reserve)) {
+    return { reason: 'inside-stadium-reserve' };
+  }
+
+  const blockedPocket = getBlockedGeometryPocket(node.position);
+  if (blockedPocket) {
+    return {
+      blockedPocketId: blockedPocket.id,
+      reason: 'inside-blocked-geometry-pocket',
+    };
+  }
+
+  return { reason: null };
+}
+
 function createCompanyNodeFromCuratedSlot(
   company: RankedBoulevardCompany,
   color: string,
@@ -1008,6 +1207,7 @@ export function buildSponsorBoulevardPlan(
   const nodes: SponsorBoulevardNode[] = [];
   const districts: SponsorBoulevardDistrict[] = [];
   const sectorGateways: SponsorBoulevardNode[] = [];
+  const rejectedNodes: SponsorPlacementRejection[] = [];
   const arrivalNode: SponsorBoulevardNode = {
     clusterIndex: -1,
     color: '#38bdf8',
@@ -1087,56 +1287,85 @@ export function buildSponsorBoulevardPlan(
     });
     nodes.push(...programmedNodes);
 
+    const candidateCompanyNodes: SponsorBoulevardNode[] = [];
+
     const heroSlots = getCuratedCompanySlots(districtTierBand, districtCenter.lane, 'hero');
     heroPrimary.forEach((company, index) => {
       const slot = heroSlots[index];
       if (!slot) {
-        if (ENABLE_LEGACY_BOOTH_FORMULA_FALLBACK) {
-          return;
+        if (!ENABLE_LEGACY_BOOTH_FORMULA_FALLBACK) {
+          rejectedNodes.push(
+            createPlacementRejection(company, sectorIndex, districtTierBand, districtCenter.lane, 'slot-missing')
+          );
         }
         return;
       }
 
       const node = createCompanyNodeFromCuratedSlot(company, color, districtCenter, slot);
       node.clusterIndex = sectorIndex;
-      nodes.push(node);
+      candidateCompanyNodes.push(node);
     });
 
     const premiumSlots = getCuratedCompanySlots(districtTierBand, districtCenter.lane, 'endcap');
     premiumCompanies.forEach((company, index) => {
       const slot = premiumSlots[index];
       if (!slot) {
-        if (ENABLE_LEGACY_BOOTH_FORMULA_FALLBACK) {
-          return;
+        if (!ENABLE_LEGACY_BOOTH_FORMULA_FALLBACK) {
+          rejectedNodes.push(
+            createPlacementRejection(company, sectorIndex, districtTierBand, districtCenter.lane, 'slot-missing')
+          );
         }
         return;
       }
 
       const node = createCompanyNodeFromCuratedSlot(company, color, districtCenter, slot);
       node.clusterIndex = sectorIndex;
-      nodes.push(node);
+      candidateCompanyNodes.push(node);
     });
 
     const standardSlots = getCuratedCompanySlots(districtTierBand, districtCenter.lane, 'standard');
     standardCompanies.forEach((company, index) => {
       const slot = standardSlots[index];
       if (!slot) {
-        if (ENABLE_LEGACY_BOOTH_FORMULA_FALLBACK) {
-          return;
+        if (!ENABLE_LEGACY_BOOTH_FORMULA_FALLBACK) {
+          rejectedNodes.push(
+            createPlacementRejection(company, sectorIndex, districtTierBand, districtCenter.lane, 'slot-missing')
+          );
         }
         return;
       }
 
       const node = createCompanyNodeFromCuratedSlot(company, color, districtCenter, slot);
       node.clusterIndex = sectorIndex;
-      nodes.push(node);
+      candidateCompanyNodes.push(node);
     });
+
+    const provisionalFootprint = buildPlanFootprint([...nodes, ...candidateCompanyNodes]);
+    const stadiumReserve = buildBoothPlacementReserveFromFootprint(provisionalFootprint);
+    const acceptedCompanyNodes = candidateCompanyNodes.filter((node) => {
+      const validation = validateCompanyNodePlacement(node, districtCenter, stadiumReserve);
+      if (!validation.reason) {
+        return true;
+      }
+
+      const company = rankedCompanies.find((entry) => entry.id === node.companyId);
+      if (company) {
+        rejectedNodes.push(
+          createPlacementRejection(company, sectorIndex, districtTierBand, districtCenter.lane, validation.reason, {
+            blockedPocketId: validation.blockedPocketId ?? null,
+            node,
+            slotId: node.id,
+          })
+        );
+      }
+      return false;
+    });
+
+    nodes.push(...acceptedCompanyNodes);
 
     const sectorNodeOffsets = [
       ...programmedNodes.map((node) => Math.abs(clusterBaseZ - node.position[2])),
-      ...nodes
-        .filter((node) => node.clusterIndex === sectorIndex && node.companyId)
-        .map((node) => Math.abs(clusterBaseZ - node.position[2])),
+      ...acceptedCompanyNodes.map((node) => Math.abs(clusterBaseZ - node.position[2])),
     ];
     const districtDepth = getSectorClusterDepth(sectorNodeOffsets);
     districts.push({
@@ -1167,20 +1396,25 @@ export function buildSponsorBoulevardPlan(
     clusterBaseZ -= districtDepth;
   });
 
-  const footprintXs = nodes.map((node) => node.position[0]);
-  const footprintZs = nodes.map((node) => node.position[2]);
+  const placementDiagnostics: SponsorPlacementDiagnostics = {
+    acceptedCompanyNodeCount: nodes.filter((node) => node.companyId).length,
+    candidateCompanyNodeCount: nodes.filter((node) => node.companyId).length + rejectedNodes.filter((entry) => entry.position).length,
+    rejectedCompanyNodeCount: rejectedNodes.length,
+    rejectedNodes,
+    rejectedReasonCounts: rejectedNodes.reduce<Record<SponsorPlacementValidationReason, number>>((counts, entry) => {
+      counts[entry.reason] += 1;
+      return counts;
+    }, { ...EMPTY_PLACEMENT_REASON_COUNTS }),
+    slotBankVersion: CURATED_SLOT_BANK_VERSION,
+  };
 
   return {
     arrivalNode,
     companyOrder: rankedCompanies,
     districts,
-    footprint: {
-      maxX: Math.max(...footprintXs) + EXPO_BOULEVARD_LAYOUT.laneMarginX,
-      maxZ: Math.max(...footprintZs) + EXPO_BOULEVARD_LAYOUT.playBoundsPaddingZ,
-      minX: Math.min(...footprintXs) - EXPO_BOULEVARD_LAYOUT.laneMarginX,
-      minZ: Math.min(...footprintZs) - EXPO_BOULEVARD_LAYOUT.playBoundsPaddingZ,
-    },
+    footprint: buildPlanFootprint(nodes),
     nodes,
+    placementDiagnostics,
     sectorGateways,
     slotBankVersion: CURATED_SLOT_BANK_VERSION,
   };

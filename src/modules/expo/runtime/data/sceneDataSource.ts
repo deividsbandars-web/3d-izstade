@@ -1,5 +1,6 @@
 import { expoService } from '../../../../services/expoService';
 import { getFrontendRuntimeEnv } from '../../../../config/runtimeEnv';
+import { buildExpoLayoutEngine } from '../../layout-engine';
 import { reportExpoDevError } from '../../lib/devErrorReporter';
 import { adaptBackendScenePayload, normalizeBooth, normalizeCompany, normalizeSector } from './sceneContract';
 import { buildDevFallbackScene, buildProductionSafeFallbackScene } from './sceneFallbacks';
@@ -29,6 +30,26 @@ export function shouldPreferLocalExpoDataSource() {
   return isLocalOrigin(getFrontendRuntimeEnv().apiBaseUrl);
 }
 
+function reportBoothPlacementDiagnostics(scene: ExpoSceneData, source: string) {
+  if (!import.meta.env.DEV) {
+    return;
+  }
+
+  try {
+    const { placementDiagnostics } = buildExpoLayoutEngine(scene.companies, scene.sectors);
+    if (placementDiagnostics.rejectedCompanyNodeCount === 0) {
+      return;
+    }
+
+    console.warn('Expo booth placement validation rejected curated slots.', {
+      diagnostics: placementDiagnostics,
+      source,
+    });
+  } catch (error) {
+    reportExpoDevError('sceneDataSource.reportBoothPlacementDiagnostics', error, { source });
+  }
+}
+
 function getDevExpoDataMode() {
   if (typeof window === 'undefined') {
     return 'seeded';
@@ -55,6 +76,7 @@ export async function loadExpoSceneFromBackendContract(): Promise<ExpoSceneData>
     throw new Error('BACKEND_SCENE_EMPTY');
   }
 
+  reportBoothPlacementDiagnostics(normalized, 'backend-contract');
   return normalized;
 }
 
@@ -68,7 +90,7 @@ export async function loadExpoSceneFromSupabaseService(): Promise<ExpoSceneData>
     throw new Error('NO_SECTORS_FOUND');
   }
 
-  return {
+  const normalized: ExpoSceneData = {
     authPolicy: undefined,
     cityInfo: null,
     companies: Array.isArray(companies)
@@ -79,6 +101,9 @@ export async function loadExpoSceneFromSupabaseService(): Promise<ExpoSceneData>
     sceneVersion: 'expo-scene-supabase-fallback',
     sectors: Array.isArray(sectors) ? sectors.map(normalizeSector).filter((sector) => sector.id.length > 0) : [],
   };
+
+  reportBoothPlacementDiagnostics(normalized, 'supabase-service');
+  return normalized;
 }
 
 export async function loadExpoSceneForRelease(): Promise<ExpoSceneData> {
