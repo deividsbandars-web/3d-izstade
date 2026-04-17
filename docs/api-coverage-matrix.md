@@ -65,17 +65,17 @@ Mounted through [api.ts](/C:/3d/backend-server/routes/api.ts) and [server.ts](/C
 
 | Wrapper Route | Status | Notes |
 | --- | --- | --- |
-| `POST /api/expo/booths` | missing | CRUD path not mounted yet. |
-| `PATCH /api/expo/booths/:id` | missing | CRUD path not mounted yet. |
-| `GET /api/expo/booths/:id` | missing | Domain service exists in `src/backend/expo`, but no route/controller. |
-| `GET /api/expo/booths` | missing | Domain service exists in `src/backend/expo`, but no route/controller. |
-| `GET /api/expo/analytics/booths/:id` | missing | Analytics service exists in `src/backend/expo/analytics`, but no route/controller. |
-| `GET /api/expo/city` | missing | City map domain exists, but no route/controller. |
-| `GET /api/expo/city/districts` | missing | City map domain exists, but no route/controller. |
-| `PATCH /api/expo/city/booths/:id/district` | missing | No mounted route. |
+| `POST /api/expo/booths` | implemented | Protected route now mounted. |
+| `PATCH /api/expo/booths/:id` | implemented | Protected route now mounted as `/api/expo/booths/:boothId`. |
+| `GET /api/expo/booths/:id` | implemented | Protected route now mounted as `/api/expo/booths/:boothId`. |
+| `GET /api/expo/booths` | implemented | Protected route now mounted. |
+| `GET /api/expo/analytics/booths/:id` | implemented | Protected route now mounted. |
+| `GET /api/expo/city` | implemented | Protected route now mounted. |
+| `GET /api/expo/city/districts` | implemented | Protected route now mounted. |
+| `PATCH /api/expo/city/booths/:id/district` | implemented | Protected route now mounted as `/api/expo/city/booths/:boothId/district`. |
 | `GET /api/expo/scene` | implemented | Public readonly route exists. |
-| `GET /api/expo/scenes/booth/:id` | missing | Domain service exists, no route/controller. |
-| `GET /api/expo/scenes/city` | missing | No mounted route. |
+| `GET /api/expo/scenes/booth/:id` | implemented | Protected route now mounted as `/api/expo/scenes/booth/:boothId`. |
+| `GET /api/expo/scenes/city` | implemented | Protected route now mounted. |
 
 ### Leads
 
@@ -194,16 +194,13 @@ Mounted through [api.ts](/C:/3d/backend-server/routes/api.ts) and [server.ts](/C
 ### Wave 2: commercial operating surface
 
 - Expo
-  - booth CRUD
-  - booth analytics
-  - city map / districts
-  - booth scene / city scene
+  - completed
+    - booth CRUD
+    - booth analytics
+    - city map / districts
+    - booth scene / city scene
 - Marketplace
-  - workflows
-  - templates
-  - install/agent
-  - install/workflow
-  - install/template
+  - completed in Wave 1
 - Platform
   - metrics
   - health
@@ -218,11 +215,11 @@ Mounted through [api.ts](/C:/3d/backend-server/routes/api.ts) and [server.ts](/C
 
 ## Phase-9 Readiness Impact
 
-Phase 9 should not be treated as fully honest release acceptance until at least Wave 2 commercial routes are closed.
+Phase 9 should not be treated as fully honest release acceptance until the remaining commercial service routes are closed.
 
 Reason:
 
 - P8-T2 correctly moved the browser behind an API boundary.
 - Wave 1 is now materially closed.
-- But several commercial and operational boundaries still terminate in missing HTTP routes.
+- But several commercial service boundaries still terminate in missing HTTP routes.
 - Without closing that gap, release acceptance would still document a system whose architectural direction is correct but whose operational API surface remains incomplete.

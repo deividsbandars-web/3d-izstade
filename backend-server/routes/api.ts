@@ -5,6 +5,7 @@ import * as agentsController from '../controllers/agentsController.js';
 import * as marketplaceController from '../controllers/marketplaceController.js';
 import * as outreachController from '../controllers/outreachController.js';
 import * as expoController from '../controllers/expoController.js';
+import * as expoDataController from '../controllers/expoDataController.js';
 import * as expoLeadController from '../controllers/expoLeadController.js';
 import * as analyticsController from '../controllers/analyticsController.js';
 import * as aiController from '../controllers/aiController.js';
@@ -39,6 +40,18 @@ protectedRouter.use(authMiddleware);
 
 // Dashboard
 protectedRouter.get('/dashboard', dashboardController.getDashboardData);
+
+// Expo data/business surface
+protectedRouter.post('/expo/booths', expoDataController.createBooth);
+protectedRouter.patch('/expo/booths/:boothId', expoDataController.updateBooth);
+protectedRouter.get('/expo/booths/:boothId', expoDataController.getBooth);
+protectedRouter.get('/expo/booths', expoDataController.getBooths);
+protectedRouter.get('/expo/analytics/booths/:boothId', expoDataController.getBoothAnalytics);
+protectedRouter.get('/expo/city', expoDataController.getExpoCity);
+protectedRouter.get('/expo/city/districts', expoDataController.getDistricts);
+protectedRouter.patch('/expo/city/booths/:boothId/district', expoDataController.assignBoothToDistrict);
+protectedRouter.get('/expo/scenes/booth/:boothId', expoDataController.getBoothScene);
+protectedRouter.get('/expo/scenes/city', expoDataController.getCityScene);
 
 // Leads
 protectedRouter.get('/leads', leadsController.getLeads);
