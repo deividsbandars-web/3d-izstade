@@ -1,32 +1,6 @@
-import type { StadiumReserve } from './WorldCitySkeletonLayout';
-
-type CityPlane = {
-  id: string;
-  position: [number, number, number];
-  size: [number, number];
-  color: string;
-};
+import type { CityPlane, StadiumReserve } from './WorldCitySkeletonLayout';
 
 const STRUCTURAL_CITY_GROUND_COLOR = '#6f7c85';
-const MIN_STRUCTURAL_CITY_PLANE_AREA = 140_000;
-
-function isDecorativePlane(id: string) {
-  return (
-    id.includes('carpet') ||
-    id.includes('ribbon') ||
-    id.includes('band') ||
-    id.includes('threshold') ||
-    id.includes('connector') ||
-    id.includes('pocket') ||
-    id.includes('pad') ||
-    id.includes('inner') ||
-    id.includes('gallery') ||
-    id.includes('terminal') ||
-    id.includes('front-court') ||
-    id.includes('front-threshold') ||
-    id.includes('outer-pocket')
-  );
-}
 
 function resolveStructuralCityPlaneTone(id: string) {
   void id;
@@ -34,14 +8,7 @@ function resolveStructuralCityPlaneTone(id: string) {
 }
 
 function filterVisibleStructuralCityPlanes(planes: CityPlane[]) {
-  return planes.filter((plane) => {
-    if (isDecorativePlane(plane.id)) {
-      return false;
-    }
-
-    const area = plane.size[0] * plane.size[1];
-    return area >= MIN_STRUCTURAL_CITY_PLANE_AREA;
-  });
+  return planes.filter((plane) => plane.role === 'structural');
 }
 
 function PlaneLayer({

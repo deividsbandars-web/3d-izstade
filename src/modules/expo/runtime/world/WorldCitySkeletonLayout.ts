@@ -7,6 +7,7 @@ export type CityPlane = {
   position: [number, number, number];
   size: [number, number];
   color: string;
+  role?: 'structural' | 'decorative' | 'helper';
 };
 
 export type CityMass = {
@@ -144,6 +145,8 @@ const NON_STRUCTURAL_PLANE_PATTERNS = [
   'promenade-axis-endcap',
 ];
 
+const MIN_STRUCTURAL_CITY_PLANE_AREA = 140_000;
+
 const NON_STRUCTURAL_MASS_PATTERNS = [
   'gateway-mid-plinth',
   'gateway-front',
@@ -220,14 +223,30 @@ const NON_STRUCTURAL_MASS_PATTERNS = [
   'media-wall-outer-marker-right-',
 ];
 
-function filterStructuralCityPlanes(planes: CityPlane[]) {
-  return planes.filter((plane) => {
-    const isCentralDecorative =
-      Math.abs(plane.position[0]) <= 220 &&
-      NON_STRUCTURAL_PLANE_PATTERNS.some((pattern) => plane.id.includes(pattern));
+function classifyCityPlaneRole(plane: CityPlane): NonNullable<CityPlane['role']> {
+  const isDecorativeByPattern =
+    Math.abs(plane.position[0]) <= 220 &&
+    NON_STRUCTURAL_PLANE_PATTERNS.some((pattern) => plane.id.includes(pattern));
 
-    return !isCentralDecorative;
-  });
+  if (isDecorativeByPattern) {
+    return 'decorative';
+  }
+
+  const area = plane.size[0] * plane.size[1];
+  if (area < MIN_STRUCTURAL_CITY_PLANE_AREA) {
+    return 'helper';
+  }
+
+  return 'structural';
+}
+
+function filterStructuralCityPlanes(planes: CityPlane[]) {
+  return planes
+    .map((plane) => ({
+      ...plane,
+      role: classifyCityPlaneRole(plane),
+    }))
+    .filter((plane) => plane.role === 'structural');
 }
 
 function filterStructuralCityMasses(masses: CityMass[]) {
