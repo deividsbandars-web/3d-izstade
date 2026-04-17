@@ -7,10 +7,8 @@ type CityPlane = {
   color: string;
 };
 
-function resolvePlaneTone(id: string) {
-  void id;
-  return '#6f7c85';
-}
+const STRUCTURAL_CITY_GROUND_COLOR = '#6f7c85';
+const MIN_STRUCTURAL_CITY_PLANE_AREA = 140_000;
 
 function isDecorativePlane(id: string) {
   return (
@@ -30,14 +28,19 @@ function isDecorativePlane(id: string) {
   );
 }
 
-function filterEssentialPlanes(planes: CityPlane[]) {
+function resolveStructuralCityPlaneTone(id: string) {
+  void id;
+  return STRUCTURAL_CITY_GROUND_COLOR;
+}
+
+function filterVisibleStructuralCityPlanes(planes: CityPlane[]) {
   return planes.filter((plane) => {
     if (isDecorativePlane(plane.id)) {
       return false;
     }
 
     const area = plane.size[0] * plane.size[1];
-    return area >= 140_000;
+    return area >= MIN_STRUCTURAL_CITY_PLANE_AREA;
   });
 }
 
@@ -55,7 +58,7 @@ function PlaneLayer({
           <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow renderOrder={8}>
             <planeGeometry args={plane.size} />
             <meshStandardMaterial
-              color={resolvePlaneTone(plane.id)}
+              color={resolveStructuralCityPlaneTone(plane.id)}
               roughness={Math.max(roughness, 0.88)}
               metalness={0.01}
               polygonOffset
@@ -82,13 +85,15 @@ export function WorldCityPlanes({
   boothForecourtPlanes: CityPlane[];
   stadiumReserve: StadiumReserve;
 }) {
-  const essentialArrivalPlanes = filterEssentialPlanes(arrivalPlanes);
-  const openPlanes: CityPlane[] = [];
+  void _promenadeAxisPlanes;
+  void _showcasePlazas;
+  void _boothForecourtPlanes;
+  void _stadiumReserve;
+  const structuralArrivalPlanes = filterVisibleStructuralCityPlanes(arrivalPlanes);
 
   return (
-    <>
-      <PlaneLayer planes={essentialArrivalPlanes} roughness={0.72} />
-      <PlaneLayer planes={openPlanes} roughness={0.7} />
-    </>
+    <group name="world-ground:city-structural-planes">
+      <PlaneLayer planes={structuralArrivalPlanes} roughness={0.72} />
+    </group>
   );
 }
