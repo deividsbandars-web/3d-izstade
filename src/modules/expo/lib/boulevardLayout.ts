@@ -136,6 +136,19 @@ export type SponsorBoulevardPlan = {
   };
   nodes: SponsorBoulevardNode[];
   sectorGateways: SponsorBoulevardNode[];
+  slotBankVersion: string;
+};
+
+type DistrictTierBand = 'arrival' | 'showcase' | 'media' | 'discovery';
+type DistrictLane = 'left' | 'right' | 'center';
+type CompanySlotKind = 'hero' | 'endcap' | 'standard';
+
+type CuratedCompanySlot = {
+  nodeType: 'hero_left' | 'hero_right' | 'endcap' | 'standard_left' | 'standard_right';
+  rotationY: number;
+  slotId: string;
+  xOffset: number;
+  zOffset: number;
 };
 
 export const EXPO_BOULEVARD_LAYOUT = {
@@ -177,6 +190,165 @@ const SPONSOR_TIER_WEIGHT: Record<SponsorTier, number> = {
 
 export const UNASSIGNED_SECTOR_ID = '__unassigned__';
 export const UNASSIGNED_SECTOR_LABEL = 'Unassigned Sponsors';
+const CURATED_SLOT_BANK_VERSION = '2026-04-17-v1';
+
+const ENABLE_LEGACY_BOOTH_FORMULA_FALLBACK = false;
+
+const CURATED_COMPANY_SLOT_BANK: Record<DistrictTierBand, Record<DistrictLane, Record<CompanySlotKind, CuratedCompanySlot[]>>> = {
+  arrival: {
+    left: {
+      hero: [
+        { slotId: 'arrival-left-hero-left', nodeType: 'hero_left', xOffset: -132, zOffset: -12, rotationY: Math.PI / 2 },
+        { slotId: 'arrival-left-hero-right', nodeType: 'hero_right', xOffset: 132, zOffset: -12, rotationY: -Math.PI / 2 },
+      ],
+      endcap: [
+        { slotId: 'arrival-left-endcap-0', nodeType: 'endcap', xOffset: -298, zOffset: -26, rotationY: Math.PI / 2 },
+        { slotId: 'arrival-left-endcap-1', nodeType: 'endcap', xOffset: 298, zOffset: -26, rotationY: -Math.PI / 2 },
+        { slotId: 'arrival-left-endcap-2', nodeType: 'endcap', xOffset: -298, zOffset: -154, rotationY: Math.PI / 2 },
+        { slotId: 'arrival-left-endcap-3', nodeType: 'endcap', xOffset: 298, zOffset: -154, rotationY: -Math.PI / 2 },
+      ],
+      standard: [
+        { slotId: 'arrival-left-standard-0', nodeType: 'standard_left', xOffset: -166, zOffset: -122, rotationY: Math.PI / 2 },
+        { slotId: 'arrival-left-standard-1', nodeType: 'standard_right', xOffset: 166, zOffset: -122, rotationY: -Math.PI / 2 },
+        { slotId: 'arrival-left-standard-2', nodeType: 'standard_left', xOffset: -166, zOffset: -240, rotationY: Math.PI / 2 },
+        { slotId: 'arrival-left-standard-3', nodeType: 'standard_right', xOffset: 166, zOffset: -240, rotationY: -Math.PI / 2 },
+        { slotId: 'arrival-left-standard-4', nodeType: 'standard_left', xOffset: -166, zOffset: -358, rotationY: Math.PI / 2 },
+        { slotId: 'arrival-left-standard-5', nodeType: 'standard_right', xOffset: 166, zOffset: -358, rotationY: -Math.PI / 2 },
+      ],
+    },
+    right: {
+      hero: [
+        { slotId: 'arrival-right-hero-left', nodeType: 'hero_left', xOffset: -132, zOffset: -12, rotationY: Math.PI / 2 },
+        { slotId: 'arrival-right-hero-right', nodeType: 'hero_right', xOffset: 132, zOffset: -12, rotationY: -Math.PI / 2 },
+      ],
+      endcap: [
+        { slotId: 'arrival-right-endcap-0', nodeType: 'endcap', xOffset: -298, zOffset: -26, rotationY: Math.PI / 2 },
+        { slotId: 'arrival-right-endcap-1', nodeType: 'endcap', xOffset: 298, zOffset: -26, rotationY: -Math.PI / 2 },
+        { slotId: 'arrival-right-endcap-2', nodeType: 'endcap', xOffset: -298, zOffset: -154, rotationY: Math.PI / 2 },
+        { slotId: 'arrival-right-endcap-3', nodeType: 'endcap', xOffset: 298, zOffset: -154, rotationY: -Math.PI / 2 },
+      ],
+      standard: [
+        { slotId: 'arrival-right-standard-0', nodeType: 'standard_left', xOffset: -166, zOffset: -122, rotationY: Math.PI / 2 },
+        { slotId: 'arrival-right-standard-1', nodeType: 'standard_right', xOffset: 166, zOffset: -122, rotationY: -Math.PI / 2 },
+        { slotId: 'arrival-right-standard-2', nodeType: 'standard_left', xOffset: -166, zOffset: -240, rotationY: Math.PI / 2 },
+        { slotId: 'arrival-right-standard-3', nodeType: 'standard_right', xOffset: 166, zOffset: -240, rotationY: -Math.PI / 2 },
+        { slotId: 'arrival-right-standard-4', nodeType: 'standard_left', xOffset: -166, zOffset: -358, rotationY: Math.PI / 2 },
+        { slotId: 'arrival-right-standard-5', nodeType: 'standard_right', xOffset: 166, zOffset: -358, rotationY: -Math.PI / 2 },
+      ],
+    },
+    center: { hero: [], endcap: [], standard: [] },
+  },
+  showcase: {
+    left: {
+      hero: [
+        { slotId: 'showcase-left-hero-left', nodeType: 'hero_left', xOffset: -278, zOffset: 12, rotationY: Math.PI / 2 },
+        { slotId: 'showcase-left-hero-right', nodeType: 'hero_right', xOffset: 278, zOffset: 12, rotationY: -Math.PI / 2 },
+      ],
+      endcap: [
+        { slotId: 'showcase-left-endcap-0', nodeType: 'endcap', xOffset: -324, zOffset: -24, rotationY: Math.PI / 2 },
+        { slotId: 'showcase-left-endcap-1', nodeType: 'endcap', xOffset: 324, zOffset: -24, rotationY: -Math.PI / 2 },
+        { slotId: 'showcase-left-endcap-2', nodeType: 'endcap', xOffset: -324, zOffset: -152, rotationY: Math.PI / 2 },
+        { slotId: 'showcase-left-endcap-3', nodeType: 'endcap', xOffset: 324, zOffset: -152, rotationY: -Math.PI / 2 },
+      ],
+      standard: [
+        { slotId: 'showcase-left-standard-0', nodeType: 'standard_left', xOffset: -224, zOffset: -182, rotationY: Math.PI / 2 },
+        { slotId: 'showcase-left-standard-1', nodeType: 'standard_right', xOffset: 224, zOffset: -182, rotationY: -Math.PI / 2 },
+        { slotId: 'showcase-left-standard-2', nodeType: 'standard_left', xOffset: -224, zOffset: -300, rotationY: Math.PI / 2 },
+        { slotId: 'showcase-left-standard-3', nodeType: 'standard_right', xOffset: 224, zOffset: -300, rotationY: -Math.PI / 2 },
+        { slotId: 'showcase-left-standard-4', nodeType: 'standard_left', xOffset: -224, zOffset: -418, rotationY: Math.PI / 2 },
+        { slotId: 'showcase-left-standard-5', nodeType: 'standard_right', xOffset: 224, zOffset: -418, rotationY: -Math.PI / 2 },
+      ],
+    },
+    right: {
+      hero: [
+        { slotId: 'showcase-right-hero-left', nodeType: 'hero_left', xOffset: -278, zOffset: 12, rotationY: Math.PI / 2 },
+        { slotId: 'showcase-right-hero-right', nodeType: 'hero_right', xOffset: 278, zOffset: 12, rotationY: -Math.PI / 2 },
+      ],
+      endcap: [
+        { slotId: 'showcase-right-endcap-0', nodeType: 'endcap', xOffset: -324, zOffset: -24, rotationY: Math.PI / 2 },
+        { slotId: 'showcase-right-endcap-1', nodeType: 'endcap', xOffset: 324, zOffset: -24, rotationY: -Math.PI / 2 },
+        { slotId: 'showcase-right-endcap-2', nodeType: 'endcap', xOffset: -324, zOffset: -152, rotationY: Math.PI / 2 },
+        { slotId: 'showcase-right-endcap-3', nodeType: 'endcap', xOffset: 324, zOffset: -152, rotationY: -Math.PI / 2 },
+      ],
+      standard: [
+        { slotId: 'showcase-right-standard-0', nodeType: 'standard_left', xOffset: -224, zOffset: -182, rotationY: Math.PI / 2 },
+        { slotId: 'showcase-right-standard-1', nodeType: 'standard_right', xOffset: 224, zOffset: -182, rotationY: -Math.PI / 2 },
+        { slotId: 'showcase-right-standard-2', nodeType: 'standard_left', xOffset: -224, zOffset: -300, rotationY: Math.PI / 2 },
+        { slotId: 'showcase-right-standard-3', nodeType: 'standard_right', xOffset: 224, zOffset: -300, rotationY: -Math.PI / 2 },
+        { slotId: 'showcase-right-standard-4', nodeType: 'standard_left', xOffset: -224, zOffset: -418, rotationY: Math.PI / 2 },
+        { slotId: 'showcase-right-standard-5', nodeType: 'standard_right', xOffset: 224, zOffset: -418, rotationY: -Math.PI / 2 },
+      ],
+    },
+    center: { hero: [], endcap: [], standard: [] },
+  },
+  media: {
+    left: {
+      hero: [
+        { slotId: 'media-left-hero-left', nodeType: 'hero_left', xOffset: -132, zOffset: -12, rotationY: Math.PI / 2 },
+        { slotId: 'media-left-hero-right', nodeType: 'hero_right', xOffset: 132, zOffset: -12, rotationY: -Math.PI / 2 },
+      ],
+      endcap: [
+        { slotId: 'media-left-endcap-0', nodeType: 'endcap', xOffset: -298, zOffset: -44, rotationY: Math.PI / 2 },
+        { slotId: 'media-left-endcap-1', nodeType: 'endcap', xOffset: 298, zOffset: -44, rotationY: -Math.PI / 2 },
+        { slotId: 'media-left-endcap-2', nodeType: 'endcap', xOffset: -298, zOffset: -172, rotationY: Math.PI / 2 },
+        { slotId: 'media-left-endcap-3', nodeType: 'endcap', xOffset: 298, zOffset: -172, rotationY: -Math.PI / 2 },
+      ],
+      standard: [
+        { slotId: 'media-left-standard-0', nodeType: 'standard_left', xOffset: -198, zOffset: -164, rotationY: Math.PI / 2 },
+        { slotId: 'media-left-standard-1', nodeType: 'standard_right', xOffset: 198, zOffset: -164, rotationY: -Math.PI / 2 },
+        { slotId: 'media-left-standard-2', nodeType: 'standard_left', xOffset: -198, zOffset: -282, rotationY: Math.PI / 2 },
+        { slotId: 'media-left-standard-3', nodeType: 'standard_right', xOffset: 198, zOffset: -282, rotationY: -Math.PI / 2 },
+        { slotId: 'media-left-standard-4', nodeType: 'standard_left', xOffset: -198, zOffset: -400, rotationY: Math.PI / 2 },
+        { slotId: 'media-left-standard-5', nodeType: 'standard_right', xOffset: 198, zOffset: -400, rotationY: -Math.PI / 2 },
+      ],
+    },
+    right: {
+      hero: [
+        { slotId: 'media-right-hero-left', nodeType: 'hero_left', xOffset: -132, zOffset: -12, rotationY: Math.PI / 2 },
+        { slotId: 'media-right-hero-right', nodeType: 'hero_right', xOffset: 132, zOffset: -12, rotationY: -Math.PI / 2 },
+      ],
+      endcap: [
+        { slotId: 'media-right-endcap-0', nodeType: 'endcap', xOffset: -298, zOffset: -44, rotationY: Math.PI / 2 },
+        { slotId: 'media-right-endcap-1', nodeType: 'endcap', xOffset: 298, zOffset: -44, rotationY: -Math.PI / 2 },
+        { slotId: 'media-right-endcap-2', nodeType: 'endcap', xOffset: -298, zOffset: -172, rotationY: Math.PI / 2 },
+        { slotId: 'media-right-endcap-3', nodeType: 'endcap', xOffset: 298, zOffset: -172, rotationY: -Math.PI / 2 },
+      ],
+      standard: [
+        { slotId: 'media-right-standard-0', nodeType: 'standard_left', xOffset: -198, zOffset: -164, rotationY: Math.PI / 2 },
+        { slotId: 'media-right-standard-1', nodeType: 'standard_right', xOffset: 198, zOffset: -164, rotationY: -Math.PI / 2 },
+        { slotId: 'media-right-standard-2', nodeType: 'standard_left', xOffset: -198, zOffset: -282, rotationY: Math.PI / 2 },
+        { slotId: 'media-right-standard-3', nodeType: 'standard_right', xOffset: 198, zOffset: -282, rotationY: -Math.PI / 2 },
+        { slotId: 'media-right-standard-4', nodeType: 'standard_left', xOffset: -198, zOffset: -400, rotationY: Math.PI / 2 },
+        { slotId: 'media-right-standard-5', nodeType: 'standard_right', xOffset: 198, zOffset: -400, rotationY: -Math.PI / 2 },
+      ],
+    },
+    center: { hero: [], endcap: [], standard: [] },
+  },
+  discovery: {
+    left: { hero: [], endcap: [], standard: [] },
+    right: { hero: [], endcap: [], standard: [] },
+    center: {
+      hero: [
+        { slotId: 'discovery-center-hero-left', nodeType: 'hero_left', xOffset: -336, zOffset: -28, rotationY: Math.PI / 2 },
+        { slotId: 'discovery-center-hero-right', nodeType: 'hero_right', xOffset: 336, zOffset: -28, rotationY: -Math.PI / 2 },
+      ],
+      endcap: [
+        { slotId: 'discovery-center-endcap-0', nodeType: 'endcap', xOffset: -526, zOffset: -76, rotationY: Math.PI / 2 },
+        { slotId: 'discovery-center-endcap-1', nodeType: 'endcap', xOffset: 526, zOffset: -76, rotationY: -Math.PI / 2 },
+        { slotId: 'discovery-center-endcap-2', nodeType: 'endcap', xOffset: -526, zOffset: -218, rotationY: Math.PI / 2 },
+        { slotId: 'discovery-center-endcap-3', nodeType: 'endcap', xOffset: 526, zOffset: -218, rotationY: -Math.PI / 2 },
+      ],
+      standard: [
+        { slotId: 'discovery-center-standard-0', nodeType: 'standard_left', xOffset: -318, zOffset: -224, rotationY: Math.PI / 2 },
+        { slotId: 'discovery-center-standard-1', nodeType: 'standard_right', xOffset: 318, zOffset: -224, rotationY: -Math.PI / 2 },
+        { slotId: 'discovery-center-standard-2', nodeType: 'standard_left', xOffset: -318, zOffset: -356, rotationY: Math.PI / 2 },
+        { slotId: 'discovery-center-standard-3', nodeType: 'standard_right', xOffset: 318, zOffset: -356, rotationY: -Math.PI / 2 },
+        { slotId: 'discovery-center-standard-4', nodeType: 'standard_left', xOffset: -318, zOffset: -488, rotationY: Math.PI / 2 },
+        { slotId: 'discovery-center-standard-5', nodeType: 'standard_right', xOffset: 318, zOffset: -488, rotationY: -Math.PI / 2 },
+      ],
+    },
+  },
+};
 
 function normalizePriority(value: unknown) {
   const parsed = Number(value);
@@ -689,7 +861,7 @@ function getDistrictNodeCenter(clusterIndex: number, totalDistrictCount: number)
 function classifyDistrictTierBand(
   clusterIndex: number,
   totalDistrictCount: number
-): 'arrival' | 'showcase' | 'media' | 'discovery' {
+): DistrictTierBand {
   if (clusterIndex === 0) {
     return 'arrival';
   }
@@ -703,6 +875,30 @@ function classifyDistrictTierBand(
   }
 
   return 'media';
+}
+
+function getCuratedCompanySlots(
+  band: DistrictTierBand,
+  lane: DistrictLane,
+  kind: CompanySlotKind
+) {
+  return CURATED_COMPANY_SLOT_BANK[band][lane][kind];
+}
+
+function createCompanyNodeFromCuratedSlot(
+  company: RankedBoulevardCompany,
+  color: string,
+  center: { x: number; z: number; lane: DistrictLane },
+  slot: CuratedCompanySlot
+) {
+  return createCompanyNode(
+    company,
+    slot.nodeType,
+    color,
+    center.x + slot.xOffset,
+    center.z + slot.zOffset,
+    slot.rotationY
+  );
 }
 
 function getDistrictGatewayPositions(center: { x: number; z: number; lane: 'left' | 'right' | 'center' }) {
@@ -891,80 +1087,49 @@ export function buildSponsorBoulevardPlan(
     });
     nodes.push(...programmedNodes);
 
-    const heroLeft = heroPrimary[0];
-    const heroRight = heroPrimary[1];
-    if (heroLeft) {
-      const heroOffset = districtTierBand === 'showcase' ? 278 : districtTierBand === 'discovery' ? 336 : districtCenter.lane === 'center' ? 312 : 132;
-      nodes.push(createCompanyNode(
-        heroLeft,
-        'hero_left',
-        color,
-        districtCenter.x - heroOffset,
-        districtCenter.z + (districtTierBand === 'showcase' ? 12 : districtTierBand === 'discovery' ? -28 : -12),
-        Math.PI / 2
-      ));
-      nodes[nodes.length - 1].clusterIndex = sectorIndex;
-    }
-    if (heroRight) {
-      const heroOffset = districtTierBand === 'showcase' ? 278 : districtTierBand === 'discovery' ? 336 : districtCenter.lane === 'center' ? 312 : 132;
-      nodes.push(createCompanyNode(
-        heroRight,
-        'hero_right',
-        color,
-        districtCenter.x + heroOffset,
-        districtCenter.z + (districtTierBand === 'showcase' ? 12 : districtTierBand === 'discovery' ? -28 : -12),
-        -Math.PI / 2
-      ));
-      nodes[nodes.length - 1].clusterIndex = sectorIndex;
-    }
+    const heroSlots = getCuratedCompanySlots(districtTierBand, districtCenter.lane, 'hero');
+    heroPrimary.forEach((company, index) => {
+      const slot = heroSlots[index];
+      if (!slot) {
+        if (ENABLE_LEGACY_BOOTH_FORMULA_FALLBACK) {
+          return;
+        }
+        return;
+      }
 
-    premiumCompanies.forEach((company, index) => {
-      const side = index % 2 === 0 ? -1 : 1;
-      const row = Math.floor(index / 2);
-      const premiumRadius =
-        districtTierBand === 'discovery' ? (districtCenter.lane === 'center' ? 526 : 348)
-        : districtTierBand === 'showcase' ? (districtCenter.lane === 'center' ? 408 : 324)
-        : districtCenter.lane === 'center' ? 436 : 298;
-      const premiumBaseZ =
-        districtTierBand === 'arrival' ? districtCenter.z - 26
-        : districtTierBand === 'showcase' ? districtCenter.z - 24
-        : districtTierBand === 'discovery' ? districtCenter.z - 76
-        : districtCenter.z - 44;
-      const premiumStep = districtTierBand === 'discovery' ? 142 : 128;
-      nodes.push(createCompanyNode(
-        company,
-        'endcap',
-        color,
-        districtCenter.x + side * premiumRadius,
-        premiumBaseZ - row * premiumStep,
-        side < 0 ? Math.PI / 2 : -Math.PI / 2
-      ));
-      nodes[nodes.length - 1].clusterIndex = sectorIndex;
+      const node = createCompanyNodeFromCuratedSlot(company, color, districtCenter, slot);
+      node.clusterIndex = sectorIndex;
+      nodes.push(node);
     });
 
+    const premiumSlots = getCuratedCompanySlots(districtTierBand, districtCenter.lane, 'endcap');
+    premiumCompanies.forEach((company, index) => {
+      const slot = premiumSlots[index];
+      if (!slot) {
+        if (ENABLE_LEGACY_BOOTH_FORMULA_FALLBACK) {
+          return;
+        }
+        return;
+      }
+
+      const node = createCompanyNodeFromCuratedSlot(company, color, districtCenter, slot);
+      node.clusterIndex = sectorIndex;
+      nodes.push(node);
+    });
+
+    const standardSlots = getCuratedCompanySlots(districtTierBand, districtCenter.lane, 'standard');
     standardCompanies.forEach((company, index) => {
-      const isLeft = index % 2 === 0;
-      const row = Math.floor(index / 2);
-      const standardOffset =
-        districtTierBand === 'arrival' ? 166
-        : districtTierBand === 'showcase' ? 224
-        : districtTierBand === 'discovery' ? 318
-        : 198;
-      const standardBaseZ =
-        districtTierBand === 'arrival' ? districtCenter.z - 122
-        : districtTierBand === 'showcase' ? districtCenter.z - 182
-        : districtTierBand === 'discovery' ? districtCenter.z - 224
-        : districtCenter.z - 164;
-      const standardStep = districtTierBand === 'discovery' ? 132 : 118;
-      nodes.push(createCompanyNode(
-        company,
-        isLeft ? 'standard_left' : 'standard_right',
-        color,
-        districtCenter.x + (isLeft ? -standardOffset : standardOffset),
-        standardBaseZ - row * standardStep,
-        isLeft ? Math.PI / 2 : -Math.PI / 2
-      ));
-      nodes[nodes.length - 1].clusterIndex = sectorIndex;
+      const slot = standardSlots[index];
+      if (!slot) {
+        if (ENABLE_LEGACY_BOOTH_FORMULA_FALLBACK) {
+          return;
+        }
+        return;
+      }
+
+      const node = createCompanyNodeFromCuratedSlot(company, color, districtCenter, slot);
+      node.clusterIndex = sectorIndex;
+      nodes.push(node);
     });
 
     const sectorNodeOffsets = [
@@ -1017,5 +1182,6 @@ export function buildSponsorBoulevardPlan(
     },
     nodes,
     sectorGateways,
+    slotBankVersion: CURATED_SLOT_BANK_VERSION,
   };
 }
