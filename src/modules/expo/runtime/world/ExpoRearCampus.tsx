@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import type { ExpoBoothPlacement } from '../../layout-engine';
 import type { ExpoWorldVisualProfile } from '../../world-contract';
 import {
+  buildRearCampusPerimeterConnectors,
   buildRearCampusMetrics,
   buildVisibleRearCampusForecourts,
   buildVisibleRearCampusLandmarkTowers,
@@ -51,11 +52,7 @@ export function ExpoRearCampus({
   const filteredStadiumForecourts = stadiumForecourts;
   const filteredStadiumSidePavilions = stadiumSidePavilions;
   const filteredStadiumLandmarkTowers = stadiumLandmarkTowers;
-  const campusPerimeterHalfWidth = 3060;
-  const campusPerimeterFrontZ = campusCenterZ + 2140;
-  const campusPerimeterRearZ = campusCenterZ - 2140;
-  const campusPerimeterCenterZ = (campusPerimeterFrontZ + campusPerimeterRearZ) * 0.5;
-  const campusPerimeterDepth = campusPerimeterFrontZ - campusPerimeterRearZ;
+  const perimeterConnectors = useMemo(() => buildRearCampusPerimeterConnectors(campusCenterZ), [campusCenterZ]);
   const hasVisibleForecourts = filteredStadiumForecourts.length > 0;
 
   useEffect(() => {
@@ -142,34 +139,23 @@ export function ExpoRearCampus({
         </group>
       </group>
       <group name="rear-campus-perimeter-shell">
-        <mesh position={[0, 16, campusPerimeterRearZ]} receiveShadow>
-          <boxGeometry args={[campusPerimeterHalfWidth * 2, 32, 20]} />
-          <meshStandardMaterial color="#81909a" emissive={accent} emissiveIntensity={0.022} roughness={0.78} metalness={0.05} />
-        </mesh>
-        <mesh position={[-campusPerimeterHalfWidth, 15, campusPerimeterCenterZ]} receiveShadow>
-          <boxGeometry args={[18, 30, campusPerimeterDepth]} />
-          <meshStandardMaterial color="#798893" emissive={accent} emissiveIntensity={0.018} roughness={0.8} metalness={0.05} />
-        </mesh>
-        <mesh position={[campusPerimeterHalfWidth, 15, campusPerimeterCenterZ]} receiveShadow>
-          <boxGeometry args={[18, 30, campusPerimeterDepth]} />
-          <meshStandardMaterial color="#798893" emissive={accent} emissiveIntensity={0.018} roughness={0.8} metalness={0.05} />
-        </mesh>
-        <mesh name="stadium-structure:rear-campus-front-left-connector" position={[-2390, 16, campusPerimeterFrontZ]} receiveShadow>
-          <boxGeometry args={[1340, 32, 18]} />
-          <meshStandardMaterial color="#798893" emissive={accent} emissiveIntensity={0.018} roughness={0.8} metalness={0.05} />
-        </mesh>
-        <mesh name="stadium-structure:rear-campus-front-left-connector-cap" position={[-2390, 33, campusPerimeterFrontZ]} receiveShadow>
-          <boxGeometry args={[1220, 2, 4]} />
-          <meshStandardMaterial color="#98a4ad" emissive={accent} emissiveIntensity={0.03} roughness={0.66} metalness={0.06} />
-        </mesh>
-        <mesh name="stadium-structure:rear-campus-front-right-connector" position={[2390, 16, campusPerimeterFrontZ]} receiveShadow>
-          <boxGeometry args={[1340, 32, 18]} />
-          <meshStandardMaterial color="#798893" emissive={accent} emissiveIntensity={0.018} roughness={0.8} metalness={0.05} />
-        </mesh>
-        <mesh name="stadium-structure:rear-campus-front-right-connector-cap" position={[2390, 33, campusPerimeterFrontZ]} receiveShadow>
-          <boxGeometry args={[1220, 2, 4]} />
-          <meshStandardMaterial color="#98a4ad" emissive={accent} emissiveIntensity={0.03} roughness={0.66} metalness={0.06} />
-        </mesh>
+        {perimeterConnectors.map((connector) => (
+          <mesh
+            key={connector.id}
+            name={`stadium-structure:${connector.id}`}
+            position={connector.position}
+            receiveShadow
+          >
+            <boxGeometry args={connector.size} />
+            <meshStandardMaterial
+              color={connector.accent === 'cap' ? '#98a4ad' : connector.id.includes('rear-wall') ? '#81909a' : '#798893'}
+              emissive={accent}
+              emissiveIntensity={connector.accent === 'cap' ? 0.03 : connector.id.includes('rear-wall') ? 0.022 : 0.018}
+              roughness={connector.accent === 'cap' ? 0.66 : connector.id.includes('rear-wall') ? 0.78 : 0.8}
+              metalness={connector.accent === 'cap' ? 0.06 : 0.05}
+            />
+          </mesh>
+        ))}
       </group>
 
       <ExpoRearCampusStructures

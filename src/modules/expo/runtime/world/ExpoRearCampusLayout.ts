@@ -19,6 +19,13 @@ export type CampusTower = {
   position: [number, number, number];
 };
 
+export type CampusConnector = {
+  id: string;
+  position: [number, number, number];
+  size: [number, number, number];
+  accent: 'wall' | 'cap';
+};
+
 const HIDDEN_REAR_CAMPUS_FORECOURT_IDS = new Set([
   'stadium-forecourt-left-main',
   'stadium-forecourt-left-inner',
@@ -83,6 +90,59 @@ export function buildRearCampusMetrics(boothPlacements: ExpoBoothPlacement[]) {
     routeEndZ,
     stadiumBackWallZ,
   };
+}
+
+export function buildRearCampusPerimeterConnectors(campusCenterZ: number): CampusConnector[] {
+  const campusPerimeterHalfWidth = 3060;
+  const campusPerimeterFrontZ = campusCenterZ + 2140;
+  const campusPerimeterRearZ = campusCenterZ - 2140;
+  const campusPerimeterCenterZ = (campusPerimeterFrontZ + campusPerimeterRearZ) * 0.5;
+  const campusPerimeterDepth = campusPerimeterFrontZ - campusPerimeterRearZ;
+
+  return [
+    {
+      id: 'rear-campus-perimeter-rear-wall',
+      position: [0, 16, campusPerimeterRearZ],
+      size: [campusPerimeterHalfWidth * 2, 32, 20],
+      accent: 'wall',
+    },
+    {
+      id: 'rear-campus-perimeter-left-wall',
+      position: [-campusPerimeterHalfWidth, 15, campusPerimeterCenterZ],
+      size: [18, 30, campusPerimeterDepth],
+      accent: 'wall',
+    },
+    {
+      id: 'rear-campus-perimeter-right-wall',
+      position: [campusPerimeterHalfWidth, 15, campusPerimeterCenterZ],
+      size: [18, 30, campusPerimeterDepth],
+      accent: 'wall',
+    },
+    {
+      id: 'rear-campus-front-left-connector',
+      position: [-2390, 16, campusPerimeterFrontZ],
+      size: [1340, 32, 18],
+      accent: 'wall',
+    },
+    {
+      id: 'rear-campus-front-left-connector-cap',
+      position: [-2390, 33, campusPerimeterFrontZ],
+      size: [1220, 2, 4],
+      accent: 'cap',
+    },
+    {
+      id: 'rear-campus-front-right-connector',
+      position: [2390, 16, campusPerimeterFrontZ],
+      size: [1340, 32, 18],
+      accent: 'wall',
+    },
+    {
+      id: 'rear-campus-front-right-connector-cap',
+      position: [2390, 33, campusPerimeterFrontZ],
+      size: [1220, 2, 4],
+      accent: 'cap',
+    },
+  ];
 }
 
 export function buildRearCampusForecourts(campusCenterZ: number): CampusPlane[] {

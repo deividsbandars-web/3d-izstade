@@ -56,6 +56,7 @@ export function WorldCityPlanes({
   void _showcasePlazas;
   void _boothForecourtPlanes;
   void _stadiumReserve;
+  // Stadium/city perimeter connectors are owned by ExpoRearCampus, not by city structural planes.
   const structuralArrivalPlanes = filterVisibleStructuralCityPlanes(arrivalPlanes);
 
   return (
