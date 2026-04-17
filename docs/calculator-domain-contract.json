@@ -1,0 +1,155 @@
+{
+  "contractVersion": "calculator-domain-v1-canonical",
+  "primaryCurrency": "EUR",
+  "categoryTaxonomy": [
+    "heating",
+    "roof",
+    "foundation",
+    "renovation",
+    "timber_house",
+    "windows",
+    "visuals",
+    "digital_art",
+    "autoservice",
+    "cleaning",
+    "quick_fix",
+    "plumbing",
+    "designer",
+    "interior",
+    "housing",
+    "logistics"
+  ],
+  "canonicalResultShape": {
+    "requiredFields": [
+      "category",
+      "contractVersion",
+      "currency",
+      "totals",
+      "breakdown"
+    ],
+    "totals": [
+      "materials",
+      "labor",
+      "overhead",
+      "grandTotal"
+    ]
+  },
+  "executionModes": {
+    "domain-engine": "Shared domain module with reusable pricing logic outside React presentation components.",
+    "legacy-adapter": "Legacy calculator still active, but must be wrapped behind a migration path into the canonical contract."
+  },
+  "engines": [
+    {
+      "category": "heating",
+      "executionMode": "domain-engine",
+      "owner": "src/services/calculators/heating.ts",
+      "uiConsumer": "src/modules/calculators/HeatingCalc.tsx",
+      "status": "migrated"
+    },
+    {
+      "category": "roof",
+      "executionMode": "legacy-adapter",
+      "owner": "src/services/calculators/roof.ts",
+      "uiConsumer": "src/modules/calculators/RoofCalc.tsx",
+      "status": "pending"
+    },
+    {
+      "category": "foundation",
+      "executionMode": "legacy-adapter",
+      "owner": "src/modules/calculators/FoundationCalc.tsx",
+      "uiConsumer": "src/modules/calculators/FoundationCalc.tsx",
+      "status": "pending"
+    },
+    {
+      "category": "renovation",
+      "executionMode": "legacy-adapter",
+      "owner": "src/services/calculators/renovation.ts",
+      "uiConsumer": "src/core/calculator.ts",
+      "status": "pending"
+    },
+    {
+      "category": "timber_house",
+      "executionMode": "legacy-adapter",
+      "owner": "src/modules/calculators/TimberHouseCalc.tsx",
+      "uiConsumer": "src/modules/calculators/TimberHouseCalc.tsx",
+      "status": "pending"
+    },
+    {
+      "category": "windows",
+      "executionMode": "legacy-adapter",
+      "owner": "src/modules/calculators/WindowsCalc.tsx",
+      "uiConsumer": "src/modules/calculators/WindowsCalc.tsx",
+      "status": "pending"
+    },
+    {
+      "category": "visuals",
+      "executionMode": "legacy-adapter",
+      "owner": "src/modules/calculators/VisualsCalc.tsx",
+      "uiConsumer": "src/modules/calculators/VisualsCalc.tsx",
+      "status": "pending"
+    },
+    {
+      "category": "digital_art",
+      "executionMode": "legacy-adapter",
+      "owner": "src/modules/calculators/DigitalArtCalc.tsx",
+      "uiConsumer": "src/modules/calculators/DigitalArtCalc.tsx",
+      "status": "pending"
+    },
+    {
+      "category": "autoservice",
+      "executionMode": "legacy-adapter",
+      "owner": "src/services/calculators/autoservice.ts",
+      "uiConsumer": "src/modules/calculators/AutoserviceCalc.tsx",
+      "status": "pending"
+    },
+    {
+      "category": "cleaning",
+      "executionMode": "legacy-adapter",
+      "owner": "src/services/calculators/cleaning.ts",
+      "uiConsumer": "src/modules/calculators/CleaningCalc.tsx",
+      "status": "pending"
+    },
+    {
+      "category": "quick_fix",
+      "executionMode": "legacy-adapter",
+      "owner": "src/modules/calculators/QuickFixCalc.tsx",
+      "uiConsumer": "src/modules/calculators/QuickFixCalc.tsx",
+      "status": "pending"
+    },
+    {
+      "category": "plumbing",
+      "executionMode": "legacy-adapter",
+      "owner": "src/services/calculators/plumbing.ts",
+      "uiConsumer": "src/modules/calculators/PlumbingCalc.tsx",
+      "status": "pending"
+    },
+    {
+      "category": "designer",
+      "executionMode": "legacy-adapter",
+      "owner": "src/modules/calculators/DesignerCalc.tsx",
+      "uiConsumer": "src/modules/calculators/DesignerCalc.tsx",
+      "status": "pending"
+    },
+    {
+      "category": "interior",
+      "executionMode": "legacy-adapter",
+      "owner": "src/modules/calculators/InteriorCalc.tsx",
+      "uiConsumer": "src/modules/calculators/InteriorCalc.tsx",
+      "status": "pending"
+    },
+    {
+      "category": "housing",
+      "executionMode": "legacy-adapter",
+      "owner": "src/modules/calculators/HousingCalc.tsx",
+      "uiConsumer": "src/modules/calculators/HousingCalc.tsx",
+      "status": "pending"
+    },
+    {
+      "category": "logistics",
+      "executionMode": "legacy-adapter",
+      "owner": "src/modules/calculators/LogisticsCalc.tsx",
+      "uiConsumer": "src/modules/calculators/LogisticsCalc.tsx",
+      "status": "pending"
+    }
+  ]
+}
