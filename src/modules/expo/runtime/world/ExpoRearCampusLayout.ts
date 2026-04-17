@@ -19,6 +19,57 @@ export type CampusTower = {
   position: [number, number, number];
 };
 
+const HIDDEN_REAR_CAMPUS_FORECOURT_IDS = new Set([
+  'stadium-forecourt-left-main',
+  'stadium-forecourt-left-inner',
+  'stadium-forecourt-right-main',
+  'stadium-forecourt-right-inner',
+  'stadium-forecourt-center-main',
+  'stadium-forecourt-center-inner',
+  'stadium-forecourt-axis',
+  'stadium-forecourt-pocket-left',
+  'stadium-forecourt-pocket-right',
+  'stadium-forecourt-ribbon-left',
+  'stadium-forecourt-ribbon-right',
+  'stadium-forecourt-endcap',
+  'stadium-forecourt-axis-pad-left',
+  'stadium-forecourt-axis-pad-right',
+  'stadium-forecourt-rear-band',
+  'stadium-forecourt-gallery-left',
+  'stadium-forecourt-gallery-right',
+  'stadium-forecourt-terminal-left',
+  'stadium-forecourt-terminal-right',
+  'stadium-forecourt-center-carpet',
+  'stadium-forecourt-threshold-left',
+  'stadium-forecourt-threshold-right',
+  'stadium-forecourt-outer-pocket-left',
+  'stadium-forecourt-outer-pocket-right',
+  'stadium-forecourt-front-court-left',
+  'stadium-forecourt-front-court-right',
+  'stadium-forecourt-front-threshold-left',
+  'stadium-forecourt-front-threshold-right',
+]);
+
+const HIDDEN_REAR_CAMPUS_PAVILION_IDS = new Set([
+  'rear-campus-side-pavilion-left-front',
+  'rear-campus-side-pavilion-left-rear',
+  'rear-campus-event-pavilion-left',
+  'rear-campus-axis-gallery-left',
+  'rear-campus-axis-front-left',
+  'rear-campus-event-pavilion-right',
+  'rear-campus-axis-gallery-right',
+  'rear-campus-side-pavilion-right-front',
+  'rear-campus-side-pavilion-right-rear',
+  'rear-campus-axis-front-right',
+]);
+
+const HIDDEN_REAR_CAMPUS_TOWER_IDS = new Set([
+  'rear-campus-landmark-left',
+  'rear-campus-landmark-right',
+  'rear-campus-landmark-center-left',
+  'rear-campus-landmark-center-right',
+]);
+
 export function buildRearCampusMetrics(boothPlacements: ExpoBoothPlacement[]) {
   const footprint = boothPlacements[0]?.layoutFootprint;
   const minZ = footprint?.minZ ?? -1400;
@@ -67,6 +118,10 @@ export function buildRearCampusForecourts(campusCenterZ: number): CampusPlane[] 
   ];
 }
 
+export function buildVisibleRearCampusForecourts(campusCenterZ: number): CampusPlane[] {
+  return buildRearCampusForecourts(campusCenterZ).filter((plane) => !HIDDEN_REAR_CAMPUS_FORECOURT_IDS.has(plane.id));
+}
+
 export function buildRearCampusSidePavilions(campusCenterZ: number): CampusPavilion[] {
   return [
     { id: 'rear-campus-side-pavilion-left-front', position: [-1420, 0, campusCenterZ + 1040], size: [176, 132, 148], accentSide: 1 },
@@ -86,6 +141,10 @@ export function buildRearCampusSidePavilions(campusCenterZ: number): CampusPavil
   ];
 }
 
+export function buildVisibleRearCampusSidePavilions(campusCenterZ: number): CampusPavilion[] {
+  return buildRearCampusSidePavilions(campusCenterZ).filter((pavilion) => !HIDDEN_REAR_CAMPUS_PAVILION_IDS.has(pavilion.id));
+}
+
 export function buildRearCampusLandmarkTowers(campusCenterZ: number): CampusTower[] {
   return [
     { id: 'rear-campus-landmark-left', position: [-920, 0, campusCenterZ + 260] },
@@ -93,4 +152,8 @@ export function buildRearCampusLandmarkTowers(campusCenterZ: number): CampusTowe
     { id: 'rear-campus-landmark-center-left', position: [-420, 0, campusCenterZ + 520] },
     { id: 'rear-campus-landmark-center-right', position: [420, 0, campusCenterZ + 500] },
   ];
+}
+
+export function buildVisibleRearCampusLandmarkTowers(campusCenterZ: number): CampusTower[] {
+  return buildRearCampusLandmarkTowers(campusCenterZ).filter((tower) => !HIDDEN_REAR_CAMPUS_TOWER_IDS.has(tower.id));
 }

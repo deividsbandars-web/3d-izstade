@@ -3,10 +3,10 @@ import * as THREE from 'three';
 import type { ExpoBoothPlacement } from '../../layout-engine';
 import type { ExpoWorldVisualProfile } from '../../world-contract';
 import {
-  buildRearCampusForecourts,
-  buildRearCampusLandmarkTowers,
   buildRearCampusMetrics,
-  buildRearCampusSidePavilions,
+  buildVisibleRearCampusForecourts,
+  buildVisibleRearCampusLandmarkTowers,
+  buildVisibleRearCampusSidePavilions,
 } from './ExpoRearCampusLayout';
 import { ExpoRearCampusStructures } from './ExpoRearCampusStructures';
 import {
@@ -30,9 +30,9 @@ export function ExpoRearCampus({
   const accent = visualProfile.global.hudAccent;
   usePlayerColliderRegistration(campusColliderRef, 'rear-campus-collider');
   const enableHeavyShadows = false;
-  const stadiumForecourts = useMemo(() => buildRearCampusForecourts(campusCenterZ), [campusCenterZ]);
-  const stadiumSidePavilions = useMemo(() => buildRearCampusSidePavilions(campusCenterZ), [campusCenterZ]);
-  const stadiumLandmarkTowers = useMemo(() => buildRearCampusLandmarkTowers(campusCenterZ), [campusCenterZ]);
+  const stadiumForecourts = useMemo(() => buildVisibleRearCampusForecourts(campusCenterZ), [campusCenterZ]);
+  const stadiumSidePavilions = useMemo(() => buildVisibleRearCampusSidePavilions(campusCenterZ), [campusCenterZ]);
+  const stadiumLandmarkTowers = useMemo(() => buildVisibleRearCampusLandmarkTowers(campusCenterZ), [campusCenterZ]);
   const stadiumScreenFeeds = useMemo(
     () => [...boothPlacements]
       .filter((placement) => {
@@ -48,44 +48,15 @@ export function ExpoRearCampus({
       })),
     [boothPlacements]
   );
-  const filteredStadiumForecourts = useMemo<typeof stadiumForecourts>(() => [], [stadiumForecourts]);
-  const filteredStadiumSidePavilions = useMemo(
-    () => {
-      const hiddenPavilionIds = new Set([
-        'rear-campus-side-pavilion-left-front',
-        'rear-campus-side-pavilion-left-rear',
-        'rear-campus-event-pavilion-left',
-        'rear-campus-axis-gallery-left',
-        'rear-campus-axis-front-left',
-        'rear-campus-event-pavilion-right',
-        'rear-campus-axis-gallery-right',
-        'rear-campus-side-pavilion-right-front',
-        'rear-campus-side-pavilion-right-rear',
-        'rear-campus-axis-front-right',
-      ]);
-
-      return stadiumSidePavilions.filter((pavilion) => !hiddenPavilionIds.has(pavilion.id));
-    },
-    [stadiumSidePavilions]
-  );
-  const filteredStadiumLandmarkTowers = useMemo(
-    () => {
-      const hiddenTowerIds = new Set([
-        'rear-campus-landmark-left',
-        'rear-campus-landmark-right',
-        'rear-campus-landmark-center-left',
-        'rear-campus-landmark-center-right',
-      ]);
-
-      return stadiumLandmarkTowers.filter((tower) => !hiddenTowerIds.has(tower.id));
-    },
-    [stadiumLandmarkTowers]
-  );
+  const filteredStadiumForecourts = stadiumForecourts;
+  const filteredStadiumSidePavilions = stadiumSidePavilions;
+  const filteredStadiumLandmarkTowers = stadiumLandmarkTowers;
   const campusPerimeterHalfWidth = 3060;
   const campusPerimeterFrontZ = campusCenterZ + 2140;
   const campusPerimeterRearZ = campusCenterZ - 2140;
   const campusPerimeterCenterZ = (campusPerimeterFrontZ + campusPerimeterRearZ) * 0.5;
   const campusPerimeterDepth = campusPerimeterFrontZ - campusPerimeterRearZ;
+  const hasVisibleForecourts = filteredStadiumForecourts.length > 0;
 
   useEffect(() => {
     const stadiumEntries = [
@@ -129,71 +100,75 @@ export function ExpoRearCampus({
 
   return (
     <group name="expo-rear-campus">
-      <mesh position={[-80, 0.02, campusCenterZ - 420]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-        <planeGeometry args={[7200, 4400]} />
-        <ExpoRuntimeSurfaceMaterial fallbackColor="#6f7c85" repeat={[9.4, 5.8]} surface="concrete" />
-      </mesh>
-      <mesh position={[0, 16, campusPerimeterRearZ]} receiveShadow>
-        <boxGeometry args={[campusPerimeterHalfWidth * 2, 32, 20]} />
-        <meshStandardMaterial color="#81909a" emissive={accent} emissiveIntensity={0.022} roughness={0.78} metalness={0.05} />
-      </mesh>
-      <mesh position={[-campusPerimeterHalfWidth, 15, campusPerimeterCenterZ]} receiveShadow>
-        <boxGeometry args={[18, 30, campusPerimeterDepth]} />
-        <meshStandardMaterial color="#798893" emissive={accent} emissiveIntensity={0.018} roughness={0.8} metalness={0.05} />
-      </mesh>
-      <mesh position={[campusPerimeterHalfWidth, 15, campusPerimeterCenterZ]} receiveShadow>
-        <boxGeometry args={[18, 30, campusPerimeterDepth]} />
-        <meshStandardMaterial color="#798893" emissive={accent} emissiveIntensity={0.018} roughness={0.8} metalness={0.05} />
-      </mesh>
-      <mesh name="stadium-structure:rear-campus-front-left-connector" position={[-2390, 16, campusPerimeterFrontZ]} receiveShadow>
-        <boxGeometry args={[1340, 32, 18]} />
-        <meshStandardMaterial color="#798893" emissive={accent} emissiveIntensity={0.018} roughness={0.8} metalness={0.05} />
-      </mesh>
-      <mesh name="stadium-structure:rear-campus-front-left-connector-cap" position={[-2390, 33, campusPerimeterFrontZ]} receiveShadow>
-        <boxGeometry args={[1220, 2, 4]} />
-        <meshStandardMaterial color="#98a4ad" emissive={accent} emissiveIntensity={0.03} roughness={0.66} metalness={0.06} />
-      </mesh>
-      <mesh name="stadium-structure:rear-campus-front-right-connector" position={[2390, 16, campusPerimeterFrontZ]} receiveShadow>
-        <boxGeometry args={[1340, 32, 18]} />
-        <meshStandardMaterial color="#798893" emissive={accent} emissiveIntensity={0.018} roughness={0.8} metalness={0.05} />
-      </mesh>
-      <mesh name="stadium-structure:rear-campus-front-right-connector-cap" position={[2390, 33, campusPerimeterFrontZ]} receiveShadow>
-        <boxGeometry args={[1220, 2, 4]} />
-        <meshStandardMaterial color="#98a4ad" emissive={accent} emissiveIntensity={0.03} roughness={0.66} metalness={0.06} />
-      </mesh>
-      {filteredStadiumForecourts.map((plane) => (
-        <mesh key={plane.id} position={plane.position} rotation={[-Math.PI / 2, 0, 0]} receiveShadow renderOrder={12}>
-          <planeGeometry args={plane.size} />
-          <meshStandardMaterial
-            color={plane.color}
-            roughness={0.72}
-            metalness={0.04}
-            polygonOffset
-            polygonOffsetFactor={-2}
-            polygonOffsetUnits={-2}
-          />
+      <group name="rear-campus-ground-shell">
+        <mesh position={[-80, 0.02, campusCenterZ - 420]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+          <planeGeometry args={[7200, 4400]} />
+          <ExpoRuntimeSurfaceMaterial fallbackColor="#6f7c85" repeat={[9.4, 5.8]} surface="concrete" />
         </mesh>
-      ))}
-      <group position={[0, 0, campusCenterZ]}>
-        <mesh position={[0, 6.08, -40]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-          <circleGeometry args={[3080, 112]} />
-          <ExpoRuntimeSurfaceMaterial fallbackColor="#6f7c85" repeat={[6.4, 6.4]} surface="concrete" />
+        {hasVisibleForecourts && filteredStadiumForecourts.map((plane) => (
+          <mesh key={plane.id} position={plane.position} rotation={[-Math.PI / 2, 0, 0]} receiveShadow renderOrder={12}>
+            <planeGeometry args={plane.size} />
+            <meshStandardMaterial
+              color={plane.color}
+              roughness={0.72}
+              metalness={0.04}
+              polygonOffset
+              polygonOffsetFactor={-2}
+              polygonOffsetUnits={-2}
+            />
+          </mesh>
+        ))}
+        <group name="rear-campus-stadium-bowl-ground" position={[0, 0, campusCenterZ]}>
+          <mesh position={[0, 6.08, -40]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+            <circleGeometry args={[3080, 112]} />
+            <ExpoRuntimeSurfaceMaterial fallbackColor="#6f7c85" repeat={[6.4, 6.4]} surface="concrete" />
+          </mesh>
+          <mesh position={[0, 6.3, -40]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+            <circleGeometry args={[2120, 88]} />
+            <ExpoRuntimeSurfaceMaterial fallbackColor="#6f7c85" repeat={[4.6, 4.6]} surface="concrete" />
+          </mesh>
+          <mesh position={[0, 6.54, -40]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+            <ringGeometry args={[2120, 2540, 96]} />
+            <ExpoRuntimeSurfaceMaterial fallbackColor="#6f7c85" repeat={[5.2, 5.2]} surface="paver" />
+          </mesh>
+          <mesh position={[0, 6.82, -40]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+            <ringGeometry args={[1860, 2000, 96]} />
+            <ExpoRuntimeSurfaceMaterial fallbackColor="#6f7c85" repeat={[4.2, 4.2]} surface="paver" />
+          </mesh>
+          <mesh position={[0, 26, -40]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+            <ringGeometry args={[2440, 2720, 96]} />
+            <meshStandardMaterial color="#6f7c85" roughness={0.97} metalness={0.01} />
+          </mesh>
+        </group>
+      </group>
+      <group name="rear-campus-perimeter-shell">
+        <mesh position={[0, 16, campusPerimeterRearZ]} receiveShadow>
+          <boxGeometry args={[campusPerimeterHalfWidth * 2, 32, 20]} />
+          <meshStandardMaterial color="#81909a" emissive={accent} emissiveIntensity={0.022} roughness={0.78} metalness={0.05} />
         </mesh>
-        <mesh position={[0, 6.3, -40]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-          <circleGeometry args={[2120, 88]} />
-          <ExpoRuntimeSurfaceMaterial fallbackColor="#6f7c85" repeat={[4.6, 4.6]} surface="concrete" />
+        <mesh position={[-campusPerimeterHalfWidth, 15, campusPerimeterCenterZ]} receiveShadow>
+          <boxGeometry args={[18, 30, campusPerimeterDepth]} />
+          <meshStandardMaterial color="#798893" emissive={accent} emissiveIntensity={0.018} roughness={0.8} metalness={0.05} />
         </mesh>
-        <mesh position={[0, 6.54, -40]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-          <ringGeometry args={[2120, 2540, 96]} />
-          <ExpoRuntimeSurfaceMaterial fallbackColor="#6f7c85" repeat={[5.2, 5.2]} surface="paver" />
+        <mesh position={[campusPerimeterHalfWidth, 15, campusPerimeterCenterZ]} receiveShadow>
+          <boxGeometry args={[18, 30, campusPerimeterDepth]} />
+          <meshStandardMaterial color="#798893" emissive={accent} emissiveIntensity={0.018} roughness={0.8} metalness={0.05} />
         </mesh>
-        <mesh position={[0, 6.82, -40]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-          <ringGeometry args={[1860, 2000, 96]} />
-          <ExpoRuntimeSurfaceMaterial fallbackColor="#6f7c85" repeat={[4.2, 4.2]} surface="paver" />
+        <mesh name="stadium-structure:rear-campus-front-left-connector" position={[-2390, 16, campusPerimeterFrontZ]} receiveShadow>
+          <boxGeometry args={[1340, 32, 18]} />
+          <meshStandardMaterial color="#798893" emissive={accent} emissiveIntensity={0.018} roughness={0.8} metalness={0.05} />
         </mesh>
-        <mesh position={[0, 26, -40]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-          <ringGeometry args={[2440, 2720, 96]} />
-          <meshStandardMaterial color="#6f7c85" roughness={0.97} metalness={0.01} />
+        <mesh name="stadium-structure:rear-campus-front-left-connector-cap" position={[-2390, 33, campusPerimeterFrontZ]} receiveShadow>
+          <boxGeometry args={[1220, 2, 4]} />
+          <meshStandardMaterial color="#98a4ad" emissive={accent} emissiveIntensity={0.03} roughness={0.66} metalness={0.06} />
+        </mesh>
+        <mesh name="stadium-structure:rear-campus-front-right-connector" position={[2390, 16, campusPerimeterFrontZ]} receiveShadow>
+          <boxGeometry args={[1340, 32, 18]} />
+          <meshStandardMaterial color="#798893" emissive={accent} emissiveIntensity={0.018} roughness={0.8} metalness={0.05} />
+        </mesh>
+        <mesh name="stadium-structure:rear-campus-front-right-connector-cap" position={[2390, 33, campusPerimeterFrontZ]} receiveShadow>
+          <boxGeometry args={[1220, 2, 4]} />
+          <meshStandardMaterial color="#98a4ad" emissive={accent} emissiveIntensity={0.03} roughness={0.66} metalness={0.06} />
         </mesh>
       </group>
 
