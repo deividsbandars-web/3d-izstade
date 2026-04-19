@@ -1,0 +1,25 @@
+services:
+  backend-staging:
+    build:
+      context: .
+      dockerfile: backend-server/Dockerfile.full
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      SIGNALING_STATUS_BASE_URL: http://signaling
+      PIXEL_STREAMING_STATUS_TIMEOUT_MS: ${PIXEL_STREAMING_STATUS_TIMEOUT_MS:-2500}
+      SUPABASE_URL: ${SUPABASE_URL:?SUPABASE_URL is required}
+      SUPABASE_SERVICE_KEY: ${SUPABASE_SERVICE_KEY:?SUPABASE_SERVICE_KEY is required}
+      UE5_SECRET_KEY: ${UE5_SECRET_KEY:?UE5_SECRET_KEY is required}
+    ports:
+      - "3001:3001"
+    depends_on:
+      signaling:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3001/health >/dev/null 2>&1 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 15s
+    restart: unless-stopped
