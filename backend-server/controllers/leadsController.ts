@@ -83,3 +83,83 @@ export const captureLead = async (req: Request, res: Response) => {
     res.status(500).send('An error occurred. Please try again later.');
   }
 };
+
+export const createLead = async (req: AuthRequest, res: Response) => {
+  try {
+    const supabase = getSupabase();
+    if (!supabase) throw new Error('Supabase not configured');
+
+    const payload = req.body && typeof req.body === 'object' ? req.body as Record<string, unknown> : null;
+    if (!payload) {
+      return res.status(400).json({ error: 'lead payload is required' });
+    }
+
+    const { data, error } = await supabase
+      .from('leads')
+      .insert([{ ...payload, user_id: req.user?.id ?? null }])
+      .select()
+      .single();
+
+    if (error) throw error;
+    res.status(201).json(data);
+  } catch (error: any) {
+    errorMonitor.captureException(error, 'createLead');
+    res.status(500).json({ error: error.message });
+  }
+};
+
+export const updateLead = async (req: AuthRequest, res: Response) => {
+  try {
+    const supabase = getSupabase();
+    if (!supabase) throw new Error('Supabase not configured');
+
+    const leadId = typeof req.params.leadId === 'string' ? req.params.leadId.trim() : '';
+    if (!leadId) {
+      return res.status(400).json({ error: 'leadId is required' });
+    }
+
+    const payload = req.body && typeof req.body === 'object' ? req.body as Record<string, unknown> : null;
+    if (!payload) {
+      return res.status(400).json({ error: 'update payload is required' });
+    }
+
+    const { data, error } = await supabase
+      .from('leads')
+      .update(payload)
+      .eq('id', leadId)
+      .eq('user_id', req.user?.id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    res.json(data);
+  } catch (error: any) {
+    errorMonitor.captureException(error, 'updateLead');
+    res.status(500).json({ error: error.message });
+  }
+};
+
+export const getLeadsBySource = async (req: AuthRequest, res: Response) => {
+  try {
+    const supabase = getSupabase();
+    if (!supabase) throw new Error('Supabase not configured');
+
+    const source = typeof req.body?.source === 'string' ? req.body.source.trim() : '';
+    if (!source) {
+      return res.status(400).json({ error: 'source is required' });
+    }
+
+    const { data, error } = await supabase
+      .from('leads')
+      .select('*')
+      .eq('user_id', req.user?.id)
+      .ilike('source', `%${source}%`)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    res.json(data);
+  } catch (error: any) {
+    errorMonitor.captureException(error, 'getLeadsBySource');
+    res.status(500).json({ error: error.message });
+  }
+};

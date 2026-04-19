@@ -1,5 +1,7 @@
 import * as THREE from 'three';
 
+import type { StadiumReserve } from './WorldCitySkeletonLayout';
+
 type CityScreenSocket = {
   color: string;
   frameSize: [number, number];
@@ -8,13 +10,6 @@ type CityScreenSocket = {
   position: [number, number, number];
   rotation: [number, number, number];
   surfaceId: string;
-};
-
-type StadiumReserve = {
-  centerX: number;
-  centerZ: number;
-  halfWidth: number;
-  halfDepth: number;
 };
 
 function overlapsStadiumReserve(
@@ -64,23 +59,23 @@ export function WorldCityScreenSockets({
           const dx = socket.position[0] - playerPosition[0];
           const dz = socket.position[2] - playerPosition[2];
           const distanceSq = (dx * dx) + (dz * dz);
-          const maxDistance = socket.kind === 'hero_wall' || socket.kind === 'tower_crown' ? 1650 : 1180;
+          const maxDistance = socket.kind === 'hero_wall' || socket.kind === 'tower_crown' ? 1500 : 1040;
           return distanceSq <= maxDistance * maxDistance;
         })
         .map((socket) => (
-          <group key={socket.id} position={socket.position} rotation={socket.rotation}>
+          <group key={socket.id} name={`world-city-screen-socket:${socket.kind}:${socket.id}`} position={socket.position} rotation={socket.rotation}>
             <mesh>
               <planeGeometry args={socket.frameSize} />
-              <meshBasicMaterial color={socket.color} transparent opacity={socket.kind === 'hero_wall' ? 0.1 : 0.07} />
+              <meshBasicMaterial color={socket.color} transparent opacity={socket.kind === 'hero_wall' ? 0.08 : 0.05} />
             </mesh>
             <lineSegments>
               <edgesGeometry args={[new THREE.PlaneGeometry(socket.frameSize[0], socket.frameSize[1])]} />
-              <lineBasicMaterial color={socket.color} transparent opacity={socket.kind === 'hero_wall' ? 0.82 : 0.62} />
+              <lineBasicMaterial color={socket.color} transparent opacity={socket.kind === 'hero_wall' ? 0.68 : 0.48} />
             </lineSegments>
             {(socket.kind === 'hero_wall' || socket.kind === 'tower_crown') && (
               <mesh position={[0, socket.kind === 'tower_crown' ? 0 : socket.frameSize[1] * 0.5 + 0.6, 0]}>
                 <boxGeometry args={[socket.kind === 'hero_wall' ? socket.frameSize[0] * 0.28 : socket.frameSize[0] * 0.22, 0.36, 0.22]} />
-                <meshBasicMaterial color={socket.color} transparent opacity={0.9} />
+                <meshBasicMaterial color={socket.color} transparent opacity={0.78} />
               </mesh>
             )}
           </group>

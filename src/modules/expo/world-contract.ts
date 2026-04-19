@@ -336,7 +336,7 @@ export function buildExpoWorldContract(data: any): ExpoWorldContract {
         groundEdge: '#0c1320',
         hudAccent: visualDistricts.find((district) => district.expressionMode === 'active-commercial')?.hudAccent ?? '#9ed6f3',
         hudPanel: 'rgba(10, 17, 28, 0.82)',
-        skylineColor: '#8ba0b4',
+        skylineColor: '#a3b6c8',
       },
     },
     walkRegions: routeContract.walkRegions,

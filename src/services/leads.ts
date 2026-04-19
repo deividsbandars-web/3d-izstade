@@ -1,16 +1,12 @@
-// Frontend exposure for backend lead service
-import { leadService } from '../backend/leads/leadService';
-import { leadEngine } from '../backend/leads/engine/leadEngine';
 import { supabaseClient } from '../lib/supabaseClient';
+import { serverApiPatch, serverApiPost } from './serverApi';
 
 export const LeadsAPI = {
-  // Existing Phase 3 functions
-  createLead: leadService.createLead,
-  updateLead: leadService.updateLead,
-  getLeadsBySource: leadService.getLeadsBySource,
+  createLead: async (payload: unknown) => serverApiPost('/api/leads', payload),
+  updateLead: async (leadId: string, payload: unknown) => serverApiPatch(`/api/leads/${leadId}`, payload),
+  getLeadsBySource: async (source: string) => serverApiPost('/api/leads/by-source', { source }),
 
-  // New Phase 9 functions
-  getLeads: async () => {
+  async getLeads() {
     try {
       const { data, error } = await supabaseClient.from('leads').select('*').order('created_at', { ascending: false });
       if (error) throw error;
@@ -20,12 +16,11 @@ export const LeadsAPI = {
       return { data: null, error: String(error) };
     }
   },
-  
-  generateLeads: async (industry: string, location: string) => {
-    return await leadEngine.processAndStoreLeads(industry, location);
-  },
-  
-  updateLeadStatus: async (leadId: string, status: string, contacted: boolean = false) => {
+
+  generateLeads: async (industry: string, location: string) =>
+    serverApiPost('/api/leads/generate', { industry, location }),
+
+  async updateLeadStatus(leadId: string, status: string, contacted: boolean = false) {
     try {
       const { data, error } = await supabaseClient
         .from('leads')
@@ -33,12 +28,12 @@ export const LeadsAPI = {
         .eq('id', leadId)
         .select()
         .single();
-        
+
       if (error) throw error;
       return { data, error: null };
     } catch (error) {
       console.error('Error updating lead status:', error);
       return { data: null, error: String(error) };
     }
-  }
+  },
 };

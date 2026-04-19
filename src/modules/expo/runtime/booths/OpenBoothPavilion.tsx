@@ -7,6 +7,7 @@ import {
   HeroOrEliteHalo,
   PremiumOrEliteBlades,
   PremiumPortalShell,
+  TierScreenFrame,
 } from './BoothTierShells';
 import { SponsorTextureSurface } from './BoothTextureMaterials';
 
@@ -40,6 +41,21 @@ export function OpenBoothPavilion({
   const eliteMonolithHeight = postHeight + 5.8;
   const eliteMonolithOffsetX = (width * 0.5) + 3.6;
   const eliteMonolithZ = rearScreenZ + 0.36;
+  const heroBladeHeight = postHeight + 2.6;
+  const heroBladeOffsetX = (width * 0.5) + 4.5;
+  const screenFrameWidth = width * (isHero ? 0.82 : isElite ? 0.76 : isPremium ? 0.72 : 0.62);
+  const screenFrameHeight = isHero ? 7.2 : isElite ? 6.4 : isPremium ? 5.6 : 4.8;
+  const screenSurfaceWidth = width * (isHero ? 0.74 : isElite ? 0.68 : isPremium ? 0.62 : 0.52);
+  const screenSurfaceHeight = isHero ? 6.16 : isElite ? 5.46 : isPremium ? 4.82 : 4.18;
+  const lowerMediaShelfWidth = width * (isHero ? 0.64 : isElite ? 0.58 : isPremium ? 0.52 : 0.44);
+  const lowerMediaShelfDepth = isHero ? 0.3 : isElite ? 0.26 : isPremium ? 0.22 : 0.18;
+  const lowerMediaShelfY = -(screenFrameHeight * 0.5) - (isHero ? 0.26 : isElite ? 0.22 : 0.16);
+  const sideBannerDepth = isHero ? 0.46 : isElite ? 0.42 : isPremium ? 0.36 : 0.28;
+  const sideBannerWidth = isHero ? 1.48 : isElite ? 1.22 : isPremium ? 0.94 : 0.72;
+  const sideBannerHeight = isHero ? 7.4 : isElite ? 6.2 : isPremium ? 5.2 : 4.4;
+  const standardFrontTrimWidth = width * 0.7;
+  const screenHeaderY = (screenFrameHeight * 0.5) - (isHero ? 0.46 : isElite ? 0.4 : isPremium ? 0.34 : 0.3);
+  const screenFooterY = -(screenFrameHeight * 0.5) + (isHero ? 0.42 : isElite ? 0.36 : isPremium ? 0.3 : 0.26);
 
   return (
     <group name="booth-open-pavilion">
@@ -56,6 +72,20 @@ export function OpenBoothPavilion({
         <boxGeometry args={[width, 0.28, depth]} />
         <meshStandardMaterial color="#e5edf4" metalness={0.04} roughness={0.74} />
       </mesh>
+      {!isPremium && !isElite && !isHero && (
+        <>
+          <mesh position={[0, 0.42, (depth * 0.5) - 0.28]} castShadow receiveShadow>
+            <boxGeometry args={[standardFrontTrimWidth, 0.12, 0.16]} />
+            <meshStandardMaterial color="#edf4fa" metalness={0.12} roughness={0.34} />
+          </mesh>
+          {[-1, 1].map((side) => (
+            <mesh key={`standard-side-post-${side}`} position={[side * ((width * 0.5) - 0.58), postHeight * 0.44, 1.18]} castShadow receiveShadow>
+              <boxGeometry args={[0.18, postHeight * 0.5, 0.18]} />
+              <meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={0.08} roughness={0.26} metalness={0.12} />
+            </mesh>
+          ))}
+        </>
+      )}
       {isPremium && !isElite && !isHero && (
         <PremiumPortalShell
           accentColor={accentColor}
@@ -88,13 +118,51 @@ export function OpenBoothPavilion({
         <boxGeometry args={[width + (isHero ? 4.4 : isElite ? 3.8 : isPremium ? 2.8 : 1.8), isHero ? 0.52 : isElite ? 0.48 : isPremium ? 0.4 : 0.34, depth * (isHero ? 0.92 : isElite ? 0.88 : isPremium ? 0.84 : 0.78)]} />
         <meshStandardMaterial color="#c9d6df" metalness={0.1} roughness={0.46} />
       </mesh>
+      {(isPremium || isElite || isHero) && (
+        <>
+          {[-1, 1].map((side) => (
+            <group key={`tier-side-banner-${side}`} position={[side * ((width * 0.5) + sideBannerWidth * 0.55), sideBannerHeight * 0.5, 1.62]}>
+              <mesh castShadow receiveShadow>
+                <boxGeometry args={[sideBannerWidth, sideBannerHeight, sideBannerDepth]} />
+                <meshStandardMaterial color={isHero ? '#dce7ef' : isElite ? '#d7e3eb' : '#d2dde7'} metalness={0.16} roughness={0.3} />
+              </mesh>
+              <mesh position={[0, 0, sideBannerDepth * 0.26]}>
+                <boxGeometry args={[sideBannerWidth * 0.26, sideBannerHeight - 1, sideBannerDepth * 0.2]} />
+                <meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={isHero ? 0.22 : isElite ? 0.18 : 0.14} roughness={0.18} metalness={0.12} />
+              </mesh>
+            </group>
+          ))}
+        </>
+      )}
       {isElite && (
         <EliteRoofCrown accentColor={accentColor} depth={depth} postHeight={postHeight} width={width} />
+      )}
+      {isHero && (
+        <>
+          {[-1, 1].map((side) => (
+            <group key={`hero-spine-blade-${side}`} position={[side * heroBladeOffsetX, heroBladeHeight * 0.5, rearScreenZ + 0.28]}>
+              <mesh castShadow receiveShadow>
+                <boxGeometry args={[1.14, heroBladeHeight, depth * 0.28]} />
+                <meshStandardMaterial color="#dce7ef" metalness={0.18} roughness={0.28} />
+              </mesh>
+              <mesh position={[0, 0.1, 0.12]}>
+                <boxGeometry args={[0.2, heroBladeHeight - 0.8, depth * 0.12]} />
+                <meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={0.24} roughness={0.18} metalness={0.12} />
+              </mesh>
+            </group>
+          ))}
+        </>
       )}
       <mesh position={[0, postHeight + 0.42, (depth * 0.5) - 0.2]} castShadow>
         <boxGeometry args={[width * (isHero ? 0.92 : isElite ? 0.88 : isPremium ? 0.86 : 0.82), 0.16, 0.22]} />
         <meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={0.1} roughness={0.42} metalness={0.16} />
       </mesh>
+      {(isElite || isHero) && (
+        <mesh position={[0, postHeight + (isHero ? 1.08 : 0.82), (depth * 0.5) - 0.08]} castShadow>
+          <boxGeometry args={[width * (isHero ? 0.76 : 0.68), isHero ? 0.16 : 0.12, 0.14]} />
+          <meshStandardMaterial color="#eef5fb" emissive={accentColor} emissiveIntensity={isHero ? 0.18 : 0.12} roughness={0.24} metalness={0.14} />
+        </mesh>
+      )}
       {(isPremium || isElite) && (
         <PremiumOrEliteBlades
           accentColor={accentColor}
@@ -105,26 +173,63 @@ export function OpenBoothPavilion({
         />
       )}
       <group position={[0, postHeight * 0.56, rearScreenZ]}>
+        <TierScreenFrame
+          accentColor={accentColor}
+          screenHeight={screenFrameHeight}
+          screenWidth={screenFrameWidth}
+          tier={tier}
+        />
         <mesh castShadow receiveShadow>
-          <boxGeometry args={[width * (isHero ? 0.72 : isElite ? 0.68 : isPremium ? 0.64 : 0.6), isHero ? 6.3 : isElite ? 5.96 : isPremium ? 5.5 : 5.1, 0.24]} />
+          <boxGeometry args={[screenFrameWidth, screenFrameHeight, 0.24]} />
           <meshStandardMaterial color="#08111c" metalness={0.12} roughness={0.58} />
         </mesh>
         <mesh position={[0, 0, 0.16]}>
-          <planeGeometry args={[width * (isHero ? 0.64 : isElite ? 0.6 : isPremium ? 0.56 : 0.52), isHero ? 5.42 : isElite ? 5.02 : isPremium ? 4.68 : 4.32]} />
+          <planeGeometry args={[screenSurfaceWidth, screenSurfaceHeight]} />
           {screenUrl ? (
             <Suspense fallback={<meshStandardMaterial color="#0f172a" emissive={accentColor} emissiveIntensity={0.08} />}>
-              <SponsorTextureSurface fallbackColor="#0f172a" url={screenUrl} />
+              <SponsorTextureSurface fallbackColor="#0f172a" emissiveColor={accentColor} emissiveIntensity={isHero ? 0.08 : isElite ? 0.06 : 0.04} url={screenUrl} />
             </Suspense>
           ) : (
             <meshStandardMaterial color="#0f172a" emissive={accentColor} emissiveIntensity={0.08} />
           )}
         </mesh>
+        <mesh position={[0, screenHeaderY, 0.17]} castShadow receiveShadow>
+          <boxGeometry args={[screenSurfaceWidth * (isHero ? 0.86 : isElite ? 0.82 : isPremium ? 0.76 : 0.68), 0.12, 0.12]} />
+          <meshStandardMaterial color="#020617" emissive={accentColor} emissiveIntensity={isHero ? 0.16 : isElite ? 0.12 : isPremium ? 0.08 : 0.05} roughness={0.18} metalness={0.12} />
+        </mesh>
+        <mesh position={[0, screenFooterY, 0.17]} castShadow receiveShadow>
+          <boxGeometry args={[screenSurfaceWidth * (isHero ? 0.72 : isElite ? 0.66 : isPremium ? 0.6 : 0.52), 0.08, 0.12]} />
+          <meshStandardMaterial color="#020617" emissive={accentColor} emissiveIntensity={isHero ? 0.14 : isElite ? 0.1 : isPremium ? 0.07 : 0.04} roughness={0.2} metalness={0.12} />
+        </mesh>
+        <mesh position={[0, lowerMediaShelfY, 0.1]} castShadow receiveShadow>
+          <boxGeometry args={[lowerMediaShelfWidth, 0.12, lowerMediaShelfDepth]} />
+          <meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={isHero ? 0.14 : isElite ? 0.1 : 0.06} roughness={0.24} metalness={0.12} />
+        </mesh>
+        {(isElite || isHero) && (
+          <mesh position={[0, (screenFrameHeight * 0.5) + (isHero ? 0.44 : 0.34), 0.14]} castShadow receiveShadow>
+            <boxGeometry args={[screenFrameWidth * (isHero ? 0.7 : 0.62), 0.12, 0.12]} />
+            <meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={isHero ? 0.22 : 0.14} roughness={0.2} metalness={0.12} />
+          </mesh>
+        )}
         {!screenUrl && (
-          <Text position={[0, -0.04, 0.24]} fontSize={0.68} color={accentColor} anchorX="center" anchorY="middle" maxWidth={2.8}>
+          <Text
+            position={[0, -0.04, 0.24]}
+            fontSize={isHero ? 0.84 : isElite ? 0.76 : isPremium ? 0.7 : 0.62}
+            color={accentColor}
+            anchorX="center"
+            anchorY="middle"
+            maxWidth={isHero ? 4.2 : isElite ? 3.8 : isPremium ? 3.2 : 2.6}
+          >
             {fallbackText}
           </Text>
         )}
       </group>
+      {(isPremium || isElite || isHero) && (
+        <mesh position={[0, 0.18, (depth * 0.5) - 0.34]} receiveShadow>
+          <boxGeometry args={[width * (isHero ? 0.92 : isElite ? 0.84 : 0.74), 0.06, 0.12]} />
+          <meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={isHero ? 0.12 : isElite ? 0.1 : 0.08} roughness={0.24} metalness={0.12} />
+        </mesh>
+      )}
     </group>
   );
 }

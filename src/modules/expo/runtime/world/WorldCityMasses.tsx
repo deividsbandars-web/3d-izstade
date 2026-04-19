@@ -1,13 +1,11 @@
-type StadiumReserve = {
-  centerX: number;
-  centerZ: number;
-  halfWidth: number;
-  halfDepth: number;
-};
+import type { ExpoWorldVisualProfile } from '../../world-contract';
+import type { StadiumReserve } from './WorldCitySkeletonLayout';
 
 type CityMass = {
+  decorPolicy?: 'signature' | 'standard' | 'none';
   id: string;
   position: [number, number, number];
+  role?: 'signature' | 'ground' | 'support-strip' | 'slender-vertical' | 'structural';
   size: [number, number, number];
   color: string;
 };
@@ -39,24 +37,43 @@ function overlapsStadiumReserve(
   );
 }
 
+function tintHex(hex: string, ratio: number) {
+  const normalized = hex.replace('#', '').padStart(6, '0').slice(0, 6);
+  const channel = (index: number) => parseInt(normalized.slice(index, index + 2), 16);
+  const mix = (value: number) => Math.max(0, Math.min(255, Math.round(value + ((255 - value) * ratio))));
+  return `#${[mix(channel(0)), mix(channel(2)), mix(channel(4))].map((value) => value.toString(16).padStart(2, '0')).join('')}`;
+}
+
+function shadeHex(hex: string, ratio: number) {
+  const normalized = hex.replace('#', '').padStart(6, '0').slice(0, 6);
+  const channel = (index: number) => parseInt(normalized.slice(index, index + 2), 16);
+  const mix = (value: number) => Math.max(0, Math.min(255, Math.round(value * (1 - ratio))));
+  return `#${[mix(channel(0)), mix(channel(2)), mix(channel(4))].map((value) => value.toString(16).padStart(2, '0')).join('')}`;
+}
+
 function WorldArchitecturalMassMaterial({
-  fallbackColor: _fallbackColor,
+  fallbackColor,
+  globalHudAccent,
   emissive = '#000000',
   emissiveIntensity = 0,
 }: {
   fallbackColor: string;
+  globalHudAccent: string;
   emissive?: string;
   emissiveIntensity?: number;
 }) {
-  const color = emissiveIntensity > 0.012 ? '#aebbc5' : '#9fadb8';
+  const base = emissiveIntensity > 0.012
+    ? tintHex(fallbackColor, 0.12)
+    : tintHex(shadeHex(fallbackColor, 0.08), 0.04);
+  const color = emissiveIntensity > 0.018 ? tintHex(base, 0.04) : base;
 
   return (
     <meshStandardMaterial
       color={color}
-      roughness={0.74}
-      metalness={0.05}
+      roughness={emissiveIntensity > 0.012 ? 0.68 : 0.74}
+      metalness={0.06}
       emissive={emissive}
-      emissiveIntensity={emissiveIntensity}
+      emissiveIntensity={emissiveIntensity + (emissiveIntensity > 0 && emissive === globalHudAccent ? 0.004 : 0)}
     />
   );
 }
@@ -64,56 +81,39 @@ function WorldArchitecturalMassMaterial({
 export function WorldCityMasses({
   masses,
   stadiumReserve,
+  visualProfile,
 }: {
   masses: CityMass[];
   stadiumReserve: StadiumReserve;
+  visualProfile: ExpoWorldVisualProfile;
 }) {
   return (
     <>
       {masses
         .filter((mass) => !overlapsStadiumReserve(mass.position, stadiumReserve, mass.size))
         .map((mass) => {
-          const isSignature =
-            mass.id.includes('gateway') ||
-            mass.id.includes('media-wall') ||
-            mass.id.includes('showcase') ||
-            mass.id.includes('discovery') ||
-            mass.id.includes('signature-mega');
+          const role = mass.role ?? 'structural';
+          const decorPolicy = mass.decorPolicy ?? 'standard';
+          const isSignature = role === 'signature';
           const isCenterLane = Math.abs(mass.position[0]) <= 220;
           const isThinHorizontalShelf = mass.size[1] <= 18 && mass.size[0] >= 72 && mass.size[2] <= 32;
-          const isSlenderVertical =
-            mass.size[1] >= 54 &&
-            (mass.size[0] <= 20 || mass.size[2] <= 20);
-          const isFrontCourtLike =
-            mass.id.includes('court') ||
-            mass.id.includes('band') ||
-            mass.id.includes('apron') ||
-            mass.id.includes('link') ||
-            mass.id.includes('dais');
-          const isGroundLikePlinth =
-            mass.size[1] <= 24 &&
-            (isFrontCourtLike ||
-              mass.id.includes('threshold') ||
-              mass.id.includes('platform') ||
-              mass.id.includes('terrace') ||
-              mass.id.includes('plinth') ||
-              (mass.size[0] * mass.size[2] >= 2200));
-          const isLeftSectionLowGroundLike =
-            mass.position[0] < -260 &&
-            mass.size[1] <= 42;
+          const isSlenderVertical = role === 'slender-vertical';
+          const isSupportStrip = role === 'support-strip';
+          const isGroundLikePlinth = role === 'ground';
           const suppressDecorativeStack =
             (isCenterLane && isThinHorizontalShelf) ||
-            (isCenterLane && isFrontCourtLike) ||
-            isSlenderVertical;
+            (isCenterLane && isSupportStrip) ||
+            isSlenderVertical ||
+            decorPolicy === 'none';
           const isLowPlinth = mass.size[1] <= 24;
           const hasHorizontalCap = !suppressDecorativeStack && mass.size[1] > 18 && mass.size[0] > 20 && mass.size[2] > 20;
           const hasSideInset = !suppressDecorativeStack && mass.size[1] > 28 && mass.size[0] >= 42 && mass.size[2] >= 18;
           const hasRearSpine = !suppressDecorativeStack && mass.size[1] > 40 && mass.size[0] >= 18 && mass.size[2] >= 14;
-          const hasFrontWing = !suppressDecorativeStack && isSignature && mass.size[0] >= 28 && mass.size[1] > 24;
+          const hasFrontWing = !suppressDecorativeStack && decorPolicy === 'signature' && mass.size[0] >= 28 && mass.size[1] > 24;
           const hasNodeTop = false;
           const hasMarkerTop = false;
 
-          if (isGroundLikePlinth || isLeftSectionLowGroundLike) {
+          if (isGroundLikePlinth) {
             return null;
           }
 
@@ -123,6 +123,7 @@ export function WorldCityMasses({
                 <boxGeometry args={mass.size} />
                 <WorldArchitecturalMassMaterial
                   fallbackColor={mass.color}
+                  globalHudAccent={visualProfile.global.hudAccent}
                   emissive={isSignature ? '#8fd6ff' : isLowPlinth ? '#d9eef8' : '#000000'}
                   emissiveIntensity={isSignature ? 0.014 : isLowPlinth ? 0.012 : 0}
                 />

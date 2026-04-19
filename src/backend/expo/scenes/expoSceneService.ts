@@ -1,37 +1,15 @@
-import { supabaseClient } from '../../../lib/supabaseClient';
 import { logger } from '../../logging/logger';
+import { sceneBuilder } from '../sceneBuilder';
+import { EXPO_SCENE_CANONICAL_DISTRICTS } from '../../../modules/expo/types/scene';
+import { getExpoBoothById, listExpoBooths } from '../data/expoBoothStore';
 
 export const expoSceneService = {
   /**
-   * Returns complete scene orchestration data for Unreal Engine to load
+   * Returns canonical Expo scene contract data
    */
   async getSceneData() {
-    try {
-      logger.info('ExpoSceneService', 'Getting Global Scene Data for Unreal Engine');
-      const { data: booths, error } = await supabaseClient
-        .from('expo_booths')
-        .select('*');
-
-      if (error) throw error;
-
-      // Unreal Engine Structured JSON format
-      const ue5Scene = booths.map((b: any) => ({
-        booth_id: b.id,
-        position: b.assets_3d?.transform?.location || [0, 0, 0],
-        model_url: b['3d_model_url'] || b.assets_3d?.mesh_url || 'default_mesh.uasset',
-        metadata: {
-          company: b.company_name,
-          type: b.booth_type,
-          district: b.district,
-          logo: b.logo
-        }
-      }));
-
-      return { data: { sceneType: "GlobalExpo", entities: ue5Scene }, error: null };
-    } catch (error) {
-      logger.error('ExpoSceneService', 'Failed to get scene data', error);
-      return { data: null, error: String(error) };
-    }
+    logger.info('ExpoSceneService', 'Getting canonical Expo scene contract');
+    return sceneBuilder.buildScene();
   },
 
   /**
@@ -40,13 +18,12 @@ export const expoSceneService = {
   async getBoothScene(boothId: string) {
     try {
       logger.info('ExpoSceneService', `Getting Booth Scene for ${boothId}`);
-      const { data: booth, error } = await supabaseClient
-        .from('expo_booths')
-        .select('*')
-        .eq('id', boothId)
-        .single();
-
-      if (error) throw error;
+      const boothResult = await getExpoBoothById(boothId);
+      if (boothResult.error) throw boothResult.error;
+      const booth = boothResult.data;
+      if (!booth) {
+        throw new Error(`Booth ${boothId} not found`);
+      }
 
       const ue5Booth = {
         booth_id: booth.id,
@@ -72,13 +49,12 @@ export const expoSceneService = {
   async getCityScene() {
     try {
       logger.info('ExpoSceneService', 'Getting City Map structural data');
-      const { data: booths, error } = await supabaseClient
-        .from('expo_booths')
-        .select('district');
+      const boothResult = await listExpoBooths();
+      if (boothResult.error) throw boothResult.error;
+      const booths = boothResult.data ?? [];
 
-      if (error) throw error;
-
-      const districts = [...new Set(booths.map((b: any) => b.district).filter(Boolean))];
+      const boothDistricts = [...new Set(booths.map((b: any) => b.district).filter(Boolean))];
+      const districts = boothDistricts.length > 0 ? boothDistricts : [...EXPO_SCENE_CANONICAL_DISTRICTS];
 
       const cityMapData = {
         navMeshReady: true,

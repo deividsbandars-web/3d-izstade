@@ -1,57 +1,33 @@
-type StadiumReserve = {
-  centerX: number;
-  centerZ: number;
-  halfWidth: number;
-  halfDepth: number;
-};
+import type { ExpoWorldVisualProfile } from '../../world-contract';
+import type { CityPlane, StadiumReserve } from './WorldCitySkeletonLayout';
 
-type CityPlane = {
-  id: string;
-  position: [number, number, number];
-  size: [number, number];
-  color: string;
-};
-
-function resolvePlaneTone(id: string) {
-  void id;
-  return '#6f7c85';
+function tintHex(hex: string, ratio: number) {
+  const normalized = hex.replace('#', '').padStart(6, '0').slice(0, 6);
+  const channel = (index: number) => parseInt(normalized.slice(index, index + 2), 16);
+  const mix = (value: number) => Math.max(0, Math.min(255, Math.round(value + ((255 - value) * ratio))));
+  return `#${[mix(channel(0)), mix(channel(2)), mix(channel(4))].map((value) => value.toString(16).padStart(2, '0')).join('')}`;
 }
 
-function isDecorativePlane(id: string) {
-  return (
-    id.includes('carpet') ||
-    id.includes('ribbon') ||
-    id.includes('band') ||
-    id.includes('threshold') ||
-    id.includes('connector') ||
-    id.includes('pocket') ||
-    id.includes('pad') ||
-    id.includes('inner') ||
-    id.includes('gallery') ||
-    id.includes('terminal') ||
-    id.includes('front-court') ||
-    id.includes('front-threshold') ||
-    id.includes('outer-pocket')
-  );
+function resolveStructuralCityPlaneTone(id: string, visualProfile: ExpoWorldVisualProfile) {
+  if (id.startsWith('arrival-')) {
+    return tintHex(visualProfile.global.groundBase, 0.08);
+  }
+
+  return visualProfile.global.groundBase;
 }
 
-function filterEssentialPlanes(planes: CityPlane[]) {
-  return planes.filter((plane) => {
-    if (isDecorativePlane(plane.id)) {
-      return false;
-    }
-
-    const area = plane.size[0] * plane.size[1];
-    return area >= 140_000;
-  });
+function filterVisibleStructuralCityPlanes(planes: CityPlane[]) {
+  return planes.filter((plane) => plane.role === 'structural');
 }
 
 function PlaneLayer({
   planes,
   roughness,
+  visualProfile,
 }: {
   planes: CityPlane[];
   roughness: number;
+  visualProfile: ExpoWorldVisualProfile;
 }) {
   return (
     <>
@@ -60,7 +36,7 @@ function PlaneLayer({
           <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow renderOrder={8}>
             <planeGeometry args={plane.size} />
             <meshStandardMaterial
-              color={resolvePlaneTone(plane.id)}
+              color={resolveStructuralCityPlaneTone(plane.id, visualProfile)}
               roughness={Math.max(roughness, 0.88)}
               metalness={0.01}
               polygonOffset
@@ -80,20 +56,25 @@ export function WorldCityPlanes({
   showcasePlazas: _showcasePlazas,
   boothForecourtPlanes: _boothForecourtPlanes,
   stadiumReserve: _stadiumReserve,
+  visualProfile,
 }: {
   arrivalPlanes: CityPlane[];
   promenadeAxisPlanes: CityPlane[];
   showcasePlazas: CityPlane[];
   boothForecourtPlanes: CityPlane[];
   stadiumReserve: StadiumReserve;
+  visualProfile: ExpoWorldVisualProfile;
 }) {
-  const essentialArrivalPlanes = filterEssentialPlanes(arrivalPlanes);
-  const openPlanes: CityPlane[] = [];
+  void _promenadeAxisPlanes;
+  void _showcasePlazas;
+  void _boothForecourtPlanes;
+  void _stadiumReserve;
+  // Stadium/city perimeter connectors are owned by ExpoRearCampus, not by city structural planes.
+  const structuralArrivalPlanes = filterVisibleStructuralCityPlanes(arrivalPlanes);
 
   return (
-    <>
-      <PlaneLayer planes={essentialArrivalPlanes} roughness={0.72} />
-      <PlaneLayer planes={openPlanes} roughness={0.7} />
-    </>
+    <group name="world-ground:city-structural-planes">
+      <PlaneLayer planes={structuralArrivalPlanes} roughness={0.72} visualProfile={visualProfile} />
+    </group>
   );
 }

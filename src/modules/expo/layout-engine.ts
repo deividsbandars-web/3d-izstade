@@ -38,6 +38,8 @@ export type ExpoSectorMarker = {
   sectorId?: string | null;
 };
 
+export type ExpoBoothPlacementDiagnostics = SponsorBoulevardPlan['placementDiagnostics'];
+
 function getNormalizedBooth(company: ExpoSceneCompany) {
   const rawBooth = company?.booth ?? null;
 
@@ -112,6 +114,7 @@ export function buildExpoLayoutEngine(
   return {
     boothPlacements: Object.assign(boothPlacements, { footprint: plan.footprint }),
     districtThemes,
+    placementDiagnostics: plan.placementDiagnostics,
     plan,
     sectorMarkers,
   };

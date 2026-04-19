@@ -22,6 +22,18 @@ export type BoothColliderSegment = {
   size: [number, number, number];
 };
 
+export type BoothTemplateBaselineTier = 'common' | 'premium' | 'hero';
+
+export type BoothArchitectureContractBaseline = {
+  baselineTier: BoothTemplateBaselineTier;
+  colliderDepth: number;
+  colliderWidth: number;
+  footprintDepth: number;
+  footprintWidth: number;
+  mediaWallHeight: number;
+  titleMaxWidth: number;
+};
+
 const METRICS: Record<SponsorBoothTemplate, BoothArchitectureMetrics> = {
   hero_forum: {
     badgePosition: [0, 18.8, -5.5],
@@ -162,6 +174,26 @@ function MetalTrimMaterial({ variant = '045' }: { variant?: '045' | '046' }) {
 // eslint-disable-next-line react-refresh/only-export-components
 export function getBoothArchitectureMetrics(template: SponsorBoothTemplate) {
   return METRICS[template];
+}
+
+// eslint-disable-next-line react-refresh/only-export-components
+export function getBoothArchitectureContractBaseline(template: SponsorBoothTemplate): BoothArchitectureContractBaseline {
+  const metrics = getBoothArchitectureMetrics(template);
+  const baselineTier: BoothTemplateBaselineTier = template.startsWith('hero_')
+    ? 'hero'
+    : template.startsWith('premium_')
+      ? 'premium'
+      : 'common';
+
+  return {
+    baselineTier,
+    colliderDepth: metrics.colliderSize[2],
+    colliderWidth: metrics.colliderSize[0],
+    footprintDepth: metrics.footprintSize[1],
+    footprintWidth: metrics.footprintSize[0],
+    mediaWallHeight: metrics.mediaWallPosition[1],
+    titleMaxWidth: metrics.titleMaxWidth,
+  };
 }
 
 // eslint-disable-next-line react-refresh/only-export-components

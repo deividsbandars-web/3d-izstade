@@ -13,5 +13,6 @@ export function WorldPromenade({
 }) {
   void boothPlacements;
   void visualProfile;
+  // Promenade is intentionally not a visible ground owner in the current hierarchy.
   return null;
 }

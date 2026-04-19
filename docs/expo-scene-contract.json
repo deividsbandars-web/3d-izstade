@@ -1,0 +1,59 @@
+{
+  "contractVersion": "expo-scene-v3-canonical",
+  "releaseMode": "sponsor-boulevard",
+  "canonicalDistricts": [
+    "architecture",
+    "construction",
+    "materials",
+    "design",
+    "real_estate",
+    "tech",
+    "logistics"
+  ],
+  "entities": {
+    "sector": {
+      "required": ["id", "name", "color_theme", "map_position"]
+    },
+    "company": {
+      "required": [
+        "id",
+        "name",
+        "sponsorTier",
+        "boothType",
+        "priority",
+        "sectorId",
+        "website"
+      ]
+    },
+    "booth": {
+      "required": [
+        "id",
+        "companyId",
+        "boothType",
+        "posterUrl",
+        "heroAssetUrl",
+        "video_url",
+        "slug"
+      ]
+    }
+  },
+  "authoritativePayload": {
+    "type": "ExpoSceneContract",
+    "required": [
+      "authPolicy",
+      "booths",
+      "cityInfo",
+      "companies",
+      "generatedAt",
+      "releaseMode",
+      "sceneVersion",
+      "sectors"
+    ]
+  },
+  "adapterBoundaries": {
+    "runtime": "src/modules/expo/runtime/data/sceneContract.ts",
+    "sceneBuilder": "src/backend/expo/sceneBuilder.ts",
+    "sceneService": "src/backend/expo/scenes/expoSceneService.ts",
+    "cityMapService": "src/backend/expo/city/cityMapService.ts"
+  }
+}

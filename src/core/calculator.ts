@@ -1,5 +1,68 @@
 export const MODULES = ["renovation", "roadworks", "real_estate", "autoservice", "marketing"] as const;
 
+export const CALCULATOR_DOMAIN_CONTRACT_VERSION = "calculator-domain-v1-canonical" as const;
+
+export const CALCULATOR_DOMAIN_CATEGORIES = [
+  "heating",
+  "roof",
+  "foundation",
+  "renovation",
+  "timber_house",
+  "windows",
+  "visuals",
+  "digital_art",
+  "autoservice",
+  "cleaning",
+  "quick_fix",
+  "plumbing",
+  "designer",
+  "interior",
+  "housing",
+  "logistics"
+] as const;
+
+export type CalculatorCategoryId = (typeof CALCULATOR_DOMAIN_CATEGORIES)[number];
+
+export interface CalculatorDomainContractShape {
+  version: typeof CALCULATOR_DOMAIN_CONTRACT_VERSION;
+  categories: readonly CalculatorCategoryId[];
+  primaryCurrency: "EUR";
+  supportedExecutionModes: readonly ["domain-engine", "legacy-adapter"];
+}
+
+export const CALCULATOR_DOMAIN_CONTRACT: CalculatorDomainContractShape = {
+  version: CALCULATOR_DOMAIN_CONTRACT_VERSION,
+  categories: CALCULATOR_DOMAIN_CATEGORIES,
+  primaryCurrency: "EUR",
+  supportedExecutionModes: ["domain-engine", "legacy-adapter"]
+} as const;
+
+export interface CalculatorCategoryDefinition {
+  id: CalculatorCategoryId;
+  label: string;
+  executionMode: "domain-engine" | "legacy-adapter";
+  ownerModule: string;
+}
+
+export const CALCULATOR_CATEGORY_DEFINITIONS: readonly CalculatorCategoryDefinition[] = [
+  { id: "heating", label: "Heating Systems", executionMode: "domain-engine", ownerModule: "src/services/calculators/heating.ts" },
+  { id: "roof", label: "Roof", executionMode: "legacy-adapter", ownerModule: "src/services/calculators/roof.ts" },
+  { id: "foundation", label: "Foundation", executionMode: "legacy-adapter", ownerModule: "src/modules/calculators/FoundationCalc.tsx" },
+  { id: "renovation", label: "Renovation", executionMode: "legacy-adapter", ownerModule: "src/services/calculators/renovation.ts" },
+  { id: "timber_house", label: "Timber House", executionMode: "legacy-adapter", ownerModule: "src/modules/calculators/TimberHouseCalc.tsx" },
+  { id: "windows", label: "Windows", executionMode: "legacy-adapter", ownerModule: "src/modules/calculators/WindowsCalc.tsx" },
+  { id: "visuals", label: "Visuals", executionMode: "legacy-adapter", ownerModule: "src/modules/calculators/VisualsCalc.tsx" },
+  { id: "digital_art", label: "Digital Art", executionMode: "legacy-adapter", ownerModule: "src/modules/calculators/DigitalArtCalc.tsx" },
+  { id: "autoservice", label: "Autoservice", executionMode: "legacy-adapter", ownerModule: "src/services/calculators/autoservice.ts" },
+  { id: "cleaning", label: "Cleaning", executionMode: "legacy-adapter", ownerModule: "src/services/calculators/cleaning.ts" },
+  { id: "quick_fix", label: "Quick Fix", executionMode: "legacy-adapter", ownerModule: "src/modules/calculators/QuickFixCalc.tsx" },
+  { id: "plumbing", label: "Plumbing", executionMode: "legacy-adapter", ownerModule: "src/services/calculators/plumbing.ts" },
+  { id: "designer", label: "Designer", executionMode: "legacy-adapter", ownerModule: "src/modules/calculators/DesignerCalc.tsx" },
+  { id: "interior", label: "Interior", executionMode: "legacy-adapter", ownerModule: "src/modules/calculators/InteriorCalc.tsx" },
+  { id: "housing", label: "Housing", executionMode: "legacy-adapter", ownerModule: "src/modules/calculators/HousingCalc.tsx" },
+  { id: "logistics", label: "Logistics", executionMode: "legacy-adapter", ownerModule: "src/modules/calculators/LogisticsCalc.tsx" }
+] as const;
+
 export const OBJECT_TYPES = [
   "maja", "dzivoklis", "garaza", "angars", "skunis", "komercelpas", "industrialie_objekti", 
   "koplietojamas_telpas", "valsts_objekts", "daudzstavu_maja", "ciematu_projekts", "pagrabs", 

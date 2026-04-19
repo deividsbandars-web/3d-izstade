@@ -6,17 +6,16 @@ const getEnv = (name: string): string => {
   if (typeof process !== 'undefined' && process.env && process.env[name]) {
     return process.env[name] as string;
   }
-  if (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env[`VITE_${name}`]) {
-    return import.meta.env[`VITE_${name}`];
-  }
   return '';
 };
+
+const isServerRuntime = typeof window === 'undefined';
 
 let openaiClient: OpenAI | null = null;
 try {
   const apiKey = getEnv('OPENAI_API_KEY');
-  if (apiKey) {
-    openaiClient = new OpenAI({ apiKey, dangerouslyAllowBrowser: true });
+  if (isServerRuntime && apiKey) {
+    openaiClient = new OpenAI({ apiKey });
   }
 } catch (e) {
   logger.warn('LLMService', 'Failed to initialize OpenAI client.', e);
@@ -77,6 +76,7 @@ export const llmService = {
   },
 
   async _callOpenAI(prompt: string, options: GenerateTextOptions): Promise<any> {
+    if (!isServerRuntime) throw new Error('OpenAI execution must remain server-side.');
     if (!openaiClient) throw new Error('OpenAI client is not initialized.');
     
     const response = await openaiClient.chat.completions.create({
@@ -93,6 +93,7 @@ export const llmService = {
   },
 
   async _callGemini(prompt: string, options: GenerateTextOptions): Promise<string> {
+    if (!isServerRuntime) throw new Error('Gemini execution must remain server-side.');
     const apiKey = getEnv('GEMINI_API_KEY');
     if (!apiKey) throw new Error('GEMINI_API_KEY is missing.');
 

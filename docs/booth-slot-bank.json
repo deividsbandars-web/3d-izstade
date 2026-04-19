@@ -1,0 +1,163 @@
+{
+  "version": "2026-04-17-v1",
+  "notes": [
+    "Curated booth company slots grouped by district band and lane.",
+    "Slots are relative to the resolved district center, not free-form placement formulas.",
+    "World freeze remains in effect. This artifact does not authorize world geometry edits."
+  ],
+  "bands": {
+    "arrival": {
+      "left": {
+        "hero": [
+          { "slotId": "arrival-left-hero-left", "nodeType": "hero_left", "xOffset": -132, "zOffset": -12, "rotationY": 1.5707963267948966 },
+          { "slotId": "arrival-left-hero-right", "nodeType": "hero_right", "xOffset": 132, "zOffset": -12, "rotationY": -1.5707963267948966 }
+        ],
+        "endcap": [
+          { "slotId": "arrival-left-endcap-0", "nodeType": "endcap", "xOffset": -298, "zOffset": -26, "rotationY": 1.5707963267948966 },
+          { "slotId": "arrival-left-endcap-1", "nodeType": "endcap", "xOffset": 298, "zOffset": -26, "rotationY": -1.5707963267948966 },
+          { "slotId": "arrival-left-endcap-2", "nodeType": "endcap", "xOffset": -298, "zOffset": -154, "rotationY": 1.5707963267948966 },
+          { "slotId": "arrival-left-endcap-3", "nodeType": "endcap", "xOffset": 298, "zOffset": -154, "rotationY": -1.5707963267948966 }
+        ],
+        "standard": [
+          { "slotId": "arrival-left-standard-0", "nodeType": "standard_left", "xOffset": -166, "zOffset": -122, "rotationY": 1.5707963267948966 },
+          { "slotId": "arrival-left-standard-1", "nodeType": "standard_right", "xOffset": 166, "zOffset": -122, "rotationY": -1.5707963267948966 },
+          { "slotId": "arrival-left-standard-2", "nodeType": "standard_left", "xOffset": -166, "zOffset": -240, "rotationY": 1.5707963267948966 },
+          { "slotId": "arrival-left-standard-3", "nodeType": "standard_right", "xOffset": 166, "zOffset": -240, "rotationY": -1.5707963267948966 },
+          { "slotId": "arrival-left-standard-4", "nodeType": "standard_left", "xOffset": -166, "zOffset": -358, "rotationY": 1.5707963267948966 },
+          { "slotId": "arrival-left-standard-5", "nodeType": "standard_right", "xOffset": 166, "zOffset": -358, "rotationY": -1.5707963267948966 }
+        ]
+      },
+      "right": {
+        "hero": [
+          { "slotId": "arrival-right-hero-left", "nodeType": "hero_left", "xOffset": -132, "zOffset": -12, "rotationY": 1.5707963267948966 },
+          { "slotId": "arrival-right-hero-right", "nodeType": "hero_right", "xOffset": 132, "zOffset": -12, "rotationY": -1.5707963267948966 }
+        ],
+        "endcap": [
+          { "slotId": "arrival-right-endcap-0", "nodeType": "endcap", "xOffset": -298, "zOffset": -26, "rotationY": 1.5707963267948966 },
+          { "slotId": "arrival-right-endcap-1", "nodeType": "endcap", "xOffset": 298, "zOffset": -26, "rotationY": -1.5707963267948966 },
+          { "slotId": "arrival-right-endcap-2", "nodeType": "endcap", "xOffset": -298, "zOffset": -154, "rotationY": 1.5707963267948966 },
+          { "slotId": "arrival-right-endcap-3", "nodeType": "endcap", "xOffset": 298, "zOffset": -154, "rotationY": -1.5707963267948966 }
+        ],
+        "standard": [
+          { "slotId": "arrival-right-standard-0", "nodeType": "standard_left", "xOffset": -166, "zOffset": -122, "rotationY": 1.5707963267948966 },
+          { "slotId": "arrival-right-standard-1", "nodeType": "standard_right", "xOffset": 166, "zOffset": -122, "rotationY": -1.5707963267948966 },
+          { "slotId": "arrival-right-standard-2", "nodeType": "standard_left", "xOffset": -166, "zOffset": -240, "rotationY": 1.5707963267948966 },
+          { "slotId": "arrival-right-standard-3", "nodeType": "standard_right", "xOffset": 166, "zOffset": -240, "rotationY": -1.5707963267948966 },
+          { "slotId": "arrival-right-standard-4", "nodeType": "standard_left", "xOffset": -166, "zOffset": -358, "rotationY": 1.5707963267948966 },
+          { "slotId": "arrival-right-standard-5", "nodeType": "standard_right", "xOffset": 166, "zOffset": -358, "rotationY": -1.5707963267948966 }
+        ]
+      },
+      "center": { "hero": [], "endcap": [], "standard": [] }
+    },
+    "showcase": {
+      "left": {
+        "hero": [
+          { "slotId": "showcase-left-hero-left", "nodeType": "hero_left", "xOffset": -278, "zOffset": 12, "rotationY": 1.5707963267948966 },
+          { "slotId": "showcase-left-hero-right", "nodeType": "hero_right", "xOffset": 278, "zOffset": 12, "rotationY": -1.5707963267948966 }
+        ],
+        "endcap": [
+          { "slotId": "showcase-left-endcap-0", "nodeType": "endcap", "xOffset": -324, "zOffset": -24, "rotationY": 1.5707963267948966 },
+          { "slotId": "showcase-left-endcap-1", "nodeType": "endcap", "xOffset": 324, "zOffset": -24, "rotationY": -1.5707963267948966 },
+          { "slotId": "showcase-left-endcap-2", "nodeType": "endcap", "xOffset": -324, "zOffset": -152, "rotationY": 1.5707963267948966 },
+          { "slotId": "showcase-left-endcap-3", "nodeType": "endcap", "xOffset": 324, "zOffset": -152, "rotationY": -1.5707963267948966 }
+        ],
+        "standard": [
+          { "slotId": "showcase-left-standard-0", "nodeType": "standard_left", "xOffset": -224, "zOffset": -182, "rotationY": 1.5707963267948966 },
+          { "slotId": "showcase-left-standard-1", "nodeType": "standard_right", "xOffset": 224, "zOffset": -182, "rotationY": -1.5707963267948966 },
+          { "slotId": "showcase-left-standard-2", "nodeType": "standard_left", "xOffset": -224, "zOffset": -300, "rotationY": 1.5707963267948966 },
+          { "slotId": "showcase-left-standard-3", "nodeType": "standard_right", "xOffset": 224, "zOffset": -300, "rotationY": -1.5707963267948966 },
+          { "slotId": "showcase-left-standard-4", "nodeType": "standard_left", "xOffset": -224, "zOffset": -418, "rotationY": 1.5707963267948966 },
+          { "slotId": "showcase-left-standard-5", "nodeType": "standard_right", "xOffset": 224, "zOffset": -418, "rotationY": -1.5707963267948966 }
+        ]
+      },
+      "right": {
+        "hero": [
+          { "slotId": "showcase-right-hero-left", "nodeType": "hero_left", "xOffset": -278, "zOffset": 12, "rotationY": 1.5707963267948966 },
+          { "slotId": "showcase-right-hero-right", "nodeType": "hero_right", "xOffset": 278, "zOffset": 12, "rotationY": -1.5707963267948966 }
+        ],
+        "endcap": [
+          { "slotId": "showcase-right-endcap-0", "nodeType": "endcap", "xOffset": -324, "zOffset": -24, "rotationY": 1.5707963267948966 },
+          { "slotId": "showcase-right-endcap-1", "nodeType": "endcap", "xOffset": 324, "zOffset": -24, "rotationY": -1.5707963267948966 },
+          { "slotId": "showcase-right-endcap-2", "nodeType": "endcap", "xOffset": -324, "zOffset": -152, "rotationY": 1.5707963267948966 },
+          { "slotId": "showcase-right-endcap-3", "nodeType": "endcap", "xOffset": 324, "zOffset": -152, "rotationY": -1.5707963267948966 }
+        ],
+        "standard": [
+          { "slotId": "showcase-right-standard-0", "nodeType": "standard_left", "xOffset": -224, "zOffset": -182, "rotationY": 1.5707963267948966 },
+          { "slotId": "showcase-right-standard-1", "nodeType": "standard_right", "xOffset": 224, "zOffset": -182, "rotationY": -1.5707963267948966 },
+          { "slotId": "showcase-right-standard-2", "nodeType": "standard_left", "xOffset": -224, "zOffset": -300, "rotationY": 1.5707963267948966 },
+          { "slotId": "showcase-right-standard-3", "nodeType": "standard_right", "xOffset": 224, "zOffset": -300, "rotationY": -1.5707963267948966 },
+          { "slotId": "showcase-right-standard-4", "nodeType": "standard_left", "xOffset": -224, "zOffset": -418, "rotationY": 1.5707963267948966 },
+          { "slotId": "showcase-right-standard-5", "nodeType": "standard_right", "xOffset": 224, "zOffset": -418, "rotationY": -1.5707963267948966 }
+        ]
+      },
+      "center": { "hero": [], "endcap": [], "standard": [] }
+    },
+    "media": {
+      "left": {
+        "hero": [
+          { "slotId": "media-left-hero-left", "nodeType": "hero_left", "xOffset": -132, "zOffset": -12, "rotationY": 1.5707963267948966 },
+          { "slotId": "media-left-hero-right", "nodeType": "hero_right", "xOffset": 132, "zOffset": -12, "rotationY": -1.5707963267948966 }
+        ],
+        "endcap": [
+          { "slotId": "media-left-endcap-0", "nodeType": "endcap", "xOffset": -298, "zOffset": -44, "rotationY": 1.5707963267948966 },
+          { "slotId": "media-left-endcap-1", "nodeType": "endcap", "xOffset": 298, "zOffset": -44, "rotationY": -1.5707963267948966 },
+          { "slotId": "media-left-endcap-2", "nodeType": "endcap", "xOffset": -298, "zOffset": -172, "rotationY": 1.5707963267948966 },
+          { "slotId": "media-left-endcap-3", "nodeType": "endcap", "xOffset": 298, "zOffset": -172, "rotationY": -1.5707963267948966 }
+        ],
+        "standard": [
+          { "slotId": "media-left-standard-0", "nodeType": "standard_left", "xOffset": -198, "zOffset": -164, "rotationY": 1.5707963267948966 },
+          { "slotId": "media-left-standard-1", "nodeType": "standard_right", "xOffset": 198, "zOffset": -164, "rotationY": -1.5707963267948966 },
+          { "slotId": "media-left-standard-2", "nodeType": "standard_left", "xOffset": -198, "zOffset": -282, "rotationY": 1.5707963267948966 },
+          { "slotId": "media-left-standard-3", "nodeType": "standard_right", "xOffset": 198, "zOffset": -282, "rotationY": -1.5707963267948966 },
+          { "slotId": "media-left-standard-4", "nodeType": "standard_left", "xOffset": -198, "zOffset": -400, "rotationY": 1.5707963267948966 },
+          { "slotId": "media-left-standard-5", "nodeType": "standard_right", "xOffset": 198, "zOffset": -400, "rotationY": -1.5707963267948966 }
+        ]
+      },
+      "right": {
+        "hero": [
+          { "slotId": "media-right-hero-left", "nodeType": "hero_left", "xOffset": -132, "zOffset": -12, "rotationY": 1.5707963267948966 },
+          { "slotId": "media-right-hero-right", "nodeType": "hero_right", "xOffset": 132, "zOffset": -12, "rotationY": -1.5707963267948966 }
+        ],
+        "endcap": [
+          { "slotId": "media-right-endcap-0", "nodeType": "endcap", "xOffset": -298, "zOffset": -44, "rotationY": 1.5707963267948966 },
+          { "slotId": "media-right-endcap-1", "nodeType": "endcap", "xOffset": 298, "zOffset": -44, "rotationY": -1.5707963267948966 },
+          { "slotId": "media-right-endcap-2", "nodeType": "endcap", "xOffset": -298, "zOffset": -172, "rotationY": 1.5707963267948966 },
+          { "slotId": "media-right-endcap-3", "nodeType": "endcap", "xOffset": 298, "zOffset": -172, "rotationY": -1.5707963267948966 }
+        ],
+        "standard": [
+          { "slotId": "media-right-standard-0", "nodeType": "standard_left", "xOffset": -198, "zOffset": -164, "rotationY": 1.5707963267948966 },
+          { "slotId": "media-right-standard-1", "nodeType": "standard_right", "xOffset": 198, "zOffset": -164, "rotationY": -1.5707963267948966 },
+          { "slotId": "media-right-standard-2", "nodeType": "standard_left", "xOffset": -198, "zOffset": -282, "rotationY": 1.5707963267948966 },
+          { "slotId": "media-right-standard-3", "nodeType": "standard_right", "xOffset": 198, "zOffset": -282, "rotationY": -1.5707963267948966 },
+          { "slotId": "media-right-standard-4", "nodeType": "standard_left", "xOffset": -198, "zOffset": -400, "rotationY": 1.5707963267948966 },
+          { "slotId": "media-right-standard-5", "nodeType": "standard_right", "xOffset": 198, "zOffset": -400, "rotationY": -1.5707963267948966 }
+        ]
+      },
+      "center": { "hero": [], "endcap": [], "standard": [] }
+    },
+    "discovery": {
+      "left": { "hero": [], "endcap": [], "standard": [] },
+      "right": { "hero": [], "endcap": [], "standard": [] },
+      "center": {
+        "hero": [
+          { "slotId": "discovery-center-hero-left", "nodeType": "hero_left", "xOffset": -336, "zOffset": -28, "rotationY": 1.5707963267948966 },
+          { "slotId": "discovery-center-hero-right", "nodeType": "hero_right", "xOffset": 336, "zOffset": -28, "rotationY": -1.5707963267948966 }
+        ],
+        "endcap": [
+          { "slotId": "discovery-center-endcap-0", "nodeType": "endcap", "xOffset": -526, "zOffset": -76, "rotationY": 1.5707963267948966 },
+          { "slotId": "discovery-center-endcap-1", "nodeType": "endcap", "xOffset": 526, "zOffset": -76, "rotationY": -1.5707963267948966 },
+          { "slotId": "discovery-center-endcap-2", "nodeType": "endcap", "xOffset": -526, "zOffset": -218, "rotationY": 1.5707963267948966 },
+          { "slotId": "discovery-center-endcap-3", "nodeType": "endcap", "xOffset": 526, "zOffset": -218, "rotationY": -1.5707963267948966 }
+        ],
+        "standard": [
+          { "slotId": "discovery-center-standard-0", "nodeType": "standard_left", "xOffset": -318, "zOffset": -224, "rotationY": 1.5707963267948966 },
+          { "slotId": "discovery-center-standard-1", "nodeType": "standard_right", "xOffset": 318, "zOffset": -224, "rotationY": -1.5707963267948966 },
+          { "slotId": "discovery-center-standard-2", "nodeType": "standard_left", "xOffset": -318, "zOffset": -356, "rotationY": 1.5707963267948966 },
+          { "slotId": "discovery-center-standard-3", "nodeType": "standard_right", "xOffset": 318, "zOffset": -356, "rotationY": -1.5707963267948966 },
+          { "slotId": "discovery-center-standard-4", "nodeType": "standard_left", "xOffset": -318, "zOffset": -488, "rotationY": 1.5707963267948966 },
+          { "slotId": "discovery-center-standard-5", "nodeType": "standard_right", "xOffset": 318, "zOffset": -488, "rotationY": -1.5707963267948966 }
+        ]
+      }
+    }
+  }
+}

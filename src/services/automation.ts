@@ -1,6 +1,6 @@
-// Frontend exposure for backend automation engine
-import { workflowEngine } from '../backend/automation/workflowEngine';
+import { serverApiPost } from './serverApi';
 
 export const AutomationAPI = {
-  startBusinessWorkflow: workflowEngine.startBusinessWorkflow,
+  startBusinessWorkflow: async (projectId: string, workflowBrief: string) =>
+    serverApiPost('/api/automation/business-workflow', { projectId, workflowBrief }),
 };

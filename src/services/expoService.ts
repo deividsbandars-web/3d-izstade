@@ -1,4 +1,13 @@
 import { supabase } from '../core/supabase';
+import {
+  CALCULATOR_CATEGORY_DEFINITIONS,
+  type CalculatorCategoryId,
+} from '../core/calculator';
+import {
+  EXPO_SCENE_CANONICAL_DISTRICTS,
+  EXPO_SCENE_CONTRACT_VERSION,
+  EXPO_SCENE_RELEASE_MODE,
+} from '../modules/expo/types/scene';
 
 export interface Sector {
   id: string;
@@ -29,6 +38,154 @@ export interface Booth {
   products: any[];
 }
 
+export interface ExpoCanonicalDistrictDefinition {
+  id: (typeof EXPO_SCENE_CANONICAL_DISTRICTS)[number];
+  name: string;
+  icon: string;
+  color: string;
+  description: string;
+  calculatorCategories: readonly CalculatorCategoryId[];
+}
+
+export interface ExpoBusinessSceneAdapterSector extends Sector {
+  canonicalDistrictId: ExpoCanonicalDistrictDefinition['id'];
+  calculatorCategories: readonly CalculatorCategoryId[];
+}
+
+export interface ExpoBusinessSceneAdapterCompany extends Company {
+  booth: Booth | undefined;
+  canonicalDistrictId: ExpoCanonicalDistrictDefinition['id'];
+  calculatorCategories: readonly CalculatorCategoryId[];
+}
+
+export interface ExpoBusinessSceneAdapterPayload {
+  calculatorCategories: readonly CalculatorCategoryId[];
+  companies: ExpoBusinessSceneAdapterCompany[];
+  contractVersion: typeof EXPO_SCENE_CONTRACT_VERSION;
+  districts: readonly ExpoCanonicalDistrictDefinition[];
+  releaseMode: typeof EXPO_SCENE_RELEASE_MODE;
+  sectors: ExpoBusinessSceneAdapterSector[];
+}
+
+export const EXPO_CANONICAL_DISTRICT_CATALOG: readonly ExpoCanonicalDistrictDefinition[] = [
+  {
+    id: 'architecture',
+    name: 'Architecture & Spatial Design',
+    icon: '🏛️',
+    color: '#8b5cf6',
+    description: 'Architecti, interior, design systems, planning, premium concept studios.',
+    calculatorCategories: ['designer', 'interior', 'visuals', 'digital_art']
+  },
+  {
+    id: 'construction',
+    name: 'Construction & Build',
+    icon: '🏗️',
+    color: '#eab308',
+    description: 'Builders, renovation, foundations, roofs, windows, site delivery.',
+    calculatorCategories: ['renovation', 'roof', 'foundation', 'timber_house', 'windows']
+  },
+  {
+    id: 'materials',
+    name: 'Materials & Engineering',
+    icon: '🧱',
+    color: '#f97316',
+    description: 'Building materials, plumbing, heating, technical systems and fit-out supply.',
+    calculatorCategories: ['heating', 'plumbing']
+  },
+  {
+    id: 'design',
+    name: 'Creative Media & Brand',
+    icon: '🎨',
+    color: '#ec4899',
+    description: 'Creative studios, presentation media, campaigns, visual identity and content.',
+    calculatorCategories: ['digital_art', 'visuals', 'designer']
+  },
+  {
+    id: 'real_estate',
+    name: 'Real Estate & Property',
+    icon: '🏢',
+    color: '#10b981',
+    description: 'Property, valuation, housing, development, brokerage and commercial space.',
+    calculatorCategories: ['housing', 'renovation', 'interior']
+  },
+  {
+    id: 'tech',
+    name: 'Technology & Automation',
+    icon: '💻',
+    color: '#3b82f6',
+    description: 'Automation, smart systems, AI-enabled operations and service technology.',
+    calculatorCategories: ['heating', 'quick_fix', 'designer']
+  },
+  {
+    id: 'logistics',
+    name: 'Logistics & Field Services',
+    icon: '🚚',
+    color: '#06b6d4',
+    description: 'Logistics, cleaning, autoservice, maintenance and rapid-response field work.',
+    calculatorCategories: ['logistics', 'cleaning', 'autoservice', 'quick_fix']
+  }
+] as const;
+
+const DISTRICT_NAME_KEYWORDS: Record<ExpoCanonicalDistrictDefinition['id'], string[]> = {
+  architecture: ['architecture', 'architect', 'spatial', 'design', 'interior'],
+  construction: ['construction', 'build', 'renovation', 'roof', 'window', 'foundation'],
+  materials: ['material', 'heating', 'plumbing', 'engineering', 'supply'],
+  design: ['media', 'brand', 'creative', 'art', 'visual'],
+  real_estate: ['real estate', 'property', 'housing', 'estate'],
+  tech: ['tech', 'technology', 'automation', 'ai', 'smart'],
+  logistics: ['logistics', 'transport', 'cleaning', 'maintenance', 'auto', 'service']
+};
+
+function getFallbackDistrictCatalogEntry(index: number) {
+  return EXPO_CANONICAL_DISTRICT_CATALOG[index % EXPO_CANONICAL_DISTRICT_CATALOG.length];
+}
+
+export function resolveCanonicalDistrictDefinition(input: { id?: string | null; name?: string | null }, fallbackIndex = 0) {
+  const normalizedId = String(input.id || '').trim().toLowerCase();
+  const normalizedName = String(input.name || '').trim().toLowerCase();
+
+  const exactById = EXPO_CANONICAL_DISTRICT_CATALOG.find((district) => district.id === normalizedId);
+  if (exactById) {
+    return exactById;
+  }
+
+  const keywordMatch = EXPO_CANONICAL_DISTRICT_CATALOG.find((district) => {
+    const keywords = DISTRICT_NAME_KEYWORDS[district.id];
+    return keywords.some((keyword) => normalizedId.includes(keyword) || normalizedName.includes(keyword));
+  });
+
+  return keywordMatch ?? getFallbackDistrictCatalogEntry(fallbackIndex);
+}
+
+function toAdapterSector(sector: Sector, index: number): ExpoBusinessSceneAdapterSector {
+  const district = resolveCanonicalDistrictDefinition({ id: sector.id, name: sector.name }, index);
+  return {
+    ...sector,
+    canonicalDistrictId: district.id,
+    calculatorCategories: district.calculatorCategories,
+  };
+}
+
+function toAdapterCompany(company: Company & { booth?: Booth }, fallbackSector: ExpoCanonicalDistrictDefinition): ExpoBusinessSceneAdapterCompany {
+  const district = resolveCanonicalDistrictDefinition(
+    { id: company.sector_id, name: company.location || company.description || company.name },
+    EXPO_CANONICAL_DISTRICT_CATALOG.findIndex((entry) => entry.id === fallbackSector.id),
+  );
+
+  return {
+    ...company,
+    booth: company.booth,
+    canonicalDistrictId: district.id,
+    calculatorCategories: district.calculatorCategories,
+  };
+}
+
+export const EXPO_SCENE_SERVICE_META = {
+  canonicalDistricts: [...EXPO_SCENE_CANONICAL_DISTRICTS],
+  contractVersion: EXPO_SCENE_CONTRACT_VERSION,
+  releaseMode: EXPO_SCENE_RELEASE_MODE,
+} as const;
+
 export const expoService = {
   // Iegūt visus sektorus
   async getSectors() {
@@ -53,6 +210,30 @@ export const expoService = {
     
     if (error) throw error;
     return data as (Company & { booth: Booth })[];
+  },
+
+  async getSceneAdapterPayload(): Promise<ExpoBusinessSceneAdapterPayload> {
+    const [sectors, companies] = await Promise.all([
+      this.getSectors(),
+      this.getCompaniesWithBooths(),
+    ]);
+
+    const adapterSectors = (sectors || []).map((sector, index) => toAdapterSector(sector, index));
+    const sectorById = new Map(adapterSectors.map((sector) => [sector.id, sector]));
+
+    const adapterCompanies = (companies || []).map((company) => {
+      const fallbackSector = sectorById.get(company.sector_id) ?? adapterSectors[0] ?? getFallbackDistrictCatalogEntry(0);
+      return toAdapterCompany(company, resolveCanonicalDistrictDefinition({ id: fallbackSector?.canonicalDistrictId, name: fallbackSector?.name }));
+    });
+
+    return {
+      calculatorCategories: CALCULATOR_CATEGORY_DEFINITIONS.map((entry) => entry.id),
+      companies: adapterCompanies,
+      contractVersion: EXPO_SCENE_CONTRACT_VERSION,
+      districts: EXPO_CANONICAL_DISTRICT_CATALOG,
+      releaseMode: EXPO_SCENE_RELEASE_MODE,
+      sectors: adapterSectors,
+    };
   },
 
   // Nosūtīt pakalpojuma pieprasījumu (Lead)

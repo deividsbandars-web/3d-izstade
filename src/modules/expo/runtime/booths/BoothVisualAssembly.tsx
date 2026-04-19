@@ -44,6 +44,12 @@ export function BoothVisualAssembly({
   const nameFontSize = getSponsorNameFontSize(presentation.displayName);
   const heroName = formatExpoDisplayName(presentation.displayName);
   const infoBandZ = metrics.titlePosition[2] - 0.24;
+  const boothPresentationScreenUrl = presentation.posterUrl ?? null;
+  const premiumLabel = tierState.isHeroBooth
+    ? 'FLAGSHIP IMMERSIVE SHOWROOM'
+    : tierState.isEliteBooth
+      ? 'UNREAL-POWERED BUYER SUITE'
+      : 'PREMIUM LIVE SHOWROOM';
 
   return (
     <>
@@ -65,12 +71,13 @@ export function BoothVisualAssembly({
           accentColor={tierState.districtVisual.shellAccent}
           fallbackText={fallbackMonogram}
           metrics={metrics}
-          screenUrl={presentation.posterUrl ?? presentation.logoUrl ?? null}
+          screenUrl={boothPresentationScreenUrl}
           tier={tierState.featureTier}
         />
       )}
       <BoothFeatureApron
         accentColor={tierState.districtVisual.shellAccent}
+        contractTier={tierState.contractTier}
         districtGlow={tierState.districtVisual.districtGlow}
         frontApronDepth={tierState.frontApronDepth}
         frontApronWidth={tierState.frontApronWidth}
@@ -87,6 +94,7 @@ export function BoothVisualAssembly({
       />
       <BoothFeatureHeader
         accentColor={accentColor}
+        contractTier={tierState.contractTier}
         fallbackMonogram={fallbackMonogram}
         heroName={heroName}
         isEliteFeature={tierState.isEliteFeature}
@@ -99,7 +107,7 @@ export function BoothVisualAssembly({
         accentColor={accentColor}
         badgeLabel={presentation.badgeLabel}
         ctaActions={presentation.actions}
-        fallbackPremiumLabel={tierState.isEliteBooth ? 'UNREAL-POWERED BUYER SUITE' : 'PREMIUM LIVE SHOWROOM'}
+        fallbackPremiumLabel={premiumLabel}
         infoBandHeight={tierState.infoBandHeight}
         infoBandWidth={tierState.infoBandWidth}
         infoBandZ={infoBandZ}

@@ -11,7 +11,7 @@ export default function ExpoPage() {
 
   useEffect(() => {
     async function loadData() {
-      const boothsRes = await expoDashboardService.getUserBooths(USER_ID);
+      const boothsRes = await expoDashboardService.getManagedBooths(USER_ID);
       
       if (boothsRes.data) {
         setBooths(boothsRes.data);

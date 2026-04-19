@@ -1,5 +1,7 @@
 import { supabaseClient } from '../../../lib/supabaseClient';
 import { logger } from '../../logging/logger';
+import { EXPO_SCENE_CANONICAL_DISTRICTS } from '../../../modules/expo/types/scene';
+import { listExpoBooths } from '../data/expoBoothStore';
 
 export const cityMapService = {
   /**
@@ -9,12 +11,9 @@ export const cityMapService = {
     try {
       logger.info('CityMapService', 'Fetching City Map layout');
       const districts = await this.getDistricts();
-      
-      const { data: booths, error } = await supabaseClient
-        .from('expo_booths')
-        .select('id, company_name, district, 3d_model_url, logo');
-
-      if (error) throw error;
+      const boothResult = await listExpoBooths();
+      if (boothResult.error) throw boothResult.error;
+      const booths = boothResult.data ?? [];
 
       // Group booths by district
       const mapLayout = districts.data?.map((district: string) => ({
@@ -34,17 +33,7 @@ export const cityMapService = {
    */
   async getDistricts() {
     try {
-      // Pre-defined structural districts
-      const defaultDistricts = [
-        'architecture', 
-        'construction', 
-        'materials', 
-        'design', 
-        'real_estate',
-        'tech',
-        'logistics'
-      ];
-      return { data: defaultDistricts, error: null };
+      return { data: [...EXPO_SCENE_CANONICAL_DISTRICTS], error: null };
     } catch (error) {
       logger.error('CityMapService', 'Failed to get districts', error);
       return { data: null, error: String(error) };
@@ -63,6 +52,18 @@ export const cityMapService = {
         .eq('id', boothId)
         .select()
         .single();
+
+      if (error?.code === 'PGRST205') {
+        return {
+          data: {
+            id: boothId,
+            district: districtName,
+            compatibilityMode: 'legacy-expo_booth',
+            updated: false,
+          },
+          error: null,
+        };
+      }
 
       if (error) throw error;
       return { data, error: null };

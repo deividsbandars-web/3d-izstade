@@ -1,9 +1,4 @@
-type StadiumReserve = {
-  centerX: number;
-  centerZ: number;
-  halfWidth: number;
-  halfDepth: number;
-};
+import type { StadiumReserve } from './WorldCitySkeletonLayout';
 
 type CityScreenSurface = {
   color: string;
@@ -62,11 +57,11 @@ export function WorldCityScreenSurfaces({
           const dx = surface.position[0] - playerPosition[0];
           const dz = surface.position[2] - playerPosition[2];
           const distanceSq = (dx * dx) + (dz * dz);
-          const maxDistance = surface.role === 'hero-wall' || surface.role === 'tower-crown' ? 1800 : 1320;
+          const maxDistance = surface.role === 'hero-wall' || surface.role === 'tower-crown' ? 1660 : 1160;
           return distanceSq <= maxDistance * maxDistance;
         })
         .map((surface) => (
-          <group key={surface.id} position={surface.position}>
+          <group key={surface.id} name={`world-city-screen-surface:${surface.role}:${surface.id}`} position={surface.position}>
             <mesh position={[0, 0, surface.size[2] * 0.5]}>
               <planeGeometry args={[surface.size[0], surface.size[1]]} />
               <meshStandardMaterial
@@ -76,13 +71,13 @@ export function WorldCityScreenSurfaces({
                 emissive={surface.glowColor}
                 emissiveIntensity={
                   surface.role === 'hero-wall'
-                    ? 0.12
+                    ? 0.1
                     : surface.role === 'tower-crown'
-                      ? 0.14
-                      : 0.09
+                      ? 0.12
+                      : 0.07
                 }
                 transparent
-                opacity={0.96}
+                opacity={0.94}
               />
             </mesh>
             <mesh position={[0, 0, surface.size[2] * 0.56]}>
@@ -92,14 +87,18 @@ export function WorldCityScreenSurfaces({
                 transparent
                 opacity={
                   surface.role === 'hero-wall'
-                    ? 0.2
+                    ? 0.16
                     : surface.role === 'tower-crown'
-                      ? 0.22
+                      ? 0.18
                       : surface.type === 'wall'
-                        ? 0.12
-                        : 0.15
+                        ? 0.08
+                        : 0.1
                 }
               />
+            </mesh>
+            <mesh position={[0, surface.size[1] * 0.43, surface.size[2] * 0.58]}>
+              <planeGeometry args={[surface.size[0] * (surface.role === 'hero-wall' ? 0.72 : surface.role === 'tower-crown' ? 0.56 : 0.44), Math.max(0.12, surface.size[1] * 0.028)]} />
+              <meshBasicMaterial color={surface.glowColor} transparent opacity={surface.role === 'hero-wall' ? 0.16 : 0.1} />
             </mesh>
             {surface.role === 'hero-wall' && (
               <mesh position={[0, 0, surface.size[2] * 0.58]}>
