@@ -9,8 +9,109 @@ type WorldCityMegaLandmarksProps = {
   };
 };
 
+type LandmarkCompositionGroup =
+  | 'arrival'
+  | 'showcase'
+  | 'media'
+  | 'discovery'
+  | 'right-citadel'
+  | 'right-skybridge'
+  | 'right-halo'
+  | 'left-crown'
+  | 'left-disc'
+  | 'left-rampart'
+  | 'left-cantilever'
+  | 'left-monolith'
+  | 'left-broken-wall';
+
+const HIDDEN_LANDMARK_COMPOSITION: Record<LandmarkCompositionGroup, string[]> = {
+  arrival: [
+    'mega-landmark:arrival-base',
+    'mega-landmark:arrival-plinth',
+    'mega-landmark:arrival-core',
+    'mega-landmark:arrival-support-left',
+    'mega-landmark:arrival-support-right',
+    'mega-landmark:arrival-accent-left',
+    'mega-landmark:arrival-accent-right',
+  ],
+  showcase: [
+    'mega-landmark:showcase-support-right',
+    'mega-landmark:showcase-side-accent-left',
+    'mega-landmark:showcase-side-accent-right',
+    'mega-landmark:showcase-outer-accent-left',
+    'mega-landmark:showcase-outer-accent-right',
+  ],
+  media: [
+    'mega-landmark:media-base',
+    'mega-landmark:media-plinth',
+    'mega-landmark:media-support-left',
+    'mega-landmark:media-support-right',
+    'mega-landmark:media-spire-left',
+    'mega-landmark:media-spire-right',
+    'mega-landmark:media-side-accent-left',
+    'mega-landmark:media-side-accent-right',
+    'mega-landmark:media-outer-accent-left',
+    'mega-landmark:media-outer-accent-right',
+  ],
+  discovery: [
+    'mega-landmark:discovery-base',
+    'mega-landmark:discovery-plinth',
+    'mega-landmark:discovery-support-left',
+    'mega-landmark:discovery-support-right',
+    'mega-landmark:discovery-outer-accent-left',
+    'mega-landmark:discovery-outer-accent-right',
+    'mega-landmark:discovery-side-accent-left',
+    'mega-landmark:discovery-side-accent-right',
+    'mega-landmark:discovery-spine-base',
+    'mega-landmark:discovery-spine-left-garden',
+    'mega-landmark:discovery-spine-ribbon',
+  ],
+  'right-citadel': [
+    'mega-landmark:right-citadel-fin-left',
+    'mega-landmark:right-citadel-fin-right',
+  ],
+  'right-skybridge': [
+    'mega-landmark:right-skybridge-side-fin-left',
+    'mega-landmark:right-skybridge-side-fin-right',
+    'mega-landmark:right-skybridge-terrace-left',
+    'mega-landmark:right-skybridge-terrace-right',
+  ],
+  'right-halo': [
+    'mega-landmark:right-media-halo-plinth',
+    'mega-landmark:right-media-halo-fin-left',
+    'mega-landmark:right-media-halo-fin-right',
+  ],
+  'left-crown': [
+    'mega-landmark:left-split-crown-fin-left',
+    'mega-landmark:left-split-crown-fin-right',
+  ],
+  'left-disc': [],
+  'left-rampart': [],
+  'left-cantilever': [],
+  'left-monolith': [],
+  'left-broken-wall': [],
+};
+
+function buildHiddenLandmarkParts() {
+  return new Set(Object.values(HIDDEN_LANDMARK_COMPOSITION).flat());
+}
+
+function tintHex(hex: string, ratio: number) {
+  const normalized = hex.replace('#', '').padStart(6, '0').slice(0, 6);
+  const channel = (index: number) => parseInt(normalized.slice(index, index + 2), 16);
+  const mix = (value: number) => Math.max(0, Math.min(255, Math.round(value + ((255 - value) * ratio))));
+  return `#${[mix(channel(0)), mix(channel(2)), mix(channel(4))].map((value) => value.toString(16).padStart(2, '0')).join('')}`;
+}
+
+function shadeHex(hex: string, ratio: number) {
+  const normalized = hex.replace('#', '').padStart(6, '0').slice(0, 6);
+  const channel = (index: number) => parseInt(normalized.slice(index, index + 2), 16);
+  const mix = (value: number) => Math.max(0, Math.min(255, Math.round(value * (1 - ratio))));
+  return `#${[mix(channel(0)), mix(channel(2)), mix(channel(4))].map((value) => value.toString(16).padStart(2, '0')).join('')}`;
+}
+
 function LandmarkMaterial({
-  color: _color,
+  color,
   emissive = '#000000',
   emissiveIntensity = 0,
   variant = 'default',
@@ -20,17 +121,12 @@ function LandmarkMaterial({
   emissiveIntensity?: number;
   variant?: 'default' | 'subdued';
 }) {
+  const baseColor = variant === 'subdued'
+    ? shadeHex(color, 0.18)
+    : tintHex(color, emissiveIntensity >= 0.08 ? 0.1 : emissiveIntensity >= 0.03 ? 0.06 : 0.03);
   const resolvedColor = variant === 'subdued'
-    ? emissiveIntensity >= 0.08
-      ? '#727e87'
-      : emissiveIntensity >= 0.03
-        ? '#66727c'
-        : '#5b6670'
-    : emissiveIntensity >= 0.08
-      ? '#818d96'
-      : emissiveIntensity >= 0.03
-        ? '#727f89'
-        : '#646f79';
+    ? tintHex(baseColor, emissiveIntensity >= 0.08 ? 0.03 : 0)
+    : baseColor;
   return (
     <meshStandardMaterial
       color={resolvedColor}
@@ -47,53 +143,7 @@ export function WorldCityMegaLandmarks({
   districtStride,
   sectionToggles = { arrival: true, left: true, middle: true, right: true },
 }: WorldCityMegaLandmarksProps) {
-  const hiddenLandmarkParts = new Set([
-    'mega-landmark:arrival-base',
-    'mega-landmark:arrival-plinth',
-    'mega-landmark:arrival-core',
-    'mega-landmark:arrival-support-left',
-    'mega-landmark:arrival-support-right',
-    'mega-landmark:arrival-accent-left',
-    'mega-landmark:arrival-accent-right',
-    'mega-landmark:showcase-side-accent-right',
-    'mega-landmark:media-spire-left',
-    'mega-landmark:showcase-side-accent-left',
-    'mega-landmark:media-base',
-    'mega-landmark:media-plinth',
-    'mega-landmark:media-support-left',
-    'mega-landmark:media-support-right',
-    'mega-landmark:media-spire-right',
-    'mega-landmark:media-side-accent-right',
-    'mega-landmark:media-side-accent-left',
-    'mega-landmark:discovery-base',
-    'mega-landmark:discovery-plinth',
-    'mega-landmark:discovery-support-left',
-    'mega-landmark:discovery-support-right',
-    'mega-landmark:discovery-outer-accent-left',
-    'mega-landmark:discovery-outer-accent-right',
-    'mega-landmark:discovery-side-accent-left',
-    'mega-landmark:discovery-side-accent-right',
-    'mega-landmark:media-outer-accent-right',
-    'mega-landmark:right-media-halo-fin-left',
-    'mega-landmark:right-media-halo-plinth',
-    'mega-landmark:right-media-halo-fin-right',
-    'mega-landmark:right-citadel-fin-left',
-    'mega-landmark:right-citadel-fin-right',
-    'mega-landmark:right-skybridge-side-fin-right',
-    'mega-landmark:right-skybridge-terrace-right',
-    'mega-landmark:right-skybridge-terrace-left',
-    'mega-landmark:right-skybridge-side-fin-left',
-    'mega-landmark:showcase-outer-accent-right',
-    'mega-landmark:showcase-support-right',
-    'mega-landmark:left-broken-wall-marker',
-    'mega-landmark:left-split-crown-fin-right',
-    'mega-landmark:left-split-crown-fin-left',
-    'mega-landmark:showcase-outer-accent-left',
-    'mega-landmark:left-cantilever-fin-left',
-    'mega-landmark:discovery-spine-base',
-    'mega-landmark:discovery-spine-left-garden',
-    'mega-landmark:discovery-spine-ribbon',
-  ]);
+  const hiddenLandmarkParts = buildHiddenLandmarkParts();
   const arrivalBaseZ = 256;
   const showcaseBaseZ = -72;
   const discoveryBaseZ = -196 - ((Math.max(1, districtCount) - 1) * districtStride) - 1080;
@@ -203,7 +253,7 @@ export function WorldCityMegaLandmarks({
         </mesh>
         <mesh name="mega-landmark:showcase-ring-outer" position={[0, 162, 0]} rotation={[0, 0, Math.PI / 2]}>
           <torusGeometry args={[122, 10, 16, 42]} />
-          <LandmarkMaterial color="#f3f7fa" emissive="#c084fc" emissiveIntensity={0.1} />
+          <LandmarkMaterial color="#f7f3fb" emissive="#c084fc" emissiveIntensity={0.14} />
         </mesh>
         <mesh name="mega-landmark:showcase-ring-inner" position={[0, 118, 0]} rotation={[0, 0, Math.PI / 2]}>
           <torusGeometry args={[82, 5, 12, 36]} />
@@ -330,10 +380,10 @@ export function WorldCityMegaLandmarks({
             <boxGeometry args={[26, 244, 24]} />
             <LandmarkMaterial color="#d7e2e9" emissive="#c084fc" emissiveIntensity={0.03} variant="subdued" />
           </mesh>
-          <mesh name="mega-landmark:media-frame-top" position={[0, 236, 0]}>
-            <boxGeometry args={[296, 20, 28]} />
-            <LandmarkMaterial color="#eef4f8" emissive="#93c5fd" emissiveIntensity={0.05} />
-          </mesh>
+        <mesh name="mega-landmark:media-frame-top" position={[0, 236, 0]}>
+          <boxGeometry args={[296, 20, 28]} />
+          <LandmarkMaterial color="#f5f8fb" emissive="#93c5fd" emissiveIntensity={0.08} />
+        </mesh>
           <mesh name="mega-landmark:media-frame-base" position={[0, 8, 0]}>
             <boxGeometry args={[214, 10, 42]} />
             <LandmarkMaterial color="#e7eef4" emissive="#67e8f9" emissiveIntensity={0.016} />
@@ -375,7 +425,7 @@ export function WorldCityMegaLandmarks({
         )}
         <mesh name="mega-landmark:discovery-ring-outer" position={[0, 154, 0]} rotation={[Math.PI / 2, 0, 0]}>
           <torusGeometry args={[118, 12, 18, 48]} />
-          <LandmarkMaterial color="#eff5f8" emissive="#67e8f9" emissiveIntensity={0.12} />
+          <LandmarkMaterial color="#f4fafb" emissive="#67e8f9" emissiveIntensity={0.15} />
         </mesh>
         <mesh name="mega-landmark:discovery-ring-inner" position={[0, 112, 0]} rotation={[Math.PI / 2, 0, 0]}>
           <torusGeometry args={[78, 5, 12, 36]} />

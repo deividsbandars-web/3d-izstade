@@ -4,6 +4,18 @@ export type BoothType = 'hero' | 'premium' | 'standard' | 'poster';
 
 export type ExpoSceneReleaseMode = 'sponsor-boulevard';
 
+export const EXPO_SCENE_RELEASE_MODE: ExpoSceneReleaseMode = 'sponsor-boulevard';
+export const EXPO_SCENE_CONTRACT_VERSION = 'expo-scene-v3-canonical';
+export const EXPO_SCENE_CANONICAL_DISTRICTS = [
+  'architecture',
+  'construction',
+  'materials',
+  'design',
+  'real_estate',
+  'tech',
+  'logistics',
+] as const;
+
 export interface ExpoSceneSector {
   color_theme: string | null;
   id: string;

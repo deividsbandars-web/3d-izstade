@@ -1,0 +1,267 @@
+{
+  "generated_at": "2026-04-17",
+  "scope": "PHASE-02 P2-T1 static owner and suppressor inventory",
+  "baseline_branch": "work/world-recovery-freeze",
+  "baseline_commit": "e24ea36506a71c30be0cc270d29ed2bcfdd6a51f",
+  "trusted_stash": "stash@{0}",
+  "notes": [
+    "This artifact is a static inventory and classification pass. It does not intentionally change runtime behavior.",
+    "Suppressors listed here are grouped by current runtime owner, not by ideal long-term architecture."
+  ],
+  "owners": [
+    {
+      "owner_file": "src/modules/expo/runtime/world/WorldCitySkeleton.tsx",
+      "owner_role": "aggregator plus render-time city plane and city mass suppression",
+      "suppressors": [
+        {
+          "id": "WCS-001",
+          "type": "pattern_list",
+          "name": "CENTRAL_CLUTTER_PLANE_PATTERNS",
+          "affects": "city planes near central axis",
+          "source_owner": "WorldCitySkeletonLayout.ts",
+          "examples": [
+            "arrival-terminal",
+            "showcase-front-carpet",
+            "booth-connector",
+            "promenade-axis-inner-carpet",
+            "promenade-axis-transition"
+          ],
+          "current_resolution": "move to typed plane roles emitted by builder",
+          "classification": "move_to_source_owner_cleanup"
+        },
+        {
+          "id": "WCS-002",
+          "type": "pattern_list",
+          "name": "CENTRAL_CLUTTER_MASS_PATTERNS",
+          "affects": "city masses near central axis and district centerline",
+          "source_owner": "WorldCitySkeletonLayout.ts",
+          "examples": [
+            "gateway-mid-plinth",
+            "showcase-forum-plinth",
+            "media-wall-center-link",
+            "discovery-axis-plinth",
+            "support-band"
+          ],
+          "current_resolution": "replace with typed source categories and source-owner exclusions",
+          "classification": "move_to_source_owner_cleanup"
+        },
+        {
+          "id": "WCS-003",
+          "type": "id_set",
+          "name": "HIDDEN_CITY_MASS_IDS",
+          "affects": "specific city masses spanning arrival, showcase, media, discovery, left, right, and support-edge families",
+          "source_owner": "WorldCitySkeletonLayout.ts",
+          "examples": [
+            "arrival-gateway-left",
+            "arrival-core-center-transition-left",
+            "media-wall-left-1",
+            "boulevard-edge-left-0",
+            "signature-mega-pylon-left"
+          ],
+          "current_resolution": "shrink aggressively; keep only temporary quarantine items with linked source fixes",
+          "classification": "split_keep_temp_and_move_to_source_owner_cleanup"
+        },
+        {
+          "id": "WCS-004",
+          "type": "id_set",
+          "name": "HIDDEN_CITY_PLANE_IDS",
+          "affects": "specific arrival and showcase plane surfaces",
+          "source_owner": "WorldCitySkeletonLayout.ts",
+          "examples": [
+            "arrival-main",
+            "arrival-entry-ribbon",
+            "arrival-mid-carpet",
+            "arrival-core-showcase-main"
+          ],
+          "current_resolution": "replace with explicit plane-role visibility rules",
+          "classification": "move_to_source_owner_cleanup"
+        },
+        {
+          "id": "WCS-005",
+          "type": "pattern_list",
+          "name": "RESIDUAL_CITY_MASS_PATTERNS",
+          "affects": "support-edge and media-wall residual strips on left and right sides",
+          "source_owner": "WorldCitySkeletonLayout.ts",
+          "examples": [
+            "support-edge-left-",
+            "support-edge-right-",
+            "media-wall-spine-left-",
+            "media-wall-outer-marker-right-"
+          ],
+          "current_resolution": "remove from aggregator once source-owner cleanup is implemented",
+          "classification": "move_to_source_owner_cleanup"
+        }
+      ]
+    },
+    {
+      "owner_file": "src/modules/expo/runtime/world/WorldCityMasses.tsx",
+      "owner_role": "render-time mass composition and heuristic suppression of ground-like mass families",
+      "suppressors": [
+        {
+          "id": "WCM-001",
+          "type": "heuristic_filter",
+          "name": "isGroundLikePlinth",
+          "affects": "plinth, terrace, platform, threshold, apron, band, link, court, dais style masses",
+          "source_owner": "WorldCitySkeletonLayout.ts",
+          "examples": [
+            "court",
+            "band",
+            "apron",
+            "link",
+            "terrace",
+            "plinth"
+          ],
+          "current_resolution": "replace with typed category ownership in builder output",
+          "classification": "move_to_source_owner_cleanup"
+        },
+        {
+          "id": "WCM-002",
+          "type": "heuristic_filter",
+          "name": "suppressDecorativeStack",
+          "affects": "caps, side inset, rear spine, front wing decorative layers on selected masses",
+          "source_owner": "WorldCityMasses.tsx",
+          "examples": [
+            "center lane thin shelf",
+            "front-court-like mass",
+            "signature mass with extra stack"
+          ],
+          "current_resolution": "convert to explicit category-based decoration rules after source-owner cleanup",
+          "classification": "keep_temporarily"
+        }
+      ]
+    },
+    {
+      "owner_file": "src/modules/expo/runtime/world/WorldCityTowers.tsx",
+      "owner_role": "tower rendering plus reserve-based filtering and explicit hidden tower IDs",
+      "suppressors": [
+        {
+          "id": "WCT-001",
+          "type": "reserve_filter",
+          "name": "overlapsStadiumReserve",
+          "affects": "all towers intersecting current reserve",
+          "source_owner": "getWorldCityStadiumReserve in WorldCitySkeletonLayout.ts",
+          "examples": [
+            "all towers inside reserve footprint"
+          ],
+          "current_resolution": "keep, but only after reserve contract becomes real",
+          "classification": "keep_temporarily"
+        },
+        {
+          "id": "WCT-002",
+          "type": "id_set",
+          "name": "hiddenTowerIds",
+          "affects": "specific support towers",
+          "source_owner": "WorldCitySkeletonLayout.ts",
+          "examples": [
+            "meetings-hero-tower-right",
+            "75c36ca5-1c8e-4bd7-b61c-7cafd988fcf1-support-tower-right",
+            "75c36ca5-1c8e-4bd7-b61c-7cafd988fcf1-support-tower-left",
+            "1a459ffc-d447-4899-97e5-7af7b562487d-support-tower-left"
+          ],
+          "current_resolution": "replace with source-defined tower composition and reserve-aware builder rules",
+          "classification": "move_to_source_owner_cleanup"
+        }
+      ]
+    },
+    {
+      "owner_file": "src/modules/expo/runtime/world/WorldCityMegaLandmarks.tsx",
+      "owner_role": "signature skyline landmark composition plus hidden landmark parts",
+      "suppressors": [
+        {
+          "id": "WCML-001",
+          "type": "id_set",
+          "name": "hiddenLandmarkParts",
+          "affects": "arrival, showcase, media, discovery, right-side and left-side landmark subparts",
+          "source_owner": "WorldCityMegaLandmarks.tsx",
+          "examples": [
+            "mega-landmark:arrival-base",
+            "mega-landmark:media-base",
+            "mega-landmark:discovery-spine-ribbon",
+            "mega-landmark:left-split-crown-fin-left",
+            "mega-landmark:right-media-halo-fin-left"
+          ],
+          "current_resolution": "convert to explicit landmark composition groups; reduce part-level hiding",
+          "classification": "split_keep_temp_and_move_to_source_owner_cleanup"
+        }
+      ]
+    },
+    {
+      "owner_file": "src/modules/expo/runtime/world/ExpoRearCampus.tsx",
+      "owner_role": "rear campus runtime composition, local pavilion/tower hiding, perimeter connectors, and stadium forecourt suppression",
+      "suppressors": [
+        {
+          "id": "ERC-001",
+          "type": "empty_array_suppression",
+          "name": "filteredStadiumForecourts",
+          "affects": "all rear-campus forecourt planes",
+          "source_owner": "ExpoRearCampusLayout.ts",
+          "examples": [
+            "all buildRearCampusForecourts output"
+          ],
+          "current_resolution": "remove blanket suppression and restore source-intent ownership",
+          "classification": "delete_after_source_owner_cleanup"
+        },
+        {
+          "id": "ERC-002",
+          "type": "id_set",
+          "name": "hiddenPavilionIds",
+          "affects": "selected side pavilions and event/gallery/front pavilion assets",
+          "source_owner": "ExpoRearCampusLayout.ts",
+          "examples": [
+            "rear-campus-side-pavilion-left-front",
+            "rear-campus-event-pavilion-left",
+            "rear-campus-axis-gallery-right"
+          ],
+          "current_resolution": "move to source-level family composition rules",
+          "classification": "move_to_source_owner_cleanup"
+        },
+        {
+          "id": "ERC-003",
+          "type": "id_set",
+          "name": "hiddenTowerIds",
+          "affects": "selected rear-campus landmark towers",
+          "source_owner": "ExpoRearCampusLayout.ts",
+          "examples": [
+            "rear-campus-landmark-left",
+            "rear-campus-landmark-right",
+            "rear-campus-landmark-center-left",
+            "rear-campus-landmark-center-right"
+          ],
+          "current_resolution": "move to source-level landmark family decisions",
+          "classification": "move_to_source_owner_cleanup"
+        }
+      ]
+    }
+  ],
+  "reserve_contract": {
+    "current_source": "src/modules/expo/runtime/world/WorldCitySkeletonLayout.ts",
+    "current_behavior": {
+      "function": "getWorldCityStadiumReserve",
+      "returns": {
+        "centerX": -10000,
+        "centerZ": -10000,
+        "halfWidth": 1,
+        "halfDepth": 1
+      },
+      "assessment": "sentinel/no-op reserve"
+    },
+    "active_consumers": [
+      "src/modules/expo/runtime/world/WorldCityMasses.tsx",
+      "src/modules/expo/runtime/world/WorldCityTowers.tsx",
+      "src/modules/expo/runtime/world/WorldCityScreenSockets.tsx",
+      "src/modules/expo/runtime/world/WorldCityScreenSurfaces.tsx"
+    ],
+    "resolution_path": "replace sentinel reserve with canonical reserve derived from accepted stadium and campus geometry, then keep reserve-based filtering only as contract enforcement",
+    "classification": "critical_blocker"
+  },
+  "immediate_follow_up": [
+    {
+      "task_id": "P2-T2",
+      "reason": "reserve contract is currently fake and invalidates downstream geometry/screen/placement assumptions"
+    },
+    {
+      "task_id": "P2-T3",
+      "reason": "owner contract must be written before source-owner cleanup starts"
+    }
+  ]
+}

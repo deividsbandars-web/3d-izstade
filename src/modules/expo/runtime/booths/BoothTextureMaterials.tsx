@@ -58,9 +58,13 @@ function loadCachedExpoTexture(url: string) {
 
 export function SponsorTextureSurface({
   fallbackColor,
+  emissiveColor,
+  emissiveIntensity = 0,
   opacity = 1,
   url,
 }: {
+  emissiveColor?: string;
+  emissiveIntensity?: number;
   fallbackColor: string;
   opacity?: number;
   url: string;
@@ -88,7 +92,19 @@ export function SponsorTextureSurface({
     };
   }, [url]);
 
-  return <meshBasicMaterial color={fallbackColor} map={mappedTexture ?? undefined} transparent opacity={opacity} toneMapped={false} />;
+  return (
+    <meshStandardMaterial
+      color={fallbackColor}
+      emissive={emissiveColor ?? '#000000'}
+      emissiveIntensity={mappedTexture ? emissiveIntensity : 0}
+      map={mappedTexture ?? undefined}
+      metalness={0.02}
+      roughness={0.42}
+      transparent
+      opacity={opacity}
+      toneMapped={false}
+    />
+  );
 }
 
 export function ScreenTextureMaterial({ fallbackColor, url }: { fallbackColor: string; url: string }) {

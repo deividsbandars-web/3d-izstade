@@ -15,6 +15,12 @@ import { buildExpoWorldContract } from '../../world-contract';
 
 const LOCAL_BUILD_STAMP = `LOCAL-${new Date().toISOString().replace('T', ' ').slice(0, 19)}`;
 
+type ReviewOperatorZone = {
+  id: string;
+  intent: string;
+  startView: ExpoStartView;
+};
+
 function detectTouchDevice() {
   if (typeof window === 'undefined') {
     return false;
@@ -40,8 +46,66 @@ function isExpoIgnorablePointerLockError(error: unknown) {
     || message.includes('Target Element removed from DOM');
 }
 
+function buildReviewOperatorZones(): ReviewOperatorZone[] {
+  return [
+    {
+      id: 'arrival',
+      intent: 'arrival-gateway-hierarchy',
+      startView: {
+        lookAt: [0, 42, 256],
+        position: [0, 128, 468],
+        source: 'arrival-main',
+      },
+    },
+    {
+      id: 'left',
+      intent: 'left-skyline-balance',
+      startView: {
+        lookAt: [-654, 122, -286],
+        position: [-968, 214, 86],
+        source: 'arrival-main',
+      },
+    },
+    {
+      id: 'middle',
+      intent: 'core-civic-reading',
+      startView: {
+        lookAt: [0, 112, -214],
+        position: [0, 188, 152],
+        source: 'arrival-main',
+      },
+    },
+    {
+      id: 'right',
+      intent: 'right-signal-cluster',
+      startView: {
+        lookAt: [628, 128, -248],
+        position: [954, 216, 74],
+        source: 'arrival-main',
+      },
+    },
+    {
+      id: 'rear',
+      intent: 'stadium-campus-continuity',
+      startView: {
+        lookAt: [0, 136, -3312],
+        position: [0, 248, -2636],
+        source: 'arrival-main',
+      },
+    },
+  ];
+}
+
 export default function Expo3D() {
-  const [mode, setMode] = useState<ExpoMode>('menu');
+  const reviewOperatorEnabled = useMemo(() => {
+    if (typeof window === 'undefined' || !import.meta.env.DEV) {
+      return false;
+    }
+
+    return new URLSearchParams(window.location.search).get('operator') === '1';
+  }, []);
+  const reviewZones = useMemo(() => buildReviewOperatorZones(), []);
+  const [mode, setMode] = useState<ExpoMode>(() => (reviewOperatorEnabled ? 'fly' : 'menu'));
   const [debug, setDebug] = useState(EXPO_DEBUG_DEFAULT);
   const [mobileMoveIntent, setMobileMoveIntent] = useState({ f: false, b: false, l: false, r: false, s: false });
   const [devClickTarget, setDevClickTarget] = useState<string | null>(null);
@@ -51,6 +115,7 @@ export default function Expo3D() {
   const [devCenterStack, setDevCenterStack] = useState<string[]>([]);
   const [markedPoint, setMarkedPoint] = useState<[number, number, number] | null>(null);
   const [targetBasket, setTargetBasket] = useState<string[]>([]);
+  const [operatorZoneId, setOperatorZoneId] = useState<string | null>(() => (reviewOperatorEnabled ? 'arrival' : null));
   const [devLayerStates, setDevLayerStates] = useState({
     booths: true,
     city: true,
@@ -77,6 +142,13 @@ export default function Expo3D() {
     return new URLSearchParams(window.location.search).get('focus');
   }, []);
   const effectiveFocusSlug = devFocusSlug === '__use_url__' ? initialUrlFocus : devFocusSlug;
+  const operatorStartView = useMemo(() => {
+    if (!reviewOperatorEnabled || !operatorZoneId) {
+      return null;
+    }
+
+    return reviewZones.find((zone) => zone.id === operatorZoneId)?.startView ?? null;
+  }, [operatorZoneId, reviewOperatorEnabled, reviewZones]);
   const focusStartView = useMemo<ExpoStartView | null>(() => {
     if (typeof window === 'undefined') {
       return null;
@@ -113,6 +185,7 @@ export default function Expo3D() {
       source: 'arrival-main',
     };
   }, [effectiveFocusSlug, worldContract.boothPlacements]);
+  const effectiveStartViewOverride = operatorStartView ?? focusStartView;
   const verificationTargets = useMemo(() => {
     const hero = worldContract.boothPlacements.find((entry) => String(entry.company?.sponsorTier || '').toLowerCase() === 'hero');
     const elite = worldContract.boothPlacements.find((entry) => String(entry.company?.sponsorTier || '').toLowerCase() === 'platinum');
@@ -225,6 +298,75 @@ export default function Expo3D() {
   }, []);
 
   useEffect(() => {
+    if (typeof window === 'undefined' || !reviewOperatorEnabled) {
+      return;
+    }
+
+    const operator = {
+      clearFocus: () => {
+        setOperatorZoneId(null);
+        setDevFocusSlug('');
+      },
+      focusBooth: (slugOrId: string) => {
+        setOperatorZoneId(null);
+        setDevFocusSlug(slugOrId);
+      },
+      focusZone: (zoneId: string) => {
+        setDevFocusSlug('');
+        setOperatorZoneId(zoneId);
+      },
+      getSnapshot: () => ({
+        activeZoneId: activeZone?.id ? String(activeZone.id) : null,
+        centerStack: devCenterStack,
+        centerTarget: devCenterTarget,
+        clickStack: devClickStack,
+        clickTarget: devClickTarget,
+        inspector,
+        layerStates: devLayerStates,
+        mode,
+        operatorZoneId,
+        playerPos,
+        sceneVersion: data?.sceneVersion ? String(data.sceneVersion) : null,
+        sectionStates: devSectionStates,
+        targetBasket,
+      }),
+      setLayerStates: (next: Partial<typeof devLayerStates>) => {
+        setDevLayerStates((current) => ({ ...current, ...next }));
+      },
+      setMode: (nextMode: ExpoMode) => setMode(nextMode),
+      setSectionStates: (next: Partial<typeof devSectionStates>) => {
+        setDevSectionStates((current) => ({ ...current, ...next }));
+      },
+      setTargetBasket: (targets: string[]) => setTargetBasket(targets),
+      zones: reviewZones.map((zone) => ({ id: zone.id, intent: zone.intent })),
+    };
+
+    (window as unknown as { __WARPALA_EXPO_REVIEW_OPERATOR__?: typeof operator }).__WARPALA_EXPO_REVIEW_OPERATOR__ = operator;
+
+    return () => {
+      if ((window as unknown as { __WARPALA_EXPO_REVIEW_OPERATOR__?: typeof operator }).__WARPALA_EXPO_REVIEW_OPERATOR__ === operator) {
+        delete (window as unknown as { __WARPALA_EXPO_REVIEW_OPERATOR__?: typeof operator }).__WARPALA_EXPO_REVIEW_OPERATOR__;
+      }
+    };
+  }, [
+    activeZone?.id,
+    data?.sceneVersion,
+    devCenterStack,
+    devCenterTarget,
+    devClickStack,
+    devClickTarget,
+    devLayerStates,
+    devSectionStates,
+    inspector,
+    mode,
+    operatorZoneId,
+    playerPos,
+    reviewOperatorEnabled,
+    reviewZones,
+    targetBasket,
+  ]);
+
+  useEffect(() => {
     if (typeof window === 'undefined') {
       return;
     }
@@ -271,6 +413,41 @@ export default function Expo3D() {
 
       {mode !== 'menu' && mode !== 'unreal' && (
         <>
+          {reviewOperatorEnabled && (
+            <div style={{ position: 'absolute', top: '20px', right: '20px', zIndex: 2100, width: '320px', background: 'rgba(7, 12, 18, 0.84)', border: '1px solid rgba(148, 163, 184, 0.24)', borderRadius: '16px', padding: '14px', backdropFilter: 'blur(12px)', color: '#e2e8f0' }}>
+              <div style={{ fontSize: '0.72rem', letterSpacing: '0.16em', fontWeight: 900, color: '#7dd3fc', marginBottom: '10px' }}>EXPO REVIEW OPERATOR</div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '10px' }}>
+                {reviewZones.map((zone) => (
+                  <button
+                    key={zone.id}
+                    onClick={() => {
+                      setDevFocusSlug('');
+                      setOperatorZoneId(zone.id);
+                    }}
+                    style={{
+                      background: operatorZoneId === zone.id ? 'rgba(125, 211, 252, 0.22)' : 'rgba(15, 23, 42, 0.76)',
+                      border: '1px solid rgba(125, 211, 252, 0.28)',
+                      borderRadius: '999px',
+                      color: '#e2e8f0',
+                      cursor: 'pointer',
+                      fontSize: '0.72rem',
+                      fontWeight: 700,
+                      padding: '6px 10px',
+                    }}
+                    type="button"
+                  >
+                    {zone.id}
+                  </button>
+                ))}
+              </div>
+              <div style={{ fontSize: '0.74rem', lineHeight: 1.5, color: '#cbd5e1' }}>
+                <div>mode: <strong>{mode}</strong></div>
+                <div>zone: <strong>{operatorZoneId ?? 'manual'}</strong></div>
+                <div>scene: <strong>{data?.sceneVersion ? String(data.sceneVersion) : 'unknown'}</strong></div>
+                <div>inspect: <strong>{inspector.map((entry) => entry.id).join(', ') || 'none'}</strong></div>
+              </div>
+            </div>
+          )}
           <ExpoWorldHud
             debug={debug}
             guests={guests}
@@ -351,7 +528,7 @@ export default function Expo3D() {
             mode={mode}
             onMove={handlePlayerMove}
             sceneVersion={data?.sceneVersion ? String(data.sceneVersion) : null}
-            startViewOverride={focusStartView}
+            startViewOverride={effectiveStartViewOverride}
             runtimeLayerToggles={import.meta.env.DEV ? devLayerStates : undefined}
             runtimeSectionToggles={import.meta.env.DEV ? devSectionStates : undefined}
             worldContract={worldContract}

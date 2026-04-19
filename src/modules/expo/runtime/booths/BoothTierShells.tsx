@@ -180,3 +180,54 @@ export function PremiumOrEliteBlades({
     </>
   );
 }
+
+export function TierScreenFrame({
+  accentColor,
+  screenHeight,
+  screenWidth,
+  tier,
+}: {
+  accentColor: string;
+  screenHeight: number;
+  screenWidth: number;
+  tier: 'standard' | 'premium' | 'elite' | 'hero';
+}) {
+  const isHero = tier === 'hero';
+  const isElite = tier === 'elite';
+  const railWidth = screenWidth + (isHero ? 2.8 : isElite ? 2.2 : tier === 'premium' ? 1.6 : 1);
+  const pillarHeight = screenHeight + (isHero ? 2.8 : isElite ? 2.2 : tier === 'premium' ? 1.4 : 0.8);
+  const pillarOffset = (railWidth * 0.5) - (isHero ? 0.42 : isElite ? 0.38 : 0.34);
+  const trimColor = isHero ? '#dbe7f2' : isElite ? '#d7e3ec' : '#ced9e4';
+  const glowIntensity = isHero ? 0.22 : isElite ? 0.18 : tier === 'premium' ? 0.14 : 0.08;
+
+  return (
+    <group>
+      <mesh position={[0, pillarHeight * 0.5, 0]} castShadow receiveShadow>
+        <boxGeometry args={[railWidth, 0.28, 0.28]} />
+        <meshStandardMaterial color={trimColor} metalness={0.2} roughness={0.3} />
+      </mesh>
+      <mesh position={[0, -(pillarHeight * 0.5), 0]} castShadow receiveShadow>
+        <boxGeometry args={[screenWidth * (isHero ? 0.72 : isElite ? 0.68 : 0.62), 0.18, 0.18]} />
+        <meshStandardMaterial color="#101a27" metalness={0.14} roughness={0.38} />
+      </mesh>
+      {[-1, 1].map((side) => (
+        <group key={`screen-frame-pillar-${tier}-${side}`} position={[side * pillarOffset, 0, 0]}>
+          <mesh castShadow receiveShadow>
+            <boxGeometry args={[0.3, pillarHeight, 0.3]} />
+            <meshStandardMaterial color={trimColor} metalness={0.2} roughness={0.32} />
+          </mesh>
+          <mesh position={[0, 0, 0.1]}>
+            <boxGeometry args={[0.1, pillarHeight - (isHero ? 0.9 : 1.2), 0.12]} />
+            <meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={glowIntensity} roughness={0.2} metalness={0.12} />
+          </mesh>
+        </group>
+      ))}
+      {(isElite || isHero) && (
+        <mesh position={[0, pillarHeight * 0.5 + 0.42, 0.08]} castShadow receiveShadow>
+          <boxGeometry args={[railWidth - (isHero ? 1.2 : 1.4), 0.12, 0.14]} />
+          <meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={glowIntensity} roughness={0.18} metalness={0.12} />
+        </mesh>
+      )}
+    </group>
+  );
+}

@@ -1,6 +1,14 @@
 import { CityMapAPI, ExpoDataAPI } from '../../services/expo';
-import { logger } from '../../backend/logging/logger';
-import { supabaseClient } from '../../lib/supabaseClient';
+
+export type ExpoManagedBooth = {
+  assets_3d?: Record<string, unknown> | null;
+  company_name?: string | null;
+  contact_info?: Record<string, unknown> | null;
+  district?: string | null;
+  id?: string;
+  industry_sector?: string | null;
+  status?: string | null;
+};
 
 export const expoDashboardService = {
   /**
@@ -8,44 +16,104 @@ export const expoDashboardService = {
    */
   async getCityMap() {
     try {
-      logger.info('ExpoDashboardService', 'Fetching city map for UI');
-      return await CityMapAPI.getExpoCity();
+      return { data: await CityMapAPI.getExpoCity(), error: null };
     } catch (error) {
-      logger.error('ExpoDashboardService', 'Failed to fetch city map', error);
       return { data: null, error: String(error) };
     }
   },
 
-  /**
-   * Retrieves only the booths owned/managed by the specific user
-   */
-  async getUserBooths(userId: string) {
+  async getDistricts() {
     try {
-      logger.info('ExpoDashboardService', `Fetching booths for user ${userId}`);
-      // Currently, expo_booths lacks user_id. For safety, we return all or simulate user filter.
-      const { data, error } = await supabaseClient
-        .from('expo_booths')
-        .select('*')
-        .limit(5); // simulated owned limitation
-
-      if (error) throw error;
-      return { data, error: null };
+      return { data: await CityMapAPI.getDistricts(), error: null };
     } catch (error) {
-      logger.error('ExpoDashboardService', 'Failed to fetch user booths', error);
       return { data: null, error: String(error) };
     }
   },
 
-  /**
-   * Retrieves analytics for a specific booth to show in the UI panel
-   */
+  async getManagedBooths(_userId?: string) {
+    try {
+      const booths = await ExpoDataAPI.getManagedBooths();
+      return { data: Array.isArray(booths) ? booths as ExpoManagedBooth[] : [], error: null };
+    } catch (error) {
+      return { data: null, error: String(error) };
+    }
+  },
+
   async getBoothAnalytics(boothId: string) {
     try {
-      logger.info('ExpoDashboardService', `Fetching analytics for booth ${boothId}`);
       return await ExpoDataAPI.getBoothStats(boothId);
     } catch (error) {
-      logger.error('ExpoDashboardService', 'Failed to fetch booth analytics', error);
       return { data: null, error: String(error) };
     }
-  }
+  },
+
+  async getManagedBoothReview(boothId: string) {
+    try {
+      return { data: await ExpoDataAPI.getReviewBooth(boothId), error: null };
+    } catch (error) {
+      return { data: null, error: String(error) };
+    }
+  },
+
+  async updateManagedLeadStatus(boothId: string, leadId: string, status: string) {
+    try {
+      return { data: await ExpoDataAPI.updateReviewLeadStatus(boothId, leadId, status), error: null };
+    } catch (error) {
+      return { data: null, error: String(error) };
+    }
+  },
+
+  async updateManagedLeadOps(
+    boothId: string,
+    leadId: string,
+    payload: { followUpAt?: string | null; opsNotes?: string | null },
+  ) {
+    try {
+      return { data: await ExpoDataAPI.updateReviewLeadOps(boothId, leadId, payload), error: null };
+    } catch (error) {
+      return { data: null, error: String(error) };
+    }
+  },
+
+  async saveManagedBooth({
+    boothId,
+    companyName,
+    description,
+    district,
+    videoUrl,
+  }: {
+    boothId?: string;
+    companyName: string;
+    description: string;
+    district: string;
+    videoUrl: string;
+  }) {
+    try {
+      const payload = {
+        assets_3d: {
+          video_url: videoUrl,
+        },
+        company_name: companyName,
+        contact_info: {
+          description,
+        },
+        district,
+        industry_sector: district,
+        status: 'active',
+      };
+
+      const booth = boothId
+        ? await ExpoDataAPI.updateBooth(boothId, payload)
+        : await ExpoDataAPI.createBooth(payload);
+
+      const resolvedBoothId = String((booth as { id?: string } | null)?.id || boothId || '');
+      if (resolvedBoothId && district) {
+        await CityMapAPI.assignBoothToDistrict(resolvedBoothId, district);
+      }
+
+      return { data: booth, error: null };
+    } catch (error) {
+      return { data: null, error: String(error) };
+    }
+  },
 };

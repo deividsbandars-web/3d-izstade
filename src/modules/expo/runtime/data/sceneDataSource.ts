@@ -1,9 +1,10 @@
-import { expoService } from '../../../../services/expoService';
+import { expoService, type ExpoBusinessSceneAdapterPayload } from '../../../../services/expoService';
 import { getFrontendRuntimeEnv } from '../../../../config/runtimeEnv';
+import { buildExpoLayoutEngine } from '../../layout-engine';
 import { reportExpoDevError } from '../../lib/devErrorReporter';
 import { adaptBackendScenePayload, normalizeBooth, normalizeCompany, normalizeSector } from './sceneContract';
 import { buildDevFallbackScene, buildProductionSafeFallbackScene } from './sceneFallbacks';
-import type { ExpoSceneData } from '../../types/scene';
+import { type ExpoSceneData } from '../../types/scene';
 
 export function getPublicExpoSceneEndpoint() {
   return `${getFrontendRuntimeEnv().apiBaseUrl}/api/expo/scene`;
@@ -27,6 +28,26 @@ export function shouldPreferLocalExpoDataSource() {
   }
 
   return isLocalOrigin(getFrontendRuntimeEnv().apiBaseUrl);
+}
+
+function reportBoothPlacementDiagnostics(scene: ExpoSceneData, source: string) {
+  if (!import.meta.env.DEV) {
+    return;
+  }
+
+  try {
+    const { placementDiagnostics } = buildExpoLayoutEngine(scene.companies, scene.sectors);
+    if (placementDiagnostics.rejectedCompanyNodeCount === 0) {
+      return;
+    }
+
+    console.warn('Expo booth placement validation rejected curated slots.', {
+      diagnostics: placementDiagnostics,
+      source,
+    });
+  } catch (error) {
+    reportExpoDevError('sceneDataSource.reportBoothPlacementDiagnostics', error, { source });
+  }
 }
 
 function getDevExpoDataMode() {
@@ -55,30 +76,45 @@ export async function loadExpoSceneFromBackendContract(): Promise<ExpoSceneData>
     throw new Error('BACKEND_SCENE_EMPTY');
   }
 
+  reportBoothPlacementDiagnostics(normalized, 'backend-contract');
   return normalized;
 }
 
 export async function loadExpoSceneFromSupabaseService(): Promise<ExpoSceneData> {
-  const [sectors, companies] = await Promise.all([
-    expoService.getSectors(),
-    expoService.getCompaniesWithBooths(),
-  ]);
+  const adapterPayload = await expoService.getSceneAdapterPayload();
 
-  if (!sectors || sectors.length === 0) {
+  if (!adapterPayload.sectors || adapterPayload.sectors.length === 0) {
     throw new Error('NO_SECTORS_FOUND');
   }
 
-  return {
+  return buildRuntimeSceneFromAdapterPayload(adapterPayload);
+}
+
+function buildRuntimeSceneFromAdapterPayload(adapterPayload: ExpoBusinessSceneAdapterPayload): ExpoSceneData {
+  const normalized: ExpoSceneData = {
     authPolicy: undefined,
     cityInfo: null,
-    companies: Array.isArray(companies)
-      ? companies.map((company: any) => normalizeCompany(company, normalizeBooth(company?.booth ?? company?.booths, company)))
+    companies: Array.isArray(adapterPayload.companies)
+      ? adapterPayload.companies.map((company: any) => normalizeCompany({
+          ...company,
+          sectorId: company.canonicalDistrictId,
+          sector_id: company.canonicalDistrictId,
+        }, normalizeBooth(company?.booth ?? company?.booths, company)))
       : [],
     generatedAt: null,
-    releaseMode: 'sponsor-boulevard',
-    sceneVersion: 'expo-scene-supabase-fallback',
-    sectors: Array.isArray(sectors) ? sectors.map(normalizeSector).filter((sector) => sector.id.length > 0) : [],
+    releaseMode: adapterPayload.releaseMode,
+    sceneVersion: `${adapterPayload.contractVersion}-adapter-supabase`,
+    sectors: Array.isArray(adapterPayload.sectors)
+      ? adapterPayload.sectors.map((sector) => normalizeSector({
+          ...sector,
+          id: sector.canonicalDistrictId,
+          name: sector.name,
+        })).filter((sector) => sector.id.length > 0)
+      : [],
   };
+
+  reportBoothPlacementDiagnostics(normalized, 'supabase-adapter');
+  return normalized;
 }
 
 export async function loadExpoSceneForRelease(): Promise<ExpoSceneData> {
