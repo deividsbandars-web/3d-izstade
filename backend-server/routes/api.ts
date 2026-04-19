@@ -48,6 +48,7 @@ protectedRouter.get('/dashboard', dashboardController.getDashboardData);
 // Expo data/business surface
 protectedRouter.post('/expo/booths', expoDataController.createBooth);
 protectedRouter.patch('/expo/booths/:boothId', expoDataController.updateBooth);
+protectedRouter.get('/expo/booths/managed', expoDataController.getManagedBooths);
 protectedRouter.get('/expo/booths/:boothId', expoDataController.getBooth);
 protectedRouter.get('/expo/booths', expoDataController.getBooths);
 protectedRouter.get('/expo/analytics/booths/:boothId', expoDataController.getBoothAnalytics);
@@ -56,6 +57,10 @@ protectedRouter.get('/expo/city/districts', expoDataController.getDistricts);
 protectedRouter.patch('/expo/city/booths/:boothId/district', expoDataController.assignBoothToDistrict);
 protectedRouter.get('/expo/scenes/booth/:boothId', expoDataController.getBoothScene);
 protectedRouter.get('/expo/scenes/city', expoDataController.getCityScene);
+protectedRouter.get('/expo/review/snapshot', expoDataController.getExpoReviewSnapshot);
+protectedRouter.get('/expo/review/booths/:boothId', expoDataController.getExpoReviewBooth);
+protectedRouter.patch('/expo/review/booths/:boothId/leads/:leadId', expoDataController.updateExpoReviewLeadStatus);
+protectedRouter.patch('/expo/review/booths/:boothId/leads/:leadId/ops', expoDataController.updateExpoReviewLeadOps);
 
 // Leads
 protectedRouter.get('/leads', leadsController.getLeads);
