@@ -6,7 +6,13 @@ WORKDIR /app
 RUN apk add --no-cache \
     python3 \
     make \
-    g++
+    g++ \
+    pkgconfig \
+    pixman-dev \
+    cairo-dev \
+    pango-dev \
+    libjpeg-turbo-dev \
+    giflib-dev
 
 # Install both root and backend-server dependencies because the full backend
 # compiles backend-server together with ../src runtime modules.
@@ -29,16 +35,17 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 
-# Runtime needs both dependency trees because compiled output resolves modules
-# from backend-server and from the shared root src tree.
-COPY package.json package-lock.json ./
-COPY backend-server/package.json backend-server/package-lock.json ./backend-server/
-
-RUN --mount=type=cache,target=/root/.npm npm ci --omit=dev --no-audit --no-fund --prefer-offline
-RUN --mount=type=cache,target=/root/.npm cd backend-server && npm ci --omit=dev --no-audit --no-fund --prefer-offline
-
-COPY --from=builder /app/backend-server/dist ./backend-server/dist
+# Runtime keeps the source tree plus installed dependencies so staging can run
+# the full backend through tsx without being blocked by the current ESM output
+# layout in backend-server/dist.
+COPY --from=builder /app/package.json /app/package-lock.json ./
+COPY --from=builder /app/backend-server/package.json /app/backend-server/package-lock.json ./backend-server/
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/backend-server/node_modules ./backend-server/node_modules
+COPY --from=builder /app/backend-server ./backend-server
+COPY --from=builder /app/src ./src
+COPY --from=builder /app/tsconfig.json /app/tsconfig.app.json /app/tsconfig.node.json ./
 
 EXPOSE 3001
 
-CMD ["node", "backend-server/dist/server.js"]
+CMD ["./node_modules/.bin/tsx", "backend-server/server.ts"]
