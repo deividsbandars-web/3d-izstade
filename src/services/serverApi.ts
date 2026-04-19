@@ -1,4 +1,10 @@
+import { getFrontendRuntimeEnv } from '../config/runtimeEnv';
 import { supabaseClient } from '../lib/supabaseClient';
+
+function buildServerApiUrl(path: string) {
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+  return `${getFrontendRuntimeEnv().apiBaseUrl}${normalizedPath}`;
+}
 
 async function buildServerApiHeaders(includeJsonBody: boolean) {
   const headers: Record<string, string> = {
@@ -23,7 +29,7 @@ async function buildServerApiHeaders(includeJsonBody: boolean) {
 }
 
 export async function serverApiGet<T>(path: string): Promise<T> {
-  const response = await fetch(path, {
+  const response = await fetch(buildServerApiUrl(path), {
     method: 'GET',
     headers: await buildServerApiHeaders(false),
   });
@@ -36,7 +42,7 @@ export async function serverApiGet<T>(path: string): Promise<T> {
 }
 
 export async function serverApiPost<T>(path: string, body: unknown): Promise<T> {
-  const response = await fetch(path, {
+  const response = await fetch(buildServerApiUrl(path), {
     method: 'POST',
     headers: await buildServerApiHeaders(true),
     body: JSON.stringify(body),
@@ -50,7 +56,7 @@ export async function serverApiPost<T>(path: string, body: unknown): Promise<T> 
 }
 
 export async function serverApiPatch<T>(path: string, body: unknown): Promise<T> {
-  const response = await fetch(path, {
+  const response = await fetch(buildServerApiUrl(path), {
     method: 'PATCH',
     headers: await buildServerApiHeaders(true),
     body: JSON.stringify(body),

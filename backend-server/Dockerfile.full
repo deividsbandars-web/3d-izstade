@@ -1,0 +1,51 @@
+FROM node:22-alpine AS builder
+
+WORKDIR /app
+
+# Native modules such as canvas need build tooling even for backend-only builds.
+RUN apk add --no-cache \
+    python3 \
+    make \
+    g++ \
+    pkgconfig \
+    pixman-dev \
+    cairo-dev \
+    pango-dev \
+    libjpeg-turbo-dev \
+    giflib-dev
+
+# Install both root and backend-server dependencies because the full backend
+# compiles backend-server together with ../src runtime modules.
+COPY package.json package-lock.json ./
+COPY backend-server/package.json backend-server/package-lock.json ./backend-server/
+
+RUN --mount=type=cache,target=/root/.npm npm ci --no-audit --no-fund --prefer-offline
+RUN --mount=type=cache,target=/root/.npm cd backend-server && npm ci --no-audit --no-fund --prefer-offline
+
+# Copy only the backend/full-platform inputs needed by backend-server/tsconfig.json.
+COPY backend-server ./backend-server
+COPY src ./src
+COPY tsconfig.json tsconfig.app.json tsconfig.node.json ./
+
+RUN cd backend-server && npm run build
+
+FROM node:22-alpine AS runner
+
+WORKDIR /app
+
+ENV NODE_ENV=production
+
+# Runtime keeps the source tree plus installed dependencies so staging can run
+# the full backend through tsx without being blocked by the current ESM output
+# layout in backend-server/dist.
+COPY --from=builder /app/package.json /app/package-lock.json ./
+COPY --from=builder /app/backend-server/package.json /app/backend-server/package-lock.json ./backend-server/
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/backend-server/node_modules ./backend-server/node_modules
+COPY --from=builder /app/backend-server ./backend-server
+COPY --from=builder /app/src ./src
+COPY --from=builder /app/tsconfig.json /app/tsconfig.app.json /app/tsconfig.node.json ./
+
+EXPOSE 3001
+
+CMD ["./node_modules/.bin/tsx", "backend-server/server.ts"]
