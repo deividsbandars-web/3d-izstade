@@ -1,5 +1,5 @@
 import { analyticsTracker } from './analyticsTracker.js';
-import { getSupabase } from '../../../backend-server/services/supabase.js';
+import { getSupabaseAdminClient } from '../lib/supabaseAdmin.js';
 
 type LandingPageRequest = {
   campaign: string;
@@ -54,7 +54,7 @@ function buildLandingPageHtml(page: Record<string, any>) {
 export const distributionApplicationService = {
   async getLandingPageResponse(params: LandingPageRequest): Promise<LandingPageResponse> {
     try {
-      const supabase = getSupabase();
+      const supabase = getSupabaseAdminClient();
       if (!supabase) {
         throw new Error('Supabase not configured');
       }

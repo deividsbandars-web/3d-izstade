@@ -4,7 +4,7 @@ import { getExpoBoothById } from '../data/expoBoothStore.js';
 import { expoSceneService } from '../scenes/expoSceneService.js';
 import { buildExpoWorldContract } from '../../../shared/expo/worldContract.js';
 import { buildExpoLayoutEngine } from '../../../shared/expo/layoutEngine.js';
-import { getSupabase } from '../../../../backend-server/services/supabase.js';
+import { getSupabaseAdminClient } from '../../lib/supabaseAdmin.js';
 
 function summarizeTierCounts(boothPlacements: Array<{ sponsorTier?: string; boothType?: string }>) {
   return boothPlacements.reduce<Record<string, number>>((acc, placement) => {
@@ -25,7 +25,7 @@ function buildReviewCameraZones() {
 }
 
 async function getExpoLeadInbox(companyId: string | null, companySlug: string | null) {
-  const supabase = getSupabase();
+  const supabase = getSupabaseAdminClient();
   const buckets: Array<Array<Record<string, unknown>>> = [];
 
   if (companyId) {
@@ -68,7 +68,7 @@ async function getExpoLeadOpsMap(leadIds: string[]) {
     return new Map<string, Record<string, unknown>>();
   }
 
-  const supabase = getSupabase();
+  const supabase = getSupabaseAdminClient();
   const { data, error } = await supabase
     .from('expo_lead_ops')
     .select('*')
@@ -239,7 +239,7 @@ export async function updateExpoReviewLeadStatus(
   }
 
   try {
-    const supabase = getSupabase();
+    const supabase = getSupabaseAdminClient();
     const { data: leadRecord, error: leadError } = await supabase
       .from('service_requests')
       .select('id, company_id, service_name, status')
@@ -286,7 +286,7 @@ export async function updateExpoReviewLeadOps(
   }
 
   try {
-    const supabase = getSupabase();
+    const supabase = getSupabaseAdminClient();
     const { data: leadRecord, error: leadError } = await supabase
       .from('service_requests')
       .select('id, company_id')
