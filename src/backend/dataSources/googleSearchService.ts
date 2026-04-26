@@ -1,5 +1,5 @@
 import { logger } from '../logging/logger.js';
-import { serpApiHelper } from '../leads/sources/serpApiHelper.js';
+import { serpApiSearchService } from './serpApiSearchService.js';
 
 export const googleSearchService = {
   /**
@@ -9,7 +9,7 @@ export const googleSearchService = {
     try {
       logger.info('GoogleSearchService', `Performing REAL search for: ${query}`);
       
-      const response = await serpApiHelper.search({
+      const response = await serpApiSearchService.search({
         engine: "google",
         q: query,
         num: limit

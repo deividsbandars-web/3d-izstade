@@ -1,5 +1,5 @@
 import { BaseAgent } from './baseAgent.js';
-import { salesSequence } from '../backend/revenue/salesSequence.js';
+import { revenueApplicationService } from '../backend/revenue/revenueApplicationService.js';
 
 export class SalesAgent extends BaseAgent {
   constructor() {
@@ -22,7 +22,7 @@ export class SalesAgent extends BaseAgent {
     
     // If real outreach is requested and we have prospect/offer IDs
     if (baseResult && taskData.prospect_id && taskData.offer_id) {
-      await salesSequence.startOutreach(taskData.prospect_id, taskData.offer_id);
+      await revenueApplicationService.startProspectOutreach(taskData.prospect_id, taskData.offer_id);
       baseResult.outreach_started = true;
       await this.storeResults(taskId, baseResult);
     }

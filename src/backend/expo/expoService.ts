@@ -2,7 +2,7 @@ import { supabaseClient, handleSupabaseError } from '../../lib/supabaseClient';
 import {
   EXPO_SCENE_CONTRACT_VERSION,
   EXPO_SCENE_RELEASE_MODE,
-} from '../../modules/expo/types/scene';
+} from '../../shared/expo/sceneContract.js';
 
 export interface ExpoBooth {
   id?: string;

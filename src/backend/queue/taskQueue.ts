@@ -1,5 +1,5 @@
 import { supabaseClient } from '../../lib/supabaseClient';
-import { agentExecutor } from '../agents/execution/agentExecutor';
+import { agentsApplicationService } from '../agents/agentsApplicationService.js';
 
 const LEASE_DURATION_MS = 5 * 60_000;
 const MAX_TASK_ATTEMPTS = 3;
@@ -26,27 +26,6 @@ interface AgentTaskRecord {
   result?: Record<string, any> | null;
   created_at?: string;
   updated_at?: string;
-}
-
-function resolveExecutionFailureReason(result: unknown) {
-  if (!result || typeof result !== 'object') {
-    return 'Agent execution failed';
-  }
-
-  const candidate = result as { reason?: unknown; error?: unknown; status?: unknown };
-  if (typeof candidate.reason === 'string' && candidate.reason.trim()) {
-    return candidate.reason;
-  }
-
-  if (typeof candidate.error === 'string' && candidate.error.trim()) {
-    return candidate.error;
-  }
-
-  if (typeof candidate.status === 'string' && candidate.status !== 'success') {
-    return `Agent execution returned status ${candidate.status}`;
-  }
-
-  return 'Agent execution failed';
 }
 
 let isListening = false;
@@ -260,11 +239,15 @@ export const taskQueue = {
         project_id: task.project_id
       };
 
-      const result = await agentExecutor.executeTask(task.id, task.agent_id, enrichedTaskData);
+      const execution = await agentsApplicationService.runAgentTask({
+        taskId: task.id,
+        agentId: task.agent_id,
+        taskData: enrichedTaskData,
+      });
 
-      if (!result || result.status === 'failed') {
+      if (!execution.ok) {
         const attempts = getQueueMetadata(task).attempts ?? 1;
-        const failureReason = resolveExecutionFailureReason(result);
+        const failureReason = execution.error;
         if (attempts >= MAX_TASK_ATTEMPTS) {
           await quarantineTask(task, failureReason);
         } else {

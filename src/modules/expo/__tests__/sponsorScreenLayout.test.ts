@@ -122,13 +122,20 @@ const secondLayout = buildSponsorScreenLayout(boothPlacements, sectorMarkers, di
 
 assert.deepEqual(firstLayout, secondLayout);
 assert.equal(firstLayout.facadeScreens.length, 17);
-assert.equal(firstLayout.mediumScreens.length, 6);
-assert.equal(firstLayout.groundScreens.length, 10);
+assert.equal(firstLayout.mediumScreens.length, boothPlacements.length);
+assert.equal(firstLayout.groundScreens.length, 1 + sectorMarkers.filter((_, index) => index % 2 === 0).slice(0, 6).length);
 assert.ok(firstLayout.facadeScreens.some((screen) => screen.placementTier === 'elite'));
 assert.ok(firstLayout.facadeScreens.some((screen) => screen.placementTier === 'premium'));
 assert.ok(firstLayout.facadeScreens.some((screen) => screen.id === 'facade-screen-left-apex'));
 assert.ok(firstLayout.facadeScreens.some((screen) => screen.id === 'facade-screen-right-far-district'));
 assert.ok(firstLayout.mediumScreens.some((screen) => screen.placementTier === 'premium'));
+assert.deepEqual(
+  firstLayout.mediumScreens.map((screen) => screen.companyId),
+  boothPlacements
+    .slice()
+    .sort((left, right) => Number(right.priority || 0) - Number(left.priority || 0))
+    .map((placement) => placement.company.id)
+);
 assert.ok(firstLayout.groundScreens.some((screen) => screen.title === 'Arrival'));
 assert.ok(firstLayout.groundScreens.some((screen) => screen.sectorName === 'Meetings'));
 assert.ok(firstLayout.groundScreens.some((screen) => screen.placementTier === 'city' || screen.placementTier === 'premium'));

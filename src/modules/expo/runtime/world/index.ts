@@ -7,27 +7,7 @@ export { WorldCityPlanes } from './WorldCityPlanes';
 export { WorldCityScreenAssignments } from './WorldCityScreenAssignments';
 export { WorldCityScreenSockets } from './WorldCityScreenSockets';
 export { WorldCityScreenSurfaces } from './WorldCityScreenSurfaces';
-export {
-  buildArrivalGatewayBlocks,
-  buildArrivalPlanes,
-  buildBoulevardEdgeBlocks,
-  buildCivicWaterCourt,
-  buildCleanTowerLandmarks,
-  buildDiscoveryEdgeBlocks,
-  buildDiscoveryLandmarks,
-  buildDiscoverySkybridge,
-  buildDiscoverySupportTerraces,
-  buildMediaWallSurfaces,
-  buildPromenadeAxisPlanes,
-  buildRightSupportBlocks,
-  buildScreenAssignments,
-  buildScreenSockets,
-  buildShowcasePlazas,
-  buildSignatureMegaLandmarks,
-  buildSupportEdgeBlocks,
-  buildTowerScreenSurfaces,
-  getWorldCityStadiumReserve,
-} from './WorldCitySkeletonLayout';
+export { buildCanonicalWorldPlan } from '../planning';
 export { WorldCityTowers } from './WorldCityTowers';
 export { WorldCityWaterCourt } from './WorldCityWaterCourt';
 export { WorldDistrictGatewayNode } from './WorldDistrictGatewayNode';
@@ -38,8 +18,11 @@ export { ExpoRearCampus } from './ExpoRearCampus';
 export { ExpoRearCampusStructures } from './ExpoRearCampusStructures';
 export {
   ColliderMaterial,
+  collectPlayerCollisionTargets,
+  EXPO_START_VIEW_KEY,
   ExpoArchitecturalMassMaterial,
   ExpoRuntimeSurfaceMaterial,
+  isCollisionMesh,
   usePlayerColliderRegistration,
 } from './WorldSceneSupport';
 export {

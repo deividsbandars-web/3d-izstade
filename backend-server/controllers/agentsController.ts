@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { agentExecutor } from '../../src/backend/agents/execution/agentExecutor.js';
+import { agentsApplicationService } from '../../src/backend/agents/agentsApplicationService.js';
 import { analytics, errorMonitor } from '../observability/monitor.js';
 import { AuthRequest } from '../middleware/authMiddleware.js';
 
@@ -19,7 +19,20 @@ export const runAgentTask = async (req: AuthRequest, res: Response) => {
       properties: { agentId, taskId, taskAction: taskData.action }
     });
 
-    const result = await agentExecutor.executeTask(taskId, agentId, taskData);
+    const execution = await agentsApplicationService.runAgentTask({ taskId, agentId, taskData });
+    if (!execution.ok) {
+      analytics.capture({
+        userId,
+        event: 'agent_task_completed',
+        properties: { agentId, taskId, status: 'failed', reason: execution.error }
+      });
+
+      if (execution.statusCode >= 500) {
+        errorMonitor.captureException(new Error(execution.error), 'runAgentTask');
+      }
+
+      return res.status(execution.statusCode).json({ error: execution.error });
+    }
 
     // 2. Track agent success
     analytics.capture({
@@ -28,7 +41,7 @@ export const runAgentTask = async (req: AuthRequest, res: Response) => {
       properties: { agentId, taskId, status: 'success' }
     });
 
-    res.json(result);
+    res.json(execution.result);
   } catch (error: any) {
     errorMonitor.captureException(error, 'runAgentTask');
     res.status(500).json({ error: error.message });
