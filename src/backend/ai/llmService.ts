@@ -1,6 +1,6 @@
 import { logger } from '../logging/logger.js';
 import OpenAI from 'openai';
-import { usageService } from '../platform/usageService.js';
+import { billingApplicationService } from '../billing/billingApplicationService.js';
 
 const getEnv = (name: string): string => {
   if (typeof process !== 'undefined' && process.env && process.env[name]) {
@@ -39,8 +39,13 @@ export const llmService = {
     try {
       // 1. Check daily limits first
       if (userId) {
-        const canProceed = await usageService.checkLimits(userId);
-        if (!canProceed) throw new Error('Daily API limit reached');
+        const quotaCheck = await billingApplicationService.enforceQuota(userId, {
+          provider,
+          model: options.model,
+          maxDailyRequests: 50,
+          metadata: { promptLength: prompt.length },
+        });
+        if (!quotaCheck.allowed) throw new Error(quotaCheck.reason || 'Daily API limit reached');
       }
 
       logger.info('LLMService', `Generating text via ${provider}`, { promptLength: prompt.length });
@@ -57,8 +62,7 @@ export const llmService = {
 
       // 2. Log usage (Token counting provided by OpenAI response)
       if (provider === 'openai' && result.usage) {
-        await usageService.logUsage({
-          userId,
+        await billingApplicationService.trackUsage(userId, {
           provider: 'openai',
           model: options.model || 'gpt-4o-mini',
           promptTokens: result.usage.prompt_tokens,

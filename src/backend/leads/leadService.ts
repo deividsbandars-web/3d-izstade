@@ -6,6 +6,9 @@ export interface Lead {
   contact_info: Record<string, any>;
   status?: string;
   value?: number;
+  score?: number;
+  contacted?: boolean;
+  user_id?: string | null;
   notes?: string;
   created_at?: string;
   updated_at?: string;
@@ -27,6 +30,31 @@ export const leadService = {
       return { data, error: null };
     } catch (error) {
       return handleSupabaseError(error, 'createLead');
+    }
+  },
+
+  /**
+   * Persists a collected lead produced by leadEngine without changing its payload shape.
+   */
+  async persistCollectedLead(lead: Record<string, any>, score: number, userId?: string) {
+    try {
+      const { data, error } = await supabaseClient
+        .from('leads')
+        .insert([{
+          source: lead.source || 'LeadEngine (SerpAPI)',
+          contact_info: lead,
+          status: 'new',
+          score,
+          contacted: false,
+          user_id: userId || null,
+        }])
+        .select()
+        .single();
+
+      if (error) throw error;
+      return { data, error: null };
+    } catch (error) {
+      return handleSupabaseError(error, 'persistCollectedLead');
     }
   },
 

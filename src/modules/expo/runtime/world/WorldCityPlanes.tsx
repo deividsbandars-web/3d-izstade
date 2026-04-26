@@ -51,30 +51,21 @@ function PlaneLayer({
 }
 
 export function WorldCityPlanes({
-  arrivalPlanes,
-  promenadeAxisPlanes: _promenadeAxisPlanes,
-  showcasePlazas: _showcasePlazas,
-  boothForecourtPlanes: _boothForecourtPlanes,
+  planes,
   stadiumReserve: _stadiumReserve,
   visualProfile,
 }: {
-  arrivalPlanes: CityPlane[];
-  promenadeAxisPlanes: CityPlane[];
-  showcasePlazas: CityPlane[];
-  boothForecourtPlanes: CityPlane[];
+  planes: CityPlane[];
   stadiumReserve: StadiumReserve;
   visualProfile: ExpoWorldVisualProfile;
 }) {
-  void _promenadeAxisPlanes;
-  void _showcasePlazas;
-  void _boothForecourtPlanes;
   void _stadiumReserve;
   // Stadium/city perimeter connectors are owned by ExpoRearCampus, not by city structural planes.
-  const structuralArrivalPlanes = filterVisibleStructuralCityPlanes(arrivalPlanes);
+  const structuralPlanes = filterVisibleStructuralCityPlanes(planes);
 
   return (
     <group name="world-ground:city-structural-planes">
-      <PlaneLayer planes={structuralArrivalPlanes} roughness={0.72} visualProfile={visualProfile} />
+      <PlaneLayer planes={structuralPlanes} roughness={0.72} visualProfile={visualProfile} />
     </group>
   );
 }

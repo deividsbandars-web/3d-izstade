@@ -1,6 +1,6 @@
 import { logger } from '../../logging/logger';
 import { sceneBuilder } from '../sceneBuilder';
-import { EXPO_SCENE_CANONICAL_DISTRICTS } from '../../../modules/expo/types/scene';
+import { EXPO_SCENE_CANONICAL_DISTRICTS } from '../../../shared/expo/sceneContract.js';
 import { getExpoBoothById, listExpoBooths } from '../data/expoBoothStore';
 
 export const expoSceneService = {

@@ -1,6 +1,6 @@
 import { logger } from '../logging/logger.js';
 import { supabaseClient } from '../../lib/supabaseClient.js';
-import { costMonitor } from './costMonitor.js';
+import { billingApplicationService } from '../billing/billingApplicationService.js';
 import { taskLimiter } from './taskLimiter.js';
 import { loopDetector } from './loopDetector.js';
 
@@ -23,7 +23,16 @@ export const agentGovernor = {
 
       // 1. Budget and Cost Validation
       if (userId) {
-        const budgetCheck = await costMonitor.verifyBudget(userId);
+        const budgetCheck = await billingApplicationService.enforceQuota(userId, {
+          provider: 'governance-agent',
+          metadata: {
+            taskId,
+            agentId,
+            projectId,
+            proposedAction,
+            depth,
+          },
+        });
         if (!budgetCheck.allowed) {
           await this._logAlert(userId, agentId, projectId, 'budget_exceeded', 'blocked', budgetCheck.reason || 'Unknown budget issue');
           return budgetCheck;

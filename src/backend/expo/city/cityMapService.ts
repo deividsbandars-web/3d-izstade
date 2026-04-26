@@ -1,6 +1,6 @@
 import { supabaseClient } from '../../../lib/supabaseClient';
 import { logger } from '../../logging/logger';
-import { EXPO_SCENE_CANONICAL_DISTRICTS } from '../../../modules/expo/types/scene';
+import { EXPO_SCENE_CANONICAL_DISTRICTS } from '../../../shared/expo/sceneContract.js';
 import { listExpoBooths } from '../data/expoBoothStore';
 
 export const cityMapService = {

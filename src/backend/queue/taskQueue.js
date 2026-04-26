@@ -1,5 +1,5 @@
 import { supabaseClient } from '../../lib/supabaseClient';
-import { agentExecutor } from '../agents/execution/agentExecutor';
+import { agentsApplicationService } from '../agents/agentsApplicationService.js';
 let isListening = false;
 let subscription = null;
 /**
@@ -52,7 +52,14 @@ export const taskQueue = {
                 ...task.task_data,
                 project_id: task.project_id
             };
-            await agentExecutor.executeTask(task.id, task.agent_id, enrichedTaskData);
+            const execution = await agentsApplicationService.runAgentTask({
+                taskId: task.id,
+                agentId: task.agent_id,
+                taskData: enrichedTaskData
+            });
+            if (!execution.ok) {
+                throw new Error(execution.error);
+            }
         }
         catch (err) {
             console.error(`[TaskQueue] Error processing task ${task.id}:`, err);

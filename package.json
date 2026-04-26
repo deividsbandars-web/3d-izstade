@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "check:backend-boundaries": "node scripts/check-backend-boundaries.mjs",
     "build:expo-textures": "node scripts/build-expo-texture-pipeline.mjs",
+    "check:expo-boundaries": "node scripts/check-expo-boundaries.mjs",
     "check:expo-release-assets": "node scripts/check-expo-release-assets.mjs",
     "check:expo-texture-pipeline": "node scripts/check-expo-texture-pipeline.mjs",
     "qa:expo-routes": "npx tsx scripts/expo-route-qa-fixtures.ts",

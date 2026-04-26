@@ -1,5 +1,5 @@
 import { supabaseClient } from '../../../lib/supabaseClient';
-import { EXPO_SCENE_CANONICAL_DISTRICTS } from '../../../modules/expo/types/scene';
+import { EXPO_SCENE_CANONICAL_DISTRICTS } from '../../../shared/expo/sceneContract.js';
 
 type SupabaseLikeError = {
   code?: string;

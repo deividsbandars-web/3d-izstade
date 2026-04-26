@@ -1,19 +1,11 @@
 import { Request, Response } from 'express';
-import { leadEngine } from '../../src/backend/leads/engine/leadEngine.js';
-import { getSupabase } from '../services/supabase.js';
+import { leadsApplicationService } from '../../src/backend/leads/leadsApplicationService.js';
 import { analytics, errorMonitor } from '../observability/monitor.js';
 import { AuthRequest } from '../middleware/authMiddleware.js';
 
 export const getLeads = async (req: AuthRequest, res: Response) => {
   try {
-    const supabase = getSupabase();
-    if (!supabase) throw new Error("Supabase not configured");
-
-    const { data, error } = await supabase
-      .from('leads')
-      .select('*')
-      .eq('user_id', req.user?.id) // Strictly filtered by user
-      .order('created_at', { ascending: false });
+    const { data, error } = await leadsApplicationService.getLeadsForUser(req.user?.id);
 
     if (error) throw error;
     res.json(data);
@@ -39,8 +31,7 @@ export const generateLeads = async (req: AuthRequest, res: Response) => {
       properties: { industry, location }
     });
 
-    // 2. Call lead engine
-    const result = await leadEngine.processAndStoreLeads(industry, location, userId);
+    const result = await leadsApplicationService.generateLeads(industry, location, userId);
 
     // 3. Track success
     analytics.capture({
@@ -68,8 +59,7 @@ export const captureLead = async (req: Request, res: Response) => {
   }
 
   try {
-    const { leadCapture } = await import('../../src/backend/growth/leadCapture.js');
-    const result = await leadCapture.captureLead(email, page_id, {
+    const result = await leadsApplicationService.captureInboundLead(email, page_id, {
       ip: req.ip,
       referrer: req.headers.referer
     });
@@ -86,19 +76,12 @@ export const captureLead = async (req: Request, res: Response) => {
 
 export const createLead = async (req: AuthRequest, res: Response) => {
   try {
-    const supabase = getSupabase();
-    if (!supabase) throw new Error('Supabase not configured');
-
     const payload = req.body && typeof req.body === 'object' ? req.body as Record<string, unknown> : null;
     if (!payload) {
       return res.status(400).json({ error: 'lead payload is required' });
     }
 
-    const { data, error } = await supabase
-      .from('leads')
-      .insert([{ ...payload, user_id: req.user?.id ?? null }])
-      .select()
-      .single();
+    const { data, error } = await leadsApplicationService.createLeadForUser(req.user?.id, payload);
 
     if (error) throw error;
     res.status(201).json(data);
@@ -110,9 +93,6 @@ export const createLead = async (req: AuthRequest, res: Response) => {
 
 export const updateLead = async (req: AuthRequest, res: Response) => {
   try {
-    const supabase = getSupabase();
-    if (!supabase) throw new Error('Supabase not configured');
-
     const leadId = typeof req.params.leadId === 'string' ? req.params.leadId.trim() : '';
     if (!leadId) {
       return res.status(400).json({ error: 'leadId is required' });
@@ -123,13 +103,7 @@ export const updateLead = async (req: AuthRequest, res: Response) => {
       return res.status(400).json({ error: 'update payload is required' });
     }
 
-    const { data, error } = await supabase
-      .from('leads')
-      .update(payload)
-      .eq('id', leadId)
-      .eq('user_id', req.user?.id)
-      .select()
-      .single();
+    const { data, error } = await leadsApplicationService.updateLeadForUser(req.user?.id, leadId, payload);
 
     if (error) throw error;
     res.json(data);
@@ -141,20 +115,12 @@ export const updateLead = async (req: AuthRequest, res: Response) => {
 
 export const getLeadsBySource = async (req: AuthRequest, res: Response) => {
   try {
-    const supabase = getSupabase();
-    if (!supabase) throw new Error('Supabase not configured');
-
     const source = typeof req.body?.source === 'string' ? req.body.source.trim() : '';
     if (!source) {
       return res.status(400).json({ error: 'source is required' });
     }
 
-    const { data, error } = await supabase
-      .from('leads')
-      .select('*')
-      .eq('user_id', req.user?.id)
-      .ilike('source', `%${source}%`)
-      .order('created_at', { ascending: false });
+    const { data, error } = await leadsApplicationService.getLeadsBySourceForUser(req.user?.id, source);
 
     if (error) throw error;
     res.json(data);

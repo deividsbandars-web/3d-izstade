@@ -1,20 +1,41 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import type { ExpoBoothPlacement } from '../../layout-engine';
 import type { ExpoWorldVisualProfile } from '../../world-contract';
-import {
-  buildRearCampusPerimeterConnectors,
-  buildRearCampusMetrics,
-  buildVisibleRearCampusForecourts,
-  buildVisibleRearCampusLandmarkTowers,
-  buildVisibleRearCampusSidePavilions,
-} from './ExpoRearCampusLayout';
+import { buildRearCampusZonePlan } from '../planning';
+import { useWorldInspectionRegistry } from './inspection/worldInspectionState';
 import { ExpoRearCampusStructures } from './ExpoRearCampusStructures';
 import {
   ColliderMaterial,
   ExpoRuntimeSurfaceMaterial,
   usePlayerColliderRegistration,
 } from './WorldSceneSupport';
+
+const EMPTY_PLANNING_GEOMETRY = {
+  arrivalPlanes: [],
+  arrivalGatewayMasses: [],
+  boothForecourtPlanes: [],
+  boulevardEdgeMasses: [],
+  discoveryEdgeMasses: [],
+  discoveryLandmarkMasses: [],
+  discoverySupportMasses: [],
+  mediaWallMasses: [],
+  observatoryMasses: [],
+  promenadeAxisPlanes: [],
+  rightSupportMasses: [],
+  showcaseMasses: [],
+  showcasePlazas: [],
+  signatureMasses: [],
+  stadiumReserve: {
+    centerX: 0,
+    centerZ: 0,
+    halfDepth: 0,
+    halfWidth: 0,
+  },
+  supportEdgeMasses: [],
+  skybridgeMasses: [],
+  towers: [],
+};
 
 export function ExpoRearCampus({
   boothPlacements,
@@ -24,76 +45,80 @@ export function ExpoRearCampus({
   visualProfile: ExpoWorldVisualProfile;
 }) {
   const campusColliderRef = useRef<THREE.Group>(null);
-  const { campusCenterZ, stadiumBackWallZ } = useMemo(
-    () => buildRearCampusMetrics(boothPlacements),
-    [boothPlacements]
+  const rearCampusPlan = useMemo(
+    () => buildRearCampusZonePlan({
+      geometry: EMPTY_PLANNING_GEOMETRY,
+      inputs: {
+        boothPlacements,
+        districtPrograms: [],
+        districtStride: 548,
+        visualProfile,
+      },
+    }),
+    [boothPlacements, visualProfile]
   );
+  const rearCampus = rearCampusPlan.zoneExtension?.rearCampus;
+  const campusCenterZ = rearCampus?.campusCenterZ ?? -2880;
+  const stadiumBackWallZ = rearCampus?.stadiumBackWallZ ?? campusCenterZ - 1520;
   const accent = visualProfile.global.hudAccent;
   usePlayerColliderRegistration(campusColliderRef, 'rear-campus-collider');
   const enableHeavyShadows = false;
-  const stadiumForecourts = useMemo(() => buildVisibleRearCampusForecourts(campusCenterZ), [campusCenterZ]);
-  const stadiumSidePavilions = useMemo(() => buildVisibleRearCampusSidePavilions(campusCenterZ), [campusCenterZ]);
-  const stadiumLandmarkTowers = useMemo(() => buildVisibleRearCampusLandmarkTowers(campusCenterZ), [campusCenterZ]);
-  const stadiumScreenFeeds = useMemo(
-    () => [...boothPlacements]
-      .filter((placement) => {
-        const tier = String(placement.company?.sponsorTier || placement.sponsorTier || '').toLowerCase();
-        return placement.boothType === 'hero' || tier === 'hero' || tier === 'platinum' || tier === 'elite' || tier === 'gold' || tier === 'premium';
-      })
-      .sort((left, right) => Number(right.priority || 0) - Number(left.priority || 0))
-      .slice(0, 3)
-      .map((placement, index) => ({
-        accentColor: placement.color,
-        id: `${placement.id}-stadium-feed-${index}`,
-        imageUrl: placement.company?.posterUrl || placement.company?.heroAssetUrl || placement.company?.logo_url || null,
-      })),
-    [boothPlacements]
-  );
-  const filteredStadiumForecourts = stadiumForecourts;
-  const filteredStadiumSidePavilions = stadiumSidePavilions;
-  const filteredStadiumLandmarkTowers = stadiumLandmarkTowers;
-  const perimeterConnectors = useMemo(() => buildRearCampusPerimeterConnectors(campusCenterZ), [campusCenterZ]);
+  const filteredStadiumForecourts = rearCampus?.forecourts ?? [];
+  const filteredStadiumSidePavilions = rearCampus?.sidePavilions ?? [];
+  const filteredStadiumLandmarkTowers = rearCampus?.landmarkTowers ?? [];
+  const perimeterConnectors = rearCampus?.perimeterConnectors ?? [];
+  const stadiumScreenFeeds = useMemo(() => {
+    const assignmentsBySocketId = new Map(
+      rearCampusPlan.assignments.map((assignment) => [assignment.socketId, assignment] as const)
+    );
+    const orderedSocketIds = [
+      rearCampus?.feedSocketIds.leftTower,
+      rearCampus?.feedSocketIds.rightTower,
+      rearCampus?.feedSocketIds.bowl,
+    ].filter((socketId): socketId is string => Boolean(socketId));
+
+    return orderedSocketIds.flatMap((socketId, index) => {
+      const assignment = assignmentsBySocketId.get(socketId);
+      if (!assignment) {
+        return [];
+      }
+
+      return [{
+        accentColor: assignment.accentColor,
+        id: `${assignment.id}-rear-campus-feed-${index}`,
+        imageUrl: assignment.imageUrl,
+      }];
+    });
+  }, [rearCampus, rearCampusPlan.assignments]);
   const hasVisibleForecourts = filteredStadiumForecourts.length > 0;
 
-  useEffect(() => {
-    const stadiumEntries = [
-      ...filteredStadiumForecourts.map((plane) => ({ id: plane.id, layer: 'stadium-plane', position: plane.position })),
-      ...filteredStadiumSidePavilions.map((pavilion) => ({ id: pavilion.id, layer: 'stadium-pavilion', position: pavilion.position })),
-      ...filteredStadiumLandmarkTowers.map((tower) => ({ id: tower.id, layer: 'stadium-tower', position: tower.position })),
-      { id: 'rear-campus-arc-bastion-right', layer: 'stadium-structure', position: [1180, 0, campusCenterZ + 864] as [number, number, number] },
-      { id: 'rear-campus-center-event-island', layer: 'stadium-structure', position: [0, 0, campusCenterZ - 1296] as [number, number, number] },
-      { id: 'rear-campus-bowl-center-deck', layer: 'stadium-structure', position: [0, 212, campusCenterZ - 972] as [number, number, number] },
-      { id: 'rear-campus-stage-monolith-canopy', layer: 'stadium-structure', position: [47, 0, -3018] as [number, number, number] },
-      { id: 'rear-campus-mega-civic-hall', layer: 'stadium-structure', position: [-2490, 0, -3670] as [number, number, number] },
-      { id: 'rear-campus-void-courtyard-monument', layer: 'stadium-structure', position: [-1971, 0, -2894] as [number, number, number] },
-      { id: 'rear-campus-linked-mini-skyline', layer: 'stadium-structure', position: [-2537, 0, -4977] as [number, number, number] },
-      { id: 'rear-campus-titan-frame-gate', layer: 'stadium-structure', position: [-682, 0, 396] as [number, number, number] },
-      { id: 'rear-campus-linear-civic-terrace', layer: 'stadium-structure', position: [-1684, 0, -1430] as [number, number, number] },
-      { id: 'rear-campus-bridge-linked-campus', layer: 'stadium-structure', position: [-1343, 0, -3449] as [number, number, number] },
-      { id: 'rear-campus-petal-tower', layer: 'stadium-structure', position: [2340, 0, -4577] as [number, number, number] },
-      { id: 'rear-campus-helix-spire', layer: 'stadium-structure', position: [2439, 0, -1432] as [number, number, number] },
-      { id: 'rear-campus-grand-prism-citadel', layer: 'stadium-structure', position: [-1033, 0, -1902] as [number, number, number] },
-      { id: 'rear-campus-split-wall-gate', layer: 'stadium-structure', position: [-836, 0, -1427] as [number, number, number] },
-      { id: 'rear-campus-terrace-signal-court', layer: 'stadium-structure', position: [-864, 0, -936] as [number, number, number] },
-      { id: 'rear-campus-needle-crown-skyscraper', layer: 'stadium-structure', position: [892, 0, -611] as [number, number, number] },
-      { id: 'rear-campus-sky-slab-tower', layer: 'stadium-structure', position: [1087, 0, -1329] as [number, number, number] },
-      { id: 'rear-campus-twin-void-monolith', layer: 'stadium-structure', position: [1340, 0, -3242] as [number, number, number] },
-      { id: 'stadium-bowl', layer: 'stadium-structure', position: [0, 0, campusCenterZ - 1520] as [number, number, number] },
-      { id: 'stadium-axis-center-1180', layer: 'stadium-structure', position: [0, 0, 1180] as [number, number, number] },
-      { id: 'stadium-axis-center-1608', layer: 'stadium-structure', position: [0, 0, 1608] as [number, number, number] },
-    ];
-
-    window.__WARPALA_EXPO_INSPECT_SOURCES__ = {
-      ...(window.__WARPALA_EXPO_INSPECT_SOURCES__ ?? {}),
-      stadium: stadiumEntries,
-    };
-
-    return () => {
-      if (window.__WARPALA_EXPO_INSPECT_SOURCES__) {
-        window.__WARPALA_EXPO_INSPECT_SOURCES__.stadium = [];
-      }
-    };
-  }, [campusCenterZ, filteredStadiumForecourts, filteredStadiumLandmarkTowers, filteredStadiumSidePavilions]);
+  const stadiumInspectionEntries = useMemo(() => [
+    ...filteredStadiumForecourts.map((plane) => ({ id: plane.id, layer: 'stadium-plane', position: plane.position })),
+    ...filteredStadiumSidePavilions.map((pavilion) => ({ id: pavilion.id, layer: 'stadium-pavilion', position: pavilion.position })),
+    ...filteredStadiumLandmarkTowers.map((tower) => ({ id: tower.id, layer: 'stadium-tower', position: tower.position })),
+    { id: 'rear-campus-arc-bastion-right', layer: 'stadium-structure', position: [1180, 0, campusCenterZ + 864] as [number, number, number] },
+    { id: 'rear-campus-center-event-island', layer: 'stadium-structure', position: [0, 0, campusCenterZ - 1296] as [number, number, number] },
+    { id: 'rear-campus-bowl-center-deck', layer: 'stadium-structure', position: [0, 212, campusCenterZ - 972] as [number, number, number] },
+    { id: 'rear-campus-stage-monolith-canopy', layer: 'stadium-structure', position: [47, 0, -3018] as [number, number, number] },
+    { id: 'rear-campus-mega-civic-hall', layer: 'stadium-structure', position: [-2490, 0, -3670] as [number, number, number] },
+    { id: 'rear-campus-void-courtyard-monument', layer: 'stadium-structure', position: [-1971, 0, -2894] as [number, number, number] },
+    { id: 'rear-campus-linked-mini-skyline', layer: 'stadium-structure', position: [-2537, 0, -4977] as [number, number, number] },
+    { id: 'rear-campus-titan-frame-gate', layer: 'stadium-structure', position: [-682, 0, 396] as [number, number, number] },
+    { id: 'rear-campus-linear-civic-terrace', layer: 'stadium-structure', position: [-1684, 0, -1430] as [number, number, number] },
+    { id: 'rear-campus-bridge-linked-campus', layer: 'stadium-structure', position: [-1343, 0, -3449] as [number, number, number] },
+    { id: 'rear-campus-petal-tower', layer: 'stadium-structure', position: [2340, 0, -4577] as [number, number, number] },
+    { id: 'rear-campus-helix-spire', layer: 'stadium-structure', position: [2439, 0, -1432] as [number, number, number] },
+    { id: 'rear-campus-grand-prism-citadel', layer: 'stadium-structure', position: [-1033, 0, -1902] as [number, number, number] },
+    { id: 'rear-campus-split-wall-gate', layer: 'stadium-structure', position: [-836, 0, -1427] as [number, number, number] },
+    { id: 'rear-campus-terrace-signal-court', layer: 'stadium-structure', position: [-864, 0, -936] as [number, number, number] },
+    { id: 'rear-campus-needle-crown-skyscraper', layer: 'stadium-structure', position: [892, 0, -611] as [number, number, number] },
+    { id: 'rear-campus-sky-slab-tower', layer: 'stadium-structure', position: [1087, 0, -1329] as [number, number, number] },
+    { id: 'rear-campus-twin-void-monolith', layer: 'stadium-structure', position: [1340, 0, -3242] as [number, number, number] },
+    { id: 'stadium-bowl', layer: 'stadium-structure', position: [0, 0, campusCenterZ - 1520] as [number, number, number] },
+    { id: 'stadium-axis-center-1180', layer: 'stadium-structure', position: [0, 0, 1180] as [number, number, number] },
+    { id: 'stadium-axis-center-1608', layer: 'stadium-structure', position: [0, 0, 1608] as [number, number, number] },
+  ], [campusCenterZ, filteredStadiumForecourts, filteredStadiumLandmarkTowers, filteredStadiumSidePavilions]);
+  useWorldInspectionRegistry('stadium', stadiumInspectionEntries);
 
   return (
     <group name="expo-rear-campus">

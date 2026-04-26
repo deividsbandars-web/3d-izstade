@@ -1,40 +1,18 @@
 import { Request, Response } from 'express';
-import { platformMetrics } from '../../src/backend/platform/metrics/platformMetrics.js';
-import { systemMonitor } from '../../src/backend/platform/monitoring/systemMonitor.js';
-import { aiOptimizer } from '../../src/backend/platform/optimization/aiOptimizer.js';
+import { platformApplicationService } from '../../src/backend/platform/platformApplicationService.js';
 
 export const getPlatformMetrics = async (_req: Request, res: Response) => {
-  const [agents, leads, business, expo] = await Promise.all([
-    platformMetrics.getAgentStats(),
-    platformMetrics.getLeadStats(),
-    platformMetrics.getBusinessStats(),
-    platformMetrics.getExpoStats(),
-  ]);
-
-  res.json({
-    agents: agents.data,
-    leads: leads.data,
-    business: business.data,
-    expo: expo.data,
-  });
+  const metrics = await platformApplicationService.getPlatformMetricsSnapshot();
+  res.json(metrics);
 };
 
 export const getPlatformHealth = async (_req: Request, res: Response) => {
-  const [queue, agents, llm] = await Promise.all([
-    systemMonitor.getQueueStatus(),
-    systemMonitor.getAgentHealth(),
-    systemMonitor.getLLMUsage(),
-  ]);
-
-  res.json({
-    queue: queue.data,
-    agents: agents.data,
-    llm: llm.data,
-  });
+  const health = await platformApplicationService.getPlatformHealthSnapshot();
+  res.json(health);
 };
 
 export const analyzeLeadConversion = async (_req: Request, res: Response) => {
-  const result = await aiOptimizer.analyzeLeadConversion();
+  const result = await platformApplicationService.analyzeLeadConversion();
   if (result.error) {
     return res.status(500).json({ error: result.error });
   }
@@ -42,7 +20,7 @@ export const analyzeLeadConversion = async (_req: Request, res: Response) => {
 };
 
 export const suggestBetterNiches = async (_req: Request, res: Response) => {
-  const result = await aiOptimizer.suggestBetterNiches();
+  const result = await platformApplicationService.suggestBetterNiches();
   if (result.error) {
     return res.status(500).json({ error: result.error });
   }
@@ -50,7 +28,7 @@ export const suggestBetterNiches = async (_req: Request, res: Response) => {
 };
 
 export const optimizeAgentTasks = async (_req: Request, res: Response) => {
-  const result = await aiOptimizer.optimizeAgentTasks();
+  const result = await platformApplicationService.optimizeAgentTasks();
   if (result.error) {
     return res.status(500).json({ error: result.error });
   }

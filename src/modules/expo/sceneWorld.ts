@@ -1,3 +1,9 @@
+/**
+ * LEGACY COMPATIBILITY FACADE (PHASE 02)
+ *
+ * Do not add new expo world/runtime logic here.
+ * Use src/modules/expo/runtime/** as the canonical authoring tree.
+ */
 export type { ExpoBoothPlacement, ExpoSectorMarker } from './layout-engine.js';
 export type { ExpoPlayBounds, ExpoWalkRegion } from './walk-region.js';
 export type { ExpoStartView } from './world-contract.js';

@@ -1,0 +1,167 @@
+import type { ExpoStartView } from '../../../world-contract';
+
+export type ReviewOperatorZone = {
+  id: string;
+  intent: string;
+  label: string;
+  startView: ExpoStartView;
+};
+
+export type ExpoOperatorSession =
+  | {
+      enabled: false;
+      reason: 'disabled';
+    }
+  | {
+      enabled: true;
+      reason: 'dev' | 'staging-review';
+    };
+
+export function resolveExpoOperatorSession(): ExpoOperatorSession {
+  if (typeof window === 'undefined') {
+    return { enabled: false, reason: 'disabled' };
+  }
+
+  const params = new URLSearchParams(window.location.search);
+  const wantsOperator = params.get('operator') === '1';
+  const isStagingHost = /(^|\.)staging\.30sek24\.com$/i.test(window.location.hostname);
+
+  if (!wantsOperator) {
+    return { enabled: false, reason: 'disabled' };
+  }
+
+  if (import.meta.env.DEV) {
+    return { enabled: true, reason: 'dev' };
+  }
+
+  if (isStagingHost) {
+    return { enabled: true, reason: 'staging-review' };
+  }
+
+  return { enabled: false, reason: 'disabled' };
+}
+
+export function buildReviewOperatorZones(): ReviewOperatorZone[] {
+  return [
+    {
+      id: 'arrival',
+      intent: 'arrival-gateway-hierarchy',
+      label: 'Arrival Gate',
+      startView: {
+        lookAt: [0, 42, 256],
+        position: [0, 128, 468],
+        source: 'arrival-main',
+      },
+    },
+    {
+      id: 'left-marquee-a',
+      intent: 'left-screen-marquee-district-a',
+      label: 'Left Marquee A',
+      startView: {
+        lookAt: [-482, 142, -300],
+        position: [-768, 178, -42],
+        source: 'arrival-main',
+      },
+    },
+    {
+      id: 'left-marquee-b',
+      intent: 'left-screen-marquee-district-b',
+      label: 'Left Marquee B',
+      startView: {
+        lookAt: [-482, 142, -848],
+        position: [-774, 184, -582],
+        source: 'arrival-main',
+      },
+    },
+    {
+      id: 'center-spine-a',
+      intent: 'center-civic-spine-district-a',
+      label: 'Center Spine A',
+      startView: {
+        lookAt: [0, 96, -232],
+        position: [0, 164, 92],
+        source: 'arrival-main',
+      },
+    },
+    {
+      id: 'center-spine-b',
+      intent: 'center-civic-spine-district-b',
+      label: 'Center Spine B',
+      startView: {
+        lookAt: [0, 96, -780],
+        position: [0, 168, -468],
+        source: 'arrival-main',
+      },
+    },
+    {
+      id: 'right-marquee-a',
+      intent: 'right-screen-marquee-district-a',
+      label: 'Right Marquee A',
+      startView: {
+        lookAt: [486, 136, -330],
+        position: [782, 184, -60],
+        source: 'arrival-main',
+      },
+    },
+    {
+      id: 'right-marquee-b',
+      intent: 'right-screen-marquee-district-b',
+      label: 'Right Marquee B',
+      startView: {
+        lookAt: [486, 136, -878],
+        position: [794, 188, -602],
+        source: 'arrival-main',
+      },
+    },
+    {
+      id: 'tower-cluster-a',
+      intent: 'hero-and-mid-tower-ribbons-district-a',
+      label: 'Tower Cluster A',
+      startView: {
+        lookAt: [548, 122, -562],
+        position: [812, 196, -208],
+        source: 'arrival-main',
+      },
+    },
+    {
+      id: 'tower-cluster-b',
+      intent: 'hero-and-mid-tower-ribbons-district-b',
+      label: 'Tower Cluster B',
+      startView: {
+        lookAt: [548, 122, -1110],
+        position: [822, 198, -742],
+        source: 'arrival-main',
+      },
+    },
+    {
+      id: 'left-array-a',
+      intent: 'left-district-array-band-a',
+      label: 'Left Array A',
+      startView: {
+        lookAt: [-462, 88, -196],
+        position: [-712, 148, 22],
+        source: 'arrival-main',
+      },
+    },
+    {
+      id: 'right-array-a',
+      intent: 'right-district-array-band-a',
+      label: 'Right Array A',
+      startView: {
+        lookAt: [462, 86, -210],
+        position: [708, 150, 8],
+        source: 'arrival-main',
+      },
+    },
+    {
+      id: 'rear',
+      intent: 'stadium-campus-continuity',
+      label: 'Rear Campus',
+      startView: {
+        lookAt: [0, 136, -3312],
+        position: [0, 248, -2636],
+        source: 'arrival-main',
+      },
+    },
+  ];
+}

@@ -5,7 +5,7 @@ import {
   EXPO_SCENE_CONTRACT_VERSION,
   EXPO_SCENE_RELEASE_MODE,
   type ExpoSceneContract,
-} from '../../modules/expo/types/scene.js';
+} from '../../shared/expo/sceneContract.js';
 
 function resolveCanonicalSectorId(value: unknown, fallbackIndex = 0) {
   const normalized = String(value || '').trim().toLowerCase();
