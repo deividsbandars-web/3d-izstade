@@ -1,5 +1,6 @@
 import { logger } from '../../logging/logger.js';
-import { serpApiHelper } from './serpApiHelper.js';
+import { serpApiSearchService } from '../../dataSources/serpApiSearchService.js';
+import { leadEmailGuessingService } from './leadEmailGuessingService.js';
 
 export const googleMapsLeadSource = {
   /**
@@ -9,7 +10,7 @@ export const googleMapsLeadSource = {
     try {
       logger.info('GoogleMapsLeadSource', `Fetching real leads for: ${query} in ${location}`);
       
-      const response = await serpApiHelper.search({
+      const response = await serpApiSearchService.search({
         engine: "google_maps",
         q: `${query} in ${location}`,
         type: "search"
@@ -24,7 +25,7 @@ export const googleMapsLeadSource = {
       const leads = results.slice(0, limit).map((res: any) => ({
         company_name: res.title,
         website: res.website || '',
-        email: serpApiHelper.guessEmail(res.website, res.title),
+        email: leadEmailGuessingService.guessEmail(res.website, res.title),
         phone: res.phone || '',
         location: res.address || location,
         metadata: {

@@ -1,9 +1,9 @@
-import { serpApiHelper } from '../../../leads/sources/serpApiHelper.js';
+import { serpApiSearchService } from '../../../dataSources/serpApiSearchService.js';
 import { websiteScraper } from '../../../dataSources/websiteScraper.js';
 
 export const dataSourceToolAdapters = {
   async searchWeb(query: string) {
-    const result = await serpApiHelper.search({ q: query, engine: 'google' });
+    const result = await serpApiSearchService.search({ q: query, engine: 'google' });
     return result.data?.organic_results?.slice(0, 5) || 'No results found.';
   },
 
@@ -12,4 +12,3 @@ export const dataSourceToolAdapters = {
     return result.data || 'Failed to scrape website.';
   },
 };
-

@@ -1,5 +1,5 @@
 import { logger } from '../../logging/logger.js';
-import { serpApiHelper } from './serpApiHelper.js';
+import { serpApiSearchService } from '../../dataSources/serpApiSearchService.js';
 
 export const linkedinLeadSource = {
   /**
@@ -10,7 +10,7 @@ export const linkedinLeadSource = {
       logger.info('LinkedinLeadSource', `Searching LinkedIn for: ${industry} in ${location}`);
       
       // Target public LinkedIn company pages
-      const response = await serpApiHelper.search({
+      const response = await serpApiSearchService.search({
         engine: "google",
         q: `site:linkedin.com/company "${industry}" "${location}"`,
         num: limit

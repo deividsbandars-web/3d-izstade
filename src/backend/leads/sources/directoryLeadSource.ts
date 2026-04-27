@@ -1,5 +1,6 @@
 import { logger } from '../../logging/logger.js';
-import { serpApiHelper } from './serpApiHelper.js';
+import { serpApiSearchService } from '../../dataSources/serpApiSearchService.js';
+import { leadEmailGuessingService } from './leadEmailGuessingService.js';
 
 export const directoryLeadSource = {
   /**
@@ -10,7 +11,7 @@ export const directoryLeadSource = {
       logger.info('DirectoryLeadSource', `Searching directories for: ${industry} in ${location}`);
       
       // Real strategy: use Google search engine to target business directories
-      const response = await serpApiHelper.search({
+      const response = await serpApiSearchService.search({
         engine: "google",
         q: `site:yellowpages.com OR site:yelp.com "${industry}" "${location}"`,
         num: limit
@@ -25,7 +26,7 @@ export const directoryLeadSource = {
       const leads = results.map((res: any) => ({
         company_name: res.title.split(' - ')[0],
         website: res.link || '',
-        email: serpApiHelper.guessEmail(res.link, res.title),
+        email: leadEmailGuessingService.guessEmail(res.link, res.title),
         phone: '', // Google organic results don't usually have phone, would need deeper scraping
         location: location,
         source: 'Directory (SerpAPI)'

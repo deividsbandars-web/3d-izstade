@@ -46,6 +46,7 @@ const leadsLinkedinSourceTs = path.join(backendLeadsRoot, 'sources', 'linkedinLe
 const leadsLinkedinSourceJs = path.join(backendLeadsRoot, 'sources', 'linkedinLeadSource.js');
 const leadsSerpApiHelperTs = path.join(backendLeadsRoot, 'sources', 'serpApiHelper.ts');
 const leadsSerpApiHelperJs = path.join(backendLeadsRoot, 'sources', 'serpApiHelper.js');
+const leadsLeadEmailGuessingServiceTs = path.join(backendLeadsRoot, 'sources', 'leadEmailGuessingService.ts');
 const dataSourcesSerpApiSearchServiceTs = path.join(backendDataSourcesRoot, 'serpApiSearchService.ts');
 const dataSourcesGoogleSearchServiceTs = path.join(backendDataSourcesRoot, 'googleSearchService.ts');
 const leadValidationServiceTs = path.join(backendLeadsRoot, 'validation', 'leadValidationService.ts');
@@ -721,6 +722,15 @@ function checkSerpApiBoundaryAudit() {
     );
   }
 
+  if (!fs.existsSync(leadsLeadEmailGuessingServiceTs)) {
+    warnings.push(
+      createWarning(
+        leadsSerpApiHelperTs,
+        'canonical leads-local guessEmail home is expected at src/backend/leads/sources/leadEmailGuessingService.ts, but the service is missing',
+      ),
+    );
+  }
+
   if (fs.existsSync(dataSourcesGoogleSearchServiceTs)) {
     for (const { specifier, resolved } of getResolvedRelativeImports(dataSourcesGoogleSearchServiceTs)) {
       if (
@@ -731,6 +741,93 @@ function checkSerpApiBoundaryAudit() {
           createViolation(
             dataSourcesGoogleSearchServiceTs,
             'src/backend/dataSources/googleSearchService.ts must not import the leads compatibility shim; use src/backend/dataSources/serpApiSearchService.ts',
+            specifier,
+          ),
+        );
+      }
+    }
+  }
+
+  const agentsDataSourceToolAdapterPath = path.join(backendAgentsToolAdaptersRoot, 'dataSourceToolAdapters.ts');
+  if (fs.existsSync(agentsDataSourceToolAdapterPath)) {
+    for (const { specifier, resolved } of getResolvedRelativeImports(agentsDataSourceToolAdapterPath)) {
+      if (
+        isResolvedToFile(resolved, leadsSerpApiHelperTs) ||
+        isResolvedToFile(resolved, leadsSerpApiHelperJs)
+      ) {
+        violations.push(
+          createViolation(
+            agentsDataSourceToolAdapterPath,
+            'src/backend/agents/tools/adapters/dataSourceToolAdapters.ts must not import the leads compatibility shim; use src/backend/dataSources/serpApiSearchService.ts',
+            specifier,
+          ),
+        );
+      }
+    }
+  }
+
+  const growthNicheDiscoveryPath = path.join(backendGrowthRoot, 'nicheDiscovery.ts');
+  if (fs.existsSync(growthNicheDiscoveryPath)) {
+    for (const { specifier, resolved } of getResolvedRelativeImports(growthNicheDiscoveryPath)) {
+      if (
+        isResolvedToFile(resolved, leadsSerpApiHelperTs) ||
+        isResolvedToFile(resolved, leadsSerpApiHelperJs)
+      ) {
+        violations.push(
+          createViolation(
+            growthNicheDiscoveryPath,
+            'src/backend/growth/nicheDiscovery.ts must not import the leads compatibility shim; use src/backend/dataSources/serpApiSearchService.ts',
+            specifier,
+          ),
+        );
+      }
+    }
+  }
+
+  if (fs.existsSync(leadsLinkedinSourceTs)) {
+    for (const { specifier, resolved } of getResolvedRelativeImports(leadsLinkedinSourceTs)) {
+      if (
+        isResolvedToFile(resolved, leadsSerpApiHelperTs) ||
+        isResolvedToFile(resolved, leadsSerpApiHelperJs)
+      ) {
+        violations.push(
+          createViolation(
+            leadsLinkedinSourceTs,
+            'src/backend/leads/sources/linkedinLeadSource.ts must not import the SerpAPI compatibility shim directly; use src/backend/dataSources/serpApiSearchService.ts',
+            specifier,
+          ),
+        );
+      }
+    }
+  }
+
+  if (fs.existsSync(leadsDirectorySourceTs)) {
+    for (const { specifier, resolved } of getResolvedRelativeImports(leadsDirectorySourceTs)) {
+      if (
+        isResolvedToFile(resolved, leadsSerpApiHelperTs) ||
+        isResolvedToFile(resolved, leadsSerpApiHelperJs)
+      ) {
+        violations.push(
+          createViolation(
+            leadsDirectorySourceTs,
+            'src/backend/leads/sources/directoryLeadSource.ts must not import the SerpAPI compatibility shim directly; use src/backend/dataSources/serpApiSearchService.ts',
+            specifier,
+          ),
+        );
+      }
+    }
+  }
+
+  if (fs.existsSync(leadsGoogleMapsSourceTs)) {
+    for (const { specifier, resolved } of getResolvedRelativeImports(leadsGoogleMapsSourceTs)) {
+      if (
+        isResolvedToFile(resolved, leadsSerpApiHelperTs) ||
+        isResolvedToFile(resolved, leadsSerpApiHelperJs)
+      ) {
+        violations.push(
+          createViolation(
+            leadsGoogleMapsSourceTs,
+            'src/backend/leads/sources/googleMapsLeadSource.ts must not import the SerpAPI compatibility shim directly; use src/backend/dataSources/serpApiSearchService.ts',
             specifier,
           ),
         );
