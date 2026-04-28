@@ -1,5 +1,5 @@
 import { llmService } from '../ai/llmService.js';
-import { serpApiHelper } from '../leads/sources/serpApiHelper.js';
+import { serpApiSearchService } from '../dataSources/serpApiSearchService.js';
 import { logger } from '../logging/logger.js';
 
 export const nicheDiscovery = {
@@ -11,7 +11,7 @@ export const nicheDiscovery = {
       logger.info('NicheDiscovery', `Analyzing niches for industry: ${baseIndustry}`);
 
       // 1. Gather raw data from search engine to see what people are searching for
-      const searchData = await serpApiHelper.search({
+      const searchData = await serpApiSearchService.search({
         engine: 'google',
         q: `top emerging trends in ${baseIndustry} 2026`,
         num: 5
