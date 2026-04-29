@@ -1,13 +1,19 @@
 import { useState, useEffect, useRef } from 'react';
 import { expoService } from '../../services/expoService';
 import '../../components/calculator/styles/CalculatorPro.css';
+import {
+  GLOBAL_CHAT_OPEN_EVENT,
+  type GlobalChatOpenDetail,
+} from './globalChatEvents';
 
 export default function GlobalChat() {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<any[]>([]);
   const [input, setInput] = useState('');
   const [isListening, setIsListening] = useState(false);
+  const [shouldFocusInput, setShouldFocusInput] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -35,6 +41,34 @@ export default function GlobalChat() {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [messages]);
+
+  useEffect(() => {
+    const onOpenChat = (event: Event) => {
+      const detail = (event as CustomEvent<GlobalChatOpenDetail>).detail;
+      setShouldFocusInput(detail?.focusInput !== false);
+      setIsOpen(true);
+    };
+
+    window.addEventListener(GLOBAL_CHAT_OPEN_EVENT, onOpenChat as EventListener);
+    return () => {
+      window.removeEventListener(GLOBAL_CHAT_OPEN_EVENT, onOpenChat as EventListener);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isOpen || !shouldFocusInput) {
+      return;
+    }
+
+    const frame = window.requestAnimationFrame(() => {
+      inputRef.current?.focus();
+      setShouldFocusInput(false);
+    });
+
+    return () => {
+      window.cancelAnimationFrame(frame);
+    };
+  }, [isOpen, shouldFocusInput]);
 
   async function handleSend(e: React.FormEvent) {
     e.preventDefault();
@@ -87,6 +121,7 @@ export default function GlobalChat() {
       {!isOpen && (
         <button 
           onClick={() => setIsOpen(true)}
+          aria-label="Open global chat"
           style={{ width: '60px', height: '60px', borderRadius: '50%', background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)', border: 'none', color: '#fff', fontSize: '1.5rem', cursor: 'pointer', boxShadow: '0 10px 30px rgba(59, 130, 246, 0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
         >
           💬
@@ -117,6 +152,7 @@ export default function GlobalChat() {
 
           <form onSubmit={handleSend} style={{ padding: '15px', background: 'rgba(0,0,0,0.2)', borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', gap: '10px' }}>
             <input 
+              ref={inputRef}
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Type or speak..."

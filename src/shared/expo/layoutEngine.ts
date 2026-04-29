@@ -1,3 +1,4 @@
+import { buildExpoBoothLocalFootprint, type ExpoBoothLocalFootprint } from './lib/boothLocalFootprint.js';
 import { buildSponsorBoulevardPlan, type SponsorBoulevardPlan } from './lib/boulevardLayout.js';
 import {
   buildDistrictThemeMap,
@@ -15,6 +16,7 @@ export type ExpoBoothPlacement = {
   districtTheme: ExpoDistrictTheme;
   districtThemeId: DistrictThemeId;
   layoutFootprint?: SponsorBoulevardPlan['footprint'];
+  localFootprint?: ExpoBoothLocalFootprint;
   nodeType?: SponsorBoulevardPlan['nodes'][number]['nodeType'];
   position: [number, number, number];
   priority?: number;
@@ -85,6 +87,13 @@ export function buildExpoLayoutEngine(
         districtThemeId: districtTheme.id,
         id: String(node.companyId),
         layoutFootprint: plan.footprint,
+        localFootprint: buildExpoBoothLocalFootprint({
+          boothType: normalizedCompany.boothType,
+          nodeType: node.nodeType,
+          position: node.position,
+          rotation: node.rotation,
+          sponsorTier: node.sponsorTier,
+        }),
         nodeType: node.nodeType,
         position: node.position,
         priority: node.priority,

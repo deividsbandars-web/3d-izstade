@@ -10,6 +10,7 @@ import { useExpoWorldSceneRuntime } from './useExpoWorldSceneRuntime';
 export function ExpoWorldSceneRoot({
   activeZone,
   debug,
+  inspectionEnabled,
   mobileMoveIntent,
   mode,
   onMove,
@@ -25,6 +26,7 @@ export function ExpoWorldSceneRoot({
 }: {
   activeZone: { id?: string | null } | null | undefined;
   debug: boolean;
+  inspectionEnabled: boolean;
   mobileMoveIntent?: { f: boolean; b: boolean; l: boolean; r: boolean; s?: boolean };
   mode: ExpoMode;
   onMove: (position: number[]) => void;
@@ -55,6 +57,7 @@ export function ExpoWorldSceneRoot({
       <ExpoWorldSceneRootView
         activeZone={activeZone}
         debug={debug}
+        inspectionEnabled={inspectionEnabled}
         mobileMoveIntent={mobileMoveIntent}
         mode={mode}
         onMove={onMove}
@@ -75,6 +78,7 @@ export function ExpoWorldSceneRoot({
 function ExpoWorldSceneRootView({
   activeZone,
   debug,
+  inspectionEnabled,
   mobileMoveIntent,
   mode,
   onMove,
@@ -90,6 +94,7 @@ function ExpoWorldSceneRootView({
 }: {
   activeZone: { id?: string | null } | null | undefined;
   debug: boolean;
+  inspectionEnabled: boolean;
   mobileMoveIntent?: { f: boolean; b: boolean; l: boolean; r: boolean; s?: boolean };
   mode: ExpoMode;
   onMove: (position: number[]) => void;
@@ -142,6 +147,7 @@ function ExpoWorldSceneRootView({
         districtPrograms={runtime.districtPrograms}
         effectiveStartView={runtime.effectiveStartView}
         highlightedTargets={runtimeHighlightedTargets}
+        inspectionEnabled={inspectionEnabled}
         layerToggles={runtime.layerToggles}
         mobileMoveIntent={mobileMoveIntent}
         mode={mode}
@@ -151,6 +157,7 @@ function ExpoWorldSceneRootView({
         }}
         playBounds={runtime.playBounds}
         playerPosition={runtime.playerPosition}
+        planningBoothPlacements={runtime.visibleBoothPlacements}
         qualityProfileInputs={runtime.qualityProfileInputs}
         runtimeCaptureSafe={runtimeCaptureSafe}
         sceneVersion={sceneVersion}

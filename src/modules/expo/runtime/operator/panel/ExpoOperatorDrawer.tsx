@@ -1,15 +1,46 @@
 import type { ExpoMode } from '../../../state/expoRuntime';
+import type { WorldObjectRegistryEntry } from '../../world/inspection/worldObjectRegistry';
 import { ExpoOperatorInspectionSummary } from '../inspection/ExpoOperatorInspectionSummary';
 
 type LayerKey = 'promenade' | 'city' | 'stadium' | 'booths' | 'skyline';
 type SectionKey = 'arrival' | 'left' | 'middle' | 'right' | 'stadium';
 
+function OwnershipCard({
+  entry,
+  title,
+}: {
+  entry: WorldObjectRegistryEntry | null;
+  title: string;
+}) {
+  return (
+    <div style={{ border: '1px solid rgba(148, 163, 184, 0.16)', borderRadius: '12px', padding: '10px', background: 'rgba(15, 23, 42, 0.36)' }}>
+      <div style={{ fontSize: '0.62rem', letterSpacing: '0.12em', fontWeight: 900, color: '#93c5fd', marginBottom: '6px' }}>{title}</div>
+      {!entry ? (
+        <div style={{ fontSize: '0.72rem', color: '#94a3b8' }}>No registry entry</div>
+      ) : (
+        <div style={{ fontSize: '0.72rem', color: '#cbd5e1', lineHeight: 1.45 }}>
+          <div>ID: {entry.id}</div>
+          <div>LAYER: {entry.layer}</div>
+          <div>KIND: {entry.sourceKind}</div>
+          <div>OWNER: {entry.interactionOwner || 'none'}</div>
+          <div>SOURCE: {entry.sourceFile}</div>
+          <div>SAFE SEAM: {entry.safeEditSeam}</div>
+          <div>ZONE: {entry.planningZone || 'none'}</div>
+          <div>DIAGNOSTICS: {entry.diagnosticOwners.length > 0 ? entry.diagnosticOwners.join(' | ') : 'none'}</div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function ExpoOperatorDrawer({
   activeZoneId,
   buildStamp,
   centerStack,
+  centerTargetEntry,
   centerTarget,
   clickStack,
+  clickTargetEntry,
   clickTarget,
   companyCount,
   dataMode,
@@ -40,8 +71,10 @@ export function ExpoOperatorDrawer({
   activeZoneId: string | null;
   buildStamp: string;
   centerStack: string[];
+  centerTargetEntry: WorldObjectRegistryEntry | null;
   centerTarget: string | null;
   clickStack: string[];
+  clickTargetEntry: WorldObjectRegistryEntry | null;
   clickTarget: string | null;
   companyCount: number;
   dataMode: string;
@@ -106,6 +139,11 @@ export function ExpoOperatorDrawer({
       </div>
 
       <ExpoOperatorInspectionSummary inspector={inspector} />
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '8px' }}>
+        <OwnershipCard entry={centerTargetEntry} title="CENTER OWNER" />
+        <OwnershipCard entry={clickTargetEntry} title="CLICK OWNER" />
+      </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '8px' }}>
         <button onClick={onFocusHero} style={{ ...panelStyle, padding: '9px 12px', fontWeight: 800, cursor: 'pointer' }}>HERO</button>

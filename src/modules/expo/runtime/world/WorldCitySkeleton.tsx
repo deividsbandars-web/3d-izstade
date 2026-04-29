@@ -2,8 +2,9 @@ import { useMemo } from 'react';
 import type { ExpoBoothPlacement } from '../../layout-engine';
 import type { ExpoDistrictProgramSummary, ExpoWorldVisualProfile } from '../../world-contract';
 import type { ExpoPlanningSectionId } from '../planning/types';
-import { buildCanonicalWorldPlan } from '../planning';
+import { buildCanonicalWorldPlan, EXPO_CANONICAL_DISTRICT_STRIDE } from '../planning';
 import { useWorldInspectionRegistry } from './inspection/worldInspectionState';
+import { buildCityWorldObjectRegistry } from './inspection/worldObjectRegistry';
 import { WorldCityMasses } from './WorldCityMasses';
 import { WorldCityMegaLandmarks } from './WorldCityMegaLandmarks';
 import { WorldCityPlanes } from './WorldCityPlanes';
@@ -31,7 +32,7 @@ export function WorldCitySkeleton({
   };
   visualProfile: ExpoWorldVisualProfile;
 }) {
-  const districtStride = 548;
+  const districtStride = EXPO_CANONICAL_DISTRICT_STRIDE;
   const canonicalWorldPlan = useMemo(
     () => buildCanonicalWorldPlan({ boothPlacements, districtPrograms, districtStride, visualProfile }),
     [boothPlacements, districtPrograms, districtStride, visualProfile]
@@ -86,43 +87,33 @@ export function WorldCitySkeleton({
     [canonicalWorldPlan.screenAssignments, sectionToggles]
   );
 
-  const cityInspectionEntries = useMemo(() => [
-    ...filteredArrivalPlanes.map((plane) => ({ id: plane.id, layer: 'city-plane', position: plane.position })),
-    ...filteredPromenadeAxisPlanes.map((plane) => ({ id: plane.id, layer: 'city-plane', position: plane.position })),
-    ...filteredShowcasePlazas.map((plane) => ({ id: plane.id, layer: 'city-plane', position: plane.position })),
-    ...filteredBoothForecourtPlanes.map((plane) => ({ id: plane.id, layer: 'city-plane', position: plane.position })),
-    ...filteredMasses.map((mass) => ({ id: mass.id, layer: 'city-mass', position: mass.position })),
-    ...filteredTowerLandmarks.map((tower) => ({ id: tower.id, layer: 'city-tower', position: tower.position })),
-    ...filteredScreenSurfaces.map((surface) => ({ id: surface.id, layer: 'city-screen-surface', position: surface.position })),
-    ...screenSockets.map((socket) => ({ id: socket.id, layer: 'city-screen-socket', position: socket.position })),
-    { id: 'mega-landmark-arrival', layer: 'mega-landmark', position: [0, 0, 256] as [number, number, number] },
-    { id: 'mega-landmark-showcase', layer: 'mega-landmark', position: [0, 0, -72] as [number, number, number] },
-    { id: 'mega-landmark-media', layer: 'mega-landmark', position: [0, 0, -214 - districtStride - 56] as [number, number, number] },
-    { id: 'mega-landmark-media-frame-wall', layer: 'mega-landmark', position: [356, 0, -214 - districtStride - 56 - 148] as [number, number, number] },
-    { id: 'mega-landmark-media-signal-pods', layer: 'mega-landmark', position: [472, 0, -214 - districtStride - 56 + 84] as [number, number, number] },
-    { id: 'mega-landmark-discovery', layer: 'mega-landmark', position: [0, 0, -196 - ((Math.max(1, districtPrograms.length) - 1) * districtStride) - 1080] as [number, number, number] },
-    { id: 'mega-landmark-discovery-observatory-crown', layer: 'mega-landmark', position: [-368, 0, -196 - ((Math.max(1, districtPrograms.length) - 1) * districtStride) - 1080 - 32] as [number, number, number] },
-    { id: 'mega-landmark-discovery-garden-spine', layer: 'mega-landmark', position: [-492, 0, -196 - ((Math.max(1, districtPrograms.length) - 1) * districtStride) - 1080 + 212] as [number, number, number] },
-    { id: 'mega-landmark-right-skyfold-citadel', layer: 'mega-landmark', position: [844, 0, -164] as [number, number, number] },
-    { id: 'mega-landmark-right-skybridge-beacon', layer: 'mega-landmark', position: [436, 0, -96] as [number, number, number] },
-    { id: 'mega-landmark-right-media-halo', layer: 'mega-landmark', position: [628, 0, -248] as [number, number, number] },
-    { id: 'mega-landmark-right-support-spire', layer: 'mega-landmark', position: [294, 0, -372] as [number, number, number] },
-    { id: 'mega-landmark-left-grand-rampart', layer: 'mega-landmark', position: [-888, 0, -156] as [number, number, number] },
-    { id: 'mega-landmark-left-cantilever-forum', layer: 'mega-landmark', position: [-438, 0, -116] as [number, number, number] },
-    { id: 'mega-landmark-left-split-crown-gate', layer: 'mega-landmark', position: [-654, 0, -286] as [number, number, number] },
-    { id: 'mega-landmark-left-broken-wall-monument', layer: 'mega-landmark', position: [-262, 0, -412] as [number, number, number] },
-    { id: 'mega-landmark-left-disc-habitat', layer: 'mega-landmark', position: [-918, 0, -548] as [number, number, number] },
-    { id: 'mega-landmark-left-split-monolith-pair', layer: 'mega-landmark', position: [-648, 0, -724] as [number, number, number] },
-  ], [
-    filteredArrivalPlanes,
-    filteredTowerLandmarks,
-    filteredScreenSurfaces,
+  const cityInspectionEntries = useMemo(() => buildCityWorldObjectRegistry({
+    districtCount: districtPrograms.length,
+    districtStride,
+    plan: {
+      ...canonicalWorldPlan,
+      arrivalPlanes: filteredArrivalPlanes,
+      boothForecourtPlanes: filteredBoothForecourtPlanes,
+      filteredMasses,
+      filteredScreenSurfaces,
+      filteredTowerLandmarks,
+      promenadeAxisPlanes: filteredPromenadeAxisPlanes,
+      screenAssignments,
+      screenSockets,
+      showcasePlazas: filteredShowcasePlazas,
+    },
+  }), [
+    canonicalWorldPlan,
     districtPrograms.length,
     districtStride,
+    filteredArrivalPlanes,
     filteredBoothForecourtPlanes,
     filteredMasses,
     filteredPromenadeAxisPlanes,
+    filteredScreenSurfaces,
     filteredShowcasePlazas,
+    filteredTowerLandmarks,
+    screenAssignments,
     screenSockets,
   ]);
   useWorldInspectionRegistry('city', cityInspectionEntries);

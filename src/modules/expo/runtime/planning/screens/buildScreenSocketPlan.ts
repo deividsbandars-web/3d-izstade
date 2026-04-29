@@ -1,6 +1,25 @@
 import { buildScreenSockets } from '../legacy/worldCityGeometry';
 import type { CanonicalPrimitive, CityScreenSocket, CityScreenSurface, ExpoPlanningZoneId, ExpoPlanningZonePlan } from '../types';
 
+function defaultSocketRenderIntent(
+  socket: CityScreenSocket,
+  zoneId: ExpoPlanningZoneId
+): NonNullable<CityScreenSocket['renderIntent']> {
+  const frameDepth = socket.kind === 'hero_wall' ? 2.8 : socket.kind === 'tower_crown' ? 2.2 : 1.9;
+
+  return {
+    accentOpacity: socket.kind === 'hero_wall' ? 0.24 : 0.16,
+    antennaHeight: socket.kind === 'hero_wall' ? socket.frameSize[1] * 0.08 : socket.kind === 'tower_crown' ? socket.frameSize[1] * 0.1 : 0,
+    beamHeight: Math.max(1.1, socket.frameSize[1] * 0.026),
+    braceDepth: frameDepth * 0.72,
+    bridgeHeight: socket.kind === 'hero_wall' ? socket.frameSize[1] * 0.12 : socket.kind === 'tower_side' ? socket.frameSize[1] * 0.08 : 0,
+    columnWidth: Math.max(1.3, socket.frameSize[0] * 0.034),
+    frameDepth,
+    maxDistance: socket.kind === 'hero_wall' || socket.kind === 'tower_crown' || zoneId === 'rear-campus' ? 1500 : 1040,
+    visible: true,
+  };
+}
+
 function buildSocketPrimitives(socket: CityScreenSocket): CanonicalPrimitive[] {
   const intent = socket.renderIntent;
   const frameDepth = intent?.frameDepth ?? 1.9;
@@ -39,24 +58,21 @@ export function buildZoneScreenSocketPlan(
   socketCap: number,
   zoneId: ExpoPlanningZoneId
 ) {
-  return buildScreenSockets(surfaces).slice(0, socketCap).map((socket) => ({
-    ...socket,
-    renderIntent: {
-      ...(socket.renderIntent ?? {
-      accentOpacity: socket.kind === 'hero_wall' ? 0.24 : 0.16,
-      antennaHeight: socket.kind === 'hero_wall' ? socket.frameSize[1] * 0.08 : socket.kind === 'tower_crown' ? socket.frameSize[1] * 0.1 : 0,
-      beamHeight: Math.max(1.1, socket.frameSize[1] * 0.026),
-      braceDepth: (socket.kind === 'hero_wall' ? 2.8 : socket.kind === 'tower_crown' ? 2.2 : 1.9) * 0.72,
-      bridgeHeight: socket.kind === 'hero_wall' ? socket.frameSize[1] * 0.12 : socket.kind === 'tower_side' ? socket.frameSize[1] * 0.08 : 0,
-      columnWidth: Math.max(1.3, socket.frameSize[0] * 0.034),
-      frameDepth: socket.kind === 'hero_wall' ? 2.8 : socket.kind === 'tower_crown' ? 2.2 : 1.9,
-      maxDistance: socket.kind === 'hero_wall' || socket.kind === 'tower_crown' || zoneId === 'rear-campus' ? 1500 : 1040,
-      visible: true,
-      }),
-      primitives: buildSocketPrimitives(socket),
-    },
-    sections: socket.sections ?? surfaces.find((surface) => surface.id === socket.surfaceId)?.sections,
-  }));
+  return buildScreenSockets(surfaces).slice(0, socketCap).map((socket) => {
+    const renderIntent = socket.renderIntent ?? defaultSocketRenderIntent(socket, zoneId);
+
+    return {
+      ...socket,
+      renderIntent: {
+        ...renderIntent,
+        primitives: buildSocketPrimitives({
+          ...socket,
+          renderIntent,
+        }),
+      },
+      sections: socket.sections ?? surfaces.find((surface) => surface.id === socket.surfaceId)?.sections,
+    };
+  });
 }
 
 export function flattenZoneScreenSockets(

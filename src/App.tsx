@@ -40,6 +40,14 @@ const RoofCalculator = lazy(() => import('./modules/calculators/RoofCalc'));
 const HeatingCalculator = lazy(() => import('./modules/calculators/HeatingCalc'));
 const FoundationCalculator = lazy(() => import('./modules/calculators/FoundationCalc'));
 const RenovationCalculator = lazy(() => import('./modules/calculators/InteriorCalc')); 
+const TimberHouseCalculator = lazy(() => import('./modules/calculators/TimberHouseCalc'));
+const WindowsCalculator = lazy(() => import('./modules/calculators/WindowsCalc'));
+const VisualsCalculator = lazy(() => import('./modules/calculators/VisualsCalc'));
+const DigitalArtCalculator = lazy(() => import('./modules/calculators/DigitalArtCalc'));
+const AutoserviceCalculator = lazy(() => import('./modules/calculators/AutoserviceCalc'));
+const CleaningCalculator = lazy(() => import('./modules/calculators/CleaningCalc'));
+const QuickFixCalculator = lazy(() => import('./modules/calculators/QuickFixCalc'));
+const PlumbingCalculator = lazy(() => import('./modules/calculators/PlumbingCalc'));
 
 // Expo
 const Expo3D = lazy(() => import('./modules/expo/Expo3D'));
@@ -116,6 +124,14 @@ export default function App() {
             <Route path="heating-cost-calculator" element={<Suspense fallback={null}><HeatingCalculator /></Suspense>} />
             <Route path="foundation-cost-calculator" element={<Suspense fallback={null}><FoundationCalculator /></Suspense>} />
             <Route path="renovation-cost-calculator" element={<Suspense fallback={null}><RenovationCalculator /></Suspense>} />
+            <Route path="timber-house-calculator" element={<Suspense fallback={null}><TimberHouseCalculator /></Suspense>} />
+            <Route path="windows-calculator" element={<Suspense fallback={null}><WindowsCalculator /></Suspense>} />
+            <Route path="visuals-calculator" element={<Suspense fallback={null}><VisualsCalculator /></Suspense>} />
+            <Route path="digital-art-calculator" element={<Suspense fallback={null}><DigitalArtCalculator /></Suspense>} />
+            <Route path="autoservice-calculator" element={<Suspense fallback={null}><AutoserviceCalculator /></Suspense>} />
+            <Route path="cleaning-calculator" element={<Suspense fallback={null}><CleaningCalculator /></Suspense>} />
+            <Route path="quick-fix-calculator" element={<Suspense fallback={null}><QuickFixCalculator /></Suspense>} />
+            <Route path="plumbing-calculator" element={<Suspense fallback={null}><PlumbingCalculator /></Suspense>} />
             
             <Route path="expo/admin" element={<Suspense fallback={null}><CompanyAdmin /></Suspense>} />
             <Route path="expo" element={<Navigate to="/expo-3d" />} />

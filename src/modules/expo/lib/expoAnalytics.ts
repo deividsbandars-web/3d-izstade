@@ -5,6 +5,7 @@ export type ExpoAnalyticsEventName =
   | 'sector_entered'
   | 'booth_viewed'
   | 'booth_clicked'
+  | 'screen_route_clicked'
   | 'website_opened'
   | 'booking_clicked'
   | 'demo_room_entered';
@@ -168,6 +169,10 @@ export function trackExpoBoothViewed(company: any, meta: Record<string, unknown>
 
 export function trackExpoBoothClicked(company: any, meta: Record<string, unknown> = {}, target?: ExpoAnalyticsTarget | null) {
   return trackExpoAnalyticsEvent('booth_clicked', company, meta, target);
+}
+
+export function trackExpoScreenRouteClicked(company: any, meta: Record<string, unknown> = {}, target?: ExpoAnalyticsTarget | null) {
+  return trackExpoAnalyticsEvent('screen_route_clicked', company, meta, target);
 }
 
 export function trackExpoWebsiteOpened(company: any, meta: Record<string, unknown> = {}, target?: ExpoAnalyticsTarget | null) {

@@ -1,5 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useReducer, type Dispatch, type ReactNode } from 'react';
 import type * as THREE from 'three';
+import type { WorldObjectRegistryEntry } from './worldObjectRegistry';
+import { buildBoothWorldObjectRegistry } from './worldObjectRegistry';
 
 export type WorldInspectionEntry = {
   id: string;
@@ -31,8 +33,8 @@ export type WorldInspectionState = {
     click: WorldInspectionSelection;
   };
   rawSources: {
-    city: WorldInspectionEntry[];
-    stadium: WorldInspectionEntry[];
+    city: WorldObjectRegistryEntry[];
+    stadium: WorldObjectRegistryEntry[];
   };
   sceneRef: THREE.Scene | null;
 };
@@ -40,7 +42,7 @@ export type WorldInspectionState = {
 type WorldInspectionEvent =
   | { type: 'CENTER_TARGET_UPDATED'; payload: WorldInspectionSelection }
   | { type: 'CLICK_TARGET_UPDATED'; payload: WorldInspectionSelection }
-  | { type: 'SOURCE_REGISTERED'; payload: { bucket: WorldInspectionSourceBucket; entries: WorldInspectionEntry[] } }
+  | { type: 'SOURCE_REGISTERED'; payload: { bucket: WorldInspectionSourceBucket; entries: WorldObjectRegistryEntry[] } }
   | { type: 'SOURCE_REMOVED'; payload: { bucket: WorldInspectionSourceBucket } }
   | { type: 'SCENE_REF_UPDATED'; payload: { scene: THREE.Scene | null } };
 
@@ -160,7 +162,7 @@ export function useInspectionTargets() {
   }), [focus.center.stack, focus.center.target, focus.click.stack, focus.click.target]);
 }
 
-export function useWorldInspectionRegistry(bucket: WorldInspectionSourceBucket, entries: WorldInspectionEntry[]) {
+export function useWorldInspectionRegistry(bucket: WorldInspectionSourceBucket, entries: WorldObjectRegistryEntry[]) {
   const dispatch = useWorldInspectionDispatch();
 
   useEffect(() => {
@@ -268,11 +270,7 @@ export function useInspectionOperatorSummary({
   playerPos: number[];
 }) {
   const boothEntries = useMemo<WorldInspectionEntry[]>(
-    () => boothPlacements.map((placement) => ({
-      id: placement.id,
-      layer: 'booth',
-      position: placement.position,
-    })),
+    () => buildBoothWorldObjectRegistry(boothPlacements),
     [boothPlacements],
   );
 

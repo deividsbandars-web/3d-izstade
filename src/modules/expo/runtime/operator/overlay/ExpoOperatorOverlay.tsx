@@ -1,5 +1,6 @@
 import type { ExpoMode } from '../../../state/expoRuntime';
 import type { ExpoOperatorSession, ReviewOperatorZone } from '../model/reviewOperatorSession';
+import type { WorldObjectRegistryEntry } from '../../world/inspection/worldObjectRegistry';
 import { ExpoOperatorZoneNav } from '../navigation/ExpoOperatorZoneNav';
 import { ExpoOperatorDrawer } from '../panel/ExpoOperatorDrawer';
 
@@ -10,8 +11,10 @@ export function ExpoOperatorOverlay({
   activeZoneId,
   buildStamp,
   centerStack,
+  centerTargetEntry,
   centerTarget,
   clickStack,
+  clickTargetEntry,
   clickTarget,
   companyCount,
   dataMode,
@@ -45,8 +48,10 @@ export function ExpoOperatorOverlay({
   activeZoneId: string | null;
   buildStamp: string;
   centerStack: string[];
+  centerTargetEntry: WorldObjectRegistryEntry | null;
   centerTarget: string | null;
   clickStack: string[];
+  clickTargetEntry: WorldObjectRegistryEntry | null;
   clickTarget: string | null;
   companyCount: number;
   dataMode: string;
@@ -97,8 +102,10 @@ export function ExpoOperatorOverlay({
         activeZoneId={activeZoneId}
         buildStamp={buildStamp}
         centerStack={centerStack}
+        centerTargetEntry={centerTargetEntry}
         centerTarget={centerTarget}
         clickStack={clickStack}
+        clickTargetEntry={clickTargetEntry}
         clickTarget={clickTarget}
         companyCount={companyCount}
         dataMode={dataMode}

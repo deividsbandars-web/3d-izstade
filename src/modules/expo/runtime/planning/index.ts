@@ -12,6 +12,11 @@ export type {
   StadiumReserve,
 } from './types';
 export { buildCanonicalWorldPlan } from './world-plan/buildCanonicalWorldPlan';
+export {
+  buildCanonicalWorldPlanFromWorldContract,
+  buildExpoPlanningInputsFromWorldContract,
+  EXPO_CANONICAL_DISTRICT_STRIDE,
+} from './world-plan/canonicalPlanningConfig';
 export { buildArrivalZonePlan } from './zones/arrival';
 export { buildLeftDistrictZonePlan } from './zones/left-district';
 export { buildCenterSpineZonePlan } from './zones/center-spine';

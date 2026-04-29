@@ -34,7 +34,7 @@ export function WorldSceneBridge({
   return null;
 }
 
-export function CenterScreenInspector() {
+export function CenterScreenInspector({ inspectionEnabled }: { inspectionEnabled: boolean }) {
   const { camera, scene } = useThree();
   const inspection = useWorldInspectionPublisher();
   const raycasterRef = useRef(new THREE.Raycaster());
@@ -42,6 +42,10 @@ export function CenterScreenInspector() {
   const frameRef = useRef(0);
 
   useFrame(() => {
+    if (!inspectionEnabled) {
+      return;
+    }
+
     frameRef.current += 1;
     if (frameRef.current % 8 !== 0) {
       return;
@@ -86,14 +90,14 @@ export function CenterScreenInspector() {
   return null;
 }
 
-export function ClickInspector() {
+export function ClickInspector({ clickInspectionEnabled }: { clickInspectionEnabled: boolean }) {
   const { camera, gl, scene } = useThree();
   const inspection = useWorldInspectionPublisher();
   const raycasterRef = useRef(new THREE.Raycaster());
 
   useEffect(() => {
     const handlePointerDown = (event: PointerEvent) => {
-      if (!import.meta.env.DEV) {
+      if (!clickInspectionEnabled) {
         return;
       }
 
@@ -138,7 +142,7 @@ export function ClickInspector() {
 
     window.addEventListener('pointerdown', handlePointerDown);
     return () => window.removeEventListener('pointerdown', handlePointerDown);
-  }, [camera, gl, inspection, scene]);
+  }, [camera, clickInspectionEnabled, gl, inspection, scene]);
 
   return null;
 }

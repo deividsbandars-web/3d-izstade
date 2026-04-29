@@ -1,7 +1,10 @@
 import { useMemo } from 'react';
 import type { ExpoMode } from '../../../state/expoRuntime';
-import type { ExpoStartView } from '../../../world-contract';
-import { useInspectionFocus, useInspectionOperatorSummary, useInspectionTargets } from '../../world/inspection/worldInspectionState';
+import type { ExpoStartView, ExpoWorldContract } from '../../../world-contract';
+import { buildCanonicalWorldPlanFromWorldContract } from '../../planning';
+import { useInspectionFocus, useInspectionOperatorSummary, useInspectionTargets, useWorldInspection } from '../../world/inspection/worldInspectionState';
+import { buildWorldDiagnosticReportFromPlan } from '../../world/inspection/worldDiagnosticReport';
+import { buildBoothWorldObjectRegistry } from '../../world/inspection/worldObjectRegistry';
 import { ExpoOperatorOverlay } from '../overlay/ExpoOperatorOverlay';
 import { buildReviewOperatorZones, resolveExpoOperatorSession } from '../model/reviewOperatorSession';
 import { useExpoOperatorState } from './useExpoOperatorState';
@@ -23,29 +26,47 @@ export function useExpoOperatorLayer({
   playerPos: number[];
   sceneVersion: string | null;
   setMode: (mode: ExpoMode) => void;
-  worldContract: {
-    boothPlacements: Array<{
-      id: string;
-      position: [number, number, number];
-      rotation?: [number, number, number];
-      company?: {
-        id?: string | null;
-        name?: string | null;
-        slug?: string | null;
-        sponsorTier?: string | null;
-        booth?: { slug?: string | null } | null;
-      } | null;
-    }>;
-  };
+  worldContract: ExpoWorldContract;
 }) {
   const session = useMemo(() => resolveExpoOperatorSession(), []);
   const reviewZones = useMemo(() => buildReviewOperatorZones(), []);
   const focus = useInspectionFocus();
   const targets = useInspectionTargets();
+  const inspectionState = useWorldInspection();
   const inspector = useInspectionOperatorSummary({
     boothPlacements: worldContract.boothPlacements,
     playerPos,
   });
+  const boothRegistryEntries = useMemo(
+    () => buildBoothWorldObjectRegistry(worldContract.boothPlacements),
+    [worldContract.boothPlacements],
+  );
+  const registryById = useMemo(() => {
+    const entries = [
+      ...inspectionState.rawSources.city,
+      ...inspectionState.rawSources.stadium,
+      ...boothRegistryEntries,
+    ];
+
+    return new Map(entries.map((entry) => [entry.id, entry]));
+  }, [boothRegistryEntries, inspectionState.rawSources.city, inspectionState.rawSources.stadium]);
+  const canonicalWorldPlan = useMemo(
+    () => buildCanonicalWorldPlanFromWorldContract(worldContract),
+    [worldContract],
+  );
+  const diagnosticReport = useMemo(
+    () => buildWorldDiagnosticReportFromPlan({
+      boothPlacements: worldContract.boothPlacements.map((placement) => ({
+        id: placement.id,
+        localFootprint: placement.localFootprint,
+        nodeType: placement.nodeType,
+        rotation: placement.rotation,
+      })),
+      plan: canonicalWorldPlan,
+    }),
+    [canonicalWorldPlan, worldContract.boothPlacements],
+  );
+  const dataMode = 'seeded-local';
 
   const operator = useExpoOperatorState({
     activeZoneId,
@@ -53,10 +74,17 @@ export function useExpoOperatorLayer({
     centerTarget: targets.centerTarget,
     clickStack: targets.clickStack,
     clickTarget: targets.clickTarget,
+    dataMode,
     enabled: session.enabled,
     inspector,
     mode,
     playerPos,
+    diagnosticReport,
+    registryEntries: {
+      booths: boothRegistryEntries,
+      city: inspectionState.rawSources.city,
+      stadium: inspectionState.rawSources.stadium,
+    },
     sceneVersion,
     setMode,
     zones: reviewZones,
@@ -140,11 +168,13 @@ export function useExpoOperatorLayer({
       activeZoneId={activeZoneId}
       buildStamp={LOCAL_BUILD_STAMP}
       centerStack={focus.center.stack}
+      centerTargetEntry={focus.center.target ? registryById.get(focus.center.target) ?? null : null}
       centerTarget={focus.center.target}
       clickStack={focus.click.stack}
+      clickTargetEntry={focus.click.target ? registryById.get(focus.click.target) ?? null : null}
       clickTarget={focus.click.target}
       companyCount={worldContract.boothPlacements.length}
-      dataMode="seeded-local"
+      dataMode={dataMode}
       debug={operator.debug}
       focusedName={focusedPlacement?.company?.name ?? null}
       focusedSlug={focusedPlacement?.company?.slug ?? effectiveFocusSlug ?? null}

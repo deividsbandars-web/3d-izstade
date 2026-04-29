@@ -5,6 +5,7 @@ export function ExpoSceneShell({
   activeZone,
   debug,
   guests,
+  inspectionEnabled,
   mobileMoveIntent,
   mode,
   onMove,
@@ -18,6 +19,7 @@ export function ExpoSceneShell({
   activeZone: unknown;
   debug: boolean;
   guests: unknown[];
+  inspectionEnabled: boolean;
   mobileMoveIntent: { f: boolean; b: boolean; l: boolean; r: boolean; s: boolean };
   mode: ExpoMode;
   onMove: (position: number[]) => void;
@@ -45,6 +47,7 @@ export function ExpoSceneShell({
       activeZone={activeZone as never}
       debug={debug}
       guests={guests as never}
+      inspectionEnabled={inspectionEnabled}
       mobileMoveIntent={mobileMoveIntent}
       mode={mode}
       onMove={onMove}
