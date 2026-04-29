@@ -46,9 +46,12 @@ assert.equal(pickSponsorBoothTemplate({ boothType: 'poster', districtThemeId: 'p
 assert.equal(pickSponsorBoothTemplate({ boothType: 'poster', districtThemeId: 'design_district', nodeType: 'standard_right', sponsorTier: 'bronze' }), 'standard_studio');
 
 const heroActions = buildSponsorCtas(heroCompany);
-assert.deepEqual(heroActions.map((action) => action.kind), ['website', 'booking', 'demo_room']);
+assert.deepEqual(heroActions.map((action) => action.kind), ['website', 'booking', 'ai_chat', 'calculators', 'demo_room']);
 assert.equal(heroActions[0].label, 'Open Website');
-assert.equal(heroActions[2].label, 'Launch Premium Room');
+assert.equal(heroActions[2].label, 'Ask AI');
+assert.equal(heroActions[2].surface, 'feature');
+assert.equal(heroActions[3].label, 'Open Calculators');
+assert.equal(heroActions[4].label, 'Launch Premium Room');
 
 const heroPresentation = buildSponsorBoothPresentation(heroCompany, heroCompany.booth, 'hero_left', { districtThemeId: 'platform_corridor' });
 assert.equal(heroPresentation.template, 'hero_gallery');
@@ -61,7 +64,9 @@ assert.equal(heroPresentation.badgeLabel, 'UNREAL ELITE');
 assert.equal(heroPresentation.demoRoomPath, '/expo/booth/hero-one/stream');
 assert.deepEqual(resolveSponsorCtaIntent(heroPresentation.actions[0], heroPresentation), { type: 'external', target: 'https://hero.example.com' });
 assert.deepEqual(resolveSponsorCtaIntent(heroPresentation.actions[1], heroPresentation), { type: 'external', target: 'https://cal.example.com/hero-one' });
-assert.deepEqual(resolveSponsorCtaIntent(heroPresentation.actions[2], heroPresentation), { type: 'navigate', target: '/expo/booth/hero-one/stream' });
+assert.deepEqual(resolveSponsorCtaIntent(heroPresentation.actions[2], heroPresentation), { type: 'local', target: 'global_chat' });
+assert.deepEqual(resolveSponsorCtaIntent(heroPresentation.actions[3], heroPresentation), { type: 'navigate', target: '/calculators' });
+assert.deepEqual(resolveSponsorCtaIntent(heroPresentation.actions[4], heroPresentation), { type: 'navigate', target: '/expo/booth/hero-one/stream' });
 
 const compactPresentation = buildSponsorBoothPresentation({
   ...heroCompany,
@@ -78,12 +83,19 @@ const compactPresentation = buildSponsorBoothPresentation({
 }, null, 'standard_right');
 
 assert.equal(compactPresentation.template, 'standard_studio');
-assert.equal(compactPresentation.actions.length, 1);
-assert.equal(compactPresentation.actions[0].kind, 'demo_room');
-assert.equal(compactPresentation.actions[0].label, 'Open Showroom');
+assert.equal(compactPresentation.actions.length, 3);
+assert.equal(compactPresentation.actions[0].kind, 'ai_chat');
+assert.equal(compactPresentation.actions[0].label, 'Ask AI');
+assert.equal(compactPresentation.actions[0].surface, 'feature');
+assert.equal(compactPresentation.actions[1].kind, 'calculators');
+assert.equal(compactPresentation.actions[1].label, 'Get Estimate');
+assert.equal(compactPresentation.actions[2].kind, 'demo_room');
+assert.equal(compactPresentation.actions[2].label, 'Open Showroom');
 assert.equal(compactPresentation.badgeLabel, 'BRONZE');
 assert.equal(compactPresentation.customInsertUrl, null);
-assert.deepEqual(resolveSponsorCtaIntent(compactPresentation.actions[0], compactPresentation), { type: 'navigate', target: '/expo/booth/hero-1' });
+assert.deepEqual(resolveSponsorCtaIntent(compactPresentation.actions[0], compactPresentation), { type: 'local', target: 'global_chat' });
+assert.deepEqual(resolveSponsorCtaIntent(compactPresentation.actions[1], compactPresentation), { type: 'navigate', target: '/calculators' });
+assert.deepEqual(resolveSponsorCtaIntent(compactPresentation.actions[2], compactPresentation), { type: 'navigate', target: '/expo/booth/hero-1' });
 
 const placeholderCompany = {
   ...heroCompany,

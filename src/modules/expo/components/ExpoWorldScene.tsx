@@ -12,6 +12,7 @@ interface ExpoWorldSceneProps {
   activeZone: any;
   debug: boolean;
   guests: any[];
+  inspectionEnabled: boolean;
   mobileMoveIntent?: { f: boolean; b: boolean; l: boolean; r: boolean; s?: boolean };
   mode: ExpoMode;
   onMove: (pos: number[]) => void;
@@ -41,6 +42,7 @@ export function ExpoWorldScene({
   activeZone,
   debug,
   guests: _guests,
+  inspectionEnabled,
   mobileMoveIntent,
   mode,
   onMove,
@@ -57,6 +59,7 @@ export function ExpoWorldScene({
     <ExpoWorldSceneRoot
       activeZone={activeZone}
       debug={debug}
+      inspectionEnabled={inspectionEnabled}
       mobileMoveIntent={mobileMoveIntent}
       mode={mode}
       onMove={onMove}

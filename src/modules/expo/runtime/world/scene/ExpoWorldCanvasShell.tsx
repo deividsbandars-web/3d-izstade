@@ -17,12 +17,14 @@ export function ExpoWorldCanvasShell({
   districtPrograms,
   effectiveStartView,
   highlightedTargets,
+  inspectionEnabled,
   layerToggles,
   mobileMoveIntent,
   mode,
   onMove,
   playBounds,
   playerPosition,
+  planningBoothPlacements,
   qualityProfileInputs,
   runtimeCaptureSafe,
   sceneVersion,
@@ -38,12 +40,14 @@ export function ExpoWorldCanvasShell({
   districtPrograms: ExpoDistrictProgramSummary[];
   effectiveStartView: ExpoStartView;
   highlightedTargets: string[];
+  inspectionEnabled: boolean;
   layerToggles: ExpoWorldLayerToggles;
   mobileMoveIntent?: { f: boolean; b: boolean; l: boolean; r: boolean; s?: boolean };
   mode: ExpoMode;
   onMove: (position: number[]) => void;
   playBounds: ExpoWorldContract['playBounds'];
   playerPosition: [number, number, number];
+  planningBoothPlacements: ExpoBoothPlacement[];
   qualityProfileInputs: ExpoWorldContract['qualityProfileInputs'];
   runtimeCaptureSafe: boolean;
   sceneVersion: string | null;
@@ -68,8 +72,8 @@ export function ExpoWorldCanvasShell({
         startView={effectiveStartView}
         startViewKey={EXPO_START_VIEW_KEY}
       />
-      <CenterScreenInspector />
-      <ClickInspector />
+      <CenterScreenInspector inspectionEnabled={inspectionEnabled} />
+      <ClickInspector clickInspectionEnabled={inspectionEnabled} />
 
       <ExpoWorldDebugLayer
         highlightedTargets={highlightedTargets}
@@ -84,6 +88,7 @@ export function ExpoWorldCanvasShell({
         layerToggles={layerToggles}
         mode={mode}
         playerPosition={playerPosition}
+        planningBoothPlacements={planningBoothPlacements}
         qualityProfileInputs={qualityProfileInputs}
         runtimeCaptureSafe={runtimeCaptureSafe}
         sceneVersion={sceneVersion}

@@ -1,0 +1,488 @@
+import type {
+  CanonicalWorldPlan,
+  CityScreenAssignment,
+  CityScreenSocket,
+  ExpoPlanningSectionId,
+  ExpoPlanningZonePlan,
+} from '../../planning/types';
+
+export type WorldObjectLayer =
+  | 'booth'
+  | 'city-mass'
+  | 'city-plane'
+  | 'city-screen-assignment'
+  | 'city-screen-socket'
+  | 'city-screen-surface'
+  | 'city-tower'
+  | 'mega-landmark'
+  | 'stadium-pavilion'
+  | 'stadium-plane'
+  | 'stadium-screen-assignment'
+  | 'stadium-screen-feed'
+  | 'stadium-screen-socket'
+  | 'stadium-screen-surface'
+  | 'stadium-structure'
+  | 'stadium-tower';
+
+export type WorldObjectRegistryEntry = {
+  diagnosticOwners: string[];
+  id: string;
+  interactionOwner: string | null;
+  layer: WorldObjectLayer;
+  planningSections?: ExpoPlanningSectionId[];
+  planningZone: string | null;
+  position: [number, number, number];
+  safeEditSeam: string;
+  sourceFile: string;
+  sourceFunction: string;
+  sourceKind: string;
+};
+
+type BuildCityWorldObjectRegistryArgs = {
+  districtCount: number;
+  districtStride: number;
+  plan: CanonicalWorldPlan;
+};
+
+type BuildStadiumWorldObjectRegistryArgs = {
+  campusCenterZ: number;
+  rearCampusPlan: ExpoPlanningZonePlan;
+};
+
+function createEntry(entry: WorldObjectRegistryEntry): WorldObjectRegistryEntry {
+  return entry;
+}
+
+function buildMegaLandmarkEntries(args: {
+  districtCount: number;
+  districtStride: number;
+}): WorldObjectRegistryEntry[] {
+  const { districtCount, districtStride } = args;
+  const landmarks: ReadonlyArray<readonly [string, [number, number, number]]> = [
+    ['mega-landmark-arrival', [0, 0, 256]],
+    ['mega-landmark-showcase', [0, 0, -72]],
+    ['mega-landmark-media', [0, 0, -214 - districtStride - 56]],
+    ['mega-landmark-media-frame-wall', [356, 0, -214 - districtStride - 56 - 148]],
+    ['mega-landmark-media-signal-pods', [472, 0, -214 - districtStride - 56 + 84]],
+    ['mega-landmark-discovery', [0, 0, -196 - ((Math.max(1, districtCount) - 1) * districtStride) - 1080]],
+    ['mega-landmark-discovery-observatory-crown', [-368, 0, -196 - ((Math.max(1, districtCount) - 1) * districtStride) - 1080 - 32]],
+    ['mega-landmark-discovery-garden-spine', [-492, 0, -196 - ((Math.max(1, districtCount) - 1) * districtStride) - 1080 + 212]],
+    ['mega-landmark-right-skyfold-citadel', [844, 0, -164]],
+    ['mega-landmark-right-skybridge-beacon', [436, 0, -96]],
+    ['mega-landmark-right-media-halo', [628, 0, -248]],
+    ['mega-landmark-right-support-spire', [294, 0, -372]],
+    ['mega-landmark-left-grand-rampart', [-888, 0, -156]],
+    ['mega-landmark-left-cantilever-forum', [-438, 0, -116]],
+    ['mega-landmark-left-split-crown-gate', [-654, 0, -286]],
+    ['mega-landmark-left-broken-wall-monument', [-262, 0, -412]],
+    ['mega-landmark-left-disc-habitat', [-918, 0, -548]],
+    ['mega-landmark-left-split-monolith-pair', [-648, 0, -724]],
+  ];
+
+  return landmarks.map(([id, position]) => createEntry({
+    diagnosticOwners: [],
+    id,
+    interactionOwner: null,
+    layer: 'mega-landmark',
+    planningZone: 'canonical-city',
+    position: position as [number, number, number],
+    safeEditSeam: 'src/modules/expo/runtime/world/WorldCityMegaLandmarks.tsx',
+    sourceFile: 'src/modules/expo/runtime/world/WorldCityMegaLandmarks.tsx',
+    sourceFunction: 'WorldCityMegaLandmarks',
+    sourceKind: 'runtime-landmark',
+  }));
+}
+
+function buildAssignmentEntries(args: {
+  assignments: CityScreenAssignment[];
+  layer: 'city-screen-assignment' | 'stadium-screen-assignment';
+  planningZone: string;
+  sockets: CityScreenSocket[];
+}): WorldObjectRegistryEntry[] {
+  const socketById = new Map(args.sockets.map((socket) => [socket.id, socket]));
+
+  return args.assignments.flatMap((assignment) => {
+    const socket = socketById.get(assignment.socketId);
+    if (!socket) {
+      return [];
+    }
+
+    return [createEntry({
+      diagnosticOwners: [
+        'src/modules/expo/runtime/planning/screens/screenSurfaceBoundsDiagnostics.ts',
+        'src/modules/expo/runtime/planning/screens/screenSurfaceOverlapDiagnostics.ts',
+      ],
+      id: assignment.id,
+      interactionOwner: 'src/modules/expo/runtime/world/WorldCityScreenAssignments.tsx',
+      layer: args.layer,
+      planningSections: assignment.sections,
+      planningZone: args.planningZone,
+      position: socket.position,
+      safeEditSeam: 'src/modules/expo/runtime/planning/screens/buildScreenAssignmentPlan.ts',
+      sourceFile: 'src/modules/expo/runtime/planning/screens/buildScreenAssignmentPlan.ts',
+      sourceFunction: 'buildZoneScreenAssignmentPlan',
+      sourceKind: 'screen-assignment',
+    })];
+  });
+}
+
+export function buildCityWorldObjectRegistry({
+  districtCount,
+  districtStride,
+  plan,
+}: BuildCityWorldObjectRegistryArgs): WorldObjectRegistryEntry[] {
+  return [
+    ...plan.arrivalPlanes.map((plane) => createEntry({
+      diagnosticOwners: [],
+      id: plane.id,
+      interactionOwner: null,
+      layer: 'city-plane',
+      planningSections: plane.sections,
+      planningZone: 'canonical-city',
+      position: plane.position,
+      safeEditSeam: 'src/modules/expo/runtime/planning/world-plan/buildCanonicalWorldPlan.ts',
+      sourceFile: 'src/modules/expo/runtime/planning/world-plan/buildCanonicalWorldPlan.ts',
+      sourceFunction: 'buildCanonicalWorldPlan',
+      sourceKind: 'city-plane',
+    })),
+    ...plan.promenadeAxisPlanes.map((plane) => createEntry({
+      diagnosticOwners: [],
+      id: plane.id,
+      interactionOwner: null,
+      layer: 'city-plane',
+      planningSections: plane.sections,
+      planningZone: 'canonical-city',
+      position: plane.position,
+      safeEditSeam: 'src/modules/expo/runtime/planning/world-plan/buildCanonicalWorldPlan.ts',
+      sourceFile: 'src/modules/expo/runtime/planning/world-plan/buildCanonicalWorldPlan.ts',
+      sourceFunction: 'buildCanonicalWorldPlan',
+      sourceKind: 'city-plane',
+    })),
+    ...plan.showcasePlazas.map((plane) => createEntry({
+      diagnosticOwners: [],
+      id: plane.id,
+      interactionOwner: null,
+      layer: 'city-plane',
+      planningSections: plane.sections,
+      planningZone: 'canonical-city',
+      position: plane.position,
+      safeEditSeam: 'src/modules/expo/runtime/planning/world-plan/buildCanonicalWorldPlan.ts',
+      sourceFile: 'src/modules/expo/runtime/planning/world-plan/buildCanonicalWorldPlan.ts',
+      sourceFunction: 'buildCanonicalWorldPlan',
+      sourceKind: 'city-plane',
+    })),
+    ...plan.boothForecourtPlanes.map((plane) => createEntry({
+      diagnosticOwners: [],
+      id: plane.id,
+      interactionOwner: null,
+      layer: 'city-plane',
+      planningSections: plane.sections,
+      planningZone: 'canonical-city',
+      position: plane.position,
+      safeEditSeam: 'src/modules/expo/runtime/planning/world-plan/buildCanonicalWorldPlan.ts',
+      sourceFile: 'src/modules/expo/runtime/planning/world-plan/buildCanonicalWorldPlan.ts',
+      sourceFunction: 'buildCanonicalWorldPlan',
+      sourceKind: 'city-plane',
+    })),
+    ...plan.filteredMasses.map((mass) => createEntry({
+      diagnosticOwners: [],
+      id: mass.id,
+      interactionOwner: null,
+      layer: 'city-mass',
+      planningSections: mass.sections,
+      planningZone: 'canonical-city',
+      position: mass.position,
+      safeEditSeam: 'src/modules/expo/runtime/planning/world-plan/buildCanonicalWorldPlan.ts',
+      sourceFile: 'src/modules/expo/runtime/planning/world-plan/buildCanonicalWorldPlan.ts',
+      sourceFunction: 'buildCanonicalWorldPlan',
+      sourceKind: 'city-mass',
+    })),
+    ...plan.filteredTowerLandmarks.map((tower) => createEntry({
+      diagnosticOwners: [
+        'src/modules/expo/runtime/planning/screens/screenOrientationDiagnostics.ts',
+      ],
+      id: tower.id,
+      interactionOwner: null,
+      layer: 'city-tower',
+      planningSections: tower.sections,
+      planningZone: 'canonical-city',
+      position: tower.position,
+      safeEditSeam: 'src/modules/expo/runtime/planning/world-plan/buildCanonicalWorldPlan.ts',
+      sourceFile: 'src/modules/expo/runtime/planning/world-plan/buildCanonicalWorldPlan.ts',
+      sourceFunction: 'buildCanonicalWorldPlan',
+      sourceKind: 'city-tower',
+    })),
+    ...plan.filteredScreenSurfaces.map((surface) => createEntry({
+      diagnosticOwners: [
+        'src/modules/expo/runtime/planning/screens/screenOrientationDiagnostics.ts',
+        'src/modules/expo/runtime/planning/screens/screenSurfaceBoundsDiagnostics.ts',
+        'src/modules/expo/runtime/planning/screens/screenSurfaceOverlapDiagnostics.ts',
+      ],
+      id: surface.id,
+      interactionOwner: null,
+      layer: 'city-screen-surface',
+      planningSections: surface.sections,
+      planningZone: 'canonical-city',
+      position: surface.position,
+      safeEditSeam: 'src/modules/expo/runtime/planning/screens/buildScreenSurfacePlan.ts',
+      sourceFile: 'src/modules/expo/runtime/planning/screens/buildScreenSurfacePlan.ts',
+      sourceFunction: 'buildZoneScreenSurfacePlan',
+      sourceKind: 'screen-surface',
+    })),
+    ...plan.screenSockets.map((socket) => createEntry({
+      diagnosticOwners: [
+        'src/modules/expo/runtime/planning/screens/screenOrientationDiagnostics.ts',
+      ],
+      id: socket.id,
+      interactionOwner: null,
+      layer: 'city-screen-socket',
+      planningSections: socket.sections,
+      planningZone: 'canonical-city',
+      position: socket.position,
+      safeEditSeam: 'src/modules/expo/runtime/planning/screens/buildScreenSocketPlan.ts',
+      sourceFile: 'src/modules/expo/runtime/planning/screens/buildScreenSocketPlan.ts',
+      sourceFunction: 'buildZoneScreenSocketPlan',
+      sourceKind: 'screen-socket',
+    })),
+    ...buildAssignmentEntries({
+      assignments: plan.screenAssignments,
+      layer: 'city-screen-assignment',
+      planningZone: 'canonical-city',
+      sockets: plan.screenSockets,
+    }),
+    ...buildMegaLandmarkEntries({ districtCount, districtStride }),
+  ];
+}
+
+function buildStadiumStructureEntries(campusCenterZ: number): WorldObjectRegistryEntry[] {
+  const structures: ReadonlyArray<readonly [string, [number, number, number]]> = [
+    ['rear-campus-arc-bastion-right', [1180, 0, campusCenterZ + 864]],
+    ['rear-campus-center-event-island', [0, 0, campusCenterZ - 1296]],
+    ['rear-campus-bowl-center-deck', [0, 212, campusCenterZ - 972]],
+    ['rear-campus-stage-monolith-canopy', [47, 0, -3018]],
+    ['rear-campus-mega-civic-hall', [-2490, 0, -3670]],
+    ['rear-campus-void-courtyard-monument', [-1971, 0, -2894]],
+    ['rear-campus-linked-mini-skyline', [-2537, 0, -4977]],
+    ['rear-campus-titan-frame-gate', [-682, 0, 396]],
+    ['rear-campus-linear-civic-terrace', [-1684, 0, -1430]],
+    ['rear-campus-bridge-linked-campus', [-1343, 0, -3449]],
+    ['rear-campus-petal-tower', [2340, 0, -4577]],
+    ['rear-campus-helix-spire', [2439, 0, -1432]],
+    ['rear-campus-grand-prism-citadel', [-1033, 0, -1902]],
+    ['rear-campus-split-wall-gate', [-836, 0, -1427]],
+    ['rear-campus-terrace-signal-court', [-864, 0, -936]],
+    ['rear-campus-needle-crown-skyscraper', [892, 0, -611]],
+    ['rear-campus-sky-slab-tower', [1087, 0, -1329]],
+    ['rear-campus-twin-void-monolith', [1340, 0, -3242]],
+    ['stadium-bowl', [0, 0, campusCenterZ - 1520]],
+    ['stadium-axis-center-1180', [0, 0, 1180]],
+    ['stadium-axis-center-1608', [0, 0, 1608]],
+  ];
+
+  return structures.map(([id, position]) => createEntry({
+    diagnosticOwners: [],
+    id,
+    interactionOwner: null,
+    layer: 'stadium-structure',
+    planningZone: 'rear-campus',
+    position: position as [number, number, number],
+    safeEditSeam: 'src/modules/expo/runtime/world/ExpoRearCampus.tsx',
+    sourceFile: 'src/modules/expo/runtime/world/ExpoRearCampus.tsx',
+    sourceFunction: 'ExpoRearCampus',
+    sourceKind: 'rear-campus-structure',
+  }));
+}
+
+function buildRearCampusCustomFeedEntries(args: {
+  campusCenterZ: number;
+  rearCampusPlan: ExpoPlanningZonePlan;
+}): WorldObjectRegistryEntry[] {
+  const rearCampus = args.rearCampusPlan.zoneExtension?.rearCampus;
+  if (!rearCampus) {
+    return [];
+  }
+
+  const assignmentBySocketId = new Map(
+    args.rearCampusPlan.assignments.map((assignment) => [assignment.socketId, assignment] as const),
+  );
+  const leftTower = rearCampus.landmarkTowers.find((tower) => tower.id.includes('left'));
+  const rightTower = rearCampus.landmarkTowers.find((tower) => tower.id.includes('right'));
+  const bowlFeedAssignment = rearCampus.feedSocketIds.bowl
+    ? assignmentBySocketId.get(rearCampus.feedSocketIds.bowl)
+    : undefined;
+  const leftFeedAssignment = rearCampus.feedSocketIds.leftTower
+    ? assignmentBySocketId.get(rearCampus.feedSocketIds.leftTower)
+    : undefined;
+  const rightFeedAssignment = rearCampus.feedSocketIds.rightTower
+    ? assignmentBySocketId.get(rearCampus.feedSocketIds.rightTower)
+    : undefined;
+
+  const feedEntries: WorldObjectRegistryEntry[] = [];
+
+  if (leftTower && leftFeedAssignment) {
+    feedEntries.push(createEntry({
+      diagnosticOwners: [],
+      id: `${leftFeedAssignment.id}-rear-campus-custom-feed-left`,
+      interactionOwner: null,
+      layer: 'stadium-screen-feed',
+      planningSections: leftFeedAssignment.sections,
+      planningZone: 'rear-campus',
+      position: [
+        leftTower.position[0],
+        leftTower.position[1] + 398,
+        leftTower.position[2] + 30,
+      ],
+      safeEditSeam: 'src/modules/expo/runtime/world/ExpoRearCampusStructures.tsx',
+      sourceFile: 'src/modules/expo/runtime/world/ExpoRearCampusStructures.tsx',
+      sourceFunction: 'ExpoRearCampusStructures',
+      sourceKind: 'rear-campus-custom-screen-feed',
+    }));
+  }
+
+  if (rightTower && rightFeedAssignment) {
+    feedEntries.push(createEntry({
+      diagnosticOwners: [],
+      id: `${rightFeedAssignment.id}-rear-campus-custom-feed-right`,
+      interactionOwner: null,
+      layer: 'stadium-screen-feed',
+      planningSections: rightFeedAssignment.sections,
+      planningZone: 'rear-campus',
+      position: [
+        rightTower.position[0],
+        rightTower.position[1] + 398,
+        rightTower.position[2] + 30,
+      ],
+      safeEditSeam: 'src/modules/expo/runtime/world/ExpoRearCampusStructures.tsx',
+      sourceFile: 'src/modules/expo/runtime/world/ExpoRearCampusStructures.tsx',
+      sourceFunction: 'ExpoRearCampusStructures',
+      sourceKind: 'rear-campus-custom-screen-feed',
+    }));
+  }
+
+  if (bowlFeedAssignment) {
+    feedEntries.push(createEntry({
+      diagnosticOwners: [],
+      id: `${bowlFeedAssignment.id}-rear-campus-custom-feed-bowl`,
+      interactionOwner: null,
+      layer: 'stadium-screen-feed',
+      planningSections: bowlFeedAssignment.sections,
+      planningZone: 'rear-campus',
+      position: [0, 318, args.campusCenterZ + 246],
+      safeEditSeam: 'src/modules/expo/runtime/world/ExpoRearCampusStructures.tsx',
+      sourceFile: 'src/modules/expo/runtime/world/ExpoRearCampusStructures.tsx',
+      sourceFunction: 'ExpoRearCampusStructures',
+      sourceKind: 'rear-campus-custom-screen-feed',
+    }));
+  }
+
+  return feedEntries;
+}
+
+export function buildStadiumWorldObjectRegistry({
+  campusCenterZ,
+  rearCampusPlan,
+}: BuildStadiumWorldObjectRegistryArgs): WorldObjectRegistryEntry[] {
+  const rearCampus = rearCampusPlan.zoneExtension?.rearCampus;
+
+  return [
+    ...(rearCampus?.forecourts ?? []).map((plane) => createEntry({
+      diagnosticOwners: [],
+      id: plane.id,
+      interactionOwner: null,
+      layer: 'stadium-plane',
+      planningZone: 'rear-campus',
+      position: plane.position,
+      safeEditSeam: 'src/modules/expo/runtime/planning/zones/rear-campus/index.ts',
+      sourceFile: 'src/modules/expo/runtime/planning/zones/rear-campus/index.ts',
+      sourceFunction: 'buildRearCampusZonePlan',
+      sourceKind: 'rear-campus-forecourt',
+    })),
+    ...(rearCampus?.sidePavilions ?? []).map((pavilion) => createEntry({
+      diagnosticOwners: [],
+      id: pavilion.id,
+      interactionOwner: null,
+      layer: 'stadium-pavilion',
+      planningZone: 'rear-campus',
+      position: pavilion.position,
+      safeEditSeam: 'src/modules/expo/runtime/planning/zones/rear-campus/index.ts',
+      sourceFile: 'src/modules/expo/runtime/planning/zones/rear-campus/index.ts',
+      sourceFunction: 'buildRearCampusZonePlan',
+      sourceKind: 'rear-campus-pavilion',
+    })),
+    ...(rearCampus?.landmarkTowers ?? []).map((tower) => createEntry({
+      diagnosticOwners: [],
+      id: tower.id,
+      interactionOwner: null,
+      layer: 'stadium-tower',
+      planningZone: 'rear-campus',
+      position: tower.position,
+      safeEditSeam: 'src/modules/expo/runtime/planning/zones/rear-campus/index.ts',
+      sourceFile: 'src/modules/expo/runtime/planning/zones/rear-campus/index.ts',
+      sourceFunction: 'buildRearCampusZonePlan',
+      sourceKind: 'rear-campus-tower',
+    })),
+    ...rearCampusPlan.screenSurfaces.map((surface) => createEntry({
+      diagnosticOwners: [
+        'src/modules/expo/runtime/planning/screens/screenSurfaceBoundsDiagnostics.ts',
+        'src/modules/expo/runtime/planning/screens/screenSurfaceOverlapDiagnostics.ts',
+      ],
+      id: surface.id,
+      interactionOwner: null,
+      layer: 'stadium-screen-surface',
+      planningSections: surface.sections,
+      planningZone: 'rear-campus',
+      position: surface.position,
+      safeEditSeam: 'src/modules/expo/runtime/planning/screens/buildScreenSurfacePlan.ts',
+      sourceFile: 'src/modules/expo/runtime/planning/screens/buildScreenSurfacePlan.ts',
+      sourceFunction: 'buildZoneScreenSurfacePlan',
+      sourceKind: 'screen-surface',
+    })),
+    ...rearCampusPlan.screenSockets.map((socket) => createEntry({
+      diagnosticOwners: [],
+      id: socket.id,
+      interactionOwner: null,
+      layer: 'stadium-screen-socket',
+      planningSections: socket.sections,
+      planningZone: 'rear-campus',
+      position: socket.position,
+      safeEditSeam: 'src/modules/expo/runtime/planning/screens/buildScreenSocketPlan.ts',
+      sourceFile: 'src/modules/expo/runtime/planning/screens/buildScreenSocketPlan.ts',
+      sourceFunction: 'buildZoneScreenSocketPlan',
+      sourceKind: 'screen-socket',
+    })),
+    ...buildAssignmentEntries({
+      assignments: rearCampusPlan.assignments,
+      layer: 'stadium-screen-assignment',
+      planningZone: 'rear-campus',
+      sockets: rearCampusPlan.screenSockets,
+    }),
+    ...buildRearCampusCustomFeedEntries({
+      campusCenterZ,
+      rearCampusPlan,
+    }),
+    ...buildStadiumStructureEntries(campusCenterZ),
+  ];
+}
+
+export function buildBoothWorldObjectRegistry(
+  boothPlacements: ReadonlyArray<{
+    id: string;
+    position: [number, number, number];
+    sectorId?: string | null;
+  }>,
+): WorldObjectRegistryEntry[] {
+  return boothPlacements.map((placement) => createEntry({
+    diagnosticOwners: [
+      'src/shared/expo/lib/boothFrontalityDiagnostics.ts',
+    ],
+    id: placement.id,
+    interactionOwner: 'src/modules/expo/runtime/booths/DistrictBooth.tsx',
+    layer: 'booth',
+    planningZone: placement.sectorId ?? null,
+    position: placement.position,
+    safeEditSeam: 'src/shared/expo/layoutEngine.ts',
+    sourceFile: 'src/shared/expo/layoutEngine.ts',
+    sourceFunction: 'buildExpoLayoutEngine',
+    sourceKind: 'booth-placement',
+  }));
+}

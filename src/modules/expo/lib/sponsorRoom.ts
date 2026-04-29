@@ -1,6 +1,7 @@
 import { buildSponsorBoothPresentation, resolveSponsorCtaIntent } from './sponsorBoothPresentation';
 import { buildBoothStreamingLevel, getPreferredBoothStreamerIds } from '../services/pixelStreamingBoothSession';
 import type { ExpoSceneCompany, ExpoSceneData } from '../types/scene';
+import { pickExpoBoothRouteToken } from './expoBoothRoutes';
 
 export type SponsorRoomRecord = {
   boothId: string | null;
@@ -47,7 +48,7 @@ export function resolveSponsorRoomRecord(scene: ExpoSceneData, routeId: string |
     presentation,
     preferredStreamerIds: [] as string[],
     sectorName,
-    slugOrId: company.slug || company.id,
+    slugOrId: pickExpoBoothRouteToken(company.id, company.slug) ?? company.id,
     streamingLevel: buildBoothStreamingLevel(company.booth?.id ?? null),
   };
 

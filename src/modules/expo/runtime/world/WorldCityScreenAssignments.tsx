@@ -1,13 +1,25 @@
 import { Text } from '@react-three/drei';
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { trackExpoScreenRouteClicked } from '../../lib/expoAnalytics';
 import { SponsorTextureSurface } from '../booths';
+import { resolveSponsorScreenInteraction } from '../../lib/sponsorScreenInteractionResolver';
 import type { CanonicalPrimitive, CityScreenAssignment, CityScreenSocket } from '../planning/types';
 
-function renderPrimitive(primitive: CanonicalPrimitive, key: string) {
+function getHighlightedOpacity(opacity: number | undefined, fallback: number) {
+  return Math.min(1, (opacity ?? fallback) + 0.12);
+}
+
+function renderPrimitive(primitive: CanonicalPrimitive, key: string, highlighted: boolean) {
   if (primitive.kind === 'plane') {
     return (
       <mesh key={key} position={primitive.position} rotation={primitive.rotation}>
         <planeGeometry args={primitive.size} />
-        <meshBasicMaterial color={primitive.color} transparent={primitive.transparent} opacity={primitive.opacity} />
+        <meshBasicMaterial
+          color={primitive.color}
+          transparent={primitive.transparent}
+          opacity={highlighted ? getHighlightedOpacity(primitive.opacity, 1) : primitive.opacity}
+        />
       </mesh>
     );
   }
@@ -17,7 +29,11 @@ function renderPrimitive(primitive: CanonicalPrimitive, key: string) {
       return (
         <mesh key={key} position={primitive.position}>
           <planeGeometry args={primitive.size} />
-          <meshBasicMaterial color={primitive.fallbackColor} transparent opacity={primitive.opacity ?? 0.22} />
+          <meshBasicMaterial
+            color={primitive.fallbackColor}
+            transparent
+            opacity={highlighted ? getHighlightedOpacity(primitive.opacity, 0.22) : primitive.opacity ?? 0.22}
+          />
         </mesh>
       );
     }
@@ -25,7 +41,11 @@ function renderPrimitive(primitive: CanonicalPrimitive, key: string) {
     return (
       <mesh key={key} position={primitive.position}>
         <planeGeometry args={primitive.size} />
-        <SponsorTextureSurface fallbackColor={primitive.fallbackColor} opacity={primitive.opacity ?? 0.92} url={primitive.url} />
+        <SponsorTextureSurface
+          fallbackColor={primitive.fallbackColor}
+          opacity={highlighted ? getHighlightedOpacity(primitive.opacity, 0.92) : primitive.opacity ?? 0.92}
+          url={primitive.url}
+        />
       </mesh>
     );
   }
@@ -61,7 +81,15 @@ export function WorldCityScreenAssignments({
   playerPosition: [number, number, number];
   sockets: CityScreenSocket[];
 }) {
+  const navigate = useNavigate();
+  const [hoveredAssignmentId, setHoveredAssignmentId] = useState<string | null>(null);
   const socketById = new Map(sockets.map((socket) => [socket.id, socket]));
+
+  useEffect(() => () => {
+    if (typeof document !== 'undefined') {
+      document.body.style.cursor = 'auto';
+    }
+  }, []);
 
   return (
     <group name="world-city-screen-assignments">
@@ -70,6 +98,15 @@ export function WorldCityScreenAssignments({
         if (!socket) {
           return null;
         }
+
+        const resolvedAction = resolveSponsorScreenInteraction({
+          companyId: assignment.companyId,
+          id: assignment.id,
+          label: assignment.subtitle,
+          title: assignment.label,
+        });
+        const isRouteAction = resolvedAction.kind === 'route';
+        const isHighlighted = hoveredAssignmentId === assignment.id;
 
         const dx = socket.position[0] - playerPosition[0];
         const dz = socket.position[2] - playerPosition[2];
@@ -105,8 +142,47 @@ export function WorldCityScreenAssignments({
         });
 
         return (
-          <group key={assignment.id} name={`world-city-screen:${intent?.semanticMode ?? 'wayfinding'}:${assignment.id}`} position={socket.position} rotation={socket.rotation}>
-            {primitives.map((primitive, index) => renderPrimitive(primitive, `${assignment.id}:${primitive.kind}:${index}`))}
+          <group
+            key={assignment.id}
+            name={`world-city-screen:${intent?.semanticMode ?? 'wayfinding'}:${assignment.id}`}
+            position={socket.position}
+            rotation={socket.rotation}
+            onClick={isRouteAction
+              ? (event) => {
+                  event.stopPropagation();
+                  trackExpoScreenRouteClicked(
+                    { id: resolvedAction.companyId },
+                    {
+                      route: resolvedAction.analytics.route,
+                      screenActionKind: resolvedAction.analytics.actionKind,
+                      screenAssignmentId: assignment.id,
+                      screenLabel: resolvedAction.analytics.label,
+                      screenSourceId: resolvedAction.analytics.sourceId,
+                    },
+                  );
+                  navigate(resolvedAction.route);
+                }
+              : undefined}
+            onPointerOver={isRouteAction
+              ? () => {
+                  setHoveredAssignmentId(assignment.id);
+                  if (typeof document !== 'undefined') {
+                    document.body.style.cursor = 'pointer';
+                  }
+                }
+              : undefined}
+            onPointerOut={isRouteAction
+              ? () => {
+                  setHoveredAssignmentId((current) => (current === assignment.id ? null : current));
+                  if (typeof document !== 'undefined') {
+                    document.body.style.cursor = 'auto';
+                  }
+                }
+              : undefined}
+          >
+            {primitives.map((primitive, index) =>
+              renderPrimitive(primitive, `${assignment.id}:${primitive.kind}:${index}`, isRouteAction && isHighlighted),
+            )}
           </group>
         );
       })}

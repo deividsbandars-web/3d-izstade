@@ -57,25 +57,208 @@ export function SponsorBadge({ accentColor, label, position }: { accentColor: st
 }
 
 export function SponsorCtaStrip({ actions, color, onAction }: { actions: SponsorCta[]; color: string; onAction: (action: SponsorCta) => void }) {
-  const primaryIndex = actions.findIndex((action) => !action.disabled && action.kind === 'demo_room');
+  const stripActions = actions.filter((action) => action.surface !== 'feature');
+  const primaryIndex = stripActions.findIndex((action) => !action.disabled && action.kind === 'demo_room');
+  const actionCount = Math.max(stripActions.length, 1);
+  const spacing = actionCount >= 4 ? 2.78 : 3.5;
+  const primaryWidth = actionCount >= 4 ? 2.86 : 3.64;
+  const secondaryWidth = actionCount >= 4 ? 2.34 : 3.04;
+  const primaryTextWidth = actionCount >= 4 ? 1.9 : 2.5;
+  const secondaryTextWidth = actionCount >= 4 ? 1.45 : 1.9;
   return (
     <group>
       <mesh castShadow><boxGeometry args={[11.9, 0.92, 0.42]} /><meshStandardMaterial color="#08111c" metalness={0.12} roughness={0.62} /></mesh>
       <mesh position={[0, -0.16, 0.08]} castShadow><boxGeometry args={[11.2, 0.1, 0.08]} /><meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.06} roughness={0.48} /></mesh>
-      {actions.map((action, index) => {
-        const x = (index - ((actions.length - 1) / 2)) * 3.5;
+      {stripActions.map((action, index) => {
+        const x = (index - ((stripActions.length - 1) / 2)) * spacing;
         const isPrimary = index === primaryIndex;
+        const buttonWidth = isPrimary ? primaryWidth : secondaryWidth;
+        const dividerOffset = (buttonWidth * 0.5) + 0.14;
         return (
           <group key={`${action.kind}-${index}`} position={[x, 0.01, 0.13]}>
             <mesh onClick={(event) => { event.stopPropagation(); if (!action.disabled) onAction(action); }} onPointerOver={() => { document.body.style.cursor = action.disabled ? 'auto' : 'pointer'; }} onPointerOut={() => { document.body.style.cursor = 'auto'; }}>
-              <boxGeometry args={[isPrimary ? 3.64 : 3.04, 0.54, 0.18]} />
+              <boxGeometry args={[buttonWidth, 0.54, 0.18]} />
               <meshStandardMaterial color={action.disabled ? '#172030' : isPrimary ? color : '#101b2a'} metalness={0.08} roughness={0.7} />
             </mesh>
-            {index < actions.length - 1 && <mesh position={[isPrimary ? 1.94 : 1.66, 0, 0.03]}><boxGeometry args={[0.04, 0.4, 0.04]} /><meshStandardMaterial color="#1b2533" /></mesh>}
-            <Text position={[0, 0, 0.16]} fontSize={isPrimary ? 0.22 : 0.2} color={action.disabled ? '#64748b' : '#f8fafc'} anchorX="center" anchorY="middle" maxWidth={isPrimary ? 2.5 : 1.9}>{action.label.toUpperCase()}</Text>
+            {index < stripActions.length - 1 && <mesh position={[dividerOffset, 0, 0.03]}><boxGeometry args={[0.04, 0.4, 0.04]} /><meshStandardMaterial color="#1b2533" /></mesh>}
+            <Text position={[0, 0, 0.16]} fontSize={isPrimary ? 0.22 : 0.2} color={action.disabled ? '#64748b' : '#f8fafc'} anchorX="center" anchorY="middle" maxWidth={isPrimary ? primaryTextWidth : secondaryTextWidth}>{action.label.toUpperCase()}</Text>
           </group>
         );
       })}
+    </group>
+  );
+}
+
+export function BoothCalculatorFeature({
+  action,
+  color,
+  onAction,
+}: {
+  action: SponsorCta | null;
+  color: string;
+  onAction: (action: SponsorCta) => void;
+}) {
+  if (!action) {
+    return null;
+  }
+
+  return (
+    <group>
+      <mesh castShadow>
+        <boxGeometry args={[7.84, 1.12, 0.34]} />
+        <meshStandardMaterial color="#0b1522" metalness={0.1} roughness={0.58} />
+      </mesh>
+      <mesh position={[-2.96, 0, 0.08]} castShadow>
+        <boxGeometry args={[1.12, 1.12, 0.12]} />
+        <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.12} roughness={0.26} metalness={0.12} />
+      </mesh>
+      <Text position={[-2.96, 0.02, 0.18]} fontSize={0.42} color="#f8fafc" anchorX="center" anchorY="middle">
+        CALC
+      </Text>
+      <Text position={[0.38, 0.2, 0.18]} fontSize={0.22} color="#f8fafc" anchorX="center" anchorY="middle" maxWidth={4.2}>
+        ESTIMATE PROJECT COSTS
+      </Text>
+      <Text position={[0.38, -0.12, 0.18]} fontSize={0.16} color="#94a3b8" anchorX="center" anchorY="middle" maxWidth={4.8}>
+        OPEN THE CALCULATOR HUB DIRECTLY FROM THIS BOOTH
+      </Text>
+      <group position={[2.44, -0.02, 0.12]}>
+        <mesh
+          onClick={(event) => {
+            event.stopPropagation();
+            if (!action.disabled) {
+              onAction(action);
+            }
+          }}
+          onPointerOver={() => {
+            document.body.style.cursor = action.disabled ? 'auto' : 'pointer';
+          }}
+          onPointerOut={() => {
+            document.body.style.cursor = 'auto';
+          }}
+        >
+          <boxGeometry args={[1.82, 0.52, 0.18]} />
+          <meshStandardMaterial color={action.disabled ? '#172030' : color} metalness={0.08} roughness={0.44} />
+        </mesh>
+        <Text position={[0, 0, 0.14]} fontSize={0.15} color={action.disabled ? '#64748b' : '#f8fafc'} anchorX="center" anchorY="middle" maxWidth={1.4}>
+          {action.label.toUpperCase()}
+        </Text>
+      </group>
+    </group>
+  );
+}
+
+export function BoothAiFeature({
+  action,
+  color,
+  onAction,
+}: {
+  action: SponsorCta | null;
+  color: string;
+  onAction: (action: SponsorCta) => void;
+}) {
+  if (!action) {
+    return null;
+  }
+
+  return (
+    <group>
+      <mesh castShadow>
+        <boxGeometry args={[7.84, 1.12, 0.34]} />
+        <meshStandardMaterial color="#0a1525" metalness={0.12} roughness={0.54} />
+      </mesh>
+      <mesh position={[-2.96, 0, 0.08]} castShadow>
+        <boxGeometry args={[1.12, 1.12, 0.12]} />
+        <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.14} roughness={0.24} metalness={0.12} />
+      </mesh>
+      <Text position={[-2.96, 0.02, 0.18]} fontSize={0.42} color="#f8fafc" anchorX="center" anchorY="middle">
+        AI
+      </Text>
+      <Text position={[0.32, 0.2, 0.18]} fontSize={0.22} color="#f8fafc" anchorX="center" anchorY="middle" maxWidth={4.4}>
+        TALK TO THE CITY AI
+      </Text>
+      <Text position={[0.32, -0.12, 0.18]} fontSize={0.16} color="#94a3b8" anchorX="center" anchorY="middle" maxWidth={4.8}>
+        OPEN LIVE AI GUIDANCE DIRECTLY FROM THIS BOOTH
+      </Text>
+      <group position={[2.44, -0.02, 0.12]}>
+        <mesh
+          onClick={(event) => {
+            event.stopPropagation();
+            if (!action.disabled) {
+              onAction(action);
+            }
+          }}
+          onPointerOver={() => {
+            document.body.style.cursor = action.disabled ? 'auto' : 'pointer';
+          }}
+          onPointerOut={() => {
+            document.body.style.cursor = 'auto';
+          }}
+        >
+          <boxGeometry args={[1.82, 0.52, 0.18]} />
+          <meshStandardMaterial color={action.disabled ? '#172030' : color} metalness={0.08} roughness={0.44} />
+        </mesh>
+        <Text position={[0, 0, 0.14]} fontSize={0.15} color={action.disabled ? '#64748b' : '#f8fafc'} anchorX="center" anchorY="middle" maxWidth={1.4}>
+          {action.label.toUpperCase()}
+        </Text>
+      </group>
+    </group>
+  );
+}
+
+export function BoothInfoStandFeature({
+  action,
+  color,
+  onAction,
+}: {
+  action: SponsorCta | null;
+  color: string;
+  onAction: (action: SponsorCta) => void;
+}) {
+  if (!action) {
+    return null;
+  }
+
+  return (
+    <group>
+      <mesh castShadow>
+        <boxGeometry args={[7.84, 1.12, 0.34]} />
+        <meshStandardMaterial color="#091420" metalness={0.12} roughness={0.56} />
+      </mesh>
+      <mesh position={[-2.96, 0, 0.08]} castShadow>
+        <boxGeometry args={[1.12, 1.12, 0.12]} />
+        <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.1} roughness={0.24} metalness={0.14} />
+      </mesh>
+      <Text position={[-2.96, 0.02, 0.18]} fontSize={0.32} color="#f8fafc" anchorX="center" anchorY="middle" maxWidth={0.9}>
+        2D
+      </Text>
+      <Text position={[0.34, 0.2, 0.18]} fontSize={0.22} color="#f8fafc" anchorX="center" anchorY="middle" maxWidth={4.4}>
+        PROJECT INFO STAND
+      </Text>
+      <Text position={[0.34, -0.12, 0.18]} fontSize={0.16} color="#94a3b8" anchorX="center" anchorY="middle" maxWidth={4.8}>
+        OPEN THE BOOTH&apos;S DEDICATED 2D INFO SURFACE AND SHOWROOM
+      </Text>
+      <group position={[2.44, -0.02, 0.12]}>
+        <mesh
+          onClick={(event) => {
+            event.stopPropagation();
+            if (!action.disabled) {
+              onAction(action);
+            }
+          }}
+          onPointerOver={() => {
+            document.body.style.cursor = action.disabled ? 'auto' : 'pointer';
+          }}
+          onPointerOut={() => {
+            document.body.style.cursor = 'auto';
+          }}
+        >
+          <boxGeometry args={[1.82, 0.52, 0.18]} />
+          <meshStandardMaterial color={action.disabled ? '#172030' : color} metalness={0.08} roughness={0.44} />
+        </mesh>
+        <Text position={[0, 0, 0.14]} fontSize={0.15} color={action.disabled ? '#64748b' : '#f8fafc'} anchorX="center" anchorY="middle" maxWidth={1.4}>
+          {action.label.toUpperCase()}
+        </Text>
+      </group>
     </group>
   );
 }
@@ -180,13 +363,23 @@ export function BoothFeatureHeader({ accentColor, contractTier, fallbackMonogram
 export function BoothInfoBand({ accentColor, badgeLabel, ctaActions, fallbackPremiumLabel, infoBandHeight, infoBandWidth, infoBandZ, isEliteBooth, isHeroNode, metrics, nameFontSize, onAction, showBadge, showDetailedText, showFullBoothUi, showPremiumEyebrow, showTagline, tagline, title }: { accentColor: string; badgeLabel: string | null; ctaActions: SponsorCta[]; fallbackPremiumLabel: string; infoBandHeight: number; infoBandWidth: number; infoBandZ: number; isEliteBooth: boolean; isHeroNode: boolean; metrics: { badgePosition: [number, number, number]; ctaPosition: [number, number, number]; taglinePosition: [number, number, number]; titleMaxWidth: number; titlePosition: [number, number, number] }; nameFontSize: number; onAction: (action: SponsorCta) => void; showBadge: boolean; showDetailedText: boolean; showFullBoothUi: boolean; showPremiumEyebrow: boolean; showTagline: boolean; tagline?: string; title: string }) {
   const isPremiumBand = showPremiumEyebrow;
   const edgeGlowColor = isEliteBooth ? '#99f6e4' : isHeroNode ? '#f3f8fd' : '#bae6fd';
+  const aiAction = ctaActions.find((action) => action.kind === 'ai_chat' && !action.disabled) ?? null;
+  const calculatorAction = ctaActions.find((action) => action.kind === 'calculators' && !action.disabled) ?? null;
+  const infoStandAction = ctaActions.find((action) => action.kind === 'demo_room' && !action.disabled) ?? null;
+  const featurePanelCount = showFullBoothUi && showDetailedText
+    ? [aiAction, calculatorAction, infoStandAction].filter(Boolean).length
+    : 0;
+  const featureStackExtraHeight = Math.max(0, featurePanelCount - 1) * 1.3;
+  const backgroundHeight = infoBandHeight + 0.72 + featureStackExtraHeight;
+  const backgroundCenterY = (metrics.titlePosition[1] - 0.82) - (featureStackExtraHeight * 0.5);
+  const sideRailCenterY = (metrics.titlePosition[1] - 0.86) - (featureStackExtraHeight * 0.5);
   return (
     <>
-      <mesh position={[0, metrics.titlePosition[1] - 0.82, infoBandZ - 0.04]} castShadow><boxGeometry args={[infoBandWidth + 1.46, infoBandHeight + 0.72, 0.48]} /><meshStandardMaterial color="#08111c" metalness={0.08} roughness={0.58} /></mesh>
+      <mesh position={[0, backgroundCenterY, infoBandZ - 0.04]} castShadow><boxGeometry args={[infoBandWidth + 1.46, backgroundHeight, 0.48]} /><meshStandardMaterial color="#08111c" metalness={0.08} roughness={0.58} /></mesh>
       <mesh position={[0, metrics.titlePosition[1] + 0.52, infoBandZ + 0.02]} castShadow><boxGeometry args={[Math.max(7.8, metrics.titleMaxWidth + (isEliteBooth ? 1.2 : isPremiumBand ? 0.8 : 0.4)), 0.18, 0.18]} /><meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={isEliteBooth ? 0.12 : isPremiumBand ? 0.1 : 0.08} /></mesh>
       {showPremiumEyebrow && showDetailedText && <Text position={[metrics.titlePosition[0], metrics.titlePosition[1] + 0.92, metrics.titlePosition[2] - 0.08]} fontSize={isEliteBooth ? 0.34 : isHeroNode ? 0.36 : 0.28} color={edgeGlowColor} anchorX="center" anchorY="middle" maxWidth={Math.max(8.2, metrics.titleMaxWidth)}>{fallbackPremiumLabel}</Text>}
-      <mesh position={[-((infoBandWidth * 0.5) + 0.54), metrics.titlePosition[1] - 0.86, infoBandZ + 0.02]} castShadow><boxGeometry args={[0.24, infoBandHeight + 0.42, 0.18]} /><meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={0.1} /></mesh>
-      <mesh position={[(infoBandWidth * 0.5) + 0.54, metrics.titlePosition[1] - 0.86, infoBandZ + 0.02]} castShadow><boxGeometry args={[0.24, infoBandHeight + 0.42, 0.18]} /><meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={0.06} /></mesh>
+      <mesh position={[-((infoBandWidth * 0.5) + 0.54), sideRailCenterY, infoBandZ + 0.02]} castShadow><boxGeometry args={[0.24, backgroundHeight - 0.3, 0.18]} /><meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={0.1} /></mesh>
+      <mesh position={[(infoBandWidth * 0.5) + 0.54, sideRailCenterY, infoBandZ + 0.02]} castShadow><boxGeometry args={[0.24, backgroundHeight - 0.3, 0.18]} /><meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={0.06} /></mesh>
       {!isPremiumBand && (
         <mesh position={[0, metrics.titlePosition[1] - 1.46, infoBandZ + 0.02]} castShadow>
           <boxGeometry args={[Math.max(7.1, infoBandWidth - 2.8), 0.06, 0.12]} />
@@ -205,6 +398,9 @@ export function BoothInfoBand({ accentColor, badgeLabel, ctaActions, fallbackPre
       <mesh position={[metrics.ctaPosition[0], metrics.ctaPosition[1] - 0.12, metrics.ctaPosition[2] - 0.14]} castShadow><boxGeometry args={[7.84, 1.02, 0.44]} /><meshStandardMaterial color="#08111c" metalness={0.1} roughness={0.6} /></mesh>
       <mesh position={[metrics.ctaPosition[0], metrics.ctaPosition[1] - 0.12, metrics.ctaPosition[2] + 0.08]} castShadow><boxGeometry args={[6.92, 0.16, 0.18]} /><meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={0.08} /></mesh>
       {showFullBoothUi && <group position={[metrics.ctaPosition[0], metrics.ctaPosition[1], metrics.ctaPosition[2] + 0.06]}><SponsorCtaStrip actions={ctaActions} color={accentColor} onAction={onAction} /></group>}
+      {showFullBoothUi && showDetailedText && <group position={[metrics.ctaPosition[0], metrics.ctaPosition[1] - 1.12, metrics.ctaPosition[2] + 0.06]}><BoothAiFeature action={aiAction} color={accentColor} onAction={onAction} /></group>}
+      {showFullBoothUi && showDetailedText && <group position={[metrics.ctaPosition[0], metrics.ctaPosition[1] - 2.38, metrics.ctaPosition[2] + 0.06]}><BoothCalculatorFeature action={calculatorAction} color={accentColor} onAction={onAction} /></group>}
+      {showFullBoothUi && showDetailedText && <group position={[metrics.ctaPosition[0], metrics.ctaPosition[1] - 3.64, metrics.ctaPosition[2] + 0.06]}><BoothInfoStandFeature action={infoStandAction} color={accentColor} onAction={onAction} /></group>}
     </>
   );
 }

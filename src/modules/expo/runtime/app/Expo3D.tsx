@@ -39,6 +39,7 @@ function ExpoRuntimeExperience({
 }) {
   const nav = useNavigate();
   const worldContract = useMemo(() => buildExpoWorldContract(data), [data]);
+  const inspectionEnabled = import.meta.env.DEV || runtimeSession.operatorSession.enabled;
   const pixelStreamingStatus = usePixelStreamingStatus();
   const { guests, playerPos, isMicOn, isSpeaking, setIsMicOn, handlePlayerMove } = useExpoPresence(runtimeSession.mode);
   const { activeZone, zoneSystem } = useZoneSystem(playerPos as any);
@@ -49,14 +50,7 @@ function ExpoRuntimeExperience({
     playerPos,
     sceneVersion: data?.sceneVersion ? String(data.sceneVersion) : null,
     setMode: runtimeSession.setMode,
-    worldContract: {
-      boothPlacements: worldContract.boothPlacements.map((placement: any) => ({
-        company: placement.company,
-        id: placement.id,
-        position: placement.position,
-        rotation: placement.rotation,
-      })),
-    },
+    worldContract,
   });
 
   useExpoRuntimeErrorBridge(import.meta.env.DEV || operatorSceneLayer.session.enabled);
@@ -94,6 +88,7 @@ function ExpoRuntimeExperience({
           mobileMoveIntent={runtimeSession.mobileMoveIntent}
           mode={runtimeSession.mode}
           onMove={handlePlayerMove}
+          inspectionEnabled={inspectionEnabled}
           runtimeLayerToggles={(import.meta.env.DEV || operatorSceneLayer.session.enabled) ? operatorSceneLayer.runtimeLayerToggles : undefined}
           runtimeSectionToggles={(import.meta.env.DEV || operatorSceneLayer.session.enabled) ? operatorSceneLayer.runtimeSectionToggles : undefined}
           sceneVersion={data?.sceneVersion ? String(data.sceneVersion) : null}

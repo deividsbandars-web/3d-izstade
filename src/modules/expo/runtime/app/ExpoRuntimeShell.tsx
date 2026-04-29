@@ -2,6 +2,7 @@ import { ExpoLobby } from '../../components/ExpoLobby';
 import { Expo3DLoader } from '../world';
 import PixelStreamingViewer from '../../PixelStreamingViewer';
 import type { ExpoMode } from '../../state/expoRuntime';
+import GlobalChat from '../../../../components/chat/GlobalChat';
 
 export function ExpoRuntimeShell({
   hudLayer,
@@ -65,6 +66,7 @@ export function ExpoRuntimeShell({
           {operatorLayer}
           {hudLayer}
           {sceneLayer}
+          <GlobalChat />
         </>
       )}
     </div>

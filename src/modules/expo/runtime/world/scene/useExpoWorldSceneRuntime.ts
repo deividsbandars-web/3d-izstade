@@ -51,6 +51,10 @@ export function useExpoWorldSceneRuntime({
     () => selectVisibleBoothPlacements(boothPlacements, districtPrograms),
     [boothPlacements, districtPrograms],
   );
+  const sectionVisibleBoothPlacements = useMemo(
+    () => selectSectionVisibleBoothPlacements(visibleBoothPlacements, sectionToggles),
+    [sectionToggles, visibleBoothPlacements],
+  );
   const analyticsState = useExpoWorldAnalyticsState();
   const analyticsActions = useExpoWorldAnalyticsActions();
   void activeZone;
@@ -68,9 +72,7 @@ export function useExpoWorldSceneRuntime({
     sectorMarkers,
     sectionToggles,
     setPlayerPosition: analyticsActions.setPlayerPosition,
-    sectionVisibleBoothPlacements: visibleBoothPlacements.filter((placement) =>
-      matchesWorldSection(placement.position, sectionToggles),
-    ),
+    sectionVisibleBoothPlacements,
     visualProfile,
     visibleBoothPlacements,
     walkRegions,
@@ -130,4 +132,16 @@ export function selectVisibleBoothPlacements(
 
     return rankedPlacements.slice(0, Math.min(visibleLimit, rankedPlacements.length));
   });
+}
+
+export function selectSectionVisibleBoothPlacements(
+  boothPlacements: ExpoBoothPlacement[],
+  sectionToggles: {
+    arrival: boolean;
+    left: boolean;
+    middle: boolean;
+    right: boolean;
+  },
+) {
+  return boothPlacements.filter((placement) => matchesWorldSection(placement.position, sectionToggles));
 }

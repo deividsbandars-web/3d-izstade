@@ -20,6 +20,7 @@ export function ExpoWorldSceneLayers({
   layerToggles,
   mode,
   playerPosition,
+  planningBoothPlacements,
   qualityProfileInputs,
   runtimeCaptureSafe,
   sceneVersion,
@@ -34,6 +35,7 @@ export function ExpoWorldSceneLayers({
   layerToggles: ExpoWorldLayerToggles;
   mode: ExpoMode;
   playerPosition: [number, number, number];
+  planningBoothPlacements: ExpoBoothPlacement[];
   qualityProfileInputs: ExpoWorldContract['qualityProfileInputs'];
   runtimeCaptureSafe: boolean;
   sceneVersion: string | null;
@@ -70,7 +72,7 @@ export function ExpoWorldSceneLayers({
       )}
       {layerToggles.city && (
         <WorldCitySkeleton
-          boothPlacements={sectionVisibleBoothPlacements}
+          boothPlacements={planningBoothPlacements}
           districtPrograms={districtPrograms}
           playerPosition={playerPosition}
           sectionToggles={sectionToggles}
@@ -78,7 +80,7 @@ export function ExpoWorldSceneLayers({
         />
       )}
       {layerToggles.stadium && sectionToggles.stadium && (
-        <ExpoRearCampus boothPlacements={sectionVisibleBoothPlacements} visualProfile={visualProfile} />
+        <ExpoRearCampus boothPlacements={planningBoothPlacements} visualProfile={visualProfile} />
       )}
       {(layerToggles.city || layerToggles.booths) && (
         <WorldWayfinding

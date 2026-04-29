@@ -7,6 +7,7 @@ import {
   trackExpoBoothViewed,
   trackExpoDemoRoomEntered,
   trackExpoSceneLoaded,
+  trackExpoScreenRouteClicked,
   trackExpoSectorEntered,
   trackExpoWebsiteOpened,
 } from '../lib/expoAnalytics.js';
@@ -26,6 +27,7 @@ assert.deepEqual(detail, {
   eventName: 'website_opened',
   sectorId: null,
   sectorName: null,
+  sessionId: null,
   sponsorTier: 'gold',
 });
 
@@ -74,6 +76,7 @@ assert.equal(trackExpoSceneLoaded({ boothCount: 12 }, { dataLayer: [] }).eventNa
 assert.equal(trackExpoSectorEntered(company, { sectorName: 'Infra' }, { dataLayer: [] }).eventName, 'sector_entered');
 assert.equal(trackExpoBoothViewed(company, { boothId: 'booth-1' }, { dataLayer: [] }).eventName, 'booth_viewed');
 assert.equal(trackExpoBoothClicked(company, { boothId: 'booth-1' }, { dataLayer: [] }).eventName, 'booth_clicked');
+assert.equal(trackExpoScreenRouteClicked(company, { route: '/expo/booth/company-1', screenSourceId: 'screen-1' }, { dataLayer: [] }).eventName, 'screen_route_clicked');
 assert.equal(trackExpoWebsiteOpened(company, { websiteUrl: 'https://acme.example.com' }, { dataLayer: [] }).eventName, 'website_opened');
 assert.equal(trackExpoBookingClicked(company, { bookingUrl: 'https://acme.example.com/book' }, { dataLayer: [] }).eventName, 'booking_clicked');
 assert.equal(trackExpoDemoRoomEntered(company, { boothId: 'booth-1' }, { dataLayer: [] }).eventName, 'demo_room_entered');

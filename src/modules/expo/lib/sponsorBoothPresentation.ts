@@ -1,4 +1,5 @@
 import type { ExpoSceneBooth, ExpoSceneCompany, SponsorTier } from '../types/scene';
+import { buildExpoBoothRoute } from './expoBoothRoutes';
 
 export type SponsorBoothTemplate =
   | 'hero_gallery'
@@ -7,18 +8,22 @@ export type SponsorBoothTemplate =
   | 'premium_spine'
   | 'standard_arcade'
   | 'standard_studio';
-export type SponsorCtaKind = 'website' | 'booking' | 'demo_room';
+export type SponsorCtaKind = 'website' | 'booking' | 'demo_room' | 'calculators' | 'ai_chat';
+
+export const CALCULATORS_ROUTE = '/calculators';
 
 export type SponsorCta = {
   disabled?: boolean;
   kind: SponsorCtaKind;
   label: string;
+  surface?: 'both' | 'feature';
   url?: string | null;
 };
 
 export type SponsorCtaIntent =
   | { type: 'navigate'; target: string }
   | { type: 'external'; target: string }
+  | { type: 'local'; target: 'global_chat' }
   | null;
 
 export type SponsorBoothPresentation = {
@@ -189,6 +194,8 @@ export function buildSponsorCtas(company: ExpoSceneCompany): SponsorCta[] {
     actions.push({ kind: 'booking', label: company.ctaLabel || (isTopTier ? 'Book Meeting' : 'Meet Team'), url: booking });
   }
 
+  actions.push({ kind: 'ai_chat', label: 'Ask AI', surface: 'feature' });
+  actions.push({ kind: 'calculators', label: isTopTier ? 'Open Calculators' : 'Get Estimate' });
   actions.push({ kind: 'demo_room', label: isTopTier ? 'Launch Premium Room' : 'Open Showroom' });
   return actions;
 }
@@ -205,11 +212,27 @@ export function resolveSponsorCtaIntent(
     return { type: 'navigate', target: presentation.demoRoomPath };
   }
 
+  if (action.kind === 'calculators') {
+    return { type: 'navigate', target: CALCULATORS_ROUTE };
+  }
+
+  if (action.kind === 'ai_chat') {
+    return { type: 'local', target: 'global_chat' };
+  }
+
   if ((action.kind === 'website' || action.kind === 'booking') && normalizeUrl(action.url)) {
     return { type: 'external', target: normalizeUrl(action.url)! };
   }
 
   return null;
+}
+
+export function isSupportedExpoInternalRoute(route: string) {
+  if (route === CALCULATORS_ROUTE) {
+    return true;
+  }
+
+  return /^\/expo\/booth\/[^/]+(?:\/stream)?$/.test(route);
 }
 
 function pickCustomInsertUrl(company: ExpoSceneCompany, booth: ExpoSceneBooth | null) {
@@ -230,7 +253,6 @@ export function buildSponsorBoothPresentation(
   }
 ): SponsorBoothPresentation {
   const displayName = truncateSponsorText(company.name, 26);
-  const slugOrId = company.slug || company.id;
   const logoUrl = normalizeReleaseUrl(company.logo_url);
   const posterUrl = normalizeReleaseUrl(company.posterUrl) || normalizeReleaseUrl(booth?.posterUrl);
   const videoUrl = normalizeReleaseUrl(booth?.video_url);
@@ -260,9 +282,11 @@ export function buildSponsorBoothPresentation(
         : template === 'standard_arcade'
         ? 'product'
           : 'support';
-  const demoRoomPath = isPremiumStreamingTier(adTier)
-    ? `/expo/booth/${slugOrId}/stream`
-    : `/expo/booth/${slugOrId}`;
+  const demoRoomPath = buildExpoBoothRoute({
+    companyId: company.id,
+    companySlug: company.slug,
+    stream: isPremiumStreamingTier(adTier),
+  }) ?? '/expo/booth/unknown';
 
   return {
     actions: buildSponsorCtas(company),
