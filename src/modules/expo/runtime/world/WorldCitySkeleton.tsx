@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 import type { ExpoBoothPlacement } from '../../layout-engine';
 import type { ExpoDistrictProgramSummary, ExpoWorldVisualProfile } from '../../world-contract';
 import type { ExpoPlanningSectionId } from '../planning/types';
@@ -39,52 +39,52 @@ export function WorldCitySkeleton({
   );
   const stadiumReserve = canonicalWorldPlan.stadiumReserve;
 
-  const isVisibleBySections = (sections?: ExpoPlanningSectionId[]) => {
+  const isVisibleBySections = useCallback((sections?: ExpoPlanningSectionId[]) => {
     if (!sections || sections.length === 0) {
       return true;
     }
 
     return sections.some((section) => sectionToggles[section]);
-  };
+  }, [sectionToggles]);
   const filteredCityPlanes = useMemo(
     () => canonicalWorldPlan.filteredCityPlanes.filter((plane) => isVisibleBySections(plane.sections)),
-    [canonicalWorldPlan.filteredCityPlanes, sectionToggles]
+    [canonicalWorldPlan.filteredCityPlanes, isVisibleBySections]
   );
   const filteredPromenadeAxisPlanes = useMemo(
     () => canonicalWorldPlan.promenadeAxisPlanes.filter((plane) => isVisibleBySections(plane.sections)),
-    [canonicalWorldPlan.promenadeAxisPlanes, sectionToggles]
+    [canonicalWorldPlan.promenadeAxisPlanes, isVisibleBySections]
   );
   const filteredShowcasePlazas = useMemo(
     () => canonicalWorldPlan.showcasePlazas.filter((plane) => isVisibleBySections(plane.sections)),
-    [canonicalWorldPlan.showcasePlazas, sectionToggles]
+    [canonicalWorldPlan.showcasePlazas, isVisibleBySections]
   );
   const filteredBoothForecourtPlanes = useMemo(
     () => canonicalWorldPlan.boothForecourtPlanes.filter((plane) => isVisibleBySections(plane.sections)),
-    [canonicalWorldPlan.boothForecourtPlanes, sectionToggles]
+    [canonicalWorldPlan.boothForecourtPlanes, isVisibleBySections]
   );
   const filteredMasses = useMemo(
     () => canonicalWorldPlan.filteredMasses.filter((mass) => isVisibleBySections(mass.sections)),
-    [canonicalWorldPlan.filteredMasses, sectionToggles]
+    [canonicalWorldPlan.filteredMasses, isVisibleBySections]
   );
   const filteredArrivalPlanes = useMemo(
     () => canonicalWorldPlan.arrivalPlanes.filter((plane) => isVisibleBySections(plane.sections)),
-    [canonicalWorldPlan.arrivalPlanes, sectionToggles]
+    [canonicalWorldPlan.arrivalPlanes, isVisibleBySections]
   );
   const filteredTowerLandmarks = useMemo(
     () => canonicalWorldPlan.filteredTowerLandmarks.filter((tower) => isVisibleBySections(tower.sections)),
-    [canonicalWorldPlan.filteredTowerLandmarks, sectionToggles]
+    [canonicalWorldPlan.filteredTowerLandmarks, isVisibleBySections]
   );
   const filteredScreenSurfaces = useMemo(
     () => canonicalWorldPlan.filteredScreenSurfaces.filter((surface) => isVisibleBySections(surface.sections)),
-    [canonicalWorldPlan.filteredScreenSurfaces, sectionToggles]
+    [canonicalWorldPlan.filteredScreenSurfaces, isVisibleBySections]
   );
   const screenSockets = useMemo(
     () => canonicalWorldPlan.screenSockets.filter((socket) => isVisibleBySections(socket.sections)),
-    [canonicalWorldPlan.screenSockets, sectionToggles]
+    [canonicalWorldPlan.screenSockets, isVisibleBySections]
   );
   const screenAssignments = useMemo(
     () => canonicalWorldPlan.screenAssignments.filter((assignment) => isVisibleBySections(assignment.sections)),
-    [canonicalWorldPlan.screenAssignments, sectionToggles]
+    [canonicalWorldPlan.screenAssignments, isVisibleBySections]
   );
 
   const cityInspectionEntries = useMemo(() => buildCityWorldObjectRegistry({

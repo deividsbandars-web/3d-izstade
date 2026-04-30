@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 interface AutoBusiness {
   id: string;
@@ -15,12 +15,14 @@ export default function AutonomousBusinessManager() {
   const [businesses, setBusinesses] = useState<AutoBusiness[]>([]);
   const [newNiche, setNewNiche] = useState('');
   const [isLaunching, setIsLaunching] = useState(false);
+  const nextBusinessIdRef = useRef(0);
 
   const launchBusiness = async () => {
     if (!newNiche) return;
     setIsLaunching(true);
     
-    const id = `biz_${Date.now()}`;
+    nextBusinessIdRef.current += 1;
+    const id = `biz_${nextBusinessIdRef.current}`;
     const newBiz: AutoBusiness = {
       id,
       niche: newNiche,

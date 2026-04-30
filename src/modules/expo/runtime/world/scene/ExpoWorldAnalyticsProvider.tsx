@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useMemo, useReducer, type Dispatch, type ReactNode } from 'react';
 
 type ExpoWorldAnalyticsState = {

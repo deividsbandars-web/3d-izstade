@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { useEffect } from 'react';
 import { useThree } from '@react-three/fiber';
 import * as THREE from 'three';

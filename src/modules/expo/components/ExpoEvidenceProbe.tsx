@@ -62,7 +62,7 @@ export function ExpoEvidenceProbe({
   sectorCount: number;
   sponsorCount: number;
 }) {
-  const startedAt = useRef(performance.now());
+  const startedAtRef = useRef<number | null>(null);
   const fpsSamplesRef = useRef<number[]>([]);
   const frameCountRef = useRef(0);
 
@@ -78,6 +78,10 @@ export function ExpoEvidenceProbe({
   });
 
   useEffect(() => {
+    if (startedAtRef.current === null) {
+      startedAtRef.current = performance.now();
+    }
+
     const publishEvidence = () => {
       const samples = fpsSamplesRef.current;
       const averageFps = samples.length > 0
@@ -101,7 +105,7 @@ export function ExpoEvidenceProbe({
         sectorCount,
         sponsorCount,
         timestamp: new Date().toISOString(),
-        uptimeMs: Number((performance.now() - startedAt.current).toFixed(0)),
+        uptimeMs: Number((performance.now() - (startedAtRef.current ?? 0)).toFixed(0)),
       };
     };
 
