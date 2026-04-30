@@ -147,57 +147,149 @@ export function ClickInspector({ clickInspectionEnabled }: { clickInspectionEnab
   return null;
 }
 
-export function TargetBasketHighlighter({ targets }: { targets: string[] }) {
+export function TargetBasketHighlighter({
+  hardIsolateNonTargets = false,
+  isolateNonTargets = false,
+  targets,
+}: {
+  hardIsolateNonTargets?: boolean;
+  isolateNonTargets?: boolean;
+  targets: string[];
+}) {
   const { scene } = useThree();
 
   useEffect(() => {
-    const originals = new Map<THREE.Material, { emissive?: THREE.Color; emissiveIntensity?: number }>();
-    const activeTargets = new Set(targets);
+    const GHOSTABLE_PREFIXES = [
+      'city-mass:',
+      'city-tower:',
+      'mega-landmark:',
+      'stadium-structure:',
+      'stadium-pavilion:',
+    ];
+    const matchesTargetName = (name: string, target: string) => (
+      name === target ||
+      name.endsWith(`:${target}`)
+    );
+    const isGhostableName = (name: string) => GHOSTABLE_PREFIXES.some((prefix) => name.startsWith(prefix));
+    const targetList = [...targets];
+    const originals = new Map<THREE.Material, {
+      color?: THREE.Color;
+      depthTest?: boolean;
+      depthWrite?: boolean;
+      emissive?: THREE.Color;
+      emissiveIntensity?: number;
+      opacity?: number;
+      transparent?: boolean;
+    }>();
+    const originalRenderOrder = new Map<THREE.Object3D, number>();
+    const originalVisibility = new Map<THREE.Object3D, boolean>();
+    const activeTargets = new Set(targetList);
+    const GHOST_OPACITY = 0.16;
+
+    const preserveTargetVisuals = isolateNonTargets;
 
     const highlightMaterial = (material: THREE.Material) => {
-      const emissiveMaterial = material as THREE.MeshStandardMaterial;
-      if (!('emissive' in emissiveMaterial)) {
-        return;
-      }
       if (!originals.has(material)) {
         originals.set(material, {
-          emissive: emissiveMaterial.emissive?.clone?.(),
-          emissiveIntensity: emissiveMaterial.emissiveIntensity,
+          color: 'color' in material ? (material as THREE.MeshBasicMaterial).color?.clone?.() : undefined,
+          depthTest: material.depthTest,
+          depthWrite: material.depthWrite,
+          emissive: 'emissive' in material ? (material as THREE.MeshStandardMaterial).emissive?.clone?.() : undefined,
+          emissiveIntensity: 'emissiveIntensity' in material ? (material as THREE.MeshStandardMaterial).emissiveIntensity : undefined,
+          opacity: material.opacity,
+          transparent: material.transparent,
         });
       }
-      emissiveMaterial.emissive = new THREE.Color('#ff3b30');
-      emissiveMaterial.emissiveIntensity = Math.max(emissiveMaterial.emissiveIntensity || 0, 0.8);
+
+      material.depthTest = false;
+      material.depthWrite = false;
+      material.transparent = true;
+      material.opacity = Math.max(material.opacity, 0.98);
+
+      if ('emissive' in material) {
+        const emissiveMaterial = material as THREE.MeshStandardMaterial;
+        if (preserveTargetVisuals) {
+          emissiveMaterial.emissiveIntensity = Math.max(emissiveMaterial.emissiveIntensity || 0, 0.45);
+        } else {
+          emissiveMaterial.emissive = new THREE.Color('#ff3b30');
+          emissiveMaterial.emissiveIntensity = Math.max(emissiveMaterial.emissiveIntensity || 0, 1.8);
+        }
+      } else if ('color' in material && !preserveTargetVisuals) {
+        (material as THREE.MeshBasicMaterial).color = new THREE.Color('#ff4d67');
+      }
+    };
+
+    const ghostMaterial = (material: THREE.Material) => {
+      if (!originals.has(material)) {
+        originals.set(material, {
+          color: 'color' in material ? (material as THREE.MeshBasicMaterial).color?.clone?.() : undefined,
+          depthTest: material.depthTest,
+          depthWrite: material.depthWrite,
+          emissive: 'emissive' in material ? (material as THREE.MeshStandardMaterial).emissive?.clone?.() : undefined,
+          emissiveIntensity: 'emissiveIntensity' in material ? (material as THREE.MeshStandardMaterial).emissiveIntensity : undefined,
+          opacity: material.opacity,
+          transparent: material.transparent,
+        });
+      }
+
+      material.transparent = true;
+      material.opacity = Math.min(material.opacity, GHOST_OPACITY);
+      material.depthWrite = false;
     };
 
     scene.traverse((object) => {
       let current: THREE.Object3D | null = object;
       let matched = false;
+      let ghostable = false;
       while (current) {
-        if (current.name && activeTargets.has(current.name)) {
+        const currentName = current.name;
+        if (currentName && targetList.some((target) => matchesTargetName(currentName, target))) {
           matched = true;
           break;
         }
+        if (!ghostable && currentName && isGhostableName(currentName)) {
+          ghostable = true;
+        }
         current = current.parent;
-      }
-
-      if (!matched) {
-        return;
       }
 
       const mesh = object as THREE.Mesh;
       if (!mesh.material) {
         return;
       }
+      if (!originalRenderOrder.has(mesh)) {
+        originalRenderOrder.set(mesh, mesh.renderOrder);
+      }
+      if (!originalVisibility.has(mesh)) {
+        originalVisibility.set(mesh, mesh.visible);
+      }
+      const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
 
-      if (Array.isArray(mesh.material)) {
-        mesh.material.forEach(highlightMaterial);
-      } else {
-        highlightMaterial(mesh.material);
+      if (matched) {
+        mesh.renderOrder = 999;
+        materials.forEach(highlightMaterial);
+        return;
+      }
+
+      if (isolateNonTargets && activeTargets.size > 0 && ghostable) {
+        if (hardIsolateNonTargets) {
+          mesh.visible = false;
+          return;
+        }
+        mesh.renderOrder = 0;
+        materials.forEach(ghostMaterial);
       }
     });
 
     return () => {
       originals.forEach((value, material) => {
+        if ('color' in material && value.color) {
+          (material as THREE.MeshBasicMaterial).color.copy(value.color);
+        }
+        material.depthTest = value.depthTest ?? true;
+        material.depthWrite = value.depthWrite ?? true;
+        material.opacity = value.opacity ?? 1;
+        material.transparent = value.transparent ?? false;
         const emissiveMaterial = material as THREE.MeshStandardMaterial;
         if ('emissive' in emissiveMaterial && value.emissive) {
           emissiveMaterial.emissive.copy(value.emissive);
@@ -206,8 +298,14 @@ export function TargetBasketHighlighter({ targets }: { targets: string[] }) {
           emissiveMaterial.emissiveIntensity = value.emissiveIntensity;
         }
       });
+      originalRenderOrder.forEach((value, object) => {
+        object.renderOrder = value;
+      });
+      originalVisibility.forEach((value, object) => {
+        object.visible = value;
+      });
     };
-  }, [scene, targets]);
+  }, [hardIsolateNonTargets, isolateNonTargets, scene, targets]);
 
   return null;
 }

@@ -15,6 +15,7 @@ export function ExpoWorldSceneRoot({
   mode,
   onMove,
   runtimeCaptureSafe,
+  runtimeFocusIsolation,
   runtimeHighlightedTargets,
   runtimeLayerToggles,
   runtimeSectionToggles,
@@ -31,6 +32,7 @@ export function ExpoWorldSceneRoot({
   mode: ExpoMode;
   onMove: (position: number[]) => void;
   runtimeCaptureSafe: boolean;
+  runtimeFocusIsolation?: boolean;
   runtimeHighlightedTargets: string[];
   runtimeLayerToggles?: {
     booths: boolean;
@@ -62,6 +64,7 @@ export function ExpoWorldSceneRoot({
         mode={mode}
         onMove={onMove}
         runtimeCaptureSafe={runtimeCaptureSafe}
+        runtimeFocusIsolation={runtimeFocusIsolation}
         runtimeHighlightedTargets={runtimeHighlightedTargets}
         runtimeLayerToggles={runtimeLayerToggles}
         runtimeSectionToggles={runtimeSectionToggles}
@@ -83,6 +86,7 @@ function ExpoWorldSceneRootView({
   mode,
   onMove,
   runtimeCaptureSafe,
+  runtimeFocusIsolation,
   runtimeHighlightedTargets,
   runtimeLayerToggles,
   runtimeSectionToggles,
@@ -99,6 +103,7 @@ function ExpoWorldSceneRootView({
   mode: ExpoMode;
   onMove: (position: number[]) => void;
   runtimeCaptureSafe: boolean;
+  runtimeFocusIsolation?: boolean;
   runtimeHighlightedTargets: string[];
   runtimeLayerToggles?: {
     booths: boolean;
@@ -129,6 +134,13 @@ function ExpoWorldSceneRootView({
     worldContract,
     zoneSystem,
   });
+  const hardIsolateNonTargets = Boolean(
+    runtimeFocusIsolation &&
+    runtimeHighlightedTargets.some((target) => (
+      target.startsWith('screen-marquee-') ||
+      target.startsWith('screen-spine-')
+    )),
+  );
 
   return (
     <>
@@ -160,6 +172,8 @@ function ExpoWorldSceneRootView({
         planningBoothPlacements={runtime.visibleBoothPlacements}
         qualityProfileInputs={runtime.qualityProfileInputs}
         runtimeCaptureSafe={runtimeCaptureSafe}
+        hardIsolateNonTargets={hardIsolateNonTargets}
+        isolateNonTargets={Boolean(runtimeFocusIsolation && runtimeHighlightedTargets.length > 0)}
         sceneVersion={sceneVersion}
         sectorMarkers={runtime.sectorMarkers}
         sectionToggles={runtime.sectionToggles}

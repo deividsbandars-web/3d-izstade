@@ -1345,7 +1345,7 @@ export function buildScreenSockets(surfaces: CityScreenSurface[]): CityScreenSoc
   ]);
 
   return surfaces.map((surface) => {
-    const depthOffset = surface.size[2] * 0.84;
+    const depthOffset = surface.role === 'tower-crown' ? (surface.size[2] * 0.28) : (surface.size[2] * 0.84);
     const yaw = surface.rotation[1] ?? 0;
     const [offsetX, offsetY, offsetZ] = offsetAlongYaw(yaw, depthOffset);
 
@@ -1376,7 +1376,7 @@ export function buildScreenSockets(surfaces: CityScreenSurface[]): CityScreenSoc
     if (surface.role === 'tower-crown') {
       return {
         color: surface.glowColor,
-        frameSize: [surface.size[0] * 0.82, surface.size[1] * 0.78],
+        frameSize: [surface.size[0] * 0.9, surface.size[1] * 0.86],
         id: `${surface.id}-socket`,
         kind: 'tower_crown',
         position: [surface.position[0] + offsetX, surface.position[1] + offsetY, surface.position[2] + offsetZ],

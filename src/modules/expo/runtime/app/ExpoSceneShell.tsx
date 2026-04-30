@@ -9,6 +9,8 @@ export function ExpoSceneShell({
   mobileMoveIntent,
   mode,
   onMove,
+  runtimeFocusIsolation,
+  runtimeHighlightedTargets,
   runtimeLayerToggles,
   runtimeSectionToggles,
   sceneVersion,
@@ -23,6 +25,8 @@ export function ExpoSceneShell({
   mobileMoveIntent: { f: boolean; b: boolean; l: boolean; r: boolean; s: boolean };
   mode: ExpoMode;
   onMove: (position: number[]) => void;
+  runtimeFocusIsolation?: boolean;
+  runtimeHighlightedTargets?: string[];
   runtimeLayerToggles?: {
     booths: boolean;
     city: boolean;
@@ -51,6 +55,8 @@ export function ExpoSceneShell({
       mobileMoveIntent={mobileMoveIntent}
       mode={mode}
       onMove={onMove}
+      runtimeFocusIsolation={runtimeFocusIsolation}
+      runtimeHighlightedTargets={runtimeHighlightedTargets}
       runtimeLayerToggles={runtimeLayerToggles}
       runtimeSectionToggles={runtimeSectionToggles}
       sceneVersion={sceneVersion}

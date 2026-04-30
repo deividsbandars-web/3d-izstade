@@ -66,7 +66,7 @@ export const ZONE_RULES: Record<ExpoPlanningZoneId, ExpoPlanningZoneRule> = {
   },
   'rear-campus': {
     allowedScreenFamilies: ['rear-campus-bowl', 'rear-campus-tower'],
-    densityCaps: { assignmentCap: 3, screenSocketCap: 3, screenSurfaceCap: 3 },
+    densityCaps: { assignmentCap: 13, screenSocketCap: 13, screenSurfaceCap: 13 },
     id: 'rear-campus',
     name: 'Rear Campus',
     placementClasses: ['stadium'],

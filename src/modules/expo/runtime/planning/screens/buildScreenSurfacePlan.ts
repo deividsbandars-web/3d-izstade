@@ -30,6 +30,14 @@ function getZoneSections(zoneId: ExpoPlanningZoneId): ExpoPlanningSectionId[] {
   }
 }
 
+function isMarqueeOrSpineHeroSurface(surface: CityScreenSurface) {
+  return surface.role === 'hero-wall' && (
+    surface.id.startsWith('screen-marquee-left-') ||
+    surface.id.startsWith('screen-marquee-right-') ||
+    surface.id.startsWith('screen-spine-')
+  );
+}
+
 function buildSurfacePrimitives(surface: CityScreenSurface): CanonicalPrimitive[] {
   const profile = surface.renderIntent;
   const housingDepth = profile?.housingDepth ?? Math.max(8, surface.size[2] * 3.5);
@@ -66,28 +74,40 @@ function buildSurfacePrimitives(surface: CityScreenSurface): CanonicalPrimitive[
     );
   }
 
+  if (isMarqueeOrSpineHeroSurface(surface)) {
+    primitives.push(
+      { color: '#0d1624', emissive: surface.glowColor, emissiveIntensity: 0.14, kind: 'box', metalness: 0.34, position: [0, 0, -(housingDepth * 0.24)], roughness: 0.38, size: [housingWidth * 0.22, housingHeight * 1.1, housingDepth * 0.52] },
+      { color: surface.glowColor, kind: 'plane', opacity: 0.12, position: [0, housingHeight * 0.2, housingDepth * 0.62], size: [innerWidth * 0.72, housingHeight * 0.18], transparent: true },
+      { color: surface.glowColor, kind: 'plane', opacity: 0.1, position: [0, -(housingHeight * 0.24), housingDepth * 0.62], size: [innerWidth * 0.56, housingHeight * 0.12], transparent: true },
+      { color: '#132238', emissive: surface.glowColor, emissiveIntensity: 0.12, kind: 'box', metalness: 0.44, position: [-(housingWidth * 0.66), 0, housingDepth * 0.04], rotation: [0, 0.22, 0], roughness: 0.3, size: [housingWidth * 0.08, housingHeight * 0.88, housingDepth * 0.36] },
+      { color: '#132238', emissive: surface.glowColor, emissiveIntensity: 0.12, kind: 'box', metalness: 0.44, position: [(housingWidth * 0.66), 0, housingDepth * 0.04], rotation: [0, -0.22, 0], roughness: 0.3, size: [housingWidth * 0.08, housingHeight * 0.88, housingDepth * 0.36] },
+    );
+  }
+
   return primitives;
 }
 
 function enrichSurfaceIntent(zoneId: ExpoPlanningZoneId, surface: CityScreenSurface): CityScreenSurface {
+  const isHeroCompositionZone = zoneId === 'left-district' || zoneId === 'center-spine' || zoneId === 'right-district';
+  const isCenterSpineHero = zoneId === 'center-spine' && surface.role === 'hero-wall';
   const renderIntent = surface.renderIntent ?? (
     surface.role === 'hero-wall'
       ? {
-          canopyHeight: surface.size[1] * 0.086,
-          canopyWidth: surface.size[0] * 0.94,
-          finDepth: Math.max(10, surface.size[2] * 4.2) * 0.92,
-          finWidth: Math.max(2.4, surface.size[0] * 0.032),
-          glowOpacity: 0.28,
-          housingDepth: Math.max(10, surface.size[2] * 4.2),
-          innerOpacity: 0.94,
-          keelHeight: surface.size[1] * 0.16,
-          keelWidth: surface.size[0] * 0.12,
+          canopyHeight: surface.size[1] * (isCenterSpineHero ? 0.112 : isHeroCompositionZone ? 0.098 : 0.086),
+          canopyWidth: surface.size[0] * (isCenterSpineHero ? 1.06 : isHeroCompositionZone ? 0.98 : 0.94),
+          finDepth: Math.max(isCenterSpineHero ? 14 : isHeroCompositionZone ? 12 : 10, surface.size[2] * (isCenterSpineHero ? 5.4 : isHeroCompositionZone ? 4.8 : 4.2)) * 0.92,
+          finWidth: Math.max(isCenterSpineHero ? 3.8 : isHeroCompositionZone ? 3.2 : 2.4, surface.size[0] * (isCenterSpineHero ? 0.048 : isHeroCompositionZone ? 0.04 : 0.032)),
+          glowOpacity: isCenterSpineHero ? 0.44 : isHeroCompositionZone ? 0.36 : 0.28,
+          housingDepth: Math.max(isCenterSpineHero ? 14 : isHeroCompositionZone ? 12 : 10, surface.size[2] * (isCenterSpineHero ? 5.4 : isHeroCompositionZone ? 4.8 : 4.2)),
+          innerOpacity: isCenterSpineHero ? 1 : isHeroCompositionZone ? 0.98 : 0.94,
+          keelHeight: surface.size[1] * (isCenterSpineHero ? 0.22 : isHeroCompositionZone ? 0.18 : 0.16),
+          keelWidth: surface.size[0] * (isCenterSpineHero ? 0.2 : isHeroCompositionZone ? 0.16 : 0.12),
           maxDistance: 1700,
-          railHeight: Math.max(1.4, surface.size[1] * 0.028),
-          railOpacity: 0.92,
+          railHeight: Math.max(isCenterSpineHero ? 2.4 : isHeroCompositionZone ? 2 : 1.4, surface.size[1] * (isCenterSpineHero ? 0.044 : isHeroCompositionZone ? 0.036 : 0.028)),
+          railOpacity: isCenterSpineHero ? 1.08 : isHeroCompositionZone ? 1 : 0.92,
           visible: true,
-          wingHeight: surface.size[1] * 0.76,
-          wingWidth: surface.size[0] * 0.18,
+          wingHeight: surface.size[1] * (isCenterSpineHero ? 0.94 : isHeroCompositionZone ? 0.84 : 0.76),
+          wingWidth: surface.size[0] * (isCenterSpineHero ? 0.32 : isHeroCompositionZone ? 0.24 : 0.18),
         }
       : surface.role === 'support-wall'
         ? {
@@ -189,7 +209,150 @@ function buildRearCampusScreenSurfaces(
       type: 'wall',
     }));
 
-  return [bowlSurface, ...towerSurfaces];
+  const campusFrontSupportSurfaces: CityScreenSurface[] = [
+    {
+      id: 'rear-campus-event-pavilion-left-feed-surface',
+      position: [-720, 118, campusCenterZ + 1168],
+      rotation: [0, Math.PI, 0],
+      size: [248, 128, 3.4],
+      color: '#091320',
+      glowColor: '#7dd3fc',
+      role: 'support-wall',
+      type: 'wall',
+    },
+    {
+      id: 'rear-campus-event-pavilion-right-feed-surface',
+      position: [720, 118, campusCenterZ + 1168],
+      rotation: [0, Math.PI, 0],
+      size: [248, 128, 3.4],
+      color: '#091320',
+      glowColor: '#7dd3fc',
+      role: 'support-wall',
+      type: 'wall',
+    },
+    {
+      id: 'rear-campus-axis-gallery-left-feed-surface',
+      position: [-412, 92, campusCenterZ + 1032],
+      rotation: [0, Math.PI, 0],
+      size: [176, 92, 3.2],
+      color: '#0a1420',
+      glowColor: '#93c5fd',
+      role: 'support-wall',
+      type: 'wall',
+    },
+    {
+      id: 'rear-campus-axis-gallery-right-feed-surface',
+      position: [412, 92, campusCenterZ + 1032],
+      rotation: [0, Math.PI, 0],
+      size: [176, 92, 3.2],
+      color: '#0a1420',
+      glowColor: '#93c5fd',
+      role: 'support-wall',
+      type: 'wall',
+    },
+    {
+      id: 'rear-campus-axis-terminal-left-feed-surface',
+      position: [-276, 74, campusCenterZ + 1500],
+      rotation: [0, Math.PI, 0],
+      size: [112, 68, 2.8],
+      color: '#0c1724',
+      glowColor: '#bfdbfe',
+      role: 'support-wall',
+      type: 'wall',
+    },
+    {
+      id: 'rear-campus-axis-terminal-right-feed-surface',
+      position: [276, 74, campusCenterZ + 1492],
+      rotation: [0, Math.PI, 0],
+      size: [112, 68, 2.8],
+      color: '#0c1724',
+      glowColor: '#bfdbfe',
+      role: 'support-wall',
+      type: 'wall',
+    },
+    {
+      id: 'rear-campus-side-pavilion-left-front-feed-surface',
+      position: [-1420, 126, campusCenterZ + 996],
+      rotation: [0, Math.PI, 0],
+      size: [196, 116, 3.4],
+      color: '#091320',
+      glowColor: '#67e8f9',
+      role: 'support-wall',
+      type: 'wall',
+    },
+    {
+      id: 'rear-campus-side-pavilion-right-front-feed-surface',
+      position: [1420, 126, campusCenterZ + 996],
+      rotation: [0, Math.PI, 0],
+      size: [196, 116, 3.4],
+      color: '#091320',
+      glowColor: '#67e8f9',
+      role: 'support-wall',
+      type: 'wall',
+    },
+    {
+      id: 'rear-campus-side-pavilion-left-rear-feed-surface',
+      position: [-1220, 148, campusCenterZ - 1152],
+      rotation: [0, Math.PI, 0],
+      size: [244, 132, 3.6],
+      color: '#091320',
+      glowColor: '#7dd3fc',
+      role: 'support-wall',
+      type: 'wall',
+    },
+    {
+      id: 'rear-campus-side-pavilion-right-rear-feed-surface',
+      position: [1220, 148, campusCenterZ - 1152],
+      rotation: [0, Math.PI, 0],
+      size: [244, 132, 3.6],
+      color: '#091320',
+      glowColor: '#7dd3fc',
+      role: 'support-wall',
+      type: 'wall',
+    },
+    {
+      id: 'rear-campus-axis-front-left-feed-surface',
+      position: [-182, 64, campusCenterZ + 1222],
+      rotation: [0, Math.PI, 0],
+      size: [96, 58, 2.6],
+      color: '#0c1724',
+      glowColor: '#bfdbfe',
+      role: 'support-wall',
+      type: 'wall',
+    },
+    {
+      id: 'rear-campus-axis-front-right-feed-surface',
+      position: [182, 64, campusCenterZ + 1214],
+      rotation: [0, Math.PI, 0],
+      size: [96, 58, 2.6],
+      color: '#0c1724',
+      glowColor: '#bfdbfe',
+      role: 'support-wall',
+      type: 'wall',
+    },
+    {
+      id: 'rear-campus-axis-kiosk-left-feed-surface',
+      position: [-318, 68, campusCenterZ + 1348],
+      rotation: [0, Math.PI, 0],
+      size: [102, 60, 2.8],
+      color: '#0c1724',
+      glowColor: '#a5f3fc',
+      role: 'support-wall',
+      type: 'wall',
+    },
+    {
+      id: 'rear-campus-axis-kiosk-right-feed-surface',
+      position: [318, 68, campusCenterZ + 1348],
+      rotation: [0, Math.PI, 0],
+      size: [102, 60, 2.8],
+      color: '#0c1724',
+      glowColor: '#a5f3fc',
+      role: 'support-wall',
+      type: 'wall',
+    },
+  ];
+
+  return [bowlSurface, ...towerSurfaces, ...campusFrontSupportSurfaces];
 }
 
 export function buildZoneScreenSurfacePlan(args: {

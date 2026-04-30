@@ -6,6 +6,9 @@ import { buildRearCampusZonePlan, EXPO_CANONICAL_DISTRICT_STRIDE } from '../plan
 import { useWorldInspectionRegistry } from './inspection/worldInspectionState';
 import { buildStadiumWorldObjectRegistry } from './inspection/worldObjectRegistry';
 import { ExpoRearCampusStructures } from './ExpoRearCampusStructures';
+import { WorldCityScreenAssignments } from './WorldCityScreenAssignments';
+import { WorldCityScreenSockets } from './WorldCityScreenSockets';
+import { WorldCityScreenSurfaces } from './WorldCityScreenSurfaces';
 import {
   ColliderMaterial,
   ExpoRuntimeSurfaceMaterial,
@@ -40,9 +43,11 @@ const EMPTY_PLANNING_GEOMETRY = {
 
 export function ExpoRearCampus({
   boothPlacements,
+  playerPosition,
   visualProfile,
 }: {
   boothPlacements: ExpoBoothPlacement[];
+  playerPosition: [number, number, number];
   visualProfile: ExpoWorldVisualProfile;
 }) {
   const campusColliderRef = useRef<THREE.Group>(null);
@@ -91,6 +96,30 @@ export function ExpoRearCampus({
       }];
     });
   }, [rearCampus, rearCampusPlan.assignments]);
+  const feedSocketIds = useMemo(
+    () => new Set([
+      rearCampus?.feedSocketIds.leftTower,
+      rearCampus?.feedSocketIds.rightTower,
+      rearCampus?.feedSocketIds.bowl,
+    ].filter((socketId): socketId is string => Boolean(socketId))),
+    [rearCampus]
+  );
+  const ambientRearCampusScreenSockets = useMemo(
+    () => rearCampusPlan.screenSockets.filter((socket) => !feedSocketIds.has(socket.id)),
+    [feedSocketIds, rearCampusPlan.screenSockets]
+  );
+  const ambientRearCampusSurfaceIds = useMemo(
+    () => new Set(ambientRearCampusScreenSockets.map((socket) => socket.surfaceId)),
+    [ambientRearCampusScreenSockets]
+  );
+  const ambientRearCampusScreenSurfaces = useMemo(
+    () => rearCampusPlan.screenSurfaces.filter((surface) => ambientRearCampusSurfaceIds.has(surface.id)),
+    [ambientRearCampusSurfaceIds, rearCampusPlan.screenSurfaces]
+  );
+  const ambientRearCampusScreenAssignments = useMemo(
+    () => rearCampusPlan.assignments.filter((assignment) => !feedSocketIds.has(assignment.socketId)),
+    [feedSocketIds, rearCampusPlan.assignments]
+  );
   const hasVisibleForecourts = filteredStadiumForecourts.length > 0;
 
   const stadiumInspectionEntries = useMemo(() => buildStadiumWorldObjectRegistry({
@@ -192,6 +221,21 @@ export function ExpoRearCampus({
         screenFeeds={stadiumScreenFeeds}
         sidePavilions={filteredStadiumSidePavilions}
         towers={filteredStadiumLandmarkTowers}
+      />
+      <WorldCityScreenSurfaces
+        playerPosition={playerPosition}
+        stadiumReserve={EMPTY_PLANNING_GEOMETRY.stadiumReserve}
+        surfaces={ambientRearCampusScreenSurfaces}
+      />
+      <WorldCityScreenSockets
+        playerPosition={playerPosition}
+        sockets={ambientRearCampusScreenSockets}
+        stadiumReserve={EMPTY_PLANNING_GEOMETRY.stadiumReserve}
+      />
+      <WorldCityScreenAssignments
+        assignments={ambientRearCampusScreenAssignments}
+        playerPosition={playerPosition}
+        sockets={ambientRearCampusScreenSockets}
       />
       <group name="stadium-structure:rear-campus-stage-monolith-canopy" position={[47, 0, -3018]}>
         <mesh position={[0, 10, 0]} receiveShadow>

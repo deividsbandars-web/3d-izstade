@@ -1,6 +1,8 @@
 import type { ExpoMode } from '../../../state/expoRuntime';
 import type { WorldObjectRegistryEntry } from '../../world/inspection/worldObjectRegistry';
 import { ExpoOperatorInspectionSummary } from '../inspection/ExpoOperatorInspectionSummary';
+import type { ZoneFixRoute } from '../model/zoneFixRouting';
+import type { ZoneReviewValidation } from '../model/zoneReviewValidation';
 
 type LayerKey = 'promenade' | 'city' | 'stadium' | 'booths' | 'skyline';
 type SectionKey = 'arrival' | 'left' | 'middle' | 'right' | 'stadium';
@@ -27,6 +29,70 @@ function OwnershipCard({
           <div>SAFE SEAM: {entry.safeEditSeam}</div>
           <div>ZONE: {entry.planningZone || 'none'}</div>
           <div>DIAGNOSTICS: {entry.diagnosticOwners.length > 0 ? entry.diagnosticOwners.join(' | ') : 'none'}</div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ValidationCard({
+  title,
+  validation,
+}: {
+  title: string;
+  validation: ZoneReviewValidation | null;
+}) {
+  const status = validation?.status ?? 'warning';
+  const tone = status === 'ok'
+    ? {
+        background: 'rgba(34, 197, 94, 0.12)',
+        border: '1px solid rgba(34, 197, 94, 0.28)',
+        color: '#bbf7d0',
+      }
+    : {
+        background: 'rgba(248, 113, 113, 0.12)',
+        border: '1px solid rgba(248, 113, 113, 0.28)',
+        color: '#fecaca',
+      };
+
+  return (
+    <div style={{ borderRadius: '12px', padding: '10px', ...tone }}>
+      <div style={{ fontSize: '0.62rem', letterSpacing: '0.12em', fontWeight: 900, marginBottom: '6px' }}>{title}</div>
+      {!validation ? (
+        <div style={{ fontSize: '0.72rem' }}>No active zone validation</div>
+      ) : (
+        <div style={{ fontSize: '0.72rem', lineHeight: 1.45 }}>
+          <div>STATUS: {validation.status.toUpperCase()}</div>
+          <div>MISSING IDS: {validation.missingExpectedObjectIds.length > 0 ? validation.missingExpectedObjectIds.join(' | ') : 'none'}</div>
+          <div>MISSING LAYERS: {validation.missingExpectedLayers.length > 0 ? validation.missingExpectedLayers.join(' | ') : 'none'}</div>
+          <div>UNKNOWN IDS: {validation.unknownExpectedObjectIds.length > 0 ? validation.unknownExpectedObjectIds.join(' | ') : 'none'}</div>
+          <div>EXTRA LAYERS: {validation.extraVisibleLayers.length > 0 ? validation.extraVisibleLayers.join(' | ') : 'none'}</div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function FixRoutingCard({
+  routes,
+  title,
+}: {
+  routes: ZoneFixRoute[];
+  title: string;
+}) {
+  return (
+    <div style={{ border: '1px solid rgba(148, 163, 184, 0.16)', borderRadius: '12px', padding: '10px', background: 'rgba(15, 23, 42, 0.36)' }}>
+      <div style={{ fontSize: '0.62rem', letterSpacing: '0.12em', fontWeight: 900, color: '#fcd34d', marginBottom: '6px' }}>{title}</div>
+      {routes.length === 0 ? (
+        <div style={{ fontSize: '0.72rem', color: '#94a3b8' }}>No active fix routes</div>
+      ) : (
+        <div style={{ fontSize: '0.72rem', color: '#cbd5e1', lineHeight: 1.45 }}>
+          {routes.slice(0, 4).map((route) => (
+            <div key={`${route.issue}:${route.target}`}>
+              <div>{route.issue.toUpperCase()}: {route.target}</div>
+              <div style={{ opacity: 0.8 }}>SEAM: {route.safeEditSeam}</div>
+            </div>
+          ))}
         </div>
       )}
     </div>
@@ -64,6 +130,9 @@ export function ExpoOperatorDrawer({
   onToggleLayer,
   onToggleSection,
   operatorReason,
+  operatorZoneLabel,
+  operatorZoneFixRoutes,
+  operatorZoneValidation,
   sceneVersion,
   sectionStates,
   targetBasket,
@@ -98,6 +167,9 @@ export function ExpoOperatorDrawer({
   onToggleLayer: (layer: LayerKey) => void;
   onToggleSection: (section: SectionKey) => void;
   operatorReason: string;
+  operatorZoneLabel: string | null;
+  operatorZoneFixRoutes: ZoneFixRoute[];
+  operatorZoneValidation: ZoneReviewValidation | null;
   sceneVersion: string | null;
   sectionStates: Record<string, boolean>;
   targetBasket: string[];
@@ -130,6 +202,7 @@ export function ExpoOperatorDrawer({
         <div>NAME: {focusedName || 'free roam'}</div>
         <div>TIER: {(focusedTier || 'none').toUpperCase()}</div>
         <div>DATA: {dataMode.toUpperCase()} / {companyCount} COMPANIES</div>
+        <div>REVIEW ZONE: {operatorZoneLabel || 'none'}</div>
         <div>BUILD: {buildStamp}</div>
         <div>CLICK: {clickTarget || 'none'}</div>
         <div>CENTER: {centerTarget || 'none'}</div>
@@ -139,6 +212,16 @@ export function ExpoOperatorDrawer({
       </div>
 
       <ExpoOperatorInspectionSummary inspector={inspector} />
+
+      <ValidationCard
+        title="ZONE VALIDATION"
+        validation={operatorZoneValidation}
+      />
+
+      <FixRoutingCard
+        title="FIX ROUTING"
+        routes={operatorZoneFixRoutes}
+      />
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '8px' }}>
         <OwnershipCard entry={centerTargetEntry} title="CENTER OWNER" />

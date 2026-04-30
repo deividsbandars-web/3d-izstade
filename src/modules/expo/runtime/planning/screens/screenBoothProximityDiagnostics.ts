@@ -35,7 +35,7 @@ type XzBounds = {
   minZ: number;
 };
 
-const PROXIMITY_THRESHOLD_XZ = 18;
+const PROXIMITY_THRESHOLD_XZ = 14;
 
 function isWallFamilySurface(surface: ScreenBoothProximityScreenCandidate) {
   return surface.role === 'hero-wall' || surface.role === 'support-wall';

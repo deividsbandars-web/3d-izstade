@@ -14,6 +14,7 @@ import {
   formatExpoDisplayName,
   OpenBoothPavilion,
 } from './index';
+import type { DistrictThemeId } from '../../../../shared/expo/lib/districtTheme';
 
 type DistrictVisual = {
   districtGlow: string;
@@ -28,10 +29,12 @@ export function BoothVisualAssembly({
   fallbackMonogram,
   onAction,
   presentation,
+  districtThemeId,
   tierState,
 }: {
   accentColor: string;
   boothColliderRef: RefObject<THREE.Group | null>;
+  districtThemeId?: DistrictThemeId | string | null;
   fallbackMonogram: string;
   onAction: (action: SponsorCta) => void;
   presentation: SponsorBoothPresentation;
@@ -69,6 +72,7 @@ export function BoothVisualAssembly({
       ) : (
         <OpenBoothPavilion
           accentColor={tierState.districtVisual.shellAccent}
+          districtThemeId={districtThemeId}
           fallbackText={fallbackMonogram}
           metrics={metrics}
           screenUrl={boothPresentationScreenUrl}
