@@ -16,8 +16,10 @@ export function ExpoWorldCanvasShell({
   debug,
   districtPrograms,
   effectiveStartView,
+  hardIsolateNonTargets,
   highlightedTargets,
   inspectionEnabled,
+  isolateNonTargets,
   layerToggles,
   mobileMoveIntent,
   mode,
@@ -39,8 +41,10 @@ export function ExpoWorldCanvasShell({
   debug: boolean;
   districtPrograms: ExpoDistrictProgramSummary[];
   effectiveStartView: ExpoStartView;
+  hardIsolateNonTargets: boolean;
   highlightedTargets: string[];
   inspectionEnabled: boolean;
+  isolateNonTargets: boolean;
   layerToggles: ExpoWorldLayerToggles;
   mobileMoveIntent?: { f: boolean; b: boolean; l: boolean; r: boolean; s?: boolean };
   mode: ExpoMode;
@@ -76,7 +80,9 @@ export function ExpoWorldCanvasShell({
       <ClickInspector clickInspectionEnabled={inspectionEnabled} />
 
       <ExpoWorldDebugLayer
+        hardIsolateNonTargets={hardIsolateNonTargets}
         highlightedTargets={highlightedTargets}
+        isolateNonTargets={isolateNonTargets}
         playBounds={playBounds}
         startView={effectiveStartView}
         walkRegions={walkRegions}
@@ -105,6 +111,7 @@ export function ExpoWorldCanvasShell({
         mobileMoveIntent={mobileMoveIntent}
         mode={mode}
         onMove={onMove}
+        preserveReviewElevation={inspectionEnabled}
         startView={effectiveStartView}
       />
     </Canvas>

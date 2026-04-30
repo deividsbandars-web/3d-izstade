@@ -1,6 +1,12 @@
 import assert from 'node:assert/strict';
 import { buildExpoBoothLocalFootprint } from '../../../shared/expo/lib/boothLocalFootprint.js';
-import { buildExpoReviewOperatorSnapshot } from '../runtime/operator/state/useExpoOperatorState.js';
+import {
+  buildAllZoneReviewReports,
+  buildZoneObservationsFromSnapshot,
+  buildExpoReviewOperatorSnapshot,
+  buildZoneReviewReport,
+  buildZoneWarningsFromSnapshot,
+} from '../runtime/operator/state/useExpoOperatorState.js';
 import { buildWorldDiagnosticReport } from '../runtime/world/inspection/worldDiagnosticReport.js';
 import type { WorldObjectRegistryEntry } from '../runtime/world/inspection/worldObjectRegistry.js';
 
@@ -63,7 +69,7 @@ const diagnosticReport = buildWorldDiagnosticReport({
 });
 
 const snapshot = buildExpoReviewOperatorSnapshot({
-  activeZoneId: 'arrival',
+  activeZoneId: 'arrival-gate',
   centerStack: ['city-screen-1', 'booth-1'],
   centerTarget: 'city-screen-1',
   clickStack: ['booth-1'],
@@ -84,7 +90,7 @@ const snapshot = buildExpoReviewOperatorSnapshot({
   },
   markedPoint: [1, 2, 3],
   mode: 'fly',
-  operatorZoneId: 'arrival',
+  operatorZoneId: 'arrival-gate',
   playerPos: [10, 3, -40],
   registryEntries: {
     booths: [boothEntry],
@@ -104,7 +110,7 @@ const snapshot = buildExpoReviewOperatorSnapshot({
     {
       expectedKeyObjectIds: ['city-screen-1'],
       expectedVisibleLayers: ['city-screen-surface', 'booth'],
-      id: 'arrival',
+      id: 'arrival-gate',
       intent: 'gateway-review',
       label: 'Arrival',
       startView: {
@@ -125,8 +131,27 @@ assert.equal(snapshot.resolvedTargets.centerTargetEntry?.id, 'city-screen-1');
 assert.equal(snapshot.resolvedTargets.clickTargetEntry?.id, 'booth-1');
 assert.equal(snapshot.resolvedTargets.inspectorEntries[0]?.registryEntry?.id, 'city-screen-1');
 assert.deepEqual(snapshot.targetBasket, ['booth-1', 'city-screen-1']);
-assert.equal(snapshot.operatorZone?.id, 'arrival');
+assert.equal(snapshot.operatorZone?.id, 'arrival-gate');
 assert.equal(snapshot.focusSlug, 'booth-1');
 assert.deepEqual(snapshot.operatorZone?.expectedKeyObjectIds, ['city-screen-1']);
+assert.deepEqual(snapshot.operatorZone?.startView, {
+  lookAt: [0, 3.4, 0],
+  position: [0, 5, 24],
+  source: 'arrival-main',
+});
+assert.equal(snapshot.operatorZoneValidation?.zoneId, 'arrival-gate');
+assert.equal(snapshot.operatorZoneValidation?.status, 'ok');
+assert.deepEqual(snapshot.operatorZoneValidation?.missingExpectedLayers, []);
+assert.deepEqual(snapshot.operatorZoneValidation?.missingExpectedObjectIds, []);
+assert.deepEqual(snapshot.operatorZoneValidation?.extraVisibleLayers, []);
+assert.deepEqual(snapshot.operatorZoneFixRoutes, []);
+assert.equal(snapshot.zones[0]?.validation.status, 'ok');
+assert.deepEqual(snapshot.zones[0]?.fixRoutes, []);
 assert.deepEqual(snapshot.zones[0]?.watchItems, ['registry traceability']);
+assert.deepEqual(buildZoneWarningsFromSnapshot(snapshot), []);
+assert.deepEqual(buildZoneObservationsFromSnapshot(snapshot), []);
+assert.equal(buildZoneReviewReport(snapshot)?.zoneId, 'arrival-gate');
+assert.equal(buildZoneReviewReport(snapshot)?.status, 'ok');
+assert.deepEqual(buildZoneReviewReport(snapshot)?.observations, []);
+assert.equal(buildAllZoneReviewReports(snapshot).length, 1);
 assert.doesNotThrow(() => JSON.stringify(snapshot));

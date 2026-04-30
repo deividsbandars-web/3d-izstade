@@ -1,8 +1,18 @@
 import type { ExpoStartView } from '../../../world-contract';
+import type { WorldObjectLayer } from '../../world/inspection/worldObjectRegistry';
+
+type ReviewOperatorZoneCamera = {
+  lookAtOffset?: [number, number, number];
+  positionOffset: [number, number, number];
+  targetIds: string[];
+};
+
+export const DEFAULT_REVIEW_OPERATOR_ZONE_ID = 'arrival-gate';
 
 export type ReviewOperatorZone = {
+  camera?: ReviewOperatorZoneCamera;
   expectedKeyObjectIds: string[];
-  expectedVisibleLayers: string[];
+  expectedVisibleLayers: WorldObjectLayer[];
   id: string;
   intent: string;
   label: string;
@@ -44,6 +54,44 @@ export function resolveExpoOperatorSession(): ExpoOperatorSession {
   return { enabled: false, reason: 'disabled' };
 }
 
+export function resolveReviewOperatorZoneStartView(
+  zone: ReviewOperatorZone,
+  registryById: Map<string, { position: [number, number, number] | number[] }>,
+): ExpoStartView {
+  if (!zone.camera?.targetIds.length) {
+    return zone.startView;
+  }
+
+  const targets = zone.camera.targetIds
+    .map((id) => registryById.get(id)?.position)
+    .filter(Boolean) as number[][];
+
+  if (targets.length === 0) {
+    return zone.startView;
+  }
+
+  const anchor = targets.reduce<[number, number, number]>(
+    (acc, position) => [acc[0] + position[0], acc[1] + position[1], acc[2] + position[2]],
+    [0, 0, 0],
+  ).map((value) => value / targets.length) as [number, number, number];
+
+  const lookAtOffset = zone.camera.lookAtOffset ?? [0, 0, 0];
+
+  return {
+    lookAt: [
+      anchor[0] + lookAtOffset[0],
+      anchor[1] + lookAtOffset[1],
+      anchor[2] + lookAtOffset[2],
+    ],
+    position: [
+      anchor[0] + zone.camera.positionOffset[0],
+      anchor[1] + zone.camera.positionOffset[1],
+      anchor[2] + zone.camera.positionOffset[2],
+    ],
+    source: zone.startView.source,
+  };
+}
+
 export function buildReviewOperatorZones(): ReviewOperatorZone[] {
   return [
     {
@@ -51,8 +99,8 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
         'mega-landmark-arrival',
         'mega-landmark-showcase',
       ],
-      expectedVisibleLayers: ['city-plane', 'mega-landmark', 'booth'],
-      id: 'arrival',
+      expectedVisibleLayers: ['mega-landmark', 'booth'],
+      id: 'arrival-gate',
       intent: 'arrival-gateway-hierarchy',
       label: 'Arrival Gate',
       startView: {
@@ -71,12 +119,17 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
         'screen-marquee-left-0-socket',
       ],
       expectedVisibleLayers: ['city-screen-surface', 'city-screen-socket', 'city-screen-assignment', 'city-mass'],
-      id: 'left-marquee-a',
-      intent: 'left-screen-marquee-district-a',
-      label: 'Left Marquee A',
+      id: 'left-marquee',
+      intent: 'left-screen-marquee-review',
+      label: 'Left Marquee',
+      camera: {
+        lookAtOffset: [0, 22, 0],
+        positionOffset: [292, 118, 332],
+        targetIds: ['screen-marquee-left-0'],
+      },
       startView: {
-        lookAt: [-482, 142, -300],
-        position: [-768, 178, -42],
+        lookAt: [-708, 148, -296],
+        position: [-980, 268, 32],
         source: 'arrival-main',
       },
       watchItems: [
@@ -86,34 +139,20 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
     },
     {
       expectedKeyObjectIds: [
-        'screen-marquee-left-1',
-        'screen-marquee-left-1-socket',
+        'screen-spine-0',
       ],
-      expectedVisibleLayers: ['city-screen-surface', 'city-screen-socket', 'city-screen-assignment', 'city-mass'],
-      id: 'left-marquee-b',
-      intent: 'left-screen-marquee-district-b',
-      label: 'Left Marquee B',
-      startView: {
-        lookAt: [-482, 142, -848],
-        position: [-774, 184, -582],
-        source: 'arrival-main',
+      expectedVisibleLayers: ['city-screen-surface', 'city-screen-socket', 'city-screen-assignment'],
+      id: 'center-spine',
+      intent: 'center-civic-spine-review',
+      label: 'Center Spine',
+      camera: {
+        lookAtOffset: [0, 24, 0],
+        positionOffset: [104, 108, 284],
+        targetIds: ['screen-spine-0'],
       },
-      watchItems: [
-        'district-b screen continuity',
-        'assignment/socket ownership trace',
-      ],
-    },
-    {
-      expectedKeyObjectIds: [
-        'screen-hero-center-0',
-      ],
-      expectedVisibleLayers: ['city-screen-surface', 'city-screen-socket', 'city-screen-assignment', 'city-plane'],
-      id: 'center-spine-a',
-      intent: 'center-civic-spine-district-a',
-      label: 'Center Spine A',
       startView: {
-        lookAt: [0, 96, -232],
-        position: [0, 164, 92],
+        lookAt: [0, 104, -238],
+        position: [0, 252, 120],
         source: 'arrival-main',
       },
       watchItems: [
@@ -123,34 +162,21 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
     },
     {
       expectedKeyObjectIds: [
-        'screen-hero-center-1',
-      ],
-      expectedVisibleLayers: ['city-screen-surface', 'city-screen-socket', 'city-screen-assignment', 'city-plane'],
-      id: 'center-spine-b',
-      intent: 'center-civic-spine-district-b',
-      label: 'Center Spine B',
-      startView: {
-        lookAt: [0, 96, -780],
-        position: [0, 168, -468],
-        source: 'arrival-main',
-      },
-      watchItems: [
-        'district-b center spine continuity',
-        'screen ownership traceability',
-      ],
-    },
-    {
-      expectedKeyObjectIds: [
         'screen-marquee-right-0',
         'screen-marquee-right-0-socket',
       ],
       expectedVisibleLayers: ['city-screen-surface', 'city-screen-socket', 'city-screen-assignment', 'city-mass'],
-      id: 'right-marquee-a',
-      intent: 'right-screen-marquee-district-a',
-      label: 'Right Marquee A',
+      id: 'right-marquee',
+      intent: 'right-screen-marquee-review',
+      label: 'Right Marquee',
+      camera: {
+        lookAtOffset: [0, 22, 0],
+        positionOffset: [-292, 118, 332],
+        targetIds: ['screen-marquee-right-0'],
+      },
       startView: {
-        lookAt: [486, 136, -330],
-        position: [782, 184, -60],
+        lookAt: [708, 144, -328],
+        position: [980, 260, -24],
         source: 'arrival-main',
       },
       watchItems: [
@@ -160,31 +186,12 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
     },
     {
       expectedKeyObjectIds: [
-        'screen-marquee-right-1',
-        'screen-marquee-right-1-socket',
-      ],
-      expectedVisibleLayers: ['city-screen-surface', 'city-screen-socket', 'city-screen-assignment', 'city-mass'],
-      id: 'right-marquee-b',
-      intent: 'right-screen-marquee-district-b',
-      label: 'Right Marquee B',
-      startView: {
-        lookAt: [486, 136, -878],
-        position: [794, 188, -602],
-        source: 'arrival-main',
-      },
-      watchItems: [
-        'district-b right marquee continuity',
-        'hover/click regression review',
-      ],
-    },
-    {
-      expectedKeyObjectIds: [
-        'tower-hero-right-0',
+        'arrival-core-hero-tower-right-tower-ribbon',
       ],
       expectedVisibleLayers: ['city-tower', 'city-screen-surface', 'city-screen-socket', 'city-screen-assignment'],
-      id: 'tower-cluster-a',
-      intent: 'hero-and-mid-tower-ribbons-district-a',
-      label: 'Tower Cluster A',
+      id: 'tower-cluster',
+      intent: 'tower-cluster-screen-review',
+      label: 'Tower Cluster',
       startView: {
         lookAt: [548, 122, -562],
         position: [812, 196, -208],
@@ -197,56 +204,67 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
     },
     {
       expectedKeyObjectIds: [
-        'tower-hero-right-1',
-      ],
-      expectedVisibleLayers: ['city-tower', 'city-screen-surface', 'city-screen-socket', 'city-screen-assignment'],
-      id: 'tower-cluster-b',
-      intent: 'hero-and-mid-tower-ribbons-district-b',
-      label: 'Tower Cluster B',
-      startView: {
-        lookAt: [548, 122, -1110],
-        position: [822, 198, -742],
-        source: 'arrival-main',
-      },
-      watchItems: [
-        'district-b tower screen continuity',
-        'tower cluster registry accuracy',
-      ],
-    },
-    {
-      expectedKeyObjectIds: [
         'screen-array-left-0',
+        'screen-array-right-0',
       ],
       expectedVisibleLayers: ['city-screen-surface', 'city-screen-socket', 'city-screen-assignment'],
-      id: 'left-array-a',
-      intent: 'left-district-array-band-a',
-      label: 'Left Array A',
+      id: 'array-band',
+      intent: 'array-band-cross-city-review',
+      label: 'Array Band',
       startView: {
-        lookAt: [-462, 88, -196],
-        position: [-712, 148, 22],
+        lookAt: [0, 88, -214],
+        position: [0, 152, 76],
         source: 'arrival-main',
       },
       watchItems: [
         'array-band density review',
-        'assignment presence in registry',
+        'cross-city assignment continuity',
       ],
     },
     {
       expectedKeyObjectIds: [
-        'screen-array-right-0',
+        'immersive-fabric-labs',
       ],
-      expectedVisibleLayers: ['city-screen-surface', 'city-screen-socket', 'city-screen-assignment'],
-      id: 'right-array-a',
-      intent: 'right-district-array-band-a',
-      label: 'Right Array A',
+      expectedVisibleLayers: ['booth', 'city-screen-assignment'],
+      id: 'sponsor-boulevard-left',
+      intent: 'left-sponsor-boulevard-frontage-review',
+      label: 'Sponsor Boulevard Left',
+      camera: {
+        lookAtOffset: [0, 20, 0],
+        positionOffset: [62, 28, 76],
+        targetIds: ['immersive-fabric-labs'],
+      },
       startView: {
-        lookAt: [462, 86, -210],
-        position: [708, 150, 8],
+        lookAt: [-526, 22, -1356],
+        position: [-344, 148, -1088],
         source: 'arrival-main',
       },
       watchItems: [
-        'array-band continuity',
-        'right district ownership review',
+        'booth frontage readability',
+        'left sponsor CTA coverage',
+      ],
+    },
+    {
+      expectedKeyObjectIds: [
+        'sponsor-concierge',
+      ],
+      expectedVisibleLayers: ['booth', 'city-screen-assignment'],
+      id: 'sponsor-boulevard-right',
+      intent: 'right-sponsor-boulevard-frontage-review',
+      label: 'Sponsor Boulevard Right',
+      camera: {
+        lookAtOffset: [-3, 14, 4],
+        positionOffset: [28, 20, 40],
+        targetIds: ['sponsor-concierge'],
+      },
+      startView: {
+        lookAt: [80, 18, -798],
+        position: [364, 136, -604],
+        source: 'arrival-main',
+      },
+      watchItems: [
+        'booth frontage readability',
+        'right sponsor CTA coverage',
       ],
     },
     {
@@ -254,18 +272,36 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
         'stadium-bowl',
         'rear-campus-center-event-island',
       ],
-      expectedVisibleLayers: ['stadium-structure', 'stadium-plane', 'stadium-pavilion', 'stadium-screen-assignment'],
-      id: 'rear',
-      intent: 'stadium-campus-continuity',
-      label: 'Rear Campus',
+      expectedVisibleLayers: ['stadium-structure', 'stadium-screen-feed'],
+      id: 'rear-campus-center',
+      intent: 'rear-campus-center-review',
+      label: 'Rear Campus Center',
       startView: {
-        lookAt: [0, 136, -3312],
-        position: [0, 248, -2636],
+        lookAt: [0, 136, -4550],
+        position: [0, 248, -3920],
         source: 'arrival-main',
       },
       watchItems: [
         'rear-campus ownership split',
         'stadium feed surface coverage',
+      ],
+    },
+    {
+      expectedKeyObjectIds: [
+        'rear-campus-bowl-feed-surface-socket-assignment-rear-campus-custom-feed-bowl',
+      ],
+      expectedVisibleLayers: ['stadium-screen-feed', 'stadium-structure'],
+      id: 'stadium-feed-axis',
+      intent: 'rear-campus-feed-axis-review',
+      label: 'Stadium Feed Axis',
+      startView: {
+        lookAt: [0, 98, -2820],
+        position: [0, 156, -2408],
+        source: 'arrival-main',
+      },
+      watchItems: [
+        'rear-campus feed ownership clarity',
+        'custom-feed vs screen-system split',
       ],
     },
   ];

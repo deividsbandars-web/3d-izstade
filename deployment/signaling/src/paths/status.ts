@@ -1,8 +1,6 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 import { SignallingServer } from '@epicgames-ps/lib-pixelstreamingsignalling-ue5.7';
-
-// eslint-disable-next-line  @typescript-eslint/no-unsafe-assignment
-const pjson = require('../../package.json');
+import pjson from '../../package.json';
 
 /* eslint-disable @typescript-eslint/no-unsafe-call,
                   @typescript-eslint/no-unsafe-member-access */
@@ -19,7 +17,6 @@ export default function (signallingServer: SignallingServer) {
             uptime: uptime,
             streamer_count: signallingServer.streamerRegistry.count(),
             player_count: signallingServer.playerRegistry.count(),
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             version: pjson.version
         });
     }

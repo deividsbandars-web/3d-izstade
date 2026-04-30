@@ -7,7 +7,7 @@ import type { ExpoStartView } from '../../../world-contract';
 import { EXPO_START_VIEW_KEY, collectPlayerCollisionTargets, isCollisionMesh } from '../WorldSceneSupport';
 
 const PLAYER_RADIUS = 0.92;
-const PLAYER_WALK_SPEED = 66;
+const PLAYER_WALK_SPEED = 108;
 const PLAYER_SPRINT_MULTIPLIER = 1.8;
 
 export function ExpoWorldPlayerLayer({
@@ -16,6 +16,7 @@ export function ExpoWorldPlayerLayer({
   mobileMoveIntent,
   mode,
   onMove,
+  preserveReviewElevation = false,
   startView,
 }: {
   bounds: { minX: number; maxX: number; minZ: number; maxZ: number };
@@ -23,6 +24,7 @@ export function ExpoWorldPlayerLayer({
   mobileMoveIntent?: { f: boolean; b: boolean; l: boolean; r: boolean; s?: boolean };
   mode: ExpoMode;
   onMove: (pos: number[]) => void;
+  preserveReviewElevation?: boolean;
   startView: ExpoStartView;
 }) {
   const { camera, scene } = useThree();
@@ -32,8 +34,10 @@ export function ExpoWorldPlayerLayer({
   const moveVelocity = useRef(new THREE.Vector3());
   const spawnChecked = useRef(false);
   const startFramingApplied = useRef(false);
+  const lastAppliedStartViewSignature = useRef<string | null>(null);
   const lastMoveTime = useRef(0);
   const lastReportedPosition = useRef<[number, number, number]>([0, 0, 0]);
+  const startViewSignature = `${startView.position.join(',')}|${startView.lookAt.join(',')}|${startView.source}`;
 
   useEffect(() => {
     camera.position.set(-8, 5, 10);
@@ -42,14 +46,20 @@ export function ExpoWorldPlayerLayer({
   }, [camera, debug]);
 
   useEffect(() => {
+    if (lastAppliedStartViewSignature.current === startViewSignature) {
+      return;
+    }
+
+    lastAppliedStartViewSignature.current = startViewSignature;
     startFramingApplied.current = false;
     spawnChecked.current = false;
     camera.position.set(...startView.position);
     camera.lookAt(...startView.lookAt);
     camera.updateMatrixWorld();
     lastReportedPosition.current = [startView.position[0], startView.position[1], startView.position[2]];
+    onMove(lastReportedPosition.current);
     logExpoWorldDebug(debug, '[ExpoView][StartViewChanged]', startView);
-  }, [camera, debug, startView]);
+  }, [camera, debug, onMove, startView, startViewSignature]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -124,6 +134,8 @@ export function ExpoWorldPlayerLayer({
         camera.lookAt(...sceneStartView.lookAt);
         camera.updateMatrixWorld();
         startFramingApplied.current = true;
+        lastReportedPosition.current = [sceneStartView.position[0], sceneStartView.position[1], sceneStartView.position[2]];
+        onMove(lastReportedPosition.current);
         logExpoWorldDebug(debug, '[ExpoView][StartFraming]', sceneStartView);
       }
     }
@@ -133,6 +145,7 @@ export function ExpoWorldPlayerLayer({
     }
 
     const stableDelta = Math.min(delta, 1 / 90);
+    const hasMoveIntent = mov.f || mov.b || mov.l || mov.r || mov.s || mobileMoveIntent?.f || mobileMoveIntent?.b || mobileMoveIntent?.l || mobileMoveIntent?.r || mobileMoveIntent?.s;
     const sprintMultiplier = mov.s || mobileMoveIntent?.s ? PLAYER_SPRINT_MULTIPLIER : 1;
     const speed = PLAYER_WALK_SPEED * sprintMultiplier * stableDelta;
     desiredMoveVector.current.set(0, 0, 0);
@@ -210,7 +223,8 @@ export function ExpoWorldPlayerLayer({
       }
     }
 
-    camera.position.setY(5);
+    const shouldPreserveStartElevation = preserveReviewElevation && !hasMoveIntent && startView.position[1] > 12;
+    camera.position.setY(shouldPreserveStartElevation ? startView.position[1] : 5);
     camera.position.setX(Math.min(bounds.maxX, Math.max(bounds.minX, camera.position.x)));
     camera.position.setZ(Math.min(bounds.maxZ, Math.max(bounds.minZ, camera.position.z)));
 

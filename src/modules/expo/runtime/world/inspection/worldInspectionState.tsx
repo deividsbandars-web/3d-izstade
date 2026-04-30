@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useEffect, useMemo, useReducer, type Dispatch, type ReactNode } from 'react';
 import type * as THREE from 'three';
 import type { WorldObjectRegistryEntry } from './worldObjectRegistry';

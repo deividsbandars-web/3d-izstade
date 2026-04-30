@@ -229,10 +229,12 @@ export function CleanExpoCitySkeleton({
 
 export function ExpoRearCampus({
   boothPlacements,
+  playerPosition = [0, 0, 0],
   visualProfile,
 }: {
   boothPlacements: ExpoBoothPlacement[];
+  playerPosition?: [number, number, number];
   visualProfile: ExpoWorldVisualProfile;
 }) {
-  return <RuntimeExpoRearCampus boothPlacements={boothPlacements} visualProfile={visualProfile} />;
+  return <RuntimeExpoRearCampus boothPlacements={boothPlacements} playerPosition={playerPosition} visualProfile={visualProfile} />;
 }

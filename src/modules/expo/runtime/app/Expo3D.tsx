@@ -89,6 +89,8 @@ function ExpoRuntimeExperience({
           mode={runtimeSession.mode}
           onMove={handlePlayerMove}
           inspectionEnabled={inspectionEnabled}
+          runtimeFocusIsolation={(import.meta.env.DEV || operatorSceneLayer.session.enabled) ? operatorSceneLayer.runtimeFocusIsolation : false}
+          runtimeHighlightedTargets={(import.meta.env.DEV || operatorSceneLayer.session.enabled) ? operatorSceneLayer.runtimeHighlightedTargets : []}
           runtimeLayerToggles={(import.meta.env.DEV || operatorSceneLayer.session.enabled) ? operatorSceneLayer.runtimeLayerToggles : undefined}
           runtimeSectionToggles={(import.meta.env.DEV || operatorSceneLayer.session.enabled) ? operatorSceneLayer.runtimeSectionToggles : undefined}
           sceneVersion={data?.sceneVersion ? String(data.sceneVersion) : null}

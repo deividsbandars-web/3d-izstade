@@ -1,6 +1,7 @@
 import { Suspense } from 'react';
 import { Text } from '@react-three/drei';
 import { getBoothArchitectureMetrics } from '../../components/BoothArchitectureKit';
+import type { DistrictThemeId } from '../../../../shared/expo/lib/districtTheme';
 import {
   EliteMonolithShell,
   EliteRoofCrown,
@@ -13,12 +14,14 @@ import { SponsorTextureSurface } from './BoothTextureMaterials';
 
 export function OpenBoothPavilion({
   accentColor,
+  districtThemeId,
   fallbackText,
   metrics,
   screenUrl,
   tier = 'standard',
 }: {
   accentColor: string;
+  districtThemeId?: DistrictThemeId | string | null;
   fallbackText: string;
   metrics: ReturnType<typeof getBoothArchitectureMetrics>;
   screenUrl: string | null;
@@ -56,6 +59,26 @@ export function OpenBoothPavilion({
   const standardFrontTrimWidth = width * 0.7;
   const screenHeaderY = (screenFrameHeight * 0.5) - (isHero ? 0.46 : isElite ? 0.4 : isPremium ? 0.34 : 0.3);
   const screenFooterY = -(screenFrameHeight * 0.5) + (isHero ? 0.42 : isElite ? 0.36 : isPremium ? 0.3 : 0.26);
+  const frontageCanopyWidth = width * (isHero ? 0.9 : isElite ? 0.82 : isPremium ? 0.78 : 0.68);
+  const frontageCanopyDepth = isHero ? 2.4 : isElite ? 2.08 : isPremium ? 1.84 : 1.42;
+  const frontageCanopyY = postHeight * (isHero ? 0.66 : isElite ? 0.62 : isPremium ? 0.58 : 0.54);
+  const frontageCanopyZ = (depth * 0.5) - (isHero ? 0.92 : isElite ? 0.84 : isPremium ? 0.78 : 0.68);
+  const frontageFinHeight = isHero ? 5.8 : isElite ? 5.1 : isPremium ? 4.5 : 0;
+  const frontageFinOffsetX = (width * 0.5) - (isHero ? 2.4 : isElite ? 2.16 : 1.96);
+  const frontageFinZ = (depth * 0.5) - (isHero ? 1.04 : isElite ? 0.96 : 0.9);
+  const frontThresholdWidth = width * (isHero ? 0.74 : isElite ? 0.7 : isPremium ? 0.66 : 0.56);
+  const frontThresholdDepth = isHero ? 1.42 : isElite ? 1.2 : isPremium ? 1.04 : 0.74;
+  const isForumPortal = districtThemeId === 'meetings_forum' && (isPremium || isElite) && !isHero;
+  const forumSignWidth = width * 0.74;
+  const forumGuideWidth = width * 0.44;
+  const forumBeaconHeight = isElite ? 6.4 : 5.9;
+  const forumDeskWidth = width * 0.56;
+  const forumDeskDepth = 1.9;
+  const forumDeskWingWidth = width * 0.22;
+  const forumDeskWingDepth = 1.18;
+  const forumLoungeRadius = isElite ? 1.06 : 0.94;
+  const forumBackWallWidth = width * 0.34;
+  const forumBackWallHeight = isElite ? 5.2 : 4.8;
 
   return (
     <group name="booth-open-pavilion">
@@ -157,6 +180,98 @@ export function OpenBoothPavilion({
         <boxGeometry args={[width * (isHero ? 0.92 : isElite ? 0.88 : isPremium ? 0.86 : 0.82), 0.16, 0.22]} />
         <meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={0.1} roughness={0.42} metalness={0.16} />
       </mesh>
+      {(isPremium || isElite || isHero) && (
+        <group position={[0, frontageCanopyY, frontageCanopyZ]}>
+          <mesh castShadow receiveShadow>
+            <boxGeometry args={[frontageCanopyWidth, 0.22, frontageCanopyDepth]} />
+            <meshStandardMaterial color="#eef5fb" metalness={0.12} roughness={0.28} />
+          </mesh>
+          <mesh position={[0, -0.12, frontageCanopyDepth * 0.18]} castShadow receiveShadow>
+            <boxGeometry args={[frontageCanopyWidth * 0.88, 0.08, frontageCanopyDepth * 0.18]} />
+            <meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={isHero ? 0.2 : isElite ? 0.16 : 0.12} roughness={0.18} metalness={0.12} />
+          </mesh>
+        </group>
+      )}
+      {isForumPortal && (
+        <group position={[0, 0, (depth * 0.5) + 0.18]}>
+          <mesh position={[0.12, 3.16, 0.72]} castShadow receiveShadow>
+            <boxGeometry args={[forumSignWidth, 0.34, 0.32]} />
+            <meshStandardMaterial color="#f6fafc" metalness={0.08} roughness={0.24} />
+          </mesh>
+          <mesh position={[0.12, 3, 0.98]} castShadow receiveShadow>
+            <boxGeometry args={[forumGuideWidth, 0.12, 0.16]} />
+            <meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={0.26} roughness={0.16} metalness={0.12} />
+          </mesh>
+          <group position={[width * 0.28, forumBeaconHeight * 0.5 - 0.2, 0.36]}>
+            <mesh castShadow receiveShadow>
+              <boxGeometry args={[0.96, forumBeaconHeight, 0.66]} />
+              <meshStandardMaterial color="#e2ebf1" metalness={0.14} roughness={0.22} />
+            </mesh>
+            <mesh position={[0, 0.18, 0.2]}>
+              <boxGeometry args={[0.26, forumBeaconHeight - 0.72, 0.22]} />
+              <meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={0.28} roughness={0.14} metalness={0.12} />
+            </mesh>
+            <mesh position={[0, (forumBeaconHeight * 0.5) - 0.66, 0.24]} castShadow receiveShadow>
+              <boxGeometry args={[0.62, 0.28, 0.18]} />
+              <meshStandardMaterial color="#f6fafc" metalness={0.1} roughness={0.22} />
+            </mesh>
+          </group>
+          <group position={[-width * 0.1, 1.34, 0.84]} rotation={[0, -0.08, 0]}>
+            <mesh castShadow receiveShadow>
+              <boxGeometry args={[forumDeskWidth, 0.42, forumDeskDepth]} />
+              <meshStandardMaterial color="#f2f8fc" metalness={0.1} roughness={0.24} />
+            </mesh>
+            <mesh position={[0, -0.5, 0.02]} castShadow receiveShadow>
+              <boxGeometry args={[forumDeskWidth * 0.92, 0.86, forumDeskDepth * 0.54]} />
+              <meshStandardMaterial color="#0a1320" metalness={0.14} roughness={0.42} />
+            </mesh>
+            <mesh position={[forumDeskWidth * 0.18, 0.12, forumDeskDepth * 0.14]} castShadow receiveShadow>
+              <boxGeometry args={[forumDeskWingWidth, 0.22, forumDeskWingDepth]} />
+              <meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={0.14} roughness={0.18} metalness={0.12} />
+            </mesh>
+            <mesh position={[0, -0.06, forumDeskDepth * 0.44]} castShadow receiveShadow>
+              <boxGeometry args={[forumDeskWidth * 0.82, 0.08, 0.14]} />
+              <meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={0.18} roughness={0.18} metalness={0.12} />
+            </mesh>
+          </group>
+          <mesh position={[-width * 0.32, 2.38, 0.16]} castShadow receiveShadow rotation={[0, 0.06, 0]}>
+            <boxGeometry args={[forumBackWallWidth, forumBackWallHeight, 0.36]} />
+            <meshStandardMaterial color="#dbe6ee" metalness={0.12} roughness={0.24} />
+          </mesh>
+          <mesh position={[-width * 0.32, 2.42, 0.34]} castShadow receiveShadow rotation={[0, 0.06, 0]}>
+            <boxGeometry args={[forumBackWallWidth * 0.18, forumBackWallHeight - 0.72, 0.12]} />
+            <meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={0.26} roughness={0.16} metalness={0.12} />
+          </mesh>
+          <mesh position={[-width * 0.1, 0.24, 1.08]} receiveShadow>
+            <boxGeometry args={[forumDeskWidth + 1.96, 0.08, 2.42]} />
+            <meshStandardMaterial color="#f7fbfd" metalness={0.06} roughness={0.42} />
+          </mesh>
+          <mesh position={[-width * 0.02, 0.32, 1.22]} receiveShadow>
+            <cylinderGeometry args={[forumLoungeRadius, forumLoungeRadius, 0.12, 24]} />
+            <meshStandardMaterial color="#0b1220" metalness={0.1} roughness={0.46} />
+          </mesh>
+          <mesh position={[-width * 0.02, 0.38, 1.22]} receiveShadow>
+            <cylinderGeometry args={[forumLoungeRadius * 0.72, forumLoungeRadius * 0.72, 0.04, 24]} />
+            <meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={0.14} roughness={0.22} metalness={0.12} />
+          </mesh>
+        </group>
+      )}
+      {(isPremium || isElite || isHero) && (
+        <>
+          {[-1, 1].map((side) => (
+            <group key={`frontage-fin-${side}`} position={[side * frontageFinOffsetX, frontageFinHeight * 0.5, frontageFinZ]}>
+              <mesh castShadow receiveShadow>
+                <boxGeometry args={[0.46, frontageFinHeight, isHero ? 1.12 : isElite ? 0.98 : 0.84]} />
+                <meshStandardMaterial color="#dce7ef" metalness={0.16} roughness={0.28} />
+              </mesh>
+              <mesh position={[0, 0.02, 0.14]}>
+                <boxGeometry args={[0.12, frontageFinHeight - 0.72, isHero ? 0.32 : isElite ? 0.28 : 0.24]} />
+                <meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={isHero ? 0.18 : isElite ? 0.14 : 0.1} roughness={0.18} metalness={0.12} />
+              </mesh>
+            </group>
+          ))}
+        </>
+      )}
       {(isElite || isHero) && (
         <mesh position={[0, postHeight + (isHero ? 1.08 : 0.82), (depth * 0.5) - 0.08]} castShadow>
           <boxGeometry args={[width * (isHero ? 0.76 : 0.68), isHero ? 0.16 : 0.12, 0.14]} />
@@ -229,6 +344,18 @@ export function OpenBoothPavilion({
           <boxGeometry args={[width * (isHero ? 0.92 : isElite ? 0.84 : 0.74), 0.06, 0.12]} />
           <meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={isHero ? 0.12 : isElite ? 0.1 : 0.08} roughness={0.24} metalness={0.12} />
         </mesh>
+      )}
+      {(isPremium || isElite || isHero) && (
+        <group position={[0, 0.16, (depth * 0.5) + 0.24]}>
+          <mesh receiveShadow>
+            <boxGeometry args={[frontThresholdWidth, 0.08, frontThresholdDepth]} />
+            <meshStandardMaterial color="#f5f9fc" metalness={0.08} roughness={0.46} />
+          </mesh>
+          <mesh position={[0, 0.08, 0]}>
+            <boxGeometry args={[frontThresholdWidth * 0.72, 0.04, frontThresholdDepth * 0.42]} />
+            <meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={isHero ? 0.12 : isElite ? 0.09 : 0.06} roughness={0.3} metalness={0.12} />
+          </mesh>
+        </group>
       )}
     </group>
   );

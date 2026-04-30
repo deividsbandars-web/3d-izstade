@@ -80,7 +80,7 @@ export function ExpoWorldSceneLayers({
         />
       )}
       {layerToggles.stadium && sectionToggles.stadium && (
-        <ExpoRearCampus boothPlacements={planningBoothPlacements} visualProfile={visualProfile} />
+        <ExpoRearCampus boothPlacements={planningBoothPlacements} playerPosition={playerPosition} visualProfile={visualProfile} />
       )}
       {(layerToggles.city || layerToggles.booths) && (
         <WorldWayfinding

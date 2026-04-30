@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { Suspense, useRef } from 'react';
 import { Text } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';

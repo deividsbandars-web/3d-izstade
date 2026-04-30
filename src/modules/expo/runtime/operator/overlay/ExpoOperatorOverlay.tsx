@@ -1,5 +1,7 @@
 import type { ExpoMode } from '../../../state/expoRuntime';
 import type { ExpoOperatorSession, ReviewOperatorZone } from '../model/reviewOperatorSession';
+import type { ZoneFixRoute } from '../model/zoneFixRouting';
+import type { ZoneReviewValidation } from '../model/zoneReviewValidation';
 import type { WorldObjectRegistryEntry } from '../../world/inspection/worldObjectRegistry';
 import { ExpoOperatorZoneNav } from '../navigation/ExpoOperatorZoneNav';
 import { ExpoOperatorDrawer } from '../panel/ExpoOperatorDrawer';
@@ -39,6 +41,9 @@ export function ExpoOperatorOverlay({
   onToggleLayer,
   onToggleSection,
   operatorZoneId,
+  operatorZoneLabel,
+  operatorZoneFixRoutes,
+  operatorZoneValidation,
   sceneVersion,
   sectionStates,
   session,
@@ -76,6 +81,9 @@ export function ExpoOperatorOverlay({
   onToggleLayer: (layer: LayerKey) => void;
   onToggleSection: (section: SectionKey) => void;
   operatorZoneId: string | null;
+  operatorZoneLabel: string | null;
+  operatorZoneFixRoutes: ZoneFixRoute[];
+  operatorZoneValidation: ZoneReviewValidation | null;
   sceneVersion: string | null;
   sectionStates: Record<string, boolean>;
   session: ExpoOperatorSession;
@@ -89,7 +97,10 @@ export function ExpoOperatorOverlay({
   const operatorReason = session.reason === 'dev' ? 'DEV OPERATOR' : 'STAGING REVIEW';
 
   return (
-    <div style={{ position: 'absolute', top: '14px', right: '14px', zIndex: 2100, display: 'flex', gap: '14px', alignItems: 'flex-start', maxWidth: 'min(760px, calc(100vw - 28px))' }}>
+    <div
+      data-expo-operator-overlay="true"
+      style={{ position: 'absolute', top: '14px', right: '14px', zIndex: 2100, display: 'flex', gap: '14px', alignItems: 'flex-start', maxWidth: 'min(760px, calc(100vw - 28px))' }}
+    >
       <div style={{ width: '360px', maxHeight: '72vh', background: 'rgba(7, 12, 18, 0.84)', border: '1px solid rgba(148, 163, 184, 0.24)', borderRadius: '16px', padding: '14px', backdropFilter: 'blur(12px)', color: '#e2e8f0', overflow: 'hidden' }}>
         <div style={{ fontSize: '0.72rem', letterSpacing: '0.16em', fontWeight: 900, color: '#7dd3fc', marginBottom: '10px' }}>EXPO OPERATOR SURFACE</div>
         <ExpoOperatorZoneNav
@@ -129,6 +140,9 @@ export function ExpoOperatorOverlay({
         onToggleLayer={onToggleLayer}
         onToggleSection={onToggleSection}
         operatorReason={operatorReason}
+        operatorZoneLabel={operatorZoneLabel}
+        operatorZoneFixRoutes={operatorZoneFixRoutes}
+        operatorZoneValidation={operatorZoneValidation}
         sceneVersion={sceneVersion}
         sectionStates={sectionStates}
         targetBasket={targetBasket}

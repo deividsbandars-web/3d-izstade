@@ -79,6 +79,23 @@ function getWorldScreenSemantic(socketKind: CityScreenSocket['kind']) {
   }
 }
 
+function getZoneScreenSemanticChip(zoneId: ExpoPlanningZoneId, socketKind: CityScreenSocket['kind']) {
+  if (socketKind === 'hero_wall') {
+    switch (zoneId) {
+      case 'left-district':
+        return 'LEFT MARQUEE';
+      case 'center-spine':
+        return 'CENTER SPINE';
+      case 'right-district':
+        return 'RIGHT MARQUEE';
+      default:
+        return 'BOULEVARD SIGNAL';
+    }
+  }
+
+  return getWorldScreenSemantic(socketKind).chip;
+}
+
 function getTierAccent(tier: CityScreenAssignment['tier']) {
   switch (tier) {
     case 'hero':
@@ -110,6 +127,37 @@ function rankSocketsForZone(zoneId: ExpoPlanningZoneId, sockets: CityScreenSocke
       return weightDiff;
     }
 
+    if (zoneId === 'rear-campus') {
+      const rearCampusPriority = (socket: CityScreenSocket) => {
+        if (socket.id.includes('bowl-feed-surface')) {
+          return 6;
+        }
+        if (socket.id.includes('landmark-left') || socket.id.includes('landmark-right')) {
+          return 5;
+        }
+        if (socket.id.includes('event-pavilion')) {
+          return 4;
+        }
+        if (socket.id.includes('side-pavilion')) {
+          return 3;
+        }
+        if (socket.id.includes('axis-gallery')) {
+          return 2;
+        }
+        if (socket.id.includes('axis-terminal') || socket.id.includes('axis-front') || socket.id.includes('axis-kiosk')) {
+          return 1;
+        }
+        return 0;
+      };
+
+      const byRearCampusPriority = rearCampusPriority(right) - rearCampusPriority(left);
+      if (byRearCampusPriority !== 0) {
+        return byRearCampusPriority;
+      }
+
+      return Math.abs(left.position[0]) - Math.abs(right.position[0]);
+    }
+
     if (zoneId === 'left-district') {
       return left.position[2] - right.position[2];
     }
@@ -137,6 +185,7 @@ function buildAssignmentPrimitives(args: {
   const footerHeight = intent.footerHeight;
   const bodyHeight = frameHeight - headerHeight - footerHeight;
   const accentBarWidth = intent.semanticMode === 'landmark' ? frameWidth * 0.16 : frameWidth * 0.12;
+  const isHeroComposition = intent.semanticChip === 'LEFT MARQUEE' || intent.semanticChip === 'RIGHT MARQUEE' || intent.semanticChip === 'CENTER SPINE';
   const primitives: CanonicalPrimitive[] = [
     { color: '#08111c', kind: 'plane', opacity: 0.92, position: [0, 0, 0.05], size: [frameWidth, frameHeight], transparent: true },
     { color: intent.tierAccent, kind: 'plane', opacity: intent.edgeGlowOpacity, position: [-(frameWidth * 0.5) + (accentBarWidth * 0.5), 0, 0.065], size: [accentBarWidth, frameHeight * 0.96], transparent: true },
@@ -145,9 +194,9 @@ function buildAssignmentPrimitives(args: {
       : { color: accentColor, kind: 'plane', opacity: 0.22, position: [0, 0, 0.07], size: [frameWidth * 0.9, bodyHeight * 0.96], transparent: true },
     { color: '#020617', kind: 'plane', opacity: intent.panelOpacityNear, position: [0, (frameHeight * 0.5) - (headerHeight * 0.5), 0.075], size: [frameWidth * 0.94, headerHeight], transparent: true },
     { color: '#020617', kind: 'plane', opacity: intent.panelOpacityNear * 0.92, position: [0, -(frameHeight * 0.5) + (footerHeight * 0.5), 0.075], size: [frameWidth * 0.94, footerHeight], transparent: true },
-    { color: intent.tierAccent, kind: 'plane', opacity: 0.22, position: [0, (frameHeight * 0.5) - headerHeight - Math.max(0.1, frameHeight * 0.02), 0.085], size: [intent.topStripWidth, Math.max(0.08, frameHeight * 0.014)], transparent: true },
+    { color: intent.tierAccent, kind: 'plane', opacity: isHeroComposition ? 0.32 : 0.22, position: [0, (frameHeight * 0.5) - headerHeight - Math.max(0.1, frameHeight * 0.02), 0.085], size: [intent.topStripWidth, Math.max(0.08, frameHeight * 0.014)], transparent: true },
     { color: accentColor, kind: 'plane', opacity: imageUrl ? 0.06 : 0.12, position: [0, 0, 0.08], size: [intent.bodyPanelWidth, bodyHeight * 0.94], transparent: true },
-    { color: intent.tierAccent, kind: 'plane', opacity: 0.045, position: [0, 0, 0.1], size: [frameWidth * 0.96, frameHeight * 0.96], transparent: true },
+    { color: intent.tierAccent, kind: 'plane', opacity: isHeroComposition ? 0.08 : 0.045, position: [0, 0, 0.1], size: [frameWidth * 0.96, frameHeight * 0.96], transparent: true },
     { color: intent.chipColor, kind: 'text', maxWidth: frameWidth * 0.72, outlineBlur: 0.12, outlineColor: '#020617', outlineWidth: 0.04, position: [frameWidth * 0.06, (frameHeight * 0.5) - (headerHeight * 0.5), 0.09], size: Math.max(0.24, frameHeight * 0.045), text: intent.semanticChip },
   ];
 
@@ -160,9 +209,16 @@ function buildAssignmentPrimitives(args: {
 
   primitives.push(
     { color: intent.tierAccent, kind: 'text', maxWidth: frameWidth * 0.18, outlineBlur: 0.12, outlineColor: '#020617', outlineWidth: 0.03, position: [-(frameWidth * 0.36), (frameHeight * 0.5) - (headerHeight * 0.5), 0.09], size: Math.max(0.18, frameHeight * 0.03), text: tier.toUpperCase() },
-    { color: '#f8fafc', kind: 'text', maxWidth: frameWidth * (imageUrl ? 0.34 : 0.72), outlineBlur: 0.14, outlineColor: '#020617', outlineWidth: 0.05, position: [frameWidth * (imageUrl ? 0.23 : 0.02), imageUrl ? frameHeight * 0.04 : 0.02, 0.09], size: Math.max(0.32, frameHeight * (imageUrl ? 0.052 : 0.082)), text: label },
+    { color: '#f8fafc', kind: 'text', maxWidth: frameWidth * (imageUrl ? (isHeroComposition ? 0.42 : 0.34) : (isHeroComposition ? 0.78 : 0.72)), outlineBlur: 0.14, outlineColor: '#020617', outlineWidth: 0.05, position: [frameWidth * (imageUrl ? 0.23 : 0.02), imageUrl ? frameHeight * 0.04 : 0.02, 0.09], size: Math.max(isHeroComposition ? 0.42 : 0.32, frameHeight * (imageUrl ? (isHeroComposition ? 0.06 : 0.052) : (isHeroComposition ? 0.094 : 0.082))), text: label },
     { color: '#cbd5e1', kind: 'text', maxWidth: frameWidth * 0.74, outlineBlur: 0.14, outlineColor: '#020617', outlineWidth: 0.04, position: [frameWidth * 0.08, -(frameHeight * 0.5) + (footerHeight * 0.5), 0.09], size: Math.max(0.2, frameHeight * 0.034), text: subtitle },
   );
+
+  if (isHeroComposition) {
+    primitives.push(
+      { color: intent.tierAccent, kind: 'plane', opacity: 0.14, position: [0, frameHeight * 0.18, 0.088], size: [frameWidth * 0.82, frameHeight * 0.18], transparent: true },
+      { color: intent.tierAccent, kind: 'plane', opacity: 0.1, position: [0, -(frameHeight * 0.18), 0.088], size: [frameWidth * 0.62, frameHeight * 0.1], transparent: true },
+    );
+  }
 
   return primitives;
 }
@@ -189,19 +245,25 @@ export function buildZoneScreenAssignmentPlan(args: {
 
     const semantic = getWorldScreenSemantic(socket.kind);
     const tierAccent = getTierAccent(tier);
-    const frameWidth = socket.frameSize[0] * 0.78;
-    const frameHeight = socket.frameSize[1] * 0.78;
-    const headerHeight = Math.max(0.28, frameHeight * 0.12);
-    const footerHeight = Math.max(0.26, frameHeight * 0.1);
+    const isHeroComposition = socket.kind === 'hero_wall' && (
+      args.zoneId === 'left-district' ||
+      args.zoneId === 'center-spine' ||
+      args.zoneId === 'right-district'
+    );
+    const isCenterSpineHero = socket.kind === 'hero_wall' && args.zoneId === 'center-spine';
+    const frameWidth = socket.frameSize[0] * (isCenterSpineHero ? 0.88 : isHeroComposition ? 0.82 : 0.78);
+    const frameHeight = socket.frameSize[1] * (isCenterSpineHero ? 0.88 : isHeroComposition ? 0.82 : 0.78);
+    const headerHeight = Math.max(0.28, frameHeight * (isCenterSpineHero ? 0.16 : isHeroComposition ? 0.14 : 0.12));
+    const footerHeight = Math.max(0.26, frameHeight * (isCenterSpineHero ? 0.12 : isHeroComposition ? 0.11 : 0.1));
     const detailDistance = tier === 'hero' ? 1100 : tier === 'elite' ? 900 : 700;
     const subtitleDistance = tier === 'hero' ? 760 : tier === 'elite' ? 620 : 480;
     const hasImage = Boolean(placement.company?.posterUrl || placement.company?.heroAssetUrl || placement.company?.logo_url);
 
     const renderIntent = {
-      bodyPanelWidth: hasImage ? frameWidth * 0.52 : frameWidth * 0.82,
+      bodyPanelWidth: hasImage ? frameWidth * (isCenterSpineHero ? 0.64 : isHeroComposition ? 0.58 : 0.52) : frameWidth * (isCenterSpineHero ? 0.9 : isHeroComposition ? 0.86 : 0.82),
       chipColor: semantic.mode === 'landmark' ? '#fde68a' : semantic.mode === 'beacon' ? '#a5f3fc' : semantic.mode === 'signal' ? '#bfdbfe' : '#dbeafe',
       detailDistance,
-      edgeGlowOpacity: tier === 'hero' ? 0.2 : tier === 'elite' ? 0.15 : 0.12,
+      edgeGlowOpacity: isCenterSpineHero ? 0.34 : isHeroComposition ? 0.26 : tier === 'hero' ? 0.2 : tier === 'elite' ? 0.15 : 0.12,
       footerHeight,
       frameHeight,
       frameWidth,
@@ -210,12 +272,12 @@ export function buildZoneScreenAssignmentPlan(args: {
       panelOpacityFar: 0.44,
       panelOpacityMid: 0.58,
       panelOpacityNear: 0.72,
-      semanticChip: semantic.chip,
+      semanticChip: getZoneScreenSemanticChip(args.zoneId, socket.kind),
       semanticMode: semantic.mode,
       showCenterTitleDistance: detailDistance,
       subtitleDistance,
       tierAccent,
-      topStripWidth: semantic.mode === 'beacon' ? frameWidth * 0.4 : semantic.mode === 'signal' ? frameWidth * 0.52 : frameWidth * 0.66,
+      topStripWidth: isCenterSpineHero ? frameWidth * 0.86 : isHeroComposition ? frameWidth * 0.78 : semantic.mode === 'beacon' ? frameWidth * 0.4 : semantic.mode === 'signal' ? frameWidth * 0.52 : frameWidth * 0.66,
     } satisfies NonNullable<CityScreenAssignment['renderIntent']>;
 
     return [{

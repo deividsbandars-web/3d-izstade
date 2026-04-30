@@ -105,6 +105,7 @@ export function DistrictBooth({
         <BoothVisualAssembly
           accentColor={placement.color}
           boothColliderRef={boothColliderRef}
+          districtThemeId={placement.districtThemeId}
           fallbackMonogram={presentation.fallbackIdentity.monogram}
           onAction={onAction}
           presentation={presentation}

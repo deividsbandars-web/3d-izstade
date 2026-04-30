@@ -16,11 +16,16 @@ function summarizeTierCounts(boothPlacements: Array<{ sponsorTier?: string; boot
 
 function buildReviewCameraZones() {
   return [
-    { id: 'arrival', focus: [0, 42, 256], eye: [0, 128, 468], intent: 'arrival-gateway-hierarchy' },
-    { id: 'left', focus: [-654, 122, -286], eye: [-968, 214, 86], intent: 'left-skyline-balance' },
-    { id: 'middle', focus: [0, 112, -214], eye: [0, 188, 152], intent: 'core-civic-reading' },
-    { id: 'right', focus: [628, 128, -248], eye: [954, 216, 74], intent: 'right-signal-cluster' },
-    { id: 'rear', focus: [0, 136, -3312], eye: [0, 248, -2636], intent: 'stadium-campus-continuity' },
+    { id: 'arrival-gate', focus: [0, 42, 256], eye: [0, 128, 468], intent: 'arrival-gateway-hierarchy' },
+    { id: 'left-marquee', focus: [-482, 142, -300], eye: [-768, 178, -42], intent: 'left-screen-marquee-review' },
+    { id: 'center-spine', focus: [0, 96, -232], eye: [0, 164, 92], intent: 'center-civic-spine-review' },
+    { id: 'right-marquee', focus: [486, 136, -330], eye: [782, 184, -60], intent: 'right-screen-marquee-review' },
+    { id: 'tower-cluster', focus: [548, 122, -562], eye: [812, 196, -208], intent: 'tower-cluster-screen-review' },
+    { id: 'array-band', focus: [0, 88, -214], eye: [0, 152, 76], intent: 'array-band-cross-city-review' },
+    { id: 'sponsor-boulevard-left', focus: [-182, 12, -248], eye: [-318, 24, -42], intent: 'left-sponsor-boulevard-frontage-review' },
+    { id: 'sponsor-boulevard-right', focus: [182, 12, -248], eye: [318, 24, -42], intent: 'right-sponsor-boulevard-frontage-review' },
+    { id: 'rear-campus-center', focus: [0, 136, -3312], eye: [0, 248, -2636], intent: 'rear-campus-center-review' },
+    { id: 'stadium-feed-axis', focus: [0, 98, -2820], eye: [0, 156, -2408], intent: 'rear-campus-feed-axis-review' },
   ] as const;
 }
 

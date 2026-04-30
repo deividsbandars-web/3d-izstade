@@ -93,6 +93,20 @@ const yawOverlapB: CityScreenSurface = {
   size: [20, 180, 100],
 };
 
+const stackedVerticalA: CityScreenSurface = {
+  ...baseSurface,
+  id: 'screen-stacked-a',
+  position: [0, 120, -420],
+  size: [40, 80, 24],
+};
+
+const stackedVerticalB: CityScreenSurface = {
+  ...baseSurface,
+  id: 'screen-stacked-b',
+  position: [0, 260, -420],
+  size: [40, 80, 24],
+};
+
 const separatedDiagnostics = diagnoseScreenSurfaceOverlaps([separatedA, separatedB]);
 assert.equal(separatedDiagnostics.length, 0);
 
@@ -114,6 +128,9 @@ const yawOverlapDiagnostics = diagnoseScreenSurfaceOverlaps([yawOverlapA, yawOve
 assert.equal(yawOverlapDiagnostics.length, 1);
 assert.equal(yawOverlapDiagnostics[0]?.surfaceA, 'screen-yaw-overlap-a');
 assert.equal(yawOverlapDiagnostics[0]?.surfaceB, 'screen-yaw-overlap-b');
+
+const stackedVerticalDiagnostics = diagnoseScreenSurfaceOverlaps([stackedVerticalA, stackedVerticalB]);
+assert.equal(stackedVerticalDiagnostics.length, 0);
 
 const multiInput = [overlapA, overlapB, overlapC, invalidBounds];
 const before = JSON.stringify(multiInput);

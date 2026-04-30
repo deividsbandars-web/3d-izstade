@@ -10,8 +10,12 @@ export default defineConfig([
     'diagnostics/**',
     'dist',
     'deployment/signaling/dist/**',
+    'WarpalaUE5/Saved/Autosaves/**',
     '**/coverage/**',
     '**/dist/**',
+    '.codex-tmp/**',
+    'tmp-chrome-cdp-profile/**',
+    'tmp-expo-zone-shots/**',
     'pazudusie faili/',
   ]),
   {

@@ -50,6 +50,18 @@ const farBooth = {
   nodeType: 'standard_right' as const,
 };
 
+const thresholdEdgeBooth = {
+  id: 'booth-threshold-edge',
+  localFootprint: buildExpoBoothLocalFootprint({
+    boothType: 'standard',
+    nodeType: 'standard_right',
+    position: [45, 0, -120],
+    rotation: [0, 0, 0],
+    sponsorTier: 'silver',
+  }),
+  nodeType: 'standard_right' as const,
+};
+
 const towerRibbonSurface: CityScreenSurface = {
   ...baseSurface,
   id: 'screen-tower-ribbon',
@@ -58,11 +70,12 @@ const towerRibbonSurface: CityScreenSurface = {
 };
 
 const diagnostics = diagnoseScreenBoothProximity({
-  boothPlacements: [overlapBooth, nearbyBooth, farBooth],
+  boothPlacements: [overlapBooth, nearbyBooth, farBooth, thresholdEdgeBooth],
   screenSurfaces: [baseSurface, towerRibbonSurface],
 });
 
 assert.ok(diagnostics.some((entry) => entry.boothId === 'booth-overlap' && entry.code === 'screen-booth-overlap'));
 assert.ok(diagnostics.some((entry) => entry.boothId === 'booth-nearby' && entry.code === 'screen-booth-proximity'));
 assert.equal(diagnostics.some((entry) => entry.boothId === 'booth-far'), false);
+assert.equal(diagnostics.some((entry) => entry.boothId === 'booth-threshold-edge'), false);
 assert.equal(diagnostics.some((entry) => entry.screenId === 'screen-tower-ribbon'), false);

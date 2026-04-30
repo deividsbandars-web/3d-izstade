@@ -16,6 +16,7 @@ interface ExpoWorldSceneProps {
   mobileMoveIntent?: { f: boolean; b: boolean; l: boolean; r: boolean; s?: boolean };
   mode: ExpoMode;
   onMove: (pos: number[]) => void;
+  runtimeFocusIsolation?: boolean;
   runtimeLayerToggles?: {
     booths: boolean;
     city: boolean;
@@ -46,6 +47,7 @@ export function ExpoWorldScene({
   mobileMoveIntent,
   mode,
   onMove,
+  runtimeFocusIsolation,
   runtimeLayerToggles,
   runtimeCaptureSafe = false,
   runtimeHighlightedTargets = [],
@@ -63,6 +65,7 @@ export function ExpoWorldScene({
       mobileMoveIntent={mobileMoveIntent}
       mode={mode}
       onMove={onMove}
+      runtimeFocusIsolation={runtimeFocusIsolation}
       runtimeCaptureSafe={runtimeCaptureSafe}
       runtimeHighlightedTargets={runtimeHighlightedTargets}
       runtimeLayerToggles={runtimeLayerToggles}

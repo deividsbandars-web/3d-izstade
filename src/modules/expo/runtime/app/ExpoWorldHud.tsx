@@ -173,7 +173,10 @@ export function ExpoWorldHud({
       )}
 
       {(!isTouchDevice || mobileOptionsOpen) && (
-        <div style={{ position: 'absolute', top: '26px', right: '26px', zIndex: 100, display: 'flex', gap: '14px', alignItems: 'stretch', maxWidth: 'calc(100vw - 52px)', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+        <div
+          data-expo-world-hud-top="true"
+          style={{ position: 'absolute', top: '26px', right: '26px', zIndex: 100, display: 'flex', gap: '14px', alignItems: 'stretch', maxWidth: 'calc(100vw - 52px)', flexWrap: 'wrap', justifyContent: 'flex-end' }}
+        >
           <div style={{ ...primaryPanelStyle, minWidth: '280px', padding: '14px 18px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
               <div>
@@ -253,7 +256,10 @@ export function ExpoWorldHud({
       )}
 
       {(!isTouchDevice || mobileMapOpen) && (
-        <div style={{ position: 'absolute', bottom: '26px', left: '26px', zIndex: 100, width: `${radarSize}px`, height: `${radarSize}px`, background: `linear-gradient(180deg, ${visualProfile.global.hudPanel}, rgba(15, 23, 42, 0.7))`, borderRadius: '50%', border: `1px solid ${visualProfile.global.hudAccent}44`, overflow: 'hidden', backdropFilter: 'blur(10px)', boxShadow: '0 18px 48px rgba(0,0,0,0.45)' }}>
+        <div
+          data-expo-world-hud-radar="true"
+          style={{ position: 'absolute', bottom: '26px', left: '26px', zIndex: 100, width: `${radarSize}px`, height: `${radarSize}px`, background: `linear-gradient(180deg, ${visualProfile.global.hudPanel}, rgba(15, 23, 42, 0.7))`, borderRadius: '50%', border: `1px solid ${visualProfile.global.hudAccent}44`, overflow: 'hidden', backdropFilter: 'blur(10px)', boxShadow: '0 18px 48px rgba(0,0,0,0.45)' }}
+        >
           <div style={{ width: '100%', height: '100%', position: 'relative', background: `radial-gradient(circle at center, ${visualProfile.global.hudAccent}30 0%, rgba(15, 23, 42, 0.04) 70%)` }}>
             <div style={{ position: 'absolute', top: '50%', left: '0', width: '100%', height: '1px', background: 'rgba(255,255,255,0.1)' }} />
             <div style={{ position: 'absolute', top: '0', left: '50%', width: '1px', height: '100%', background: 'rgba(255,255,255,0.1)' }} />

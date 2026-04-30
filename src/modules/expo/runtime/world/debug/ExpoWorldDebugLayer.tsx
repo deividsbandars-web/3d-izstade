@@ -5,19 +5,27 @@ import type { ExpoPlayBounds, ExpoWalkRegion } from '../../../walk-region';
 import { TargetBasketHighlighter } from '../inspection/worldInspectionContract';
 
 export function ExpoWorldDebugLayer({
+  hardIsolateNonTargets = false,
   highlightedTargets,
+  isolateNonTargets = false,
   playBounds,
   startView,
   walkRegions,
 }: {
+  hardIsolateNonTargets?: boolean;
   highlightedTargets: string[];
+  isolateNonTargets?: boolean;
   playBounds: ExpoPlayBounds;
   startView: ExpoStartView;
   walkRegions: ExpoWalkRegion[];
 }) {
   return (
     <>
-      <TargetBasketHighlighter targets={highlightedTargets} />
+      <TargetBasketHighlighter
+        hardIsolateNonTargets={hardIsolateNonTargets}
+        isolateNonTargets={isolateNonTargets}
+        targets={highlightedTargets}
+      />
       {(EXPO_SPATIAL_DEBUG_FLAGS.showSpawnMarkers || EXPO_SPATIAL_DEBUG_FLAGS.showWalkCorridor) && (
         <SpawnDebugOverlay playBounds={playBounds} startView={startView} walkRegions={walkRegions} />
       )}

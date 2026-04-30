@@ -6,7 +6,11 @@ import { useInspectionFocus, useInspectionOperatorSummary, useInspectionTargets,
 import { buildWorldDiagnosticReportFromPlan } from '../../world/inspection/worldDiagnosticReport';
 import { buildBoothWorldObjectRegistry } from '../../world/inspection/worldObjectRegistry';
 import { ExpoOperatorOverlay } from '../overlay/ExpoOperatorOverlay';
-import { buildReviewOperatorZones, resolveExpoOperatorSession } from '../model/reviewOperatorSession';
+import {
+  buildReviewOperatorZones,
+  resolveExpoOperatorSession,
+  resolveReviewOperatorZoneStartView,
+} from '../model/reviewOperatorSession';
 import { useExpoOperatorState } from './useExpoOperatorState';
 
 const LOCAL_BUILD_STAMP = `LOCAL-${new Date().toISOString().replace('T', ' ').slice(0, 19)}`;
@@ -50,6 +54,13 @@ export function useExpoOperatorLayer({
 
     return new Map(entries.map((entry) => [entry.id, entry]));
   }, [boothRegistryEntries, inspectionState.rawSources.city, inspectionState.rawSources.stadium]);
+  const resolvedReviewZones = useMemo(
+    () => reviewZones.map((zone) => ({
+      ...zone,
+      startView: resolveReviewOperatorZoneStartView(zone, registryById),
+    })),
+    [registryById, reviewZones],
+  );
   const canonicalWorldPlan = useMemo(
     () => buildCanonicalWorldPlanFromWorldContract(worldContract),
     [worldContract],
@@ -87,7 +98,7 @@ export function useExpoOperatorLayer({
     },
     sceneVersion,
     setMode,
-    zones: reviewZones,
+    zones: resolvedReviewZones,
   });
 
   const effectiveFocusSlug = operator.focusSlug === '__use_url__' ? initialUrlFocus : operator.focusSlug;
@@ -97,8 +108,8 @@ export function useExpoOperatorLayer({
       return null;
     }
 
-    return reviewZones.find((zone) => zone.id === operator.operatorZoneId)?.startView ?? null;
-  }, [operator.operatorZoneId, reviewZones, session.enabled]);
+    return resolvedReviewZones.find((zone) => zone.id === operator.operatorZoneId)?.startView ?? null;
+  }, [operator.operatorZoneId, resolvedReviewZones, session.enabled]);
 
   const focusStartView = useMemo<ExpoStartView | null>(() => {
     if (typeof window === 'undefined') {
@@ -237,11 +248,14 @@ export function useExpoOperatorLayer({
         }
       }}
       operatorZoneId={operator.operatorZoneId}
+      operatorZoneLabel={operator.operatorZone?.label ?? null}
+      operatorZoneFixRoutes={operator.operatorZoneFixRoutes}
+      operatorZoneValidation={operator.operatorZoneValidation}
       sceneVersion={sceneVersion}
       sectionStates={operator.sectionStates}
       session={session}
       targetBasket={operator.targetBasket}
-      zones={reviewZones}
+      zones={resolvedReviewZones}
     />
   );
 
@@ -249,6 +263,13 @@ export function useExpoOperatorLayer({
     debug: operator.debug,
     effectiveStartViewOverride,
     layer,
+    runtimeFocusIsolation: session.enabled && Boolean(operator.operatorZoneId),
+    runtimeHighlightedTargets: session.enabled
+      ? Array.from(new Set([
+        ...(operator.operatorZone?.expectedKeyObjectIds ?? []),
+        ...operator.targetBasket,
+      ]))
+      : [],
     runtimeLayerToggles: session.enabled ? operator.layerStates : undefined,
     runtimeSectionToggles: session.enabled ? operator.sectionStates : undefined,
     session,
