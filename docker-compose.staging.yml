@@ -1,4 +1,13 @@
 services:
+  redis-staging:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    expose:
+      - "6379"
+    restart: unless-stopped
+    networks:
+      - default
+
   backend-staging:
     build:
       context: .
@@ -8,12 +17,16 @@ services:
       PORT: 3001
       SIGNALING_STATUS_BASE_URL: http://signaling
       PIXEL_STREAMING_STATUS_TIMEOUT_MS: ${PIXEL_STREAMING_STATUS_TIMEOUT_MS:-2500}
+      REDIS_URL: redis://redis-staging:6379
       SUPABASE_URL: ${SUPABASE_URL:?SUPABASE_URL is required}
       SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY:?SUPABASE_ANON_KEY is required}
       SUPABASE_SERVICE_KEY: ${SUPABASE_SERVICE_KEY:?SUPABASE_SERVICE_KEY is required}
       UE5_SECRET_KEY: ${UE5_SECRET_KEY:?UE5_SECRET_KEY is required}
     ports:
       - "3001:3001"
+    depends_on:
+      redis-staging:
+        condition: service_started
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3001/health >/dev/null 2>&1 || exit 1"]
       interval: 10s
@@ -26,5 +39,4 @@ services:
 
 networks:
   default:
-    external: true
-    name: warpala-network
+    name: warpala-staging-network
