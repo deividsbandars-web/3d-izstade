@@ -15,7 +15,7 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3001
-      SIGNALING_STATUS_BASE_URL: http://signaling
+      SIGNALING_STATUS_BASE_URL: http://signaling-staging
       PIXEL_STREAMING_STATUS_TIMEOUT_MS: ${PIXEL_STREAMING_STATUS_TIMEOUT_MS:-2500}
       REDIS_URL: redis://redis-staging:6379
       SUPABASE_URL: ${SUPABASE_URL:?SUPABASE_URL is required}
@@ -27,8 +27,35 @@ services:
     depends_on:
       redis-staging:
         condition: service_started
+      signaling-staging:
+        condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3001/health >/dev/null 2>&1 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 15s
+    restart: unless-stopped
+    networks:
+      - default
+
+  signaling-staging:
+    build:
+      context: ./deployment/signaling
+      dockerfile: Dockerfile
+    environment:
+      STUN_SERVER_URLS: ${STUN_SERVER_URLS:-stun:stun.l.google.com:19302}
+      TURN_SERVER_URLS: ${TURN_SERVER_URLS:?TURN_SERVER_URLS is required}
+      TURN_USERNAME: ${TURN_USERNAME:?TURN_USERNAME is required}
+      TURN_PASSWORD: ${TURN_PASSWORD:?TURN_PASSWORD is required}
+    expose:
+      - "80"
+    ports:
+      - "127.0.0.1:8081:80"
+      - "9888:8888"
+      - "9889:8889"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1/api/status >/dev/null 2>&1 || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 12
