@@ -8,19 +8,35 @@ import {
 const zones = buildReviewOperatorZones();
 const zoneIds = zones.map((zone) => zone.id);
 
-assert.equal(zones.length, 10);
+assert.equal(zones.length, 26);
 assert.equal(DEFAULT_REVIEW_OPERATOR_ZONE_ID, 'arrival-gate');
 assert.deepEqual(zoneIds, [
   'arrival-gate',
+  'arrival-civic-axis',
   'left-marquee',
+  'left-marquee-close',
+  'left-edge-far',
   'center-spine',
+  'mid-start-deep',
+  'center-spine-side',
   'right-marquee',
+  'right-marquee-close',
+  'right-edge-far',
   'tower-cluster',
+  'tower-cluster-reverse',
   'array-band',
+  'array-band-south',
   'sponsor-boulevard-left',
+  'sponsor-boulevard-left-close',
   'sponsor-boulevard-right',
+  'sponsor-boulevard-right-close',
+  'stadium-approach',
+  'stadium-left-flank',
   'rear-campus-center',
   'stadium-feed-axis',
+  'stadium-right-flank',
+  'rear-campus-mega-hall',
+  'rear-campus-needle-crown',
 ]);
 
 assert.ok(zones.every((zone) => zone.expectedVisibleLayers.length > 0));

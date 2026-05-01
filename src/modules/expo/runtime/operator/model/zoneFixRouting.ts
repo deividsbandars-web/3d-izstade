@@ -3,7 +3,7 @@ import type { ReviewOperatorZone } from './reviewOperatorSession';
 import type { ZoneReviewValidation } from './zoneReviewValidation';
 
 export type ZoneFixRoute = {
-  issue: 'missing-layer' | 'missing-object' | 'unknown-expected-object';
+  issue: 'forbidden-layer' | 'forbidden-object' | 'missing-layer' | 'missing-object' | 'unknown-expected-object';
   reason: string;
   safeEditSeam: string;
   sourceFile: string;
@@ -115,6 +115,32 @@ export function buildZoneFixRoutes(args: {
       safeEditSeam: 'src/modules/expo/runtime/operator/model/reviewOperatorSession.ts',
       sourceFile: 'src/modules/expo/runtime/operator/model/reviewOperatorSession.ts',
       target: objectId,
+    });
+  }
+
+  for (const objectId of args.validation.forbiddenObjectIdsPresent) {
+    const entry = args.registryById[objectId];
+    if (!entry) {
+      continue;
+    }
+
+    routes.push({
+      issue: 'forbidden-object',
+      reason: `Object ${objectId} is visible in current zone context but the zone contract forbids it`,
+      safeEditSeam: entry.safeEditSeam,
+      sourceFile: entry.sourceFile,
+      target: objectId,
+    });
+  }
+
+  for (const layer of args.validation.forbiddenExpectedLayersPresent) {
+    const route = buildLayerRoute(layer);
+    routes.push({
+      issue: 'forbidden-layer',
+      reason: `Layer ${layer} is visible in current zone context but the zone contract forbids it`,
+      safeEditSeam: route.safeEditSeam,
+      sourceFile: route.sourceFile,
+      target: layer,
     });
   }
 

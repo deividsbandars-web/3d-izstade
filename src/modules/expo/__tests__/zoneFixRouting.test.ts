@@ -35,6 +35,10 @@ const validation: ZoneReviewValidation = {
   actualKeyObjectIds: [],
   actualVisibleLayers: [],
   extraVisibleLayers: [],
+  forbiddenExpectedLayersPresent: ['booth'],
+  forbiddenObjectIdsPresent: ['city-screen-1'],
+  locationDistance: 640,
+  locationStatus: 'mismatch',
   missingExpectedLayers: ['booth'],
   missingExpectedObjectIds: ['city-screen-1'],
   status: 'warning',
@@ -50,8 +54,12 @@ const routes = buildZoneFixRoutes({
   zone,
 });
 
-assert.equal(routes.length, 2);
+assert.equal(routes.length, 4);
 assert.equal(routes[0]?.target, 'city-screen-1');
 assert.equal(routes[0]?.safeEditSeam, 'src/modules/expo/runtime/planning/screens/buildScreenSurfacePlan.ts');
 assert.equal(routes[1]?.target, 'booth');
 assert.equal(routes[1]?.safeEditSeam, 'src/shared/expo/layoutEngine.ts');
+assert.equal(routes[2]?.issue, 'forbidden-object');
+assert.equal(routes[2]?.target, 'city-screen-1');
+assert.equal(routes[3]?.issue, 'forbidden-layer');
+assert.equal(routes[3]?.target, 'booth');

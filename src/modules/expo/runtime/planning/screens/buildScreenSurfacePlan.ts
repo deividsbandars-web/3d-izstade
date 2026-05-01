@@ -2,6 +2,7 @@ import {
   buildMediaWallSurfaces,
   buildTowerScreenSurfaces,
 } from '../legacy/worldCityGeometry';
+import { buildRearCampusSidePavilions } from '../../world/ExpoRearCampusLayout';
 import type {
   CanonicalPrimitive,
   CityScreenSurface,
@@ -38,8 +39,33 @@ function isMarqueeOrSpineHeroSurface(surface: CityScreenSurface) {
   );
 }
 
-function buildSurfacePrimitives(surface: CityScreenSurface): CanonicalPrimitive[] {
+function getSurfaceFamily(zoneId: ExpoPlanningZoneId, surface: CityScreenSurface) {
+  if (surface.id.startsWith('rear-campus-')) {
+    return 'rear-campus';
+  }
+
+  if (surface.role === 'tower-crown' || surface.role === 'tower-side') {
+    return 'tower';
+  }
+
+  if (zoneId === 'center-spine' || surface.id.startsWith('screen-spine-')) {
+    return 'center-spine';
+  }
+
+  if (surface.id.startsWith('screen-marquee-')) {
+    return 'marquee-hero';
+  }
+
+  if (surface.id.startsWith('screen-array-')) {
+    return 'district-array';
+  }
+
+  return 'default';
+}
+
+function buildSurfacePrimitives(zoneId: ExpoPlanningZoneId, surface: CityScreenSurface): CanonicalPrimitive[] {
   const profile = surface.renderIntent;
+  const family = getSurfaceFamily(zoneId, surface);
   const housingDepth = profile?.housingDepth ?? Math.max(8, surface.size[2] * 3.5);
   const housingWidth = surface.size[0];
   const housingHeight = surface.size[1];
@@ -53,19 +79,64 @@ function buildSurfacePrimitives(surface: CityScreenSurface): CanonicalPrimitive[
   const wingHeight = profile?.wingHeight ?? 0;
 
   const primitives: CanonicalPrimitive[] = [
-    { color: surface.color, emissive: surface.glowColor, emissiveIntensity: surface.role === 'hero-wall' ? 0.08 : 0.05, kind: 'box', metalness: 0.38, position: [0, 0, 0], roughness: 0.42, size: [housingWidth, housingHeight, housingDepth] },
-    { color: '#07101c', emissive: surface.glowColor, emissiveIntensity: surface.role === 'hero-wall' ? 0.06 : 0.04, kind: 'box', metalness: 0.18, position: [0, 0, housingDepth * 0.38], roughness: 0.22, size: [innerWidth, innerHeight, Math.max(1.8, housingDepth * 0.22)] },
-    { color: surface.glowColor, kind: 'plane', opacity: profile?.glowOpacity ?? 0.18, position: [0, 0, housingDepth * 0.51], size: [innerWidth * 0.95, innerHeight * 0.95], transparent: true },
-    { color: '#111c2d', emissive: surface.glowColor, emissiveIntensity: 0.12, kind: 'box', metalness: 0.34, position: [0, housingHeight * 0.52, housingDepth * 0.12], roughness: 0.38, size: [profile?.canopyWidth ?? housingWidth * 0.86, profile?.canopyHeight ?? housingHeight * 0.072, housingDepth * 0.56] },
-    { color: '#142033', emissive: surface.glowColor, emissiveIntensity: 0.09, kind: 'box', metalness: 0.44, position: [-(housingWidth * 0.5) + (finWidth * 0.5), 0, 0], roughness: 0.36, size: [finWidth, housingHeight * 1.02, finDepth] },
-    { color: '#142033', emissive: surface.glowColor, emissiveIntensity: 0.09, kind: 'box', metalness: 0.44, position: [(housingWidth * 0.5) - (finWidth * 0.5), 0, 0], roughness: 0.36, size: [finWidth, housingHeight * 1.02, finDepth] },
-    { color: '#0f1927', emissive: surface.glowColor, emissiveIntensity: 0.06, kind: 'box', metalness: 0.26, position: [0, -(housingHeight * 0.5) - (railHeight * 0.8), 0], roughness: 0.42, size: [housingWidth * 0.82, railHeight, housingDepth * 0.5] },
-    { color: surface.glowColor, kind: 'plane', opacity: (profile?.railOpacity ?? 0.72) * 0.24, position: [0, housingHeight * 0.42, housingDepth * 0.58], size: [housingWidth * 0.72, railHeight * 0.82], transparent: true },
-    { color: surface.glowColor, kind: 'plane', opacity: (profile?.railOpacity ?? 0.72) * 0.18, position: [0, -(housingHeight * 0.42), housingDepth * 0.58], size: [housingWidth * 0.58, railHeight * 0.68], transparent: true },
-    { color: '#121f32', emissive: surface.glowColor, emissiveIntensity: 0.08, kind: 'box', metalness: 0.4, position: [0, -(housingHeight * 0.5) - (keelHeight * 0.5), -(housingDepth * 0.16)], roughness: 0.34, size: [profile?.keelWidth ?? housingWidth * 0.1, keelHeight, housingDepth * 0.44] },
-    { color: '#f8fafc', kind: 'plane', opacity: surface.role === 'hero-wall' ? 0.042 : 0.024, position: [0, 0, housingDepth * 0.6], size: [innerWidth * 0.88, innerHeight * 0.88], transparent: true },
-    { color: surface.color, kind: 'plane', opacity: (profile?.innerOpacity ?? 0.88) * 0.08, position: [0, 0, housingDepth * 0.46], size: [innerWidth * 0.9, innerHeight * 0.9], transparent: true },
+    { color: surface.color, emissive: surface.glowColor, emissiveIntensity: surface.role === 'hero-wall' ? 0.06 : 0.04, kind: 'box', metalness: 0.34, position: [0, 0, 0], roughness: 0.46, size: [housingWidth, housingHeight, housingDepth] },
+    { color: '#08111c', emissive: surface.glowColor, emissiveIntensity: surface.role === 'hero-wall' ? 0.04 : 0.025, kind: 'box', metalness: 0.16, position: [0, 0, housingDepth * 0.28], roughness: 0.24, size: [innerWidth, innerHeight, Math.max(1.6, housingDepth * 0.16)] },
+    { color: surface.glowColor, kind: 'plane', opacity: Math.min(0.18, profile?.glowOpacity ?? 0.16), position: [0, 0, housingDepth * 0.38], size: [innerWidth * 0.92, innerHeight * 0.92], transparent: true },
+    { color: '#111c2d', emissive: surface.glowColor, emissiveIntensity: 0.08, kind: 'box', metalness: 0.3, position: [0, housingHeight * 0.52, housingDepth * 0.02], roughness: 0.42, size: [profile?.canopyWidth ?? housingWidth * 0.84, profile?.canopyHeight ?? housingHeight * 0.068, housingDepth * 0.34] },
+    { color: '#142033', emissive: surface.glowColor, emissiveIntensity: 0.07, kind: 'box', metalness: 0.4, position: [-(housingWidth * 0.5) + (finWidth * 0.5), 0, -(housingDepth * 0.04)], roughness: 0.38, size: [finWidth, housingHeight, finDepth * 0.72] },
+    { color: '#142033', emissive: surface.glowColor, emissiveIntensity: 0.07, kind: 'box', metalness: 0.4, position: [(housingWidth * 0.5) - (finWidth * 0.5), 0, -(housingDepth * 0.04)], roughness: 0.38, size: [finWidth, housingHeight, finDepth * 0.72] },
+    { color: '#0f1927', emissive: surface.glowColor, emissiveIntensity: 0.05, kind: 'box', metalness: 0.24, position: [0, -(housingHeight * 0.5) - (railHeight * 0.7), -(housingDepth * 0.06)], roughness: 0.46, size: [housingWidth * 0.8, railHeight, housingDepth * 0.34] },
+    { color: '#121f32', emissive: surface.glowColor, emissiveIntensity: 0.06, kind: 'box', metalness: 0.34, position: [0, -(housingHeight * 0.5) - (keelHeight * 0.5), -(housingDepth * 0.18)], roughness: 0.38, size: [profile?.keelWidth ?? housingWidth * 0.1, keelHeight, housingDepth * 0.3] },
   ];
+
+  if (family === 'rear-campus') {
+    return [
+      { color: surface.color, emissive: surface.glowColor, emissiveIntensity: 0.04, kind: 'box', metalness: 0.28, position: [0, 0, 0], roughness: 0.5, size: [housingWidth, housingHeight, housingDepth] },
+      { color: '#08111c', emissive: surface.glowColor, emissiveIntensity: 0.02, kind: 'box', metalness: 0.12, position: [0, 0, housingDepth * 0.18], roughness: 0.26, size: [housingWidth * 0.98, housingHeight * 0.98, Math.max(0.9, housingDepth * 0.1)] },
+      { color: '#0e1d2e', emissive: surface.glowColor, emissiveIntensity: 0.04, kind: 'box', metalness: 0.3, position: [0, 0, -(housingDepth * 0.18)], roughness: 0.38, size: [housingWidth * 0.1, housingHeight * 0.72, housingDepth * 0.18] },
+      { color: '#112032', emissive: surface.glowColor, emissiveIntensity: 0.04, kind: 'box', metalness: 0.34, position: [-(housingWidth * 0.22), 0, -(housingDepth * 0.08)], roughness: 0.36, size: [Math.max(2.2, housingWidth * 0.028), housingHeight * 0.42, housingDepth * 0.14] },
+      { color: '#112032', emissive: surface.glowColor, emissiveIntensity: 0.04, kind: 'box', metalness: 0.34, position: [(housingWidth * 0.22), 0, -(housingDepth * 0.08)], roughness: 0.36, size: [Math.max(2.2, housingWidth * 0.028), housingHeight * 0.42, housingDepth * 0.14] },
+    ];
+  }
+
+  if (family === 'tower') {
+    return [
+      { color: surface.color, emissive: surface.glowColor, emissiveIntensity: 0.04, kind: 'box', metalness: 0.34, position: [0, 0, 0], roughness: 0.42, size: [housingWidth, housingHeight, housingDepth] },
+      { color: '#091320', emissive: surface.glowColor, emissiveIntensity: 0.02, kind: 'box', metalness: 0.12, position: [0, 0, housingDepth * 0.18], roughness: 0.24, size: [housingWidth * 0.98, housingHeight * 0.98, Math.max(0.72, housingDepth * 0.1)] },
+      { color: '#0f1c2b', emissive: surface.glowColor, emissiveIntensity: 0.03, kind: 'box', metalness: 0.3, position: [0, 0, -(housingDepth * 0.16)], roughness: 0.36, size: [housingWidth * 0.14, housingHeight * 0.62, housingDepth * 0.18] },
+      { color: '#14243a', emissive: surface.glowColor, emissiveIntensity: 0.04, kind: 'box', metalness: 0.34, position: [-(housingWidth * 0.28), 0, -(housingDepth * 0.08)], roughness: 0.36, size: [Math.max(1.2, housingWidth * 0.028), housingHeight * 0.42, housingDepth * 0.1] },
+      { color: '#14243a', emissive: surface.glowColor, emissiveIntensity: 0.04, kind: 'box', metalness: 0.34, position: [(housingWidth * 0.28), 0, -(housingDepth * 0.08)], roughness: 0.36, size: [Math.max(1.2, housingWidth * 0.028), housingHeight * 0.42, housingDepth * 0.1] },
+    ];
+  }
+
+  if (family === 'center-spine') {
+    return [
+      { color: surface.color, emissive: surface.glowColor, emissiveIntensity: 0.05, kind: 'box', metalness: 0.32, position: [0, 0, 0], roughness: 0.46, size: [housingWidth, housingHeight, housingDepth] },
+      { color: '#08111c', emissive: surface.glowColor, emissiveIntensity: 0.03, kind: 'box', metalness: 0.14, position: [0, 0, housingDepth * 0.2], roughness: 0.22, size: [housingWidth * 0.98, housingHeight * 0.98, Math.max(1, housingDepth * 0.12)] },
+      { color: '#102031', emissive: surface.glowColor, emissiveIntensity: 0.04, kind: 'box', metalness: 0.32, position: [0, 0, -(housingDepth * 0.18)], roughness: 0.4, size: [housingWidth * 0.1, housingHeight * 0.74, housingDepth * 0.18] },
+      { color: '#132238', emissive: surface.glowColor, emissiveIntensity: 0.05, kind: 'box', metalness: 0.34, position: [-(housingWidth * 0.48), 0, -(housingDepth * 0.04)], rotation: [0, 0.1, 0], roughness: 0.36, size: [housingWidth * 0.03, housingHeight * 0.56, housingDepth * 0.12] },
+      { color: '#132238', emissive: surface.glowColor, emissiveIntensity: 0.05, kind: 'box', metalness: 0.34, position: [(housingWidth * 0.48), 0, -(housingDepth * 0.04)], rotation: [0, -0.1, 0], roughness: 0.36, size: [housingWidth * 0.03, housingHeight * 0.56, housingDepth * 0.12] },
+    ];
+  }
+
+  if (family === 'marquee-hero') {
+    return [
+      { color: surface.color, emissive: surface.glowColor, emissiveIntensity: 0.05, kind: 'box', metalness: 0.34, position: [0, 0, 0], roughness: 0.46, size: [housingWidth, housingHeight, housingDepth] },
+      { color: '#08111c', emissive: surface.glowColor, emissiveIntensity: 0.03, kind: 'box', metalness: 0.16, position: [0, 0, housingDepth * 0.2], roughness: 0.24, size: [housingWidth * 0.98, housingHeight * 0.98, Math.max(1.1, housingDepth * 0.12)] },
+      { color: '#111c2d', emissive: surface.glowColor, emissiveIntensity: 0.04, kind: 'box', metalness: 0.3, position: [0, housingHeight * 0.48, housingDepth * 0.01], roughness: 0.42, size: [housingWidth * 0.68, housingHeight * 0.04, housingDepth * 0.18] },
+      { color: '#0f1a29', emissive: surface.glowColor, emissiveIntensity: 0.04, kind: 'box', metalness: 0.3, position: [0, 0, -(housingDepth * 0.18)], roughness: 0.4, size: [housingWidth * 0.1, housingHeight * 0.72, housingDepth * 0.2] },
+      { color: '#132238', emissive: surface.glowColor, emissiveIntensity: 0.05, kind: 'box', metalness: 0.34, position: [-(housingWidth * 0.48), 0, -(housingDepth * 0.04)], rotation: [0, 0.1, 0], roughness: 0.36, size: [housingWidth * 0.032, housingHeight * 0.58, housingDepth * 0.12] },
+      { color: '#132238', emissive: surface.glowColor, emissiveIntensity: 0.05, kind: 'box', metalness: 0.34, position: [(housingWidth * 0.48), 0, -(housingDepth * 0.04)], rotation: [0, -0.1, 0], roughness: 0.36, size: [housingWidth * 0.032, housingHeight * 0.58, housingDepth * 0.12] },
+    ];
+  }
+
+  if (family === 'district-array') {
+    return [
+      { color: surface.color, emissive: surface.glowColor, emissiveIntensity: 0.04, kind: 'box', metalness: 0.32, position: [0, 0, 0], roughness: 0.46, size: [housingWidth, housingHeight, housingDepth] },
+      { color: '#08111c', emissive: surface.glowColor, emissiveIntensity: 0.02, kind: 'box', metalness: 0.14, position: [0, 0, housingDepth * 0.18], roughness: 0.24, size: [housingWidth * 0.98, housingHeight * 0.98, Math.max(0.9, housingDepth * 0.12)] },
+      { color: '#101d2d', emissive: surface.glowColor, emissiveIntensity: 0.04, kind: 'box', metalness: 0.3, position: [0, 0, -(housingDepth * 0.18)], roughness: 0.4, size: [housingWidth * 0.08, housingHeight * 0.64, housingDepth * 0.16] },
+    ];
+  }
 
   if (wingWidth > 0) {
     primitives.push(
@@ -74,13 +145,51 @@ function buildSurfacePrimitives(surface: CityScreenSurface): CanonicalPrimitive[
     );
   }
 
+  if (surface.role === 'hero-wall' || surface.role === 'support-wall') {
+    const supportLegHeight = surface.role === 'hero-wall' ? housingHeight * 0.54 : housingHeight * 0.44;
+    const supportLegWidth = Math.max(surface.role === 'hero-wall' ? 5.4 : 3.8, housingWidth * 0.046);
+    const supportLegDepth = housingDepth * 0.28;
+    const supportLegOffsetX = housingWidth * 0.24;
+    const supportLegY = -(housingHeight * 0.5) - (supportLegHeight * 0.5) + (surface.role === 'hero-wall' ? 2 : 1.4);
+    const supportBridgeHeight = Math.max(3.6, housingHeight * 0.042);
+    const supportBridgeWidth = housingWidth * 0.34;
+    const isMountedWallFamily =
+      zoneId === 'rear-campus'
+      || zoneId === 'center-spine'
+      || surface.id.startsWith('screen-marquee-')
+      || surface.id.startsWith('screen-array-');
+
+    primitives.push(
+      { color: '#112032', emissive: surface.glowColor, emissiveIntensity: 0.07, kind: 'box', metalness: 0.42, position: [0, -(housingHeight * 0.5) - (supportBridgeHeight * 0.35), -(housingDepth * 0.08)], roughness: 0.34, size: [supportBridgeWidth, supportBridgeHeight, housingDepth * 0.42] },
+      { color: '#0f1a29', emissive: surface.glowColor, emissiveIntensity: 0.06, kind: 'box', metalness: 0.34, position: [0, 0, -(housingDepth * 0.24)], roughness: 0.38, size: [housingWidth * 0.16, housingHeight * 0.82, housingDepth * 0.36] },
+    );
+
+    if (!isMountedWallFamily) {
+      primitives.push(
+        { color: '#112032', emissive: surface.glowColor, emissiveIntensity: 0.08, kind: 'box', metalness: 0.44, position: [-supportLegOffsetX, supportLegY, -(housingDepth * 0.06)], roughness: 0.3, size: [supportLegWidth, supportLegHeight, supportLegDepth] },
+        { color: '#112032', emissive: surface.glowColor, emissiveIntensity: 0.08, kind: 'box', metalness: 0.44, position: [supportLegOffsetX, supportLegY, -(housingDepth * 0.06)], roughness: 0.3, size: [supportLegWidth, supportLegHeight, supportLegDepth] },
+      );
+    }
+  }
+
+  if (surface.role === 'tower-crown' || surface.role === 'tower-side') {
+    const spineWidth = surface.role === 'tower-crown' ? housingWidth * 0.24 : housingWidth * 0.18;
+    const spineHeight = surface.role === 'tower-crown' ? housingHeight * 0.82 : housingHeight * 0.74;
+    const spineDepth = housingDepth * 0.42;
+    const clampWidth = Math.max(2.8, housingWidth * 0.044);
+
+    primitives.push(
+      { color: '#102031', emissive: surface.glowColor, emissiveIntensity: 0.08, kind: 'box', metalness: 0.42, position: [0, 0, -(housingDepth * 0.28)], roughness: 0.3, size: [spineWidth, spineHeight, spineDepth] },
+      { color: '#14243a', emissive: surface.glowColor, emissiveIntensity: 0.07, kind: 'box', metalness: 0.38, position: [-(housingWidth * 0.34), 0, -(housingDepth * 0.16)], roughness: 0.34, size: [clampWidth, housingHeight * 0.64, housingDepth * 0.24] },
+      { color: '#14243a', emissive: surface.glowColor, emissiveIntensity: 0.07, kind: 'box', metalness: 0.38, position: [(housingWidth * 0.34), 0, -(housingDepth * 0.16)], roughness: 0.34, size: [clampWidth, housingHeight * 0.64, housingDepth * 0.24] },
+    );
+  }
+
   if (isMarqueeOrSpineHeroSurface(surface)) {
     primitives.push(
-      { color: '#0d1624', emissive: surface.glowColor, emissiveIntensity: 0.14, kind: 'box', metalness: 0.34, position: [0, 0, -(housingDepth * 0.24)], roughness: 0.38, size: [housingWidth * 0.22, housingHeight * 1.1, housingDepth * 0.52] },
-      { color: surface.glowColor, kind: 'plane', opacity: 0.12, position: [0, housingHeight * 0.2, housingDepth * 0.62], size: [innerWidth * 0.72, housingHeight * 0.18], transparent: true },
-      { color: surface.glowColor, kind: 'plane', opacity: 0.1, position: [0, -(housingHeight * 0.24), housingDepth * 0.62], size: [innerWidth * 0.56, housingHeight * 0.12], transparent: true },
-      { color: '#132238', emissive: surface.glowColor, emissiveIntensity: 0.12, kind: 'box', metalness: 0.44, position: [-(housingWidth * 0.66), 0, housingDepth * 0.04], rotation: [0, 0.22, 0], roughness: 0.3, size: [housingWidth * 0.08, housingHeight * 0.88, housingDepth * 0.36] },
-      { color: '#132238', emissive: surface.glowColor, emissiveIntensity: 0.12, kind: 'box', metalness: 0.44, position: [(housingWidth * 0.66), 0, housingDepth * 0.04], rotation: [0, -0.22, 0], roughness: 0.3, size: [housingWidth * 0.08, housingHeight * 0.88, housingDepth * 0.36] },
+      { color: '#0d1624', emissive: surface.glowColor, emissiveIntensity: 0.1, kind: 'box', metalness: 0.28, position: [0, 0, -(housingDepth * 0.18)], roughness: 0.42, size: [housingWidth * 0.18, housingHeight * 1.02, housingDepth * 0.32] },
+      { color: '#132238', emissive: surface.glowColor, emissiveIntensity: 0.08, kind: 'box', metalness: 0.36, position: [-(housingWidth * 0.64), 0, -(housingDepth * 0.02)], rotation: [0, 0.16, 0], roughness: 0.34, size: [housingWidth * 0.06, housingHeight * 0.82, housingDepth * 0.24] },
+      { color: '#132238', emissive: surface.glowColor, emissiveIntensity: 0.08, kind: 'box', metalness: 0.36, position: [(housingWidth * 0.64), 0, -(housingDepth * 0.02)], rotation: [0, -0.16, 0], roughness: 0.34, size: [housingWidth * 0.06, housingHeight * 0.82, housingDepth * 0.24] },
     );
   }
 
@@ -90,6 +199,7 @@ function buildSurfacePrimitives(surface: CityScreenSurface): CanonicalPrimitive[
 function enrichSurfaceIntent(zoneId: ExpoPlanningZoneId, surface: CityScreenSurface): CityScreenSurface {
   const isHeroCompositionZone = zoneId === 'left-district' || zoneId === 'center-spine' || zoneId === 'right-district';
   const isCenterSpineHero = zoneId === 'center-spine' && surface.role === 'hero-wall';
+  const family = getSurfaceFamily(zoneId, surface);
   const renderIntent = surface.renderIntent ?? (
     surface.role === 'hero-wall'
       ? {
@@ -111,53 +221,53 @@ function enrichSurfaceIntent(zoneId: ExpoPlanningZoneId, surface: CityScreenSurf
         }
       : surface.role === 'support-wall'
         ? {
-            canopyHeight: surface.size[1] * 0.072,
-            canopyWidth: surface.size[0] * 0.86,
-            finDepth: Math.max(8, surface.size[2] * 3.5) * 0.92,
-            finWidth: Math.max(2.4, surface.size[0] * 0.032),
-            glowOpacity: 0.2,
-            housingDepth: Math.max(8, surface.size[2] * 3.5),
+            canopyHeight: family === 'center-spine' ? surface.size[1] * 0.086 : family === 'rear-campus' ? surface.size[1] * 0.058 : family === 'district-array' ? surface.size[1] * 0.052 : surface.size[1] * 0.072,
+            canopyWidth: family === 'center-spine' ? surface.size[0] * 0.92 : family === 'rear-campus' ? surface.size[0] * 0.72 : family === 'district-array' ? surface.size[0] * 0.68 : surface.size[0] * 0.86,
+            finDepth: (family === 'rear-campus' ? Math.max(4.8, surface.size[2] * 1.9) : family === 'center-spine' ? Math.max(8.2, surface.size[2] * 3.4) : family === 'district-array' ? Math.max(5.4, surface.size[2] * 2.1) : Math.max(8, surface.size[2] * 3.5)) * 0.92,
+            finWidth: family === 'rear-campus' ? Math.max(1.8, surface.size[0] * 0.02) : family === 'district-array' ? Math.max(1.8, surface.size[0] * 0.022) : Math.max(2.4, surface.size[0] * 0.032),
+            glowOpacity: family === 'center-spine' ? 0.22 : family === 'rear-campus' ? 0.12 : family === 'district-array' ? 0.1 : 0.2,
+            housingDepth: family === 'rear-campus' ? Math.max(4.8, surface.size[2] * 1.9) : family === 'center-spine' ? Math.max(8.2, surface.size[2] * 3.4) : family === 'district-array' ? Math.max(5.4, surface.size[2] * 2.1) : Math.max(8, surface.size[2] * 3.5),
             innerOpacity: 0.88,
-            keelHeight: surface.size[1] * 0.16,
-            keelWidth: surface.size[0] * 0.1,
+            keelHeight: family === 'center-spine' ? surface.size[1] * 0.22 : family === 'district-array' ? surface.size[1] * 0.12 : surface.size[1] * 0.16,
+            keelWidth: family === 'center-spine' ? surface.size[0] * 0.16 : family === 'district-array' ? surface.size[0] * 0.08 : surface.size[0] * 0.1,
             maxDistance: zoneId === 'rear-campus' ? 1560 : 1240,
             railHeight: Math.max(1.4, surface.size[1] * 0.028),
             railOpacity: 0.74,
             visible: true,
-            wingHeight: surface.size[1] * 0.68,
-            wingWidth: surface.size[0] * 0.14,
+            wingHeight: family === 'center-spine' ? surface.size[1] * 0.78 : family === 'rear-campus' || family === 'district-array' ? 0 : surface.size[1] * 0.68,
+            wingWidth: family === 'center-spine' ? surface.size[0] * 0.16 : family === 'rear-campus' || family === 'district-array' ? 0 : surface.size[0] * 0.14,
           }
-        : surface.role === 'tower-crown'
+      : surface.role === 'tower-crown'
           ? {
-              canopyHeight: surface.size[1] * 0.12,
-              canopyWidth: surface.size[0] * 0.68,
-              finDepth: Math.max(7, surface.size[2] * 3.2) * 0.92,
-              finWidth: Math.max(2.4, surface.size[0] * 0.032),
-              glowOpacity: 0.24,
-              housingDepth: Math.max(7, surface.size[2] * 3.2),
+              canopyHeight: surface.size[1] * 0.068,
+              canopyWidth: surface.size[0] * 0.5,
+              finDepth: Math.max(3.2, surface.size[2] * 1.34) * 0.92,
+              finWidth: Math.max(1.2, surface.size[0] * 0.018),
+              glowOpacity: 0.08,
+              housingDepth: Math.max(3.2, surface.size[2] * 1.34),
               innerOpacity: 0.9,
-              keelHeight: surface.size[1] * 0.16,
-              keelWidth: surface.size[0] * 0.18,
+              keelHeight: surface.size[1] * 0.08,
+              keelWidth: surface.size[0] * 0.1,
               maxDistance: 1560,
-              railHeight: Math.max(1.4, surface.size[1] * 0.028),
-              railOpacity: 0.82,
+              railHeight: Math.max(1, surface.size[1] * 0.02),
+              railOpacity: 0.44,
               visible: true,
               wingHeight: 0,
               wingWidth: 0,
             }
           : {
-              canopyHeight: surface.size[1] * 0.094,
-              canopyWidth: surface.size[0] * 0.56,
-              finDepth: Math.max(6, surface.size[2] * 3) * 0.92,
-              finWidth: Math.max(2.4, surface.size[0] * 0.032),
-              glowOpacity: 0.18,
-              housingDepth: Math.max(6, surface.size[2] * 3),
+              canopyHeight: surface.size[1] * 0.064,
+              canopyWidth: surface.size[0] * 0.44,
+              finDepth: Math.max(3, surface.size[2] * 1.28) * 0.92,
+              finWidth: Math.max(1.1, surface.size[0] * 0.018),
+              glowOpacity: 0.08,
+              housingDepth: Math.max(3, surface.size[2] * 1.28),
               innerOpacity: 0.9,
-              keelHeight: surface.size[1] * 0.22,
-              keelWidth: surface.size[0] * 0.18,
+              keelHeight: surface.size[1] * 0.08,
+              keelWidth: surface.size[0] * 0.08,
               maxDistance: 1420,
-              railHeight: Math.max(1.4, surface.size[1] * 0.028),
-              railOpacity: 0.72,
+              railHeight: Math.max(1, surface.size[1] * 0.02),
+              railOpacity: 0.4,
               visible: true,
               wingHeight: 0,
               wingWidth: 0,
@@ -168,7 +278,7 @@ function enrichSurfaceIntent(zoneId: ExpoPlanningZoneId, surface: CityScreenSurf
     ...surface,
     renderIntent: {
       ...renderIntent,
-      primitives: buildSurfacePrimitives({ ...surface, renderIntent }),
+      primitives: buildSurfacePrimitives(zoneId, { ...surface, renderIntent }),
     },
     sections: surface.sections ?? getZoneSections(zoneId),
   };
@@ -209,150 +319,150 @@ function buildRearCampusScreenSurfaces(
       type: 'wall',
     }));
 
-  const campusFrontSupportSurfaces: CityScreenSurface[] = [
-    {
-      id: 'rear-campus-event-pavilion-left-feed-surface',
-      position: [-720, 118, campusCenterZ + 1168],
+  const pavilionById = new Map(buildRearCampusSidePavilions(campusCenterZ).map((pavilion) => [pavilion.id, pavilion]));
+  const buildMegaHostSurface = (args: {
+    id: string;
+    position: [number, number, number];
+    width: number;
+    height: number;
+    depth: number;
+    glowColor: string;
+    role?: 'hero-wall' | 'support-wall';
+  }): CityScreenSurface => ({
+    id: args.id,
+    position: args.position,
+    rotation: [0, Math.PI, 0],
+    size: [args.width, args.height, args.depth],
+    color: '#0c1724',
+    glowColor: args.glowColor,
+    role: args.role ?? 'support-wall',
+    type: 'wall',
+  });
+  const buildPavilionSurface = (args: {
+    glowColor: string;
+    id: string;
+    sourceId: string;
+    widthScale: number;
+    heightScale: number;
+    depth: number;
+    elevationScale: number;
+    frontFace: 'negative-z' | 'positive-z';
+  }): CityScreenSurface | null => {
+    const pavilion = pavilionById.get(args.sourceId);
+    if (!pavilion) {
+      return null;
+    }
+
+    const zOffset = (args.frontFace === 'negative-z' ? -1 : 1) * ((pavilion.size[2] * 0.5) - (args.depth * 0.5) - 4);
+    return {
+      id: args.id,
+      position: [
+        pavilion.position[0],
+        pavilion.size[1] * args.elevationScale,
+        pavilion.position[2] + zOffset,
+      ],
       rotation: [0, Math.PI, 0],
-      size: [248, 128, 3.4],
-      color: '#091320',
-      glowColor: '#7dd3fc',
+      size: [
+        Math.max(38, pavilion.size[0] * args.widthScale),
+        Math.max(22, pavilion.size[1] * args.heightScale),
+        args.depth,
+      ],
+      color: '#0c1724',
+      glowColor: args.glowColor,
       role: 'support-wall',
       type: 'wall',
-    },
-    {
-      id: 'rear-campus-event-pavilion-right-feed-surface',
-      position: [720, 118, campusCenterZ + 1168],
-      rotation: [0, Math.PI, 0],
-      size: [248, 128, 3.4],
-      color: '#091320',
-      glowColor: '#7dd3fc',
-      role: 'support-wall',
-      type: 'wall',
-    },
-    {
-      id: 'rear-campus-axis-gallery-left-feed-surface',
-      position: [-412, 92, campusCenterZ + 1032],
-      rotation: [0, Math.PI, 0],
-      size: [176, 92, 3.2],
-      color: '#0a1420',
-      glowColor: '#93c5fd',
-      role: 'support-wall',
-      type: 'wall',
-    },
-    {
-      id: 'rear-campus-axis-gallery-right-feed-surface',
-      position: [412, 92, campusCenterZ + 1032],
-      rotation: [0, Math.PI, 0],
-      size: [176, 92, 3.2],
-      color: '#0a1420',
-      glowColor: '#93c5fd',
-      role: 'support-wall',
-      type: 'wall',
-    },
-    {
+    } satisfies CityScreenSurface;
+  };
+
+  const campusFrontSupportSurfaces = [
+    buildPavilionSurface({
       id: 'rear-campus-axis-terminal-left-feed-surface',
-      position: [-276, 74, campusCenterZ + 1500],
-      rotation: [0, Math.PI, 0],
-      size: [112, 68, 2.8],
-      color: '#0c1724',
+      sourceId: 'rear-campus-terminal-left',
       glowColor: '#bfdbfe',
-      role: 'support-wall',
-      type: 'wall',
-    },
-    {
+      widthScale: 0.62,
+      heightScale: 0.58,
+      depth: 2.2,
+      elevationScale: 0.82,
+      frontFace: 'negative-z',
+    }),
+    buildPavilionSurface({
       id: 'rear-campus-axis-terminal-right-feed-surface',
-      position: [276, 74, campusCenterZ + 1492],
-      rotation: [0, Math.PI, 0],
-      size: [112, 68, 2.8],
-      color: '#0c1724',
+      sourceId: 'rear-campus-terminal-right',
       glowColor: '#bfdbfe',
-      role: 'support-wall',
-      type: 'wall',
-    },
-    {
-      id: 'rear-campus-side-pavilion-left-front-feed-surface',
-      position: [-1420, 126, campusCenterZ + 996],
-      rotation: [0, Math.PI, 0],
-      size: [196, 116, 3.4],
-      color: '#091320',
-      glowColor: '#67e8f9',
-      role: 'support-wall',
-      type: 'wall',
-    },
-    {
-      id: 'rear-campus-side-pavilion-right-front-feed-surface',
-      position: [1420, 126, campusCenterZ + 996],
-      rotation: [0, Math.PI, 0],
-      size: [196, 116, 3.4],
-      color: '#091320',
-      glowColor: '#67e8f9',
-      role: 'support-wall',
-      type: 'wall',
-    },
-    {
-      id: 'rear-campus-side-pavilion-left-rear-feed-surface',
-      position: [-1220, 148, campusCenterZ - 1152],
-      rotation: [0, Math.PI, 0],
-      size: [244, 132, 3.6],
-      color: '#091320',
-      glowColor: '#7dd3fc',
-      role: 'support-wall',
-      type: 'wall',
-    },
-    {
-      id: 'rear-campus-side-pavilion-right-rear-feed-surface',
-      position: [1220, 148, campusCenterZ - 1152],
-      rotation: [0, Math.PI, 0],
-      size: [244, 132, 3.6],
-      color: '#091320',
-      glowColor: '#7dd3fc',
-      role: 'support-wall',
-      type: 'wall',
-    },
-    {
-      id: 'rear-campus-axis-front-left-feed-surface',
-      position: [-182, 64, campusCenterZ + 1222],
-      rotation: [0, Math.PI, 0],
-      size: [96, 58, 2.6],
-      color: '#0c1724',
-      glowColor: '#bfdbfe',
-      role: 'support-wall',
-      type: 'wall',
-    },
-    {
-      id: 'rear-campus-axis-front-right-feed-surface',
-      position: [182, 64, campusCenterZ + 1214],
-      rotation: [0, Math.PI, 0],
-      size: [96, 58, 2.6],
-      color: '#0c1724',
-      glowColor: '#bfdbfe',
-      role: 'support-wall',
-      type: 'wall',
-    },
-    {
+      widthScale: 0.62,
+      heightScale: 0.58,
+      depth: 2.2,
+      elevationScale: 0.82,
+      frontFace: 'negative-z',
+    }),
+    buildPavilionSurface({
       id: 'rear-campus-axis-kiosk-left-feed-surface',
-      position: [-318, 68, campusCenterZ + 1348],
-      rotation: [0, Math.PI, 0],
-      size: [102, 60, 2.8],
-      color: '#0c1724',
+      sourceId: 'rear-campus-axis-kiosk-left',
       glowColor: '#a5f3fc',
-      role: 'support-wall',
-      type: 'wall',
-    },
-    {
+      widthScale: 0.64,
+      heightScale: 0.58,
+      depth: 2.2,
+      elevationScale: 0.82,
+      frontFace: 'negative-z',
+    }),
+    buildPavilionSurface({
       id: 'rear-campus-axis-kiosk-right-feed-surface',
-      position: [318, 68, campusCenterZ + 1348],
-      rotation: [0, Math.PI, 0],
-      size: [102, 60, 2.8],
-      color: '#0c1724',
+      sourceId: 'rear-campus-axis-kiosk-right',
       glowColor: '#a5f3fc',
-      role: 'support-wall',
-      type: 'wall',
-    },
+      widthScale: 0.64,
+      heightScale: 0.58,
+      depth: 2.2,
+      elevationScale: 0.82,
+      frontFace: 'negative-z',
+    }),
+  ].filter((surface): surface is CityScreenSurface => surface !== null);
+
+  const megaHostSurfaces: CityScreenSurface[] = [
+    buildMegaHostSurface({
+      id: 'rear-campus-stage-monolith-canopy-host-surface',
+      position: [47, 126, -2926],
+      width: 308,
+      height: 136,
+      depth: 4.2,
+      glowColor: '#67e8f9',
+      role: 'hero-wall',
+    }),
+    buildMegaHostSurface({
+      id: 'rear-campus-grand-prism-citadel-host-surface',
+      position: [-999, 228, -1804],
+      width: 168,
+      height: 286,
+      depth: 3.4,
+      glowColor: '#93c5fd',
+    }),
+    buildMegaHostSurface({
+      id: 'rear-campus-mega-civic-hall-host-surface',
+      position: [-2490, 156, -3518],
+      width: 356,
+      height: 168,
+      depth: 4,
+      glowColor: '#7dd3fc',
+      role: 'hero-wall',
+    }),
+    buildMegaHostSurface({
+      id: 'rear-campus-sky-slab-tower-host-surface',
+      position: [1087, 438, -1268],
+      width: 174,
+      height: 84,
+      depth: 3,
+      glowColor: '#bfdbfe',
+    }),
+    buildMegaHostSurface({
+      id: 'rear-campus-needle-crown-skyscraper-host-surface',
+      position: [892, 396, -549],
+      width: 66,
+      height: 86,
+      depth: 2.8,
+      glowColor: '#a5f3fc',
+    }),
   ];
 
-  return [bowlSurface, ...towerSurfaces, ...campusFrontSupportSurfaces];
+  return [bowlSurface, ...towerSurfaces, ...megaHostSurfaces, ...campusFrontSupportSurfaces];
 }
 
 export function buildZoneScreenSurfacePlan(args: {

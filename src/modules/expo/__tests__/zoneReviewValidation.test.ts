@@ -50,6 +50,7 @@ const okValidation = validateReviewZone(zone, {
     { distance: 12, id: 'city-screen-1', layer: 'city-screen-surface', registryEntry: cityScreen },
     { distance: 18, id: 'booth-1', layer: 'booth', registryEntry: booth },
   ],
+  playerPos: [32, 0, 24],
   registryById: {
     'booth-1': booth,
     'city-screen-1': cityScreen,
@@ -57,6 +58,9 @@ const okValidation = validateReviewZone(zone, {
 });
 
 assert.equal(okValidation.status, 'ok');
+assert.equal(okValidation.locationStatus, 'settled');
+assert.deepEqual(okValidation.forbiddenObjectIdsPresent, []);
+assert.deepEqual(okValidation.forbiddenExpectedLayersPresent, []);
 assert.deepEqual(okValidation.missingExpectedObjectIds, []);
 assert.deepEqual(okValidation.missingExpectedLayers, []);
 
@@ -66,6 +70,7 @@ const warningValidation = validateReviewZone(zone, {
   inspectorEntries: [
     { distance: 12, id: 'city-screen-1', layer: 'city-screen-surface', registryEntry: cityScreen },
   ],
+  playerPos: [32, 0, 24],
   registryById: {
     'city-screen-1': cityScreen,
   },
@@ -83,6 +88,7 @@ const unknownValidation = validateReviewZone({
   centerTargetEntry: cityScreen,
   clickTargetEntry: null,
   inspectorEntries: [],
+  playerPos: [32, 0, 24],
   registryById: {
     'city-screen-1': cityScreen,
   },
@@ -91,3 +97,42 @@ const unknownValidation = validateReviewZone({
 assert.equal(unknownValidation.status, 'warning');
 assert.deepEqual(unknownValidation.unknownExpectedObjectIds, ['missing-object']);
 assert.deepEqual(unknownValidation.missingExpectedObjectIds, ['missing-object']);
+
+const locationMismatchValidation = validateReviewZone(zone, {
+  centerTargetEntry: cityScreen,
+  clickTargetEntry: booth,
+  inspectorEntries: [
+    { distance: 12, id: 'city-screen-1', layer: 'city-screen-surface', registryEntry: cityScreen },
+    { distance: 18, id: 'booth-1', layer: 'booth', registryEntry: booth },
+  ],
+  playerPos: [1600, 0, -2200],
+  registryById: {
+    'booth-1': booth,
+    'city-screen-1': cityScreen,
+  },
+});
+
+assert.equal(locationMismatchValidation.status, 'warning');
+assert.equal(locationMismatchValidation.locationStatus, 'mismatch');
+
+const forbiddenValidation = validateReviewZone({
+  ...zone,
+  forbiddenKeyObjectIds: ['booth-1'],
+  forbiddenVisibleLayers: ['booth'],
+}, {
+  centerTargetEntry: cityScreen,
+  clickTargetEntry: booth,
+  inspectorEntries: [
+    { distance: 12, id: 'city-screen-1', layer: 'city-screen-surface', registryEntry: cityScreen },
+    { distance: 18, id: 'booth-1', layer: 'booth', registryEntry: booth },
+  ],
+  playerPos: [32, 0, 24],
+  registryById: {
+    'booth-1': booth,
+    'city-screen-1': cityScreen,
+  },
+});
+
+assert.equal(forbiddenValidation.status, 'warning');
+assert.deepEqual(forbiddenValidation.forbiddenObjectIdsPresent, ['booth-1']);
+assert.deepEqual(forbiddenValidation.forbiddenExpectedLayersPresent, ['booth']);

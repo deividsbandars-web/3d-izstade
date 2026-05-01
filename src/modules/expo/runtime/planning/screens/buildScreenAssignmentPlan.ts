@@ -132,22 +132,32 @@ function rankSocketsForZone(zoneId: ExpoPlanningZoneId, sockets: CityScreenSocke
         if (socket.id.includes('bowl-feed-surface')) {
           return 6;
         }
-        if (socket.id.includes('landmark-left') || socket.id.includes('landmark-right')) {
+        if (socket.id.includes('stage-monolith-canopy-host-surface') || socket.id.includes('mega-civic-hall-host-surface')) {
           return 5;
         }
-        if (socket.id.includes('event-pavilion')) {
+        if (
+          socket.id.includes('grand-prism-citadel-host-surface')
+          || socket.id.includes('sky-slab-tower-host-surface')
+          || socket.id.includes('needle-crown-skyscraper-host-surface')
+        ) {
           return 4;
         }
-        if (socket.id.includes('side-pavilion')) {
+        if (socket.id.includes('landmark-left') || socket.id.includes('landmark-right')) {
           return 3;
         }
-        if (socket.id.includes('axis-gallery')) {
+        if (socket.id.includes('event-pavilion')) {
           return 2;
         }
-        if (socket.id.includes('axis-terminal') || socket.id.includes('axis-front') || socket.id.includes('axis-kiosk')) {
+        if (socket.id.includes('side-pavilion')) {
           return 1;
         }
-        return 0;
+        if (socket.id.includes('axis-gallery')) {
+          return 0;
+        }
+        if (socket.id.includes('axis-terminal') || socket.id.includes('axis-front') || socket.id.includes('axis-kiosk')) {
+          return -1;
+        }
+        return -2;
       };
 
       const byRearCampusPriority = rearCampusPriority(right) - rearCampusPriority(left);
@@ -184,39 +194,39 @@ function buildAssignmentPrimitives(args: {
   const headerHeight = intent.headerHeight;
   const footerHeight = intent.footerHeight;
   const bodyHeight = frameHeight - headerHeight - footerHeight;
-  const accentBarWidth = intent.semanticMode === 'landmark' ? frameWidth * 0.16 : frameWidth * 0.12;
+  const accentBarWidth = intent.semanticMode === 'landmark' ? frameWidth * 0.1 : frameWidth * 0.08;
   const isHeroComposition = intent.semanticChip === 'LEFT MARQUEE' || intent.semanticChip === 'RIGHT MARQUEE' || intent.semanticChip === 'CENTER SPINE';
+  const contentWidth = frameWidth * 0.92;
+  const contentHeight = bodyHeight * 0.94;
+  const contentCenterX = imageUrl ? frameWidth * 0.18 : 0;
   const primitives: CanonicalPrimitive[] = [
-    { color: '#08111c', kind: 'plane', opacity: 0.92, position: [0, 0, 0.05], size: [frameWidth, frameHeight], transparent: true },
-    { color: intent.tierAccent, kind: 'plane', opacity: intent.edgeGlowOpacity, position: [-(frameWidth * 0.5) + (accentBarWidth * 0.5), 0, 0.065], size: [accentBarWidth, frameHeight * 0.96], transparent: true },
+    { color: '#0a121b', kind: 'plane', opacity: 1, position: [0, 0, 0.02], size: [frameWidth, frameHeight] },
+    { color: '#101a25', kind: 'plane', opacity: 1, position: [0, 0, 0.03], size: [frameWidth * 0.98, frameHeight * 0.98] },
+    { color: intent.tierAccent, kind: 'plane', opacity: Math.min(intent.edgeGlowOpacity, 0.18), position: [-(frameWidth * 0.5) + (accentBarWidth * 0.5), 0, 0.04], size: [accentBarWidth, frameHeight * 0.9], transparent: true },
     imageUrl
-      ? { fallbackColor: accentColor, kind: 'texture-plane', opacity: 0.92, position: [0, 0, 0.07], size: [frameWidth * 0.9, bodyHeight * 0.96], url: imageUrl }
-      : { color: accentColor, kind: 'plane', opacity: 0.22, position: [0, 0, 0.07], size: [frameWidth * 0.9, bodyHeight * 0.96], transparent: true },
-    { color: '#020617', kind: 'plane', opacity: intent.panelOpacityNear, position: [0, (frameHeight * 0.5) - (headerHeight * 0.5), 0.075], size: [frameWidth * 0.94, headerHeight], transparent: true },
-    { color: '#020617', kind: 'plane', opacity: intent.panelOpacityNear * 0.92, position: [0, -(frameHeight * 0.5) + (footerHeight * 0.5), 0.075], size: [frameWidth * 0.94, footerHeight], transparent: true },
-    { color: intent.tierAccent, kind: 'plane', opacity: isHeroComposition ? 0.32 : 0.22, position: [0, (frameHeight * 0.5) - headerHeight - Math.max(0.1, frameHeight * 0.02), 0.085], size: [intent.topStripWidth, Math.max(0.08, frameHeight * 0.014)], transparent: true },
-    { color: accentColor, kind: 'plane', opacity: imageUrl ? 0.06 : 0.12, position: [0, 0, 0.08], size: [intent.bodyPanelWidth, bodyHeight * 0.94], transparent: true },
-    { color: intent.tierAccent, kind: 'plane', opacity: isHeroComposition ? 0.08 : 0.045, position: [0, 0, 0.1], size: [frameWidth * 0.96, frameHeight * 0.96], transparent: true },
-    { color: intent.chipColor, kind: 'text', maxWidth: frameWidth * 0.72, outlineBlur: 0.12, outlineColor: '#020617', outlineWidth: 0.04, position: [frameWidth * 0.06, (frameHeight * 0.5) - (headerHeight * 0.5), 0.09], size: Math.max(0.24, frameHeight * 0.045), text: intent.semanticChip },
+      ? { fallbackColor: accentColor, kind: 'texture-plane', opacity: 1, position: [contentCenterX, 0, 0.05], size: [imageUrl ? frameWidth * 0.56 : contentWidth, contentHeight], url: imageUrl }
+      : { color: accentColor, kind: 'plane', opacity: 1, position: [0, 0, 0.05], size: [contentWidth, contentHeight] },
+    { color: '#050b12', kind: 'plane', opacity: 1, position: [0, (frameHeight * 0.5) - (headerHeight * 0.5), 0.06], size: [frameWidth * 0.98, headerHeight] },
+    { color: '#050b12', kind: 'plane', opacity: 1, position: [0, -(frameHeight * 0.5) + (footerHeight * 0.5), 0.06], size: [frameWidth * 0.98, footerHeight] },
+    { color: intent.tierAccent, kind: 'plane', opacity: isHeroComposition ? 0.14 : 0.1, position: [0, (frameHeight * 0.5) - headerHeight - Math.max(0.1, frameHeight * 0.02), 0.07], size: [intent.topStripWidth, Math.max(0.08, frameHeight * 0.014)], transparent: true },
+    { color: intent.chipColor, kind: 'text', maxWidth: frameWidth * 0.68, outlineBlur: 0.04, outlineColor: '#020617', outlineWidth: 0.02, position: [frameWidth * 0.04, (frameHeight * 0.5) - (headerHeight * 0.5), 0.072], size: Math.max(0.22, frameHeight * 0.04), text: intent.semanticChip },
   ];
 
-  if (imageUrl) {
+    if (imageUrl) {
     primitives.push(
-      { color: '#020617', kind: 'plane', opacity: 0.54, position: [frameWidth * 0.22, 0, 0.082], size: [frameWidth * 0.28, bodyHeight * 0.9], transparent: true },
-      { color: intent.tierAccent, kind: 'plane', opacity: 0.12, position: [frameWidth * 0.22, 0, 0.09], size: [frameWidth * 0.22, bodyHeight * 0.82], transparent: true },
+      { color: '#0b121b', kind: 'plane', opacity: 1, position: [-(frameWidth * 0.2), 0, 0.052], size: [frameWidth * 0.22, bodyHeight * 0.88] },
     );
   }
 
   primitives.push(
-    { color: intent.tierAccent, kind: 'text', maxWidth: frameWidth * 0.18, outlineBlur: 0.12, outlineColor: '#020617', outlineWidth: 0.03, position: [-(frameWidth * 0.36), (frameHeight * 0.5) - (headerHeight * 0.5), 0.09], size: Math.max(0.18, frameHeight * 0.03), text: tier.toUpperCase() },
-    { color: '#f8fafc', kind: 'text', maxWidth: frameWidth * (imageUrl ? (isHeroComposition ? 0.42 : 0.34) : (isHeroComposition ? 0.78 : 0.72)), outlineBlur: 0.14, outlineColor: '#020617', outlineWidth: 0.05, position: [frameWidth * (imageUrl ? 0.23 : 0.02), imageUrl ? frameHeight * 0.04 : 0.02, 0.09], size: Math.max(isHeroComposition ? 0.42 : 0.32, frameHeight * (imageUrl ? (isHeroComposition ? 0.06 : 0.052) : (isHeroComposition ? 0.094 : 0.082))), text: label },
-    { color: '#cbd5e1', kind: 'text', maxWidth: frameWidth * 0.74, outlineBlur: 0.14, outlineColor: '#020617', outlineWidth: 0.04, position: [frameWidth * 0.08, -(frameHeight * 0.5) + (footerHeight * 0.5), 0.09], size: Math.max(0.2, frameHeight * 0.034), text: subtitle },
+    { color: intent.tierAccent, kind: 'text', maxWidth: frameWidth * 0.16, outlineBlur: 0.04, outlineColor: '#020617', outlineWidth: 0.02, position: [-(frameWidth * 0.34), (frameHeight * 0.5) - (headerHeight * 0.5), 0.072], size: Math.max(0.16, frameHeight * 0.028), text: tier.toUpperCase() },
+    { color: '#f8fafc', kind: 'text', maxWidth: frameWidth * (imageUrl ? (isHeroComposition ? 0.36 : 0.3) : (isHeroComposition ? 0.72 : 0.66)), outlineBlur: 0.05, outlineColor: '#020617', outlineWidth: 0.025, position: [frameWidth * (imageUrl ? 0.18 : 0.02), imageUrl ? frameHeight * 0.04 : 0.02, 0.074], size: Math.max(isHeroComposition ? 0.36 : 0.28, frameHeight * (imageUrl ? (isHeroComposition ? 0.05 : 0.044) : (isHeroComposition ? 0.08 : 0.07))), text: label },
+    { color: '#cbd5e1', kind: 'text', maxWidth: frameWidth * 0.68, outlineBlur: 0.05, outlineColor: '#020617', outlineWidth: 0.02, position: [frameWidth * 0.06, -(frameHeight * 0.5) + (footerHeight * 0.5), 0.074], size: Math.max(0.18, frameHeight * 0.03), text: subtitle },
   );
 
   if (isHeroComposition) {
     primitives.push(
-      { color: intent.tierAccent, kind: 'plane', opacity: 0.14, position: [0, frameHeight * 0.18, 0.088], size: [frameWidth * 0.82, frameHeight * 0.18], transparent: true },
-      { color: intent.tierAccent, kind: 'plane', opacity: 0.1, position: [0, -(frameHeight * 0.18), 0.088], size: [frameWidth * 0.62, frameHeight * 0.1], transparent: true },
+      { color: intent.tierAccent, kind: 'plane', opacity: 0.06, position: [0, frameHeight * 0.18, 0.068], size: [frameWidth * 0.76, frameHeight * 0.14], transparent: true },
     );
   }
 
@@ -251,33 +261,51 @@ export function buildZoneScreenAssignmentPlan(args: {
       args.zoneId === 'right-district'
     );
     const isCenterSpineHero = socket.kind === 'hero_wall' && args.zoneId === 'center-spine';
-    const frameWidth = socket.frameSize[0] * (isCenterSpineHero ? 0.88 : isHeroComposition ? 0.82 : 0.78);
-    const frameHeight = socket.frameSize[1] * (isCenterSpineHero ? 0.88 : isHeroComposition ? 0.82 : 0.78);
-    const headerHeight = Math.max(0.28, frameHeight * (isCenterSpineHero ? 0.16 : isHeroComposition ? 0.14 : 0.12));
-    const footerHeight = Math.max(0.26, frameHeight * (isCenterSpineHero ? 0.12 : isHeroComposition ? 0.11 : 0.1));
+    const isTowerFamily = socket.kind === 'tower_crown' || socket.kind === 'tower_side';
+    const isHeroTowerSocket = socket.id.includes('-hero-tower-');
+    const isMidTowerSocket = socket.id.includes('-mid-tower-');
+    const isSupportTowerSocket = socket.id.includes('-support-tower-') || socket.id.includes('-outer-support-tower-');
+    const isRearCampusWall = args.zoneId === 'rear-campus' && socket.kind === 'wall';
+    const frameScale = isCenterSpineHero
+      ? 0.92
+      : isHeroComposition
+        ? 0.9
+        : isTowerFamily
+          ? isHeroTowerSocket
+            ? 0.92
+            : isMidTowerSocket
+              ? 0.88
+              : 0.76
+          : isRearCampusWall
+            ? 0.88
+            : 0.86;
+    const frameWidth = socket.frameSize[0] * frameScale;
+    const frameHeight = socket.frameSize[1] * frameScale;
+    const headerHeight = Math.max(0.24, frameHeight * (isCenterSpineHero ? 0.13 : isHeroComposition ? 0.12 : 0.1));
+    const footerHeight = Math.max(0.22, frameHeight * (isCenterSpineHero ? 0.1 : isHeroComposition ? 0.09 : 0.08));
     const detailDistance = tier === 'hero' ? 1100 : tier === 'elite' ? 900 : 700;
     const subtitleDistance = tier === 'hero' ? 760 : tier === 'elite' ? 620 : 480;
     const hasImage = Boolean(placement.company?.posterUrl || placement.company?.heroAssetUrl || placement.company?.logo_url);
 
     const renderIntent = {
-      bodyPanelWidth: hasImage ? frameWidth * (isCenterSpineHero ? 0.64 : isHeroComposition ? 0.58 : 0.52) : frameWidth * (isCenterSpineHero ? 0.9 : isHeroComposition ? 0.86 : 0.82),
+      bodyPanelWidth: hasImage ? frameWidth * (isCenterSpineHero ? 0.76 : isHeroComposition ? 0.7 : 0.62) : frameWidth * (isCenterSpineHero ? 0.96 : isHeroComposition ? 0.94 : 0.92),
       chipColor: semantic.mode === 'landmark' ? '#fde68a' : semantic.mode === 'beacon' ? '#a5f3fc' : semantic.mode === 'signal' ? '#bfdbfe' : '#dbeafe',
       detailDistance,
-      edgeGlowOpacity: isCenterSpineHero ? 0.34 : isHeroComposition ? 0.26 : tier === 'hero' ? 0.2 : tier === 'elite' ? 0.15 : 0.12,
+      edgeGlowOpacity: isCenterSpineHero ? 0.24 : isHeroComposition ? 0.2 : isTowerFamily ? (isHeroTowerSocket ? 0.12 : isMidTowerSocket ? 0.1 : 0.05) : tier === 'hero' ? 0.16 : tier === 'elite' ? 0.12 : 0.1,
       footerHeight,
       frameHeight,
       frameWidth,
       headerHeight,
       maxDistance: tier === 'hero' ? 1700 : tier === 'elite' ? 1350 : 980,
-      panelOpacityFar: 0.44,
-      panelOpacityMid: 0.58,
-      panelOpacityNear: 0.72,
+      panelOpacityFar: isTowerFamily ? (isSupportTowerSocket ? 0.24 : 0.38) : 0.44,
+      panelOpacityMid: isTowerFamily ? (isSupportTowerSocket ? 0.36 : 0.54) : 0.58,
+      panelOpacityNear: isTowerFamily ? (isSupportTowerSocket ? 0.5 : 0.68) : 0.72,
       semanticChip: getZoneScreenSemanticChip(args.zoneId, socket.kind),
       semanticMode: semantic.mode,
       showCenterTitleDistance: detailDistance,
       subtitleDistance,
       tierAccent,
-      topStripWidth: isCenterSpineHero ? frameWidth * 0.86 : isHeroComposition ? frameWidth * 0.78 : semantic.mode === 'beacon' ? frameWidth * 0.4 : semantic.mode === 'signal' ? frameWidth * 0.52 : frameWidth * 0.66,
+      topStripWidth: isCenterSpineHero ? frameWidth * 0.86 : isHeroComposition ? frameWidth * 0.78 : isHeroTowerSocket ? frameWidth * 0.6 : semantic.mode === 'beacon' ? frameWidth * 0.4 : semantic.mode === 'signal' ? frameWidth * 0.52 : frameWidth * 0.66,
     } satisfies NonNullable<CityScreenAssignment['renderIntent']>;
 
     return [{

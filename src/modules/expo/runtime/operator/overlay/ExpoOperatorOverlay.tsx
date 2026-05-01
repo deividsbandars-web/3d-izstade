@@ -5,6 +5,7 @@ import type { ZoneReviewValidation } from '../model/zoneReviewValidation';
 import type { WorldObjectRegistryEntry } from '../../world/inspection/worldObjectRegistry';
 import { ExpoOperatorZoneNav } from '../navigation/ExpoOperatorZoneNav';
 import { ExpoOperatorDrawer } from '../panel/ExpoOperatorDrawer';
+import type { ExpoZoneVisualDefect } from '../state/useExpoOperatorState';
 
 type LayerKey = 'promenade' | 'city' | 'stadium' | 'booths' | 'skyline';
 type SectionKey = 'arrival' | 'left' | 'middle' | 'right' | 'stadium';
@@ -44,6 +45,7 @@ export function ExpoOperatorOverlay({
   operatorZoneLabel,
   operatorZoneFixRoutes,
   operatorZoneValidation,
+  operatorZoneVisualDefects,
   sceneVersion,
   sectionStates,
   session,
@@ -84,6 +86,7 @@ export function ExpoOperatorOverlay({
   operatorZoneLabel: string | null;
   operatorZoneFixRoutes: ZoneFixRoute[];
   operatorZoneValidation: ZoneReviewValidation | null;
+  operatorZoneVisualDefects: ExpoZoneVisualDefect[];
   sceneVersion: string | null;
   sectionStates: Record<string, boolean>;
   session: ExpoOperatorSession;
@@ -143,6 +146,7 @@ export function ExpoOperatorOverlay({
         operatorZoneLabel={operatorZoneLabel}
         operatorZoneFixRoutes={operatorZoneFixRoutes}
         operatorZoneValidation={operatorZoneValidation}
+        operatorZoneVisualDefects={operatorZoneVisualDefects}
         sceneVersion={sceneVersion}
         sectionStates={sectionStates}
         targetBasket={targetBasket}

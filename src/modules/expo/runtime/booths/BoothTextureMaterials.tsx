@@ -95,12 +95,16 @@ export function SponsorTextureSurface({
   return (
     <meshStandardMaterial
       color={fallbackColor}
+      depthWrite={opacity >= 0.999}
       emissive={emissiveColor ?? '#000000'}
       emissiveIntensity={mappedTexture ? emissiveIntensity : 0}
       map={mappedTexture ?? undefined}
       metalness={0.02}
+      polygonOffset
+      polygonOffsetFactor={-5}
+      polygonOffsetUnits={-5}
       roughness={0.42}
-      transparent
+      transparent={opacity < 0.999}
       opacity={opacity}
       toneMapped={false}
     />
