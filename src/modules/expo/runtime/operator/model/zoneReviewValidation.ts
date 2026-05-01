@@ -10,28 +10,33 @@ type ZoneValidationContext = {
     layer: WorldObjectLayer;
     registryEntry: WorldObjectRegistryEntry | null;
   }>;
+  playerPos: number[];
   registryById: Record<string, WorldObjectRegistryEntry>;
 };
 
-const ZONE_NEARBY_RADIUS = 1000;
+const ZONE_LOCATION_SETTLE_RADIUS = 180;
 
-function isEntryNearZone(
-  entry: WorldObjectRegistryEntry,
+function getZoneLocationDistance(
+  playerPos: number[],
   zone: ReviewOperatorZone,
-): boolean {
-  const [entryX, , entryZ] = entry.position;
+): number {
+  const [playerX, , playerZ] = playerPos;
   const [positionX, , positionZ] = zone.startView.position;
   const [lookAtX, , lookAtZ] = zone.startView.lookAt;
 
-  const distanceToPosition = Math.hypot(entryX - positionX, entryZ - positionZ);
-  const distanceToLookAt = Math.hypot(entryX - lookAtX, entryZ - lookAtZ);
-  return Math.min(distanceToPosition, distanceToLookAt) <= ZONE_NEARBY_RADIUS;
+  const distanceToPosition = Math.hypot(playerX - positionX, playerZ - positionZ);
+  const distanceToLookAt = Math.hypot(playerX - lookAtX, playerZ - lookAtZ);
+  return Math.min(distanceToPosition, distanceToLookAt);
 }
 
 export type ZoneReviewValidation = {
   actualKeyObjectIds: string[];
   actualVisibleLayers: WorldObjectLayer[];
   extraVisibleLayers: WorldObjectLayer[];
+  forbiddenExpectedLayersPresent: WorldObjectLayer[];
+  forbiddenObjectIdsPresent: string[];
+  locationDistance: number;
+  locationStatus: 'mismatch' | 'settled';
   missingExpectedLayers: WorldObjectLayer[];
   missingExpectedObjectIds: string[];
   status: 'ok' | 'warning';
@@ -59,28 +64,33 @@ export function validateReviewZone(
     dedupedEntries.set(context.clickTargetEntry.id, context.clickTargetEntry);
   }
 
-  for (const entry of Object.values(context.registryById)) {
-    if (isEntryNearZone(entry, zone)) {
-      dedupedEntries.set(entry.id, entry);
-    }
-  }
-
   const actualEntries = Array.from(dedupedEntries.values());
   const actualKeyObjectIds = actualEntries.map((entry) => entry.id);
   const actualVisibleLayers: WorldObjectLayer[] = Array.from(new Set(actualEntries.map((entry) => entry.layer)));
+  const locationDistance = getZoneLocationDistance(context.playerPos, zone);
+  const locationStatus = locationDistance <= ZONE_LOCATION_SETTLE_RADIUS ? 'settled' : 'mismatch';
 
   const unknownExpectedObjectIds = zone.expectedKeyObjectIds.filter((id) => !context.registryById[id]);
   const missingExpectedObjectIds = zone.expectedKeyObjectIds.filter((id) => !actualKeyObjectIds.includes(id));
   const missingExpectedLayers = zone.expectedVisibleLayers.filter((layer) => !actualVisibleLayers.includes(layer));
   const extraVisibleLayers = actualVisibleLayers.filter((layer) => !zone.expectedVisibleLayers.includes(layer));
+  const forbiddenObjectIdsPresent = (zone.forbiddenKeyObjectIds ?? []).filter((id) => actualKeyObjectIds.includes(id));
+  const forbiddenExpectedLayersPresent = (zone.forbiddenVisibleLayers ?? []).filter((layer) => actualVisibleLayers.includes(layer));
 
   return {
     actualKeyObjectIds,
     actualVisibleLayers,
     extraVisibleLayers,
+    forbiddenExpectedLayersPresent,
+    forbiddenObjectIdsPresent,
+    locationDistance,
+    locationStatus,
     missingExpectedLayers,
     missingExpectedObjectIds,
     status:
+      locationStatus === 'settled' &&
+      forbiddenObjectIdsPresent.length === 0 &&
+      forbiddenExpectedLayersPresent.length === 0 &&
       unknownExpectedObjectIds.length === 0 &&
       missingExpectedObjectIds.length === 0 &&
       missingExpectedLayers.length === 0

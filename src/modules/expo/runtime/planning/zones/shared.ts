@@ -34,7 +34,7 @@ export const ZONE_RULES: Record<ExpoPlanningZoneId, ExpoPlanningZoneRule> = {
   },
   'left-district': {
     allowedScreenFamilies: ['district-marquee', 'district-array'],
-    densityCaps: { assignmentCap: 6, screenSocketCap: 6, screenSurfaceCap: 6 },
+    densityCaps: { assignmentCap: 9, screenSocketCap: 9, screenSurfaceCap: 9 },
     id: 'left-district',
     name: 'Left District Belt',
     placementClasses: ['district', 'city-support'],
@@ -42,7 +42,7 @@ export const ZONE_RULES: Record<ExpoPlanningZoneId, ExpoPlanningZoneRule> = {
   },
   'center-spine': {
     allowedScreenFamilies: ['center-spine'],
-    densityCaps: { assignmentCap: 2, screenSocketCap: 2, screenSurfaceCap: 2 },
+    densityCaps: { assignmentCap: 6, screenSocketCap: 6, screenSurfaceCap: 6 },
     id: 'center-spine',
     name: 'Center Spine',
     placementClasses: ['spine', 'gateway'],
@@ -50,7 +50,7 @@ export const ZONE_RULES: Record<ExpoPlanningZoneId, ExpoPlanningZoneRule> = {
   },
   'right-district': {
     allowedScreenFamilies: ['district-marquee', 'district-array'],
-    densityCaps: { assignmentCap: 6, screenSocketCap: 6, screenSurfaceCap: 6 },
+    densityCaps: { assignmentCap: 9, screenSocketCap: 9, screenSurfaceCap: 9 },
     id: 'right-district',
     name: 'Right District Belt',
     placementClasses: ['district', 'city-support'],
@@ -58,7 +58,7 @@ export const ZONE_RULES: Record<ExpoPlanningZoneId, ExpoPlanningZoneRule> = {
   },
   'tower-cluster': {
     allowedScreenFamilies: ['tower-ribbon', 'tower-crown'],
-    densityCaps: { assignmentCap: 10, screenSocketCap: 10, screenSurfaceCap: 10 },
+    densityCaps: { assignmentCap: 16, screenSocketCap: 16, screenSurfaceCap: 16 },
     id: 'tower-cluster',
     name: 'Tower Cluster Layer',
     placementClasses: ['tower', 'city-support'],
@@ -66,7 +66,7 @@ export const ZONE_RULES: Record<ExpoPlanningZoneId, ExpoPlanningZoneRule> = {
   },
   'rear-campus': {
     allowedScreenFamilies: ['rear-campus-bowl', 'rear-campus-tower'],
-    densityCaps: { assignmentCap: 13, screenSocketCap: 13, screenSurfaceCap: 13 },
+    densityCaps: { assignmentCap: 23, screenSocketCap: 23, screenSurfaceCap: 23 },
     id: 'rear-campus',
     name: 'Rear Campus',
     placementClasses: ['stadium'],

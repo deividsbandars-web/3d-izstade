@@ -1114,6 +1114,16 @@ export function buildMediaWallSurfaces(districtCount: number, districtStride: nu
         type: 'wall' as const,
       },
       {
+        id: `screen-array-left-upper-${districtIndex}`,
+        position: [-842, 142, baseZ - 18],
+        rotation: [0, inwardYawLeft, 0],
+        size: [104, 116, 2.8],
+        color: '#091320',
+        glowColor: palette.supportLeft,
+        role: 'support-wall' as const,
+        type: 'wall' as const,
+      },
+      {
         id: `screen-array-right-${districtIndex}`,
         position: [968, 94, baseZ + 86],
         rotation: [0, flankYawRight, 0],
@@ -1123,18 +1133,36 @@ export function buildMediaWallSurfaces(districtCount: number, districtStride: nu
         role: 'support-wall' as const,
         type: 'wall' as const,
       },
-      ...(districtIndex < 2
-        ? [{
-            id: `screen-spine-${districtIndex}`,
-            position: [0, 104, baseZ - 24],
-            rotation: [0, districtIndex === 0 ? Math.PI : 0, 0],
-            size: [108, 128, 2.8],
-            color: '#091320',
-            glowColor: palette.spine,
-            role: 'support-wall' as const,
-            type: 'wall' as const,
-          } satisfies CityScreenSurface]
-        : []),
+      {
+        id: `screen-array-right-upper-${districtIndex}`,
+        position: [842, 138, baseZ - 44],
+        rotation: [0, inwardYawRight, 0],
+        size: [104, 116, 2.8],
+        color: '#091320',
+        glowColor: palette.supportRight,
+        role: 'support-wall' as const,
+        type: 'wall' as const,
+      },
+      {
+        id: `screen-spine-primary-${districtIndex}`,
+        position: [-184, 108, baseZ - 34],
+        rotation: [0, inwardYawLeft, 0],
+        size: [118, 136, 2.8],
+        color: '#091320',
+        glowColor: palette.spine,
+        role: 'support-wall' as const,
+        type: 'wall' as const,
+      },
+      {
+        id: `screen-spine-secondary-${districtIndex}`,
+        position: [184, 116, baseZ + 84],
+        rotation: [0, inwardYawRight, 0],
+        size: [104, 118, 2.6],
+        color: '#0a1420',
+        glowColor: palette.spine,
+        role: 'support-wall' as const,
+        type: 'wall' as const,
+      },
     ] satisfies CityScreenSurface[];
   }).flat();
 }
@@ -1290,25 +1318,33 @@ export function buildTowerScreenSurfaces(towers: CityTower[]): CityScreenSurface
   return towers.flatMap((tower) => {
     const isHeroTower = tower.role === 'hero';
     const isMidTower = tower.role === 'mid';
+    const isSupportTower = tower.role === 'support' || tower.role === 'outer-support';
     const isLeftSide = tower.position[0] < 0;
 
-    if (!isHeroTower && !isMidTower) {
+    if (!isHeroTower && !isMidTower && !isSupportTower) {
       return [];
     }
 
     const yaw = isLeftSide ? 0.86 : -0.86;
+    const offsetAlongYaw = (distance: number): [number, number] => ([
+      Math.sin(yaw) * distance,
+      Math.cos(yaw) * distance,
+    ]);
+    const [heroRibbonOffsetX, heroRibbonOffsetZ] = offsetAlongYaw(isHeroTower ? 11.2 : isMidTower ? 9.2 : 8.4);
+    const [crownOffsetX, crownOffsetZ] = offsetAlongYaw(isHeroTower ? 6.2 : isMidTower ? 4.8 : 4.4);
+    const [supportOffsetX, supportOffsetZ] = offsetAlongYaw(tower.role === 'outer-support' ? 3.6 : 4.1);
     const ribbonSurface: CityScreenSurface = {
       id: `${tower.id}-tower-ribbon`,
       position: [
-        tower.position[0],
+        tower.position[0] + heroRibbonOffsetX,
         tower.position[1] + (tower.baseSize[1] * (isHeroTower ? 0.12 : 0.08)),
-        tower.position[2] + (isLeftSide ? 18 : -18),
+        tower.position[2] + heroRibbonOffsetZ,
       ],
       rotation: [0, yaw, 0],
       size: [
-        isHeroTower ? 64 : 46,
-        isHeroTower ? 148 : 114,
-        2.6,
+        isHeroTower ? 60 : 46,
+        isHeroTower ? 146 : 116,
+        2.3,
       ],
       color: '#091320',
       glowColor: isHeroTower ? tower.crownColor : '#7dd3fc',
@@ -1320,18 +1356,58 @@ export function buildTowerScreenSurfaces(towers: CityTower[]): CityScreenSurface
       ? {
           id: `${tower.id}-crown-beacon`,
           position: [
-            tower.position[0],
+            tower.position[0] + crownOffsetX,
             tower.position[1] + tower.baseSize[1] + (tower.upperSize[1] * 0.72),
-            tower.position[2] + (isLeftSide ? 14 : -14),
+            tower.position[2] + crownOffsetZ,
           ],
           rotation: [0, yaw, 0],
-          size: [44, 54, 2.4],
+          size: [38, 46, 1.9],
           color: '#0b1421',
           glowColor: tower.crownColor,
           role: 'tower-crown' as const,
           type: 'tower-crown' as const,
         } satisfies CityScreenSurface
+      : isMidTower
+        ? {
+            id: `${tower.id}-crown-beacon`,
+            position: [
+              tower.position[0] + crownOffsetX,
+              tower.position[1] + tower.baseSize[1] + (tower.upperSize[1] * 0.7),
+              tower.position[2] + crownOffsetZ,
+            ],
+            rotation: [0, yaw, 0],
+            size: [26, 30, 1.8],
+            color: '#0b1421',
+            glowColor: '#93c5fd',
+            role: 'tower-crown' as const,
+            type: 'tower-crown' as const,
+          } satisfies CityScreenSurface
+        : null;
+
+    const supportRibbonSurface: CityScreenSurface | null = isSupportTower
+      ? {
+          id: `${tower.id}-tower-ribbon`,
+          position: [
+            tower.position[0] + supportOffsetX,
+            tower.position[1] + (tower.baseSize[1] * 0.14),
+            tower.position[2] + supportOffsetZ,
+          ],
+          rotation: [0, yaw, 0],
+          size: [
+            tower.role === 'outer-support' ? 16 : 20,
+            tower.role === 'outer-support' ? 36 : 48,
+            1.9,
+          ],
+          color: '#0a1420',
+          glowColor: '#bfdbfe',
+          role: 'tower-side' as const,
+          type: 'tower-side' as const,
+        } satisfies CityScreenSurface
       : null;
+
+    if (isSupportTower) {
+      return supportRibbonSurface ? [supportRibbonSurface] : [];
+    }
 
     return crownBeaconSurface ? [ribbonSurface, crownBeaconSurface] : [ribbonSurface];
   });
@@ -1344,8 +1420,39 @@ export function buildScreenSockets(surfaces: CityScreenSurface[]): CityScreenSoc
     Math.cos(yaw) * depthOffset,
   ]);
 
+  const getSurfaceHousingDepth = (surface: CityScreenSurface) => (
+    surface.renderIntent?.housingDepth
+    ?? (
+      surface.role === 'hero-wall'
+        ? Math.max(10, surface.size[2] * 4.2)
+        : surface.role === 'support-wall'
+          ? Math.max(8, surface.size[2] * 3.5)
+          : surface.role === 'tower-crown'
+            ? Math.max(4.8, surface.size[2] * 2.2)
+            : Math.max(4.4, surface.size[2] * 2.1)
+    )
+  );
+
+  const getSocketAnchorDepth = (surface: CityScreenSurface) => {
+    const housingDepth = getSurfaceHousingDepth(surface);
+
+    if (surface.role === 'hero-wall') {
+      return housingDepth * 0.42;
+    }
+
+    if (surface.role === 'support-wall') {
+      return housingDepth * 0.4;
+    }
+
+    if (surface.role === 'tower-crown') {
+      return housingDepth * 0.28;
+    }
+
+    return housingDepth * 0.3;
+  };
+
   return surfaces.map((surface) => {
-    const depthOffset = surface.role === 'tower-crown' ? (surface.size[2] * 0.28) : (surface.size[2] * 0.84);
+    const depthOffset = getSocketAnchorDepth(surface);
     const yaw = surface.rotation[1] ?? 0;
     const [offsetX, offsetY, offsetZ] = offsetAlongYaw(yaw, depthOffset);
 
@@ -1364,7 +1471,7 @@ export function buildScreenSockets(surfaces: CityScreenSurface[]): CityScreenSoc
     if (surface.role === 'support-wall') {
       return {
         color: surface.glowColor,
-        frameSize: [surface.size[0] * 0.84, surface.size[1] * 0.82],
+        frameSize: [surface.size[0] * 0.8, surface.size[1] * 0.78],
         id: `${surface.id}-socket`,
         kind: 'wall',
         position: [surface.position[0] + offsetX, surface.position[1] + offsetY, surface.position[2] + offsetZ],
@@ -1376,7 +1483,7 @@ export function buildScreenSockets(surfaces: CityScreenSurface[]): CityScreenSoc
     if (surface.role === 'tower-crown') {
       return {
         color: surface.glowColor,
-        frameSize: [surface.size[0] * 0.9, surface.size[1] * 0.86],
+        frameSize: [surface.size[0] * 0.78, surface.size[1] * 0.74],
         id: `${surface.id}-socket`,
         kind: 'tower_crown',
         position: [surface.position[0] + offsetX, surface.position[1] + offsetY, surface.position[2] + offsetZ],
@@ -1387,7 +1494,7 @@ export function buildScreenSockets(surfaces: CityScreenSurface[]): CityScreenSoc
 
     return {
       color: surface.glowColor,
-      frameSize: [surface.size[0] * 0.8, surface.size[1] * 0.8],
+      frameSize: [surface.size[0] * 0.72, surface.size[1] * 0.72],
       id: `${surface.id}-socket`,
       kind: 'tower_side',
       position: [surface.position[0] + offsetX, surface.position[1] + offsetY, surface.position[2] + offsetZ],

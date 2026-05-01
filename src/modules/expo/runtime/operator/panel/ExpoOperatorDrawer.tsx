@@ -3,6 +3,7 @@ import type { WorldObjectRegistryEntry } from '../../world/inspection/worldObjec
 import { ExpoOperatorInspectionSummary } from '../inspection/ExpoOperatorInspectionSummary';
 import type { ZoneFixRoute } from '../model/zoneFixRouting';
 import type { ZoneReviewValidation } from '../model/zoneReviewValidation';
+import type { ExpoZoneVisualDefect } from '../state/useExpoOperatorState';
 
 type LayerKey = 'promenade' | 'city' | 'stadium' | 'booths' | 'skyline';
 type SectionKey = 'arrival' | 'left' | 'middle' | 'right' | 'stadium';
@@ -66,6 +67,8 @@ function ValidationCard({
           <div>MISSING IDS: {validation.missingExpectedObjectIds.length > 0 ? validation.missingExpectedObjectIds.join(' | ') : 'none'}</div>
           <div>MISSING LAYERS: {validation.missingExpectedLayers.length > 0 ? validation.missingExpectedLayers.join(' | ') : 'none'}</div>
           <div>UNKNOWN IDS: {validation.unknownExpectedObjectIds.length > 0 ? validation.unknownExpectedObjectIds.join(' | ') : 'none'}</div>
+          <div>FORBIDDEN IDS: {validation.forbiddenObjectIdsPresent.length > 0 ? validation.forbiddenObjectIdsPresent.join(' | ') : 'none'}</div>
+          <div>FORBIDDEN LAYERS: {validation.forbiddenExpectedLayersPresent.length > 0 ? validation.forbiddenExpectedLayersPresent.join(' | ') : 'none'}</div>
           <div>EXTRA LAYERS: {validation.extraVisibleLayers.length > 0 ? validation.extraVisibleLayers.join(' | ') : 'none'}</div>
         </div>
       )}
@@ -91,6 +94,32 @@ function FixRoutingCard({
             <div key={`${route.issue}:${route.target}`}>
               <div>{route.issue.toUpperCase()}: {route.target}</div>
               <div style={{ opacity: 0.8 }}>SEAM: {route.safeEditSeam}</div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function VisualDefectsCard({
+  defects,
+  title,
+}: {
+  defects: ExpoZoneVisualDefect[];
+  title: string;
+}) {
+  return (
+    <div style={{ border: '1px solid rgba(148, 163, 184, 0.16)', borderRadius: '12px', padding: '10px', background: 'rgba(15, 23, 42, 0.36)' }}>
+      <div style={{ fontSize: '0.62rem', letterSpacing: '0.12em', fontWeight: 900, color: '#fca5a5', marginBottom: '6px' }}>{title}</div>
+      {defects.length === 0 ? (
+        <div style={{ fontSize: '0.72rem', color: '#94a3b8' }}>No active visual defects</div>
+      ) : (
+        <div style={{ fontSize: '0.72rem', color: '#cbd5e1', lineHeight: 1.45 }}>
+          {defects.slice(0, 6).map((defect) => (
+            <div key={`${defect.family}:${defect.id}`}>
+              <div>{defect.family.toUpperCase()}: {defect.id}</div>
+              <div style={{ opacity: 0.8 }}>{defect.message}</div>
             </div>
           ))}
         </div>
@@ -133,6 +162,7 @@ export function ExpoOperatorDrawer({
   operatorZoneLabel,
   operatorZoneFixRoutes,
   operatorZoneValidation,
+  operatorZoneVisualDefects,
   sceneVersion,
   sectionStates,
   targetBasket,
@@ -170,6 +200,7 @@ export function ExpoOperatorDrawer({
   operatorZoneLabel: string | null;
   operatorZoneFixRoutes: ZoneFixRoute[];
   operatorZoneValidation: ZoneReviewValidation | null;
+  operatorZoneVisualDefects: ExpoZoneVisualDefect[];
   sceneVersion: string | null;
   sectionStates: Record<string, boolean>;
   targetBasket: string[];
@@ -221,6 +252,11 @@ export function ExpoOperatorDrawer({
       <FixRoutingCard
         title="FIX ROUTING"
         routes={operatorZoneFixRoutes}
+      />
+
+      <VisualDefectsCard
+        title="VISUAL DEFECTS"
+        defects={operatorZoneVisualDefects}
       />
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '8px' }}>

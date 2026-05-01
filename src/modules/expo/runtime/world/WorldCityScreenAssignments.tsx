@@ -13,12 +13,17 @@ function getHighlightedOpacity(opacity: number | undefined, fallback: number) {
 function renderPrimitive(primitive: CanonicalPrimitive, key: string, highlighted: boolean) {
   if (primitive.kind === 'plane') {
     return (
-      <mesh key={key} position={primitive.position} rotation={primitive.rotation}>
+      <mesh key={key} position={primitive.position} rotation={primitive.rotation} renderOrder={8}>
         <planeGeometry args={primitive.size} />
         <meshBasicMaterial
           color={primitive.color}
+          depthWrite={false}
+          polygonOffset
+          polygonOffsetFactor={-4}
+          polygonOffsetUnits={-4}
           transparent={primitive.transparent}
           opacity={highlighted ? getHighlightedOpacity(primitive.opacity, 1) : primitive.opacity}
+          toneMapped={false}
         />
       </mesh>
     );
@@ -27,19 +32,24 @@ function renderPrimitive(primitive: CanonicalPrimitive, key: string, highlighted
   if (primitive.kind === 'texture-plane') {
     if (!primitive.url) {
       return (
-        <mesh key={key} position={primitive.position}>
+        <mesh key={key} position={primitive.position} renderOrder={9}>
           <planeGeometry args={primitive.size} />
           <meshBasicMaterial
             color={primitive.fallbackColor}
+            depthWrite={false}
+            polygonOffset
+            polygonOffsetFactor={-5}
+            polygonOffsetUnits={-5}
             transparent
             opacity={highlighted ? getHighlightedOpacity(primitive.opacity, 0.22) : primitive.opacity ?? 0.22}
+            toneMapped={false}
           />
         </mesh>
       );
     }
 
     return (
-      <mesh key={key} position={primitive.position}>
+      <mesh key={key} position={primitive.position} renderOrder={9}>
         <planeGeometry args={primitive.size} />
         <SponsorTextureSurface
           fallbackColor={primitive.fallbackColor}
@@ -63,6 +73,7 @@ function renderPrimitive(primitive: CanonicalPrimitive, key: string, highlighted
         outlineColor={primitive.outlineColor}
         outlineWidth={primitive.outlineWidth}
         position={primitive.position}
+        renderOrder={10}
       >
         {primitive.text}
       </Text>

@@ -9,7 +9,6 @@ import { ExpoOperatorOverlay } from '../overlay/ExpoOperatorOverlay';
 import {
   buildReviewOperatorZones,
   resolveExpoOperatorSession,
-  resolveReviewOperatorZoneStartView,
 } from '../model/reviewOperatorSession';
 import { useExpoOperatorState } from './useExpoOperatorState';
 
@@ -54,13 +53,7 @@ export function useExpoOperatorLayer({
 
     return new Map(entries.map((entry) => [entry.id, entry]));
   }, [boothRegistryEntries, inspectionState.rawSources.city, inspectionState.rawSources.stadium]);
-  const resolvedReviewZones = useMemo(
-    () => reviewZones.map((zone) => ({
-      ...zone,
-      startView: resolveReviewOperatorZoneStartView(zone, registryById),
-    })),
-    [registryById, reviewZones],
-  );
+  const resolvedReviewZones = reviewZones;
   const canonicalWorldPlan = useMemo(
     () => buildCanonicalWorldPlanFromWorldContract(worldContract),
     [worldContract],
@@ -232,8 +225,7 @@ export function useExpoOperatorLayer({
         operator.setFocusSlug(String(verificationTargets.premium?.company?.slug || verificationTargets.premium?.company?.id || ''));
       } : undefined}
       onSelectZone={(zoneId) => {
-        operator.setFocusSlug('');
-        operator.setOperatorZoneId(zoneId);
+        operator.goToZone(zoneId);
       }}
       onSetMark={() => {
         const [x, y, z] = playerPos as [number, number, number];
@@ -251,6 +243,7 @@ export function useExpoOperatorLayer({
       operatorZoneLabel={operator.operatorZone?.label ?? null}
       operatorZoneFixRoutes={operator.operatorZoneFixRoutes}
       operatorZoneValidation={operator.operatorZoneValidation}
+      operatorZoneVisualDefects={operator.operatorZoneVisualDefects}
       sceneVersion={sceneVersion}
       sectionStates={operator.sectionStates}
       session={session}
@@ -263,13 +256,8 @@ export function useExpoOperatorLayer({
     debug: operator.debug,
     effectiveStartViewOverride,
     layer,
-    runtimeFocusIsolation: session.enabled && Boolean(operator.operatorZoneId),
-    runtimeHighlightedTargets: session.enabled
-      ? Array.from(new Set([
-        ...(operator.operatorZone?.expectedKeyObjectIds ?? []),
-        ...operator.targetBasket,
-      ]))
-      : [],
+    runtimeFocusIsolation: false,
+    runtimeHighlightedTargets: session.enabled ? operator.targetBasket : [],
     runtimeLayerToggles: session.enabled ? operator.layerStates : undefined,
     runtimeSectionToggles: session.enabled ? operator.sectionStates : undefined,
     session,

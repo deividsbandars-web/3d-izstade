@@ -4,16 +4,21 @@ import type { StadiumReserve } from './WorldCitySkeletonLayout';
 function renderPrimitive(primitive: CanonicalPrimitive, key: string) {
   if (primitive.kind === 'box') {
     return (
-      <mesh key={key} position={primitive.position} rotation={primitive.rotation}>
+      <mesh key={key} position={primitive.position} rotation={primitive.rotation} renderOrder={1}>
         <boxGeometry args={primitive.size} />
         <meshStandardMaterial
           color={primitive.color}
+          depthWrite={primitive.transparent ? false : true}
           emissive={primitive.emissive}
           emissiveIntensity={primitive.emissiveIntensity ?? 0}
           metalness={primitive.metalness ?? 0.38}
+          polygonOffset
+          polygonOffsetFactor={primitive.transparent ? -2 : 0}
+          polygonOffsetUnits={primitive.transparent ? -2 : 0}
           roughness={primitive.roughness ?? 0.42}
           transparent={primitive.transparent}
           opacity={primitive.opacity}
+          toneMapped={false}
         />
       </mesh>
     );
@@ -21,9 +26,18 @@ function renderPrimitive(primitive: CanonicalPrimitive, key: string) {
 
   if (primitive.kind === 'plane') {
     return (
-      <mesh key={key} position={primitive.position} rotation={primitive.rotation}>
+      <mesh key={key} position={primitive.position} rotation={primitive.rotation} renderOrder={4}>
         <planeGeometry args={primitive.size} />
-        <meshBasicMaterial color={primitive.color} transparent={primitive.transparent} opacity={primitive.opacity} />
+        <meshBasicMaterial
+          color={primitive.color}
+          depthWrite={false}
+          polygonOffset
+          polygonOffsetFactor={-3}
+          polygonOffsetUnits={-3}
+          transparent={primitive.transparent}
+          opacity={primitive.opacity}
+          toneMapped={false}
+        />
       </mesh>
     );
   }

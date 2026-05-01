@@ -5,6 +5,7 @@ import {
   buildZoneObservationsFromSnapshot,
   buildExpoReviewOperatorSnapshot,
   buildZoneReviewReport,
+  buildZoneVisualDefectsFromSnapshot,
   buildZoneWarningsFromSnapshot,
 } from '../runtime/operator/state/useExpoOperatorState.js';
 import { buildWorldDiagnosticReport } from '../runtime/world/inspection/worldDiagnosticReport.js';
@@ -65,7 +66,19 @@ const diagnosticReport = buildWorldDiagnosticReport({
       rotation: [0, -0.3, 0],
     },
   ],
-  screenSurfaces: [],
+  screenSurfaces: [
+    {
+      color: '#ffffff',
+      glowColor: '#22d3ee',
+      id: 'city-screen-1',
+      position: [5000, 120, -420],
+      role: 'hero-wall',
+      rotation: [0, 0, 0],
+      sections: ['middle'],
+      size: [32, 18, 4],
+      type: 'wall',
+    },
+  ],
 });
 
 const snapshot = buildExpoReviewOperatorSnapshot({
@@ -150,8 +163,133 @@ assert.deepEqual(snapshot.zones[0]?.fixRoutes, []);
 assert.deepEqual(snapshot.zones[0]?.watchItems, ['registry traceability']);
 assert.deepEqual(buildZoneWarningsFromSnapshot(snapshot), []);
 assert.deepEqual(buildZoneObservationsFromSnapshot(snapshot), []);
+assert.equal(buildZoneVisualDefectsFromSnapshot(snapshot).length, 2);
+assert.equal(buildZoneVisualDefectsFromSnapshot(snapshot)[0]?.family, 'screen-bounds');
+assert.equal(buildZoneVisualDefectsFromSnapshot(snapshot)[1]?.family, 'booth-frontality');
 assert.equal(buildZoneReviewReport(snapshot)?.zoneId, 'arrival-gate');
 assert.equal(buildZoneReviewReport(snapshot)?.status, 'ok');
 assert.deepEqual(buildZoneReviewReport(snapshot)?.observations, []);
+assert.equal(buildZoneReviewReport(snapshot)?.visualDefects.length, 2);
 assert.equal(buildAllZoneReviewReports(snapshot).length, 1);
 assert.doesNotThrow(() => JSON.stringify(snapshot));
+
+const seamSnapshot = buildExpoReviewOperatorSnapshot({
+  activeZoneId: 'stadium-feed-axis',
+  centerStack: ['rear-campus-bowl-feed-surface', 'city-ground-seam', 'stadium-ground-seam'],
+  centerTarget: 'rear-campus-bowl-feed-surface',
+  clickStack: ['stadium-ground-seam'],
+  clickTarget: 'stadium-ground-seam',
+  dataMode: 'seeded-local',
+  diagnosticReport,
+  focusSlug: null,
+  inspector: [
+    { distance: 10, id: 'rear-campus-bowl-feed-surface', layer: 'stadium-screen-surface' },
+    { distance: 14, id: 'stadium-custom-feed-1', layer: 'stadium-screen-feed' },
+    { distance: 18, id: 'city-ground-seam', layer: 'city-plane' },
+    { distance: 20, id: 'stadium-ground-seam', layer: 'stadium-plane' },
+  ],
+  layerStates: {
+    booths: true,
+    city: true,
+    promenade: true,
+    skyline: false,
+    stadium: true,
+  },
+  markedPoint: null,
+  mode: 'fly',
+  operatorZoneId: 'stadium-feed-axis',
+  playerPos: [0, 156, -2408],
+  registryEntries: {
+    booths: [],
+    city: [
+      {
+        diagnosticOwners: [],
+        id: 'city-ground-seam',
+        interactionOwner: null,
+        layer: 'city-plane',
+        planningSections: ['middle'],
+        planningZone: 'canonical-city',
+        position: [0, 0, -2408],
+        rotation: [0, 0, 0],
+        safeEditSeam: 'buildCanonicalWorldPlan.ts',
+        size: [100, 2, 100],
+        sourceFile: 'buildCanonicalWorldPlan.ts',
+        sourceFunction: 'buildCanonicalWorldPlan',
+        sourceKind: 'city-plane',
+      },
+    ],
+    stadium: [
+      {
+        diagnosticOwners: [],
+        id: 'rear-campus-bowl-feed-surface',
+        interactionOwner: null,
+        layer: 'stadium-screen-surface',
+        planningSections: ['middle'],
+        planningZone: 'rear-campus',
+        position: [0, 318, -2540],
+        rotation: [0, Math.PI, 0],
+        safeEditSeam: 'buildScreenSurfacePlan.ts',
+        size: [1110, 214, 4.4],
+        sourceFile: 'buildScreenSurfacePlan.ts',
+        sourceFunction: 'buildZoneScreenSurfacePlan',
+        sourceKind: 'screen-surface',
+      },
+      {
+        diagnosticOwners: [],
+        id: 'stadium-custom-feed-1',
+        interactionOwner: null,
+        layer: 'stadium-screen-feed',
+        planningSections: ['middle'],
+        planningZone: 'rear-campus',
+        position: [0, 318, -2540],
+        safeEditSeam: 'ExpoRearCampusStructures.tsx',
+        sourceFile: 'ExpoRearCampusStructures.tsx',
+        sourceFunction: 'ExpoRearCampusStructures',
+        sourceKind: 'rear-campus-custom-screen-feed',
+      },
+      {
+        diagnosticOwners: [],
+        id: 'stadium-ground-seam',
+        interactionOwner: null,
+        layer: 'stadium-plane',
+        planningSections: ['middle'],
+        planningZone: 'rear-campus',
+        position: [0, 0, -2408],
+        rotation: [0, 0, 0],
+        safeEditSeam: 'buildRearCampusZonePlan.ts',
+        size: [100, 2, 100],
+        sourceFile: 'buildRearCampusZonePlan.ts',
+        sourceFunction: 'buildRearCampusZonePlan',
+        sourceKind: 'rear-campus-forecourt',
+      },
+    ],
+  },
+  sceneVersion: 'scene-v1',
+  sectionStates: {
+    arrival: true,
+    left: true,
+    middle: true,
+    right: true,
+    stadium: true,
+  },
+  targetBasket: [],
+  zones: [
+    {
+      expectedKeyObjectIds: ['rear-campus-bowl-feed-surface'],
+      expectedVisibleLayers: ['stadium-screen-surface'],
+      id: 'stadium-feed-axis',
+      intent: 'rear-campus-feed-axis-review',
+      label: 'Stadium Feed Axis',
+      startView: {
+        lookAt: [0, 98, -2820],
+        position: [0, 156, -2408],
+        source: 'arrival-main',
+      },
+      watchItems: ['seam detection'],
+    },
+  ],
+});
+
+const seamDefects = buildZoneVisualDefectsFromSnapshot(seamSnapshot);
+assert.ok(seamDefects.some((defect) => defect.family === 'screen-feed-conflict'));
+assert.ok(seamDefects.some((defect) => defect.family === 'mixed-ground-plane'));

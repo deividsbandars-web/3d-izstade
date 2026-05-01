@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls, PointerLockControls } from '@react-three/drei';
 import * as THREE from 'three';
@@ -9,6 +9,12 @@ import { EXPO_START_VIEW_KEY, collectPlayerCollisionTargets, isCollisionMesh } f
 const PLAYER_RADIUS = 0.92;
 const PLAYER_WALK_SPEED = 108;
 const PLAYER_SPRINT_MULTIPLIER = 1.8;
+const OPERATOR_TELEPORT_SETTLE_MS = 1200;
+
+type OperatorTeleportDetail = {
+  startView?: ExpoStartView;
+  zoneId?: string;
+};
 
 export function ExpoWorldPlayerLayer({
   bounds,
@@ -32,12 +38,31 @@ export function ExpoWorldPlayerLayer({
   const raycaster = useRef(new THREE.Raycaster());
   const desiredMoveVector = useRef(new THREE.Vector3());
   const moveVelocity = useRef(new THREE.Vector3());
+  const orbitControlsRef = useRef<any>(null);
   const spawnChecked = useRef(false);
   const startFramingApplied = useRef(false);
   const lastAppliedStartViewSignature = useRef<string | null>(null);
   const lastMoveTime = useRef(0);
   const lastReportedPosition = useRef<[number, number, number]>([0, 0, 0]);
+  const operatorTeleportUntil = useRef(0);
   const startViewSignature = `${startView.position.join(',')}|${startView.lookAt.join(',')}|${startView.source}`;
+
+  const applyStartView = useCallback((
+    nextStartView: ExpoStartView,
+    reason: string,
+    options?: { markFramed?: boolean },
+  ) => {
+    startFramingApplied.current = options?.markFramed ?? false;
+    spawnChecked.current = false;
+    camera.position.set(...nextStartView.position);
+    orbitControlsRef.current?.target.set(...nextStartView.lookAt);
+    camera.lookAt(...nextStartView.lookAt);
+    orbitControlsRef.current?.update();
+    camera.updateMatrixWorld();
+    lastReportedPosition.current = [nextStartView.position[0], nextStartView.position[1], nextStartView.position[2]];
+    onMove(lastReportedPosition.current);
+    logExpoWorldDebug(debug, reason, nextStartView);
+  }, [camera, debug, onMove]);
 
   useEffect(() => {
     camera.position.set(-8, 5, 10);
@@ -51,15 +76,25 @@ export function ExpoWorldPlayerLayer({
     }
 
     lastAppliedStartViewSignature.current = startViewSignature;
-    startFramingApplied.current = false;
-    spawnChecked.current = false;
-    camera.position.set(...startView.position);
-    camera.lookAt(...startView.lookAt);
-    camera.updateMatrixWorld();
-    lastReportedPosition.current = [startView.position[0], startView.position[1], startView.position[2]];
-    onMove(lastReportedPosition.current);
-    logExpoWorldDebug(debug, '[ExpoView][StartViewChanged]', startView);
-  }, [camera, debug, onMove, startView, startViewSignature]);
+    applyStartView(startView, '[ExpoView][StartViewChanged]');
+  }, [applyStartView, startView, startViewSignature]);
+
+  useEffect(() => {
+    const handleOperatorTeleport = (event: Event) => {
+      const detail = (event as CustomEvent<OperatorTeleportDetail>).detail;
+      if (!detail?.startView) {
+        return;
+      }
+
+      operatorTeleportUntil.current = Date.now() + OPERATOR_TELEPORT_SETTLE_MS;
+      applyStartView(detail.startView, '[ExpoView][OperatorTeleport]', { markFramed: true });
+    };
+
+    window.addEventListener('expo:operator-teleport', handleOperatorTeleport as EventListener);
+    return () => {
+      window.removeEventListener('expo:operator-teleport', handleOperatorTeleport as EventListener);
+    };
+  }, [applyStartView]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -144,6 +179,9 @@ export function ExpoWorldPlayerLayer({
       return;
     }
 
+    const isOperatorReviewFrame = preserveReviewElevation && startView.position[1] > 12;
+    const operatorTeleportSettling = operatorTeleportUntil.current > Date.now();
+
     const stableDelta = Math.min(delta, 1 / 90);
     const hasMoveIntent = mov.f || mov.b || mov.l || mov.r || mov.s || mobileMoveIntent?.f || mobileMoveIntent?.b || mobileMoveIntent?.l || mobileMoveIntent?.r || mobileMoveIntent?.s;
     const sprintMultiplier = mov.s || mobileMoveIntent?.s ? PLAYER_SPRINT_MULTIPLIER : 1;
@@ -225,8 +263,11 @@ export function ExpoWorldPlayerLayer({
 
     const shouldPreserveStartElevation = preserveReviewElevation && !hasMoveIntent && startView.position[1] > 12;
     camera.position.setY(shouldPreserveStartElevation ? startView.position[1] : 5);
-    camera.position.setX(Math.min(bounds.maxX, Math.max(bounds.minX, camera.position.x)));
-    camera.position.setZ(Math.min(bounds.maxZ, Math.max(bounds.minZ, camera.position.z)));
+
+    if (!isOperatorReviewFrame && !operatorTeleportSettling) {
+      camera.position.setX(Math.min(bounds.maxX, Math.max(bounds.minX, camera.position.x)));
+      camera.position.setZ(Math.min(bounds.maxZ, Math.max(bounds.minZ, camera.position.z)));
+    }
 
     if (moved) {
       const now = Date.now();
@@ -243,7 +284,7 @@ export function ExpoWorldPlayerLayer({
   });
 
   return mode === 'fly'
-    ? <OrbitControls enablePan enableZoom enableRotate maxDistance={500} enableDamping dampingFactor={0.05} />
+    ? <OrbitControls ref={orbitControlsRef} enablePan enableZoom enableRotate maxDistance={500} enableDamping dampingFactor={0.05} />
     : (mode === 'walk' ? <PointerLockControls onUnlock={() => document.body.style.cursor = 'auto'} pointerSpeed={0.18} /> : null);
 }
 
