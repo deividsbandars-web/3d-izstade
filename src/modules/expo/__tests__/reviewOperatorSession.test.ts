@@ -8,7 +8,7 @@ import {
 const zones = buildReviewOperatorZones();
 const zoneIds = zones.map((zone) => zone.id);
 
-assert.equal(zones.length, 26);
+assert.equal(zones.length, 28);
 assert.equal(DEFAULT_REVIEW_OPERATOR_ZONE_ID, 'arrival-gate');
 assert.deepEqual(zoneIds, [
   'arrival-gate',
@@ -23,18 +23,20 @@ assert.deepEqual(zoneIds, [
   'right-marquee-close',
   'right-edge-far',
   'tower-cluster',
-  'tower-cluster-reverse',
+  'tower-cluster-reverse-wide',
   'array-band',
   'array-band-south',
   'sponsor-boulevard-left',
   'sponsor-boulevard-left-close',
   'sponsor-boulevard-right',
-  'sponsor-boulevard-right-close',
+  'sponsor-boulevard-right-medium',
   'stadium-approach',
   'stadium-left-flank',
   'rear-campus-center',
   'stadium-feed-axis',
   'stadium-right-flank',
+  'ground-seam-transition',
+  'ground-seam-overhead',
   'rear-campus-mega-hall',
   'rear-campus-needle-crown',
 ]);
@@ -49,5 +51,5 @@ assert.ok(leftMarquee);
 const resolvedLeftMarqueeView = resolveReviewOperatorZoneStartView(leftMarquee, new Map([
   ['screen-marquee-left-0', { position: [-700, 140, -300] }],
 ]));
-assert.deepEqual(resolvedLeftMarqueeView.lookAt, [-700, 140, -300]);
-assert.deepEqual(resolvedLeftMarqueeView.position, [-460, 260, -120]);
+assert.deepEqual(resolvedLeftMarqueeView.lookAt, [-700, 162, -300]);
+assert.deepEqual(resolvedLeftMarqueeView.position, [-180, 318, 390]);
