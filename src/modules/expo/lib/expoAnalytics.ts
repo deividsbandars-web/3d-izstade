@@ -65,6 +65,16 @@ function persistExpoAnalytics(detail: ExpoAnalyticsDetail) {
   }
 
   const endpoint = `${getFrontendRuntimeEnv().apiBaseUrl}/api/analytics/track`;
+  const endpointOrigin = (() => {
+    try {
+      return new URL(endpoint).origin;
+    } catch {
+      return null;
+    }
+  })();
+  if (!endpointOrigin || endpointOrigin !== window.location.origin) {
+    return;
+  }
   const payload = JSON.stringify({ payload: detail });
 
   if (typeof navigator !== 'undefined' && typeof navigator.sendBeacon === 'function') {

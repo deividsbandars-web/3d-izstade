@@ -277,18 +277,20 @@ export function buildZoneScreenAssignmentPlan(args: {
               ? 0.88
               : 0.76
           : isRearCampusWall
-            ? 0.88
+            ? 0.94
             : 0.86;
     const frameWidth = socket.frameSize[0] * frameScale;
     const frameHeight = socket.frameSize[1] * frameScale;
-    const headerHeight = Math.max(0.24, frameHeight * (isCenterSpineHero ? 0.13 : isHeroComposition ? 0.12 : 0.1));
-    const footerHeight = Math.max(0.22, frameHeight * (isCenterSpineHero ? 0.1 : isHeroComposition ? 0.09 : 0.08));
+    const headerHeight = Math.max(0.24, frameHeight * (isCenterSpineHero ? 0.13 : isHeroComposition ? 0.12 : isRearCampusWall ? 0.08 : 0.1));
+    const footerHeight = Math.max(0.22, frameHeight * (isCenterSpineHero ? 0.1 : isHeroComposition ? 0.09 : isRearCampusWall ? 0.065 : 0.08));
     const detailDistance = tier === 'hero' ? 1100 : tier === 'elite' ? 900 : 700;
     const subtitleDistance = tier === 'hero' ? 760 : tier === 'elite' ? 620 : 480;
     const hasImage = Boolean(placement.company?.posterUrl || placement.company?.heroAssetUrl || placement.company?.logo_url);
 
     const renderIntent = {
-      bodyPanelWidth: hasImage ? frameWidth * (isCenterSpineHero ? 0.76 : isHeroComposition ? 0.7 : 0.62) : frameWidth * (isCenterSpineHero ? 0.96 : isHeroComposition ? 0.94 : 0.92),
+      bodyPanelWidth: hasImage
+        ? frameWidth * (isCenterSpineHero ? 0.76 : isHeroComposition ? 0.7 : isRearCampusWall ? 0.7 : 0.62)
+        : frameWidth * (isCenterSpineHero ? 0.96 : isHeroComposition ? 0.94 : isRearCampusWall ? 0.97 : 0.92),
       chipColor: semantic.mode === 'landmark' ? '#fde68a' : semantic.mode === 'beacon' ? '#a5f3fc' : semantic.mode === 'signal' ? '#bfdbfe' : '#dbeafe',
       detailDistance,
       edgeGlowOpacity: isCenterSpineHero ? 0.24 : isHeroComposition ? 0.2 : isTowerFamily ? (isHeroTowerSocket ? 0.12 : isMidTowerSocket ? 0.1 : 0.05) : tier === 'hero' ? 0.16 : tier === 'elite' ? 0.12 : 0.1,
@@ -305,7 +307,7 @@ export function buildZoneScreenAssignmentPlan(args: {
       showCenterTitleDistance: detailDistance,
       subtitleDistance,
       tierAccent,
-      topStripWidth: isCenterSpineHero ? frameWidth * 0.86 : isHeroComposition ? frameWidth * 0.78 : isHeroTowerSocket ? frameWidth * 0.6 : semantic.mode === 'beacon' ? frameWidth * 0.4 : semantic.mode === 'signal' ? frameWidth * 0.52 : frameWidth * 0.66,
+      topStripWidth: isCenterSpineHero ? frameWidth * 0.86 : isHeroComposition ? frameWidth * 0.78 : isRearCampusWall ? frameWidth * 0.82 : isHeroTowerSocket ? frameWidth * 0.6 : semantic.mode === 'beacon' ? frameWidth * 0.4 : semantic.mode === 'signal' ? frameWidth * 0.52 : frameWidth * 0.66,
     } satisfies NonNullable<CityScreenAssignment['renderIntent']>;
 
     return [{

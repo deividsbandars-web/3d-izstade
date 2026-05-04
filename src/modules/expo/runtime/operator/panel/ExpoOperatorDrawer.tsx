@@ -228,7 +228,7 @@ export function ExpoOperatorDrawer({
 
       <div style={{ fontSize: '0.72rem', color: '#cbd5e1', fontWeight: 700, lineHeight: 1.45 }}>
         <div>MODE: {mode}</div>
-        <div>ACTIVE ZONE: {activeZoneId || 'none'}</div>
+        <div>WALK ZONE: {activeZoneId || 'none'}</div>
         <div>FOCUS: {focusedSlug || 'none'}</div>
         <div>NAME: {focusedName || 'free roam'}</div>
         <div>TIER: {(focusedTier || 'none').toUpperCase()}</div>

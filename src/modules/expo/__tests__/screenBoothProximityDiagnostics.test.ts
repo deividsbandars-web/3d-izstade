@@ -55,7 +55,7 @@ const thresholdEdgeBooth = {
   localFootprint: buildExpoBoothLocalFootprint({
     boothType: 'standard',
     nodeType: 'standard_right',
-    position: [45, 0, -120],
+    position: [47, 0, -120],
     rotation: [0, 0, 0],
     sponsorTier: 'silver',
   }),

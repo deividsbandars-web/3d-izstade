@@ -252,8 +252,22 @@ try {
 
   Ensure-ExpoWorldReady -Ws $ws
 
+  # Warm up one render pass to avoid occasional black first capture frame.
+  if ($Zones.Count -gt 0) {
+    $warmupZoneId = $Zones[0]
+    [void](Eval-Expr -Ws $ws -Expression @"
+(async () => {
+  const api = window.__WARPALA_EXPO_REVIEW_OPERATOR__;
+  await api.reviewZone('$($warmupZoneId.Replace('\', '\\').Replace("'", "\'"))');
+  return true;
+})()
+"@)
+    Start-Sleep -Milliseconds 900
+  }
+
   $manifest = @()
-  foreach ($zoneId in $Zones) {
+  for ($zoneIndex = 0; $zoneIndex -lt $Zones.Count; $zoneIndex++) {
+    $zoneId = $Zones[$zoneIndex]
     [void](Eval-Expr -Ws $ws -Expression @"
 (async () => {
   const api = window.__WARPALA_EXPO_REVIEW_OPERATOR__;
@@ -276,12 +290,21 @@ try {
 
     $snapshot = Get-OperatorSnapshot -Ws $ws
     Set-OverlayVisibility -Ws $ws -Visible $false
-    Start-Sleep -Milliseconds 120
+    Start-Sleep -Milliseconds 320
 
     $screenshot = Invoke-Cdp -Ws $ws -Method 'Page.captureScreenshot' -Params @{
       format = 'png'
       captureBeyondViewport = $false
       fromSurface = $true
+    }
+    if ($zoneIndex -eq 0) {
+      # First zone can still produce a black frame on some runs; capture a second frame and keep that.
+      Start-Sleep -Milliseconds 240
+      $screenshot = Invoke-Cdp -Ws $ws -Method 'Page.captureScreenshot' -Params @{
+        format = 'png'
+        captureBeyondViewport = $false
+        fromSurface = $true
+      }
     }
     Set-OverlayVisibility -Ws $ws -Visible $true
 

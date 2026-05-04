@@ -1,5 +1,6 @@
 import type { SponsorBoothTemplate } from '../lib/sponsorBoothPresentation';
 import type { ExpoDistrictExpressionMode } from '../lib/boulevardLayout';
+import { EXPO_BOOTH_LOCAL_FOOTPRINT_SIZE } from '../../../shared/expo/lib/boothLocalFootprint';
 
 export type BoothArchitectureMetrics = {
   badgePosition: [number, number, number];
@@ -37,9 +38,9 @@ export type BoothArchitectureContractBaseline = {
 const METRICS: Record<SponsorBoothTemplate, BoothArchitectureMetrics> = {
   hero_forum: {
     badgePosition: [0, 18.8, -5.5],
-    colliderSize: [28, 18, 20],
+    colliderSize: [31, 18, 22],
     ctaPosition: [0, 1.45, 6.6],
-    footprintSize: [36, 26],
+    footprintSize: [EXPO_BOOTH_LOCAL_FOOTPRINT_SIZE.hero.width, EXPO_BOOTH_LOCAL_FOOTPRINT_SIZE.hero.depth],
     insertPosition: [0, 0.2, -3.4],
     insertScale: 2.2,
     logoPanelPosition: [9.8, 10.2, 4.8],
@@ -51,9 +52,9 @@ const METRICS: Record<SponsorBoothTemplate, BoothArchitectureMetrics> = {
   },
   hero_gallery: {
     badgePosition: [0, 19.8, -7.1],
-    colliderSize: [24, 18, 18],
+    colliderSize: [28, 18, 21],
     ctaPosition: [0, 1.6, 6.4],
-    footprintSize: [34, 26],
+    footprintSize: [EXPO_BOOTH_LOCAL_FOOTPRINT_SIZE.hero.width, EXPO_BOOTH_LOCAL_FOOTPRINT_SIZE.hero.depth],
     insertPosition: [0, 0.24, -3.6],
     insertScale: 2.4,
     logoPanelPosition: [-7.4, 10.4, 3.8],
@@ -65,9 +66,9 @@ const METRICS: Record<SponsorBoothTemplate, BoothArchitectureMetrics> = {
   },
   premium_portal: {
     badgePosition: [0, 15.1, -3.9],
-    colliderSize: [24, 17, 17],
+    colliderSize: [27, 17, 19],
     ctaPosition: [0, 1.55, 5.8],
-    footprintSize: [30, 21],
+    footprintSize: [EXPO_BOOTH_LOCAL_FOOTPRINT_SIZE.premium.width, EXPO_BOOTH_LOCAL_FOOTPRINT_SIZE.premium.depth],
     insertPosition: [0, 0.16, -2.2],
     insertScale: 2,
     logoPanelPosition: [7.8, 9.9, 3.8],
@@ -79,9 +80,9 @@ const METRICS: Record<SponsorBoothTemplate, BoothArchitectureMetrics> = {
   },
   premium_spine: {
     badgePosition: [0, 15.6, -5.2],
-    colliderSize: [23, 17, 16],
+    colliderSize: [26, 17, 18.5],
     ctaPosition: [0, 1.55, 6.4],
-    footprintSize: [32, 22],
+    footprintSize: [EXPO_BOOTH_LOCAL_FOOTPRINT_SIZE.premium.width, EXPO_BOOTH_LOCAL_FOOTPRINT_SIZE.premium.depth],
     insertPosition: [-2.6, 0.2, -2.2],
     insertScale: 2.05,
     logoPanelPosition: [-8.4, 11.2, 4.2],
@@ -93,9 +94,9 @@ const METRICS: Record<SponsorBoothTemplate, BoothArchitectureMetrics> = {
   },
   standard_arcade: {
     badgePosition: [0, 12.1, -2.3],
-    colliderSize: [17, 12.2, 12],
+    colliderSize: [18.5, 12.2, 13.2],
     ctaPosition: [0, 1.35, 3.8],
-    footprintSize: [20, 15.5],
+    footprintSize: [EXPO_BOOTH_LOCAL_FOOTPRINT_SIZE.standard.width, EXPO_BOOTH_LOCAL_FOOTPRINT_SIZE.standard.depth],
     insertPosition: [0, 0.14, -1.5],
     insertScale: 1.42,
     logoPanelPosition: [0, 8.2, 3.6],
@@ -107,9 +108,9 @@ const METRICS: Record<SponsorBoothTemplate, BoothArchitectureMetrics> = {
   },
   standard_studio: {
     badgePosition: [0, 12.4, -2.4],
-    colliderSize: [16.5, 11.6, 11.4],
+    colliderSize: [18.2, 11.6, 12.8],
     ctaPosition: [0, 1.45, 3.6],
-    footprintSize: [20, 15.5],
+    footprintSize: [EXPO_BOOTH_LOCAL_FOOTPRINT_SIZE.standard.width, EXPO_BOOTH_LOCAL_FOOTPRINT_SIZE.standard.depth],
     insertPosition: [0, 0.12, -1.8],
     insertScale: 1.46,
     logoPanelPosition: [0, 8.15, 3.8],

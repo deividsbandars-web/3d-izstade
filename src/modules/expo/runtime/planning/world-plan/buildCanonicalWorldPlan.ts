@@ -321,7 +321,8 @@ export function buildCanonicalWorldPlan(inputs: ExpoPlanningInputs): CanonicalWo
   const filteredTowerLandmarks = cityZones
     .flatMap((zone) => zone.towers)
     .map((tower) => withTowerSections(tower, geometry.stadiumReserve))
-    .filter((tower) => !tower.renderIntent?.hidden && !tower.renderIntent?.skipBase);
+    .filter((tower) => !tower.renderIntent?.hidden && !tower.renderIntent?.skipBase)
+    .filter((tower) => !overlapsStadiumReserve(tower.position, geometry.stadiumReserve, tower.baseSize));
   const filteredScreenSurfaces = flattenZoneScreenSurfaces(zones, { includeRearCampus: false })
     .map(withSurfaceSections)
     .filter((surface) => surface.renderIntent?.visible !== false && !overlapsStadiumReserve(surface.position, geometry.stadiumReserve, surface.size));
@@ -332,13 +333,16 @@ export function buildCanonicalWorldPlan(inputs: ExpoPlanningInputs): CanonicalWo
   const screenAssignments = flattenZoneScreenAssignments(zones, { includeRearCampus: false })
     .map((assignment) => withAssignmentIntent(assignment, screenSockets.find((socket) => socket.id === assignment.socketId)))
     .filter((assignment) => visibleSocketIds.has(assignment.socketId));
+  const filteredCityPlanes = cityPlanes
+    .filter(shouldRenderPlane)
+    .filter((plane) => !overlapsStadiumReserve(plane.position, geometry.stadiumReserve, plane.size));
 
   return {
     arrivalPlanes: arrivalZone.planes.map(withSections).filter(shouldRenderPlane),
     arrivalZone,
     boothForecourtPlanes: pickZonePlanes(cityPlanes, (plane) => plane.id.includes('booth-forecourt') && shouldRenderPlane(plane)),
     districtStride: inputs.districtStride,
-    filteredCityPlanes: cityPlanes.filter(shouldRenderPlane),
+    filteredCityPlanes,
     filteredMasses,
     filteredScreenSurfaces,
     filteredTowerLandmarks,

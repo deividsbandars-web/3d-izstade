@@ -58,30 +58,40 @@ const HIDDEN_REAR_CAMPUS_FORECOURT_IDS = new Set([
 ]);
 
 const HIDDEN_REAR_CAMPUS_PAVILION_IDS = new Set([
-  'rear-campus-side-pavilion-left-front',
   'rear-campus-side-pavilion-left-rear',
-  'rear-campus-event-pavilion-left',
-  'rear-campus-axis-gallery-left',
-  'rear-campus-axis-front-left',
-  'rear-campus-event-pavilion-right',
-  'rear-campus-axis-gallery-right',
-  'rear-campus-side-pavilion-right-front',
   'rear-campus-side-pavilion-right-rear',
-  'rear-campus-axis-front-right',
 ]);
 
 const HIDDEN_REAR_CAMPUS_TOWER_IDS = new Set([
-  'rear-campus-landmark-left',
-  'rear-campus-landmark-right',
   'rear-campus-landmark-center-left',
   'rear-campus-landmark-center-right',
 ]);
 
+export const DEFAULT_REAR_CAMPUS_CENTER_Z = -2880;
+const REAR_CAMPUS_FRONT_ANCHOR_MAX_OFFSET_Z = 1540;
+
+export function resolveRearCampusAnchoredZ(campusCenterZ: number, defaultZ: number) {
+  const defaultOffsetZ = defaultZ - DEFAULT_REAR_CAMPUS_CENTER_Z;
+  return campusCenterZ + Math.min(defaultOffsetZ, REAR_CAMPUS_FRONT_ANCHOR_MAX_OFFSET_Z);
+}
+
 export function buildRearCampusMetrics(boothPlacements: ExpoBoothPlacement[]) {
-  const footprint = boothPlacements[0]?.layoutFootprint;
-  const minZ = footprint?.minZ ?? -1400;
+  const footprintMinZ = boothPlacements.reduce<number>((acc, placement) => {
+    const minZ = placement.layoutFootprint?.minZ;
+    return typeof minZ === 'number' ? Math.min(acc, minZ) : acc;
+  }, Number.POSITIVE_INFINITY);
+
+  const placementMinZ = boothPlacements.reduce<number>((acc, placement) => (
+    Array.isArray(placement.position) ? Math.min(acc, placement.position[2] ?? acc) : acc
+  ), Number.POSITIVE_INFINITY);
+
+  const minZ = Number.isFinite(footprintMinZ)
+    ? footprintMinZ
+    : Number.isFinite(placementMinZ)
+      ? placementMinZ
+      : -1400;
   const routeEndZ = minZ - 720;
-  const campusCenterZ = minZ - 1480;
+  const campusCenterZ = boothPlacements.length > 0 ? minZ - 1480 : DEFAULT_REAR_CAMPUS_CENTER_Z;
   const stadiumBackWallZ = campusCenterZ - 1520;
 
   return {

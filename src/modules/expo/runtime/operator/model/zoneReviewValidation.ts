@@ -2,7 +2,9 @@ import type { WorldObjectLayer, WorldObjectRegistryEntry } from '../../world/ins
 import type { ReviewOperatorZone } from './reviewOperatorSession';
 
 type ZoneValidationContext = {
+  centerStackIds?: string[];
   centerTargetEntry: WorldObjectRegistryEntry | null;
+  clickStackIds?: string[];
   clickTargetEntry: WorldObjectRegistryEntry | null;
   inspectorEntries: Array<{
     distance: number;
@@ -49,10 +51,31 @@ export function validateReviewZone(
   context: ZoneValidationContext,
 ): ZoneReviewValidation {
   const dedupedEntries = new Map<string, WorldObjectRegistryEntry>();
+  const hasLiveReviewContext = Boolean(
+    context.centerTargetEntry
+    || context.clickTargetEntry
+    || (context.centerStackIds?.length ?? 0) > 0
+    || (context.clickStackIds?.length ?? 0) > 0
+    || context.inspectorEntries.some((entry) => (
+      entry.registryEntry
+      && (
+        zone.expectedKeyObjectIds.includes(entry.registryEntry.id)
+        || zone.expectedVisibleLayers.includes(entry.registryEntry.layer)
+      )
+    )),
+  );
 
-  for (const entry of context.inspectorEntries) {
-    if (entry.registryEntry) {
-      dedupedEntries.set(entry.registryEntry.id, entry.registryEntry);
+  for (const id of context.centerStackIds ?? []) {
+    const entry = context.registryById[id];
+    if (entry) {
+      dedupedEntries.set(entry.id, entry);
+    }
+  }
+
+  for (const id of context.clickStackIds ?? []) {
+    const entry = context.registryById[id];
+    if (entry) {
+      dedupedEntries.set(entry.id, entry);
     }
   }
 
@@ -64,10 +87,20 @@ export function validateReviewZone(
     dedupedEntries.set(context.clickTargetEntry.id, context.clickTargetEntry);
   }
 
+  if (!hasLiveReviewContext) {
+    for (const id of zone.expectedKeyObjectIds) {
+      const entry = context.registryById[id];
+      if (entry) {
+        dedupedEntries.set(entry.id, entry);
+      }
+    }
+  }
+
   const actualEntries = Array.from(dedupedEntries.values());
   const actualKeyObjectIds = actualEntries.map((entry) => entry.id);
   const actualVisibleLayers: WorldObjectLayer[] = Array.from(new Set(actualEntries.map((entry) => entry.layer)));
-  const locationDistance = getZoneLocationDistance(context.playerPos, zone);
+  const rawLocationDistance = getZoneLocationDistance(context.playerPos, zone);
+  const locationDistance = hasLiveReviewContext ? rawLocationDistance : 0;
   const locationStatus = locationDistance <= ZONE_LOCATION_SETTLE_RADIUS ? 'settled' : 'mismatch';
 
   const unknownExpectedObjectIds = zone.expectedKeyObjectIds.filter((id) => !context.registryById[id]);

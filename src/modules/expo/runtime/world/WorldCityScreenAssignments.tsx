@@ -95,6 +95,8 @@ export function WorldCityScreenAssignments({
   const navigate = useNavigate();
   const [hoveredAssignmentId, setHoveredAssignmentId] = useState<string | null>(null);
   const socketById = new Map(sockets.map((socket) => [socket.id, socket]));
+  const operatorReviewEnabled =
+    typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('operator') === '1';
 
   useEffect(() => () => {
     if (typeof document !== 'undefined') {
@@ -125,7 +127,7 @@ export function WorldCityScreenAssignments({
         const distance = Math.sqrt(distanceSq);
         const intent = assignment.renderIntent;
         const maxDistance = intent?.maxDistance ?? 980;
-        if (distanceSq > maxDistance * maxDistance) {
+        if (!operatorReviewEnabled && distanceSq > maxDistance * maxDistance) {
           return null;
         }
 

@@ -175,7 +175,7 @@ assert.doesNotThrow(() => JSON.stringify(snapshot));
 
 const seamSnapshot = buildExpoReviewOperatorSnapshot({
   activeZoneId: 'stadium-feed-axis',
-  centerStack: ['rear-campus-bowl-feed-surface', 'city-ground-seam', 'stadium-ground-seam'],
+  centerStack: ['rear-campus-bowl-feed-surface', 'stadium-custom-feed-1', 'city-ground-seam', 'stadium-ground-seam'],
   centerTarget: 'rear-campus-bowl-feed-surface',
   clickStack: ['stadium-ground-seam'],
   clickTarget: 'stadium-ground-seam',

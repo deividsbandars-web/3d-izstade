@@ -2,7 +2,7 @@ import {
   buildMediaWallSurfaces,
   buildTowerScreenSurfaces,
 } from '../legacy/worldCityGeometry';
-import { buildRearCampusSidePavilions } from '../../world/ExpoRearCampusLayout';
+import { buildRearCampusSidePavilions, resolveRearCampusAnchoredZ } from '../../world/ExpoRearCampusLayout';
 import type {
   CanonicalPrimitive,
   CityScreenSurface,
@@ -292,14 +292,15 @@ function buildRearCampusScreenSurfaces(
   landmarkTowers: RearCampusLandmarkTower[],
   campusCenterZ: number
 ): CityScreenSurface[] {
+  const rearCampusZ = (defaultZ: number) => resolveRearCampusAnchoredZ(campusCenterZ, defaultZ);
   const leftTower = landmarkTowers.find((tower) => tower.id.includes('left')) ?? null;
   const rightTower = landmarkTowers.find((tower) => tower.id.includes('right')) ?? null;
 
   const bowlSurface: CityScreenSurface = {
     id: 'rear-campus-bowl-feed-surface',
-    position: [0, 318, campusCenterZ - 1274],
-    rotation: [0, Math.PI, 0],
-    size: [1110, 214, 4.4],
+    position: [0, 292, campusCenterZ - 1218],
+    rotation: [0, 0, 0],
+    size: [720, 168, 4.2],
     color: '#08111c',
     glowColor: '#7dd3fc',
     role: 'hero-wall',
@@ -310,9 +311,9 @@ function buildRearCampusScreenSurfaces(
     .filter((tower): tower is RearCampusLandmarkTower => tower !== null)
     .map((tower): CityScreenSurface => ({
       id: `${tower.id}-rear-campus-feed-surface`,
-      position: [tower.position[0], 398, tower.position[2] + 30],
-      rotation: [0, Math.PI, 0],
-      size: [210, 124, 3.6],
+      position: [tower.position[0], 412, tower.position[2] + 104],
+      rotation: [0, 0, 0],
+      size: [264, 152, 3.8],
       color: '#091320',
       glowColor: '#93c5fd',
       role: 'support-wall',
@@ -331,7 +332,7 @@ function buildRearCampusScreenSurfaces(
   }): CityScreenSurface => ({
     id: args.id,
     position: args.position,
-    rotation: [0, Math.PI, 0],
+    rotation: [0, 0, 0],
     size: [args.width, args.height, args.depth],
     color: '#0c1724',
     glowColor: args.glowColor,
@@ -361,7 +362,7 @@ function buildRearCampusScreenSurfaces(
         pavilion.size[1] * args.elevationScale,
         pavilion.position[2] + zOffset,
       ],
-      rotation: [0, Math.PI, 0],
+      rotation: [0, args.frontFace === 'positive-z' ? 0 : Math.PI, 0],
       size: [
         Math.max(38, pavilion.size[0] * args.widthScale),
         Math.max(22, pavilion.size[1] * args.heightScale),
@@ -373,8 +374,95 @@ function buildRearCampusScreenSurfaces(
       type: 'wall',
     } satisfies CityScreenSurface;
   };
+  const buildCenterIslandSurface = (args: {
+    glowColor: string;
+    id: string;
+    width: number;
+    height: number;
+    depth: number;
+    y: number;
+    zOffset: number;
+  }): CityScreenSurface => ({
+    id: args.id,
+    position: [0, args.y, campusCenterZ + args.zOffset],
+    rotation: [0, 0, 0],
+    size: [args.width, args.height, args.depth],
+    color: '#0c1724',
+    glowColor: args.glowColor,
+    role: 'support-wall',
+    type: 'wall',
+  });
 
   const campusFrontSupportSurfaces = [
+    buildCenterIslandSurface({
+      id: 'rear-campus-center-event-island-feed-surface',
+      glowColor: '#67e8f9',
+      width: 292,
+      height: 128,
+      depth: 3,
+      y: 142,
+      zOffset: -1212,
+    }),
+    buildPavilionSurface({
+      id: 'rear-campus-event-pavilion-left-feed-surface',
+      sourceId: 'rear-campus-event-pavilion-left',
+      glowColor: '#93c5fd',
+      widthScale: 0.82,
+      heightScale: 0.72,
+      depth: 2.6,
+      elevationScale: 0.84,
+      frontFace: 'positive-z',
+    }),
+    buildPavilionSurface({
+      id: 'rear-campus-event-pavilion-right-feed-surface',
+      sourceId: 'rear-campus-event-pavilion-right',
+      glowColor: '#93c5fd',
+      widthScale: 0.82,
+      heightScale: 0.72,
+      depth: 2.6,
+      elevationScale: 0.84,
+      frontFace: 'positive-z',
+    }),
+    buildPavilionSurface({
+      id: 'rear-campus-axis-gallery-left-feed-surface',
+      sourceId: 'rear-campus-axis-gallery-left',
+      glowColor: '#bfdbfe',
+      widthScale: 0.74,
+      heightScale: 0.66,
+      depth: 2.4,
+      elevationScale: 0.82,
+      frontFace: 'positive-z',
+    }),
+    buildPavilionSurface({
+      id: 'rear-campus-axis-gallery-right-feed-surface',
+      sourceId: 'rear-campus-axis-gallery-right',
+      glowColor: '#bfdbfe',
+      widthScale: 0.74,
+      heightScale: 0.66,
+      depth: 2.4,
+      elevationScale: 0.82,
+      frontFace: 'positive-z',
+    }),
+    buildPavilionSurface({
+      id: 'rear-campus-axis-front-left-feed-surface',
+      sourceId: 'rear-campus-axis-front-left',
+      glowColor: '#a5f3fc',
+      widthScale: 0.76,
+      heightScale: 0.72,
+      depth: 2.3,
+      elevationScale: 0.88,
+      frontFace: 'positive-z',
+    }),
+    buildPavilionSurface({
+      id: 'rear-campus-axis-front-right-feed-surface',
+      sourceId: 'rear-campus-axis-front-right',
+      glowColor: '#a5f3fc',
+      widthScale: 0.76,
+      heightScale: 0.72,
+      depth: 2.3,
+      elevationScale: 0.88,
+      frontFace: 'positive-z',
+    }),
     buildPavilionSurface({
       id: 'rear-campus-axis-terminal-left-feed-surface',
       sourceId: 'rear-campus-terminal-left',
@@ -383,7 +471,7 @@ function buildRearCampusScreenSurfaces(
       heightScale: 0.58,
       depth: 2.2,
       elevationScale: 0.82,
-      frontFace: 'negative-z',
+      frontFace: 'positive-z',
     }),
     buildPavilionSurface({
       id: 'rear-campus-axis-terminal-right-feed-surface',
@@ -393,7 +481,7 @@ function buildRearCampusScreenSurfaces(
       heightScale: 0.58,
       depth: 2.2,
       elevationScale: 0.82,
-      frontFace: 'negative-z',
+      frontFace: 'positive-z',
     }),
     buildPavilionSurface({
       id: 'rear-campus-axis-kiosk-left-feed-surface',
@@ -403,7 +491,7 @@ function buildRearCampusScreenSurfaces(
       heightScale: 0.58,
       depth: 2.2,
       elevationScale: 0.82,
-      frontFace: 'negative-z',
+      frontFace: 'positive-z',
     }),
     buildPavilionSurface({
       id: 'rear-campus-axis-kiosk-right-feed-surface',
@@ -413,14 +501,14 @@ function buildRearCampusScreenSurfaces(
       heightScale: 0.58,
       depth: 2.2,
       elevationScale: 0.82,
-      frontFace: 'negative-z',
+      frontFace: 'positive-z',
     }),
   ].filter((surface): surface is CityScreenSurface => surface !== null);
 
   const megaHostSurfaces: CityScreenSurface[] = [
     buildMegaHostSurface({
       id: 'rear-campus-stage-monolith-canopy-host-surface',
-      position: [47, 126, -2926],
+      position: [47, 126, rearCampusZ(-2926)],
       width: 308,
       height: 136,
       depth: 4.2,
@@ -429,7 +517,7 @@ function buildRearCampusScreenSurfaces(
     }),
     buildMegaHostSurface({
       id: 'rear-campus-grand-prism-citadel-host-surface',
-      position: [-999, 228, -1804],
+      position: [-999, 228, rearCampusZ(-1804)],
       width: 168,
       height: 286,
       depth: 3.4,
@@ -437,16 +525,16 @@ function buildRearCampusScreenSurfaces(
     }),
     buildMegaHostSurface({
       id: 'rear-campus-mega-civic-hall-host-surface',
-      position: [-2490, 156, -3518],
-      width: 356,
-      height: 168,
-      depth: 4,
+      position: [-2490, 168, rearCampusZ(-3488)],
+      width: 428,
+      height: 194,
+      depth: 4.2,
       glowColor: '#7dd3fc',
       role: 'hero-wall',
     }),
     buildMegaHostSurface({
       id: 'rear-campus-sky-slab-tower-host-surface',
-      position: [1087, 438, -1268],
+      position: [1087, 438, rearCampusZ(-1268)],
       width: 174,
       height: 84,
       depth: 3,
@@ -454,10 +542,10 @@ function buildRearCampusScreenSurfaces(
     }),
     buildMegaHostSurface({
       id: 'rear-campus-needle-crown-skyscraper-host-surface',
-      position: [892, 396, -549],
-      width: 66,
-      height: 86,
-      depth: 2.8,
+      position: [892, 408, rearCampusZ(-534)],
+      width: 82,
+      height: 108,
+      depth: 3,
       glowColor: '#a5f3fc',
     }),
   ];
