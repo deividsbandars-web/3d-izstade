@@ -2,6 +2,7 @@ param(
   [string]$BrowserJsonUrl = 'http://127.0.0.1:9230/json',
   [string]$SiteUrl = 'http://localhost:5173/expo-3d?operator=1',
   [string]$OutputRoot = 'C:\3d\tmp-full-city-clean-pass',
+  [string]$VercelProtectionBypass = '',
   [switch]$FixSafe,
   [int]$SmallScreenshotBytes = 120000
 )
@@ -85,13 +86,17 @@ try {
 }
 
 Write-Host "[full-city-clean-pass] running operator review..."
-Invoke-Checked -FilePath 'powershell' -Arguments @(
+$reviewArgs = @(
   '-ExecutionPolicy', 'Bypass',
   '-File', $reviewScript,
   '-BrowserJsonUrl', $BrowserJsonUrl,
   '-SiteUrl', $SiteUrl,
   '-OutputPath', $reviewPath
 )
+if ($VercelProtectionBypass.Trim()) {
+  $reviewArgs += @('-VercelProtectionBypass', $VercelProtectionBypass.Trim())
+}
+Invoke-Checked -FilePath 'powershell' -Arguments $reviewArgs
 
 $reviewRaw = Get-Content -LiteralPath $reviewPath -Raw | ConvertFrom-Json
 if (-not $reviewRaw -or $reviewRaw.Count -eq 0) {
@@ -104,10 +109,15 @@ if ($zoneIds.Count -eq 0) {
 }
 
 Write-Host "[full-city-clean-pass] capturing zone screenshots for $($zoneIds.Count) zones..."
+$captureCommand = "& '$captureScript' -BrowserJsonUrl '$BrowserJsonUrl' -SiteUrl '$SiteUrl' -OutputDir '$screensDir' -Zones @('$($zoneIds -join "','")')"
+if ($VercelProtectionBypass.Trim()) {
+  $escapedBypass = $VercelProtectionBypass.Trim().Replace("'", "''")
+  $captureCommand = "& '$captureScript' -BrowserJsonUrl '$BrowserJsonUrl' -SiteUrl '$SiteUrl' -OutputDir '$screensDir' -VercelProtectionBypass '$escapedBypass' -Zones @('$($zoneIds -join "','")')"
+}
 Invoke-Checked -FilePath 'powershell' -Arguments @(
   '-ExecutionPolicy', 'Bypass',
   '-Command',
-  "& '$captureScript' -BrowserJsonUrl '$BrowserJsonUrl' -SiteUrl '$SiteUrl' -OutputDir '$screensDir' -Zones @('$($zoneIds -join "','")')"
+  $captureCommand
 )
 
 $byZone = @{}

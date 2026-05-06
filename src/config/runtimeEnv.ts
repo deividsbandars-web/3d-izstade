@@ -135,7 +135,7 @@ function deriveHostedApiBaseUrl() {
   }
 
   const hostname = resolvedHostname.toLowerCase();
-  if (hostname === 'staging.30sek24.com') {
+  if (hostname === 'staging.30sek24.com' || hostname.endsWith('.vercel.app')) {
     return 'https://api-staging.30sek24.com';
   }
   if (hostname === 'www.30sek24.com' || hostname === '30sek24.com') {
@@ -156,7 +156,7 @@ function deriveHostedSupabaseUrl() {
   }
 
   const hostname = resolvedHostname.toLowerCase();
-  if (hostname === 'staging.30sek24.com') {
+  if (hostname === 'staging.30sek24.com' || hostname.endsWith('.vercel.app')) {
     return HOSTED_SUPABASE_URL;
   }
   if (hostname === 'www.30sek24.com' || hostname === '30sek24.com') {
@@ -177,7 +177,7 @@ function deriveHostedSupabaseAnonKey() {
   }
 
   const hostname = resolvedHostname.toLowerCase();
-  if (hostname === 'staging.30sek24.com') {
+  if (hostname === 'staging.30sek24.com' || hostname.endsWith('.vercel.app')) {
     return HOSTED_SUPABASE_ANON_KEY;
   }
   if (hostname === 'www.30sek24.com' || hostname === '30sek24.com') {

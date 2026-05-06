@@ -2,6 +2,7 @@ param(
   [string]$BrowserJsonUrl = 'http://127.0.0.1:9230/json',
   [string]$SiteUrl = 'https://www.30sek24.com/expo-3d?operator=1',
   [string]$OutputPath = 'C:\3d\tmp-expo-zone-review.json',
+  [string]$VercelProtectionBypass = '',
   [Parameter(Position = 4, ValueFromRemainingArguments = $true)]
   [string[]]$Zones = @()
 )
@@ -111,6 +112,20 @@ function Eval-Expr {
   }
 }
 
+function Set-RequestBypassHeaders {
+  param([System.Net.WebSockets.ClientWebSocket]$Ws)
+
+  if (-not $VercelProtectionBypass.Trim()) {
+    return
+  }
+
+  [void](Invoke-Cdp -Ws $Ws -Method 'Network.setExtraHTTPHeaders' -Params @{
+    headers = @{
+      'x-vercel-protection-bypass' = $VercelProtectionBypass.Trim()
+    }
+  })
+}
+
 function Wait-ForOperatorApi {
   param([System.Net.WebSockets.ClientWebSocket]$Ws)
 
@@ -213,6 +228,7 @@ try {
   [void](Invoke-Cdp -Ws $ws -Method 'Page.enable' -Params @{})
   [void](Invoke-Cdp -Ws $ws -Method 'Runtime.enable' -Params @{})
   [void](Invoke-Cdp -Ws $ws -Method 'Network.enable' -Params @{})
+  Set-RequestBypassHeaders -Ws $ws
   [void](Invoke-Cdp -Ws $ws -Method 'Emulation.setDeviceMetricsOverride' -Params @{
     width = 1600
     height = 960

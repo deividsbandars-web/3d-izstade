@@ -2,6 +2,7 @@ param(
   [string]$BrowserJsonUrl = 'http://127.0.0.1:9230/json',
   [string]$SiteUrl = 'http://localhost:5173/expo-3d?operator=1',
   [string]$OutputDir = 'C:\3d\tmp-expo-zone-shots',
+  [string]$VercelProtectionBypass = '',
   [string[]]$Zones = @('left-marquee', 'right-marquee', 'center-spine', 'sponsor-boulevard-left', 'sponsor-boulevard-right')
 )
 
@@ -95,6 +96,20 @@ function Eval-Expr {
     returnByValue = $true
     awaitPromise = $true
   }
+}
+
+function Set-RequestBypassHeaders {
+  param([System.Net.WebSockets.ClientWebSocket]$Ws)
+
+  if (-not $VercelProtectionBypass.Trim()) {
+    return
+  }
+
+  [void](Invoke-Cdp -Ws $Ws -Method 'Network.setExtraHTTPHeaders' -Params @{
+    headers = @{
+      'x-vercel-protection-bypass' = $VercelProtectionBypass.Trim()
+    }
+  })
 }
 
 function Ensure-OperatorApi {
@@ -243,6 +258,7 @@ try {
   [void](Invoke-Cdp -Ws $ws -Method 'Page.enable' -Params @{})
   [void](Invoke-Cdp -Ws $ws -Method 'Runtime.enable' -Params @{})
   [void](Invoke-Cdp -Ws $ws -Method 'Network.enable' -Params @{})
+  Set-RequestBypassHeaders -Ws $ws
   [void](Invoke-Cdp -Ws $ws -Method 'Emulation.setDeviceMetricsOverride' -Params @{
     width = 1600
     height = 960
