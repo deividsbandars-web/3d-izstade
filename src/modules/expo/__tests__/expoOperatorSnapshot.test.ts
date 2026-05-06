@@ -39,6 +39,7 @@ const stadiumEntry: WorldObjectRegistryEntry = {
 };
 
 const boothEntry: WorldObjectRegistryEntry = {
+  aliases: ['sponsor-concierge'],
   diagnosticOwners: ['boothFrontalityDiagnostics.ts'],
   id: 'booth-1',
   interactionOwner: 'DistrictBooth.tsx',
@@ -138,6 +139,7 @@ const snapshot = buildExpoReviewOperatorSnapshot({
 
 assert.equal(snapshot.registry.totalCount, 3);
 assert.equal(snapshot.registryById['booth-1']?.layer, 'booth');
+assert.equal(snapshot.registryById['sponsor-concierge']?.id, 'booth-1');
 assert.equal(snapshot.diagnostics.booths.frontalityCount, 1);
 assert.equal(snapshot.diagnostics.screens.boothProximityCount, 0);
 assert.equal(snapshot.resolvedTargets.centerTargetEntry?.id, 'city-screen-1');

@@ -228,6 +228,11 @@ const rearCampusPlan: ExpoPlanningZonePlan = {
 
 const boothPlacements = [
   {
+    company: {
+      booth: { id: 'booth-sponsor-concierge' },
+      id: 'company-sponsor-concierge',
+      slug: 'sponsor-concierge',
+    },
     id: 'booth-1',
     position: [40, 0, -80] as [number, number, number],
     sectorId: 'sector-a',
@@ -267,4 +272,5 @@ const boothsBefore = JSON.stringify(boothPlacements);
 const boothRegistry = buildBoothWorldObjectRegistry(boothPlacements);
 assert.equal(JSON.stringify(boothPlacements), boothsBefore);
 assert.deepEqual(boothRegistry.map((entry) => entry.id), ['booth-1']);
+assert.deepEqual(boothRegistry[0]?.aliases, ['sponsor-concierge', 'company-sponsor-concierge', 'booth-sponsor-concierge']);
 assert.equal(boothRegistry[0]?.layer, 'booth');

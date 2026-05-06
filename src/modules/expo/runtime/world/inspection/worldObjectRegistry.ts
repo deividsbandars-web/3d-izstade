@@ -26,6 +26,7 @@ export type WorldObjectLayer =
   | 'stadium-tower';
 
 export type WorldObjectRegistryEntry = {
+  aliases?: string[];
   diagnosticOwners: string[];
   id: string;
   interactionOwner: string | null;
@@ -414,23 +415,41 @@ export function buildStadiumWorldObjectRegistry({
 
 export function buildBoothWorldObjectRegistry(
   boothPlacements: ReadonlyArray<{
+    company?: {
+      booth?: unknown;
+      id?: string | number | null;
+      slug?: string | null;
+    } | null;
     id: string;
     position: [number, number, number];
     sectorId?: string | null;
   }>,
 ): WorldObjectRegistryEntry[] {
-  return boothPlacements.map((placement) => createEntry({
-    diagnosticOwners: [
-      'src/shared/expo/lib/boothFrontalityDiagnostics.ts',
-    ],
-    id: placement.id,
-    interactionOwner: 'src/modules/expo/runtime/booths/DistrictBooth.tsx',
-    layer: 'booth',
-    planningZone: placement.sectorId ?? null,
-    position: placement.position,
-    safeEditSeam: 'src/shared/expo/layoutEngine.ts',
-    sourceFile: 'src/shared/expo/layoutEngine.ts',
-    sourceFunction: 'buildExpoLayoutEngine',
-    sourceKind: 'booth-placement',
-  }));
+  return boothPlacements.map((placement) => {
+    const booth = placement.company?.booth;
+    const boothId = booth && typeof booth === 'object' && 'id' in booth
+      ? String((booth as { id?: string | number | null }).id ?? '')
+      : '';
+    const aliases = Array.from(new Set([
+      placement.company?.slug ?? '',
+      placement.company?.id != null ? String(placement.company.id) : '',
+      boothId,
+    ].map((value) => value.trim()).filter((value) => value && value !== placement.id)));
+
+    return createEntry({
+      aliases: aliases.length > 0 ? aliases : undefined,
+      diagnosticOwners: [
+        'src/shared/expo/lib/boothFrontalityDiagnostics.ts',
+      ],
+      id: placement.id,
+      interactionOwner: 'src/modules/expo/runtime/booths/DistrictBooth.tsx',
+      layer: 'booth',
+      planningZone: placement.sectorId ?? null,
+      position: placement.position,
+      safeEditSeam: 'src/shared/expo/layoutEngine.ts',
+      sourceFile: 'src/shared/expo/layoutEngine.ts',
+      sourceFunction: 'buildExpoLayoutEngine',
+      sourceKind: 'booth-placement',
+    });
+  });
 }

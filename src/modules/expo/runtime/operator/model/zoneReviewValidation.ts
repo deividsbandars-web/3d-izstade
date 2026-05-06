@@ -31,6 +31,10 @@ function getZoneLocationDistance(
   return Math.min(distanceToPosition, distanceToLookAt);
 }
 
+function entryMatchesExpectedId(entry: WorldObjectRegistryEntry, expectedId: string) {
+  return entry.id === expectedId || (entry.aliases ?? []).includes(expectedId);
+}
+
 export type ZoneReviewValidation = {
   actualKeyObjectIds: string[];
   actualVisibleLayers: WorldObjectLayer[];
@@ -59,7 +63,9 @@ export function validateReviewZone(
     || context.inspectorEntries.some((entry) => (
       entry.registryEntry
       && (
-        zone.expectedKeyObjectIds.includes(entry.registryEntry.id)
+        zone.expectedKeyObjectIds.some((expectedId) => (
+          Boolean(entry.registryEntry && entryMatchesExpectedId(entry.registryEntry, expectedId))
+        ))
         || zone.expectedVisibleLayers.includes(entry.registryEntry.layer)
       )
     )),
@@ -104,7 +110,9 @@ export function validateReviewZone(
   const locationStatus = locationDistance <= ZONE_LOCATION_SETTLE_RADIUS ? 'settled' : 'mismatch';
 
   const unknownExpectedObjectIds = zone.expectedKeyObjectIds.filter((id) => !context.registryById[id]);
-  const missingExpectedObjectIds = zone.expectedKeyObjectIds.filter((id) => !actualKeyObjectIds.includes(id));
+  const missingExpectedObjectIds = zone.expectedKeyObjectIds.filter((id) => (
+    !actualEntries.some((entry) => entryMatchesExpectedId(entry, id))
+  ));
   const missingExpectedLayers = zone.expectedVisibleLayers.filter((layer) => !actualVisibleLayers.includes(layer));
   const extraVisibleLayers = actualVisibleLayers.filter((layer) => !zone.expectedVisibleLayers.includes(layer));
   const forbiddenObjectIdsPresent = (zone.forbiddenKeyObjectIds ?? []).filter((id) => actualKeyObjectIds.includes(id));

@@ -199,6 +199,24 @@ function resolveRegistryEntryFromInspectableId(
   return null;
 }
 
+function buildRegistryById(entries: WorldObjectRegistryEntry[]) {
+  const registryById: Record<string, WorldObjectRegistryEntry> = {};
+
+  for (const entry of entries) {
+    registryById[entry.id] = entry;
+  }
+
+  for (const entry of entries) {
+    for (const alias of entry.aliases ?? []) {
+      if (alias && !registryById[alias]) {
+        registryById[alias] = entry;
+      }
+    }
+  }
+
+  return registryById;
+}
+
 function resolveInspectableIdCandidates(
   inspectableIds: string[],
   registryById: Record<string, WorldObjectRegistryEntry>,
@@ -687,9 +705,7 @@ function buildCurrentOperatorZoneState(args: {
     ...args.registryEntries.stadium,
     ...args.registryEntries.booths,
   ];
-  const registryById = Object.fromEntries(
-    allRegistryEntries.map((entry) => [entry.id, entry]),
-  ) as Record<string, WorldObjectRegistryEntry>;
+  const registryById = buildRegistryById(allRegistryEntries);
   const centerTargetEntry = resolveRegistryEntryFromInspectableId(args.centerTarget, registryById);
   const clickTargetEntry = resolveRegistryEntryFromInspectableId(args.clickTarget, registryById);
   const resolvedInspectorEntries = args.inspector.map((entry) => ({
@@ -762,9 +778,7 @@ export function buildExpoReviewOperatorSnapshot(args: {
     ...args.registryEntries.stadium,
     ...args.registryEntries.booths,
   ];
-  const registryById = Object.fromEntries(
-    allRegistryEntries.map((entry) => [entry.id, entry]),
-  ) as Record<string, WorldObjectRegistryEntry>;
+  const registryById = buildRegistryById(allRegistryEntries);
   const resolvedInspectorEntries = args.inspector.map((entry) => ({
     ...entry,
     layer: (resolveRegistryEntryFromInspectableId(entry.id, registryById)?.layer ?? entry.layer) as WorldObjectLayer,

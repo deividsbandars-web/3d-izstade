@@ -17,6 +17,7 @@ const cityScreen: WorldObjectRegistryEntry = {
 };
 
 const booth: WorldObjectRegistryEntry = {
+  aliases: ['sponsor-concierge'],
   diagnosticOwners: [],
   id: 'booth-1',
   interactionOwner: 'DistrictBooth.tsx',
@@ -63,6 +64,28 @@ assert.deepEqual(okValidation.forbiddenObjectIdsPresent, []);
 assert.deepEqual(okValidation.forbiddenExpectedLayersPresent, []);
 assert.deepEqual(okValidation.missingExpectedObjectIds, []);
 assert.deepEqual(okValidation.missingExpectedLayers, []);
+
+const aliasValidation = validateReviewZone({
+  ...zone,
+  expectedKeyObjectIds: ['sponsor-concierge'],
+  expectedVisibleLayers: ['booth'],
+}, {
+  centerTargetEntry: null,
+  clickTargetEntry: booth,
+  inspectorEntries: [
+    { distance: 18, id: 'booth-1', layer: 'booth', registryEntry: booth },
+  ],
+  playerPos: [32, 0, 24],
+  registryById: {
+    'booth-1': booth,
+    'sponsor-concierge': booth,
+  },
+});
+
+assert.equal(aliasValidation.status, 'ok');
+assert.deepEqual(aliasValidation.unknownExpectedObjectIds, []);
+assert.deepEqual(aliasValidation.missingExpectedObjectIds, []);
+assert.deepEqual(aliasValidation.missingExpectedLayers, []);
 
 const warningValidation = validateReviewZone(zone, {
   centerTargetEntry: cityScreen,
