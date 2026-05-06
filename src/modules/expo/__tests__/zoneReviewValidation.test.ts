@@ -30,6 +30,19 @@ const booth: WorldObjectRegistryEntry = {
   sourceKind: 'booth-placement',
 };
 
+const unrelatedMass: WorldObjectRegistryEntry = {
+  diagnosticOwners: [],
+  id: 'city-mass-1',
+  interactionOwner: null,
+  layer: 'city-mass',
+  planningZone: 'canonical-city',
+  position: [20, 0, -120],
+  safeEditSeam: 'buildCanonicalWorldPlan.ts',
+  sourceFile: 'buildCanonicalWorldPlan.ts',
+  sourceFunction: 'buildCanonicalWorldPlan',
+  sourceKind: 'city-mass',
+};
+
 const zone: ReviewOperatorZone = {
   expectedKeyObjectIds: ['city-screen-1'],
   expectedVisibleLayers: ['city-screen-surface', 'booth'],
@@ -86,6 +99,26 @@ assert.equal(aliasValidation.status, 'ok');
 assert.deepEqual(aliasValidation.unknownExpectedObjectIds, []);
 assert.deepEqual(aliasValidation.missingExpectedObjectIds, []);
 assert.deepEqual(aliasValidation.missingExpectedLayers, []);
+
+const unrelatedLiveHitValidation = validateReviewZone({
+  ...zone,
+  expectedVisibleLayers: ['city-screen-surface'],
+}, {
+  centerTargetEntry: unrelatedMass,
+  clickTargetEntry: null,
+  inspectorEntries: [
+    { distance: 8, id: 'city-mass-1', layer: 'city-mass', registryEntry: unrelatedMass },
+  ],
+  playerPos: [32, 0, 24],
+  registryById: {
+    'city-mass-1': unrelatedMass,
+    'city-screen-1': cityScreen,
+  },
+});
+
+assert.equal(unrelatedLiveHitValidation.status, 'ok');
+assert.deepEqual(unrelatedLiveHitValidation.missingExpectedObjectIds, []);
+assert.deepEqual(unrelatedLiveHitValidation.missingExpectedLayers, []);
 
 const warningValidation = validateReviewZone(zone, {
   centerTargetEntry: cityScreen,

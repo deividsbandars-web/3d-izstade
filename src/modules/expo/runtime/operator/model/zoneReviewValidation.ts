@@ -35,6 +35,15 @@ function entryMatchesExpectedId(entry: WorldObjectRegistryEntry, expectedId: str
   return entry.id === expectedId || (entry.aliases ?? []).includes(expectedId);
 }
 
+function entryMatchesReviewSignal(entry: WorldObjectRegistryEntry, zone: ReviewOperatorZone) {
+  return (
+    zone.expectedKeyObjectIds.some((expectedId) => entryMatchesExpectedId(entry, expectedId))
+    || zone.expectedVisibleLayers.includes(entry.layer)
+    || (zone.forbiddenKeyObjectIds ?? []).some((forbiddenId) => entryMatchesExpectedId(entry, forbiddenId))
+    || (zone.forbiddenVisibleLayers ?? []).includes(entry.layer)
+  );
+}
+
 export type ZoneReviewValidation = {
   actualKeyObjectIds: string[];
   actualVisibleLayers: WorldObjectLayer[];
@@ -55,34 +64,29 @@ export function validateReviewZone(
   context: ZoneValidationContext,
 ): ZoneReviewValidation {
   const dedupedEntries = new Map<string, WorldObjectRegistryEntry>();
+  const centerStackEntries = (context.centerStackIds ?? [])
+    .map((id) => context.registryById[id])
+    .filter((entry): entry is WorldObjectRegistryEntry => Boolean(entry));
+  const clickStackEntries = (context.clickStackIds ?? [])
+    .map((id) => context.registryById[id])
+    .filter((entry): entry is WorldObjectRegistryEntry => Boolean(entry));
   const hasLiveReviewContext = Boolean(
-    context.centerTargetEntry
-    || context.clickTargetEntry
-    || (context.centerStackIds?.length ?? 0) > 0
-    || (context.clickStackIds?.length ?? 0) > 0
+    (context.centerTargetEntry && entryMatchesReviewSignal(context.centerTargetEntry, zone))
+    || (context.clickTargetEntry && entryMatchesReviewSignal(context.clickTargetEntry, zone))
+    || centerStackEntries.some((entry) => entryMatchesReviewSignal(entry, zone))
+    || clickStackEntries.some((entry) => entryMatchesReviewSignal(entry, zone))
     || context.inspectorEntries.some((entry) => (
       entry.registryEntry
-      && (
-        zone.expectedKeyObjectIds.some((expectedId) => (
-          Boolean(entry.registryEntry && entryMatchesExpectedId(entry.registryEntry, expectedId))
-        ))
-        || zone.expectedVisibleLayers.includes(entry.registryEntry.layer)
-      )
+      && entryMatchesReviewSignal(entry.registryEntry, zone)
     )),
   );
 
-  for (const id of context.centerStackIds ?? []) {
-    const entry = context.registryById[id];
-    if (entry) {
-      dedupedEntries.set(entry.id, entry);
-    }
+  for (const entry of centerStackEntries) {
+    dedupedEntries.set(entry.id, entry);
   }
 
-  for (const id of context.clickStackIds ?? []) {
-    const entry = context.registryById[id];
-    if (entry) {
-      dedupedEntries.set(entry.id, entry);
-    }
+  for (const entry of clickStackEntries) {
+    dedupedEntries.set(entry.id, entry);
   }
 
   if (context.centerTargetEntry) {
