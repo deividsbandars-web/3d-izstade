@@ -122,6 +122,7 @@ function Set-RequestBypassHeaders {
   [void](Invoke-Cdp -Ws $Ws -Method 'Network.setExtraHTTPHeaders' -Params @{
     headers = @{
       'x-vercel-protection-bypass' = $VercelProtectionBypass.Trim()
+      'x-vercel-set-bypass-cookie' = 'true'
     }
   })
 }
