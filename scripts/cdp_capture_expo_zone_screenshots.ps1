@@ -250,6 +250,96 @@ function Set-OverlayVisibility {
 "@)
 }
 
+function Get-PngQualityStats {
+  param([byte[]]$Bytes)
+
+  $stream = $null
+  $bitmap = $null
+  try {
+    if (-not $script:CaptureQualityDrawingLoaded) {
+      Add-Type -AssemblyName System.Drawing
+      $script:CaptureQualityDrawingLoaded = $true
+    }
+
+    $stream = [System.IO.MemoryStream]::new($Bytes)
+    $bitmap = [System.Drawing.Bitmap]::new($stream)
+    $width = [int]$bitmap.Width
+    $height = [int]$bitmap.Height
+    $stepX = [Math]::Max(1, [int][Math]::Floor($width / 40.0))
+    $stepY = [Math]::Max(1, [int][Math]::Floor($height / 24.0))
+    $startX = [Math]::Min($width - 1, [int][Math]::Floor($stepX / 2))
+    $startY = [Math]::Min($height - 1, [int][Math]::Floor($stepY / 2))
+    $sum = 0.0
+    $sumSquares = 0.0
+    $sampleCount = 0
+    $colorBuckets = @{}
+
+    for ($y = $startY; $y -lt $height; $y += $stepY) {
+      for ($x = $startX; $x -lt $width; $x += $stepX) {
+        $pixel = $bitmap.GetPixel($x, $y)
+        $brightness = ((0.2126 * $pixel.R) + (0.7152 * $pixel.G) + (0.0722 * $pixel.B)) / 255.0
+        $sum += $brightness
+        $sumSquares += ($brightness * $brightness)
+        $sampleCount += 1
+        $bucketKey = "$([int][Math]::Floor($pixel.R / 32))-$([int][Math]::Floor($pixel.G / 32))-$([int][Math]::Floor($pixel.B / 32))"
+        $colorBuckets[$bucketKey] = $true
+      }
+    }
+
+    if ($sampleCount -eq 0) {
+      return @{ brightnessAverage = 0.0; brightnessStdDev = 0.0; colorBucketCount = 0 }
+    }
+
+    $average = $sum / $sampleCount
+    $variance = [Math]::Max(0.0, ($sumSquares / $sampleCount) - ($average * $average))
+
+    return @{
+      brightnessAverage = [Math]::Round($average * 100.0, 2)
+      brightnessStdDev = [Math]::Round([Math]::Sqrt($variance) * 100.0, 2)
+      colorBucketCount = $colorBuckets.Count
+    }
+  } catch {
+    return @{ brightnessAverage = 0.0; brightnessStdDev = 0.0; colorBucketCount = 0 }
+  } finally {
+    if ($bitmap) { $bitmap.Dispose() }
+    if ($stream) { $stream.Dispose() }
+  }
+}
+
+function Capture-StableScreenshotBytes {
+  param([System.Net.WebSockets.ClientWebSocket]$Ws)
+
+  $bestBytes = $null
+  $bestScore = -1.0
+
+  for ($attempt = 0; $attempt -lt 4; $attempt++) {
+    if ($attempt -gt 0) {
+      Start-Sleep -Milliseconds 420
+    }
+
+    $screenshot = Invoke-Cdp -Ws $Ws -Method 'Page.captureScreenshot' -Params @{
+      format = 'png'
+      captureBeyondViewport = $false
+      fromSurface = $true
+    }
+    $bytes = [Convert]::FromBase64String($screenshot.result.data)
+    $stats = Get-PngQualityStats -Bytes $bytes
+    $score = [double]$stats.brightnessStdDev + ([double]$stats.colorBucketCount / 10.0) + ([double]$bytes.Length / 1000000.0)
+
+    if ($score -gt $bestScore) {
+      $bestScore = $score
+      $bestBytes = $bytes
+    }
+
+    $isBlackFrame = [double]$stats.brightnessAverage -lt 2.0 -and [double]$stats.brightnessStdDev -lt 4.0 -and [int]$stats.colorBucketCount -lt 6
+    if (-not $isBlackFrame) {
+      return $bytes
+    }
+  }
+
+  return $bestBytes
+}
+
 New-Item -ItemType Directory -Force -Path $OutputDir | Out-Null
 
 $wsUrl = Resolve-WsUrl -JsonUrl $BrowserJsonUrl -PreferredUrl $SiteUrl
@@ -309,26 +399,12 @@ try {
 
     $snapshot = Get-OperatorSnapshot -Ws $ws
     Set-OverlayVisibility -Ws $ws -Visible $false
-    Start-Sleep -Milliseconds 320
-
-    $screenshot = Invoke-Cdp -Ws $ws -Method 'Page.captureScreenshot' -Params @{
-      format = 'png'
-      captureBeyondViewport = $false
-      fromSurface = $true
-    }
-    if ($zoneIndex -eq 0) {
-      # First zone can still produce a black frame on some runs; capture a second frame and keep that.
-      Start-Sleep -Milliseconds 240
-      $screenshot = Invoke-Cdp -Ws $ws -Method 'Page.captureScreenshot' -Params @{
-        format = 'png'
-        captureBeyondViewport = $false
-        fromSurface = $true
-      }
-    }
+    Start-Sleep -Milliseconds 520
+    $screenshotBytes = Capture-StableScreenshotBytes -Ws $ws
     Set-OverlayVisibility -Ws $ws -Visible $true
 
     $filePath = Join-Path $OutputDir "$zoneId.png"
-    [IO.File]::WriteAllBytes($filePath, [Convert]::FromBase64String($screenshot.result.data))
+    [IO.File]::WriteAllBytes($filePath, $screenshotBytes)
     if ($snapshot) {
       $snapshot | ConvertTo-Json -Depth 30 | Set-Content -Path (Join-Path $OutputDir "$zoneId.snapshot.json") -Encoding UTF8
     }
