@@ -4,7 +4,10 @@ param(
   [string]$OutputRoot = 'C:\3d\tmp-full-city-clean-pass',
   [string]$VercelProtectionBypass = '',
   [switch]$FixSafe,
-  [int]$SmallScreenshotBytes = 120000
+  [switch]$EmitJson,
+  [int]$SmallScreenshotBytes = 120000,
+  [double]$LowDetailBrightnessStdDev = 12.0,
+  [int]$LowDetailColorBuckets = 12
 )
 
 $ErrorActionPreference = 'Stop'
@@ -12,10 +15,15 @@ $ErrorActionPreference = 'Stop'
 function Invoke-Checked {
   param(
     [string]$FilePath,
-    [string[]]$Arguments
+    [string[]]$Arguments,
+    [switch]$SuppressOutput
   )
 
-  & $FilePath @Arguments
+  if ($SuppressOutput.IsPresent) {
+    & $FilePath @Arguments | Out-Null
+  } else {
+    & $FilePath @Arguments
+  }
   if ($LASTEXITCODE -ne 0) {
     throw "Command failed: $FilePath $($Arguments -join ' ')"
   }
@@ -66,6 +74,79 @@ function Resolve-IssueSeverityFromStatus {
   }
 }
 
+function Get-ScreenshotQualityStats {
+  param(
+    [string]$Path,
+    [int]$SampleColumns = 40,
+    [int]$SampleRows = 24
+  )
+
+  $bitmap = $null
+  try {
+    if (-not $script:ScreenshotQualityDrawingLoaded) {
+      Add-Type -AssemblyName System.Drawing
+      $script:ScreenshotQualityDrawingLoaded = $true
+    }
+
+    $bitmap = [System.Drawing.Bitmap]::new($Path)
+    $width = [int]$bitmap.Width
+    $height = [int]$bitmap.Height
+    $stepX = [Math]::Max(1, [int][Math]::Floor($width / [double]$SampleColumns))
+    $stepY = [Math]::Max(1, [int][Math]::Floor($height / [double]$SampleRows))
+    $startX = [Math]::Min($width - 1, [int][Math]::Floor($stepX / 2))
+    $startY = [Math]::Min($height - 1, [int][Math]::Floor($stepY / 2))
+
+    $sum = 0.0
+    $sumSquares = 0.0
+    $sampleCount = 0
+    $colorBuckets = @{}
+
+    for ($y = $startY; $y -lt $height; $y += $stepY) {
+      for ($x = $startX; $x -lt $width; $x += $stepX) {
+        $pixel = $bitmap.GetPixel($x, $y)
+        $brightness = ((0.2126 * $pixel.R) + (0.7152 * $pixel.G) + (0.0722 * $pixel.B)) / 255.0
+        $sum += $brightness
+        $sumSquares += ($brightness * $brightness)
+        $sampleCount += 1
+
+        $bucketKey = "$([int][Math]::Floor($pixel.R / 32))-$([int][Math]::Floor($pixel.G / 32))-$([int][Math]::Floor($pixel.B / 32))"
+        $colorBuckets[$bucketKey] = $true
+      }
+    }
+
+    if ($sampleCount -eq 0) {
+      throw "No pixels sampled from screenshot."
+    }
+
+    $average = $sum / $sampleCount
+    $variance = [Math]::Max(0.0, ($sumSquares / $sampleCount) - ($average * $average))
+
+    return [pscustomobject]@{
+      width = $width
+      height = $height
+      sampleCount = $sampleCount
+      brightnessAverage = [Math]::Round($average * 100.0, 2)
+      brightnessStdDev = [Math]::Round([Math]::Sqrt($variance) * 100.0, 2)
+      colorBucketCount = $colorBuckets.Count
+      error = $null
+    }
+  } catch {
+    return [pscustomobject]@{
+      width = 0
+      height = 0
+      sampleCount = 0
+      brightnessAverage = 0
+      brightnessStdDev = 0
+      colorBucketCount = 0
+      error = $_.Exception.Message
+    }
+  } finally {
+    if ($bitmap) {
+      $bitmap.Dispose()
+    }
+  }
+}
+
 $timestamp = Get-Date -Format 'yyyyMMdd-HHmmss'
 $runDir = Join-Path $OutputRoot $timestamp
 $reviewPath = Join-Path $runDir 'zone-review.json'
@@ -96,7 +177,7 @@ $reviewArgs = @(
 if ($VercelProtectionBypass.Trim()) {
   $reviewArgs += @('-VercelProtectionBypass', $VercelProtectionBypass.Trim())
 }
-Invoke-Checked -FilePath 'powershell' -Arguments $reviewArgs
+Invoke-Checked -FilePath 'powershell' -Arguments $reviewArgs -SuppressOutput
 
 $reviewRaw = Get-Content -LiteralPath $reviewPath -Raw | ConvertFrom-Json
 if (-not $reviewRaw -or $reviewRaw.Count -eq 0) {
@@ -118,7 +199,52 @@ Invoke-Checked -FilePath 'powershell' -Arguments @(
   '-ExecutionPolicy', 'Bypass',
   '-Command',
   $captureCommand
-)
+) -SuppressOutput
+
+$screenshotMetadataByZone = @{}
+$hashZones = @{}
+foreach ($zoneId in $zoneIds) {
+  $screenshotPath = Join-Path $screensDir "$zoneId.png"
+  $screenshotExists = Test-Path -LiteralPath $screenshotPath
+  $screenshotBytes = if ($screenshotExists) { (Get-Item -LiteralPath $screenshotPath).Length } else { 0 }
+  $screenshotHash = $null
+  $quality = $null
+
+  if ($screenshotExists) {
+    try {
+      $screenshotHash = (Get-FileHash -LiteralPath $screenshotPath -Algorithm SHA256).Hash
+    } catch {
+      $screenshotHash = $null
+    }
+
+    $quality = Get-ScreenshotQualityStats -Path $screenshotPath
+
+    if ($screenshotHash) {
+      if (-not $hashZones.ContainsKey($screenshotHash)) {
+        $hashZones[$screenshotHash] = New-Object 'System.Collections.Generic.List[string]'
+      }
+      [void]$hashZones[$screenshotHash].Add([string]$zoneId)
+    }
+  }
+
+  $screenshotMetadataByZone[$zoneId] = [pscustomobject]@{
+    exists = $screenshotExists
+    path = $screenshotPath
+    bytes = $screenshotBytes
+    sha256 = $screenshotHash
+    quality = $quality
+  }
+}
+
+$duplicateScreenshotZonesByZone = @{}
+foreach ($hash in $hashZones.Keys) {
+  $duplicateZones = @($hashZones[$hash])
+  if ($duplicateZones.Count -gt 1) {
+    foreach ($duplicateZone in $duplicateZones) {
+      $duplicateScreenshotZonesByZone[$duplicateZone] = $duplicateZones
+    }
+  }
+}
 
 $byZone = @{}
 $allIssues = New-Object 'System.Collections.Generic.List[object]'
@@ -169,13 +295,31 @@ foreach ($zone in $reviewRaw) {
     }
   }
 
-  $screenshotPath = Join-Path $screensDir "$zoneId.png"
-  $screenshotExists = Test-Path -LiteralPath $screenshotPath
-  $screenshotBytes = if ($screenshotExists) { (Get-Item -LiteralPath $screenshotPath).Length } else { 0 }
+  $screenshotMeta = $screenshotMetadataByZone[$zoneId]
+  $screenshotExists = if ($screenshotMeta) { [bool]$screenshotMeta.exists } else { $false }
+  $screenshotBytes = if ($screenshotMeta) { [int64]$screenshotMeta.bytes } else { 0 }
   if (-not $screenshotExists) {
     Add-UniqueIssue -Target $zoneIssues -Issue (New-Issue -Severity 'critical' -Code 'screenshot-missing' -Message 'Screenshot not captured for zone.')
-  } elseif ($screenshotBytes -lt $SmallScreenshotBytes) {
-    Add-UniqueIssue -Target $zoneIssues -Issue (New-Issue -Severity 'medium' -Code 'screenshot-small' -Message "Screenshot file is small ($screenshotBytes bytes), inspect possible blank/obstructed view.")
+  } else {
+    if ($screenshotBytes -lt $SmallScreenshotBytes) {
+      Add-UniqueIssue -Target $zoneIssues -Issue (New-Issue -Severity 'medium' -Code 'screenshot-small' -Message "Screenshot file is small ($screenshotBytes bytes), inspect possible blank/obstructed view.")
+    }
+
+    $quality = $screenshotMeta.quality
+    if ($quality -and $quality.error) {
+      Add-UniqueIssue -Target $zoneIssues -Issue (New-Issue -Severity 'medium' -Code 'screenshot-analysis-failed' -Message "Screenshot quality analysis failed: $($quality.error)")
+    } elseif ($quality) {
+      $brightnessStdDev = [double]$quality.brightnessStdDev
+      $colorBucketCount = [int]$quality.colorBucketCount
+      if ($brightnessStdDev -lt $LowDetailBrightnessStdDev -or $colorBucketCount -lt $LowDetailColorBuckets) {
+        Add-UniqueIssue -Target $zoneIssues -Issue (New-Issue -Severity 'medium' -Code 'screenshot-low-detail' -Message "Screenshot is low-detail/possibly blank: brightnessStdDev=$brightnessStdDev, colorBucketCount=$colorBucketCount.")
+      }
+    }
+  }
+
+  if ($screenshotExists -and $duplicateScreenshotZonesByZone.ContainsKey($zoneId)) {
+    $sharedZones = @($duplicateScreenshotZonesByZone[$zoneId] | Where-Object { $_ -ne $zoneId })
+    Add-UniqueIssue -Target $zoneIssues -Issue (New-Issue -Severity 'high' -Code 'screenshot-duplicate' -Message "Screenshot hash is shared with zones: $($sharedZones -join ', ').")
   }
 
   $severityOrder = @{ critical = 5; high = 4; medium = 3; low = 2; ok = 1 }
@@ -206,11 +350,7 @@ foreach ($zone in $reviewRaw) {
     issueCount = $zoneIssues.Count
     issues = $zoneIssues.ToArray()
     diagnosticsSummary = $diag
-    screenshot = @{
-      exists = $screenshotExists
-      path = $screenshotPath
-      bytes = $screenshotBytes
-    }
+    screenshot = $screenshotMeta
     fixRoutes = $fixRoutes
   }
 
@@ -262,6 +402,8 @@ $report = [pscustomobject]@{
     zoneCount = $zoneIds.Count
     fixSafeMode = [bool]$FixSafe.IsPresent
     smallScreenshotBytes = $SmallScreenshotBytes
+    lowDetailBrightnessStdDev = $LowDetailBrightnessStdDev
+    lowDetailColorBuckets = $LowDetailColorBuckets
   }
   summary = [pscustomobject]@{
     severityCounts = $severityCounts
@@ -292,4 +434,9 @@ if ($FixSafe.IsPresent) {
 }
 $summaryLines | Set-Content -LiteralPath $summaryPath -Encoding UTF8
 
-Write-Output ($report | ConvertTo-Json -Depth 20)
+if ($EmitJson.IsPresent) {
+  Write-Output ($report | ConvertTo-Json -Depth 20)
+} else {
+  Write-Output ($summaryLines -join [Environment]::NewLine)
+  Write-Output "reportPath: $reportPath"
+}
