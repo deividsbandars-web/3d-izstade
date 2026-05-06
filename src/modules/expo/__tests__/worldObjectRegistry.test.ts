@@ -40,6 +40,12 @@ const cityTower: CityTower = {
   upperSize: [36, 42, 36],
 };
 
+const semanticTower: CityTower = {
+  ...cityTower,
+  id: '1a459ffc-d447-4899-97e5-7af7b562487d-hero-tower-right',
+  position: [548, 116, -544],
+};
+
 const citySurface: CityScreenSurface = {
   color: '#08111c',
   glowColor: '#7dd3fc',
@@ -50,6 +56,15 @@ const citySurface: CityScreenSurface = {
   sections: ['middle'],
   size: [156, 184, 3.4],
   type: 'wall',
+};
+
+const semanticTowerSurface: CityScreenSurface = {
+  ...citySurface,
+  id: '1a459ffc-d447-4899-97e5-7af7b562487d-hero-tower-right-tower-ribbon',
+  position: [518, 145, -518],
+  role: 'tower-side',
+  size: [44, 104, 2],
+  type: 'tower-side',
 };
 
 const citySocket: CityScreenSocket = {
@@ -96,8 +111,8 @@ const cityPlan: CanonicalWorldPlan = {
   districtStride: 548,
   filteredCityPlanes: [cityPlane],
   filteredMasses: [cityMass],
-  filteredScreenSurfaces: [citySurface],
-  filteredTowerLandmarks: [cityTower],
+  filteredScreenSurfaces: [citySurface, semanticTowerSurface],
+  filteredTowerLandmarks: [cityTower, semanticTower],
   promenadeAxisPlanes: [cityPlane],
   screenAssignments: [cityAssignment],
   screenSockets: [citySocket],
@@ -251,6 +266,14 @@ assert.ok(cityRegistry.some((entry) => entry.id === citySocket.id && entry.layer
 assert.ok(cityRegistry.some((entry) => entry.id === cityAssignment.id && entry.layer === 'city-screen-assignment'));
 assert.ok(cityRegistry.some((entry) => entry.id === cityMass.id && entry.layer === 'city-mass'));
 assert.ok(cityRegistry.some((entry) => entry.id === cityTower.id && entry.layer === 'city-tower'));
+assert.deepEqual(
+  cityRegistry.find((entry) => entry.id === semanticTower.id)?.aliases,
+  ['arrival-core-hero-tower-right'],
+);
+assert.deepEqual(
+  cityRegistry.find((entry) => entry.id === semanticTowerSurface.id)?.aliases,
+  ['arrival-core-hero-tower-right-tower-ribbon'],
+);
 assert.ok(cityRegistry.some((entry) => entry.id === 'mega-landmark-arrival' && entry.layer === 'mega-landmark'));
 
 const stadiumBefore = JSON.stringify(rearCampusPlan);

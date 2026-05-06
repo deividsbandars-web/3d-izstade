@@ -477,7 +477,7 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
     },
     {
       expectedKeyObjectIds: [
-        'immersive-fabric-labs',
+        'sponsor-concierge',
       ],
       expectedVisibleLayers: ['booth'],
       id: 'sponsor-boulevard-left',
@@ -486,7 +486,7 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       camera: {
         lookAtOffset: [0, 22, 0],
         positionOffset: [280, 188, 560],
-        targetIds: ['immersive-fabric-labs'],
+        targetIds: ['sponsor-concierge'],
       },
       startView: {
         lookAt: [-526, 22, -1356],
@@ -500,7 +500,7 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
     },
     {
       expectedKeyObjectIds: [
-        'immersive-fabric-labs',
+        'sponsor-concierge',
       ],
       expectedVisibleLayers: ['booth'],
       id: 'sponsor-boulevard-left-close',
@@ -509,7 +509,7 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       camera: {
         lookAtOffset: [0, 20, 0],
         positionOffset: [240, 168, 460],
-        targetIds: ['immersive-fabric-labs'],
+        targetIds: ['sponsor-concierge'],
       },
       startView: {
         lookAt: [-612, 64, -1412],

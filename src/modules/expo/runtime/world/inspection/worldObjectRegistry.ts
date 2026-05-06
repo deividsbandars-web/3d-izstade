@@ -57,6 +57,55 @@ function createEntry(entry: WorldObjectRegistryEntry): WorldObjectRegistryEntry 
   return entry;
 }
 
+const STABLE_DISTRICT_ALIASES = ['arrival-core', 'meetings', 'showcase-row'] as const;
+const TOWER_SEMANTIC_SUFFIX_PATTERN =
+  /((?:outer-support|support|hero|mid)-tower-(?:left|right)(?:-(?:tower-ribbon|crown-beacon))?)$/;
+
+function compactAliases(id: string, aliases: Array<string | null | undefined>) {
+  const compact = Array.from(new Set(
+    aliases
+      .map((alias) => (alias ?? '').trim())
+      .filter((alias) => alias && alias !== id),
+  ));
+
+  return compact.length > 0 ? compact : undefined;
+}
+
+function buildStableTowerAliases(
+  entries: ReadonlyArray<{ id: string; position: [number, number, number] }>,
+) {
+  const groupedEntries = new Map<string, Array<{ id: string; position: [number, number, number] }>>();
+
+  for (const entry of entries) {
+    const suffix = entry.id.match(TOWER_SEMANTIC_SUFFIX_PATTERN)?.[1];
+    if (!suffix) {
+      continue;
+    }
+
+    groupedEntries.set(suffix, [...(groupedEntries.get(suffix) ?? []), entry]);
+  }
+
+  const aliasesById = new Map<string, string[]>();
+  for (const [suffix, group] of groupedEntries) {
+    group
+      .slice()
+      .sort((a, b) => b.position[2] - a.position[2])
+      .forEach((entry, index) => {
+        const districtAlias = STABLE_DISTRICT_ALIASES[index];
+        if (!districtAlias) {
+          return;
+        }
+
+        const alias = `${districtAlias}-${suffix}`;
+        if (alias !== entry.id) {
+          aliasesById.set(entry.id, [...(aliasesById.get(entry.id) ?? []), alias]);
+        }
+      });
+  }
+
+  return aliasesById;
+}
+
 function buildMegaLandmarkEntries(args: {
   districtCount: number;
   districtStride: number;
@@ -135,6 +184,9 @@ export function buildCityWorldObjectRegistry({
   districtStride,
   plan,
 }: BuildCityWorldObjectRegistryArgs): WorldObjectRegistryEntry[] {
+  const towerAliasesById = buildStableTowerAliases(plan.filteredTowerLandmarks);
+  const screenSurfaceAliasesById = buildStableTowerAliases(plan.filteredScreenSurfaces);
+
   return [
     ...plan.arrivalPlanes.map((plane) => createEntry({
       diagnosticOwners: [],
@@ -212,6 +264,7 @@ export function buildCityWorldObjectRegistry({
       sourceKind: 'city-mass',
     })),
     ...plan.filteredTowerLandmarks.map((tower) => createEntry({
+      aliases: compactAliases(tower.id, towerAliasesById.get(tower.id) ?? []),
       diagnosticOwners: [
         'src/modules/expo/runtime/planning/screens/screenOrientationDiagnostics.ts',
       ],
@@ -233,6 +286,7 @@ export function buildCityWorldObjectRegistry({
       sourceKind: 'city-tower',
     })),
     ...plan.filteredScreenSurfaces.map((surface) => createEntry({
+      aliases: compactAliases(surface.id, screenSurfaceAliasesById.get(surface.id) ?? []),
       diagnosticOwners: [
         'src/modules/expo/runtime/planning/screens/screenOrientationDiagnostics.ts',
         'src/modules/expo/runtime/planning/screens/screenSurfaceBoundsDiagnostics.ts',
@@ -430,14 +484,14 @@ export function buildBoothWorldObjectRegistry(
     const boothId = booth && typeof booth === 'object' && 'id' in booth
       ? String((booth as { id?: string | number | null }).id ?? '')
       : '';
-    const aliases = Array.from(new Set([
+    const aliases = compactAliases(placement.id, [
       placement.company?.slug ?? '',
       placement.company?.id != null ? String(placement.company.id) : '',
       boothId,
-    ].map((value) => value.trim()).filter((value) => value && value !== placement.id)));
+    ]);
 
     return createEntry({
-      aliases: aliases.length > 0 ? aliases : undefined,
+      aliases,
       diagnosticOwners: [
         'src/shared/expo/lib/boothFrontalityDiagnostics.ts',
       ],
