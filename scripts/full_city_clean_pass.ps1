@@ -25,7 +25,7 @@ function Invoke-Checked {
     & $FilePath @Arguments
   }
   if ($LASTEXITCODE -ne 0) {
-    throw "Command failed: $FilePath $($Arguments -join ' ')"
+    throw "Command failed: $FilePath. Arguments omitted to avoid leaking protected deployment tokens."
   }
 }
 
@@ -246,6 +246,24 @@ foreach ($hash in $hashZones.Keys) {
   }
 }
 
+$captureSnapshotByZone = @{}
+foreach ($zoneId in $zoneIds) {
+  $snapshotPath = Join-Path $screensDir "$zoneId.snapshot.json"
+  if (Test-Path -LiteralPath $snapshotPath) {
+    try {
+      $captureSnapshotByZone[$zoneId] = Get-Content -LiteralPath $snapshotPath -Raw | ConvertFrom-Json
+    } catch {
+      $captureSnapshotByZone[$zoneId] = [pscustomobject]@{
+        operatorZoneValidation = [pscustomobject]@{
+          status = 'warning'
+          zoneId = $zoneId
+        }
+        snapshotReadError = $_.Exception.Message
+      }
+    }
+  }
+}
+
 $byZone = @{}
 $allIssues = New-Object 'System.Collections.Generic.List[object]'
 
@@ -273,6 +291,41 @@ foreach ($zone in $reviewRaw) {
   foreach ($obs in @($zone.observations)) {
     if ($obs -and [string]$obs -match 'Extra visible layer|forbidden|missing|overlap|seam|floating') {
       Add-UniqueIssue -Target $zoneIssues -Issue (New-Issue -Severity 'medium' -Code 'observation' -Message ([string]$obs))
+    }
+  }
+
+  $captureSnapshot = $captureSnapshotByZone[$zoneId]
+  $liveValidation = if ($captureSnapshot) { $captureSnapshot.operatorZoneValidation } else { $null }
+  if ($liveValidation) {
+    $liveStatus = [string]$liveValidation.status
+    if ($liveStatus -and $liveStatus -ne 'ok') {
+      Add-UniqueIssue -Target $zoneIssues -Issue (New-Issue -Severity 'medium' -Code 'live-snapshot-status' -Message "Live screenshot snapshot status is '$liveStatus'.")
+    }
+
+    foreach ($id in @($liveValidation.missingExpectedObjectIds)) {
+      if ($id) {
+        Add-UniqueIssue -Target $zoneIssues -Issue (New-Issue -Severity 'medium' -Code 'live-missing-expected-object' -Message "Live snapshot missing expected object: $id")
+      }
+    }
+    foreach ($id in @($liveValidation.unknownExpectedObjectIds)) {
+      if ($id) {
+        Add-UniqueIssue -Target $zoneIssues -Issue (New-Issue -Severity 'high' -Code 'live-unknown-expected-object' -Message "Live snapshot unknown expected object: $id")
+      }
+    }
+    foreach ($layer in @($liveValidation.missingExpectedLayers)) {
+      if ($layer) {
+        Add-UniqueIssue -Target $zoneIssues -Issue (New-Issue -Severity 'medium' -Code 'live-missing-expected-layer' -Message "Live snapshot missing expected layer: $layer")
+      }
+    }
+    foreach ($id in @($liveValidation.forbiddenObjectIdsPresent)) {
+      if ($id) {
+        Add-UniqueIssue -Target $zoneIssues -Issue (New-Issue -Severity 'high' -Code 'live-forbidden-object' -Message "Live snapshot sees forbidden object: $id")
+      }
+    }
+    foreach ($layer in @($liveValidation.forbiddenExpectedLayersPresent)) {
+      if ($layer) {
+        Add-UniqueIssue -Target $zoneIssues -Issue (New-Issue -Severity 'high' -Code 'live-forbidden-layer' -Message "Live snapshot sees forbidden layer: $layer")
+      }
     }
   }
 
@@ -332,7 +385,11 @@ foreach ($zone in $reviewRaw) {
     }
   }
 
-  $fixRoutes = @($zone.fixRoutes | ForEach-Object {
+  $rawFixRoutes = @($zone.fixRoutes)
+  if ($captureSnapshot -and $captureSnapshot.operatorZoneFixRoutes) {
+    $rawFixRoutes += @($captureSnapshot.operatorZoneFixRoutes)
+  }
+  $fixRoutes = @($rawFixRoutes | ForEach-Object {
     [pscustomobject]@{
       issue = $_.issue
       reason = $_.reason
@@ -350,6 +407,7 @@ foreach ($zone in $reviewRaw) {
     issueCount = $zoneIssues.Count
     issues = $zoneIssues.ToArray()
     diagnosticsSummary = $diag
+    liveSnapshotStatus = if ($liveValidation) { $liveValidation.status } else { $null }
     screenshot = $screenshotMeta
     fixRoutes = $fixRoutes
   }

@@ -221,6 +221,32 @@ function Get-OperatorSnapshot {
   return $result.result.result.value
 }
 
+function Wait-ForZoneSnapshot {
+  param(
+    [System.Net.WebSockets.ClientWebSocket]$Ws,
+    [string]$ZoneId
+  )
+
+  $bestSnapshot = $null
+  for ($i = 0; $i -lt 14; $i++) {
+    $snapshot = Get-OperatorSnapshot -Ws $Ws
+    if ($snapshot -and [string]$snapshot.operatorZoneId -eq $ZoneId -and [string]$snapshot.operatorZoneValidation.zoneId -eq $ZoneId) {
+      $bestSnapshot = $snapshot
+      if ([string]$snapshot.operatorZoneValidation.status -eq 'ok') {
+        return $snapshot
+      }
+    }
+
+    Start-Sleep -Milliseconds 250
+  }
+
+  if ($bestSnapshot) {
+    return $bestSnapshot
+  }
+
+  return Get-OperatorSnapshot -Ws $Ws
+}
+
 function Set-OverlayVisibility {
   param(
     [System.Net.WebSockets.ClientWebSocket]$Ws,
@@ -397,11 +423,15 @@ try {
       Start-Sleep -Milliseconds 1200
     }
 
-    $snapshot = Get-OperatorSnapshot -Ws $ws
+    $snapshot = Wait-ForZoneSnapshot -Ws $ws -ZoneId $zoneId
     Set-OverlayVisibility -Ws $ws -Visible $false
     Start-Sleep -Milliseconds 520
     $screenshotBytes = Capture-StableScreenshotBytes -Ws $ws
     Set-OverlayVisibility -Ws $ws -Visible $true
+    $postCaptureSnapshot = Wait-ForZoneSnapshot -Ws $ws -ZoneId $zoneId
+    if ($postCaptureSnapshot) {
+      $snapshot = $postCaptureSnapshot
+    }
 
     $filePath = Join-Path $OutputDir "$zoneId.png"
     [IO.File]::WriteAllBytes($filePath, $screenshotBytes)
