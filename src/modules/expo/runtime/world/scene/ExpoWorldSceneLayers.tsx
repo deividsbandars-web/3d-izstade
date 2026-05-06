@@ -54,12 +54,8 @@ export function ExpoWorldSceneLayers({
       ) : (
         <Sky distance={450000} sunPosition={[56, 10, 42]} inclination={0.42} azimuth={0.18} />
       )}
-      {!runtimeCaptureSafe && (
-        EXPO_FEATURE_FLAGS.enableStreetEnvironmentLighting ? (
-          <Environment files="/models/modern_evening_street_4k.exr" />
-        ) : (
-          <Environment preset="park" />
-        )
+      {!runtimeCaptureSafe && EXPO_FEATURE_FLAGS.enableStreetEnvironmentLighting && (
+        <Environment files="/models/modern_evening_street_4k.exr" />
       )}
       <ambientLight intensity={runtimeCaptureSafe ? 0.16 : 0.24} />
       <directionalLight position={[16, 26, 10]} intensity={runtimeCaptureSafe ? 0.66 : 0.96} castShadow={false} />

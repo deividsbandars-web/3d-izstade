@@ -228,6 +228,8 @@ try {
   [void](Invoke-Cdp -Ws $ws -Method 'Page.enable' -Params @{})
   [void](Invoke-Cdp -Ws $ws -Method 'Runtime.enable' -Params @{})
   [void](Invoke-Cdp -Ws $ws -Method 'Network.enable' -Params @{})
+  [void](Invoke-Cdp -Ws $ws -Method 'Network.setCacheDisabled' -Params @{ cacheDisabled = $true })
+  [void](Invoke-Cdp -Ws $ws -Method 'Network.clearBrowserCache' -Params @{})
   Set-RequestBypassHeaders -Ws $ws
   [void](Invoke-Cdp -Ws $ws -Method 'Emulation.setDeviceMetricsOverride' -Params @{
     width = 1600

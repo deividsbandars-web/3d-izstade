@@ -20,8 +20,16 @@ node_modules
 .idea
 .codex-tmp
 tmp-chrome-cdp-profile
+tmp-chrome-cdp-profile*
+tmp-cdp-profile
+tmp-cdp-profile*
+tmp-*
+tmp-*.*
 tmp-expo-zone-review.json
 tmp-expo-zone-shots
+tmp-expo-zone-shots*
+tmp-full-city-clean-pass
+tmp-full-city-clean-pass*
 docs/recovery
 .env
 .env.*
