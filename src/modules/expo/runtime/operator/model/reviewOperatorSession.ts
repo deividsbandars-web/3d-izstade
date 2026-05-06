@@ -628,9 +628,14 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       id: 'rear-campus-center',
       intent: 'rear-campus-center-review',
       label: 'Rear Campus Center',
+      camera: {
+        lookAtOffset: [0, 30, 0],
+        positionOffset: [0, 168, 602],
+        targetIds: ['rear-campus-center-event-island-feed-surface'],
+      },
       startView: {
-        lookAt: [0, 118, -1702],
-        position: [0, 174, -1518],
+        lookAt: [0, 172, -4432],
+        position: [0, 310, -3830],
         source: 'arrival-main',
       },
       watchItems: [
@@ -648,9 +653,14 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       id: 'stadium-feed-axis',
       intent: 'rear-campus-feed-axis-review',
       label: 'Stadium Feed Axis',
+      camera: {
+        lookAtOffset: [0, 30, 0],
+        positionOffset: [0, 138, 570],
+        targetIds: ['rear-campus-bowl-feed-surface'],
+      },
       startView: {
-        lookAt: [0, 104, -1320],
-        position: [0, 146, -1182],
+        lookAt: [0, 322, -4438],
+        position: [0, 430, -3868],
         source: 'arrival-main',
       },
       watchItems: [
@@ -741,9 +751,14 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       id: 'rear-campus-mega-hall',
       intent: 'rear-campus-mega-hall-review',
       label: 'Rear Campus Mega Hall',
+      camera: {
+        lookAtOffset: [0, 30, 0],
+        positionOffset: [520, 160, 620],
+        targetIds: ['rear-campus-mega-civic-hall-host-surface'],
+      },
       startView: {
-        lookAt: [-2478, 242, -3588],
-        position: [-1600, 560, -2140],
+        lookAt: [-2490, 198, -3828],
+        position: [-1970, 328, -3208],
         source: 'arrival-main',
       },
       watchItems: [
