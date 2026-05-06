@@ -628,14 +628,9 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       id: 'rear-campus-center',
       intent: 'rear-campus-center-review',
       label: 'Rear Campus Center',
-      camera: {
-        lookAtOffset: [0, 30, 0],
-        positionOffset: [0, 168, 602],
-        targetIds: ['rear-campus-center-event-island-feed-surface'],
-      },
       startView: {
-        lookAt: [0, 172, -4432],
-        position: [0, 310, -3830],
+        lookAt: [0, 118, -1702],
+        position: [0, 174, -1518],
         source: 'arrival-main',
       },
       watchItems: [
@@ -654,13 +649,13 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       intent: 'rear-campus-feed-axis-review',
       label: 'Stadium Feed Axis',
       camera: {
-        lookAtOffset: [0, 30, 0],
-        positionOffset: [0, 138, 570],
+        lookAtOffset: [0, 34, 0],
+        positionOffset: [0, 188, 1080],
         targetIds: ['rear-campus-bowl-feed-surface'],
       },
       startView: {
-        lookAt: [0, 322, -4438],
-        position: [0, 430, -3868],
+        lookAt: [0, 326, -4438],
+        position: [0, 480, -3358],
         source: 'arrival-main',
       },
       watchItems: [
