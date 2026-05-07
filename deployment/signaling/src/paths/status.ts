@@ -1,6 +1,15 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 import { SignallingServer } from '@epicgames-ps/lib-pixelstreamingsignalling-ue5.7';
-import pjson from '../../package.json';
+import fs from 'fs';
+import path from 'path';
+
+type PackageJsonMetadata = {
+    version?: string;
+};
+
+const packageJson = JSON.parse(
+    fs.readFileSync(path.resolve(__dirname, '..', '..', 'package.json'), { encoding: 'utf8' })
+) as PackageJsonMetadata;
 
 /* eslint-disable @typescript-eslint/no-unsafe-call,
                   @typescript-eslint/no-unsafe-member-access */
@@ -17,7 +26,7 @@ export default function (signallingServer: SignallingServer) {
             uptime: uptime,
             streamer_count: signallingServer.streamerRegistry.count(),
             player_count: signallingServer.playerRegistry.count(),
-            version: pjson.version
+            version: packageJson.version ?? '0.0.0'
         });
     }
 
