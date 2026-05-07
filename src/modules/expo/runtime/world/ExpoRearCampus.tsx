@@ -42,6 +42,11 @@ const EMPTY_PLANNING_GEOMETRY = {
   towers: [],
 };
 
+const HIDDEN_REAR_CAMPUS_SCENIC_STRUCTURE_IDS = new Set([
+  'stadium-structure:rear-campus-split-wall-gate',
+  'stadium-structure:rear-campus-titan-frame-gate',
+]);
+
 export function ExpoRearCampus({
   boothPlacements,
   playerPosition,
@@ -358,6 +363,7 @@ export function ExpoRearCampus({
           <meshStandardMaterial color="#98a4ad" roughness={0.66} metalness={0.05} emissive={accent} emissiveIntensity={0.08} />
         </mesh>
       </group>
+      {!HIDDEN_REAR_CAMPUS_SCENIC_STRUCTURE_IDS.has('stadium-structure:rear-campus-titan-frame-gate') && (
       <group name="stadium-structure:rear-campus-titan-frame-gate" position={[-682, 0, rearCampusZ(396)]}>
         <mesh position={[0, 16, 0]} receiveShadow>
           <boxGeometry args={[412, 20, 146]} />
@@ -380,6 +386,7 @@ export function ExpoRearCampus({
           <meshStandardMaterial color="#92a6b4" roughness={0.66} metalness={0.05} emissive={accent} emissiveIntensity={0.07} />
         </mesh>
       </group>
+      )}
       <group name="stadium-structure:rear-campus-linear-civic-terrace" position={[-1684, 0, rearCampusZ(-1430)]}>
         <mesh position={[0, 10, 0]} receiveShadow>
           <boxGeometry args={[868, 16, 188]} />
@@ -518,6 +525,7 @@ export function ExpoRearCampus({
           <meshStandardMaterial color="#6f7b84" roughness={0.66} metalness={0.05} emissive={accent} emissiveIntensity={0.05} />
         </mesh>
       </group>
+      {!HIDDEN_REAR_CAMPUS_SCENIC_STRUCTURE_IDS.has('stadium-structure:rear-campus-split-wall-gate') && (
       <group name="stadium-structure:rear-campus-split-wall-gate" position={[-836, 0, rearCampusZ(-1427)]}>
         <mesh position={[0, 10, 0]} receiveShadow>
           <boxGeometry args={[548, 16, 192]} />
@@ -536,6 +544,7 @@ export function ExpoRearCampus({
           <meshStandardMaterial color="#98a4ad" roughness={0.66} metalness={0.05} emissive={accent} emissiveIntensity={0.07} />
         </mesh>
       </group>
+      )}
       <group name="stadium-structure:rear-campus-terrace-signal-court" position={[-864, 0, rearCampusZ(-936)]}>
         <mesh position={[0, 8, 0]} receiveShadow>
           <boxGeometry args={[404, 14, 132]} />
@@ -558,7 +567,7 @@ export function ExpoRearCampus({
           <meshStandardMaterial color="#98a4ad" roughness={0.62} metalness={0.04} emissive={accent} emissiveIntensity={0.04} />
         </mesh>
       </group>
-      <group name="stadium-structure:rear-campus-needle-crown-skyscraper" position={[892, 0, rearCampusZ(-611)]}>
+      <group name="stadium-structure:rear-campus-needle-crown-skyscraper" position={[1540, 0, rearCampusZ(-611)]}>
         <mesh position={[0, 12, 0]} receiveShadow>
           <boxGeometry args={[188, 18, 128]} />
           <meshStandardMaterial color="#84919a" roughness={0.74} metalness={0.04} emissive={accent} emissiveIntensity={0.024} />

@@ -72,6 +72,7 @@ export function ExpoRearCampusStructures({
     'stadium-structure:rear-campus-entry-plinth--1',
     'stadium-structure:rear-campus-entry-plinth-1',
     'stadium-structure:rear-campus-inner-portal-1',
+    'stadium-structure:rear-campus-gateway--1',
     'stadium-structure:rear-campus-gateway-1',
     'stadium-structure:rear-campus-fan-court--1',
     'stadium-structure:rear-campus-fan-court-1',
@@ -82,7 +83,7 @@ export function ExpoRearCampusStructures({
 
   return (
     <group position={[0, 0, campusCenterZ]}>
-      {[-1, 1].map((side) => (
+      {[-1, 1].filter((side) => !hiddenStructureIds.has(`stadium-structure:rear-campus-gateway-${side}`)).map((side) => (
         <group key={`rear-campus-gateway-${side}`} name={`stadium-structure:rear-campus-gateway-${side}`} position={[side * 1260, 0, 980]}>
           <mesh position={[0, 168, 0]} castShadow={enableHeavyShadows} receiveShadow>
             <boxGeometry args={[126, 336, 126]} />
