@@ -97,6 +97,12 @@ export function validateReviewZone(
     dedupedEntries.set(context.clickTargetEntry.id, context.clickTargetEntry);
   }
 
+  for (const entry of context.inspectorEntries) {
+    if (entry.registryEntry && entryMatchesReviewSignal(entry.registryEntry, zone)) {
+      dedupedEntries.set(entry.registryEntry.id, entry.registryEntry);
+    }
+  }
+
   if (!hasLiveReviewContext) {
     for (const id of zone.expectedKeyObjectIds) {
       const entry = context.registryById[id];
