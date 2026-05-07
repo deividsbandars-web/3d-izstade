@@ -17,6 +17,7 @@ const cityScreen: WorldObjectRegistryEntry = {
 };
 
 const booth: WorldObjectRegistryEntry = {
+  aliases: ['sponsor-concierge'],
   diagnosticOwners: [],
   id: 'booth-1',
   interactionOwner: 'DistrictBooth.tsx',
@@ -27,6 +28,19 @@ const booth: WorldObjectRegistryEntry = {
   sourceFile: 'layoutEngine.ts',
   sourceFunction: 'buildExpoLayoutEngine',
   sourceKind: 'booth-placement',
+};
+
+const unrelatedMass: WorldObjectRegistryEntry = {
+  diagnosticOwners: [],
+  id: 'city-mass-1',
+  interactionOwner: null,
+  layer: 'city-mass',
+  planningZone: 'canonical-city',
+  position: [20, 0, -120],
+  safeEditSeam: 'buildCanonicalWorldPlan.ts',
+  sourceFile: 'buildCanonicalWorldPlan.ts',
+  sourceFunction: 'buildCanonicalWorldPlan',
+  sourceKind: 'city-mass',
 };
 
 const zone: ReviewOperatorZone = {
@@ -63,6 +77,48 @@ assert.deepEqual(okValidation.forbiddenObjectIdsPresent, []);
 assert.deepEqual(okValidation.forbiddenExpectedLayersPresent, []);
 assert.deepEqual(okValidation.missingExpectedObjectIds, []);
 assert.deepEqual(okValidation.missingExpectedLayers, []);
+
+const aliasValidation = validateReviewZone({
+  ...zone,
+  expectedKeyObjectIds: ['sponsor-concierge'],
+  expectedVisibleLayers: ['booth'],
+}, {
+  centerTargetEntry: null,
+  clickTargetEntry: booth,
+  inspectorEntries: [
+    { distance: 18, id: 'booth-1', layer: 'booth', registryEntry: booth },
+  ],
+  playerPos: [32, 0, 24],
+  registryById: {
+    'booth-1': booth,
+    'sponsor-concierge': booth,
+  },
+});
+
+assert.equal(aliasValidation.status, 'ok');
+assert.deepEqual(aliasValidation.unknownExpectedObjectIds, []);
+assert.deepEqual(aliasValidation.missingExpectedObjectIds, []);
+assert.deepEqual(aliasValidation.missingExpectedLayers, []);
+
+const unrelatedLiveHitValidation = validateReviewZone({
+  ...zone,
+  expectedVisibleLayers: ['city-screen-surface'],
+}, {
+  centerTargetEntry: unrelatedMass,
+  clickTargetEntry: null,
+  inspectorEntries: [
+    { distance: 8, id: 'city-mass-1', layer: 'city-mass', registryEntry: unrelatedMass },
+  ],
+  playerPos: [32, 0, 24],
+  registryById: {
+    'city-mass-1': unrelatedMass,
+    'city-screen-1': cityScreen,
+  },
+});
+
+assert.equal(unrelatedLiveHitValidation.status, 'ok');
+assert.deepEqual(unrelatedLiveHitValidation.missingExpectedObjectIds, []);
+assert.deepEqual(unrelatedLiveHitValidation.missingExpectedLayers, []);
 
 const warningValidation = validateReviewZone(zone, {
   centerTargetEntry: cityScreen,
@@ -136,3 +192,44 @@ const forbiddenValidation = validateReviewZone({
 assert.equal(forbiddenValidation.status, 'warning');
 assert.deepEqual(forbiddenValidation.forbiddenObjectIdsPresent, ['booth-1']);
 assert.deepEqual(forbiddenValidation.forbiddenExpectedLayersPresent, ['booth']);
+
+const distantForbiddenLayerValidation = validateReviewZone({
+  ...zone,
+  expectedKeyObjectIds: ['booth-1'],
+  expectedVisibleLayers: ['booth'],
+  forbiddenVisibleLayers: ['city-screen-surface'],
+}, {
+  centerTargetEntry: null,
+  clickTargetEntry: null,
+  inspectorEntries: [
+    { distance: 240, id: 'city-screen-1', layer: 'city-screen-surface', registryEntry: cityScreen },
+  ],
+  playerPos: [32, 0, 24],
+  registryById: {
+    'booth-1': booth,
+    'city-screen-1': cityScreen,
+  },
+});
+
+assert.equal(distantForbiddenLayerValidation.status, 'ok');
+assert.deepEqual(distantForbiddenLayerValidation.forbiddenExpectedLayersPresent, []);
+assert.deepEqual(distantForbiddenLayerValidation.missingExpectedObjectIds, []);
+assert.deepEqual(distantForbiddenLayerValidation.missingExpectedLayers, []);
+
+const foregroundForbiddenLayerValidation = validateReviewZone({
+  ...zone,
+  forbiddenVisibleLayers: ['city-screen-surface'],
+}, {
+  centerTargetEntry: null,
+  clickTargetEntry: null,
+  inspectorEntries: [
+    { distance: 42, id: 'city-screen-1', layer: 'city-screen-surface', registryEntry: cityScreen },
+  ],
+  playerPos: [32, 0, 24],
+  registryById: {
+    'city-screen-1': cityScreen,
+  },
+});
+
+assert.equal(foregroundForbiddenLayerValidation.status, 'warning');
+assert.deepEqual(foregroundForbiddenLayerValidation.forbiddenExpectedLayersPresent, ['city-screen-surface']);

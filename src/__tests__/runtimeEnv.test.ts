@@ -64,5 +64,21 @@ assert.equal(devFallbackEnv.signalingUrl, 'ws://127.0.0.1:5173/ws');
 
 Object.defineProperty(globalThis, 'window', {
   configurable: true,
+  value: {
+    location: {
+      hostname: 'app-nibulzacr-esaukans-6934s-projects.vercel.app',
+      host: 'app-nibulzacr-esaukans-6934s-projects.vercel.app',
+      protocol: 'https:',
+    },
+  },
+});
+
+const vercelPreviewFallbackEnv = resolveFrontendRuntimeEnv({});
+assert.equal(vercelPreviewFallbackEnv.apiBaseUrl, 'https://api-staging.30sek24.com');
+assert.equal(vercelPreviewFallbackEnv.supabaseUrl, 'https://gbmxrposlrhctyaaznmj.supabase.co');
+assert.notEqual(vercelPreviewFallbackEnv.supabaseAnonKey, 'dummy-key');
+
+Object.defineProperty(globalThis, 'window', {
+  configurable: true,
   value: originalWindow,
 });

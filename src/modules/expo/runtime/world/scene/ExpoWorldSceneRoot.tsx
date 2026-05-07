@@ -6,6 +6,7 @@ import { ExpoWorldAnalyticsLayer } from './ExpoWorldAnalyticsLayer';
 import { ExpoWorldAnalyticsProvider } from './ExpoWorldAnalyticsProvider';
 import { ExpoWorldCanvasShell } from './ExpoWorldCanvasShell';
 import { useExpoWorldSceneRuntime } from './useExpoWorldSceneRuntime';
+import { ExpoWorldSceneErrorBoundary } from './ExpoWorldSceneErrorBoundary';
 
 export function ExpoWorldSceneRoot({
   activeZone,
@@ -153,35 +154,37 @@ function ExpoWorldSceneRootView({
         zoneSystem={zoneSystem}
       />
       <BoothUI visible={debug && !!activeZone} zoneName={activeZone?.id ?? undefined} />
-      <ExpoWorldCanvasShell
-        activeZoneId={activeZone?.id ? String(activeZone.id) : null}
-        debug={debug}
-        districtPrograms={runtime.districtPrograms}
-        effectiveStartView={runtime.effectiveStartView}
-        highlightedTargets={runtimeHighlightedTargets}
-        inspectionEnabled={inspectionEnabled}
-        layerToggles={runtime.layerToggles}
-        mobileMoveIntent={mobileMoveIntent}
-        mode={mode}
-        onMove={(position) => {
-          runtime.setPlayerPosition([position[0], position[1], position[2]]);
-          onMove(position);
-        }}
-        playBounds={runtime.playBounds}
-        playerPosition={runtime.playerPosition}
-        planningBoothPlacements={runtime.visibleBoothPlacements}
-        qualityProfileInputs={runtime.qualityProfileInputs}
-        runtimeCaptureSafe={runtimeCaptureSafe}
-        hardIsolateNonTargets={hardIsolateNonTargets}
-        isolateNonTargets={Boolean(runtimeFocusIsolation && runtimeHighlightedTargets.length > 0)}
-        sceneVersion={sceneVersion}
-        sectorMarkers={runtime.sectorMarkers}
-        sectionToggles={runtime.sectionToggles}
-        sectionVisibleBoothPlacements={runtime.sectionVisibleBoothPlacements}
-        setSceneUserData={setSceneUserData}
-        visualProfile={runtime.visualProfile}
-        walkRegions={runtime.walkRegions}
-      />
+      <ExpoWorldSceneErrorBoundary label="canvas">
+        <ExpoWorldCanvasShell
+          activeZoneId={activeZone?.id ? String(activeZone.id) : null}
+          debug={debug}
+          districtPrograms={runtime.districtPrograms}
+          effectiveStartView={runtime.effectiveStartView}
+          highlightedTargets={runtimeHighlightedTargets}
+          inspectionEnabled={inspectionEnabled}
+          layerToggles={runtime.layerToggles}
+          mobileMoveIntent={mobileMoveIntent}
+          mode={mode}
+          onMove={(position) => {
+            runtime.setPlayerPosition([position[0], position[1], position[2]]);
+            onMove(position);
+          }}
+          playBounds={runtime.playBounds}
+          playerPosition={runtime.playerPosition}
+          planningBoothPlacements={runtime.visibleBoothPlacements}
+          qualityProfileInputs={runtime.qualityProfileInputs}
+          runtimeCaptureSafe={runtimeCaptureSafe}
+          hardIsolateNonTargets={hardIsolateNonTargets}
+          isolateNonTargets={Boolean(runtimeFocusIsolation && runtimeHighlightedTargets.length > 0)}
+          sceneVersion={sceneVersion}
+          sectorMarkers={runtime.sectorMarkers}
+          sectionToggles={runtime.sectionToggles}
+          sectionVisibleBoothPlacements={runtime.sectionVisibleBoothPlacements}
+          setSceneUserData={setSceneUserData}
+          visualProfile={runtime.visualProfile}
+          walkRegions={runtime.walkRegions}
+        />
+      </ExpoWorldSceneErrorBoundary>
     </>
   );
 }

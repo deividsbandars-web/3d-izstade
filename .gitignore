@@ -34,6 +34,17 @@ apps/frontend/.next
 diagnostics
 .tmp-*
 .tmp*
+tmp/
+tmp-*/
+tmp-*
+tmp-*.*
+tmp-*/
+tmp-cdp-*
+tmp-expo-*
+tmp-full-city-clean-pass/
+tmp-chrome-cdp-profile/
+tmp-cdp-profile/
+.codex-tmp/
 supabase/.temp/
 .aider*
 pazudusie faili/

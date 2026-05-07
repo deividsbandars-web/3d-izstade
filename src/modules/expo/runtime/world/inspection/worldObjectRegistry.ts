@@ -5,6 +5,7 @@ import type {
   ExpoPlanningSectionId,
   ExpoPlanningZonePlan,
 } from '../../planning/types';
+import { resolveRearCampusAnchoredZ } from '../ExpoRearCampusLayout';
 
 export type WorldObjectLayer =
   | 'booth'
@@ -25,6 +26,7 @@ export type WorldObjectLayer =
   | 'stadium-tower';
 
 export type WorldObjectRegistryEntry = {
+  aliases?: string[];
   diagnosticOwners: string[];
   id: string;
   interactionOwner: string | null;
@@ -53,6 +55,55 @@ type BuildStadiumWorldObjectRegistryArgs = {
 
 function createEntry(entry: WorldObjectRegistryEntry): WorldObjectRegistryEntry {
   return entry;
+}
+
+const STABLE_DISTRICT_ALIASES = ['arrival-core', 'meetings', 'showcase-row'] as const;
+const TOWER_SEMANTIC_SUFFIX_PATTERN =
+  /((?:outer-support|support|hero|mid)-tower-(?:left|right)(?:-(?:tower-ribbon|crown-beacon))?)$/;
+
+function compactAliases(id: string, aliases: Array<string | null | undefined>) {
+  const compact = Array.from(new Set(
+    aliases
+      .map((alias) => (alias ?? '').trim())
+      .filter((alias) => alias && alias !== id),
+  ));
+
+  return compact.length > 0 ? compact : undefined;
+}
+
+function buildStableTowerAliases(
+  entries: ReadonlyArray<{ id: string; position: [number, number, number] }>,
+) {
+  const groupedEntries = new Map<string, Array<{ id: string; position: [number, number, number] }>>();
+
+  for (const entry of entries) {
+    const suffix = entry.id.match(TOWER_SEMANTIC_SUFFIX_PATTERN)?.[1];
+    if (!suffix) {
+      continue;
+    }
+
+    groupedEntries.set(suffix, [...(groupedEntries.get(suffix) ?? []), entry]);
+  }
+
+  const aliasesById = new Map<string, string[]>();
+  for (const [suffix, group] of groupedEntries) {
+    group
+      .slice()
+      .sort((a, b) => b.position[2] - a.position[2])
+      .forEach((entry, index) => {
+        const districtAlias = STABLE_DISTRICT_ALIASES[index];
+        if (!districtAlias) {
+          return;
+        }
+
+        const alias = `${districtAlias}-${suffix}`;
+        if (alias !== entry.id) {
+          aliasesById.set(entry.id, [...(aliasesById.get(entry.id) ?? []), alias]);
+        }
+      });
+  }
+
+  return aliasesById;
 }
 
 function buildMegaLandmarkEntries(args: {
@@ -133,6 +184,9 @@ export function buildCityWorldObjectRegistry({
   districtStride,
   plan,
 }: BuildCityWorldObjectRegistryArgs): WorldObjectRegistryEntry[] {
+  const towerAliasesById = buildStableTowerAliases(plan.filteredTowerLandmarks);
+  const screenSurfaceAliasesById = buildStableTowerAliases(plan.filteredScreenSurfaces);
+
   return [
     ...plan.arrivalPlanes.map((plane) => createEntry({
       diagnosticOwners: [],
@@ -210,6 +264,7 @@ export function buildCityWorldObjectRegistry({
       sourceKind: 'city-mass',
     })),
     ...plan.filteredTowerLandmarks.map((tower) => createEntry({
+      aliases: compactAliases(tower.id, towerAliasesById.get(tower.id) ?? []),
       diagnosticOwners: [
         'src/modules/expo/runtime/planning/screens/screenOrientationDiagnostics.ts',
       ],
@@ -231,6 +286,7 @@ export function buildCityWorldObjectRegistry({
       sourceKind: 'city-tower',
     })),
     ...plan.filteredScreenSurfaces.map((surface) => createEntry({
+      aliases: compactAliases(surface.id, screenSurfaceAliasesById.get(surface.id) ?? []),
       diagnosticOwners: [
         'src/modules/expo/runtime/planning/screens/screenOrientationDiagnostics.ts',
         'src/modules/expo/runtime/planning/screens/screenSurfaceBoundsDiagnostics.ts',
@@ -277,25 +333,31 @@ export function buildCityWorldObjectRegistry({
 }
 
 function buildStadiumStructureEntries(campusCenterZ: number): WorldObjectRegistryEntry[] {
+  const rearCampusZ = (defaultZ: number) => resolveRearCampusAnchoredZ(campusCenterZ, defaultZ);
+  const campusPerimeterFrontZ = campusCenterZ + 2140;
   const structures: ReadonlyArray<readonly [string, [number, number, number]]> = [
+    ['rear-campus-front-left-connector', [-2390, 16, campusPerimeterFrontZ]],
+    ['rear-campus-front-right-connector', [2390, 16, campusPerimeterFrontZ]],
+    ['rear-campus-front-left-connector-cap', [-2390, 33, campusPerimeterFrontZ]],
+    ['rear-campus-front-right-connector-cap', [2390, 33, campusPerimeterFrontZ]],
     ['rear-campus-arc-bastion-right', [1180, 0, campusCenterZ + 864]],
     ['rear-campus-center-event-island', [0, 0, campusCenterZ - 1296]],
     ['rear-campus-bowl-center-deck', [0, 212, campusCenterZ - 972]],
-    ['rear-campus-stage-monolith-canopy', [47, 0, -3018]],
-    ['rear-campus-mega-civic-hall', [-2490, 0, -3670]],
-    ['rear-campus-void-courtyard-monument', [-1971, 0, -2894]],
-    ['rear-campus-linked-mini-skyline', [-2537, 0, -4977]],
-    ['rear-campus-titan-frame-gate', [-682, 0, 396]],
-    ['rear-campus-linear-civic-terrace', [-1684, 0, -1430]],
-    ['rear-campus-bridge-linked-campus', [-1343, 0, -3449]],
-    ['rear-campus-petal-tower', [2340, 0, -4577]],
-    ['rear-campus-helix-spire', [2439, 0, -1432]],
-    ['rear-campus-grand-prism-citadel', [-1033, 0, -1902]],
-    ['rear-campus-split-wall-gate', [-836, 0, -1427]],
-    ['rear-campus-terrace-signal-court', [-864, 0, -936]],
-    ['rear-campus-needle-crown-skyscraper', [892, 0, -611]],
-    ['rear-campus-sky-slab-tower', [1087, 0, -1329]],
-    ['rear-campus-twin-void-monolith', [1340, 0, -3242]],
+    ['rear-campus-stage-monolith-canopy', [47, 0, rearCampusZ(-3018)]],
+    ['rear-campus-mega-civic-hall', [-2490, 0, rearCampusZ(-3670)]],
+    ['rear-campus-void-courtyard-monument', [-1971, 0, rearCampusZ(-2894)]],
+    ['rear-campus-linked-mini-skyline', [-2537, 0, rearCampusZ(-4977)]],
+    ['rear-campus-titan-frame-gate', [-682, 0, rearCampusZ(396)]],
+    ['rear-campus-linear-civic-terrace', [-1684, 0, rearCampusZ(-1430)]],
+    ['rear-campus-bridge-linked-campus', [-1343, 0, rearCampusZ(-3449)]],
+    ['rear-campus-petal-tower', [2340, 0, rearCampusZ(-4577)]],
+    ['rear-campus-helix-spire', [2439, 0, rearCampusZ(-1432)]],
+    ['rear-campus-grand-prism-citadel', [-1033, 0, rearCampusZ(-1902)]],
+    ['rear-campus-split-wall-gate', [-836, 0, rearCampusZ(-1427)]],
+    ['rear-campus-terrace-signal-court', [-864, 0, rearCampusZ(-936)]],
+    ['rear-campus-needle-crown-skyscraper', [892, 0, rearCampusZ(-611)]],
+    ['rear-campus-sky-slab-tower', [1087, 0, rearCampusZ(-1329)]],
+    ['rear-campus-twin-void-monolith', [1340, 0, rearCampusZ(-3242)]],
     ['stadium-bowl', [0, 0, campusCenterZ - 1520]],
     ['stadium-axis-center-1180', [0, 0, 1180]],
     ['stadium-axis-center-1608', [0, 0, 1608]],
@@ -313,91 +375,6 @@ function buildStadiumStructureEntries(campusCenterZ: number): WorldObjectRegistr
     sourceFunction: 'ExpoRearCampus',
     sourceKind: 'rear-campus-structure',
   }));
-}
-
-function buildRearCampusCustomFeedEntries(args: {
-  campusCenterZ: number;
-  rearCampusPlan: ExpoPlanningZonePlan;
-}): WorldObjectRegistryEntry[] {
-  const rearCampus = args.rearCampusPlan.zoneExtension?.rearCampus;
-  if (!rearCampus) {
-    return [];
-  }
-
-  const assignmentBySocketId = new Map(
-    args.rearCampusPlan.assignments.map((assignment) => [assignment.socketId, assignment] as const),
-  );
-  const leftTower = rearCampus.landmarkTowers.find((tower) => tower.id.includes('left'));
-  const rightTower = rearCampus.landmarkTowers.find((tower) => tower.id.includes('right'));
-  const bowlFeedAssignment = rearCampus.feedSocketIds.bowl
-    ? assignmentBySocketId.get(rearCampus.feedSocketIds.bowl)
-    : undefined;
-  const leftFeedAssignment = rearCampus.feedSocketIds.leftTower
-    ? assignmentBySocketId.get(rearCampus.feedSocketIds.leftTower)
-    : undefined;
-  const rightFeedAssignment = rearCampus.feedSocketIds.rightTower
-    ? assignmentBySocketId.get(rearCampus.feedSocketIds.rightTower)
-    : undefined;
-
-  const feedEntries: WorldObjectRegistryEntry[] = [];
-
-  if (leftTower && leftFeedAssignment) {
-    feedEntries.push(createEntry({
-      diagnosticOwners: [],
-      id: `${leftFeedAssignment.id}-rear-campus-custom-feed-left`,
-      interactionOwner: null,
-      layer: 'stadium-screen-feed',
-      planningSections: leftFeedAssignment.sections,
-      planningZone: 'rear-campus',
-      position: [
-        leftTower.position[0],
-        leftTower.position[1] + 398,
-        leftTower.position[2] + 30,
-      ],
-      safeEditSeam: 'src/modules/expo/runtime/world/ExpoRearCampusStructures.tsx',
-      sourceFile: 'src/modules/expo/runtime/world/ExpoRearCampusStructures.tsx',
-      sourceFunction: 'ExpoRearCampusStructures',
-      sourceKind: 'rear-campus-custom-screen-feed',
-    }));
-  }
-
-  if (rightTower && rightFeedAssignment) {
-    feedEntries.push(createEntry({
-      diagnosticOwners: [],
-      id: `${rightFeedAssignment.id}-rear-campus-custom-feed-right`,
-      interactionOwner: null,
-      layer: 'stadium-screen-feed',
-      planningSections: rightFeedAssignment.sections,
-      planningZone: 'rear-campus',
-      position: [
-        rightTower.position[0],
-        rightTower.position[1] + 398,
-        rightTower.position[2] + 30,
-      ],
-      safeEditSeam: 'src/modules/expo/runtime/world/ExpoRearCampusStructures.tsx',
-      sourceFile: 'src/modules/expo/runtime/world/ExpoRearCampusStructures.tsx',
-      sourceFunction: 'ExpoRearCampusStructures',
-      sourceKind: 'rear-campus-custom-screen-feed',
-    }));
-  }
-
-  if (bowlFeedAssignment) {
-    feedEntries.push(createEntry({
-      diagnosticOwners: [],
-      id: `${bowlFeedAssignment.id}-rear-campus-custom-feed-bowl`,
-      interactionOwner: null,
-      layer: 'stadium-screen-feed',
-      planningSections: bowlFeedAssignment.sections,
-      planningZone: 'rear-campus',
-      position: [0, 318, args.campusCenterZ + 246],
-      safeEditSeam: 'src/modules/expo/runtime/world/ExpoRearCampusStructures.tsx',
-      sourceFile: 'src/modules/expo/runtime/world/ExpoRearCampusStructures.tsx',
-      sourceFunction: 'ExpoRearCampusStructures',
-      sourceKind: 'rear-campus-custom-screen-feed',
-    }));
-  }
-
-  return feedEntries;
 }
 
 export function buildStadiumWorldObjectRegistry({
@@ -486,33 +463,47 @@ export function buildStadiumWorldObjectRegistry({
       planningZone: 'rear-campus',
       sockets: rearCampusPlan.screenSockets,
     }),
-    ...buildRearCampusCustomFeedEntries({
-      campusCenterZ,
-      rearCampusPlan,
-    }),
     ...buildStadiumStructureEntries(campusCenterZ),
   ];
 }
 
 export function buildBoothWorldObjectRegistry(
   boothPlacements: ReadonlyArray<{
+    company?: {
+      booth?: unknown;
+      id?: string | number | null;
+      slug?: string | null;
+    } | null;
     id: string;
     position: [number, number, number];
     sectorId?: string | null;
   }>,
 ): WorldObjectRegistryEntry[] {
-  return boothPlacements.map((placement) => createEntry({
-    diagnosticOwners: [
-      'src/shared/expo/lib/boothFrontalityDiagnostics.ts',
-    ],
-    id: placement.id,
-    interactionOwner: 'src/modules/expo/runtime/booths/DistrictBooth.tsx',
-    layer: 'booth',
-    planningZone: placement.sectorId ?? null,
-    position: placement.position,
-    safeEditSeam: 'src/shared/expo/layoutEngine.ts',
-    sourceFile: 'src/shared/expo/layoutEngine.ts',
-    sourceFunction: 'buildExpoLayoutEngine',
-    sourceKind: 'booth-placement',
-  }));
+  return boothPlacements.map((placement) => {
+    const booth = placement.company?.booth;
+    const boothId = booth && typeof booth === 'object' && 'id' in booth
+      ? String((booth as { id?: string | number | null }).id ?? '')
+      : '';
+    const aliases = compactAliases(placement.id, [
+      placement.company?.slug ?? '',
+      placement.company?.id != null ? String(placement.company.id) : '',
+      boothId,
+    ]);
+
+    return createEntry({
+      aliases,
+      diagnosticOwners: [
+        'src/shared/expo/lib/boothFrontalityDiagnostics.ts',
+      ],
+      id: placement.id,
+      interactionOwner: 'src/modules/expo/runtime/booths/DistrictBooth.tsx',
+      layer: 'booth',
+      planningZone: placement.sectorId ?? null,
+      position: placement.position,
+      safeEditSeam: 'src/shared/expo/layoutEngine.ts',
+      sourceFile: 'src/shared/expo/layoutEngine.ts',
+      sourceFunction: 'buildExpoLayoutEngine',
+      sourceKind: 'booth-placement',
+    });
+  });
 }

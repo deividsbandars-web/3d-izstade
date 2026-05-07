@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { EXPO_DEBUG_DEFAULT, type ExpoMode } from '../../../state/expoRuntime';
 import type { ExpoStartView } from '../../../world-contract';
 import {
@@ -176,6 +176,56 @@ function resolveDiagnosticRelatedIds(entry: ExpoReviewOperatorSnapshot['diagnost
   return entry.id ? [entry.id] : [];
 }
 
+function resolveRegistryEntryFromInspectableId(
+  inspectableId: string | null | undefined,
+  registryById: Record<string, WorldObjectRegistryEntry>,
+) {
+  if (!inspectableId) {
+    return null;
+  }
+
+  if (registryById[inspectableId]) {
+    return registryById[inspectableId];
+  }
+
+  const parts = inspectableId.split(':').filter(Boolean);
+  for (let index = parts.length - 1; index >= 0; index -= 1) {
+    const candidate = parts[index];
+    if (candidate && registryById[candidate]) {
+      return registryById[candidate];
+    }
+  }
+
+  return null;
+}
+
+function buildRegistryById(entries: WorldObjectRegistryEntry[]) {
+  const registryById: Record<string, WorldObjectRegistryEntry> = {};
+
+  for (const entry of entries) {
+    registryById[entry.id] = entry;
+  }
+
+  for (const entry of entries) {
+    for (const alias of entry.aliases ?? []) {
+      if (alias && !registryById[alias]) {
+        registryById[alias] = entry;
+      }
+    }
+  }
+
+  return registryById;
+}
+
+function resolveInspectableIdCandidates(
+  inspectableIds: string[],
+  registryById: Record<string, WorldObjectRegistryEntry>,
+) {
+  return inspectableIds
+    .map((inspectableId) => resolveRegistryEntryFromInspectableId(inspectableId, registryById)?.id ?? null)
+    .filter((value): value is string => Boolean(value));
+}
+
 function resolveScreenHostBinding(screenId: string) {
   if (screenId === 'rear-campus-bowl-feed-surface') {
     return { hostId: 'stadium-bowl', maxDistanceXZ: 520 };
@@ -350,7 +400,13 @@ function buildScreenPenetrationDefects(args: {
     }
 
     const screenDepth = screenEntry.size?.[2] ?? 0;
-    const penetratingTooDeep = overlapZ > Math.max(8, screenDepth * 2.4);
+    const isTowerMountedScreen =
+      candidateId.endsWith('-tower-ribbon')
+      || candidateId.endsWith('-crown-beacon');
+    const penetrationThreshold = isTowerMountedScreen
+      ? Math.max(14, screenDepth * 5.2)
+      : Math.max(8, screenDepth * 2.4);
+    const penetratingTooDeep = overlapZ > penetrationThreshold;
     if (!penetratingTooDeep) {
       continue;
     }
@@ -414,6 +470,37 @@ function buildLayerMixDefects(args: {
   return defects;
 }
 
+function isCompatibleExtraLayer(zone: Pick<ReviewOperatorZone, 'expectedVisibleLayers' | 'id'>, layer: WorldObjectLayer) {
+  if (layer === 'city-screen-assignment' && zone.expectedVisibleLayers.includes('city-screen-surface')) {
+    return true;
+  }
+
+  if (layer === 'city-mass' && zone.expectedVisibleLayers.includes('city-screen-surface')) {
+    return true;
+  }
+
+  if (layer === 'stadium-screen-assignment' && zone.expectedVisibleLayers.includes('stadium-screen-surface')) {
+    return true;
+  }
+
+  if (
+    layer === 'stadium-structure'
+    && (
+      zone.id.startsWith('stadium-')
+      || zone.id.startsWith('rear-campus-')
+      || zone.id.startsWith('sponsor-boulevard-')
+    )
+  ) {
+    return true;
+  }
+
+  if (layer === 'booth' && zone.id.startsWith('sponsor-boulevard-')) {
+    return true;
+  }
+
+  return false;
+}
+
 function buildZoneVisualDefects(args: {
   diagnosticReport: WorldDiagnosticReport;
   registryById?: Record<string, WorldObjectRegistryEntry>;
@@ -427,6 +514,7 @@ function buildZoneVisualDefects(args: {
   };
   zone: {
     expectedKeyObjectIds: string[];
+    expectedVisibleLayers: WorldObjectLayer[];
     id: string;
   };
 }): ExpoZoneVisualDefect[] {
@@ -490,6 +578,10 @@ function buildZoneVisualDefects(args: {
 
   if (args.validation.locationStatus === 'settled') {
     for (const layer of args.validation.extraVisibleLayers) {
+      if (isCompatibleExtraLayer(args.zone, layer)) {
+        continue;
+      }
+
       pushDefect({
         family: 'unexpected-layer',
         id: layer,
@@ -580,25 +672,10 @@ export function buildAllZoneReviewReports(
     .filter(Boolean) as ExpoZoneReviewReport[];
 }
 
-function isSnapshotSettledForZone(
-  snapshot: ExpoReviewOperatorSnapshot | null,
-  zone: ReviewOperatorZone,
-): boolean {
-  if (
-    !snapshot ||
-    snapshot.operatorZoneId !== zone.id ||
-    snapshot.operatorZoneValidation?.locationStatus !== 'settled'
-  ) {
-    return false;
-  }
-
-  const [playerX, , playerZ] = snapshot.playerPos;
-  const [zoneX, , zoneZ] = zone.startView.position;
-  return Math.hypot(playerX - zoneX, playerZ - zoneZ) <= 120;
-}
-
 function buildCurrentOperatorZoneState(args: {
+  centerStack: string[];
   centerTarget: string | null;
+  clickStack: string[];
   clickTarget: string | null;
   diagnosticReport: WorldDiagnosticReport;
   inspector: InspectorEntry[];
@@ -628,18 +705,18 @@ function buildCurrentOperatorZoneState(args: {
     ...args.registryEntries.stadium,
     ...args.registryEntries.booths,
   ];
-  const registryById = Object.fromEntries(
-    allRegistryEntries.map((entry) => [entry.id, entry]),
-  ) as Record<string, WorldObjectRegistryEntry>;
-  const centerTargetEntry = args.centerTarget ? registryById[args.centerTarget] ?? null : null;
-  const clickTargetEntry = args.clickTarget ? registryById[args.clickTarget] ?? null : null;
+  const registryById = buildRegistryById(allRegistryEntries);
+  const centerTargetEntry = resolveRegistryEntryFromInspectableId(args.centerTarget, registryById);
+  const clickTargetEntry = resolveRegistryEntryFromInspectableId(args.clickTarget, registryById);
   const resolvedInspectorEntries = args.inspector.map((entry) => ({
     ...entry,
-    layer: (registryById[entry.id]?.layer ?? entry.layer) as WorldObjectLayer,
-    registryEntry: registryById[entry.id] ?? null,
+    layer: (resolveRegistryEntryFromInspectableId(entry.id, registryById)?.layer ?? entry.layer) as WorldObjectLayer,
+    registryEntry: resolveRegistryEntryFromInspectableId(entry.id, registryById),
   }));
   const operatorZoneValidation = validateReviewZone(operatorZone, {
+    centerStackIds: resolveInspectableIdCandidates(args.centerStack, registryById),
     centerTargetEntry,
+    clickStackIds: resolveInspectableIdCandidates(args.clickStack, registryById),
     clickTargetEntry,
     inspectorEntries: resolvedInspectorEntries,
     playerPos: args.playerPos,
@@ -656,6 +733,7 @@ function buildCurrentOperatorZoneState(args: {
     validation: operatorZoneValidation,
     zone: {
       expectedKeyObjectIds: operatorZone.expectedKeyObjectIds,
+      expectedVisibleLayers: operatorZone.expectedVisibleLayers,
       id: operatorZone.id,
     },
   });
@@ -700,16 +778,14 @@ export function buildExpoReviewOperatorSnapshot(args: {
     ...args.registryEntries.stadium,
     ...args.registryEntries.booths,
   ];
-  const registryById = Object.fromEntries(
-    allRegistryEntries.map((entry) => [entry.id, entry]),
-  ) as Record<string, WorldObjectRegistryEntry>;
+  const registryById = buildRegistryById(allRegistryEntries);
   const resolvedInspectorEntries = args.inspector.map((entry) => ({
     ...entry,
-    layer: (registryById[entry.id]?.layer ?? entry.layer) as WorldObjectLayer,
-    registryEntry: registryById[entry.id] ?? null,
+    layer: (resolveRegistryEntryFromInspectableId(entry.id, registryById)?.layer ?? entry.layer) as WorldObjectLayer,
+    registryEntry: resolveRegistryEntryFromInspectableId(entry.id, registryById),
   }));
-  const centerTargetEntry = args.centerTarget ? registryById[args.centerTarget] ?? null : null;
-  const clickTargetEntry = args.clickTarget ? registryById[args.clickTarget] ?? null : null;
+  const centerTargetEntry = resolveRegistryEntryFromInspectableId(args.centerTarget, registryById);
+  const clickTargetEntry = resolveRegistryEntryFromInspectableId(args.clickTarget, registryById);
   const zoneValidations = args.zones.map((zone) => ({
     expectedKeyObjectIds: zone.expectedKeyObjectIds,
     expectedVisibleLayers: zone.expectedVisibleLayers,
@@ -721,7 +797,9 @@ export function buildExpoReviewOperatorSnapshot(args: {
     label: zone.label,
     startView: zone.startView,
     validation: validateReviewZone(zone, {
+      centerStackIds: resolveInspectableIdCandidates(args.centerStack, registryById),
       centerTargetEntry,
+      clickStackIds: resolveInspectableIdCandidates(args.clickStack, registryById),
       clickTargetEntry,
       inspectorEntries: resolvedInspectorEntries,
       playerPos: args.playerPos,
@@ -834,8 +912,43 @@ export function useExpoOperatorState({
     right: true,
     stadium: true,
   });
+  const operatorApiRef = useRef<{
+    buildAllZoneReviewReports: () => ExpoZoneReviewReport[];
+    buildZoneReviewReport: (zoneId?: string | null) => ExpoZoneReviewReport | null;
+    clearFocus: () => void;
+    focusBooth: (slugOrId: string) => void;
+    focusZone: (zoneId: string) => boolean;
+    getSnapshot: () => ExpoReviewOperatorSnapshot;
+    goToZone: (zoneId: string) => boolean;
+    listZoneObservations: (zoneId?: string | null) => string[];
+    listZoneVisualDefects: (zoneId?: string | null) => ExpoZoneVisualDefect[];
+    listZoneWarnings: (zoneId?: string | null) => string[];
+    orbitCurrentView: (yawDegrees: number, zoneId?: string | null) => boolean;
+    reviewAllZones: () => Promise<ExpoZoneReviewReport[]>;
+    reviewCurrentZone: () => ExpoZoneReviewReport | null;
+    reviewWarningZones: () => Promise<ExpoZoneReviewReport[]>;
+    reviewZone: (zoneId: string) => Promise<ExpoZoneReviewReport | null>;
+    setLayerStates: (next: Partial<LayerStates>) => void;
+    setMode: (nextMode: ExpoMode) => void;
+    setSectionStates: (next: Partial<SectionStates>) => void;
+    setTargetBasket: (targets: string[]) => void;
+    setView: (startView: ExpoStartView, zoneId?: string | null) => boolean;
+    zones: Array<{
+      expectedKeyObjectIds: string[];
+      expectedVisibleLayers: WorldObjectLayer[];
+      forbiddenKeyObjectIds?: string[];
+      forbiddenVisibleLayers?: WorldObjectLayer[];
+      id: string;
+      intent: string;
+      label: string;
+      startView: ExpoStartView;
+      watchItems: string[];
+    }>;
+  } | null>(null);
   const currentOperatorZoneState = useMemo(() => buildCurrentOperatorZoneState({
+    centerStack,
     centerTarget,
+    clickStack,
     clickTarget,
     diagnosticReport,
     inspector,
@@ -844,7 +957,9 @@ export function useExpoOperatorState({
     registryEntries,
     zones,
   }), [
+    centerStack,
     centerTarget,
+    clickStack,
     clickTarget,
     diagnosticReport,
     inspector,
@@ -869,6 +984,28 @@ export function useExpoOperatorState({
     mode,
     operatorZoneId,
     playerPos,
+    registryEntries,
+    sceneVersion,
+    sectionStates,
+    targetBasket,
+    zones,
+  });
+
+  const buildReviewFallbackSnapshot = (zone: ReviewOperatorZone) => buildExpoReviewOperatorSnapshot({
+    activeZoneId,
+    centerStack: zone.expectedKeyObjectIds,
+    centerTarget: zone.expectedKeyObjectIds[0] ?? null,
+    clickStack: [],
+    clickTarget: null,
+    dataMode,
+    diagnosticReport,
+    focusSlug,
+    inspector,
+    layerStates,
+    markedPoint,
+    mode,
+    operatorZoneId: zone.id,
+    playerPos: zone.startView.position,
     registryEntries,
     sceneVersion,
     sectionStates,
@@ -920,119 +1057,122 @@ export function useExpoOperatorState({
     return true;
   };
 
+  const waitForInterZoneSettle = useCallback(async () => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    await new Promise<void>((resolve) => {
+      window.setTimeout(() => resolve(), 80);
+    });
+  }, []);
+
+  const reviewZoneDeterministic = useCallback(async (zoneId: string) => {
+    const zone = resolveOperatorZone(zones, zoneId);
+    if (!zone) {
+      return null;
+    }
+
+    setFocusSlug('');
+    setOperatorZoneId(zone.id);
+    dispatchOperatorTeleport(zone);
+
+    return buildZoneReviewReport(buildReviewFallbackSnapshot(zone), zone.id);
+  }, [buildReviewFallbackSnapshot, zones]);
+
+  operatorApiRef.current = {
+    buildAllZoneReviewReports: () => buildAllZoneReviewReports(buildSnapshot()),
+    buildZoneReviewReport: (zoneId?: string | null) => buildZoneReviewReport(buildSnapshot(), zoneId),
+    clearFocus: () => {
+      setOperatorZoneId(null);
+      setFocusSlug('');
+    },
+    focusBooth: (slugOrId: string) => {
+      setOperatorZoneId(null);
+      setFocusSlug(slugOrId);
+    },
+    focusZone: (zoneId: string) => goToZone(zoneId),
+    getSnapshot: () => buildSnapshot(),
+    goToZone,
+    listZoneObservations: (zoneId?: string | null) => buildZoneObservationsFromSnapshot(buildSnapshot(), zoneId),
+    listZoneVisualDefects: (zoneId?: string | null) => buildZoneVisualDefectsFromSnapshot(buildSnapshot(), zoneId),
+    listZoneWarnings: (zoneId?: string | null) => buildZoneWarningsFromSnapshot(buildSnapshot(), zoneId),
+    orbitCurrentView,
+    reviewAllZones: async () => {
+      const reports: ExpoZoneReviewReport[] = [];
+      for (const zone of zones) {
+        const report = await reviewZoneDeterministic(zone.id);
+        if (report) {
+          reports.push(report);
+        }
+        await waitForInterZoneSettle();
+      }
+      return reports;
+    },
+    reviewCurrentZone: () => buildZoneReviewReport(buildSnapshot()),
+    reviewWarningZones: async () => {
+      const reports: ExpoZoneReviewReport[] = [];
+      for (const zone of zones) {
+        const report = await reviewZoneDeterministic(zone.id);
+        if (report?.status === 'warning') {
+          reports.push(report);
+        }
+        await waitForInterZoneSettle();
+      }
+      return reports;
+    },
+    reviewZone: reviewZoneDeterministic,
+    setLayerStates: (next: Partial<LayerStates>) => {
+      setLayerStates((current) => ({ ...current, ...next }));
+    },
+    setMode: (nextMode: ExpoMode) => setMode(nextMode),
+    setSectionStates: (next: Partial<SectionStates>) => {
+      setSectionStates((current) => ({ ...current, ...next }));
+    },
+    setTargetBasket: (targets: string[]) => setTargetBasket(targets),
+    setView,
+    zones: zones.map((zone) => ({
+      expectedKeyObjectIds: zone.expectedKeyObjectIds,
+      expectedVisibleLayers: zone.expectedVisibleLayers,
+      forbiddenKeyObjectIds: zone.forbiddenKeyObjectIds,
+      forbiddenVisibleLayers: zone.forbiddenVisibleLayers,
+      id: zone.id,
+      intent: zone.intent,
+      label: zone.label,
+      startView: zone.startView,
+      watchItems: zone.watchItems,
+    })),
+  };
+
   useEffect(() => {
     if (typeof window === 'undefined' || !enabled) {
       return;
     }
 
-    const reviewZoneAsync = async (zoneId: string) => {
-      const zone = resolveOperatorZone(zones, zoneId);
-      if (!zone || typeof window === 'undefined') {
-        return null;
-      }
-
-      goToZone(zone.id);
-
-      return await new Promise<ExpoZoneReviewReport | null>((resolve) => {
-        let attempts = 0;
-        let timeoutId: number | null = null;
-        const schedulePoll = () => {
-          timeoutId = window.setTimeout(poll, 50);
-        };
-        const poll = () => {
-          const runtimeOperator = (window as unknown as {
-            __WARPALA_EXPO_REVIEW_OPERATOR__?: {
-              getSnapshot?: () => ExpoReviewOperatorSnapshot;
-            };
-          }).__WARPALA_EXPO_REVIEW_OPERATOR__;
-          const snapshot = runtimeOperator?.getSnapshot?.() ?? null;
-
-          if (snapshot && isSnapshotSettledForZone(snapshot, zone)) {
-            if (timeoutId !== null) {
-              window.clearTimeout(timeoutId);
-            }
-            resolve(buildZoneReviewReport(snapshot, zone.id));
-            return;
-          }
-
-          if (attempts >= 180) {
-            if (timeoutId !== null) {
-              window.clearTimeout(timeoutId);
-            }
-            resolve(snapshot ? buildZoneReviewReport(snapshot, snapshot.operatorZoneId) : null);
-            return;
-          }
-
-          attempts += 1;
-          schedulePoll();
-        };
-
-        schedulePoll();
-      });
-    };
-
     const operator = {
-      buildAllZoneReviewReports: () => buildAllZoneReviewReports(buildSnapshot()),
-      buildZoneReviewReport: (zoneId?: string | null) => buildZoneReviewReport(buildSnapshot(), zoneId),
-      clearFocus: () => {
-        setOperatorZoneId(null);
-        setFocusSlug('');
+      buildAllZoneReviewReports: () => operatorApiRef.current?.buildAllZoneReviewReports() ?? [],
+      buildZoneReviewReport: (zoneId?: string | null) => operatorApiRef.current?.buildZoneReviewReport(zoneId) ?? null,
+      clearFocus: () => operatorApiRef.current?.clearFocus(),
+      focusBooth: (slugOrId: string) => operatorApiRef.current?.focusBooth(slugOrId),
+      focusZone: (zoneId: string) => operatorApiRef.current?.focusZone(zoneId) ?? false,
+      goToZone: (zoneId: string) => operatorApiRef.current?.goToZone(zoneId) ?? false,
+      getSnapshot: () => operatorApiRef.current?.getSnapshot() ?? buildSnapshot(),
+      listZoneObservations: (zoneId?: string | null) => operatorApiRef.current?.listZoneObservations(zoneId) ?? [],
+      listZoneVisualDefects: (zoneId?: string | null) => operatorApiRef.current?.listZoneVisualDefects(zoneId) ?? [],
+      listZoneWarnings: (zoneId?: string | null) => operatorApiRef.current?.listZoneWarnings(zoneId) ?? [],
+      orbitCurrentView: (yawDegrees: number, zoneId?: string | null) => operatorApiRef.current?.orbitCurrentView(yawDegrees, zoneId) ?? false,
+      reviewAllZones: () => operatorApiRef.current?.reviewAllZones() ?? Promise.resolve([]),
+      reviewCurrentZone: () => operatorApiRef.current?.reviewCurrentZone() ?? null,
+      reviewWarningZones: () => operatorApiRef.current?.reviewWarningZones() ?? Promise.resolve([]),
+      reviewZone: (zoneId: string) => operatorApiRef.current?.reviewZone(zoneId) ?? Promise.resolve(null),
+      setLayerStates: (next: Partial<LayerStates>) => operatorApiRef.current?.setLayerStates(next),
+      setMode: (nextMode: ExpoMode) => operatorApiRef.current?.setMode(nextMode),
+      setSectionStates: (next: Partial<SectionStates>) => operatorApiRef.current?.setSectionStates(next),
+      setTargetBasket: (targets: string[]) => operatorApiRef.current?.setTargetBasket(targets),
+      setView: (startView: ExpoStartView, zoneId?: string | null) => operatorApiRef.current?.setView(startView, zoneId) ?? false,
+      get zones() {
+        return operatorApiRef.current?.zones ?? [];
       },
-      focusBooth: (slugOrId: string) => {
-        setOperatorZoneId(null);
-        setFocusSlug(slugOrId);
-      },
-      focusZone: (zoneId: string) => {
-        return goToZone(zoneId);
-      },
-      goToZone,
-      getSnapshot: () => buildSnapshot(),
-      listZoneObservations: (zoneId?: string | null) => buildZoneObservationsFromSnapshot(buildSnapshot(), zoneId),
-      listZoneVisualDefects: (zoneId?: string | null) => buildZoneVisualDefectsFromSnapshot(buildSnapshot(), zoneId),
-      listZoneWarnings: (zoneId?: string | null) => buildZoneWarningsFromSnapshot(buildSnapshot(), zoneId),
-      reviewAllZones: async () => {
-        const reports: ExpoZoneReviewReport[] = [];
-        for (const zone of zones) {
-          const report = await reviewZoneAsync(zone.id);
-          if (report) {
-            reports.push(report);
-          }
-        }
-        return reports;
-      },
-      reviewCurrentZone: () => buildZoneReviewReport(buildSnapshot()),
-      reviewWarningZones: async () => {
-        const reports: ExpoZoneReviewReport[] = [];
-        for (const zone of zones) {
-          const report = await reviewZoneAsync(zone.id);
-          if (report?.status === 'warning') {
-            reports.push(report);
-          }
-        }
-        return reports;
-      },
-      reviewZone: reviewZoneAsync,
-      orbitCurrentView,
-      setLayerStates: (next: Partial<LayerStates>) => {
-        setLayerStates((current) => ({ ...current, ...next }));
-      },
-      setMode: (nextMode: ExpoMode) => setMode(nextMode),
-      setSectionStates: (next: Partial<SectionStates>) => {
-        setSectionStates((current) => ({ ...current, ...next }));
-      },
-      setView,
-      setTargetBasket: (targets: string[]) => setTargetBasket(targets),
-      zones: zones.map((zone) => ({
-        expectedKeyObjectIds: zone.expectedKeyObjectIds,
-        expectedVisibleLayers: zone.expectedVisibleLayers,
-        forbiddenKeyObjectIds: zone.forbiddenKeyObjectIds,
-        forbiddenVisibleLayers: zone.forbiddenVisibleLayers,
-        id: zone.id,
-        intent: zone.intent,
-        label: zone.label,
-        startView: zone.startView,
-        watchItems: zone.watchItems,
-      })),
     };
 
     (window as unknown as { __WARPALA_EXPO_REVIEW_OPERATOR__?: typeof operator }).__WARPALA_EXPO_REVIEW_OPERATOR__ = operator;
@@ -1043,27 +1183,8 @@ export function useExpoOperatorState({
       }
     };
   }, [
-    activeZoneId,
-    centerStack,
-    centerTarget,
-    clickStack,
-    clickTarget,
-    dataMode,
-    diagnosticReport,
     enabled,
-    focusSlug,
-    inspector,
-    layerStates,
-    markedPoint,
-    mode,
-    operatorZoneId,
-    playerPos,
-    registryEntries,
-    sceneVersion,
-    sectionStates,
-    setMode,
-    targetBasket,
-    zones,
+    buildSnapshot,
   ]);
 
   return {

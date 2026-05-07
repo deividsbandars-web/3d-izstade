@@ -2,6 +2,7 @@ param(
   [string]$BrowserJsonUrl = 'http://127.0.0.1:9230/json',
   [string]$SiteUrl = 'http://localhost:5173/expo-3d?operator=1',
   [string]$OutputDir = 'C:\3d\tmp-expo-zone-shots',
+  [string]$VercelProtectionBypass = '',
   [string[]]$Zones = @('left-marquee', 'right-marquee', 'center-spine', 'sponsor-boulevard-left', 'sponsor-boulevard-right')
 )
 
@@ -95,6 +96,21 @@ function Eval-Expr {
     returnByValue = $true
     awaitPromise = $true
   }
+}
+
+function Set-RequestBypassHeaders {
+  param([System.Net.WebSockets.ClientWebSocket]$Ws)
+
+  if (-not $VercelProtectionBypass.Trim()) {
+    return
+  }
+
+  [void](Invoke-Cdp -Ws $Ws -Method 'Network.setExtraHTTPHeaders' -Params @{
+    headers = @{
+      'x-vercel-protection-bypass' = $VercelProtectionBypass.Trim()
+      'x-vercel-set-bypass-cookie' = 'true'
+    }
+  })
 }
 
 function Ensure-OperatorApi {
@@ -205,6 +221,32 @@ function Get-OperatorSnapshot {
   return $result.result.result.value
 }
 
+function Wait-ForZoneSnapshot {
+  param(
+    [System.Net.WebSockets.ClientWebSocket]$Ws,
+    [string]$ZoneId
+  )
+
+  $bestSnapshot = $null
+  for ($i = 0; $i -lt 14; $i++) {
+    $snapshot = Get-OperatorSnapshot -Ws $Ws
+    if ($snapshot -and [string]$snapshot.operatorZoneId -eq $ZoneId -and [string]$snapshot.operatorZoneValidation.zoneId -eq $ZoneId) {
+      $bestSnapshot = $snapshot
+      if ([string]$snapshot.operatorZoneValidation.status -eq 'ok') {
+        return $snapshot
+      }
+    }
+
+    Start-Sleep -Milliseconds 250
+  }
+
+  if ($bestSnapshot) {
+    return $bestSnapshot
+  }
+
+  return Get-OperatorSnapshot -Ws $Ws
+}
+
 function Set-OverlayVisibility {
   param(
     [System.Net.WebSockets.ClientWebSocket]$Ws,
@@ -234,6 +276,96 @@ function Set-OverlayVisibility {
 "@)
 }
 
+function Get-PngQualityStats {
+  param([byte[]]$Bytes)
+
+  $stream = $null
+  $bitmap = $null
+  try {
+    if (-not $script:CaptureQualityDrawingLoaded) {
+      Add-Type -AssemblyName System.Drawing
+      $script:CaptureQualityDrawingLoaded = $true
+    }
+
+    $stream = [System.IO.MemoryStream]::new($Bytes)
+    $bitmap = [System.Drawing.Bitmap]::new($stream)
+    $width = [int]$bitmap.Width
+    $height = [int]$bitmap.Height
+    $stepX = [Math]::Max(1, [int][Math]::Floor($width / 40.0))
+    $stepY = [Math]::Max(1, [int][Math]::Floor($height / 24.0))
+    $startX = [Math]::Min($width - 1, [int][Math]::Floor($stepX / 2))
+    $startY = [Math]::Min($height - 1, [int][Math]::Floor($stepY / 2))
+    $sum = 0.0
+    $sumSquares = 0.0
+    $sampleCount = 0
+    $colorBuckets = @{}
+
+    for ($y = $startY; $y -lt $height; $y += $stepY) {
+      for ($x = $startX; $x -lt $width; $x += $stepX) {
+        $pixel = $bitmap.GetPixel($x, $y)
+        $brightness = ((0.2126 * $pixel.R) + (0.7152 * $pixel.G) + (0.0722 * $pixel.B)) / 255.0
+        $sum += $brightness
+        $sumSquares += ($brightness * $brightness)
+        $sampleCount += 1
+        $bucketKey = "$([int][Math]::Floor($pixel.R / 32))-$([int][Math]::Floor($pixel.G / 32))-$([int][Math]::Floor($pixel.B / 32))"
+        $colorBuckets[$bucketKey] = $true
+      }
+    }
+
+    if ($sampleCount -eq 0) {
+      return @{ brightnessAverage = 0.0; brightnessStdDev = 0.0; colorBucketCount = 0 }
+    }
+
+    $average = $sum / $sampleCount
+    $variance = [Math]::Max(0.0, ($sumSquares / $sampleCount) - ($average * $average))
+
+    return @{
+      brightnessAverage = [Math]::Round($average * 100.0, 2)
+      brightnessStdDev = [Math]::Round([Math]::Sqrt($variance) * 100.0, 2)
+      colorBucketCount = $colorBuckets.Count
+    }
+  } catch {
+    return @{ brightnessAverage = 0.0; brightnessStdDev = 0.0; colorBucketCount = 0 }
+  } finally {
+    if ($bitmap) { $bitmap.Dispose() }
+    if ($stream) { $stream.Dispose() }
+  }
+}
+
+function Capture-StableScreenshotBytes {
+  param([System.Net.WebSockets.ClientWebSocket]$Ws)
+
+  $bestBytes = $null
+  $bestScore = -1.0
+
+  for ($attempt = 0; $attempt -lt 4; $attempt++) {
+    if ($attempt -gt 0) {
+      Start-Sleep -Milliseconds 420
+    }
+
+    $screenshot = Invoke-Cdp -Ws $Ws -Method 'Page.captureScreenshot' -Params @{
+      format = 'png'
+      captureBeyondViewport = $false
+      fromSurface = $true
+    }
+    $bytes = [Convert]::FromBase64String($screenshot.result.data)
+    $stats = Get-PngQualityStats -Bytes $bytes
+    $score = [double]$stats.brightnessStdDev + ([double]$stats.colorBucketCount / 10.0) + ([double]$bytes.Length / 1000000.0)
+
+    if ($score -gt $bestScore) {
+      $bestScore = $score
+      $bestBytes = $bytes
+    }
+
+    $isBlackFrame = [double]$stats.brightnessAverage -lt 2.0 -and [double]$stats.brightnessStdDev -lt 4.0 -and [int]$stats.colorBucketCount -lt 6
+    if (-not $isBlackFrame) {
+      return $bytes
+    }
+  }
+
+  return $bestBytes
+}
+
 New-Item -ItemType Directory -Force -Path $OutputDir | Out-Null
 
 $wsUrl = Resolve-WsUrl -JsonUrl $BrowserJsonUrl -PreferredUrl $SiteUrl
@@ -243,6 +375,9 @@ try {
   [void](Invoke-Cdp -Ws $ws -Method 'Page.enable' -Params @{})
   [void](Invoke-Cdp -Ws $ws -Method 'Runtime.enable' -Params @{})
   [void](Invoke-Cdp -Ws $ws -Method 'Network.enable' -Params @{})
+  [void](Invoke-Cdp -Ws $ws -Method 'Network.setCacheDisabled' -Params @{ cacheDisabled = $true })
+  [void](Invoke-Cdp -Ws $ws -Method 'Network.clearBrowserCache' -Params @{})
+  Set-RequestBypassHeaders -Ws $ws
   [void](Invoke-Cdp -Ws $ws -Method 'Emulation.setDeviceMetricsOverride' -Params @{
     width = 1600
     height = 960
@@ -252,8 +387,22 @@ try {
 
   Ensure-ExpoWorldReady -Ws $ws
 
+  # Warm up one render pass to avoid occasional black first capture frame.
+  if ($Zones.Count -gt 0) {
+    $warmupZoneId = $Zones[0]
+    [void](Eval-Expr -Ws $ws -Expression @"
+(async () => {
+  const api = window.__WARPALA_EXPO_REVIEW_OPERATOR__;
+  await api.reviewZone('$($warmupZoneId.Replace('\', '\\').Replace("'", "\'"))');
+  return true;
+})()
+"@)
+    Start-Sleep -Milliseconds 900
+  }
+
   $manifest = @()
-  foreach ($zoneId in $Zones) {
+  for ($zoneIndex = 0; $zoneIndex -lt $Zones.Count; $zoneIndex++) {
+    $zoneId = $Zones[$zoneIndex]
     [void](Eval-Expr -Ws $ws -Expression @"
 (async () => {
   const api = window.__WARPALA_EXPO_REVIEW_OPERATOR__;
@@ -274,19 +423,18 @@ try {
       Start-Sleep -Milliseconds 1200
     }
 
-    $snapshot = Get-OperatorSnapshot -Ws $ws
+    $snapshot = Wait-ForZoneSnapshot -Ws $ws -ZoneId $zoneId
     Set-OverlayVisibility -Ws $ws -Visible $false
-    Start-Sleep -Milliseconds 120
-
-    $screenshot = Invoke-Cdp -Ws $ws -Method 'Page.captureScreenshot' -Params @{
-      format = 'png'
-      captureBeyondViewport = $false
-      fromSurface = $true
-    }
+    Start-Sleep -Milliseconds 520
+    $screenshotBytes = Capture-StableScreenshotBytes -Ws $ws
     Set-OverlayVisibility -Ws $ws -Visible $true
+    $postCaptureSnapshot = Wait-ForZoneSnapshot -Ws $ws -ZoneId $zoneId
+    if ($postCaptureSnapshot) {
+      $snapshot = $postCaptureSnapshot
+    }
 
     $filePath = Join-Path $OutputDir "$zoneId.png"
-    [IO.File]::WriteAllBytes($filePath, [Convert]::FromBase64String($screenshot.result.data))
+    [IO.File]::WriteAllBytes($filePath, $screenshotBytes)
     if ($snapshot) {
       $snapshot | ConvertTo-Json -Depth 30 | Set-Content -Path (Join-Path $OutputDir "$zoneId.snapshot.json") -Encoding UTF8
     }

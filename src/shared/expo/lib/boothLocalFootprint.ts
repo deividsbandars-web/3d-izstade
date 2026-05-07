@@ -17,6 +17,12 @@ export type ExpoBoothLocalFootprint = {
   yaw: number;
 };
 
+export const EXPO_BOOTH_LOCAL_FOOTPRINT_SIZE = {
+  hero: { depth: 29, width: 40 },
+  premium: { depth: 24, width: 35 },
+  standard: { depth: 17, width: 22 },
+} as const;
+
 function resolveLocalFootprintSize(args: {
   boothType?: string | null;
   nodeType?: string | null;
@@ -32,7 +38,7 @@ function resolveLocalFootprintSize(args: {
     nodeType === 'hero_left' ||
     nodeType === 'hero_right'
   ) {
-    return { depth: 26, width: 36 };
+    return EXPO_BOOTH_LOCAL_FOOTPRINT_SIZE.hero;
   }
 
   if (
@@ -43,10 +49,10 @@ function resolveLocalFootprintSize(args: {
     sponsorTier === 'elite' ||
     nodeType === 'endcap'
   ) {
-    return { depth: 22, width: 32 };
+    return EXPO_BOOTH_LOCAL_FOOTPRINT_SIZE.premium;
   }
 
-  return { depth: 15.5, width: 20 };
+  return EXPO_BOOTH_LOCAL_FOOTPRINT_SIZE.standard;
 }
 
 export function buildExpoBoothLocalFootprint(args: {

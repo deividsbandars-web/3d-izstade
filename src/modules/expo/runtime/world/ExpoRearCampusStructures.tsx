@@ -128,7 +128,7 @@ export function ExpoRearCampusStructures({
       ))}
 
       <group name="stadium-structure:rear-campus-center-event-island" position={[0, 0, -1296]}>
-        <mesh position={[0, 14, 0]} castShadow={enableHeavyShadows} receiveShadow>
+        <mesh name="stadium-structure:rear-campus-center-event-island" position={[0, 14, 0]} castShadow={enableHeavyShadows} receiveShadow>
           <boxGeometry args={[420, 22, 168]} />
           <CampusMassMaterial color="#dce7ee" emissive={accent} emissiveIntensity={0.03} />
         </mesh>

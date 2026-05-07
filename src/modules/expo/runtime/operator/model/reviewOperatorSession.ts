@@ -86,11 +86,6 @@ export function resolveReviewOperatorZoneStartView(
   zone: ReviewOperatorZone,
   registryById: Map<string, { position: [number, number, number] | number[] }>,
 ): ExpoStartView {
-  const isStadiumZone = zone.id.startsWith('stadium-') || zone.id.startsWith('rear-campus-');
-  if (!isStadiumZone) {
-    return zone.startView;
-  }
-
   if (!zone.camera?.targetIds.length) {
     return zone.startView;
   }
@@ -390,8 +385,8 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       intent: 'tower-cluster-screen-review',
       label: 'Tower Cluster',
       camera: {
-        lookAtOffset: [0, 12, 0],
-        positionOffset: [360, 138, 520],
+        lookAtOffset: [0, 22, 0],
+        positionOffset: [640, 220, -620],
         targetIds: ['arrival-core-hero-tower-right-tower-ribbon'],
       },
       startView: {
@@ -437,8 +432,8 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       intent: 'array-band-cross-city-review',
       label: 'Array Band',
       camera: {
-        lookAtOffset: [0, 34, 0],
-        positionOffset: [-860, 252, 820],
+        lookAtOffset: [0, 44, 0],
+        positionOffset: [0, 310, 1240],
         targetIds: ['screen-array-left-0', 'screen-array-right-0'],
       },
       startView: {
@@ -461,8 +456,8 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       intent: 'array-band-south-review',
       label: 'Array Band South',
       camera: {
-        lookAtOffset: [0, 34, 0],
-        positionOffset: [860, 252, 860],
+        lookAtOffset: [0, 44, 0],
+        positionOffset: [0, 310, 1240],
         targetIds: ['screen-array-left-upper-0', 'screen-array-right-upper-0'],
       },
       startView: {
@@ -477,7 +472,7 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
     },
     {
       expectedKeyObjectIds: [
-        'immersive-fabric-labs',
+        'sponsor-concierge',
       ],
       expectedVisibleLayers: ['booth'],
       id: 'sponsor-boulevard-left',
@@ -486,7 +481,7 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       camera: {
         lookAtOffset: [0, 22, 0],
         positionOffset: [280, 188, 560],
-        targetIds: ['immersive-fabric-labs'],
+        targetIds: ['sponsor-concierge'],
       },
       startView: {
         lookAt: [-526, 22, -1356],
@@ -500,7 +495,7 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
     },
     {
       expectedKeyObjectIds: [
-        'immersive-fabric-labs',
+        'sponsor-concierge',
       ],
       expectedVisibleLayers: ['booth'],
       id: 'sponsor-boulevard-left-close',
@@ -509,7 +504,7 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       camera: {
         lookAtOffset: [0, 20, 0],
         positionOffset: [240, 168, 460],
-        targetIds: ['immersive-fabric-labs'],
+        targetIds: ['sponsor-concierge'],
       },
       startView: {
         lookAt: [-612, 64, -1412],
@@ -599,8 +594,8 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       ],
       expectedVisibleLayers: ['stadium-screen-surface'],
       camera: {
-        lookAtOffset: [0, 14, 0],
-        positionOffset: [300, 112, 180],
+        lookAtOffset: [0, 18, 0],
+        positionOffset: [-340, 120, 340],
         targetIds: ['rear-campus-event-pavilion-left-feed-surface'],
       },
       forbiddenKeyObjectIds: STADIUM_TRANSITION_FORBIDDEN_OBJECT_IDS,
@@ -628,6 +623,11 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       id: 'rear-campus-center',
       intent: 'rear-campus-center-review',
       label: 'Rear Campus Center',
+      camera: {
+        lookAtOffset: [0, 60, 0],
+        positionOffset: [420, 210, 980],
+        targetIds: ['rear-campus-center-event-island-feed-surface'],
+      },
       startView: {
         lookAt: [0, 118, -1702],
         position: [0, 174, -1518],
@@ -648,9 +648,14 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       id: 'stadium-feed-axis',
       intent: 'rear-campus-feed-axis-review',
       label: 'Stadium Feed Axis',
+      camera: {
+        lookAtOffset: [0, 34, 0],
+        positionOffset: [0, 188, 1080],
+        targetIds: ['rear-campus-bowl-feed-surface'],
+      },
       startView: {
-        lookAt: [0, 104, -1320],
-        position: [0, 146, -1182],
+        lookAt: [0, 326, -4438],
+        position: [0, 480, -3358],
         source: 'arrival-main',
       },
       watchItems: [
@@ -664,8 +669,8 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       ],
       expectedVisibleLayers: ['stadium-screen-surface'],
       camera: {
-        lookAtOffset: [0, 10, 4],
-        positionOffset: [-220, 88, 260],
+        lookAtOffset: [0, 18, 0],
+        positionOffset: [340, 120, 340],
         targetIds: ['rear-campus-event-pavilion-right-feed-surface'],
       },
       forbiddenKeyObjectIds: STADIUM_TRANSITION_FORBIDDEN_OBJECT_IDS,
@@ -741,9 +746,14 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       id: 'rear-campus-mega-hall',
       intent: 'rear-campus-mega-hall-review',
       label: 'Rear Campus Mega Hall',
+      camera: {
+        lookAtOffset: [0, 30, 0],
+        positionOffset: [520, 160, 620],
+        targetIds: ['rear-campus-mega-civic-hall-host-surface'],
+      },
       startView: {
-        lookAt: [-2478, 242, -3588],
-        position: [-1600, 560, -2140],
+        lookAt: [-2490, 198, -3828],
+        position: [-1970, 328, -3208],
         source: 'arrival-main',
       },
       watchItems: [

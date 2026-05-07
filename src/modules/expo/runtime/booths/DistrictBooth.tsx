@@ -48,14 +48,6 @@ export function DistrictBooth({
     skylineDensityEnabled: EXPO_FEATURE_FLAGS.enableShowcaseSkylineDensity,
   });
   const boothId = String(booth?.id ?? placement.id);
-  const boothScale =
-    tierState.featureTier === 'hero'
-      ? 1.52
-      : tierState.featureTier === 'elite'
-        ? 1.34
-        : tierState.featureTier === 'premium'
-          ? 1.22
-          : 1.1;
   const openRoom = () => openShowcaseRoom({
     analyticsEnabled: EXPO_FEATURE_FLAGS.enableAnalytics,
     boothId,
@@ -101,17 +93,15 @@ export function DistrictBooth({
         document.body.style.cursor = 'auto';
       }}
     >
-      <group scale={boothScale}>
-        <BoothVisualAssembly
-          accentColor={placement.color}
-          boothColliderRef={boothColliderRef}
-          districtThemeId={placement.districtThemeId}
-          fallbackMonogram={presentation.fallbackIdentity.monogram}
-          onAction={onAction}
-          presentation={presentation}
-          tierState={{ ...tierState, districtVisual }}
-        />
-      </group>
+      <BoothVisualAssembly
+        accentColor={placement.color}
+        boothColliderRef={boothColliderRef}
+        districtThemeId={placement.districtThemeId}
+        fallbackMonogram={presentation.fallbackIdentity.monogram}
+        onAction={onAction}
+        presentation={presentation}
+        tierState={{ ...tierState, districtVisual }}
+      />
     </group>
   );
 }

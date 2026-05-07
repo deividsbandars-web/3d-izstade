@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
-import { buildExpoBoothLocalFootprint } from '../../../shared/expo/lib/boothLocalFootprint.js';
+import { buildExpoBoothLocalFootprint, EXPO_BOOTH_LOCAL_FOOTPRINT_SIZE } from '../../../shared/expo/lib/boothLocalFootprint.js';
 import { buildExpoWorldContract } from '../../../shared/expo/worldContract.js';
+import { getBoothArchitectureMetrics } from '../components/BoothArchitectureKit.js';
 
 const rotatedHeroFootprint = buildExpoBoothLocalFootprint({
   boothType: 'hero',
@@ -10,13 +11,26 @@ const rotatedHeroFootprint = buildExpoBoothLocalFootprint({
   sponsorTier: 'hero',
 });
 
-assert.equal(rotatedHeroFootprint.width, 36);
-assert.equal(rotatedHeroFootprint.depth, 26);
+assert.equal(rotatedHeroFootprint.width, EXPO_BOOTH_LOCAL_FOOTPRINT_SIZE.hero.width);
+assert.equal(rotatedHeroFootprint.depth, EXPO_BOOTH_LOCAL_FOOTPRINT_SIZE.hero.depth);
 assert.equal(rotatedHeroFootprint.source, 'conservative-node-baseline');
-assert.equal(rotatedHeroFootprint.localBounds.minX, -18);
-assert.equal(rotatedHeroFootprint.localBounds.maxZ, 13);
-assert.ok(Math.abs(rotatedHeroFootprint.worldBounds.maxX - (120 + 13)) < 1e-9);
-assert.ok(Math.abs(rotatedHeroFootprint.worldBounds.minZ - (-240 - 18)) < 1e-9);
+assert.equal(rotatedHeroFootprint.localBounds.minX, -(EXPO_BOOTH_LOCAL_FOOTPRINT_SIZE.hero.width * 0.5));
+assert.equal(rotatedHeroFootprint.localBounds.maxZ, EXPO_BOOTH_LOCAL_FOOTPRINT_SIZE.hero.depth * 0.5);
+assert.ok(Math.abs(rotatedHeroFootprint.worldBounds.maxX - (120 + (EXPO_BOOTH_LOCAL_FOOTPRINT_SIZE.hero.depth * 0.5))) < 1e-9);
+assert.ok(Math.abs(rotatedHeroFootprint.worldBounds.minZ - (-240 - (EXPO_BOOTH_LOCAL_FOOTPRINT_SIZE.hero.width * 0.5))) < 1e-9);
+
+assert.deepEqual(getBoothArchitectureMetrics('hero_gallery').footprintSize, [
+  EXPO_BOOTH_LOCAL_FOOTPRINT_SIZE.hero.width,
+  EXPO_BOOTH_LOCAL_FOOTPRINT_SIZE.hero.depth,
+]);
+assert.deepEqual(getBoothArchitectureMetrics('premium_spine').footprintSize, [
+  EXPO_BOOTH_LOCAL_FOOTPRINT_SIZE.premium.width,
+  EXPO_BOOTH_LOCAL_FOOTPRINT_SIZE.premium.depth,
+]);
+assert.deepEqual(getBoothArchitectureMetrics('standard_arcade').footprintSize, [
+  EXPO_BOOTH_LOCAL_FOOTPRINT_SIZE.standard.width,
+  EXPO_BOOTH_LOCAL_FOOTPRINT_SIZE.standard.depth,
+]);
 
 const world = buildExpoWorldContract({
   companies: [

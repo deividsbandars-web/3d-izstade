@@ -2,6 +2,8 @@ param(
   [string]$BrowserJsonUrl = 'http://127.0.0.1:9230/json',
   [string]$SiteUrl = 'https://www.30sek24.com/expo-3d?operator=1',
   [string]$OutputPath = 'C:\3d\tmp-expo-zone-review.json',
+  [string]$VercelProtectionBypass = '',
+  [Parameter(Position = 4, ValueFromRemainingArguments = $true)]
   [string[]]$Zones = @()
 )
 
@@ -19,12 +21,17 @@ function Resolve-WsUrl {
   }
 
   $preferred = $targets | Where-Object {
-    $_.webSocketDebuggerUrl -and (
-      ($_.url -like "*expo-3d*") -or
-      ($_.title -like "*expo*") -or
-      ($_.url -eq $PreferredUrl)
-    )
+    $_.webSocketDebuggerUrl -and ($_.url -eq $PreferredUrl)
   } | Select-Object -First 1
+
+  if (-not $preferred) {
+    $preferred = $targets | Where-Object {
+      $_.webSocketDebuggerUrl -and (
+        ($_.url -like "*expo-3d*") -or
+        ($_.title -like "*expo*")
+      )
+    } | Select-Object -First 1
+  }
 
   if ($preferred) {
     return [string]$preferred.webSocketDebuggerUrl
@@ -105,6 +112,21 @@ function Eval-Expr {
   }
 }
 
+function Set-RequestBypassHeaders {
+  param([System.Net.WebSockets.ClientWebSocket]$Ws)
+
+  if (-not $VercelProtectionBypass.Trim()) {
+    return
+  }
+
+  [void](Invoke-Cdp -Ws $Ws -Method 'Network.setExtraHTTPHeaders' -Params @{
+    headers = @{
+      'x-vercel-protection-bypass' = $VercelProtectionBypass.Trim()
+      'x-vercel-set-bypass-cookie' = 'true'
+    }
+  })
+}
+
 function Wait-ForOperatorApi {
   param([System.Net.WebSockets.ClientWebSocket]$Ws)
 
@@ -171,15 +193,21 @@ function Invoke-Review {
     [string[]]$ZoneIds
   )
 
-  if ($ZoneIds.Count -gt 0) {
-    $zonesJson = ($ZoneIds | ConvertTo-Json -Compress)
+  $normalizedZoneIds = @(
+    $ZoneIds |
+      ForEach-Object { [string]$_ -split ',' } |
+      ForEach-Object { $_.Trim() } |
+      Where-Object { $_ }
+  )
+
+  if ($normalizedZoneIds.Count -gt 0) {
+    $zonesJson = ConvertTo-Json -InputObject $normalizedZoneIds -Compress
     return Eval-Expr -Ws $Ws -Expression @"
 (async () => {
-  const api = window.__WARPALA_EXPO_REVIEW_OPERATOR__;
   const zones = $zonesJson;
   const reports = [];
   for (const zoneId of zones) {
-    const report = await api.reviewZone(zoneId);
+    const report = await window.__WARPALA_EXPO_REVIEW_OPERATOR__.reviewZone(zoneId);
     reports.push(report);
   }
   return reports;
@@ -189,8 +217,7 @@ function Invoke-Review {
 
   return Eval-Expr -Ws $Ws -Expression @"
 (async () => {
-  const api = window.__WARPALA_EXPO_REVIEW_OPERATOR__;
-  return await api.reviewAllZones();
+  return await window.__WARPALA_EXPO_REVIEW_OPERATOR__.reviewAllZones();
 })()
 "@
 }
@@ -202,6 +229,9 @@ try {
   [void](Invoke-Cdp -Ws $ws -Method 'Page.enable' -Params @{})
   [void](Invoke-Cdp -Ws $ws -Method 'Runtime.enable' -Params @{})
   [void](Invoke-Cdp -Ws $ws -Method 'Network.enable' -Params @{})
+  [void](Invoke-Cdp -Ws $ws -Method 'Network.setCacheDisabled' -Params @{ cacheDisabled = $true })
+  [void](Invoke-Cdp -Ws $ws -Method 'Network.clearBrowserCache' -Params @{})
+  Set-RequestBypassHeaders -Ws $ws
   [void](Invoke-Cdp -Ws $ws -Method 'Emulation.setDeviceMetricsOverride' -Params @{
     width = 1600
     height = 960
@@ -212,8 +242,18 @@ try {
   Ensure-ExpoWorldReady -Ws $ws
   $review = Invoke-Review -Ws $ws -ZoneIds $Zones
   $value = $review.result.result.value
-  $value | ConvertTo-Json -Depth 40 | Set-Content -Path $OutputPath -Encoding UTF8
-  $value | ConvertTo-Json -Depth 40
+  if ($null -eq $value) {
+    throw "CDP review returned no serializable value: $($review | ConvertTo-Json -Depth 12 -Compress)"
+  }
+
+  $outputDir = Split-Path -Parent $OutputPath
+  if ($outputDir -and -not (Test-Path -LiteralPath $outputDir)) {
+    New-Item -ItemType Directory -Path $outputDir -Force | Out-Null
+  }
+
+  $json = ConvertTo-Json -InputObject $value -Depth 40
+  [System.IO.File]::WriteAllText($OutputPath, $json, [System.Text.UTF8Encoding]::new($false))
+  Write-Output $json
 }
 finally {
   $ws.Dispose()

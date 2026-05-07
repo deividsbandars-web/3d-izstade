@@ -39,6 +39,7 @@ const stadiumEntry: WorldObjectRegistryEntry = {
 };
 
 const boothEntry: WorldObjectRegistryEntry = {
+  aliases: ['sponsor-concierge'],
   diagnosticOwners: ['boothFrontalityDiagnostics.ts'],
   id: 'booth-1',
   interactionOwner: 'DistrictBooth.tsx',
@@ -138,6 +139,7 @@ const snapshot = buildExpoReviewOperatorSnapshot({
 
 assert.equal(snapshot.registry.totalCount, 3);
 assert.equal(snapshot.registryById['booth-1']?.layer, 'booth');
+assert.equal(snapshot.registryById['sponsor-concierge']?.id, 'booth-1');
 assert.equal(snapshot.diagnostics.booths.frontalityCount, 1);
 assert.equal(snapshot.diagnostics.screens.boothProximityCount, 0);
 assert.equal(snapshot.resolvedTargets.centerTargetEntry?.id, 'city-screen-1');
@@ -175,7 +177,7 @@ assert.doesNotThrow(() => JSON.stringify(snapshot));
 
 const seamSnapshot = buildExpoReviewOperatorSnapshot({
   activeZoneId: 'stadium-feed-axis',
-  centerStack: ['rear-campus-bowl-feed-surface', 'city-ground-seam', 'stadium-ground-seam'],
+  centerStack: ['rear-campus-bowl-feed-surface', 'stadium-custom-feed-1', 'city-ground-seam', 'stadium-ground-seam'],
   centerTarget: 'rear-campus-bowl-feed-surface',
   clickStack: ['stadium-ground-seam'],
   clickTarget: 'stadium-ground-seam',

@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useZoneSystem } from '../../../../hooks/useZoneSystem';
 import { ExpoWorldHud } from './ExpoWorldHud';
@@ -52,8 +52,25 @@ function ExpoRuntimeExperience({
     setMode: runtimeSession.setMode,
     worldContract,
   });
+  const lastOperatorStartViewSignature = useRef<string | null>(null);
 
-  useExpoRuntimeErrorBridge(import.meta.env.DEV || operatorSceneLayer.session.enabled);
+  useEffect(() => {
+    const startView = operatorSceneLayer.effectiveStartViewOverride;
+    if (!operatorSceneLayer.session.enabled || !startView) {
+      return;
+    }
+
+    const signature = `${startView.position.join(',')}|${startView.lookAt.join(',')}|${startView.source}`;
+    if (lastOperatorStartViewSignature.current === signature) {
+      return;
+    }
+
+    lastOperatorStartViewSignature.current = signature;
+    handlePlayerMove(startView.position);
+  }, [handlePlayerMove, operatorSceneLayer.effectiveStartViewOverride, operatorSceneLayer.session.enabled]);
+
+  // Web3D failures in production should not silently degrade into a black canvas.
+  useExpoRuntimeErrorBridge(true);
 
   return (
     <ExpoRuntimeShell

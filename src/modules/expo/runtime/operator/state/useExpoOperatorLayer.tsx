@@ -4,15 +4,50 @@ import type { ExpoStartView, ExpoWorldContract } from '../../../world-contract';
 import { buildCanonicalWorldPlanFromWorldContract } from '../../planning';
 import { useInspectionFocus, useInspectionOperatorSummary, useInspectionTargets, useWorldInspection } from '../../world/inspection/worldInspectionState';
 import { buildWorldDiagnosticReportFromPlan } from '../../world/inspection/worldDiagnosticReport';
-import { buildBoothWorldObjectRegistry } from '../../world/inspection/worldObjectRegistry';
+import {
+  buildBoothWorldObjectRegistry,
+  buildCityWorldObjectRegistry,
+  buildStadiumWorldObjectRegistry,
+  type WorldObjectRegistryEntry,
+} from '../../world/inspection/worldObjectRegistry';
 import { ExpoOperatorOverlay } from '../overlay/ExpoOperatorOverlay';
 import {
   buildReviewOperatorZones,
   resolveExpoOperatorSession,
+  resolveReviewOperatorZoneStartView,
 } from '../model/reviewOperatorSession';
 import { useExpoOperatorState } from './useExpoOperatorState';
 
 const LOCAL_BUILD_STAMP = `LOCAL-${new Date().toISOString().replace('T', ' ').slice(0, 19)}`;
+const REVIEW_ZONE_MAX_AUTO_RESOLVE_DRIFT = 5200;
+
+function getReviewZoneMaxAutoResolveDrift(zoneId: string) {
+  if (zoneId.startsWith('stadium-') || zoneId.startsWith('rear-campus-')) {
+    return 5200;
+  }
+
+  return REVIEW_ZONE_MAX_AUTO_RESOLVE_DRIFT;
+}
+
+function buildRegistryMap(
+  entries: WorldObjectRegistryEntry[],
+) {
+  const registryById = new Map<string, WorldObjectRegistryEntry>();
+
+  for (const entry of entries) {
+    registryById.set(entry.id, entry);
+  }
+
+  for (const entry of entries) {
+    for (const alias of entry.aliases ?? []) {
+      if (alias && !registryById.has(alias)) {
+        registryById.set(alias, entry);
+      }
+    }
+  }
+
+  return registryById;
+}
 
 export function useExpoOperatorLayer({
   activeZoneId,
@@ -44,19 +79,66 @@ export function useExpoOperatorLayer({
     () => buildBoothWorldObjectRegistry(worldContract.boothPlacements),
     [worldContract.boothPlacements],
   );
-  const registryById = useMemo(() => {
-    const entries = [
-      ...inspectionState.rawSources.city,
-      ...inspectionState.rawSources.stadium,
-      ...boothRegistryEntries,
-    ];
-
-    return new Map(entries.map((entry) => [entry.id, entry]));
-  }, [boothRegistryEntries, inspectionState.rawSources.city, inspectionState.rawSources.stadium]);
-  const resolvedReviewZones = reviewZones;
   const canonicalWorldPlan = useMemo(
     () => buildCanonicalWorldPlanFromWorldContract(worldContract),
     [worldContract],
+  );
+  const fallbackCityRegistryEntries = useMemo(
+    () => buildCityWorldObjectRegistry({
+      districtCount: worldContract.districtPrograms.length,
+      districtStride: canonicalWorldPlan.districtStride,
+      plan: canonicalWorldPlan,
+    }),
+    [canonicalWorldPlan, worldContract.districtPrograms.length],
+  );
+  const fallbackStadiumRegistryEntries = useMemo(() => {
+    const rearCampusPlan = canonicalWorldPlan.zones.find((zone) => zone.id === 'rear-campus');
+    const rearCampus = rearCampusPlan?.zoneExtension?.rearCampus;
+
+    if (!rearCampusPlan || !rearCampus) {
+      return [];
+    }
+
+    return buildStadiumWorldObjectRegistry({
+      campusCenterZ: rearCampus.campusCenterZ,
+      rearCampusPlan,
+    });
+  }, [canonicalWorldPlan]);
+  const cityRegistryEntries = inspectionState.rawSources.city.length > 0
+    ? inspectionState.rawSources.city
+    : fallbackCityRegistryEntries;
+  const stadiumRegistryEntries = inspectionState.rawSources.stadium.length > 0
+    ? inspectionState.rawSources.stadium
+    : fallbackStadiumRegistryEntries;
+  const registryById = useMemo(() => {
+    const entries = [
+      ...cityRegistryEntries,
+      ...stadiumRegistryEntries,
+      ...boothRegistryEntries,
+    ];
+
+    return buildRegistryMap(entries);
+  }, [boothRegistryEntries, cityRegistryEntries, stadiumRegistryEntries]);
+  const resolvedReviewZones = useMemo(
+    () => reviewZones.map((zone) => {
+      const resolvedStartView = resolveReviewOperatorZoneStartView(zone, registryById);
+      const maxDrift = getReviewZoneMaxAutoResolveDrift(zone.id);
+      const positionDrift = Math.hypot(
+        resolvedStartView.position[0] - zone.startView.position[0],
+        resolvedStartView.position[1] - zone.startView.position[1],
+        resolvedStartView.position[2] - zone.startView.position[2],
+      );
+
+      if (positionDrift > maxDrift) {
+        return zone;
+      }
+
+      return {
+        ...zone,
+        startView: resolvedStartView,
+      };
+    }),
+    [registryById, reviewZones],
   );
   const diagnosticReport = useMemo(
     () => buildWorldDiagnosticReportFromPlan({
@@ -86,8 +168,8 @@ export function useExpoOperatorLayer({
     diagnosticReport,
     registryEntries: {
       booths: boothRegistryEntries,
-      city: inspectionState.rawSources.city,
-      stadium: inspectionState.rawSources.stadium,
+      city: cityRegistryEntries,
+      stadium: stadiumRegistryEntries,
     },
     sceneVersion,
     setMode,

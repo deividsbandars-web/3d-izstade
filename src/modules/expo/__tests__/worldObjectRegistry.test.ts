@@ -40,6 +40,12 @@ const cityTower: CityTower = {
   upperSize: [36, 42, 36],
 };
 
+const semanticTower: CityTower = {
+  ...cityTower,
+  id: '1a459ffc-d447-4899-97e5-7af7b562487d-hero-tower-right',
+  position: [548, 116, -544],
+};
+
 const citySurface: CityScreenSurface = {
   color: '#08111c',
   glowColor: '#7dd3fc',
@@ -50,6 +56,15 @@ const citySurface: CityScreenSurface = {
   sections: ['middle'],
   size: [156, 184, 3.4],
   type: 'wall',
+};
+
+const semanticTowerSurface: CityScreenSurface = {
+  ...citySurface,
+  id: '1a459ffc-d447-4899-97e5-7af7b562487d-hero-tower-right-tower-ribbon',
+  position: [518, 145, -518],
+  role: 'tower-side',
+  size: [44, 104, 2],
+  type: 'tower-side',
 };
 
 const citySocket: CityScreenSocket = {
@@ -96,8 +111,8 @@ const cityPlan: CanonicalWorldPlan = {
   districtStride: 548,
   filteredCityPlanes: [cityPlane],
   filteredMasses: [cityMass],
-  filteredScreenSurfaces: [citySurface],
-  filteredTowerLandmarks: [cityTower],
+  filteredScreenSurfaces: [citySurface, semanticTowerSurface],
+  filteredTowerLandmarks: [cityTower, semanticTower],
   promenadeAxisPlanes: [cityPlane],
   screenAssignments: [cityAssignment],
   screenSockets: [citySocket],
@@ -228,6 +243,11 @@ const rearCampusPlan: ExpoPlanningZonePlan = {
 
 const boothPlacements = [
   {
+    company: {
+      booth: { id: 'booth-sponsor-concierge' },
+      id: 'company-sponsor-concierge',
+      slug: 'sponsor-concierge',
+    },
     id: 'booth-1',
     position: [40, 0, -80] as [number, number, number],
     sectorId: 'sector-a',
@@ -246,6 +266,14 @@ assert.ok(cityRegistry.some((entry) => entry.id === citySocket.id && entry.layer
 assert.ok(cityRegistry.some((entry) => entry.id === cityAssignment.id && entry.layer === 'city-screen-assignment'));
 assert.ok(cityRegistry.some((entry) => entry.id === cityMass.id && entry.layer === 'city-mass'));
 assert.ok(cityRegistry.some((entry) => entry.id === cityTower.id && entry.layer === 'city-tower'));
+assert.deepEqual(
+  cityRegistry.find((entry) => entry.id === semanticTower.id)?.aliases,
+  ['arrival-core-hero-tower-right'],
+);
+assert.deepEqual(
+  cityRegistry.find((entry) => entry.id === semanticTowerSurface.id)?.aliases,
+  ['arrival-core-hero-tower-right-tower-ribbon'],
+);
 assert.ok(cityRegistry.some((entry) => entry.id === 'mega-landmark-arrival' && entry.layer === 'mega-landmark'));
 
 const stadiumBefore = JSON.stringify(rearCampusPlan);
@@ -257,9 +285,7 @@ assert.equal(JSON.stringify(rearCampusPlan), stadiumBefore);
 assert.ok(stadiumRegistry.some((entry) => entry.id === stadiumSurface.id && entry.layer === 'stadium-screen-surface'));
 assert.ok(stadiumRegistry.some((entry) => entry.id === stadiumSocket.id && entry.layer === 'stadium-screen-socket'));
 assert.ok(stadiumRegistry.some((entry) => entry.id === stadiumAssignment.id && entry.layer === 'stadium-screen-assignment'));
-assert.ok(stadiumRegistry.some((entry) => entry.id === 'stadium-left-assignment-1-rear-campus-custom-feed-left' && entry.layer === 'stadium-screen-feed' && entry.sourceKind === 'rear-campus-custom-screen-feed'));
-assert.ok(stadiumRegistry.some((entry) => entry.id === 'stadium-right-assignment-1-rear-campus-custom-feed-right' && entry.layer === 'stadium-screen-feed' && entry.sourceFile === 'src/modules/expo/runtime/world/ExpoRearCampusStructures.tsx'));
-assert.ok(stadiumRegistry.some((entry) => entry.id === 'stadium-assignment-1-rear-campus-custom-feed-bowl' && entry.layer === 'stadium-screen-feed' && entry.safeEditSeam === 'src/modules/expo/runtime/world/ExpoRearCampusStructures.tsx'));
+assert.equal(stadiumRegistry.filter((entry) => entry.layer === 'stadium-screen-feed').length, 0);
 assert.ok(stadiumRegistry.some((entry) => entry.id === 'rear-forecourt-1' && entry.layer === 'stadium-plane'));
 assert.ok(stadiumRegistry.some((entry) => entry.id === 'rear-pavilion-1' && entry.layer === 'stadium-pavilion'));
 assert.ok(stadiumRegistry.some((entry) => entry.id === 'rear-tower-1' && entry.layer === 'stadium-tower'));
@@ -269,4 +295,5 @@ const boothsBefore = JSON.stringify(boothPlacements);
 const boothRegistry = buildBoothWorldObjectRegistry(boothPlacements);
 assert.equal(JSON.stringify(boothPlacements), boothsBefore);
 assert.deepEqual(boothRegistry.map((entry) => entry.id), ['booth-1']);
+assert.deepEqual(boothRegistry[0]?.aliases, ['sponsor-concierge', 'company-sponsor-concierge', 'booth-sponsor-concierge']);
 assert.equal(boothRegistry[0]?.layer, 'booth');

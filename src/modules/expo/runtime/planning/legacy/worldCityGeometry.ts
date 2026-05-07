@@ -1318,7 +1318,7 @@ export function buildTowerScreenSurfaces(towers: CityTower[]): CityScreenSurface
   return towers.flatMap((tower) => {
     const isHeroTower = tower.role === 'hero';
     const isMidTower = tower.role === 'mid';
-    const isSupportTower = tower.role === 'support' || tower.role === 'outer-support';
+    const isSupportTower = tower.role === 'support';
     const isLeftSide = tower.position[0] < 0;
 
     if (!isHeroTower && !isMidTower && !isSupportTower) {
@@ -1330,8 +1330,8 @@ export function buildTowerScreenSurfaces(towers: CityTower[]): CityScreenSurface
       Math.sin(yaw) * distance,
       Math.cos(yaw) * distance,
     ]);
-    const [heroRibbonOffsetX, heroRibbonOffsetZ] = offsetAlongYaw(isHeroTower ? 11.2 : isMidTower ? 9.2 : 8.4);
-    const [crownOffsetX, crownOffsetZ] = offsetAlongYaw(isHeroTower ? 6.2 : isMidTower ? 4.8 : 4.4);
+    const [heroRibbonOffsetX, heroRibbonOffsetZ] = offsetAlongYaw(isHeroTower ? 38.5 : isMidTower ? 22.4 : 11.4);
+    const [crownOffsetX, crownOffsetZ] = offsetAlongYaw(isHeroTower ? 18.8 : isMidTower ? 10.8 : 6.1);
     const [supportOffsetX, supportOffsetZ] = offsetAlongYaw(tower.role === 'outer-support' ? 3.6 : 4.1);
     const ribbonSurface: CityScreenSurface = {
       id: `${tower.id}-tower-ribbon`,
@@ -1342,9 +1342,9 @@ export function buildTowerScreenSurfaces(towers: CityTower[]): CityScreenSurface
       ],
       rotation: [0, yaw, 0],
       size: [
-        isHeroTower ? 60 : 46,
-        isHeroTower ? 146 : 116,
-        2.3,
+        isHeroTower ? 44 : 38,
+        isHeroTower ? 104 : 92,
+        2,
       ],
       color: '#091320',
       glowColor: isHeroTower ? tower.crownColor : '#7dd3fc',
@@ -1361,7 +1361,7 @@ export function buildTowerScreenSurfaces(towers: CityTower[]): CityScreenSurface
             tower.position[2] + crownOffsetZ,
           ],
           rotation: [0, yaw, 0],
-          size: [38, 46, 1.9],
+          size: [26, 34, 1.8],
           color: '#0b1421',
           glowColor: tower.crownColor,
           role: 'tower-crown' as const,
@@ -1376,7 +1376,7 @@ export function buildTowerScreenSurfaces(towers: CityTower[]): CityScreenSurface
               tower.position[2] + crownOffsetZ,
             ],
             rotation: [0, yaw, 0],
-            size: [26, 30, 1.8],
+            size: [20, 24, 1.7],
             color: '#0b1421',
             glowColor: '#93c5fd',
             role: 'tower-crown' as const,
@@ -1435,13 +1435,14 @@ export function buildScreenSockets(surfaces: CityScreenSurface[]): CityScreenSoc
 
   const getSocketAnchorDepth = (surface: CityScreenSurface) => {
     const housingDepth = getSurfaceHousingDepth(surface);
+    const isRearCampusSurface = surface.id.startsWith('rear-campus-');
 
     if (surface.role === 'hero-wall') {
-      return housingDepth * 0.42;
+      return isRearCampusSurface ? housingDepth * 0.3 : housingDepth * 0.42;
     }
 
     if (surface.role === 'support-wall') {
-      return housingDepth * 0.4;
+      return isRearCampusSurface ? housingDepth * 0.26 : housingDepth * 0.4;
     }
 
     if (surface.role === 'tower-crown') {
@@ -1459,7 +1460,9 @@ export function buildScreenSockets(surfaces: CityScreenSurface[]): CityScreenSoc
     if (surface.role === 'hero-wall') {
       return {
         color: surface.glowColor,
-        frameSize: [surface.size[0] * 0.86, surface.size[1] * 0.84],
+        frameSize: surface.id.startsWith('rear-campus-')
+          ? [surface.size[0] * 0.94, surface.size[1] * 0.92]
+          : [surface.size[0] * 0.86, surface.size[1] * 0.84],
         id: `${surface.id}-socket`,
         kind: 'hero_wall',
         position: [surface.position[0] + offsetX, surface.position[1] + offsetY, surface.position[2] + offsetZ],
@@ -1471,7 +1474,9 @@ export function buildScreenSockets(surfaces: CityScreenSurface[]): CityScreenSoc
     if (surface.role === 'support-wall') {
       return {
         color: surface.glowColor,
-        frameSize: [surface.size[0] * 0.8, surface.size[1] * 0.78],
+        frameSize: surface.id.startsWith('rear-campus-')
+          ? [surface.size[0] * 0.9, surface.size[1] * 0.88]
+          : [surface.size[0] * 0.8, surface.size[1] * 0.78],
         id: `${surface.id}-socket`,
         kind: 'wall',
         position: [surface.position[0] + offsetX, surface.position[1] + offsetY, surface.position[2] + offsetZ],
