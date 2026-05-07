@@ -49,7 +49,7 @@ export type ExpoOperatorSession =
     }
   | {
       enabled: true;
-      reason: 'dev' | 'staging-review';
+      reason: 'dev' | 'local-review' | 'staging-review';
     };
 
 export function resolveExpoOperatorSession(): ExpoOperatorSession {
@@ -59,6 +59,7 @@ export function resolveExpoOperatorSession(): ExpoOperatorSession {
 
   const params = new URLSearchParams(window.location.search);
   const wantsOperator = params.get('operator') === '1';
+  const isLocalReviewHost = ['localhost', '127.0.0.1', '::1', '[::1]'].includes(window.location.hostname);
   const isStagingHost = /(^|\.)staging\.30sek24\.com$/i.test(window.location.hostname);
   const isVercelPreviewHost = /\.vercel\.app$/i.test(window.location.hostname) || /\.vercel\.dev$/i.test(window.location.hostname);
 
@@ -68,6 +69,11 @@ export function resolveExpoOperatorSession(): ExpoOperatorSession {
 
   if (import.meta.env.DEV) {
     return { enabled: true, reason: 'dev' };
+  }
+
+  // Production-mode Docker builds still need local operator review without exposing it on public production hosts.
+  if (isLocalReviewHost) {
+    return { enabled: true, reason: 'local-review' };
   }
 
   if (isStagingHost) {
