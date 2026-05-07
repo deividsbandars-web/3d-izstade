@@ -86,11 +86,6 @@ export function resolveReviewOperatorZoneStartView(
   zone: ReviewOperatorZone,
   registryById: Map<string, { position: [number, number, number] | number[] }>,
 ): ExpoStartView {
-  const isStadiumZone = zone.id.startsWith('stadium-') || zone.id.startsWith('rear-campus-');
-  if (!isStadiumZone) {
-    return zone.startView;
-  }
-
   if (!zone.camera?.targetIds.length) {
     return zone.startView;
   }
@@ -628,6 +623,11 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       id: 'rear-campus-center',
       intent: 'rear-campus-center-review',
       label: 'Rear Campus Center',
+      camera: {
+        lookAtOffset: [0, 34, 0],
+        positionOffset: [0, 172, 520],
+        targetIds: ['rear-campus-center-event-island-feed-surface'],
+      },
       startView: {
         lookAt: [0, 118, -1702],
         position: [0, 174, -1518],
