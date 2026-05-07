@@ -96,15 +96,13 @@ export function ExpoWorldCanvasShell({
   const [webglLost, setWebglLost] = useState(false);
   const [webglLostAt, setWebglLostAt] = useState<string | null>(null);
   const [webglStatusKey, setWebglStatusKey] = useState(0);
-  const [webglAvailability, setWebglAvailability] = useState<WebglAvailability>(() => detectWebglAvailability());
+  const [webglAvailability] = useState<WebglAvailability>(() => detectWebglAvailability());
 
   useEffect(() => {
-    const status = detectWebglAvailability();
-    setWebglAvailability(status);
-    if (!status.available) {
-      reportExpoDevError('webgl.unavailable', 'WebGL unavailable at startup', { reason: status.reason });
+    if (!webglAvailability.available) {
+      reportExpoDevError('webgl.unavailable', 'WebGL unavailable at startup', { reason: webglAvailability.reason });
     }
-  }, []);
+  }, [webglAvailability.available, webglAvailability.reason]);
 
   const onCreated = useMemo(() => ({ gl }: { gl: THREE.WebGLRenderer }) => {
     const canvas = gl.domElement;
