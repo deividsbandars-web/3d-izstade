@@ -8,6 +8,7 @@ import {
   buildBoothWorldObjectRegistry,
   buildCityWorldObjectRegistry,
   buildStadiumWorldObjectRegistry,
+  type WorldObjectRegistryEntry,
 } from '../../world/inspection/worldObjectRegistry';
 import { ExpoOperatorOverlay } from '../overlay/ExpoOperatorOverlay';
 import {
@@ -18,7 +19,7 @@ import {
 import { useExpoOperatorState } from './useExpoOperatorState';
 
 const LOCAL_BUILD_STAMP = `LOCAL-${new Date().toISOString().replace('T', ' ').slice(0, 19)}`;
-const REVIEW_ZONE_MAX_AUTO_RESOLVE_DRIFT = 1800;
+const REVIEW_ZONE_MAX_AUTO_RESOLVE_DRIFT = 5200;
 
 function getReviewZoneMaxAutoResolveDrift(zoneId: string) {
   if (zoneId.startsWith('stadium-') || zoneId.startsWith('rear-campus-')) {
@@ -26,6 +27,26 @@ function getReviewZoneMaxAutoResolveDrift(zoneId: string) {
   }
 
   return REVIEW_ZONE_MAX_AUTO_RESOLVE_DRIFT;
+}
+
+function buildRegistryMap(
+  entries: WorldObjectRegistryEntry[],
+) {
+  const registryById = new Map<string, WorldObjectRegistryEntry>();
+
+  for (const entry of entries) {
+    registryById.set(entry.id, entry);
+  }
+
+  for (const entry of entries) {
+    for (const alias of entry.aliases ?? []) {
+      if (alias && !registryById.has(alias)) {
+        registryById.set(alias, entry);
+      }
+    }
+  }
+
+  return registryById;
 }
 
 export function useExpoOperatorLayer({
@@ -96,7 +117,7 @@ export function useExpoOperatorLayer({
       ...boothRegistryEntries,
     ];
 
-    return new Map(entries.map((entry) => [entry.id, entry]));
+    return buildRegistryMap(entries);
   }, [boothRegistryEntries, cityRegistryEntries, stadiumRegistryEntries]);
   const resolvedReviewZones = useMemo(
     () => reviewZones.map((zone) => {
