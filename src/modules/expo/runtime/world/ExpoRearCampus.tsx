@@ -119,6 +119,22 @@ export function ExpoRearCampus({
             polygonOffsetUnits={-3}
           />
         </mesh>
+        <mesh
+          name="rear-campus-front-transition-ground"
+          position={[0, 0.018, campusCenterZ + 2070]}
+          rotation={[-Math.PI / 2, 0, 0]}
+          receiveShadow
+          renderOrder={7}
+        >
+          <planeGeometry args={[6400, 680]} />
+          <ExpoRuntimeSurfaceMaterial
+            fallbackColor="#6f7c85"
+            repeat={[8.2, 1.2]}
+            surface="concrete"
+            polygonOffsetFactor={-4}
+            polygonOffsetUnits={-4}
+          />
+        </mesh>
         {hasVisibleForecourts && filteredStadiumForecourts.map((plane) => (
           <mesh key={plane.id} position={plane.position} rotation={[-Math.PI / 2, 0, 0]} receiveShadow renderOrder={12}>
             <planeGeometry args={plane.size} />
