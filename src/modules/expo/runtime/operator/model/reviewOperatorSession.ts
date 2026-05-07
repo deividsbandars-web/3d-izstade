@@ -177,7 +177,7 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
     },
     {
       expectedKeyObjectIds: [
-        'screen-marquee-left-0',
+        'screen-marquee-left-2',
       ],
       expectedVisibleLayers: ['city-screen-surface'],
       id: 'left-marquee',
@@ -185,8 +185,8 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       label: 'Left Marquee',
       camera: {
         lookAtOffset: [0, 22, 0],
-        positionOffset: [520, 178, 690],
-        targetIds: ['screen-marquee-left-0'],
+        positionOffset: [768, 186, 444],
+        targetIds: ['screen-marquee-left-2'],
       },
       startView: {
         lookAt: [-708, 148, -296],
@@ -200,16 +200,16 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
     },
     {
       expectedKeyObjectIds: [
-        'screen-marquee-left-0',
+        'screen-marquee-left-2',
       ],
       expectedVisibleLayers: ['city-screen-surface'],
       id: 'left-marquee-close',
       intent: 'left-screen-marquee-close-review',
       label: 'Left Marquee Close',
       camera: {
-        lookAtOffset: [0, 16, 0],
-        positionOffset: [286, 96, 330],
-        targetIds: ['screen-marquee-left-0'],
+        lookAtOffset: [0, 14, 0],
+        positionOffset: [528, 216, 294],
+        targetIds: ['screen-marquee-left-2'],
       },
       startView: {
         lookAt: [-622, 124, -284],
@@ -315,7 +315,7 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
     },
     {
       expectedKeyObjectIds: [
-        'screen-marquee-right-0',
+        'screen-marquee-right-2',
       ],
       expectedVisibleLayers: ['city-screen-surface'],
       id: 'right-marquee',
@@ -323,8 +323,8 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       label: 'Right Marquee',
       camera: {
         lookAtOffset: [0, 22, 0],
-        positionOffset: [-520, 178, 690],
-        targetIds: ['screen-marquee-right-0'],
+        positionOffset: [-768, 186, 444],
+        targetIds: ['screen-marquee-right-2'],
       },
       startView: {
         lookAt: [708, 144, -328],
@@ -338,7 +338,7 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
     },
     {
       expectedKeyObjectIds: [
-        'screen-marquee-right-0',
+        'screen-marquee-right-2',
       ],
       expectedVisibleLayers: ['city-screen-surface'],
       id: 'right-marquee-close',
@@ -346,8 +346,8 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       label: 'Right Marquee Close',
       camera: {
         lookAtOffset: [0, 14, 0],
-        positionOffset: [-312, 104, 282],
-        targetIds: ['screen-marquee-right-0'],
+        positionOffset: [-528, 216, 294],
+        targetIds: ['screen-marquee-right-2'],
       },
       startView: {
         lookAt: [760, 188, -332],

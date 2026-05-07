@@ -354,19 +354,23 @@ foreach ($zone in $reviewRaw) {
   if (-not $screenshotExists) {
     Add-UniqueIssue -Target $zoneIssues -Issue (New-Issue -Severity 'critical' -Code 'screenshot-missing' -Message 'Screenshot not captured for zone.')
   } else {
-    if ($screenshotBytes -lt $SmallScreenshotBytes) {
-      Add-UniqueIssue -Target $zoneIssues -Issue (New-Issue -Severity 'medium' -Code 'screenshot-small' -Message "Screenshot file is small ($screenshotBytes bytes), inspect possible blank/obstructed view.")
-    }
-
     $quality = $screenshotMeta.quality
+    $hasUsableQuality = $false
+    $isLowDetailScreenshot = $false
     if ($quality -and $quality.error) {
       Add-UniqueIssue -Target $zoneIssues -Issue (New-Issue -Severity 'medium' -Code 'screenshot-analysis-failed' -Message "Screenshot quality analysis failed: $($quality.error)")
     } elseif ($quality) {
       $brightnessStdDev = [double]$quality.brightnessStdDev
       $colorBucketCount = [int]$quality.colorBucketCount
-      if ($brightnessStdDev -lt $LowDetailBrightnessStdDev -or $colorBucketCount -lt $LowDetailColorBuckets) {
+      $hasUsableQuality = $true
+      $isLowDetailScreenshot = $brightnessStdDev -lt $LowDetailBrightnessStdDev -and $colorBucketCount -lt $LowDetailColorBuckets
+      if ($isLowDetailScreenshot) {
         Add-UniqueIssue -Target $zoneIssues -Issue (New-Issue -Severity 'medium' -Code 'screenshot-low-detail' -Message "Screenshot is low-detail/possibly blank: brightnessStdDev=$brightnessStdDev, colorBucketCount=$colorBucketCount.")
       }
+    }
+
+    if ($screenshotBytes -lt $SmallScreenshotBytes -and (-not $hasUsableQuality -or $isLowDetailScreenshot)) {
+      Add-UniqueIssue -Target $zoneIssues -Issue (New-Issue -Severity 'medium' -Code 'screenshot-small' -Message "Screenshot file is small and quality signal is weak/missing ($screenshotBytes bytes), inspect possible blank/obstructed view.")
     }
   }
 

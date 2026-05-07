@@ -49,7 +49,7 @@ assert.ok(zones.every((zone) => zone.startView.lookAt.length === 3));
 const leftMarquee = zones.find((zone) => zone.id === 'left-marquee');
 assert.ok(leftMarquee);
 const resolvedLeftMarqueeView = resolveReviewOperatorZoneStartView(leftMarquee, new Map([
-  ['screen-marquee-left-0', { position: [-700, 140, -300] }],
+  ['screen-marquee-left-2', { position: [-708, 148, -1392] }],
 ]));
-assert.deepEqual(resolvedLeftMarqueeView.lookAt, [-700, 162, -300]);
-assert.deepEqual(resolvedLeftMarqueeView.position, [-180, 318, 390]);
+assert.deepEqual(resolvedLeftMarqueeView.lookAt, [-708, 170, -1392]);
+assert.deepEqual(resolvedLeftMarqueeView.position, [60, 334, -948]);
