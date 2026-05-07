@@ -374,35 +374,7 @@ function buildRearCampusScreenSurfaces(
       type: 'wall',
     } satisfies CityScreenSurface;
   };
-  const buildCenterIslandSurface = (args: {
-    glowColor: string;
-    id: string;
-    width: number;
-    height: number;
-    depth: number;
-    y: number;
-    zOffset: number;
-  }): CityScreenSurface => ({
-    id: args.id,
-    position: [0, args.y, campusCenterZ + args.zOffset],
-    rotation: [0, 0, 0],
-    size: [args.width, args.height, args.depth],
-    color: '#0c1724',
-    glowColor: args.glowColor,
-    role: 'support-wall',
-    type: 'wall',
-  });
-
   const campusFrontSupportSurfaces = [
-    buildCenterIslandSurface({
-      id: 'rear-campus-center-event-island-feed-surface',
-      glowColor: '#67e8f9',
-      width: 292,
-      height: 128,
-      depth: 3,
-      y: 142,
-      zOffset: -1212,
-    }),
     buildPavilionSurface({
       id: 'rear-campus-event-pavilion-left-feed-surface',
       sourceId: 'rear-campus-event-pavilion-left',
@@ -542,7 +514,7 @@ function buildRearCampusScreenSurfaces(
     }),
     buildMegaHostSurface({
       id: 'rear-campus-needle-crown-skyscraper-host-surface',
-      position: [892, 408, rearCampusZ(-534)],
+      position: [1540, 408, rearCampusZ(-534)],
       width: 82,
       height: 108,
       depth: 3,
