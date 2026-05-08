@@ -17,6 +17,7 @@ const SOLID_LAYERS = new Set([
   'stadium-structure',
   'stadium-tower',
 ]);
+const BOOTH_SOLID_CLEARANCE_LAYERS = SOLID_LAYERS;
 
 const GROUND_LAYERS = new Set(['city-plane', 'stadium-plane']);
 const SCREEN_LAYERS = new Set(['city-screen-surface', 'stadium-screen-surface']);
@@ -350,6 +351,49 @@ function auditBoothSpacing(entries) {
   return issues;
 }
 
+function auditBoothSolidClearance(entries) {
+  const issues = [];
+  const booths = entries
+    .filter((entry) => entry.layer === 'booth')
+    .map((entry) => ({ bounds: resolveBounds(entry), entry }))
+    .filter((item) => item.bounds);
+  const solids = entries
+    .filter((entry) => BOOTH_SOLID_CLEARANCE_LAYERS.has(entry.layer))
+    .map((entry) => ({ bounds: resolveBounds(entry), entry }))
+    .filter((item) => item.bounds);
+
+  for (const booth of booths) {
+    for (const solid of solids) {
+      const overlapArea = overlapAreaXZ(booth.bounds, solid.bounds);
+      if (overlapArea > 0) {
+        pushIssue(
+          issues,
+          overlapArea >= 600 ? 'high' : 'medium',
+          'booth-solid-overlap',
+          `Booth ${booth.entry.id} overlaps ${solid.entry.layer} ${solid.entry.id} on the XZ footprint.`,
+          [booth.entry.id, solid.entry.id],
+          { overlapAreaXZ: Math.round(overlapArea) },
+        );
+        continue;
+      }
+
+      const gap = gapXZ(booth.bounds, solid.bounds);
+      if (gap <= 8) {
+        pushIssue(
+          issues,
+          'medium',
+          'booth-solid-near-gap',
+          `Booth ${booth.entry.id} is ${Math.round(gap)} units from ${solid.entry.layer} ${solid.entry.id}; booth frontage needs clearer separation.`,
+          [booth.entry.id, solid.entry.id],
+          { gapXZ: Math.round(gap) },
+        );
+      }
+    }
+  }
+
+  return issues;
+}
+
 function auditScreenSocketAttachment(entries) {
   const registryById = new Map(entries.map((entry) => [entry.id, entry]));
   const screens = entries
@@ -488,6 +532,7 @@ const issues = [
   ...auditSolidBoundsCoverage(entries),
   ...auditGroundAndCrossLayerOverlaps(entries),
   ...auditBoothSpacing(entries),
+  ...auditBoothSolidClearance(entries),
   ...auditScreenSocketAttachment(entries),
   ...auditScreenHostAttachment(entries),
 ].sort((left, right) => {

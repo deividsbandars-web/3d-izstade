@@ -10,6 +10,10 @@ import {
   buildWorldCityMegaLandmarkBounds,
   filterWorldCityMegaLandmarkBounds,
 } from '../WorldCityMegaLandmarkBounds';
+import {
+  buildExpoBoothLocalFootprint,
+  type ExpoBoothLocalFootprint,
+} from '../../../../../shared/expo/lib/boothLocalFootprint';
 
 export type WorldObjectLayer =
   | 'booth'
@@ -471,14 +475,19 @@ export function buildStadiumWorldObjectRegistry({
 
 export function buildBoothWorldObjectRegistry(
   boothPlacements: ReadonlyArray<{
+    boothType?: string | null;
     company?: {
       booth?: unknown;
       id?: string | number | null;
       slug?: string | null;
     } | null;
     id: string;
+    localFootprint?: ExpoBoothLocalFootprint;
+    nodeType?: string | null;
     position: [number, number, number];
+    rotation?: [number, number, number] | null;
     sectorId?: string | null;
+    sponsorTier?: string | null;
   }>,
 ): WorldObjectRegistryEntry[] {
   return boothPlacements.map((placement) => {
@@ -491,6 +500,15 @@ export function buildBoothWorldObjectRegistry(
       placement.company?.id != null ? String(placement.company.id) : '',
       boothId,
     ]);
+    const footprint = placement.localFootprint ?? buildExpoBoothLocalFootprint({
+      boothType: placement.boothType,
+      nodeType: placement.nodeType,
+      position: placement.position,
+      rotation: placement.rotation,
+      sponsorTier: placement.sponsorTier,
+    });
+    const footprintWidth = footprint.worldBounds.maxX - footprint.worldBounds.minX;
+    const footprintDepth = footprint.worldBounds.maxZ - footprint.worldBounds.minZ;
 
     return createEntry({
       aliases,
@@ -502,7 +520,9 @@ export function buildBoothWorldObjectRegistry(
       layer: 'booth',
       planningZone: placement.sectorId ?? null,
       position: placement.position,
+      rotation: placement.rotation ?? [0, 0, 0],
       safeEditSeam: 'src/shared/expo/layoutEngine.ts',
+      size: [footprintWidth, 12, footprintDepth],
       sourceFile: 'src/shared/expo/layoutEngine.ts',
       sourceFunction: 'buildExpoLayoutEngine',
       sourceKind: 'booth-placement',

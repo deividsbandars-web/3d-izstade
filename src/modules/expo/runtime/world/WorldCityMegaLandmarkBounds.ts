@@ -46,7 +46,7 @@ export function buildWorldCityMegaLandmarkBounds({
     { id: 'mega-landmark-right-support-spire', position: [294, 90, -372], size: [132, 180, 64] },
     { id: 'mega-landmark-left-grand-rampart', position: [-888, 138, -156], size: [220, 276, 72] },
     { id: 'mega-landmark-left-cantilever-forum', position: [-438, 104, -116], size: [320, 208, 96] },
-    { id: 'mega-landmark-left-split-crown-gate', position: [-654, 146, -286], size: [340, 292, 96] },
+    { id: 'mega-landmark-left-split-crown-gate', position: [-742, 146, -346], size: [340, 292, 96] },
     { id: 'mega-landmark-left-broken-wall-monument', position: [-262, 112, -412], size: [140, 224, 96] },
     { id: 'mega-landmark-left-disc-habitat', position: [-918, 178, -548], size: [296, 212, 296] },
     { id: 'mega-landmark-left-split-monolith-pair', position: [-648, 146, -724], size: [160, 292, 72] },
