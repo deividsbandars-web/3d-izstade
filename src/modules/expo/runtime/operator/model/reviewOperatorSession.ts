@@ -138,8 +138,8 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       intent: 'arrival-gateway-hierarchy',
       label: 'Arrival Gate',
       camera: {
-        lookAtOffset: [0, 24, 0],
-        positionOffset: [0, 124, 420],
+        lookAtOffset: [0, 64, 0],
+        positionOffset: [0, 160, 300],
         targetIds: ['mega-landmark-arrival', 'mega-landmark-showcase'],
       },
       startView: {
@@ -230,8 +230,8 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       intent: 'left-edge-far-review',
       label: 'Left Edge Far',
       camera: {
-        lookAtOffset: [0, 14, 0],
-        positionOffset: [-260, 164, 360],
+        lookAtOffset: [0, 74, 0],
+        positionOffset: [-220, 190, 260],
         targetIds: ['screen-array-left-0'],
       },
       startView: {
@@ -368,8 +368,8 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       intent: 'right-edge-far-review',
       label: 'Right Edge Far',
       camera: {
-        lookAtOffset: [0, 14, 0],
-        positionOffset: [-520, 164, 560],
+        lookAtOffset: [0, 32, 0],
+        positionOffset: [-420, 188, 420],
         targetIds: ['screen-array-right-0'],
       },
       startView: {
@@ -485,8 +485,8 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       intent: 'left-sponsor-boulevard-frontage-review',
       label: 'Sponsor Boulevard Left',
       camera: {
-        lookAtOffset: [0, 22, 0],
-        positionOffset: [280, 188, 560],
+        lookAtOffset: [0, 42, 0],
+        positionOffset: [240, 188, 420],
         targetIds: ['sponsor-concierge'],
       },
       startView: {
@@ -630,8 +630,8 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       intent: 'rear-campus-center-review',
       label: 'Rear Campus Center',
       camera: {
-        lookAtOffset: [0, 42, 0],
-        positionOffset: [360, 190, 640],
+        lookAtOffset: [0, 64, 0],
+        positionOffset: [300, 210, 520],
         targetIds: ['rear-campus-stage-monolith-canopy-host-surface'],
       },
       startView: {

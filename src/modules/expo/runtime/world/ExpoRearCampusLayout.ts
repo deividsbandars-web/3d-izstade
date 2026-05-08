@@ -57,6 +57,19 @@ const HIDDEN_REAR_CAMPUS_FORECOURT_IDS = new Set([
   'stadium-forecourt-front-threshold-right',
 ]);
 
+const REVEALED_REAR_CAMPUS_FORECOURT_IDS = new Set([
+  'stadium-forecourt-center-main',
+  'stadium-forecourt-center-inner',
+  'stadium-forecourt-axis',
+  'stadium-forecourt-rear-band',
+  'stadium-forecourt-endcap',
+  'stadium-forecourt-center-carpet',
+  'stadium-forecourt-threshold-left',
+  'stadium-forecourt-threshold-right',
+  'stadium-forecourt-front-court-left',
+  'stadium-forecourt-front-court-right',
+]);
+
 const HIDDEN_REAR_CAMPUS_PAVILION_IDS = new Set([
   'rear-campus-side-pavilion-left-rear',
   'rear-campus-side-pavilion-right-rear',
@@ -189,7 +202,10 @@ export function buildRearCampusForecourts(campusCenterZ: number): CampusPlane[] 
 }
 
 export function buildVisibleRearCampusForecourts(campusCenterZ: number): CampusPlane[] {
-  return buildRearCampusForecourts(campusCenterZ).filter((plane) => !HIDDEN_REAR_CAMPUS_FORECOURT_IDS.has(plane.id));
+  return buildRearCampusForecourts(campusCenterZ).filter((plane) => (
+    REVEALED_REAR_CAMPUS_FORECOURT_IDS.has(plane.id)
+    || !HIDDEN_REAR_CAMPUS_FORECOURT_IDS.has(plane.id)
+  ));
 }
 
 export function buildRearCampusSidePavilions(campusCenterZ: number): CampusPavilion[] {

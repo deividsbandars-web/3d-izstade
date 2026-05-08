@@ -16,6 +16,12 @@ const PLAYER_COLLISION_TARGETS_CACHE_RESOLVED_VERSION_KEY = 'playerCollisionTarg
 const UNIFIED_WORLD_TONE = '#6f7c85';
 export const EXPO_START_VIEW_KEY = 'expoStartView';
 
+const SURFACE_TONES = {
+  concrete: '#85939d',
+  grass: '#6f8b74',
+  paver: '#9ba7ae',
+} as const;
+
 function getPlayerCollisionTargetsVersion(scene: THREE.Scene) {
   const version = Number(scene.userData[PLAYER_COLLISION_TARGETS_CACHE_VERSION_KEY]);
   return Number.isFinite(version) ? version : 0;
@@ -138,9 +144,9 @@ export function ColliderMaterial({ debug, color }: { debug?: boolean; color: str
 }
 
 export function ExpoRuntimeSurfaceMaterial({
-  fallbackColor: _fallbackColor,
+  fallbackColor,
   repeat: _repeat,
-  surface: _surface,
+  surface,
   polygonOffsetFactor = -1,
   polygonOffsetUnits = -1,
 }: {
@@ -150,7 +156,7 @@ export function ExpoRuntimeSurfaceMaterial({
   polygonOffsetFactor?: number;
   polygonOffsetUnits?: number;
 }) {
-  const color = UNIFIED_WORLD_TONE;
+  const color = fallbackColor === UNIFIED_WORLD_TONE ? SURFACE_TONES[surface] : fallbackColor;
   const roughness = 0.95;
 
   return (

@@ -8,12 +8,13 @@ function tintHex(hex: string, ratio: number) {
   return `#${[mix(channel(0)), mix(channel(2)), mix(channel(4))].map((value) => value.toString(16).padStart(2, '0')).join('')}`;
 }
 
-function resolveStructuralCityPlaneTone(id: string, visualProfile: ExpoWorldVisualProfile) {
-  if (id.startsWith('arrival-')) {
-    return tintHex(visualProfile.global.groundBase, 0.08);
+function resolveStructuralCityPlaneTone(plane: CityPlane, visualProfile: ExpoWorldVisualProfile) {
+  const authoredTone = plane.color || visualProfile.global.groundBase;
+  if (plane.id.startsWith('arrival-')) {
+    return tintHex(authoredTone, 0.04);
   }
 
-  return visualProfile.global.groundBase;
+  return authoredTone;
 }
 
 function filterVisibleStructuralCityPlanes(planes: CityPlane[]) {
@@ -36,7 +37,7 @@ function PlaneLayer({
           <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow renderOrder={8}>
             <planeGeometry args={plane.size} />
             <meshStandardMaterial
-              color={resolveStructuralCityPlaneTone(plane.id, visualProfile)}
+              color={resolveStructuralCityPlaneTone(plane, visualProfile)}
               roughness={Math.max(roughness, 0.88)}
               metalness={0.01}
               polygonOffset
