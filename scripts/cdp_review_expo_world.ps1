@@ -127,6 +127,25 @@ function Set-RequestBypassHeaders {
   })
 }
 
+function Clear-SiteOriginStorage {
+  param([System.Net.WebSockets.ClientWebSocket]$Ws)
+
+  try {
+    $uri = [Uri]$SiteUrl
+    $origin = "$($uri.Scheme)://$($uri.Host)"
+    if (-not $uri.IsDefaultPort) {
+      $origin = "$origin`:$($uri.Port)"
+    }
+
+    [void](Invoke-Cdp -Ws $Ws -Method 'Storage.clearDataForOrigin' -Params @{
+      origin = $origin
+      storageTypes = 'all'
+    })
+  } catch {
+    Write-Warning "Could not clear site origin storage before review: $($_.Exception.Message)"
+  }
+}
+
 function Wait-ForOperatorApi {
   param([System.Net.WebSockets.ClientWebSocket]$Ws)
 
@@ -231,6 +250,7 @@ try {
   [void](Invoke-Cdp -Ws $ws -Method 'Network.enable' -Params @{})
   [void](Invoke-Cdp -Ws $ws -Method 'Network.setCacheDisabled' -Params @{ cacheDisabled = $true })
   [void](Invoke-Cdp -Ws $ws -Method 'Network.clearBrowserCache' -Params @{})
+  Clear-SiteOriginStorage -Ws $ws
   Set-RequestBypassHeaders -Ws $ws
   [void](Invoke-Cdp -Ws $ws -Method 'Emulation.setDeviceMetricsOverride' -Params @{
     width = 1600
