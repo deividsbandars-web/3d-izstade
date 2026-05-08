@@ -335,3 +335,4 @@ assert.equal(JSON.stringify(boothPlacements), boothsBefore);
 assert.deepEqual(boothRegistry.map((entry) => entry.id), ['booth-1']);
 assert.deepEqual(boothRegistry[0]?.aliases, ['sponsor-concierge', 'company-sponsor-concierge', 'booth-sponsor-concierge']);
 assert.equal(boothRegistry[0]?.layer, 'booth');
+assert.ok(boothRegistry[0]?.size?.every((value) => value > 0), 'booth registry entries must expose positive audit bounds');

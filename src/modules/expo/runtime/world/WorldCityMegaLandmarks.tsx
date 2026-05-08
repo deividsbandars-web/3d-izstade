@@ -175,7 +175,7 @@ export function WorldCityMegaLandmarks({
   const leftRampartBase: [number, number, number] = [-888, 0, -156];
   const leftMonolithBase: [number, number, number] = [-648, 0, -724];
   const leftForumBase: [number, number, number] = [-438, 0, -116];
-  const leftCrownBase: [number, number, number] = [-654, 0, -286];
+  const leftCrownBase: [number, number, number] = [-742, 0, -346];
   const leftSupportBase: [number, number, number] = [-262, 0, -412];
   const cityPerimeterFrontZ = 760;
   const citySideWallRearZ = mediaBaseZ - 260;
