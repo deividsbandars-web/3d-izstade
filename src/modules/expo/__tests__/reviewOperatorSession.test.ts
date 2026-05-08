@@ -88,9 +88,9 @@ assert.deepEqual(resolvedRearCampusCenterView.position, [267, 386, -2926]);
 const stadiumFeedAxis = zones.find((zone) => zone.id === 'stadium-feed-axis');
 assert.ok(stadiumFeedAxis);
 const resolvedStadiumFeedAxisView = resolveReviewOperatorZoneStartView(stadiumFeedAxis, new Map([
-  ['rear-campus-bowl-feed-surface', { position: [0, 292, -4192] }],
+  ['rear-campus-bowl-center-deck', { position: [0, 212, -4192] }],
 ]));
-assert.deepEqual(resolvedStadiumFeedAxisView.lookAt, [0, 348, -4192]);
+assert.deepEqual(resolvedStadiumFeedAxisView.lookAt, [0, 348, -4084]);
 assert.deepEqual(resolvedStadiumFeedAxisView.position, [980, 592, -2872]);
 
 const rearCampusMegaHall = zones.find((zone) => zone.id === 'rear-campus-mega-hall');

@@ -655,12 +655,12 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       intent: 'rear-campus-feed-axis-review',
       label: 'Stadium Feed Axis',
       camera: {
-        lookAtOffset: [0, 56, 0],
-        positionOffset: [980, 300, 1320],
-        targetIds: ['rear-campus-bowl-feed-surface'],
+        lookAtOffset: [0, 136, 108],
+        positionOffset: [980, 380, 1320],
+        targetIds: ['rear-campus-bowl-center-deck'],
       },
       startView: {
-        lookAt: [0, 348, -4192],
+        lookAt: [0, 348, -4084],
         position: [980, 592, -2872],
         source: 'arrival-main',
       },

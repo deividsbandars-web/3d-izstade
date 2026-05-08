@@ -21,10 +21,13 @@ const BOOTH_SOLID_CLEARANCE_LAYERS = SOLID_LAYERS;
 
 const GROUND_LAYERS = new Set(['city-plane', 'stadium-plane']);
 const SCREEN_LAYERS = new Set(['city-screen-surface', 'stadium-screen-surface']);
+const STADIUM_SCREEN_FACE_HOST_LAYERS = new Set(['stadium-pavilion', 'stadium-structure', 'stadium-tower']);
 const SOCKET_LAYER_BY_SCREEN_LAYER = {
   'city-screen-surface': 'city-screen-socket',
   'stadium-screen-surface': 'stadium-screen-socket',
 };
+const AXIS_ALIGNED_YAW_TOLERANCE = 0.12;
+const SCREEN_HOST_FACE_GAP_TOLERANCE = 16;
 
 function resolveScreenHostBinding(screenId) {
   if (screenId === 'rear-campus-bowl-feed-surface') {
@@ -200,6 +203,57 @@ function gapXZ(a, b) {
 
 function distanceXZ(a, b) {
   return Math.hypot(a.position[0] - b.position[0], a.position[2] - b.position[2]);
+}
+
+function normalizeYawDelta(left, right) {
+  return Math.abs(Math.atan2(Math.sin(left - right), Math.cos(left - right)));
+}
+
+function resolveAxisAlignedFacing(rotation) {
+  const yaw = tuple3(rotation)?.[1];
+  if (!isFiniteNumber(yaw)) {
+    return null;
+  }
+
+  const candidates = [
+    { axis: 'positive-z', yaw: 0 },
+    { axis: 'negative-z', yaw: Math.PI },
+    { axis: 'positive-x', yaw: Math.PI / 2 },
+    { axis: 'negative-x', yaw: -Math.PI / 2 },
+  ].map((candidate) => ({
+    ...candidate,
+    delta: normalizeYawDelta(yaw, candidate.yaw),
+  })).sort((left, right) => left.delta - right.delta);
+
+  const best = candidates[0];
+  return best && best.delta <= AXIS_ALIGNED_YAW_TOLERANCE ? best : null;
+}
+
+function resolveFaceAttachmentMetrics(screenBounds, hostBounds, facing) {
+  switch (facing.axis) {
+    case 'positive-z':
+      return {
+        faceGap: Math.abs(screenBounds.maxZ - hostBounds.maxZ),
+        lateralOverlap: overlap1d(screenBounds.minX, screenBounds.maxX, hostBounds.minX, hostBounds.maxX),
+      };
+    case 'negative-z':
+      return {
+        faceGap: Math.abs(screenBounds.minZ - hostBounds.minZ),
+        lateralOverlap: overlap1d(screenBounds.minX, screenBounds.maxX, hostBounds.minX, hostBounds.maxX),
+      };
+    case 'positive-x':
+      return {
+        faceGap: Math.abs(screenBounds.maxX - hostBounds.maxX),
+        lateralOverlap: overlap1d(screenBounds.minZ, screenBounds.maxZ, hostBounds.minZ, hostBounds.maxZ),
+      };
+    case 'negative-x':
+      return {
+        faceGap: Math.abs(screenBounds.minX - hostBounds.minX),
+        lateralOverlap: overlap1d(screenBounds.minZ, screenBounds.maxZ, hostBounds.minZ, hostBounds.maxZ),
+      };
+    default:
+      return null;
+  }
 }
 
 function pushIssue(issues, severity, code, message, relatedIds, metrics = {}) {
@@ -509,6 +563,72 @@ function auditScreenHostAttachment(entries) {
   return issues;
 }
 
+function auditStadiumScreenHostFaceAttachment(entries) {
+  const registryById = new Map(entries.map((entry) => [entry.id, entry]));
+  const screens = entries
+    .filter((entry) => entry.layer === 'stadium-screen-surface')
+    .map((entry) => ({ bounds: resolveBounds(entry), entry }));
+  const issues = [];
+
+  for (const screen of screens) {
+    const binding = resolveScreenHostBinding(screen.entry.id);
+    if (!binding || !screen.bounds) {
+      continue;
+    }
+
+    const host = registryById.get(binding.hostId);
+    if (!host || !STADIUM_SCREEN_FACE_HOST_LAYERS.has(host.layer)) {
+      continue;
+    }
+
+    const hostBounds = resolveBounds(host);
+    const facing = resolveAxisAlignedFacing(screen.entry.rotation);
+    if (!hostBounds || !facing) {
+      continue;
+    }
+
+    const metrics = resolveFaceAttachmentMetrics(screen.bounds, hostBounds, facing);
+    if (!metrics) {
+      continue;
+    }
+
+    if (metrics.lateralOverlap <= 0) {
+      pushIssue(
+        issues,
+        'high',
+        'stadium-screen-host-face-miss',
+        `Stadium screen ${screen.entry.id} does not overlap the mounted face of host ${host.id}.`,
+        [screen.entry.id, host.id],
+        {
+          axis: facing.axis,
+          lateralOverlap: Math.round(metrics.lateralOverlap),
+          yawDelta: Number(facing.delta.toFixed(3)),
+        },
+      );
+      continue;
+    }
+
+    if (metrics.faceGap > SCREEN_HOST_FACE_GAP_TOLERANCE) {
+      pushIssue(
+        issues,
+        metrics.faceGap > 48 ? 'high' : 'medium',
+        'stadium-screen-host-face-gap',
+        `Stadium screen ${screen.entry.id} is ${Math.round(metrics.faceGap)} units from the ${facing.axis} face of host ${host.id}.`,
+        [screen.entry.id, host.id],
+        {
+          axis: facing.axis,
+          faceGap: Math.round(metrics.faceGap),
+          lateralOverlap: Math.round(metrics.lateralOverlap),
+          maxFaceGap: SCREEN_HOST_FACE_GAP_TOLERANCE,
+          yawDelta: Number(facing.delta.toFixed(3)),
+        },
+      );
+    }
+  }
+
+  return issues;
+}
+
 function summarize(issues) {
   const counts = { critical: 0, high: 0, medium: 0, low: 0 };
   const byCode = {};
@@ -535,6 +655,7 @@ const issues = [
   ...auditBoothSolidClearance(entries),
   ...auditScreenSocketAttachment(entries),
   ...auditScreenHostAttachment(entries),
+  ...auditStadiumScreenHostFaceAttachment(entries),
 ].sort((left, right) => {
   const severityDelta = SEVERITY_RANK[right.severity] - SEVERITY_RANK[left.severity];
   if (severityDelta !== 0) {

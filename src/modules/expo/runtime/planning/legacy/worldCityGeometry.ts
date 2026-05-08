@@ -1476,11 +1476,11 @@ export function buildScreenSockets(surfaces: CityScreenSurface[]): CityScreenSoc
     const isRearCampusSurface = surface.id.startsWith('rear-campus-');
 
     if (surface.role === 'hero-wall') {
-      return isRearCampusSurface ? housingDepth * 0.3 : housingDepth * 0.42;
+      return isRearCampusSurface ? housingDepth * 0.46 : housingDepth * 0.42;
     }
 
     if (surface.role === 'support-wall') {
-      return isRearCampusSurface ? housingDepth * 0.26 : housingDepth * 0.4;
+      return isRearCampusSurface ? housingDepth * 0.44 : housingDepth * 0.4;
     }
 
     if (surface.role === 'tower-crown') {

@@ -302,12 +302,16 @@ function buildRearCampusScreenSurfaces(
   campusCenterZ: number
 ): CityScreenSurface[] {
   const rearCampusZ = (defaultZ: number) => resolveRearCampusAnchoredZ(campusCenterZ, defaultZ);
+  const screenFaceInset = 4;
+  const resolvePositiveZFaceMountedZ = (hostCenterZ: number, hostDepth: number, screenDepth: number) => (
+    hostCenterZ + (hostDepth * 0.5) - (screenDepth * 0.5) - screenFaceInset
+  );
   const leftTower = landmarkTowers.find((tower) => tower.id.includes('left')) ?? null;
   const rightTower = landmarkTowers.find((tower) => tower.id.includes('right')) ?? null;
 
   const bowlSurface: CityScreenSurface = {
     id: 'rear-campus-bowl-feed-surface',
-    position: [0, 292, campusCenterZ - 972],
+    position: [0, 292, resolvePositiveZFaceMountedZ(campusCenterZ - 972, 228, 4.2)],
     rotation: [0, 0, 0],
     size: [720, 168, 4.2],
     color: '#08111c',
@@ -320,7 +324,7 @@ function buildRearCampusScreenSurfaces(
     .filter((tower): tower is RearCampusLandmarkTower => tower !== null)
     .map((tower): CityScreenSurface => ({
       id: `${tower.id}-rear-campus-feed-surface`,
-      position: [tower.position[0], 412, tower.position[2] + 104],
+      position: [tower.position[0], 412, resolvePositiveZFaceMountedZ(tower.position[2], 146, 3.8)],
       rotation: [0, 0, 0],
       size: [264, 152, 3.8],
       color: '#091320',
@@ -506,7 +510,7 @@ function buildRearCampusScreenSurfaces(
     }),
     buildMegaHostSurface({
       id: 'rear-campus-mega-civic-hall-host-surface',
-      position: [-2490, 168, rearCampusZ(-3488)],
+      position: [-2490, 168, resolvePositiveZFaceMountedZ(rearCampusZ(-3670), 324, 4.2)],
       width: 428,
       height: 194,
       depth: 4.2,
@@ -515,7 +519,7 @@ function buildRearCampusScreenSurfaces(
     }),
     buildMegaHostSurface({
       id: 'rear-campus-sky-slab-tower-host-surface',
-      position: [1087, 438, rearCampusZ(-1268)],
+      position: [1087, 438, resolvePositiveZFaceMountedZ(rearCampusZ(-1329), 136, 3)],
       width: 174,
       height: 84,
       depth: 3,
@@ -523,7 +527,7 @@ function buildRearCampusScreenSurfaces(
     }),
     buildMegaHostSurface({
       id: 'rear-campus-needle-crown-skyscraper-host-surface',
-      position: [1540, 408, rearCampusZ(-534)],
+      position: [1540, 408, resolvePositiveZFaceMountedZ(rearCampusZ(-611), 128, 3)],
       width: 82,
       height: 108,
       depth: 3,
