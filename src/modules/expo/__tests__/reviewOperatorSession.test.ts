@@ -66,8 +66,8 @@ assert.ok(leftEdgeFar);
 const resolvedLeftEdgeFarView = resolveReviewOperatorZoneStartView(leftEdgeFar, new Map([
   ['screen-array-left-0', { position: [-968, 98, -110] }],
 ]));
-assert.deepEqual(resolvedLeftEdgeFarView.lookAt, [-968, 112, -110]);
-assert.deepEqual(resolvedLeftEdgeFarView.position, [-1228, 262, 250]);
+assert.deepEqual(resolvedLeftEdgeFarView.lookAt, [-968, 172, -110]);
+assert.deepEqual(resolvedLeftEdgeFarView.position, [-1188, 288, 150]);
 
 const centerSpine = zones.find((zone) => zone.id === 'center-spine');
 assert.ok(centerSpine);
@@ -82,8 +82,8 @@ assert.ok(rearCampusCenter);
 const resolvedRearCampusCenterView = resolveReviewOperatorZoneStartView(rearCampusCenter, new Map([
   ['rear-campus-stage-monolith-canopy-host-surface', { position: [47, 126, -3266] }],
 ]));
-assert.deepEqual(resolvedRearCampusCenterView.lookAt, [47, 168, -3266]);
-assert.deepEqual(resolvedRearCampusCenterView.position, [407, 316, -2626]);
+assert.deepEqual(resolvedRearCampusCenterView.lookAt, [47, 190, -3266]);
+assert.deepEqual(resolvedRearCampusCenterView.position, [347, 336, -2746]);
 
 const towerCluster = zones.find((zone) => zone.id === 'tower-cluster');
 assert.ok(towerCluster);

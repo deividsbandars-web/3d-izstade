@@ -8,7 +8,7 @@ type CampusScreenFeed = {
 };
 
 function CampusMassMaterial({
-  color: _color,
+  color,
   emissive = '#000000',
   emissiveIntensity = 0,
 }: {
@@ -16,14 +16,9 @@ function CampusMassMaterial({
   emissive?: string;
   emissiveIntensity?: number;
 }) {
-  const resolvedColor = emissiveIntensity >= 0.08
-    ? '#7f8b94'
-    : emissiveIntensity >= 0.03
-      ? '#717d87'
-      : '#646f79';
   return (
     <meshStandardMaterial
-      color={resolvedColor}
+      color={color}
       roughness={0.74}
       metalness={0.05}
       emissive={emissive}
@@ -223,7 +218,7 @@ export function ExpoRearCampusStructures({
               {bowlFeed.imageUrl ? (
                 <SponsorTextureSurface fallbackColor={bowlFeed.accentColor} opacity={0.95} url={bowlFeed.imageUrl} />
               ) : (
-                <meshBasicMaterial color={bowlFeed.accentColor} transparent opacity={0.4} />
+                <meshBasicMaterial color={bowlFeed.accentColor} transparent opacity={0.72} />
               )}
             </mesh>
           </group>
