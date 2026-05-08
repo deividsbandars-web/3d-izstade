@@ -231,12 +231,12 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       label: 'Left Edge Far',
       camera: {
         lookAtOffset: [0, 14, 0],
-        positionOffset: [520, 164, 560],
+        positionOffset: [-260, 164, 360],
         targetIds: ['screen-array-left-0'],
       },
       startView: {
-        lookAt: [-1460, 92, -1180],
-        position: [-1820, 188, -860],
+        lookAt: [-968, 112, -110],
+        position: [-1228, 262, 250],
         source: 'arrival-main',
       },
       watchItems: [
@@ -254,12 +254,12 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       label: 'Center Spine',
       camera: {
         lookAtOffset: [0, 34, 0],
-        positionOffset: [560, 238, 760],
+        positionOffset: [-420, 210, -520],
         targetIds: ['screen-spine-primary-0'],
       },
       startView: {
-        lookAt: [0, 104, -238],
-        position: [0, 252, 120],
+        lookAt: [-184, 142, -248],
+        position: [-604, 318, -768],
         source: 'arrival-main',
       },
       watchItems: [
@@ -392,12 +392,12 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       label: 'Tower Cluster',
       camera: {
         lookAtOffset: [0, 22, 0],
-        positionOffset: [640, 220, -620],
+        positionOffset: [380, 180, 360],
         targetIds: ['arrival-core-hero-tower-right-tower-ribbon'],
       },
       startView: {
-        lookAt: [612, 136, -536],
-        position: [1450, 332, 332],
+        lookAt: [519, 167, -519],
+        position: [899, 325, -159],
         source: 'arrival-main',
       },
       watchItems: [
@@ -631,12 +631,12 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       label: 'Rear Campus Center',
       camera: {
         lookAtOffset: [0, 42, 0],
-        positionOffset: [0, 190, 760],
+        positionOffset: [360, 190, 640],
         targetIds: ['rear-campus-stage-monolith-canopy-host-surface'],
       },
       startView: {
-        lookAt: [0, 118, -1702],
-        position: [0, 174, -1518],
+        lookAt: [47, 168, -3266],
+        position: [407, 316, -2626],
         source: 'arrival-main',
       },
       watchItems: [
@@ -676,7 +676,7 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       expectedVisibleLayers: ['stadium-screen-surface'],
       camera: {
         lookAtOffset: [0, 30, 0],
-        positionOffset: [620, 210, 620],
+        positionOffset: [320, 190, -520],
         targetIds: ['rear-campus-event-pavilion-right-feed-surface'],
       },
       forbiddenKeyObjectIds: STADIUM_TRANSITION_FORBIDDEN_OBJECT_IDS,
@@ -685,8 +685,8 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       intent: 'stadium-right-flank-review',
       label: 'Stadium Right Flank',
       startView: {
-        lookAt: [720, 108, -1648],
-        position: [1028, 164, -1428],
+        lookAt: [720, 116, -1939],
+        position: [1040, 276, -2459],
         source: 'arrival-main',
       },
       watchItems: [
