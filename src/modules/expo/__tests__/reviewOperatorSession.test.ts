@@ -66,7 +66,7 @@ assert.ok(leftEdgeFar);
 const resolvedLeftEdgeFarView = resolveReviewOperatorZoneStartView(leftEdgeFar, new Map([
   ['screen-array-left-0', { position: [-968, 98, -110] }],
 ]));
-assert.deepEqual(resolvedLeftEdgeFarView.lookAt, [-968, 172, -110]);
+assert.deepEqual(resolvedLeftEdgeFarView.lookAt, [-968, 248, -110]);
 assert.deepEqual(resolvedLeftEdgeFarView.position, [-1188, 288, 150]);
 
 const centerSpine = zones.find((zone) => zone.id === 'center-spine');

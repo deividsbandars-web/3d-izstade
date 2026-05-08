@@ -230,12 +230,12 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       intent: 'left-edge-far-review',
       label: 'Left Edge Far',
       camera: {
-        lookAtOffset: [0, 74, 0],
+        lookAtOffset: [0, 150, 0],
         positionOffset: [-220, 190, 260],
         targetIds: ['screen-array-left-0'],
       },
       startView: {
-        lookAt: [-968, 112, -110],
+        lookAt: [-968, 248, -110],
         position: [-1228, 262, 250],
         source: 'arrival-main',
       },
