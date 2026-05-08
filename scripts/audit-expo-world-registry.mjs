@@ -25,6 +25,64 @@ const SOCKET_LAYER_BY_SCREEN_LAYER = {
   'stadium-screen-surface': 'stadium-screen-socket',
 };
 
+function resolveScreenHostBinding(screenId) {
+  if (screenId === 'rear-campus-bowl-feed-surface') {
+    return { hostId: 'stadium-bowl', maxDistanceXZ: 520 };
+  }
+
+  if (screenId.endsWith('-host-surface')) {
+    return {
+      hostId: screenId.slice(0, -'-host-surface'.length),
+      maxDistanceXZ: 260,
+    };
+  }
+
+  if (screenId.endsWith('-rear-campus-feed-surface')) {
+    return {
+      hostId: screenId.slice(0, -'-rear-campus-feed-surface'.length),
+      maxDistanceXZ: 220,
+    };
+  }
+
+  const terminalFeedMatch = screenId.match(/^rear-campus-axis-terminal-(left|right)-feed-surface$/);
+  if (terminalFeedMatch) {
+    return {
+      hostId: `rear-campus-terminal-${terminalFeedMatch[1]}`,
+      maxDistanceXZ: 90,
+    };
+  }
+
+  if (screenId.startsWith('rear-campus-') && screenId.endsWith('-feed-surface')) {
+    return {
+      hostId: screenId.slice(0, -'-feed-surface'.length),
+      maxDistanceXZ: 90,
+    };
+  }
+
+  if (screenId.startsWith('screen-marquee-') || screenId.startsWith('screen-array-') || screenId.startsWith('screen-spine-')) {
+    return {
+      hostId: `${screenId}-host`,
+      maxDistanceXZ: 72,
+    };
+  }
+
+  if (screenId.endsWith('-tower-ribbon')) {
+    return {
+      hostId: screenId.slice(0, -'-tower-ribbon'.length),
+      maxDistanceXZ: 140,
+    };
+  }
+
+  if (screenId.endsWith('-crown-beacon')) {
+    return {
+      hostId: screenId.slice(0, -'-crown-beacon'.length),
+      maxDistanceXZ: 120,
+    };
+  }
+
+  return null;
+}
+
 function printUsageAndExit() {
   console.error('Usage: node scripts/audit-expo-world-registry.mjs <snapshot.json> [--out <report.json>] [--fail-on high|medium|low]');
   process.exit(2);
@@ -297,6 +355,71 @@ function auditScreenSocketAttachment(entries) {
   return issues;
 }
 
+function auditScreenHostAttachment(entries) {
+  const registryById = new Map(entries.map((entry) => [entry.id, entry]));
+  const screens = entries
+    .filter((entry) => SCREEN_LAYERS.has(entry.layer) && tuple3(entry.position))
+    .map((entry) => ({ bounds: resolveBounds(entry), entry }));
+  const issues = [];
+
+  for (const screen of screens) {
+    const binding = resolveScreenHostBinding(screen.entry.id);
+    if (!binding) {
+      pushIssue(
+        issues,
+        'high',
+        'screen-host-binding-missing',
+        `Screen ${screen.entry.id} has no host binding; it cannot be audited for wall/tower attachment.`,
+        [screen.entry.id],
+      );
+      continue;
+    }
+
+    const host = registryById.get(binding.hostId);
+    if (!host) {
+      pushIssue(
+        issues,
+        'high',
+        'screen-host-missing',
+        `Screen ${screen.entry.id} expects host ${binding.hostId}, but that host is missing from the registry.`,
+        [screen.entry.id, binding.hostId],
+      );
+      continue;
+    }
+
+    const distance = distanceXZ(screen.entry, host);
+    if (distance > binding.maxDistanceXZ) {
+      pushIssue(
+        issues,
+        distance > binding.maxDistanceXZ * 1.8 ? 'high' : 'medium',
+        'screen-host-gap',
+        `Screen ${screen.entry.id} is ${Math.round(distance)} units from host ${host.id}.`,
+        [screen.entry.id, host.id],
+        { distanceXZ: Math.round(distance), maxDistanceXZ: binding.maxDistanceXZ },
+      );
+    }
+
+    const hostBounds = resolveBounds(host);
+    if (!screen.bounds || !hostBounds) {
+      continue;
+    }
+
+    const faceGap = gapXZ(screen.bounds, hostBounds);
+    if (faceGap > 64) {
+      pushIssue(
+        issues,
+        faceGap > 140 ? 'high' : 'medium',
+        'screen-host-face-gap',
+        `Screen ${screen.entry.id} does not share a tight XZ footprint with host ${host.id}.`,
+        [screen.entry.id, host.id],
+        { faceGapXZ: Math.round(faceGap) },
+      );
+    }
+  }
+
+  return issues;
+}
+
 function summarize(issues) {
   const counts = { critical: 0, high: 0, medium: 0, low: 0 };
   const byCode = {};
@@ -320,6 +443,7 @@ const issues = [
   ...auditGroundAndCrossLayerOverlaps(entries),
   ...auditBoothSpacing(entries),
   ...auditScreenSocketAttachment(entries),
+  ...auditScreenHostAttachment(entries),
 ].sort((left, right) => {
   const severityDelta = SEVERITY_RANK[right.severity] - SEVERITY_RANK[left.severity];
   if (severityDelta !== 0) {

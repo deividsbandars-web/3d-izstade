@@ -867,7 +867,7 @@ export function buildRightSupportBlocks(
 }
 
 export function buildMediaWallLandmarks(districtCount: number, districtStride: number): CityMass[] {
-  return filterStructuralCityMasses(Array.from({ length: Math.max(3, districtCount) }, (_, districtIndex) => {
+  const mediaWallMasses = Array.from({ length: Math.max(3, districtCount) }, (_, districtIndex) => {
     const baseZ = -214 - (districtIndex * districtStride);
     return [
       {
@@ -1063,7 +1063,45 @@ export function buildMediaWallLandmarks(districtCount: number, districtStride: n
         color: '#e3ebf0',
       },
     ] as CityMass[];
-  }).flat());
+  }).flat();
+
+  return filterStructuralCityMasses([
+    ...mediaWallMasses,
+    ...buildMediaWallScreenHostMasses(districtCount, districtStride),
+  ]);
+}
+
+function round1(value: number) {
+  return Math.round(value * 10) / 10;
+}
+
+function buildMediaWallScreenHostMasses(districtCount: number, districtStride: number): CityMass[] {
+  return buildMediaWallSurfaces(districtCount, districtStride).map((surface) => {
+    const yaw = surface.rotation[1] ?? 0;
+    const isMarquee = surface.id.startsWith('screen-marquee-');
+    const isSpine = surface.id.startsWith('screen-spine-');
+    const backset = isMarquee ? 18 : isSpine ? 14 : 12;
+    const hostTop = surface.position[1] + (surface.size[1] * 0.5) + (isMarquee ? 8 : 6);
+    const hostWidth = Math.max(
+      isMarquee ? 112 : isSpine ? 72 : 78,
+      surface.size[0] * (isMarquee ? 0.72 : isSpine ? 0.6 : 0.64),
+    );
+
+    return {
+      id: `${surface.id}-host`,
+      position: [
+        round1(surface.position[0] - (Math.sin(yaw) * backset)),
+        0,
+        round1(surface.position[2] - (Math.cos(yaw) * backset)),
+      ],
+      size: [
+        round1(hostWidth),
+        round1(Math.max(surface.size[1] + (isMarquee ? 58 : isSpine ? 46 : 34), hostTop)),
+        round1(Math.max(24, surface.size[2] * 7.2)),
+      ],
+      color: isSpine ? '#7c909e' : isMarquee ? '#718795' : '#8294a0',
+    } as CityMass;
+  });
 }
 
 export function buildMediaWallSurfaces(districtCount: number, districtStride: number): CityScreenSurface[] {
