@@ -531,12 +531,12 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       intent: 'right-sponsor-boulevard-frontage-review',
       label: 'Sponsor Boulevard Right',
       camera: {
-        lookAtOffset: [-2, 108, 2],
+        lookAtOffset: [-2, 80, 2],
         positionOffset: [-260, 182, 520],
         targetIds: ['sponsor-concierge'],
       },
       startView: {
-        lookAt: [80, 108, -798],
+        lookAt: [80, 80, -798],
         position: [364, 136, -604],
         source: 'arrival-main',
       },
@@ -554,12 +554,12 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       intent: 'right-sponsor-boulevard-medium-review',
       label: 'Sponsor Boulevard Right Medium',
       camera: {
-        lookAtOffset: [-2, 108, 2],
+        lookAtOffset: [-2, 80, 2],
         positionOffset: [-220, 158, 440],
         targetIds: ['sponsor-concierge'],
       },
       startView: {
-        lookAt: [248, 108, -980],
+        lookAt: [248, 80, -980],
         position: [186, 228, -682],
         source: 'arrival-main',
       },
