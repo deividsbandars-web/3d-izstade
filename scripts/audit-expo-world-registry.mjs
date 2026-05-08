@@ -27,7 +27,7 @@ const SOCKET_LAYER_BY_SCREEN_LAYER = {
 
 function resolveScreenHostBinding(screenId) {
   if (screenId === 'rear-campus-bowl-feed-surface') {
-    return { hostId: 'stadium-bowl', maxDistanceXZ: 520 };
+    return { hostId: 'rear-campus-bowl-center-deck', maxDistanceXZ: 180 };
   }
 
   if (screenId.endsWith('-host-surface')) {
@@ -230,14 +230,12 @@ function auditGroundAndCrossLayerOverlaps(entries) {
       const left = bounded[leftIndex];
       const right = bounded[rightIndex];
       const area = overlapAreaXZ(left.bounds, right.bounds);
-      if (area <= 0) {
-        continue;
-      }
 
       const leftGround = GROUND_LAYERS.has(left.entry.layer);
       const rightGround = GROUND_LAYERS.has(right.entry.layer);
       if (
-        leftGround
+        area > 0
+        && leftGround
         && rightGround
         && left.entry.layer !== right.entry.layer
         && area >= 1800
@@ -258,8 +256,9 @@ function auditGroundAndCrossLayerOverlaps(entries) {
         || (isStadiumLayer(left.entry.layer) && isCityLayer(right.entry.layer));
       if (
         cityVsStadium
-        && (SOLID_LAYERS.has(left.entry.layer) || SOLID_LAYERS.has(right.entry.layer))
-        && area >= 2600
+        && SOLID_LAYERS.has(left.entry.layer)
+        && SOLID_LAYERS.has(right.entry.layer)
+        && area >= 1000
       ) {
         pushIssue(
           issues,
@@ -269,7 +268,53 @@ function auditGroundAndCrossLayerOverlaps(entries) {
           [left.entry.id, right.entry.id],
           { overlapAreaXZ: Math.round(area) },
         );
+        continue;
       }
+
+      if (
+        cityVsStadium
+        && SOLID_LAYERS.has(left.entry.layer)
+        && SOLID_LAYERS.has(right.entry.layer)
+        && area <= 0
+      ) {
+        const gap = gapXZ(left.bounds, right.bounds);
+        if (gap <= 18) {
+          pushIssue(
+            issues,
+            'medium',
+            'city-stadium-solid-near-gap',
+            `${left.entry.layer} ${left.entry.id} is ${Math.round(gap)} units from ${right.entry.layer} ${right.entry.id}; this is too tight for a clean city/stadium split.`,
+            [left.entry.id, right.entry.id],
+            { gapXZ: Math.round(gap) },
+          );
+        }
+      }
+    }
+  }
+
+  return issues;
+}
+
+function auditSolidBoundsCoverage(entries) {
+  const issues = [];
+
+  for (const entry of entries) {
+    if (!SOLID_LAYERS.has(entry.layer)) {
+      continue;
+    }
+
+    if (!resolveBounds(entry)) {
+      pushIssue(
+        issues,
+        'high',
+        'solid-missing-bounds',
+        `${entry.layer} ${entry.id} has no usable size bounds, so overlap/attachment audits cannot control it.`,
+        [entry.id],
+        {
+          sourceFile: entry.sourceFile ?? null,
+          sourceKind: entry.sourceKind ?? null,
+        },
+      );
     }
   }
 
@@ -440,6 +485,7 @@ const snapshotPath = path.resolve(args.snapshotPath);
 const snapshot = JSON.parse(fs.readFileSync(snapshotPath, 'utf8').replace(/^\uFEFF/, ''));
 const entries = uniqueRegistryEntries(snapshot);
 const issues = [
+  ...auditSolidBoundsCoverage(entries),
   ...auditGroundAndCrossLayerOverlaps(entries),
   ...auditBoothSpacing(entries),
   ...auditScreenSocketAttachment(entries),

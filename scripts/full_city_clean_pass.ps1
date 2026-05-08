@@ -147,6 +147,66 @@ function Get-ScreenshotQualityStats {
   }
 }
 
+function New-ContactSheet {
+  param(
+    [string]$ScreensDir,
+    [string]$OutputPath,
+    [int]$Columns = 4,
+    [int]$ThumbWidth = 360,
+    [int]$ThumbHeight = 203,
+    [int]$LabelHeight = 24
+  )
+
+  $images = @(Get-ChildItem -LiteralPath $ScreensDir -Filter '*.png' | Sort-Object Name)
+  if ($images.Count -eq 0) {
+    return $null
+  }
+
+  if (-not $script:ScreenshotQualityDrawingLoaded) {
+    Add-Type -AssemblyName System.Drawing
+    $script:ScreenshotQualityDrawingLoaded = $true
+  }
+
+  $rows = [Math]::Ceiling($images.Count / [double]$Columns)
+  $sheet = $null
+  $graphics = $null
+  $font = $null
+  try {
+    $sheet = [System.Drawing.Bitmap]::new($Columns * $ThumbWidth, [int]$rows * ($ThumbHeight + $LabelHeight))
+    $graphics = [System.Drawing.Graphics]::FromImage($sheet)
+    $graphics.Clear([System.Drawing.Color]::FromArgb(24, 24, 24))
+    $font = [System.Drawing.Font]::new('Arial', 9)
+
+    for ($index = 0; $index -lt $images.Count; $index += 1) {
+      $image = $null
+      try {
+        $image = [System.Drawing.Image]::FromFile($images[$index].FullName)
+        $x = ($index % $Columns) * $ThumbWidth
+        $y = [Math]::Floor($index / [double]$Columns) * ($ThumbHeight + $LabelHeight)
+        $graphics.DrawImage($image, $x, $y, $ThumbWidth, $ThumbHeight)
+        $graphics.DrawString($images[$index].BaseName, $font, [System.Drawing.Brushes]::White, $x + 4, $y + $ThumbHeight + 4)
+      } finally {
+        if ($image) {
+          $image.Dispose()
+        }
+      }
+    }
+
+    $sheet.Save($OutputPath, [System.Drawing.Imaging.ImageFormat]::Png)
+    return $OutputPath
+  } finally {
+    if ($font) {
+      $font.Dispose()
+    }
+    if ($graphics) {
+      $graphics.Dispose()
+    }
+    if ($sheet) {
+      $sheet.Dispose()
+    }
+  }
+}
+
 $timestamp = Get-Date -Format 'yyyyMMdd-HHmmss'
 $runDir = Join-Path $OutputRoot $timestamp
 $reviewPath = Join-Path $runDir 'zone-review.json'
@@ -155,6 +215,7 @@ $reportPath = Join-Path $runDir 'full-city-clean-report.json'
 $registryAuditPath = Join-Path $runDir 'registry-structural-audit.json'
 $visualAuditPath = Join-Path $runDir 'visual-clean-audit.json'
 $visualAuditMarkdownPath = Join-Path $runDir 'visual-clean-audit.md'
+$contactSheetPath = Join-Path $runDir 'contact-sheet.png'
 $summaryPath = Join-Path $runDir 'summary.txt'
 
 Ensure-Dir -Path $runDir
@@ -239,6 +300,13 @@ foreach ($zoneId in $zoneIds) {
     sha256 = $screenshotHash
     quality = $quality
   }
+}
+
+$contactSheetGeneratedPath = $null
+try {
+  $contactSheetGeneratedPath = New-ContactSheet -ScreensDir $screensDir -OutputPath $contactSheetPath
+} catch {
+  Write-Warning "Contact sheet generation failed: $($_.Exception.Message)"
 }
 
 $duplicateScreenshotZonesByZone = @{}
@@ -373,28 +441,13 @@ foreach ($zone in $reviewRaw) {
   $captureSnapshot = $captureSnapshotByZone[$zoneId]
   $liveValidation = if ($captureSnapshot) { $captureSnapshot.operatorZoneValidation } else { $null }
   if ($liveValidation) {
-    $zoneStatusOk = ((-not $zone.status) -or ([string]$zone.status -eq 'ok'))
-    $expectedVisibleLayers = @($zone.expectedVisibleLayers | ForEach-Object { [string]$_ } | Where-Object { $_ })
-    if ($expectedVisibleLayers.Count -eq 0 -and $captureSnapshot.operatorZone) {
-      $expectedVisibleLayers = @($captureSnapshot.operatorZone.expectedVisibleLayers | ForEach-Object { [string]$_ } | Where-Object { $_ })
-    }
-    $actualVisibleLayers = @($liveValidation.actualVisibleLayers | ForEach-Object { [string]$_ } | Where-Object { $_ })
-
-    $liveHasExpectedLayer = $false
-    foreach ($expectedLayer in $expectedVisibleLayers) {
-      if ($expectedLayer -and ($actualVisibleLayers -contains $expectedLayer)) {
-        $liveHasExpectedLayer = $true
-        break
-      }
-    }
-
     $liveStatus = [string]$liveValidation.status
-    if ($liveStatus -and $liveStatus -ne 'ok' -and -not $zoneStatusOk) {
+    if ($liveStatus -and $liveStatus -ne 'ok') {
       Add-UniqueIssue -Target $zoneIssues -Issue (New-Issue -Severity 'medium' -Code 'live-snapshot-status' -Message "Live screenshot snapshot status is '$liveStatus'.")
     }
 
     foreach ($id in @($liveValidation.missingExpectedObjectIds)) {
-      if ($id -and ((-not $zoneStatusOk) -or (-not $liveHasExpectedLayer))) {
+      if ($id) {
         Add-UniqueIssue -Target $zoneIssues -Issue (New-Issue -Severity 'medium' -Code 'live-missing-expected-object' -Message "Live snapshot missing expected object: $id")
       }
     }
@@ -470,6 +523,17 @@ foreach ($zone in $reviewRaw) {
     Add-UniqueIssue -Target $zoneIssues -Issue (New-Issue -Severity 'high' -Code 'screenshot-duplicate' -Message "Screenshot hash is shared with zones: $($sharedZones -join ', ').")
   }
 
+  $visualFindings = if ($visualFindingsByZone.ContainsKey($zoneId)) { @($visualFindingsByZone[$zoneId]) } else { @() }
+  foreach ($finding in $visualFindings) {
+    if ($finding -and $finding.code) {
+      $findingSeverity = [string]$finding.severity
+      if (-not $findingSeverity) {
+        $findingSeverity = 'medium'
+      }
+      Add-UniqueIssue -Target $zoneIssues -Issue (New-Issue -Severity $findingSeverity -Code "visual-clean:$($finding.code)" -Message ([string]$finding.message))
+    }
+  }
+
   $severityOrder = @{ critical = 5; high = 4; medium = 3; low = 2; ok = 1 }
   $worst = 'ok'
   foreach ($issue in $zoneIssues) {
@@ -493,7 +557,6 @@ foreach ($zone in $reviewRaw) {
       target = $_.target
     }
   })
-  $visualFindings = if ($visualFindingsByZone.ContainsKey($zoneId)) { @($visualFindingsByZone[$zoneId]) } else { @() }
 
   $entry = @{
     id = $zoneId
@@ -521,6 +584,33 @@ foreach ($zone in $reviewRaw) {
   }
 }
 
+if ($registryAudit -and $registryAudit.issues) {
+  foreach ($issue in @($registryAudit.issues)) {
+    [void]$allIssues.Add([pscustomobject]@{
+      zoneId = 'registry-structural-audit'
+      severity = $issue.severity
+      code = $issue.code
+      message = $issue.message
+    })
+  }
+}
+if ($registryAuditError) {
+  [void]$allIssues.Add([pscustomobject]@{
+    zoneId = 'registry-structural-audit'
+    severity = 'high'
+    code = 'registry-structural-audit-error'
+    message = $registryAuditError
+  })
+}
+if ($visualAuditError) {
+  [void]$allIssues.Add([pscustomobject]@{
+    zoneId = 'visual-clean-audit'
+    severity = 'high'
+    code = 'visual-clean-audit-error'
+    message = $visualAuditError
+  })
+}
+
 $zonesOrdered = @($byZone.Values | Sort-Object @{ Expression = {
   switch ($_.severity) {
     'critical' { 0 }
@@ -539,6 +629,13 @@ $severityCounts = [ordered]@{
   ok = (@($zonesOrdered | Where-Object { $_.severity -eq 'ok' })).Count
 }
 
+$issueSeverityCounts = [ordered]@{
+  critical = (@($allIssues | Where-Object { $_.severity -eq 'critical' })).Count
+  high = (@($allIssues | Where-Object { $_.severity -eq 'high' })).Count
+  medium = (@($allIssues | Where-Object { $_.severity -eq 'medium' })).Count
+  low = (@($allIssues | Where-Object { $_.severity -eq 'low' })).Count
+}
+
 $fixSafeActions = @()
 if ($FixSafe.IsPresent) {
   # Safe mode in v1 only marks actionable routes; code edits stay explicit/approved.
@@ -552,6 +649,7 @@ if ($FixSafe.IsPresent) {
 
 $report = [pscustomobject]@{
   meta = [pscustomobject]@{
+    contactSheetPath = $contactSheetGeneratedPath
     generatedAtUtc = (Get-Date).ToUniversalTime().ToString('o')
     runDir = $runDir
     siteUrl = $SiteUrl
@@ -563,6 +661,7 @@ $report = [pscustomobject]@{
   }
   summary = [pscustomobject]@{
     severityCounts = $severityCounts
+    issueSeverityCounts = $issueSeverityCounts
     totalIssues = $allIssues.Count
     topZones = @($zonesOrdered | Select-Object -First 12 id, label, severity, issueCount, status)
   }
@@ -589,9 +688,11 @@ $summaryLines = @(
   "full-city-clean-pass",
   "runDir: $runDir",
   "siteUrl: $SiteUrl",
+  "contactSheetPath: $contactSheetGeneratedPath",
   "zones: $($zoneIds.Count)",
   "issues: $($allIssues.Count)",
   "severity: critical=$($severityCounts.critical), high=$($severityCounts.high), medium=$($severityCounts.medium), low=$($severityCounts.low), ok=$($severityCounts.ok)",
+  "issue severity: critical=$($issueSeverityCounts.critical), high=$($issueSeverityCounts.high), medium=$($issueSeverityCounts.medium), low=$($issueSeverityCounts.low)",
   "",
   "registry structural audit:",
   $(if ($registryAudit) {

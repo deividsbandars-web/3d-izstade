@@ -985,9 +985,9 @@ function buildBoothPlacementReserveFromFootprint(footprint: SponsorBoulevardPlan
 
   return {
     centerX: 0,
-    centerZ: campusCenterZ - 800,
-    halfWidth: 2300,
-    halfDepth: 1500,
+    centerZ: campusCenterZ - 300,
+    halfWidth: 3000,
+    halfDepth: 1900,
   };
 }
 

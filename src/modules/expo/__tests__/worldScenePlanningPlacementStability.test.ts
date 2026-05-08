@@ -38,6 +38,20 @@ assert.deepEqual(
 );
 
 const canonicalPlan = buildCanonicalWorldPlanFromWorldContract(world);
+function resolveReserveOverlappingMassIds(plan: typeof canonicalPlan) {
+  return plan.filteredMasses
+    .filter((mass) => {
+      const halfX = mass.size[0] * 0.5;
+      const halfZ = mass.size[2] * 0.5;
+      return (
+        Math.abs(mass.position[0] - plan.stadiumReserve.centerX) <= plan.stadiumReserve.halfWidth + halfX
+        && Math.abs(mass.position[2] - plan.stadiumReserve.centerZ) <= plan.stadiumReserve.halfDepth + halfZ
+      );
+    })
+    .map((mass) => mass.id)
+    .sort();
+}
+
 const stableScreenIds = canonicalPlan.filteredScreenSurfaces.map((surface) => surface.id).sort();
 const stableSocketIds = canonicalPlan.screenSockets.map((socket) => socket.id).sort();
 const filteredInputPlan = buildCanonicalWorldPlan({
@@ -51,6 +65,8 @@ const filteredInputSocketIds = filteredInputPlan.screenSockets.map((socket) => s
 
 assert.ok(stableScreenIds.length > 0);
 assert.ok(stableSocketIds.length > 0);
+assert.deepEqual(resolveReserveOverlappingMassIds(canonicalPlan), []);
+assert.deepEqual(resolveReserveOverlappingMassIds(filteredInputPlan), []);
 assert.deepEqual(stableScreenIds, buildCanonicalWorldPlanFromWorldContract(world).filteredScreenSurfaces.map((surface) => surface.id).sort());
 assert.deepEqual(stableSocketIds, buildCanonicalWorldPlanFromWorldContract(world).screenSockets.map((socket) => socket.id).sort());
 assert.notDeepEqual(filteredInputScreenIds, stableScreenIds);

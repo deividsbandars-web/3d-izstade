@@ -329,7 +329,11 @@ export function buildCanonicalWorldPlan(inputs: ExpoPlanningInputs): CanonicalWo
 
   const cityZones = zones.filter((zone) => zone.id !== 'rear-campus');
   const cityPlanes = flattenZonePlanes(cityZones).map(withSections);
-  const filteredMasses = cityZones.flatMap((zone) => zone.masses).map((mass) => withMassIntent(mass, geometry.stadiumReserve)).filter(shouldRenderMass);
+  const filteredMasses = cityZones
+    .flatMap((zone) => zone.masses)
+    .map((mass) => withMassIntent(mass, geometry.stadiumReserve))
+    .filter(shouldRenderMass)
+    .filter((mass) => !overlapsStadiumReserve(mass.position, geometry.stadiumReserve, mass.size));
   const filteredTowerLandmarks = cityZones
     .flatMap((zone) => zone.towers)
     .map((tower) => withTowerSections(tower, geometry.stadiumReserve))

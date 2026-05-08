@@ -146,7 +146,12 @@ export function WorldCitySkeleton({
         playerPosition={playerPosition}
         sockets={screenSockets}
       />
-      <WorldCityMegaLandmarks districtCount={districtPrograms.length} districtStride={districtStride} sectionToggles={sectionToggles} />
+      <WorldCityMegaLandmarks
+        districtCount={districtPrograms.length}
+        districtStride={districtStride}
+        sectionToggles={sectionToggles}
+        stadiumReserve={stadiumReserve}
+      />
       <WorldCityTowers towers={filteredTowerLandmarks} stadiumReserve={stadiumReserve} visualProfile={visualProfile} />
     </group>
   );

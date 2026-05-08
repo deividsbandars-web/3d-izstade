@@ -6,6 +6,10 @@ import type {
   ExpoPlanningZonePlan,
 } from '../../planning/types';
 import { resolveRearCampusAnchoredZ } from '../ExpoRearCampusLayout';
+import {
+  buildWorldCityMegaLandmarkBounds,
+  filterWorldCityMegaLandmarkBounds,
+} from '../WorldCityMegaLandmarkBounds';
 
 export type WorldObjectLayer =
   | 'booth'
@@ -109,37 +113,22 @@ function buildStableTowerAliases(
 function buildMegaLandmarkEntries(args: {
   districtCount: number;
   districtStride: number;
+  stadiumReserve: CanonicalWorldPlan['stadiumReserve'];
 }): WorldObjectRegistryEntry[] {
-  const { districtCount, districtStride } = args;
-  const landmarks: ReadonlyArray<readonly [string, [number, number, number]]> = [
-    ['mega-landmark-arrival', [0, 0, 256]],
-    ['mega-landmark-showcase', [0, 0, -72]],
-    ['mega-landmark-media', [0, 0, -214 - districtStride - 56]],
-    ['mega-landmark-media-frame-wall', [356, 0, -214 - districtStride - 56 - 148]],
-    ['mega-landmark-media-signal-pods', [472, 0, -214 - districtStride - 56 + 84]],
-    ['mega-landmark-discovery', [0, 0, -196 - ((Math.max(1, districtCount) - 1) * districtStride) - 1080]],
-    ['mega-landmark-discovery-observatory-crown', [-368, 0, -196 - ((Math.max(1, districtCount) - 1) * districtStride) - 1080 - 32]],
-    ['mega-landmark-discovery-garden-spine', [-492, 0, -196 - ((Math.max(1, districtCount) - 1) * districtStride) - 1080 + 212]],
-    ['mega-landmark-right-skyfold-citadel', [844, 0, -164]],
-    ['mega-landmark-right-skybridge-beacon', [436, 0, -96]],
-    ['mega-landmark-right-media-halo', [628, 0, -248]],
-    ['mega-landmark-right-support-spire', [294, 0, -372]],
-    ['mega-landmark-left-grand-rampart', [-888, 0, -156]],
-    ['mega-landmark-left-cantilever-forum', [-438, 0, -116]],
-    ['mega-landmark-left-split-crown-gate', [-654, 0, -286]],
-    ['mega-landmark-left-broken-wall-monument', [-262, 0, -412]],
-    ['mega-landmark-left-disc-habitat', [-918, 0, -548]],
-    ['mega-landmark-left-split-monolith-pair', [-648, 0, -724]],
-  ];
+  const landmarks = filterWorldCityMegaLandmarkBounds(
+    buildWorldCityMegaLandmarkBounds(args),
+    args.stadiumReserve,
+  );
 
-  return landmarks.map(([id, position]) => createEntry({
+  return landmarks.map(({ id, position, size }) => createEntry({
     diagnosticOwners: [],
     id,
     interactionOwner: null,
     layer: 'mega-landmark',
     planningZone: 'canonical-city',
-    position: position as [number, number, number],
+    position,
     safeEditSeam: 'src/modules/expo/runtime/world/WorldCityMegaLandmarks.tsx',
+    size,
     sourceFile: 'src/modules/expo/runtime/world/WorldCityMegaLandmarks.tsx',
     sourceFunction: 'WorldCityMegaLandmarks',
     sourceKind: 'runtime-landmark',
@@ -328,47 +317,47 @@ export function buildCityWorldObjectRegistry({
       planningZone: 'canonical-city',
       sockets: plan.screenSockets,
     }),
-    ...buildMegaLandmarkEntries({ districtCount, districtStride }),
+    ...buildMegaLandmarkEntries({ districtCount, districtStride, stadiumReserve: plan.stadiumReserve }),
   ];
 }
 
+type StadiumStructureRegistrySpec = {
+  id: string;
+  position: [number, number, number];
+  size: [number, number, number];
+};
+
 function buildStadiumStructureEntries(campusCenterZ: number): WorldObjectRegistryEntry[] {
   const rearCampusZ = (defaultZ: number) => resolveRearCampusAnchoredZ(campusCenterZ, defaultZ);
-  const campusPerimeterFrontZ = campusCenterZ + 2140;
-  const structures: ReadonlyArray<readonly [string, [number, number, number]]> = [
-    ['rear-campus-front-left-connector', [-2390, 16, campusPerimeterFrontZ]],
-    ['rear-campus-front-right-connector', [2390, 16, campusPerimeterFrontZ]],
-    ['rear-campus-front-left-connector-cap', [-2390, 33, campusPerimeterFrontZ]],
-    ['rear-campus-front-right-connector-cap', [2390, 33, campusPerimeterFrontZ]],
-    ['rear-campus-arc-bastion-right', [1180, 0, campusCenterZ + 864]],
-    ['rear-campus-center-event-island', [0, 0, campusCenterZ - 1296]],
-    ['rear-campus-bowl-center-deck', [0, 212, campusCenterZ - 972]],
-    ['rear-campus-stage-monolith-canopy', [47, 0, rearCampusZ(-3018)]],
-    ['rear-campus-mega-civic-hall', [-2490, 0, rearCampusZ(-3670)]],
-    ['rear-campus-void-courtyard-monument', [-1971, 0, rearCampusZ(-2894)]],
-    ['rear-campus-linked-mini-skyline', [-2537, 0, rearCampusZ(-4977)]],
-    ['rear-campus-linear-civic-terrace', [-1684, 0, rearCampusZ(-1430)]],
-    ['rear-campus-bridge-linked-campus', [-1343, 0, rearCampusZ(-3449)]],
-    ['rear-campus-petal-tower', [2340, 0, rearCampusZ(-4577)]],
-    ['rear-campus-helix-spire', [2439, 0, rearCampusZ(-1432)]],
-    ['rear-campus-grand-prism-citadel', [-1033, 0, rearCampusZ(-1902)]],
-    ['rear-campus-terrace-signal-court', [-864, 0, rearCampusZ(-936)]],
-    ['rear-campus-needle-crown-skyscraper', [1540, 0, rearCampusZ(-611)]],
-    ['rear-campus-sky-slab-tower', [1087, 0, rearCampusZ(-1329)]],
-    ['rear-campus-twin-void-monolith', [1340, 0, rearCampusZ(-3242)]],
-    ['stadium-bowl', [0, 0, campusCenterZ - 1520]],
-    ['stadium-axis-center-1180', [0, 0, 1180]],
-    ['stadium-axis-center-1608', [0, 0, 1608]],
+  const structures: ReadonlyArray<StadiumStructureRegistrySpec> = [
+    { id: 'rear-campus-arc-bastion-right', position: [1180, 132, campusCenterZ + 864], size: [264, 264, 100] },
+    { id: 'rear-campus-center-event-island', position: [0, 112, campusCenterZ - 1296], size: [420, 224, 168] },
+    { id: 'rear-campus-bowl-center-deck', position: [0, 212, campusCenterZ - 972], size: [612, 64, 228] },
+    { id: 'rear-campus-stage-monolith-canopy', position: [47, 130, rearCampusZ(-3018)], size: [564, 260, 176] },
+    { id: 'rear-campus-mega-civic-hall', position: [-2490, 180, rearCampusZ(-3670)], size: [724, 360, 324] },
+    { id: 'rear-campus-void-courtyard-monument', position: [-1971, 198, rearCampusZ(-2894)], size: [612, 396, 348] },
+    { id: 'rear-campus-linked-mini-skyline', position: [-2537, 228, rearCampusZ(-4977)], size: [744, 456, 312] },
+    { id: 'rear-campus-linear-civic-terrace', position: [-1684, 78, rearCampusZ(-1430)], size: [868, 156, 188] },
+    { id: 'rear-campus-bridge-linked-campus', position: [-1343, 176, rearCampusZ(-3449)], size: [632, 352, 154] },
+    { id: 'rear-campus-petal-tower', position: [2340, 288, rearCampusZ(-4577)], size: [260, 576, 420] },
+    { id: 'rear-campus-helix-spire', position: [2439, 406, rearCampusZ(-1432)], size: [272, 812, 272] },
+    { id: 'rear-campus-grand-prism-citadel', position: [-1033, 228, rearCampusZ(-1902)], size: [596, 456, 224] },
+    { id: 'rear-campus-terrace-signal-court', position: [-864, 68, rearCampusZ(-936)], size: [404, 136, 132] },
+    { id: 'rear-campus-needle-crown-skyscraper', position: [1540, 374, rearCampusZ(-611)], size: [188, 748, 128] },
+    { id: 'rear-campus-sky-slab-tower', position: [1087, 390, rearCampusZ(-1329)], size: [224, 780, 136] },
+    { id: 'rear-campus-twin-void-monolith', position: [1340, 300, rearCampusZ(-3242)], size: [276, 600, 168] },
+    { id: 'stadium-bowl', position: [0, 360, campusCenterZ - 1520], size: [2860, 720, 1150] },
   ];
 
-  return structures.map(([id, position]) => createEntry({
+  return structures.map(({ id, position, size }) => createEntry({
     diagnosticOwners: [],
     id,
     interactionOwner: null,
     layer: 'stadium-structure',
     planningZone: 'rear-campus',
-    position: position as [number, number, number],
+    position,
     safeEditSeam: 'src/modules/expo/runtime/world/ExpoRearCampus.tsx',
+    size,
     sourceFile: 'src/modules/expo/runtime/world/ExpoRearCampus.tsx',
     sourceFunction: 'ExpoRearCampus',
     sourceKind: 'rear-campus-structure',
@@ -418,9 +407,24 @@ export function buildStadiumWorldObjectRegistry({
       planningZone: 'rear-campus',
       position: tower.position,
       safeEditSeam: 'src/modules/expo/runtime/planning/zones/rear-campus/index.ts',
+      size: [188, 720, 146],
       sourceFile: 'src/modules/expo/runtime/planning/zones/rear-campus/index.ts',
       sourceFunction: 'buildRearCampusZonePlan',
       sourceKind: 'rear-campus-tower',
+    })),
+    ...(rearCampus?.perimeterConnectors ?? []).map((connector) => createEntry({
+      diagnosticOwners: [],
+      id: connector.id,
+      interactionOwner: null,
+      layer: 'stadium-structure',
+      planningZone: 'rear-campus',
+      position: connector.position,
+      rotation: [0, 0, 0],
+      safeEditSeam: 'src/modules/expo/runtime/planning/zones/rear-campus/index.ts',
+      size: connector.size,
+      sourceFile: 'src/modules/expo/runtime/planning/zones/rear-campus/index.ts',
+      sourceFunction: 'buildRearCampusZonePlan',
+      sourceKind: 'rear-campus-perimeter-connector',
     })),
     ...rearCampusPlan.screenSurfaces.map((surface) => createEntry({
       diagnosticOwners: [

@@ -198,6 +198,10 @@ export function buildRearCampusForecourts(campusCenterZ: number): CampusPlane[] 
     { id: 'stadium-forecourt-front-court-right', position: [348, 6.06, campusCenterZ + 1278], size: [56, 34], color: '#edf4f8' },
     { id: 'stadium-forecourt-front-threshold-left', position: [-132, 6.08, campusCenterZ + 1292], size: [20, 12], color: '#f1f6f9' },
     { id: 'stadium-forecourt-front-threshold-right', position: [132, 6.08, campusCenterZ + 1284], size: [20, 12], color: '#f1f6f9' },
+    { id: 'stadium-forecourt-city-threshold-main', position: [0, 6.16, campusCenterZ + 2058], size: [1180, 108], color: '#d8e2e8' },
+    { id: 'stadium-forecourt-city-threshold-spine', position: [0, 6.2, campusCenterZ + 2058], size: [220, 132], color: '#f2f7fa' },
+    { id: 'stadium-forecourt-city-threshold-left-stripe', position: [-372, 6.22, campusCenterZ + 2058], size: [76, 124], color: '#b8c7d1' },
+    { id: 'stadium-forecourt-city-threshold-right-stripe', position: [372, 6.22, campusCenterZ + 2058], size: [76, 124], color: '#b8c7d1' },
   ];
 }
 
