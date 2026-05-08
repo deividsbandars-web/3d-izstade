@@ -245,6 +245,28 @@ function resolveScreenHostBinding(screenId: string) {
     };
   }
 
+  const terminalFeedMatch = screenId.match(/^rear-campus-axis-terminal-(left|right)-feed-surface$/);
+  if (terminalFeedMatch) {
+    return {
+      hostId: `rear-campus-terminal-${terminalFeedMatch[1]}`,
+      maxDistanceXZ: 90,
+    };
+  }
+
+  if (screenId.startsWith('rear-campus-') && screenId.endsWith('-feed-surface')) {
+    return {
+      hostId: screenId.slice(0, -'-feed-surface'.length),
+      maxDistanceXZ: 90,
+    };
+  }
+
+  if (screenId.startsWith('screen-marquee-') || screenId.startsWith('screen-array-') || screenId.startsWith('screen-spine-')) {
+    return {
+      hostId: `${screenId}-host`,
+      maxDistanceXZ: 72,
+    };
+  }
+
   if (screenId.endsWith('-tower-ribbon')) {
     return {
       hostId: screenId.slice(0, -'-tower-ribbon'.length),
@@ -382,6 +404,10 @@ function buildScreenPenetrationDefects(args: {
 
     const hostEntry = args.registryById[binding.hostId];
     if (!hostEntry) {
+      continue;
+    }
+
+    if (binding.hostId === `${candidateId}-host`) {
       continue;
     }
 

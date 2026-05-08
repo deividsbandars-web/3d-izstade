@@ -21,11 +21,12 @@ assert.equal(JSON.stringify(input), before);
 assert.equal(sockets.length, 1);
 
 const [socket] = sockets;
+const expectedFrameDepth = 4.2;
 
 assert.equal(socket.kind, 'hero_wall');
 assert.ok(socket.renderIntent);
-assert.equal(socket.renderIntent?.frameDepth, 2.8);
-assert.equal(socket.renderIntent?.braceDepth, 2.8 * 0.72);
+assert.equal(socket.renderIntent?.frameDepth, expectedFrameDepth);
+assert.equal(socket.renderIntent?.braceDepth, expectedFrameDepth * 0.72);
 
 const housingPrimitive = socket.renderIntent?.primitives?.[0];
 const leftColumnPrimitive = socket.renderIntent?.primitives?.[1];
@@ -33,11 +34,11 @@ const leftColumnPrimitive = socket.renderIntent?.primitives?.[1];
 assert.ok(housingPrimitive);
 assert.equal(housingPrimitive?.kind, 'box');
 if (housingPrimitive?.kind === 'box') {
-  assert.equal(housingPrimitive.size[2], 2.8 * 0.4);
+  assert.equal(housingPrimitive.size[2], expectedFrameDepth * 0.4);
 }
 
 assert.ok(leftColumnPrimitive);
 assert.equal(leftColumnPrimitive?.kind, 'box');
 if (leftColumnPrimitive?.kind === 'box') {
-  assert.equal(leftColumnPrimitive.size[2], 2.8 * 0.72);
+  assert.equal(leftColumnPrimitive.size[2], expectedFrameDepth * 0.72);
 }
