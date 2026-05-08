@@ -153,6 +153,8 @@ $reviewPath = Join-Path $runDir 'zone-review.json'
 $screensDir = Join-Path $runDir 'screens'
 $reportPath = Join-Path $runDir 'full-city-clean-report.json'
 $registryAuditPath = Join-Path $runDir 'registry-structural-audit.json'
+$visualAuditPath = Join-Path $runDir 'visual-clean-audit.json'
+$visualAuditMarkdownPath = Join-Path $runDir 'visual-clean-audit.md'
 $summaryPath = Join-Path $runDir 'summary.txt'
 
 Ensure-Dir -Path $runDir
@@ -161,6 +163,7 @@ Ensure-Dir -Path $screensDir
 $reviewScript = Join-Path $PSScriptRoot 'cdp_review_expo_world.ps1'
 $captureScript = Join-Path $PSScriptRoot 'cdp_capture_expo_zone_screenshots.ps1'
 $registryAuditScript = Join-Path $PSScriptRoot 'audit-expo-world-registry.mjs'
+$visualAuditScript = Join-Path $PSScriptRoot 'audit-expo-visual-clean.mjs'
 
 try {
   [void](Invoke-RestMethod -Uri $BrowserJsonUrl -TimeoutSec 3)
@@ -300,6 +303,40 @@ if (-not (Test-Path -LiteralPath $registryAuditScript)) {
     $registryAudit = Get-Content -LiteralPath $registryAuditPath -Raw | ConvertFrom-Json
   } catch {
     $registryAuditError = $_.Exception.Message
+  }
+}
+
+$visualAudit = $null
+$visualAuditError = $null
+$captureManifestPath = Join-Path $screensDir 'manifest.json'
+if (-not (Test-Path -LiteralPath $visualAuditScript)) {
+  $visualAuditError = "Visual audit script is missing: $visualAuditScript"
+} elseif (-not (Test-Path -LiteralPath $captureManifestPath)) {
+  $visualAuditError = "Capture manifest is missing: $captureManifestPath"
+} else {
+  try {
+    Write-Host "[full-city-clean-pass] running visual clean audit..."
+    Invoke-Checked -FilePath 'node' -Arguments @(
+      $visualAuditScript,
+      $runDir,
+      '--out',
+      $visualAuditPath,
+      '--md',
+      $visualAuditMarkdownPath
+    ) -SuppressOutput
+    $visualAudit = Get-Content -LiteralPath $visualAuditPath -Raw | ConvertFrom-Json
+  } catch {
+    $visualAuditError = $_.Exception.Message
+  }
+}
+
+$visualFindingsByZone = @{}
+if ($visualAudit -and $visualAudit.zones) {
+  foreach ($visualZone in @($visualAudit.zones)) {
+    $visualZoneId = [string]$visualZone.zoneId
+    if ($visualZoneId) {
+      $visualFindingsByZone[$visualZoneId] = @($visualZone.findings)
+    }
   }
 }
 
@@ -456,6 +493,7 @@ foreach ($zone in $reviewRaw) {
       target = $_.target
     }
   })
+  $visualFindings = if ($visualFindingsByZone.ContainsKey($zoneId)) { @($visualFindingsByZone[$zoneId]) } else { @() }
 
   $entry = @{
     id = $zoneId
@@ -468,6 +506,8 @@ foreach ($zone in $reviewRaw) {
     liveSnapshotStatus = if ($liveValidation) { $liveValidation.status } else { $null }
     screenshot = $screenshotMeta
     fixRoutes = $fixRoutes
+    visualCleanFindingCount = $visualFindings.Count
+    visualCleanFindings = $visualFindings
   }
 
   $byZone[$zoneId] = [pscustomobject]$entry
@@ -533,6 +573,12 @@ $report = [pscustomobject]@{
     summary = if ($registryAudit) { $registryAudit.summary } else { $null }
     error = $registryAuditError
   }
+  visualCleanAudit = [pscustomobject]@{
+    path = if ($visualAudit) { $visualAuditPath } else { $null }
+    markdownPath = if ($visualAudit) { $visualAuditMarkdownPath } else { $null }
+    summary = if ($visualAudit) { $visualAudit.summary } else { $null }
+    error = $visualAuditError
+  }
   zones = $zonesOrdered
   fixSafeActions = $fixSafeActions
 }
@@ -555,9 +601,23 @@ $summaryLines = @(
   }),
   "reportPath: $registryAuditPath",
   "",
+  "visual clean audit:",
+  $(if ($visualAudit) {
+    "findings: $($visualAudit.summary.totalFindings), high=$($visualAudit.summary.severity.high), medium=$($visualAudit.summary.severity.medium), low=$($visualAudit.summary.severity.low)"
+  } else {
+    "error: $visualAuditError"
+  }),
+  "reportPath: $visualAuditPath",
+  "markdownPath: $visualAuditMarkdownPath",
+  "",
   "top zones:"
 )
 $summaryLines += @($zonesOrdered | Select-Object -First 12 | ForEach-Object { "- $($_.id) [$($_.severity)] issues=$($_.issueCount) status=$($_.status)" })
+if ($visualAudit -and $visualAudit.summary -and $visualAudit.summary.topZones) {
+  $summaryLines += ""
+  $summaryLines += "top visual zones:"
+  $summaryLines += @($visualAudit.summary.topZones | Select-Object -First 12 | ForEach-Object { "- $($_.zoneId) findings=$($_.findingCount) codes=$(@($_.topCodes) -join ',')" })
+}
 if ($FixSafe.IsPresent) {
   $summaryLines += ""
   $summaryLines += "fix-safe actions:"
