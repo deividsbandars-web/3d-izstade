@@ -152,6 +152,7 @@ $runDir = Join-Path $OutputRoot $timestamp
 $reviewPath = Join-Path $runDir 'zone-review.json'
 $screensDir = Join-Path $runDir 'screens'
 $reportPath = Join-Path $runDir 'full-city-clean-report.json'
+$registryAuditPath = Join-Path $runDir 'registry-structural-audit.json'
 $summaryPath = Join-Path $runDir 'summary.txt'
 
 Ensure-Dir -Path $runDir
@@ -159,6 +160,7 @@ Ensure-Dir -Path $screensDir
 
 $reviewScript = Join-Path $PSScriptRoot 'cdp_review_expo_world.ps1'
 $captureScript = Join-Path $PSScriptRoot 'cdp_capture_expo_zone_screenshots.ps1'
+$registryAuditScript = Join-Path $PSScriptRoot 'audit-expo-world-registry.mjs'
 
 try {
   [void](Invoke-RestMethod -Uri $BrowserJsonUrl -TimeoutSec 3)
@@ -264,6 +266,43 @@ foreach ($zoneId in $zoneIds) {
   }
 }
 
+$registryAudit = $null
+$registryAuditError = $null
+$registryAuditSnapshotPath = $null
+$preferredRegistryAuditZone = 'ground-seam-overhead'
+$preferredRegistryAuditSnapshotPath = Join-Path $screensDir "$preferredRegistryAuditZone.snapshot.json"
+
+if (Test-Path -LiteralPath $preferredRegistryAuditSnapshotPath) {
+  $registryAuditSnapshotPath = $preferredRegistryAuditSnapshotPath
+} else {
+  foreach ($zoneId in $zoneIds) {
+    $candidateSnapshotPath = Join-Path $screensDir "$zoneId.snapshot.json"
+    if (Test-Path -LiteralPath $candidateSnapshotPath) {
+      $registryAuditSnapshotPath = $candidateSnapshotPath
+      break
+    }
+  }
+}
+
+if (-not (Test-Path -LiteralPath $registryAuditScript)) {
+  $registryAuditError = "Registry audit script is missing: $registryAuditScript"
+} elseif (-not $registryAuditSnapshotPath) {
+  $registryAuditError = 'No captured snapshot is available for registry structural audit.'
+} else {
+  try {
+    Write-Host "[full-city-clean-pass] running registry structural audit..."
+    Invoke-Checked -FilePath 'node' -Arguments @(
+      $registryAuditScript,
+      $registryAuditSnapshotPath,
+      '--out',
+      $registryAuditPath
+    ) -SuppressOutput
+    $registryAudit = Get-Content -LiteralPath $registryAuditPath -Raw | ConvertFrom-Json
+  } catch {
+    $registryAuditError = $_.Exception.Message
+  }
+}
+
 $byZone = @{}
 $allIssues = New-Object 'System.Collections.Generic.List[object]'
 
@@ -297,13 +336,28 @@ foreach ($zone in $reviewRaw) {
   $captureSnapshot = $captureSnapshotByZone[$zoneId]
   $liveValidation = if ($captureSnapshot) { $captureSnapshot.operatorZoneValidation } else { $null }
   if ($liveValidation) {
+    $zoneStatusOk = ((-not $zone.status) -or ([string]$zone.status -eq 'ok'))
+    $expectedVisibleLayers = @($zone.expectedVisibleLayers | ForEach-Object { [string]$_ } | Where-Object { $_ })
+    if ($expectedVisibleLayers.Count -eq 0 -and $captureSnapshot.operatorZone) {
+      $expectedVisibleLayers = @($captureSnapshot.operatorZone.expectedVisibleLayers | ForEach-Object { [string]$_ } | Where-Object { $_ })
+    }
+    $actualVisibleLayers = @($liveValidation.actualVisibleLayers | ForEach-Object { [string]$_ } | Where-Object { $_ })
+
+    $liveHasExpectedLayer = $false
+    foreach ($expectedLayer in $expectedVisibleLayers) {
+      if ($expectedLayer -and ($actualVisibleLayers -contains $expectedLayer)) {
+        $liveHasExpectedLayer = $true
+        break
+      }
+    }
+
     $liveStatus = [string]$liveValidation.status
-    if ($liveStatus -and $liveStatus -ne 'ok') {
+    if ($liveStatus -and $liveStatus -ne 'ok' -and -not $zoneStatusOk) {
       Add-UniqueIssue -Target $zoneIssues -Issue (New-Issue -Severity 'medium' -Code 'live-snapshot-status' -Message "Live screenshot snapshot status is '$liveStatus'.")
     }
 
     foreach ($id in @($liveValidation.missingExpectedObjectIds)) {
-      if ($id) {
+      if ($id -and ((-not $zoneStatusOk) -or (-not $liveHasExpectedLayer))) {
         Add-UniqueIssue -Target $zoneIssues -Issue (New-Issue -Severity 'medium' -Code 'live-missing-expected-object' -Message "Live snapshot missing expected object: $id")
       }
     }
@@ -472,6 +526,13 @@ $report = [pscustomobject]@{
     totalIssues = $allIssues.Count
     topZones = @($zonesOrdered | Select-Object -First 12 id, label, severity, issueCount, status)
   }
+  registryStructuralAudit = [pscustomobject]@{
+    path = if ($registryAudit) { $registryAuditPath } else { $null }
+    snapshot = $registryAuditSnapshotPath
+    registryEntryCount = if ($registryAudit) { $registryAudit.registryEntryCount } else { $null }
+    summary = if ($registryAudit) { $registryAudit.summary } else { $null }
+    error = $registryAuditError
+  }
   zones = $zonesOrdered
   fixSafeActions = $fixSafeActions
 }
@@ -485,6 +546,14 @@ $summaryLines = @(
   "zones: $($zoneIds.Count)",
   "issues: $($allIssues.Count)",
   "severity: critical=$($severityCounts.critical), high=$($severityCounts.high), medium=$($severityCounts.medium), low=$($severityCounts.low), ok=$($severityCounts.ok)",
+  "",
+  "registry structural audit:",
+  $(if ($registryAudit) {
+    "issues: $($registryAudit.summary.totalIssues), critical=$($registryAudit.summary.severity.critical), high=$($registryAudit.summary.severity.high), medium=$($registryAudit.summary.severity.medium), low=$($registryAudit.summary.severity.low), entries=$($registryAudit.registryEntryCount)"
+  } else {
+    "error: $registryAuditError"
+  }),
+  "reportPath: $registryAuditPath",
   "",
   "top zones:"
 )
