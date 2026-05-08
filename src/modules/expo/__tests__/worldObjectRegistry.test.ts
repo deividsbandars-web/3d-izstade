@@ -227,7 +227,14 @@ const rearCampusPlan: ExpoPlanningZonePlan = {
           position: [220, 0, -3000],
         },
       ],
-      perimeterConnectors: [],
+      perimeterConnectors: [
+        {
+          accent: 'wall',
+          id: 'rear-campus-test-perimeter',
+          position: [0, 16, -4600],
+          size: [640, 32, 20],
+        },
+      ],
       sidePavilions: [
         {
           accentSide: 1,
@@ -276,6 +283,21 @@ assert.deepEqual(
 );
 assert.ok(cityRegistry.some((entry) => entry.id === 'mega-landmark-arrival' && entry.layer === 'mega-landmark'));
 
+const stadiumOverlapCityRegistry = buildCityWorldObjectRegistry({
+  districtCount: 2,
+  districtStride: 548,
+  plan: {
+    ...cityPlan,
+    stadiumReserve: {
+      centerX: 0,
+      centerZ: -1824,
+      halfDepth: 320,
+      halfWidth: 900,
+    },
+  },
+});
+assert.equal(stadiumOverlapCityRegistry.some((entry) => entry.id === 'mega-landmark-discovery'), false);
+
 const stadiumBefore = JSON.stringify(rearCampusPlan);
 const stadiumRegistry = buildStadiumWorldObjectRegistry({
   campusCenterZ: -2880,
@@ -290,6 +312,22 @@ assert.ok(stadiumRegistry.some((entry) => entry.id === 'rear-forecourt-1' && ent
 assert.ok(stadiumRegistry.some((entry) => entry.id === 'rear-pavilion-1' && entry.layer === 'stadium-pavilion'));
 assert.ok(stadiumRegistry.some((entry) => entry.id === 'rear-tower-1' && entry.layer === 'stadium-tower'));
 assert.ok(stadiumRegistry.some((entry) => entry.id === 'stadium-bowl' && entry.layer === 'stadium-structure'));
+assert.ok(stadiumRegistry.some((entry) => entry.id === 'rear-campus-test-perimeter' && entry.layer === 'stadium-structure'));
+assert.equal(stadiumRegistry.some((entry) => entry.id === 'stadium-axis-center-1180'), false);
+
+const requiredBoundedLayers = new Set([
+  'city-mass',
+  'city-tower',
+  'mega-landmark',
+  'stadium-pavilion',
+  'stadium-structure',
+  'stadium-tower',
+]);
+for (const entry of [...cityRegistry, ...stadiumRegistry]) {
+  if (requiredBoundedLayers.has(entry.layer)) {
+    assert.ok(entry.size?.every((value) => value > 0), `${entry.id} must expose positive audit bounds`);
+  }
+}
 
 const boothsBefore = JSON.stringify(boothPlacements);
 const boothRegistry = buildBoothWorldObjectRegistry(boothPlacements);

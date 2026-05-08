@@ -253,8 +253,8 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       intent: 'center-civic-spine-review',
       label: 'Center Spine',
       camera: {
-        lookAtOffset: [0, 34, 0],
-        positionOffset: [-420, 210, -520],
+        lookAtOffset: [0, 46, 0],
+        positionOffset: [220, 240, 620],
         targetIds: ['screen-spine-primary-0'],
       },
       startView: {
@@ -630,8 +630,8 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       intent: 'rear-campus-center-review',
       label: 'Rear Campus Center',
       camera: {
-        lookAtOffset: [0, 126, 0],
-        positionOffset: [300, 210, 520],
+        lookAtOffset: [0, 100, 0],
+        positionOffset: [220, 260, 340],
         targetIds: ['rear-campus-stage-monolith-canopy-host-surface'],
       },
       startView: {
@@ -655,13 +655,13 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       intent: 'rear-campus-feed-axis-review',
       label: 'Stadium Feed Axis',
       camera: {
-        lookAtOffset: [0, 44, 0],
-        positionOffset: [0, 228, 980],
+        lookAtOffset: [0, 56, 0],
+        positionOffset: [980, 300, 1320],
         targetIds: ['rear-campus-bowl-feed-surface'],
       },
       startView: {
-        lookAt: [0, 326, -4438],
-        position: [0, 480, -3358],
+        lookAt: [0, 348, -4192],
+        position: [980, 592, -2872],
         source: 'arrival-main',
       },
       watchItems: [
@@ -753,13 +753,13 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       intent: 'rear-campus-mega-hall-review',
       label: 'Rear Campus Mega Hall',
       camera: {
-        lookAtOffset: [0, 56, 0],
-        positionOffset: [760, 250, 920],
+        lookAtOffset: [80, 98, 0],
+        positionOffset: [780, 340, 980],
         targetIds: ['rear-campus-mega-civic-hall-host-surface'],
       },
       startView: {
-        lookAt: [-2490, 198, -3828],
-        position: [-1970, 328, -3208],
+        lookAt: [-2410, 266, -3828],
+        position: [-1710, 508, -2848],
         source: 'arrival-main',
       },
       watchItems: [
@@ -776,13 +776,13 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       intent: 'rear-campus-needle-crown-review',
       label: 'Rear Campus Needle Crown',
       camera: {
-        lookAtOffset: [0, 18, 0],
-        positionOffset: [180, 180, 360],
+        lookAtOffset: [-28, 28, 0],
+        positionOffset: [460, 230, 540],
         targetIds: ['rear-campus-needle-crown-skyscraper-host-surface'],
       },
       startView: {
-        lookAt: [892, 412, -548],
-        position: [1004, 472, -446],
+        lookAt: [1512, 436, -534],
+        position: [2000, 638, 6],
         source: 'arrival-main',
       },
       watchItems: [

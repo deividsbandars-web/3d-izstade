@@ -228,7 +228,7 @@ function resolveInspectableIdCandidates(
 
 function resolveScreenHostBinding(screenId: string) {
   if (screenId === 'rear-campus-bowl-feed-surface') {
-    return { hostId: 'stadium-bowl', maxDistanceXZ: 520 };
+    return { hostId: 'rear-campus-bowl-center-deck', maxDistanceXZ: 180 };
   }
 
   if (screenId.endsWith('-host-surface')) {

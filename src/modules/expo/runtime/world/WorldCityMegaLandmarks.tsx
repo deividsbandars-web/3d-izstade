@@ -1,6 +1,13 @@
+import type { StadiumReserve } from '../planning/types';
+import {
+  buildWorldCityMegaLandmarkBounds,
+  filterWorldCityMegaLandmarkBounds,
+} from './WorldCityMegaLandmarkBounds';
+
 type WorldCityMegaLandmarksProps = {
   districtCount: number;
   districtStride: number;
+  stadiumReserve: StadiumReserve;
   sectionToggles?: {
     arrival: boolean;
     left: boolean;
@@ -141,9 +148,17 @@ function LandmarkMaterial({
 export function WorldCityMegaLandmarks({
   districtCount,
   districtStride,
+  stadiumReserve,
   sectionToggles = { arrival: true, left: true, middle: true, right: true },
 }: WorldCityMegaLandmarksProps) {
   const hiddenLandmarkParts = buildHiddenLandmarkParts();
+  const visibleLandmarkIds = new Set(
+    filterWorldCityMegaLandmarkBounds(
+      buildWorldCityMegaLandmarkBounds({ districtCount, districtStride }),
+      stadiumReserve,
+    ).map((landmark) => landmark.id),
+  );
+  const isLandmarkVisible = (id: string) => visibleLandmarkIds.has(id);
   const arrivalBaseZ = 256;
   const showcaseBaseZ = -72;
   const discoveryBaseZ = -196 - ((Math.max(1, districtCount) - 1) * districtStride) - 1080;
@@ -197,7 +212,7 @@ export function WorldCityMegaLandmarks({
         </mesh>
       </group>
 
-      {sectionToggles.arrival && <group name="mega-landmark:arrival" position={[0, 0, arrivalBaseZ]}>
+      {sectionToggles.arrival && isLandmarkVisible('mega-landmark-arrival') && <group name="mega-landmark:arrival" position={[0, 0, arrivalBaseZ]}>
         {!hiddenLandmarkParts.has('mega-landmark:arrival-base') && (
         <mesh name="mega-landmark:arrival-base" position={[0, 8, 0]}>
           <boxGeometry args={[148, 6, 22]} />
@@ -240,7 +255,7 @@ export function WorldCityMegaLandmarks({
         </mesh>
       </group>}
 
-      {sectionToggles.middle && <group name="mega-landmark:showcase" position={[0, 0, showcaseBaseZ]}>
+      {sectionToggles.middle && isLandmarkVisible('mega-landmark-showcase') && <group name="mega-landmark:showcase" position={[0, 0, showcaseBaseZ]}>
         {!hiddenLandmarkParts.has('mega-landmark:showcase-base') && (
         <mesh name="mega-landmark:showcase-base" position={[0, 12, 0]}>
           <boxGeometry args={[176, 10, 20]} />
@@ -309,7 +324,7 @@ export function WorldCityMegaLandmarks({
         )}
       </group>}
 
-      {sectionToggles.middle && <group name="mega-landmark:media" position={[0, 0, mediaBaseZ]}>
+      {sectionToggles.middle && isLandmarkVisible('mega-landmark-media') && <group name="mega-landmark:media" position={[0, 0, mediaBaseZ]}>
         {!hiddenLandmarkParts.has('mega-landmark:media-base') && (
         <mesh name="mega-landmark:media-base" position={[0, 8, 0]}>
           <boxGeometry args={[228, 6, 24]} />
@@ -370,7 +385,7 @@ export function WorldCityMegaLandmarks({
         )}
       </group>}
 
-      {sectionToggles.middle && (
+      {sectionToggles.middle && isLandmarkVisible('mega-landmark-media-frame-wall') && (
         <group name="mega-landmark:media-frame-wall" position={mediaFrameBase}>
           <mesh name="mega-landmark:media-frame-left" position={[-132, 122, 0]}>
             <boxGeometry args={[26, 244, 24]} />
@@ -395,7 +410,7 @@ export function WorldCityMegaLandmarks({
         </group>
       )}
 
-      {sectionToggles.middle && (
+      {sectionToggles.middle && isLandmarkVisible('mega-landmark-media-signal-pods') && (
         <group name="mega-landmark:media-signal-pods" position={mediaPodsBase}>
           <mesh name="mega-landmark:media-pod-left" position={[-118, 42, 0]}>
             <boxGeometry args={[84, 84, 42]} />
@@ -416,7 +431,7 @@ export function WorldCityMegaLandmarks({
         </group>
       )}
 
-      {sectionToggles.middle && <group name="mega-landmark:discovery" position={[0, 0, discoveryBaseZ]}>
+      {sectionToggles.middle && isLandmarkVisible('mega-landmark-discovery') && <group name="mega-landmark:discovery" position={[0, 0, discoveryBaseZ]}>
         {!hiddenLandmarkParts.has('mega-landmark:discovery-base') && (
         <mesh name="mega-landmark:discovery-base" position={[0, 8, 0]}>
           <boxGeometry args={[152, 6, 20]} />
@@ -480,7 +495,7 @@ export function WorldCityMegaLandmarks({
         )}
       </group>}
 
-      {sectionToggles.middle && (
+      {sectionToggles.middle && isLandmarkVisible('mega-landmark-discovery-observatory-crown') && (
         <group name="mega-landmark:discovery-observatory-crown" position={discoveryCrownBase}>
           <mesh name="mega-landmark:discovery-crown-plinth" position={[0, 8, 0]}>
             <boxGeometry args={[212, 10, 54]} />
@@ -505,7 +520,7 @@ export function WorldCityMegaLandmarks({
         </group>
       )}
 
-      {sectionToggles.middle && (
+      {sectionToggles.middle && isLandmarkVisible('mega-landmark-discovery-garden-spine') && (
         <group name="mega-landmark:discovery-garden-spine" position={discoverySpineBase}>
           {!hiddenLandmarkParts.has('mega-landmark:discovery-spine-base') && (
           <mesh name="mega-landmark:discovery-spine-base" position={[0, 5, 0]}>
@@ -530,7 +545,7 @@ export function WorldCityMegaLandmarks({
         </group>
       )}
 
-      {sectionToggles.right && (
+      {sectionToggles.right && isLandmarkVisible('mega-landmark-right-skyfold-citadel') && (
         <group name="mega-landmark:right-skyfold-citadel" position={rightCitadelBase}>
           <mesh name="mega-landmark:right-citadel-plinth" position={[0, 10, 0]}>
             <boxGeometry args={[248, 12, 62]} />
@@ -567,7 +582,7 @@ export function WorldCityMegaLandmarks({
         </group>
       )}
 
-      {sectionToggles.right && (
+      {sectionToggles.right && isLandmarkVisible('mega-landmark-right-skybridge-beacon') && (
         <group name="mega-landmark:right-skybridge-beacon" position={rightBeaconBase}>
           <mesh name="mega-landmark:right-skybridge-plinth" position={[0, 8, 0]}>
             <boxGeometry args={[236, 10, 56]} />
@@ -628,7 +643,7 @@ export function WorldCityMegaLandmarks({
         </group>
       )}
 
-      {sectionToggles.right && (
+      {sectionToggles.right && isLandmarkVisible('mega-landmark-right-media-halo') && (
         <group name="mega-landmark:right-media-halo" position={rightHaloBase}>
           <mesh name="mega-landmark:right-media-halo-plinth" position={[0, 8, 0]}>
             <boxGeometry args={[188, 8, 48]} />
@@ -677,7 +692,7 @@ export function WorldCityMegaLandmarks({
         </group>
       )}
 
-      {sectionToggles.left && (
+      {sectionToggles.left && isLandmarkVisible('mega-landmark-left-disc-habitat') && (
         <group name="mega-landmark:left-disc-habitat" position={leftDiscBase}>
           <mesh name="mega-landmark:left-disc-support-a" position={[-62, 82, 18]}>
             <boxGeometry args={[18, 164, 18]} />
@@ -702,7 +717,7 @@ export function WorldCityMegaLandmarks({
         </group>
       )}
 
-      {sectionToggles.right && (
+      {sectionToggles.right && isLandmarkVisible('mega-landmark-right-support-spire') && (
         <group name="mega-landmark:right-support-spire" position={rightSupportBase}>
           <mesh name="mega-landmark:right-support-spire-plinth" position={[0, 7, 0]}>
             <boxGeometry args={[132, 8, 38]} />
@@ -735,7 +750,7 @@ export function WorldCityMegaLandmarks({
         <group name="mega-landmark:right-linear-water-terrace" />
       )}
 
-      {sectionToggles.left && (
+      {sectionToggles.left && isLandmarkVisible('mega-landmark-left-grand-rampart') && (
         <group name="mega-landmark:left-grand-rampart" position={leftRampartBase}>
           <mesh name="mega-landmark:left-rampart-wall-left" position={[-78, 112, 0]}>
             <boxGeometry args={[48, 224, 18]} />
@@ -752,7 +767,7 @@ export function WorldCityMegaLandmarks({
         </group>
       )}
 
-      {sectionToggles.left && (
+      {sectionToggles.left && isLandmarkVisible('mega-landmark-left-cantilever-forum') && (
         <group name="mega-landmark:left-cantilever-forum" position={leftForumBase}>
           <mesh name="mega-landmark:left-cantilever-pylon-left" position={[-68, 104, 0]}>
             <boxGeometry args={[24, 208, 24]} />
@@ -783,7 +798,7 @@ export function WorldCityMegaLandmarks({
         </group>
       )}
 
-      {sectionToggles.left && (
+      {sectionToggles.left && isLandmarkVisible('mega-landmark-left-split-crown-gate') && (
         <group name="mega-landmark:left-split-crown-gate" position={leftCrownBase}>
           <mesh name="mega-landmark:left-split-crown-left" position={[-82, 146, 0]}>
             <boxGeometry args={[34, 292, 28]} />
@@ -824,7 +839,7 @@ export function WorldCityMegaLandmarks({
         </group>
       )}
 
-      {sectionToggles.left && (
+      {sectionToggles.left && isLandmarkVisible('mega-landmark-left-split-monolith-pair') && (
         <group name="mega-landmark:left-split-monolith-pair" position={leftMonolithBase}>
           <mesh name="mega-landmark:left-monolith-a" position={[-58, 146, 0]} rotation={[0, 0, -0.04]}>
             <boxGeometry args={[44, 292, 28]} />
@@ -841,7 +856,7 @@ export function WorldCityMegaLandmarks({
         </group>
       )}
 
-      {sectionToggles.left && (
+      {sectionToggles.left && isLandmarkVisible('mega-landmark-left-broken-wall-monument') && (
         <group name="mega-landmark:left-broken-wall-monument" position={leftSupportBase}>
           <mesh name="mega-landmark:left-broken-wall-left" position={[-56, 112, -6]}>
             <boxGeometry args={[30, 224, 18]} />

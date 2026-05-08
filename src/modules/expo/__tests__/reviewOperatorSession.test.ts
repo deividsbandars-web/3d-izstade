@@ -74,16 +74,40 @@ assert.ok(centerSpine);
 const resolvedCenterSpineView = resolveReviewOperatorZoneStartView(centerSpine, new Map([
   ['screen-spine-primary-0', { position: [-184, 108, -248] }],
 ]));
-assert.deepEqual(resolvedCenterSpineView.lookAt, [-184, 142, -248]);
-assert.deepEqual(resolvedCenterSpineView.position, [-604, 318, -768]);
+assert.deepEqual(resolvedCenterSpineView.lookAt, [-184, 154, -248]);
+assert.deepEqual(resolvedCenterSpineView.position, [36, 348, 372]);
 
 const rearCampusCenter = zones.find((zone) => zone.id === 'rear-campus-center');
 assert.ok(rearCampusCenter);
 const resolvedRearCampusCenterView = resolveReviewOperatorZoneStartView(rearCampusCenter, new Map([
   ['rear-campus-stage-monolith-canopy-host-surface', { position: [47, 126, -3266] }],
 ]));
-assert.deepEqual(resolvedRearCampusCenterView.lookAt, [47, 252, -3266]);
-assert.deepEqual(resolvedRearCampusCenterView.position, [347, 336, -2746]);
+assert.deepEqual(resolvedRearCampusCenterView.lookAt, [47, 226, -3266]);
+assert.deepEqual(resolvedRearCampusCenterView.position, [267, 386, -2926]);
+
+const stadiumFeedAxis = zones.find((zone) => zone.id === 'stadium-feed-axis');
+assert.ok(stadiumFeedAxis);
+const resolvedStadiumFeedAxisView = resolveReviewOperatorZoneStartView(stadiumFeedAxis, new Map([
+  ['rear-campus-bowl-feed-surface', { position: [0, 292, -4192] }],
+]));
+assert.deepEqual(resolvedStadiumFeedAxisView.lookAt, [0, 348, -4192]);
+assert.deepEqual(resolvedStadiumFeedAxisView.position, [980, 592, -2872]);
+
+const rearCampusMegaHall = zones.find((zone) => zone.id === 'rear-campus-mega-hall');
+assert.ok(rearCampusMegaHall);
+const resolvedRearCampusMegaHallView = resolveReviewOperatorZoneStartView(rearCampusMegaHall, new Map([
+  ['rear-campus-mega-civic-hall-host-surface', { position: [-2490, 168, -3828] }],
+]));
+assert.deepEqual(resolvedRearCampusMegaHallView.lookAt, [-2410, 266, -3828]);
+assert.deepEqual(resolvedRearCampusMegaHallView.position, [-1710, 508, -2848]);
+
+const rearCampusNeedleCrown = zones.find((zone) => zone.id === 'rear-campus-needle-crown');
+assert.ok(rearCampusNeedleCrown);
+const resolvedRearCampusNeedleCrownView = resolveReviewOperatorZoneStartView(rearCampusNeedleCrown, new Map([
+  ['rear-campus-needle-crown-skyscraper-host-surface', { position: [1540, 408, -534] }],
+]));
+assert.deepEqual(resolvedRearCampusNeedleCrownView.lookAt, [1512, 436, -534]);
+assert.deepEqual(resolvedRearCampusNeedleCrownView.position, [2000, 638, 6]);
 
 const towerCluster = zones.find((zone) => zone.id === 'tower-cluster');
 assert.ok(towerCluster);

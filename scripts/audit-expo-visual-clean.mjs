@@ -21,6 +21,10 @@ const SOLID_LAYERS = new Set([
   'stadium-tower',
 ]);
 
+function isCityLayer(layer) {
+  return layer?.startsWith('city-') || layer === 'mega-landmark';
+}
+
 function printUsageAndExit() {
   console.error('Usage: node scripts/audit-expo-visual-clean.mjs <full-city-clean-run-dir> [--out <report.json>] [--md <report.md>]');
   process.exit(2);
@@ -232,6 +236,10 @@ function collectNearSolidHints(snapshot) {
     }));
 }
 
+function uniqueSourceHints(...hintGroups) {
+  return [...new Set(hintGroups.flat().filter(Boolean))];
+}
+
 function resolveRegistryEntries(snapshot) {
   const byId = new Map();
   if (snapshot?.registryById && typeof snapshot.registryById === 'object') {
@@ -273,7 +281,10 @@ function auditZone({ imageStats, manifestEntry, snapshot, zoneId }) {
   const top = imageStats.regions.top;
   const zone = snapshot?.operatorZone;
   const nearSolidHints = collectNearSolidHints(snapshot);
+  const nearestSolid = nearSolidHints[0] ?? null;
   const nearbyLayerCounts = countLayersNearPlayer(snapshot, 420);
+  const expectedLayers = new Set(zone?.expectedVisibleLayers ?? []);
+  const actualLayers = new Set(snapshot?.operatorZoneValidation?.actualVisibleLayers ?? []);
 
   if (bottom.dominantBucketRatio >= 0.82 && bottom.brightnessStdDev <= 6.5) {
     pushFinding(
@@ -322,8 +333,6 @@ function auditZone({ imageStats, manifestEntry, snapshot, zoneId }) {
     );
   }
 
-  const expectedLayers = new Set(zone?.expectedVisibleLayers ?? []);
-  const actualLayers = new Set(snapshot?.operatorZoneValidation?.actualVisibleLayers ?? []);
   const expectedLayerVisible = [...expectedLayers].some((layer) => actualLayers.has(layer));
   if (zone && expectedLayers.size > 0 && !expectedLayerVisible) {
     pushFinding(
@@ -341,15 +350,96 @@ function auditZone({ imageStats, manifestEntry, snapshot, zoneId }) {
     );
   }
 
+  if (
+    nearestSolid
+    && Number(nearestSolid.distance) <= 90
+    && expectedLayers.has('city-screen-surface')
+    && full.brightnessStdDev >= 24
+  ) {
+    pushFinding(
+      findings,
+      'medium',
+      'near-foreground-solid-camera-risk',
+      'Review camera is very close to a solid object while checking a city screen, so the view may be foreground-blocked.',
+      'Move the review camera/look-at before deleting or moving city structures; inspect the closest solid source first.',
+      {
+        full,
+        nearestSolid,
+      },
+      uniqueSourceHints(
+        [nearestSolid.sourceFile],
+        ['src/modules/expo/runtime/operator/model/reviewOperatorSession.ts'],
+      ),
+    );
+  }
+
+  if (
+    (zoneId.includes('stadium') || zoneId.includes('rear-campus'))
+    && expectedLayers.has('stadium-screen-surface')
+    && full.bucketCount <= 36
+    && full.brightnessStdDev <= 19
+    && center.bucketCount <= 22
+    && (center.dominantBucketRatio >= 0.32 || center.brightnessStdDev <= 16.5)
+  ) {
+    pushFinding(
+      findings,
+      'medium',
+      'stadium-screen-low-composition-read',
+      'Stadium screen review sees a screen layer, but the frame has low composition density and weak host context.',
+      'Retune this review camera or host massing so the stadium screen reads attached to its structure with surrounding depth.',
+      {
+        center,
+        full,
+        nearSolidHints,
+      },
+      uniqueSourceHints(
+        nearSolidHints.map((entry) => entry.sourceFile),
+        [
+          'src/modules/expo/runtime/operator/model/reviewOperatorSession.ts',
+          'src/modules/expo/runtime/world/ExpoRearCampus.tsx',
+        ],
+      ),
+    );
+  }
+
+  if (
+    zoneId.includes('ground-seam')
+    && bottom.dominantBucketRatio >= 0.58
+    && center.dominantBucketRatio >= 0.42
+    && center.brightnessStdDev <= 10.5
+  ) {
+    pushFinding(
+      findings,
+      'medium',
+      'ground-seam-flat-band',
+      'Ground seam review is dominated by flat same-color bands, so layer separation may still be visually exposed.',
+      'Inspect the city/stadium ground transition and fix material/layer continuity before expanding screen or booth layout.',
+      {
+        bottom,
+        center,
+        full,
+      },
+      [
+        'src/modules/expo/runtime/planning/legacy/worldCityGeometry.ts',
+        'src/shared/expo/lib/boulevardLayout.ts',
+      ],
+    );
+  }
+
   const cityNear = Object.entries(nearbyLayerCounts)
     .filter(([layer]) => layer.startsWith('city-') || layer === 'mega-landmark')
     .reduce((sum, [, count]) => sum + count, 0);
   const stadiumNear = Object.entries(nearbyLayerCounts)
     .filter(([layer]) => layer.startsWith('stadium-'))
     .reduce((sum, [, count]) => sum + count, 0);
+  const actualCityLayerVisible = [...actualLayers].some((layer) => isCityLayer(layer));
 
   if (zoneId.includes('stadium') || zoneId.includes('rear-campus')) {
-    if (cityNear >= 12 && stadiumNear >= 12) {
+    if (
+      cityNear >= 12
+      && stadiumNear >= 12
+      && (actualCityLayerVisible || full.bucketCount <= 52 || center.bucketCount <= 28)
+    ) {
       pushFinding(
         findings,
         'medium',
@@ -476,7 +566,8 @@ async function main() {
     throw new Error(`Missing capture manifest: ${manifestPath}`);
   }
 
-  const manifest = readJson(manifestPath);
+  const manifestRaw = readJson(manifestPath);
+  const manifest = Array.isArray(manifestRaw) ? manifestRaw : [manifestRaw];
   const zones = [];
   for (const entry of manifest) {
     const imagePath = entry.file;
