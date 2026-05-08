@@ -274,6 +274,18 @@ function withSurfaceSections(surface: CityScreenSurface) {
   return withSections(surface);
 }
 
+function resolveTowerScreenSurfaceHostId(surfaceId: string) {
+  if (surfaceId.endsWith('-tower-ribbon')) {
+    return surfaceId.slice(0, -'-tower-ribbon'.length);
+  }
+
+  if (surfaceId.endsWith('-crown-beacon')) {
+    return surfaceId.slice(0, -'-crown-beacon'.length);
+  }
+
+  return null;
+}
+
 function withSocketSections(socket: CityScreenSocket) {
   return withSections(socket);
 }
@@ -323,9 +335,14 @@ export function buildCanonicalWorldPlan(inputs: ExpoPlanningInputs): CanonicalWo
     .map((tower) => withTowerSections(tower, geometry.stadiumReserve))
     .filter((tower) => !tower.renderIntent?.hidden && !tower.renderIntent?.skipBase)
     .filter((tower) => !overlapsStadiumReserve(tower.position, geometry.stadiumReserve, tower.baseSize));
+  const visibleTowerIds = new Set(filteredTowerLandmarks.map((tower) => tower.id));
   const filteredScreenSurfaces = flattenZoneScreenSurfaces(zones, { includeRearCampus: false })
     .map(withSurfaceSections)
-    .filter((surface) => surface.renderIntent?.visible !== false && !overlapsStadiumReserve(surface.position, geometry.stadiumReserve, surface.size));
+    .filter((surface) => surface.renderIntent?.visible !== false && !overlapsStadiumReserve(surface.position, geometry.stadiumReserve, surface.size))
+    .filter((surface) => {
+      const hostId = resolveTowerScreenSurfaceHostId(surface.id);
+      return !hostId || visibleTowerIds.has(hostId);
+    });
   const screenSockets = flattenZoneScreenSockets(zones, { includeRearCampus: false })
     .map(withSocketSections)
     .filter((socket) => socket.renderIntent?.visible !== false && !overlapsStadiumReserve(socket.position, geometry.stadiumReserve, socket.frameSize));

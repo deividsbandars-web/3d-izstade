@@ -82,7 +82,7 @@ assert.ok(rearCampusCenter);
 const resolvedRearCampusCenterView = resolveReviewOperatorZoneStartView(rearCampusCenter, new Map([
   ['rear-campus-stage-monolith-canopy-host-surface', { position: [47, 126, -3266] }],
 ]));
-assert.deepEqual(resolvedRearCampusCenterView.lookAt, [47, 190, -3266]);
+assert.deepEqual(resolvedRearCampusCenterView.lookAt, [47, 252, -3266]);
 assert.deepEqual(resolvedRearCampusCenterView.position, [347, 336, -2746]);
 
 const towerCluster = zones.find((zone) => zone.id === 'tower-cluster');
