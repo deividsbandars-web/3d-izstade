@@ -32,6 +32,9 @@ const GROUND_PLANE_SAME_LAYER_HIGH_OVERLAP_AREA = 32000;
 const GROUND_PLANE_SAME_LAYER_WARNING_OVERLAP_AREA = 4096;
 const SCREEN_HOST_FACE_GAP_TOLERANCE = 16;
 const SCREEN_HOST_VERTICAL_FLOAT_TOLERANCE = 24;
+const SCREEN_HOST_PLANAR_GAP_TOLERANCE = 18;
+const SCREEN_HOST_PLANAR_EMBED_TOLERANCE = 18;
+const SCREEN_HOST_MIN_LATERAL_OVERLAP_RATIO = 0.18;
 const CITY_SOLID_OVERLAP_WARNING_AREA = 600;
 const CITY_SOLID_OVERLAP_HIGH_VOLUME = 100000;
 const GROUND_DETAIL_MAX_OPACITY = 0.32;
@@ -177,9 +180,10 @@ function resolveBounds(entry) {
     return null;
   }
 
-  const halfX = size[0] * 0.5;
+  const yaw = tuple3(entry.rotation)?.[1] ?? 0;
+  const halfX = (Math.abs(Math.cos(yaw)) * size[0] * 0.5) + (Math.abs(Math.sin(yaw)) * size[2] * 0.5);
   const halfY = size[1] * 0.5;
-  const halfZ = size[2] * 0.5;
+  const halfZ = (Math.abs(Math.sin(yaw)) * size[0] * 0.5) + (Math.abs(Math.cos(yaw)) * size[2] * 0.5);
   return {
     centerX: position[0],
     centerY: position[1],
@@ -249,7 +253,12 @@ function projectedHalfExtentXZ(entry, axis) {
     return null;
   }
 
-  return (Math.abs(axis.x) * size[0] * 0.5) + (Math.abs(axis.z) * size[2] * 0.5);
+  const yaw = tuple3(entry.rotation)?.[1] ?? 0;
+  const localX = { x: Math.cos(yaw), z: -Math.sin(yaw) };
+  const localZ = { x: Math.sin(yaw), z: Math.cos(yaw) };
+
+  return (Math.abs(dotXZ(localX, axis)) * size[0] * 0.5)
+    + (Math.abs(dotXZ(localZ, axis)) * size[2] * 0.5);
 }
 
 function resolveAxisAlignedFacing(rotation) {
@@ -870,6 +879,91 @@ function auditScreenHostVerticalAttachment(entries) {
   return issues;
 }
 
+function auditScreenHostPlanarAttachment(entries) {
+  const registryById = new Map(entries.map((entry) => [entry.id, entry]));
+  const screens = entries
+    .filter((entry) => SCREEN_LAYERS.has(entry.layer) && tuple3(entry.position))
+    .map((entry) => ({ bounds: resolveBounds(entry), entry }));
+  const issues = [];
+
+  for (const screen of screens) {
+    const binding = resolveScreenHostBinding(screen.entry.id);
+    const host = binding ? registryById.get(binding.hostId) : null;
+    const yaw = tuple3(screen.entry.rotation)?.[1];
+    if (!binding || !host || !screen.bounds || !isFiniteNumber(yaw)) {
+      continue;
+    }
+
+    const normal = resolveYawNormal(yaw);
+    const tangent = resolveYawTangent(yaw);
+    const delta = {
+      x: screen.entry.position[0] - host.position[0],
+      z: screen.entry.position[2] - host.position[2],
+    };
+    const forwardGap = dotXZ(delta, normal);
+    const hostNormalHalfExtent = projectedHalfExtentXZ(host, normal);
+    const hostTangentHalfExtent = projectedHalfExtentXZ(host, tangent);
+    if (!hostNormalHalfExtent || !hostTangentHalfExtent) {
+      continue;
+    }
+
+    const screenDepthHalfExtent = screen.entry.size[2] * 0.5;
+    const planarGap = forwardGap - hostNormalHalfExtent - screenDepthHalfExtent;
+    if (planarGap > SCREEN_HOST_PLANAR_GAP_TOLERANCE) {
+      pushIssue(
+        issues,
+        planarGap > 42 ? 'high' : 'medium',
+        'screen-host-planar-gap',
+        `Screen ${screen.entry.id} is ${Math.round(planarGap)} units in front of host ${host.id}; it can read as detached from the wall.`,
+        [screen.entry.id, host.id],
+        {
+          forwardGap: Math.round(forwardGap),
+          hostNormalHalfExtent: Math.round(hostNormalHalfExtent),
+          planarGap: Math.round(planarGap),
+        },
+      );
+      continue;
+    }
+
+    if (planarGap < -SCREEN_HOST_PLANAR_EMBED_TOLERANCE) {
+      pushIssue(
+        issues,
+        planarGap < -42 ? 'high' : 'medium',
+        'screen-host-planar-embed',
+        `Screen ${screen.entry.id} is embedded ${Math.round(Math.abs(planarGap))} units into host ${host.id}; it should sit on the host face.`,
+        [screen.entry.id, host.id],
+        {
+          forwardGap: Math.round(forwardGap),
+          hostNormalHalfExtent: Math.round(hostNormalHalfExtent),
+          planarGap: Math.round(planarGap),
+        },
+      );
+      continue;
+    }
+
+    const screenTangentHalfExtent = screen.entry.size[0] * 0.5;
+    const tangentDelta = Math.abs(dotXZ(delta, tangent));
+    const lateralOverlap = hostTangentHalfExtent + screenTangentHalfExtent - tangentDelta;
+    const minLateralOverlap = screen.entry.size[0] * SCREEN_HOST_MIN_LATERAL_OVERLAP_RATIO;
+    if (lateralOverlap < minLateralOverlap) {
+      pushIssue(
+        issues,
+        lateralOverlap <= 0 ? 'high' : 'medium',
+        'screen-host-planar-lateral-miss',
+        `Screen ${screen.entry.id} has only ${Math.round(Math.max(0, lateralOverlap))} units of lateral overlap with host ${host.id}.`,
+        [screen.entry.id, host.id],
+        {
+          lateralOverlap: Math.round(Math.max(0, lateralOverlap)),
+          minLateralOverlap: Math.round(minLateralOverlap),
+          tangentDelta: Math.round(tangentDelta),
+        },
+      );
+    }
+  }
+
+  return issues;
+}
+
 function auditStadiumScreenHostFaceAttachment(entries) {
   const registryById = new Map(entries.map((entry) => [entry.id, entry]));
   const screens = entries
@@ -1007,6 +1101,7 @@ const issues = [
   ...auditScreenSocketAttachment(entries),
   ...auditScreenHostAttachment(entries),
   ...auditScreenHostVerticalAttachment(entries),
+  ...auditScreenHostPlanarAttachment(entries),
   ...auditStadiumScreenHostFaceAttachment(entries),
 ].sort((left, right) => {
   const severityDelta = SEVERITY_RANK[right.severity] - SEVERITY_RANK[left.severity];

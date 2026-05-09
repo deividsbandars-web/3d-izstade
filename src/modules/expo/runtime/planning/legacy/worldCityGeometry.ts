@@ -103,6 +103,7 @@ export type CanonicalPrimitive =
 export type CityMass = {
   id: string;
   position: [number, number, number];
+  rotation?: [number, number, number];
   size: [number, number, number];
   color: string;
   role?: 'signature' | 'ground' | 'support-strip' | 'slender-vertical' | 'structural';
@@ -1080,12 +1081,13 @@ function buildMediaWallScreenHostMasses(districtCount: number, districtStride: n
     const yaw = surface.rotation[1] ?? 0;
     const isMarquee = surface.id.startsWith('screen-marquee-');
     const isSpine = surface.id.startsWith('screen-spine-');
-    const backset = isMarquee ? 18 : isSpine ? 14 : 12;
     const hostTop = surface.position[1] + (surface.size[1] * 0.5) + (isMarquee ? 8 : 6);
     const hostWidth = Math.max(
       isMarquee ? 112 : isSpine ? 72 : 78,
       surface.size[0] * (isMarquee ? 0.72 : isSpine ? 0.6 : 0.64),
     );
+    const hostDepth = Math.max(24, surface.size[2] * 7.2);
+    const backset = (hostDepth * 0.5) + (surface.size[2] * 0.5) - 1.2;
 
     return {
       id: `${surface.id}-host`,
@@ -1094,10 +1096,11 @@ function buildMediaWallScreenHostMasses(districtCount: number, districtStride: n
         0,
         round1(surface.position[2] - (Math.cos(yaw) * backset)),
       ],
+      rotation: [0, yaw, 0],
       size: [
         round1(hostWidth),
         round1(Math.max(surface.size[1] + (isMarquee ? 58 : isSpine ? 46 : 34), hostTop)),
-        round1(Math.max(24, surface.size[2] * 7.2)),
+        round1(hostDepth),
       ],
       color: isSpine ? '#7c909e' : isMarquee ? '#718795' : '#8294a0',
     } as CityMass;
@@ -1116,6 +1119,8 @@ export function buildMediaWallSurfaces(districtCount: number, districtStride: nu
   const flankYawLeft = 1.08;
   const flankYawRight = -1.08;
   const marqueeClearanceZ = 52;
+  const marqueeLeftOutwardX = 36;
+  const marqueeRightOutwardX = 52;
   const sideArrayClearanceX = 112;
 
   return Array.from({ length: Math.max(3, districtCount) }, (_, districtIndex) => {
@@ -1125,7 +1130,7 @@ export function buildMediaWallSurfaces(districtCount: number, districtStride: nu
     return [
       {
         id: `screen-marquee-left-${districtIndex}`,
-        position: [-708, 148, baseZ - 82 + marqueeClearanceZ],
+        position: [-(708 + marqueeLeftOutwardX), 148, baseZ - 82 + marqueeClearanceZ],
         rotation: [0, inwardYawLeft, 0],
         size: [156, 184, 3.4],
         color: '#08111c',
@@ -1135,7 +1140,7 @@ export function buildMediaWallSurfaces(districtCount: number, districtStride: nu
       },
       {
         id: `screen-marquee-right-${districtIndex}`,
-        position: [708, 144, baseZ - 114 - marqueeClearanceZ],
+        position: [708 + marqueeRightOutwardX, 144, baseZ - 114 - marqueeClearanceZ],
         rotation: [0, inwardYawRight, 0],
         size: [150, 178, 3.4],
         color: '#091320',
@@ -1195,7 +1200,7 @@ export function buildMediaWallSurfaces(districtCount: number, districtStride: nu
       },
       {
         id: `screen-spine-secondary-${districtIndex}`,
-        position: [184, 116, baseZ + 84],
+        position: [184, 116, baseZ + 58],
         rotation: [0, inwardYawRight, 0],
         size: [104, 118, 2.6],
         color: '#0a1420',

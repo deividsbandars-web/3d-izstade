@@ -380,7 +380,7 @@ export function buildCityWorldObjectRegistry({
       planningSections: mass.sections,
       planningZone: 'canonical-city',
       position: baseAnchoredBoxCenter(mass.position, mass.size),
-      rotation: [0, 0, 0],
+      rotation: mass.rotation ?? [0, 0, 0],
       safeEditSeam: 'src/modules/expo/runtime/planning/world-plan/buildCanonicalWorldPlan.ts',
       size: mass.size,
       sourceFile: 'src/modules/expo/runtime/planning/world-plan/buildCanonicalWorldPlan.ts',
