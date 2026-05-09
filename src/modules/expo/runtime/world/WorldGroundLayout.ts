@@ -4,6 +4,7 @@ export type GroundDetailRibbon = {
   color: string;
   groundOwner: GroundOwner;
   id: string;
+  opacity?: number;
   position: [number, number, number];
   size: [number, number];
 };
@@ -13,6 +14,18 @@ export const GLOBAL_GROUND_POSITION: [number, number, number] = [0, -0.16, -1800
 
 export const GROUND_DETAIL_Y = -0.145;
 export const GROUND_ACCENT_Y = -0.139;
+export const GROUND_SURFACE_MARKER_Y = 0.034;
+export const GROUND_DETAIL_DEFAULT_OPACITY = 0.2;
+export const GROUND_DETAIL_ACCENT_OPACITY = 0.26;
+export const CITY_STRUCTURAL_GROUND_OPACITY = 0.34;
+export const CITY_STRUCTURAL_GROUND_ARRIVAL_OPACITY = 0.3;
+export const STADIUM_FORECOURT_GROUND_OPACITY = 0.36;
+
+export function resolveGroundDetailOpacity(ribbon: Pick<GroundDetailRibbon, 'opacity' | 'position'>) {
+  return ribbon.opacity ?? (ribbon.position[1] === GROUND_ACCENT_Y
+    ? GROUND_DETAIL_ACCENT_OPACITY
+    : GROUND_DETAIL_DEFAULT_OPACITY);
+}
 
 export const GROUND_DETAIL_RIBBONS: GroundDetailRibbon[] = [
   { id: 'arrival-forecourt-wide-band', position: [0, GROUND_DETAIL_Y, 210], size: [1180, 86], color: '#949fa7', groundOwner: 'city' },
@@ -30,7 +43,14 @@ export const GROUND_DETAIL_RIBBONS: GroundDetailRibbon[] = [
   { id: 'right-edge-observation-pad', position: [900, GROUND_DETAIL_Y, -720], size: [640, 1460], color: '#828d96', groundOwner: 'city' },
   { id: 'sponsor-left-forecourt-ribbon', position: [-410, GROUND_DETAIL_Y, -720], size: [250, 1280], color: '#8b969f', groundOwner: 'city' },
   { id: 'sponsor-right-forecourt-ribbon', position: [410, GROUND_DETAIL_Y, -720], size: [250, 1280], color: '#8b969f', groundOwner: 'city' },
-  { id: 'stadium-transition-crosswalk', position: [0, GROUND_DETAIL_Y, -1010], size: [1520, 72], color: '#98a3ab', groundOwner: 'transition' },
-  { id: 'stadium-transition-back-band', position: [0, GROUND_DETAIL_Y, -1240], size: [980, 54], color: '#838e97', groundOwner: 'transition' },
-  { id: 'rear-campus-approach-ribbon', position: [0, GROUND_DETAIL_Y, -1640], size: [360, 1040], color: '#89949d', groundOwner: 'stadium' },
+  { id: 'stadium-transition-crosswalk', position: [0, GROUND_SURFACE_MARKER_Y, -1010], size: [1520, 72], color: '#98a3ab', groundOwner: 'transition', opacity: 0.3 },
+  { id: 'stadium-transition-back-band', position: [0, GROUND_SURFACE_MARKER_Y, -1240], size: [980, 54], color: '#838e97', groundOwner: 'transition', opacity: 0.28 },
+  { id: 'stadium-transition-center-stitch', position: [0, GROUND_SURFACE_MARKER_Y, -1122], size: [1080, 24], color: '#aeb8bf', groundOwner: 'transition', opacity: 0.32 },
+  { id: 'stadium-transition-left-service-line', position: [-540, GROUND_SURFACE_MARKER_Y, -1122], size: [28, 420], color: '#75838d', groundOwner: 'transition', opacity: 0.3 },
+  { id: 'stadium-transition-right-service-line', position: [540, GROUND_SURFACE_MARKER_Y, -1122], size: [28, 420], color: '#75838d', groundOwner: 'transition', opacity: 0.3 },
+  { id: 'stadium-transition-midline', position: [0, GROUND_SURFACE_MARKER_Y, -1410], size: [42, 420], color: '#a0abb3', groundOwner: 'transition', opacity: 0.28 },
+  { id: 'rear-campus-approach-ribbon', position: [0, GROUND_SURFACE_MARKER_Y, -1640], size: [360, 1040], color: '#89949d', groundOwner: 'stadium' },
+  { id: 'stadium-right-flank-approach-band', position: [760, GROUND_SURFACE_MARKER_Y, -2260], size: [520, 44], color: '#9aa6ae', groundOwner: 'stadium', opacity: 0.3 },
+  { id: 'stadium-right-flank-service-edge', position: [970, GROUND_SURFACE_MARKER_Y, -2550], size: [52, 620], color: '#75838d', groundOwner: 'stadium', opacity: 0.28 },
+  { id: 'stadium-right-flank-cross-tie', position: [820, GROUND_SURFACE_MARKER_Y, -2820], size: [360, 30], color: '#a2adb5', groundOwner: 'stadium', opacity: 0.28 },
 ];

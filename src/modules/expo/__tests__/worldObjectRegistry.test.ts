@@ -276,6 +276,8 @@ assert.ok(cityRegistry.some((entry) => entry.id === cityMass.id && entry.layer =
 assert.ok(cityRegistry.some((entry) => entry.id === cityTower.id && entry.layer === 'city-tower'));
 assert.equal(cityRegistry.find((entry) => entry.id === cityPlane.id)?.groundOwner, 'city');
 assert.equal(cityRegistry.find((entry) => entry.id === cityPlane.id)?.groundRole, 'structural');
+assert.equal(cityRegistry.find((entry) => entry.id === cityPlane.id)?.material?.transparent, true);
+assert.ok((cityRegistry.find((entry) => entry.id === cityPlane.id)?.material?.opacity ?? 1) <= 0.46);
 assert.deepEqual(cityRegistry.find((entry) => entry.id === cityMass.id)?.position, [10, 90, -40]);
 assert.deepEqual(cityRegistry.find((entry) => entry.id === cityTower.id)?.position, [120, 151, -160]);
 assert.deepEqual(
@@ -316,6 +318,8 @@ assert.equal(stadiumRegistry.filter((entry) => entry.layer === 'stadium-screen-f
 assert.ok(stadiumRegistry.some((entry) => entry.id === 'rear-forecourt-1' && entry.layer === 'stadium-plane'));
 assert.equal(stadiumRegistry.find((entry) => entry.id === 'rear-forecourt-1')?.groundOwner, 'stadium');
 assert.equal(stadiumRegistry.find((entry) => entry.id === 'rear-forecourt-1')?.groundRole, 'structural');
+assert.equal(stadiumRegistry.find((entry) => entry.id === 'rear-forecourt-1')?.material?.transparent, true);
+assert.ok((stadiumRegistry.find((entry) => entry.id === 'rear-forecourt-1')?.material?.opacity ?? 1) <= 0.46);
 assert.ok(stadiumRegistry.some((entry) => entry.id === 'rear-pavilion-1' && entry.layer === 'stadium-pavilion'));
 assert.ok(stadiumRegistry.some((entry) => entry.id === 'rear-tower-1' && entry.layer === 'stadium-tower'));
 assert.deepEqual(stadiumRegistry.find((entry) => entry.id === 'rear-pavilion-1')?.position, [180, 40, -2500]);
@@ -352,4 +356,6 @@ assert.equal(groundRegistry.find((entry) => entry.id === 'global-ground-base')?.
 assert.equal(groundRegistry.find((entry) => entry.id === 'arrival-to-seam-spine')?.groundOwner, 'city');
 assert.equal(groundRegistry.find((entry) => entry.id === 'stadium-transition-crosswalk')?.groundOwner, 'transition');
 assert.equal(groundRegistry.find((entry) => entry.id === 'rear-campus-approach-ribbon')?.groundOwner, 'stadium');
+assert.equal(groundRegistry.find((entry) => entry.id === 'arrival-to-seam-spine')?.material?.transparent, true);
+assert.ok((groundRegistry.find((entry) => entry.id === 'arrival-to-seam-spine')?.material?.opacity ?? 1) <= 0.32);
 assert.ok(groundRegistry.every((entry) => entry.size?.every((value) => value > 0)), 'ground registry entries must expose positive audit bounds');

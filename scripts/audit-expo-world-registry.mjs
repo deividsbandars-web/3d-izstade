@@ -34,6 +34,8 @@ const SCREEN_HOST_FACE_GAP_TOLERANCE = 16;
 const SCREEN_HOST_VERTICAL_FLOAT_TOLERANCE = 24;
 const CITY_SOLID_OVERLAP_WARNING_AREA = 600;
 const CITY_SOLID_OVERLAP_HIGH_VOLUME = 100000;
+const GROUND_DETAIL_MAX_OPACITY = 0.32;
+const STRUCTURAL_GROUND_MAX_OPACITY = 0.46;
 const VALID_GROUND_OWNERS = new Set(['city', 'stadium', 'transition']);
 
 function resolveScreenHostBinding(screenId) {
@@ -371,6 +373,56 @@ function auditGroundOwnershipMetadata(entries) {
         [entry.id],
         { groundRole: entry.groundRole ?? null },
       );
+    }
+  }
+
+  return issues;
+}
+
+function resolveMaterialOpacity(entry) {
+  const opacity = entry?.material?.opacity;
+  return isFiniteNumber(opacity) ? opacity : null;
+}
+
+function auditGroundVisualContinuity(entries) {
+  const issues = [];
+
+  for (const entry of entries) {
+    if (entry.layer === 'ground-detail') {
+      const opacity = resolveMaterialOpacity(entry);
+      if (opacity === null || entry.material?.transparent !== true || opacity > GROUND_DETAIL_MAX_OPACITY) {
+        pushIssue(
+          issues,
+          opacity === null || opacity > 0.55 ? 'high' : 'medium',
+          'ground-detail-too-opaque',
+          `${entry.layer} ${entry.id} must stay as a subtle transparent guide layer so it does not create visible color seams across the city.`,
+          [entry.id],
+          {
+            maxOpacity: GROUND_DETAIL_MAX_OPACITY,
+            opacity,
+            transparent: entry.material?.transparent ?? null,
+          },
+        );
+      }
+      continue;
+    }
+
+    if (STRUCTURAL_GROUND_LAYERS.has(entry.layer)) {
+      const opacity = resolveMaterialOpacity(entry);
+      if (opacity === null || entry.material?.transparent !== true || opacity > STRUCTURAL_GROUND_MAX_OPACITY) {
+        pushIssue(
+          issues,
+          opacity === null || opacity > 0.72 ? 'high' : 'medium',
+          'structural-ground-too-opaque',
+          `${entry.layer} ${entry.id} must be a transparent structural ground overlay, not an opaque competing ground layer.`,
+          [entry.id],
+          {
+            maxOpacity: STRUCTURAL_GROUND_MAX_OPACITY,
+            opacity,
+            transparent: entry.material?.transparent ?? null,
+          },
+        );
+      }
     }
   }
 
@@ -947,6 +999,7 @@ const entries = uniqueRegistryEntries(snapshot);
 const issues = [
   ...auditSolidBoundsCoverage(entries),
   ...auditGroundOwnershipMetadata(entries),
+  ...auditGroundVisualContinuity(entries),
   ...auditGroundAndCrossLayerOverlaps(entries),
   ...auditCitySolidOverlaps(entries),
   ...auditBoothSpacing(entries),

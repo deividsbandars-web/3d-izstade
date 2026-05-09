@@ -10,6 +10,7 @@ import { ExpoRearCampusStructures } from './ExpoRearCampusStructures';
 import { WorldCityScreenAssignments } from './WorldCityScreenAssignments';
 import { WorldCityScreenSockets } from './WorldCityScreenSockets';
 import { WorldCityScreenSurfaces } from './WorldCityScreenSurfaces';
+import { STADIUM_FORECOURT_GROUND_OPACITY } from './WorldGroundLayout';
 import {
   ColliderMaterial,
   ExpoRuntimeSurfaceMaterial,
@@ -145,11 +146,14 @@ export function ExpoRearCampus({
             <planeGeometry args={plane.size} />
             <meshStandardMaterial
               color={plane.color}
-              roughness={0.72}
+              depthWrite={false}
               metalness={0.04}
+              opacity={STADIUM_FORECOURT_GROUND_OPACITY}
               polygonOffset
               polygonOffsetFactor={-2}
               polygonOffsetUnits={-2}
+              roughness={0.72}
+              transparent
             />
           </mesh>
         ))}

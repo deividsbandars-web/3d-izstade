@@ -1,20 +1,45 @@
 import type { ExpoWorldVisualProfile } from '../../world-contract';
 import type { CityPlane, StadiumReserve } from './WorldCitySkeletonLayout';
+import {
+  CITY_STRUCTURAL_GROUND_ARRIVAL_OPACITY,
+  CITY_STRUCTURAL_GROUND_OPACITY,
+} from './WorldGroundLayout';
+
+function parseHex(hex: string) {
+  const normalized = hex.replace('#', '').padStart(6, '0').slice(0, 6);
+  return [0, 2, 4].map((index) => parseInt(normalized.slice(index, index + 2), 16));
+}
+
+function formatHex(channels: number[]) {
+  return `#${channels.map((value) => Math.max(0, Math.min(255, Math.round(value))).toString(16).padStart(2, '0')).join('')}`;
+}
 
 function tintHex(hex: string, ratio: number) {
-  const normalized = hex.replace('#', '').padStart(6, '0').slice(0, 6);
-  const channel = (index: number) => parseInt(normalized.slice(index, index + 2), 16);
+  const channels = parseHex(hex);
   const mix = (value: number) => Math.max(0, Math.min(255, Math.round(value + ((255 - value) * ratio))));
-  return `#${[mix(channel(0)), mix(channel(2)), mix(channel(4))].map((value) => value.toString(16).padStart(2, '0')).join('')}`;
+  return formatHex(channels.map(mix));
+}
+
+function blendHex(source: string, target: string, targetRatio: number) {
+  const sourceChannels = parseHex(source);
+  const targetChannels = parseHex(target);
+  return formatHex(sourceChannels.map((value, index) => value + ((targetChannels[index] - value) * targetRatio)));
 }
 
 function resolveStructuralCityPlaneTone(plane: CityPlane, visualProfile: ExpoWorldVisualProfile) {
   const authoredTone = plane.color || visualProfile.global.groundBase;
+  const unifiedTone = blendHex(authoredTone, visualProfile.global.groundBase, 0.68);
   if (plane.id.startsWith('arrival-')) {
-    return tintHex(authoredTone, 0.04);
+    return tintHex(unifiedTone, 0.025);
   }
 
-  return authoredTone;
+  return unifiedTone;
+}
+
+function resolveStructuralCityPlaneOpacity(plane: CityPlane) {
+  return plane.id.startsWith('arrival-')
+    ? CITY_STRUCTURAL_GROUND_ARRIVAL_OPACITY
+    : CITY_STRUCTURAL_GROUND_OPACITY;
 }
 
 function filterVisibleStructuralCityPlanes(planes: CityPlane[]) {
@@ -38,11 +63,14 @@ function PlaneLayer({
             <planeGeometry args={plane.size} />
             <meshStandardMaterial
               color={resolveStructuralCityPlaneTone(plane, visualProfile)}
-              roughness={Math.max(roughness, 0.88)}
+              depthWrite={false}
               metalness={0.01}
+              opacity={resolveStructuralCityPlaneOpacity(plane)}
               polygonOffset
               polygonOffsetFactor={-1}
               polygonOffsetUnits={-1}
+              roughness={Math.max(roughness, 0.88)}
+              transparent
             />
           </mesh>
         </group>

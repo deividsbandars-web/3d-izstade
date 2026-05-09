@@ -3,24 +3,36 @@ import {
   GLOBAL_GROUND_POSITION,
   GLOBAL_GROUND_SIZE,
   GROUND_DETAIL_RIBBONS,
+  resolveGroundDetailOpacity,
 } from './WorldGroundLayout';
 
 function GroundDetailRibbons() {
   return (
     <group name="world-ground:global-guide-ribbons">
-      {GROUND_DETAIL_RIBBONS.map((ribbon) => (
-        <mesh
-          key={ribbon.id}
-          name={`world-ground-guide:${ribbon.id}`}
-          position={ribbon.position}
-          receiveShadow={false}
-          renderOrder={3}
-          rotation={[-Math.PI / 2, 0, 0]}
-        >
-          <planeGeometry args={ribbon.size} />
-          <meshStandardMaterial color={ribbon.color} roughness={0.94} metalness={0.01} />
-        </mesh>
-      ))}
+      {GROUND_DETAIL_RIBBONS.map((ribbon) => {
+        const opacity = resolveGroundDetailOpacity(ribbon);
+
+        return (
+          <mesh
+            key={ribbon.id}
+            name={`world-ground-guide:${ribbon.id}`}
+            position={ribbon.position}
+            receiveShadow={false}
+            renderOrder={3}
+            rotation={[-Math.PI / 2, 0, 0]}
+          >
+            <planeGeometry args={ribbon.size} />
+            <meshStandardMaterial
+              color={ribbon.color}
+              depthWrite={false}
+              metalness={0.01}
+              opacity={opacity}
+              roughness={0.94}
+              transparent
+            />
+          </mesh>
+        );
+      })}
     </group>
   );
 }

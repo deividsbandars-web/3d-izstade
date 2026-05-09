@@ -14,7 +14,11 @@ import {
 import {
   GLOBAL_GROUND_POSITION,
   GLOBAL_GROUND_SIZE,
+  CITY_STRUCTURAL_GROUND_ARRIVAL_OPACITY,
+  CITY_STRUCTURAL_GROUND_OPACITY,
   GROUND_DETAIL_RIBBONS,
+  STADIUM_FORECOURT_GROUND_OPACITY,
+  resolveGroundDetailOpacity,
 } from '../WorldGroundLayout';
 import {
   buildExpoBoothLocalFootprint,
@@ -49,6 +53,11 @@ export type WorldObjectRegistryEntry = {
   id: string;
   interactionOwner: string | null;
   layer: WorldObjectLayer;
+  material?: {
+    color?: string;
+    opacity?: number;
+    transparent?: boolean;
+  };
   planningSections?: ExpoPlanningSectionId[];
   planningZone: string | null;
   position: [number, number, number];
@@ -94,6 +103,12 @@ function resolveCityGroundOwner(planeId: string): NonNullable<WorldObjectRegistr
   return planeId.includes('seam') || planeId.includes('transition')
     ? 'transition'
     : 'city';
+}
+
+function resolveCityStructuralGroundOpacity(planeId: string) {
+  return planeId.startsWith('arrival-')
+    ? CITY_STRUCTURAL_GROUND_ARRIVAL_OPACITY
+    : CITY_STRUCTURAL_GROUND_OPACITY;
 }
 
 function resolveStadiumGroundOwner(planeId: string): NonNullable<WorldObjectRegistryEntry['groundOwner']> {
@@ -220,6 +235,11 @@ export function buildGroundWorldObjectRegistry(): WorldObjectRegistryEntry[] {
       id: 'global-ground-base',
       interactionOwner: null,
       layer: 'ground-base',
+      material: {
+        color: 'visualProfile.global.groundBase',
+        opacity: 1,
+        transparent: false,
+      },
       planningZone: null,
       position: GLOBAL_GROUND_POSITION,
       rotation: [0, 0, 0],
@@ -238,6 +258,11 @@ export function buildGroundWorldObjectRegistry(): WorldObjectRegistryEntry[] {
       id: ribbon.id,
       interactionOwner: null,
       layer: 'ground-detail',
+      material: {
+        color: ribbon.color,
+        opacity: resolveGroundDetailOpacity(ribbon),
+        transparent: true,
+      },
       planningZone: ribbon.groundOwner === 'stadium' ? 'rear-campus' : ribbon.groundOwner === 'city' ? 'canonical-city' : 'city-stadium-transition',
       position: ribbon.position,
       rotation: [0, 0, 0],
@@ -266,6 +291,11 @@ export function buildCityWorldObjectRegistry({
       id: plane.id,
       interactionOwner: null,
       layer: 'city-plane',
+      material: {
+        color: plane.color,
+        opacity: resolveCityStructuralGroundOpacity(plane.id),
+        transparent: true,
+      },
       planningSections: plane.sections,
       planningZone: 'canonical-city',
       position: plane.position,
@@ -283,6 +313,11 @@ export function buildCityWorldObjectRegistry({
       id: plane.id,
       interactionOwner: null,
       layer: 'city-plane',
+      material: {
+        color: plane.color,
+        opacity: resolveCityStructuralGroundOpacity(plane.id),
+        transparent: true,
+      },
       planningSections: plane.sections,
       planningZone: 'canonical-city',
       position: plane.position,
@@ -300,6 +335,11 @@ export function buildCityWorldObjectRegistry({
       id: plane.id,
       interactionOwner: null,
       layer: 'city-plane',
+      material: {
+        color: plane.color,
+        opacity: resolveCityStructuralGroundOpacity(plane.id),
+        transparent: true,
+      },
       planningSections: plane.sections,
       planningZone: 'canonical-city',
       position: plane.position,
@@ -317,6 +357,11 @@ export function buildCityWorldObjectRegistry({
       id: plane.id,
       interactionOwner: null,
       layer: 'city-plane',
+      material: {
+        color: plane.color,
+        opacity: resolveCityStructuralGroundOpacity(plane.id),
+        transparent: true,
+      },
       planningSections: plane.sections,
       planningZone: 'canonical-city',
       position: plane.position,
@@ -468,6 +513,11 @@ export function buildStadiumWorldObjectRegistry({
       id: plane.id,
       interactionOwner: null,
       layer: 'stadium-plane',
+      material: {
+        color: plane.color,
+        opacity: STADIUM_FORECOURT_GROUND_OPACITY,
+        transparent: true,
+      },
       planningZone: 'rear-campus',
       position: plane.position,
       rotation: [0, 0, 0],

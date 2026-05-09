@@ -675,8 +675,8 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       ],
       expectedVisibleLayers: ['stadium-screen-surface'],
       camera: {
-        lookAtOffset: [0, 30, 0],
-        positionOffset: [320, 190, -520],
+        lookAtOffset: [0, 62, -8],
+        positionOffset: [250, 150, -380],
         targetIds: ['rear-campus-event-pavilion-right-feed-surface'],
       },
       forbiddenKeyObjectIds: STADIUM_TRANSITION_FORBIDDEN_OBJECT_IDS,
@@ -705,8 +705,8 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       intent: 'city-stadium-ground-transition-review',
       label: 'Ground Seam Transition',
       camera: {
-        lookAtOffset: [0, 14, -40],
-        positionOffset: [0, 140, 620],
+        lookAtOffset: [0, 60, -20],
+        positionOffset: [0, 120, 500],
         targetIds: ['rear-campus-front-left-connector', 'rear-campus-front-right-connector'],
       },
       startView: {
@@ -730,8 +730,8 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       intent: 'city-stadium-overhead-ground-review',
       label: 'Ground Seam Overhead',
       camera: {
-        lookAtOffset: [0, 8, -20],
-        positionOffset: [0, 300, 540],
+        lookAtOffset: [0, 72, -40],
+        positionOffset: [0, 240, 440],
         targetIds: ['rear-campus-front-left-connector', 'rear-campus-front-right-connector'],
       },
       startView: {

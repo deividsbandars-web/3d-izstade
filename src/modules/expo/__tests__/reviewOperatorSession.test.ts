@@ -122,5 +122,5 @@ assert.ok(stadiumRightFlank);
 const resolvedStadiumRightFlankView = resolveReviewOperatorZoneStartView(stadiumRightFlank, new Map([
   ['rear-campus-event-pavilion-right-feed-surface', { position: [720, 85.68, -1939.3] }],
 ]));
-assert.deepEqual(resolvedStadiumRightFlankView.lookAt, [720, 115.68, -1939.3]);
-assert.deepEqual(resolvedStadiumRightFlankView.position, [1040, 275.68, -2459.3]);
+assert.deepEqual(resolvedStadiumRightFlankView.lookAt, [720, 147.68, -1947.3]);
+assert.deepEqual(resolvedStadiumRightFlankView.position, [970, 235.68, -2319.3]);
