@@ -30,6 +30,8 @@ const AXIS_ALIGNED_YAW_TOLERANCE = 0.12;
 const GROUND_PLANE_SAME_LAYER_HIGH_OVERLAP_AREA = 32000;
 const GROUND_PLANE_SAME_LAYER_WARNING_OVERLAP_AREA = 4096;
 const SCREEN_HOST_FACE_GAP_TOLERANCE = 16;
+const SCREEN_HOST_VERTICAL_FLOAT_TOLERANCE = 24;
+const VALID_GROUND_OWNERS = new Set(['city', 'stadium', 'transition']);
 
 function resolveScreenHostBinding(screenId) {
   if (screenId === 'rear-campus-bowl-feed-surface') {
@@ -211,6 +213,33 @@ function normalizeYawDelta(left, right) {
   return Math.abs(Math.atan2(Math.sin(left - right), Math.cos(left - right)));
 }
 
+function resolveYawNormal(yaw) {
+  return {
+    x: Math.sin(yaw),
+    z: Math.cos(yaw),
+  };
+}
+
+function resolveYawTangent(yaw) {
+  return {
+    x: Math.cos(yaw),
+    z: -Math.sin(yaw),
+  };
+}
+
+function dotXZ(left, right) {
+  return (left.x * right.x) + (left.z * right.z);
+}
+
+function projectedHalfExtentXZ(entry, axis) {
+  const size = positiveTuple3(entry.size);
+  if (!size) {
+    return null;
+  }
+
+  return (Math.abs(axis.x) * size[0] * 0.5) + (Math.abs(axis.z) * size[2] * 0.5);
+}
+
 function resolveAxisAlignedFacing(rotation) {
   const yaw = tuple3(rotation)?.[1];
   if (!isFiniteNumber(yaw)) {
@@ -274,6 +303,32 @@ function isCityLayer(layer) {
 
 function isStadiumLayer(layer) {
   return layer?.startsWith('stadium-');
+}
+
+function auditGroundOwnershipMetadata(entries) {
+  const issues = [];
+
+  for (const entry of entries) {
+    if (!GROUND_LAYERS.has(entry.layer)) {
+      continue;
+    }
+
+    if (!VALID_GROUND_OWNERS.has(entry.groundOwner)) {
+      pushIssue(
+        issues,
+        'high',
+        'ground-owner-missing',
+        `${entry.layer} ${entry.id} has no explicit groundOwner; ground seams need city/stadium/transition ownership.`,
+        [entry.id],
+        {
+          sourceFile: entry.sourceFile ?? null,
+          sourceKind: entry.sourceKind ?? null,
+        },
+      );
+    }
+  }
+
+  return issues;
 }
 
 function auditGroundAndCrossLayerOverlaps(entries) {
@@ -582,6 +637,103 @@ function auditScreenHostAttachment(entries) {
   return issues;
 }
 
+function auditScreenHostVerticalAttachment(entries) {
+  const registryById = new Map(entries.map((entry) => [entry.id, entry]));
+  const screens = entries
+    .filter((entry) => SCREEN_LAYERS.has(entry.layer) && tuple3(entry.position))
+    .map((entry) => ({ bounds: resolveBounds(entry), entry }));
+  const issues = [];
+
+  for (const screen of screens) {
+    const binding = resolveScreenHostBinding(screen.entry.id);
+    if (!binding || !screen.bounds) {
+      continue;
+    }
+
+    const host = registryById.get(binding.hostId);
+    const hostBounds = host ? resolveBounds(host) : null;
+    const yaw = tuple3(screen.entry.rotation)?.[1];
+    if (!host || !hostBounds || !isFiniteNumber(yaw)) {
+      continue;
+    }
+
+    const verticalOverlap = overlap1d(screen.bounds.minY, screen.bounds.maxY, hostBounds.minY, hostBounds.maxY);
+    const minVerticalOverlap = Math.min(screen.entry.size[1] * 0.34, hostBounds.size[1] * 0.5, 72);
+    if (verticalOverlap < minVerticalOverlap) {
+      pushIssue(
+        issues,
+        verticalOverlap <= 0 ? 'high' : 'medium',
+        'screen-host-vertical-miss',
+        `Screen ${screen.entry.id} has only ${Math.round(Math.max(0, verticalOverlap))} units of vertical overlap with host ${host.id}; it can read as floating.`,
+        [screen.entry.id, host.id],
+        {
+          minVerticalOverlap: Math.round(minVerticalOverlap),
+          verticalOverlap: Math.round(Math.max(0, verticalOverlap)),
+        },
+      );
+      continue;
+    }
+
+    if (screen.bounds.minY > hostBounds.maxY + SCREEN_HOST_VERTICAL_FLOAT_TOLERANCE) {
+      pushIssue(
+        issues,
+        'high',
+        'screen-floating-above-host',
+        `Screen ${screen.entry.id} starts ${Math.round(screen.bounds.minY - hostBounds.maxY)} units above host ${host.id}.`,
+        [screen.entry.id, host.id],
+        {
+          hostTopY: Math.round(hostBounds.maxY),
+          screenBottomY: Math.round(screen.bounds.minY),
+        },
+      );
+      continue;
+    }
+
+    const normal = resolveYawNormal(yaw);
+    const tangent = resolveYawTangent(yaw);
+    const delta = {
+      x: screen.entry.position[0] - host.position[0],
+      z: screen.entry.position[2] - host.position[2],
+    };
+    const forwardGap = dotXZ(delta, normal);
+    if (forwardGap < -SCREEN_HOST_VERTICAL_FLOAT_TOLERANCE) {
+      pushIssue(
+        issues,
+        'high',
+        'screen-host-facing-behind',
+        `Screen ${screen.entry.id} is behind host ${host.id} relative to its facing direction.`,
+        [screen.entry.id, host.id],
+        { forwardGap: Math.round(forwardGap) },
+      );
+      continue;
+    }
+
+    const hostTangentHalfExtent = projectedHalfExtentXZ(host, tangent);
+    if (!hostTangentHalfExtent) {
+      continue;
+    }
+
+    const tangentDelta = Math.abs(dotXZ(delta, tangent));
+    const screenTangentHalfExtent = screen.entry.size[0] * 0.5;
+    const lateralOverflow = tangentDelta + (screenTangentHalfExtent * 0.42) - (hostTangentHalfExtent + 18);
+    if (lateralOverflow > 36) {
+      pushIssue(
+        issues,
+        lateralOverflow > 72 ? 'high' : 'medium',
+        'screen-host-lateral-miss',
+        `Screen ${screen.entry.id} is laterally misaligned with host ${host.id}.`,
+        [screen.entry.id, host.id],
+        {
+          lateralOverflow: Math.round(lateralOverflow),
+          tangentDelta: Math.round(tangentDelta),
+        },
+      );
+    }
+  }
+
+  return issues;
+}
+
 function auditStadiumScreenHostFaceAttachment(entries) {
   const registryById = new Map(entries.map((entry) => [entry.id, entry]));
   const screens = entries
@@ -669,11 +821,13 @@ const snapshot = JSON.parse(fs.readFileSync(snapshotPath, 'utf8').replace(/^\uFE
 const entries = uniqueRegistryEntries(snapshot);
 const issues = [
   ...auditSolidBoundsCoverage(entries),
+  ...auditGroundOwnershipMetadata(entries),
   ...auditGroundAndCrossLayerOverlaps(entries),
   ...auditBoothSpacing(entries),
   ...auditBoothSolidClearance(entries),
   ...auditScreenSocketAttachment(entries),
   ...auditScreenHostAttachment(entries),
+  ...auditScreenHostVerticalAttachment(entries),
   ...auditStadiumScreenHostFaceAttachment(entries),
 ].sort((left, right) => {
   const severityDelta = SEVERITY_RANK[right.severity] - SEVERITY_RANK[left.severity];

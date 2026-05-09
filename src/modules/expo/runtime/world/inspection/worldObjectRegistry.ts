@@ -2,6 +2,7 @@ import type {
   CanonicalWorldPlan,
   CityScreenAssignment,
   CityScreenSocket,
+  CityTower,
   ExpoPlanningSectionId,
   ExpoPlanningZonePlan,
 } from '../../planning/types';
@@ -36,6 +37,8 @@ export type WorldObjectLayer =
 export type WorldObjectRegistryEntry = {
   aliases?: string[];
   diagnosticOwners: string[];
+  groundOwner?: 'city' | 'stadium' | 'transition';
+  groundRole?: 'detail' | 'structural';
   id: string;
   interactionOwner: string | null;
   layer: WorldObjectLayer;
@@ -63,6 +66,33 @@ type BuildStadiumWorldObjectRegistryArgs = {
 
 function createEntry(entry: WorldObjectRegistryEntry): WorldObjectRegistryEntry {
   return entry;
+}
+
+function baseAnchoredBoxCenter(
+  position: [number, number, number],
+  size: [number, number, number],
+): [number, number, number] {
+  return [position[0], size[1] * 0.5, position[2]];
+}
+
+function resolveCityTowerAuditSize(tower: CityTower): [number, number, number] {
+  return [
+    Math.max(tower.baseSize[0], tower.upperSize[0]),
+    tower.baseSize[1] + tower.upperSize[1],
+    Math.max(tower.baseSize[2], tower.upperSize[2]),
+  ];
+}
+
+function resolveCityGroundOwner(planeId: string): NonNullable<WorldObjectRegistryEntry['groundOwner']> {
+  return planeId.includes('seam') || planeId.includes('transition')
+    ? 'transition'
+    : 'city';
+}
+
+function resolveStadiumGroundOwner(planeId: string): NonNullable<WorldObjectRegistryEntry['groundOwner']> {
+  return planeId.includes('city-threshold')
+    ? 'transition'
+    : 'stadium';
 }
 
 const STABLE_DISTRICT_ALIASES = ['arrival-core', 'meetings', 'showcase-row'] as const;
@@ -183,6 +213,8 @@ export function buildCityWorldObjectRegistry({
   return [
     ...plan.arrivalPlanes.map((plane) => createEntry({
       diagnosticOwners: [],
+      groundOwner: resolveCityGroundOwner(plane.id),
+      groundRole: 'structural',
       id: plane.id,
       interactionOwner: null,
       layer: 'city-plane',
@@ -198,6 +230,8 @@ export function buildCityWorldObjectRegistry({
     })),
     ...plan.promenadeAxisPlanes.map((plane) => createEntry({
       diagnosticOwners: [],
+      groundOwner: resolveCityGroundOwner(plane.id),
+      groundRole: 'structural',
       id: plane.id,
       interactionOwner: null,
       layer: 'city-plane',
@@ -213,6 +247,8 @@ export function buildCityWorldObjectRegistry({
     })),
     ...plan.showcasePlazas.map((plane) => createEntry({
       diagnosticOwners: [],
+      groundOwner: resolveCityGroundOwner(plane.id),
+      groundRole: 'structural',
       id: plane.id,
       interactionOwner: null,
       layer: 'city-plane',
@@ -228,6 +264,8 @@ export function buildCityWorldObjectRegistry({
     })),
     ...plan.boothForecourtPlanes.map((plane) => createEntry({
       diagnosticOwners: [],
+      groundOwner: resolveCityGroundOwner(plane.id),
+      groundRole: 'structural',
       id: plane.id,
       interactionOwner: null,
       layer: 'city-plane',
@@ -248,7 +286,7 @@ export function buildCityWorldObjectRegistry({
       layer: 'city-mass',
       planningSections: mass.sections,
       planningZone: 'canonical-city',
-      position: mass.position,
+      position: baseAnchoredBoxCenter(mass.position, mass.size),
       rotation: [0, 0, 0],
       safeEditSeam: 'src/modules/expo/runtime/planning/world-plan/buildCanonicalWorldPlan.ts',
       size: mass.size,
@@ -256,28 +294,28 @@ export function buildCityWorldObjectRegistry({
       sourceFunction: 'buildCanonicalWorldPlan',
       sourceKind: 'city-mass',
     })),
-    ...plan.filteredTowerLandmarks.map((tower) => createEntry({
-      aliases: compactAliases(tower.id, towerAliasesById.get(tower.id) ?? []),
-      diagnosticOwners: [
-        'src/modules/expo/runtime/planning/screens/screenOrientationDiagnostics.ts',
-      ],
-      id: tower.id,
-      interactionOwner: null,
-      layer: 'city-tower',
-      planningSections: tower.sections,
-      planningZone: 'canonical-city',
-      position: tower.position,
-      rotation: [0, 0, 0],
-      safeEditSeam: 'src/modules/expo/runtime/planning/world-plan/buildCanonicalWorldPlan.ts',
-      size: [
-        Math.max(tower.baseSize[0], tower.upperSize[0]),
-        tower.baseSize[1] + tower.upperSize[1],
-        Math.max(tower.baseSize[2], tower.upperSize[2]),
-      ],
-      sourceFile: 'src/modules/expo/runtime/planning/world-plan/buildCanonicalWorldPlan.ts',
-      sourceFunction: 'buildCanonicalWorldPlan',
-      sourceKind: 'city-tower',
-    })),
+    ...plan.filteredTowerLandmarks.map((tower) => {
+      const size = resolveCityTowerAuditSize(tower);
+
+      return createEntry({
+        aliases: compactAliases(tower.id, towerAliasesById.get(tower.id) ?? []),
+        diagnosticOwners: [
+          'src/modules/expo/runtime/planning/screens/screenOrientationDiagnostics.ts',
+        ],
+        id: tower.id,
+        interactionOwner: null,
+        layer: 'city-tower',
+        planningSections: tower.sections,
+        planningZone: 'canonical-city',
+        position: baseAnchoredBoxCenter(tower.position, size),
+        rotation: [0, 0, 0],
+        safeEditSeam: 'src/modules/expo/runtime/planning/world-plan/buildCanonicalWorldPlan.ts',
+        size,
+        sourceFile: 'src/modules/expo/runtime/planning/world-plan/buildCanonicalWorldPlan.ts',
+        sourceFunction: 'buildCanonicalWorldPlan',
+        sourceKind: 'city-tower',
+      });
+    }),
     ...plan.filteredScreenSurfaces.map((surface) => createEntry({
       aliases: compactAliases(surface.id, screenSurfaceAliasesById.get(surface.id) ?? []),
       diagnosticOwners: [
@@ -377,6 +415,8 @@ export function buildStadiumWorldObjectRegistry({
   return [
     ...(rearCampus?.forecourts ?? []).map((plane) => createEntry({
       diagnosticOwners: [],
+      groundOwner: resolveStadiumGroundOwner(plane.id),
+      groundRole: 'structural',
       id: plane.id,
       interactionOwner: null,
       layer: 'stadium-plane',
@@ -395,7 +435,7 @@ export function buildStadiumWorldObjectRegistry({
       interactionOwner: null,
       layer: 'stadium-pavilion',
       planningZone: 'rear-campus',
-      position: pavilion.position,
+      position: baseAnchoredBoxCenter(pavilion.position, pavilion.size),
       rotation: [0, 0, 0],
       safeEditSeam: 'src/modules/expo/runtime/planning/zones/rear-campus/index.ts',
       size: pavilion.size,
@@ -409,7 +449,7 @@ export function buildStadiumWorldObjectRegistry({
       interactionOwner: null,
       layer: 'stadium-tower',
       planningZone: 'rear-campus',
-      position: tower.position,
+      position: baseAnchoredBoxCenter(tower.position, [188, 720, 146]),
       safeEditSeam: 'src/modules/expo/runtime/planning/zones/rear-campus/index.ts',
       size: [188, 720, 146],
       sourceFile: 'src/modules/expo/runtime/planning/zones/rear-campus/index.ts',

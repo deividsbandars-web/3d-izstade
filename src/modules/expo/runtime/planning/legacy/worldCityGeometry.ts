@@ -1395,7 +1395,7 @@ export function buildTowerScreenSurfaces(towers: CityTower[]): CityScreenSurface
           id: `${tower.id}-crown-beacon`,
           position: [
             tower.position[0] + crownOffsetX,
-            tower.position[1] + tower.baseSize[1] + (tower.upperSize[1] * 0.72),
+            tower.baseSize[1] + (tower.upperSize[1] * 0.72),
             tower.position[2] + crownOffsetZ,
           ],
           rotation: [0, yaw, 0],
@@ -1410,7 +1410,7 @@ export function buildTowerScreenSurfaces(towers: CityTower[]): CityScreenSurface
             id: `${tower.id}-crown-beacon`,
             position: [
               tower.position[0] + crownOffsetX,
-              tower.position[1] + tower.baseSize[1] + (tower.upperSize[1] * 0.7),
+              tower.baseSize[1] + (tower.upperSize[1] * 0.7),
               tower.position[2] + crownOffsetZ,
             ],
             rotation: [0, yaw, 0],

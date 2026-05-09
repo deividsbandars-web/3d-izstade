@@ -273,6 +273,10 @@ assert.ok(cityRegistry.some((entry) => entry.id === citySocket.id && entry.layer
 assert.ok(cityRegistry.some((entry) => entry.id === cityAssignment.id && entry.layer === 'city-screen-assignment'));
 assert.ok(cityRegistry.some((entry) => entry.id === cityMass.id && entry.layer === 'city-mass'));
 assert.ok(cityRegistry.some((entry) => entry.id === cityTower.id && entry.layer === 'city-tower'));
+assert.equal(cityRegistry.find((entry) => entry.id === cityPlane.id)?.groundOwner, 'city');
+assert.equal(cityRegistry.find((entry) => entry.id === cityPlane.id)?.groundRole, 'structural');
+assert.deepEqual(cityRegistry.find((entry) => entry.id === cityMass.id)?.position, [10, 90, -40]);
+assert.deepEqual(cityRegistry.find((entry) => entry.id === cityTower.id)?.position, [120, 151, -160]);
 assert.deepEqual(
   cityRegistry.find((entry) => entry.id === semanticTower.id)?.aliases,
   ['arrival-core-hero-tower-right'],
@@ -309,8 +313,12 @@ assert.ok(stadiumRegistry.some((entry) => entry.id === stadiumSocket.id && entry
 assert.ok(stadiumRegistry.some((entry) => entry.id === stadiumAssignment.id && entry.layer === 'stadium-screen-assignment'));
 assert.equal(stadiumRegistry.filter((entry) => entry.layer === 'stadium-screen-feed').length, 0);
 assert.ok(stadiumRegistry.some((entry) => entry.id === 'rear-forecourt-1' && entry.layer === 'stadium-plane'));
+assert.equal(stadiumRegistry.find((entry) => entry.id === 'rear-forecourt-1')?.groundOwner, 'stadium');
+assert.equal(stadiumRegistry.find((entry) => entry.id === 'rear-forecourt-1')?.groundRole, 'structural');
 assert.ok(stadiumRegistry.some((entry) => entry.id === 'rear-pavilion-1' && entry.layer === 'stadium-pavilion'));
 assert.ok(stadiumRegistry.some((entry) => entry.id === 'rear-tower-1' && entry.layer === 'stadium-tower'));
+assert.deepEqual(stadiumRegistry.find((entry) => entry.id === 'rear-pavilion-1')?.position, [180, 40, -2500]);
+assert.deepEqual(stadiumRegistry.find((entry) => entry.id === 'rear-tower-1')?.position, [220, 360, -3000]);
 assert.ok(stadiumRegistry.some((entry) => entry.id === 'stadium-bowl' && entry.layer === 'stadium-structure'));
 assert.ok(stadiumRegistry.some((entry) => entry.id === 'rear-campus-test-perimeter' && entry.layer === 'stadium-structure'));
 assert.equal(stadiumRegistry.some((entry) => entry.id === 'stadium-axis-center-1180'), false);
