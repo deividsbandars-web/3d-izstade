@@ -428,8 +428,9 @@ function filterStructuralCityMasses(masses: CityMass[]) {
     const isClutterLike = NON_STRUCTURAL_MASS_PATTERNS.some((pattern) => mass.id.includes(pattern));
     const isCentralDecorative = Math.abs(mass.position[0]) <= 220 && isClutterLike;
     const isResidualSupportStrip = mass.id.includes('support-edge-') || mass.id.includes('media-wall-spine-');
+    const isLowMarkerBlock = mass.id.includes('boulevard-node-') && mass.size[1] <= 8;
 
-    return !isCentralDecorative && !isResidualSupportStrip;
+    return !isCentralDecorative && !isResidualSupportStrip && !isLowMarkerBlock;
   }).map((mass) => {
     const isSignature =
       mass.id.includes('gateway') ||

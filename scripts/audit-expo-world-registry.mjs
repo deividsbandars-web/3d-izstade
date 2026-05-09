@@ -37,6 +37,9 @@ const SCREEN_HOST_PLANAR_EMBED_TOLERANCE = 18;
 const SCREEN_HOST_MIN_LATERAL_OVERLAP_RATIO = 0.18;
 const CITY_SOLID_OVERLAP_WARNING_AREA = 600;
 const CITY_SOLID_OVERLAP_HIGH_VOLUME = 100000;
+const CITY_SMALL_BLOCK_MAX_HEIGHT = 8;
+const CITY_SMALL_BLOCK_MAX_FOOTPRINT_AREA = 900;
+const CITY_SMALL_BLOCK_MAX_ASPECT_RATIO = 3;
 const GROUND_DETAIL_MAX_OPACITY = 0.32;
 const STRUCTURAL_GROUND_MAX_OPACITY = 0.46;
 const VALID_GROUND_OWNERS = new Set(['city', 'stadium', 'transition']);
@@ -595,6 +598,45 @@ function auditSolidBoundsCoverage(entries) {
   return issues;
 }
 
+function auditCitySmallBlockClutter(entries) {
+  const issues = [];
+
+  for (const entry of entries) {
+    const size = positiveTuple3(entry.size);
+    if (entry.layer !== 'city-mass' || !size) {
+      continue;
+    }
+
+    const footprintArea = size[0] * size[2];
+    const footprintAspectRatio = Math.max(size[0], size[2]) / Math.max(1, Math.min(size[0], size[2]));
+    const planningRole = entry.planningRole ?? null;
+    const isAllowedLowStrip = footprintAspectRatio > CITY_SMALL_BLOCK_MAX_ASPECT_RATIO;
+    const isExplicitGroundSupport = planningRole === 'ground' || planningRole === 'support-strip';
+    if (
+      size[1] <= CITY_SMALL_BLOCK_MAX_HEIGHT
+      && footprintArea <= CITY_SMALL_BLOCK_MAX_FOOTPRINT_AREA
+      && !isAllowedLowStrip
+      && !isExplicitGroundSupport
+    ) {
+      pushIssue(
+        issues,
+        'medium',
+        'city-small-block-clutter',
+        `${entry.layer} ${entry.id} is a low isolated block (${Math.round(size[0])}x${Math.round(size[1])}x${Math.round(size[2])}); demote it from structural city massing or convert it to ground detail.`,
+        [entry.id],
+        {
+          footprintArea: Math.round(footprintArea),
+          footprintAspectRatio: Number(footprintAspectRatio.toFixed(2)),
+          height: Math.round(size[1]),
+          planningRole,
+        },
+      );
+    }
+  }
+
+  return issues;
+}
+
 function auditBoothSpacing(entries) {
   const booths = entries
     .filter((entry) => entry.layer === 'booth' && tuple3(entry.position))
@@ -1096,6 +1138,7 @@ const issues = [
   ...auditGroundVisualContinuity(entries),
   ...auditGroundAndCrossLayerOverlaps(entries),
   ...auditCitySolidOverlaps(entries),
+  ...auditCitySmallBlockClutter(entries),
   ...auditBoothSpacing(entries),
   ...auditBoothSolidClearance(entries),
   ...auditScreenSocketAttachment(entries),

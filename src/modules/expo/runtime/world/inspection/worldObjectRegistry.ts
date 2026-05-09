@@ -59,6 +59,7 @@ export type WorldObjectRegistryEntry = {
     transparent?: boolean;
   };
   planningSections?: ExpoPlanningSectionId[];
+  planningRole?: string | null;
   planningZone: string | null;
   position: [number, number, number];
   rotation?: [number, number, number];
@@ -378,6 +379,7 @@ export function buildCityWorldObjectRegistry({
       interactionOwner: null,
       layer: 'city-mass',
       planningSections: mass.sections,
+      planningRole: mass.role ?? null,
       planningZone: 'canonical-city',
       position: baseAnchoredBoxCenter(mass.position, mass.size),
       rotation: mass.rotation ?? [0, 0, 0],
