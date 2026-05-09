@@ -566,7 +566,7 @@ export function buildBoulevardEdgeBlocks(districtCount: number, districtStride: 
       { id: `boulevard-edge-left-${districtIndex}`, position: [-228, 0, baseZ + 28], size: [8, 2.8, 108], color: '#dfe8ee' },
       { id: `boulevard-edge-right-${districtIndex}`, position: [228, 0, baseZ + 22], size: [8, 2.8, 108], color: '#dfe8ee' },
       { id: `boulevard-node-left-${districtIndex}`, position: [-338, 0, baseZ - 88], size: [24, 5, 26], color: '#d7e2e9' },
-      { id: `boulevard-node-right-${districtIndex}`, position: [338, 0, baseZ - 102], size: [24, 5, 26], color: '#d7e2e9' },
+      { id: `boulevard-node-right-${districtIndex}`, position: [districtIndex === 1 ? 276 : 338, 0, baseZ - 102], size: [24, 5, 26], color: '#d7e2e9' },
       { id: `boulevard-threshold-left-${districtIndex}`, position: [-352, 0, baseZ + 118], size: [16, 8, 16], color: '#e1e9ef' },
       { id: `boulevard-threshold-right-${districtIndex}`, position: [352, 0, baseZ + 106], size: [16, 8, 16], color: '#e1e9ef' },
       { id: `boulevard-rear-node-left-${districtIndex}`, position: [-248, 0, baseZ - 214], size: [16, 10, 18], color: '#dde6ec' },

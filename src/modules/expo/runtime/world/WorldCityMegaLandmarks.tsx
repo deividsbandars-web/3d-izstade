@@ -169,7 +169,7 @@ export function WorldCityMegaLandmarks({
   const discoverySpineBase: [number, number, number] = [-492, 0, discoveryBaseZ + 212];
   const rightCitadelBase: [number, number, number] = [844, 0, -164];
   const leftDiscBase: [number, number, number] = [-918, 0, -548];
-  const rightBeaconBase: [number, number, number] = [436, 0, -96];
+  const rightBeaconBase: [number, number, number] = [436, 0, -74];
   const rightHaloBase: [number, number, number] = [520, 0, -278];
   const rightSupportBase: [number, number, number] = [294, 0, -372];
   const leftRampartBase: [number, number, number] = [-888, 0, -156];

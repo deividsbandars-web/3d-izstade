@@ -32,6 +32,8 @@ const GROUND_PLANE_SAME_LAYER_HIGH_OVERLAP_AREA = 32000;
 const GROUND_PLANE_SAME_LAYER_WARNING_OVERLAP_AREA = 4096;
 const SCREEN_HOST_FACE_GAP_TOLERANCE = 16;
 const SCREEN_HOST_VERTICAL_FLOAT_TOLERANCE = 24;
+const CITY_SOLID_OVERLAP_WARNING_AREA = 600;
+const CITY_SOLID_OVERLAP_HIGH_VOLUME = 100000;
 const VALID_GROUND_OWNERS = new Set(['city', 'stadium', 'transition']);
 
 function resolveScreenHostBinding(screenId) {
@@ -200,6 +202,13 @@ function overlapAreaXZ(a, b) {
   return overlapX > 0 && overlapZ > 0 ? overlapX * overlapZ : 0;
 }
 
+function overlapVolume(a, b) {
+  const overlapX = overlap1d(a.minX, a.maxX, b.minX, b.maxX);
+  const overlapY = overlap1d(a.minY, a.maxY, b.minY, b.maxY);
+  const overlapZ = overlap1d(a.minZ, a.maxZ, b.minZ, b.maxZ);
+  return overlapX > 0 && overlapY > 0 && overlapZ > 0 ? overlapX * overlapY * overlapZ : 0;
+}
+
 function gapXZ(a, b) {
   const gapX = Math.max(0, Math.max(a.minX - b.maxX, b.minX - a.maxX));
   const gapZ = Math.max(0, Math.max(a.minZ - b.maxZ, b.minZ - a.maxZ));
@@ -304,6 +313,20 @@ function isCityLayer(layer) {
 
 function isStadiumLayer(layer) {
   return layer?.startsWith('stadium-');
+}
+
+function isIntentionalCitySolidOverlap(left, right) {
+  const pairs = [
+    [left.id, right.id],
+    [right.id, left.id],
+  ];
+
+  return pairs.some(([candidate, host]) => (
+    typeof candidate === 'string'
+    && typeof host === 'string'
+    && candidate.endsWith('-tower-cluster-plinth')
+    && candidate.slice(0, -'-tower-cluster-plinth'.length) === host
+  ));
 }
 
 function auditGroundOwnershipMetadata(entries) {
@@ -441,6 +464,44 @@ function auditGroundAndCrossLayerOverlaps(entries) {
           );
         }
       }
+    }
+  }
+
+  return issues;
+}
+
+function auditCitySolidOverlaps(entries) {
+  const issues = [];
+  const solids = entries
+    .filter((entry) => isCityLayer(entry.layer) && SOLID_LAYERS.has(entry.layer))
+    .map((entry) => ({ bounds: resolveBounds(entry), entry }))
+    .filter((item) => item.bounds);
+
+  for (let leftIndex = 0; leftIndex < solids.length; leftIndex += 1) {
+    for (let rightIndex = leftIndex + 1; rightIndex < solids.length; rightIndex += 1) {
+      const left = solids[leftIndex];
+      const right = solids[rightIndex];
+      const area = overlapAreaXZ(left.bounds, right.bounds);
+      if (area < CITY_SOLID_OVERLAP_WARNING_AREA) {
+        continue;
+      }
+
+      const volume = overlapVolume(left.bounds, right.bounds);
+      if (volume <= 0 || isIntentionalCitySolidOverlap(left.entry, right.entry)) {
+        continue;
+      }
+
+      pushIssue(
+        issues,
+        volume >= CITY_SOLID_OVERLAP_HIGH_VOLUME ? 'high' : 'medium',
+        'city-solid-overlap',
+        `${left.entry.layer} ${left.entry.id} overlaps ${right.entry.layer} ${right.entry.id}; city solid objects need explicit clearance unless they are an intentional host/plinth pair.`,
+        [left.entry.id, right.entry.id],
+        {
+          overlapAreaXZ: Math.round(area),
+          overlapVolume: Math.round(volume),
+        },
+      );
     }
   }
 
@@ -887,6 +948,7 @@ const issues = [
   ...auditSolidBoundsCoverage(entries),
   ...auditGroundOwnershipMetadata(entries),
   ...auditGroundAndCrossLayerOverlaps(entries),
+  ...auditCitySolidOverlaps(entries),
   ...auditBoothSpacing(entries),
   ...auditBoothSolidClearance(entries),
   ...auditScreenSocketAttachment(entries),
