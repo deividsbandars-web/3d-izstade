@@ -42,7 +42,7 @@ export function buildWorldCityMegaLandmarkBounds({
     { id: 'mega-landmark-discovery-garden-spine', position: [-492, 8, discoveryBaseZ + 212], size: [236, 16, 72] },
     { id: 'mega-landmark-right-skyfold-citadel', position: [844, 146, -164], size: [300, 292, 96] },
     { id: 'mega-landmark-right-skybridge-beacon', position: [436, 134, -96], size: [360, 268, 116] },
-    { id: 'mega-landmark-right-media-halo', position: [628, 126, -248], size: [260, 180, 220] },
+    { id: 'mega-landmark-right-media-halo', position: [520, 126, -278], size: [260, 180, 220] },
     { id: 'mega-landmark-right-support-spire', position: [294, 90, -372], size: [132, 180, 64] },
     { id: 'mega-landmark-left-grand-rampart', position: [-888, 138, -156], size: [220, 276, 72] },
     { id: 'mega-landmark-left-cantilever-forum', position: [-438, 104, -116], size: [320, 208, 96] },

@@ -878,7 +878,7 @@ export function buildMediaWallLandmarks(districtCount: number, districtStride: n
       },
       {
         id: `media-wall-right-${districtIndex}`,
-        position: [418, 0, baseZ - 104],
+        position: [districtIndex === 0 ? 742 : 486, 0, baseZ - 104],
         size: [156, 246, 28],
         color: '#708492',
       },
@@ -896,7 +896,7 @@ export function buildMediaWallLandmarks(districtCount: number, districtStride: n
       },
       {
         id: `media-wall-buttress-left-${districtIndex}`,
-        position: [-306, 0, baseZ + 32],
+        position: [-226, 0, baseZ + 32],
         size: [92, 74, 78],
         color: '#8fa2af',
       },
@@ -1115,6 +1115,8 @@ export function buildMediaWallSurfaces(districtCount: number, districtStride: nu
   const inwardYawRight = -0.78;
   const flankYawLeft = 1.08;
   const flankYawRight = -1.08;
+  const marqueeClearanceZ = 52;
+  const sideArrayClearanceX = 112;
 
   return Array.from({ length: Math.max(3, districtCount) }, (_, districtIndex) => {
     const baseZ = -214 - (districtIndex * districtStride);
@@ -1123,7 +1125,7 @@ export function buildMediaWallSurfaces(districtCount: number, districtStride: nu
     return [
       {
         id: `screen-marquee-left-${districtIndex}`,
-        position: [-708, 148, baseZ - 82],
+        position: [-708, 148, baseZ - 82 + marqueeClearanceZ],
         rotation: [0, inwardYawLeft, 0],
         size: [156, 184, 3.4],
         color: '#08111c',
@@ -1133,7 +1135,7 @@ export function buildMediaWallSurfaces(districtCount: number, districtStride: nu
       },
       {
         id: `screen-marquee-right-${districtIndex}`,
-        position: [708, 144, baseZ - 114],
+        position: [708, 144, baseZ - 114 - marqueeClearanceZ],
         rotation: [0, inwardYawRight, 0],
         size: [150, 178, 3.4],
         color: '#091320',
@@ -1143,7 +1145,7 @@ export function buildMediaWallSurfaces(districtCount: number, districtStride: nu
       },
       {
         id: `screen-array-left-${districtIndex}`,
-        position: [-968, 98, baseZ + 104],
+        position: [-968 - sideArrayClearanceX, 98, baseZ + 104],
         rotation: [0, flankYawLeft, 0],
         size: [126, 122, 2.8],
         color: '#091320',
@@ -1163,7 +1165,7 @@ export function buildMediaWallSurfaces(districtCount: number, districtStride: nu
       },
       {
         id: `screen-array-right-${districtIndex}`,
-        position: [968, 94, baseZ + 86],
+        position: [968 + sideArrayClearanceX, 94, baseZ + 86],
         rotation: [0, flankYawRight, 0],
         size: [126, 122, 2.8],
         color: '#091320',

@@ -323,7 +323,7 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       label: 'Right Marquee',
       camera: {
         lookAtOffset: [0, 22, 0],
-        positionOffset: [-768, 186, 444],
+        positionOffset: [-548, 186, 444],
         targetIds: ['screen-marquee-right-2'],
       },
       startView: {
