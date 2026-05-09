@@ -27,6 +27,8 @@ const SOCKET_LAYER_BY_SCREEN_LAYER = {
   'stadium-screen-surface': 'stadium-screen-socket',
 };
 const AXIS_ALIGNED_YAW_TOLERANCE = 0.12;
+const GROUND_PLANE_SAME_LAYER_HIGH_OVERLAP_AREA = 32000;
+const GROUND_PLANE_SAME_LAYER_WARNING_OVERLAP_AREA = 4096;
 const SCREEN_HOST_FACE_GAP_TOLERANCE = 16;
 
 function resolveScreenHostBinding(screenId) {
@@ -288,6 +290,23 @@ function auditGroundAndCrossLayerOverlaps(entries) {
 
       const leftGround = GROUND_LAYERS.has(left.entry.layer);
       const rightGround = GROUND_LAYERS.has(right.entry.layer);
+      if (
+        area >= GROUND_PLANE_SAME_LAYER_WARNING_OVERLAP_AREA
+        && leftGround
+        && rightGround
+        && left.entry.layer === right.entry.layer
+      ) {
+        pushIssue(
+          issues,
+          area >= GROUND_PLANE_SAME_LAYER_HIGH_OVERLAP_AREA ? 'high' : 'medium',
+          'ground-plane-layer-overlap',
+          `${left.entry.layer} ${left.entry.id} overlaps ${right.entry.id}; same-layer ground should have one clear owner per footprint.`,
+          [left.entry.id, right.entry.id],
+          { overlapAreaXZ: Math.round(area) },
+        );
+        continue;
+      }
+
       if (
         area > 0
         && leftGround

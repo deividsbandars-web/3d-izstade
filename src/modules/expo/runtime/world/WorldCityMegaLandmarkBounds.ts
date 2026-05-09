@@ -28,7 +28,7 @@ export function buildWorldCityMegaLandmarkBounds({
   districtCount: number;
   districtStride: number;
 }): WorldCityMegaLandmarkBound[] {
-  const mediaBaseZ = -214 - districtStride - 56;
+  const mediaBaseZ = -214 - districtStride - 136;
   const discoveryBaseZ = -196 - ((Math.max(1, districtCount) - 1) * districtStride) - 1080;
 
   return [
