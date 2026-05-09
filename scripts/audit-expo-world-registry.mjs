@@ -838,6 +838,47 @@ function summarize(issues) {
   };
 }
 
+function incrementCount(target, key) {
+  target[key] = (target[key] ?? 0) + 1;
+}
+
+function summarizeCoverage(entries) {
+  const byLayer = {};
+  const groundByOwner = {};
+  const groundByRole = {};
+  let screenHostBindings = 0;
+  let screenSurfaces = 0;
+
+  for (const entry of entries) {
+    incrementCount(byLayer, entry.layer ?? 'unknown');
+
+    if (SCREEN_LAYERS.has(entry.layer)) {
+      screenSurfaces += 1;
+      if (resolveScreenHostBinding(entry.id)) {
+        screenHostBindings += 1;
+      }
+    }
+
+    if (GROUND_METADATA_LAYERS.has(entry.layer)) {
+      incrementCount(groundByOwner, entry.groundOwner ?? 'missing');
+      incrementCount(groundByRole, entry.groundRole ?? 'missing');
+    }
+  }
+
+  return {
+    byLayer,
+    ground: {
+      byOwner: groundByOwner,
+      byRole: groundByRole,
+      total: Object.values(groundByOwner).reduce((sum, count) => sum + count, 0),
+    },
+    screens: {
+      hostBindings: screenHostBindings,
+      surfaces: screenSurfaces,
+    },
+  };
+}
+
 const args = parseArgs(process.argv);
 const snapshotPath = path.resolve(args.snapshotPath);
 const snapshot = JSON.parse(fs.readFileSync(snapshotPath, 'utf8').replace(/^\uFEFF/, ''));
@@ -861,6 +902,7 @@ const issues = [
 });
 
 const report = {
+  coverage: summarizeCoverage(entries),
   generatedAt: new Date().toISOString(),
   registryEntryCount: entries.length,
   snapshot: snapshotPath,
@@ -875,6 +917,7 @@ if (args.outPath) {
 }
 
 console.log(JSON.stringify({
+  coverage: report.coverage,
   registryEntryCount: report.registryEntryCount,
   summary: report.summary,
   topIssues: report.issues.slice(0, 12),

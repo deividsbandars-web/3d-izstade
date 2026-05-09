@@ -670,6 +670,7 @@ $report = [pscustomobject]@{
     snapshot = $registryAuditSnapshotPath
     registryEntryCount = if ($registryAudit) { $registryAudit.registryEntryCount } else { $null }
     summary = if ($registryAudit) { $registryAudit.summary } else { $null }
+    coverage = if ($registryAudit) { $registryAudit.coverage } else { $null }
     error = $registryAuditError
   }
   visualCleanAudit = [pscustomobject]@{
@@ -699,6 +700,9 @@ $summaryLines = @(
     "issues: $($registryAudit.summary.totalIssues), critical=$($registryAudit.summary.severity.critical), high=$($registryAudit.summary.severity.high), medium=$($registryAudit.summary.severity.medium), low=$($registryAudit.summary.severity.low), entries=$($registryAudit.registryEntryCount)"
   } else {
     "error: $registryAuditError"
+  }),
+  $(if ($registryAudit -and $registryAudit.coverage) {
+    "coverage: screens=$($registryAudit.coverage.screens.surfaces), screenHostBindings=$($registryAudit.coverage.screens.hostBindings), ground=$($registryAudit.coverage.ground.total)"
   }),
   "reportPath: $registryAuditPath",
   "",
