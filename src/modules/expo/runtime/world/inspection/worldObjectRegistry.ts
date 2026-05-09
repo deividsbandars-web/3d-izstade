@@ -12,6 +12,11 @@ import {
   filterWorldCityMegaLandmarkBounds,
 } from '../WorldCityMegaLandmarkBounds';
 import {
+  GLOBAL_GROUND_POSITION,
+  GLOBAL_GROUND_SIZE,
+  GROUND_DETAIL_RIBBONS,
+} from '../WorldGroundLayout';
+import {
   buildExpoBoothLocalFootprint,
   type ExpoBoothLocalFootprint,
 } from '../../../../../shared/expo/lib/boothLocalFootprint';
@@ -24,6 +29,8 @@ export type WorldObjectLayer =
   | 'city-screen-socket'
   | 'city-screen-surface'
   | 'city-tower'
+  | 'ground-base'
+  | 'ground-detail'
   | 'mega-landmark'
   | 'stadium-pavilion'
   | 'stadium-plane'
@@ -38,7 +45,7 @@ export type WorldObjectRegistryEntry = {
   aliases?: string[];
   diagnosticOwners: string[];
   groundOwner?: 'city' | 'stadium' | 'transition';
-  groundRole?: 'detail' | 'structural';
+  groundRole?: 'base' | 'detail' | 'structural';
   id: string;
   interactionOwner: string | null;
   layer: WorldObjectLayer;
@@ -200,6 +207,47 @@ function buildAssignmentEntries(args: {
       sourceKind: 'screen-assignment',
     })];
   });
+}
+
+export function buildGroundWorldObjectRegistry(): WorldObjectRegistryEntry[] {
+  return [
+    createEntry({
+      diagnosticOwners: [
+        'src/modules/expo/runtime/world/WorldGroundPlane.tsx',
+      ],
+      groundOwner: 'transition',
+      groundRole: 'base',
+      id: 'global-ground-base',
+      interactionOwner: null,
+      layer: 'ground-base',
+      planningZone: null,
+      position: GLOBAL_GROUND_POSITION,
+      rotation: [0, 0, 0],
+      safeEditSeam: 'src/modules/expo/runtime/world/WorldGroundLayout.ts',
+      size: [GLOBAL_GROUND_SIZE[0], 0.02, GLOBAL_GROUND_SIZE[1]],
+      sourceFile: 'src/modules/expo/runtime/world/WorldGroundLayout.ts',
+      sourceFunction: 'WorldGroundPlane',
+      sourceKind: 'global-ground-base',
+    }),
+    ...GROUND_DETAIL_RIBBONS.map((ribbon) => createEntry({
+      diagnosticOwners: [
+        'src/modules/expo/runtime/world/WorldGroundPlane.tsx',
+      ],
+      groundOwner: ribbon.groundOwner,
+      groundRole: 'detail',
+      id: ribbon.id,
+      interactionOwner: null,
+      layer: 'ground-detail',
+      planningZone: ribbon.groundOwner === 'stadium' ? 'rear-campus' : ribbon.groundOwner === 'city' ? 'canonical-city' : 'city-stadium-transition',
+      position: ribbon.position,
+      rotation: [0, 0, 0],
+      safeEditSeam: 'src/modules/expo/runtime/world/WorldGroundLayout.ts',
+      size: [ribbon.size[0], 0.02, ribbon.size[1]],
+      sourceFile: 'src/modules/expo/runtime/world/WorldGroundLayout.ts',
+      sourceFunction: 'WorldGroundPlane',
+      sourceKind: 'ground-detail-ribbon',
+    })),
+  ];
 }
 
 export function buildCityWorldObjectRegistry({

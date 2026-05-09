@@ -7,6 +7,7 @@ import { buildWorldDiagnosticReportFromPlan } from '../../world/inspection/world
 import {
   buildBoothWorldObjectRegistry,
   buildCityWorldObjectRegistry,
+  buildGroundWorldObjectRegistry,
   buildStadiumWorldObjectRegistry,
   type WorldObjectRegistryEntry,
 } from '../../world/inspection/worldObjectRegistry';
@@ -84,11 +85,14 @@ export function useExpoOperatorLayer({
     [worldContract],
   );
   const fallbackCityRegistryEntries = useMemo(
-    () => buildCityWorldObjectRegistry({
-      districtCount: worldContract.districtPrograms.length,
-      districtStride: canonicalWorldPlan.districtStride,
-      plan: canonicalWorldPlan,
-    }),
+    () => [
+      ...buildGroundWorldObjectRegistry(),
+      ...buildCityWorldObjectRegistry({
+        districtCount: worldContract.districtPrograms.length,
+        districtStride: canonicalWorldPlan.districtStride,
+        plan: canonicalWorldPlan,
+      }),
+    ],
     [canonicalWorldPlan, worldContract.districtPrograms.length],
   );
   const fallbackStadiumRegistryEntries = useMemo(() => {

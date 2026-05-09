@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {
   buildBoothWorldObjectRegistry,
   buildCityWorldObjectRegistry,
+  buildGroundWorldObjectRegistry,
   buildStadiumWorldObjectRegistry,
 } from '../runtime/world/inspection/worldObjectRegistry.js';
 import type {
@@ -344,3 +345,11 @@ assert.deepEqual(boothRegistry.map((entry) => entry.id), ['booth-1']);
 assert.deepEqual(boothRegistry[0]?.aliases, ['sponsor-concierge', 'company-sponsor-concierge', 'booth-sponsor-concierge']);
 assert.equal(boothRegistry[0]?.layer, 'booth');
 assert.ok(boothRegistry[0]?.size?.every((value) => value > 0), 'booth registry entries must expose positive audit bounds');
+
+const groundRegistry = buildGroundWorldObjectRegistry();
+assert.ok(groundRegistry.some((entry) => entry.id === 'global-ground-base' && entry.layer === 'ground-base'));
+assert.equal(groundRegistry.find((entry) => entry.id === 'global-ground-base')?.groundRole, 'base');
+assert.equal(groundRegistry.find((entry) => entry.id === 'arrival-to-seam-spine')?.groundOwner, 'city');
+assert.equal(groundRegistry.find((entry) => entry.id === 'stadium-transition-crosswalk')?.groundOwner, 'transition');
+assert.equal(groundRegistry.find((entry) => entry.id === 'rear-campus-approach-ribbon')?.groundOwner, 'stadium');
+assert.ok(groundRegistry.every((entry) => entry.size?.every((value) => value > 0)), 'ground registry entries must expose positive audit bounds');

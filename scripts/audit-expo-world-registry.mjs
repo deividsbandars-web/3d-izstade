@@ -19,7 +19,8 @@ const SOLID_LAYERS = new Set([
 ]);
 const BOOTH_SOLID_CLEARANCE_LAYERS = SOLID_LAYERS;
 
-const GROUND_LAYERS = new Set(['city-plane', 'stadium-plane']);
+const STRUCTURAL_GROUND_LAYERS = new Set(['city-plane', 'stadium-plane']);
+const GROUND_METADATA_LAYERS = new Set(['city-plane', 'stadium-plane', 'ground-base', 'ground-detail']);
 const SCREEN_LAYERS = new Set(['city-screen-surface', 'stadium-screen-surface']);
 const STADIUM_SCREEN_FACE_HOST_LAYERS = new Set(['stadium-pavilion', 'stadium-structure', 'stadium-tower']);
 const SOCKET_LAYER_BY_SCREEN_LAYER = {
@@ -309,7 +310,7 @@ function auditGroundOwnershipMetadata(entries) {
   const issues = [];
 
   for (const entry of entries) {
-    if (!GROUND_LAYERS.has(entry.layer)) {
+    if (!GROUND_METADATA_LAYERS.has(entry.layer)) {
       continue;
     }
 
@@ -324,6 +325,28 @@ function auditGroundOwnershipMetadata(entries) {
           sourceFile: entry.sourceFile ?? null,
           sourceKind: entry.sourceKind ?? null,
         },
+      );
+    }
+
+    if (entry.layer === 'ground-base' && entry.groundRole !== 'base') {
+      pushIssue(
+        issues,
+        'high',
+        'ground-base-role-missing',
+        `${entry.layer} ${entry.id} must be marked as groundRole=base.`,
+        [entry.id],
+        { groundRole: entry.groundRole ?? null },
+      );
+    }
+
+    if (entry.layer === 'ground-detail' && entry.groundRole !== 'detail') {
+      pushIssue(
+        issues,
+        'high',
+        'ground-detail-role-missing',
+        `${entry.layer} ${entry.id} must be marked as groundRole=detail so visible guide ribbons stay auditable.`,
+        [entry.id],
+        { groundRole: entry.groundRole ?? null },
       );
     }
   }
@@ -343,8 +366,8 @@ function auditGroundAndCrossLayerOverlaps(entries) {
       const right = bounded[rightIndex];
       const area = overlapAreaXZ(left.bounds, right.bounds);
 
-      const leftGround = GROUND_LAYERS.has(left.entry.layer);
-      const rightGround = GROUND_LAYERS.has(right.entry.layer);
+      const leftGround = STRUCTURAL_GROUND_LAYERS.has(left.entry.layer);
+      const rightGround = STRUCTURAL_GROUND_LAYERS.has(right.entry.layer);
       if (
         area >= GROUND_PLANE_SAME_LAYER_WARNING_OVERLAP_AREA
         && leftGround

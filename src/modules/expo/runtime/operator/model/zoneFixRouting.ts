@@ -39,6 +39,12 @@ function buildLayerRoute(layer: WorldObjectLayer): Omit<ZoneFixRoute, 'issue' | 
         safeEditSeam: 'src/modules/expo/runtime/planning/world-plan/buildCanonicalWorldPlan.ts',
         sourceFile: 'src/modules/expo/runtime/planning/world-plan/buildCanonicalWorldPlan.ts',
       };
+    case 'ground-base':
+    case 'ground-detail':
+      return {
+        safeEditSeam: 'src/modules/expo/runtime/world/WorldGroundLayout.ts',
+        sourceFile: 'src/modules/expo/runtime/world/WorldGroundLayout.ts',
+      };
     case 'mega-landmark':
       return {
         safeEditSeam: 'src/modules/expo/runtime/world/WorldCityMegaLandmarks.tsx',

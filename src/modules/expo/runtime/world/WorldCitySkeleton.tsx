@@ -4,7 +4,7 @@ import type { ExpoDistrictProgramSummary, ExpoWorldVisualProfile } from '../../w
 import type { ExpoPlanningSectionId } from '../planning/types';
 import { buildCanonicalWorldPlan, EXPO_CANONICAL_DISTRICT_STRIDE } from '../planning';
 import { useWorldInspectionRegistry } from './inspection/worldInspectionState';
-import { buildCityWorldObjectRegistry } from './inspection/worldObjectRegistry';
+import { buildCityWorldObjectRegistry, buildGroundWorldObjectRegistry } from './inspection/worldObjectRegistry';
 import { WorldCityMasses } from './WorldCityMasses';
 import { WorldCityMegaLandmarks } from './WorldCityMegaLandmarks';
 import { WorldCityPlanes } from './WorldCityPlanes';
@@ -87,22 +87,25 @@ export function WorldCitySkeleton({
     [canonicalWorldPlan.screenAssignments, isVisibleBySections]
   );
 
-  const cityInspectionEntries = useMemo(() => buildCityWorldObjectRegistry({
-    districtCount: districtPrograms.length,
-    districtStride,
-    plan: {
-      ...canonicalWorldPlan,
-      arrivalPlanes: filteredArrivalPlanes,
-      boothForecourtPlanes: filteredBoothForecourtPlanes,
-      filteredMasses,
-      filteredScreenSurfaces,
-      filteredTowerLandmarks,
-      promenadeAxisPlanes: filteredPromenadeAxisPlanes,
-      screenAssignments,
-      screenSockets,
-      showcasePlazas: filteredShowcasePlazas,
-    },
-  }), [
+  const cityInspectionEntries = useMemo(() => [
+    ...buildGroundWorldObjectRegistry(),
+    ...buildCityWorldObjectRegistry({
+      districtCount: districtPrograms.length,
+      districtStride,
+      plan: {
+        ...canonicalWorldPlan,
+        arrivalPlanes: filteredArrivalPlanes,
+        boothForecourtPlanes: filteredBoothForecourtPlanes,
+        filteredMasses,
+        filteredScreenSurfaces,
+        filteredTowerLandmarks,
+        promenadeAxisPlanes: filteredPromenadeAxisPlanes,
+        screenAssignments,
+        screenSockets,
+        showcasePlazas: filteredShowcasePlazas,
+      },
+    }),
+  ], [
     canonicalWorldPlan,
     districtPrograms.length,
     districtStride,
