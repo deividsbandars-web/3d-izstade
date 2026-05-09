@@ -5,6 +5,8 @@ param(
   [string]$VercelProtectionBypass = '',
   [switch]$FixSafe,
   [switch]$EmitJson,
+  [ValidateSet('', 'critical', 'high', 'medium', 'low')]
+  [string]$FailOnIssueSeverity = 'high',
   [int]$SmallScreenshotBytes = 120000,
   [double]$LowDetailBrightnessStdDev = 12.0,
   [int]$LowDetailColorBuckets = 12
@@ -692,6 +694,7 @@ $summaryLines = @(
   "contactSheetPath: $contactSheetGeneratedPath",
   "zones: $($zoneIds.Count)",
   "issues: $($allIssues.Count)",
+  "failOnIssueSeverity: $FailOnIssueSeverity",
   "severity: critical=$($severityCounts.critical), high=$($severityCounts.high), medium=$($severityCounts.medium), low=$($severityCounts.low), ok=$($severityCounts.ok)",
   "issue severity: critical=$($issueSeverityCounts.critical), high=$($issueSeverityCounts.high), medium=$($issueSeverityCounts.medium), low=$($issueSeverityCounts.low)",
   "",
@@ -735,4 +738,22 @@ if ($EmitJson.IsPresent) {
 } else {
   Write-Output ($summaryLines -join [Environment]::NewLine)
   Write-Output "reportPath: $reportPath"
+}
+
+if ($FailOnIssueSeverity) {
+  $failureSeverityRank = @{
+    critical = 4
+    high = 3
+    medium = 2
+    low = 1
+  }
+  $failureThreshold = $failureSeverityRank[$FailOnIssueSeverity]
+  $failingIssueCount = @($allIssues | Where-Object {
+    $failureSeverityRank.ContainsKey([string]$_.severity) -and $failureSeverityRank[[string]$_.severity] -ge $failureThreshold
+  }).Count
+
+  if ($failingIssueCount -gt 0) {
+    Write-Host "[full-city-clean-pass] failing: $failingIssueCount issue(s) at or above '$FailOnIssueSeverity'."
+    exit 1
+  }
 }
