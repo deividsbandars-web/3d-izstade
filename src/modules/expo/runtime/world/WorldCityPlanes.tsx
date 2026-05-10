@@ -28,9 +28,9 @@ function blendHex(source: string, target: string, targetRatio: number) {
 
 function resolveStructuralCityPlaneTone(plane: CityPlane, visualProfile: ExpoWorldVisualProfile) {
   const authoredTone = plane.color || visualProfile.global.groundBase;
-  const unifiedTone = blendHex(authoredTone, visualProfile.global.groundBase, 0.68);
+  const unifiedTone = blendHex(authoredTone, visualProfile.global.groundBase, 0.82);
   if (plane.id.startsWith('arrival-')) {
-    return tintHex(unifiedTone, 0.025);
+    return tintHex(unifiedTone, 0.012);
   }
 
   return unifiedTone;
