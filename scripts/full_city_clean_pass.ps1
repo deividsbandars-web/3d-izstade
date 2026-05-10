@@ -218,6 +218,8 @@ $registryAuditPath = Join-Path $runDir 'registry-structural-audit.json'
 $reviewCoverageAuditPath = Join-Path $runDir 'review-coverage-audit.json'
 $visualAuditPath = Join-Path $runDir 'visual-clean-audit.json'
 $visualAuditMarkdownPath = Join-Path $runDir 'visual-clean-audit.md'
+$cityReviewAtlasPath = Join-Path $runDir 'city-review-atlas.json'
+$cityReviewAtlasMarkdownPath = Join-Path $runDir 'city-review-atlas.md'
 $contactSheetPath = Join-Path $runDir 'contact-sheet.png'
 $summaryPath = Join-Path $runDir 'summary.txt'
 
@@ -229,6 +231,7 @@ $captureScript = Join-Path $PSScriptRoot 'cdp_capture_expo_zone_screenshots.ps1'
 $registryAuditScript = Join-Path $PSScriptRoot 'audit-expo-world-registry.mjs'
 $reviewCoverageAuditScript = Join-Path $PSScriptRoot 'audit-expo-review-coverage.mjs'
 $visualAuditScript = Join-Path $PSScriptRoot 'audit-expo-visual-clean.mjs'
+$cityReviewAtlasScript = Join-Path $PSScriptRoot 'build-expo-city-review-atlas.mjs'
 
 try {
   [void](Invoke-RestMethod -Uri $BrowserJsonUrl -TimeoutSec 3)
@@ -672,6 +675,27 @@ if ($reviewCoverageAudit -and $reviewCoverageAudit.issues) {
     })
   }
 }
+
+$cityReviewAtlas = $null
+$cityReviewAtlasError = $null
+if (-not (Test-Path -LiteralPath $cityReviewAtlasScript)) {
+  $cityReviewAtlasError = "City review atlas script is missing: $cityReviewAtlasScript"
+} else {
+  try {
+    Write-Host "[full-city-clean-pass] building city review atlas..."
+    Invoke-Checked -FilePath 'node' -Arguments @(
+      $cityReviewAtlasScript,
+      $runDir,
+      '--out',
+      $cityReviewAtlasPath,
+      '--md',
+      $cityReviewAtlasMarkdownPath
+    ) -SuppressOutput
+    $cityReviewAtlas = Get-Content -LiteralPath $cityReviewAtlasPath -Raw | ConvertFrom-Json
+  } catch {
+    $cityReviewAtlasError = $_.Exception.Message
+  }
+}
 if ($reviewCoverageAuditError) {
   [void]$allIssues.Add([pscustomobject]@{
     zoneId = 'review-coverage-audit'
@@ -686,6 +710,24 @@ if ($visualAuditError) {
     severity = 'high'
     code = 'visual-clean-audit-error'
     message = $visualAuditError
+  })
+}
+if ($cityReviewAtlas -and $cityReviewAtlas.issues) {
+  foreach ($issue in @($cityReviewAtlas.issues)) {
+    [void]$allIssues.Add([pscustomobject]@{
+      zoneId = 'city-review-atlas'
+      severity = $issue.severity
+      code = $issue.code
+      message = $issue.message
+    })
+  }
+}
+if ($cityReviewAtlasError) {
+  [void]$allIssues.Add([pscustomobject]@{
+    zoneId = 'city-review-atlas'
+    severity = 'high'
+    code = 'city-review-atlas-error'
+    message = $cityReviewAtlasError
   })
 }
 
@@ -763,6 +805,12 @@ $report = [pscustomobject]@{
     summary = if ($visualAudit) { $visualAudit.summary } else { $null }
     error = $visualAuditError
   }
+  cityReviewAtlas = [pscustomobject]@{
+    path = if ($cityReviewAtlas) { $cityReviewAtlasPath } else { $null }
+    markdownPath = if ($cityReviewAtlas) { $cityReviewAtlasMarkdownPath } else { $null }
+    summary = if ($cityReviewAtlas) { $cityReviewAtlas.summary } else { $null }
+    error = $cityReviewAtlasError
+  }
   zones = $zonesOrdered
   fixSafeActions = $fixSafeActions
 }
@@ -810,6 +858,18 @@ $summaryLines = @(
   }),
   "reportPath: $visualAuditPath",
   "markdownPath: $visualAuditMarkdownPath",
+  "",
+  "city review atlas:",
+  $(if ($cityReviewAtlas) {
+    "issues: $($cityReviewAtlas.summary.issues.totalIssues), critical=$($cityReviewAtlas.summary.issues.severity.critical), high=$($cityReviewAtlas.summary.issues.severity.high), medium=$($cityReviewAtlas.summary.issues.severity.medium), low=$($cityReviewAtlas.summary.issues.severity.low)"
+  } else {
+    "error: $cityReviewAtlasError"
+  }),
+  $(if ($cityReviewAtlas -and $cityReviewAtlas.summary) {
+    "coverage: required=$($cityReviewAtlas.summary.requiredObjects), covered=$($cityReviewAtlas.summary.coveredObjects), criticalDirect=$($cityReviewAtlas.summary.criticalDirectEvidence)/$($cityReviewAtlas.summary.criticalObjects), screenBoothDirect=$($cityReviewAtlas.summary.screenOrBoothDirectEvidence)/$($cityReviewAtlas.summary.screenOrBoothObjects), targetHits=$($cityReviewAtlas.summary.targetableCriticalTargetHits)/$($cityReviewAtlas.summary.targetableCriticalObjects), zones=$($cityReviewAtlas.summary.zones)"
+  }),
+  "reportPath: $cityReviewAtlasPath",
+  "markdownPath: $cityReviewAtlasMarkdownPath",
   "",
   "top zones:"
 )
