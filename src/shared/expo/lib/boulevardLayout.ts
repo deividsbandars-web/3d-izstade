@@ -239,7 +239,7 @@ const SPONSOR_TIER_WEIGHT: Record<SponsorTier, number> = {
 
 export const UNASSIGNED_SECTOR_ID = '__unassigned__';
 export const UNASSIGNED_SECTOR_LABEL = 'Unassigned Sponsors';
-const CURATED_SLOT_BANK_VERSION = '2026-04-17-v1';
+const CURATED_SLOT_BANK_VERSION = '2026-05-11-v1';
 
 const ENABLE_LEGACY_BOOTH_FORMULA_FALLBACK = false;
 
@@ -291,7 +291,7 @@ const CURATED_COMPANY_SLOT_BANK: Record<DistrictTierBand, Record<DistrictLane, R
         { slotId: 'arrival-left-endcap-3', nodeType: 'endcap', xOffset: 298, zOffset: -154, rotationY: -Math.PI / 2 },
       ],
       standard: [
-        { slotId: 'arrival-left-standard-0', nodeType: 'standard_left', xOffset: -166, zOffset: -122, rotationY: Math.PI / 2 },
+        { slotId: 'arrival-left-standard-0', nodeType: 'standard_left', xOffset: -132, zOffset: -122, rotationY: Math.PI / 2 },
         { slotId: 'arrival-left-standard-1', nodeType: 'standard_right', xOffset: 166, zOffset: -122, rotationY: -Math.PI / 2 },
         { slotId: 'arrival-left-standard-2', nodeType: 'standard_left', xOffset: -166, zOffset: -240, rotationY: Math.PI / 2 },
         { slotId: 'arrival-left-standard-3', nodeType: 'standard_right', xOffset: 166, zOffset: -240, rotationY: -Math.PI / 2 },
@@ -312,7 +312,7 @@ const CURATED_COMPANY_SLOT_BANK: Record<DistrictTierBand, Record<DistrictLane, R
       ],
       standard: [
         { slotId: 'arrival-right-standard-0', nodeType: 'standard_left', xOffset: -166, zOffset: -122, rotationY: Math.PI / 2 },
-        { slotId: 'arrival-right-standard-1', nodeType: 'standard_right', xOffset: 166, zOffset: -122, rotationY: -Math.PI / 2 },
+        { slotId: 'arrival-right-standard-1', nodeType: 'standard_right', xOffset: 132, zOffset: -122, rotationY: -Math.PI / 2 },
         { slotId: 'arrival-right-standard-2', nodeType: 'standard_left', xOffset: -166, zOffset: -240, rotationY: Math.PI / 2 },
         { slotId: 'arrival-right-standard-3', nodeType: 'standard_right', xOffset: 166, zOffset: -240, rotationY: -Math.PI / 2 },
         { slotId: 'arrival-right-standard-4', nodeType: 'standard_left', xOffset: -166, zOffset: -358, rotationY: Math.PI / 2 },
@@ -325,7 +325,7 @@ const CURATED_COMPANY_SLOT_BANK: Record<DistrictTierBand, Record<DistrictLane, R
     left: {
       hero: [
         { slotId: 'showcase-left-hero-left', nodeType: 'hero_left', xOffset: -278, zOffset: 12, rotationY: Math.PI / 2 },
-        { slotId: 'showcase-left-hero-right', nodeType: 'hero_right', xOffset: 278, zOffset: 12, rotationY: -Math.PI / 2 },
+        { slotId: 'showcase-left-hero-right', nodeType: 'hero_right', xOffset: 336, zOffset: 12, rotationY: -Math.PI / 2 },
       ],
       endcap: [
         { slotId: 'showcase-left-endcap-0', nodeType: 'endcap', xOffset: -324, zOffset: -24, rotationY: Math.PI / 2 },
@@ -344,7 +344,7 @@ const CURATED_COMPANY_SLOT_BANK: Record<DistrictTierBand, Record<DistrictLane, R
     },
     right: {
       hero: [
-        { slotId: 'showcase-right-hero-left', nodeType: 'hero_left', xOffset: -278, zOffset: 12, rotationY: Math.PI / 2 },
+        { slotId: 'showcase-right-hero-left', nodeType: 'hero_left', xOffset: -336, zOffset: 12, rotationY: Math.PI / 2 },
         { slotId: 'showcase-right-hero-right', nodeType: 'hero_right', xOffset: 278, zOffset: 12, rotationY: -Math.PI / 2 },
       ],
       endcap: [

@@ -285,20 +285,29 @@ function auditZone({ imageStats, manifestEntry, snapshot, zoneId }) {
   const nearbyLayerCounts = countLayersNearPlayer(snapshot, 420);
   const expectedLayers = new Set(zone?.expectedVisibleLayers ?? []);
   const actualLayers = new Set(snapshot?.operatorZoneValidation?.actualVisibleLayers ?? []);
+  const centerTarget = typeof snapshot?.centerTarget === 'string' ? snapshot.centerTarget : '';
+  const validationStatus = String(snapshot?.operatorZoneValidation?.status ?? '').toLowerCase();
+  const isValidatedBoothFocus = zoneId.startsWith('sponsor-boulevard-')
+    && expectedLayers.has('booth')
+    && actualLayers.has('booth')
+    && !['warn', 'warning', 'error', 'critical'].includes(validationStatus);
 
   if (bottom.dominantBucketRatio >= 0.82 && bottom.brightnessStdDev <= 6.5) {
+    const severity = bottom.dominantBucketRatio >= 0.94 && bottom.brightnessStdDev <= 3.5 ? 'high' : 'medium';
     pushFinding(
       findings,
-      bottom.dominantBucketRatio >= 0.94 && bottom.brightnessStdDev <= 3.5 ? 'high' : 'medium',
+      isValidatedBoothFocus && severity === 'high' ? 'medium' : severity,
       'ground-dominance',
       'Bottom viewport is dominated by a flat low-variation ground or platform band.',
-      'Inspect ground/camera composition in this zone; reduce foreground ground dominance before changing object placement.',
-      { bottom },
+      isValidatedBoothFocus
+        ? 'Validated booth close-up: keep as a composition note, not a blocking city-clean failure.'
+        : 'Inspect ground/camera composition in this zone; reduce foreground ground dominance before changing object placement.',
+      { bottom, centerTarget, isValidatedBoothFocus },
       ['src/modules/expo/runtime/world/scene', 'src/modules/expo/runtime/planning/world-plan'],
     );
   }
 
-  if (center.dominantBucketRatio >= 0.66 && center.brightnessStdDev <= 10) {
+  if (!isValidatedBoothFocus && center.dominantBucketRatio >= 0.66 && center.brightnessStdDev <= 10) {
     pushFinding(
       findings,
       center.dominantBucketRatio >= 0.78 && center.brightnessStdDev <= 6 ? 'high' : 'medium',

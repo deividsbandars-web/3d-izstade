@@ -238,6 +238,48 @@ function buildRegistryById(entries: WorldObjectRegistryEntry[]) {
   return registryById;
 }
 
+function resolveFallbackCenterTargetForZone(
+  zone: ReviewOperatorZone,
+  registryById: Record<string, WorldObjectRegistryEntry>,
+) {
+  const explicitTarget = zone.expectedKeyObjectIds[0];
+  if (explicitTarget) {
+    return explicitTarget;
+  }
+
+  const targetLayer = zone.camera?.targetLayer;
+  if (!targetLayer) {
+    return null;
+  }
+
+  const layerEntries = Object.values(registryById)
+    .filter((entry) => entry.layer === targetLayer && hasFiniteTuple3(entry.position));
+  const sideEntries = zone.camera?.targetSide
+    ? layerEntries.filter((entry) => {
+        const x = entry.position[0];
+        if (zone.camera?.targetSide === 'left') {
+          return x < -24;
+        }
+        if (zone.camera?.targetSide === 'right') {
+          return x > 24;
+        }
+        return Math.abs(x) <= 160;
+      })
+    : layerEntries;
+  const candidates = sideEntries.length > 0 ? sideEntries : layerEntries;
+  const sorted = [...candidates].sort((left, right) => {
+    if (zone.camera?.targetDepth === 'frontmost') {
+      return right.position[2] - left.position[2];
+    }
+    if (zone.camera?.targetDepth === 'rearmost') {
+      return left.position[2] - right.position[2];
+    }
+    return Math.abs(left.position[0]) - Math.abs(right.position[0]);
+  });
+
+  return sorted[0]?.id ?? null;
+}
+
 function resolveInspectableIdCandidates(
   inspectableIds: string[],
   registryById: Record<string, WorldObjectRegistryEntry>,
@@ -1038,27 +1080,38 @@ export function useExpoOperatorState({
     zones,
   });
 
-  const buildReviewFallbackSnapshot = (zone: ReviewOperatorZone) => buildExpoReviewOperatorSnapshot({
-    activeZoneId,
-    centerStack: zone.expectedKeyObjectIds,
-    centerTarget: zone.expectedKeyObjectIds[0] ?? null,
-    clickStack: [],
-    clickTarget: null,
-    dataMode,
-    diagnosticReport,
-    focusSlug,
-    inspector,
-    layerStates,
-    markedPoint,
-    mode,
-    operatorZoneId: zone.id,
-    playerPos: zone.startView.position,
-    registryEntries,
-    sceneVersion,
-    sectionStates,
-    targetBasket,
-    zones,
-  });
+  const buildReviewFallbackSnapshot = (zone: ReviewOperatorZone) => {
+    const fallbackRegistryById = buildRegistryById([
+      ...registryEntries.city,
+      ...registryEntries.stadium,
+      ...registryEntries.booths,
+    ]);
+    const fallbackCenterTarget = resolveFallbackCenterTargetForZone(zone, fallbackRegistryById);
+    const fallbackCenterStack = zone.expectedKeyObjectIds.length > 0
+      ? zone.expectedKeyObjectIds
+      : fallbackCenterTarget ? [fallbackCenterTarget] : [];
+    return buildExpoReviewOperatorSnapshot({
+      activeZoneId,
+      centerStack: fallbackCenterStack,
+      centerTarget: fallbackCenterTarget,
+      clickStack: [],
+      clickTarget: null,
+      dataMode,
+      diagnosticReport,
+      focusSlug,
+      inspector,
+      layerStates,
+      markedPoint,
+      mode,
+      operatorZoneId: zone.id,
+      playerPos: zone.startView.position,
+      registryEntries,
+      sceneVersion,
+      sectionStates,
+      targetBasket,
+      zones,
+    });
+  };
 
   const goToZone = (zoneId: string) => {
     const zone = resolveOperatorZone(zones, zoneId);

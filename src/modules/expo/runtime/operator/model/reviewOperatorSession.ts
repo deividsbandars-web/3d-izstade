@@ -4,7 +4,10 @@ import type { WorldObjectLayer } from '../../world/inspection/worldObjectRegistr
 type ReviewOperatorZoneCamera = {
   lookAtOffset?: [number, number, number];
   positionOffset: [number, number, number];
+  targetDepth?: 'frontmost' | 'rearmost';
   targetIds: string[];
+  targetLayer?: WorldObjectLayer;
+  targetSide?: 'center' | 'left' | 'right';
 };
 
 export const DEFAULT_REVIEW_OPERATOR_ZONE_ID = 'arrival-gate';
@@ -90,15 +93,17 @@ export function resolveExpoOperatorSession(): ExpoOperatorSession {
 
 export function resolveReviewOperatorZoneStartView(
   zone: ReviewOperatorZone,
-  registryById: Map<string, { position: [number, number, number] | number[] }>,
+  registryById: Map<string, { id?: string; layer?: WorldObjectLayer; position: [number, number, number] | number[] }>,
 ): ExpoStartView {
-  if (!zone.camera?.targetIds.length) {
+  if (!zone.camera?.targetIds.length && !zone.camera?.targetLayer) {
     return zone.startView;
   }
 
-  const targets = zone.camera.targetIds
+  const selectorTargets = resolveCameraSelectorTargets(zone.camera, registryById);
+  const explicitTargets = zone.camera.targetIds
     .map((id) => registryById.get(id)?.position)
     .filter(Boolean) as number[][];
+  const targets = selectorTargets.length > 0 ? selectorTargets : explicitTargets;
 
   if (targets.length === 0) {
     return zone.startView;
@@ -124,6 +129,55 @@ export function resolveReviewOperatorZoneStartView(
     ],
     source: zone.startView.source,
   };
+}
+
+function resolveCameraSelectorTargets(
+  camera: ReviewOperatorZoneCamera,
+  registryById: Map<string, { id?: string; layer?: WorldObjectLayer; position: [number, number, number] | number[] }>,
+) {
+  if (!camera.targetLayer) {
+    return [];
+  }
+
+  const entriesById = new Map<string, { id?: string; layer?: WorldObjectLayer; position: [number, number, number] | number[] }>();
+  for (const entry of registryById.values()) {
+    const position = entry.position;
+    if (!Array.isArray(position) || position.length < 3 || !position.slice(0, 3).every(Number.isFinite)) {
+      continue;
+    }
+    if (entry.layer !== camera.targetLayer) {
+      continue;
+    }
+
+    const id = entry.id ?? position.join(':');
+    entriesById.set(id, entry);
+  }
+
+  const sideFiltered = Array.from(entriesById.values()).filter((entry) => {
+    const x = entry.position[0] ?? 0;
+    switch (camera.targetSide) {
+      case 'left':
+        return x < -24;
+      case 'right':
+        return x > 24;
+      case 'center':
+        return Math.abs(x) <= 160;
+      default:
+        return true;
+    }
+  });
+
+  const sorted = sideFiltered.sort((left, right) => {
+    if (camera.targetDepth === 'frontmost') {
+      return (right.position[2] ?? 0) - (left.position[2] ?? 0);
+    }
+    if (camera.targetDepth === 'rearmost') {
+      return (left.position[2] ?? 0) - (right.position[2] ?? 0);
+    }
+    return Math.abs(left.position[0] ?? 0) - Math.abs(right.position[0] ?? 0);
+  });
+
+  return sorted.slice(0, 1).map((entry) => entry.position);
 }
 
 export function buildReviewOperatorZones(): ReviewOperatorZone[] {
@@ -477,17 +531,18 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       ],
     },
     {
-      expectedKeyObjectIds: [
-        'sponsor-concierge',
-      ],
+      expectedKeyObjectIds: [],
       expectedVisibleLayers: ['booth'],
       id: 'sponsor-boulevard-left',
       intent: 'left-sponsor-boulevard-frontage-review',
       label: 'Sponsor Boulevard Left',
       camera: {
-        lookAtOffset: [0, 132, 0],
-        positionOffset: [300, 230, 560],
-        targetIds: ['sponsor-concierge'],
+        lookAtOffset: [0, 5, 0],
+        positionOffset: [0, 20, 64],
+        targetDepth: 'frontmost',
+        targetIds: [],
+        targetLayer: 'booth',
+        targetSide: 'left',
       },
       startView: {
         lookAt: [-526, 22, -1356],
@@ -500,17 +555,18 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       ],
     },
     {
-      expectedKeyObjectIds: [
-        'sponsor-concierge',
-      ],
+      expectedKeyObjectIds: [],
       expectedVisibleLayers: ['booth'],
       id: 'sponsor-boulevard-left-close',
       intent: 'left-sponsor-boulevard-close-review',
       label: 'Sponsor Boulevard Left Close',
       camera: {
-        lookAtOffset: [0, 96, 0],
-        positionOffset: [250, 200, 500],
-        targetIds: ['sponsor-concierge'],
+        lookAtOffset: [0, 5, 0],
+        positionOffset: [56, 20, 64],
+        targetDepth: 'rearmost',
+        targetIds: [],
+        targetLayer: 'booth',
+        targetSide: 'left',
       },
       startView: {
         lookAt: [-612, 64, -1412],
@@ -523,17 +579,18 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       ],
     },
     {
-      expectedKeyObjectIds: [
-        'sponsor-concierge',
-      ],
+      expectedKeyObjectIds: [],
       expectedVisibleLayers: ['booth'],
       id: 'sponsor-boulevard-right',
       intent: 'right-sponsor-boulevard-frontage-review',
       label: 'Sponsor Boulevard Right',
       camera: {
-        lookAtOffset: [-2, 132, 2],
-        positionOffset: [-300, 230, 620],
-        targetIds: ['sponsor-concierge'],
+        lookAtOffset: [-2, 5, 2],
+        positionOffset: [-56, 20, 64],
+        targetDepth: 'frontmost',
+        targetIds: [],
+        targetLayer: 'booth',
+        targetSide: 'right',
       },
       startView: {
         lookAt: [80, 80, -798],
@@ -546,17 +603,18 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       ],
     },
     {
-      expectedKeyObjectIds: [
-        'sponsor-concierge',
-      ],
+      expectedKeyObjectIds: [],
       expectedVisibleLayers: ['booth'],
       id: 'sponsor-boulevard-right-medium',
       intent: 'right-sponsor-boulevard-medium-review',
       label: 'Sponsor Boulevard Right Medium',
       camera: {
-        lookAtOffset: [-2, 150, 2],
-        positionOffset: [-210, 145, 360],
-        targetIds: ['sponsor-concierge'],
+        lookAtOffset: [-2, 5, 2],
+        positionOffset: [-48, 20, 56],
+        targetDepth: 'rearmost',
+        targetIds: [],
+        targetLayer: 'booth',
+        targetSide: 'right',
       },
       startView: {
         lookAt: [248, 80, -980],

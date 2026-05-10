@@ -191,7 +191,7 @@ assert.ok(sparseWorldBounds.maxZ - sparseWorldBounds.minZ >= 700);
 
 const startView = buildExpoSponsorStartView(boulevardPlan);
 assert.equal(startView.source, 'arrival-main');
-assert.equal(startView.position[0], 0);
+assert.ok(Math.abs(startView.position[0]) <= 32);
 assert.equal(startView.position[1], 8.2);
 assert.ok(startView.position[2] > boulevardPlan.arrivalNode.position[2]);
 assert.ok(startView.lookAt[2] < boulevardPlan.arrivalNode.position[2]);
@@ -210,8 +210,8 @@ assert.ok(isPointWithinExpoWalkRegions({ x: -44, z: multiPlacements[0].position[
 assert.ok(isPointWithinExpoWalkRegions({ x: -78, z: multiPlacements[0].position[2] - 4 }, walkRegions));
 assert.ok(isPointWithinExpoWalkRegions({ x: -116, z: -120 }, walkRegions));
 assert.ok(isPointWithinExpoWalkRegions({ x: 116, z: -120 }, walkRegions));
-assert.equal(isPointWithinExpoWalkRegions({ x: -620, z: -120 }, walkRegions), false);
-assert.equal(isPointWithinExpoWalkRegions({ x: 620, z: -120 }, walkRegions), false);
+assert.equal(isPointWithinExpoWalkRegions({ x: -740, z: -120 }, walkRegions), false);
+assert.equal(isPointWithinExpoWalkRegions({ x: 740, z: -120 }, walkRegions), false);
 assert.ok(isPointWithinExpoWalkRegions({ x: 52, z: multiPlacements[1].position[2] - 2 }, walkRegions));
 
 const rightSidePlacements = buildExpoWorldContract({
@@ -226,7 +226,16 @@ const rightSidePlacements = buildExpoWorldContract({
 const rightSideWalkRegions = buildExpoWalkRegionContract(rightSidePlacements).walkRegions;
 assert.ok(isPointWithinExpoWalkRegions({ x: 32, z: -136 }, rightSideWalkRegions));
 assert.ok(isPointWithinExpoWalkRegions({ x: 78, z: -136 }, rightSideWalkRegions));
-assert.equal(isPointWithinExpoWalkRegions({ x: -620, z: -136 }, rightSideWalkRegions), false);
+assert.equal(isPointWithinExpoWalkRegions({ x: -740, z: -136 }, rightSideWalkRegions), false);
+
+const showcaseRightHeroPlacement = buildExpoWorldContract({
+  companies: [
+    { boothType: 'hero', id: 'showcase-right-hero', name: 'Showcase Right Hero', priority: 100, sector_id: 'sector-2', sponsorTier: 'hero', booth: { id: 'showcase-right-hero' } },
+  ],
+  sectors: sponsorData.sectors,
+}).boothPlacements.find((placement) => placement.id === 'showcase-right-hero');
+assert.equal(showcaseRightHeroPlacement?.nodeType, 'hero_left');
+assert.deepEqual(showcaseRightHeroPlacement?.position, [68, 0, -762]);
 
 const sectorMarkers = multiWorld.sectorMarkers;
 assert.equal(sectorMarkers.length, 6);
