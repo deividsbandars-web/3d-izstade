@@ -60,13 +60,7 @@ const HIDDEN_REAR_CAMPUS_FORECOURT_IDS = new Set([
   'stadium-forecourt-city-threshold-right-stripe',
 ]);
 
-const REVEALED_REAR_CAMPUS_FORECOURT_IDS = new Set([
-  'stadium-forecourt-center-main',
-  'stadium-forecourt-endcap',
-  'stadium-forecourt-center-carpet',
-  'stadium-forecourt-front-court-left',
-  'stadium-forecourt-front-court-right',
-]);
+const REVEALED_REAR_CAMPUS_FORECOURT_IDS = new Set<string>();
 
 const HIDDEN_REAR_CAMPUS_PAVILION_IDS = new Set([
   'rear-campus-side-pavilion-left-rear',
@@ -117,50 +111,59 @@ export function buildRearCampusPerimeterConnectors(campusCenterZ: number): Campu
   const campusPerimeterHalfWidth = 3060;
   const campusPerimeterFrontZ = campusCenterZ + 2140;
   const campusPerimeterRearZ = campusCenterZ - 2140;
-  const campusPerimeterCenterZ = (campusPerimeterFrontZ + campusPerimeterRearZ) * 0.5;
-  const campusPerimeterDepth = campusPerimeterFrontZ - campusPerimeterRearZ;
+  const sideWallThickness = 18;
+  const rearWallDepth = 20;
+  const frontConnectorDepth = 18;
+  const rearWallInnerHalfWidth = campusPerimeterHalfWidth - (sideWallThickness * 0.5);
+  const sideWallStartZ = campusPerimeterRearZ + (rearWallDepth * 0.5);
+  const sideWallEndZ = campusPerimeterFrontZ - (frontConnectorDepth * 0.5);
+  const sideWallDepth = sideWallEndZ - sideWallStartZ;
+  const sideWallCenterZ = (sideWallStartZ + sideWallEndZ) * 0.5;
+  const frontConnectorInnerX = 1720;
+  const frontConnectorWidth = rearWallInnerHalfWidth - frontConnectorInnerX;
+  const frontConnectorCenterX = frontConnectorInnerX + (frontConnectorWidth * 0.5);
 
   return [
     {
       id: 'rear-campus-perimeter-rear-wall',
       position: [0, 16, campusPerimeterRearZ],
-      size: [campusPerimeterHalfWidth * 2, 32, 20],
+      size: [rearWallInnerHalfWidth * 2, 32, rearWallDepth],
       accent: 'wall',
     },
     {
       id: 'rear-campus-perimeter-left-wall',
-      position: [-campusPerimeterHalfWidth, 15, campusPerimeterCenterZ],
-      size: [18, 30, campusPerimeterDepth],
+      position: [-campusPerimeterHalfWidth, 15, sideWallCenterZ],
+      size: [sideWallThickness, 30, sideWallDepth],
       accent: 'wall',
     },
     {
       id: 'rear-campus-perimeter-right-wall',
-      position: [campusPerimeterHalfWidth, 15, campusPerimeterCenterZ],
-      size: [18, 30, campusPerimeterDepth],
+      position: [campusPerimeterHalfWidth, 15, sideWallCenterZ],
+      size: [sideWallThickness, 30, sideWallDepth],
       accent: 'wall',
     },
     {
       id: 'rear-campus-front-left-connector',
-      position: [-2390, 16, campusPerimeterFrontZ],
-      size: [1340, 32, 18],
+      position: [-frontConnectorCenterX, 16, campusPerimeterFrontZ],
+      size: [frontConnectorWidth, 32, frontConnectorDepth],
       accent: 'wall',
     },
     {
       id: 'rear-campus-front-left-connector-cap',
-      position: [-2390, 33, campusPerimeterFrontZ],
-      size: [1220, 2, 4],
+      position: [-frontConnectorCenterX, 33, campusPerimeterFrontZ],
+      size: [frontConnectorWidth - 120, 2, 4],
       accent: 'cap',
     },
     {
       id: 'rear-campus-front-right-connector',
-      position: [2390, 16, campusPerimeterFrontZ],
-      size: [1340, 32, 18],
+      position: [frontConnectorCenterX, 16, campusPerimeterFrontZ],
+      size: [frontConnectorWidth, 32, frontConnectorDepth],
       accent: 'wall',
     },
     {
       id: 'rear-campus-front-right-connector-cap',
-      position: [2390, 33, campusPerimeterFrontZ],
-      size: [1220, 2, 4],
+      position: [frontConnectorCenterX, 33, campusPerimeterFrontZ],
+      size: [frontConnectorWidth - 120, 2, 4],
       accent: 'cap',
     },
   ];

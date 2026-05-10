@@ -129,7 +129,7 @@ const cityPlan: CanonicalWorldPlan = {
 
 const stadiumSurface: CityScreenSurface = {
   ...citySurface,
-  id: 'stadium-surface-1',
+  id: 'rear-campus-bowl-feed-surface',
   position: [20, 90, -2820],
 };
 
@@ -274,10 +274,7 @@ assert.ok(cityRegistry.some((entry) => entry.id === citySocket.id && entry.layer
 assert.ok(cityRegistry.some((entry) => entry.id === cityAssignment.id && entry.layer === 'city-screen-assignment'));
 assert.ok(cityRegistry.some((entry) => entry.id === cityMass.id && entry.layer === 'city-mass'));
 assert.ok(cityRegistry.some((entry) => entry.id === cityTower.id && entry.layer === 'city-tower'));
-assert.equal(cityRegistry.find((entry) => entry.id === cityPlane.id)?.groundOwner, 'city');
-assert.equal(cityRegistry.find((entry) => entry.id === cityPlane.id)?.groundRole, 'structural');
-assert.equal(cityRegistry.find((entry) => entry.id === cityPlane.id)?.material?.transparent, true);
-assert.ok((cityRegistry.find((entry) => entry.id === cityPlane.id)?.material?.opacity ?? 1) <= 0.18);
+assert.equal(cityRegistry.some((entry) => entry.id === cityPlane.id), false);
 assert.deepEqual(cityRegistry.find((entry) => entry.id === cityMass.id)?.position, [10, 90, -40]);
 assert.deepEqual(cityRegistry.find((entry) => entry.id === cityTower.id)?.position, [120, 151, -160]);
 assert.deepEqual(
@@ -315,6 +312,8 @@ assert.ok(stadiumRegistry.some((entry) => entry.id === stadiumSurface.id && entr
 assert.ok(stadiumRegistry.some((entry) => entry.id === stadiumSocket.id && entry.layer === 'stadium-screen-socket'));
 assert.ok(stadiumRegistry.some((entry) => entry.id === stadiumAssignment.id && entry.layer === 'stadium-screen-assignment'));
 assert.equal(stadiumRegistry.filter((entry) => entry.layer === 'stadium-screen-feed').length, 0);
+assert.ok(stadiumRegistry.some((entry) => entry.id === 'rear-campus-bowl-center-deck' && entry.layer === 'stadium-structure'));
+assert.equal(stadiumRegistry.find((entry) => entry.id === 'rear-campus-bowl-center-deck')?.planningRole, 'screen-host-shell');
 assert.ok(stadiumRegistry.some((entry) => entry.id === 'rear-forecourt-1' && entry.layer === 'stadium-plane'));
 assert.equal(stadiumRegistry.find((entry) => entry.id === 'rear-forecourt-1')?.groundOwner, 'stadium');
 assert.equal(stadiumRegistry.find((entry) => entry.id === 'rear-forecourt-1')?.groundRole, 'structural');
@@ -324,7 +323,7 @@ assert.ok(stadiumRegistry.some((entry) => entry.id === 'rear-pavilion-1' && entr
 assert.ok(stadiumRegistry.some((entry) => entry.id === 'rear-tower-1' && entry.layer === 'stadium-tower'));
 assert.deepEqual(stadiumRegistry.find((entry) => entry.id === 'rear-pavilion-1')?.position, [180, 40, -2500]);
 assert.deepEqual(stadiumRegistry.find((entry) => entry.id === 'rear-tower-1')?.position, [220, 360, -3000]);
-assert.ok(stadiumRegistry.some((entry) => entry.id === 'stadium-bowl' && entry.layer === 'stadium-structure'));
+assert.equal(stadiumRegistry.some((entry) => entry.id === 'stadium-bowl' && entry.layer === 'stadium-structure'), false);
 assert.ok(stadiumRegistry.some((entry) => entry.id === 'rear-campus-test-perimeter' && entry.layer === 'stadium-structure'));
 assert.equal(stadiumRegistry.some((entry) => entry.id === 'stadium-axis-center-1180'), false);
 
@@ -353,9 +352,5 @@ assert.ok(boothRegistry[0]?.size?.every((value) => value > 0), 'booth registry e
 const groundRegistry = buildGroundWorldObjectRegistry();
 assert.ok(groundRegistry.some((entry) => entry.id === 'global-ground-base' && entry.layer === 'ground-base'));
 assert.equal(groundRegistry.find((entry) => entry.id === 'global-ground-base')?.groundRole, 'base');
-assert.equal(groundRegistry.find((entry) => entry.id === 'arrival-to-seam-spine')?.groundOwner, 'city');
-assert.equal(groundRegistry.find((entry) => entry.id === 'stadium-transition-crosswalk')?.groundOwner, 'transition');
-assert.equal(groundRegistry.find((entry) => entry.id === 'rear-campus-approach-ribbon')?.groundOwner, 'stadium');
-assert.equal(groundRegistry.find((entry) => entry.id === 'arrival-to-seam-spine')?.material?.transparent, true);
-assert.ok((groundRegistry.find((entry) => entry.id === 'arrival-to-seam-spine')?.material?.opacity ?? 1) <= 0.32);
+assert.equal(groundRegistry.some((entry) => entry.layer === 'ground-detail'), false);
 assert.ok(groundRegistry.every((entry) => entry.size?.every((value) => value > 0)), 'ground registry entries must expose positive audit bounds');

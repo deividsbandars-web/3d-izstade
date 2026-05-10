@@ -56,14 +56,6 @@ export function BoothVisualAssembly({
 
   return (
     <>
-      <mesh position={[0, 0.03, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-        <planeGeometry args={metrics.footprintSize} />
-        <meshStandardMaterial
-          color={tierState.districtVisual.groundAccent}
-          transparent
-          opacity={tierState.districtVisual.expressionMode === 'active-commercial' ? 0.16 : 0.11}
-        />
-      </mesh>
       <group ref={boothColliderRef}>
         <BoothColliderGroup colliderSegments={colliderSegments} debug={EXPO_SPATIAL_DEBUG_FLAGS.showBoothColliderBoxes} />
       </group>

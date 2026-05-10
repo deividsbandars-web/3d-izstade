@@ -2,11 +2,11 @@ import type {
   CanonicalWorldPlan,
   CityScreenAssignment,
   CityScreenSocket,
+  CityScreenSurface,
   CityTower,
   ExpoPlanningSectionId,
   ExpoPlanningZonePlan,
 } from '../../planning/types';
-import { resolveRearCampusAnchoredZ } from '../ExpoRearCampusLayout';
 import {
   buildWorldCityMegaLandmarkBounds,
   filterWorldCityMegaLandmarkBounds,
@@ -14,12 +14,9 @@ import {
 import {
   GLOBAL_GROUND_POSITION,
   GLOBAL_GROUND_SIZE,
-  CITY_STRUCTURAL_GROUND_ARRIVAL_OPACITY,
-  CITY_STRUCTURAL_GROUND_OPACITY,
-  GROUND_DETAIL_RIBBONS,
   STADIUM_FORECOURT_GROUND_OPACITY,
-  resolveGroundDetailOpacity,
 } from '../WorldGroundLayout';
+import { buildRearCampusScreenHostShells } from '../rearCampusScreenHosts';
 import {
   buildExpoBoothLocalFootprint,
   type ExpoBoothLocalFootprint,
@@ -99,18 +96,6 @@ function resolveCityTowerAuditSize(tower: CityTower): [number, number, number] {
     tower.baseSize[1] + tower.upperSize[1],
     Math.max(tower.baseSize[2], tower.upperSize[2]),
   ];
-}
-
-function resolveCityGroundOwner(planeId: string): NonNullable<WorldObjectRegistryEntry['groundOwner']> {
-  return planeId.includes('seam') || planeId.includes('transition')
-    ? 'transition'
-    : 'city';
-}
-
-function resolveCityStructuralGroundOpacity(planeId: string) {
-  return planeId.startsWith('arrival-')
-    ? CITY_STRUCTURAL_GROUND_ARRIVAL_OPACITY
-    : CITY_STRUCTURAL_GROUND_OPACITY;
 }
 
 function resolveStadiumGroundOwner(planeId: string): NonNullable<WorldObjectRegistryEntry['groundOwner']> {
@@ -287,29 +272,6 @@ export function buildGroundWorldObjectRegistry(): WorldObjectRegistryEntry[] {
       sourceFunction: 'WorldGroundPlane',
       sourceKind: 'global-ground-base',
     }),
-    ...GROUND_DETAIL_RIBBONS.map((ribbon) => createEntry({
-      diagnosticOwners: [
-        'src/modules/expo/runtime/world/WorldGroundPlane.tsx',
-      ],
-      groundOwner: ribbon.groundOwner,
-      groundRole: 'detail',
-      id: ribbon.id,
-      interactionOwner: null,
-      layer: 'ground-detail',
-      material: {
-        color: ribbon.color,
-        opacity: resolveGroundDetailOpacity(ribbon),
-        transparent: true,
-      },
-      planningZone: ribbon.groundOwner === 'stadium' ? 'rear-campus' : ribbon.groundOwner === 'city' ? 'canonical-city' : 'city-stadium-transition',
-      position: ribbon.position,
-      rotation: [0, 0, 0],
-      safeEditSeam: 'src/modules/expo/runtime/world/WorldGroundLayout.ts',
-      size: [ribbon.size[0], 0.02, ribbon.size[1]],
-      sourceFile: 'src/modules/expo/runtime/world/WorldGroundLayout.ts',
-      sourceFunction: 'WorldGroundPlane',
-      sourceKind: 'ground-detail-ribbon',
-    })),
   ];
 }
 
@@ -322,94 +284,6 @@ export function buildCityWorldObjectRegistry({
   const screenSurfaceAliasesById = buildStableTowerAliases(plan.filteredScreenSurfaces);
 
   return [
-    ...plan.arrivalPlanes.map((plane) => createEntry({
-      diagnosticOwners: [],
-      groundOwner: resolveCityGroundOwner(plane.id),
-      groundRole: 'structural',
-      id: plane.id,
-      interactionOwner: null,
-      layer: 'city-plane',
-      material: {
-        color: plane.color,
-        opacity: resolveCityStructuralGroundOpacity(plane.id),
-        transparent: true,
-      },
-      planningSections: plane.sections,
-      planningZone: 'canonical-city',
-      position: plane.position,
-      rotation: [0, 0, 0],
-      safeEditSeam: 'src/modules/expo/runtime/planning/world-plan/buildCanonicalWorldPlan.ts',
-      size: [plane.size[0], 2, plane.size[1]],
-      sourceFile: 'src/modules/expo/runtime/planning/world-plan/buildCanonicalWorldPlan.ts',
-      sourceFunction: 'buildCanonicalWorldPlan',
-      sourceKind: 'city-plane',
-    })),
-    ...plan.promenadeAxisPlanes.map((plane) => createEntry({
-      diagnosticOwners: [],
-      groundOwner: resolveCityGroundOwner(plane.id),
-      groundRole: 'structural',
-      id: plane.id,
-      interactionOwner: null,
-      layer: 'city-plane',
-      material: {
-        color: plane.color,
-        opacity: resolveCityStructuralGroundOpacity(plane.id),
-        transparent: true,
-      },
-      planningSections: plane.sections,
-      planningZone: 'canonical-city',
-      position: plane.position,
-      rotation: [0, 0, 0],
-      safeEditSeam: 'src/modules/expo/runtime/planning/world-plan/buildCanonicalWorldPlan.ts',
-      size: [plane.size[0], 2, plane.size[1]],
-      sourceFile: 'src/modules/expo/runtime/planning/world-plan/buildCanonicalWorldPlan.ts',
-      sourceFunction: 'buildCanonicalWorldPlan',
-      sourceKind: 'city-plane',
-    })),
-    ...plan.showcasePlazas.map((plane) => createEntry({
-      diagnosticOwners: [],
-      groundOwner: resolveCityGroundOwner(plane.id),
-      groundRole: 'structural',
-      id: plane.id,
-      interactionOwner: null,
-      layer: 'city-plane',
-      material: {
-        color: plane.color,
-        opacity: resolveCityStructuralGroundOpacity(plane.id),
-        transparent: true,
-      },
-      planningSections: plane.sections,
-      planningZone: 'canonical-city',
-      position: plane.position,
-      rotation: [0, 0, 0],
-      safeEditSeam: 'src/modules/expo/runtime/planning/world-plan/buildCanonicalWorldPlan.ts',
-      size: [plane.size[0], 2, plane.size[1]],
-      sourceFile: 'src/modules/expo/runtime/planning/world-plan/buildCanonicalWorldPlan.ts',
-      sourceFunction: 'buildCanonicalWorldPlan',
-      sourceKind: 'city-plane',
-    })),
-    ...plan.boothForecourtPlanes.map((plane) => createEntry({
-      diagnosticOwners: [],
-      groundOwner: resolveCityGroundOwner(plane.id),
-      groundRole: 'structural',
-      id: plane.id,
-      interactionOwner: null,
-      layer: 'city-plane',
-      material: {
-        color: plane.color,
-        opacity: resolveCityStructuralGroundOpacity(plane.id),
-        transparent: true,
-      },
-      planningSections: plane.sections,
-      planningZone: 'canonical-city',
-      position: plane.position,
-      rotation: [0, 0, 0],
-      safeEditSeam: 'src/modules/expo/runtime/planning/world-plan/buildCanonicalWorldPlan.ts',
-      size: [plane.size[0], 2, plane.size[1]],
-      sourceFile: 'src/modules/expo/runtime/planning/world-plan/buildCanonicalWorldPlan.ts',
-      sourceFunction: 'buildCanonicalWorldPlan',
-      sourceKind: 'city-plane',
-    })),
     ...plan.filteredMasses.map((mass) => createEntry({
       diagnosticOwners: [],
       id: mass.id,
@@ -495,46 +369,25 @@ export function buildCityWorldObjectRegistry({
   ];
 }
 
-type StadiumStructureRegistrySpec = {
-  id: string;
-  position: [number, number, number];
-  size: [number, number, number];
-};
-
-function buildStadiumStructureEntries(campusCenterZ: number): WorldObjectRegistryEntry[] {
-  const rearCampusZ = (defaultZ: number) => resolveRearCampusAnchoredZ(campusCenterZ, defaultZ);
-  const structures: ReadonlyArray<StadiumStructureRegistrySpec> = [
-    { id: 'rear-campus-arc-bastion-right', position: [1180, 132, campusCenterZ + 864], size: [264, 264, 100] },
-    { id: 'rear-campus-center-event-island', position: [0, 112, campusCenterZ - 1296], size: [420, 224, 168] },
-    { id: 'rear-campus-bowl-center-deck', position: [0, 212, campusCenterZ - 972], size: [612, 64, 228] },
-    { id: 'rear-campus-stage-monolith-canopy', position: [47, 130, rearCampusZ(-3018)], size: [564, 260, 176] },
-    { id: 'rear-campus-mega-civic-hall', position: [-2490, 180, rearCampusZ(-3670)], size: [724, 360, 324] },
-    { id: 'rear-campus-void-courtyard-monument', position: [-1971, 198, rearCampusZ(-2894)], size: [612, 396, 348] },
-    { id: 'rear-campus-linked-mini-skyline', position: [-2537, 228, rearCampusZ(-4977)], size: [744, 456, 312] },
-    { id: 'rear-campus-linear-civic-terrace', position: [-1684, 78, rearCampusZ(-1430)], size: [868, 156, 188] },
-    { id: 'rear-campus-bridge-linked-campus', position: [-1343, 176, rearCampusZ(-3449)], size: [632, 352, 154] },
-    { id: 'rear-campus-petal-tower', position: [2340, 288, rearCampusZ(-4577)], size: [260, 576, 420] },
-    { id: 'rear-campus-helix-spire', position: [2439, 406, rearCampusZ(-1432)], size: [272, 812, 272] },
-    { id: 'rear-campus-grand-prism-citadel', position: [-1033, 228, rearCampusZ(-1902)], size: [596, 456, 224] },
-    { id: 'rear-campus-terrace-signal-court', position: [-864, 68, rearCampusZ(-936)], size: [404, 136, 132] },
-    { id: 'rear-campus-needle-crown-skyscraper', position: [1540, 374, rearCampusZ(-611)], size: [188, 748, 128] },
-    { id: 'rear-campus-sky-slab-tower', position: [1087, 390, rearCampusZ(-1329)], size: [224, 780, 136] },
-    { id: 'rear-campus-twin-void-monolith', position: [1340, 300, rearCampusZ(-3242)], size: [276, 600, 168] },
-    { id: 'stadium-bowl', position: [0, 360, campusCenterZ - 1520], size: [2860, 720, 1150] },
-  ];
-
-  return structures.map(({ id, position, size }) => createEntry({
-    diagnosticOwners: [],
-    id,
+function buildStadiumScreenHostShellEntries(
+  screenSurfaces: ReadonlyArray<CityScreenSurface>,
+): WorldObjectRegistryEntry[] {
+  return buildRearCampusScreenHostShells(screenSurfaces).map((shell) => createEntry({
+    diagnosticOwners: [
+      'scripts/audit-expo-world-registry.mjs',
+    ],
+    id: shell.id,
     interactionOwner: null,
     layer: 'stadium-structure',
+    planningRole: 'screen-host-shell',
     planningZone: 'rear-campus',
-    position,
-    safeEditSeam: 'src/modules/expo/runtime/world/ExpoRearCampus.tsx',
-    size,
-    sourceFile: 'src/modules/expo/runtime/world/ExpoRearCampus.tsx',
-    sourceFunction: 'ExpoRearCampus',
-    sourceKind: 'rear-campus-structure',
+    position: shell.position,
+    rotation: shell.rotation,
+    safeEditSeam: 'src/modules/expo/runtime/world/rearCampusScreenHosts.ts',
+    size: shell.size,
+    sourceFile: 'src/modules/expo/runtime/world/rearCampusScreenHosts.ts',
+    sourceFunction: 'buildRearCampusScreenHostShells',
+    sourceKind: 'rear-campus-screen-host-shell',
   }));
 }
 
@@ -542,6 +395,7 @@ export function buildStadiumWorldObjectRegistry({
   campusCenterZ,
   rearCampusPlan,
 }: BuildStadiumWorldObjectRegistryArgs): WorldObjectRegistryEntry[] {
+  void campusCenterZ;
   const rearCampus = rearCampusPlan.zoneExtension?.rearCampus;
 
   return [
@@ -607,6 +461,7 @@ export function buildStadiumWorldObjectRegistry({
       sourceFunction: 'buildRearCampusZonePlan',
       sourceKind: 'rear-campus-perimeter-connector',
     })),
+    ...buildStadiumScreenHostShellEntries(rearCampusPlan.screenSurfaces),
     ...rearCampusPlan.screenSurfaces.map((surface) => createEntry({
       diagnosticOwners: [
         'src/modules/expo/runtime/planning/screens/screenSurfaceBoundsDiagnostics.ts',
@@ -646,7 +501,6 @@ export function buildStadiumWorldObjectRegistry({
       planningZone: 'rear-campus',
       sockets: rearCampusPlan.screenSockets,
     }),
-    ...buildStadiumStructureEntries(campusCenterZ),
   ];
 }
 
