@@ -15,16 +15,18 @@ export const GLOBAL_GROUND_POSITION: [number, number, number] = [0, -0.16, -1800
 export const GROUND_DETAIL_Y = -0.145;
 export const GROUND_ACCENT_Y = -0.139;
 export const GROUND_SURFACE_MARKER_Y = 0.034;
-export const GROUND_DETAIL_DEFAULT_OPACITY = 0.2;
-export const GROUND_DETAIL_ACCENT_OPACITY = 0.26;
-export const CITY_STRUCTURAL_GROUND_OPACITY = 0.34;
-export const CITY_STRUCTURAL_GROUND_ARRIVAL_OPACITY = 0.3;
-export const STADIUM_FORECOURT_GROUND_OPACITY = 0.36;
+export const GROUND_DETAIL_DEFAULT_OPACITY = 0.08;
+export const GROUND_DETAIL_ACCENT_OPACITY = 0.1;
+export const GROUND_DETAIL_MAX_RENDER_OPACITY = 0.1;
+export const CITY_STRUCTURAL_GROUND_OPACITY = 0.14;
+export const CITY_STRUCTURAL_GROUND_ARRIVAL_OPACITY = 0.12;
+export const STADIUM_FORECOURT_GROUND_OPACITY = 0.12;
 
 export function resolveGroundDetailOpacity(ribbon: Pick<GroundDetailRibbon, 'opacity' | 'position'>) {
-  return ribbon.opacity ?? (ribbon.position[1] === GROUND_ACCENT_Y
+  const opacity = ribbon.opacity ?? (ribbon.position[1] === GROUND_ACCENT_Y
     ? GROUND_DETAIL_ACCENT_OPACITY
     : GROUND_DETAIL_DEFAULT_OPACITY);
+  return Math.min(opacity, GROUND_DETAIL_MAX_RENDER_OPACITY);
 }
 
 export const GROUND_DETAIL_RIBBONS: GroundDetailRibbon[] = [

@@ -10,7 +10,11 @@ import { DEFAULT_REVIEW_OPERATOR_ZONE_ID, type ReviewOperatorZone } from '../mod
 import { buildZoneFixRoutes } from '../model/zoneFixRouting';
 import { validateReviewZone } from '../model/zoneReviewValidation';
 import type { WorldDiagnosticReport } from '../../world/inspection/worldDiagnosticReport';
-import type { WorldObjectLayer, WorldObjectRegistryEntry } from '../../world/inspection/worldObjectRegistry';
+import {
+  resolveMegaLandmarkRegistryIdFromInspectableName,
+  type WorldObjectLayer,
+  type WorldObjectRegistryEntry,
+} from '../../world/inspection/worldObjectRegistry';
 
 type LayerStates = {
   booths: boolean;
@@ -184,11 +188,28 @@ function resolveRegistryEntryFromInspectableId(
     return null;
   }
 
+  const parts = inspectableId.split(':').filter(Boolean);
+  for (let index = parts.length - 1; index >= 0; index -= 1) {
+    const part = parts[index];
+    for (const suffix of ['-socket-assignment', '-socket']) {
+      if (part.endsWith(suffix)) {
+        const surfaceId = part.slice(0, -suffix.length);
+        if (registryById[surfaceId]) {
+          return registryById[surfaceId];
+        }
+      }
+    }
+  }
+
   if (registryById[inspectableId]) {
     return registryById[inspectableId];
   }
 
-  const parts = inspectableId.split(':').filter(Boolean);
+  const megaLandmarkId = resolveMegaLandmarkRegistryIdFromInspectableName(inspectableId);
+  if (megaLandmarkId && registryById[megaLandmarkId]) {
+    return registryById[megaLandmarkId];
+  }
+
   for (let index = parts.length - 1; index >= 0; index -= 1) {
     const candidate = parts[index];
     if (candidate && registryById[candidate]) {

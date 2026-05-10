@@ -15,7 +15,7 @@ function assertVectorClose(actual: number[], expected: number[]) {
   });
 }
 
-assert.equal(zones.length, 28);
+assert.equal(zones.length, 30);
 assert.equal(DEFAULT_REVIEW_OPERATOR_ZONE_ID, 'arrival-gate');
 assert.deepEqual(zoneIds, [
   'arrival-gate',
@@ -42,6 +42,8 @@ assert.deepEqual(zoneIds, [
   'rear-campus-center',
   'stadium-feed-axis',
   'stadium-right-flank',
+  'rear-campus-right-landmark-feed',
+  'rear-campus-sky-slab-feed',
   'ground-seam-transition',
   'ground-seam-overhead',
   'rear-campus-mega-hall',
@@ -53,29 +55,44 @@ assert.ok(zones.every((zone) => zone.watchItems.length > 0));
 assert.ok(zones.every((zone) => zone.startView.position.length === 3));
 assert.ok(zones.every((zone) => zone.startView.lookAt.length === 3));
 
+const mediaWallTargetsById = new Map<string, string[]>();
+zones.forEach((zone) => {
+  zone.expectedKeyObjectIds
+    .filter((id) => /^screen-(marquee|array|spine)-/.test(id))
+    .forEach((id) => {
+      mediaWallTargetsById.set(id, [...(mediaWallTargetsById.get(id) ?? []), zone.id]);
+    });
+});
+assert.deepEqual(
+  [...mediaWallTargetsById.entries()]
+    .filter(([, targetZones]) => targetZones.length > 1)
+    .map(([id, targetZones]) => ({ id, zones: targetZones })),
+  [],
+);
+
 const leftMarquee = zones.find((zone) => zone.id === 'left-marquee');
 assert.ok(leftMarquee);
 const resolvedLeftMarqueeView = resolveReviewOperatorZoneStartView(leftMarquee, new Map([
-  ['screen-marquee-left-2', { position: [-708, 148, -1392] }],
+  ['screen-marquee-left-0', { position: [-744, 148, -244] }],
 ]));
-assert.deepEqual(resolvedLeftMarqueeView.lookAt, [-708, 170, -1392]);
-assert.deepEqual(resolvedLeftMarqueeView.position, [60, 334, -948]);
+assert.deepEqual(resolvedLeftMarqueeView.lookAt, [-744, 170, -244]);
+assert.deepEqual(resolvedLeftMarqueeView.position, [24, 334, 200]);
 
 const leftEdgeFar = zones.find((zone) => zone.id === 'left-edge-far');
 assert.ok(leftEdgeFar);
 const resolvedLeftEdgeFarView = resolveReviewOperatorZoneStartView(leftEdgeFar, new Map([
-  ['screen-array-left-0', { position: [-968, 98, -110] }],
+  ['screen-array-left-2', { position: [-1080, 98, -1206] }],
 ]));
-assert.deepEqual(resolvedLeftEdgeFarView.lookAt, [-968, 248, -110]);
-assert.deepEqual(resolvedLeftEdgeFarView.position, [-1188, 288, 150]);
+assert.deepEqual(resolvedLeftEdgeFarView.lookAt, [-1080, 248, -1206]);
+assert.deepEqual(resolvedLeftEdgeFarView.position, [-1300, 288, -946]);
 
 const centerSpine = zones.find((zone) => zone.id === 'center-spine');
 assert.ok(centerSpine);
 const resolvedCenterSpineView = resolveReviewOperatorZoneStartView(centerSpine, new Map([
-  ['screen-spine-primary-0', { position: [-184, 108, -248] }],
+  ['screen-spine-primary-1', { position: [-184, 108, -796] }],
 ]));
-assert.deepEqual(resolvedCenterSpineView.lookAt, [-184, 154, -248]);
-assert.deepEqual(resolvedCenterSpineView.position, [36, 348, 372]);
+assert.deepEqual(resolvedCenterSpineView.lookAt, [-184, 154, -796]);
+assert.deepEqual(resolvedCenterSpineView.position, [36, 348, -176]);
 
 const rearCampusCenter = zones.find((zone) => zone.id === 'rear-campus-center');
 assert.ok(rearCampusCenter);
@@ -124,3 +141,19 @@ const resolvedStadiumRightFlankView = resolveReviewOperatorZoneStartView(stadium
 ]));
 assert.deepEqual(resolvedStadiumRightFlankView.lookAt, [720, 147.68, -1947.3]);
 assert.deepEqual(resolvedStadiumRightFlankView.position, [970, 235.68, -2319.3]);
+
+const rearCampusRightLandmarkFeed = zones.find((zone) => zone.id === 'rear-campus-right-landmark-feed');
+assert.ok(rearCampusRightLandmarkFeed);
+const resolvedRearCampusRightLandmarkFeedView = resolveReviewOperatorZoneStartView(rearCampusRightLandmarkFeed, new Map([
+  ['rear-campus-landmark-right-rear-campus-feed-surface', { position: [920, 412, -2876.9] }],
+]));
+assert.deepEqual(resolvedRearCampusRightLandmarkFeedView.lookAt, [920, 456, -2876.9]);
+assert.deepEqual(resolvedRearCampusRightLandmarkFeedView.position, [770, 436, -2516.9]);
+
+const rearCampusSkySlabFeed = zones.find((zone) => zone.id === 'rear-campus-sky-slab-feed');
+assert.ok(rearCampusSkySlabFeed);
+const resolvedRearCampusSkySlabFeedView = resolveReviewOperatorZoneStartView(rearCampusSkySlabFeed, new Map([
+  ['rear-campus-sky-slab-tower-host-surface', { position: [1087, 438, -1601.5] }],
+]));
+assert.deepEqual(resolvedRearCampusSkySlabFeedView.lookAt, [1087, 458, -1601.5]);
+assert.deepEqual(resolvedRearCampusSkySlabFeedView.position, [867, 480, -1081.5]);

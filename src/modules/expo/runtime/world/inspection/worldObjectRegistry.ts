@@ -167,6 +167,41 @@ function buildStableTowerAliases(
   return aliasesById;
 }
 
+const MEGA_LANDMARK_INSPECTABLE_PREFIXES: ReadonlyArray<readonly [prefix: string, registryId: string]> = [
+  ['media-frame', 'mega-landmark-media-frame-wall'],
+  ['media-pod', 'mega-landmark-media-signal-pods'],
+  ['media-signal-pods', 'mega-landmark-media-signal-pods'],
+  ['right-media-halo', 'mega-landmark-right-media-halo'],
+  ['right-skybridge', 'mega-landmark-right-skybridge-beacon'],
+  ['right-skyfold-citadel', 'mega-landmark-right-skyfold-citadel'],
+  ['right-citadel', 'mega-landmark-right-skyfold-citadel'],
+  ['right-support-spire', 'mega-landmark-right-support-spire'],
+  ['left-split-crown', 'mega-landmark-left-split-crown-gate'],
+  ['left-rampart', 'mega-landmark-left-grand-rampart'],
+  ['left-cantilever', 'mega-landmark-left-cantilever-forum'],
+  ['left-disc', 'mega-landmark-left-disc-habitat'],
+  ['left-monolith', 'mega-landmark-left-split-monolith-pair'],
+  ['left-broken-wall', 'mega-landmark-left-broken-wall-monument'],
+  ['arrival', 'mega-landmark-arrival'],
+  ['showcase', 'mega-landmark-showcase'],
+  ['media', 'mega-landmark-media'],
+];
+
+export function resolveMegaLandmarkRegistryIdFromInspectableName(inspectableName: string) {
+  if (!inspectableName.startsWith('mega-landmark:')) {
+    return null;
+  }
+
+  const suffix = inspectableName.slice('mega-landmark:'.length);
+  for (const [prefix, registryId] of MEGA_LANDMARK_INSPECTABLE_PREFIXES) {
+    if (suffix === prefix || suffix.startsWith(`${prefix}-`)) {
+      return registryId;
+    }
+  }
+
+  return null;
+}
+
 function buildMegaLandmarkEntries(args: {
   districtCount: number;
   districtStride: number;

@@ -277,7 +277,7 @@ assert.ok(cityRegistry.some((entry) => entry.id === cityTower.id && entry.layer 
 assert.equal(cityRegistry.find((entry) => entry.id === cityPlane.id)?.groundOwner, 'city');
 assert.equal(cityRegistry.find((entry) => entry.id === cityPlane.id)?.groundRole, 'structural');
 assert.equal(cityRegistry.find((entry) => entry.id === cityPlane.id)?.material?.transparent, true);
-assert.ok((cityRegistry.find((entry) => entry.id === cityPlane.id)?.material?.opacity ?? 1) <= 0.46);
+assert.ok((cityRegistry.find((entry) => entry.id === cityPlane.id)?.material?.opacity ?? 1) <= 0.18);
 assert.deepEqual(cityRegistry.find((entry) => entry.id === cityMass.id)?.position, [10, 90, -40]);
 assert.deepEqual(cityRegistry.find((entry) => entry.id === cityTower.id)?.position, [120, 151, -160]);
 assert.deepEqual(
@@ -319,7 +319,7 @@ assert.ok(stadiumRegistry.some((entry) => entry.id === 'rear-forecourt-1' && ent
 assert.equal(stadiumRegistry.find((entry) => entry.id === 'rear-forecourt-1')?.groundOwner, 'stadium');
 assert.equal(stadiumRegistry.find((entry) => entry.id === 'rear-forecourt-1')?.groundRole, 'structural');
 assert.equal(stadiumRegistry.find((entry) => entry.id === 'rear-forecourt-1')?.material?.transparent, true);
-assert.ok((stadiumRegistry.find((entry) => entry.id === 'rear-forecourt-1')?.material?.opacity ?? 1) <= 0.46);
+assert.ok((stadiumRegistry.find((entry) => entry.id === 'rear-forecourt-1')?.material?.opacity ?? 1) <= 0.18);
 assert.ok(stadiumRegistry.some((entry) => entry.id === 'rear-pavilion-1' && entry.layer === 'stadium-pavilion'));
 assert.ok(stadiumRegistry.some((entry) => entry.id === 'rear-tower-1' && entry.layer === 'stadium-tower'));
 assert.deepEqual(stadiumRegistry.find((entry) => entry.id === 'rear-pavilion-1')?.position, [180, 40, -2500]);

@@ -215,6 +215,7 @@ $reviewPath = Join-Path $runDir 'zone-review.json'
 $screensDir = Join-Path $runDir 'screens'
 $reportPath = Join-Path $runDir 'full-city-clean-report.json'
 $registryAuditPath = Join-Path $runDir 'registry-structural-audit.json'
+$reviewCoverageAuditPath = Join-Path $runDir 'review-coverage-audit.json'
 $visualAuditPath = Join-Path $runDir 'visual-clean-audit.json'
 $visualAuditMarkdownPath = Join-Path $runDir 'visual-clean-audit.md'
 $contactSheetPath = Join-Path $runDir 'contact-sheet.png'
@@ -226,6 +227,7 @@ Ensure-Dir -Path $screensDir
 $reviewScript = Join-Path $PSScriptRoot 'cdp_review_expo_world.ps1'
 $captureScript = Join-Path $PSScriptRoot 'cdp_capture_expo_zone_screenshots.ps1'
 $registryAuditScript = Join-Path $PSScriptRoot 'audit-expo-world-registry.mjs'
+$reviewCoverageAuditScript = Join-Path $PSScriptRoot 'audit-expo-review-coverage.mjs'
 $visualAuditScript = Join-Path $PSScriptRoot 'audit-expo-visual-clean.mjs'
 
 try {
@@ -339,6 +341,36 @@ foreach ($zoneId in $zoneIds) {
   }
 }
 
+$mediaWallExpectedZonesByScreenId = @{}
+foreach ($zoneId in $zoneIds) {
+  $captureSnapshot = $captureSnapshotByZone[$zoneId]
+  foreach ($expectedId in @($captureSnapshot.operatorZone.expectedKeyObjectIds)) {
+    $screenId = [string]$expectedId
+    if ($screenId -match '^screen-(marquee|array|spine)-') {
+      if (-not $mediaWallExpectedZonesByScreenId.ContainsKey($screenId)) {
+        $mediaWallExpectedZonesByScreenId[$screenId] = New-Object 'System.Collections.Generic.List[string]'
+      }
+      [void]$mediaWallExpectedZonesByScreenId[$screenId].Add([string]$zoneId)
+    }
+  }
+}
+
+$duplicateMediaWallTargetsByZone = @{}
+foreach ($screenId in $mediaWallExpectedZonesByScreenId.Keys) {
+  $screenZones = @($mediaWallExpectedZonesByScreenId[$screenId])
+  if ($screenZones.Count -gt 1) {
+    foreach ($screenZone in $screenZones) {
+      if (-not $duplicateMediaWallTargetsByZone.ContainsKey($screenZone)) {
+        $duplicateMediaWallTargetsByZone[$screenZone] = New-Object 'System.Collections.Generic.List[object]'
+      }
+      [void]$duplicateMediaWallTargetsByZone[$screenZone].Add([pscustomobject]@{
+        screenId = $screenId
+        zones = $screenZones
+      })
+    }
+  }
+}
+
 $registryAudit = $null
 $registryAuditError = $null
 $registryAuditSnapshotPath = $null
@@ -373,6 +405,25 @@ if (-not (Test-Path -LiteralPath $registryAuditScript)) {
     $registryAudit = Get-Content -LiteralPath $registryAuditPath -Raw | ConvertFrom-Json
   } catch {
     $registryAuditError = $_.Exception.Message
+  }
+}
+
+$reviewCoverageAudit = $null
+$reviewCoverageAuditError = $null
+if (-not (Test-Path -LiteralPath $reviewCoverageAuditScript)) {
+  $reviewCoverageAuditError = "Review coverage audit script is missing: $reviewCoverageAuditScript"
+} else {
+  try {
+    Write-Host "[full-city-clean-pass] running review coverage audit..."
+    Invoke-Checked -FilePath 'node' -Arguments @(
+      $reviewCoverageAuditScript,
+      $runDir,
+      '--out',
+      $reviewCoverageAuditPath
+    ) -SuppressOutput
+    $reviewCoverageAudit = Get-Content -LiteralPath $reviewCoverageAuditPath -Raw | ConvertFrom-Json
+  } catch {
+    $reviewCoverageAuditError = $_.Exception.Message
   }
 }
 
@@ -525,6 +576,13 @@ foreach ($zone in $reviewRaw) {
     Add-UniqueIssue -Target $zoneIssues -Issue (New-Issue -Severity 'high' -Code 'screenshot-duplicate' -Message "Screenshot hash is shared with zones: $($sharedZones -join ', ').")
   }
 
+  if ($duplicateMediaWallTargetsByZone.ContainsKey($zoneId)) {
+    foreach ($duplicateTarget in @($duplicateMediaWallTargetsByZone[$zoneId])) {
+      $sharedZones = @($duplicateTarget.zones | Where-Object { $_ -ne $zoneId })
+      Add-UniqueIssue -Target $zoneIssues -Issue (New-Issue -Severity 'high' -Code 'camera-duplicate-media-wall-target' -Message "Media wall target $($duplicateTarget.screenId) is reused by zones: $($sharedZones -join ', ').")
+    }
+  }
+
   $visualFindings = if ($visualFindingsByZone.ContainsKey($zoneId)) { @($visualFindingsByZone[$zoneId]) } else { @() }
   foreach ($finding in $visualFindings) {
     if ($finding -and $finding.code) {
@@ -604,6 +662,24 @@ if ($registryAuditError) {
     message = $registryAuditError
   })
 }
+if ($reviewCoverageAudit -and $reviewCoverageAudit.issues) {
+  foreach ($issue in @($reviewCoverageAudit.issues)) {
+    [void]$allIssues.Add([pscustomobject]@{
+      zoneId = 'review-coverage-audit'
+      severity = $issue.severity
+      code = $issue.code
+      message = $issue.message
+    })
+  }
+}
+if ($reviewCoverageAuditError) {
+  [void]$allIssues.Add([pscustomobject]@{
+    zoneId = 'review-coverage-audit'
+    severity = 'high'
+    code = 'review-coverage-audit-error'
+    message = $reviewCoverageAuditError
+  })
+}
 if ($visualAuditError) {
   [void]$allIssues.Add([pscustomobject]@{
     zoneId = 'visual-clean-audit'
@@ -675,6 +751,12 @@ $report = [pscustomobject]@{
     coverage = if ($registryAudit) { $registryAudit.coverage } else { $null }
     error = $registryAuditError
   }
+  reviewCoverageAudit = [pscustomobject]@{
+    path = if ($reviewCoverageAudit) { $reviewCoverageAuditPath } else { $null }
+    summary = if ($reviewCoverageAudit) { $reviewCoverageAudit.summary } else { $null }
+    coverage = if ($reviewCoverageAudit) { $reviewCoverageAudit.coverage } else { $null }
+    error = $reviewCoverageAuditError
+  }
   visualCleanAudit = [pscustomobject]@{
     path = if ($visualAudit) { $visualAuditPath } else { $null }
     markdownPath = if ($visualAudit) { $visualAuditMarkdownPath } else { $null }
@@ -708,6 +790,17 @@ $summaryLines = @(
     "coverage: screens=$($registryAudit.coverage.screens.surfaces), screenHostBindings=$($registryAudit.coverage.screens.hostBindings), ground=$($registryAudit.coverage.ground.total)"
   }),
   "reportPath: $registryAuditPath",
+  "",
+  "review coverage audit:",
+  $(if ($reviewCoverageAudit) {
+    "issues: $($reviewCoverageAudit.summary.totalIssues), critical=$($reviewCoverageAudit.summary.severity.critical), high=$($reviewCoverageAudit.summary.severity.high), medium=$($reviewCoverageAudit.summary.severity.medium), low=$($reviewCoverageAudit.summary.severity.low)"
+  } else {
+    "error: $reviewCoverageAuditError"
+  }),
+  $(if ($reviewCoverageAudit -and $reviewCoverageAudit.coverage) {
+    "coverage: required=$($reviewCoverageAudit.coverage.required), covered=$($reviewCoverageAudit.coverage.covered), critical=$($reviewCoverageAudit.coverage.criticalCovered)/$($reviewCoverageAudit.coverage.criticalRequired), raycastEvidence=$($reviewCoverageAudit.coverage.criticalRaycastEvidence)/$($reviewCoverageAudit.coverage.raycastCriticalRequired), sampleHits=$($reviewCoverageAudit.coverage.criticalSampleHit)/$($reviewCoverageAudit.coverage.raycastCriticalRequired), targetHits=$($reviewCoverageAudit.coverage.criticalTargetHit)/$($reviewCoverageAudit.coverage.raycastCriticalRequired), samples=$($reviewCoverageAudit.coverage.sampleHitTotal), targetSamples=$($reviewCoverageAudit.coverage.targetSampleTotal), zones=$($reviewCoverageAudit.coverage.zones)"
+  }),
+  "reportPath: $reviewCoverageAuditPath",
   "",
   "visual clean audit:",
   $(if ($visualAudit) {

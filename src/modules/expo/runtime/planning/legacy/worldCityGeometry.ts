@@ -1084,8 +1084,8 @@ function buildMediaWallScreenHostMasses(districtCount: number, districtStride: n
     const isSpine = surface.id.startsWith('screen-spine-');
     const hostTop = surface.position[1] + (surface.size[1] * 0.5) + (isMarquee ? 8 : 6);
     const hostWidth = Math.max(
-      isMarquee ? 112 : isSpine ? 72 : 78,
-      surface.size[0] * (isMarquee ? 0.72 : isSpine ? 0.6 : 0.64),
+      surface.size[0] + 8,
+      surface.size[0] * 1.08,
     );
     const hostDepth = Math.max(24, surface.size[2] * 7.2);
     const backset = (hostDepth * 0.5) + (surface.size[2] * 0.5) - 1.2;
@@ -1122,7 +1122,7 @@ export function buildMediaWallSurfaces(districtCount: number, districtStride: nu
   const marqueeClearanceZ = 52;
   const marqueeLeftOutwardX = 36;
   const marqueeRightOutwardX = 52;
-  const sideArrayClearanceX = 112;
+  const sideArrayClearanceX = 188;
 
   return Array.from({ length: Math.max(3, districtCount) }, (_, districtIndex) => {
     const baseZ = -214 - (districtIndex * districtStride);
@@ -1161,7 +1161,7 @@ export function buildMediaWallSurfaces(districtCount: number, districtStride: nu
       },
       {
         id: `screen-array-left-upper-${districtIndex}`,
-        position: [-842, 142, baseZ - 18],
+        position: [-960, 142, baseZ - 18],
         rotation: [0, inwardYawLeft, 0],
         size: [104, 116, 2.8],
         color: '#091320',
@@ -1181,7 +1181,7 @@ export function buildMediaWallSurfaces(districtCount: number, districtStride: nu
       },
       {
         id: `screen-array-right-upper-${districtIndex}`,
-        position: [842, 138, baseZ - 44],
+        position: [960, 138, baseZ - 44],
         rotation: [0, inwardYawRight, 0],
         size: [104, 116, 2.8],
         color: '#091320',

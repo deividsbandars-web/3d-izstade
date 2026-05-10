@@ -351,6 +351,266 @@ function Get-PngQualityStats {
   }
 }
 
+function Get-ZoneHitSamples {
+  param(
+    [System.Net.WebSockets.ClientWebSocket]$Ws,
+    [string]$ZoneId
+  )
+
+  $pointsResult = Eval-Expr -Ws $Ws -Expression @"
+(() => {
+  const normalize = (value) => {
+    const length = Math.hypot(value[0], value[1], value[2]);
+    return length > 0 ? [value[0] / length, value[1] / length, value[2] / length] : null;
+  };
+  const dot = (left, right) => (left[0] * right[0]) + (left[1] * right[1]) + (left[2] * right[2]);
+  const cross = (left, right) => [
+    (left[1] * right[2]) - (left[2] * right[1]),
+    (left[2] * right[0]) - (left[0] * right[2]),
+    (left[0] * right[1]) - (left[1] * right[0]),
+  ];
+  const tuple3 = (value) => Array.isArray(value) && value.length === 3 && value.every(Number.isFinite) ? value : null;
+  const criticalLayers = new Set(['booth', 'city-screen-surface', 'mega-landmark', 'stadium-screen-surface']);
+  const canvas = document.querySelector('canvas');
+  if (!canvas) {
+    return [];
+  }
+  const rect = canvas.getBoundingClientRect();
+  const xs = [0.14, 0.26, 0.38, 0.50, 0.62, 0.74, 0.86];
+  const ys = [0.18, 0.32, 0.46, 0.60, 0.74];
+  const gridPoints = ys.flatMap((fy, row) => xs.map((fx, column) => ({
+    column,
+    fx,
+    fy,
+    row,
+    sampleType: 'grid',
+    x: Math.round(rect.left + (rect.width * fx)),
+    y: Math.round(rect.top + (rect.height * fy)),
+  })));
+
+  const api = window.__WARPALA_EXPO_REVIEW_OPERATOR__;
+  const snapshot = api?.getSnapshot?.();
+  const startView = snapshot?.operatorZone?.startView;
+  const cameraPosition = tuple3(startView?.position);
+  const lookAt = tuple3(startView?.lookAt);
+  if (!snapshot?.registryById || !cameraPosition || !lookAt) {
+    return gridPoints;
+  }
+
+  const forward = normalize([
+    lookAt[0] - cameraPosition[0],
+    lookAt[1] - cameraPosition[1],
+    lookAt[2] - cameraPosition[2],
+  ]);
+  if (!forward) {
+    return gridPoints;
+  }
+
+  const worldUp = [0, 1, 0];
+  const right = normalize(cross(forward, worldUp)) ?? [1, 0, 0];
+  const up = normalize(cross(right, forward)) ?? [0, 1, 0];
+  const aspect = rect.width / Math.max(1, rect.height);
+  const tanHalfFov = Math.tan((60 * Math.PI / 180) / 2);
+  const expectedIds = new Set(snapshot.operatorZone?.expectedKeyObjectIds ?? []);
+  const byId = new Map();
+  for (const entry of Object.values(snapshot.registryById)) {
+    if (!entry?.id || byId.has(entry.id) || !criticalLayers.has(entry.layer) || !tuple3(entry.position)) {
+      continue;
+    }
+    byId.set(entry.id, entry);
+  }
+
+  const targetCenter = (entry) => {
+    const position = tuple3(entry.position);
+    if (!position) {
+      return null;
+    }
+    const size = tuple3(entry.size) ?? [0, 0, 0];
+    if (entry.layer === 'city-screen-surface' || entry.layer === 'stadium-screen-surface') {
+      const rotation = tuple3(entry.rotation) ?? [0, 0, 0];
+      const yaw = rotation[1];
+      const normal = [Math.sin(yaw), 0, Math.cos(yaw)];
+      const toCamera = [
+        cameraPosition[0] - position[0],
+        cameraPosition[1] - position[1],
+        cameraPosition[2] - position[2],
+      ];
+      const side = dot(toCamera, normal) >= 0 ? 1 : -1;
+      const frontOffset = Math.max(0.8, size[2] * 0.68);
+      return [
+        position[0] + (normal[0] * side * frontOffset),
+        position[1],
+        position[2] + (normal[2] * side * frontOffset),
+      ];
+    }
+    if (entry.layer === 'booth') {
+      return [position[0], position[1] + (size[1] * 0.56), position[2]];
+    }
+    return position;
+  };
+
+  const projectPoint = (entry, point, anchor, anchorScore) => {
+    const delta = [
+      point[0] - cameraPosition[0],
+      point[1] - cameraPosition[1],
+      point[2] - cameraPosition[2],
+    ];
+    const depth = dot(delta, forward);
+    if (depth <= 1 || depth > 6200) {
+      return null;
+    }
+
+    const cameraX = dot(delta, right);
+    const cameraY = dot(delta, up);
+    const ndcX = cameraX / (depth * tanHalfFov * aspect);
+    const ndcY = cameraY / (depth * tanHalfFov);
+    const fx = 0.5 + (ndcX * 0.5);
+    const fy = 0.5 - (ndcY * 0.5);
+    if (fx < 0.08 || fx > 0.92 || fy < 0.08 || fy > 0.88) {
+      return null;
+    }
+
+    return {
+      anchorScore,
+      depth,
+      fx,
+      fy,
+      sampleType: 'target',
+      targetAnchor: anchor,
+      targetLayer: entry.layer,
+      targetObjectId: entry.id,
+      x: Math.round(rect.left + (rect.width * fx)),
+      y: Math.round(rect.top + (rect.height * fy)),
+    };
+  };
+
+  const targetGroups = [...byId.values()]
+    .map((entry) => {
+      const center = targetCenter(entry);
+      if (!center) {
+        return null;
+      }
+      const size = tuple3(entry.size) ?? [0, 0, 0];
+      const isScreenSurface = entry.layer === 'city-screen-surface' || entry.layer === 'stadium-screen-surface';
+      const horizontal = isScreenSurface
+        ? Math.min(220, Math.max(16, size[0] * 0.38))
+        : Math.min(150, Math.max(10, Math.max(size[0], size[2]) * 0.26));
+      const vertical = isScreenSurface
+        ? Math.min(168, Math.max(12, size[1] * 0.38))
+        : Math.min(128, Math.max(8, size[1] * 0.28));
+      const rotation = tuple3(entry.rotation) ?? [0, 0, 0];
+      const yaw = rotation[1];
+      const localRight = isScreenSurface ? [Math.cos(yaw), 0, -Math.sin(yaw)] : right;
+      const anchors = isScreenSurface
+        ? [
+            ['center', center, 0],
+            ['upper', [center[0], center[1] + vertical, center[2]], 1],
+            ['lower', [center[0], center[1] - (vertical * 0.35), center[2]], 2],
+            ['left', [center[0] - (localRight[0] * horizontal), center[1], center[2] - (localRight[2] * horizontal)], 3],
+            ['right', [center[0] + (localRight[0] * horizontal), center[1], center[2] + (localRight[2] * horizontal)], 4],
+            ['upper-left', [center[0] - (localRight[0] * horizontal), center[1] + (vertical * 0.55), center[2] - (localRight[2] * horizontal)], 5],
+            ['upper-right', [center[0] + (localRight[0] * horizontal), center[1] + (vertical * 0.55), center[2] + (localRight[2] * horizontal)], 6],
+          ]
+        : [
+            ['center', center, 0],
+            ['upper', [center[0], center[1] + vertical, center[2]], 1],
+            ['lower', [center[0], center[1] - (vertical * 0.45), center[2]], 2],
+            ['left', [center[0] - (right[0] * horizontal), center[1], center[2] - (right[2] * horizontal)], 3],
+            ['right', [center[0] + (right[0] * horizontal), center[1], center[2] + (right[2] * horizontal)], 4],
+          ];
+      const points = anchors
+        .map(([anchor, point, anchorScore]) => projectPoint(entry, point, anchor, anchorScore))
+        .filter(Boolean)
+        .sort((left, right) => left.anchorScore - right.anchorScore);
+      if (points.length === 0) {
+        return null;
+      }
+
+      const objectDepth = Math.min(...points.map((point) => point.depth));
+      const layerScore =
+        entry.layer === 'city-screen-surface' || entry.layer === 'stadium-screen-surface'
+          ? -2000
+          : entry.layer === 'booth'
+            ? -1000
+            : 0;
+      return {
+        objectScore: (expectedIds.has(entry.id) ? -100000 : 0) + layerScore + objectDepth,
+        points,
+      };
+    })
+    .filter(Boolean)
+    .sort((left, right) => left.objectScore - right.objectScore);
+
+  const targetPoints = [];
+  const targetObjectBudget = 24;
+  const targetPointBudget = 54;
+  const primaryGroups = targetGroups.slice(0, targetObjectBudget);
+  for (const group of primaryGroups) {
+    targetPoints.push(group.points[0]);
+  }
+  for (const group of primaryGroups) {
+    for (const point of group.points.slice(1)) {
+      if (targetPoints.length >= targetPointBudget) {
+        break;
+      }
+      targetPoints.push(point);
+    }
+    if (targetPoints.length >= targetPointBudget) {
+      break;
+    }
+  }
+
+  const indexedTargetPoints = targetPoints.map((point, index) => ({ ...point, column: index, row: -1 }));
+
+  return [...indexedTargetPoints, ...gridPoints];
+})()
+"@
+
+  $points = @($pointsResult.result.result.value)
+  $samples = @()
+  foreach ($point in $points) {
+    [void](Invoke-Cdp -Ws $Ws -Method 'Input.dispatchMouseEvent' -Params @{
+      type = 'mouseMoved'
+      x = [double]$point.x
+      y = [double]$point.y
+    })
+    [void](Invoke-Cdp -Ws $Ws -Method 'Input.dispatchMouseEvent' -Params @{
+      type = 'mousePressed'
+      button = 'left'
+      clickCount = 1
+      x = [double]$point.x
+      y = [double]$point.y
+    })
+    [void](Invoke-Cdp -Ws $Ws -Method 'Input.dispatchMouseEvent' -Params @{
+      type = 'mouseReleased'
+      button = 'left'
+      clickCount = 1
+      x = [double]$point.x
+      y = [double]$point.y
+    })
+    Start-Sleep -Milliseconds 70
+
+    $hitSnapshot = Get-OperatorSnapshot -Ws $Ws
+    $samples += [pscustomobject]@{
+      clickStack = @($hitSnapshot.clickStack)
+      clickTarget = $hitSnapshot.clickTarget
+      column = [int]$point.column
+      fx = [double]$point.fx
+      fy = [double]$point.fy
+      row = [int]$point.row
+      sampleType = if ($point.sampleType) { [string]$point.sampleType } else { 'grid' }
+      targetAnchor = if ($point.targetAnchor) { [string]$point.targetAnchor } else { $null }
+      targetLayer = if ($point.targetLayer) { [string]$point.targetLayer } else { $null }
+      targetObjectId = if ($point.targetObjectId) { [string]$point.targetObjectId } else { $null }
+      x = [int]$point.x
+      y = [int]$point.y
+      zoneId = $ZoneId
+    }
+  }
+
+  return $samples
+}
+
 function Capture-StableScreenshotBytes {
   param([System.Net.WebSockets.ClientWebSocket]$Ws)
 
@@ -447,6 +707,7 @@ try {
     Set-OverlayVisibility -Ws $ws -Visible $false
     Start-Sleep -Milliseconds 520
     $screenshotBytes = Capture-StableScreenshotBytes -Ws $ws
+    $hitSamples = Get-ZoneHitSamples -Ws $ws -ZoneId $zoneId
     Set-OverlayVisibility -Ws $ws -Visible $true
     $postCaptureSnapshot = Wait-ForZoneSnapshot -Ws $ws -ZoneId $zoneId
     if ($postCaptureSnapshot) {
@@ -456,10 +717,12 @@ try {
     $filePath = Join-Path $OutputDir "$zoneId.png"
     [IO.File]::WriteAllBytes($filePath, $screenshotBytes)
     if ($snapshot) {
+      $snapshot | Add-Member -NotePropertyName 'operatorHitSamples' -NotePropertyValue $hitSamples -Force
       $snapshot | ConvertTo-Json -Depth 30 | Set-Content -Path (Join-Path $OutputDir "$zoneId.snapshot.json") -Encoding UTF8
     }
     $manifest += @{
       file = $filePath
+      hitSampleCount = @($hitSamples).Count
       operatorZoneId = $snapshot.operatorZoneId
       playerPos = $snapshot.playerPos
       zoneId = $zoneId

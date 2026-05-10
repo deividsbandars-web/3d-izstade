@@ -74,6 +74,7 @@ export function ExpoRearCampus({
   const campusCenterZ = rearCampus?.campusCenterZ ?? -2880;
   const stadiumBackWallZ = rearCampus?.stadiumBackWallZ ?? campusCenterZ - 1520;
   const accent = visualProfile.global.hudAccent;
+  const groundBase = visualProfile.global.groundBase;
   usePlayerColliderRegistration(campusColliderRef, 'rear-campus-collider');
   const enableHeavyShadows = false;
   const filteredStadiumForecourts = rearCampus?.forecourts ?? [];
@@ -118,7 +119,7 @@ export function ExpoRearCampus({
         <mesh position={[-80, 0.012, campusCenterZ - 420]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow renderOrder={6}>
           <planeGeometry args={[7200, 4400]} />
           <ExpoRuntimeSurfaceMaterial
-            fallbackColor="#6f7c85"
+            fallbackColor={groundBase}
             repeat={[9.4, 5.8]}
             surface="concrete"
             polygonOffsetFactor={-3}
@@ -134,7 +135,7 @@ export function ExpoRearCampus({
         >
           <planeGeometry args={[6400, 680]} />
           <ExpoRuntimeSurfaceMaterial
-            fallbackColor="#6f7c85"
+            fallbackColor={groundBase}
             repeat={[8.2, 1.2]}
             surface="concrete"
             polygonOffsetFactor={-4}
@@ -160,23 +161,23 @@ export function ExpoRearCampus({
         <group name="rear-campus-stadium-bowl-ground" position={[0, 0, campusCenterZ]}>
           <mesh position={[0, 6.08, -40]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
             <circleGeometry args={[3080, 112]} />
-            <ExpoRuntimeSurfaceMaterial fallbackColor="#6f7c85" repeat={[6.4, 6.4]} surface="concrete" />
+            <ExpoRuntimeSurfaceMaterial fallbackColor={groundBase} repeat={[6.4, 6.4]} surface="concrete" />
           </mesh>
           <mesh position={[0, 6.3, -40]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
             <circleGeometry args={[2120, 88]} />
-            <ExpoRuntimeSurfaceMaterial fallbackColor="#6f7c85" repeat={[4.6, 4.6]} surface="concrete" />
+            <ExpoRuntimeSurfaceMaterial fallbackColor={groundBase} repeat={[4.6, 4.6]} surface="concrete" />
           </mesh>
           <mesh position={[0, 6.54, -40]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
             <ringGeometry args={[2120, 2540, 96]} />
-            <ExpoRuntimeSurfaceMaterial fallbackColor="#6f7c85" repeat={[5.2, 5.2]} surface="paver" />
+            <ExpoRuntimeSurfaceMaterial fallbackColor={groundBase} repeat={[5.2, 5.2]} surface="paver" />
           </mesh>
           <mesh position={[0, 6.82, -40]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
             <ringGeometry args={[1860, 2000, 96]} />
-            <ExpoRuntimeSurfaceMaterial fallbackColor="#6f7c85" repeat={[4.2, 4.2]} surface="paver" />
+            <ExpoRuntimeSurfaceMaterial fallbackColor={groundBase} repeat={[4.2, 4.2]} surface="paver" />
           </mesh>
           <mesh position={[0, 26, -40]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
             <ringGeometry args={[2440, 2720, 96]} />
-            <meshStandardMaterial color="#6f7c85" roughness={0.97} metalness={0.01} />
+            <meshStandardMaterial color={groundBase} roughness={0.97} metalness={0.01} />
           </mesh>
         </group>
       </group>

@@ -35,13 +35,14 @@ const SCREEN_HOST_VERTICAL_FLOAT_TOLERANCE = 24;
 const SCREEN_HOST_PLANAR_GAP_TOLERANCE = 18;
 const SCREEN_HOST_PLANAR_EMBED_TOLERANCE = 18;
 const SCREEN_HOST_MIN_LATERAL_OVERLAP_RATIO = 0.18;
+const MEDIA_WALL_SCREEN_HOST_MIN_WIDTH_RATIO = 1.04;
 const CITY_SOLID_OVERLAP_WARNING_AREA = 600;
 const CITY_SOLID_OVERLAP_HIGH_VOLUME = 100000;
 const CITY_SMALL_BLOCK_MAX_HEIGHT = 8;
 const CITY_SMALL_BLOCK_MAX_FOOTPRINT_AREA = 900;
 const CITY_SMALL_BLOCK_MAX_ASPECT_RATIO = 3;
-const GROUND_DETAIL_MAX_OPACITY = 0.32;
-const STRUCTURAL_GROUND_MAX_OPACITY = 0.46;
+const GROUND_DETAIL_MAX_OPACITY = 0.12;
+const STRUCTURAL_GROUND_MAX_OPACITY = 0.18;
 const VALID_GROUND_OWNERS = new Set(['city', 'stadium', 'transition']);
 
 function resolveScreenHostBinding(screenId) {
@@ -211,6 +212,25 @@ function overlapAreaXZ(a, b) {
   return overlapX > 0 && overlapZ > 0 ? overlapX * overlapZ : 0;
 }
 
+function isMediaWallScreen(screenId) {
+  return screenId.startsWith('screen-marquee-')
+    || screenId.startsWith('screen-array-')
+    || screenId.startsWith('screen-spine-');
+}
+
+function isMediaWallScreenHost(entry) {
+  return entry?.id?.startsWith('screen-') && entry.id.endsWith('-host');
+}
+
+function isAllowedScreenHostFacadeOverlap(left, right) {
+  const leftScreenHost = isMediaWallScreenHost(left);
+  const rightScreenHost = isMediaWallScreenHost(right);
+  if (leftScreenHost && rightScreenHost) {
+    return false;
+  }
+  return leftScreenHost || rightScreenHost;
+}
+
 function overlapVolume(a, b) {
   const overlapX = overlap1d(a.minX, a.maxX, b.minX, b.maxX);
   const overlapY = overlap1d(a.minY, a.maxY, b.minY, b.maxY);
@@ -330,6 +350,10 @@ function isStadiumLayer(layer) {
 }
 
 function isIntentionalCitySolidOverlap(left, right) {
+  if (isAllowedScreenHostFacadeOverlap(left, right)) {
+    return true;
+  }
+
   const pairs = [
     [left.id, right.id],
     [right.id, left.id],
@@ -405,7 +429,7 @@ function auditGroundVisualContinuity(entries) {
       if (opacity === null || entry.material?.transparent !== true || opacity > GROUND_DETAIL_MAX_OPACITY) {
         pushIssue(
           issues,
-          opacity === null || opacity > 0.55 ? 'high' : 'medium',
+          'high',
           'ground-detail-too-opaque',
           `${entry.layer} ${entry.id} must stay as a subtle transparent guide layer so it does not create visible color seams across the city.`,
           [entry.id],
@@ -424,7 +448,7 @@ function auditGroundVisualContinuity(entries) {
       if (opacity === null || entry.material?.transparent !== true || opacity > STRUCTURAL_GROUND_MAX_OPACITY) {
         pushIssue(
           issues,
-          opacity === null || opacity > 0.72 ? 'high' : 'medium',
+          'high',
           'structural-ground-too-opaque',
           `${entry.layer} ${entry.id} must be a transparent structural ground overlay, not an opaque competing ground layer.`,
           [entry.id],
@@ -987,6 +1011,20 @@ function auditScreenHostPlanarAttachment(entries) {
     const tangentDelta = Math.abs(dotXZ(delta, tangent));
     const lateralOverlap = hostTangentHalfExtent + screenTangentHalfExtent - tangentDelta;
     const minLateralOverlap = screen.entry.size[0] * SCREEN_HOST_MIN_LATERAL_OVERLAP_RATIO;
+    if (isMediaWallScreen(screen.entry.id) && hostTangentHalfExtent < screenTangentHalfExtent * MEDIA_WALL_SCREEN_HOST_MIN_WIDTH_RATIO) {
+      pushIssue(
+        issues,
+        'high',
+        'screen-host-planar-backdrop-narrow',
+        `Screen ${screen.entry.id} is wider than its mounted host ${host.id}; it can read as hanging in the air.`,
+        [screen.entry.id, host.id],
+        {
+          hostWidth: Math.round(hostTangentHalfExtent * 2),
+          minHostWidth: Math.round(screenTangentHalfExtent * 2 * MEDIA_WALL_SCREEN_HOST_MIN_WIDTH_RATIO),
+          screenWidth: Math.round(screenTangentHalfExtent * 2),
+        },
+      );
+    }
     if (lateralOverlap < minLateralOverlap) {
       pushIssue(
         issues,
