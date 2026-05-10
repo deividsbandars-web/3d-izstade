@@ -405,7 +405,7 @@ function auditZone({ imageStats, manifestEntry, snapshot, zoneId }) {
   if (
     zoneId.includes('ground-seam')
     && bottom.dominantBucketRatio >= 0.58
-    && center.dominantBucketRatio >= 0.42
+    && center.dominantBucketRatio >= 0.44
     && center.brightnessStdDev <= 10.5
   ) {
     pushFinding(
