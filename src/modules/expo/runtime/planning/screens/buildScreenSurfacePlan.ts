@@ -63,6 +63,137 @@ function getSurfaceFamily(zoneId: ExpoPlanningZoneId, surface: CityScreenSurface
   return 'default';
 }
 
+type ScreenSurfaceFamily = ReturnType<typeof getSurfaceFamily>;
+
+function buildMountedHostAttachmentPrimitives(
+  family: ScreenSurfaceFamily,
+  surface: CityScreenSurface,
+  housingWidth: number,
+  housingHeight: number,
+  housingDepth: number
+): CanonicalPrimitive[] {
+  const isMountedHostFamily =
+    family === 'rear-campus'
+    || family === 'marquee-hero'
+    || family === 'district-array';
+
+  if (!isMountedHostFamily) {
+    return [];
+  }
+
+  const isDistrictArray = family === 'district-array';
+  const isRearCampus = family === 'rear-campus';
+  const isHeroWall = surface.role === 'hero-wall';
+  const plateWidthScale = isDistrictArray ? 1.22 : isRearCampus ? 1.12 : 1.16;
+  const plateHeightScale = isDistrictArray ? 1.2 : isHeroWall ? 1.14 : 1.1;
+  const clampHeightScale = isDistrictArray ? 1.04 : isHeroWall ? 0.98 : 0.9;
+  const plateDepth = Math.max(2.4, housingDepth * (isDistrictArray ? 0.5 : 0.38));
+  const receiverDepth = Math.max(1.8, housingDepth * (isDistrictArray ? 0.28 : 0.2));
+  const clampDepth = Math.max(2.4, housingDepth * (isDistrictArray ? 0.68 : 0.54));
+  const clampWidth = Math.max(isDistrictArray ? 3.2 : 3.8, housingWidth * (isDistrictArray ? 0.052 : 0.042));
+  const sillHeight = Math.max(2.8, housingHeight * (isDistrictArray ? 0.074 : 0.052));
+  const keeperHeight = Math.max(2.4, housingHeight * (isDistrictArray ? 0.056 : 0.04));
+  const rearZ = -(housingDepth * 0.54);
+  const receiverZ = -(housingDepth * 0.72);
+  const clampZ = -(housingDepth * 0.28);
+  const clampX = housingWidth * 0.56;
+  const attachmentColor = isRearCampus ? '#5e7480' : '#526878';
+  const receiverColor = isRearCampus ? '#8298a2' : '#718794';
+  const clampColor = isRearCampus ? '#2f4858' : '#25394a';
+
+  const primitives: CanonicalPrimitive[] = [
+    {
+      color: attachmentColor,
+      emissive: surface.glowColor,
+      emissiveIntensity: isHeroWall ? 0.035 : 0.022,
+      kind: 'box',
+      metalness: 0.36,
+      position: [0, 0, rearZ],
+      roughness: 0.5,
+      size: [housingWidth * plateWidthScale, housingHeight * plateHeightScale, plateDepth],
+    },
+    {
+      color: receiverColor,
+      emissive: surface.glowColor,
+      emissiveIntensity: isHeroWall ? 0.028 : 0.016,
+      kind: 'box',
+      metalness: 0.28,
+      position: [0, 0, receiverZ],
+      roughness: 0.56,
+      size: [housingWidth * (isDistrictArray ? 0.92 : 0.78), housingHeight * (isDistrictArray ? 0.82 : 0.7), receiverDepth],
+    },
+    {
+      color: clampColor,
+      emissive: surface.glowColor,
+      emissiveIntensity: isHeroWall ? 0.05 : 0.035,
+      kind: 'box',
+      metalness: 0.42,
+      position: [-clampX, 0, clampZ],
+      roughness: 0.34,
+      size: [clampWidth, housingHeight * clampHeightScale, clampDepth],
+    },
+    {
+      color: clampColor,
+      emissive: surface.glowColor,
+      emissiveIntensity: isHeroWall ? 0.05 : 0.035,
+      kind: 'box',
+      metalness: 0.42,
+      position: [clampX, 0, clampZ],
+      roughness: 0.34,
+      size: [clampWidth, housingHeight * clampHeightScale, clampDepth],
+    },
+    {
+      color: '#405a6a',
+      emissive: surface.glowColor,
+      emissiveIntensity: isHeroWall ? 0.045 : 0.03,
+      kind: 'box',
+      metalness: 0.4,
+      position: [0, -(housingHeight * 0.56), -(housingDepth * 0.24)],
+      roughness: 0.36,
+      size: [housingWidth * (isDistrictArray ? 0.98 : 0.86), sillHeight, clampDepth],
+    },
+    {
+      color: '#364e5f',
+      emissive: surface.glowColor,
+      emissiveIntensity: isHeroWall ? 0.04 : 0.026,
+      kind: 'box',
+      metalness: 0.38,
+      position: [0, housingHeight * 0.56, -(housingDepth * 0.24)],
+      roughness: 0.38,
+      size: [housingWidth * (isDistrictArray ? 0.78 : 0.64), keeperHeight, Math.max(1.6, housingDepth * 0.46)],
+    },
+  ];
+
+  if (isDistrictArray || family === 'marquee-hero') {
+    const standoffWidth = Math.max(isDistrictArray ? 2.8 : 3.2, housingWidth * 0.035);
+    const standoffDepth = Math.max(2.2, housingDepth * 0.42);
+    primitives.push(
+      {
+        color: '#1f3344',
+        emissive: surface.glowColor,
+        emissiveIntensity: 0.038,
+        kind: 'box',
+        metalness: 0.44,
+        position: [-(housingWidth * 0.28), 0, -(housingDepth * 0.62)],
+        roughness: 0.34,
+        size: [standoffWidth, housingHeight * 0.76, standoffDepth],
+      },
+      {
+        color: '#1f3344',
+        emissive: surface.glowColor,
+        emissiveIntensity: 0.038,
+        kind: 'box',
+        metalness: 0.44,
+        position: [housingWidth * 0.28, 0, -(housingDepth * 0.62)],
+        roughness: 0.34,
+        size: [standoffWidth, housingHeight * 0.76, standoffDepth],
+      },
+    );
+  }
+
+  return primitives;
+}
+
 function buildSurfacePrimitives(zoneId: ExpoPlanningZoneId, surface: CityScreenSurface): CanonicalPrimitive[] {
   const profile = surface.renderIntent;
   const family = getSurfaceFamily(zoneId, surface);
@@ -77,8 +208,10 @@ function buildSurfacePrimitives(zoneId: ExpoPlanningZoneId, surface: CityScreenS
   const keelHeight = profile?.keelHeight ?? housingHeight * 0.16;
   const wingWidth = profile?.wingWidth ?? 0;
   const wingHeight = profile?.wingHeight ?? 0;
+  const mountedHostAttachmentPrimitives = buildMountedHostAttachmentPrimitives(family, surface, housingWidth, housingHeight, housingDepth);
 
   const primitives: CanonicalPrimitive[] = [
+    ...mountedHostAttachmentPrimitives,
     { color: surface.color, emissive: surface.glowColor, emissiveIntensity: surface.role === 'hero-wall' ? 0.06 : 0.04, kind: 'box', metalness: 0.34, position: [0, 0, 0], roughness: 0.46, size: [housingWidth, housingHeight, housingDepth] },
     { color: '#08111c', emissive: surface.glowColor, emissiveIntensity: surface.role === 'hero-wall' ? 0.04 : 0.025, kind: 'box', metalness: 0.16, position: [0, 0, housingDepth * 0.28], roughness: 0.24, size: [innerWidth, innerHeight, Math.max(1.6, housingDepth * 0.16)] },
     { color: surface.glowColor, kind: 'plane', opacity: Math.min(0.18, profile?.glowOpacity ?? 0.16), position: [0, 0, housingDepth * 0.38], size: [innerWidth * 0.92, innerHeight * 0.92], transparent: true },
@@ -95,6 +228,7 @@ function buildSurfacePrimitives(zoneId: ExpoPlanningZoneId, surface: CityScreenS
     const rearTrimColor = surface.role === 'hero-wall' ? '#18344d' : '#11263a';
 
     return [
+      ...mountedHostAttachmentPrimitives,
       { color: surface.color, emissive: surface.glowColor, emissiveIntensity: 0.05, kind: 'box', metalness: 0.28, position: [0, 0, 0], roughness: 0.5, size: [housingWidth, housingHeight, housingDepth] },
       { color: rearInnerColor, emissive: surface.glowColor, emissiveIntensity: surface.role === 'hero-wall' ? 0.08 : 0.045, kind: 'box', metalness: 0.12, position: [0, 0, housingDepth * 0.22], roughness: 0.24, size: [housingWidth * 0.9, housingHeight * 0.78, Math.max(1.1, housingDepth * 0.12)] },
       { color: surface.glowColor, kind: 'plane', opacity: Math.min(0.26, rearGlowOpacity), position: [0, 0, housingDepth * 0.34], size: [housingWidth * 0.82, housingHeight * 0.68], transparent: true },
@@ -110,6 +244,7 @@ function buildSurfacePrimitives(zoneId: ExpoPlanningZoneId, surface: CityScreenS
 
   if (family === 'tower') {
     return [
+      ...mountedHostAttachmentPrimitives,
       { color: surface.color, emissive: surface.glowColor, emissiveIntensity: 0.04, kind: 'box', metalness: 0.34, position: [0, 0, 0], roughness: 0.42, size: [housingWidth, housingHeight, housingDepth] },
       { color: '#091320', emissive: surface.glowColor, emissiveIntensity: 0.02, kind: 'box', metalness: 0.12, position: [0, 0, housingDepth * 0.18], roughness: 0.24, size: [housingWidth * 0.98, housingHeight * 0.98, Math.max(0.72, housingDepth * 0.1)] },
       { color: '#0f1c2b', emissive: surface.glowColor, emissiveIntensity: 0.03, kind: 'box', metalness: 0.3, position: [0, 0, -(housingDepth * 0.16)], roughness: 0.36, size: [housingWidth * 0.14, housingHeight * 0.62, housingDepth * 0.18] },
@@ -120,6 +255,7 @@ function buildSurfacePrimitives(zoneId: ExpoPlanningZoneId, surface: CityScreenS
 
   if (family === 'center-spine') {
     return [
+      ...mountedHostAttachmentPrimitives,
       { color: surface.color, emissive: surface.glowColor, emissiveIntensity: 0.05, kind: 'box', metalness: 0.32, position: [0, 0, 0], roughness: 0.46, size: [housingWidth, housingHeight, housingDepth] },
       { color: '#08111c', emissive: surface.glowColor, emissiveIntensity: 0.03, kind: 'box', metalness: 0.14, position: [0, 0, housingDepth * 0.2], roughness: 0.22, size: [housingWidth * 0.98, housingHeight * 0.98, Math.max(1, housingDepth * 0.12)] },
       { color: '#102031', emissive: surface.glowColor, emissiveIntensity: 0.04, kind: 'box', metalness: 0.32, position: [0, 0, -(housingDepth * 0.18)], roughness: 0.4, size: [housingWidth * 0.1, housingHeight * 0.74, housingDepth * 0.18] },
@@ -130,6 +266,7 @@ function buildSurfacePrimitives(zoneId: ExpoPlanningZoneId, surface: CityScreenS
 
   if (family === 'marquee-hero') {
     return [
+      ...mountedHostAttachmentPrimitives,
       { color: surface.color, emissive: surface.glowColor, emissiveIntensity: 0.05, kind: 'box', metalness: 0.34, position: [0, 0, 0], roughness: 0.46, size: [housingWidth, housingHeight, housingDepth] },
       { color: '#08111c', emissive: surface.glowColor, emissiveIntensity: 0.03, kind: 'box', metalness: 0.16, position: [0, 0, housingDepth * 0.2], roughness: 0.24, size: [housingWidth * 0.98, housingHeight * 0.98, Math.max(1.1, housingDepth * 0.12)] },
       { color: '#111c2d', emissive: surface.glowColor, emissiveIntensity: 0.04, kind: 'box', metalness: 0.3, position: [0, housingHeight * 0.48, housingDepth * 0.01], roughness: 0.42, size: [housingWidth * 0.68, housingHeight * 0.04, housingDepth * 0.18] },
@@ -141,6 +278,7 @@ function buildSurfacePrimitives(zoneId: ExpoPlanningZoneId, surface: CityScreenS
 
   if (family === 'district-array') {
     return [
+      ...mountedHostAttachmentPrimitives,
       { color: surface.color, emissive: surface.glowColor, emissiveIntensity: 0.04, kind: 'box', metalness: 0.32, position: [0, 0, 0], roughness: 0.46, size: [housingWidth, housingHeight, housingDepth] },
       { color: '#08111c', emissive: surface.glowColor, emissiveIntensity: 0.02, kind: 'box', metalness: 0.14, position: [0, 0, housingDepth * 0.18], roughness: 0.24, size: [housingWidth * 0.98, housingHeight * 0.98, Math.max(0.9, housingDepth * 0.12)] },
       { color: '#101d2d', emissive: surface.glowColor, emissiveIntensity: 0.04, kind: 'box', metalness: 0.3, position: [0, 0, -(housingDepth * 0.18)], roughness: 0.4, size: [housingWidth * 0.08, housingHeight * 0.64, housingDepth * 0.16] },
