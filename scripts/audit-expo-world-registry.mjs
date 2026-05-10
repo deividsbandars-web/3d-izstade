@@ -313,21 +313,25 @@ function resolveFaceAttachmentMetrics(screenBounds, hostBounds, facing) {
     case 'positive-z':
       return {
         faceGap: Math.abs(screenBounds.maxZ - hostBounds.maxZ),
+        hostFaceWidth: hostBounds.maxX - hostBounds.minX,
         lateralOverlap: overlap1d(screenBounds.minX, screenBounds.maxX, hostBounds.minX, hostBounds.maxX),
       };
     case 'negative-z':
       return {
         faceGap: Math.abs(screenBounds.minZ - hostBounds.minZ),
+        hostFaceWidth: hostBounds.maxX - hostBounds.minX,
         lateralOverlap: overlap1d(screenBounds.minX, screenBounds.maxX, hostBounds.minX, hostBounds.maxX),
       };
     case 'positive-x':
       return {
         faceGap: Math.abs(screenBounds.maxX - hostBounds.maxX),
+        hostFaceWidth: hostBounds.maxZ - hostBounds.minZ,
         lateralOverlap: overlap1d(screenBounds.minZ, screenBounds.maxZ, hostBounds.minZ, hostBounds.maxZ),
       };
     case 'negative-x':
       return {
         faceGap: Math.abs(screenBounds.minX - hostBounds.minX),
+        hostFaceWidth: hostBounds.maxZ - hostBounds.minZ,
         lateralOverlap: overlap1d(screenBounds.minZ, screenBounds.maxZ, hostBounds.minZ, hostBounds.maxZ),
       };
     default:
@@ -1132,6 +1136,21 @@ function auditStadiumScreenHostFaceAttachment(entries) {
           lateralOverlap: Math.round(metrics.lateralOverlap),
           maxFaceGap: SCREEN_HOST_FACE_GAP_TOLERANCE,
           yawDelta: Number(facing.delta.toFixed(3)),
+        },
+      );
+    }
+
+    if (metrics.hostFaceWidth < screen.entry.size[0] * MEDIA_WALL_SCREEN_HOST_MIN_WIDTH_RATIO) {
+      pushIssue(
+        issues,
+        'high',
+        'stadium-screen-host-face-backdrop-narrow',
+        `Stadium screen ${screen.entry.id} is wider than the mounted face of host ${host.id}; it can read as hanging in the air.`,
+        [screen.entry.id, host.id],
+        {
+          hostFaceWidth: Math.round(metrics.hostFaceWidth),
+          minHostFaceWidth: Math.round(screen.entry.size[0] * MEDIA_WALL_SCREEN_HOST_MIN_WIDTH_RATIO),
+          screenWidth: Math.round(screen.entry.size[0]),
         },
       );
     }
