@@ -41,6 +41,10 @@ const CITY_SOLID_OVERLAP_HIGH_VOLUME = 100000;
 const CITY_SMALL_BLOCK_MAX_HEIGHT = 8;
 const CITY_SMALL_BLOCK_MAX_FOOTPRINT_AREA = 900;
 const CITY_SMALL_BLOCK_MAX_ASPECT_RATIO = 3;
+const CITY_NON_RENDERABLE_DECORATIVE_MASS_PATTERNS = [
+  'boulevard-edge-',
+  'media-wall-flank-',
+];
 const GROUND_DETAIL_MAX_OPACITY = 0.12;
 const STRUCTURAL_GROUND_MAX_OPACITY = 0.18;
 const VALID_GROUND_OWNERS = new Set(['city', 'stadium', 'transition']);
@@ -661,6 +665,32 @@ function auditCitySmallBlockClutter(entries) {
   return issues;
 }
 
+function auditResidualDecorativeCityMasses(entries) {
+  const issues = [];
+
+  for (const entry of entries) {
+    if (entry.layer !== 'city-mass') {
+      continue;
+    }
+
+    const matchedPattern = CITY_NON_RENDERABLE_DECORATIVE_MASS_PATTERNS.find((pattern) => entry.id?.includes(pattern));
+    if (!matchedPattern) {
+      continue;
+    }
+
+    pushIssue(
+      issues,
+      'medium',
+      'city-residual-decorative-mass',
+      `${entry.layer} ${entry.id} matches residual decorative mass pattern "${matchedPattern}" and should not render as a solid city object.`,
+      [entry.id],
+      { matchedPattern },
+    );
+  }
+
+  return issues;
+}
+
 function auditBoothSpacing(entries) {
   const booths = entries
     .filter((entry) => entry.layer === 'booth' && tuple3(entry.position))
@@ -1177,6 +1207,7 @@ const issues = [
   ...auditGroundAndCrossLayerOverlaps(entries),
   ...auditCitySolidOverlaps(entries),
   ...auditCitySmallBlockClutter(entries),
+  ...auditResidualDecorativeCityMasses(entries),
   ...auditBoothSpacing(entries),
   ...auditBoothSolidClearance(entries),
   ...auditScreenSocketAttachment(entries),

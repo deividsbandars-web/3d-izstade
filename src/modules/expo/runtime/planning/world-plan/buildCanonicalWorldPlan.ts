@@ -86,6 +86,8 @@ const NON_RENDERABLE_MASS_PATTERNS = [
   'skybridge-anchor-',
   'skybridge-left-pylon',
   'skybridge-right-pylon',
+  'boulevard-edge-',
+  'media-wall-flank-',
 ];
 
 const NON_RENDERABLE_PLANE_PATTERNS = [

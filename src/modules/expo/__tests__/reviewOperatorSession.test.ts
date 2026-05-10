@@ -91,7 +91,7 @@ assert.ok(centerSpine);
 const resolvedCenterSpineView = resolveReviewOperatorZoneStartView(centerSpine, new Map([
   ['screen-spine-primary-1', { position: [-184, 108, -796] }],
 ]));
-assert.deepEqual(resolvedCenterSpineView.lookAt, [-184, 154, -796]);
+assert.deepEqual(resolvedCenterSpineView.lookAt, [-184, 170, -796]);
 assert.deepEqual(resolvedCenterSpineView.position, [36, 348, -176]);
 
 const rearCampusCenter = zones.find((zone) => zone.id === 'rear-campus-center');

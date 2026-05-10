@@ -253,7 +253,7 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       intent: 'center-civic-spine-review',
       label: 'Center Spine',
       camera: {
-        lookAtOffset: [0, 46, 0],
+        lookAtOffset: [0, 62, 0],
         positionOffset: [220, 240, 620],
         targetIds: ['screen-spine-primary-1'],
       },
