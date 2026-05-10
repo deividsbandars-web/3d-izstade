@@ -629,6 +629,13 @@ for (const { snapshot, snapshotPath } of snapshots) {
   const targetSamples = collectTargetSamples(snapshot, aliasMap);
   const targetSampleIds = new Set(targetSamples.map((sample) => sample.targetId));
   const targetHitIds = new Set(targetSamples.filter((sample) => sample.hitMatchedTarget).map((sample) => sample.targetId));
+  // If the same camera target-sampled an object and grid raycast also hit it, the
+  // object is reviewable even when the projected target anchor is foreground-occluded.
+  for (const id of targetSampleIds) {
+    if (sampleHitIds.has(id)) {
+      targetHitIds.add(id);
+    }
+  }
   const directVisibleIds = new Set([...actualIds, ...sampleHitIds, ...targetHitIds]);
   const geometricIds = new Set();
 

@@ -449,12 +449,23 @@ for (const entry of requiredEntries) {
   const targetedBy = targetSampleCoverageByObjectId.get(entry.id);
   const targetHitBy = targetSampleHitByObjectId.get(entry.id);
   for (const zone of zoneViews) {
+    let targetedInZone = false;
+    let targetHitInZone = false;
     for (const sample of zone.targetSamples) {
       if (sample.targetId === entry.id) {
-        targetedBy.push(zone.view.zoneId);
+        targetedInZone = true;
         if (sample.hitIds.has(entry.id)) {
-          targetHitBy.push(zone.view.zoneId);
+          targetHitInZone = true;
         }
+      }
+    }
+    if (targetedInZone) {
+      targetedBy.push(zone.view.zoneId);
+      // A target anchor can land on foreground geometry while the same camera's grid raycast
+      // directly hits the object. Treat that as resolved target evidence instead of
+      // forcing camera movement for already-visible objects.
+      if (targetHitInZone || zone.sampleHitIds.has(entry.id)) {
+        targetHitBy.push(zone.view.zoneId);
       }
     }
     if (zone.actualIds.has(entry.id)) {
