@@ -3,6 +3,7 @@ import type { StadiumReserve } from '../planning/types';
 export type WorldCityMegaLandmarkBound = {
   id: string;
   position: [number, number, number];
+  reviewTargetPosition?: [number, number, number];
   size: [number, number, number];
 };
 
@@ -43,11 +44,11 @@ export function buildWorldCityMegaLandmarkBounds({
     { id: 'mega-landmark-right-skyfold-citadel', position: [844, 146, -164], size: [300, 292, 96] },
     { id: 'mega-landmark-right-skybridge-beacon', position: [436, 134, -74], size: [360, 268, 116] },
     { id: 'mega-landmark-right-media-halo', position: [520, 126, -278], size: [260, 180, 220] },
-    { id: 'mega-landmark-right-support-spire', position: [294, 90, -372], size: [132, 180, 64] },
+    { id: 'mega-landmark-right-support-spire', position: [294, 90, -372], reviewTargetPosition: [294, 118, -372], size: [132, 180, 64] },
     { id: 'mega-landmark-left-grand-rampart', position: [-888, 138, -156], size: [220, 276, 72] },
     { id: 'mega-landmark-left-cantilever-forum', position: [-438, 104, -116], size: [320, 208, 96] },
     { id: 'mega-landmark-left-split-crown-gate', position: [-742, 146, -346], size: [340, 292, 96] },
-    { id: 'mega-landmark-left-broken-wall-monument', position: [-262, 112, -412], size: [140, 224, 96] },
+    { id: 'mega-landmark-left-broken-wall-monument', position: [-262, 112, -412], reviewTargetPosition: [-318, 112, -418], size: [140, 224, 96] },
     { id: 'mega-landmark-left-disc-habitat', position: [-918, 178, -548], size: [296, 212, 296] },
     { id: 'mega-landmark-left-split-monolith-pair', position: [-648, 146, -724], size: [160, 292, 72] },
   ];

@@ -62,6 +62,7 @@ export type WorldObjectRegistryEntry = {
   planningRole?: string | null;
   planningZone: string | null;
   position: [number, number, number];
+  reviewTargetPosition?: [number, number, number];
   rotation?: [number, number, number];
   safeEditSeam: string;
   size?: [number, number, number];
@@ -212,13 +213,14 @@ function buildMegaLandmarkEntries(args: {
     args.stadiumReserve,
   );
 
-  return landmarks.map(({ id, position, size }) => createEntry({
+  return landmarks.map(({ id, position, reviewTargetPosition, size }) => createEntry({
     diagnosticOwners: [],
     id,
     interactionOwner: null,
     layer: 'mega-landmark',
     planningZone: 'canonical-city',
     position,
+    ...(reviewTargetPosition ? { reviewTargetPosition } : {}),
     safeEditSeam: 'src/modules/expo/runtime/world/WorldCityMegaLandmarks.tsx',
     size,
     sourceFile: 'src/modules/expo/runtime/world/WorldCityMegaLandmarks.tsx',

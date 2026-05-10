@@ -421,6 +421,11 @@ function Get-ZoneHitSamples {
   }
 
   const targetCenter = (entry) => {
+    const reviewTargetPosition = tuple3(entry.reviewTargetPosition);
+    if (reviewTargetPosition) {
+      return reviewTargetPosition;
+    }
+
     const position = tuple3(entry.position);
     if (!position) {
       return null;
@@ -533,8 +538,9 @@ function Get-ZoneHitSamples {
           : entry.layer === 'booth'
             ? -1000
             : 0;
+      const reviewTargetScore = tuple3(entry.reviewTargetPosition) ? -5000 : 0;
       return {
-        objectScore: (expectedIds.has(entry.id) ? -100000 : 0) + layerScore + objectDepth,
+        objectScore: (expectedIds.has(entry.id) ? -100000 : 0) + reviewTargetScore + layerScore + objectDepth,
         points,
       };
     })
