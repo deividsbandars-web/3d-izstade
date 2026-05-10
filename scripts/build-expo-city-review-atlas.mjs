@@ -55,6 +55,11 @@ const MEGA_LANDMARK_HIT_PREFIXES = [
   ['media', 'mega-landmark-media'],
 ];
 
+const PARENT_OBJECT_IDS_BY_CHILD_ID = new Map([
+  ['mega-landmark-media-frame-wall', 'mega-landmark-media'],
+  ['mega-landmark-media-signal-pods', 'mega-landmark-media'],
+]);
+
 function printUsageAndExit() {
   console.error('Usage: node scripts/build-expo-city-review-atlas.mjs <runDir> [--out <atlas.json>] [--md <atlas.md>] [--fail-on high|medium|low]');
   process.exit(2);
@@ -268,6 +273,10 @@ function addResolvedId(target, value, aliasMap) {
   const resolved = resolveInspectableId(value, aliasMap);
   if (resolved) {
     target.add(resolved);
+    const parentId = PARENT_OBJECT_IDS_BY_CHILD_ID.get(resolved);
+    if (parentId && aliasMap.has(parentId)) {
+      target.add(parentId);
+    }
   }
 }
 

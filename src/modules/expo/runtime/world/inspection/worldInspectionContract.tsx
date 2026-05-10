@@ -96,6 +96,67 @@ export function ClickInspector({ clickInspectionEnabled }: { clickInspectionEnab
   const raycasterRef = useRef(new THREE.Raycaster());
 
   useEffect(() => {
+    type InspectPoint = {
+      x: number;
+      y: number;
+      [key: string]: unknown;
+    };
+    const resolveInspectableStack = (x: number, y: number) => {
+      const rect = gl.domElement.getBoundingClientRect();
+      if (
+        x < rect.left ||
+        x > rect.right ||
+        y < rect.top ||
+        y > rect.bottom
+      ) {
+        return [];
+      }
+
+      const ndc = new THREE.Vector2(
+        ((x - rect.left) / rect.width) * 2 - 1,
+        -(((y - rect.top) / rect.height) * 2 - 1),
+      );
+
+      raycasterRef.current.setFromCamera(ndc, camera);
+      const intersections = raycasterRef.current.intersectObjects(scene.children, true);
+      return intersections
+        .map((entry) => {
+          let current: THREE.Object3D | null = entry.object;
+          while (current) {
+            if (current.name && current.name.includes(':')) {
+              return current.name;
+            }
+            current = current.parent;
+          }
+          return null;
+        })
+        .filter((value): value is string => Boolean(value))
+        .filter((value, index, array) => array.indexOf(value) === index)
+        .slice(0, 5);
+    };
+
+    const batchInspect = (points: InspectPoint[]) => points.map((point) => {
+      const clickStack = resolveInspectableStack(point.x, point.y);
+      return {
+        ...point,
+        clickStack,
+        clickTarget: clickStack[0] ?? null,
+      };
+    });
+
+    const windowWithInspector = window as unknown as {
+      __WARPALA_EXPO_BATCH_INSPECT_POINTS__?: typeof batchInspect;
+    };
+    windowWithInspector.__WARPALA_EXPO_BATCH_INSPECT_POINTS__ = batchInspect;
+
+    return () => {
+      if (windowWithInspector.__WARPALA_EXPO_BATCH_INSPECT_POINTS__ === batchInspect) {
+        delete windowWithInspector.__WARPALA_EXPO_BATCH_INSPECT_POINTS__;
+      }
+    };
+  }, [camera, gl, scene]);
+
+  useEffect(() => {
     const handlePointerDown = (event: PointerEvent) => {
       if (!clickInspectionEnabled) {
         return;

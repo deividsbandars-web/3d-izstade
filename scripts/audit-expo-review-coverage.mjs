@@ -148,6 +148,11 @@ const MEGA_LANDMARK_HIT_PREFIXES = [
   ['media', 'mega-landmark-media'],
 ];
 
+const PARENT_OBJECT_IDS_BY_CHILD_ID = new Map([
+  ['mega-landmark-media-frame-wall', 'mega-landmark-media'],
+  ['mega-landmark-media-signal-pods', 'mega-landmark-media'],
+]);
+
 function resolveMegaLandmarkInspectableId(id, aliasMap) {
   if (!id.startsWith('mega-landmark:')) {
     return null;
@@ -250,6 +255,10 @@ function collectActualObjectIds(snapshot, aliasMap) {
     const resolved = resolveInspectableId(value, aliasMap);
     if (resolved) {
       ids.add(resolved);
+      const parentId = PARENT_OBJECT_IDS_BY_CHILD_ID.get(resolved);
+      if (parentId && aliasMap.has(parentId)) {
+        ids.add(parentId);
+      }
     }
   };
 
@@ -286,6 +295,10 @@ function collectSampleHitIds(snapshot, aliasMap) {
     const resolved = resolveInspectableId(value, aliasMap);
     if (resolved) {
       ids.add(resolved);
+      const parentId = PARENT_OBJECT_IDS_BY_CHILD_ID.get(resolved);
+      if (parentId && aliasMap.has(parentId)) {
+        ids.add(parentId);
+      }
     }
   };
 
@@ -315,11 +328,19 @@ function collectTargetSamples(snapshot, aliasMap) {
     const clickTargetId = resolve(sample.clickTarget);
     if (clickTargetId) {
       hitIds.add(clickTargetId);
+      const parentId = PARENT_OBJECT_IDS_BY_CHILD_ID.get(clickTargetId);
+      if (parentId && aliasMap.has(parentId)) {
+        hitIds.add(parentId);
+      }
     }
     for (const id of sample.clickStack ?? []) {
       const hitId = resolve(id);
       if (hitId) {
         hitIds.add(hitId);
+        const parentId = PARENT_OBJECT_IDS_BY_CHILD_ID.get(hitId);
+        if (parentId && aliasMap.has(parentId)) {
+          hitIds.add(parentId);
+        }
       }
     }
     samples.push({

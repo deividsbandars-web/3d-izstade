@@ -567,6 +567,43 @@ function Get-ZoneHitSamples {
 "@
 
   $points = @($pointsResult.result.result.value)
+  $pointsJson = ConvertTo-Json -InputObject @($points) -Depth 20 -Compress
+  try {
+    $batchResult = Eval-Expr -Ws $Ws -Expression @"
+(() => {
+  const inspect = window.__WARPALA_EXPO_BATCH_INSPECT_POINTS__;
+  if (typeof inspect !== 'function') {
+    return null;
+  }
+  return inspect($pointsJson);
+})()
+"@
+    $batchValues = @($batchResult.result.result.value)
+    if ($batchValues.Count -gt 0) {
+      $batchSamples = @()
+      foreach ($sample in $batchValues) {
+        $batchSamples += [pscustomobject]@{
+          clickStack = @($sample.clickStack)
+          clickTarget = $sample.clickTarget
+          column = [int]$sample.column
+          fx = [double]$sample.fx
+          fy = [double]$sample.fy
+          row = [int]$sample.row
+          sampleType = if ($sample.sampleType) { [string]$sample.sampleType } else { 'grid' }
+          targetAnchor = if ($sample.targetAnchor) { [string]$sample.targetAnchor } else { $null }
+          targetLayer = if ($sample.targetLayer) { [string]$sample.targetLayer } else { $null }
+          targetObjectId = if ($sample.targetObjectId) { [string]$sample.targetObjectId } else { $null }
+          x = [int]$sample.x
+          y = [int]$sample.y
+          zoneId = $ZoneId
+        }
+      }
+      return $batchSamples
+    }
+  } catch {
+    Write-Warning "Batch point inspection failed for $ZoneId, falling back to click sampling: $($_.Exception.Message)"
+  }
+
   $samples = @()
   foreach ($point in $points) {
     [void](Invoke-Cdp -Ws $Ws -Method 'Input.dispatchMouseEvent' -Params @{
