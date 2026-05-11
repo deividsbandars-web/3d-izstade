@@ -6,12 +6,16 @@ Dev-only browser operator mode is available for Expo review sessions.
 
 Open the Expo 3D view with:
 
-`/expo-3d?operator=1`
+`/expo-3d?operator=1&expoData=review`
 
 Behavior:
 - skips the normal menu flow into `fly` mode
 - enables a compact operator panel in the top-right corner
 - exposes a window operator API for scripted review actions
+
+Data modes:
+- `expoData=review` or `expoData=seeded` uses the deterministic review scene on local, staging, and Vercel preview hosts
+- `expoData=live` uses the backend scene data
 
 ## Window API
 

@@ -1,6 +1,6 @@
 param(
   [string]$BrowserJsonUrl = 'http://127.0.0.1:9230/json',
-  [string]$SiteUrl = 'http://localhost:5173/expo-3d?operator=1',
+  [string]$SiteUrl = 'http://localhost:5173/expo-3d?operator=1&expoData=review',
   [string]$OutputRoot = 'C:\3d\tmp-full-city-clean-pass',
   [string]$VercelProtectionBypass = '',
   [switch]$FixSafe,

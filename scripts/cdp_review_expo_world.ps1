@@ -1,6 +1,6 @@
 param(
   [string]$BrowserJsonUrl = 'http://127.0.0.1:9230/json',
-  [string]$SiteUrl = 'https://www.30sek24.com/expo-3d?operator=1',
+  [string]$SiteUrl = 'https://staging.30sek24.com/expo-3d?operator=1&expoData=review',
   [string]$OutputPath = 'C:\3d\tmp-expo-zone-review.json',
   [string]$VercelProtectionBypass = '',
   [Parameter(Position = 4, ValueFromRemainingArguments = $true)]

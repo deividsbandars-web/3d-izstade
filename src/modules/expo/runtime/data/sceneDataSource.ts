@@ -3,6 +3,7 @@ import { getFrontendRuntimeEnv } from '../../../../config/runtimeEnv';
 import { buildExpoLayoutEngine } from '../../layout-engine';
 import { reportExpoDevError } from '../../lib/devErrorReporter';
 import { adaptBackendScenePayload, normalizeBooth, normalizeCompany, normalizeSector } from './sceneContract';
+import { shouldUseReviewExpoSceneSource } from './sceneDataMode';
 import { buildDevFallbackScene, buildProductionSafeFallbackScene } from './sceneFallbacks';
 import { type ExpoSceneData } from '../../types/scene';
 
@@ -10,12 +11,16 @@ export function getPublicExpoSceneEndpoint() {
   return `${getFrontendRuntimeEnv().apiBaseUrl}/api/expo/scene`;
 }
 
+function isViteDev() {
+  return Boolean(import.meta.env?.DEV);
+}
+
 function isLocalOrigin(value: string) {
   try {
     const url = new URL(value);
     return url.hostname === 'localhost' || url.hostname === '127.0.0.1';
   } catch (error) {
-    if (import.meta.env.DEV) {
+    if (isViteDev()) {
       reportExpoDevError('sceneDataSource.isLocalOrigin', error, { value });
     }
     return false;
@@ -23,7 +28,7 @@ function isLocalOrigin(value: string) {
 }
 
 export function shouldPreferLocalExpoDataSource() {
-  if (!import.meta.env.DEV) {
+  if (!isViteDev()) {
     return false;
   }
 
@@ -31,7 +36,7 @@ export function shouldPreferLocalExpoDataSource() {
 }
 
 function reportBoothPlacementDiagnostics(scene: ExpoSceneData, source: string) {
-  if (!import.meta.env.DEV) {
+  if (!isViteDev()) {
     return;
   }
 
@@ -50,13 +55,16 @@ function reportBoothPlacementDiagnostics(scene: ExpoSceneData, source: string) {
   }
 }
 
-function getDevExpoDataMode() {
+function shouldUseRuntimeReviewSceneSource() {
   if (typeof window === 'undefined') {
-    return 'seeded';
+    return isViteDev();
   }
 
-  const mode = new URLSearchParams(window.location.search).get('expoData');
-  return mode === 'live' ? 'live' : 'seeded';
+  return shouldUseReviewExpoSceneSource({
+    hostname: window.location.hostname,
+    isDev: isViteDev(),
+    search: window.location.search,
+  });
 }
 
 export async function loadExpoSceneFromBackendContract(): Promise<ExpoSceneData> {
@@ -118,7 +126,7 @@ function buildRuntimeSceneFromAdapterPayload(adapterPayload: ExpoBusinessSceneAd
 }
 
 export async function loadExpoSceneForRelease(): Promise<ExpoSceneData> {
-  if (import.meta.env.DEV && getDevExpoDataMode() === 'seeded') {
+  if (shouldUseRuntimeReviewSceneSource()) {
     return buildProductionSafeFallbackScene();
   }
 
@@ -135,17 +143,17 @@ export async function loadExpoSceneForRelease(): Promise<ExpoSceneData> {
   try {
     return await loadExpoSceneFromBackendContract();
   } catch (backendError) {
-    if (import.meta.env.DEV) {
+    if (isViteDev()) {
       reportExpoDevError('sceneDataSource.loadExpoSceneForRelease.backendContract', backendError, {
         endpoint: getPublicExpoSceneEndpoint(),
       });
     }
-    if (import.meta.env.DEV) {
+    if (isViteDev()) {
       console.warn('Expo scene backend contract unavailable.', backendError);
     }
   }
 
-  if (import.meta.env.DEV) {
+  if (isViteDev()) {
     try {
       return await loadExpoSceneFromSupabaseService();
     } catch (supabaseError) {

@@ -14,7 +14,7 @@
     "city:audit:visual": "node scripts/audit-expo-visual-clean.mjs",
     "city:audit:registry": "node scripts/audit-expo-world-registry.mjs",
     "city:audit:atlas": "node scripts/build-expo-city-review-atlas.mjs",
-    "city:clean:full": "powershell -ExecutionPolicy Bypass -File scripts/full_city_clean_pass.ps1 -SiteUrl http://localhost:5173/expo-3d?operator=1 -FixSafe",
+    "city:clean:full": "powershell -ExecutionPolicy Bypass -File scripts/full_city_clean_pass.ps1 -SiteUrl \"http://localhost:5173/expo-3d?operator=1&expoData=review\" -FixSafe",
     "qa:expo-routes": "npx tsx scripts/expo-route-qa-fixtures.ts",
     "lint": "eslint .",
     "preview": "vite preview",

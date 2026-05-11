@@ -156,7 +156,9 @@ export function useExpoOperatorLayer({
     }),
     [canonicalWorldPlan, worldContract.boothPlacements],
   );
-  const dataMode = 'seeded-local';
+  const dataMode = sceneVersion?.includes('production-safe-fallback')
+    ? 'review-seeded'
+    : 'live';
 
   const operator = useExpoOperatorState({
     activeZoneId,

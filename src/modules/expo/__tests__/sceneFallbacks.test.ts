@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { buildExpoWorldContract } from '../world-contract.js';
 import { buildSponsorBoothPresentation } from '../lib/sponsorBoothPresentation.js';
 import { buildDevFallbackScene, buildProductionSafeFallbackScene } from '../lib/sceneFallbacks.js';
 
@@ -13,12 +14,15 @@ assert.ok(productionFallback.companies.every((company) => company.website || com
 const productionPresentations = productionFallback.companies.map((company) => (
   buildSponsorBoothPresentation(company, company.booth, company.boothType)
 ));
+const productionWorld = buildExpoWorldContract(productionFallback);
 
 assert.ok(productionPresentations.every((presentation) => presentation.actions.length > 0));
 assert.ok(productionPresentations.every((presentation) => presentation.videoUrl === null));
 assert.ok(productionPresentations.some((presentation) => presentation.posterUrl !== null));
 assert.ok(productionPresentations.some((presentation) => presentation.logoUrl !== null));
 assert.ok(productionPresentations.some((presentation) => presentation.customInsertUrl !== null));
+assert.ok(productionWorld.boothPlacements.some((placement) => placement.position[0] < -24));
+assert.ok(productionWorld.boothPlacements.some((placement) => placement.position[0] > 24));
 
 const devFallback = buildDevFallbackScene();
 
