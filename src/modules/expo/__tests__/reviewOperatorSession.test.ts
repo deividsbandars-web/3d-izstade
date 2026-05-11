@@ -115,7 +115,7 @@ assert.deepEqual(resolvedRearCampusCenterView.position, [47, 296, -2726]);
 const stadiumFeedAxis = zones.find((zone) => zone.id === 'stadium-feed-axis');
 assert.ok(stadiumFeedAxis);
 const resolvedStadiumFeedAxisView = resolveReviewOperatorZoneStartView(stadiumFeedAxis, new Map([
-  ['rear-campus-bowl-center-deck', { position: [0, 212, -4192] }],
+  ['rear-campus-bowl-center-deck-screen-host-shell', { position: [0, 212, -4192] }],
 ]));
 assert.deepEqual(resolvedStadiumFeedAxisView.lookAt, [0, 348, -4084]);
 assert.deepEqual(resolvedStadiumFeedAxisView.position, [980, 592, -2872]);

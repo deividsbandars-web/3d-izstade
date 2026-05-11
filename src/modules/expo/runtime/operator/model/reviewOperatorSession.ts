@@ -757,7 +757,7 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       camera: {
         lookAtOffset: [0, 136, 108],
         positionOffset: [980, 380, 1320],
-        targetIds: ['rear-campus-bowl-center-deck'],
+        targetIds: ['rear-campus-bowl-center-deck-screen-host-shell'],
       },
       startView: {
         lookAt: [0, 348, -4084],

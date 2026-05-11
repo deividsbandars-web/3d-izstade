@@ -148,8 +148,9 @@ const stadiumAssignment: CityScreenAssignment = {
 
 const stadiumLeftSurface: CityScreenSurface = {
   ...citySurface,
-  id: 'stadium-left-surface-1',
-  position: [-220, 90, -2820],
+  id: 'rear-campus-mega-civic-hall-host-surface',
+  position: [-2490, 168, -3838.1],
+  size: [428, 194, 4.2],
 };
 
 const stadiumLeftSocket: CityScreenSocket = {
@@ -312,8 +313,8 @@ assert.ok(stadiumRegistry.some((entry) => entry.id === stadiumSurface.id && entr
 assert.ok(stadiumRegistry.some((entry) => entry.id === stadiumSocket.id && entry.layer === 'stadium-screen-socket'));
 assert.ok(stadiumRegistry.some((entry) => entry.id === stadiumAssignment.id && entry.layer === 'stadium-screen-assignment'));
 assert.equal(stadiumRegistry.filter((entry) => entry.layer === 'stadium-screen-feed').length, 0);
-assert.ok(stadiumRegistry.some((entry) => entry.id === 'rear-campus-bowl-center-deck' && entry.layer === 'stadium-structure'));
-assert.equal(stadiumRegistry.find((entry) => entry.id === 'rear-campus-bowl-center-deck')?.planningRole, 'screen-host-shell');
+assert.ok(stadiumRegistry.some((entry) => entry.id === 'rear-campus-bowl-center-deck-screen-host-shell' && entry.layer === 'stadium-structure'));
+assert.equal(stadiumRegistry.find((entry) => entry.id === 'rear-campus-bowl-center-deck-screen-host-shell')?.planningRole, 'screen-host-shell');
 assert.ok(stadiumRegistry.some((entry) => entry.id === 'rear-forecourt-1' && entry.layer === 'stadium-plane'));
 assert.equal(stadiumRegistry.find((entry) => entry.id === 'rear-forecourt-1')?.groundOwner, 'stadium');
 assert.equal(stadiumRegistry.find((entry) => entry.id === 'rear-forecourt-1')?.groundRole, 'structural');
@@ -327,8 +328,12 @@ assert.equal(stadiumRegistry.some((entry) => entry.id === 'stadium-bowl' && entr
 assert.ok(stadiumRegistry.some((entry) => entry.id === 'rear-campus-mega-civic-hall' && entry.layer === 'stadium-structure'));
 assert.deepEqual(stadiumRegistry.find((entry) => entry.id === 'rear-campus-mega-civic-hall')?.position, [-2490, 176, -3670]);
 assert.equal(stadiumRegistry.find((entry) => entry.id === 'rear-campus-mega-civic-hall')?.planningRole, 'recovered-large-landmark');
+assert.equal(stadiumRegistry.some((entry) => entry.id === 'rear-campus-mega-civic-hall-screen-host-shell'), true);
 assert.ok(stadiumRegistry.some((entry) => entry.id === 'rear-campus-test-perimeter' && entry.layer === 'stadium-structure'));
 assert.equal(stadiumRegistry.some((entry) => entry.id === 'stadium-axis-center-1180'), false);
+
+const rearCampusRegistryIds = stadiumRegistry.map((entry) => entry.id);
+assert.equal(new Set(rearCampusRegistryIds).size, rearCampusRegistryIds.length);
 
 const requiredBoundedLayers = new Set([
   'city-mass',

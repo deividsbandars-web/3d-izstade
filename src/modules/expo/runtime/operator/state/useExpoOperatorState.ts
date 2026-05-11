@@ -15,6 +15,7 @@ import {
   type WorldObjectLayer,
   type WorldObjectRegistryEntry,
 } from '../../world/inspection/worldObjectRegistry';
+import { resolveRearCampusScreenHostId } from '../../world/rearCampusScreenHosts';
 
 type LayerStates = {
   booths: boolean;
@@ -294,36 +295,18 @@ function resolveScreenHostBinding(screenId: string) {
     return null;
   }
 
-  if (screenId === 'rear-campus-bowl-feed-surface') {
-    return { hostId: 'rear-campus-bowl-center-deck', maxDistanceXZ: 180 };
-  }
-
-  if (screenId.endsWith('-host-surface')) {
+  const rearCampusHostId = resolveRearCampusScreenHostId(screenId);
+  if (rearCampusHostId) {
+    const maxDistanceXZ = screenId === 'rear-campus-bowl-feed-surface'
+      ? 180
+      : screenId.endsWith('-host-surface')
+        ? 260
+        : screenId.endsWith('-rear-campus-feed-surface')
+          ? 220
+          : 90;
     return {
-      hostId: screenId.slice(0, -'-host-surface'.length),
-      maxDistanceXZ: 260,
-    };
-  }
-
-  if (screenId.endsWith('-rear-campus-feed-surface')) {
-    return {
-      hostId: screenId.slice(0, -'-rear-campus-feed-surface'.length),
-      maxDistanceXZ: 220,
-    };
-  }
-
-  const terminalFeedMatch = screenId.match(/^rear-campus-axis-terminal-(left|right)-feed-surface$/);
-  if (terminalFeedMatch) {
-    return {
-      hostId: `rear-campus-terminal-${terminalFeedMatch[1]}`,
-      maxDistanceXZ: 90,
-    };
-  }
-
-  if (screenId.startsWith('rear-campus-') && screenId.endsWith('-feed-surface')) {
-    return {
-      hostId: screenId.slice(0, -'-feed-surface'.length),
-      maxDistanceXZ: 90,
+      hostId: rearCampusHostId,
+      maxDistanceXZ,
     };
   }
 

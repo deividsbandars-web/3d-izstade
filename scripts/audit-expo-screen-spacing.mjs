@@ -128,18 +128,25 @@ function normalizeYawDelta(left, right) {
   return Math.abs(Math.atan2(Math.sin(left - right), Math.cos(left - right)));
 }
 
-function inferHostId(screenId) {
+function inferRearCampusScreenHostId(screenId) {
+  let baseId = null;
   if (screenId === 'rear-campus-bowl-feed-surface') {
-    return 'rear-campus-bowl-center-deck';
+    baseId = 'rear-campus-bowl-center-deck';
+  } else if (screenId.endsWith('-host-surface')) {
+    baseId = screenId.slice(0, -'-host-surface'.length);
+  } else if (screenId.endsWith('-rear-campus-feed-surface')) {
+    baseId = screenId.slice(0, -'-rear-campus-feed-surface'.length);
+  } else if (screenId.startsWith('rear-campus-') && screenId.endsWith('-feed-surface')) {
+    baseId = screenId.slice(0, -'-feed-surface'.length);
   }
-  if (screenId.endsWith('-host-surface')) {
-    return screenId.slice(0, -'-host-surface'.length);
-  }
-  if (screenId.endsWith('-rear-campus-feed-surface')) {
-    return screenId.slice(0, -'-rear-campus-feed-surface'.length);
-  }
-  if (screenId.startsWith('rear-campus-') && screenId.endsWith('-feed-surface')) {
-    return screenId.slice(0, -'-feed-surface'.length);
+
+  return baseId ? `${baseId}-screen-host-shell` : null;
+}
+
+function inferHostId(screenId) {
+  const rearCampusHostId = inferRearCampusScreenHostId(screenId);
+  if (rearCampusHostId) {
+    return rearCampusHostId;
   }
   if (screenId.endsWith('-tower-ribbon')) {
     return screenId.slice(0, -'-tower-ribbon'.length);

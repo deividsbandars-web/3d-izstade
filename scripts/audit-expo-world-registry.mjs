@@ -49,37 +49,39 @@ const GROUND_DETAIL_MAX_OPACITY = 0.12;
 const STRUCTURAL_GROUND_MAX_OPACITY = 0.18;
 const VALID_GROUND_OWNERS = new Set(['city', 'stadium', 'transition']);
 
-function resolveScreenHostBinding(screenId) {
+function resolveRearCampusScreenHostId(screenId) {
+  let baseId = null;
   if (screenId === 'rear-campus-bowl-feed-surface') {
-    return { hostId: 'rear-campus-bowl-center-deck', maxDistanceXZ: 180 };
+    baseId = 'rear-campus-bowl-center-deck';
+  } else if (screenId.endsWith('-host-surface')) {
+    baseId = screenId.slice(0, -'-host-surface'.length);
+  } else if (screenId.endsWith('-rear-campus-feed-surface')) {
+    baseId = screenId.slice(0, -'-rear-campus-feed-surface'.length);
+  } else {
+    const terminalFeedMatch = screenId.match(/^rear-campus-axis-terminal-(left|right)-feed-surface$/);
+    if (terminalFeedMatch) {
+      baseId = `rear-campus-terminal-${terminalFeedMatch[1]}`;
+    } else if (screenId.startsWith('rear-campus-') && screenId.endsWith('-feed-surface')) {
+      baseId = screenId.slice(0, -'-feed-surface'.length);
+    }
   }
 
-  if (screenId.endsWith('-host-surface')) {
-    return {
-      hostId: screenId.slice(0, -'-host-surface'.length),
-      maxDistanceXZ: 260,
-    };
-  }
+  return baseId ? `${baseId}-screen-host-shell` : null;
+}
 
-  if (screenId.endsWith('-rear-campus-feed-surface')) {
+function resolveScreenHostBinding(screenId) {
+  const rearCampusHostId = resolveRearCampusScreenHostId(screenId);
+  if (rearCampusHostId) {
+    const maxDistanceXZ = screenId === 'rear-campus-bowl-feed-surface'
+      ? 180
+      : screenId.endsWith('-host-surface')
+        ? 260
+        : screenId.endsWith('-rear-campus-feed-surface')
+          ? 220
+          : 90;
     return {
-      hostId: screenId.slice(0, -'-rear-campus-feed-surface'.length),
-      maxDistanceXZ: 220,
-    };
-  }
-
-  const terminalFeedMatch = screenId.match(/^rear-campus-axis-terminal-(left|right)-feed-surface$/);
-  if (terminalFeedMatch) {
-    return {
-      hostId: `rear-campus-terminal-${terminalFeedMatch[1]}`,
-      maxDistanceXZ: 90,
-    };
-  }
-
-  if (screenId.startsWith('rear-campus-') && screenId.endsWith('-feed-surface')) {
-    return {
-      hostId: screenId.slice(0, -'-feed-surface'.length),
-      maxDistanceXZ: 90,
+      hostId: rearCampusHostId,
+      maxDistanceXZ,
     };
   }
 
@@ -226,13 +228,28 @@ function isMediaWallScreenHost(entry) {
   return entry?.id?.startsWith('screen-') && entry.id.endsWith('-host');
 }
 
+function resolveRearCampusScreenHostShellBaseId(entry) {
+  return entry?.planningRole === 'screen-host-shell' && typeof entry.id === 'string' && entry.id.endsWith('-screen-host-shell')
+    ? entry.id.slice(0, -'-screen-host-shell'.length)
+    : null;
+}
+
 function isAllowedScreenHostFacadeOverlap(left, right) {
   const leftScreenHost = isMediaWallScreenHost(left);
   const rightScreenHost = isMediaWallScreenHost(right);
   if (leftScreenHost && rightScreenHost) {
     return false;
   }
-  return leftScreenHost || rightScreenHost;
+  if (leftScreenHost || rightScreenHost) {
+    return true;
+  }
+
+  const leftRearCampusHostBaseId = resolveRearCampusScreenHostShellBaseId(left);
+  const rightRearCampusHostBaseId = resolveRearCampusScreenHostShellBaseId(right);
+  if (leftRearCampusHostBaseId && rightRearCampusHostBaseId) {
+    return false;
+  }
+  return leftRearCampusHostBaseId === right.id || rightRearCampusHostBaseId === left.id;
 }
 
 function overlapVolume(a, b) {

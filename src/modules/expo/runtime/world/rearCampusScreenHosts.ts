@@ -8,7 +8,7 @@ export type RearCampusScreenHostShell = {
   surfaceId: string;
 };
 
-export function resolveRearCampusScreenHostId(surfaceId: string): string | null {
+export function resolveRearCampusScreenHostBaseId(surfaceId: string): string | null {
   if (surfaceId === 'rear-campus-bowl-feed-surface') {
     return 'rear-campus-bowl-center-deck';
   }
@@ -31,6 +31,11 @@ export function resolveRearCampusScreenHostId(surfaceId: string): string | null 
   }
 
   return null;
+}
+
+export function resolveRearCampusScreenHostId(surfaceId: string): string | null {
+  const baseId = resolveRearCampusScreenHostBaseId(surfaceId);
+  return baseId ? `${baseId}-screen-host-shell` : null;
 }
 
 export function buildRearCampusScreenHostShells(
