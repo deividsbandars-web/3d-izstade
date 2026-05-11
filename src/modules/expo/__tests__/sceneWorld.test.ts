@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { ZoneSystem } from '../../../modules/city/ZoneSystem.js';
 import { buildSponsorBoulevardPlan, rankCompaniesForBoulevard, UNASSIGNED_SECTOR_ID } from '../lib/boulevardLayout.js';
+import { buildCanonicalWorldPlanFromWorldContract } from '../runtime/planning/index.js';
 import { buildCuratedCityPlan, buildExpoGenerationSignature, buildExpoWorldDiagnostics, createDistrictBoothZone, replaceDistrictBoothZones } from '../sceneWorld.js';
 import type { ExpoSceneCompany, ExpoSceneSector } from '../types/scene.js';
 import { buildExpoPlayBoundsFromPlacements, buildExpoWalkRegionContract, isPointWithinExpoWalkRegions } from '../walk-region.js';
@@ -87,6 +88,23 @@ assert.ok(Math.abs(sector3GatewayZ - sector2GatewayZ) <= 760);
 
 const multiWorld = buildExpoWorldContract(sponsorData);
 const multiPlacements = multiWorld.boothPlacements;
+const multiCanonicalPlan = buildCanonicalWorldPlanFromWorldContract(multiWorld);
+const rearCampusPlan = multiCanonicalPlan.zones.find((zone) => zone.id === 'rear-campus');
+assert.ok(rearCampusPlan);
+assert.deepEqual(
+  rearCampusPlan.screenSurfaces
+    .filter((surface) => /^rear-campus-axis-(front|gallery|kiosk)-/.test(surface.id) || /^rear-campus-axis-terminal-/.test(surface.id))
+    .map((surface) => surface.id),
+  [],
+);
+assert.ok(rearCampusPlan.screenSurfaces.some((surface) => surface.id === 'rear-campus-event-pavilion-left-feed-surface'));
+assert.ok(rearCampusPlan.screenSurfaces.some((surface) => surface.id === 'rear-campus-event-pavilion-right-feed-surface'));
+assert.deepEqual(
+  multiCanonicalPlan.filteredScreenSurfaces
+    .filter((surface) => /-(mid|support)-tower-/.test(surface.id))
+    .map((surface) => surface.id),
+  [],
+);
 assert.equal(multiWorld.districtPrograms.length, 3);
 assert.ok(multiWorld.qualityProfileInputs.districtProgramNodeCount >= multiWorld.districtPrograms.length * 6);
 assert.ok(multiWorld.qualityProfileInputs.districtProgramTargetCount >= multiWorld.qualityProfileInputs.districtProgramNodeCount);

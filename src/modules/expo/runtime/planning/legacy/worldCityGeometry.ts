@@ -1363,11 +1363,9 @@ export function buildCleanTowerLandmarks(
 export function buildTowerScreenSurfaces(towers: CityTower[]): CityScreenSurface[] {
   return towers.flatMap((tower) => {
     const isHeroTower = tower.role === 'hero';
-    const isMidTower = tower.role === 'mid';
-    const isSupportTower = tower.role === 'support';
     const isLeftSide = tower.position[0] < 0;
 
-    if (!isHeroTower && !isMidTower && !isSupportTower) {
+    if (!isHeroTower) {
       return [];
     }
 
@@ -1376,9 +1374,8 @@ export function buildTowerScreenSurfaces(towers: CityTower[]): CityScreenSurface
       Math.sin(yaw) * distance,
       Math.cos(yaw) * distance,
     ]);
-    const [heroRibbonOffsetX, heroRibbonOffsetZ] = offsetAlongYaw(isHeroTower ? 38.5 : isMidTower ? 22.4 : 11.4);
-    const [crownOffsetX, crownOffsetZ] = offsetAlongYaw(isHeroTower ? 18.8 : isMidTower ? 10.8 : 6.1);
-    const [supportOffsetX, supportOffsetZ] = offsetAlongYaw(tower.role === 'outer-support' ? 3.6 : 4.1);
+    const [heroRibbonOffsetX, heroRibbonOffsetZ] = offsetAlongYaw(38.5);
+    const [crownOffsetX, crownOffsetZ] = offsetAlongYaw(18.8);
     const ribbonSurface: CityScreenSurface = {
       id: `${tower.id}-tower-ribbon`,
       position: [
@@ -1388,74 +1385,32 @@ export function buildTowerScreenSurfaces(towers: CityTower[]): CityScreenSurface
       ],
       rotation: [0, yaw, 0],
       size: [
-        isHeroTower ? 44 : 38,
-        isHeroTower ? 104 : 92,
+        44,
+        104,
         2,
       ],
       color: '#091320',
-      glowColor: isHeroTower ? tower.crownColor : '#7dd3fc',
+      glowColor: tower.crownColor,
       role: 'tower-side',
       type: 'tower-side',
     };
 
-    const crownBeaconSurface = isHeroTower
-      ? {
-          id: `${tower.id}-crown-beacon`,
-          position: [
-            tower.position[0] + crownOffsetX,
-            tower.baseSize[1] + (tower.upperSize[1] * 0.72),
-            tower.position[2] + crownOffsetZ,
-          ],
-          rotation: [0, yaw, 0],
-          size: [26, 34, 1.8],
-          color: '#0b1421',
-          glowColor: tower.crownColor,
-          role: 'tower-crown' as const,
-          type: 'tower-crown' as const,
-        } satisfies CityScreenSurface
-      : isMidTower
-        ? {
-            id: `${tower.id}-crown-beacon`,
-            position: [
-              tower.position[0] + crownOffsetX,
-              tower.baseSize[1] + (tower.upperSize[1] * 0.7),
-              tower.position[2] + crownOffsetZ,
-            ],
-            rotation: [0, yaw, 0],
-            size: [20, 24, 1.7],
-            color: '#0b1421',
-            glowColor: '#93c5fd',
-            role: 'tower-crown' as const,
-            type: 'tower-crown' as const,
-          } satisfies CityScreenSurface
-        : null;
+    const crownBeaconSurface = {
+      id: `${tower.id}-crown-beacon`,
+      position: [
+        tower.position[0] + crownOffsetX,
+        tower.baseSize[1] + (tower.upperSize[1] * 0.72),
+        tower.position[2] + crownOffsetZ,
+      ],
+      rotation: [0, yaw, 0],
+      size: [26, 34, 1.8],
+      color: '#0b1421',
+      glowColor: tower.crownColor,
+      role: 'tower-crown' as const,
+      type: 'tower-crown' as const,
+    } satisfies CityScreenSurface;
 
-    const supportRibbonSurface: CityScreenSurface | null = isSupportTower
-      ? {
-          id: `${tower.id}-tower-ribbon`,
-          position: [
-            tower.position[0] + supportOffsetX,
-            tower.position[1] + (tower.baseSize[1] * 0.14),
-            tower.position[2] + supportOffsetZ,
-          ],
-          rotation: [0, yaw, 0],
-          size: [
-            tower.role === 'outer-support' ? 16 : 20,
-            tower.role === 'outer-support' ? 36 : 48,
-            1.9,
-          ],
-          color: '#0a1420',
-          glowColor: '#bfdbfe',
-          role: 'tower-side' as const,
-          type: 'tower-side' as const,
-        } satisfies CityScreenSurface
-      : null;
-
-    if (isSupportTower) {
-      return supportRibbonSurface ? [supportRibbonSurface] : [];
-    }
-
-    return crownBeaconSurface ? [ribbonSurface, crownBeaconSurface] : [ribbonSurface];
+    return [ribbonSurface, crownBeaconSurface];
   });
 }
 

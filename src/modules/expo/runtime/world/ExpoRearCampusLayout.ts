@@ -65,6 +65,14 @@ const REVEALED_REAR_CAMPUS_FORECOURT_IDS = new Set<string>();
 const HIDDEN_REAR_CAMPUS_PAVILION_IDS = new Set([
   'rear-campus-side-pavilion-left-rear',
   'rear-campus-side-pavilion-right-rear',
+  'rear-campus-axis-gallery-left',
+  'rear-campus-axis-gallery-right',
+  'rear-campus-axis-front-left',
+  'rear-campus-axis-front-right',
+  'rear-campus-axis-kiosk-left',
+  'rear-campus-axis-kiosk-right',
+  'rear-campus-terminal-left',
+  'rear-campus-terminal-right',
 ]);
 
 const HIDDEN_REAR_CAMPUS_TOWER_IDS = new Set([
@@ -178,6 +186,18 @@ export function buildRearCampusPerimeterConnectors(campusCenterZ: number): Campu
       id: 'rear-campus-front-right-connector',
       position: [frontConnectorCenterX, wallHeight * 0.5, frontWallCenterZ],
       size: [frontConnectorWidth, wallHeight, wallThickness],
+      accent: 'wall',
+    },
+    {
+      id: 'rear-campus-approach-guide-left',
+      position: [-286, 9, campusCenterZ + 1376],
+      size: [24, 18, 520],
+      accent: 'wall',
+    },
+    {
+      id: 'rear-campus-approach-guide-right',
+      position: [286, 9, campusCenterZ + 1376],
+      size: [24, 18, 520],
       accent: 'wall',
     },
   ];

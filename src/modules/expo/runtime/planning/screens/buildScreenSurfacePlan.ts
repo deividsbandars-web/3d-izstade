@@ -2,7 +2,7 @@ import {
   buildMediaWallSurfaces,
   buildTowerScreenSurfaces,
 } from '../legacy/worldCityGeometry';
-import { buildRearCampusSidePavilions, resolveRearCampusAnchoredZ } from '../../world/ExpoRearCampusLayout';
+import { buildVisibleRearCampusSidePavilions, resolveRearCampusAnchoredZ } from '../../world/ExpoRearCampusLayout';
 import type {
   CanonicalPrimitive,
   CityScreenSurface,
@@ -471,7 +471,7 @@ function buildRearCampusScreenSurfaces(
       type: 'wall',
     }));
 
-  const pavilionById = new Map(buildRearCampusSidePavilions(campusCenterZ).map((pavilion) => [pavilion.id, pavilion]));
+  const pavilionById = new Map(buildVisibleRearCampusSidePavilions(campusCenterZ).map((pavilion) => [pavilion.id, pavilion]));
   const buildMegaHostSurface = (args: {
     id: string;
     position: [number, number, number];
