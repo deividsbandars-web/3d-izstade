@@ -8,6 +8,7 @@ import { buildStadiumWorldObjectRegistry } from './inspection/worldObjectRegistr
 import { WorldCityScreenAssignments } from './WorldCityScreenAssignments';
 import { WorldCityScreenSockets } from './WorldCityScreenSockets';
 import { WorldCityScreenSurfaces } from './WorldCityScreenSurfaces';
+import { ExpoRearCampusRecoveredStructures } from './ExpoRearCampusRecoveredStructures';
 import { buildRearCampusScreenHostShells } from './rearCampusScreenHosts';
 import {
   ColliderMaterial,
@@ -127,6 +128,12 @@ export function ExpoRearCampus({
         ))}
       </group>
 
+      <ExpoRearCampusRecoveredStructures
+        accent={accent}
+        campusCenterZ={campusCenterZ}
+        enableHeavyShadows={false}
+      />
+
       <group name="rear-campus-screen-host-shells">
         {screenHostShells.map((shell) => (
           <mesh
@@ -177,4 +184,3 @@ export function ExpoRearCampus({
     </group>
   );
 }
-

@@ -18,6 +18,10 @@ import {
 } from '../WorldGroundLayout';
 import { buildRearCampusScreenHostShells } from '../rearCampusScreenHosts';
 import {
+  RECOVERED_REAR_CAMPUS_STRUCTURES,
+  resolveRecoveredRearCampusRegistryPosition,
+} from '../rearCampusRecoveredStructures';
+import {
   buildExpoBoothLocalFootprint,
   type ExpoBoothLocalFootprint,
 } from '../../../../../shared/expo/lib/boothLocalFootprint';
@@ -391,11 +395,31 @@ function buildStadiumScreenHostShellEntries(
   }));
 }
 
+function buildRecoveredStadiumStructureEntries(campusCenterZ: number): WorldObjectRegistryEntry[] {
+  return RECOVERED_REAR_CAMPUS_STRUCTURES.map((structure) => createEntry({
+    diagnosticOwners: [
+      'scripts/audit-expo-structure-recovery.mjs',
+      'scripts/audit-expo-world-registry.mjs',
+    ],
+    id: structure.id,
+    interactionOwner: null,
+    layer: 'stadium-structure',
+    planningRole: 'recovered-large-landmark',
+    planningZone: 'rear-campus',
+    position: resolveRecoveredRearCampusRegistryPosition(structure, campusCenterZ),
+    rotation: [0, 0, 0],
+    safeEditSeam: 'src/modules/expo/runtime/world/ExpoRearCampusRecoveredStructures.tsx',
+    size: structure.size,
+    sourceFile: 'src/modules/expo/runtime/world/ExpoRearCampusRecoveredStructures.tsx',
+    sourceFunction: 'ExpoRearCampusRecoveredStructures',
+    sourceKind: 'recovered-rear-campus-structure',
+  }));
+}
+
 export function buildStadiumWorldObjectRegistry({
   campusCenterZ,
   rearCampusPlan,
 }: BuildStadiumWorldObjectRegistryArgs): WorldObjectRegistryEntry[] {
-  void campusCenterZ;
   const rearCampus = rearCampusPlan.zoneExtension?.rearCampus;
 
   return [
@@ -461,6 +485,7 @@ export function buildStadiumWorldObjectRegistry({
       sourceFunction: 'buildRearCampusZonePlan',
       sourceKind: 'rear-campus-perimeter-connector',
     })),
+    ...buildRecoveredStadiumStructureEntries(campusCenterZ),
     ...buildStadiumScreenHostShellEntries(rearCampusPlan.screenSurfaces),
     ...rearCampusPlan.screenSurfaces.map((surface) => createEntry({
       diagnosticOwners: [

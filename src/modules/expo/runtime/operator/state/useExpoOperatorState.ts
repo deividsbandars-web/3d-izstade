@@ -290,6 +290,10 @@ function resolveInspectableIdCandidates(
 }
 
 function resolveScreenHostBinding(screenId: string) {
+  if (screenId.endsWith('-host')) {
+    return null;
+  }
+
   if (screenId === 'rear-campus-bowl-feed-surface') {
     return { hostId: 'rear-campus-bowl-center-deck', maxDistanceXZ: 180 };
   }

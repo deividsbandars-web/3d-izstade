@@ -1161,7 +1161,7 @@ export function buildMediaWallSurfaces(districtCount: number, districtStride: nu
       },
       {
         id: `screen-array-left-upper-${districtIndex}`,
-        position: [-960, 142, baseZ - 18],
+        position: [-1470, 142, baseZ - 18],
         rotation: [0, inwardYawLeft, 0],
         size: [104, 116, 2.8],
         color: '#091320',
@@ -1181,7 +1181,7 @@ export function buildMediaWallSurfaces(districtCount: number, districtStride: nu
       },
       {
         id: `screen-array-right-upper-${districtIndex}`,
-        position: [960, 138, baseZ - 44],
+        position: [1470, 138, baseZ - 44],
         rotation: [0, inwardYawRight, 0],
         size: [104, 116, 2.8],
         color: '#091320',

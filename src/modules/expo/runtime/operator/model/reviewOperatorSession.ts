@@ -531,6 +531,48 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       ],
     },
     {
+      expectedKeyObjectIds: ['screen-array-left-upper-0-host'],
+      expectedVisibleLayers: ['city-mass'],
+      id: 'array-upper-left-direct',
+      intent: 'left-upper-array-direct-hit-review',
+      label: 'Array Upper Left Direct',
+      camera: {
+        lookAtOffset: [0, 18, 0],
+        positionOffset: [280, 96, 300],
+        targetIds: ['screen-array-left-upper-0'],
+      },
+      startView: {
+        lookAt: [-1470, 160, -232],
+        position: [-1190, 238, 68],
+        source: 'arrival-main',
+      },
+      watchItems: [
+        'left upper array direct target hit',
+        'outer screen host separation',
+      ],
+    },
+    {
+      expectedKeyObjectIds: ['screen-array-right-upper-0-host'],
+      expectedVisibleLayers: ['city-mass'],
+      id: 'array-upper-right-direct',
+      intent: 'right-upper-array-direct-hit-review',
+      label: 'Array Upper Right Direct',
+      camera: {
+        lookAtOffset: [0, 18, 0],
+        positionOffset: [-280, 96, 300],
+        targetIds: ['screen-array-right-upper-0'],
+      },
+      startView: {
+        lookAt: [1470, 156, -258],
+        position: [1190, 234, 42],
+        source: 'arrival-main',
+      },
+      watchItems: [
+        'right upper array direct target hit',
+        'outer screen host separation',
+      ],
+    },
+    {
       expectedKeyObjectIds: [],
       expectedVisibleLayers: ['booth'],
       id: 'sponsor-boulevard-left',

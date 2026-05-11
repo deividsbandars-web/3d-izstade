@@ -15,7 +15,7 @@ function assertVectorClose(actual: number[], expected: number[]) {
   });
 }
 
-assert.equal(zones.length, 34);
+assert.equal(zones.length, 36);
 assert.equal(DEFAULT_REVIEW_OPERATOR_ZONE_ID, 'arrival-gate');
 assert.deepEqual(zoneIds, [
   'arrival-gate',
@@ -33,6 +33,8 @@ assert.deepEqual(zoneIds, [
   'tower-cluster-reverse-wide',
   'array-band',
   'array-band-south',
+  'array-upper-left-direct',
+  'array-upper-right-direct',
   'sponsor-boulevard-left',
   'sponsor-boulevard-left-close',
   'sponsor-boulevard-right',
@@ -60,6 +62,10 @@ assert.ok(zones.every((zone) => zone.startView.position.length === 3));
 assert.ok(zones.every((zone) => zone.startView.lookAt.length === 3));
 
 const mediaWallTargetsById = new Map<string, string[]>();
+const allowedDuplicateMediaWallTargetZones = new Set([
+  'array-upper-left-direct',
+  'array-upper-right-direct',
+]);
 zones.forEach((zone) => {
   zone.expectedKeyObjectIds
     .filter((id) => /^screen-(marquee|array|spine)-/.test(id))
@@ -69,7 +75,7 @@ zones.forEach((zone) => {
 });
 assert.deepEqual(
   [...mediaWallTargetsById.entries()]
-    .filter(([, targetZones]) => targetZones.length > 1)
+    .filter(([, targetZones]) => targetZones.filter((zoneId) => !allowedDuplicateMediaWallTargetZones.has(zoneId)).length > 1)
     .map(([id, targetZones]) => ({ id, zones: targetZones })),
   [],
 );
