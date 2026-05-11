@@ -121,6 +121,8 @@ export function buildRearCampusPerimeterConnectors(campusCenterZ: number): Campu
   const rearOuterZ = campusCenterZ - 2140;
   const wallThickness = 20;
   const wallHeight = 32;
+  const cornerCapFootprint = 46;
+  const cornerCapHeight = 48;
   const innerHalfWidth = outerHalfWidth - wallThickness;
   const wallCenterX = outerHalfWidth - (wallThickness * 0.5);
   const rearWallCenterZ = rearOuterZ + (wallThickness * 0.5);
@@ -142,15 +144,15 @@ export function buildRearCampusPerimeterConnectors(campusCenterZ: number): Campu
     },
     {
       id: 'rear-campus-perimeter-left-rear-corner',
-      position: [-wallCenterX, wallHeight * 0.5, rearWallCenterZ],
-      size: [wallThickness, wallHeight, wallThickness],
-      accent: 'wall',
+      position: [-wallCenterX, cornerCapHeight * 0.5, rearWallCenterZ],
+      size: [cornerCapFootprint, cornerCapHeight, cornerCapFootprint],
+      accent: 'cap',
     },
     {
       id: 'rear-campus-perimeter-right-rear-corner',
-      position: [wallCenterX, wallHeight * 0.5, rearWallCenterZ],
-      size: [wallThickness, wallHeight, wallThickness],
-      accent: 'wall',
+      position: [wallCenterX, cornerCapHeight * 0.5, rearWallCenterZ],
+      size: [cornerCapFootprint, cornerCapHeight, cornerCapFootprint],
+      accent: 'cap',
     },
     {
       id: 'rear-campus-perimeter-left-wall',
@@ -166,15 +168,15 @@ export function buildRearCampusPerimeterConnectors(campusCenterZ: number): Campu
     },
     {
       id: 'rear-campus-perimeter-left-front-corner',
-      position: [-wallCenterX, wallHeight * 0.5, frontWallCenterZ],
-      size: [wallThickness, wallHeight, wallThickness],
-      accent: 'wall',
+      position: [-wallCenterX, cornerCapHeight * 0.5, frontWallCenterZ],
+      size: [cornerCapFootprint, cornerCapHeight, cornerCapFootprint],
+      accent: 'cap',
     },
     {
       id: 'rear-campus-perimeter-right-front-corner',
-      position: [wallCenterX, wallHeight * 0.5, frontWallCenterZ],
-      size: [wallThickness, wallHeight, wallThickness],
-      accent: 'wall',
+      position: [wallCenterX, cornerCapHeight * 0.5, frontWallCenterZ],
+      size: [cornerCapFootprint, cornerCapHeight, cornerCapFootprint],
+      accent: 'cap',
     },
     {
       id: 'rear-campus-front-left-connector',
