@@ -109,8 +109,8 @@ assert.ok(rearCampusCenter);
 const resolvedRearCampusCenterView = resolveReviewOperatorZoneStartView(rearCampusCenter, new Map([
   ['rear-campus-stage-monolith-canopy-host-surface', { position: [47, 126, -3266] }],
 ]));
-assert.deepEqual(resolvedRearCampusCenterView.lookAt, [47, 226, -3266]);
-assert.deepEqual(resolvedRearCampusCenterView.position, [267, 386, -2926]);
+assert.deepEqual(resolvedRearCampusCenterView.lookAt, [47, 212, -3266]);
+assert.deepEqual(resolvedRearCampusCenterView.position, [47, 296, -2726]);
 
 const stadiumFeedAxis = zones.find((zone) => zone.id === 'stadium-feed-axis');
 assert.ok(stadiumFeedAxis);

@@ -730,13 +730,13 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       intent: 'rear-campus-center-review',
       label: 'Rear Campus Center',
       camera: {
-        lookAtOffset: [0, 100, 0],
-        positionOffset: [220, 260, 340],
+        lookAtOffset: [0, 86, 0],
+        positionOffset: [0, 170, 540],
         targetIds: ['rear-campus-stage-monolith-canopy-host-surface'],
       },
       startView: {
-        lookAt: [47, 252, -3266],
-        position: [407, 316, -2626],
+        lookAt: [47, 212, -3250],
+        position: [47, 296, -2710],
         source: 'arrival-main',
       },
       watchItems: [
