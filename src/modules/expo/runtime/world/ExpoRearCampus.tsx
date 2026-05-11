@@ -41,6 +41,26 @@ const EMPTY_PLANNING_GEOMETRY = {
   towers: [],
 };
 
+function resolvePerimeterMaterial(connector: { accent: string; id: string }) {
+  switch (connector.accent) {
+    case 'cap':
+      return { color: '#98a4ad', emissiveIntensity: 0.03, metalness: 0.06, roughness: 0.66 };
+    case 'rail':
+      return { color: '#a7b3bc', emissiveIntensity: 0.032, metalness: 0.07, roughness: 0.62 };
+    case 'post':
+      return { color: '#8f9ca6', emissiveIntensity: 0.026, metalness: 0.055, roughness: 0.68 };
+    case 'gate':
+      return { color: '#aeb9c2', emissiveIntensity: 0.038, metalness: 0.08, roughness: 0.58 };
+    default:
+      return {
+        color: connector.id.includes('rear-wall') ? '#81909a' : '#798893',
+        emissiveIntensity: connector.id.includes('rear-wall') ? 0.022 : 0.018,
+        metalness: 0.05,
+        roughness: connector.id.includes('rear-wall') ? 0.78 : 0.8,
+      };
+  }
+}
+
 export function ExpoRearCampus({
   boothPlacements,
   playerPosition,
@@ -109,23 +129,26 @@ export function ExpoRearCampus({
   return (
     <group name="expo-rear-campus">
       <group name="rear-campus-perimeter-shell">
-        {perimeterConnectors.map((connector) => (
-          <mesh
-            key={connector.id}
-            name={`stadium-structure:${connector.id}`}
-            position={connector.position}
-            receiveShadow
-          >
-            <boxGeometry args={connector.size} />
-            <meshStandardMaterial
-              color={connector.accent === 'cap' ? '#98a4ad' : connector.id.includes('rear-wall') ? '#81909a' : '#798893'}
-              emissive={accent}
-              emissiveIntensity={connector.accent === 'cap' ? 0.03 : connector.id.includes('rear-wall') ? 0.022 : 0.018}
-              roughness={connector.accent === 'cap' ? 0.66 : connector.id.includes('rear-wall') ? 0.78 : 0.8}
-              metalness={connector.accent === 'cap' ? 0.06 : 0.05}
-            />
-          </mesh>
-        ))}
+        {perimeterConnectors.map((connector) => {
+          const material = resolvePerimeterMaterial(connector);
+          return (
+            <mesh
+              key={connector.id}
+              name={`stadium-structure:${connector.id}`}
+              position={connector.position}
+              receiveShadow
+            >
+              <boxGeometry args={connector.size} />
+              <meshStandardMaterial
+                color={material.color}
+                emissive={accent}
+                emissiveIntensity={material.emissiveIntensity}
+                roughness={material.roughness}
+                metalness={material.metalness}
+              />
+            </mesh>
+          );
+        })}
       </group>
 
       <ExpoRearCampusRecoveredStructures

@@ -23,7 +23,7 @@ export type CampusConnector = {
   id: string;
   position: [number, number, number];
   size: [number, number, number];
-  accent: 'wall' | 'cap';
+  accent: 'wall' | 'cap' | 'rail' | 'post' | 'gate';
 };
 
 const HIDDEN_REAR_CAMPUS_FORECOURT_IDS = new Set([
@@ -123,6 +123,15 @@ export function buildRearCampusPerimeterConnectors(campusCenterZ: number): Campu
   const wallHeight = 32;
   const cornerCapFootprint = 46;
   const cornerCapHeight = 48;
+  const railHeight = 10;
+  const railY = wallHeight + (railHeight * 0.5);
+  const railThickness = 14;
+  const postFootprint = 42;
+  const postHeight = 72;
+  const postY = postHeight * 0.5;
+  const gatePylonFootprint = 58;
+  const gatePylonHeight = 96;
+  const gatePylonY = gatePylonHeight * 0.5;
   const innerHalfWidth = outerHalfWidth - wallThickness;
   const wallCenterX = outerHalfWidth - (wallThickness * 0.5);
   const rearWallCenterZ = rearOuterZ + (wallThickness * 0.5);
@@ -134,6 +143,19 @@ export function buildRearCampusPerimeterConnectors(campusCenterZ: number): Campu
   const frontConnectorInnerX = 1720;
   const frontConnectorWidth = innerHalfWidth - frontConnectorInnerX;
   const frontConnectorCenterX = frontConnectorInnerX + (frontConnectorWidth * 0.5);
+  const postInteriorOffset = (wallThickness * 0.5) + (postFootprint * 0.5) + 6;
+  const rearPostZ = rearWallCenterZ + postInteriorOffset;
+  const frontPostZ = frontWallCenterZ - postInteriorOffset;
+  const sidePostAbsX = wallCenterX - postInteriorOffset;
+  const rearPostXs = [-2280, -1520, -760, 0, 760, 1520, 2280];
+  const sidePostZs = [
+    rearOuterZ + 760,
+    rearOuterZ + 1520,
+    campusCenterZ,
+    frontOuterZ - 1520,
+    frontOuterZ - 760,
+  ];
+  const gatePylonAbsX = frontConnectorInnerX - (gatePylonFootprint * 0.5) - 8;
 
   return [
     {
@@ -201,6 +223,68 @@ export function buildRearCampusPerimeterConnectors(campusCenterZ: number): Campu
       position: [286, 9, campusCenterZ + 1376],
       size: [24, 18, 520],
       accent: 'wall',
+    },
+    {
+      id: 'rear-campus-perimeter-rear-wall-rail',
+      position: [0, railY, rearWallCenterZ],
+      size: [innerHalfWidth * 2, railHeight, railThickness],
+      accent: 'rail',
+    },
+    {
+      id: 'rear-campus-perimeter-left-wall-rail',
+      position: [-wallCenterX, railY, sideWallCenterZ],
+      size: [railThickness, railHeight, sideWallDepth],
+      accent: 'rail',
+    },
+    {
+      id: 'rear-campus-perimeter-right-wall-rail',
+      position: [wallCenterX, railY, sideWallCenterZ],
+      size: [railThickness, railHeight, sideWallDepth],
+      accent: 'rail',
+    },
+    {
+      id: 'rear-campus-front-left-connector-rail',
+      position: [-frontConnectorCenterX, railY, frontWallCenterZ],
+      size: [frontConnectorWidth, railHeight, railThickness],
+      accent: 'rail',
+    },
+    {
+      id: 'rear-campus-front-right-connector-rail',
+      position: [frontConnectorCenterX, railY, frontWallCenterZ],
+      size: [frontConnectorWidth, railHeight, railThickness],
+      accent: 'rail',
+    },
+    ...rearPostXs.map((x, index): CampusConnector => ({
+      id: `rear-campus-perimeter-rear-post-${index}`,
+      position: [x, postY, rearPostZ],
+      size: [postFootprint, postHeight, postFootprint],
+      accent: 'post',
+    })),
+    ...sidePostZs.flatMap((z, index): CampusConnector[] => ([
+      {
+        id: `rear-campus-perimeter-left-post-${index}`,
+        position: [-sidePostAbsX, postY, z],
+        size: [postFootprint, postHeight, postFootprint],
+        accent: 'post',
+      },
+      {
+        id: `rear-campus-perimeter-right-post-${index}`,
+        position: [sidePostAbsX, postY, z],
+        size: [postFootprint, postHeight, postFootprint],
+        accent: 'post',
+      },
+    ])),
+    {
+      id: 'rear-campus-front-left-gate-pylon',
+      position: [-gatePylonAbsX, gatePylonY, frontPostZ],
+      size: [gatePylonFootprint, gatePylonHeight, gatePylonFootprint],
+      accent: 'gate',
+    },
+    {
+      id: 'rear-campus-front-right-gate-pylon',
+      position: [gatePylonAbsX, gatePylonY, frontPostZ],
+      size: [gatePylonFootprint, gatePylonHeight, gatePylonFootprint],
+      accent: 'gate',
     },
   ];
 }

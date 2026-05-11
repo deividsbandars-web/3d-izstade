@@ -113,7 +113,7 @@ export type RearCampusLandmarkTower = {
 };
 
 export type RearCampusPerimeterConnector = {
-  accent: 'wall' | 'cap';
+  accent: 'wall' | 'cap' | 'rail' | 'post' | 'gate';
   id: string;
   position: [number, number, number];
   size: [number, number, number];

@@ -86,6 +86,21 @@ function buildRearCampusTower(tower: RearCampusLandmarkTower, crownColor: string
   };
 }
 
+function resolvePerimeterMassColor(accent: string) {
+  switch (accent) {
+    case 'cap':
+      return '#98a4ad';
+    case 'rail':
+      return '#a7b3bc';
+    case 'post':
+      return '#8f9ca6';
+    case 'gate':
+      return '#aeb9c2';
+    default:
+      return '#81909a';
+  }
+}
+
 export function buildRearCampusZonePlan(context: ExpoZonePlannerContext) {
   const rule = getZoneRule('rear-campus');
   const metrics = buildRearCampusMetrics(context.inputs.boothPlacements);
@@ -141,7 +156,7 @@ export function buildRearCampusZonePlan(context: ExpoZonePlannerContext) {
     context,
     id: 'rear-campus',
     masses: perimeterConnectors.map((connector) => ({
-      color: connector.accent === 'cap' ? '#98a4ad' : '#81909a',
+      color: resolvePerimeterMassColor(connector.accent),
       id: connector.id,
       position: connector.position,
       size: connector.size,
