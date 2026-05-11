@@ -680,13 +680,13 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       intent: 'stadium-approach-review',
       label: 'Stadium Approach',
       camera: {
-        lookAtOffset: [0, 34, 0],
+        lookAtOffset: [0, 74, 0],
         positionOffset: [0, 154, 430],
         targetIds: ['rear-campus-event-pavilion-left-feed-surface', 'rear-campus-event-pavilion-right-feed-surface'],
       },
       startView: {
-        lookAt: [0, 118, -1702],
-        position: [0, 260, -860],
+        lookAt: [0, 160, -1923.3],
+        position: [0, 239.68, -1493.3],
         source: 'arrival-main',
       },
       watchItems: [
