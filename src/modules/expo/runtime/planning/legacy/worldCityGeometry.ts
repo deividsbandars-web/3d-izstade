@@ -1121,7 +1121,7 @@ export function buildMediaWallSurfaces(districtCount: number, districtStride: nu
   const flankYawRight = -1.08;
   const marqueeClearanceZ = 52;
   const marqueeLeftOutwardX = 36;
-  const marqueeRightOutwardX = 52;
+  const marqueeRightOutwardX = 128;
   const sideArrayClearanceX = 188;
 
   return Array.from({ length: Math.max(3, districtCount) }, (_, districtIndex) => {
