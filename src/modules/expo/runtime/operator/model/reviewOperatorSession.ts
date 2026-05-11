@@ -422,13 +422,13 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       intent: 'right-edge-far-review',
       label: 'Right Edge Far',
       camera: {
-        lookAtOffset: [0, 32, 0],
-        positionOffset: [-420, 188, 420],
+        lookAtOffset: [0, 56, 0],
+        positionOffset: [-220, 146, 700],
         targetIds: ['screen-array-right-2'],
       },
       startView: {
-        lookAt: [1460, 92, -1180],
-        position: [1820, 188, -860],
+        lookAt: [1156, 150, -1224],
+        position: [936, 240, -524],
         source: 'arrival-main',
       },
       watchItems: [
