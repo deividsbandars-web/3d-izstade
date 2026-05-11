@@ -414,7 +414,12 @@ function Get-ZoneHitSamples {
   const expectedIds = new Set(snapshot.operatorZone?.expectedKeyObjectIds ?? []);
   const byId = new Map();
   for (const entry of Object.values(snapshot.registryById)) {
-    if (!entry?.id || byId.has(entry.id) || !criticalLayers.has(entry.layer) || !tuple3(entry.position)) {
+    if (
+      !entry?.id
+      || byId.has(entry.id)
+      || (!criticalLayers.has(entry.layer) && !expectedIds.has(entry.id))
+      || !tuple3(entry.position)
+    ) {
       continue;
     }
     byId.set(entry.id, entry);

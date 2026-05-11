@@ -108,63 +108,77 @@ export function buildRearCampusMetrics(boothPlacements: ExpoBoothPlacement[]) {
 }
 
 export function buildRearCampusPerimeterConnectors(campusCenterZ: number): CampusConnector[] {
-  const campusPerimeterHalfWidth = 3060;
-  const campusPerimeterFrontZ = campusCenterZ + 2140;
-  const campusPerimeterRearZ = campusCenterZ - 2140;
-  const sideWallThickness = 18;
-  const rearWallDepth = 20;
-  const frontConnectorDepth = 18;
-  const rearWallInnerHalfWidth = campusPerimeterHalfWidth - (sideWallThickness * 0.5);
-  const sideWallStartZ = campusPerimeterRearZ + (rearWallDepth * 0.5);
-  const sideWallEndZ = campusPerimeterFrontZ - (frontConnectorDepth * 0.5);
+  const outerHalfWidth = 3060;
+  const frontOuterZ = campusCenterZ + 2140;
+  const rearOuterZ = campusCenterZ - 2140;
+  const wallThickness = 20;
+  const wallHeight = 32;
+  const innerHalfWidth = outerHalfWidth - wallThickness;
+  const wallCenterX = outerHalfWidth - (wallThickness * 0.5);
+  const rearWallCenterZ = rearOuterZ + (wallThickness * 0.5);
+  const frontWallCenterZ = frontOuterZ - (wallThickness * 0.5);
+  const sideWallStartZ = rearOuterZ + wallThickness;
+  const sideWallEndZ = frontOuterZ - wallThickness;
   const sideWallDepth = sideWallEndZ - sideWallStartZ;
   const sideWallCenterZ = (sideWallStartZ + sideWallEndZ) * 0.5;
   const frontConnectorInnerX = 1720;
-  const frontConnectorWidth = rearWallInnerHalfWidth - frontConnectorInnerX;
+  const frontConnectorWidth = innerHalfWidth - frontConnectorInnerX;
   const frontConnectorCenterX = frontConnectorInnerX + (frontConnectorWidth * 0.5);
 
   return [
     {
       id: 'rear-campus-perimeter-rear-wall',
-      position: [0, 16, campusPerimeterRearZ],
-      size: [rearWallInnerHalfWidth * 2, 32, rearWallDepth],
+      position: [0, wallHeight * 0.5, rearWallCenterZ],
+      size: [innerHalfWidth * 2, wallHeight, wallThickness],
+      accent: 'wall',
+    },
+    {
+      id: 'rear-campus-perimeter-left-rear-corner',
+      position: [-wallCenterX, wallHeight * 0.5, rearWallCenterZ],
+      size: [wallThickness, wallHeight, wallThickness],
+      accent: 'wall',
+    },
+    {
+      id: 'rear-campus-perimeter-right-rear-corner',
+      position: [wallCenterX, wallHeight * 0.5, rearWallCenterZ],
+      size: [wallThickness, wallHeight, wallThickness],
       accent: 'wall',
     },
     {
       id: 'rear-campus-perimeter-left-wall',
-      position: [-campusPerimeterHalfWidth, 15, sideWallCenterZ],
-      size: [sideWallThickness, 30, sideWallDepth],
+      position: [-wallCenterX, wallHeight * 0.5, sideWallCenterZ],
+      size: [wallThickness, wallHeight, sideWallDepth],
       accent: 'wall',
     },
     {
       id: 'rear-campus-perimeter-right-wall',
-      position: [campusPerimeterHalfWidth, 15, sideWallCenterZ],
-      size: [sideWallThickness, 30, sideWallDepth],
+      position: [wallCenterX, wallHeight * 0.5, sideWallCenterZ],
+      size: [wallThickness, wallHeight, sideWallDepth],
+      accent: 'wall',
+    },
+    {
+      id: 'rear-campus-perimeter-left-front-corner',
+      position: [-wallCenterX, wallHeight * 0.5, frontWallCenterZ],
+      size: [wallThickness, wallHeight, wallThickness],
+      accent: 'wall',
+    },
+    {
+      id: 'rear-campus-perimeter-right-front-corner',
+      position: [wallCenterX, wallHeight * 0.5, frontWallCenterZ],
+      size: [wallThickness, wallHeight, wallThickness],
       accent: 'wall',
     },
     {
       id: 'rear-campus-front-left-connector',
-      position: [-frontConnectorCenterX, 16, campusPerimeterFrontZ],
-      size: [frontConnectorWidth, 32, frontConnectorDepth],
+      position: [-frontConnectorCenterX, wallHeight * 0.5, frontWallCenterZ],
+      size: [frontConnectorWidth, wallHeight, wallThickness],
       accent: 'wall',
-    },
-    {
-      id: 'rear-campus-front-left-connector-cap',
-      position: [-frontConnectorCenterX, 33, campusPerimeterFrontZ],
-      size: [frontConnectorWidth - 120, 2, 4],
-      accent: 'cap',
     },
     {
       id: 'rear-campus-front-right-connector',
-      position: [frontConnectorCenterX, 16, campusPerimeterFrontZ],
-      size: [frontConnectorWidth, 32, frontConnectorDepth],
+      position: [frontConnectorCenterX, wallHeight * 0.5, frontWallCenterZ],
+      size: [frontConnectorWidth, wallHeight, wallThickness],
       accent: 'wall',
-    },
-    {
-      id: 'rear-campus-front-right-connector-cap',
-      position: [frontConnectorCenterX, 33, campusPerimeterFrontZ],
-      size: [frontConnectorWidth - 120, 2, 4],
-      accent: 'cap',
     },
   ];
 }

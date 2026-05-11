@@ -15,7 +15,7 @@ function assertVectorClose(actual: number[], expected: number[]) {
   });
 }
 
-assert.equal(zones.length, 30);
+assert.equal(zones.length, 34);
 assert.equal(DEFAULT_REVIEW_OPERATOR_ZONE_ID, 'arrival-gate');
 assert.deepEqual(zoneIds, [
   'arrival-gate',
@@ -46,6 +46,10 @@ assert.deepEqual(zoneIds, [
   'rear-campus-sky-slab-feed',
   'ground-seam-transition',
   'ground-seam-overhead',
+  'rear-campus-left-rear-corner',
+  'rear-campus-right-rear-corner',
+  'rear-campus-left-front-corner',
+  'rear-campus-right-front-corner',
   'rear-campus-mega-hall',
   'rear-campus-needle-crown',
 ]);
@@ -157,3 +161,11 @@ const resolvedRearCampusSkySlabFeedView = resolveReviewOperatorZoneStartView(rea
 ]));
 assert.deepEqual(resolvedRearCampusSkySlabFeedView.lookAt, [1087, 458, -1601.5]);
 assert.deepEqual(resolvedRearCampusSkySlabFeedView.position, [867, 480, -1081.5]);
+
+const rearCampusLeftRearCorner = zones.find((zone) => zone.id === 'rear-campus-left-rear-corner');
+assert.ok(rearCampusLeftRearCorner);
+const resolvedRearCampusLeftRearCornerView = resolveReviewOperatorZoneStartView(rearCampusLeftRearCorner, new Map([
+  ['rear-campus-perimeter-left-rear-corner', { position: [-3050, 16, -5010] }],
+]));
+assert.deepEqual(resolvedRearCampusLeftRearCornerView.lookAt, [-3050, 34, -5010]);
+assert.deepEqual(resolvedRearCampusLeftRearCornerView.position, [-2630, 170, -4510]);

@@ -854,6 +854,102 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
     },
     {
       expectedKeyObjectIds: [
+        'rear-campus-perimeter-left-rear-corner',
+      ],
+      expectedVisibleLayers: ['stadium-structure'],
+      forbiddenVisibleLayers: STADIUM_REVIEW_FORBIDDEN_LAYERS,
+      id: 'rear-campus-left-rear-corner',
+      intent: 'rear-campus-left-rear-perimeter-corner-review',
+      label: 'Rear Campus Left Rear Corner',
+      camera: {
+        lookAtOffset: [0, 18, 0],
+        positionOffset: [420, 154, 500],
+        targetIds: ['rear-campus-perimeter-left-rear-corner'],
+      },
+      startView: {
+        lookAt: [-3050, 46, -5010],
+        position: [-2630, 170, -4510],
+        source: 'arrival-main',
+      },
+      watchItems: [
+        'left rear perimeter miter',
+        'rear wall to side wall cleanup',
+      ],
+    },
+    {
+      expectedKeyObjectIds: [
+        'rear-campus-perimeter-right-rear-corner',
+      ],
+      expectedVisibleLayers: ['stadium-structure'],
+      forbiddenVisibleLayers: STADIUM_REVIEW_FORBIDDEN_LAYERS,
+      id: 'rear-campus-right-rear-corner',
+      intent: 'rear-campus-right-rear-perimeter-corner-review',
+      label: 'Rear Campus Right Rear Corner',
+      camera: {
+        lookAtOffset: [0, 18, 0],
+        positionOffset: [-420, 154, 500],
+        targetIds: ['rear-campus-perimeter-right-rear-corner'],
+      },
+      startView: {
+        lookAt: [3050, 46, -5010],
+        position: [2630, 170, -4510],
+        source: 'arrival-main',
+      },
+      watchItems: [
+        'right rear perimeter miter',
+        'rear wall to side wall cleanup',
+      ],
+    },
+    {
+      expectedKeyObjectIds: [
+        'rear-campus-perimeter-left-front-corner',
+      ],
+      expectedVisibleLayers: ['stadium-structure'],
+      forbiddenVisibleLayers: STADIUM_REVIEW_FORBIDDEN_LAYERS,
+      id: 'rear-campus-left-front-corner',
+      intent: 'rear-campus-left-front-perimeter-corner-review',
+      label: 'Rear Campus Left Front Corner',
+      camera: {
+        lookAtOffset: [0, 18, 0],
+        positionOffset: [420, 154, -500],
+        targetIds: ['rear-campus-perimeter-left-front-corner'],
+      },
+      startView: {
+        lookAt: [-3050, 46, -750],
+        position: [-2630, 170, -1250],
+        source: 'arrival-main',
+      },
+      watchItems: [
+        'left front perimeter miter',
+        'front connector to side wall cleanup',
+      ],
+    },
+    {
+      expectedKeyObjectIds: [
+        'rear-campus-perimeter-right-front-corner',
+      ],
+      expectedVisibleLayers: ['stadium-structure'],
+      forbiddenVisibleLayers: STADIUM_REVIEW_FORBIDDEN_LAYERS,
+      id: 'rear-campus-right-front-corner',
+      intent: 'rear-campus-right-front-perimeter-corner-review',
+      label: 'Rear Campus Right Front Corner',
+      camera: {
+        lookAtOffset: [0, 18, 0],
+        positionOffset: [-420, 154, -500],
+        targetIds: ['rear-campus-perimeter-right-front-corner'],
+      },
+      startView: {
+        lookAt: [3050, 46, -750],
+        position: [2630, 170, -1250],
+        source: 'arrival-main',
+      },
+      watchItems: [
+        'right front perimeter miter',
+        'front connector to side wall cleanup',
+      ],
+    },
+    {
+      expectedKeyObjectIds: [
         'rear-campus-mega-civic-hall-host-surface',
       ],
       expectedVisibleLayers: ['stadium-screen-surface'],
