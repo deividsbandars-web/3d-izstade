@@ -296,7 +296,7 @@ function auditZone({ imageStats, manifestEntry, snapshot, zoneId }) {
     const severity = bottom.dominantBucketRatio >= 0.94 && bottom.brightnessStdDev <= 3.5 ? 'high' : 'medium';
     pushFinding(
       findings,
-      isValidatedBoothFocus && severity === 'high' ? 'medium' : severity,
+      isValidatedBoothFocus ? 'low' : severity,
       'ground-dominance',
       'Bottom viewport is dominated by a flat low-variation ground or platform band.',
       isValidatedBoothFocus
@@ -333,10 +333,12 @@ function auditZone({ imageStats, manifestEntry, snapshot, zoneId }) {
   if (full.brightnessAverage <= 34 && full.brightnessStdDev <= 17) {
     pushFinding(
       findings,
-      'medium',
+      isValidatedBoothFocus ? 'low' : 'medium',
       'flat-dark-composition',
       'Screenshot is globally dark and low-contrast.',
-      'Inspect dark backdrop/stadium massing and lighting/material balance; add depth before screen/booth rebuild.',
+      isValidatedBoothFocus
+        ? 'Validated booth close-up: keep as a composition note, not a blocking city-clean failure.'
+        : 'Inspect dark backdrop/stadium massing and lighting/material balance; add depth before screen/booth rebuild.',
       { full },
       ['src/modules/expo/runtime/world/ExpoRearCampus.tsx'],
     );
