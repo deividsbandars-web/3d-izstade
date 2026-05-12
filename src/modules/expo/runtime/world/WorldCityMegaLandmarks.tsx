@@ -164,7 +164,7 @@ export function WorldCityMegaLandmarks({
   const discoveryBaseZ = -196 - ((Math.max(1, districtCount) - 1) * districtStride) - 1080;
   const mediaBaseZ = -214 - districtStride - 260;
   const mediaFrameBase: [number, number, number] = [860, 0, mediaBaseZ - 148];
-  const mediaPodsBase: [number, number, number] = [320, 0, mediaBaseZ + 132];
+  const mediaPodsBase: [number, number, number] = [500, 0, mediaBaseZ + 222];
   const discoveryCrownBase: [number, number, number] = [-368, 0, discoveryBaseZ - 32];
   const discoverySpineBase: [number, number, number] = [-492, 0, discoveryBaseZ + 212];
   const rightCitadelBase: [number, number, number] = [844, 0, -164];
@@ -173,9 +173,9 @@ export function WorldCityMegaLandmarks({
   const rightHaloBase: [number, number, number] = [1120, 0, -400];
   const rightSupportBase: [number, number, number] = [360, 0, -460];
   const leftRampartBase: [number, number, number] = [-930, 0, -80];
-  const leftMonolithBase: [number, number, number] = [-950, 0, -768];
+  const leftMonolithBase: [number, number, number] = [-950, 0, -820];
   const leftForumBase: [number, number, number] = [-520, 0, -48];
-  const leftCrownBase: [number, number, number] = [-1030, 0, -286];
+  const leftCrownBase: [number, number, number] = [-1030, 0, -260];
   const leftSupportBase: [number, number, number] = [-420, 0, -480];
 
   return (

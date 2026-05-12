@@ -224,7 +224,7 @@ assert.ok(rearCampusLeftRearCorner);
 const resolvedRearCampusLeftRearCornerView = resolveReviewOperatorZoneStartView(rearCampusLeftRearCorner, new Map([
   ['rear-campus-perimeter-left-rear-corner', { position: [-3050, 16, -5010] }],
 ]));
-assert.deepEqual(resolvedRearCampusLeftRearCornerView.lookAt, [-2970, 36, -5010]);
+assert.deepEqual(resolvedRearCampusLeftRearCornerView.lookAt, [-3050, 36, -5010]);
 assert.deepEqual(resolvedRearCampusLeftRearCornerView.position, [-2910, 106, -4850]);
 
 const rearCampusLeftFrontCorner = zones.find((zone) => zone.id === 'rear-campus-left-front-corner');
@@ -232,5 +232,5 @@ assert.ok(rearCampusLeftFrontCorner);
 const resolvedRearCampusLeftFrontCornerView = resolveReviewOperatorZoneStartView(rearCampusLeftFrontCorner, new Map([
   ['rear-campus-perimeter-left-front-corner', { position: [-3050, 42, -1074] }],
 ]));
-assert.deepEqual(resolvedRearCampusLeftFrontCornerView.lookAt, [-3050, 100, -1074]);
+assert.deepEqual(resolvedRearCampusLeftFrontCornerView.lookAt, [-3050, 62, -1074]);
 assert.deepEqual(resolvedRearCampusLeftFrontCornerView.position, [-2630, 196, -1574]);

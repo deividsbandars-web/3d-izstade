@@ -861,7 +861,7 @@ export function buildRightSupportBlocks(
     const baseZ = -196 - (districtIndex * districtStride);
     return [
       { id: `${district.sectorId ?? district.clusterIndex}-right-support-front`, position: [512, 18, baseZ + 78], size: [48, 18, 48], color: '#c8d4dc' },
-      { id: `${district.sectorId ?? district.clusterIndex}-right-support-rear`, position: [592, 36, baseZ - 248], size: [64, 54, 76], color: '#95a8b4' },
+      { id: `${district.sectorId ?? district.clusterIndex}-right-support-rear`, position: [592, 36, baseZ - 210], size: [64, 54, 76], color: '#95a8b4' },
       { id: `${district.sectorId ?? district.clusterIndex}-center-transition-left`, position: [-102, 12, baseZ + 108], size: [28, 16, 28], color: '#d4dee5' },
       { id: `${district.sectorId ?? district.clusterIndex}-center-transition-right`, position: [102, 12, baseZ + 96], size: [28, 16, 28], color: '#d4dee5' },
       { id: `${district.sectorId ?? district.clusterIndex}-center-transition-rear-left`, position: [-146, 10, baseZ - 42], size: [22, 12, 22], color: '#dde6ec' },
@@ -986,9 +986,9 @@ export function buildSignatureMegaLandmarks(districtCount: number, districtStrid
   const boulevardCenterZ = -196 - (signatureDistrictIndex * districtStride) - 122;
   return filterStructuralCityMasses([
     { id: 'signature-mega-front-court', position: [0, 0, boulevardCenterZ - 72], size: [112, 8, 22], color: '#e5edf2' },
-    { id: 'signature-mega-pylon-left', position: [-930, 0, boulevardCenterZ - 34], size: [48, 246, 48], color: '#748998' },
-    { id: 'signature-mega-pylon-right', position: [500, 0, boulevardCenterZ - 18], size: [48, 238, 48], color: '#748998' },
-    { id: 'signature-mega-center-beacon', position: [0, 0, boulevardCenterZ - 264], size: [24, 118, 24], color: '#b6c5ce' },
+    { id: 'signature-mega-pylon-left', position: [-1160, 0, boulevardCenterZ - 34], size: [48, 246, 48], color: '#748998' },
+    { id: 'signature-mega-pylon-right', position: [500, 0, boulevardCenterZ + 200], size: [48, 238, 48], color: '#748998' },
+    { id: 'signature-mega-center-beacon', position: [0, 0, boulevardCenterZ - 326], size: [24, 118, 24], color: '#b6c5ce' },
     { id: 'signature-mega-dais-left', position: [-162, 0, boulevardCenterZ - 176], size: [62, 12, 28], color: '#dbe4ea' },
     { id: 'signature-mega-dais-right', position: [162, 0, boulevardCenterZ - 190], size: [62, 12, 28], color: '#dbe4ea' },
     { id: 'signature-mega-outer-node-left', position: [-286, 0, boulevardCenterZ - 148], size: [26, 54, 20], color: '#d6e0e7' },
@@ -1022,8 +1022,8 @@ export function buildCleanTowerLandmarks(
       { id: `${district.sectorId ?? district.clusterIndex}-mid-tower-right`, position: [298, 74, baseZ - 112], baseSize: [32, 152, 24], upperSize: [24, 56, 18], color: '#718391', crownColor: '#d7e2ea', role: 'mid', composition: 'standard' },
       { id: `${district.sectorId ?? district.clusterIndex}-support-tower-left`, position: [-422, 54, baseZ + 62], baseSize: [24, 104, 18], upperSize: [18, 34, 14], color: '#7e909c', crownColor: '#d7e2ea', role: 'support', composition: 'minimal' },
       { id: `${district.sectorId ?? district.clusterIndex}-support-tower-right`, position: [422, 52, baseZ + 48], baseSize: [24, 98, 18], upperSize: [18, 32, 14], color: '#7e909c', crownColor: '#d7e2ea', role: 'support', composition: 'minimal' },
-      { id: `${district.sectorId ?? district.clusterIndex}-outer-support-tower-left`, position: [-1110, 44, baseZ - 42], baseSize: [20, 86, 16], upperSize: [14, 26, 12], color: '#8798a4', crownColor: '#dfe8ee', role: 'outer-support', composition: 'minimal' },
-      { id: `${district.sectorId ?? district.clusterIndex}-outer-support-tower-right`, position: [610, 42, baseZ - 114], baseSize: [20, 82, 16], upperSize: [14, 24, 12], color: '#8798a4', crownColor: '#dfe8ee', role: 'outer-support', composition: 'minimal' },
+      { id: `${district.sectorId ?? district.clusterIndex}-outer-support-tower-left`, position: [-1160, 44, baseZ - 42], baseSize: [20, 86, 16], upperSize: [14, 26, 12], color: '#8798a4', crownColor: '#dfe8ee', role: 'outer-support', composition: 'minimal' },
+      { id: `${district.sectorId ?? district.clusterIndex}-outer-support-tower-right`, position: [610, 42, baseZ - 80], baseSize: [20, 82, 16], upperSize: [14, 24, 12], color: '#8798a4', crownColor: '#dfe8ee', role: 'outer-support', composition: 'minimal' },
     ] as CityTower[];
   });
 

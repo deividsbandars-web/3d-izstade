@@ -56,7 +56,7 @@ export function buildWorldCityMegaLandmarkBounds({
     createMegaLandmarkBound({ id: 'mega-landmark-showcase', planningSection: 'middle', planningZone: 'center-spine', position: [0, 104, 32], size: [510, 208, 96] }),
     createMegaLandmarkBound({ id: 'mega-landmark-media', planningSection: 'middle', planningZone: 'center-spine', position: [0, 120, mediaBaseZ], size: [780, 240, 96] }),
     createMegaLandmarkBound({ id: 'mega-landmark-media-frame-wall', planningSection: 'middle', planningZone: 'center-spine', position: [860, 122, mediaBaseZ - 148], size: [296, 244, 70] }),
-    createMegaLandmarkBound({ id: 'mega-landmark-media-signal-pods', planningSection: 'middle', planningZone: 'center-spine', position: [320, 54, mediaBaseZ + 132], size: [320, 108, 70] }),
+    createMegaLandmarkBound({ id: 'mega-landmark-media-signal-pods', planningSection: 'middle', planningZone: 'center-spine', position: [500, 54, mediaBaseZ + 222], size: [320, 108, 70] }),
     createMegaLandmarkBound({ id: 'mega-landmark-discovery', planningSection: 'middle', planningZone: 'center-spine', position: [0, 90, discoveryBaseZ], size: [460, 180, 104] }),
     createMegaLandmarkBound({ id: 'mega-landmark-discovery-observatory-crown', planningSection: 'left', planningZone: 'left-district', position: [-368, 108, discoveryBaseZ - 32], size: [212, 216, 96] }),
     createMegaLandmarkBound({ id: 'mega-landmark-discovery-garden-spine', planningSection: 'left', planningZone: 'left-district', position: [-492, 8, discoveryBaseZ + 212], size: [236, 16, 72] }),
@@ -66,10 +66,10 @@ export function buildWorldCityMegaLandmarkBounds({
     createMegaLandmarkBound({ id: 'mega-landmark-right-support-spire', planningSection: 'right', planningZone: 'right-district', position: [360, 90, -460], reviewTargetPosition: [360, 118, -460], size: [132, 180, 64] }),
     createMegaLandmarkBound({ id: 'mega-landmark-left-grand-rampart', planningSection: 'left', planningZone: 'left-district', position: [-930, 138, -80], size: [220, 276, 72] }),
     createMegaLandmarkBound({ id: 'mega-landmark-left-cantilever-forum', planningSection: 'left', planningZone: 'left-district', position: [-520, 104, -48], size: [320, 208, 96] }),
-    createMegaLandmarkBound({ id: 'mega-landmark-left-split-crown-gate', planningSection: 'left', planningZone: 'left-district', position: [-1030, 146, -286], size: [340, 292, 96] }),
+    createMegaLandmarkBound({ id: 'mega-landmark-left-split-crown-gate', planningSection: 'left', planningZone: 'left-district', position: [-1030, 146, -260], size: [340, 292, 96] }),
     createMegaLandmarkBound({ id: 'mega-landmark-left-broken-wall-monument', planningSection: 'left', planningZone: 'left-district', position: [-420, 112, -480], reviewTargetPosition: [-420, 112, -480], size: [140, 224, 96] }),
     createMegaLandmarkBound({ id: 'mega-landmark-left-disc-habitat', planningSection: 'left', planningZone: 'left-district', position: [-918, 178, -548], size: [296, 212, 296] }),
-    createMegaLandmarkBound({ id: 'mega-landmark-left-split-monolith-pair', planningSection: 'left', planningZone: 'left-district', position: [-950, 146, -768], size: [160, 292, 72] }),
+    createMegaLandmarkBound({ id: 'mega-landmark-left-split-monolith-pair', planningSection: 'left', planningZone: 'left-district', position: [-950, 146, -820], size: [160, 292, 72] }),
   ];
 }
 

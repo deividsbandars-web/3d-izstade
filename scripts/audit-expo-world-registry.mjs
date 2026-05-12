@@ -38,7 +38,7 @@ const SCREEN_HOST_MIN_LATERAL_OVERLAP_RATIO = 0.18;
 const MEDIA_WALL_SCREEN_HOST_MIN_WIDTH_RATIO = 1.04;
 const CITY_SOLID_OVERLAP_WARNING_AREA = 600;
 const CITY_SOLID_OVERLAP_HIGH_VOLUME = 100000;
-const CITY_SOLID_NEAR_GAP_WARNING_DISTANCE = 28;
+const CITY_SOLID_NEAR_GAP_WARNING_DISTANCE = 72;
 const CITY_SCREEN_HOST_READABILITY_MIN_CLEARANCE = 72;
 const CITY_SMALL_BLOCK_MAX_HEIGHT = 8;
 const CITY_SMALL_BLOCK_MAX_FOOTPRINT_AREA = 900;
@@ -807,6 +807,12 @@ function auditPerimeterAttachmentPrecision(entries) {
     pushPerimeterAttachmentGapIssue(issues, entriesById, `rear-campus-perimeter-right-post-${index}`, 'rear-campus-perimeter-right-wall');
   }
 
+  pushPerimeterAttachmentGapIssue(issues, entriesById, 'city-perimeter-left-front-corner', 'city-perimeter-front-wall');
+  pushPerimeterAttachmentGapIssue(issues, entriesById, 'city-perimeter-left-front-corner', 'city-perimeter-left-wall');
+  pushPerimeterAttachmentGapIssue(issues, entriesById, 'city-perimeter-right-front-corner', 'city-perimeter-front-wall');
+  pushPerimeterAttachmentGapIssue(issues, entriesById, 'city-perimeter-right-front-corner', 'city-perimeter-right-wall');
+  pushPerimeterAttachmentGapIssue(issues, entriesById, 'city-perimeter-left-stadium-terminus', 'city-perimeter-left-wall');
+  pushPerimeterAttachmentGapIssue(issues, entriesById, 'city-perimeter-right-stadium-terminus', 'city-perimeter-right-wall');
   pushPerimeterAttachmentGapIssue(issues, entriesById, 'rear-campus-front-left-gate-pylon', 'rear-campus-front-left-connector');
   pushPerimeterAttachmentGapIssue(issues, entriesById, 'rear-campus-front-right-gate-pylon', 'rear-campus-front-right-connector');
   pushPerimeterAttachmentGapIssue(issues, entriesById, 'city-perimeter-left-stadium-terminus', 'rear-campus-front-left-connector');

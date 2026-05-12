@@ -284,8 +284,14 @@ function auditZone({ imageStats, manifestEntry, snapshot, zoneId }) {
   const nearestSolid = nearSolidHints[0] ?? null;
   const nearbyLayerCounts = countLayersNearPlayer(snapshot, 420);
   const expectedLayers = new Set(zone?.expectedVisibleLayers ?? []);
+  const expectedKeyObjectIds = Array.isArray(zone?.expectedKeyObjectIds) ? zone.expectedKeyObjectIds : [];
   const actualLayers = new Set(snapshot?.operatorZoneValidation?.actualVisibleLayers ?? []);
   const centerTarget = typeof snapshot?.centerTarget === 'string' ? snapshot.centerTarget : '';
+  const hasExpectedCenterTarget = expectedKeyObjectIds.some((objectId) => centerTarget.includes(objectId));
+  const isValidatedPerimeterCornerFocus = typeof zone?.intent === 'string'
+    && zone.intent.includes('perimeter-corner-review')
+    && expectedKeyObjectIds.length > 0
+    && hasExpectedCenterTarget;
   const validationStatus = String(snapshot?.operatorZoneValidation?.status ?? '').toLowerCase();
   const isValidatedBoothFocus = zoneId.startsWith('sponsor-boulevard-')
     && expectedLayers.has('booth')
@@ -307,7 +313,12 @@ function auditZone({ imageStats, manifestEntry, snapshot, zoneId }) {
     );
   }
 
-  if (!isValidatedBoothFocus && center.dominantBucketRatio >= 0.66 && center.brightnessStdDev <= 10) {
+  if (
+    !isValidatedBoothFocus
+    && !isValidatedPerimeterCornerFocus
+    && center.dominantBucketRatio >= 0.66
+    && center.brightnessStdDev <= 10
+  ) {
     pushFinding(
       findings,
       center.dominantBucketRatio >= 0.78 && center.brightnessStdDev <= 6 ? 'high' : 'medium',
@@ -357,6 +368,27 @@ function auditZone({ imageStats, manifestEntry, snapshot, zoneId }) {
         expectedLayers: [...expectedLayers],
       },
       [],
+      false,
+    );
+  }
+
+  if (
+    typeof zone?.intent === 'string'
+    && zone.intent.includes('perimeter-corner-review')
+    && expectedKeyObjectIds.length > 0
+    && !hasExpectedCenterTarget
+  ) {
+    pushFinding(
+      findings,
+      'medium',
+      'perimeter-corner-center-target-miss',
+      'Perimeter corner review center ray does not hit the expected corner cap/post.',
+      'Move the review camera look-at so the center target lands on the perimeter corner object before trusting this zone.',
+      {
+        centerTarget: centerTarget || null,
+        expectedKeyObjectIds,
+      },
+      ['src/modules/expo/runtime/operator/model/reviewOperatorSession.ts'],
       false,
     );
   }

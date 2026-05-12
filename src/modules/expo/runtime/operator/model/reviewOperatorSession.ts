@@ -950,12 +950,12 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       intent: 'rear-campus-left-rear-perimeter-corner-review',
       label: 'Rear Campus Left Rear Corner',
       camera: {
-        lookAtOffset: [80, 20, 0],
+        lookAtOffset: [0, 20, 0],
         positionOffset: [140, 90, 160],
         targetIds: ['rear-campus-perimeter-left-rear-corner'],
       },
       startView: {
-        lookAt: [-2970, 62, -5334],
+        lookAt: [-3050, 62, -5334],
         position: [-2910, 132, -5174],
         source: 'arrival-main',
       },
@@ -998,12 +998,12 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       intent: 'rear-campus-left-front-perimeter-corner-review',
       label: 'Rear Campus Left Front Corner',
       camera: {
-        lookAtOffset: [0, 58, 0],
+        lookAtOffset: [0, 20, 0],
         positionOffset: [420, 154, -500],
         targetIds: ['rear-campus-perimeter-left-front-corner'],
       },
       startView: {
-        lookAt: [-3050, 100, -1074],
+        lookAt: [-3050, 62, -1074],
         position: [-2630, 196, -1574],
         source: 'arrival-main',
       },
