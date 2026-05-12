@@ -50,7 +50,7 @@ export function SponsorShowcaseObject({
 export function SponsorBadge({ accentColor, label, position }: { accentColor: string; label: string; position: [number, number, number] }) {
   return (
     <group position={position}>
-      <mesh castShadow><boxGeometry args={[3.9, 0.84, 0.34]} /><meshStandardMaterial color="#08111c" metalness={0.14} roughness={0.58} /></mesh>
+      <mesh castShadow><boxGeometry args={[3.9, 0.84, 0.34]} /><meshStandardMaterial color="#18304a" emissive={accentColor} emissiveIntensity={0.035} metalness={0.1} roughness={0.52} /></mesh>
       <mesh position={[-1.36, 0, 0.1]} castShadow><boxGeometry args={[0.2, 0.84, 0.08]} /><meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={0.16} /></mesh>
       <Text position={[0.14, 0, 0.24]} fontSize={0.34} color="#f8fafc" anchorX="center" anchorY="middle" maxWidth={2.6}>{label}</Text>
     </group>
@@ -68,7 +68,7 @@ export function SponsorCtaStrip({ actions, color, onAction }: { actions: Sponsor
   const secondaryTextWidth = actionCount >= 4 ? 1.45 : 1.9;
   return (
     <group>
-      <mesh castShadow><boxGeometry args={[11.9, 0.92, 0.42]} /><meshStandardMaterial color="#08111c" metalness={0.12} roughness={0.62} /></mesh>
+      <mesh castShadow><boxGeometry args={[11.9, 0.92, 0.42]} /><meshStandardMaterial color="#17283a" emissive={color} emissiveIntensity={0.035} metalness={0.08} roughness={0.56} /></mesh>
       <mesh position={[0, -0.16, 0.08]} castShadow><boxGeometry args={[11.2, 0.1, 0.08]} /><meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.06} roughness={0.48} /></mesh>
       {stripActions.map((action, index) => {
         const x = (index - ((stripActions.length - 1) / 2)) * spacing;
@@ -79,7 +79,7 @@ export function SponsorCtaStrip({ actions, color, onAction }: { actions: Sponsor
           <group key={`${action.kind}-${index}`} position={[x, 0.01, 0.13]}>
             <mesh onClick={(event) => { event.stopPropagation(); if (!action.disabled) onAction(action); }} onPointerOver={() => { document.body.style.cursor = action.disabled ? 'auto' : 'pointer'; }} onPointerOut={() => { document.body.style.cursor = 'auto'; }}>
               <boxGeometry args={[buttonWidth, 0.54, 0.18]} />
-              <meshStandardMaterial color={action.disabled ? '#172030' : isPrimary ? color : '#101b2a'} metalness={0.08} roughness={0.7} />
+              <meshStandardMaterial color={action.disabled ? '#243246' : isPrimary ? color : '#203247'} emissive={action.disabled ? '#000000' : color} emissiveIntensity={isPrimary ? 0.08 : 0.035} metalness={0.06} roughness={0.62} />
             </mesh>
             {index < stripActions.length - 1 && <mesh position={[dividerOffset, 0, 0.03]}><boxGeometry args={[0.04, 0.4, 0.04]} /><meshStandardMaterial color="#1b2533" /></mesh>}
             <Text position={[0, 0, 0.16]} fontSize={isPrimary ? 0.22 : 0.2} color={action.disabled ? '#64748b' : '#f8fafc'} anchorX="center" anchorY="middle" maxWidth={isPrimary ? primaryTextWidth : secondaryTextWidth}>{action.label.toUpperCase()}</Text>
@@ -107,7 +107,7 @@ export function BoothCalculatorFeature({
     <group>
       <mesh castShadow>
         <boxGeometry args={[7.84, 1.12, 0.34]} />
-        <meshStandardMaterial color="#0b1522" metalness={0.1} roughness={0.58} />
+        <meshStandardMaterial color="#16273a" emissive={color} emissiveIntensity={0.035} metalness={0.08} roughness={0.54} />
       </mesh>
       <mesh position={[-2.96, 0, 0.08]} castShadow>
         <boxGeometry args={[1.12, 1.12, 0.12]} />
@@ -165,7 +165,7 @@ export function BoothAiFeature({
     <group>
       <mesh castShadow>
         <boxGeometry args={[7.84, 1.12, 0.34]} />
-        <meshStandardMaterial color="#0a1525" metalness={0.12} roughness={0.54} />
+        <meshStandardMaterial color="#142a42" emissive={color} emissiveIntensity={0.04} metalness={0.08} roughness={0.5} />
       </mesh>
       <mesh position={[-2.96, 0, 0.08]} castShadow>
         <boxGeometry args={[1.12, 1.12, 0.12]} />
@@ -223,7 +223,7 @@ export function BoothInfoStandFeature({
     <group>
       <mesh castShadow>
         <boxGeometry args={[7.84, 1.12, 0.34]} />
-        <meshStandardMaterial color="#091420" metalness={0.12} roughness={0.56} />
+        <meshStandardMaterial color="#15283e" emissive={color} emissiveIntensity={0.035} metalness={0.08} roughness={0.52} />
       </mesh>
       <mesh position={[-2.96, 0, 0.08]} castShadow>
         <boxGeometry args={[1.12, 1.12, 0.12]} />
@@ -308,9 +308,9 @@ export function BoothFeatureStage({ accentColor, fallbackMonogram, isEliteFeatur
           </mesh>
         ))}
       </>}
-      <mesh position={[0, 0.32, 0]} receiveShadow><cylinderGeometry args={[3.9 * stageScale, 4.5 * stageScale, 0.46, 28]} /><meshStandardMaterial color="#0a1220" metalness={0.12} roughness={0.68} /></mesh>
+      <mesh position={[0, 0.32, 0]} receiveShadow><cylinderGeometry args={[3.9 * stageScale, 4.5 * stageScale, 0.46, 28]} /><meshStandardMaterial color="#18283a" emissive={accentColor} emissiveIntensity={0.035} metalness={0.1} roughness={0.62} /></mesh>
       <mesh position={[0, 0.56, 0]} receiveShadow><cylinderGeometry args={[3.52 * stageScale, 3.84 * stageScale, 0.12, 28]} /><meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={0.08} roughness={0.48} /></mesh>
-      {isFeatureBooth && <mesh position={[0, 0.9, 0]} receiveShadow><cylinderGeometry args={[4.34 * stageScale, 4.64 * stageScale, 0.14, 28]} /><meshStandardMaterial color="#0f1a28" metalness={0.2} roughness={0.52} /></mesh>}
+      {isFeatureBooth && <mesh position={[0, 0.9, 0]} receiveShadow><cylinderGeometry args={[4.34 * stageScale, 4.64 * stageScale, 0.14, 28]} /><meshStandardMaterial color="#223449" emissive={accentColor} emissiveIntensity={0.04} metalness={0.16} roughness={0.48} /></mesh>}
       <group position={[0, 3.1, 0]}><SponsorShowcaseObject accentColor={accentColor} fallbackMonogram={fallbackMonogram} mode={mode} /></group>
     </group>
   );
@@ -323,7 +323,7 @@ export function BoothFeatureHeader({ accentColor, contractTier, fallbackMonogram
   const isPremium = contractTier === 'premium';
   return (
     <group position={[0, metricsColliderHeight + (isHeroFeature ? 4.8 : isEliteFeature ? 4.5 : 4.2), -0.22]}>
-      <mesh castShadow><boxGeometry args={[isHeroFeature ? 12.8 : isEliteFeature ? 11.4 : 10.4, isHeroFeature ? 2.48 : isEliteFeature ? 2.16 : 1.94, 0.5]} /><meshStandardMaterial color="#08111c" metalness={0.12} roughness={0.42} /></mesh>
+      <mesh castShadow><boxGeometry args={[isHeroFeature ? 12.8 : isEliteFeature ? 11.4 : 10.4, isHeroFeature ? 2.48 : isEliteFeature ? 2.16 : 1.94, 0.5]} /><meshStandardMaterial color="#142337" emissive={accentColor} emissiveIntensity={0.045} metalness={0.08} roughness={0.42} /></mesh>
       {(isPremium || isElite || isHero) && (
         <>
           {[-1, 1].map((side) => (
@@ -343,11 +343,11 @@ export function BoothFeatureHeader({ accentColor, contractTier, fallbackMonogram
       <mesh position={[0, isHeroFeature ? -0.86 : isEliteFeature ? -0.76 : -0.66, 0.16]} castShadow><boxGeometry args={[isHeroFeature ? 10.6 : isEliteFeature ? 9.2 : 8.2, 0.14, 0.14]} /><meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={0.14} roughness={0.3} /></mesh>
       <Text position={[0, heroName.lines.length > 1 ? (isHeroFeature ? 0.18 : isEliteFeature ? 0.15 : 0.12) : (isHeroFeature ? 0.02 : isEliteFeature ? 0 : -0.02), 0.28]} fontSize={(isHeroFeature ? 0.7 : isEliteFeature ? 0.62 : 0.56) * heroName.fontScale} lineHeight={0.92} color="#f8fafc" anchorX="center" anchorY="middle" maxWidth={isHeroFeature ? 10.8 : isEliteFeature ? 9.3 : 8.4}>{heroName.lines.join('\n')}</Text>
       <group position={[0, isHeroFeature ? -2.92 : isEliteFeature ? -2.58 : -2.28, 0.04]}>
-        <mesh castShadow><cylinderGeometry args={[isHeroFeature ? 1.54 : isEliteFeature ? 1.34 : 1.18, isHeroFeature ? 1.54 : isEliteFeature ? 1.34 : 1.18, 0.16, 40]} /><meshStandardMaterial color="#09111b" metalness={0.12} roughness={0.4} /></mesh>
+        <mesh castShadow><cylinderGeometry args={[isHeroFeature ? 1.54 : isEliteFeature ? 1.34 : 1.18, isHeroFeature ? 1.54 : isEliteFeature ? 1.34 : 1.18, 0.16, 40]} /><meshStandardMaterial color="#15283a" emissive={accentColor} emissiveIntensity={0.04} metalness={0.1} roughness={0.4} /></mesh>
         <mesh position={[0, 0, 0.09]}><cylinderGeometry args={[isHeroFeature ? 1.28 : isEliteFeature ? 1.12 : 0.96, isHeroFeature ? 1.28 : isEliteFeature ? 1.12 : 0.96, 0.08, 40]} /><meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={0.16} roughness={0.24} metalness={0.12} /></mesh>
         <mesh position={[0, 0, 0.14]}>
           <circleGeometry args={[isHeroFeature ? 1.08 : isEliteFeature ? 0.96 : 0.82, 40]} />
-          {logoUrl ? <Suspense fallback={<meshStandardMaterial color="#0f172a" emissive={accentColor} emissiveIntensity={0.08} />}><SponsorTextureSurface fallbackColor="#0f172a" url={logoUrl} /></Suspense> : <meshStandardMaterial color="#0f172a" emissive={accentColor} emissiveIntensity={0.08} />}
+          {logoUrl ? <Suspense fallback={<meshStandardMaterial color="#1f4d6d" emissive={accentColor} emissiveIntensity={0.12} />}><SponsorTextureSurface fallbackColor="#1f4d6d" emissiveColor={accentColor} emissiveIntensity={0.12} url={logoUrl} /></Suspense> : <meshStandardMaterial color="#1f4d6d" emissive={accentColor} emissiveIntensity={0.12} />}
         </mesh>
         {!logoUrl && <Text position={[0, -0.04, 0.22]} fontSize={isHeroFeature ? 0.48 : isEliteFeature ? 0.42 : 0.38} color="#f8fafc" anchorX="center" anchorY="middle" maxWidth={isHeroFeature ? 1.5 : isEliteFeature ? 1.28 : 1.1}>{fallbackMonogram}</Text>}
       </group>
@@ -376,7 +376,7 @@ export function BoothInfoBand({ accentColor, badgeLabel, ctaActions, fallbackPre
   const sideRailCenterY = (metrics.titlePosition[1] - 0.86) - (featureStackExtraHeight * 0.5);
   return (
     <>
-      <mesh position={[0, backgroundCenterY, infoBandZ - 0.04]} castShadow><boxGeometry args={[infoBandWidth + 1.46, backgroundHeight, 0.48]} /><meshStandardMaterial color="#08111c" metalness={0.08} roughness={0.58} /></mesh>
+      <mesh position={[0, backgroundCenterY, infoBandZ - 0.04]} castShadow><boxGeometry args={[infoBandWidth + 1.46, backgroundHeight, 0.48]} /><meshStandardMaterial color="#142337" emissive={accentColor} emissiveIntensity={0.045} metalness={0.06} roughness={0.52} /></mesh>
       <mesh position={[0, metrics.titlePosition[1] + 0.52, infoBandZ + 0.02]} castShadow><boxGeometry args={[Math.max(7.8, metrics.titleMaxWidth + (isEliteBooth ? 1.2 : isPremiumBand ? 0.8 : 0.4)), 0.18, 0.18]} /><meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={isEliteBooth ? 0.12 : isPremiumBand ? 0.1 : 0.08} /></mesh>
       {showPremiumEyebrow && showDetailedText && <Text position={[metrics.titlePosition[0], metrics.titlePosition[1] + 0.92, metrics.titlePosition[2] - 0.08]} fontSize={isEliteBooth ? 0.34 : isHeroNode ? 0.36 : 0.28} color={edgeGlowColor} anchorX="center" anchorY="middle" maxWidth={Math.max(8.2, metrics.titleMaxWidth)}>{fallbackPremiumLabel}</Text>}
       <mesh position={[-((infoBandWidth * 0.5) + 0.54), sideRailCenterY, infoBandZ + 0.02]} castShadow><boxGeometry args={[0.24, backgroundHeight - 0.3, 0.18]} /><meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={0.1} /></mesh>
@@ -396,7 +396,7 @@ export function BoothInfoBand({ accentColor, badgeLabel, ctaActions, fallbackPre
       {showDetailedText && !isHeroNode && <Text position={metrics.titlePosition} fontSize={nameFontSize * 0.84} color="#f8fafc" anchorX="center" anchorY="middle" maxWidth={metrics.titleMaxWidth - 1.1}>{title.toUpperCase()}</Text>}
       {showTagline && showDetailedText && <Text position={metrics.taglinePosition} fontSize={metrics.titleMaxWidth <= 10 ? 0.36 : 0.42} color="#94a3b8" anchorX="center" anchorY="middle" maxWidth={Math.max(8.4, metrics.titleMaxWidth - 2.4)}>{(tagline || '').toUpperCase()}</Text>}
       {showBadge && showDetailedText && badgeLabel && <SponsorBadge accentColor={accentColor} label={badgeLabel} position={[metrics.badgePosition[0], metrics.badgePosition[1] + (showPremiumEyebrow ? 0.14 : 0), metrics.badgePosition[2] - 0.46]} />}
-      <mesh position={[metrics.ctaPosition[0], metrics.ctaPosition[1] - 0.12, metrics.ctaPosition[2] - 0.14]} castShadow><boxGeometry args={[7.84, 1.02, 0.44]} /><meshStandardMaterial color="#08111c" metalness={0.1} roughness={0.6} /></mesh>
+      <mesh position={[metrics.ctaPosition[0], metrics.ctaPosition[1] - 0.12, metrics.ctaPosition[2] - 0.14]} castShadow><boxGeometry args={[7.84, 1.02, 0.44]} /><meshStandardMaterial color="#142337" emissive={accentColor} emissiveIntensity={0.04} metalness={0.08} roughness={0.56} /></mesh>
       <mesh position={[metrics.ctaPosition[0], metrics.ctaPosition[1] - 0.12, metrics.ctaPosition[2] + 0.08]} castShadow><boxGeometry args={[6.92, 0.16, 0.18]} /><meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={0.08} /></mesh>
       {showFullBoothUi && <group position={[metrics.ctaPosition[0], metrics.ctaPosition[1], metrics.ctaPosition[2] + 0.06]}><SponsorCtaStrip actions={ctaActions} color={accentColor} onAction={onAction} /></group>}
       {showFullBoothUi && showDetailedText && <group position={[metrics.ctaPosition[0], metrics.ctaPosition[1] - 1.12, metrics.ctaPosition[2] + 0.06]}><BoothAiFeature action={aiAction} color={accentColor} onAction={onAction} /></group>}

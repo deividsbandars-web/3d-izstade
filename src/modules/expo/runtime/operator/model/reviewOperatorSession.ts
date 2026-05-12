@@ -238,13 +238,13 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       intent: 'left-screen-marquee-review',
       label: 'Left Marquee',
       camera: {
-        lookAtOffset: [0, 22, 0],
-        positionOffset: [768, 186, 444],
+        lookAtOffset: [0, 40, 0],
+        positionOffset: [300, 80, 220],
         targetIds: ['screen-marquee-left-0'],
       },
       startView: {
-        lookAt: [-708, 148, -296],
-        position: [-980, 268, 32],
+        lookAt: [-744, 188, -244],
+        position: [-444, 228, -24],
         source: 'arrival-main',
       },
       watchItems: [
@@ -261,13 +261,13 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       intent: 'left-screen-marquee-close-review',
       label: 'Left Marquee Close',
       camera: {
-        lookAtOffset: [0, 14, 0],
-        positionOffset: [528, 216, 294],
+        lookAtOffset: [0, 32, 0],
+        positionOffset: [260, 70, 120],
         targetIds: ['screen-marquee-left-1'],
       },
       startView: {
-        lookAt: [-622, 124, -284],
-        position: [-790, 198, -62],
+        lookAt: [-744, 180, -792],
+        position: [-484, 218, -672],
         source: 'arrival-main',
       },
       watchItems: [
@@ -300,6 +300,29 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
     },
     {
       expectedKeyObjectIds: [
+        'city-perimeter-left-front-corner',
+      ],
+      expectedVisibleLayers: ['city-mass'],
+      id: 'city-left-front-corner',
+      intent: 'city-left-front-perimeter-corner-review',
+      label: 'City Left Front Corner',
+      camera: {
+        lookAtOffset: [0, 0, 0],
+        positionOffset: [-60, 25, 65],
+        targetIds: ['city-perimeter-left-front-corner'],
+      },
+      startView: {
+        lookAt: [-1710, 35, 770],
+        position: [-1770, 60, 835],
+        source: 'arrival-main',
+      },
+      watchItems: [
+        'city front-left perimeter cap coverage',
+        'front wall to side wall gap closure',
+      ],
+    },
+    {
+      expectedKeyObjectIds: [
         'screen-spine-primary-1',
       ],
       expectedVisibleLayers: ['city-screen-surface'],
@@ -307,13 +330,13 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       intent: 'center-civic-spine-review',
       label: 'Center Spine',
       camera: {
-        lookAtOffset: [0, 62, 0],
-        positionOffset: [220, 240, 620],
+        lookAtOffset: [0, 54, 0],
+        positionOffset: [180, 100, 220],
         targetIds: ['screen-spine-primary-1'],
       },
       startView: {
-        lookAt: [-184, 142, -248],
-        position: [-604, 318, -768],
+        lookAt: [-184, 162, -796],
+        position: [-4, 208, -576],
         source: 'arrival-main',
       },
       watchItems: [
@@ -330,13 +353,13 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       intent: 'mid-start-deep-review',
       label: 'Mid Start Deep',
       camera: {
-        lookAtOffset: [0, 50, 0],
-        positionOffset: [300, 12, 360],
+        lookAtOffset: [0, 48, 0],
+        positionOffset: [430, 42, 230],
         targetIds: ['screen-spine-primary-2'],
       },
       startView: {
-        lookAt: [0, 92, -520],
-        position: [0, 172, -128],
+        lookAt: [-184, 156, -1344],
+        position: [246, 150, -1114],
         source: 'arrival-main',
       },
       watchItems: [
@@ -376,18 +399,41 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       intent: 'right-screen-marquee-review',
       label: 'Right Marquee',
       camera: {
-        lookAtOffset: [0, 22, 0],
-        positionOffset: [-548, 186, 444],
+        lookAtOffset: [0, -14, 0],
+        positionOffset: [-420, 150, 360],
         targetIds: ['screen-marquee-right-0'],
       },
       startView: {
-        lookAt: [708, 144, -328],
-        position: [456, 272, 244],
+        lookAt: [836, 130, -380],
+        position: [416, 294, -20],
         source: 'arrival-main',
       },
       watchItems: [
         'right marquee CTA clarity',
         'screen/socket registry resolution',
+      ],
+    },
+    {
+      expectedKeyObjectIds: [
+        'mega-landmark-right-skybridge-beacon',
+      ],
+      expectedVisibleLayers: ['mega-landmark'],
+      id: 'right-skybridge-landmark',
+      intent: 'right-skybridge-landmark-review',
+      label: 'Right Skybridge Landmark',
+      camera: {
+        lookAtOffset: [0, 86, 0],
+        positionOffset: [0, 136, 300],
+        targetIds: ['mega-landmark-right-skybridge-beacon'],
+      },
+      startView: {
+        lookAt: [580, 220, 30],
+        position: [580, 270, 330],
+        source: 'arrival-main',
+      },
+      watchItems: [
+        'right skybridge direct evidence',
+        'right-district landmark spacing',
       ],
     },
     {
@@ -445,13 +491,13 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       intent: 'tower-cluster-screen-review',
       label: 'Tower Cluster',
       camera: {
-        lookAtOffset: [0, 22, 0],
-        positionOffset: [380, 180, 360],
+        lookAtOffset: [0, 10, 0],
+        positionOffset: [248, 94, 328],
         targetIds: ['arrival-core-hero-tower-right-tower-ribbon'],
       },
       startView: {
-        lookAt: [519, 167, -519],
-        position: [899, 325, -159],
+        lookAt: [518.8230613285318, 155.04, -518.881157475684],
+        position: [766.8230613285318, 239.04, -190.88115747568395],
         source: 'arrival-main',
       },
       watchItems: [
@@ -493,12 +539,12 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       label: 'Array Band',
       camera: {
         lookAtOffset: [0, 44, 0],
-        positionOffset: [0, 310, 1240],
+        positionOffset: [0, 180, 560],
         targetIds: ['screen-array-left-0', 'screen-array-right-0'],
       },
       startView: {
-        lookAt: [0, 88, -214],
-        position: [0, 152, 76],
+        lookAt: [0, 140, -119],
+        position: [0, 276, 441],
         source: 'arrival-main',
       },
       watchItems: [
@@ -579,8 +625,8 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       intent: 'left-sponsor-boulevard-frontage-review',
       label: 'Sponsor Boulevard Left',
       camera: {
-        lookAtOffset: [0, 5, 0],
-        positionOffset: [0, 20, 64],
+        lookAtOffset: [0, 24, 0],
+        positionOffset: [0, 36, 36],
         targetDepth: 'frontmost',
         targetIds: [],
         targetLayer: 'booth',
@@ -603,8 +649,8 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       intent: 'left-sponsor-boulevard-close-review',
       label: 'Sponsor Boulevard Left Close',
       camera: {
-        lookAtOffset: [0, 5, 0],
-        positionOffset: [56, 20, 64],
+        lookAtOffset: [0, 24, 0],
+        positionOffset: [50, 36, 36],
         targetDepth: 'rearmost',
         targetIds: [],
         targetLayer: 'booth',
@@ -627,8 +673,8 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       intent: 'right-sponsor-boulevard-frontage-review',
       label: 'Sponsor Boulevard Right',
       camera: {
-        lookAtOffset: [-2, 5, 2],
-        positionOffset: [-56, 20, 64],
+        lookAtOffset: [-2, 24, 2],
+        positionOffset: [-50, 36, 36],
         targetDepth: 'frontmost',
         targetIds: [],
         targetLayer: 'booth',
@@ -651,8 +697,8 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       intent: 'right-sponsor-boulevard-medium-review',
       label: 'Sponsor Boulevard Right Medium',
       camera: {
-        lookAtOffset: [-2, 5, 2],
-        positionOffset: [-48, 20, 56],
+        lookAtOffset: [-2, 24, 2],
+        positionOffset: [-44, 36, 34],
         targetDepth: 'rearmost',
         targetIds: [],
         targetLayer: 'booth',
@@ -700,8 +746,8 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       ],
       expectedVisibleLayers: ['stadium-screen-surface'],
       camera: {
-        lookAtOffset: [0, 30, 0],
-        positionOffset: [-300, 24, 300],
+        lookAtOffset: [0, 44, 0],
+        positionOffset: [-240, 18, 220],
         targetIds: ['rear-campus-event-pavilion-left-feed-surface'],
       },
       forbiddenKeyObjectIds: STADIUM_TRANSITION_FORBIDDEN_OBJECT_IDS,
@@ -904,13 +950,13 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       intent: 'rear-campus-left-rear-perimeter-corner-review',
       label: 'Rear Campus Left Rear Corner',
       camera: {
-        lookAtOffset: [0, 18, 0],
-        positionOffset: [420, 154, 500],
+        lookAtOffset: [80, 20, 0],
+        positionOffset: [140, 90, 160],
         targetIds: ['rear-campus-perimeter-left-rear-corner'],
       },
       startView: {
-        lookAt: [-3050, 46, -5010],
-        position: [-2630, 170, -4510],
+        lookAt: [-2970, 62, -5334],
+        position: [-2910, 132, -5174],
         source: 'arrival-main',
       },
       watchItems: [
@@ -928,13 +974,13 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       intent: 'rear-campus-right-rear-perimeter-corner-review',
       label: 'Rear Campus Right Rear Corner',
       camera: {
-        lookAtOffset: [0, 18, 0],
-        positionOffset: [-420, 154, 500],
+        lookAtOffset: [0, 20, 0],
+        positionOffset: [-140, 90, 160],
         targetIds: ['rear-campus-perimeter-right-rear-corner'],
       },
       startView: {
-        lookAt: [3050, 46, -5010],
-        position: [2630, 170, -4510],
+        lookAt: [3050, 62, -5334],
+        position: [2910, 132, -5174],
         source: 'arrival-main',
       },
       watchItems: [
@@ -952,13 +998,13 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       intent: 'rear-campus-left-front-perimeter-corner-review',
       label: 'Rear Campus Left Front Corner',
       camera: {
-        lookAtOffset: [0, 18, 0],
+        lookAtOffset: [0, 58, 0],
         positionOffset: [420, 154, -500],
         targetIds: ['rear-campus-perimeter-left-front-corner'],
       },
       startView: {
-        lookAt: [-3050, 46, -750],
-        position: [-2630, 170, -1250],
+        lookAt: [-3050, 100, -1074],
+        position: [-2630, 196, -1574],
         source: 'arrival-main',
       },
       watchItems: [
@@ -1022,13 +1068,16 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       intent: 'rear-campus-needle-crown-review',
       label: 'Rear Campus Needle Crown',
       camera: {
-        lookAtOffset: [-28, 28, 0],
-        positionOffset: [460, 230, 540],
-        targetIds: ['rear-campus-needle-crown-skyscraper-host-surface'],
+        lookAtOffset: [-28, 100, 0],
+        positionOffset: [180, 135, 117],
+        targetIds: [
+          'rear-campus-needle-crown-skyscraper-host-surface',
+          'rear-campus-needle-crown-skyscraper-screen-host-shell',
+        ],
       },
       startView: {
-        lookAt: [1512, 436, -534],
-        position: [2000, 638, 6],
+        lookAt: [1512, 421.66, -1612.25],
+        position: [1720, 456.66, -1495.25],
         source: 'arrival-main',
       },
       watchItems: [

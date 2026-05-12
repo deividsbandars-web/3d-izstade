@@ -122,7 +122,7 @@ export function buildRearCampusPerimeterConnectors(campusCenterZ: number): Campu
   const wallThickness = 20;
   const wallHeight = 32;
   const cornerCapFootprint = 46;
-  const cornerCapHeight = 48;
+  const cornerCapHeight = 84;
   const railHeight = 10;
   const railY = wallHeight + (railHeight * 0.5);
   const railThickness = 14;
@@ -141,7 +141,8 @@ export function buildRearCampusPerimeterConnectors(campusCenterZ: number): Campu
   const sideWallDepth = sideWallEndZ - sideWallStartZ;
   const sideWallCenterZ = (sideWallStartZ + sideWallEndZ) * 0.5;
   const frontConnectorInnerX = 1720;
-  const frontConnectorWidth = innerHalfWidth - frontConnectorInnerX;
+  const frontConnectorOuterX = wallCenterX - (cornerCapFootprint * 0.5);
+  const frontConnectorWidth = frontConnectorOuterX - frontConnectorInnerX;
   const frontConnectorCenterX = frontConnectorInnerX + (frontConnectorWidth * 0.5);
   const postInteriorOffset = (wallThickness * 0.5) + (postFootprint * 0.5) + 6;
   const rearPostZ = rearWallCenterZ + postInteriorOffset;

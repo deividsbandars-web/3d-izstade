@@ -56,6 +56,13 @@ const stableScreenIds = canonicalPlan.filteredScreenSurfaces.map((surface) => su
 const stableSocketIds = canonicalPlan.screenSockets.map((socket) => socket.id).sort();
 const cityMassSourceFunctions = new Set(canonicalPlan.filteredMasses.map((mass) => mass.planningSource?.sourceFunction ?? 'missing'));
 const cityTowerSourceFunctions = new Set(canonicalPlan.filteredTowerLandmarks.map((tower) => tower.planningSource?.sourceFunction ?? 'missing'));
+const renderedLegacyMediaWallMassIds = canonicalPlan.filteredMasses
+  .filter((mass) => mass.id.startsWith('media-wall-'))
+  .map((mass) => mass.id)
+  .sort();
+const cityScreenHostMasses = canonicalPlan.filteredMasses
+  .filter((mass) => mass.id.startsWith('screen-') && mass.id.endsWith('-host'))
+  .sort((left, right) => left.id.localeCompare(right.id));
 const filteredInputPlan = buildCanonicalWorldPlan({
   boothPlacements: leftHiddenRenderPlacements,
   districtPrograms: world.districtPrograms,
@@ -70,6 +77,17 @@ assert.ok(stableSocketIds.length > 0);
 assert.ok(
   canonicalPlan.filteredMasses.every((mass) => mass.planningSource?.sourceFile && mass.planningSource.sourceFunction !== 'buildCanonicalWorldPlan'),
   `filtered city masses must keep concrete non-generic source functions: ${Array.from(cityMassSourceFunctions).join(', ')}`,
+);
+assert.deepEqual(renderedLegacyMediaWallMassIds, []);
+assert.ok(canonicalPlan.filteredMasses.some((mass) => mass.id === 'screen-marquee-left-0-host'));
+assert.ok(!cityMassSourceFunctions.has('buildMediaWallLandmarks'));
+assert.ok(cityScreenHostMasses.length > 0);
+assert.ok(
+  cityScreenHostMasses.every((mass) => mass.planningSource?.sourceFunction === 'buildCityScreenHostMasses'),
+  `screen host masses must be screen-planned, got: ${cityScreenHostMasses.map((mass) => `${mass.id}:${mass.planningSource?.sourceFunction}`).join(', ')}`,
+);
+assert.ok(
+  cityScreenHostMasses.every((mass) => mass.planningSource?.safeEditSeam === 'src/modules/expo/runtime/planning/screens/buildCityScreenHostMassPlan.ts'),
 );
 assert.deepEqual(Array.from(cityTowerSourceFunctions), ['buildCleanTowerLandmarks']);
 assert.deepEqual(resolveReserveOverlappingMassIds(canonicalPlan), []);

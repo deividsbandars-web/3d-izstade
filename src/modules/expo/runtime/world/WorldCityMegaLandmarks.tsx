@@ -160,22 +160,22 @@ export function WorldCityMegaLandmarks({
   );
   const isLandmarkVisible = (id: string) => visibleLandmarkIds.has(id);
   const arrivalBaseZ = 256;
-  const showcaseBaseZ = -72;
+  const showcaseBaseZ = 32;
   const discoveryBaseZ = -196 - ((Math.max(1, districtCount) - 1) * districtStride) - 1080;
-  const mediaBaseZ = -214 - districtStride - 136;
-  const mediaFrameBase: [number, number, number] = [356, 0, mediaBaseZ - 148];
-  const mediaPodsBase: [number, number, number] = [472, 0, mediaBaseZ + 84];
+  const mediaBaseZ = -214 - districtStride - 260;
+  const mediaFrameBase: [number, number, number] = [760, 0, mediaBaseZ - 148];
+  const mediaPodsBase: [number, number, number] = [320, 0, mediaBaseZ + 132];
   const discoveryCrownBase: [number, number, number] = [-368, 0, discoveryBaseZ - 32];
   const discoverySpineBase: [number, number, number] = [-492, 0, discoveryBaseZ + 212];
   const rightCitadelBase: [number, number, number] = [844, 0, -164];
   const leftDiscBase: [number, number, number] = [-918, 0, -548];
-  const rightBeaconBase: [number, number, number] = [436, 0, -74];
-  const rightHaloBase: [number, number, number] = [520, 0, -278];
-  const rightSupportBase: [number, number, number] = [294, 0, -372];
-  const leftRampartBase: [number, number, number] = [-888, 0, -156];
-  const leftMonolithBase: [number, number, number] = [-648, 0, -724];
-  const leftForumBase: [number, number, number] = [-438, 0, -116];
-  const leftCrownBase: [number, number, number] = [-742, 0, -346];
+  const rightBeaconBase: [number, number, number] = [580, 0, 30];
+  const rightHaloBase: [number, number, number] = [1120, 0, -400];
+  const rightSupportBase: [number, number, number] = [360, 0, -460];
+  const leftRampartBase: [number, number, number] = [-930, 0, -80];
+  const leftMonolithBase: [number, number, number] = [-950, 0, -768];
+  const leftForumBase: [number, number, number] = [-520, 0, -48];
+  const leftCrownBase: [number, number, number] = [-1030, 0, -286];
   const leftSupportBase: [number, number, number] = [-262, 0, -412];
 
   return (

@@ -76,6 +76,36 @@ function Resolve-IssueSeverityFromStatus {
   }
 }
 
+function Test-OperatorTargetHit {
+  param(
+    [object]$Snapshot,
+    [string]$ObjectId
+  )
+
+  if (-not $Snapshot -or -not $ObjectId) {
+    return $false
+  }
+
+  $escapedObjectId = [regex]::Escape($ObjectId)
+  foreach ($sample in @($Snapshot.operatorHitSamples)) {
+    if (-not $sample) {
+      continue
+    }
+
+    $targetObjectId = [string]$sample.targetObjectId
+    if ($targetObjectId -ne $ObjectId) {
+      continue
+    }
+
+    $stackText = (@($sample.clickStack) -join '|')
+    if ($stackText -match $escapedObjectId) {
+      return $true
+    }
+  }
+
+  return $false
+}
+
 function Get-ScreenshotQualityStats {
   param(
     [string]$Path,
@@ -498,11 +528,26 @@ foreach ($zone in $reviewRaw) {
   $liveValidation = if ($captureSnapshot) { $captureSnapshot.operatorZoneValidation } else { $null }
   if ($liveValidation) {
     $liveStatus = [string]$liveValidation.status
-    if ($liveStatus -and $liveStatus -ne 'ok') {
+    $unverifiedMissingExpectedObjectIds = New-Object 'System.Collections.Generic.List[string]'
+    foreach ($id in @($liveValidation.missingExpectedObjectIds)) {
+      if ($id -and -not (Test-OperatorTargetHit -Snapshot $captureSnapshot -ObjectId ([string]$id))) {
+        [void]$unverifiedMissingExpectedObjectIds.Add([string]$id)
+      }
+    }
+
+    $hasUnverifiedLiveValidationIssue = (
+      $unverifiedMissingExpectedObjectIds.Count -gt 0 `
+      -or @($liveValidation.unknownExpectedObjectIds).Count -gt 0 `
+      -or @($liveValidation.missingExpectedLayers).Count -gt 0 `
+      -or @($liveValidation.forbiddenObjectIdsPresent).Count -gt 0 `
+      -or @($liveValidation.forbiddenExpectedLayersPresent).Count -gt 0
+    )
+
+    if ($liveStatus -and $liveStatus -ne 'ok' -and $hasUnverifiedLiveValidationIssue) {
       Add-UniqueIssue -Target $zoneIssues -Issue (New-Issue -Severity 'medium' -Code 'live-snapshot-status' -Message "Live screenshot snapshot status is '$liveStatus'.")
     }
 
-    foreach ($id in @($liveValidation.missingExpectedObjectIds)) {
+    foreach ($id in @($unverifiedMissingExpectedObjectIds)) {
       if ($id) {
         Add-UniqueIssue -Target $zoneIssues -Issue (New-Issue -Severity 'medium' -Code 'live-missing-expected-object' -Message "Live snapshot missing expected object: $id")
       }

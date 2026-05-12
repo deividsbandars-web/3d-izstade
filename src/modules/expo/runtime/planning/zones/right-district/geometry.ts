@@ -19,7 +19,6 @@ export function buildRightDistrictZoneGeometry(context: ExpoZonePlannerContext) 
     ...context.geometry.boulevardEdgeMasses.filter(isRightDistrictMass),
     ...context.geometry.showcaseMasses.filter(isRightDistrictMass),
     ...context.geometry.rightSupportMasses.filter(isRightDistrictMass),
-    ...context.geometry.mediaWallMasses.filter(isRightDistrictMass),
     ...context.geometry.discoveryEdgeMasses.filter(isRightDistrictMass),
     ...context.geometry.supportEdgeMasses.filter(isRightDistrictMass),
     ...context.geometry.discoveryLandmarkMasses.filter(isRightDistrictMass),

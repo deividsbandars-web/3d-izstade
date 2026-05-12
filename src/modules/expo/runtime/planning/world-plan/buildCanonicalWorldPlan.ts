@@ -9,7 +9,6 @@ import {
   buildDiscoveryObservatory,
   buildDiscoverySkybridge,
   buildDiscoverySupportTerraces,
-  buildMediaWallLandmarks,
   buildPromenadeAxisPlanes,
   buildRightSupportBlocks,
   buildShowcaseMonuments,
@@ -144,7 +143,6 @@ function buildGeometryPools(inputs: ExpoPlanningInputs) {
       'buildDiscoverySupportTerraces',
       'legacy-discovery-support-mass',
     ),
-    mediaWallMasses: withPlanningSource(buildMediaWallLandmarks(districtCount, inputs.districtStride), 'buildMediaWallLandmarks', 'legacy-media-wall-mass'),
     observatoryMasses: withPlanningSource(buildDiscoveryObservatory(districtCount, inputs.districtStride), 'buildDiscoveryObservatory', 'legacy-discovery-observatory-mass'),
     promenadeAxisPlanes: withPlanningSource(buildPromenadeAxisPlanes(districtCount, inputs.districtStride), 'buildPromenadeAxisPlanes', 'legacy-promenade-axis-plane'),
     rightSupportMasses: withPlanningSource(
@@ -387,6 +385,10 @@ function shouldRenderPlane(plane: CityPlane) {
 
 function shouldRenderMass(mass: CityMass) {
   if (NON_RENDERABLE_MASS_IDS.has(mass.id)) {
+    return false;
+  }
+
+  if (mass.id.startsWith('media-wall-')) {
     return false;
   }
 

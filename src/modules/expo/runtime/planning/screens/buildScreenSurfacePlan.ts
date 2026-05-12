@@ -1,8 +1,6 @@
-import {
-  buildMediaWallSurfaces,
-  buildTowerScreenSurfaces,
-} from '../legacy/worldCityGeometry';
+import { buildTowerScreenSurfaces } from '../legacy/worldCityGeometry';
 import { buildVisibleRearCampusSidePavilions, resolveRearCampusAnchoredZ } from '../../world/ExpoRearCampusLayout';
+import { buildCityScreenSurfacePool } from './buildCityScreenSurfacePool';
 import type {
   CanonicalPrimitive,
   CityScreenSurface,
@@ -431,8 +429,8 @@ function enrichSurfaceIntent(zoneId: ExpoPlanningZoneId, surface: CityScreenSurf
   };
 }
 
-function buildMediaWallSurfacePool(inputs: ExpoPlanningInputs) {
-  return buildMediaWallSurfaces(inputs.districtPrograms.length, inputs.districtStride);
+function buildCityScreenSurfacePoolForInputs(inputs: ExpoPlanningInputs) {
+  return buildCityScreenSurfacePool(inputs.districtPrograms.length, inputs.districtStride);
 }
 
 function buildRearCampusScreenSurfaces(
@@ -684,19 +682,19 @@ export function buildZoneScreenSurfacePlan(args: {
   zoneId: ExpoPlanningZoneId;
 }) {
   const { campusCenterZ, inputs, landmarkTowers = [], towers = [], zoneId } = args;
-  const mediaWallSurfaces = buildMediaWallSurfacePool(inputs);
+  const cityScreenSurfaces = buildCityScreenSurfacePoolForInputs(inputs);
 
   switch (zoneId) {
     case 'arrival':
       return [] as CityScreenSurface[];
     case 'left-district':
-      return mediaWallSurfaces.filter((surface) =>
+      return cityScreenSurfaces.filter((surface) =>
         surface.id.startsWith('screen-marquee-left-') || surface.id.startsWith('screen-array-left-')
       ).map((surface) => enrichSurfaceIntent(zoneId, surface));
     case 'center-spine':
-      return mediaWallSurfaces.filter((surface) => surface.id.startsWith('screen-spine-')).map((surface) => enrichSurfaceIntent(zoneId, surface));
+      return cityScreenSurfaces.filter((surface) => surface.id.startsWith('screen-spine-')).map((surface) => enrichSurfaceIntent(zoneId, surface));
     case 'right-district':
-      return mediaWallSurfaces.filter((surface) =>
+      return cityScreenSurfaces.filter((surface) =>
         surface.id.startsWith('screen-marquee-right-') || surface.id.startsWith('screen-array-right-')
       ).map((surface) => enrichSurfaceIntent(zoneId, surface));
     case 'tower-cluster':

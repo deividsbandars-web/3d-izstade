@@ -203,7 +203,7 @@ function buildDistrictVisualProfile(district: ExpoDistrictProgramSummary): ExpoD
         expressionMode: district.expressionMode,
         frontageIntensity: district.frontageIntensity,
         groundAccent: '#b7d4dd',
-        groundBase: '#88949d',
+        groundBase: '#9ca7af',
         groundEdge: '#0d1522',
         hudAccent: tintHex(accent, 0.12),
         hudPanel: 'rgba(11, 18, 28, 0.8)',

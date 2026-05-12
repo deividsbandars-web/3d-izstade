@@ -179,7 +179,6 @@ export type ExpoPlanningGeometryPools = {
   discoveryEdgeMasses: CityMass[];
   discoveryLandmarkMasses: CityMass[];
   discoverySupportMasses: CityMass[];
-  mediaWallMasses: CityMass[];
   observatoryMasses: CityMass[];
   promenadeAxisPlanes: CityPlane[];
   rightSupportMasses: CityMass[];

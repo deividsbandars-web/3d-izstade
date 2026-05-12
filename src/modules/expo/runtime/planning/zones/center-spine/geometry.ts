@@ -16,7 +16,6 @@ export function buildCenterSpineZoneGeometry(context: ExpoZonePlannerContext) {
   ];
 
   const masses = [
-    ...context.geometry.mediaWallMasses.filter((mass) => isCenterSpineMass(mass) && mass.id.startsWith('screen-spine-')),
     ...context.geometry.showcaseMasses.filter(isCenterSpineMass),
     ...context.geometry.discoveryLandmarkMasses.filter(isCenterSpineMass),
     ...context.geometry.discoverySupportMasses.filter(isCenterSpineMass),

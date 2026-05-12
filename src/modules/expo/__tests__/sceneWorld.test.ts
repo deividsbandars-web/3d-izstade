@@ -2,6 +2,8 @@ import assert from 'node:assert/strict';
 import { ZoneSystem } from '../../../modules/city/ZoneSystem.js';
 import { buildSponsorBoulevardPlan, rankCompaniesForBoulevard, UNASSIGNED_SECTOR_ID } from '../lib/boulevardLayout.js';
 import { buildCanonicalWorldPlanFromWorldContract } from '../runtime/planning/index.js';
+import { buildRearCampusPerimeterConnectors, DEFAULT_REAR_CAMPUS_CENTER_Z } from '../runtime/world/ExpoRearCampusLayout.js';
+import { buildCityPerimeterConnectors } from '../runtime/world/WorldCityPerimeterLayout.js';
 import { buildCuratedCityPlan, buildExpoGenerationSignature, buildExpoWorldDiagnostics, createDistrictBoothZone, replaceDistrictBoothZones } from '../sceneWorld.js';
 import type { ExpoSceneCompany, ExpoSceneSector } from '../types/scene.js';
 import { buildExpoPlayBoundsFromPlacements, buildExpoWalkRegionContract, isPointWithinExpoWalkRegions } from '../walk-region.js';
@@ -99,6 +101,31 @@ assert.deepEqual(
 );
 assert.ok(rearCampusPlan.screenSurfaces.some((surface) => surface.id === 'rear-campus-event-pavilion-left-feed-surface'));
 assert.ok(rearCampusPlan.screenSurfaces.some((surface) => surface.id === 'rear-campus-event-pavilion-right-feed-surface'));
+const rearCampusPerimeter = buildRearCampusPerimeterConnectors(DEFAULT_REAR_CAMPUS_CENTER_Z);
+const leftFrontCorner = rearCampusPerimeter.find((connector) => connector.id === 'rear-campus-perimeter-left-front-corner');
+const leftFrontConnector = rearCampusPerimeter.find((connector) => connector.id === 'rear-campus-front-left-connector');
+assert.ok(leftFrontCorner);
+assert.ok(leftFrontConnector);
+const cornerMinX = leftFrontCorner.position[0] - (leftFrontCorner.size[0] * 0.5);
+const cornerMaxX = leftFrontCorner.position[0] + (leftFrontCorner.size[0] * 0.5);
+const connectorMinX = leftFrontConnector.position[0] - (leftFrontConnector.size[0] * 0.5);
+const connectorMaxX = leftFrontConnector.position[0] + (leftFrontConnector.size[0] * 0.5);
+assert.ok(connectorMinX >= cornerMaxX || connectorMaxX <= cornerMinX);
+const cityPerimeter = buildCityPerimeterConnectors(multiCanonicalPlan.stadiumReserve);
+const cityFrontWall = cityPerimeter.find((connector) => connector.id === 'city-perimeter-front-wall');
+const cityLeftFrontCorner = cityPerimeter.find((connector) => connector.id === 'city-perimeter-left-front-corner');
+const cityRightFrontCorner = cityPerimeter.find((connector) => connector.id === 'city-perimeter-right-front-corner');
+const cityLeftTerminus = cityPerimeter.find((connector) => connector.id === 'city-perimeter-left-stadium-terminus');
+assert.ok(cityFrontWall);
+assert.ok(cityLeftFrontCorner);
+assert.ok(cityRightFrontCorner);
+assert.ok(cityLeftTerminus);
+const cityFrontMinX = cityFrontWall.position[0] - (cityFrontWall.size[0] * 0.5);
+const cityFrontMaxX = cityFrontWall.position[0] + (cityFrontWall.size[0] * 0.5);
+const cityLeftCornerMaxX = cityLeftFrontCorner.position[0] + (cityLeftFrontCorner.size[0] * 0.5);
+const cityRightCornerMinX = cityRightFrontCorner.position[0] - (cityRightFrontCorner.size[0] * 0.5);
+assert.equal(cityFrontMinX, cityLeftCornerMaxX);
+assert.equal(cityFrontMaxX, cityRightCornerMinX);
 assert.deepEqual(
   multiCanonicalPlan.filteredScreenSurfaces
     .filter((surface) => /-(mid|support)-tower-/.test(surface.id))

@@ -97,7 +97,7 @@ export function SponsorTextureSurface({
       color={fallbackColor}
       depthWrite={opacity >= 0.999}
       emissive={emissiveColor ?? '#000000'}
-      emissiveIntensity={mappedTexture ? emissiveIntensity : 0}
+      emissiveIntensity={mappedTexture ? emissiveIntensity : Math.min(emissiveIntensity, 0.12)}
       map={mappedTexture ?? undefined}
       metalness={0.02}
       polygonOffset

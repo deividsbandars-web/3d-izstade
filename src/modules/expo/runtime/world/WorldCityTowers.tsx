@@ -9,13 +9,6 @@ function tintHex(hex: string, ratio: number) {
   return `#${[mix(channel(0)), mix(channel(2)), mix(channel(4))].map((value) => value.toString(16).padStart(2, '0')).join('')}`;
 }
 
-function shadeHex(hex: string, ratio: number) {
-  const normalized = hex.replace('#', '').padStart(6, '0').slice(0, 6);
-  const channel = (index: number) => parseInt(normalized.slice(index, index + 2), 16);
-  const mix = (value: number) => Math.max(0, Math.min(255, Math.round(value * (1 - ratio))));
-  return `#${[mix(channel(0)), mix(channel(2)), mix(channel(4))].map((value) => value.toString(16).padStart(2, '0')).join('')}`;
-}
-
 function WorldArchitecturalMassMaterial({
   fallbackColor,
   globalHudAccent,
@@ -28,14 +21,14 @@ function WorldArchitecturalMassMaterial({
   emissiveIntensity?: number;
 }) {
   const base = emissiveIntensity > 0.012
-    ? tintHex(fallbackColor, 0.1)
-    : tintHex(shadeHex(fallbackColor, 0.08), 0.04);
-  const color = emissiveIntensity > 0.02 ? tintHex(base, 0.04) : base;
+    ? tintHex(fallbackColor, 0.16)
+    : tintHex(fallbackColor, 0.08);
+  const color = emissiveIntensity > 0.02 ? tintHex(base, 0.08) : base;
 
   return (
     <meshStandardMaterial
       color={color}
-      roughness={emissiveIntensity > 0.012 ? 0.66 : 0.74}
+      roughness={emissiveIntensity > 0.012 ? 0.62 : 0.7}
       metalness={0.06}
       emissive={emissive}
       emissiveIntensity={emissiveIntensity + (emissiveIntensity > 0 && emissive === globalHudAccent ? 0.004 : 0)}

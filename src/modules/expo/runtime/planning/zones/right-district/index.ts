@@ -1,4 +1,5 @@
 import { buildZoneScreenAssignmentPlan } from '../../screens/buildScreenAssignmentPlan';
+import { buildCityScreenHostMasses } from '../../screens/buildCityScreenHostMassPlan';
 import { buildZoneScreenSocketPlan } from '../../screens/buildScreenSocketPlan';
 import { buildZoneScreenSurfacePlan } from '../../screens/buildScreenSurfacePlan';
 import type { ExpoZonePlannerContext } from '../../types';
@@ -12,6 +13,7 @@ export function buildRightDistrictZonePlan(context: ExpoZonePlannerContext) {
     inputs: context.inputs,
     zoneId: 'right-district',
   }).slice(0, rule.densityCaps.screenSurfaceCap);
+  const screenHostMasses = buildCityScreenHostMasses(screenSurfaces);
   const screenSockets = buildZoneScreenSocketPlan(screenSurfaces, rule.densityCaps.screenSocketCap, 'right-district');
   const assignments = buildZoneScreenAssignmentPlan({
     assignmentCap: rule.densityCaps.assignmentCap,
@@ -24,7 +26,7 @@ export function buildRightDistrictZonePlan(context: ExpoZonePlannerContext) {
     assignments,
     context,
     id: 'right-district',
-    masses: geometry.masses,
+    masses: [...geometry.masses, ...screenHostMasses],
     planes: geometry.planes,
     screenSockets,
     screenSurfaces,

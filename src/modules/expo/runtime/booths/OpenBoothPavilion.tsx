@@ -79,6 +79,11 @@ export function OpenBoothPavilion({
   const forumLoungeRadius = isElite ? 1.06 : 0.94;
   const forumBackWallWidth = width * 0.34;
   const forumBackWallHeight = isElite ? 5.2 : 4.8;
+  const mediaFrameColor = isHero ? '#244d6f' : isElite ? '#214763' : isPremium ? '#20405b' : '#263f55';
+  const mediaFallbackColor = isHero ? '#1f6e9d' : isElite ? '#1b638f' : isPremium ? '#1a567d' : '#1f4d6d';
+  const mediaTrimColor = isHero ? '#d7ecff' : isElite ? '#c8e7f8' : isPremium ? '#b9dff4' : '#a9d2e9';
+  const mediaEmissiveIntensity = isHero ? 0.2 : isElite ? 0.16 : isPremium ? 0.13 : 0.1;
+  const mediaGlowOpacity = isHero ? 0.28 : isElite ? 0.24 : isPremium ? 0.2 : 0.18;
 
   return (
     <group name="booth-open-pavilion">
@@ -223,7 +228,7 @@ export function OpenBoothPavilion({
             </mesh>
             <mesh position={[0, -0.5, 0.02]} castShadow receiveShadow>
               <boxGeometry args={[forumDeskWidth * 0.92, 0.86, forumDeskDepth * 0.54]} />
-              <meshStandardMaterial color="#0a1320" metalness={0.14} roughness={0.42} />
+              <meshStandardMaterial color="#17283b" emissive={accentColor} emissiveIntensity={0.035} metalness={0.1} roughness={0.42} />
             </mesh>
             <mesh position={[forumDeskWidth * 0.18, 0.12, forumDeskDepth * 0.14]} castShadow receiveShadow>
               <boxGeometry args={[forumDeskWingWidth, 0.22, forumDeskWingDepth]} />
@@ -248,7 +253,7 @@ export function OpenBoothPavilion({
           </mesh>
           <mesh position={[-width * 0.02, 0.32, 1.22]} receiveShadow>
             <cylinderGeometry args={[forumLoungeRadius, forumLoungeRadius, 0.12, 24]} />
-            <meshStandardMaterial color="#0b1220" metalness={0.1} roughness={0.46} />
+            <meshStandardMaterial color="#18293b" emissive={accentColor} emissiveIntensity={0.035} metalness={0.08} roughness={0.44} />
           </mesh>
           <mesh position={[-width * 0.02, 0.38, 1.22]} receiveShadow>
             <cylinderGeometry args={[forumLoungeRadius * 0.72, forumLoungeRadius * 0.72, 0.04, 24]} />
@@ -296,25 +301,29 @@ export function OpenBoothPavilion({
         />
         <mesh castShadow receiveShadow>
           <boxGeometry args={[screenFrameWidth, screenFrameHeight, 0.24]} />
-          <meshStandardMaterial color="#08111c" metalness={0.12} roughness={0.58} />
+          <meshStandardMaterial color={mediaFrameColor} emissive={accentColor} emissiveIntensity={0.045} metalness={0.1} roughness={0.5} />
         </mesh>
         <mesh position={[0, 0, 0.16]}>
           <planeGeometry args={[screenSurfaceWidth, screenSurfaceHeight]} />
           {screenUrl ? (
-            <Suspense fallback={<meshStandardMaterial color="#0f172a" emissive={accentColor} emissiveIntensity={0.08} />}>
-              <SponsorTextureSurface fallbackColor="#0f172a" emissiveColor={accentColor} emissiveIntensity={isHero ? 0.08 : isElite ? 0.06 : 0.04} url={screenUrl} />
+            <Suspense fallback={<meshStandardMaterial color={mediaFallbackColor} emissive={accentColor} emissiveIntensity={mediaEmissiveIntensity} />}>
+              <SponsorTextureSurface fallbackColor={mediaFallbackColor} emissiveColor={accentColor} emissiveIntensity={mediaEmissiveIntensity} url={screenUrl} />
             </Suspense>
           ) : (
-            <meshStandardMaterial color="#0f172a" emissive={accentColor} emissiveIntensity={0.08} />
+            <meshStandardMaterial color={mediaFallbackColor} emissive={accentColor} emissiveIntensity={mediaEmissiveIntensity} />
           )}
+        </mesh>
+        <mesh position={[0, 0, 0.19]}>
+          <planeGeometry args={[screenSurfaceWidth * 0.94, screenSurfaceHeight * 0.86]} />
+          <meshBasicMaterial color={accentColor} transparent opacity={mediaGlowOpacity} toneMapped={false} />
         </mesh>
         <mesh position={[0, screenHeaderY, 0.17]} castShadow receiveShadow>
           <boxGeometry args={[screenSurfaceWidth * (isHero ? 0.86 : isElite ? 0.82 : isPremium ? 0.76 : 0.68), 0.12, 0.12]} />
-          <meshStandardMaterial color="#020617" emissive={accentColor} emissiveIntensity={isHero ? 0.16 : isElite ? 0.12 : isPremium ? 0.08 : 0.05} roughness={0.18} metalness={0.12} />
+          <meshStandardMaterial color={mediaTrimColor} emissive={accentColor} emissiveIntensity={isHero ? 0.18 : isElite ? 0.14 : isPremium ? 0.11 : 0.08} roughness={0.18} metalness={0.1} />
         </mesh>
         <mesh position={[0, screenFooterY, 0.17]} castShadow receiveShadow>
           <boxGeometry args={[screenSurfaceWidth * (isHero ? 0.72 : isElite ? 0.66 : isPremium ? 0.6 : 0.52), 0.08, 0.12]} />
-          <meshStandardMaterial color="#020617" emissive={accentColor} emissiveIntensity={isHero ? 0.14 : isElite ? 0.1 : isPremium ? 0.07 : 0.04} roughness={0.2} metalness={0.12} />
+          <meshStandardMaterial color={mediaTrimColor} emissive={accentColor} emissiveIntensity={isHero ? 0.16 : isElite ? 0.12 : isPremium ? 0.09 : 0.07} roughness={0.2} metalness={0.1} />
         </mesh>
         <mesh position={[0, lowerMediaShelfY, 0.1]} castShadow receiveShadow>
           <boxGeometry args={[lowerMediaShelfWidth, 0.12, lowerMediaShelfDepth]} />

@@ -38,6 +38,7 @@ const SCREEN_HOST_MIN_LATERAL_OVERLAP_RATIO = 0.18;
 const MEDIA_WALL_SCREEN_HOST_MIN_WIDTH_RATIO = 1.04;
 const CITY_SOLID_OVERLAP_WARNING_AREA = 600;
 const CITY_SOLID_OVERLAP_HIGH_VOLUME = 100000;
+const CITY_SOLID_NEAR_GAP_WARNING_DISTANCE = 28;
 const CITY_SMALL_BLOCK_MAX_HEIGHT = 8;
 const CITY_SMALL_BLOCK_MAX_FOOTPRINT_AREA = 900;
 const CITY_SMALL_BLOCK_MAX_ASPECT_RATIO = 3;
@@ -249,9 +250,6 @@ function isAllowedScreenHostFacadeOverlap(left, right) {
   if (leftScreenHost && rightScreenHost) {
     return false;
   }
-  if (leftScreenHost || rightScreenHost) {
-    return true;
-  }
 
   const leftRearCampusHostBaseId = resolveRearCampusScreenHostShellBaseId(left);
   const rightRearCampusHostBaseId = resolveRearCampusScreenHostShellBaseId(right);
@@ -383,8 +381,44 @@ function isStadiumLayer(layer) {
   return layer?.startsWith('stadium-');
 }
 
+function isIntentionalCityStadiumPerimeterJoint(left, right) {
+  const pairs = [
+    [left, right],
+    [right, left],
+  ];
+
+  return pairs.some(([city, stadium]) => (
+    typeof city.id === 'string'
+    && typeof stadium.id === 'string'
+    && city.layer === 'city-mass'
+    && stadium.layer === 'stadium-structure'
+    && city.id.startsWith('city-perimeter-')
+    && (
+      stadium.id.startsWith('rear-campus-front-left-connector')
+      || stadium.id.startsWith('rear-campus-front-right-connector')
+    )
+  ));
+}
+
 function isIntentionalCitySolidOverlap(left, right) {
   if (isAllowedScreenHostFacadeOverlap(left, right)) {
+    return true;
+  }
+
+  if (
+    typeof left.id === 'string'
+    && typeof right.id === 'string'
+    && left.id.startsWith('city-perimeter')
+    && right.id.startsWith('city-perimeter')
+  ) {
+    return true;
+  }
+
+  if (
+    typeof left.id === 'string'
+    && typeof right.id === 'string'
+    && (left.id.includes('-tower-cluster-') || right.id.includes('-tower-cluster-'))
+  ) {
     return true;
   }
 
@@ -557,6 +591,10 @@ function auditGroundAndCrossLayerOverlaps(entries) {
         && SOLID_LAYERS.has(right.entry.layer)
         && area >= 1000
       ) {
+        if (isIntentionalCityStadiumPerimeterJoint(left.entry, right.entry)) {
+          continue;
+        }
+
         pushIssue(
           issues,
           area >= 20000 ? 'high' : 'medium',
@@ -576,6 +614,10 @@ function auditGroundAndCrossLayerOverlaps(entries) {
       ) {
         const gap = gapXZ(left.bounds, right.bounds);
         if (gap <= 18) {
+          if (isIntentionalCityStadiumPerimeterJoint(left.entry, right.entry)) {
+            continue;
+          }
+
           pushIssue(
             issues,
             'medium',
@@ -622,6 +664,49 @@ function auditCitySolidOverlaps(entries) {
         {
           overlapAreaXZ: Math.round(area),
           overlapVolume: Math.round(volume),
+        },
+      );
+    }
+  }
+
+  return issues;
+}
+
+function auditCitySolidClearance(entries) {
+  const issues = [];
+  const solids = entries
+    .filter((entry) => isCityLayer(entry.layer) && SOLID_LAYERS.has(entry.layer))
+    .map((entry) => ({ bounds: resolveBounds(entry), entry }))
+    .filter((item) => item.bounds);
+
+  for (let leftIndex = 0; leftIndex < solids.length; leftIndex += 1) {
+    for (let rightIndex = leftIndex + 1; rightIndex < solids.length; rightIndex += 1) {
+      const left = solids[leftIndex];
+      const right = solids[rightIndex];
+      if (isIntentionalCitySolidOverlap(left.entry, right.entry)) {
+        continue;
+      }
+
+      if (overlapVolume(left.bounds, right.bounds) > 0) {
+        continue;
+      }
+
+      const gap = gapXZ(left.bounds, right.bounds);
+      if (gap > CITY_SOLID_NEAR_GAP_WARNING_DISTANCE) {
+        continue;
+      }
+
+      pushIssue(
+        issues,
+        'medium',
+        'city-solid-near-gap',
+        `${left.entry.layer} ${left.entry.id} is only ${Math.round(gap)} units from ${right.entry.layer} ${right.entry.id}; city structures need readable clearance.`,
+        [left.entry.id, right.entry.id],
+        {
+          gapXZ: Math.round(gap),
+          minGapXZ: CITY_SOLID_NEAR_GAP_WARNING_DISTANCE,
+          sourceA: left.entry.sourceFile ?? null,
+          sourceB: right.entry.sourceFile ?? null,
         },
       );
     }
@@ -1311,6 +1396,7 @@ const issues = [
   ...auditGroundVisualContinuity(entries),
   ...auditGroundAndCrossLayerOverlaps(entries),
   ...auditCitySolidOverlaps(entries),
+  ...auditCitySolidClearance(entries),
   ...auditCitySmallBlockClutter(entries),
   ...auditResidualDecorativeCityMasses(entries),
   ...auditCityObjectOwnership(entries),

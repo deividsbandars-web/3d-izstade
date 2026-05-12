@@ -18,7 +18,6 @@ export function buildLeftDistrictZoneGeometry(context: ExpoZonePlannerContext) {
   const masses = [
     ...context.geometry.boulevardEdgeMasses.filter(isLeftDistrictMass),
     ...context.geometry.showcaseMasses.filter(isLeftDistrictMass),
-    ...context.geometry.mediaWallMasses.filter(isLeftDistrictMass),
     ...context.geometry.discoveryEdgeMasses.filter(isLeftDistrictMass),
     ...context.geometry.supportEdgeMasses.filter(isLeftDistrictMass),
     ...context.geometry.discoveryLandmarkMasses.filter(isLeftDistrictMass),

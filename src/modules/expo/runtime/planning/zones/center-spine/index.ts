@@ -1,4 +1,5 @@
 import { buildZoneScreenAssignmentPlan } from '../../screens/buildScreenAssignmentPlan';
+import { buildCityScreenHostMasses } from '../../screens/buildCityScreenHostMassPlan';
 import { buildZoneScreenSocketPlan } from '../../screens/buildScreenSocketPlan';
 import { buildZoneScreenSurfacePlan } from '../../screens/buildScreenSurfacePlan';
 import type { ExpoZonePlannerContext } from '../../types';
@@ -12,6 +13,7 @@ export function buildCenterSpineZonePlan(context: ExpoZonePlannerContext) {
     inputs: context.inputs,
     zoneId: 'center-spine',
   }).slice(0, rule.densityCaps.screenSurfaceCap);
+  const screenHostMasses = buildCityScreenHostMasses(screenSurfaces);
   const screenSockets = buildZoneScreenSocketPlan(screenSurfaces, rule.densityCaps.screenSocketCap, 'center-spine');
   const assignments = buildZoneScreenAssignmentPlan({
     assignmentCap: rule.densityCaps.assignmentCap,
@@ -24,7 +26,7 @@ export function buildCenterSpineZonePlan(context: ExpoZonePlannerContext) {
     assignments,
     context,
     id: 'center-spine',
-    masses: geometry.masses,
+    masses: [...geometry.masses, ...screenHostMasses],
     planes: geometry.planes,
     screenSockets,
     screenSurfaces,

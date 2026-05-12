@@ -24,7 +24,6 @@ const EMPTY_PLANNING_GEOMETRY = {
   discoveryEdgeMasses: [],
   discoveryLandmarkMasses: [],
   discoverySupportMasses: [],
-  mediaWallMasses: [],
   observatoryMasses: [],
   promenadeAxisPlanes: [],
   rightSupportMasses: [],
