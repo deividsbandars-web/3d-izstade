@@ -39,6 +39,7 @@ const MEDIA_WALL_SCREEN_HOST_MIN_WIDTH_RATIO = 1.04;
 const CITY_SOLID_OVERLAP_WARNING_AREA = 600;
 const CITY_SOLID_OVERLAP_HIGH_VOLUME = 100000;
 const CITY_SOLID_NEAR_GAP_WARNING_DISTANCE = 28;
+const CITY_SCREEN_HOST_READABILITY_MIN_CLEARANCE = 72;
 const CITY_SMALL_BLOCK_MAX_HEIGHT = 8;
 const CITY_SMALL_BLOCK_MAX_FOOTPRINT_AREA = 900;
 const CITY_SMALL_BLOCK_MAX_ASPECT_RATIO = 3;
@@ -707,6 +708,141 @@ function auditCitySolidClearance(entries) {
           minGapXZ: CITY_SOLID_NEAR_GAP_WARNING_DISTANCE,
           sourceA: left.entry.sourceFile ?? null,
           sourceB: right.entry.sourceFile ?? null,
+        },
+      );
+    }
+  }
+
+  return issues;
+}
+
+function auditCityScreenHostReadabilityClearance(entries) {
+  const issues = [];
+  const solids = entries
+    .filter((entry) => isCityLayer(entry.layer) && SOLID_LAYERS.has(entry.layer))
+    .map((entry) => ({ bounds: resolveBounds(entry), entry }))
+    .filter((item) => item.bounds);
+  const screenHosts = solids.filter((item) => isMediaWallScreenHost(item.entry));
+
+  for (const screenHost of screenHosts) {
+    for (const obstacle of solids) {
+      if (screenHost.entry.id === obstacle.entry.id || isIntentionalCitySolidOverlap(screenHost.entry, obstacle.entry)) {
+        continue;
+      }
+
+      if (overlapVolume(screenHost.bounds, obstacle.bounds) > 0) {
+        continue;
+      }
+
+      const gap = gapXZ(screenHost.bounds, obstacle.bounds);
+      if (gap > CITY_SCREEN_HOST_READABILITY_MIN_CLEARANCE) {
+        continue;
+      }
+
+      pushIssue(
+        issues,
+        'medium',
+        'city-screen-host-readability-gap',
+        `${screenHost.entry.id} is only ${Math.round(gap)} units from ${obstacle.entry.id}; city screens need readable clearance instead of being visually crowded by nearby blocks.`,
+        [screenHost.entry.id, obstacle.entry.id],
+        {
+          gapXZ: Math.round(gap),
+          minGapXZ: CITY_SCREEN_HOST_READABILITY_MIN_CLEARANCE,
+          sourceA: screenHost.entry.sourceFile ?? null,
+          sourceB: obstacle.entry.sourceFile ?? null,
+        },
+      );
+    }
+  }
+
+  return issues;
+}
+
+function getEntryBoundsById(entries) {
+  return new Map(entries
+    .map((entry) => [entry.id, { bounds: resolveBounds(entry), entry }])
+    .filter(([, item]) => item.bounds));
+}
+
+function pushPerimeterAttachmentGapIssue(issues, entriesById, objectId, wallId, maxGap = 0) {
+  const object = entriesById.get(objectId);
+  const wall = entriesById.get(wallId);
+  if (!object || !wall) {
+    return;
+  }
+
+  const overlapArea = overlapAreaXZ(object.bounds, wall.bounds);
+  if (overlapArea > 0) {
+    return;
+  }
+
+  const gap = gapXZ(object.bounds, wall.bounds);
+  if (gap <= maxGap) {
+    return;
+  }
+
+  pushIssue(
+    issues,
+    'medium',
+    'perimeter-attachment-gap',
+    `${object.entry.id} is ${Math.round(gap)} units from ${wall.entry.id}; perimeter posts/caps must be embedded into the wall line, not placed beside it.`,
+    [object.entry.id, wall.entry.id],
+    {
+      gapXZ: Math.round(gap),
+      maxGap,
+    },
+  );
+}
+
+function auditPerimeterAttachmentPrecision(entries) {
+  const issues = [];
+  const entriesById = getEntryBoundsById(entries);
+
+  for (let index = 0; index <= 6; index += 1) {
+    pushPerimeterAttachmentGapIssue(issues, entriesById, `rear-campus-perimeter-rear-post-${index}`, 'rear-campus-perimeter-rear-wall');
+  }
+
+  for (let index = 0; index <= 4; index += 1) {
+    pushPerimeterAttachmentGapIssue(issues, entriesById, `rear-campus-perimeter-left-post-${index}`, 'rear-campus-perimeter-left-wall');
+    pushPerimeterAttachmentGapIssue(issues, entriesById, `rear-campus-perimeter-right-post-${index}`, 'rear-campus-perimeter-right-wall');
+  }
+
+  pushPerimeterAttachmentGapIssue(issues, entriesById, 'rear-campus-front-left-gate-pylon', 'rear-campus-front-left-connector');
+  pushPerimeterAttachmentGapIssue(issues, entriesById, 'rear-campus-front-right-gate-pylon', 'rear-campus-front-right-connector');
+  pushPerimeterAttachmentGapIssue(issues, entriesById, 'city-perimeter-left-stadium-terminus', 'rear-campus-front-left-connector');
+  pushPerimeterAttachmentGapIssue(issues, entriesById, 'city-perimeter-right-stadium-terminus', 'rear-campus-front-right-connector');
+
+  return issues;
+}
+
+function auditRecoveredStructurePerimeterIntrusions(entries) {
+  const issues = [];
+  const perimeterConnectors = entries
+    .filter((entry) => entry.sourceKind === 'rear-campus-perimeter-connector')
+    .map((entry) => ({ bounds: resolveBounds(entry), entry }))
+    .filter((item) => item.bounds);
+  const recoveredStructures = entries
+    .filter((entry) => entry.sourceKind === 'recovered-rear-campus-structure')
+    .map((entry) => ({ bounds: resolveBounds(entry), entry }))
+    .filter((item) => item.bounds);
+
+  for (const structure of recoveredStructures) {
+    for (const connector of perimeterConnectors) {
+      const overlapArea = overlapAreaXZ(structure.bounds, connector.bounds);
+      if (overlapArea <= 0) {
+        continue;
+      }
+
+      pushIssue(
+        issues,
+        overlapArea >= 4000 ? 'high' : 'medium',
+        'recovered-structure-perimeter-intrusion',
+        `${structure.entry.id} overlaps ${connector.entry.id}; recovered landmark structures must stay inside the campus perimeter and not cut through walls or posts.`,
+        [structure.entry.id, connector.entry.id],
+        {
+          overlapAreaXZ: Math.round(overlapArea),
+          sourceA: structure.entry.sourceFile ?? null,
+          sourceB: connector.entry.sourceFile ?? null,
         },
       );
     }
@@ -1397,6 +1533,9 @@ const issues = [
   ...auditGroundAndCrossLayerOverlaps(entries),
   ...auditCitySolidOverlaps(entries),
   ...auditCitySolidClearance(entries),
+  ...auditCityScreenHostReadabilityClearance(entries),
+  ...auditPerimeterAttachmentPrecision(entries),
+  ...auditRecoveredStructurePerimeterIntrusions(entries),
   ...auditCitySmallBlockClutter(entries),
   ...auditResidualDecorativeCityMasses(entries),
   ...auditCityObjectOwnership(entries),

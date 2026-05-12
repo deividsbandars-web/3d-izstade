@@ -243,8 +243,8 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
         targetIds: ['screen-marquee-left-0'],
       },
       startView: {
-        lookAt: [-744, 188, -244],
-        position: [-444, 228, -24],
+        lookAt: [-628, 188, -244],
+        position: [-328, 228, -24],
         source: 'arrival-main',
       },
       watchItems: [
@@ -266,8 +266,8 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
         targetIds: ['screen-marquee-left-1'],
       },
       startView: {
-        lookAt: [-744, 180, -792],
-        position: [-484, 218, -672],
+        lookAt: [-628, 180, -792],
+        position: [-368, 218, -672],
         source: 'arrival-main',
       },
       watchItems: [
@@ -289,8 +289,8 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
         targetIds: ['screen-array-left-2'],
       },
       startView: {
-        lookAt: [-968, 248, -110],
-        position: [-1228, 262, 250],
+        lookAt: [-1204, 156, -1142],
+        position: [-904, 110, -942],
         source: 'arrival-main',
       },
       watchItems: [
@@ -473,8 +473,8 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
         targetIds: ['screen-array-right-2'],
       },
       startView: {
-        lookAt: [1156, 150, -1224],
-        position: [936, 240, -524],
+        lookAt: [1204, 150, -1224],
+        position: [904, 244, -764],
         source: 'arrival-main',
       },
       watchItems: [
@@ -649,16 +649,16 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       intent: 'left-sponsor-boulevard-close-review',
       label: 'Sponsor Boulevard Left Close',
       camera: {
-        lookAtOffset: [0, 24, 0],
-        positionOffset: [50, 36, 36],
+        lookAtOffset: [0, 38, 0],
+        positionOffset: [40, 64, 48],
         targetDepth: 'rearmost',
         targetIds: [],
         targetLayer: 'booth',
         targetSide: 'left',
       },
       startView: {
-        lookAt: [-612, 64, -1412],
-        position: [-884, 198, -1048],
+        lookAt: [-526, 38, -1356],
+        position: [-486, 64, -1308],
         source: 'arrival-main',
       },
       watchItems: [

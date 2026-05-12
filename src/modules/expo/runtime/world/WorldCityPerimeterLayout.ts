@@ -19,7 +19,7 @@ export function buildCityPerimeterConnectors(stadiumReserve: StadiumReserve): Ci
   const frontWallWidth = (wallCenterX - (cornerCapFootprint * 0.5)) * 2;
   const sideWallFrontZ = frontOuterZ - wallThickness;
   const stadiumFrontEdgeZ = stadiumReserve.centerZ + 2440;
-  const sideWallRearZ = stadiumFrontEdgeZ + 24;
+  const sideWallRearZ = stadiumFrontEdgeZ - 8;
   const sideWallDepth = sideWallFrontZ - sideWallRearZ;
   const sideWallCenterZ = (sideWallFrontZ + sideWallRearZ) * 0.5;
 

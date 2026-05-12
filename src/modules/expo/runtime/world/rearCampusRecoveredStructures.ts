@@ -16,7 +16,7 @@ export const RECOVERED_REAR_CAMPUS_STRUCTURES: RecoveredRearCampusStructure[] = 
     size: [724, 352, 324],
   },
   {
-    authoredZ: -4977,
+    authoredZ: -4764,
     id: 'rear-campus-linked-mini-skyline',
     positionX: -2537,
     size: [744, 444, 312],

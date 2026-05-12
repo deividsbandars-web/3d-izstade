@@ -144,10 +144,9 @@ export function buildRearCampusPerimeterConnectors(campusCenterZ: number): Campu
   const frontConnectorOuterX = wallCenterX - (cornerCapFootprint * 0.5);
   const frontConnectorWidth = frontConnectorOuterX - frontConnectorInnerX;
   const frontConnectorCenterX = frontConnectorInnerX + (frontConnectorWidth * 0.5);
-  const postInteriorOffset = (wallThickness * 0.5) + (postFootprint * 0.5) + 6;
-  const rearPostZ = rearWallCenterZ + postInteriorOffset;
-  const frontPostZ = frontWallCenterZ - postInteriorOffset;
-  const sidePostAbsX = wallCenterX - postInteriorOffset;
+  const rearPostZ = rearWallCenterZ;
+  const frontPostZ = frontWallCenterZ;
+  const sidePostAbsX = wallCenterX;
   const rearPostXs = [-2280, -1520, -760, 0, 760, 1520, 2280];
   const sidePostZs = [
     rearOuterZ + 760,
@@ -156,7 +155,7 @@ export function buildRearCampusPerimeterConnectors(campusCenterZ: number): Campu
     frontOuterZ - 1520,
     frontOuterZ - 760,
   ];
-  const gatePylonAbsX = frontConnectorInnerX - (gatePylonFootprint * 0.5) - 8;
+  const gatePylonAbsX = frontConnectorInnerX + (gatePylonFootprint * 0.5) + 46;
 
   return [
     {

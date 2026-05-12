@@ -163,7 +163,7 @@ export function WorldCityMegaLandmarks({
   const showcaseBaseZ = 32;
   const discoveryBaseZ = -196 - ((Math.max(1, districtCount) - 1) * districtStride) - 1080;
   const mediaBaseZ = -214 - districtStride - 260;
-  const mediaFrameBase: [number, number, number] = [760, 0, mediaBaseZ - 148];
+  const mediaFrameBase: [number, number, number] = [860, 0, mediaBaseZ - 148];
   const mediaPodsBase: [number, number, number] = [320, 0, mediaBaseZ + 132];
   const discoveryCrownBase: [number, number, number] = [-368, 0, discoveryBaseZ - 32];
   const discoverySpineBase: [number, number, number] = [-492, 0, discoveryBaseZ + 212];
@@ -176,7 +176,7 @@ export function WorldCityMegaLandmarks({
   const leftMonolithBase: [number, number, number] = [-950, 0, -768];
   const leftForumBase: [number, number, number] = [-520, 0, -48];
   const leftCrownBase: [number, number, number] = [-1030, 0, -286];
-  const leftSupportBase: [number, number, number] = [-262, 0, -412];
+  const leftSupportBase: [number, number, number] = [-420, 0, -480];
 
   return (
     <group name="world-city-mega-landmarks">
