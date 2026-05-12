@@ -662,16 +662,16 @@ export function WorldCityMegaLandmarks({
 
       {sectionToggles.left && isLandmarkVisible('mega-landmark-left-disc-habitat') && (
         <group name="mega-landmark:left-disc-habitat" position={leftDiscBase}>
-          <mesh name="mega-landmark:left-disc-support-a" position={[-62, 82, 18]}>
-            <boxGeometry args={[18, 164, 18]} />
-            <LandmarkMaterial color="#d7e2e9" emissive="#67e8f9" emissiveIntensity={0.03} />
+          <mesh name="mega-landmark:left-disc-support-a" position={[-82, 72, 16]}>
+            <boxGeometry args={[26, 144, 18]} />
+            <LandmarkMaterial color="#c2d0d8" emissive="#67e8f9" emissiveIntensity={0.025} />
           </mesh>
-          <mesh name="mega-landmark:left-disc-support-b" position={[72, 88, -10]}>
-            <boxGeometry args={[18, 176, 18]} />
-            <LandmarkMaterial color="#d7e2e9" emissive="#c084fc" emissiveIntensity={0.03} />
+          <mesh name="mega-landmark:left-disc-support-b" position={[82, 82, -34]} rotation={[0, 0, -0.14]}>
+            <boxGeometry args={[28, 164, 30]} />
+            <LandmarkMaterial color="#b8c5ce" emissive="#c084fc" emissiveIntensity={0.026} />
           </mesh>
-          <mesh name="mega-landmark:left-disc-support-c" position={[0, 72, 42]}>
-            <boxGeometry args={[16, 144, 16]} />
+          <mesh name="mega-landmark:left-disc-support-c" position={[-8, 58, 54]} rotation={[0, 0, 0.12]}>
+            <boxGeometry args={[34, 112, 14]} />
             <LandmarkMaterial color="#dbe5eb" emissive="#93c5fd" emissiveIntensity={0.025} variant="subdued" />
           </mesh>
           <mesh name="mega-landmark:left-disc-body" position={[0, 178, 0]}>
@@ -720,33 +720,33 @@ export function WorldCityMegaLandmarks({
 
       {sectionToggles.left && isLandmarkVisible('mega-landmark-left-grand-rampart') && (
         <group name="mega-landmark:left-grand-rampart" position={leftRampartBase}>
-          <mesh name="mega-landmark:left-rampart-wall-left" position={[-78, 112, 0]}>
-            <boxGeometry args={[48, 224, 18]} />
-            <LandmarkMaterial color="#d7e2e9" emissive="#67e8f9" emissiveIntensity={0.028} variant="subdued" />
+          <mesh name="mega-landmark:left-rampart-wall-left" position={[-96, 56, -8]} rotation={[0, 0, -0.04]}>
+            <boxGeometry args={[84, 112, 26]} />
+            <LandmarkMaterial color="#c4d0d8" emissive="#67e8f9" emissiveIntensity={0.024} variant="subdued" />
           </mesh>
-          <mesh name="mega-landmark:left-rampart-wall-center" position={[4, 138, -6]}>
-            <boxGeometry args={[54, 276, 18]} />
-            <LandmarkMaterial color="#d7e2e9" emissive="#93c5fd" emissiveIntensity={0.028} variant="subdued" />
+          <mesh name="mega-landmark:left-rampart-wall-center" position={[-6, 98, -6]}>
+            <boxGeometry args={[128, 196, 28]} />
+            <LandmarkMaterial color="#d7e2e9" emissive="#93c5fd" emissiveIntensity={0.026} variant="subdued" />
           </mesh>
-          <mesh name="mega-landmark:left-rampart-wall-right" position={[98, 96, 10]}>
-            <boxGeometry args={[42, 192, 18]} />
-            <LandmarkMaterial color="#d7e2e9" emissive="#c084fc" emissiveIntensity={0.028} variant="subdued" />
+          <mesh name="mega-landmark:left-rampart-wall-right" position={[58, 124, 16]}>
+            <boxGeometry args={[80, 18, 22]} />
+            <LandmarkMaterial color="#edf4f8" emissive="#c084fc" emissiveIntensity={0.034} variant="subdued" />
           </mesh>
         </group>
       )}
 
       {sectionToggles.left && isLandmarkVisible('mega-landmark-left-cantilever-forum') && (
         <group name="mega-landmark:left-cantilever-forum" position={leftForumBase}>
-          <mesh name="mega-landmark:left-cantilever-pylon-left" position={[-68, 104, 0]}>
-            <boxGeometry args={[24, 208, 24]} />
-            <LandmarkMaterial color="#d7e2e9" emissive="#67e8f9" emissiveIntensity={0.026} variant="subdued" />
+          <mesh name="mega-landmark:left-cantilever-pylon-left" position={[-84, 78, -4]}>
+            <boxGeometry args={[56, 156, 28]} />
+            <LandmarkMaterial color="#c3cfd8" emissive="#67e8f9" emissiveIntensity={0.024} variant="subdued" />
           </mesh>
-          <mesh name="mega-landmark:left-cantilever-pylon-right" position={[42, 88, -12]}>
-            <boxGeometry args={[20, 176, 20]} />
-            <LandmarkMaterial color="#d7e2e9" emissive="#c084fc" emissiveIntensity={0.024} variant="subdued" />
+          <mesh name="mega-landmark:left-cantilever-pylon-right" position={[48, 66, -12]} rotation={[0, 0, 0.08]}>
+            <boxGeometry args={[38, 132, 24]} />
+            <LandmarkMaterial color="#b9c6cf" emissive="#c084fc" emissiveIntensity={0.024} variant="subdued" />
           </mesh>
-          <mesh name="mega-landmark:left-cantilever-core" position={[-8, 46, 32]}>
-            <boxGeometry args={[18, 92, 18]} />
+          <mesh name="mega-landmark:left-cantilever-core" position={[-8, 42, 32]}>
+            <boxGeometry args={[34, 84, 24]} />
             <LandmarkMaterial color="#8ea2af" variant="subdued" />
           </mesh>
           <mesh name="mega-landmark:left-cantilever-cap" position={[-8, 144, 32]}>
@@ -754,14 +754,14 @@ export function WorldCityMegaLandmarks({
             <LandmarkMaterial color="#e4f6ff" emissive="#67e8f9" emissiveIntensity={0.12} variant="subdued" />
           </mesh>
           {!hiddenLandmarkParts.has('mega-landmark:left-cantilever-fin-left') && (
-          <mesh name="mega-landmark:left-cantilever-fin-left" position={[-146, 74, -18]}>
-            <boxGeometry args={[14, 148, 14]} />
-            <LandmarkMaterial color="#edf4f8" emissive="#67e8f9" emissiveIntensity={0.045} variant="subdued" />
+          <mesh name="mega-landmark:left-cantilever-fin-left" position={[-146, 52, -18]} rotation={[0, 0, -0.16]}>
+            <boxGeometry args={[26, 104, 18]} />
+            <LandmarkMaterial color="#dce6ec" emissive="#67e8f9" emissiveIntensity={0.035} variant="subdued" />
           </mesh>
           )}
-          <mesh name="mega-landmark:left-cantilever-fin-right" position={[136, 62, 18]}>
-            <boxGeometry args={[14, 124, 14]} />
-            <LandmarkMaterial color="#edf4f8" emissive="#c084fc" emissiveIntensity={0.04} variant="subdued" />
+          <mesh name="mega-landmark:left-cantilever-fin-right" position={[126, 46, 18]} rotation={[0, 0, 0.16]}>
+            <boxGeometry args={[24, 92, 18]} />
+            <LandmarkMaterial color="#dce6ec" emissive="#c084fc" emissiveIntensity={0.034} variant="subdued" />
           </mesh>
         </group>
       )}
@@ -817,8 +817,8 @@ export function WorldCityMegaLandmarks({
             <boxGeometry args={[38, 256, 28]} />
             <LandmarkMaterial color="#d7e2e9" emissive="#c084fc" emissiveIntensity={0.03} variant="subdued" />
           </mesh>
-          <mesh name="mega-landmark:left-monolith-gap-marker" position={[0, 82, 22]}>
-            <boxGeometry args={[12, 164, 14]} />
+          <mesh name="mega-landmark:left-monolith-gap-marker" position={[0, 172, 22]}>
+            <boxGeometry args={[92, 14, 16]} />
             <LandmarkMaterial color="#eef4f8" emissive="#93c5fd" emissiveIntensity={0.05} variant="subdued" />
           </mesh>
         </group>
@@ -826,16 +826,16 @@ export function WorldCityMegaLandmarks({
 
       {sectionToggles.left && isLandmarkVisible('mega-landmark-left-broken-wall-monument') && (
         <group name="mega-landmark:left-broken-wall-monument" position={leftSupportBase}>
-          <mesh name="mega-landmark:left-broken-wall-left" position={[-56, 112, -6]}>
-            <boxGeometry args={[30, 224, 18]} />
-            <LandmarkMaterial color="#d7e2e9" emissive="#67e8f9" emissiveIntensity={0.03} variant="subdued" />
+          <mesh name="mega-landmark:left-broken-wall-left" position={[-64, 86, -14]} rotation={[0, 0, -0.08]}>
+            <boxGeometry args={[42, 172, 22]} />
+            <LandmarkMaterial color="#c4d0d8" emissive="#67e8f9" emissiveIntensity={0.026} variant="subdued" />
           </mesh>
-          <mesh name="mega-landmark:left-broken-wall-right" position={[54, 96, 10]}>
-            <boxGeometry args={[26, 192, 18]} />
-            <LandmarkMaterial color="#d7e2e9" emissive="#c084fc" emissiveIntensity={0.028} variant="subdued" />
+          <mesh name="mega-landmark:left-broken-wall-right" position={[48, 66, 22]} rotation={[0, 0, 0.1]}>
+            <boxGeometry args={[54, 132, 20]} />
+            <LandmarkMaterial color="#b7c4cd" emissive="#c084fc" emissiveIntensity={0.024} variant="subdued" />
           </mesh>
-          <mesh name="mega-landmark:left-broken-wall-marker" position={[0, 44, 28]}>
-            <boxGeometry args={[14, 88, 14]} />
+          <mesh name="mega-landmark:left-broken-wall-marker" position={[-6, 142, 28]}>
+            <boxGeometry args={[96, 16, 16]} />
             <LandmarkMaterial color="#edf4f8" emissive="#67e8f9" emissiveIntensity={0.04} variant="subdued" />
           </mesh>
         </group>

@@ -818,6 +818,83 @@ function auditCityScreenRowRhythm(entries) {
   return issues;
 }
 
+function auditLeftOuterSupportTowerRhythm(entries) {
+  const issues = [];
+  const leftOuterTowers = entries
+    .filter((entry) => entry.layer === 'city-tower' && typeof entry.id === 'string' && entry.id.endsWith('-outer-support-tower-left'))
+    .map((entry) => ({ bounds: resolveBounds(entry), entry, position: tuple3(entry.position) }))
+    .filter((item) => item.bounds && item.position)
+    .sort((left, right) => left.position[2] - right.position[2]);
+  const megaLandmarks = entries
+    .filter((entry) => entry.layer === 'mega-landmark')
+    .map((entry) => ({ bounds: resolveBounds(entry), entry }))
+    .filter((item) => item.bounds);
+  const signatureLeftPylon = entries.find((entry) => entry.id === 'signature-mega-pylon-left');
+  const signatureLeftPylonPosition = tuple3(signatureLeftPylon?.position);
+
+  for (let index = 0; index < leftOuterTowers.length; index += 1) {
+    const tower = leftOuterTowers[index];
+    const nextTower = leftOuterTowers[index + 1];
+    if (nextTower && Math.abs(tower.position[0] - nextTower.position[0]) < 64) {
+      pushIssue(
+        issues,
+        'medium',
+        'left-outer-support-tower-repetition',
+        `${tower.entry.id} and ${nextTower.entry.id} sit on nearly the same left-side X line; arrival view needs staggered tower rhythm instead of repeated identical columns.`,
+        [tower.entry.id, nextTower.entry.id],
+        {
+          sourceA: tower.entry.sourceFile ?? null,
+          sourceB: nextTower.entry.sourceFile ?? null,
+          xDelta: Math.round(Math.abs(tower.position[0] - nextTower.position[0])),
+        },
+      );
+    }
+
+    for (const landmark of megaLandmarks) {
+      const overlapArea = overlapAreaXZ(tower.bounds, landmark.bounds);
+      if (overlapArea <= 0) {
+        continue;
+      }
+
+      pushIssue(
+        issues,
+        'medium',
+        'left-outer-support-landmark-intrusion',
+        `${tower.entry.id} overlaps ${landmark.entry.id}; slim support towers must not read as repeated columns embedded inside left-side landmarks.`,
+        [tower.entry.id, landmark.entry.id],
+        {
+          overlapAreaXZ: Math.round(overlapArea),
+          sourceA: tower.entry.sourceFile ?? null,
+          sourceB: landmark.entry.sourceFile ?? null,
+        },
+      );
+    }
+
+    if (
+      signatureLeftPylon
+      && signatureLeftPylonPosition
+      && Math.abs(tower.position[0] - signatureLeftPylonPosition[0]) < 96
+      && Math.abs(tower.position[2] - signatureLeftPylonPosition[2]) < 220
+    ) {
+      pushIssue(
+        issues,
+        'medium',
+        'left-outer-support-pylon-stack',
+        `${tower.entry.id} sits too close to signature-mega-pylon-left in the arrival-left sightline; they read as repeated identical columns.`,
+        [tower.entry.id, signatureLeftPylon.id],
+        {
+          sourceA: tower.entry.sourceFile ?? null,
+          sourceB: signatureLeftPylon.sourceFile ?? null,
+          xDelta: Math.round(Math.abs(tower.position[0] - signatureLeftPylonPosition[0])),
+          zDelta: Math.round(Math.abs(tower.position[2] - signatureLeftPylonPosition[2])),
+        },
+      );
+    }
+  }
+
+  return issues;
+}
+
 function getEntryBoundsById(entries) {
   return new Map(entries
     .map((entry) => [entry.id, { bounds: resolveBounds(entry), entry }])
@@ -1601,6 +1678,7 @@ const issues = [
   ...auditCitySolidClearance(entries),
   ...auditCityScreenHostReadabilityClearance(entries),
   ...auditCityScreenRowRhythm(entries),
+  ...auditLeftOuterSupportTowerRhythm(entries),
   ...auditPerimeterAttachmentPrecision(entries),
   ...auditRecoveredStructurePerimeterIntrusions(entries),
   ...auditCitySmallBlockClutter(entries),
