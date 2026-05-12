@@ -85,7 +85,7 @@ export function buildCityScreenSurfacePool(districtCount: number, districtStride
       },
       {
         id: `screen-spine-primary-${districtIndex}`,
-        position: [-184, 108, baseZ - 34],
+        position: [-110, 108, baseZ - 34],
         rotation: [0, inwardYawLeft, 0],
         size: [118, 136, 2.8],
         color: '#091320',

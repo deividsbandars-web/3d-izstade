@@ -40,6 +40,8 @@ const CITY_SOLID_OVERLAP_WARNING_AREA = 600;
 const CITY_SOLID_OVERLAP_HIGH_VOLUME = 100000;
 const CITY_SOLID_NEAR_GAP_WARNING_DISTANCE = 72;
 const CITY_SCREEN_HOST_READABILITY_MIN_CLEARANCE = 72;
+const CITY_SCREEN_ROW_MAX_LATERAL_DISTANCE = 500;
+const CITY_SCREEN_ROW_MIN_Z_SPACING = 96;
 const CITY_SMALL_BLOCK_MAX_HEIGHT = 8;
 const CITY_SMALL_BLOCK_MAX_FOOTPRINT_AREA = 900;
 const CITY_SMALL_BLOCK_MAX_ASPECT_RATIO = 3;
@@ -233,6 +235,11 @@ function isMediaWallScreen(screenId) {
   return screenId.startsWith('screen-marquee-')
     || screenId.startsWith('screen-array-')
     || screenId.startsWith('screen-spine-');
+}
+
+function resolveCityMediaWallDistrictIndex(screenId) {
+  const match = /^screen-(?:marquee-(?:left|right)|array-(?:left|right)(?:-upper)?|spine-(?:primary|secondary))-(\d+)$/.exec(screenId);
+  return match ? Number(match[1]) : null;
 }
 
 function isMediaWallScreenHost(entry) {
@@ -750,6 +757,59 @@ function auditCityScreenHostReadabilityClearance(entries) {
           minGapXZ: CITY_SCREEN_HOST_READABILITY_MIN_CLEARANCE,
           sourceA: screenHost.entry.sourceFile ?? null,
           sourceB: obstacle.entry.sourceFile ?? null,
+        },
+      );
+    }
+  }
+
+  return issues;
+}
+
+function auditCityScreenRowRhythm(entries) {
+  const issues = [];
+  const screens = entries
+    .filter((entry) => entry.layer === 'city-screen-surface' && isMediaWallScreen(entry.id))
+    .map((entry) => ({
+      districtIndex: resolveCityMediaWallDistrictIndex(entry.id),
+      entry,
+      position: tuple3(entry.position),
+    }))
+    .filter((item) => Number.isInteger(item.districtIndex) && item.position);
+
+  for (let leftIndex = 0; leftIndex < screens.length; leftIndex += 1) {
+    for (let rightIndex = leftIndex + 1; rightIndex < screens.length; rightIndex += 1) {
+      const left = screens[leftIndex];
+      const right = screens[rightIndex];
+      if (left.districtIndex !== right.districtIndex) {
+        continue;
+      }
+      if (left.entry.id.startsWith('screen-spine-') && right.entry.id.startsWith('screen-spine-')) {
+        continue;
+      }
+
+      const lateralDistance = Math.abs(left.position[0] - right.position[0]);
+      if (lateralDistance > CITY_SCREEN_ROW_MAX_LATERAL_DISTANCE) {
+        continue;
+      }
+
+      const zSpacing = Math.abs(left.position[2] - right.position[2]);
+      if (zSpacing >= CITY_SCREEN_ROW_MIN_Z_SPACING) {
+        continue;
+      }
+
+      pushIssue(
+        issues,
+        'medium',
+        'city-screen-row-clump',
+        `${left.entry.id} and ${right.entry.id} are only ${Math.round(zSpacing)} units apart on Z in district ${left.districtIndex}; city screens need staggered depth rhythm instead of a crowded row.`,
+        [left.entry.id, right.entry.id],
+        {
+          districtIndex: left.districtIndex,
+          lateralDistance: Math.round(lateralDistance),
+          minZSpacing: CITY_SCREEN_ROW_MIN_Z_SPACING,
+          sourceA: left.entry.sourceFile ?? null,
+          sourceB: right.entry.sourceFile ?? null,
+          zSpacing: Math.round(zSpacing),
         },
       );
     }
@@ -1540,6 +1600,7 @@ const issues = [
   ...auditCitySolidOverlaps(entries),
   ...auditCitySolidClearance(entries),
   ...auditCityScreenHostReadabilityClearance(entries),
+  ...auditCityScreenRowRhythm(entries),
   ...auditPerimeterAttachmentPrecision(entries),
   ...auditRecoveredStructurePerimeterIntrusions(entries),
   ...auditCitySmallBlockClutter(entries),
