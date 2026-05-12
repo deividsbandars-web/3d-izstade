@@ -177,41 +177,9 @@ export function WorldCityMegaLandmarks({
   const leftForumBase: [number, number, number] = [-438, 0, -116];
   const leftCrownBase: [number, number, number] = [-742, 0, -346];
   const leftSupportBase: [number, number, number] = [-262, 0, -412];
-  const cityPerimeterFrontZ = 760;
-  const citySideWallRearZ = mediaBaseZ - 260;
-  const citySideWallCenterZ = (cityPerimeterFrontZ + citySideWallRearZ) * 0.5;
-  const citySideWallDepth = cityPerimeterFrontZ - citySideWallRearZ;
-  const cityPerimeterHalfWidth = 1720;
 
   return (
     <group name="world-city-mega-landmarks">
-      <group name="mega-landmark:city-outer-perimeter">
-        <mesh name="mega-landmark:city-perimeter-front-wall" position={[0, 16, cityPerimeterFrontZ]} receiveShadow>
-          <boxGeometry args={[cityPerimeterHalfWidth * 2 + 640, 32, 18]} />
-          <LandmarkMaterial color="#dde8ef" emissive="#67e8f9" emissiveIntensity={0.014} />
-        </mesh>
-        <mesh name="mega-landmark:city-perimeter-front-cap" position={[0, 33, cityPerimeterFrontZ]} receiveShadow>
-          <boxGeometry args={[cityPerimeterHalfWidth * 2 + 520, 2, 4]} />
-          <LandmarkMaterial color="#f4fbff" emissive="#67e8f9" emissiveIntensity={0.08} />
-        </mesh>
-        <mesh name="mega-landmark:city-perimeter-left-wall" position={[-cityPerimeterHalfWidth, 17, citySideWallCenterZ]} receiveShadow>
-          <boxGeometry args={[18, 34, citySideWallDepth]} />
-          <LandmarkMaterial color="#dde8ef" emissive="#67e8f9" emissiveIntensity={0.012} />
-        </mesh>
-        <mesh name="mega-landmark:city-perimeter-front-left-corner" position={[-2040, 16, cityPerimeterFrontZ]} receiveShadow>
-          <boxGeometry args={[720, 32, 18]} />
-          <LandmarkMaterial color="#dde8ef" emissive="#67e8f9" emissiveIntensity={0.014} />
-        </mesh>
-        <mesh name="mega-landmark:city-perimeter-front-left-corner-cap" position={[-2040, 33, cityPerimeterFrontZ]} receiveShadow>
-          <boxGeometry args={[660, 2, 4]} />
-          <LandmarkMaterial color="#f4fbff" emissive="#67e8f9" emissiveIntensity={0.08} />
-        </mesh>
-        <mesh name="mega-landmark:city-perimeter-right-wall" position={[cityPerimeterHalfWidth, 17, citySideWallCenterZ]} receiveShadow>
-          <boxGeometry args={[18, 34, citySideWallDepth]} />
-          <LandmarkMaterial color="#dde8ef" emissive="#67e8f9" emissiveIntensity={0.012} />
-        </mesh>
-      </group>
-
       {sectionToggles.arrival && isLandmarkVisible('mega-landmark-arrival') && <group name="mega-landmark:arrival" position={[0, 0, arrivalBaseZ]}>
         {!hiddenLandmarkParts.has('mega-landmark:arrival-base') && (
         <mesh name="mega-landmark:arrival-base" position={[0, 8, 0]}>

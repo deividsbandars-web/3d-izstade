@@ -13,11 +13,19 @@ import type { ExpoBoothPlacement } from '../../../layout-engine';
 import type { ExpoDistrictProgramSummary, ExpoWorldVisualProfile } from '../../../world-contract';
 import { buildRearCampusMetrics } from '../../world/ExpoRearCampusLayout';
 
+export type CityGeometryPlanningSource = {
+  safeEditSeam: string;
+  sourceFile: string;
+  sourceFunction: string;
+  sourceKind: string;
+};
+
 export type CityPlane = {
   id: string;
   position: [number, number, number];
   size: [number, number];
   color: string;
+  planningSource?: CityGeometryPlanningSource;
   role?: 'structural' | 'decorative' | 'helper';
   sections?: Array<'arrival' | 'left' | 'middle' | 'right'>;
 };
@@ -108,6 +116,8 @@ export type CityMass = {
   color: string;
   role?: 'signature' | 'ground' | 'support-strip' | 'slender-vertical' | 'structural';
   decorPolicy?: 'signature' | 'standard' | 'none';
+  planningSource?: CityGeometryPlanningSource;
+  planningZone?: 'arrival' | 'left-district' | 'center-spine' | 'right-district' | 'tower-cluster' | 'rear-campus';
   renderIntent?: CityMassRenderIntent;
   sections?: Array<'arrival' | 'left' | 'middle' | 'right'>;
 };
@@ -119,6 +129,8 @@ export type CityTower = {
   upperSize: [number, number, number];
   color: string;
   crownColor: string;
+  planningSource?: CityGeometryPlanningSource;
+  planningZone?: 'arrival' | 'left-district' | 'center-spine' | 'right-district' | 'tower-cluster' | 'rear-campus';
   role?: 'hero' | 'mid' | 'support' | 'outer-support';
   composition?: 'hero' | 'standard' | 'minimal';
   renderIntent?: {
@@ -153,6 +165,7 @@ export type CityScreenSurface = {
   color: string;
   glowColor: string;
   id: string;
+  planningZone?: 'arrival' | 'left-district' | 'center-spine' | 'right-district' | 'tower-cluster' | 'rear-campus';
   role: 'hero-wall' | 'support-wall' | 'tower-crown' | 'tower-side';
   position: [number, number, number];
   rotation: [number, number, number];
@@ -184,6 +197,7 @@ export type CityScreenSocket = {
   frameSize: [number, number];
   id: string;
   kind: 'hero_wall' | 'tower_crown' | 'tower_side' | 'wall';
+  planningZone?: 'arrival' | 'left-district' | 'center-spine' | 'right-district' | 'tower-cluster' | 'rear-campus';
   position: [number, number, number];
   rotation: [number, number, number];
   renderIntent?: {
@@ -208,6 +222,7 @@ export type CityScreenAssignment = {
   id: string;
   imageUrl: string | null;
   label: string;
+  planningZone?: 'arrival' | 'left-district' | 'center-spine' | 'right-district' | 'tower-cluster' | 'rear-campus';
   renderIntent?: {
     bodyPanelWidth: number;
     chipColor: string;

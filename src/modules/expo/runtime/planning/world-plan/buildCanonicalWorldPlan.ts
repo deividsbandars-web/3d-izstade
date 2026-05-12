@@ -18,13 +18,12 @@ import {
   buildSupportEdgeBlocks,
   getWorldCityStadiumReserve,
 } from '../legacy/worldCityGeometry';
-import { flattenZoneScreenAssignments } from '../screens/buildScreenAssignmentPlan';
-import { flattenZoneScreenSockets } from '../screens/buildScreenSocketPlan';
-import { flattenZoneScreenSurfaces } from '../screens/buildScreenSurfacePlan';
 import type {
   CanonicalWorldPlan,
+  CityGeometryPlanningSource,
   CityMass,
   CityPlane,
+  CityScreenAssignment,
   CityScreenSocket,
   CityScreenSurface,
   CityTower,
@@ -106,32 +105,76 @@ const NON_RENDERABLE_PLANE_PATTERNS = [
   'side-band-',
 ];
 
+const LEGACY_CITY_GEOMETRY_SOURCE_FILE = 'src/modules/expo/runtime/planning/legacy/worldCityGeometry.ts';
+
+function withPlanningSource<T extends { planningSource?: CityGeometryPlanningSource }>(
+  entries: T[],
+  sourceFunction: string,
+  sourceKind: string,
+): T[] {
+  const planningSource: CityGeometryPlanningSource = {
+    safeEditSeam: LEGACY_CITY_GEOMETRY_SOURCE_FILE,
+    sourceFile: LEGACY_CITY_GEOMETRY_SOURCE_FILE,
+    sourceFunction,
+    sourceKind,
+  };
+
+  return entries.map((entry) => ({
+    ...entry,
+    planningSource,
+  }));
+}
+
 function buildGeometryPools(inputs: ExpoPlanningInputs) {
   const districtCount = inputs.districtPrograms.length;
 
   return {
-    arrivalPlanes: buildArrivalPlanes(),
-    arrivalGatewayMasses: buildArrivalGatewayBlocks(),
-    boothForecourtPlanes: buildBoothForecourtPlanes(inputs.districtPrograms, inputs.boothPlacements, inputs.districtStride),
-    boulevardEdgeMasses: buildBoulevardEdgeBlocks(districtCount, inputs.districtStride),
-    discoveryEdgeMasses: buildDiscoveryEdgeBlocks(districtCount, inputs.districtStride),
-    discoveryLandmarkMasses: buildDiscoveryLandmarks(districtCount, inputs.districtStride),
-    discoverySupportMasses: buildDiscoverySupportTerraces(districtCount, inputs.districtStride),
-    mediaWallMasses: buildMediaWallLandmarks(districtCount, inputs.districtStride),
-    observatoryMasses: buildDiscoveryObservatory(districtCount, inputs.districtStride),
-    promenadeAxisPlanes: buildPromenadeAxisPlanes(districtCount, inputs.districtStride),
-    rightSupportMasses: buildRightSupportBlocks(inputs.districtPrograms, inputs.boothPlacements, inputs.districtStride),
-    showcaseMasses: buildShowcaseMonuments(inputs.districtPrograms, inputs.districtStride),
-    showcasePlazas: buildShowcasePlazas(inputs.districtPrograms, inputs.boothPlacements, inputs.districtStride),
-    signatureMasses: buildSignatureMegaLandmarks(districtCount, inputs.districtStride),
+    arrivalPlanes: withPlanningSource(buildArrivalPlanes(), 'buildArrivalPlanes', 'legacy-arrival-plane'),
+    arrivalGatewayMasses: withPlanningSource(buildArrivalGatewayBlocks(), 'buildArrivalGatewayBlocks', 'legacy-arrival-gateway-mass'),
+    boothForecourtPlanes: withPlanningSource(
+      buildBoothForecourtPlanes(inputs.districtPrograms, inputs.boothPlacements, inputs.districtStride),
+      'buildBoothForecourtPlanes',
+      'legacy-booth-forecourt-plane',
+    ),
+    boulevardEdgeMasses: withPlanningSource(buildBoulevardEdgeBlocks(districtCount, inputs.districtStride), 'buildBoulevardEdgeBlocks', 'legacy-boulevard-edge-mass'),
+    discoveryEdgeMasses: withPlanningSource(buildDiscoveryEdgeBlocks(districtCount, inputs.districtStride), 'buildDiscoveryEdgeBlocks', 'legacy-discovery-edge-mass'),
+    discoveryLandmarkMasses: withPlanningSource(buildDiscoveryLandmarks(districtCount, inputs.districtStride), 'buildDiscoveryLandmarks', 'legacy-discovery-landmark-mass'),
+    discoverySupportMasses: withPlanningSource(
+      buildDiscoverySupportTerraces(districtCount, inputs.districtStride),
+      'buildDiscoverySupportTerraces',
+      'legacy-discovery-support-mass',
+    ),
+    mediaWallMasses: withPlanningSource(buildMediaWallLandmarks(districtCount, inputs.districtStride), 'buildMediaWallLandmarks', 'legacy-media-wall-mass'),
+    observatoryMasses: withPlanningSource(buildDiscoveryObservatory(districtCount, inputs.districtStride), 'buildDiscoveryObservatory', 'legacy-discovery-observatory-mass'),
+    promenadeAxisPlanes: withPlanningSource(buildPromenadeAxisPlanes(districtCount, inputs.districtStride), 'buildPromenadeAxisPlanes', 'legacy-promenade-axis-plane'),
+    rightSupportMasses: withPlanningSource(
+      buildRightSupportBlocks(inputs.districtPrograms, inputs.boothPlacements, inputs.districtStride),
+      'buildRightSupportBlocks',
+      'legacy-right-support-mass',
+    ),
+    showcaseMasses: withPlanningSource(
+      buildShowcaseMonuments(inputs.districtPrograms, inputs.districtStride),
+      'buildShowcaseMonuments',
+      'legacy-showcase-mass',
+    ),
+    showcasePlazas: withPlanningSource(
+      buildShowcasePlazas(inputs.districtPrograms, inputs.boothPlacements, inputs.districtStride),
+      'buildShowcasePlazas',
+      'legacy-showcase-plaza',
+    ),
+    signatureMasses: withPlanningSource(buildSignatureMegaLandmarks(districtCount, inputs.districtStride), 'buildSignatureMegaLandmarks', 'legacy-signature-mass'),
     stadiumReserve: getWorldCityStadiumReserve(inputs.boothPlacements),
-    supportEdgeMasses: buildSupportEdgeBlocks(districtCount, inputs.districtStride),
-    skybridgeMasses: buildDiscoverySkybridge(districtCount, inputs.districtStride),
-    towers: buildCleanTowerLandmarks(
-      inputs.districtPrograms,
-      inputs.boothPlacements,
-      inputs.districtStride,
-      { global: inputs.visualProfile.global }
+    supportEdgeMasses: withPlanningSource(buildSupportEdgeBlocks(districtCount, inputs.districtStride), 'buildSupportEdgeBlocks', 'legacy-support-edge-mass'),
+    skybridgeMasses: withPlanningSource(buildDiscoverySkybridge(districtCount, inputs.districtStride), 'buildDiscoverySkybridge', 'legacy-discovery-skybridge-mass'),
+    towers: withPlanningSource(
+      buildCleanTowerLandmarks(
+        inputs.districtPrograms,
+        inputs.boothPlacements,
+        inputs.districtStride,
+        { global: inputs.visualProfile.global }
+      ),
+      'buildCleanTowerLandmarks',
+      'legacy-clean-tower',
     ),
   };
 }
@@ -157,6 +200,41 @@ function flattenZonePlanes(zones: ExpoPlanningZonePlan[], excludedZoneIds: ExpoP
 
 function pickZonePlanes(planes: CityPlane[], predicate: (plane: CityPlane) => boolean) {
   return planes.filter(predicate);
+}
+
+function attachMassPlanningZone(zone: ExpoPlanningZonePlan, mass: CityMass): CityMass {
+  return {
+    ...mass,
+    planningZone: zone.id,
+  };
+}
+
+function attachScreenSurfacePlanningZone(zone: ExpoPlanningZonePlan, surface: CityScreenSurface): CityScreenSurface {
+  return {
+    ...surface,
+    planningZone: zone.id,
+  };
+}
+
+function attachScreenSocketPlanningZone(zone: ExpoPlanningZonePlan, socket: CityScreenSocket): CityScreenSocket {
+  return {
+    ...socket,
+    planningZone: zone.id,
+  };
+}
+
+function attachScreenAssignmentPlanningZone(zone: ExpoPlanningZonePlan, assignment: CityScreenAssignment): CityScreenAssignment {
+  return {
+    ...assignment,
+    planningZone: zone.id,
+  };
+}
+
+function attachTowerPlanningZone(zone: ExpoPlanningZonePlan, tower: CityTower): CityTower {
+  return {
+    ...tower,
+    planningZone: zone.id,
+  };
 }
 
 function resolveSections(position: [number, number, number]): ExpoPlanningSectionId[] {
@@ -332,28 +410,31 @@ export function buildCanonicalWorldPlan(inputs: ExpoPlanningInputs): CanonicalWo
   const cityZones = zones.filter((zone) => zone.id !== 'rear-campus');
   const cityPlanes = flattenZonePlanes(cityZones).map(withSections);
   const filteredMasses = cityZones
-    .flatMap((zone) => zone.masses)
+    .flatMap((zone) => zone.masses.map((mass) => attachMassPlanningZone(zone, mass)))
     .map((mass) => withMassIntent(mass, geometry.stadiumReserve))
     .filter(shouldRenderMass)
     .filter((mass) => !overlapsStadiumReserve(mass.position, geometry.stadiumReserve, mass.size));
   const filteredTowerLandmarks = cityZones
-    .flatMap((zone) => zone.towers)
+    .flatMap((zone) => zone.towers.map((tower) => attachTowerPlanningZone(zone, tower)))
     .map((tower) => withTowerSections(tower, geometry.stadiumReserve))
     .filter((tower) => !tower.renderIntent?.hidden && !tower.renderIntent?.skipBase)
     .filter((tower) => !overlapsStadiumReserve(tower.position, geometry.stadiumReserve, tower.baseSize));
   const visibleTowerIds = new Set(filteredTowerLandmarks.map((tower) => tower.id));
-  const filteredScreenSurfaces = flattenZoneScreenSurfaces(zones, { includeRearCampus: false })
+  const filteredScreenSurfaces = cityZones
+    .flatMap((zone) => zone.screenSurfaces.map((surface) => attachScreenSurfacePlanningZone(zone, surface)))
     .map(withSurfaceSections)
     .filter((surface) => surface.renderIntent?.visible !== false && !overlapsStadiumReserve(surface.position, geometry.stadiumReserve, surface.size))
     .filter((surface) => {
       const hostId = resolveTowerScreenSurfaceHostId(surface.id);
       return !hostId || visibleTowerIds.has(hostId);
     });
-  const screenSockets = flattenZoneScreenSockets(zones, { includeRearCampus: false })
+  const screenSockets = cityZones
+    .flatMap((zone) => zone.screenSockets.map((socket) => attachScreenSocketPlanningZone(zone, socket)))
     .map(withSocketSections)
     .filter((socket) => socket.renderIntent?.visible !== false && !overlapsStadiumReserve(socket.position, geometry.stadiumReserve, socket.frameSize));
   const visibleSocketIds = new Set(screenSockets.map((socket) => socket.id));
-  const screenAssignments = flattenZoneScreenAssignments(zones, { includeRearCampus: false })
+  const screenAssignments = cityZones
+    .flatMap((zone) => zone.assignments.map((assignment) => attachScreenAssignmentPlanningZone(zone, assignment)))
     .map((assignment) => withAssignmentIntent(assignment, screenSockets.find((socket) => socket.id === assignment.socketId)))
     .filter((assignment) => visibleSocketIds.has(assignment.socketId));
   const filteredCityPlanes = cityPlanes

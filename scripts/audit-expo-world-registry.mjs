@@ -48,6 +48,15 @@ const CITY_NON_RENDERABLE_DECORATIVE_MASS_PATTERNS = [
 const GROUND_DETAIL_MAX_OPACITY = 0.12;
 const STRUCTURAL_GROUND_MAX_OPACITY = 0.18;
 const VALID_GROUND_OWNERS = new Set(['city', 'stadium', 'transition']);
+const VALID_CITY_OBJECT_PLANNING_ZONES = new Set([
+  'arrival',
+  'left-district',
+  'center-spine',
+  'right-district',
+  'tower-cluster',
+]);
+const GENERIC_CITY_WORLD_PLAN_SOURCE = 'src/modules/expo/runtime/planning/world-plan/buildCanonicalWorldPlan.ts';
+const SOURCE_TRACE_CITY_LAYERS = new Set(['city-mass', 'city-tower']);
 
 function resolveRearCampusScreenHostId(screenId) {
   let baseId = null;
@@ -712,6 +721,66 @@ function auditResidualDecorativeCityMasses(entries) {
   return issues;
 }
 
+function auditCityObjectOwnership(entries) {
+  const issues = [];
+  const ownedCityLayers = new Set([
+    'city-mass',
+    'city-screen-assignment',
+    'city-screen-socket',
+    'city-screen-surface',
+    'city-tower',
+    'mega-landmark',
+  ]);
+
+  for (const entry of entries) {
+    if (!ownedCityLayers.has(entry.layer) || entry.planningRole === 'city-perimeter') {
+      continue;
+    }
+
+    if (!VALID_CITY_OBJECT_PLANNING_ZONES.has(entry.planningZone)) {
+      pushIssue(
+        issues,
+        'medium',
+        'city-object-zone-owner-missing',
+        `${entry.layer} ${entry.id} must expose a concrete planning zone owner instead of ${entry.planningZone ?? 'missing'}.`,
+        [entry.id],
+        {
+          planningZone: entry.planningZone ?? null,
+          sourceFile: entry.sourceFile ?? null,
+        },
+      );
+    }
+  }
+
+  return issues;
+}
+
+function auditCityObjectSourceTrace(entries) {
+  const issues = [];
+
+  for (const entry of entries) {
+    if (!SOURCE_TRACE_CITY_LAYERS.has(entry.layer) || entry.planningRole === 'city-perimeter') {
+      continue;
+    }
+
+    if (entry.sourceFile === GENERIC_CITY_WORLD_PLAN_SOURCE || entry.sourceFunction === 'buildCanonicalWorldPlan') {
+      pushIssue(
+        issues,
+        'medium',
+        'city-object-source-owner-generic',
+        `${entry.layer} ${entry.id} must expose its concrete geometry source pool instead of generic buildCanonicalWorldPlan.`,
+        [entry.id],
+        {
+          sourceFile: entry.sourceFile ?? null,
+          sourceFunction: entry.sourceFunction ?? null,
+        },
+      );
+    }
+  }
+
+  return issues;
+}
+
 function auditBoothSpacing(entries) {
   const booths = entries
     .filter((entry) => entry.layer === 'booth' && tuple3(entry.position))
@@ -1244,6 +1313,8 @@ const issues = [
   ...auditCitySolidOverlaps(entries),
   ...auditCitySmallBlockClutter(entries),
   ...auditResidualDecorativeCityMasses(entries),
+  ...auditCityObjectOwnership(entries),
+  ...auditCityObjectSourceTrace(entries),
   ...auditBoothSpacing(entries),
   ...auditBoothSolidClearance(entries),
   ...auditScreenSocketAttachment(entries),

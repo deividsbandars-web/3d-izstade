@@ -287,6 +287,8 @@ assert.deepEqual(
   ['arrival-core-hero-tower-right-tower-ribbon'],
 );
 assert.ok(cityRegistry.some((entry) => entry.id === 'mega-landmark-arrival' && entry.layer === 'mega-landmark'));
+assert.equal(cityRegistry.find((entry) => entry.id === 'mega-landmark-arrival')?.planningZone, 'arrival');
+assert.deepEqual(cityRegistry.find((entry) => entry.id === 'mega-landmark-arrival')?.planningSections, ['arrival']);
 
 const stadiumOverlapCityRegistry = buildCityWorldObjectRegistry({
   districtCount: 2,

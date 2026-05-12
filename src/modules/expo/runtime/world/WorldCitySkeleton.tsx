@@ -7,6 +7,7 @@ import { useWorldInspectionRegistry } from './inspection/worldInspectionState';
 import { buildCityWorldObjectRegistry, buildGroundWorldObjectRegistry } from './inspection/worldObjectRegistry';
 import { WorldCityMasses } from './WorldCityMasses';
 import { WorldCityMegaLandmarks } from './WorldCityMegaLandmarks';
+import { WorldCityPerimeter } from './WorldCityPerimeter';
 import { WorldCityPlanes } from './WorldCityPlanes';
 import { WorldCityScreenAssignments } from './WorldCityScreenAssignments';
 import { WorldCityScreenSockets } from './WorldCityScreenSockets';
@@ -133,6 +134,10 @@ export function WorldCitySkeleton({
         masses={filteredMasses}
         stadiumReserve={stadiumReserve}
         visualProfile={visualProfile}
+      />
+      <WorldCityPerimeter
+        accent={visualProfile.global.hudAccent}
+        stadiumReserve={stadiumReserve}
       />
       <WorldCityScreenSurfaces
         playerPosition={playerPosition}

@@ -54,6 +54,8 @@ function resolveReserveOverlappingMassIds(plan: typeof canonicalPlan) {
 
 const stableScreenIds = canonicalPlan.filteredScreenSurfaces.map((surface) => surface.id).sort();
 const stableSocketIds = canonicalPlan.screenSockets.map((socket) => socket.id).sort();
+const cityMassSourceFunctions = new Set(canonicalPlan.filteredMasses.map((mass) => mass.planningSource?.sourceFunction ?? 'missing'));
+const cityTowerSourceFunctions = new Set(canonicalPlan.filteredTowerLandmarks.map((tower) => tower.planningSource?.sourceFunction ?? 'missing'));
 const filteredInputPlan = buildCanonicalWorldPlan({
   boothPlacements: leftHiddenRenderPlacements,
   districtPrograms: world.districtPrograms,
@@ -65,6 +67,11 @@ const filteredInputSocketIds = filteredInputPlan.screenSockets.map((socket) => s
 
 assert.ok(stableScreenIds.length > 0);
 assert.ok(stableSocketIds.length > 0);
+assert.ok(
+  canonicalPlan.filteredMasses.every((mass) => mass.planningSource?.sourceFile && mass.planningSource.sourceFunction !== 'buildCanonicalWorldPlan'),
+  `filtered city masses must keep concrete non-generic source functions: ${Array.from(cityMassSourceFunctions).join(', ')}`,
+);
+assert.deepEqual(Array.from(cityTowerSourceFunctions), ['buildCleanTowerLandmarks']);
 assert.deepEqual(resolveReserveOverlappingMassIds(canonicalPlan), []);
 assert.deepEqual(resolveReserveOverlappingMassIds(filteredInputPlan), []);
 assert.deepEqual(stableScreenIds, buildCanonicalWorldPlanFromWorldContract(world).filteredScreenSurfaces.map((surface) => surface.id).sort());

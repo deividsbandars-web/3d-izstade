@@ -284,8 +284,8 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       intent: 'left-edge-far-review',
       label: 'Left Edge Far',
       camera: {
-        lookAtOffset: [0, 150, 0],
-        positionOffset: [-220, 190, 260],
+        lookAtOffset: [0, 58, 0],
+        positionOffset: [300, 12, 200],
         targetIds: ['screen-array-left-2'],
       },
       startView: {
@@ -330,8 +330,8 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       intent: 'mid-start-deep-review',
       label: 'Mid Start Deep',
       camera: {
-        lookAtOffset: [0, 30, 0],
-        positionOffset: [620, 224, 820],
+        lookAtOffset: [0, 50, 0],
+        positionOffset: [300, 12, 360],
         targetIds: ['screen-spine-primary-2'],
       },
       startView: {
@@ -423,7 +423,7 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       label: 'Right Edge Far',
       camera: {
         lookAtOffset: [0, 56, 0],
-        positionOffset: [-220, 146, 700],
+        positionOffset: [-300, 150, 460],
         targetIds: ['screen-array-right-2'],
       },
       startView: {
@@ -681,7 +681,7 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       label: 'Stadium Approach',
       camera: {
         lookAtOffset: [0, 74, 0],
-        positionOffset: [0, 154, 430],
+        positionOffset: [0, 24, 240],
         targetIds: ['rear-campus-event-pavilion-left-feed-surface', 'rear-campus-event-pavilion-right-feed-surface'],
       },
       startView: {
@@ -701,7 +701,7 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       expectedVisibleLayers: ['stadium-screen-surface'],
       camera: {
         lookAtOffset: [0, 30, 0],
-        positionOffset: [-620, 210, 620],
+        positionOffset: [-300, 24, 300],
         targetIds: ['rear-campus-event-pavilion-left-feed-surface'],
       },
       forbiddenKeyObjectIds: STADIUM_TRANSITION_FORBIDDEN_OBJECT_IDS,

@@ -16,6 +16,7 @@ import {
   GLOBAL_GROUND_SIZE,
   STADIUM_FORECOURT_GROUND_OPACITY,
 } from '../WorldGroundLayout';
+import { buildCityPerimeterConnectors } from '../WorldCityPerimeterLayout';
 import { buildRearCampusScreenHostShells } from '../rearCampusScreenHosts';
 import {
   RECOVERED_REAR_CAMPUS_STRUCTURES,
@@ -202,16 +203,17 @@ function buildMegaLandmarkEntries(args: {
     args.stadiumReserve,
   );
 
-  return landmarks.map(({ id, position, reviewTargetPosition, size }) => createEntry({
+  return landmarks.map((landmark) => createEntry({
     diagnosticOwners: [],
-    id,
+    id: landmark.id,
     interactionOwner: null,
     layer: 'mega-landmark',
-    planningZone: 'canonical-city',
-    position,
-    ...(reviewTargetPosition ? { reviewTargetPosition } : {}),
+    planningSections: landmark.planningSections,
+    planningZone: landmark.planningZone,
+    position: landmark.position,
+    ...(landmark.reviewTargetPosition ? { reviewTargetPosition: landmark.reviewTargetPosition } : {}),
     safeEditSeam: 'src/modules/expo/runtime/world/WorldCityMegaLandmarks.tsx',
-    size,
+    size: landmark.size,
     sourceFile: 'src/modules/expo/runtime/world/WorldCityMegaLandmarks.tsx',
     sourceFunction: 'WorldCityMegaLandmarks',
     sourceKind: 'runtime-landmark',
@@ -241,7 +243,7 @@ function buildAssignmentEntries(args: {
       interactionOwner: 'src/modules/expo/runtime/world/WorldCityScreenAssignments.tsx',
       layer: args.layer,
       planningSections: assignment.sections,
-      planningZone: args.planningZone,
+      planningZone: assignment.planningZone ?? args.planningZone,
       position: socket.position,
       safeEditSeam: 'src/modules/expo/runtime/planning/screens/buildScreenAssignmentPlan.ts',
       sourceFile: 'src/modules/expo/runtime/planning/screens/buildScreenAssignmentPlan.ts',
@@ -249,6 +251,26 @@ function buildAssignmentEntries(args: {
       sourceKind: 'screen-assignment',
     })];
   });
+}
+
+function buildCityPerimeterEntries(stadiumReserve: CanonicalWorldPlan['stadiumReserve']): WorldObjectRegistryEntry[] {
+  return buildCityPerimeterConnectors(stadiumReserve).map((connector) => createEntry({
+    diagnosticOwners: [
+      'scripts/audit-expo-world-registry.mjs',
+    ],
+    id: connector.id,
+    interactionOwner: null,
+    layer: 'city-mass',
+    planningRole: 'city-perimeter',
+    planningZone: 'canonical-city',
+    position: connector.position,
+    rotation: [0, 0, 0],
+    safeEditSeam: 'src/modules/expo/runtime/world/WorldCityPerimeterLayout.ts',
+    size: connector.size,
+    sourceFile: 'src/modules/expo/runtime/world/WorldCityPerimeterLayout.ts',
+    sourceFunction: 'buildCityPerimeterConnectors',
+    sourceKind: 'city-perimeter-connector',
+  }));
 }
 
 export function buildGroundWorldObjectRegistry(): WorldObjectRegistryEntry[] {
@@ -288,6 +310,7 @@ export function buildCityWorldObjectRegistry({
   const screenSurfaceAliasesById = buildStableTowerAliases(plan.filteredScreenSurfaces);
 
   return [
+    ...buildCityPerimeterEntries(plan.stadiumReserve),
     ...plan.filteredMasses.map((mass) => createEntry({
       diagnosticOwners: [],
       id: mass.id,
@@ -295,14 +318,14 @@ export function buildCityWorldObjectRegistry({
       layer: 'city-mass',
       planningSections: mass.sections,
       planningRole: mass.role ?? null,
-      planningZone: 'canonical-city',
+      planningZone: mass.planningZone ?? 'canonical-city',
       position: baseAnchoredBoxCenter(mass.position, mass.size),
       rotation: mass.rotation ?? [0, 0, 0],
-      safeEditSeam: 'src/modules/expo/runtime/planning/world-plan/buildCanonicalWorldPlan.ts',
+      safeEditSeam: mass.planningSource?.safeEditSeam ?? 'src/modules/expo/runtime/planning/world-plan/buildCanonicalWorldPlan.ts',
       size: mass.size,
-      sourceFile: 'src/modules/expo/runtime/planning/world-plan/buildCanonicalWorldPlan.ts',
-      sourceFunction: 'buildCanonicalWorldPlan',
-      sourceKind: 'city-mass',
+      sourceFile: mass.planningSource?.sourceFile ?? 'src/modules/expo/runtime/planning/world-plan/buildCanonicalWorldPlan.ts',
+      sourceFunction: mass.planningSource?.sourceFunction ?? 'buildCanonicalWorldPlan',
+      sourceKind: mass.planningSource?.sourceKind ?? 'city-mass',
     })),
     ...plan.filteredTowerLandmarks.map((tower) => {
       const size = resolveCityTowerAuditSize(tower);
@@ -316,14 +339,14 @@ export function buildCityWorldObjectRegistry({
         interactionOwner: null,
         layer: 'city-tower',
         planningSections: tower.sections,
-        planningZone: 'canonical-city',
+        planningZone: tower.planningZone ?? 'canonical-city',
         position: baseAnchoredBoxCenter(tower.position, size),
         rotation: [0, 0, 0],
-        safeEditSeam: 'src/modules/expo/runtime/planning/world-plan/buildCanonicalWorldPlan.ts',
+        safeEditSeam: tower.planningSource?.safeEditSeam ?? 'src/modules/expo/runtime/planning/world-plan/buildCanonicalWorldPlan.ts',
         size,
-        sourceFile: 'src/modules/expo/runtime/planning/world-plan/buildCanonicalWorldPlan.ts',
-        sourceFunction: 'buildCanonicalWorldPlan',
-        sourceKind: 'city-tower',
+        sourceFile: tower.planningSource?.sourceFile ?? 'src/modules/expo/runtime/planning/world-plan/buildCanonicalWorldPlan.ts',
+        sourceFunction: tower.planningSource?.sourceFunction ?? 'buildCanonicalWorldPlan',
+        sourceKind: tower.planningSource?.sourceKind ?? 'city-tower',
       });
     }),
     ...plan.filteredScreenSurfaces.map((surface) => createEntry({
@@ -337,7 +360,7 @@ export function buildCityWorldObjectRegistry({
       interactionOwner: null,
       layer: 'city-screen-surface',
       planningSections: surface.sections,
-      planningZone: 'canonical-city',
+      planningZone: surface.planningZone ?? 'canonical-city',
       position: surface.position,
       rotation: surface.rotation,
       safeEditSeam: 'src/modules/expo/runtime/planning/screens/buildScreenSurfacePlan.ts',
@@ -354,7 +377,7 @@ export function buildCityWorldObjectRegistry({
       interactionOwner: null,
       layer: 'city-screen-socket',
       planningSections: socket.sections,
-      planningZone: 'canonical-city',
+      planningZone: socket.planningZone ?? 'canonical-city',
       position: socket.position,
       rotation: socket.rotation,
       safeEditSeam: 'src/modules/expo/runtime/planning/screens/buildScreenSocketPlan.ts',

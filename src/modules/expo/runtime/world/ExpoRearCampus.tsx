@@ -9,6 +9,7 @@ import { WorldCityScreenAssignments } from './WorldCityScreenAssignments';
 import { WorldCityScreenSockets } from './WorldCityScreenSockets';
 import { WorldCityScreenSurfaces } from './WorldCityScreenSurfaces';
 import { ExpoRearCampusRecoveredStructures } from './ExpoRearCampusRecoveredStructures';
+import { ExpoRearCampusStructures } from './ExpoRearCampusStructures';
 import { buildRearCampusScreenHostShells } from './rearCampusScreenHosts';
 import {
   ColliderMaterial,
@@ -40,6 +41,11 @@ const EMPTY_PLANNING_GEOMETRY = {
   skybridgeMasses: [],
   towers: [],
 };
+
+const RENDERED_REAR_CAMPUS_PAVILION_IDS = new Set([
+  'rear-campus-event-pavilion-left',
+  'rear-campus-event-pavilion-right',
+]);
 
 function resolvePerimeterMaterial(connector: { accent: string; id: string }) {
   switch (connector.accent) {
@@ -89,7 +95,9 @@ export function ExpoRearCampus({
   const accent = visualProfile.global.hudAccent;
   usePlayerColliderRegistration(campusColliderRef, 'rear-campus-collider');
   const filteredStadiumForecourts = (rearCampus?.forecourts ?? []).filter(() => false);
-  const filteredStadiumSidePavilions = (rearCampus?.sidePavilions ?? []).filter(() => false);
+  const filteredStadiumSidePavilions = (rearCampus?.sidePavilions ?? []).filter((pavilion) => (
+    RENDERED_REAR_CAMPUS_PAVILION_IDS.has(pavilion.id)
+  ));
   const filteredStadiumLandmarkTowers = (rearCampus?.landmarkTowers ?? []).filter(() => false);
   const perimeterConnectors = rearCampus?.perimeterConnectors ?? [];
   const screenHostShells = useMemo(
@@ -155,6 +163,14 @@ export function ExpoRearCampus({
         accent={accent}
         campusCenterZ={campusCenterZ}
         enableHeavyShadows={false}
+      />
+      <ExpoRearCampusStructures
+        accent={accent}
+        campusCenterZ={campusCenterZ}
+        enableHeavyShadows={false}
+        screenFeeds={[]}
+        sidePavilions={filteredStadiumSidePavilions}
+        towers={filteredStadiumLandmarkTowers}
       />
 
       <group name="rear-campus-screen-host-shells">
