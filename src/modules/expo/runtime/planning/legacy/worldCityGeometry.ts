@@ -986,7 +986,7 @@ export function buildSignatureMegaLandmarks(districtCount: number, districtStrid
   const boulevardCenterZ = -196 - (signatureDistrictIndex * districtStride) - 122;
   return filterStructuralCityMasses([
     { id: 'signature-mega-front-court', position: [0, 0, boulevardCenterZ - 72], size: [112, 8, 22], color: '#e5edf2' },
-    { id: 'signature-mega-pylon-left', position: [-1160, 0, boulevardCenterZ - 34], size: [48, 246, 48], color: '#748998' },
+    { id: 'signature-mega-pylon-left', position: [-1390, 0, boulevardCenterZ - 140], size: [48, 246, 48], color: '#748998' },
     { id: 'signature-mega-pylon-right', position: [500, 0, boulevardCenterZ + 200], size: [48, 238, 48], color: '#748998' },
     { id: 'signature-mega-center-beacon', position: [0, 0, boulevardCenterZ - 326], size: [24, 118, 24], color: '#b6c5ce' },
     { id: 'signature-mega-dais-left', position: [-162, 0, boulevardCenterZ - 176], size: [62, 12, 28], color: '#dbe4ea' },

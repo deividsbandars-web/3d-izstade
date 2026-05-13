@@ -895,6 +895,52 @@ function auditLeftOuterSupportTowerRhythm(entries) {
   return issues;
 }
 
+function auditLeftLandmarkRhythm(entries) {
+  const issues = [];
+  const rhythmIds = new Set([
+    'mega-landmark-left-grand-rampart',
+    'mega-landmark-left-cantilever-forum',
+    'mega-landmark-left-split-crown-gate',
+    'mega-landmark-left-broken-wall-monument',
+    'mega-landmark-left-disc-habitat',
+    'mega-landmark-left-split-monolith-pair',
+  ]);
+  const leftLandmarks = entries
+    .filter((entry) => rhythmIds.has(entry.id))
+    .map((entry) => ({ entry, position: tuple3(entry.position) }))
+    .filter((item) => item.position)
+    .sort((left, right) => left.position[2] - right.position[2]);
+
+  for (let leftIndex = 0; leftIndex < leftLandmarks.length; leftIndex += 1) {
+    for (let rightIndex = leftIndex + 1; rightIndex < leftLandmarks.length; rightIndex += 1) {
+      const left = leftLandmarks[leftIndex];
+      const right = leftLandmarks[rightIndex];
+      const xDelta = Math.abs(left.position[0] - right.position[0]);
+      const zDelta = Math.abs(left.position[2] - right.position[2]);
+
+      if (zDelta > 360 || xDelta >= 180) {
+        continue;
+      }
+
+      pushIssue(
+        issues,
+        'medium',
+        'left-landmark-column-rhythm',
+        `${left.entry.id} and ${right.entry.id} sit in the same left-side sightline; left district landmarks need staggered X/Z placement instead of repeated clustered columns.`,
+        [left.entry.id, right.entry.id],
+        {
+          sourceA: left.entry.sourceFile ?? null,
+          sourceB: right.entry.sourceFile ?? null,
+          xDelta: Math.round(xDelta),
+          zDelta: Math.round(zDelta),
+        },
+      );
+    }
+  }
+
+  return issues;
+}
+
 function getEntryBoundsById(entries) {
   return new Map(entries
     .map((entry) => [entry.id, { bounds: resolveBounds(entry), entry }])
@@ -1679,6 +1725,7 @@ const issues = [
   ...auditCityScreenHostReadabilityClearance(entries),
   ...auditCityScreenRowRhythm(entries),
   ...auditLeftOuterSupportTowerRhythm(entries),
+  ...auditLeftLandmarkRhythm(entries),
   ...auditPerimeterAttachmentPrecision(entries),
   ...auditRecoveredStructurePerimeterIntrusions(entries),
   ...auditCitySmallBlockClutter(entries),
