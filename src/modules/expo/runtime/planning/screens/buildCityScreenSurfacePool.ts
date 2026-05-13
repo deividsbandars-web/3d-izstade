@@ -17,6 +17,21 @@ export function buildCityScreenSurfacePool(districtCount: number, districtStride
   const sideArrayClearanceX = 236;
   const sideArrayLeftForwardZ = 64;
   const sideArrayRightForwardZ = 0;
+  const sideArrayY = (districtIndex: number) => 118 + (districtIndex * 12);
+  const sideArrayUpperY = (districtIndex: number) => 166 + (districtIndex * 10);
+  const sideArraySize = (districtIndex: number): [number, number, number] => [142 + (districtIndex * 6), 148 + (districtIndex * 8), 2.8];
+  const sideArrayUpperSize = (districtIndex: number): [number, number, number] => [120 + (districtIndex * 4), 138 + (districtIndex * 6), 2.8];
+  const sideArrayLeftDepthOffset = (districtIndex: number) => (
+    districtIndex === 1
+      ? sideArrayLeftForwardZ - 218
+      : sideArrayLeftForwardZ + (districtIndex === 2 ? 18 : 0)
+  );
+  const sideArrayRightDepthOffset = (districtIndex: number) => (
+    districtIndex === 0 ? sideArrayRightForwardZ + 14 : sideArrayRightForwardZ
+  );
+  const sideArrayLeftUpperDepthOffset = (districtIndex: number) => (
+    districtIndex === 0 ? -2 : districtIndex === 1 ? -186 : -46
+  );
 
   return Array.from({ length: Math.max(3, districtCount) }, (_, districtIndex) => {
     const baseZ = -214 - (districtIndex * districtStride);
@@ -45,9 +60,9 @@ export function buildCityScreenSurfacePool(districtCount: number, districtStride
       },
       {
         id: `screen-array-left-${districtIndex}`,
-        position: [-968 - sideArrayClearanceX, 98, baseZ + 104 + sideArrayLeftForwardZ],
+        position: [-968 - sideArrayClearanceX, sideArrayY(districtIndex), baseZ + 104 + sideArrayLeftDepthOffset(districtIndex)],
         rotation: [0, flankYawLeft, 0],
-        size: [126, 122, 2.8],
+        size: sideArraySize(districtIndex),
         color: '#091320',
         glowColor: palette.supportLeft,
         role: 'support-wall' as const,
@@ -55,9 +70,9 @@ export function buildCityScreenSurfacePool(districtCount: number, districtStride
       },
       {
         id: `screen-array-left-upper-${districtIndex}`,
-        position: [-1470, 142, baseZ - 18],
+        position: [-1470, sideArrayUpperY(districtIndex), baseZ + sideArrayLeftUpperDepthOffset(districtIndex)],
         rotation: [0, inwardYawLeft, 0],
-        size: [104, 116, 2.8],
+        size: sideArrayUpperSize(districtIndex),
         color: '#091320',
         glowColor: palette.supportLeft,
         role: 'support-wall' as const,
@@ -65,9 +80,9 @@ export function buildCityScreenSurfacePool(districtCount: number, districtStride
       },
       {
         id: `screen-array-right-${districtIndex}`,
-        position: [968 + sideArrayClearanceX, 94, baseZ + 86 + sideArrayRightForwardZ],
+        position: [968 + sideArrayClearanceX, sideArrayY(districtIndex) - 2, baseZ + 86 + sideArrayRightDepthOffset(districtIndex)],
         rotation: [0, flankYawRight, 0],
-        size: [126, 122, 2.8],
+        size: sideArraySize(districtIndex),
         color: '#091320',
         glowColor: palette.supportRight,
         role: 'support-wall' as const,
@@ -75,9 +90,9 @@ export function buildCityScreenSurfacePool(districtCount: number, districtStride
       },
       {
         id: `screen-array-right-upper-${districtIndex}`,
-        position: [1470, 138, baseZ - 44],
+        position: [1470, sideArrayUpperY(districtIndex) - 2, baseZ - 44],
         rotation: [0, inwardYawRight, 0],
-        size: [104, 116, 2.8],
+        size: sideArrayUpperSize(districtIndex),
         color: '#091320',
         glowColor: palette.supportRight,
         role: 'support-wall' as const,

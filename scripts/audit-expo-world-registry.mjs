@@ -818,6 +818,79 @@ function auditCityScreenRowRhythm(entries) {
   return issues;
 }
 
+function auditSideArrayScreenHostScale(entries) {
+  const issues = [];
+  const entriesById = new Map(entries.map((entry) => [entry.id, entry]));
+  const sideArrayPattern = /^screen-array-(left|right)(-upper)?-(\d+)$/;
+  const sideArraySurfaces = entries
+    .filter((entry) => entry.layer === 'city-screen-surface' && sideArrayPattern.test(entry.id))
+    .map((entry) => {
+      const match = sideArrayPattern.exec(entry.id);
+      return {
+        districtIndex: Number(match?.[3] ?? 0),
+        entry,
+        isUpper: Boolean(match?.[2]),
+        position: tuple3(entry.position),
+        size: positiveTuple3(entry.size),
+      };
+    })
+    .filter((item) => item.position && item.size);
+
+  for (const surface of sideArraySurfaces) {
+    const minSurfaceY = surface.isUpper
+      ? 164 + (surface.districtIndex * 8)
+      : 116 + (surface.districtIndex * 10);
+    const minSurfaceHeight = surface.isUpper
+      ? 136 + (surface.districtIndex * 5)
+      : 146 + (surface.districtIndex * 6);
+
+    if (surface.position[1] < minSurfaceY || surface.size[1] < minSurfaceHeight) {
+      pushIssue(
+        issues,
+        'medium',
+        'side-array-screen-scale-too-small',
+        `${surface.entry.id} is too low or small for a side/far city screen; side array screens need elevated, readable plates instead of low ground-level panels.`,
+        [surface.entry.id],
+        {
+          minSurfaceHeight,
+          minSurfaceY,
+          sourceA: surface.entry.sourceFile ?? null,
+          surfaceHeight: Math.round(surface.size[1]),
+          surfaceY: Math.round(surface.position[1]),
+        },
+      );
+    }
+
+    const host = entriesById.get(`${surface.entry.id}-host`);
+    const hostSize = positiveTuple3(host?.size);
+    if (!host || !hostSize) {
+      continue;
+    }
+
+    const minHostWidth = surface.size[0] * 1.25;
+    const minHostHeight = surface.position[1] + (surface.size[1] * 0.5) + 22;
+    if (hostSize[0] < minHostWidth || hostSize[1] < minHostHeight) {
+      pushIssue(
+        issues,
+        'medium',
+        'side-array-host-plate-too-small',
+        `${host.id} is not large enough for ${surface.entry.id}; side/far screen host plates must read as enlarged support slabs.`,
+        [host.id, surface.entry.id],
+        {
+          hostHeight: Math.round(hostSize[1]),
+          hostWidth: Math.round(hostSize[0]),
+          minHostHeight: Math.round(minHostHeight),
+          minHostWidth: Math.round(minHostWidth),
+          sourceA: host.sourceFile ?? null,
+          sourceB: surface.entry.sourceFile ?? null,
+        },
+      );
+    }
+  }
+
+  return issues;
+}
+
 function auditLeftOuterSupportTowerRhythm(entries) {
   const issues = [];
   const leftOuterTowers = entries
@@ -1724,6 +1797,7 @@ const issues = [
   ...auditCitySolidClearance(entries),
   ...auditCityScreenHostReadabilityClearance(entries),
   ...auditCityScreenRowRhythm(entries),
+  ...auditSideArrayScreenHostScale(entries),
   ...auditLeftOuterSupportTowerRhythm(entries),
   ...auditLeftLandmarkRhythm(entries),
   ...auditPerimeterAttachmentPrecision(entries),

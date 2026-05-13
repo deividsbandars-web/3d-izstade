@@ -54,7 +54,7 @@ export function buildWorldCityMegaLandmarkBounds({
   return [
     createMegaLandmarkBound({ id: 'mega-landmark-arrival', planningSection: 'arrival', planningZone: 'arrival', position: [0, 104, 256], size: [320, 208, 72] }),
     createMegaLandmarkBound({ id: 'mega-landmark-showcase', planningSection: 'middle', planningZone: 'center-spine', position: [0, 104, 32], size: [510, 208, 96] }),
-    createMegaLandmarkBound({ id: 'mega-landmark-media', planningSection: 'middle', planningZone: 'center-spine', position: [0, 120, mediaBaseZ], size: [780, 240, 96] }),
+    createMegaLandmarkBound({ id: 'mega-landmark-media', planningSection: 'middle', planningZone: 'center-spine', position: [0, 120, mediaBaseZ], reviewTargetPosition: [0, 198, mediaBaseZ], size: [780, 240, 96] }),
     createMegaLandmarkBound({ id: 'mega-landmark-media-frame-wall', planningSection: 'middle', planningZone: 'center-spine', position: [860, 122, mediaBaseZ - 148], size: [296, 244, 70] }),
     createMegaLandmarkBound({ id: 'mega-landmark-media-signal-pods', planningSection: 'middle', planningZone: 'center-spine', position: [500, 54, mediaBaseZ + 222], size: [320, 108, 70] }),
     createMegaLandmarkBound({ id: 'mega-landmark-discovery', planningSection: 'middle', planningZone: 'center-spine', position: [0, 90, discoveryBaseZ], size: [460, 180, 104] }),
