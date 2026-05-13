@@ -20,12 +20,16 @@ function Resolve-WsUrl {
     throw "No CDP targets returned from $JsonUrl"
   }
 
-  $preferred = $targets | Where-Object {
+  $pageTargets = @($targets | Where-Object {
+    $_.webSocketDebuggerUrl -and $_.type -eq 'page'
+  })
+
+  $preferred = $pageTargets | Where-Object {
     $_.webSocketDebuggerUrl -and ($_.url -eq $PreferredUrl)
   } | Select-Object -First 1
 
   if (-not $preferred) {
-    $preferred = $targets | Where-Object {
+    $preferred = $pageTargets | Where-Object {
       $_.webSocketDebuggerUrl -and (
         ($_.url -like "*expo-3d*") -or
         ($_.title -like "*expo*")
@@ -37,9 +41,14 @@ function Resolve-WsUrl {
     return [string]$preferred.webSocketDebuggerUrl
   }
 
-  $firstPage = $targets | Where-Object { $_.webSocketDebuggerUrl } | Select-Object -First 1
+  $firstPage = $pageTargets | Select-Object -First 1
   if ($firstPage) {
     return [string]$firstPage.webSocketDebuggerUrl
+  }
+
+  $fallback = $targets | Where-Object { $_.webSocketDebuggerUrl } | Select-Object -First 1
+  if ($fallback) {
+    return [string]$fallback.webSocketDebuggerUrl
   }
 
   throw "No webSocketDebuggerUrl found in $JsonUrl"
@@ -80,7 +89,14 @@ function Read-CdpUntil {
     $ms = New-Object System.IO.MemoryStream
     do {
       $segment = [ArraySegment[byte]]::new($buffer)
-      $result = $Ws.ReceiveAsync($segment, [Threading.CancellationToken]::None).GetAwaiter().GetResult()
+      $cts = [Threading.CancellationTokenSource]::new([TimeSpan]::FromSeconds(30))
+      try {
+        $result = $Ws.ReceiveAsync($segment, $cts.Token).GetAwaiter().GetResult()
+      } catch [OperationCanceledException] {
+        throw "Timed out waiting for CDP response id $TargetId"
+      } finally {
+        $cts.Dispose()
+      }
       if ($result.Count -gt 0) { $ms.Write($buffer, 0, $result.Count) }
     } while (-not $result.EndOfMessage)
 

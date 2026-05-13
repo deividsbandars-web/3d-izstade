@@ -63,6 +63,12 @@ const renderedLegacyMediaWallMassIds = canonicalPlan.filteredMasses
 const cityScreenHostMasses = canonicalPlan.filteredMasses
   .filter((mass) => mass.id.startsWith('screen-') && mass.id.endsWith('-host'))
   .sort((left, right) => left.id.localeCompare(right.id));
+const sideArrayScreenSurfaces = canonicalPlan.filteredScreenSurfaces
+  .filter((surface) => surface.id.startsWith('screen-array-'))
+  .sort((left, right) => left.id.localeCompare(right.id));
+const sideArrayHostMassById = new Map(cityScreenHostMasses.map((mass) => [mass.id, mass]));
+const sideArraySocketBySurfaceId = new Map(canonicalPlan.screenSockets.map((socket) => [socket.surfaceId, socket]));
+const sideArrayAssignmentBySocketId = new Map(canonicalPlan.screenAssignments.map((assignment) => [assignment.socketId, assignment]));
 const filteredInputPlan = buildCanonicalWorldPlan({
   boothPlacements: leftHiddenRenderPlacements,
   districtPrograms: world.districtPrograms,
@@ -82,6 +88,33 @@ assert.deepEqual(renderedLegacyMediaWallMassIds, []);
 assert.ok(canonicalPlan.filteredMasses.some((mass) => mass.id === 'screen-marquee-left-0-host'));
 assert.ok(!cityMassSourceFunctions.has('buildMediaWallLandmarks'));
 assert.ok(cityScreenHostMasses.length > 0);
+assert.ok(sideArrayScreenSurfaces.length > 0);
+for (const surface of sideArrayScreenSurfaces) {
+  const match = /^screen-array-(?:left|right)(-upper)?-(\d+)$/.exec(surface.id);
+  assert.ok(match, `unexpected side-array screen id: ${surface.id}`);
+  const districtIndex = Number(match[2]);
+  const isUpper = Boolean(match[1]);
+  const minSurfaceY = isUpper ? 216 + (districtIndex * 12) : 146 + (districtIndex * 14);
+  const minSurfaceHeight = isUpper ? 184 + (districtIndex * 8) : 192 + (districtIndex * 10);
+  assert.ok(surface.position[1] >= minSurfaceY, `${surface.id} must be elevated for side/far visibility`);
+  assert.ok(surface.size[1] >= minSurfaceHeight, `${surface.id} must use a tall side/far host plate`);
+
+  const host = sideArrayHostMassById.get(`${surface.id}-host`);
+  assert.ok(host, `${surface.id} must have a planned host mass`);
+  assert.ok(host.size[0] >= surface.size[0] * 1.25, `${host?.id} must be wider than its side-array screen`);
+  assert.ok(host.size[1] >= surface.position[1] + (surface.size[1] * 0.5) + 38, `${host?.id} must carry the elevated side-array plate`);
+
+  const socket = sideArraySocketBySurfaceId.get(surface.id);
+  assert.ok(socket, `${surface.id} must have a screen socket`);
+  assert.ok(socket.frameSize[0] >= surface.size[0] * 0.92, `${socket?.id} must expose most of the plate width`);
+  assert.ok(socket.frameSize[1] >= surface.size[1] * 0.9, `${socket?.id} must expose most of the plate height`);
+
+  const assignment = socket ? sideArrayAssignmentBySocketId.get(socket.id) : null;
+  assert.ok(assignment, `${socket?.id} must receive an assignment`);
+  assert.equal(assignment?.renderIntent?.fullBleed, true, `${assignment?.id} must use full-bleed side-array rendering`);
+  assert.ok((assignment?.renderIntent?.frameWidth ?? 0) >= surface.size[0] * 0.88, `${assignment?.id} must render a wide ad face`);
+  assert.ok((assignment?.renderIntent?.frameHeight ?? 0) >= surface.size[1] * 0.84, `${assignment?.id} must render a tall ad face`);
+}
 assert.ok(
   cityScreenHostMasses.every((mass) => mass.planningSource?.sourceFunction === 'buildCityScreenHostMasses'),
   `screen host masses must be screen-planned, got: ${cityScreenHostMasses.map((mass) => `${mass.id}:${mass.planningSource?.sourceFunction}`).join(', ')}`,

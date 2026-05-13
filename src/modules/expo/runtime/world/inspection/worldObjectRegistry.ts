@@ -245,7 +245,11 @@ function buildAssignmentEntries(args: {
       planningSections: assignment.sections,
       planningZone: assignment.planningZone ?? args.planningZone,
       position: socket.position,
+      rotation: socket.rotation,
       safeEditSeam: 'src/modules/expo/runtime/planning/screens/buildScreenAssignmentPlan.ts',
+      size: assignment.renderIntent
+        ? [assignment.renderIntent.frameWidth, assignment.renderIntent.frameHeight, 0.2]
+        : [socket.frameSize[0], socket.frameSize[1], 0.2],
       sourceFile: 'src/modules/expo/runtime/planning/screens/buildScreenAssignmentPlan.ts',
       sourceFunction: 'buildZoneScreenAssignmentPlan',
       sourceKind: 'screen-assignment',

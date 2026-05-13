@@ -838,11 +838,11 @@ function auditSideArrayScreenHostScale(entries) {
 
   for (const surface of sideArraySurfaces) {
     const minSurfaceY = surface.isUpper
-      ? 164 + (surface.districtIndex * 8)
-      : 116 + (surface.districtIndex * 10);
+      ? 216 + (surface.districtIndex * 12)
+      : 146 + (surface.districtIndex * 14);
     const minSurfaceHeight = surface.isUpper
-      ? 136 + (surface.districtIndex * 5)
-      : 146 + (surface.districtIndex * 6);
+      ? 184 + (surface.districtIndex * 8)
+      : 192 + (surface.districtIndex * 10);
 
     if (surface.position[1] < minSurfaceY || surface.size[1] < minSurfaceHeight) {
       pushIssue(
@@ -868,7 +868,7 @@ function auditSideArrayScreenHostScale(entries) {
     }
 
     const minHostWidth = surface.size[0] * 1.25;
-    const minHostHeight = surface.position[1] + (surface.size[1] * 0.5) + 22;
+    const minHostHeight = surface.position[1] + (surface.size[1] * 0.5) + 38;
     if (hostSize[0] < minHostWidth || hostSize[1] < minHostHeight) {
       pushIssue(
         issues,
@@ -882,6 +882,51 @@ function auditSideArrayScreenHostScale(entries) {
           minHostHeight: Math.round(minHostHeight),
           minHostWidth: Math.round(minHostWidth),
           sourceA: host.sourceFile ?? null,
+          sourceB: surface.entry.sourceFile ?? null,
+        },
+      );
+    }
+
+    const socket = entriesById.get(`${surface.entry.id}-socket`);
+    const socketSize = positiveTuple3(socket?.size);
+    const assignment = entriesById.get(`${surface.entry.id}-socket-assignment`);
+    const assignmentSize = positiveTuple3(assignment?.size);
+    const minSocketWidth = surface.size[0] * 0.92;
+    const minSocketHeight = surface.size[1] * 0.9;
+    const minAssignmentWidth = surface.size[0] * 0.88;
+    const minAssignmentHeight = surface.size[1] * 0.84;
+
+    if (!socketSize || socketSize[0] < minSocketWidth || socketSize[1] < minSocketHeight) {
+      pushIssue(
+        issues,
+        'medium',
+        'side-array-screen-socket-area-too-small',
+        `${socket?.id ?? `${surface.entry.id}-socket`} does not expose enough of ${surface.entry.id}; side/far plates need a large usable ad face, not a thick bezel.`,
+        [surface.entry.id, socket?.id].filter(Boolean),
+        {
+          minSocketHeight: Math.round(minSocketHeight),
+          minSocketWidth: Math.round(minSocketWidth),
+          socketHeight: socketSize ? Math.round(socketSize[1]) : null,
+          socketWidth: socketSize ? Math.round(socketSize[0]) : null,
+          sourceA: socket?.sourceFile ?? null,
+          sourceB: surface.entry.sourceFile ?? null,
+        },
+      );
+    }
+
+    if (!assignmentSize || assignmentSize[0] < minAssignmentWidth || assignmentSize[1] < minAssignmentHeight) {
+      pushIssue(
+        issues,
+        'medium',
+        'side-array-screen-ad-area-too-small',
+        `${assignment?.id ?? `${surface.entry.id}-socket-assignment`} is too small relative to ${surface.entry.id}; side/far screens must render near full-bleed ad content.`,
+        [surface.entry.id, socket?.id, assignment?.id].filter(Boolean),
+        {
+          assignmentHeight: assignmentSize ? Math.round(assignmentSize[1]) : null,
+          assignmentWidth: assignmentSize ? Math.round(assignmentSize[0]) : null,
+          minAssignmentHeight: Math.round(minAssignmentHeight),
+          minAssignmentWidth: Math.round(minAssignmentWidth),
+          sourceA: assignment?.sourceFile ?? null,
           sourceB: surface.entry.sourceFile ?? null,
         },
       );

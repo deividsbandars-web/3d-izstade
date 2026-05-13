@@ -194,34 +194,37 @@ function buildAssignmentPrimitives(args: {
   const headerHeight = intent.headerHeight;
   const footerHeight = intent.footerHeight;
   const bodyHeight = frameHeight - headerHeight - footerHeight;
-  const accentBarWidth = intent.semanticMode === 'landmark' ? frameWidth * 0.1 : frameWidth * 0.08;
+  const isFullBleed = intent.fullBleed === true;
+  const accentBarWidth = isFullBleed
+    ? frameWidth * 0.018
+    : intent.semanticMode === 'landmark' ? frameWidth * 0.1 : frameWidth * 0.08;
   const isHeroComposition = intent.semanticChip === 'LEFT MARQUEE' || intent.semanticChip === 'RIGHT MARQUEE' || intent.semanticChip === 'CENTER SPINE';
-  const contentWidth = frameWidth * 0.92;
-  const contentHeight = bodyHeight * 0.94;
-  const contentCenterX = imageUrl ? frameWidth * 0.18 : 0;
+  const contentWidth = frameWidth * (isFullBleed ? 0.965 : 0.92);
+  const contentHeight = bodyHeight * (isFullBleed ? 0.985 : 0.94);
+  const contentCenterX = imageUrl && !isFullBleed ? frameWidth * 0.18 : 0;
   const primitives: CanonicalPrimitive[] = [
     { color: '#0a121b', kind: 'plane', opacity: 1, position: [0, 0, 0.02], size: [frameWidth, frameHeight] },
     { color: '#101a25', kind: 'plane', opacity: 1, position: [0, 0, 0.03], size: [frameWidth * 0.98, frameHeight * 0.98] },
-    { color: intent.tierAccent, kind: 'plane', opacity: Math.min(intent.edgeGlowOpacity, 0.18), position: [-(frameWidth * 0.5) + (accentBarWidth * 0.5), 0, 0.04], size: [accentBarWidth, frameHeight * 0.9], transparent: true },
+    { color: intent.tierAccent, kind: 'plane', opacity: Math.min(intent.edgeGlowOpacity, isFullBleed ? 0.1 : 0.18), position: [-(frameWidth * 0.5) + (accentBarWidth * 0.5), 0, 0.04], size: [accentBarWidth, frameHeight * (isFullBleed ? 0.96 : 0.9)], transparent: true },
     imageUrl
-      ? { fallbackColor: accentColor, kind: 'texture-plane', opacity: 1, position: [contentCenterX, 0, 0.05], size: [imageUrl ? frameWidth * 0.56 : contentWidth, contentHeight], url: imageUrl }
+      ? { fallbackColor: accentColor, kind: 'texture-plane', opacity: 1, position: [contentCenterX, 0, 0.05], size: [isFullBleed ? contentWidth : frameWidth * 0.56, contentHeight], url: imageUrl }
       : { color: accentColor, kind: 'plane', opacity: 1, position: [0, 0, 0.05], size: [contentWidth, contentHeight] },
     { color: '#050b12', kind: 'plane', opacity: 1, position: [0, (frameHeight * 0.5) - (headerHeight * 0.5), 0.06], size: [frameWidth * 0.98, headerHeight] },
     { color: '#050b12', kind: 'plane', opacity: 1, position: [0, -(frameHeight * 0.5) + (footerHeight * 0.5), 0.06], size: [frameWidth * 0.98, footerHeight] },
-    { color: intent.tierAccent, kind: 'plane', opacity: isHeroComposition ? 0.14 : 0.1, position: [0, (frameHeight * 0.5) - headerHeight - Math.max(0.1, frameHeight * 0.02), 0.07], size: [intent.topStripWidth, Math.max(0.08, frameHeight * 0.014)], transparent: true },
-    { color: intent.chipColor, kind: 'text', maxWidth: frameWidth * 0.68, outlineBlur: 0.04, outlineColor: '#020617', outlineWidth: 0.02, position: [frameWidth * 0.04, (frameHeight * 0.5) - (headerHeight * 0.5), 0.072], size: Math.max(0.22, frameHeight * 0.04), text: intent.semanticChip },
+    { color: intent.tierAccent, kind: 'plane', opacity: isFullBleed ? 0.08 : isHeroComposition ? 0.14 : 0.1, position: [0, (frameHeight * 0.5) - headerHeight - Math.max(0.1, frameHeight * (isFullBleed ? 0.012 : 0.02)), 0.07], size: [intent.topStripWidth, Math.max(0.08, frameHeight * (isFullBleed ? 0.008 : 0.014))], transparent: true },
+    { color: intent.chipColor, kind: 'text', maxWidth: frameWidth * (isFullBleed ? 0.72 : 0.68), outlineBlur: 0.04, outlineColor: '#020617', outlineWidth: 0.02, position: [frameWidth * (isFullBleed ? 0.02 : 0.04), (frameHeight * 0.5) - (headerHeight * 0.5), 0.072], size: Math.max(0.22, frameHeight * (isFullBleed ? 0.026 : 0.04)), text: intent.semanticChip },
   ];
 
-    if (imageUrl) {
+  if (imageUrl && !isFullBleed) {
     primitives.push(
       { color: '#0b121b', kind: 'plane', opacity: 1, position: [-(frameWidth * 0.2), 0, 0.052], size: [frameWidth * 0.22, bodyHeight * 0.88] },
     );
   }
 
   primitives.push(
-    { color: intent.tierAccent, kind: 'text', maxWidth: frameWidth * 0.16, outlineBlur: 0.04, outlineColor: '#020617', outlineWidth: 0.02, position: [-(frameWidth * 0.34), (frameHeight * 0.5) - (headerHeight * 0.5), 0.072], size: Math.max(0.16, frameHeight * 0.028), text: tier.toUpperCase() },
-    { color: '#f8fafc', kind: 'text', maxWidth: frameWidth * (imageUrl ? (isHeroComposition ? 0.36 : 0.3) : (isHeroComposition ? 0.72 : 0.66)), outlineBlur: 0.05, outlineColor: '#020617', outlineWidth: 0.025, position: [frameWidth * (imageUrl ? 0.18 : 0.02), imageUrl ? frameHeight * 0.04 : 0.02, 0.074], size: Math.max(isHeroComposition ? 0.36 : 0.28, frameHeight * (imageUrl ? (isHeroComposition ? 0.05 : 0.044) : (isHeroComposition ? 0.08 : 0.07))), text: label },
-    { color: '#cbd5e1', kind: 'text', maxWidth: frameWidth * 0.68, outlineBlur: 0.05, outlineColor: '#020617', outlineWidth: 0.02, position: [frameWidth * 0.06, -(frameHeight * 0.5) + (footerHeight * 0.5), 0.074], size: Math.max(0.18, frameHeight * 0.03), text: subtitle },
+    { color: intent.tierAccent, kind: 'text', maxWidth: frameWidth * (isFullBleed ? 0.11 : 0.16), outlineBlur: 0.04, outlineColor: '#020617', outlineWidth: 0.02, position: [-(frameWidth * (isFullBleed ? 0.42 : 0.34)), (frameHeight * 0.5) - (headerHeight * 0.5), 0.072], size: Math.max(0.16, frameHeight * (isFullBleed ? 0.018 : 0.028)), text: tier.toUpperCase() },
+    { color: '#f8fafc', kind: 'text', maxWidth: frameWidth * (isFullBleed ? 0.74 : imageUrl ? (isHeroComposition ? 0.36 : 0.3) : (isHeroComposition ? 0.72 : 0.66)), outlineBlur: 0.05, outlineColor: '#020617', outlineWidth: 0.025, position: [frameWidth * (isFullBleed ? 0 : imageUrl ? 0.18 : 0.02), isFullBleed ? frameHeight * 0.02 : imageUrl ? frameHeight * 0.04 : 0.02, 0.074], size: Math.max(isHeroComposition ? 0.36 : 0.28, frameHeight * (isFullBleed ? 0.036 : imageUrl ? (isHeroComposition ? 0.05 : 0.044) : (isHeroComposition ? 0.08 : 0.07))), text: label },
+    { color: '#cbd5e1', kind: 'text', maxWidth: frameWidth * (isFullBleed ? 0.8 : 0.68), outlineBlur: 0.05, outlineColor: '#020617', outlineWidth: 0.02, position: [frameWidth * (isFullBleed ? 0.02 : 0.06), -(frameHeight * 0.5) + (footerHeight * 0.5), 0.074], size: Math.max(0.18, frameHeight * (isFullBleed ? 0.02 : 0.03)), text: subtitle },
   );
 
   if (isHeroComposition) {
@@ -266,7 +269,10 @@ export function buildZoneScreenAssignmentPlan(args: {
     const isMidTowerSocket = socket.id.includes('-mid-tower-');
     const isSupportTowerSocket = socket.id.includes('-support-tower-') || socket.id.includes('-outer-support-tower-');
     const isRearCampusWall = args.zoneId === 'rear-campus' && socket.kind === 'wall';
-    const frameScale = isCenterSpineHero
+    const isSideArraySocket = socket.surfaceId.startsWith('screen-array-');
+    const frameScale = isSideArraySocket
+      ? 0.99
+      : isCenterSpineHero
       ? 0.92
       : isHeroComposition
         ? 0.9
@@ -281,8 +287,8 @@ export function buildZoneScreenAssignmentPlan(args: {
             : 0.86;
     const frameWidth = socket.frameSize[0] * frameScale;
     const frameHeight = socket.frameSize[1] * frameScale;
-    const headerHeight = Math.max(0.24, frameHeight * (isCenterSpineHero ? 0.13 : isHeroComposition ? 0.12 : isRearCampusWall ? 0.08 : 0.1));
-    const footerHeight = Math.max(0.22, frameHeight * (isCenterSpineHero ? 0.1 : isHeroComposition ? 0.09 : isRearCampusWall ? 0.065 : 0.08));
+    const headerHeight = Math.max(0.24, frameHeight * (isSideArraySocket ? 0.045 : isCenterSpineHero ? 0.13 : isHeroComposition ? 0.12 : isRearCampusWall ? 0.08 : 0.1));
+    const footerHeight = Math.max(0.22, frameHeight * (isSideArraySocket ? 0.035 : isCenterSpineHero ? 0.1 : isHeroComposition ? 0.09 : isRearCampusWall ? 0.065 : 0.08));
     const detailDistance = tier === 'hero' ? 1100 : tier === 'elite' ? 900 : 700;
     const subtitleDistance = tier === 'hero' ? 760 : tier === 'elite' ? 620 : 480;
     const hasImage = Boolean(placement.company?.posterUrl || placement.company?.heroAssetUrl || placement.company?.logo_url);
@@ -297,6 +303,7 @@ export function buildZoneScreenAssignmentPlan(args: {
       footerHeight,
       frameHeight,
       frameWidth,
+      fullBleed: isSideArraySocket,
       headerHeight,
       maxDistance: tier === 'hero' ? 1700 : tier === 'elite' ? 1350 : 980,
       panelOpacityFar: isTowerFamily ? (isSupportTowerSocket ? 0.24 : 0.38) : 0.44,
@@ -307,7 +314,7 @@ export function buildZoneScreenAssignmentPlan(args: {
       showCenterTitleDistance: detailDistance,
       subtitleDistance,
       tierAccent,
-      topStripWidth: isCenterSpineHero ? frameWidth * 0.86 : isHeroComposition ? frameWidth * 0.78 : isRearCampusWall ? frameWidth * 0.82 : isHeroTowerSocket ? frameWidth * 0.6 : semantic.mode === 'beacon' ? frameWidth * 0.4 : semantic.mode === 'signal' ? frameWidth * 0.52 : frameWidth * 0.66,
+      topStripWidth: isSideArraySocket ? frameWidth * 0.9 : isCenterSpineHero ? frameWidth * 0.86 : isHeroComposition ? frameWidth * 0.78 : isRearCampusWall ? frameWidth * 0.82 : isHeroTowerSocket ? frameWidth * 0.6 : semantic.mode === 'beacon' ? frameWidth * 0.4 : semantic.mode === 'signal' ? frameWidth * 0.52 : frameWidth * 0.66,
     } satisfies NonNullable<CityScreenAssignment['renderIntent']>;
 
     return [{

@@ -228,6 +228,7 @@ export type CityScreenAssignment = {
     chipColor: string;
     detailDistance: number;
     edgeGlowOpacity: number;
+    fullBleed?: boolean;
     frameHeight: number;
     frameWidth: number;
     headerHeight: number;
@@ -1148,11 +1149,14 @@ export function buildScreenSockets(surfaces: CityScreenSurface[]): CityScreenSoc
     }
 
     if (surface.role === 'support-wall') {
+      const isSideArraySurface = surface.id.startsWith('screen-array-');
       return {
         color: surface.glowColor,
-        frameSize: surface.id.startsWith('rear-campus-')
-          ? [surface.size[0] * 0.9, surface.size[1] * 0.88]
-          : [surface.size[0] * 0.8, surface.size[1] * 0.78],
+        frameSize: isSideArraySurface
+          ? [surface.size[0] * 0.96, surface.size[1] * 0.94]
+          : surface.id.startsWith('rear-campus-')
+            ? [surface.size[0] * 0.9, surface.size[1] * 0.88]
+            : [surface.size[0] * 0.8, surface.size[1] * 0.78],
         id: `${surface.id}-socket`,
         kind: 'wall',
         position: [surface.position[0] + offsetX, surface.position[1] + offsetY, surface.position[2] + offsetZ],

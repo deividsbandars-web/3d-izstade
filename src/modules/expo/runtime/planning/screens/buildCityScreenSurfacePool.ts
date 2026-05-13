@@ -17,10 +17,10 @@ export function buildCityScreenSurfacePool(districtCount: number, districtStride
   const sideArrayClearanceX = 236;
   const sideArrayLeftForwardZ = 64;
   const sideArrayRightForwardZ = 0;
-  const sideArrayY = (districtIndex: number) => 118 + (districtIndex * 12);
-  const sideArrayUpperY = (districtIndex: number) => 166 + (districtIndex * 10);
-  const sideArraySize = (districtIndex: number): [number, number, number] => [142 + (districtIndex * 6), 148 + (districtIndex * 8), 2.8];
-  const sideArrayUpperSize = (districtIndex: number): [number, number, number] => [120 + (districtIndex * 4), 138 + (districtIndex * 6), 2.8];
+  const sideArrayY = (districtIndex: number) => 148 + (districtIndex * 18);
+  const sideArrayUpperY = (districtIndex: number) => 218 + (districtIndex * 16);
+  const sideArraySize = (districtIndex: number): [number, number, number] => [142 + (districtIndex * 6), 196 + (districtIndex * 14), 2.8];
+  const sideArrayUpperSize = (districtIndex: number): [number, number, number] => [120 + (districtIndex * 4), 186 + (districtIndex * 12), 2.8];
   const sideArrayLeftDepthOffset = (districtIndex: number) => (
     districtIndex === 1
       ? sideArrayLeftForwardZ - 218
