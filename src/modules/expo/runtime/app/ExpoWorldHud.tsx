@@ -198,6 +198,11 @@ export function ExpoWorldHud({
                 {isSpeaking ? 'VOICE LIVE' : 'VOICE READY'}
               </div>
             </div>
+            {!isTouchDevice && (
+              <div style={{ fontSize: '0.64rem', letterSpacing: '0.12em', color: '#9fb2c7', fontWeight: 800 }}>
+                WASD MOVE | MOUSE LOOK | Q/E OR LEFT/RIGHT TURN
+              </div>
+            )}
           </div>
 
           <button

@@ -253,7 +253,7 @@ export const EXPO_MODE_COPY = {
   title: 'WARPALA',
   subtitle: 'INDUSTRIAL METAVERSE',
   publicLabel: 'Public / lightweight:',
-  publicDescription: 'WALK LITE and DRONE VIEW open the stable Web3D city route.',
+  publicDescription: 'WALK LITE and DRONE VIEW open the stable Web3D city route. WASD moves; mouse, Q/E, or arrow keys turn.',
   premiumLabel: 'Premium / Unreal:',
   premiumDescription: 'Pixel Streaming stays optional and is entered only through FULL UNREAL ENGINE CITY.',
   fallbackLabel: 'Fallback:',

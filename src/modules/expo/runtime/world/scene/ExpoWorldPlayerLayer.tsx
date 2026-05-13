@@ -9,7 +9,20 @@ import { EXPO_START_VIEW_KEY, collectPlayerCollisionTargets, isCollisionMesh } f
 const PLAYER_RADIUS = 0.92;
 const PLAYER_WALK_SPEED = 108;
 const PLAYER_SPRINT_MULTIPLIER = 1.8;
+const PLAYER_KEYBOARD_TURN_SPEED = 2.25;
 const OPERATOR_TELEPORT_SETTLE_MS = 1200;
+const WALK_CONTROL_KEYS = new Set([
+  'ArrowLeft',
+  'ArrowRight',
+  'KeyA',
+  'KeyD',
+  'KeyE',
+  'KeyQ',
+  'KeyS',
+  'KeyW',
+  'ShiftLeft',
+  'ShiftRight',
+]);
 
 type OperatorTeleportDetail = {
   startView?: ExpoStartView;
@@ -34,7 +47,7 @@ export function ExpoWorldPlayerLayer({
   startView: ExpoStartView;
 }) {
   const { camera, scene } = useThree();
-  const [mov, setMov] = useState({ f: false, b: false, l: false, r: false, s: false });
+  const [mov, setMov] = useState({ f: false, b: false, l: false, r: false, s: false, turnL: false, turnR: false });
   const raycaster = useRef(new THREE.Raycaster());
   const desiredMoveVector = useRef(new THREE.Vector3());
   const moveVelocity = useRef(new THREE.Vector3());
@@ -129,22 +142,38 @@ export function ExpoWorldPlayerLayer({
     };
 
     const onKeyDown = (event: KeyboardEvent) => {
+      if (WALK_CONTROL_KEYS.has(event.code)) {
+        event.preventDefault();
+      }
+
       switch (event.code) {
         case 'KeyW': setMov((value) => ({ ...value, f: true })); break;
         case 'KeyS': setMov((value) => ({ ...value, b: true })); break;
         case 'KeyA': setMov((value) => ({ ...value, l: true })); break;
         case 'KeyD': setMov((value) => ({ ...value, r: true })); break;
+        case 'ArrowLeft':
+        case 'KeyQ': setMov((value) => ({ ...value, turnL: true })); break;
+        case 'ArrowRight':
+        case 'KeyE': setMov((value) => ({ ...value, turnR: true })); break;
         case 'ShiftLeft':
         case 'ShiftRight': setMov((value) => ({ ...value, s: true })); break;
       }
     };
 
     const onKeyUp = (event: KeyboardEvent) => {
+      if (WALK_CONTROL_KEYS.has(event.code)) {
+        event.preventDefault();
+      }
+
       switch (event.code) {
         case 'KeyW': setMov((value) => ({ ...value, f: false })); break;
         case 'KeyS': setMov((value) => ({ ...value, b: false })); break;
         case 'KeyA': setMov((value) => ({ ...value, l: false })); break;
         case 'KeyD': setMov((value) => ({ ...value, r: false })); break;
+        case 'ArrowLeft':
+        case 'KeyQ': setMov((value) => ({ ...value, turnL: false })); break;
+        case 'ArrowRight':
+        case 'KeyE': setMov((value) => ({ ...value, turnR: false })); break;
         case 'ShiftLeft':
         case 'ShiftRight': setMov((value) => ({ ...value, s: false })); break;
       }
@@ -183,9 +212,17 @@ export function ExpoWorldPlayerLayer({
     const operatorTeleportSettling = operatorTeleportUntil.current > Date.now();
 
     const stableDelta = Math.min(delta, 1 / 90);
-    const hasMoveIntent = mov.f || mov.b || mov.l || mov.r || mov.s || mobileMoveIntent?.f || mobileMoveIntent?.b || mobileMoveIntent?.l || mobileMoveIntent?.r || mobileMoveIntent?.s;
+    const hasKeyboardTurnIntent = mov.turnL || mov.turnR;
+    const hasMoveIntent = mov.f || mov.b || mov.l || mov.r || mov.s || hasKeyboardTurnIntent || mobileMoveIntent?.f || mobileMoveIntent?.b || mobileMoveIntent?.l || mobileMoveIntent?.r || mobileMoveIntent?.s;
     const sprintMultiplier = mov.s || mobileMoveIntent?.s ? PLAYER_SPRINT_MULTIPLIER : 1;
     const speed = PLAYER_WALK_SPEED * sprintMultiplier * stableDelta;
+    const turnDirection = (mov.turnR ? 1 : 0) - (mov.turnL ? 1 : 0);
+
+    if (turnDirection !== 0) {
+      camera.rotateY(-turnDirection * PLAYER_KEYBOARD_TURN_SPEED * stableDelta);
+      camera.updateMatrixWorld();
+    }
+
     desiredMoveVector.current.set(0, 0, 0);
 
     if (mov.f || mobileMoveIntent?.f) desiredMoveVector.current.z -= speed;
