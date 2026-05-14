@@ -23,16 +23,16 @@ export function resolveOpenBoothPavilionLayout(
   const isPremium = tier === 'premium';
   const isScreenFirstPremium = isPremium && !isElite && !isHero;
   const isScreenFirstBooth = (isPremium || isElite) && !isHero;
-  const width = metrics.footprintSize[0] * (isHero ? 0.98 : isElite ? 0.92 : isPremium ? 0.84 : 0.78);
-  const depth = metrics.footprintSize[1] * (isHero ? 0.76 : isElite ? 0.72 : isPremium ? 0.68 : 0.62);
-  const postHeight = Math.max(isHero ? 9.4 : isElite ? 8.4 : isPremium ? 7.3 : 6.7, metrics.colliderSize[1] * (isHero ? 0.78 : isElite ? 0.72 : isPremium ? 0.66 : 0.61));
-  const screenFrameWidth = width * (isHero ? 0.82 : isScreenFirstBooth ? 0.94 : isElite ? 0.76 : isPremium ? 0.72 : 0.62);
-  const screenFrameHeight = isHero ? 7.2 : isScreenFirstBooth ? 7.1 : isElite ? 6.4 : isPremium ? 5.6 : 4.8;
+  const width = metrics.footprintSize[0] * (isHero ? 0.98 : isScreenFirstBooth ? (isElite ? 0.96 : 0.92) : isPremium ? 0.84 : 0.78);
+  const depth = metrics.footprintSize[1] * (isHero ? 0.76 : isScreenFirstBooth ? 0.58 : isElite ? 0.72 : isPremium ? 0.68 : 0.62);
+  const postHeight = Math.max(isHero ? 9.4 : isElite ? 8.4 : isPremium ? 7.3 : 6.7, metrics.colliderSize[1] * (isHero ? 0.78 : isScreenFirstBooth ? 0.7 : isElite ? 0.72 : isPremium ? 0.66 : 0.61));
+  const screenFrameWidth = width * (isHero ? 0.82 : isScreenFirstBooth ? 1.08 : isElite ? 0.76 : isPremium ? 0.72 : 0.62);
+  const screenFrameHeight = isHero ? 7.2 : isScreenFirstBooth ? 7.8 : isElite ? 6.4 : isPremium ? 5.6 : 4.8;
   const screenSurfaceWidth = isScreenFirstBooth
-    ? screenFrameWidth * 0.97
+    ? screenFrameWidth * 0.985
     : width * (isHero ? 0.74 : isElite ? 0.68 : isPremium ? 0.62 : 0.52);
   const screenSurfaceHeight = isScreenFirstBooth
-    ? screenFrameHeight * 0.94
+    ? screenFrameHeight * 0.965
     : isHero ? 6.16 : isElite ? 5.46 : isPremium ? 4.82 : 4.18;
 
   return {
@@ -149,6 +149,20 @@ export function OpenBoothPavilion({
   const mediaGlowZ = 0.36;
   const mediaTrimZ = 0.42;
   const mediaSurfaceZs = mediaSurfaceCount === 2 ? [mediaFaceZ, -mediaFaceZ] : [mediaFaceZ];
+  const pavilionPostPositions = isScreenFirstBooth
+    ? [
+        [-(screenFrameWidth * 0.54), postHeight * 0.5, rearScreenZ + 0.08],
+        [screenFrameWidth * 0.54, postHeight * 0.5, rearScreenZ + 0.08],
+      ]
+    : [
+        [-postOffsetX, postHeight * 0.5, -postOffsetZ],
+        [postOffsetX, postHeight * 0.5, -postOffsetZ],
+        [-postOffsetX, postHeight * 0.5, postOffsetZ],
+        [postOffsetX, postHeight * 0.5, postOffsetZ],
+      ];
+  const pavilionPostSize: [number, number, number] = isScreenFirstBooth
+    ? [0.34, postHeight, 0.34]
+    : [isHero ? 0.56 : isElite ? 0.52 : isPremium ? 0.48 : 0.44, postHeight, isHero ? 0.56 : isElite ? 0.52 : isPremium ? 0.48 : 0.44];
 
   return (
     <group name="booth-open-pavilion">
@@ -196,14 +210,9 @@ export function OpenBoothPavilion({
           width={width}
         />
       )}
-      {[
-        [-postOffsetX, postHeight * 0.5, -postOffsetZ],
-        [postOffsetX, postHeight * 0.5, -postOffsetZ],
-        [-postOffsetX, postHeight * 0.5, postOffsetZ],
-        [postOffsetX, postHeight * 0.5, postOffsetZ],
-      ].map((position, index) => (
+      {pavilionPostPositions.map((position, index) => (
         <mesh key={`pavilion-post-${index}`} position={position as [number, number, number]} castShadow receiveShadow>
-          <boxGeometry args={[isHero ? 0.56 : isElite ? 0.52 : isPremium ? 0.48 : 0.44, postHeight, isHero ? 0.56 : isElite ? 0.52 : isPremium ? 0.48 : 0.44]} />
+          <boxGeometry args={pavilionPostSize} />
           <meshStandardMaterial color="#6c8190" metalness={0.18} roughness={0.58} />
         </mesh>
       ))}
@@ -378,7 +387,7 @@ export function OpenBoothPavilion({
             <planeGeometry args={[screenSurfaceWidth, screenSurfaceHeight]} />
             {screenUrl ? (
               <Suspense fallback={<meshStandardMaterial color={mediaFallbackColor} emissive={accentColor} emissiveIntensity={mediaEmissiveIntensity} />}>
-                <SponsorTextureSurface doubleSided fallbackColor={mediaFallbackColor} emissiveColor={accentColor} emissiveIntensity={mediaEmissiveIntensity} url={screenUrl} />
+                <SponsorTextureSurface fallbackColor={mediaFallbackColor} emissiveColor={accentColor} emissiveIntensity={mediaEmissiveIntensity} url={screenUrl} />
               </Suspense>
             ) : (
               <meshStandardMaterial color={mediaFallbackColor} emissive={accentColor} emissiveIntensity={mediaEmissiveIntensity} />
