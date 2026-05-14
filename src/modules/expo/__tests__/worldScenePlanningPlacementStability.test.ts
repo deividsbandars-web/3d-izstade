@@ -68,6 +68,7 @@ const sideArrayScreenSurfaces = canonicalPlan.filteredScreenSurfaces
   .filter((surface) => surface.id.startsWith('screen-array-'))
   .sort((left, right) => left.id.localeCompare(right.id));
 const sideArrayHostMassById = new Map(cityScreenHostMasses.map((mass) => [mass.id, mass]));
+const screenSurfaceById = new Map(canonicalPlan.filteredScreenSurfaces.map((surface) => [surface.id, surface]));
 const sideArraySocketBySurfaceId = new Map(canonicalPlan.screenSockets.map((socket) => [socket.surfaceId, socket]));
 const sideArrayAssignmentBySocketId = new Map(canonicalPlan.screenAssignments.map((assignment) => [assignment.socketId, assignment]));
 const filteredInputPlan = buildCanonicalWorldPlan({
@@ -92,6 +93,18 @@ for (const assignment of canonicalPlan.screenAssignments) {
   assert.ok(texturePrimitive, `${assignment.id} must render a generated billboard texture`);
   assert.ok((texturePrimitive.url ?? '').startsWith('generated-billboard:'), `${assignment.id} must use a controlled full-bleed ad texture`);
   assert.equal(texturePrimitive.opacity ?? 1, 1, `${assignment.id} billboard texture must be opaque to avoid transparent-sort jitter`);
+}
+for (const socket of canonicalPlan.screenSockets) {
+  const surface = screenSurfaceById.get(socket.surfaceId);
+  assert.ok(surface, `${socket.id} must reference an existing screen surface`);
+  const yaw = surface?.rotation[1] ?? 0;
+  const socketDepth = surface
+    ? ((socket.position[0] - surface.position[0]) * Math.sin(yaw)) + ((socket.position[2] - surface.position[2]) * Math.cos(yaw))
+    : 0;
+  assert.ok(
+    socketDepth >= (surface?.renderIntent?.housingDepth ?? 0) * 0.54,
+    `${socket.id} must place screen content in front of its housing shell instead of inside stacked surface geometry`,
+  );
 }
 assert.ok(
   canonicalPlan.filteredMasses.every((mass) => mass.planningSource?.sourceFile && mass.planningSource.sourceFunction !== 'buildCanonicalWorldPlan'),

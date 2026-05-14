@@ -84,6 +84,9 @@ export function OpenBoothPavilion({
   const mediaTrimColor = isHero ? '#d7ecff' : isElite ? '#c8e7f8' : isPremium ? '#b9dff4' : '#a9d2e9';
   const mediaEmissiveIntensity = isHero ? 0.2 : isElite ? 0.16 : isPremium ? 0.13 : 0.1;
   const mediaGlowOpacity = isHero ? 0.28 : isElite ? 0.24 : isPremium ? 0.2 : 0.18;
+  const mediaFaceZ = 0.32;
+  const mediaGlowZ = 0.36;
+  const mediaTrimZ = 0.42;
 
   return (
     <group name="booth-open-pavilion">
@@ -303,7 +306,7 @@ export function OpenBoothPavilion({
           <boxGeometry args={[screenFrameWidth, screenFrameHeight, 0.24]} />
           <meshStandardMaterial color={mediaFrameColor} emissive={accentColor} emissiveIntensity={0.045} metalness={0.1} roughness={0.5} />
         </mesh>
-        <mesh position={[0, 0, 0.16]}>
+        <mesh position={[0, 0, mediaFaceZ]}>
           <planeGeometry args={[screenSurfaceWidth, screenSurfaceHeight]} />
           {screenUrl ? (
             <Suspense fallback={<meshStandardMaterial color={mediaFallbackColor} emissive={accentColor} emissiveIntensity={mediaEmissiveIntensity} />}>
@@ -313,31 +316,31 @@ export function OpenBoothPavilion({
             <meshStandardMaterial color={mediaFallbackColor} emissive={accentColor} emissiveIntensity={mediaEmissiveIntensity} />
           )}
         </mesh>
-        <mesh position={[0, 0, 0.19]}>
+        <mesh position={[0, 0, mediaGlowZ]}>
           <planeGeometry args={[screenSurfaceWidth * 0.94, screenSurfaceHeight * 0.86]} />
-          <meshBasicMaterial color={accentColor} transparent opacity={mediaGlowOpacity} toneMapped={false} />
+          <meshBasicMaterial color={accentColor} depthWrite={false} transparent opacity={mediaGlowOpacity * 0.48} toneMapped={false} />
         </mesh>
-        <mesh position={[0, screenHeaderY, 0.17]} castShadow receiveShadow>
+        <mesh position={[0, screenHeaderY, mediaTrimZ]} castShadow receiveShadow>
           <boxGeometry args={[screenSurfaceWidth * (isHero ? 0.86 : isElite ? 0.82 : isPremium ? 0.76 : 0.68), 0.12, 0.12]} />
           <meshStandardMaterial color={mediaTrimColor} emissive={accentColor} emissiveIntensity={isHero ? 0.18 : isElite ? 0.14 : isPremium ? 0.11 : 0.08} roughness={0.18} metalness={0.1} />
         </mesh>
-        <mesh position={[0, screenFooterY, 0.17]} castShadow receiveShadow>
+        <mesh position={[0, screenFooterY, mediaTrimZ]} castShadow receiveShadow>
           <boxGeometry args={[screenSurfaceWidth * (isHero ? 0.72 : isElite ? 0.66 : isPremium ? 0.6 : 0.52), 0.08, 0.12]} />
           <meshStandardMaterial color={mediaTrimColor} emissive={accentColor} emissiveIntensity={isHero ? 0.16 : isElite ? 0.12 : isPremium ? 0.09 : 0.07} roughness={0.2} metalness={0.1} />
         </mesh>
-        <mesh position={[0, lowerMediaShelfY, 0.1]} castShadow receiveShadow>
+        <mesh position={[0, lowerMediaShelfY, 0.22]} castShadow receiveShadow>
           <boxGeometry args={[lowerMediaShelfWidth, 0.12, lowerMediaShelfDepth]} />
           <meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={isHero ? 0.14 : isElite ? 0.1 : 0.06} roughness={0.24} metalness={0.12} />
         </mesh>
         {(isElite || isHero) && (
-          <mesh position={[0, (screenFrameHeight * 0.5) + (isHero ? 0.44 : 0.34), 0.14]} castShadow receiveShadow>
+          <mesh position={[0, (screenFrameHeight * 0.5) + (isHero ? 0.44 : 0.34), mediaTrimZ]} castShadow receiveShadow>
             <boxGeometry args={[screenFrameWidth * (isHero ? 0.7 : 0.62), 0.12, 0.12]} />
             <meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={isHero ? 0.22 : 0.14} roughness={0.2} metalness={0.12} />
           </mesh>
         )}
         {!screenUrl && (
           <Text
-            position={[0, -0.04, 0.24]}
+            position={[0, -0.04, 0.48]}
             fontSize={isHero ? 0.84 : isElite ? 0.76 : isPremium ? 0.7 : 0.62}
             color={accentColor}
             anchorX="center"

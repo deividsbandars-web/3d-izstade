@@ -1115,20 +1115,20 @@ export function buildScreenSockets(surfaces: CityScreenSurface[]): CityScreenSoc
     const isRearCampusSurface = surface.id.startsWith('rear-campus-');
 
     if (surface.role === 'hero-wall') {
-      return isRearCampusSurface ? housingDepth * 0.46 : housingDepth * 0.42;
+      return isRearCampusSurface ? housingDepth * 0.58 : housingDepth * 0.6;
     }
 
     if (surface.role === 'support-wall') {
       return surface.id.startsWith('screen-array-')
-        ? housingDepth * 0.58
-        : isRearCampusSurface ? housingDepth * 0.44 : housingDepth * 0.4;
+        ? housingDepth * 0.6
+        : isRearCampusSurface ? housingDepth * 0.56 : housingDepth * 0.58;
     }
 
     if (surface.role === 'tower-crown') {
-      return housingDepth * 0.28;
+      return housingDepth * 0.56;
     }
 
-    return housingDepth * 0.3;
+    return housingDepth * 0.56;
   };
 
   return surfaces.map((surface) => {

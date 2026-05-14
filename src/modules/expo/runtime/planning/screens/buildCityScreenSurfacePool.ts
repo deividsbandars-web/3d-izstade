@@ -17,6 +17,7 @@ export function buildCityScreenSurfacePool(districtCount: number, districtStride
   const sideArrayClearanceX = 236;
   const sideArrayLeftForwardZ = 64;
   const sideArrayRightForwardZ = 0;
+  const sideArrayUpperX = 1560;
   const sideArrayY = (districtIndex: number) => 148 + (districtIndex * 18);
   const sideArrayUpperY = (districtIndex: number) => 218 + (districtIndex * 16);
   const sideArraySize = (districtIndex: number): [number, number, number] => [142 + (districtIndex * 6), 196 + (districtIndex * 14), 2.8];
@@ -24,7 +25,7 @@ export function buildCityScreenSurfacePool(districtCount: number, districtStride
   const sideArrayLeftDepthOffset = (districtIndex: number) => (
     districtIndex === 1
       ? sideArrayLeftForwardZ - 218
-      : sideArrayLeftForwardZ + (districtIndex === 2 ? 18 : 0)
+      : sideArrayLeftForwardZ + (districtIndex === 2 ? -24 : 0)
   );
   const sideArrayRightDepthOffset = (districtIndex: number) => (
     districtIndex === 0 ? sideArrayRightForwardZ + 14 : sideArrayRightForwardZ
@@ -70,7 +71,7 @@ export function buildCityScreenSurfacePool(districtCount: number, districtStride
       },
       {
         id: `screen-array-left-upper-${districtIndex}`,
-        position: [-1470, sideArrayUpperY(districtIndex), baseZ + sideArrayLeftUpperDepthOffset(districtIndex)],
+        position: [-sideArrayUpperX, sideArrayUpperY(districtIndex), baseZ + sideArrayLeftUpperDepthOffset(districtIndex)],
         rotation: [0, inwardYawLeft, 0],
         size: sideArrayUpperSize(districtIndex),
         color: '#091320',
@@ -90,7 +91,7 @@ export function buildCityScreenSurfacePool(districtCount: number, districtStride
       },
       {
         id: `screen-array-right-upper-${districtIndex}`,
-        position: [1470, sideArrayUpperY(districtIndex) - 2, baseZ - 44],
+        position: [sideArrayUpperX, sideArrayUpperY(districtIndex) - 2, baseZ - 44],
         rotation: [0, inwardYawRight, 0],
         size: sideArrayUpperSize(districtIndex),
         color: '#091320',
