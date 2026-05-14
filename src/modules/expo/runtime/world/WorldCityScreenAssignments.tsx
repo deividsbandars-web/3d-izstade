@@ -52,6 +52,7 @@ function renderPrimitive(primitive: CanonicalPrimitive, key: string, highlighted
       <mesh key={key} position={primitive.position} renderOrder={9}>
         <planeGeometry args={primitive.size} />
         <SponsorTextureSurface
+          depthWrite={false}
           fallbackColor={primitive.fallbackColor}
           opacity={highlighted ? getHighlightedOpacity(primitive.opacity, 0.92) : primitive.opacity ?? 0.92}
           url={primitive.url}
@@ -72,8 +73,8 @@ function renderPrimitive(primitive: CanonicalPrimitive, key: string, highlighted
         outlineBlur={primitive.outlineBlur}
         outlineColor={primitive.outlineColor}
         outlineWidth={primitive.outlineWidth}
-        position={primitive.position}
-        renderOrder={10}
+        position={[primitive.position[0], primitive.position[1], primitive.position[2] + 0.34]}
+        renderOrder={30}
       >
         {primitive.text}
       </Text>

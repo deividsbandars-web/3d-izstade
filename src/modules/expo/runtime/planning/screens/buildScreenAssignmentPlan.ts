@@ -180,6 +180,38 @@ function rankSocketsForZone(zoneId: ExpoPlanningZoneId, sockets: CityScreenSocke
   });
 }
 
+function truncateBillboardText(value: string, maxLength: number) {
+  const normalized = value.replace(/\s+/g, ' ').trim();
+  return normalized.length > maxLength
+    ? `${normalized.slice(0, Math.max(0, maxLength - 3)).trim()}...`
+    : normalized;
+}
+
+function buildFullBleedBillboardDataUrl({
+  accentColor,
+  label,
+  semanticChip,
+  subtitle,
+  tier,
+  tierAccent,
+}: {
+  accentColor: string;
+  label: string;
+  semanticChip: string;
+  subtitle: string;
+  tier: CityScreenAssignment['tier'];
+  tierAccent: string;
+}) {
+  return `generated-billboard:${encodeURIComponent(JSON.stringify({
+    accentColor,
+    chip: truncateBillboardText(semanticChip, 22).toUpperCase(),
+    label: truncateBillboardText(label, 28).toUpperCase(),
+    subtitle: truncateBillboardText(subtitle, 44).toUpperCase(),
+    tier: tier.toUpperCase(),
+    tierAccent,
+  }))}`;
+}
+
 function buildAssignmentPrimitives(args: {
   accentColor: string;
   imageUrl: string | null;
@@ -195,37 +227,57 @@ function buildAssignmentPrimitives(args: {
   const footerHeight = intent.footerHeight;
   const bodyHeight = frameHeight - headerHeight - footerHeight;
   const isFullBleed = intent.fullBleed === true;
+  const useTexturePlane = Boolean(imageUrl && !isFullBleed);
+  const fullBleedBillboardUrl = isFullBleed
+    ? buildFullBleedBillboardDataUrl({
+        accentColor,
+        label,
+        semanticChip: intent.semanticChip,
+        subtitle,
+        tier,
+        tierAccent: intent.tierAccent,
+      })
+    : null;
   const accentBarWidth = isFullBleed
     ? frameWidth * 0.018
     : intent.semanticMode === 'landmark' ? frameWidth * 0.1 : frameWidth * 0.08;
   const isHeroComposition = intent.semanticChip === 'LEFT MARQUEE' || intent.semanticChip === 'RIGHT MARQUEE' || intent.semanticChip === 'CENTER SPINE';
-  const contentWidth = frameWidth * (isFullBleed ? 0.965 : 0.92);
-  const contentHeight = bodyHeight * (isFullBleed ? 0.985 : 0.94);
-  const contentCenterX = imageUrl && !isFullBleed ? frameWidth * 0.18 : 0;
+  const contentWidth = frameWidth * (isFullBleed ? 0.985 : 0.92);
+  const contentHeight = bodyHeight * (isFullBleed ? 0.992 : 0.94);
+  const contentCenterX = useTexturePlane ? frameWidth * 0.18 : 0;
   const primitives: CanonicalPrimitive[] = [
     { color: '#0a121b', kind: 'plane', opacity: 1, position: [0, 0, 0.02], size: [frameWidth, frameHeight] },
     { color: '#101a25', kind: 'plane', opacity: 1, position: [0, 0, 0.03], size: [frameWidth * 0.98, frameHeight * 0.98] },
     { color: intent.tierAccent, kind: 'plane', opacity: Math.min(intent.edgeGlowOpacity, isFullBleed ? 0.1 : 0.18), position: [-(frameWidth * 0.5) + (accentBarWidth * 0.5), 0, 0.04], size: [accentBarWidth, frameHeight * (isFullBleed ? 0.96 : 0.9)], transparent: true },
-    imageUrl
-      ? { fallbackColor: accentColor, kind: 'texture-plane', opacity: 1, position: [contentCenterX, 0, 0.05], size: [isFullBleed ? contentWidth : frameWidth * 0.56, contentHeight], url: imageUrl }
+    fullBleedBillboardUrl
+      ? { fallbackColor: accentColor, kind: 'texture-plane', opacity: 0.98, position: [0, 0, 0.05], size: [contentWidth, contentHeight], url: fullBleedBillboardUrl }
+      : useTexturePlane
+      ? { fallbackColor: accentColor, kind: 'texture-plane', opacity: 1, position: [contentCenterX, 0, 0.05], size: [frameWidth * 0.56, contentHeight], url: imageUrl }
       : { color: accentColor, kind: 'plane', opacity: 1, position: [0, 0, 0.05], size: [contentWidth, contentHeight] },
-    { color: '#050b12', kind: 'plane', opacity: 1, position: [0, (frameHeight * 0.5) - (headerHeight * 0.5), 0.06], size: [frameWidth * 0.98, headerHeight] },
-    { color: '#050b12', kind: 'plane', opacity: 1, position: [0, -(frameHeight * 0.5) + (footerHeight * 0.5), 0.06], size: [frameWidth * 0.98, footerHeight] },
-    { color: intent.tierAccent, kind: 'plane', opacity: isFullBleed ? 0.08 : isHeroComposition ? 0.14 : 0.1, position: [0, (frameHeight * 0.5) - headerHeight - Math.max(0.1, frameHeight * (isFullBleed ? 0.012 : 0.02)), 0.07], size: [intent.topStripWidth, Math.max(0.08, frameHeight * (isFullBleed ? 0.008 : 0.014))], transparent: true },
-    { color: intent.chipColor, kind: 'text', maxWidth: frameWidth * (isFullBleed ? 0.72 : 0.68), outlineBlur: 0.04, outlineColor: '#020617', outlineWidth: 0.02, position: [frameWidth * (isFullBleed ? 0.02 : 0.04), (frameHeight * 0.5) - (headerHeight * 0.5), 0.072], size: Math.max(0.22, frameHeight * (isFullBleed ? 0.026 : 0.04)), text: intent.semanticChip },
   ];
 
-  if (imageUrl && !isFullBleed) {
+  if (!isFullBleed) {
+    primitives.push(
+      { color: '#050b12', kind: 'plane', opacity: 1, position: [0, (frameHeight * 0.5) - (headerHeight * 0.5), 0.06], size: [frameWidth * 0.98, headerHeight] },
+      { color: '#050b12', kind: 'plane', opacity: 1, position: [0, -(frameHeight * 0.5) + (footerHeight * 0.5), 0.06], size: [frameWidth * 0.98, footerHeight] },
+      { color: intent.tierAccent, kind: 'plane', opacity: isHeroComposition ? 0.14 : 0.1, position: [0, (frameHeight * 0.5) - headerHeight - Math.max(0.1, frameHeight * 0.02), 0.07], size: [intent.topStripWidth, Math.max(0.08, frameHeight * 0.014)], transparent: true },
+      { color: intent.chipColor, kind: 'text', maxWidth: frameWidth * 0.68, outlineBlur: 0.04, outlineColor: '#020617', outlineWidth: 0.02, position: [frameWidth * 0.04, (frameHeight * 0.5) - (headerHeight * 0.5), 0.072], size: Math.max(0.22, frameHeight * 0.04), text: intent.semanticChip },
+    );
+  }
+
+  if (useTexturePlane) {
     primitives.push(
       { color: '#0b121b', kind: 'plane', opacity: 1, position: [-(frameWidth * 0.2), 0, 0.052], size: [frameWidth * 0.22, bodyHeight * 0.88] },
     );
   }
 
-  primitives.push(
-    { color: intent.tierAccent, kind: 'text', maxWidth: frameWidth * (isFullBleed ? 0.11 : 0.16), outlineBlur: 0.04, outlineColor: '#020617', outlineWidth: 0.02, position: [-(frameWidth * (isFullBleed ? 0.42 : 0.34)), (frameHeight * 0.5) - (headerHeight * 0.5), 0.072], size: Math.max(0.16, frameHeight * (isFullBleed ? 0.018 : 0.028)), text: tier.toUpperCase() },
-    { color: '#f8fafc', kind: 'text', maxWidth: frameWidth * (isFullBleed ? 0.74 : imageUrl ? (isHeroComposition ? 0.36 : 0.3) : (isHeroComposition ? 0.72 : 0.66)), outlineBlur: 0.05, outlineColor: '#020617', outlineWidth: 0.025, position: [frameWidth * (isFullBleed ? 0 : imageUrl ? 0.18 : 0.02), isFullBleed ? frameHeight * 0.02 : imageUrl ? frameHeight * 0.04 : 0.02, 0.074], size: Math.max(isHeroComposition ? 0.36 : 0.28, frameHeight * (isFullBleed ? 0.036 : imageUrl ? (isHeroComposition ? 0.05 : 0.044) : (isHeroComposition ? 0.08 : 0.07))), text: label },
-    { color: '#cbd5e1', kind: 'text', maxWidth: frameWidth * (isFullBleed ? 0.8 : 0.68), outlineBlur: 0.05, outlineColor: '#020617', outlineWidth: 0.02, position: [frameWidth * (isFullBleed ? 0.02 : 0.06), -(frameHeight * 0.5) + (footerHeight * 0.5), 0.074], size: Math.max(0.18, frameHeight * (isFullBleed ? 0.02 : 0.03)), text: subtitle },
-  );
+  if (!isFullBleed) {
+    primitives.push(
+      { color: intent.tierAccent, kind: 'text', maxWidth: frameWidth * 0.16, outlineBlur: 0.04, outlineColor: '#020617', outlineWidth: 0.02, position: [-(frameWidth * 0.34), (frameHeight * 0.5) - (headerHeight * 0.5), 0.072], size: Math.max(0.16, frameHeight * 0.028), text: tier.toUpperCase() },
+      { color: '#f8fafc', kind: 'text', maxWidth: frameWidth * (useTexturePlane ? (isHeroComposition ? 0.36 : 0.3) : (isHeroComposition ? 0.72 : 0.66)), outlineBlur: 0.05, outlineColor: '#020617', outlineWidth: 0.025, position: [frameWidth * (useTexturePlane ? 0.18 : 0.02), useTexturePlane ? frameHeight * 0.04 : 0.02, 0.074], size: Math.max(isHeroComposition ? 0.36 : 0.28, frameHeight * (useTexturePlane ? (isHeroComposition ? 0.05 : 0.044) : (isHeroComposition ? 0.08 : 0.07))), text: label },
+      { color: '#cbd5e1', kind: 'text', maxWidth: frameWidth * 0.68, outlineBlur: 0.05, outlineColor: '#020617', outlineWidth: 0.02, position: [frameWidth * 0.06, -(frameHeight * 0.5) + (footerHeight * 0.5), 0.074], size: Math.max(0.18, frameHeight * 0.03), text: subtitle },
+    );
+  }
 
   if (isHeroComposition) {
     primitives.push(

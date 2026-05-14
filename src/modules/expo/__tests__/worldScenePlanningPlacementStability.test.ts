@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { buildCanonicalWorldPlan, buildCanonicalWorldPlanFromWorldContract, EXPO_CANONICAL_DISTRICT_STRIDE } from '../runtime/planning/index.js';
+import type { CanonicalPrimitiveTexturePlane } from '../runtime/planning/types/index.js';
 import { selectSectionVisibleBoothPlacements, selectVisibleBoothPlacements } from '../runtime/world/scene/useExpoWorldSceneRuntime.js';
 import { buildExpoWorldContract } from '../../../shared/expo/worldContract.js';
 
@@ -77,6 +78,7 @@ const filteredInputPlan = buildCanonicalWorldPlan({
 });
 const filteredInputScreenIds = filteredInputPlan.filteredScreenSurfaces.map((surface) => surface.id).sort();
 const filteredInputSocketIds = filteredInputPlan.screenSockets.map((socket) => socket.id).sort();
+const isTexturePrimitive = (primitive: { kind: string }): primitive is CanonicalPrimitiveTexturePlane => primitive.kind === 'texture-plane';
 
 assert.ok(stableScreenIds.length > 0);
 assert.ok(stableSocketIds.length > 0);
@@ -108,12 +110,21 @@ for (const surface of sideArrayScreenSurfaces) {
   assert.ok(socket, `${surface.id} must have a screen socket`);
   assert.ok(socket.frameSize[0] >= surface.size[0] * 0.92, `${socket?.id} must expose most of the plate width`);
   assert.ok(socket.frameSize[1] >= surface.size[1] * 0.9, `${socket?.id} must expose most of the plate height`);
+  const yaw = surface.rotation[1] ?? 0;
+  const socketDepth = socket
+    ? ((socket.position[0] - surface.position[0]) * Math.sin(yaw)) + ((socket.position[2] - surface.position[2]) * Math.cos(yaw))
+    : 0;
+  assert.ok(socketDepth >= (surface.renderIntent?.housingDepth ?? 0) * 0.54, `${socket?.id} must sit in front of the side-array housing face`);
 
   const assignment = socket ? sideArrayAssignmentBySocketId.get(socket.id) : null;
   assert.ok(assignment, `${socket?.id} must receive an assignment`);
   assert.equal(assignment?.renderIntent?.fullBleed, true, `${assignment?.id} must use full-bleed side-array rendering`);
   assert.ok((assignment?.renderIntent?.frameWidth ?? 0) >= surface.size[0] * 0.88, `${assignment?.id} must render a wide ad face`);
   assert.ok((assignment?.renderIntent?.frameHeight ?? 0) >= surface.size[1] * 0.84, `${assignment?.id} must render a tall ad face`);
+  const texturePrimitive = assignment?.renderIntent?.primitives?.find(isTexturePrimitive);
+  assert.ok(texturePrimitive, `${assignment?.id} must render a generated billboard texture`);
+  assert.ok((texturePrimitive.url ?? '').startsWith('generated-billboard:'), `${assignment?.id} must use a controlled side-array ad texture`);
+  assert.ok((texturePrimitive.opacity ?? 1) < 1, `${assignment?.id} texture must not depth-mask side-array overlays`);
 }
 assert.ok(
   cityScreenHostMasses.every((mass) => mass.planningSource?.sourceFunction === 'buildCityScreenHostMasses'),

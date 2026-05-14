@@ -1119,7 +1119,9 @@ export function buildScreenSockets(surfaces: CityScreenSurface[]): CityScreenSoc
     }
 
     if (surface.role === 'support-wall') {
-      return isRearCampusSurface ? housingDepth * 0.44 : housingDepth * 0.4;
+      return surface.id.startsWith('screen-array-')
+        ? housingDepth * 0.58
+        : isRearCampusSurface ? housingDepth * 0.44 : housingDepth * 0.4;
     }
 
     if (surface.role === 'tower-crown') {
