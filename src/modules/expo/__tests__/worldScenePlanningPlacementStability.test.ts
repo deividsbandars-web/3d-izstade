@@ -178,6 +178,16 @@ function assertWorldBoothScreenHostClearance(worldContract: typeof world, label:
 
 assert.ok(stableScreenIds.length > 0);
 assert.ok(stableSocketIds.length > 0);
+for (const surface of canonicalPlan.filteredScreenSurfaces) {
+  assert.ok(
+    surface.renderIntent?.primitives?.every((primitive) => primitive.kind === 'box'),
+    `${surface.id} screen host must use clean solid geometry only; transparent host planes cause screen shimmer/mutations`,
+  );
+  assert.ok(
+    (surface.renderIntent?.primitives?.length ?? 0) <= 7,
+    `${surface.id} screen host must stay simple instead of stacking old decorative frame layers`,
+  );
+}
 for (const assignment of canonicalPlan.screenAssignments) {
   assert.equal(assignment.renderIntent?.fullBleed, true, `${assignment.id} must use full-bleed city-screen rendering`);
   assert.ok(

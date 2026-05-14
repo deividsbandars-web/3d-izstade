@@ -23,6 +23,7 @@ templates.forEach((template) => {
 
 const premiumLayout = resolveOpenBoothPavilionLayout(getBoothArchitectureMetrics('premium_portal'), 'premium');
 assert.equal(premiumLayout.isScreenFirstPremium, true);
+assert.equal(premiumLayout.isScreenFirstBooth, true);
 assert.equal(premiumLayout.showFullRoof, false);
 assert.equal(premiumLayout.showFrontageCanopy, false);
 assert.equal(premiumLayout.showFrontageFins, false);
@@ -39,6 +40,17 @@ assert.ok(premiumLayout.screenSurfaceWidth / premiumLayout.screenFrameWidth >= 0
 assert.ok(premiumLayout.screenSurfaceHeight / premiumLayout.screenFrameHeight >= 0.98);
 assert.ok(premiumLayout.screenSurfaceWidth / premiumLayout.screenSurfaceHeight <= 2.4);
 
+const standardLayout = resolveOpenBoothPavilionLayout(getBoothArchitectureMetrics('standard_arcade'), 'standard');
+assert.equal(standardLayout.isScreenFirstBooth, true);
+assert.equal(standardLayout.showFullRoof, false);
+assert.equal(standardLayout.showFrontageCanopy, false);
+assert.equal(standardLayout.mediaSurfaceCount, 1);
+assert.ok(standardLayout.depth / getBoothArchitectureMetrics('standard_arcade').footprintSize[1] <= 0.48);
+assert.ok(standardLayout.screenFrameWidth / standardLayout.width <= 1);
+assert.ok(standardLayout.screenFrameHeight >= 8);
+assert.ok(standardLayout.screenSurfaceWidth / standardLayout.screenFrameWidth >= 0.99);
+assert.ok(standardLayout.screenSurfaceHeight / standardLayout.screenFrameHeight >= 0.98);
+
 const eliteLayout = resolveOpenBoothPavilionLayout(getBoothArchitectureMetrics('premium_spine'), 'elite');
 assert.equal(eliteLayout.isScreenFirstBooth, true);
 assert.equal(eliteLayout.showFullRoof, false);
@@ -51,3 +63,15 @@ assert.ok(eliteLayout.screenFrameHeight >= 14);
 assert.ok(eliteLayout.screenSurfaceWidth / eliteLayout.screenFrameWidth >= 0.99);
 assert.ok(eliteLayout.screenSurfaceHeight / eliteLayout.screenFrameHeight >= 0.98);
 assert.ok(eliteLayout.screenSurfaceWidth / eliteLayout.screenSurfaceHeight <= 2.4);
+
+const heroLayout = resolveOpenBoothPavilionLayout(getBoothArchitectureMetrics('hero_gallery'), 'hero');
+assert.equal(heroLayout.isScreenFirstBooth, true);
+assert.equal(heroLayout.showFullRoof, false);
+assert.equal(heroLayout.showFrontageCanopy, false);
+assert.equal(heroLayout.showTierSideBanners, false);
+assert.equal(heroLayout.mediaSurfaceCount, 1);
+assert.ok(heroLayout.depth / getBoothArchitectureMetrics('hero_gallery').footprintSize[1] <= 0.46);
+assert.ok(heroLayout.screenFrameHeight >= 16);
+assert.ok(heroLayout.screenSurfaceWidth / heroLayout.screenFrameWidth >= 0.99);
+assert.ok(heroLayout.screenSurfaceHeight / heroLayout.screenFrameHeight >= 0.98);
+assert.ok(heroLayout.screenSurfaceWidth / heroLayout.screenSurfaceHeight <= 2.4);

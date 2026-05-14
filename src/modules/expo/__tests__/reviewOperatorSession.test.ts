@@ -127,8 +127,8 @@ assert.ok(sponsorBoulevardLeft);
 const resolvedSponsorBoulevardLeftView = resolveReviewOperatorZoneStartView(sponsorBoulevardLeft, new Map([
   ['left-front-booth', { layer: 'booth', position: [-536, 0, -244] }],
 ]));
-assert.deepEqual(resolvedSponsorBoulevardLeftView.lookAt, [-536, 34, -244]);
-assert.deepEqual(resolvedSponsorBoulevardLeftView.position, [-536, 62, -162]);
+assert.deepEqual(resolvedSponsorBoulevardLeftView.lookAt, [-536, 28, -244]);
+assert.deepEqual(resolvedSponsorBoulevardLeftView.position, [-418, 46, -186]);
 
 const sponsorBoulevardLeftClose = zones.find((zone) => zone.id === 'sponsor-boulevard-left-close');
 assert.ok(sponsorBoulevardLeftClose);

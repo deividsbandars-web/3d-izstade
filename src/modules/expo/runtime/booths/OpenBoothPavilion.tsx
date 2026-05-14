@@ -21,13 +21,14 @@ export function resolveOpenBoothPavilionLayout(
   const isHero = tier === 'hero';
   const isElite = tier === 'elite';
   const isPremium = tier === 'premium';
+  const isStandard = tier === 'standard';
   const isScreenFirstPremium = isPremium && !isElite && !isHero;
-  const isScreenFirstBooth = (isPremium || isElite) && !isHero;
-  const width = metrics.footprintSize[0] * (isHero ? 0.98 : isScreenFirstBooth ? (isElite ? 0.94 : 0.9) : isPremium ? 0.84 : 0.78);
-  const depth = metrics.footprintSize[1] * (isHero ? 0.76 : isScreenFirstBooth ? 0.42 : isElite ? 0.72 : isPremium ? 0.68 : 0.62);
+  const isScreenFirstBooth = true;
+  const width = metrics.footprintSize[0] * (isHero ? 0.92 : isElite ? 0.94 : isPremium ? 0.9 : 0.82);
+  const depth = metrics.footprintSize[1] * (isHero ? 0.44 : isElite || isPremium ? 0.42 : 0.46);
   const postHeight = Math.max(isHero ? 9.4 : isElite ? 8.4 : isPremium ? 7.3 : 6.7, metrics.colliderSize[1] * (isHero ? 0.78 : isScreenFirstBooth ? 0.7 : isElite ? 0.72 : isPremium ? 0.66 : 0.61));
-  const screenFrameWidth = width * (isHero ? 0.82 : isScreenFirstBooth ? 0.98 : isElite ? 0.76 : isPremium ? 0.72 : 0.62);
-  const screenFrameHeight = isHero ? 7.2 : isScreenFirstBooth ? (isElite ? 14.4 : 13.2) : isElite ? 6.4 : isPremium ? 5.6 : 4.8;
+  const screenFrameWidth = width * (isStandard ? 0.96 : 0.98);
+  const screenFrameHeight = isHero ? 16.2 : isElite ? 14.4 : isPremium ? 13.2 : 8.8;
   const screenSurfaceWidth = isScreenFirstBooth
     ? screenFrameWidth * 0.995
     : width * (isHero ? 0.74 : isElite ? 0.68 : isPremium ? 0.62 : 0.52);
@@ -49,14 +50,14 @@ export function resolveOpenBoothPavilionLayout(
     screenFrameWidth,
     screenSurfaceHeight,
     screenSurfaceWidth,
-    showFrontThreshold: isHero,
-    showFrontageCanopy: isHero,
-    showFrontageFins: isHero,
+    showFrontThreshold: false,
+    showFrontageCanopy: false,
+    showFrontageFins: false,
     showFullRoof: !isScreenFirstBooth,
     showPremiumOrEliteBlades: false,
     showPremiumPortalShell: isPremium && !isElite && !isHero && !isScreenFirstBooth,
     showScreenTrimOverlays: !isScreenFirstBooth,
-    showTierSideBanners: isHero,
+    showTierSideBanners: false,
     width,
   };
 }

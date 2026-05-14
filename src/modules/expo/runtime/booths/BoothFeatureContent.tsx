@@ -47,6 +47,59 @@ export function SponsorShowcaseObject({
   );
 }
 
+function ScreenFirstEngagementPad({
+  accentColor,
+  fallbackMonogram,
+  isEliteFeature,
+  isFeatureBooth,
+  isHeroFeature,
+  stageScale,
+}: {
+  accentColor: string;
+  fallbackMonogram: string;
+  isEliteFeature: boolean;
+  isFeatureBooth: boolean;
+  isHeroFeature: boolean;
+  stageScale: number;
+}) {
+  const scale = (isHeroFeature ? 1.18 : isEliteFeature ? 1.08 : isFeatureBooth ? 1 : 0.86) * stageScale;
+  const padWidth = 6.8 * scale;
+  const padDepth = 3.2 * scale;
+  const beaconHeight = (isHeroFeature ? 2.4 : isEliteFeature ? 2.08 : 1.72) * Math.max(0.9, stageScale * 0.72);
+
+  return (
+    <group position={[0, 0, 1.42]}>
+      <mesh position={[0, 0.18, 0]} receiveShadow>
+        <boxGeometry args={[padWidth, 0.22, padDepth]} />
+        <meshStandardMaterial color="#16283a" emissive={accentColor} emissiveIntensity={0.035} metalness={0.12} roughness={0.58} />
+      </mesh>
+      <mesh position={[0, 0.34, 0.16]} receiveShadow>
+        <boxGeometry args={[padWidth * 0.78, 0.08, padDepth * 0.36]} />
+        <meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={0.16} metalness={0.16} roughness={0.32} />
+      </mesh>
+      <mesh position={[0, 0.42, -padDepth * 0.28]} receiveShadow>
+        <boxGeometry args={[padWidth * 0.52, 0.06, 0.18]} />
+        <meshStandardMaterial color="#e6f3fa" emissive={accentColor} emissiveIntensity={0.08} metalness={0.12} roughness={0.34} />
+      </mesh>
+      {[-1, 1].map((side) => (
+        <group key={`screen-first-pad-beacon-${side}`} position={[side * padWidth * 0.38, beaconHeight * 0.5 + 0.28, -padDepth * 0.04]}>
+          <mesh castShadow receiveShadow>
+            <boxGeometry args={[0.18, beaconHeight, 0.18]} />
+            <meshStandardMaterial color="#d7e8f1" emissive={accentColor} emissiveIntensity={0.07} metalness={0.16} roughness={0.36} />
+          </mesh>
+          <mesh position={[0, beaconHeight * 0.3, 0.08]}>
+            <boxGeometry args={[0.42, 0.42, 0.08]} />
+            <meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={0.22} metalness={0.08} roughness={0.24} />
+          </mesh>
+        </group>
+      ))}
+      <Text position={[0, 0.54, 0.22]} fontSize={0.32 * Math.min(1.18, scale)} color="#f8fafc" anchorX="center" anchorY="middle" maxWidth={padWidth * 0.62}>
+        {`${fallbackMonogram} 4K ROOM`}
+      </Text>
+    </group>
+  );
+}
+
 export function SponsorBadge({ accentColor, label, position }: { accentColor: string; label: string; position: [number, number, number] }) {
   return (
     <group position={position}>
@@ -294,7 +347,20 @@ export function BoothFeatureApron({ accentColor, contractTier, districtGlow, fro
   );
 }
 
-export function BoothFeatureStage({ accentColor, fallbackMonogram, isEliteFeature, isFeatureBooth, isHeroFeature, mode, stageScale }: { accentColor: string; fallbackMonogram: string; isEliteFeature: boolean; isFeatureBooth: boolean; isHeroFeature: boolean; mode: 'immersive' | 'hero-object' | 'product' | 'support'; stageScale: number }) {
+export function BoothFeatureStage({ accentColor, fallbackMonogram, isEliteFeature, isFeatureBooth, isHeroFeature, mode, screenFirst = false, stageScale }: { accentColor: string; fallbackMonogram: string; isEliteFeature: boolean; isFeatureBooth: boolean; isHeroFeature: boolean; mode: 'immersive' | 'hero-object' | 'product' | 'support'; screenFirst?: boolean; stageScale: number }) {
+  if (screenFirst) {
+    return (
+      <ScreenFirstEngagementPad
+        accentColor={accentColor}
+        fallbackMonogram={fallbackMonogram}
+        isEliteFeature={isEliteFeature}
+        isFeatureBooth={isFeatureBooth}
+        isHeroFeature={isHeroFeature}
+        stageScale={stageScale}
+      />
+    );
+  }
+
   return (
     <group position={[0, 0, 1.48]}>
       {isFeatureBooth && <>

@@ -192,6 +192,105 @@ function buildMountedHostAttachmentPrimitives(
   return primitives;
 }
 
+function shouldUseCleanScreenHostArchitecture() {
+  return true;
+}
+
+function buildCleanScreenHostPrimitives(
+  family: ScreenSurfaceFamily,
+  surface: CityScreenSurface,
+  housingWidth: number,
+  housingHeight: number,
+  housingDepth: number
+): CanonicalPrimitive[] {
+  const isRearCampus = family === 'rear-campus';
+  const isTower = family === 'tower';
+  const isHeroWall = surface.role === 'hero-wall';
+  const shellDepth = Math.max(isTower ? 2.6 : isRearCampus ? 3.2 : 3, housingDepth * (isRearCampus ? 0.64 : 0.72));
+  const faceDepth = Math.max(0.72, housingDepth * 0.1);
+  const railDepth = Math.max(1, housingDepth * 0.18);
+  const railWidth = Math.max(isHeroWall ? 2.4 : 1.6, housingWidth * (isTower ? 0.018 : 0.024));
+  const railHeight = Math.max(isHeroWall ? 2.4 : 1.4, housingHeight * (isTower ? 0.02 : 0.026));
+  const receiverDepth = Math.max(1.2, housingDepth * 0.16);
+  const shellColor = isRearCampus ? '#263947' : isTower ? '#203241' : '#223545';
+  const innerColor = isRearCampus ? '#071421' : '#08111c';
+  const railColor = isRearCampus ? '#91a4ad' : '#d5e4ec';
+  const rearReceiverColor = isRearCampus ? '#627783' : '#4f6573';
+
+  return [
+    {
+      color: rearReceiverColor,
+      emissive: surface.glowColor,
+      emissiveIntensity: isHeroWall ? 0.022 : 0.014,
+      kind: 'box',
+      metalness: 0.22,
+      position: [0, 0, -(housingDepth * 0.42)],
+      roughness: 0.62,
+      size: [housingWidth * (isRearCampus ? 0.9 : 0.78), housingHeight * (isRearCampus ? 0.78 : 0.66), receiverDepth],
+    },
+    {
+      color: shellColor,
+      emissive: surface.glowColor,
+      emissiveIntensity: isHeroWall ? 0.032 : 0.02,
+      kind: 'box',
+      metalness: 0.26,
+      position: [0, 0, 0],
+      roughness: 0.56,
+      size: [housingWidth, housingHeight, shellDepth],
+    },
+    {
+      color: innerColor,
+      emissive: surface.glowColor,
+      emissiveIntensity: isHeroWall ? 0.04 : 0.025,
+      kind: 'box',
+      metalness: 0.1,
+      position: [0, 0, housingDepth * 0.3],
+      roughness: 0.26,
+      size: [housingWidth * 0.985, housingHeight * 0.982, faceDepth],
+    },
+    {
+      color: railColor,
+      emissive: surface.glowColor,
+      emissiveIntensity: isHeroWall ? 0.07 : 0.045,
+      kind: 'box',
+      metalness: 0.18,
+      position: [0, housingHeight * 0.5 + railHeight * 0.45, housingDepth * 0.08],
+      roughness: 0.34,
+      size: [housingWidth * 0.78, railHeight, railDepth],
+    },
+    {
+      color: '#102031',
+      emissive: surface.glowColor,
+      emissiveIntensity: isHeroWall ? 0.055 : 0.034,
+      kind: 'box',
+      metalness: 0.24,
+      position: [0, -(housingHeight * 0.5 + railHeight * 0.45), housingDepth * 0.08],
+      roughness: 0.42,
+      size: [housingWidth * 0.72, railHeight, railDepth],
+    },
+    {
+      color: railColor,
+      emissive: surface.glowColor,
+      emissiveIntensity: isHeroWall ? 0.06 : 0.038,
+      kind: 'box',
+      metalness: 0.18,
+      position: [-(housingWidth * 0.5 + railWidth * 0.25), 0, housingDepth * 0.04],
+      roughness: 0.36,
+      size: [railWidth, housingHeight * 1.02, railDepth],
+    },
+    {
+      color: railColor,
+      emissive: surface.glowColor,
+      emissiveIntensity: isHeroWall ? 0.06 : 0.038,
+      kind: 'box',
+      metalness: 0.18,
+      position: [housingWidth * 0.5 + railWidth * 0.25, 0, housingDepth * 0.04],
+      roughness: 0.36,
+      size: [railWidth, housingHeight * 1.02, railDepth],
+    },
+  ];
+}
+
 function buildSurfacePrimitives(zoneId: ExpoPlanningZoneId, surface: CityScreenSurface): CanonicalPrimitive[] {
   const profile = surface.renderIntent;
   const family = getSurfaceFamily(zoneId, surface);
@@ -208,6 +307,10 @@ function buildSurfacePrimitives(zoneId: ExpoPlanningZoneId, surface: CityScreenS
   const wingHeight = profile?.wingHeight ?? 0;
   const housingShellColor = family === 'rear-campus' ? surface.color : '#263744';
   const mountedHostAttachmentPrimitives = buildMountedHostAttachmentPrimitives(family, surface, housingWidth, housingHeight, housingDepth);
+
+  if (shouldUseCleanScreenHostArchitecture()) {
+    return buildCleanScreenHostPrimitives(family, surface, housingWidth, housingHeight, housingDepth);
+  }
 
   const primitives: CanonicalPrimitive[] = [
     ...mountedHostAttachmentPrimitives,

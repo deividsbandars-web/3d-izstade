@@ -100,6 +100,7 @@ export function BoothVisualAssembly({
             isFeatureBooth={tierState.isFeatureBooth}
             isHeroFeature={tierState.isHeroFeature}
             mode={presentation.showcaseMode}
+            screenFirst={pavilionLayout.isScreenFirstBooth}
             stageScale={tierState.stageScale}
           />
           {showHeroFloatingFeatureUi && (

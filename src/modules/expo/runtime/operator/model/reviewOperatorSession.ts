@@ -625,8 +625,8 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       intent: 'left-sponsor-boulevard-frontage-review',
       label: 'Sponsor Boulevard Left',
       camera: {
-        lookAtOffset: [0, 34, 0],
-        positionOffset: [0, 62, 82],
+        lookAtOffset: [0, 28, 0],
+        positionOffset: [118, 46, 58],
         targetDepth: 'frontmost',
         targetIds: [],
         targetLayer: 'booth',
