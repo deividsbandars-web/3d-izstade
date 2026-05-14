@@ -42,6 +42,8 @@ export type ExpoSectorMarker = {
 
 export type ExpoBoothPlacementDiagnostics = SponsorBoulevardPlan['placementDiagnostics'];
 
+const FRONTAGE_SIDE_EPSILON = 24;
+
 function getNormalizedBooth(company: ExpoSceneCompany) {
   const rawBooth = company?.booth ?? null;
 
@@ -54,6 +56,21 @@ function getNormalizedBooth(company: ExpoSceneCompany) {
   }
 
   return null;
+}
+
+function normalizeBoothFrontageRotation(
+  position: [number, number, number],
+  rotation: [number, number, number],
+): [number, number, number] {
+  if (position[0] > FRONTAGE_SIDE_EPSILON) {
+    return [rotation[0] ?? 0, -Math.PI / 2, rotation[2] ?? 0];
+  }
+
+  if (position[0] < -FRONTAGE_SIDE_EPSILON) {
+    return [rotation[0] ?? 0, Math.PI / 2, rotation[2] ?? 0];
+  }
+
+  return rotation;
 }
 
 export function buildExpoDistrictThemes(sectors: ExpoSceneSector[]) {
@@ -77,6 +94,7 @@ export function buildExpoLayoutEngine(
         ...company,
         booth: getNormalizedBooth(company),
       } as ExpoSceneCompany & { booth: unknown };
+      const rotation = normalizeBoothFrontageRotation(node.position, node.rotation);
 
       return {
         boothType: normalizedCompany.boothType,
@@ -91,13 +109,13 @@ export function buildExpoLayoutEngine(
           boothType: normalizedCompany.boothType,
           nodeType: node.nodeType,
           position: node.position,
-          rotation: node.rotation,
+          rotation,
           sponsorTier: node.sponsorTier,
         }),
         nodeType: node.nodeType,
         position: node.position,
         priority: node.priority,
-        rotation: node.rotation,
+        rotation,
         sectorId: node.sectorId ?? undefined,
         sectorName: node.sectorLabel,
         sponsorTier: node.sponsorTier,

@@ -192,6 +192,14 @@ assert.equal(multiPlacements[4].districtThemeId, 'sponsor_gallery');
 assert.ok(Math.abs(multiPlacements[0].position[0]) >= 32);
 assert.ok(multiPlacements[0].position[2] <= -30);
 assert.ok(Math.abs(multiPlacements[0].rotation[1]) > 1);
+for (const placement of multiPlacements) {
+  if (placement.position[0] > 24) {
+    assert.equal(placement.rotation[1], -Math.PI / 2, `${placement.id} must face back toward the center boulevard from the right side`);
+  }
+  if (placement.position[0] < -24) {
+    assert.equal(placement.rotation[1], Math.PI / 2, `${placement.id} must face back toward the center boulevard from the left side`);
+  }
+}
 
 const initialGenerationSignature = buildExpoGenerationSignature({
   assetUrls: ['shared.glb'],

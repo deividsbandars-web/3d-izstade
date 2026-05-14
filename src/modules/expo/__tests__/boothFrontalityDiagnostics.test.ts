@@ -61,6 +61,22 @@ const endcapPlacement: BoothFrontalityPlacement = {
   rotation: [0, Math.PI / 2, 0],
 };
 
+const worldSideEndcapConflict: BoothFrontalityPlacement = {
+  ...basePlacement,
+  id: 'booth-endcap-world-side-conflict',
+  nodeType: 'endcap',
+  position: [180, 0, -900],
+  rotation: [0, Math.PI / 2, 0],
+};
+
+const worldSideEndcapValid: BoothFrontalityPlacement = {
+  ...basePlacement,
+  id: 'booth-endcap-world-side-valid',
+  nodeType: 'endcap',
+  position: [180, 0, -900],
+  rotation: [0, -Math.PI / 2, 0],
+};
+
 const diagnostics = diagnoseBoothFrontality([
   validLeftPlacement,
   validRightPlacement,
@@ -70,6 +86,8 @@ const diagnostics = diagnoseBoothFrontality([
   nonFiniteRotationPlacement,
   missingNodeTypePlacement,
   endcapPlacement,
+  worldSideEndcapConflict,
+  worldSideEndcapValid,
 ]);
 
 assert.equal(diagnostics.some((entry) => entry.boothId === 'booth-left-valid'), false);
@@ -80,3 +98,5 @@ assert.ok(diagnostics.some((entry) => entry.boothId === 'booth-missing-rotation'
 assert.ok(diagnostics.some((entry) => entry.boothId === 'booth-non-finite-rotation' && entry.code === 'non-finite-rotation'));
 assert.ok(diagnostics.some((entry) => entry.boothId === 'booth-missing-node-type' && entry.code === 'missing-node-type'));
 assert.equal(diagnostics.some((entry) => entry.boothId === 'booth-endcap'), false);
+assert.ok(diagnostics.some((entry) => entry.boothId === 'booth-endcap-world-side-conflict' && entry.code === 'world-side-facing-conflict'));
+assert.equal(diagnostics.some((entry) => entry.boothId === 'booth-endcap-world-side-valid'), false);

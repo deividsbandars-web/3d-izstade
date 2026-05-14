@@ -60,6 +60,7 @@ export type WorldObjectRegistryEntry = {
     opacity?: number;
     transparent?: boolean;
   };
+  nodeType?: string | null;
   planningSections?: ExpoPlanningSectionId[];
   planningRole?: string | null;
   planningZone: string | null;
@@ -601,6 +602,7 @@ export function buildBoothWorldObjectRegistry(
       id: placement.id,
       interactionOwner: 'src/modules/expo/runtime/booths/DistrictBooth.tsx',
       layer: 'booth',
+      nodeType: placement.nodeType ?? null,
       planningZone: placement.sectorId ?? null,
       position: placement.position,
       rotation: placement.rotation ?? [0, 0, 0],
