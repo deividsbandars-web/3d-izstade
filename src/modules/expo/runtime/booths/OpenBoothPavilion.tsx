@@ -23,16 +23,16 @@ export function resolveOpenBoothPavilionLayout(
   const isPremium = tier === 'premium';
   const isScreenFirstPremium = isPremium && !isElite && !isHero;
   const isScreenFirstBooth = (isPremium || isElite) && !isHero;
-  const width = metrics.footprintSize[0] * (isHero ? 0.98 : isScreenFirstBooth ? (isElite ? 0.96 : 0.92) : isPremium ? 0.84 : 0.78);
-  const depth = metrics.footprintSize[1] * (isHero ? 0.76 : isScreenFirstBooth ? 0.58 : isElite ? 0.72 : isPremium ? 0.68 : 0.62);
+  const width = metrics.footprintSize[0] * (isHero ? 0.98 : isScreenFirstBooth ? (isElite ? 0.94 : 0.9) : isPremium ? 0.84 : 0.78);
+  const depth = metrics.footprintSize[1] * (isHero ? 0.76 : isScreenFirstBooth ? 0.42 : isElite ? 0.72 : isPremium ? 0.68 : 0.62);
   const postHeight = Math.max(isHero ? 9.4 : isElite ? 8.4 : isPremium ? 7.3 : 6.7, metrics.colliderSize[1] * (isHero ? 0.78 : isScreenFirstBooth ? 0.7 : isElite ? 0.72 : isPremium ? 0.66 : 0.61));
-  const screenFrameWidth = width * (isHero ? 0.82 : isScreenFirstBooth ? 1.08 : isElite ? 0.76 : isPremium ? 0.72 : 0.62);
-  const screenFrameHeight = isHero ? 7.2 : isScreenFirstBooth ? 7.8 : isElite ? 6.4 : isPremium ? 5.6 : 4.8;
+  const screenFrameWidth = width * (isHero ? 0.82 : isScreenFirstBooth ? 0.98 : isElite ? 0.76 : isPremium ? 0.72 : 0.62);
+  const screenFrameHeight = isHero ? 7.2 : isScreenFirstBooth ? (isElite ? 14.4 : 13.2) : isElite ? 6.4 : isPremium ? 5.6 : 4.8;
   const screenSurfaceWidth = isScreenFirstBooth
-    ? screenFrameWidth * 0.985
+    ? screenFrameWidth * 0.995
     : width * (isHero ? 0.74 : isElite ? 0.68 : isPremium ? 0.62 : 0.52);
   const screenSurfaceHeight = isScreenFirstBooth
-    ? screenFrameHeight * 0.965
+    ? screenFrameHeight * 0.982
     : isHero ? 6.16 : isElite ? 5.46 : isPremium ? 4.82 : 4.18;
 
   return {
@@ -148,6 +148,87 @@ export function OpenBoothPavilion({
   const mediaFaceZ = 0.32;
   const mediaGlowZ = 0.36;
   const mediaTrimZ = 0.42;
+
+  if (isScreenFirstBooth) {
+    const wallY = (screenFrameHeight * 0.5) + (isElite ? 1.82 : 1.7);
+    const wallZ = rearScreenZ - 0.04;
+    const wallWidth = screenFrameWidth * 1.035;
+    const wallHeight = screenFrameHeight * 1.04;
+    const baseWidth = Math.max(screenFrameWidth * 0.72, width * 0.64);
+    const baseDepth = Math.max(2.2, depth * 0.42);
+    const sideRailHeight = wallHeight + 0.24;
+    const sideRailOffsetX = wallWidth * 0.5 + 0.14;
+    const mediaPanelZ = wallZ + 0.28;
+    const screenFirstFrameColor = isElite ? '#102232' : '#14283a';
+    const screenFirstBackColor = isElite ? '#09131f' : '#0d1724';
+    const screenFirstEdgeColor = isElite ? '#d2edf8' : '#c6e2f2';
+
+    return (
+      <group name="booth-open-pavilion booth-media-wall">
+        <mesh position={[0, 0.09, wallZ + 0.62]} receiveShadow>
+          <boxGeometry args={[baseWidth, 0.16, baseDepth]} />
+          <meshStandardMaterial color="#dce6ee" metalness={0.06} roughness={0.72} />
+        </mesh>
+        <mesh position={[0, 0.22, wallZ + 0.62]} receiveShadow>
+          <boxGeometry args={[baseWidth * 0.86, 0.06, baseDepth * 0.34]} />
+          <meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={0.08} metalness={0.08} roughness={0.42} />
+        </mesh>
+        <group position={[0, wallY, wallZ]}>
+          <mesh castShadow receiveShadow>
+            <boxGeometry args={[wallWidth, wallHeight, 0.32]} />
+            <meshStandardMaterial color={screenFirstFrameColor} emissive={accentColor} emissiveIntensity={0.035} metalness={0.12} roughness={0.54} />
+          </mesh>
+          <mesh position={[0, 0, -0.22]} castShadow receiveShadow>
+            <boxGeometry args={[wallWidth * 1.055, wallHeight * 1.05, 0.16]} />
+            <meshStandardMaterial color={screenFirstBackColor} emissive={accentColor} emissiveIntensity={0.025} metalness={0.08} roughness={0.62} />
+          </mesh>
+          <mesh position={[0, wallHeight * 0.5 + 0.09, 0.08]} castShadow receiveShadow>
+            <boxGeometry args={[wallWidth * 0.82, 0.12, 0.14]} />
+            <meshStandardMaterial color={screenFirstEdgeColor} emissive={accentColor} emissiveIntensity={0.1} metalness={0.16} roughness={0.34} />
+          </mesh>
+          <mesh position={[0, -(wallHeight * 0.5 + 0.08), 0.08]} castShadow receiveShadow>
+            <boxGeometry args={[wallWidth * 0.62, 0.1, 0.14]} />
+            <meshStandardMaterial color="#0b1320" emissive={accentColor} emissiveIntensity={0.045} metalness={0.12} roughness={0.48} />
+          </mesh>
+          {[-1, 1].map((side) => (
+            <mesh key={`media-wall-side-rail-${side}`} position={[side * sideRailOffsetX, 0, -0.02]} castShadow receiveShadow>
+              <boxGeometry args={[0.18, sideRailHeight, 0.22]} />
+              <meshStandardMaterial color={screenFirstEdgeColor} emissive={accentColor} emissiveIntensity={0.075} metalness={0.18} roughness={0.36} />
+            </mesh>
+          ))}
+          {[-1, 1].map((side) => (
+            <mesh key={`media-wall-rear-brace-${side}`} position={[side * (wallWidth * 0.43), -(wallHeight * 0.5) - 0.86, -0.28]} castShadow receiveShadow>
+              <boxGeometry args={[0.22, 1.72, 0.24]} />
+              <meshStandardMaterial color="#6e8190" metalness={0.14} roughness={0.58} />
+            </mesh>
+          ))}
+        </group>
+        <mesh position={[0, wallY, mediaPanelZ]}>
+          <planeGeometry args={[screenSurfaceWidth, screenSurfaceHeight]} />
+          {screenUrl ? (
+            <Suspense fallback={<meshStandardMaterial color={mediaFallbackColor} emissive={accentColor} emissiveIntensity={mediaEmissiveIntensity} />}>
+              <SponsorTextureSurface fallbackColor={mediaFallbackColor} emissiveColor={accentColor} emissiveIntensity={mediaEmissiveIntensity} url={screenUrl} />
+            </Suspense>
+          ) : (
+            <meshStandardMaterial color={mediaFallbackColor} emissive={accentColor} emissiveIntensity={mediaEmissiveIntensity} />
+          )}
+        </mesh>
+        {!screenUrl && (
+          <Text
+            position={[0, wallY - 0.04, mediaPanelZ + 0.16]}
+            fontSize={isElite ? 0.82 : 0.76}
+            color={accentColor}
+            anchorX="center"
+            anchorY="middle"
+            maxWidth={screenSurfaceWidth * 0.46}
+          >
+            {fallbackText}
+          </Text>
+        )}
+      </group>
+    );
+  }
+
   const mediaSurfaceZs = mediaSurfaceCount === 2 ? [mediaFaceZ, -mediaFaceZ] : [mediaFaceZ];
   const pavilionPostPositions = isScreenFirstBooth
     ? [
