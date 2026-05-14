@@ -262,12 +262,12 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       label: 'Left Marquee Close',
       camera: {
         lookAtOffset: [0, 32, 0],
-        positionOffset: [260, 70, 120],
+        positionOffset: [450, 70, -20],
         targetIds: ['screen-marquee-left-1'],
       },
       startView: {
         lookAt: [-836, 180, -792],
-        position: [-576, 218, -672],
+        position: [-386, 218, -812],
         source: 'arrival-main',
       },
       watchItems: [
