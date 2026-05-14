@@ -252,8 +252,7 @@ function buildAssignmentPrimitives(args: {
 
   if (isFullBleed) {
     return [
-      { color: '#050b12', kind: 'plane', opacity: 1, position: [0, 0, 0.02], size: [frameWidth, frameHeight] },
-      { fallbackColor: accentColor, kind: 'texture-plane', opacity: 1, position: [0, 0, 0.16], size: [frameWidth * 0.992, frameHeight * 0.992], url: fullBleedBillboardUrl },
+      { fallbackColor: accentColor, kind: 'texture-plane', opacity: 1, position: [0, 0, 1.24], size: [frameWidth * 0.992, frameHeight * 0.992], url: fullBleedBillboardUrl },
     ];
   }
 

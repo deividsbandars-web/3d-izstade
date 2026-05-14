@@ -299,8 +299,8 @@ export function BoothFeatureStage({ accentColor, fallbackMonogram, isEliteFeatur
   return (
     <group position={[0, 0, 1.48]}>
       {isFeatureBooth && <>
-        <mesh position={[0, 0.18, 0]} rotation={[-Math.PI / 2, 0, 0]}><ringGeometry args={[(isHeroFeature ? 4.9 : isEliteFeature ? 4.5 : 4.2) * stageScale, (isHeroFeature ? 5.9 : isEliteFeature ? 5.45 : 5.1) * stageScale, 48]} /><meshBasicMaterial color={accentColor} transparent opacity={isHeroFeature ? 0.24 : isEliteFeature ? 0.2 : 0.16} side={THREE.DoubleSide} /></mesh>
-        <mesh position={[0, 0.2, 0]} rotation={[-Math.PI / 2, 0, 0]}><ringGeometry args={[(isHeroFeature ? 6.2 : isEliteFeature ? 5.8 : 5.4) * stageScale, (isHeroFeature ? 6.8 : isEliteFeature ? 6.3 : 5.9) * stageScale, 56]} /><meshBasicMaterial color="#dbeafe" transparent opacity={isHeroFeature ? 0.12 : isEliteFeature ? 0.1 : 0.08} side={THREE.DoubleSide} /></mesh>
+        <mesh position={[0, 0.18, 0]} rotation={[-Math.PI / 2, 0, 0]}><ringGeometry args={[(isHeroFeature ? 4.9 : isEliteFeature ? 4.5 : 4.2) * stageScale, (isHeroFeature ? 5.9 : isEliteFeature ? 5.45 : 5.1) * stageScale, 48]} /><meshBasicMaterial color={accentColor} depthWrite={false} transparent opacity={isHeroFeature ? 0.24 : isEliteFeature ? 0.2 : 0.16} side={THREE.DoubleSide} /></mesh>
+        <mesh position={[0, 0.2, 0]} rotation={[-Math.PI / 2, 0, 0]}><ringGeometry args={[(isHeroFeature ? 6.2 : isEliteFeature ? 5.8 : 5.4) * stageScale, (isHeroFeature ? 6.8 : isEliteFeature ? 6.3 : 5.9) * stageScale, 56]} /><meshBasicMaterial color="#dbeafe" depthWrite={false} transparent opacity={isHeroFeature ? 0.12 : isEliteFeature ? 0.1 : 0.08} side={THREE.DoubleSide} /></mesh>
         {[-1, 1].map((side) => (
           <mesh key={`stage-guide-${side}`} position={[side * (isHeroFeature ? 4.8 : isEliteFeature ? 4.2 : 3.7) * stageScale, 0.44, 0]} castShadow receiveShadow>
             <boxGeometry args={[0.18, isHeroFeature ? 0.72 : isEliteFeature ? 0.58 : 0.46, 0.18]} />

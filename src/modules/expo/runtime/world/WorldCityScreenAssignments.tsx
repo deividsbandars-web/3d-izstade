@@ -17,7 +17,7 @@ function renderPrimitive(primitive: CanonicalPrimitive, key: string) {
         <planeGeometry args={primitive.size} />
         <meshBasicMaterial
           color={primitive.color}
-          depthWrite={isOpaque && !primitive.transparent}
+          depthWrite={false}
           polygonOffset
           polygonOffsetFactor={-4}
           polygonOffsetUnits={-4}
@@ -37,7 +37,7 @@ function renderPrimitive(primitive: CanonicalPrimitive, key: string) {
           <planeGeometry args={primitive.size} />
           <meshBasicMaterial
             color={primitive.fallbackColor}
-            depthWrite={isOpaque}
+            depthWrite={false}
             polygonOffset
             polygonOffsetFactor={-5}
             polygonOffsetUnits={-5}
@@ -53,7 +53,7 @@ function renderPrimitive(primitive: CanonicalPrimitive, key: string) {
       <mesh key={key} position={primitive.position} renderOrder={9}>
         <planeGeometry args={primitive.size} />
         <SponsorTextureSurface
-          depthWrite={isOpaque}
+          depthWrite={false}
           fallbackColor={primitive.fallbackColor}
           opacity={primitive.opacity ?? 0.92}
           url={primitive.url}

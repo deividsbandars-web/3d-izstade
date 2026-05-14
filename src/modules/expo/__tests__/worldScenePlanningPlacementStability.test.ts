@@ -101,6 +101,7 @@ const sideArrayScreenSurfaces = canonicalPlan.filteredScreenSurfaces
   .sort((left, right) => left.id.localeCompare(right.id));
 const sideArrayHostMassById = new Map(cityScreenHostMasses.map((mass) => [mass.id, mass]));
 const screenSurfaceById = new Map(canonicalPlan.filteredScreenSurfaces.map((surface) => [surface.id, surface]));
+const screenSocketById = new Map(canonicalPlan.screenSockets.map((socket) => [socket.id, socket]));
 const sideArraySocketBySurfaceId = new Map(canonicalPlan.screenSockets.map((socket) => [socket.surfaceId, socket]));
 const sideArrayAssignmentBySocketId = new Map(canonicalPlan.screenAssignments.map((assignment) => [assignment.socketId, assignment]));
 const filteredInputPlan = buildCanonicalWorldPlan({
@@ -144,6 +145,16 @@ function assertSurfaceZSpacing(idA: string, idB: string, minSpacing: number) {
   assert.ok(right, `${idB} must exist for screen rhythm checks`);
   assert.ok(Math.abs(left.position[2] - right.position[2]) >= minSpacing, `${idA} and ${idB} must keep at least ${minSpacing} units of Z rhythm`);
 }
+function screenAssignmentFaceClearance(
+  surface: NonNullable<ReturnType<typeof screenSurfaceById.get>>,
+  socket: NonNullable<ReturnType<typeof screenSocketById.get>>,
+  primitive: CanonicalPrimitiveTexturePlane,
+) {
+  const yaw = surface.rotation[1] ?? 0;
+  const socketDepth = ((socket.position[0] - surface.position[0]) * Math.sin(yaw)) + ((socket.position[2] - surface.position[2]) * Math.cos(yaw));
+  const frontFaceDepth = (surface.renderIntent?.housingDepth ?? surface.size[2]) * 0.5;
+  return (socketDepth + primitive.position[2]) - frontFaceDepth;
+}
 function assertWorldBoothScreenHostClearance(worldContract: typeof world, label: string) {
   const plan = buildCanonicalWorldPlanFromWorldContract(worldContract);
   const mediaWallHosts = plan.filteredMasses.filter((mass) => /^screen-(?:marquee|array|spine)-/.test(mass.id) && mass.id.endsWith('-host'));
@@ -175,8 +186,17 @@ for (const assignment of canonicalPlan.screenAssignments) {
   );
   const texturePrimitive = assignment.renderIntent?.primitives?.find(isTexturePrimitive);
   assert.ok(texturePrimitive, `${assignment.id} must render a generated billboard texture`);
+  assert.equal(assignment.renderIntent?.primitives?.length, 1, `${assignment.id} must render one billboard overlay plane, not stacked backing planes`);
   assert.ok((texturePrimitive.url ?? '').startsWith('generated-billboard:'), `${assignment.id} must use a controlled full-bleed ad texture`);
   assert.equal(texturePrimitive.opacity ?? 1, 1, `${assignment.id} billboard texture must be opaque to avoid transparent-sort jitter`);
+  const socket = screenSocketById.get(assignment.socketId);
+  const surface = socket ? screenSurfaceById.get(socket.surfaceId) : null;
+  assert.ok(socket, `${assignment.id} must reference an existing screen socket`);
+  assert.ok(surface, `${assignment.id} must reference an existing screen surface`);
+  assert.ok(
+    socket && surface && screenAssignmentFaceClearance(surface, socket, texturePrimitive) >= 1.25,
+    `${assignment.id} billboard texture must sit clearly in front of screen housing instead of z-fighting with the host shell`,
+  );
 }
 for (const socket of canonicalPlan.screenSockets) {
   const surface = screenSurfaceById.get(socket.surfaceId);
@@ -231,8 +251,13 @@ for (const surface of sideArrayScreenSurfaces) {
   assert.ok((assignment?.renderIntent?.frameHeight ?? 0) >= surface.size[1] * 0.84, `${assignment?.id} must render a tall ad face`);
   const texturePrimitive = assignment?.renderIntent?.primitives?.find(isTexturePrimitive);
   assert.ok(texturePrimitive, `${assignment?.id} must render a generated billboard texture`);
+  assert.equal(assignment?.renderIntent?.primitives?.length, 1, `${assignment?.id} must render one side-array billboard overlay plane`);
   assert.ok((texturePrimitive.url ?? '').startsWith('generated-billboard:'), `${assignment?.id} must use a controlled side-array ad texture`);
   assert.equal(texturePrimitive.opacity ?? 1, 1, `${assignment?.id} texture must render opaque for stable camera rotation`);
+  assert.ok(
+    socket && screenAssignmentFaceClearance(surface, socket, texturePrimitive) >= 1.25,
+    `${assignment?.id} side-array texture must sit clearly in front of the host shell`,
+  );
 }
 assert.ok(
   cityScreenHostMasses.every((mass) => mass.planningSource?.sourceFunction === 'buildCityScreenHostMasses'),
