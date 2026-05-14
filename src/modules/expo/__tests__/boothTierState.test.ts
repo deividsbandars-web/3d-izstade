@@ -35,7 +35,7 @@ assert.equal(reviewDistanceHero.showFullBoothUi, false);
 
 const nearHero = buildBoothTierState({
   ...baseArgs,
-  playerPosition: [180, 0, 0],
+  playerPosition: [40, 0, 0],
   skylineDensityEnabled: true,
 });
 
