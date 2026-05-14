@@ -189,6 +189,8 @@ function truncateBillboardText(value: string, maxLength: number) {
 
 function buildFullBleedBillboardDataUrl({
   accentColor,
+  frameHeight,
+  frameWidth,
   label,
   semanticChip,
   subtitle,
@@ -196,6 +198,8 @@ function buildFullBleedBillboardDataUrl({
   tierAccent,
 }: {
   accentColor: string;
+  frameHeight: number;
+  frameWidth: number;
   label: string;
   semanticChip: string;
   subtitle: string;
@@ -204,6 +208,7 @@ function buildFullBleedBillboardDataUrl({
 }) {
   return `generated-billboard:${encodeURIComponent(JSON.stringify({
     accentColor,
+    aspect: Number((frameWidth / Math.max(1, frameHeight)).toFixed(3)),
     chip: truncateBillboardText(semanticChip, 22).toUpperCase(),
     label: truncateBillboardText(label, 28).toUpperCase(),
     subtitle: truncateBillboardText(subtitle, 44).toUpperCase(),
@@ -219,7 +224,7 @@ function buildAssignmentPrimitives(args: {
   label: string;
   subtitle: string;
   tier: CityScreenAssignment['tier'];
-}) {
+}): CanonicalPrimitive[] {
   const { accentColor, imageUrl, intent, label, subtitle, tier } = args;
   const frameWidth = intent.frameWidth;
   const frameHeight = intent.frameHeight;
@@ -231,6 +236,8 @@ function buildAssignmentPrimitives(args: {
   const fullBleedBillboardUrl = isFullBleed
     ? buildFullBleedBillboardDataUrl({
         accentColor,
+        frameHeight,
+        frameWidth,
         label,
         semanticChip: intent.semanticChip,
         subtitle,
@@ -242,6 +249,14 @@ function buildAssignmentPrimitives(args: {
     ? frameWidth * 0.018
     : intent.semanticMode === 'landmark' ? frameWidth * 0.1 : frameWidth * 0.08;
   const isHeroComposition = intent.semanticChip === 'LEFT MARQUEE' || intent.semanticChip === 'RIGHT MARQUEE' || intent.semanticChip === 'CENTER SPINE';
+
+  if (isFullBleed) {
+    return [
+      { color: '#050b12', kind: 'plane', opacity: 1, position: [0, 0, 0.02], size: [frameWidth, frameHeight] },
+      { fallbackColor: accentColor, kind: 'texture-plane', opacity: 1, position: [0, 0, 0.16], size: [frameWidth * 0.992, frameHeight * 0.992], url: fullBleedBillboardUrl },
+    ];
+  }
+
   const contentWidth = frameWidth * (isFullBleed ? 0.985 : 0.92);
   const contentHeight = bodyHeight * (isFullBleed ? 0.992 : 0.94);
   const contentCenterX = useTexturePlane ? frameWidth * 0.18 : 0;
@@ -325,18 +340,18 @@ export function buildZoneScreenAssignmentPlan(args: {
     const frameScale = isSideArraySocket
       ? 0.99
       : isCenterSpineHero
-      ? 0.92
+      ? 0.985
       : isHeroComposition
-        ? 0.9
+        ? 0.975
         : isTowerFamily
           ? isHeroTowerSocket
-            ? 0.92
+            ? 0.965
             : isMidTowerSocket
-              ? 0.88
-              : 0.76
+              ? 0.94
+              : 0.9
           : isRearCampusWall
-            ? 0.94
-            : 0.86;
+            ? 0.975
+            : 0.95;
     const frameWidth = socket.frameSize[0] * frameScale;
     const frameHeight = socket.frameSize[1] * frameScale;
     const headerHeight = Math.max(0.24, frameHeight * (isSideArraySocket ? 0.045 : isCenterSpineHero ? 0.13 : isHeroComposition ? 0.12 : isRearCampusWall ? 0.08 : 0.1));
@@ -355,7 +370,7 @@ export function buildZoneScreenAssignmentPlan(args: {
       footerHeight,
       frameHeight,
       frameWidth,
-      fullBleed: isSideArraySocket,
+      fullBleed: true,
       headerHeight,
       maxDistance: tier === 'hero' ? 1700 : tier === 'elite' ? 1350 : 980,
       panelOpacityFar: isTowerFamily ? (isSupportTowerSocket ? 0.24 : 0.38) : 0.44,

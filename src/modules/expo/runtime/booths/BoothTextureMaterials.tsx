@@ -6,6 +6,7 @@ const GENERATED_BILLBOARD_PREFIX = 'generated-billboard:';
 
 type GeneratedBillboardPayload = {
   accentColor?: string;
+  aspect?: number;
   chip?: string;
   label?: string;
   subtitle?: string;
@@ -47,6 +48,36 @@ function drawBillboardText(
   context.fillText(value, x, y);
 }
 
+function configureExpoTexture(texture: THREE.Texture) {
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.generateMipmaps = true;
+  texture.minFilter = THREE.LinearMipmapLinearFilter;
+  texture.magFilter = THREE.LinearFilter;
+  texture.wrapS = THREE.ClampToEdgeWrapping;
+  texture.wrapT = THREE.ClampToEdgeWrapping;
+  texture.anisotropy = Math.max(texture.anisotropy || 1, 8);
+  texture.needsUpdate = true;
+  return texture;
+}
+
+function resolveGeneratedBillboardCanvasSize(aspect: number | undefined) {
+  const normalizedAspect = Number.isFinite(aspect) && aspect ? Math.max(0.35, Math.min(4.5, aspect)) : 0.7;
+
+  if (normalizedAspect >= 2.15) {
+    return { height: 512, width: 2048 };
+  }
+
+  if (normalizedAspect >= 1.12) {
+    return { height: 1024, width: 2048 };
+  }
+
+  if (normalizedAspect >= 0.86) {
+    return { height: 1024, width: 1024 };
+  }
+
+  return { height: 2048, width: 1024 };
+}
+
 function createGeneratedBillboardTexture(url: string) {
   const payload = parseGeneratedBillboardPayload(url);
   if (!payload || typeof document === 'undefined') {
@@ -54,8 +85,9 @@ function createGeneratedBillboardTexture(url: string) {
   }
 
   const canvas = document.createElement('canvas');
-  canvas.width = 900;
-  canvas.height = 1280;
+  const canvasSize = resolveGeneratedBillboardCanvasSize(payload.aspect);
+  canvas.width = canvasSize.width;
+  canvas.height = canvasSize.height;
 
   const context = canvas.getContext('2d');
   if (!context) {
@@ -64,55 +96,101 @@ function createGeneratedBillboardTexture(url: string) {
 
   const accentColor = payload.accentColor || '#2563eb';
   const tierAccent = payload.tierAccent || '#93c5fd';
+  const width = canvas.width;
+  const height = canvas.height;
+  const shortSide = Math.min(width, height);
+  const pad = Math.max(34, shortSide * 0.068);
+  const isLandscape = width > height * 1.08;
+  const isUltraWide = width > height * 2.4;
+  const font = (weight: number, size: number) => `${weight} ${Math.round(size)}px Verdana, Arial, sans-serif`;
 
   context.fillStyle = '#07101b';
-  context.fillRect(0, 0, canvas.width, canvas.height);
+  context.fillRect(0, 0, width, height);
   context.globalAlpha = 0.86;
   context.fillStyle = accentColor;
-  context.fillRect(0, 0, canvas.width, canvas.height);
+  context.fillRect(0, 0, width, height);
   context.globalAlpha = 1;
 
   context.fillStyle = 'rgba(7, 16, 27, 0.34)';
-  context.roundRect(34, 34, 832, 1212, 18);
+  context.roundRect(pad * 0.48, pad * 0.48, width - pad * 0.96, height - pad * 0.96, Math.max(18, shortSide * 0.028));
   context.fill();
 
+  if (isLandscape) {
+    const contentTop = height * (isUltraWide ? 0.26 : 0.3);
+    const titleSize = height * (isUltraWide ? 0.28 : 0.24);
+    const chipSize = height * (isUltraWide ? 0.09 : 0.075);
+    const tierSize = height * (isUltraWide ? 0.105 : 0.082);
+    const subtitleSize = height * (isUltraWide ? 0.08 : 0.066);
+
+    context.fillStyle = 'rgba(248, 250, 252, 0.17)';
+    context.roundRect(pad, height * 0.14, width - pad * 2, height * (isUltraWide ? 0.54 : 0.48), Math.max(18, shortSide * 0.035));
+    context.fill();
+
+    context.fillStyle = tierAccent;
+    context.globalAlpha = 0.78;
+    context.roundRect(pad, height * 0.78, width * 0.42, Math.max(14, height * 0.035), height * 0.02);
+    context.fill();
+    context.globalAlpha = 1;
+
+    context.fillStyle = 'rgba(248, 250, 252, 0.28)';
+    context.fillRect(width * 0.62, height * 0.18, width * 0.25, Math.max(4, height * 0.012));
+    context.fillRect(width * 0.67, height * 0.24, width * 0.18, Math.max(4, height * 0.012));
+
+    drawBillboardText(context, payload.chip || 'DISTRICT ARRAY', pad * 1.22, height * 0.08, width - pad * 2.44, font(800, chipSize), tierAccent);
+    drawBillboardText(context, payload.label || 'EXPO PARTNER', pad * 1.22, contentTop, width - pad * 2.44, font(900, titleSize), '#ffffff');
+    drawBillboardText(context, `${payload.tier || 'PREMIUM'} PARTNER`, pad * 1.22, contentTop + titleSize * 0.92, width * 0.52, font(800, tierSize), '#dbeafe');
+    drawBillboardText(context, payload.subtitle || 'EXPO SPONSOR FRONTAGE', width * 0.52, height * 0.8, width * 0.36, font(700, subtitleSize), '#e2e8f0');
+
+    context.globalAlpha = 0.88;
+    context.fillStyle = tierAccent;
+    context.beginPath();
+    context.arc(width - pad * 1.7, height - pad * 1.7, shortSide * 0.07, 0, Math.PI * 2);
+    context.fill();
+    context.globalAlpha = 0.24;
+    context.strokeStyle = '#f8fafc';
+    context.lineWidth = Math.max(6, shortSide * 0.012);
+    context.beginPath();
+    context.arc(width - pad * 1.7, height - pad * 1.7, shortSide * 0.11, 0, Math.PI * 2);
+    context.stroke();
+    context.globalAlpha = 1;
+
+    return configureExpoTexture(new THREE.CanvasTexture(canvas));
+  }
+
   context.fillStyle = 'rgba(248, 250, 252, 0.18)';
-  context.roundRect(78, 128, 744, 310, 16);
+  context.roundRect(pad, height * 0.1, width - pad * 2, height * 0.24, Math.max(16, shortSide * 0.024));
   context.fill();
 
   context.fillStyle = tierAccent;
   context.globalAlpha = 0.74;
-  context.roundRect(78, 846, 540, 30, 15);
+  context.roundRect(pad, height * 0.66, width * 0.6, Math.max(22, height * 0.024), height * 0.012);
   context.fill();
   context.globalAlpha = 1;
 
   context.fillStyle = 'rgba(248, 250, 252, 0.32)';
-  context.fillRect(78, 900, 704, 5);
+  context.fillRect(pad, height * 0.704, width - pad * 2.2, Math.max(5, height * 0.004));
   context.fillStyle = 'rgba(248, 250, 252, 0.22)';
-  context.fillRect(78, 932, 612, 5);
+  context.fillRect(pad, height * 0.73, width - pad * 3, Math.max(5, height * 0.004));
 
-  drawBillboardText(context, payload.chip || 'DISTRICT ARRAY', 92, 108, 720, '800 42px Verdana, Arial, sans-serif', tierAccent);
-  drawBillboardText(context, payload.label || 'EXPO PARTNER', 92, 548, 720, '900 98px Verdana, Arial, sans-serif', '#ffffff');
-  drawBillboardText(context, `${payload.tier || 'PREMIUM'} PARTNER`, 92, 642, 640, '800 44px Verdana, Arial, sans-serif', '#dbeafe');
-  drawBillboardText(context, payload.subtitle || 'EXPO SPONSOR FRONTAGE', 92, 1122, 690, '700 36px Verdana, Arial, sans-serif', '#e2e8f0');
+  drawBillboardText(context, payload.chip || 'DISTRICT ARRAY', pad * 1.18, height * 0.084, width - pad * 2.36, font(800, height * 0.033), tierAccent);
+  drawBillboardText(context, payload.label || 'EXPO PARTNER', pad * 1.18, height * 0.428, width - pad * 2.36, font(900, height * 0.076), '#ffffff');
+  drawBillboardText(context, `${payload.tier || 'PREMIUM'} PARTNER`, pad * 1.18, height * 0.502, width - pad * 2.7, font(800, height * 0.034), '#dbeafe');
+  drawBillboardText(context, payload.subtitle || 'EXPO SPONSOR FRONTAGE', pad * 1.18, height * 0.876, width - pad * 2.5, font(700, height * 0.028), '#e2e8f0');
 
   context.globalAlpha = 0.88;
   context.fillStyle = tierAccent;
   context.beginPath();
-  context.arc(784, 1084, 52, 0, Math.PI * 2);
+  context.arc(width - pad * 1.35, height * 0.847, shortSide * 0.058, 0, Math.PI * 2);
   context.fill();
   context.globalAlpha = 0.22;
   context.strokeStyle = '#f8fafc';
-  context.lineWidth = 8;
+  context.lineWidth = Math.max(8, shortSide * 0.012);
   context.beginPath();
-  context.arc(784, 1084, 82, 0, Math.PI * 2);
+  context.arc(width - pad * 1.35, height * 0.847, shortSide * 0.09, 0, Math.PI * 2);
   context.stroke();
   context.globalAlpha = 1;
 
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.colorSpace = THREE.SRGBColorSpace;
-  texture.needsUpdate = true;
-  return texture;
+  return configureExpoTexture(new THREE.CanvasTexture(canvas));
 }
 
 function loadTextureWithCandidateUrls(loader: THREE.TextureLoader, urls: string[]) {
@@ -159,9 +237,7 @@ function loadCachedExpoTexture(url: string) {
   const candidateUrls = resolveExpoTextureCandidateUrls(url);
   const promise = loadTextureWithCandidateUrls(loader, candidateUrls)
     .then((texture) => {
-      texture.colorSpace = THREE.SRGBColorSpace;
-      texture.needsUpdate = true;
-      EXPO_TEXTURE_CACHE.set(url, texture);
+      EXPO_TEXTURE_CACHE.set(url, configureExpoTexture(texture));
       EXPO_TEXTURE_PROMISE_CACHE.delete(url);
       return texture;
     })

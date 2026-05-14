@@ -82,6 +82,17 @@ const isTexturePrimitive = (primitive: { kind: string }): primitive is Canonical
 
 assert.ok(stableScreenIds.length > 0);
 assert.ok(stableSocketIds.length > 0);
+for (const assignment of canonicalPlan.screenAssignments) {
+  assert.equal(assignment.renderIntent?.fullBleed, true, `${assignment.id} must use full-bleed city-screen rendering`);
+  assert.ok(
+    assignment.renderIntent?.primitives?.every((primitive) => primitive.kind !== 'text'),
+    `${assignment.id} must bake screen text into a stable billboard texture instead of live text meshes`,
+  );
+  const texturePrimitive = assignment.renderIntent?.primitives?.find(isTexturePrimitive);
+  assert.ok(texturePrimitive, `${assignment.id} must render a generated billboard texture`);
+  assert.ok((texturePrimitive.url ?? '').startsWith('generated-billboard:'), `${assignment.id} must use a controlled full-bleed ad texture`);
+  assert.equal(texturePrimitive.opacity ?? 1, 1, `${assignment.id} billboard texture must be opaque to avoid transparent-sort jitter`);
+}
 assert.ok(
   canonicalPlan.filteredMasses.every((mass) => mass.planningSource?.sourceFile && mass.planningSource.sourceFunction !== 'buildCanonicalWorldPlan'),
   `filtered city masses must keep concrete non-generic source functions: ${Array.from(cityMassSourceFunctions).join(', ')}`,
@@ -124,7 +135,7 @@ for (const surface of sideArrayScreenSurfaces) {
   const texturePrimitive = assignment?.renderIntent?.primitives?.find(isTexturePrimitive);
   assert.ok(texturePrimitive, `${assignment?.id} must render a generated billboard texture`);
   assert.ok((texturePrimitive.url ?? '').startsWith('generated-billboard:'), `${assignment?.id} must use a controlled side-array ad texture`);
-  assert.ok((texturePrimitive.opacity ?? 1) < 1, `${assignment?.id} texture must not depth-mask side-array overlays`);
+  assert.equal(texturePrimitive.opacity ?? 1, 1, `${assignment?.id} texture must render opaque for stable camera rotation`);
 }
 assert.ok(
   cityScreenHostMasses.every((mass) => mass.planningSource?.sourceFunction === 'buildCityScreenHostMasses'),

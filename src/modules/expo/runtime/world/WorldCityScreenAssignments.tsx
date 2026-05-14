@@ -1,28 +1,28 @@
 import { Text } from '@react-three/drei';
-import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { trackExpoScreenRouteClicked } from '../../lib/expoAnalytics';
 import { SponsorTextureSurface } from '../booths';
 import { resolveSponsorScreenInteraction } from '../../lib/sponsorScreenInteractionResolver';
 import type { CanonicalPrimitive, CityScreenAssignment, CityScreenSocket } from '../planning/types';
 
-function getHighlightedOpacity(opacity: number | undefined, fallback: number) {
-  return Math.min(1, (opacity ?? fallback) + 0.12);
+function isOpaquePrimitive(opacity: number | undefined) {
+  return (opacity ?? 1) >= 0.999;
 }
 
-function renderPrimitive(primitive: CanonicalPrimitive, key: string, highlighted: boolean) {
+function renderPrimitive(primitive: CanonicalPrimitive, key: string) {
   if (primitive.kind === 'plane') {
+    const isOpaque = isOpaquePrimitive(primitive.opacity);
     return (
       <mesh key={key} position={primitive.position} rotation={primitive.rotation} renderOrder={8}>
         <planeGeometry args={primitive.size} />
         <meshBasicMaterial
           color={primitive.color}
-          depthWrite={false}
+          depthWrite={isOpaque && !primitive.transparent}
           polygonOffset
           polygonOffsetFactor={-4}
           polygonOffsetUnits={-4}
-          transparent={primitive.transparent}
-          opacity={highlighted ? getHighlightedOpacity(primitive.opacity, 1) : primitive.opacity}
+          transparent={primitive.transparent || !isOpaque}
+          opacity={primitive.opacity}
           toneMapped={false}
         />
       </mesh>
@@ -30,18 +30,19 @@ function renderPrimitive(primitive: CanonicalPrimitive, key: string, highlighted
   }
 
   if (primitive.kind === 'texture-plane') {
+    const isOpaque = isOpaquePrimitive(primitive.opacity);
     if (!primitive.url) {
       return (
         <mesh key={key} position={primitive.position} renderOrder={9}>
           <planeGeometry args={primitive.size} />
           <meshBasicMaterial
             color={primitive.fallbackColor}
-            depthWrite={false}
+            depthWrite={isOpaque}
             polygonOffset
             polygonOffsetFactor={-5}
             polygonOffsetUnits={-5}
-            transparent
-            opacity={highlighted ? getHighlightedOpacity(primitive.opacity, 0.22) : primitive.opacity ?? 0.22}
+            transparent={!isOpaque}
+            opacity={primitive.opacity ?? 0.22}
             toneMapped={false}
           />
         </mesh>
@@ -52,9 +53,9 @@ function renderPrimitive(primitive: CanonicalPrimitive, key: string, highlighted
       <mesh key={key} position={primitive.position} renderOrder={9}>
         <planeGeometry args={primitive.size} />
         <SponsorTextureSurface
-          depthWrite={false}
+          depthWrite={isOpaque}
           fallbackColor={primitive.fallbackColor}
-          opacity={highlighted ? getHighlightedOpacity(primitive.opacity, 0.92) : primitive.opacity ?? 0.92}
+          opacity={primitive.opacity ?? 0.92}
           url={primitive.url}
         />
       </mesh>
@@ -94,16 +95,9 @@ export function WorldCityScreenAssignments({
   sockets: CityScreenSocket[];
 }) {
   const navigate = useNavigate();
-  const [hoveredAssignmentId, setHoveredAssignmentId] = useState<string | null>(null);
   const socketById = new Map(sockets.map((socket) => [socket.id, socket]));
   const operatorReviewEnabled =
     typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('operator') === '1';
-
-  useEffect(() => () => {
-    if (typeof document !== 'undefined') {
-      document.body.style.cursor = 'auto';
-    }
-  }, []);
 
   return (
     <group name="world-city-screen-assignments">
@@ -120,7 +114,6 @@ export function WorldCityScreenAssignments({
           title: assignment.label,
         });
         const isRouteAction = resolvedAction.kind === 'route';
-        const isHighlighted = hoveredAssignmentId === assignment.id;
 
         const dx = socket.position[0] - playerPosition[0];
         const dz = socket.position[2] - playerPosition[2];
@@ -177,25 +170,9 @@ export function WorldCityScreenAssignments({
                   navigate(resolvedAction.route);
                 }
               : undefined}
-            onPointerOver={isRouteAction
-              ? () => {
-                  setHoveredAssignmentId(assignment.id);
-                  if (typeof document !== 'undefined') {
-                    document.body.style.cursor = 'pointer';
-                  }
-                }
-              : undefined}
-            onPointerOut={isRouteAction
-              ? () => {
-                  setHoveredAssignmentId((current) => (current === assignment.id ? null : current));
-                  if (typeof document !== 'undefined') {
-                    document.body.style.cursor = 'auto';
-                  }
-                }
-              : undefined}
           >
             {primitives.map((primitive, index) =>
-              renderPrimitive(primitive, `${assignment.id}:${primitive.kind}:${index}`, isRouteAction && isHighlighted),
+              renderPrimitive(primitive, `${assignment.id}:${primitive.kind}:${index}`),
             )}
           </group>
         );
