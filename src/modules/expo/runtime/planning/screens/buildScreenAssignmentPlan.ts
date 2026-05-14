@@ -358,6 +358,8 @@ export function buildZoneScreenAssignmentPlan(args: {
     const detailDistance = tier === 'hero' ? 1100 : tier === 'elite' ? 900 : 700;
     const subtitleDistance = tier === 'hero' ? 760 : tier === 'elite' ? 620 : 480;
     const hasImage = Boolean(placement.company?.posterUrl || placement.company?.heroAssetUrl || placement.company?.logo_url);
+    const tierMaxDistance = tier === 'hero' ? 1700 : tier === 'elite' ? 1350 : 980;
+    const socketMaxDistance = socket.renderIntent?.maxDistance ?? tierMaxDistance;
 
     const renderIntent = {
       bodyPanelWidth: hasImage
@@ -371,7 +373,7 @@ export function buildZoneScreenAssignmentPlan(args: {
       frameWidth,
       fullBleed: true,
       headerHeight,
-      maxDistance: tier === 'hero' ? 1700 : tier === 'elite' ? 1350 : 980,
+      maxDistance: Math.max(tierMaxDistance, socketMaxDistance),
       panelOpacityFar: isTowerFamily ? (isSupportTowerSocket ? 0.24 : 0.38) : 0.44,
       panelOpacityMid: isTowerFamily ? (isSupportTowerSocket ? 0.36 : 0.54) : 0.58,
       panelOpacityNear: isTowerFamily ? (isSupportTowerSocket ? 0.5 : 0.68) : 0.72,

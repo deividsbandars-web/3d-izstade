@@ -12,6 +12,16 @@ function defaultSocketRenderIntent(
   const heroComposition = socket.kind === 'hero_wall' && isHeroCompositionZone(zoneId);
   const centerSpineHero = socket.kind === 'hero_wall' && zoneId === 'center-spine';
   const frameDepth = socket.kind === 'hero_wall' ? (centerSpineHero ? 4.2 : heroComposition ? 3.4 : 2.8) : socket.kind === 'tower_crown' ? 2.2 : 1.9;
+  const maxDistance =
+    zoneId === 'rear-campus'
+      ? 1560
+      : socket.kind === 'hero_wall'
+        ? 1700
+        : socket.kind === 'tower_crown'
+          ? 1560
+          : socket.kind === 'tower_side'
+            ? 1420
+            : 1240;
 
   return {
     accentOpacity: socket.kind === 'hero_wall' ? (centerSpineHero ? 0.4 : heroComposition ? 0.32 : 0.24) : 0.16,
@@ -21,7 +31,7 @@ function defaultSocketRenderIntent(
     bridgeHeight: socket.kind === 'hero_wall' ? socket.frameSize[1] * (centerSpineHero ? 0.22 : heroComposition ? 0.16 : 0.12) : socket.kind === 'tower_side' ? socket.frameSize[1] * 0.08 : 0,
     columnWidth: Math.max(centerSpineHero ? 2.8 : heroComposition ? 2.1 : 1.3, socket.frameSize[0] * (centerSpineHero ? 0.056 : heroComposition ? 0.042 : 0.034)),
     frameDepth,
-    maxDistance: socket.kind === 'hero_wall' || socket.kind === 'tower_crown' || zoneId === 'rear-campus' ? 1500 : 1040,
+    maxDistance,
     visible: true,
   };
 }

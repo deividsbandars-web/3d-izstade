@@ -197,6 +197,10 @@ for (const assignment of canonicalPlan.screenAssignments) {
     socket && surface && screenAssignmentFaceClearance(surface, socket, texturePrimitive) >= 1.25,
     `${assignment.id} billboard texture must sit clearly in front of screen housing instead of z-fighting with the host shell`,
   );
+  assert.ok(
+    (assignment.renderIntent?.maxDistance ?? 0) >= (socket?.renderIntent?.maxDistance ?? 0),
+    `${assignment.id} billboard content must stay visible for at least the host screen visibility range`,
+  );
 }
 for (const socket of canonicalPlan.screenSockets) {
   const surface = screenSurfaceById.get(socket.surfaceId);
