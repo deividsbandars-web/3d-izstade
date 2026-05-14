@@ -1,7 +1,11 @@
 import assert from 'node:assert/strict';
 import { buildCanonicalWorldPlan, buildCanonicalWorldPlanFromWorldContract, EXPO_CANONICAL_DISTRICT_STRIDE } from '../runtime/planning/index.js';
+import { buildCleanTowerLandmarks } from '../runtime/planning/legacy/worldCityGeometry.js';
+import { buildCityScreenHostMasses } from '../runtime/planning/screens/buildCityScreenHostMassPlan.js';
+import { buildCityScreenSurfacePool } from '../runtime/planning/screens/buildCityScreenSurfacePool.js';
 import type { CanonicalPrimitiveTexturePlane } from '../runtime/planning/types/index.js';
 import { selectSectionVisibleBoothPlacements, selectVisibleBoothPlacements } from '../runtime/world/scene/useExpoWorldSceneRuntime.js';
+import { buildCityPerimeterConnectors } from '../runtime/world/WorldCityPerimeterLayout.js';
 import { buildExpoWorldContract } from '../../../shared/expo/worldContract.js';
 
 const world = buildExpoWorldContract({
@@ -64,6 +68,30 @@ const renderedLegacyMediaWallMassIds = canonicalPlan.filteredMasses
 const cityScreenHostMasses = canonicalPlan.filteredMasses
   .filter((mass) => mass.id.startsWith('screen-') && mass.id.endsWith('-host'))
   .sort((left, right) => left.id.localeCompare(right.id));
+const cityMassById = new Map(canonicalPlan.filteredMasses.map((mass) => [mass.id, mass]));
+const unfilteredScreenHostById = new Map(
+  buildCityScreenHostMasses(buildCityScreenSurfacePool(3, EXPO_CANONICAL_DISTRICT_STRIDE)).map((mass) => [mass.id, mass])
+);
+const clearanceTowerById = new Map(
+  buildCleanTowerLandmarks(
+    ['arrival-core', 'meetings', 'showcase-row'].map((sectorId, index) => ({
+      ...world.districtPrograms[0],
+      clusterIndex: index,
+      sectorId,
+    })),
+    [],
+    EXPO_CANONICAL_DISTRICT_STRIDE,
+    world.visualProfile,
+  ).map((tower) => [
+    tower.id,
+    {
+      position: tower.position,
+      rotation: [0, 0, 0],
+      size: [tower.baseSize[0], tower.baseSize[1] + tower.upperSize[1], tower.baseSize[2]],
+    },
+  ])
+);
+const perimeterById = new Map(buildCityPerimeterConnectors(canonicalPlan.stadiumReserve).map((connector) => [connector.id, connector]));
 const sideArrayScreenSurfaces = canonicalPlan.filteredScreenSurfaces
   .filter((surface) => surface.id.startsWith('screen-array-'))
   .sort((left, right) => left.id.localeCompare(right.id));
@@ -80,6 +108,31 @@ const filteredInputPlan = buildCanonicalWorldPlan({
 const filteredInputScreenIds = filteredInputPlan.filteredScreenSurfaces.map((surface) => surface.id).sort();
 const filteredInputSocketIds = filteredInputPlan.screenSockets.map((socket) => socket.id).sort();
 const isTexturePrimitive = (primitive: { kind: string }): primitive is CanonicalPrimitiveTexturePlane => primitive.kind === 'texture-plane';
+function resolveBounds(entry: { position: number[]; rotation?: number[]; size: number[] }) {
+  const yaw = entry.rotation?.[1] ?? 0;
+  const halfX = (Math.abs(Math.cos(yaw)) * entry.size[0] * 0.5) + (Math.abs(Math.sin(yaw)) * entry.size[2] * 0.5);
+  const halfZ = (Math.abs(Math.sin(yaw)) * entry.size[0] * 0.5) + (Math.abs(Math.cos(yaw)) * entry.size[2] * 0.5);
+  return {
+    maxX: entry.position[0] + halfX,
+    maxZ: entry.position[2] + halfZ,
+    minX: entry.position[0] - halfX,
+    minZ: entry.position[2] - halfZ,
+  };
+}
+function gapXZ(left: { position: number[]; rotation?: number[]; size: number[] }, right: { position: number[]; rotation?: number[]; size: number[] }) {
+  const leftBounds = resolveBounds(left);
+  const rightBounds = resolveBounds(right);
+  const dx = Math.max(0, Math.max(leftBounds.minX - rightBounds.maxX, rightBounds.minX - leftBounds.maxX));
+  const dz = Math.max(0, Math.max(leftBounds.minZ - rightBounds.maxZ, rightBounds.minZ - leftBounds.maxZ));
+  return Math.sqrt((dx * dx) + (dz * dz));
+}
+function assertMinGap(idA: string, idB: string, minGap: number) {
+  const left = cityMassById.get(idA) ?? unfilteredScreenHostById.get(idA) ?? clearanceTowerById.get(idA) ?? perimeterById.get(idA);
+  const right = cityMassById.get(idB) ?? unfilteredScreenHostById.get(idB) ?? clearanceTowerById.get(idB) ?? perimeterById.get(idB);
+  assert.ok(left, `${idA} must exist for city clearance checks`);
+  assert.ok(right, `${idB} must exist for city clearance checks`);
+  assert.ok(gapXZ(left, right) >= minGap, `${idA} must stay at least ${minGap} units from ${idB}`);
+}
 
 assert.ok(stableScreenIds.length > 0);
 assert.ok(stableSocketIds.length > 0);
@@ -157,6 +210,12 @@ assert.ok(
 assert.ok(
   cityScreenHostMasses.every((mass) => mass.planningSource?.safeEditSeam === 'src/modules/expo/runtime/planning/screens/buildCityScreenHostMassPlan.ts'),
 );
+assertMinGap('screen-array-left-upper-0-host', 'city-perimeter-left-wall', 72);
+assertMinGap('screen-array-left-upper-1-host', 'city-perimeter-left-wall', 72);
+assertMinGap('screen-array-left-upper-1-host', 'city-perimeter-left-stadium-terminus', 72);
+assertMinGap('screen-array-left-2-host', 'showcase-row-outer-support-tower-left', 72);
+assertMinGap('screen-array-right-upper-0-host', 'city-perimeter-right-wall', 72);
+assertMinGap('screen-array-right-upper-1-host', 'city-perimeter-right-wall', 72);
 assert.deepEqual(Array.from(cityTowerSourceFunctions), ['buildCleanTowerLandmarks']);
 assert.deepEqual(resolveReserveOverlappingMassIds(canonicalPlan), []);
 assert.deepEqual(resolveReserveOverlappingMassIds(filteredInputPlan), []);

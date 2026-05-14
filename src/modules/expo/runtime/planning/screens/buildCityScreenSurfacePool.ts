@@ -17,7 +17,7 @@ export function buildCityScreenSurfacePool(districtCount: number, districtStride
   const sideArrayClearanceX = 236;
   const sideArrayLeftForwardZ = 64;
   const sideArrayRightForwardZ = 0;
-  const sideArrayUpperX = 1560;
+  const sideArrayUpperX = 1536;
   const sideArrayY = (districtIndex: number) => 148 + (districtIndex * 18);
   const sideArrayUpperY = (districtIndex: number) => 218 + (districtIndex * 16);
   const sideArraySize = (districtIndex: number): [number, number, number] => [142 + (districtIndex * 6), 196 + (districtIndex * 14), 2.8];
@@ -61,7 +61,11 @@ export function buildCityScreenSurfacePool(districtCount: number, districtStride
       },
       {
         id: `screen-array-left-${districtIndex}`,
-        position: [-968 - sideArrayClearanceX, sideArrayY(districtIndex), baseZ + 104 + sideArrayLeftDepthOffset(districtIndex)],
+        position: [
+          -968 - sideArrayClearanceX + (districtIndex === 2 ? 70 : 0),
+          sideArrayY(districtIndex),
+          baseZ + 104 + sideArrayLeftDepthOffset(districtIndex),
+        ],
         rotation: [0, flankYawLeft, 0],
         size: sideArraySize(districtIndex),
         color: '#091320',
