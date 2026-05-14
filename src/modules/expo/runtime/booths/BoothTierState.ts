@@ -187,8 +187,10 @@ export function buildBoothTierState({
     districtVisual.expressionMode === 'active-commercial';
   const showPremiumEyebrow = isHeroFeature || isEliteBooth || isPremiumBooth;
   const distanceToPlayer = Math.hypot(playerPosition[0] - position[0], playerPosition[2] - position[2]);
-  const showDetailedText = skylineDensityEnabled || distanceToPlayer < 760;
-  const showFullBoothUi = skylineDensityEnabled || distanceToPlayer < 540 || isHeroFeature || isEliteBooth || isPremiumBooth;
+  const detailDistance = skylineDensityEnabled ? 760 : 620;
+  const fullUiDistance = skylineDensityEnabled ? 460 : 360;
+  const showDetailedText = distanceToPlayer < detailDistance || (isHeroFeature && distanceToPlayer < 920);
+  const showFullBoothUi = distanceToPlayer < fullUiDistance;
   const infoBandWidth = Math.max(10.2, metricsTitleMaxWidth + contractSpec.infoBandWidthPadding);
   const infoBandHeight = showTagline
     ? contractSpec.infoBandHeightWithTagline

@@ -362,6 +362,10 @@ export function BoothFeatureHeader({ accentColor, contractTier, fallbackMonogram
 }
 
 export function BoothInfoBand({ accentColor, badgeLabel, ctaActions, fallbackPremiumLabel, infoBandHeight, infoBandWidth, infoBandZ, isEliteBooth, isHeroNode, metrics, nameFontSize, onAction, showBadge, showDetailedText, showFullBoothUi, showPremiumEyebrow, showTagline, tagline, title }: { accentColor: string; badgeLabel: string | null; ctaActions: SponsorCta[]; fallbackPremiumLabel: string; infoBandHeight: number; infoBandWidth: number; infoBandZ: number; isEliteBooth: boolean; isHeroNode: boolean; metrics: { badgePosition: [number, number, number]; ctaPosition: [number, number, number]; taglinePosition: [number, number, number]; titleMaxWidth: number; titlePosition: [number, number, number] }; nameFontSize: number; onAction: (action: SponsorCta) => void; showBadge: boolean; showDetailedText: boolean; showFullBoothUi: boolean; showPremiumEyebrow: boolean; showTagline: boolean; tagline?: string; title: string }) {
+  if (!showDetailedText && !showFullBoothUi) {
+    return null;
+  }
+
   const isPremiumBand = showPremiumEyebrow;
   const edgeGlowColor = isEliteBooth ? '#99f6e4' : isHeroNode ? '#f3f8fd' : '#bae6fd';
   const aiAction = ctaActions.find((action) => action.kind === 'ai_chat' && !action.disabled) ?? null;
@@ -396,9 +400,13 @@ export function BoothInfoBand({ accentColor, badgeLabel, ctaActions, fallbackPre
       {showDetailedText && !isHeroNode && <Text position={metrics.titlePosition} fontSize={nameFontSize * 0.84} color="#f8fafc" anchorX="center" anchorY="middle" maxWidth={metrics.titleMaxWidth - 1.1}>{title.toUpperCase()}</Text>}
       {showTagline && showDetailedText && <Text position={metrics.taglinePosition} fontSize={metrics.titleMaxWidth <= 10 ? 0.36 : 0.42} color="#94a3b8" anchorX="center" anchorY="middle" maxWidth={Math.max(8.4, metrics.titleMaxWidth - 2.4)}>{(tagline || '').toUpperCase()}</Text>}
       {showBadge && showDetailedText && badgeLabel && <SponsorBadge accentColor={accentColor} label={badgeLabel} position={[metrics.badgePosition[0], metrics.badgePosition[1] + (showPremiumEyebrow ? 0.14 : 0), metrics.badgePosition[2] - 0.46]} />}
-      <mesh position={[metrics.ctaPosition[0], metrics.ctaPosition[1] - 0.12, metrics.ctaPosition[2] - 0.14]} castShadow><boxGeometry args={[7.84, 1.02, 0.44]} /><meshStandardMaterial color="#142337" emissive={accentColor} emissiveIntensity={0.04} metalness={0.08} roughness={0.56} /></mesh>
-      <mesh position={[metrics.ctaPosition[0], metrics.ctaPosition[1] - 0.12, metrics.ctaPosition[2] + 0.08]} castShadow><boxGeometry args={[6.92, 0.16, 0.18]} /><meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={0.08} /></mesh>
-      {showFullBoothUi && <group position={[metrics.ctaPosition[0], metrics.ctaPosition[1], metrics.ctaPosition[2] + 0.06]}><SponsorCtaStrip actions={ctaActions} color={accentColor} onAction={onAction} /></group>}
+      {showFullBoothUi && (
+        <>
+          <mesh position={[metrics.ctaPosition[0], metrics.ctaPosition[1] - 0.12, metrics.ctaPosition[2] - 0.14]} castShadow><boxGeometry args={[7.84, 1.02, 0.44]} /><meshStandardMaterial color="#142337" emissive={accentColor} emissiveIntensity={0.04} metalness={0.08} roughness={0.56} /></mesh>
+          <mesh position={[metrics.ctaPosition[0], metrics.ctaPosition[1] - 0.12, metrics.ctaPosition[2] + 0.08]} castShadow><boxGeometry args={[6.92, 0.16, 0.18]} /><meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={0.08} /></mesh>
+          <group position={[metrics.ctaPosition[0], metrics.ctaPosition[1], metrics.ctaPosition[2] + 0.06]}><SponsorCtaStrip actions={ctaActions} color={accentColor} onAction={onAction} /></group>
+        </>
+      )}
       {showFullBoothUi && showDetailedText && <group position={[metrics.ctaPosition[0], metrics.ctaPosition[1] - 1.12, metrics.ctaPosition[2] + 0.06]}><BoothAiFeature action={aiAction} color={accentColor} onAction={onAction} /></group>}
       {showFullBoothUi && showDetailedText && <group position={[metrics.ctaPosition[0], metrics.ctaPosition[1] - 2.38, metrics.ctaPosition[2] + 0.06]}><BoothCalculatorFeature action={calculatorAction} color={accentColor} onAction={onAction} /></group>}
       {showFullBoothUi && showDetailedText && <group position={[metrics.ctaPosition[0], metrics.ctaPosition[1] - 3.64, metrics.ctaPosition[2] + 0.06]}><BoothInfoStandFeature action={infoStandAction} color={accentColor} onAction={onAction} /></group>}
