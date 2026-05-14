@@ -9,6 +9,8 @@ import { buildExpoWorldContract } from '../../world-contract';
 import { useExpoOperatorLayer } from '../operator';
 import { ExpoRuntimeShell } from './ExpoRuntimeShell';
 import { ExpoSceneShell } from './ExpoSceneShell';
+import { EXPO_REVIEW_BUILD_STAMP } from './expoBuildStamp';
+import { maybeRunExpoOperatorFreshCacheReset } from './expoOperatorFreshCache';
 import { useExpoRuntimeErrorBridge } from './useExpoRuntimeErrorBridge';
 import { useExpoRuntimeSession } from './useExpoRuntimeSession';
 import { WorldInspectionProvider } from '../world/inspection/worldInspectionState';
@@ -55,6 +57,20 @@ function ExpoRuntimeExperience({
   const lastOperatorStartViewSignature = useRef<string | null>(null);
 
   useEffect(() => {
+    if (!runtimeSession.operatorSession.enabled || typeof window === 'undefined') {
+      return;
+    }
+
+    Object.assign(window, {
+      __WARPALA_EXPO_BUILD__: {
+        buildStamp: EXPO_REVIEW_BUILD_STAMP,
+        operatorReason: runtimeSession.operatorSession.reason,
+      },
+    });
+    maybeRunExpoOperatorFreshCacheReset(true, EXPO_REVIEW_BUILD_STAMP);
+  }, [runtimeSession.operatorSession]);
+
+  useEffect(() => {
     const startView = operatorSceneLayer.effectiveStartViewOverride;
     if (!operatorSceneLayer.session.enabled || !startView) {
       return;
@@ -85,6 +101,7 @@ function ExpoRuntimeExperience({
           sectorMarkers={worldContract.sectorMarkers}
           visualProfile={worldContract.visualProfile}
           onToggleMic={() => setIsMicOn((value) => !value)}
+          operatorBuildStamp={runtimeSession.operatorSession.enabled ? EXPO_REVIEW_BUILD_STAMP : null}
           onExit={() => {
             document.exitPointerLock();
             runtimeSession.setMode('menu');

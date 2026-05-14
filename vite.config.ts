@@ -1,10 +1,29 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
+import { execSync } from 'node:child_process'
+
+function resolveBuildStamp() {
+  const commit =
+    process.env.VERCEL_GIT_COMMIT_SHA ||
+    process.env.GITHUB_SHA ||
+    process.env.COMMIT_SHA ||
+    (() => {
+      try {
+        return execSync('git rev-parse --short=12 HEAD', { stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim()
+      } catch {
+        return 'local'
+      }
+    })()
+
+  const target = process.env.VERCEL_ENV ? `vercel-${process.env.VERCEL_ENV}` : 'local'
+  return `${target}:${commit.slice(0, 12)}`
+}
 
 export default defineConfig({
   define: {
     global: 'window',
+    __WARPALA_EXPO_BUILD_STAMP__: JSON.stringify(resolveBuildStamp()),
   },
   optimizeDeps: {
     entries: ['index.html'],

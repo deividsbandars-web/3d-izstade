@@ -10,6 +10,7 @@ interface ExpoWorldHudProps {
   isSpeaking: boolean;
   isTouchDevice?: boolean;
   onMoveTouch?: (intent: { f: boolean; b: boolean; l: boolean; r: boolean; s: boolean }) => void;
+  operatorBuildStamp?: string | null;
   playerPos: number[];
   sectorMarkers: ExpoSectorMarker[];
   visualProfile: ExpoWorldVisualProfile;
@@ -23,6 +24,7 @@ export function ExpoWorldHud({
   isSpeaking,
   isTouchDevice = false,
   onMoveTouch,
+  operatorBuildStamp = null,
   playerPos,
   sectorMarkers,
   visualProfile,
@@ -123,6 +125,31 @@ export function ExpoWorldHud({
 
   return (
     <>
+      {operatorBuildStamp && (
+        <div
+          data-expo-operator-build-stamp="true"
+          style={{
+            position: 'absolute',
+            top: '18px',
+            left: '18px',
+            zIndex: 3000,
+            padding: '8px 11px',
+            borderRadius: '10px',
+            border: '1px solid rgba(56, 189, 248, 0.46)',
+            background: 'rgba(2, 6, 23, 0.82)',
+            boxShadow: '0 10px 26px rgba(2, 6, 23, 0.36)',
+            color: '#bae6fd',
+            fontSize: '0.62rem',
+            fontWeight: 900,
+            letterSpacing: '0.12em',
+            pointerEvents: 'none',
+            textTransform: 'uppercase',
+          }}
+        >
+          BUILD {operatorBuildStamp}
+        </div>
+      )}
+
       {isTouchDevice && (
         <>
           <button
