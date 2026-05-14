@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { buildCanonicalWorldPlan, buildCanonicalWorldPlanFromWorldContract, EXPO_CANONICAL_DISTRICT_STRIDE } from '../runtime/planning/index.js';
-import { buildCleanTowerLandmarks } from '../runtime/planning/legacy/worldCityGeometry.js';
+import { buildCleanTowerLandmarks, buildSignatureMegaLandmarks } from '../runtime/planning/legacy/worldCityGeometry.js';
 import { buildCityScreenHostMasses } from '../runtime/planning/screens/buildCityScreenHostMassPlan.js';
 import { buildCityScreenSurfacePool } from '../runtime/planning/screens/buildCityScreenSurfacePool.js';
 import type { CanonicalPrimitiveTexturePlane } from '../runtime/planning/types/index.js';
@@ -91,6 +91,7 @@ const clearanceTowerById = new Map(
     },
   ])
 );
+const signatureMegaById = new Map(buildSignatureMegaLandmarks(3, EXPO_CANONICAL_DISTRICT_STRIDE).map((mass) => [mass.id, mass]));
 const perimeterById = new Map(buildCityPerimeterConnectors(canonicalPlan.stadiumReserve).map((connector) => [connector.id, connector]));
 const sideArrayScreenSurfaces = canonicalPlan.filteredScreenSurfaces
   .filter((surface) => surface.id.startsWith('screen-array-'))
@@ -127,8 +128,8 @@ function gapXZ(left: { position: number[]; rotation?: number[]; size: number[] }
   return Math.sqrt((dx * dx) + (dz * dz));
 }
 function assertMinGap(idA: string, idB: string, minGap: number) {
-  const left = cityMassById.get(idA) ?? unfilteredScreenHostById.get(idA) ?? clearanceTowerById.get(idA) ?? perimeterById.get(idA);
-  const right = cityMassById.get(idB) ?? unfilteredScreenHostById.get(idB) ?? clearanceTowerById.get(idB) ?? perimeterById.get(idB);
+  const left = cityMassById.get(idA) ?? unfilteredScreenHostById.get(idA) ?? clearanceTowerById.get(idA) ?? signatureMegaById.get(idA) ?? perimeterById.get(idA);
+  const right = cityMassById.get(idB) ?? unfilteredScreenHostById.get(idB) ?? clearanceTowerById.get(idB) ?? signatureMegaById.get(idB) ?? perimeterById.get(idB);
   assert.ok(left, `${idA} must exist for city clearance checks`);
   assert.ok(right, `${idB} must exist for city clearance checks`);
   assert.ok(gapXZ(left, right) >= minGap, `${idA} must stay at least ${minGap} units from ${idB}`);
@@ -213,6 +214,7 @@ assert.ok(
 assertMinGap('screen-array-left-upper-0-host', 'city-perimeter-left-wall', 72);
 assertMinGap('screen-array-left-upper-1-host', 'city-perimeter-left-wall', 72);
 assertMinGap('screen-array-left-upper-1-host', 'city-perimeter-left-stadium-terminus', 72);
+assertMinGap('screen-array-left-upper-1-host', 'signature-mega-pylon-left', 72);
 assertMinGap('screen-array-left-2-host', 'showcase-row-outer-support-tower-left', 72);
 assertMinGap('screen-array-right-upper-0-host', 'city-perimeter-right-wall', 72);
 assertMinGap('screen-array-right-upper-1-host', 'city-perimeter-right-wall', 72);

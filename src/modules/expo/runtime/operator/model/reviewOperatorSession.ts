@@ -626,7 +626,7 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       label: 'Sponsor Boulevard Left',
       camera: {
         lookAtOffset: [0, 52, 0],
-        positionOffset: [170, 106, 230],
+        positionOffset: [0, 96, 150],
         targetDepth: 'frontmost',
         targetIds: [],
         targetLayer: 'booth',
@@ -650,7 +650,7 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       label: 'Sponsor Boulevard Left Close',
       camera: {
         lookAtOffset: [0, 56, 0],
-        positionOffset: [92, 86, 132],
+        positionOffset: [0, 82, 118],
         targetDepth: 'rearmost',
         targetIds: [],
         targetLayer: 'booth',

@@ -31,7 +31,7 @@ export function buildCityScreenSurfacePool(districtCount: number, districtStride
     districtIndex === 0 ? sideArrayRightForwardZ + 14 : sideArrayRightForwardZ
   );
   const sideArrayLeftUpperDepthOffset = (districtIndex: number) => (
-    districtIndex === 0 ? -2 : districtIndex === 1 ? -186 : -46
+    districtIndex === 0 ? -2 : districtIndex === 1 ? -104 : -46
   );
 
   return Array.from({ length: Math.max(3, districtCount) }, (_, districtIndex) => {
