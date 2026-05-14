@@ -14,6 +14,10 @@ type GeneratedBillboardPayload = {
   tierAccent?: string;
 };
 
+export function buildGeneratedBillboardTextureUrl(payload: GeneratedBillboardPayload) {
+  return `${GENERATED_BILLBOARD_PREFIX}${encodeURIComponent(JSON.stringify(payload))}`;
+}
+
 function parseGeneratedBillboardPayload(url: string): GeneratedBillboardPayload | null {
   if (!url.startsWith(GENERATED_BILLBOARD_PREFIX)) {
     return null;
@@ -253,6 +257,7 @@ function loadCachedExpoTexture(url: string) {
 
 export function SponsorTextureSurface({
   depthWrite,
+  doubleSided = false,
   fallbackColor,
   emissiveColor,
   emissiveIntensity = 0,
@@ -260,6 +265,7 @@ export function SponsorTextureSurface({
   url,
 }: {
   depthWrite?: boolean;
+  doubleSided?: boolean;
   emissiveColor?: string;
   emissiveIntensity?: number;
   fallbackColor: string;
@@ -268,6 +274,7 @@ export function SponsorTextureSurface({
 }) {
   const [mappedTexture, setMappedTexture] = useState<THREE.Texture | null>(null);
   const isGeneratedBillboard = url.startsWith(GENERATED_BILLBOARD_PREFIX);
+  const side = doubleSided ? THREE.DoubleSide : THREE.FrontSide;
 
   useEffect(() => {
     let isActive = true;
@@ -300,6 +307,7 @@ export function SponsorTextureSurface({
         polygonOffsetUnits={-5}
         transparent={opacity < 0.999}
         opacity={opacity}
+        side={side}
         toneMapped={false}
       />
     );
@@ -317,6 +325,7 @@ export function SponsorTextureSurface({
       polygonOffsetFactor={-5}
       polygonOffsetUnits={-5}
       roughness={0.42}
+      side={side}
       transparent={opacity < 0.999}
       opacity={opacity}
       toneMapped={false}

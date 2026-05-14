@@ -12,8 +12,9 @@ import {
   BoothInfoBand,
   type BoothTierState,
   formatExpoDisplayName,
-  OpenBoothPavilion,
 } from './index';
+import { OpenBoothPavilion, resolveOpenBoothPavilionLayout } from './OpenBoothPavilion';
+import { buildGeneratedBillboardTextureUrl } from './BoothTextureMaterials';
 import type { DistrictThemeId } from '../../../../shared/expo/lib/districtTheme';
 
 type DistrictVisual = {
@@ -47,7 +48,6 @@ export function BoothVisualAssembly({
   const nameFontSize = getSponsorNameFontSize(presentation.displayName);
   const heroName = formatExpoDisplayName(presentation.displayName);
   const infoBandZ = metrics.titlePosition[2] - 0.24;
-  const boothPresentationScreenUrl = presentation.posterUrl ?? null;
   const showInteractiveDressing = tierState.showFullBoothUi;
   const showHeroFloatingFeatureUi = showInteractiveDressing && tierState.isHeroFeature;
   const premiumLabel = tierState.isHeroBooth
@@ -55,6 +55,16 @@ export function BoothVisualAssembly({
     : tierState.isEliteBooth
       ? 'UNREAL-POWERED BUYER SUITE'
       : 'PREMIUM LIVE SHOWROOM';
+  const pavilionLayout = resolveOpenBoothPavilionLayout(metrics, tierState.featureTier);
+  const boothPresentationScreenUrl = buildGeneratedBillboardTextureUrl({
+    accentColor,
+    aspect: pavilionLayout.screenSurfaceWidth / Math.max(1, pavilionLayout.screenSurfaceHeight),
+    chip: presentation.badgeLabel ?? premiumLabel,
+    label: presentation.displayName,
+    subtitle: presentation.tagline ?? premiumLabel,
+    tier: tierState.contractTier.toUpperCase(),
+    tierAccent: tierState.districtVisual.shellAccent,
+  });
 
   return (
     <>

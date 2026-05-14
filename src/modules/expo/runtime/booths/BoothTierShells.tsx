@@ -183,41 +183,46 @@ export function PremiumOrEliteBlades({
 
 export function TierScreenFrame({
   accentColor,
+  screenFirst = false,
   screenHeight,
   screenWidth,
   tier,
 }: {
   accentColor: string;
+  screenFirst?: boolean;
   screenHeight: number;
   screenWidth: number;
   tier: 'standard' | 'premium' | 'elite' | 'hero';
 }) {
   const isHero = tier === 'hero';
   const isElite = tier === 'elite';
-  const railWidth = screenWidth + (isHero ? 2.8 : isElite ? 2.2 : tier === 'premium' ? 1.6 : 1);
-  const pillarHeight = screenHeight + (isHero ? 2.8 : isElite ? 2.2 : tier === 'premium' ? 1.4 : 0.8);
-  const pillarOffset = (railWidth * 0.5) - (isHero ? 0.42 : isElite ? 0.38 : 0.34);
+  const isScreenFirst = screenFirst && !isHero;
+  const railWidth = screenWidth + (isHero ? 2.8 : isScreenFirst ? 0.72 : isElite ? 2.2 : tier === 'premium' ? 1.6 : 1);
+  const pillarHeight = screenHeight + (isHero ? 2.8 : isScreenFirst ? 0.64 : isElite ? 2.2 : tier === 'premium' ? 1.4 : 0.8);
+  const pillarOffset = (railWidth * 0.5) - (isHero ? 0.42 : isScreenFirst ? 0.2 : isElite ? 0.38 : 0.34);
+  const pillarWidth = isScreenFirst ? 0.18 : 0.3;
+  const pillarAccentWidth = isScreenFirst ? 0.06 : 0.1;
   const trimColor = isHero ? '#dbe7f2' : isElite ? '#d7e3ec' : '#ced9e4';
-  const glowIntensity = isHero ? 0.22 : isElite ? 0.18 : tier === 'premium' ? 0.14 : 0.08;
+  const glowIntensity = isHero ? 0.22 : isScreenFirst ? 0.08 : isElite ? 0.18 : tier === 'premium' ? 0.14 : 0.08;
 
   return (
     <group>
       <mesh position={[0, pillarHeight * 0.5, 0]} castShadow receiveShadow>
-        <boxGeometry args={[railWidth, 0.28, 0.28]} />
+        <boxGeometry args={[railWidth, isScreenFirst ? 0.18 : 0.28, isScreenFirst ? 0.18 : 0.28]} />
         <meshStandardMaterial color={trimColor} metalness={0.2} roughness={0.3} />
       </mesh>
       <mesh position={[0, -(pillarHeight * 0.5), 0]} castShadow receiveShadow>
-        <boxGeometry args={[screenWidth * (isHero ? 0.72 : isElite ? 0.68 : 0.62), 0.18, 0.18]} />
+        <boxGeometry args={[screenWidth * (isHero ? 0.72 : isScreenFirst ? 0.86 : isElite ? 0.68 : 0.62), isScreenFirst ? 0.12 : 0.18, isScreenFirst ? 0.12 : 0.18]} />
         <meshStandardMaterial color="#101a27" metalness={0.14} roughness={0.38} />
       </mesh>
       {[-1, 1].map((side) => (
         <group key={`screen-frame-pillar-${tier}-${side}`} position={[side * pillarOffset, 0, 0]}>
           <mesh castShadow receiveShadow>
-            <boxGeometry args={[0.3, pillarHeight, 0.3]} />
+            <boxGeometry args={[pillarWidth, pillarHeight, pillarWidth]} />
             <meshStandardMaterial color={trimColor} metalness={0.2} roughness={0.32} />
           </mesh>
           <mesh position={[0, 0, 0.1]}>
-            <boxGeometry args={[0.1, pillarHeight - (isHero ? 0.9 : 1.2), 0.12]} />
+            <boxGeometry args={[pillarAccentWidth, pillarHeight - (isHero ? 0.9 : isScreenFirst ? 0.72 : 1.2), isScreenFirst ? 0.08 : 0.12]} />
             <meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={glowIntensity} roughness={0.2} metalness={0.12} />
           </mesh>
         </group>

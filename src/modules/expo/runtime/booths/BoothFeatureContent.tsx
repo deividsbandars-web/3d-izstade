@@ -268,14 +268,13 @@ export function BoothFeatureApron({ accentColor, contractTier, districtGlow, fro
   if (!isFeatureBooth) return null;
   const isHero = contractTier === 'hero';
   const isElite = contractTier === 'elite';
-  const isPremium = contractTier === 'premium';
   const upperBandWidth = frontApronWidth * (isHero ? 0.84 : isElite ? 0.8 : 0.78);
   const upperBandDepth = frontApronDepth * (isHero ? 0.52 : isElite ? 0.48 : 0.44);
   return (
     <group position={[0, 0, 7.4]}>
       <mesh position={[0, 0.08, 0]} receiveShadow><boxGeometry args={[frontApronWidth, 0.16, frontApronDepth]} /><meshStandardMaterial color="#e4edf4" metalness={0.04} roughness={0.72} /></mesh>
       <mesh position={[0, 0.24, 0]} receiveShadow><boxGeometry args={[upperBandWidth, 0.08, upperBandDepth]} /><meshStandardMaterial color={accentColor} emissive={districtGlow} emissiveIntensity={isHero ? 0.12 : isElite ? 0.1 : 0.08} roughness={0.54} metalness={0.16} /></mesh>
-      {(isPremium || isElite || isHero) && (
+      {(isElite || isHero) && (
         <>
           {[-1, 1].map((side) => (
             <mesh key={`apron-guide-${side}`} position={[side * ((frontApronWidth * 0.5) - 0.84), 0.26, 0]} receiveShadow>
