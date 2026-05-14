@@ -9,6 +9,14 @@ function isOpaquePrimitive(opacity: number | undefined) {
   return (opacity ?? 1) >= 0.999;
 }
 
+function shouldForceRenderAllScreens() {
+  if (typeof window === 'undefined') {
+    return false;
+  }
+
+  return new URLSearchParams(window.location.search).get('operatorRenderAllScreens') === '1';
+}
+
 function renderPrimitive(primitive: CanonicalPrimitive, key: string) {
   if (primitive.kind === 'plane') {
     const isOpaque = isOpaquePrimitive(primitive.opacity);
@@ -96,8 +104,7 @@ export function WorldCityScreenAssignments({
 }) {
   const navigate = useNavigate();
   const socketById = new Map(sockets.map((socket) => [socket.id, socket]));
-  const operatorReviewEnabled =
-    typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('operator') === '1';
+  const forceRenderAllScreens = shouldForceRenderAllScreens();
 
   return (
     <group name="world-city-screen-assignments">
@@ -121,7 +128,7 @@ export function WorldCityScreenAssignments({
         const distance = Math.sqrt(distanceSq);
         const intent = assignment.renderIntent;
         const maxDistance = intent?.maxDistance ?? 980;
-        if (!operatorReviewEnabled && distanceSq > maxDistance * maxDistance) {
+        if (!forceRenderAllScreens && distanceSq > maxDistance * maxDistance) {
           return null;
         }
 

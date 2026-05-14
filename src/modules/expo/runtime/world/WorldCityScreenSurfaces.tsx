@@ -55,6 +55,14 @@ function getSurfaceHitPlaneOffset(surface: CityScreenSurface) {
   return Math.max(0.4, housingDepth * 0.22);
 }
 
+function shouldForceRenderAllScreens() {
+  if (typeof window === 'undefined') {
+    return false;
+  }
+
+  return new URLSearchParams(window.location.search).get('operatorRenderAllScreens') === '1';
+}
+
 export function WorldCityScreenSurfaces({
   playerPosition,
   stadiumReserve: _stadiumReserve,
@@ -65,8 +73,7 @@ export function WorldCityScreenSurfaces({
   surfaces: CityScreenSurface[];
 }) {
   void _stadiumReserve;
-  const operatorReviewEnabled =
-    typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('operator') === '1';
+  const forceRenderAllScreens = shouldForceRenderAllScreens();
 
   return (
     <>
@@ -76,7 +83,7 @@ export function WorldCityScreenSurfaces({
             return false;
           }
 
-          if (operatorReviewEnabled) {
+          if (forceRenderAllScreens) {
             return true;
           }
 
