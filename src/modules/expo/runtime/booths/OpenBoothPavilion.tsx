@@ -26,13 +26,13 @@ export function resolveOpenBoothPavilionLayout(
   const width = metrics.footprintSize[0] * (isHero ? 0.98 : isElite ? 0.92 : isPremium ? 0.84 : 0.78);
   const depth = metrics.footprintSize[1] * (isHero ? 0.76 : isElite ? 0.72 : isPremium ? 0.68 : 0.62);
   const postHeight = Math.max(isHero ? 9.4 : isElite ? 8.4 : isPremium ? 7.3 : 6.7, metrics.colliderSize[1] * (isHero ? 0.78 : isElite ? 0.72 : isPremium ? 0.66 : 0.61));
-  const screenFrameWidth = width * (isHero ? 0.82 : isScreenFirstBooth ? 0.9 : isElite ? 0.76 : isPremium ? 0.72 : 0.62);
+  const screenFrameWidth = width * (isHero ? 0.82 : isScreenFirstBooth ? 0.94 : isElite ? 0.76 : isPremium ? 0.72 : 0.62);
   const screenFrameHeight = isHero ? 7.2 : isScreenFirstBooth ? 7.1 : isElite ? 6.4 : isPremium ? 5.6 : 4.8;
   const screenSurfaceWidth = isScreenFirstBooth
-    ? screenFrameWidth * 0.92
+    ? screenFrameWidth * 0.97
     : width * (isHero ? 0.74 : isElite ? 0.68 : isPremium ? 0.62 : 0.52);
   const screenSurfaceHeight = isScreenFirstBooth
-    ? screenFrameHeight * 0.88
+    ? screenFrameHeight * 0.94
     : isHero ? 6.16 : isElite ? 5.46 : isPremium ? 4.82 : 4.18;
 
   return {
@@ -43,7 +43,7 @@ export function resolveOpenBoothPavilionLayout(
     isScreenFirstBooth,
     isScreenFirstPremium,
     lowerMediaShelfWidth: isScreenFirstBooth ? screenFrameWidth * 0.48 : width * (isHero ? 0.64 : isElite ? 0.58 : isPremium ? 0.52 : 0.44),
-    mediaSurfaceCount: isScreenFirstBooth ? 2 : 1,
+    mediaSurfaceCount: 1,
     postHeight,
     screenFrameHeight,
     screenFrameWidth,

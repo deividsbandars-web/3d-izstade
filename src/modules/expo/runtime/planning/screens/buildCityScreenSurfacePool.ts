@@ -12,7 +12,7 @@ export function buildCityScreenSurfacePool(districtCount: number, districtStride
   const flankYawLeft = 1.08;
   const flankYawRight = -1.08;
   const marqueeClearanceZ = 52;
-  const marqueeLeftOutwardX = -80;
+  const marqueeLeftOutwardX = 128;
   const marqueeRightOutwardX = 128;
   const sideArrayClearanceX = 236;
   const sideArrayLeftForwardZ = 64;

@@ -243,8 +243,8 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
         targetIds: ['screen-marquee-left-0'],
       },
       startView: {
-        lookAt: [-628, 188, -244],
-        position: [-328, 228, -24],
+        lookAt: [-836, 188, -244],
+        position: [-536, 228, -24],
         source: 'arrival-main',
       },
       watchItems: [
@@ -266,8 +266,8 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
         targetIds: ['screen-marquee-left-1'],
       },
       startView: {
-        lookAt: [-628, 180, -792],
-        position: [-368, 218, -672],
+        lookAt: [-836, 180, -792],
+        position: [-576, 218, -672],
         source: 'arrival-main',
       },
       watchItems: [
@@ -649,8 +649,8 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       intent: 'left-sponsor-boulevard-close-review',
       label: 'Sponsor Boulevard Left Close',
       camera: {
-        lookAtOffset: [0, 40, 0],
-        positionOffset: [0, 66, 88],
+        lookAtOffset: [0, 18, 0],
+        positionOffset: [88, 32, 24],
         targetDepth: 'rearmost',
         targetIds: [],
         targetLayer: 'booth',
