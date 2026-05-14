@@ -220,6 +220,25 @@ function loadTextureWithCandidateUrls(loader: THREE.TextureLoader, urls: string[
 const EXPO_TEXTURE_CACHE = new Map<string, THREE.Texture | null>();
 const EXPO_TEXTURE_PROMISE_CACHE = new Map<string, Promise<THREE.Texture | null>>();
 
+function resolveGeneratedBillboardTextureSync(url: string) {
+  if (!url.startsWith(GENERATED_BILLBOARD_PREFIX)) {
+    return null;
+  }
+
+  const cachedTexture = EXPO_TEXTURE_CACHE.get(url);
+  if (cachedTexture !== undefined) {
+    return cachedTexture;
+  }
+
+  const generatedTexture = createGeneratedBillboardTexture(url);
+  if (generatedTexture) {
+    EXPO_TEXTURE_CACHE.set(url, generatedTexture);
+    return generatedTexture;
+  }
+
+  return null;
+}
+
 function loadCachedExpoTexture(url: string) {
   const cachedTexture = EXPO_TEXTURE_CACHE.get(url);
   if (cachedTexture !== undefined) {
@@ -272,11 +291,16 @@ export function SponsorTextureSurface({
   opacity?: number;
   url: string;
 }) {
-  const [mappedTexture, setMappedTexture] = useState<THREE.Texture | null>(null);
+  const [mappedTexture, setMappedTexture] = useState<THREE.Texture | null>(() => resolveGeneratedBillboardTextureSync(url));
   const isGeneratedBillboard = url.startsWith(GENERATED_BILLBOARD_PREFIX);
   const side = doubleSided ? THREE.DoubleSide : THREE.FrontSide;
 
   useEffect(() => {
+    if (isGeneratedBillboard) {
+      setMappedTexture(resolveGeneratedBillboardTextureSync(url));
+      return;
+    }
+
     let isActive = true;
     loadCachedExpoTexture(url)
       .then((texture) => {
@@ -295,7 +319,7 @@ export function SponsorTextureSurface({
     return () => {
       isActive = false;
     };
-  }, [url]);
+  }, [isGeneratedBillboard, url]);
 
   if (mappedTexture && isGeneratedBillboard) {
     return (

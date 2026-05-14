@@ -1112,23 +1112,20 @@ export function buildScreenSockets(surfaces: CityScreenSurface[]): CityScreenSoc
 
   const getSocketAnchorDepth = (surface: CityScreenSurface) => {
     const housingDepth = getSurfaceHousingDepth(surface);
-    const isRearCampusSurface = surface.id.startsWith('rear-campus-');
 
     if (surface.role === 'hero-wall') {
-      return isRearCampusSurface ? housingDepth * 0.58 : housingDepth * 0.6;
+      return housingDepth * 0.55;
     }
 
     if (surface.role === 'support-wall') {
-      return surface.id.startsWith('screen-array-')
-        ? housingDepth * 0.6
-        : isRearCampusSurface ? housingDepth * 0.56 : housingDepth * 0.58;
+      return housingDepth * 0.55;
     }
 
     if (surface.role === 'tower-crown') {
-      return housingDepth * 0.56;
+      return housingDepth * 0.55;
     }
 
-    return housingDepth * 0.56;
+    return housingDepth * 0.55;
   };
 
   return surfaces.map((surface) => {
@@ -1140,8 +1137,8 @@ export function buildScreenSockets(surfaces: CityScreenSurface[]): CityScreenSoc
       return {
         color: surface.glowColor,
         frameSize: surface.id.startsWith('rear-campus-')
-          ? [surface.size[0] * 0.94, surface.size[1] * 0.92]
-          : [surface.size[0] * 0.86, surface.size[1] * 0.84],
+          ? [surface.size[0] * 0.96, surface.size[1] * 0.94]
+          : [surface.size[0] * 0.96, surface.size[1] * 0.94],
         id: `${surface.id}-socket`,
         kind: 'hero_wall',
         position: [surface.position[0] + offsetX, surface.position[1] + offsetY, surface.position[2] + offsetZ],
@@ -1155,10 +1152,10 @@ export function buildScreenSockets(surfaces: CityScreenSurface[]): CityScreenSoc
       return {
         color: surface.glowColor,
         frameSize: isSideArraySurface
-          ? [surface.size[0] * 0.96, surface.size[1] * 0.94]
+          ? [surface.size[0] * 0.99, surface.size[1] * 0.98]
           : surface.id.startsWith('rear-campus-')
-            ? [surface.size[0] * 0.9, surface.size[1] * 0.88]
-            : [surface.size[0] * 0.8, surface.size[1] * 0.78],
+            ? [surface.size[0] * 0.94, surface.size[1] * 0.92]
+            : [surface.size[0] * 0.94, surface.size[1] * 0.92],
         id: `${surface.id}-socket`,
         kind: 'wall',
         position: [surface.position[0] + offsetX, surface.position[1] + offsetY, surface.position[2] + offsetZ],
@@ -1170,7 +1167,7 @@ export function buildScreenSockets(surfaces: CityScreenSurface[]): CityScreenSoc
     if (surface.role === 'tower-crown') {
       return {
         color: surface.glowColor,
-        frameSize: [surface.size[0] * 0.78, surface.size[1] * 0.74],
+        frameSize: [surface.size[0] * 0.9, surface.size[1] * 0.88],
         id: `${surface.id}-socket`,
         kind: 'tower_crown',
         position: [surface.position[0] + offsetX, surface.position[1] + offsetY, surface.position[2] + offsetZ],
@@ -1181,7 +1178,7 @@ export function buildScreenSockets(surfaces: CityScreenSurface[]): CityScreenSoc
 
     return {
       color: surface.glowColor,
-      frameSize: [surface.size[0] * 0.72, surface.size[1] * 0.72],
+      frameSize: [surface.size[0] * 0.88, surface.size[1] * 0.86],
       id: `${surface.id}-socket`,
       kind: 'tower_side',
       position: [surface.position[0] + offsetX, surface.position[1] + offsetY, surface.position[2] + offsetZ],
