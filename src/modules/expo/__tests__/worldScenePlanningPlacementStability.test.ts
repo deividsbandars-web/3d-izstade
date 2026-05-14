@@ -69,8 +69,10 @@ const cityScreenHostMasses = canonicalPlan.filteredMasses
   .filter((mass) => mass.id.startsWith('screen-') && mass.id.endsWith('-host'))
   .sort((left, right) => left.id.localeCompare(right.id));
 const cityMassById = new Map(canonicalPlan.filteredMasses.map((mass) => [mass.id, mass]));
+const unfilteredScreenSurfaces = buildCityScreenSurfacePool(3, EXPO_CANONICAL_DISTRICT_STRIDE);
+const unfilteredScreenSurfaceById = new Map(unfilteredScreenSurfaces.map((surface) => [surface.id, surface]));
 const unfilteredScreenHostById = new Map(
-  buildCityScreenHostMasses(buildCityScreenSurfacePool(3, EXPO_CANONICAL_DISTRICT_STRIDE)).map((mass) => [mass.id, mass])
+  buildCityScreenHostMasses(unfilteredScreenSurfaces).map((mass) => [mass.id, mass])
 );
 const clearanceTowerById = new Map(
   buildCleanTowerLandmarks(
@@ -133,6 +135,13 @@ function assertMinGap(idA: string, idB: string, minGap: number) {
   assert.ok(left, `${idA} must exist for city clearance checks`);
   assert.ok(right, `${idB} must exist for city clearance checks`);
   assert.ok(gapXZ(left, right) >= minGap, `${idA} must stay at least ${minGap} units from ${idB}`);
+}
+function assertSurfaceZSpacing(idA: string, idB: string, minSpacing: number) {
+  const left = screenSurfaceById.get(idA) ?? unfilteredScreenSurfaceById.get(idA);
+  const right = screenSurfaceById.get(idB) ?? unfilteredScreenSurfaceById.get(idB);
+  assert.ok(left, `${idA} must exist for screen rhythm checks`);
+  assert.ok(right, `${idB} must exist for screen rhythm checks`);
+  assert.ok(Math.abs(left.position[2] - right.position[2]) >= minSpacing, `${idA} and ${idB} must keep at least ${minSpacing} units of Z rhythm`);
 }
 
 assert.ok(stableScreenIds.length > 0);
@@ -218,6 +227,7 @@ assertMinGap('screen-array-left-upper-1-host', 'signature-mega-pylon-left', 72);
 assertMinGap('screen-array-left-2-host', 'showcase-row-outer-support-tower-left', 72);
 assertMinGap('screen-array-right-upper-0-host', 'city-perimeter-right-wall', 72);
 assertMinGap('screen-array-right-upper-1-host', 'city-perimeter-right-wall', 72);
+assertSurfaceZSpacing('screen-array-left-1', 'screen-array-left-upper-1', 96);
 assert.deepEqual(Array.from(cityTowerSourceFunctions), ['buildCleanTowerLandmarks']);
 assert.deepEqual(resolveReserveOverlappingMassIds(canonicalPlan), []);
 assert.deepEqual(resolveReserveOverlappingMassIds(filteredInputPlan), []);

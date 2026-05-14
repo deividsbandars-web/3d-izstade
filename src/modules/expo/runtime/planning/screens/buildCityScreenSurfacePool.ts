@@ -17,7 +17,7 @@ export function buildCityScreenSurfacePool(districtCount: number, districtStride
   const sideArrayClearanceX = 236;
   const sideArrayLeftForwardZ = 64;
   const sideArrayRightForwardZ = 0;
-  const sideArrayUpperX = 1536;
+  const sideArrayUpperX = 1546;
   const sideArrayY = (districtIndex: number) => 148 + (districtIndex * 18);
   const sideArrayUpperY = (districtIndex: number) => 218 + (districtIndex * 16);
   const sideArraySize = (districtIndex: number): [number, number, number] => [142 + (districtIndex * 6), 196 + (districtIndex * 14), 2.8];
@@ -31,7 +31,7 @@ export function buildCityScreenSurfacePool(districtCount: number, districtStride
     districtIndex === 0 ? sideArrayRightForwardZ + 14 : sideArrayRightForwardZ
   );
   const sideArrayLeftUpperDepthOffset = (districtIndex: number) => (
-    districtIndex === 0 ? -2 : districtIndex === 1 ? -104 : -46
+    districtIndex === 0 ? -2 : districtIndex === 1 ? -148 : -46
   );
 
   return Array.from({ length: Math.max(3, districtCount) }, (_, districtIndex) => {
