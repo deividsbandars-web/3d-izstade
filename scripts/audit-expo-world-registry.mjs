@@ -40,6 +40,7 @@ const CITY_SOLID_OVERLAP_WARNING_AREA = 600;
 const CITY_SOLID_OVERLAP_HIGH_VOLUME = 100000;
 const CITY_SOLID_NEAR_GAP_WARNING_DISTANCE = 72;
 const CITY_SCREEN_HOST_READABILITY_MIN_CLEARANCE = 72;
+const BOOTH_SCREEN_HOST_READABILITY_MIN_CLEARANCE = 96;
 const CITY_SCREEN_ROW_MAX_LATERAL_DISTANCE = 500;
 const CITY_SCREEN_ROW_MIN_Z_SPACING = 96;
 const CITY_SMALL_BLOCK_MAX_HEIGHT = 8;
@@ -1381,6 +1382,43 @@ function auditBoothSolidClearance(entries) {
   return issues;
 }
 
+function auditBoothScreenHostReadabilityClearance(entries) {
+  const issues = [];
+  const booths = entries
+    .filter((entry) => entry.layer === 'booth')
+    .map((entry) => ({ bounds: resolveBounds(entry), entry }))
+    .filter((item) => item.bounds);
+  const mediaWallHosts = entries
+    .filter((entry) => isMediaWallScreenHost(entry))
+    .map((entry) => ({ bounds: resolveBounds(entry), entry }))
+    .filter((item) => item.bounds);
+
+  for (const booth of booths) {
+    for (const host of mediaWallHosts) {
+      const gap = gapXZ(booth.bounds, host.bounds);
+      if (gap >= BOOTH_SCREEN_HOST_READABILITY_MIN_CLEARANCE) {
+        continue;
+      }
+
+      pushIssue(
+        issues,
+        gap < 48 ? 'high' : 'medium',
+        'booth-screen-host-readability-gap',
+        `Booth ${booth.entry.id} is only ${Math.round(gap)} units from media wall host ${host.entry.id}; booth frontage needs clearer separation from screen slabs.`,
+        [booth.entry.id, host.entry.id],
+        {
+          gapXZ: Math.round(gap),
+          minGapXZ: BOOTH_SCREEN_HOST_READABILITY_MIN_CLEARANCE,
+          sourceA: booth.entry.sourceFile ?? null,
+          sourceB: host.entry.sourceFile ?? null,
+        },
+      );
+    }
+  }
+
+  return issues;
+}
+
 function auditScreenSocketAttachment(entries) {
   const registryById = new Map(entries.map((entry) => [entry.id, entry]));
   const screens = entries
@@ -1853,6 +1891,7 @@ const issues = [
   ...auditCityObjectSourceTrace(entries),
   ...auditBoothSpacing(entries),
   ...auditBoothSolidClearance(entries),
+  ...auditBoothScreenHostReadabilityClearance(entries),
   ...auditScreenSocketAttachment(entries),
   ...auditScreenHostAttachment(entries),
   ...auditScreenHostVerticalAttachment(entries),

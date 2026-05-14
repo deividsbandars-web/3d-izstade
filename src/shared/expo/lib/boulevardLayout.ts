@@ -281,8 +281,8 @@ const CURATED_COMPANY_SLOT_BANK: Record<DistrictTierBand, Record<DistrictLane, R
   arrival: {
     left: {
       hero: [
-        { slotId: 'arrival-left-hero-left', nodeType: 'hero_left', xOffset: -132, zOffset: -12, rotationY: Math.PI / 2 },
-        { slotId: 'arrival-left-hero-right', nodeType: 'hero_right', xOffset: 132, zOffset: -12, rotationY: -Math.PI / 2 },
+        { slotId: 'arrival-left-hero-left', nodeType: 'hero_left', xOffset: -40, zOffset: -120, rotationY: Math.PI / 2 },
+        { slotId: 'arrival-left-hero-right', nodeType: 'hero_right', xOffset: 112, zOffset: -120, rotationY: -Math.PI / 2 },
       ],
       endcap: [
         { slotId: 'arrival-left-endcap-0', nodeType: 'endcap', xOffset: -298, zOffset: -26, rotationY: Math.PI / 2 },
@@ -348,7 +348,7 @@ const CURATED_COMPANY_SLOT_BANK: Record<DistrictTierBand, Record<DistrictLane, R
         { slotId: 'showcase-right-hero-right', nodeType: 'hero_right', xOffset: 278, zOffset: 12, rotationY: -Math.PI / 2 },
       ],
       endcap: [
-        { slotId: 'showcase-right-endcap-0', nodeType: 'endcap', xOffset: -324, zOffset: -24, rotationY: Math.PI / 2 },
+        { slotId: 'showcase-right-endcap-0', nodeType: 'endcap', xOffset: -220, zOffset: -126, rotationY: Math.PI / 2 },
         { slotId: 'showcase-right-endcap-1', nodeType: 'endcap', xOffset: 324, zOffset: -24, rotationY: -Math.PI / 2 },
         { slotId: 'showcase-right-endcap-2', nodeType: 'endcap', xOffset: -324, zOffset: -152, rotationY: Math.PI / 2 },
         { slotId: 'showcase-right-endcap-3', nodeType: 'endcap', xOffset: 324, zOffset: -152, rotationY: -Math.PI / 2 },
@@ -416,9 +416,9 @@ const CURATED_COMPANY_SLOT_BANK: Record<DistrictTierBand, Record<DistrictLane, R
         { slotId: 'discovery-center-hero-right', nodeType: 'hero_right', xOffset: 336, zOffset: -28, rotationY: -Math.PI / 2 },
       ],
       endcap: [
-        { slotId: 'discovery-center-endcap-0', nodeType: 'endcap', xOffset: -526, zOffset: -76, rotationY: Math.PI / 2 },
+        { slotId: 'discovery-center-endcap-0', nodeType: 'endcap', xOffset: -430, zOffset: -132, rotationY: Math.PI / 2 },
         { slotId: 'discovery-center-endcap-1', nodeType: 'endcap', xOffset: 526, zOffset: -76, rotationY: -Math.PI / 2 },
-        { slotId: 'discovery-center-endcap-2', nodeType: 'endcap', xOffset: -526, zOffset: -218, rotationY: Math.PI / 2 },
+        { slotId: 'discovery-center-endcap-2', nodeType: 'endcap', xOffset: -430, zOffset: -250, rotationY: Math.PI / 2 },
         { slotId: 'discovery-center-endcap-3', nodeType: 'endcap', xOffset: 526, zOffset: -218, rotationY: -Math.PI / 2 },
       ],
       standard: [

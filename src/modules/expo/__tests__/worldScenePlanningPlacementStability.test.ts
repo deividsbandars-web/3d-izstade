@@ -4,6 +4,7 @@ import { buildCleanTowerLandmarks, buildSignatureMegaLandmarks } from '../runtim
 import { buildCityScreenHostMasses } from '../runtime/planning/screens/buildCityScreenHostMassPlan.js';
 import { buildCityScreenSurfacePool } from '../runtime/planning/screens/buildCityScreenSurfacePool.js';
 import type { CanonicalPrimitiveTexturePlane } from '../runtime/planning/types/index.js';
+import { buildBoothWorldObjectRegistry } from '../runtime/world/inspection/worldObjectRegistry.js';
 import { selectSectionVisibleBoothPlacements, selectVisibleBoothPlacements } from '../runtime/world/scene/useExpoWorldSceneRuntime.js';
 import { buildCityPerimeterConnectors } from '../runtime/world/WorldCityPerimeterLayout.js';
 import { buildExpoWorldContract } from '../../../shared/expo/worldContract.js';
@@ -143,6 +144,26 @@ function assertSurfaceZSpacing(idA: string, idB: string, minSpacing: number) {
   assert.ok(right, `${idB} must exist for screen rhythm checks`);
   assert.ok(Math.abs(left.position[2] - right.position[2]) >= minSpacing, `${idA} and ${idB} must keep at least ${minSpacing} units of Z rhythm`);
 }
+function assertWorldBoothScreenHostClearance(worldContract: typeof world, label: string) {
+  const plan = buildCanonicalWorldPlanFromWorldContract(worldContract);
+  const mediaWallHosts = plan.filteredMasses.filter((mass) => /^screen-(?:marquee|array|spine)-/.test(mass.id) && mass.id.endsWith('-host'));
+  const boothEntries = buildBoothWorldObjectRegistry(worldContract.boothPlacements).map((entry) => {
+    assert.ok(entry.size, `${label}:${entry.id} must have a booth registry footprint size`);
+    return { ...entry, size: entry.size };
+  });
+
+  assert.ok(mediaWallHosts.length > 0, `${label} must include media wall screen hosts for booth clearance checks`);
+  assert.ok(boothEntries.length > 0, `${label} must include booths for screen-host clearance checks`);
+
+  for (const booth of boothEntries) {
+    for (const host of mediaWallHosts) {
+      assert.ok(
+        gapXZ(booth, host) >= 96,
+        `${label}:${booth.id} must stay at least 96 units from ${host.id}`,
+      );
+    }
+  }
+}
 
 assert.ok(stableScreenIds.length > 0);
 assert.ok(stableSocketIds.length > 0);
@@ -228,6 +249,18 @@ assertMinGap('screen-array-left-2-host', 'showcase-row-outer-support-tower-left'
 assertMinGap('screen-array-right-upper-0-host', 'city-perimeter-right-wall', 72);
 assertMinGap('screen-array-right-upper-1-host', 'city-perimeter-right-wall', 72);
 assertSurfaceZSpacing('screen-array-left-1', 'screen-array-left-upper-1', 96);
+assertWorldBoothScreenHostClearance(world, 'primary-world');
+assertWorldBoothScreenHostClearance(buildExpoWorldContract({
+  companies: [
+    { booth: { id: 'booth-a' }, boothType: 'hero', id: 'hero-a', name: 'Hero A', priority: 100, sector_id: 'sector-a', sponsorTier: 'hero' },
+    { booth: { id: 'booth-b' }, boothType: 'premium', id: 'premium-b', name: 'Premium B', priority: 90, sponsorTier: 'gold' },
+    { booth: { id: 'booth-c' }, boothType: 'standard', id: 'standard-c', name: 'Standard C', priority: 50, sector_id: 'sector-b', sponsorTier: 'silver' },
+  ],
+  sectors: [
+    { color_theme: '#0ea5e9', id: 'sector-a', map_position: { x: 0, z: 0 }, name: 'Sector A' },
+    { color_theme: '#22c55e', id: 'sector-b', map_position: { x: 12, z: -10 }, name: 'Sector B' },
+  ],
+}), 'arrival-discovery-world');
 assert.deepEqual(Array.from(cityTowerSourceFunctions), ['buildCleanTowerLandmarks']);
 assert.deepEqual(resolveReserveOverlappingMassIds(canonicalPlan), []);
 assert.deepEqual(resolveReserveOverlappingMassIds(filteredInputPlan), []);
