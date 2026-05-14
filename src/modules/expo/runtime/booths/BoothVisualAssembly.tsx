@@ -49,6 +49,7 @@ export function BoothVisualAssembly({
   const infoBandZ = metrics.titlePosition[2] - 0.24;
   const boothPresentationScreenUrl = presentation.posterUrl ?? null;
   const showInteractiveDressing = tierState.showFullBoothUi;
+  const showHeroFloatingFeatureUi = showInteractiveDressing && tierState.isHeroFeature;
   const premiumLabel = tierState.isHeroBooth
     ? 'FLAGSHIP IMMERSIVE SHOWROOM'
     : tierState.isEliteBooth
@@ -91,44 +92,48 @@ export function BoothVisualAssembly({
             mode={presentation.showcaseMode}
             stageScale={tierState.stageScale}
           />
-          <BoothFeatureHeader
-            accentColor={accentColor}
-            contractTier={tierState.contractTier}
-            fallbackMonogram={fallbackMonogram}
-            heroName={heroName}
-            isEliteFeature={tierState.isEliteFeature}
-            isFeatureBooth={tierState.isFeatureBooth}
-            isHeroFeature={tierState.isHeroFeature}
-            logoUrl={presentation.logoUrl ?? null}
-            metricsColliderHeight={metrics.colliderSize[1]}
-          />
-          <BoothInfoBand
-            accentColor={accentColor}
-            badgeLabel={presentation.badgeLabel}
-            ctaActions={presentation.actions}
-            fallbackPremiumLabel={premiumLabel}
-            infoBandHeight={tierState.infoBandHeight}
-            infoBandWidth={tierState.infoBandWidth}
-            infoBandZ={infoBandZ}
-            isEliteBooth={tierState.isEliteBooth}
-            isHeroNode={tierState.isHeroNode}
-            metrics={{
-              badgePosition: metrics.badgePosition,
-              ctaPosition: metrics.ctaPosition,
-              taglinePosition: metrics.taglinePosition,
-              titleMaxWidth: metrics.titleMaxWidth,
-              titlePosition: metrics.titlePosition,
-            }}
-            nameFontSize={nameFontSize}
-            onAction={onAction}
-            showBadge={tierState.showBadge}
-            showDetailedText={tierState.showDetailedText}
-            showFullBoothUi={tierState.showFullBoothUi}
-            showPremiumEyebrow={tierState.showPremiumEyebrow}
-            showTagline={tierState.showTagline}
-            tagline={presentation.tagline ?? undefined}
-            title={presentation.displayName}
-          />
+          {showHeroFloatingFeatureUi && (
+            <>
+              <BoothFeatureHeader
+                accentColor={accentColor}
+                contractTier={tierState.contractTier}
+                fallbackMonogram={fallbackMonogram}
+                heroName={heroName}
+                isEliteFeature={tierState.isEliteFeature}
+                isFeatureBooth={tierState.isFeatureBooth}
+                isHeroFeature={tierState.isHeroFeature}
+                logoUrl={presentation.logoUrl ?? null}
+                metricsColliderHeight={metrics.colliderSize[1]}
+              />
+              <BoothInfoBand
+                accentColor={accentColor}
+                badgeLabel={presentation.badgeLabel}
+                ctaActions={presentation.actions}
+                fallbackPremiumLabel={premiumLabel}
+                infoBandHeight={tierState.infoBandHeight}
+                infoBandWidth={tierState.infoBandWidth}
+                infoBandZ={infoBandZ}
+                isEliteBooth={tierState.isEliteBooth}
+                isHeroNode={tierState.isHeroNode}
+                metrics={{
+                  badgePosition: metrics.badgePosition,
+                  ctaPosition: metrics.ctaPosition,
+                  taglinePosition: metrics.taglinePosition,
+                  titleMaxWidth: metrics.titleMaxWidth,
+                  titlePosition: metrics.titlePosition,
+                }}
+                nameFontSize={nameFontSize}
+                onAction={onAction}
+                showBadge={tierState.showBadge}
+                showDetailedText={tierState.showDetailedText}
+                showFullBoothUi={tierState.showFullBoothUi}
+                showPremiumEyebrow={tierState.showPremiumEyebrow}
+                showTagline={tierState.showTagline}
+                tagline={presentation.tagline ?? undefined}
+                title={presentation.displayName}
+              />
+            </>
+          )}
         </>
       )}
       {showInteractiveDressing && (presentation.template === 'hero_gallery' || presentation.template === 'hero_forum') && (
