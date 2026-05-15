@@ -796,7 +796,9 @@ export function buildZoneScreenSurfacePlan(args: {
         surface.id.startsWith('screen-marquee-left-') || surface.id.startsWith('screen-array-left-')
       ).map((surface) => enrichSurfaceIntent(zoneId, surface));
     case 'center-spine':
-      return cityScreenSurfaces.filter((surface) => surface.id.startsWith('screen-spine-')).map((surface) => enrichSurfaceIntent(zoneId, surface));
+      return cityScreenSurfaces
+        .filter((surface) => surface.id.startsWith('screen-spine-primary-'))
+        .map((surface) => enrichSurfaceIntent(zoneId, surface));
     case 'right-district':
       return cityScreenSurfaces.filter((surface) =>
         surface.id.startsWith('screen-marquee-right-') || surface.id.startsWith('screen-array-right-')

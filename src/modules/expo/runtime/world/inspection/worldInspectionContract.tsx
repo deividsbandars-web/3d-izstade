@@ -97,11 +97,12 @@ export function ClickInspector({ clickInspectionEnabled }: { clickInspectionEnab
 
   useEffect(() => {
     type InspectPoint = {
+      rawHits?: boolean;
       x: number;
       y: number;
       [key: string]: unknown;
     };
-    const resolveInspectableStack = (x: number, y: number) => {
+    const resolveIntersections = (x: number, y: number) => {
       const rect = gl.domElement.getBoundingClientRect();
       if (
         x < rect.left ||
@@ -118,7 +119,11 @@ export function ClickInspector({ clickInspectionEnabled }: { clickInspectionEnab
       );
 
       raycasterRef.current.setFromCamera(ndc, camera);
-      const intersections = raycasterRef.current.intersectObjects(scene.children, true);
+      return raycasterRef.current.intersectObjects(scene.children, true);
+    };
+
+    const resolveInspectableStack = (x: number, y: number) => {
+      const intersections = resolveIntersections(x, y);
       return intersections
         .map((entry) => {
           let current: THREE.Object3D | null = entry.object;
@@ -135,12 +140,31 @@ export function ClickInspector({ clickInspectionEnabled }: { clickInspectionEnab
         .slice(0, 5);
     };
 
+    const resolveRawHits = (x: number, y: number) => resolveIntersections(x, y)
+      .slice(0, 8)
+      .map((entry) => {
+        const hierarchy: string[] = [];
+        let current: THREE.Object3D | null = entry.object;
+        while (current && hierarchy.length < 8) {
+          hierarchy.push(current.name || current.type);
+          current = current.parent;
+        }
+
+        return {
+          distance: Number(entry.distance.toFixed(2)),
+          hierarchy,
+          objectName: entry.object.name || null,
+          objectType: entry.object.type,
+        };
+      });
+
     const batchInspect = (points: InspectPoint[]) => points.map((point) => {
       const clickStack = resolveInspectableStack(point.x, point.y);
       return {
         ...point,
         clickStack,
         clickTarget: clickStack[0] ?? null,
+        rawHits: point.rawHits ? resolveRawHits(point.x, point.y) : undefined,
       };
     });
 

@@ -33,15 +33,7 @@ type LandmarkCompositionGroup =
 
 const HIDDEN_LANDMARK_COMPOSITION: Record<LandmarkCompositionGroup, string[]> = {
   arrival: [
-    'mega-landmark:arrival-base',
-    'mega-landmark:arrival-plinth',
     'mega-landmark:arrival-core',
-    'mega-landmark:arrival-support-left',
-    'mega-landmark:arrival-support-right',
-    'mega-landmark:arrival-accent-left',
-    'mega-landmark:arrival-accent-right',
-    'mega-landmark:arrival-ring-outer',
-    'mega-landmark:arrival-ring-inner',
   ],
   showcase: [
     'mega-landmark:showcase-base',
@@ -194,22 +186,38 @@ export function WorldCityMegaLandmarks({
       {sectionToggles.arrival && isLandmarkVisible('mega-landmark-arrival') && <group name="mega-landmark:arrival" position={[0, 0, arrivalBaseZ]}>
         {!hiddenLandmarkParts.has('mega-landmark:arrival-base') && (
         <mesh name="mega-landmark:arrival-base" position={[0, 8, 0]}>
-          <boxGeometry args={[148, 6, 22]} />
+          <boxGeometry args={[206, 8, 30]} />
           <LandmarkMaterial color="#edf4f8" emissive="#67e8f9" emissiveIntensity={0.018} />
         </mesh>
         )}
         {!hiddenLandmarkParts.has('mega-landmark:arrival-ring-outer') && (
-        <mesh name="mega-landmark:arrival-ring-outer" position={[0, 174, 0]} rotation={[Math.PI / 2, 0, 0]}>
-          <torusGeometry args={[112, 12, 16, 48]} />
-          <LandmarkMaterial color="#e2edf4" emissive="#67e8f9" emissiveIntensity={0.08} />
+        <mesh name="mega-landmark:arrival-ring-outer" position={[0, 158, -10]} rotation={[0.08, 0, 0.18]}>
+          <torusGeometry args={[72, 4.5, 14, 72, Math.PI * 1.68]} />
+          <LandmarkMaterial color="#e2edf4" emissive="#67e8f9" emissiveIntensity={0.09} />
         </mesh>
         )}
         {!hiddenLandmarkParts.has('mega-landmark:arrival-ring-inner') && (
-        <mesh name="mega-landmark:arrival-ring-inner" position={[0, 126, 0]} rotation={[Math.PI / 2, 0, 0]}>
-          <torusGeometry args={[74, 5, 12, 36]} />
-          <LandmarkMaterial color="#edf4f8" emissive="#67e8f9" emissiveIntensity={0.04} />
+        <mesh name="mega-landmark:arrival-ring-inner" position={[0, 158, -5]} rotation={[0.08, 0, -0.2]}>
+          <torusGeometry args={[46, 2.4, 10, 64, Math.PI * 1.42]} />
+          <LandmarkMaterial color="#edf4f8" emissive="#67e8f9" emissiveIntensity={0.05} />
         </mesh>
         )}
+        <mesh name="mega-landmark:arrival-signal-arc-high" position={[0, 158, -18]} rotation={[0.08, 0, 2.74]}>
+          <torusGeometry args={[86, 1.9, 8, 64, Math.PI * 1.0]} />
+          <LandmarkMaterial color="#f4fbff" emissive="#93c5fd" emissiveIntensity={0.08} />
+        </mesh>
+        <mesh name="mega-landmark:arrival-signal-arc-low" position={[0, 158, 7]} rotation={[0.08, 0, -2.38]}>
+          <torusGeometry args={[60, 1.6, 8, 48, Math.PI * 0.78]} />
+          <LandmarkMaterial color="#dff4ff" emissive="#67e8f9" emissiveIntensity={0.07} />
+        </mesh>
+        <mesh name="mega-landmark:arrival-ring-beacon-left" position={[-68, 154, 8]}>
+          <octahedronGeometry args={[9, 0]} />
+          <LandmarkMaterial color="#e4f6ff" emissive="#67e8f9" emissiveIntensity={0.13} />
+        </mesh>
+        <mesh name="mega-landmark:arrival-ring-beacon-right" position={[68, 162, -12]}>
+          <octahedronGeometry args={[8, 0]} />
+          <LandmarkMaterial color="#eef4ff" emissive="#93c5fd" emissiveIntensity={0.11} />
+        </mesh>
         {!hiddenLandmarkParts.has('mega-landmark:arrival-core') && (
         <mesh name="mega-landmark:arrival-core" position={[0, 54, 0]}>
           <cylinderGeometry args={[8, 12, 108, 18]} />
@@ -217,20 +225,20 @@ export function WorldCityMegaLandmarks({
         </mesh>
         )}
         {!hiddenLandmarkParts.has('mega-landmark:arrival-support-left') && (
-        <mesh name="mega-landmark:arrival-support-left" position={[-148, 102, 0]}>
-          <boxGeometry args={[18, 204, 18]} />
+        <mesh name="mega-landmark:arrival-support-left" position={[-112, 86, 0]}>
+          <boxGeometry args={[18, 172, 20]} />
           <LandmarkMaterial color="#d8e4ec" />
         </mesh>
         )}
         {!hiddenLandmarkParts.has('mega-landmark:arrival-support-right') && (
-        <mesh name="mega-landmark:arrival-support-right" position={[148, 102, 0]}>
-          <boxGeometry args={[18, 204, 18]} />
+        <mesh name="mega-landmark:arrival-support-right" position={[112, 86, 0]}>
+          <boxGeometry args={[18, 172, 20]} />
           <LandmarkMaterial color="#d8e4ec" />
         </mesh>
         )}
         {!hiddenLandmarkParts.has('mega-landmark:arrival-plinth') && (
         <mesh name="mega-landmark:arrival-plinth" position={[0, 12, 0]}>
-          <boxGeometry args={[84, 6, 12]} />
+          <boxGeometry args={[128, 6, 18]} />
           <LandmarkMaterial color="#d9e4eb" />
         </mesh>
         )}

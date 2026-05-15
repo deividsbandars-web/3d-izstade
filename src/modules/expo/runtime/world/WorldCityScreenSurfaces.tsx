@@ -55,12 +55,12 @@ function getSurfaceHitPlaneOffset(surface: CityScreenSurface) {
   return Math.max(0.4, housingDepth * 0.22);
 }
 
-function shouldForceRenderAllScreens() {
+function shouldCullDistantScreens() {
   if (typeof window === 'undefined') {
     return false;
   }
 
-  return new URLSearchParams(window.location.search).get('operatorRenderAllScreens') === '1';
+  return new URLSearchParams(window.location.search).get('screenDistanceCulling') === '1';
 }
 
 export function WorldCityScreenSurfaces({
@@ -73,7 +73,7 @@ export function WorldCityScreenSurfaces({
   surfaces: CityScreenSurface[];
 }) {
   void _stadiumReserve;
-  const forceRenderAllScreens = shouldForceRenderAllScreens();
+  const cullDistantScreens = shouldCullDistantScreens();
 
   return (
     <>
@@ -83,7 +83,7 @@ export function WorldCityScreenSurfaces({
             return false;
           }
 
-          if (forceRenderAllScreens) {
+          if (!cullDistantScreens) {
             return true;
           }
 

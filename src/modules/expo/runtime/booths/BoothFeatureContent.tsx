@@ -49,14 +49,12 @@ export function SponsorShowcaseObject({
 
 function ScreenFirstEngagementPad({
   accentColor,
-  fallbackMonogram,
   isEliteFeature,
   isFeatureBooth,
   isHeroFeature,
   stageScale,
 }: {
   accentColor: string;
-  fallbackMonogram: string;
   isEliteFeature: boolean;
   isFeatureBooth: boolean;
   isHeroFeature: boolean;
@@ -65,14 +63,10 @@ function ScreenFirstEngagementPad({
   const scale = (isHeroFeature ? 1.18 : isEliteFeature ? 1.08 : isFeatureBooth ? 1 : 0.86) * stageScale;
   const padWidth = 7.6 * scale;
   const padDepth = 3.7 * scale;
-  const tileWidth = padWidth * 0.26;
-  const tileHeight = 0.56 * Math.min(1.16, scale);
-  const tileDepth = 0.68 * scale;
-  const beaconHeight = (isHeroFeature ? 2.35 : isEliteFeature ? 2.02 : 1.64) * Math.max(0.86, stageScale * 0.68);
-  const ctaTiles = [
-    { id: '4k-room', label: '4K', sublabel: 'ROOM', x: -padWidth * 0.29, color: '#eef7fb' },
-    { id: 'book-demo', label: 'BOOK', sublabel: 'DEMO', x: 0, color: accentColor },
-    { id: 'roi-leads', label: 'ROI', sublabel: 'LEADS', x: padWidth * 0.29, color: '#c8f7ff' },
+  const lightStrips = [
+    { id: 'left', x: -padWidth * 0.24, color: '#eef7fb' },
+    { id: 'center', x: 0, color: accentColor },
+    { id: 'right', x: padWidth * 0.24, color: '#c8f7ff' },
   ];
 
   return (
@@ -93,39 +87,28 @@ function ScreenFirstEngagementPad({
         <boxGeometry args={[padWidth * 0.46, 0.06, 0.14 * scale]} />
         <meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={0.18} metalness={0.1} roughness={0.24} />
       </mesh>
-      {ctaTiles.map((tile) => (
-        <group key={`screen-first-pad-cta-${tile.id}`} position={[tile.x, 0.72, 0.2]}>
-          <mesh castShadow receiveShadow>
-            <boxGeometry args={[tileWidth, tileHeight, tileDepth]} />
-            <meshStandardMaterial color={tile.id === 'book-demo' ? '#18304a' : '#e5eef5'} emissive={tile.color} emissiveIntensity={tile.id === 'book-demo' ? 0.12 : 0.055} metalness={0.12} roughness={0.42} />
-          </mesh>
-          <mesh position={[0, 0.02, tileDepth * 0.52 + 0.025]}>
-            <boxGeometry args={[tileWidth * 0.78, tileHeight * 0.7, 0.04]} />
-            <meshBasicMaterial color={tile.color} transparent opacity={tile.id === 'book-demo' ? 0.78 : 0.42} />
-          </mesh>
-          <Text position={[0, 0.08, tileDepth * 0.55 + 0.06]} fontSize={0.24 * Math.min(1.2, scale)} color={tile.id === 'book-demo' ? '#f8fafc' : '#102033'} anchorX="center" anchorY="middle" maxWidth={tileWidth * 0.74}>
-            {tile.label}
-          </Text>
-          <Text position={[0, -0.15, tileDepth * 0.55 + 0.06]} fontSize={0.13 * Math.min(1.18, scale)} color={tile.id === 'book-demo' ? '#e6f3fa' : '#314155'} anchorX="center" anchorY="middle" maxWidth={tileWidth * 0.76}>
-            {tile.sublabel}
-          </Text>
-        </group>
+      {lightStrips.map((strip) => (
+        <mesh key={`screen-first-pad-light-strip-${strip.id}`} position={[strip.x, 0.53, 0.12]} receiveShadow>
+          <boxGeometry args={[padWidth * 0.18, 0.04, 0.92 * scale]} />
+          <meshBasicMaterial color={strip.color} transparent opacity={strip.id === 'center' ? 0.68 : 0.42} toneMapped={false} />
+        </mesh>
       ))}
       {[-1, 1].map((side) => (
-        <group key={`screen-first-pad-beacon-${side}`} position={[side * padWidth * 0.45, beaconHeight * 0.5 + 0.28, -padDepth * 0.2]}>
+        <group key={`screen-first-pad-side-bollard-${side}`} position={[side * padWidth * 0.46, 0.62, -padDepth * 0.2]}>
           <mesh castShadow receiveShadow>
-            <boxGeometry args={[0.18, beaconHeight, 0.18]} />
+            <boxGeometry args={[0.16, 0.86 * Math.max(0.82, stageScale), 0.16]} />
             <meshStandardMaterial color="#d7e8f1" emissive={accentColor} emissiveIntensity={0.07} metalness={0.16} roughness={0.36} />
           </mesh>
-          <mesh position={[0, beaconHeight * 0.3, 0.08]}>
-            <boxGeometry args={[0.42, 0.42, 0.08]} />
+          <mesh position={[0, 0.38 * Math.max(0.82, stageScale), 0.08]}>
+            <boxGeometry args={[0.36, 0.16, 0.08]} />
             <meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={0.22} metalness={0.08} roughness={0.24} />
           </mesh>
         </group>
       ))}
-      <Text position={[0, 0.62, -padDepth * 0.24]} fontSize={0.25 * Math.min(1.18, scale)} color="#f8fafc" anchorX="center" anchorY="middle" maxWidth={padWidth * 0.62}>
-        {`${fallbackMonogram} LIVE SALES DOCK`}
-      </Text>
+      <mesh position={[0, 0.58, -padDepth * 0.24]} receiveShadow>
+        <boxGeometry args={[padWidth * 0.34, 0.1, 0.12 * scale]} />
+        <meshStandardMaterial color="#f8fbfe" emissive={accentColor} emissiveIntensity={0.08} metalness={0.08} roughness={0.32} />
+      </mesh>
     </group>
   );
 }
@@ -382,7 +365,6 @@ export function BoothFeatureStage({ accentColor, fallbackMonogram, isEliteFeatur
     return (
       <ScreenFirstEngagementPad
         accentColor={accentColor}
-        fallbackMonogram={fallbackMonogram}
         isEliteFeature={isEliteFeature}
         isFeatureBooth={isFeatureBooth}
         isHeroFeature={isHeroFeature}

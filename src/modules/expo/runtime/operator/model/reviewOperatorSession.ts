@@ -369,20 +369,20 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
     },
     {
       expectedKeyObjectIds: [
-        'screen-spine-secondary-1',
+        'screen-spine-primary-1',
       ],
       expectedVisibleLayers: ['city-screen-surface'],
       id: 'center-spine-side',
       intent: 'center-civic-spine-side-review',
       label: 'Center Spine Side',
       camera: {
-        lookAtOffset: [0, 58, 0],
-        positionOffset: [-560, 140, 580],
-        targetIds: ['screen-spine-secondary-1'],
+        lookAtOffset: [0, 52, 0],
+        positionOffset: [420, 92, 140],
+        targetIds: ['screen-spine-primary-1'],
       },
       startView: {
-        lookAt: [116, 94, -258],
-        position: [324, 188, -86],
+        lookAt: [-184, 160, -796],
+        position: [236, 200, -656],
         source: 'arrival-main',
       },
       watchItems: [
@@ -491,8 +491,8 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       intent: 'tower-cluster-screen-review',
       label: 'Tower Cluster',
       camera: {
-        lookAtOffset: [0, 10, 0],
-        positionOffset: [248, 94, 328],
+        lookAtOffset: [0, 18, 0],
+        positionOffset: [-260, 112, 360],
         targetIds: ['arrival-core-hero-tower-right-tower-ribbon'],
       },
       startView: {
@@ -514,8 +514,8 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       intent: 'tower-cluster-reverse-wide-review',
       label: 'Tower Cluster Reverse Wide',
       camera: {
-        lookAtOffset: [0, 10, 0],
-        positionOffset: [224, 86, 314],
+        lookAtOffset: [0, 28, 0],
+        positionOffset: [-460, 190, 560],
         targetIds: ['arrival-core-hero-tower-right-tower-ribbon'],
       },
       startView: {

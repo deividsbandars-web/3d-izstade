@@ -67,6 +67,7 @@ const screenSurfaceTargetsById = new Map<string, string[]>();
 const allowedDuplicateScreenSurfaceTargetZones = new Set([
   'array-upper-left-direct',
   'array-upper-right-direct',
+  'center-spine-side',
 ]);
 zones.forEach((zone) => {
   zone.expectedKeyObjectIds
@@ -200,8 +201,8 @@ assert.ok(towerCluster);
 const resolvedTowerClusterView = resolveReviewOperatorZoneStartView(towerCluster, new Map([
   ['arrival-core-hero-tower-right-tower-ribbon', { position: [518.8230613285318, 145.04, -518.881157475684] }],
 ]));
-assertVectorClose(resolvedTowerClusterView.lookAt, [518.8230613285318, 155.04, -518.881157475684]);
-assertVectorClose(resolvedTowerClusterView.position, [766.8230613285318, 239.04, -190.881157475684]);
+assertVectorClose(resolvedTowerClusterView.lookAt, [518.8230613285318, 163.04, -518.881157475684]);
+assertVectorClose(resolvedTowerClusterView.position, [258.8230613285318, 257.04, -158.881157475684]);
 
 const stadiumRightFlank = zones.find((zone) => zone.id === 'stadium-right-flank');
 assert.ok(stadiumRightFlank);

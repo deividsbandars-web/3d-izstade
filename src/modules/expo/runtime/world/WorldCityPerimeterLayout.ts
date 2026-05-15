@@ -17,9 +17,9 @@ export function buildCityPerimeterConnectors(stadiumReserve: StadiumReserve): Ci
   const frontWallCenterZ = frontOuterZ - (wallThickness * 0.5);
   const wallCenterX = outerHalfWidth - (wallThickness * 0.5);
   const frontWallWidth = (wallCenterX - (cornerCapFootprint * 0.5)) * 2;
-  const sideWallFrontZ = frontOuterZ - wallThickness;
-  const stadiumFrontEdgeZ = stadiumReserve.centerZ + 2440;
-  const sideWallRearZ = stadiumFrontEdgeZ - 8;
+  const sideWallFrontZ = frontWallCenterZ - (cornerCapFootprint * 0.5);
+  const stadiumTerminusCenterZ = stadiumReserve.centerZ + 2432;
+  const sideWallRearZ = stadiumTerminusCenterZ + (cornerCapFootprint * 0.5);
   const sideWallDepth = sideWallFrontZ - sideWallRearZ;
   const sideWallCenterZ = (sideWallFrontZ + sideWallRearZ) * 0.5;
 
@@ -57,13 +57,13 @@ export function buildCityPerimeterConnectors(stadiumReserve: StadiumReserve): Ci
     {
       accent: 'cap',
       id: 'city-perimeter-left-stadium-terminus',
-      position: [-wallCenterX, cornerCapHeight * 0.5, sideWallRearZ],
+      position: [-wallCenterX, cornerCapHeight * 0.5, stadiumTerminusCenterZ],
       size: [cornerCapFootprint, cornerCapHeight, cornerCapFootprint],
     },
     {
       accent: 'cap',
       id: 'city-perimeter-right-stadium-terminus',
-      position: [wallCenterX, cornerCapHeight * 0.5, sideWallRearZ],
+      position: [wallCenterX, cornerCapHeight * 0.5, stadiumTerminusCenterZ],
       size: [cornerCapFootprint, cornerCapHeight, cornerCapFootprint],
     },
   ];

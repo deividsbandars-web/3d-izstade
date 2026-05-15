@@ -113,16 +113,6 @@ export function buildCityScreenSurfacePool(districtCount: number, districtStride
         role: 'support-wall' as const,
         type: 'wall' as const,
       },
-      {
-        id: `screen-spine-secondary-${districtIndex}`,
-        position: [184, 116, baseZ + 58],
-        rotation: [0, inwardYawRight, 0],
-        size: [104, 118, 2.6],
-        color: '#0a1420',
-        glowColor: palette.spine,
-        role: 'support-wall' as const,
-        type: 'wall' as const,
-      },
     ] satisfies CityScreenSurface[];
   }).flat();
 }

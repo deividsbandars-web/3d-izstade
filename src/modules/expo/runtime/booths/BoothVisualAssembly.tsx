@@ -85,14 +85,16 @@ export function BoothVisualAssembly({
       )}
       {showInteractiveDressing && (
         <>
-          <BoothFeatureApron
-            accentColor={tierState.districtVisual.shellAccent}
-            contractTier={tierState.contractTier}
-            districtGlow={tierState.districtVisual.districtGlow}
-            frontApronDepth={tierState.frontApronDepth}
-            frontApronWidth={tierState.frontApronWidth}
-            isFeatureBooth={tierState.isFeatureBooth}
-          />
+          {!pavilionLayout.isScreenFirstBooth && (
+            <BoothFeatureApron
+              accentColor={tierState.districtVisual.shellAccent}
+              contractTier={tierState.contractTier}
+              districtGlow={tierState.districtVisual.districtGlow}
+              frontApronDepth={tierState.frontApronDepth}
+              frontApronWidth={tierState.frontApronWidth}
+              isFeatureBooth={tierState.isFeatureBooth}
+            />
+          )}
           <BoothFeatureStage
             accentColor={accentColor}
             fallbackMonogram={fallbackMonogram}

@@ -136,7 +136,7 @@ export function collectZoneBoothPlacements(
     case 'left-district':
       return eligible.filter((placement) => placement.position[0] < -20 && placement.position[2] > -2200);
     case 'center-spine':
-      return eligible.filter((placement) => Math.abs(placement.position[0]) <= 180 && placement.position[2] > -2200);
+      return eligible.filter((placement) => Math.abs(placement.position[0]) <= 560 && placement.position[2] > -2200);
     case 'right-district':
       return eligible.filter((placement) => placement.position[0] > 20 && placement.position[2] > -2200);
     case 'tower-cluster':

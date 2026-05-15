@@ -116,6 +116,7 @@ function createGeneratedBillboardTexture(url: string) {
   context.globalAlpha = 1;
 
   context.fillStyle = 'rgba(7, 16, 27, 0.34)';
+  context.beginPath();
   context.roundRect(pad * 0.48, pad * 0.48, width - pad * 0.96, height - pad * 0.96, Math.max(18, shortSide * 0.028));
   context.fill();
 
@@ -127,72 +128,27 @@ function createGeneratedBillboardTexture(url: string) {
     const subtitleSize = height * (isUltraWide ? 0.08 : 0.066);
 
     context.fillStyle = 'rgba(248, 250, 252, 0.17)';
+    context.beginPath();
     context.roundRect(pad, height * 0.14, width - pad * 2, height * (isUltraWide ? 0.54 : 0.48), Math.max(18, shortSide * 0.035));
     context.fill();
-
-    context.fillStyle = tierAccent;
-    context.globalAlpha = 0.78;
-    context.roundRect(pad, height * 0.78, width * 0.42, Math.max(14, height * 0.035), height * 0.02);
-    context.fill();
-    context.globalAlpha = 1;
-
-    context.fillStyle = 'rgba(248, 250, 252, 0.28)';
-    context.fillRect(width * 0.62, height * 0.18, width * 0.25, Math.max(4, height * 0.012));
-    context.fillRect(width * 0.67, height * 0.24, width * 0.18, Math.max(4, height * 0.012));
 
     drawBillboardText(context, payload.chip || 'DISTRICT ARRAY', pad * 1.22, height * 0.08, width - pad * 2.44, font(800, chipSize), tierAccent);
     drawBillboardText(context, payload.label || 'EXPO PARTNER', pad * 1.22, contentTop, width - pad * 2.44, font(900, titleSize), '#ffffff');
     drawBillboardText(context, `${payload.tier || 'PREMIUM'} PARTNER`, pad * 1.22, contentTop + titleSize * 0.92, width * 0.52, font(800, tierSize), '#dbeafe');
     drawBillboardText(context, payload.subtitle || 'EXPO SPONSOR FRONTAGE', width * 0.52, height * 0.8, width * 0.36, font(700, subtitleSize), '#e2e8f0');
 
-    context.globalAlpha = 0.88;
-    context.fillStyle = tierAccent;
-    context.beginPath();
-    context.arc(width - pad * 1.7, height - pad * 1.7, shortSide * 0.07, 0, Math.PI * 2);
-    context.fill();
-    context.globalAlpha = 0.24;
-    context.strokeStyle = '#f8fafc';
-    context.lineWidth = Math.max(6, shortSide * 0.012);
-    context.beginPath();
-    context.arc(width - pad * 1.7, height - pad * 1.7, shortSide * 0.11, 0, Math.PI * 2);
-    context.stroke();
-    context.globalAlpha = 1;
-
     return configureExpoTexture(new THREE.CanvasTexture(canvas));
   }
 
   context.fillStyle = 'rgba(248, 250, 252, 0.18)';
+  context.beginPath();
   context.roundRect(pad, height * 0.1, width - pad * 2, height * 0.24, Math.max(16, shortSide * 0.024));
   context.fill();
-
-  context.fillStyle = tierAccent;
-  context.globalAlpha = 0.74;
-  context.roundRect(pad, height * 0.66, width * 0.6, Math.max(22, height * 0.024), height * 0.012);
-  context.fill();
-  context.globalAlpha = 1;
-
-  context.fillStyle = 'rgba(248, 250, 252, 0.32)';
-  context.fillRect(pad, height * 0.704, width - pad * 2.2, Math.max(5, height * 0.004));
-  context.fillStyle = 'rgba(248, 250, 252, 0.22)';
-  context.fillRect(pad, height * 0.73, width - pad * 3, Math.max(5, height * 0.004));
 
   drawBillboardText(context, payload.chip || 'DISTRICT ARRAY', pad * 1.18, height * 0.084, width - pad * 2.36, font(800, height * 0.033), tierAccent);
   drawBillboardText(context, payload.label || 'EXPO PARTNER', pad * 1.18, height * 0.428, width - pad * 2.36, font(900, height * 0.076), '#ffffff');
   drawBillboardText(context, `${payload.tier || 'PREMIUM'} PARTNER`, pad * 1.18, height * 0.502, width - pad * 2.7, font(800, height * 0.034), '#dbeafe');
   drawBillboardText(context, payload.subtitle || 'EXPO SPONSOR FRONTAGE', pad * 1.18, height * 0.876, width - pad * 2.5, font(700, height * 0.028), '#e2e8f0');
-
-  context.globalAlpha = 0.88;
-  context.fillStyle = tierAccent;
-  context.beginPath();
-  context.arc(width - pad * 1.35, height * 0.847, shortSide * 0.058, 0, Math.PI * 2);
-  context.fill();
-  context.globalAlpha = 0.22;
-  context.strokeStyle = '#f8fafc';
-  context.lineWidth = Math.max(8, shortSide * 0.012);
-  context.beginPath();
-  context.arc(width - pad * 1.35, height * 0.847, shortSide * 0.09, 0, Math.PI * 2);
-  context.stroke();
-  context.globalAlpha = 1;
 
   return configureExpoTexture(new THREE.CanvasTexture(canvas));
 }

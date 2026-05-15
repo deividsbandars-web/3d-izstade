@@ -1016,20 +1016,49 @@ export function buildCleanTowerLandmarks(
 ): CityTower[] {
   const entries: CityTower[] = districtPrograms.slice(0, Math.max(3, districtPrograms.length)).flatMap((district, districtIndex) => {
     const baseZ = -196 - (districtIndex * districtStride);
-    const leftOuterSupportRhythm = [
-      { x: -1290, zOffset: -52 },
-      { x: -1354, zOffset: 54 },
-      { x: -1285, zOffset: -24 },
+    const towerRhythm = [
+      {
+        heroLeft: [-620, -380],
+        heroRight: [620, -420],
+        midLeft: [-348, -138],
+        midRight: [372, -172],
+        outerLeft: [-1160, -188],
+        outerRight: [704, -170],
+        supportLeft: [-496, 88],
+        supportRight: [508, 12],
+      },
+      {
+        heroLeft: [-540, -332],
+        heroRight: [690, -486],
+        midLeft: [-438, -34],
+        midRight: [322, -236],
+        outerLeft: [-1450, 120],
+        outerRight: [820, -304],
+        supportLeft: [-588, 132],
+        supportRight: [620, -8],
+      },
+      {
+        heroLeft: [-720, -438],
+        heroRight: [560, -374],
+        midLeft: [-286, -208],
+        midRight: [432, -74],
+        outerLeft: [-990, 250],
+        outerRight: [930, 28],
+        supportLeft: [-370, 176],
+        supportRight: [552, 116],
+      },
     ][districtIndex % 3];
+    const heightStep = districtIndex % 3;
+
     return [
-      { id: `${district.sectorId ?? district.clusterIndex}-hero-tower-left`, position: [-548, 106, baseZ - 306], baseSize: [48, 224, 36], upperSize: [34, 94, 26], color: '#617583', crownColor: visualProfile.global.hudAccent, role: 'hero', composition: 'hero' },
-      { id: `${district.sectorId ?? district.clusterIndex}-hero-tower-right`, position: [548, 116, baseZ - 348], baseSize: [54, 242, 40], upperSize: [38, 104, 28], color: '#647887', crownColor: visualProfile.global.hudAccent, role: 'hero', composition: 'hero' },
-      { id: `${district.sectorId ?? district.clusterIndex}-mid-tower-left`, position: [-298, 78, baseZ - 74], baseSize: [32, 156, 24], upperSize: [24, 60, 18], color: '#718391', crownColor: '#d7e2ea', role: 'mid', composition: 'standard' },
-      { id: `${district.sectorId ?? district.clusterIndex}-mid-tower-right`, position: [298, 74, baseZ - 112], baseSize: [32, 152, 24], upperSize: [24, 56, 18], color: '#718391', crownColor: '#d7e2ea', role: 'mid', composition: 'standard' },
-      { id: `${district.sectorId ?? district.clusterIndex}-support-tower-left`, position: [-422, 54, baseZ + 62], baseSize: [24, 104, 18], upperSize: [18, 34, 14], color: '#7e909c', crownColor: '#d7e2ea', role: 'support', composition: 'minimal' },
-      { id: `${district.sectorId ?? district.clusterIndex}-support-tower-right`, position: [422, 52, baseZ + 48], baseSize: [24, 98, 18], upperSize: [18, 32, 14], color: '#7e909c', crownColor: '#d7e2ea', role: 'support', composition: 'minimal' },
-      { id: `${district.sectorId ?? district.clusterIndex}-outer-support-tower-left`, position: [leftOuterSupportRhythm.x, 44, baseZ + leftOuterSupportRhythm.zOffset], baseSize: [20, 86, 16], upperSize: [14, 26, 12], color: '#8798a4', crownColor: '#dfe8ee', role: 'outer-support', composition: 'minimal' },
-      { id: `${district.sectorId ?? district.clusterIndex}-outer-support-tower-right`, position: [610, 42, baseZ - 80], baseSize: [20, 82, 16], upperSize: [14, 24, 12], color: '#8798a4', crownColor: '#dfe8ee', role: 'outer-support', composition: 'minimal' },
+      { id: `${district.sectorId ?? district.clusterIndex}-hero-tower-left`, position: [towerRhythm.heroLeft[0], 106, baseZ + towerRhythm.heroLeft[1]], baseSize: [48 + (heightStep * 2), 218 + (heightStep * 8), 36], upperSize: [34, 90 + (heightStep * 6), 26], color: '#617583', crownColor: visualProfile.global.hudAccent, role: 'hero', composition: 'hero' },
+      { id: `${district.sectorId ?? district.clusterIndex}-hero-tower-right`, position: [towerRhythm.heroRight[0], 116, baseZ + towerRhythm.heroRight[1]], baseSize: [54, 236 + (heightStep * 9), 40], upperSize: [38, 100 + (heightStep * 5), 28], color: '#647887', crownColor: visualProfile.global.hudAccent, role: 'hero', composition: 'hero' },
+      { id: `${district.sectorId ?? district.clusterIndex}-mid-tower-left`, position: [towerRhythm.midLeft[0], 78, baseZ + towerRhythm.midLeft[1]], baseSize: [32, 144 + (heightStep * 10), 24], upperSize: [24, 54 + (heightStep * 5), 18], color: '#718391', crownColor: '#d7e2ea', role: 'mid', composition: 'standard' },
+      { id: `${district.sectorId ?? district.clusterIndex}-mid-tower-right`, position: [towerRhythm.midRight[0], 74, baseZ + towerRhythm.midRight[1]], baseSize: [32, 150 + (heightStep * 8), 24], upperSize: [24, 52 + (heightStep * 4), 18], color: '#718391', crownColor: '#d7e2ea', role: 'mid', composition: 'standard' },
+      { id: `${district.sectorId ?? district.clusterIndex}-support-tower-left`, position: [towerRhythm.supportLeft[0], 54, baseZ + towerRhythm.supportLeft[1]], baseSize: [24, 92 + (heightStep * 9), 18], upperSize: [18, 28 + (heightStep * 4), 14], color: '#7e909c', crownColor: '#d7e2ea', role: 'support', composition: 'minimal' },
+      { id: `${district.sectorId ?? district.clusterIndex}-support-tower-right`, position: [towerRhythm.supportRight[0], 52, baseZ + towerRhythm.supportRight[1]], baseSize: [24, 88 + (heightStep * 8), 18], upperSize: [18, 26 + (heightStep * 4), 14], color: '#7e909c', crownColor: '#d7e2ea', role: 'support', composition: 'minimal' },
+      { id: `${district.sectorId ?? district.clusterIndex}-outer-support-tower-left`, position: [towerRhythm.outerLeft[0], 44, baseZ + towerRhythm.outerLeft[1]], baseSize: [20, 72 + (heightStep * 7), 16], upperSize: [14, 22 + (heightStep * 3), 12], color: '#8798a4', crownColor: '#dfe8ee', role: 'outer-support', composition: 'minimal' },
+      { id: `${district.sectorId ?? district.clusterIndex}-outer-support-tower-right`, position: [towerRhythm.outerRight[0], 42, baseZ + towerRhythm.outerRight[1]], baseSize: [20, 70 + (heightStep * 6), 16], upperSize: [14, 20 + (heightStep * 3), 12], color: '#8798a4', crownColor: '#dfe8ee', role: 'outer-support', composition: 'minimal' },
     ] as CityTower[];
   });
 

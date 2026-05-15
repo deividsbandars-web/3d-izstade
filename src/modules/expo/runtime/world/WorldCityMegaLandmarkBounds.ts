@@ -52,7 +52,7 @@ export function buildWorldCityMegaLandmarkBounds({
   const discoveryBaseZ = -196 - ((Math.max(1, districtCount) - 1) * districtStride) - 1080;
 
   return [
-    createMegaLandmarkBound({ id: 'mega-landmark-arrival', planningSection: 'arrival', planningZone: 'arrival', position: [0, 104, 256], size: [320, 208, 72] }),
+    createMegaLandmarkBound({ id: 'mega-landmark-arrival', planningSection: 'arrival', planningZone: 'arrival', position: [0, 130, 256], size: [260, 260, 96] }),
     createMegaLandmarkBound({ id: 'mega-landmark-showcase', planningSection: 'middle', planningZone: 'center-spine', position: [0, 104, 32], size: [510, 208, 96] }),
     createMegaLandmarkBound({ id: 'mega-landmark-media', planningSection: 'middle', planningZone: 'center-spine', position: [0, 120, mediaBaseZ], reviewTargetPosition: [0, 198, mediaBaseZ], size: [780, 240, 96] }),
     createMegaLandmarkBound({ id: 'mega-landmark-media-frame-wall', planningSection: 'middle', planningZone: 'center-spine', position: [860, 122, mediaBaseZ - 148], size: [296, 244, 70] }),
