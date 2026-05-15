@@ -248,6 +248,8 @@ $registryAuditPath = Join-Path $runDir 'registry-structural-audit.json'
 $reviewCoverageAuditPath = Join-Path $runDir 'review-coverage-audit.json'
 $visualAuditPath = Join-Path $runDir 'visual-clean-audit.json'
 $visualAuditMarkdownPath = Join-Path $runDir 'visual-clean-audit.md'
+$screenSpacingAuditPath = Join-Path $runDir 'screen-spacing-audit.json'
+$screenSpacingAuditMarkdownPath = Join-Path $runDir 'screen-spacing-audit.md'
 $cityReviewAtlasPath = Join-Path $runDir 'city-review-atlas.json'
 $cityReviewAtlasMarkdownPath = Join-Path $runDir 'city-review-atlas.md'
 $contactSheetPath = Join-Path $runDir 'contact-sheet.png'
@@ -261,6 +263,7 @@ $captureScript = Join-Path $PSScriptRoot 'cdp_capture_expo_zone_screenshots.ps1'
 $registryAuditScript = Join-Path $PSScriptRoot 'audit-expo-world-registry.mjs'
 $reviewCoverageAuditScript = Join-Path $PSScriptRoot 'audit-expo-review-coverage.mjs'
 $visualAuditScript = Join-Path $PSScriptRoot 'audit-expo-visual-clean.mjs'
+$screenSpacingAuditScript = Join-Path $PSScriptRoot 'audit-expo-screen-spacing.mjs'
 $cityReviewAtlasScript = Join-Path $PSScriptRoot 'build-expo-city-review-atlas.mjs'
 
 try {
@@ -491,6 +494,27 @@ if ($visualAudit -and $visualAudit.zones) {
     if ($visualZoneId) {
       $visualFindingsByZone[$visualZoneId] = @($visualZone.findings)
     }
+  }
+}
+
+$screenSpacingAudit = $null
+$screenSpacingAuditError = $null
+if (-not (Test-Path -LiteralPath $screenSpacingAuditScript)) {
+  $screenSpacingAuditError = "Screen spacing audit script is missing: $screenSpacingAuditScript"
+} else {
+  try {
+    Write-Host "[full-city-clean-pass] running screen spacing audit..."
+    Invoke-Checked -FilePath 'node' -Arguments @(
+      $screenSpacingAuditScript,
+      $runDir,
+      '--out',
+      $screenSpacingAuditPath,
+      '--md',
+      $screenSpacingAuditMarkdownPath
+    ) -SuppressOutput
+    $screenSpacingAudit = Get-Content -LiteralPath $screenSpacingAuditPath -Raw | ConvertFrom-Json
+  } catch {
+    $screenSpacingAuditError = $_.Exception.Message
   }
 }
 
@@ -761,6 +785,24 @@ if ($visualAuditError) {
     message = $visualAuditError
   })
 }
+if ($screenSpacingAudit -and $screenSpacingAudit.issues) {
+  foreach ($issue in @($screenSpacingAudit.issues)) {
+    [void]$allIssues.Add([pscustomobject]@{
+      zoneId = 'screen-spacing-audit'
+      severity = $issue.severity
+      code = $issue.code
+      message = "Screens $(@($issue.ids) -join ' / ') are $($issue.distanceXZ) units apart; required=$($issue.minDistance)."
+    })
+  }
+}
+if ($screenSpacingAuditError) {
+  [void]$allIssues.Add([pscustomobject]@{
+    zoneId = 'screen-spacing-audit'
+    severity = 'high'
+    code = 'screen-spacing-audit-error'
+    message = $screenSpacingAuditError
+  })
+}
 if ($cityReviewAtlas -and $cityReviewAtlas.issues) {
   foreach ($issue in @($cityReviewAtlas.issues)) {
     [void]$allIssues.Add([pscustomobject]@{
@@ -854,6 +896,12 @@ $report = [pscustomobject]@{
     summary = if ($visualAudit) { $visualAudit.summary } else { $null }
     error = $visualAuditError
   }
+  screenSpacingAudit = [pscustomobject]@{
+    path = if ($screenSpacingAudit) { $screenSpacingAuditPath } else { $null }
+    markdownPath = if ($screenSpacingAudit) { $screenSpacingAuditMarkdownPath } else { $null }
+    summary = if ($screenSpacingAudit) { $screenSpacingAudit.summary } else { $null }
+    error = $screenSpacingAuditError
+  }
   cityReviewAtlas = [pscustomobject]@{
     path = if ($cityReviewAtlas) { $cityReviewAtlasPath } else { $null }
     markdownPath = if ($cityReviewAtlas) { $cityReviewAtlasMarkdownPath } else { $null }
@@ -907,6 +955,15 @@ $summaryLines = @(
   }),
   "reportPath: $visualAuditPath",
   "markdownPath: $visualAuditMarkdownPath",
+  "",
+  "screen spacing audit:",
+  $(if ($screenSpacingAudit) {
+    "issues: $($screenSpacingAudit.summary.totalIssues), high=$($screenSpacingAudit.summary.bySeverity.high), medium=$($screenSpacingAudit.summary.bySeverity.medium), screens=$($screenSpacingAudit.summary.screenCount)"
+  } else {
+    "error: $screenSpacingAuditError"
+  }),
+  "reportPath: $screenSpacingAuditPath",
+  "markdownPath: $screenSpacingAuditMarkdownPath",
   "",
   "city review atlas:",
   $(if ($cityReviewAtlas) {
