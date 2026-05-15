@@ -39,14 +39,6 @@ function sortPlacementsForScreens(placements: ExpoBoothPlacement[]) {
     });
 }
 
-function cyclePickPlacement<T>(placements: T[], index: number): T | null {
-  if (placements.length === 0) {
-    return null;
-  }
-
-  return placements[index % placements.length] ?? null;
-}
-
 function getDefaultZoneSubtitle(zoneId: ExpoPlanningZoneId) {
   switch (zoneId) {
     case 'arrival':
@@ -64,6 +56,78 @@ function getDefaultZoneSubtitle(zoneId: ExpoPlanningZoneId) {
     default:
       return 'Expo partner';
   }
+}
+
+type ScreenAssignmentContent = {
+  accentColor: string;
+  companyId: string | null;
+  imageUrl: string | null;
+  label: string;
+  subtitle: string;
+  tier: CityScreenAssignment['tier'];
+};
+
+const FALLBACK_SCREEN_CONTENT: Record<ExpoPlanningZoneId, ScreenAssignmentContent[]> = {
+  arrival: [],
+  'left-district': [
+    { accentColor: '#2563eb', companyId: null, imageUrl: null, label: 'Left Showcase', subtitle: 'Innovation demos and partner stories', tier: 'premium' },
+    { accentColor: '#7c3aed', companyId: null, imageUrl: null, label: 'Creator Stack', subtitle: 'Digital twin, content and launch assets', tier: 'elite' },
+    { accentColor: '#0891b2', companyId: null, imageUrl: null, label: 'Live Product Row', subtitle: 'Rotating product demos and service previews', tier: 'premium' },
+    { accentColor: '#1d4ed8', companyId: null, imageUrl: null, label: 'Partner Route', subtitle: 'Follow the left district sponsor trail', tier: 'premium' },
+  ],
+  'center-spine': [
+    { accentColor: '#0ea5e9', companyId: null, imageUrl: null, label: 'Center Signal', subtitle: 'Main boulevard orientation and expo highlights', tier: 'hero' },
+    { accentColor: '#2563eb', companyId: null, imageUrl: null, label: 'Platform Pulse', subtitle: 'Warpala platform, sponsor discovery and rooms', tier: 'premium' },
+    { accentColor: '#06b6d4', companyId: null, imageUrl: null, label: 'Visitor Flow', subtitle: 'Navigate city, stadium and premium showcases', tier: 'premium' },
+  ],
+  'right-district': [
+    { accentColor: '#0f766e', companyId: null, imageUrl: null, label: 'Right District Live', subtitle: 'Premium meetings, sponsor routes and live demos', tier: 'premium' },
+    { accentColor: '#0284c7', companyId: null, imageUrl: null, label: 'Demo Slot Open', subtitle: 'Book a visible screen position in this district', tier: 'premium' },
+    { accentColor: '#2563eb', companyId: null, imageUrl: null, label: 'Investor Route', subtitle: 'Featured offers, services and discovery paths', tier: 'elite' },
+    { accentColor: '#0d9488', companyId: null, imageUrl: null, label: 'Meeting Pods', subtitle: 'Fast sponsor meetings and guided next steps', tier: 'premium' },
+    { accentColor: '#155e75', companyId: null, imageUrl: null, label: 'Signal Tower', subtitle: 'High-visibility sponsor beacon and route marker', tier: 'premium' },
+    { accentColor: '#1e40af', companyId: null, imageUrl: null, label: 'Marketplace Drop', subtitle: 'Promote launches, offers and premium activations', tier: 'premium' },
+  ],
+  'tower-cluster': [
+    { accentColor: '#38bdf8', companyId: null, imageUrl: null, label: 'Tower Beacon', subtitle: 'High-rise sponsor visibility signal', tier: 'premium' },
+    { accentColor: '#60a5fa', companyId: null, imageUrl: null, label: 'Skyline Pulse', subtitle: 'District-wide brand and navigation marker', tier: 'premium' },
+  ],
+  'rear-campus': [
+    { accentColor: '#0ea5e9', companyId: null, imageUrl: null, label: 'Arena Feed', subtitle: 'Event program, sponsor highlights and show signals', tier: 'premium' },
+    { accentColor: '#2563eb', companyId: null, imageUrl: null, label: 'Stage Signal', subtitle: 'Live sessions, demos and rear campus routes', tier: 'premium' },
+    { accentColor: '#0891b2', companyId: null, imageUrl: null, label: 'Campus Guide', subtitle: 'Navigate event areas, screens and premium rooms', tier: 'premium' },
+  ],
+};
+
+function buildPlacementScreenContent(placement: ExpoBoothPlacement): ScreenAssignmentContent | null {
+  const tier = getPlacementTier(placement);
+  if (!tier) {
+    return null;
+  }
+
+  return {
+    accentColor: placement.color,
+    companyId: placement.company?.id ?? null,
+    imageUrl: placement.company?.posterUrl || placement.company?.heroAssetUrl || placement.company?.logo_url || null,
+    label: placement.company?.name || placement.sectorName || 'Sponsor',
+    subtitle: placement.company?.tagline || placement.sectorName || 'Expo partner',
+    tier,
+  };
+}
+
+function buildFallbackScreenContent(zoneId: ExpoPlanningZoneId, socket: CityScreenSocket, index: number): ScreenAssignmentContent | null {
+  const fallbackCards = FALLBACK_SCREEN_CONTENT[zoneId];
+  if (fallbackCards.length === 0) {
+    return null;
+  }
+
+  const card = fallbackCards[index % fallbackCards.length];
+  const isHeroWall = socket.kind === 'hero_wall';
+  return {
+    ...card,
+    label: isHeroWall ? card.label : card.label,
+    subtitle: card.subtitle || getDefaultZoneSubtitle(zoneId),
+  };
 }
 
 function getWorldScreenSemantic(socketKind: CityScreenSocket['kind']) {
@@ -312,16 +376,15 @@ export function buildZoneScreenAssignmentPlan(args: {
   const rankedSockets = rankSocketsForZone(args.zoneId, args.sockets).slice(0, args.assignmentCap);
 
   return rankedSockets.flatMap((socket, index) => {
-    const placement = cyclePickPlacement(rankedPlacements, index);
-    if (!placement) {
+    const placement = rankedPlacements[index] ?? null;
+    const content = placement
+      ? buildPlacementScreenContent(placement)
+      : buildFallbackScreenContent(args.zoneId, socket, index - rankedPlacements.length);
+    if (!content) {
       return [];
     }
 
-    const tier = getPlacementTier(placement);
-    if (!tier) {
-      return [];
-    }
-
+    const { accentColor, companyId, imageUrl, label, subtitle, tier } = content;
     const semantic = getWorldScreenSemantic(socket.kind);
     const tierAccent = getTierAccent(tier);
     const isHeroComposition = socket.kind === 'hero_wall' && (
@@ -357,7 +420,7 @@ export function buildZoneScreenAssignmentPlan(args: {
     const footerHeight = Math.max(0.22, frameHeight * (isSideArraySocket ? 0.035 : isCenterSpineHero ? 0.1 : isHeroComposition ? 0.09 : isRearCampusWall ? 0.065 : 0.08));
     const detailDistance = tier === 'hero' ? 1100 : tier === 'elite' ? 900 : 700;
     const subtitleDistance = tier === 'hero' ? 760 : tier === 'elite' ? 620 : 480;
-    const hasImage = Boolean(placement.company?.posterUrl || placement.company?.heroAssetUrl || placement.company?.logo_url);
+    const hasImage = Boolean(imageUrl);
     const tierMaxDistance = tier === 'hero' ? 1700 : tier === 'elite' ? 1350 : 980;
     const socketMaxDistance = socket.renderIntent?.maxDistance ?? tierMaxDistance;
 
@@ -386,25 +449,25 @@ export function buildZoneScreenAssignmentPlan(args: {
     } satisfies NonNullable<CityScreenAssignment['renderIntent']>;
 
     return [{
-      accentColor: placement.color,
-      companyId: placement.company?.id ?? null,
+      accentColor,
+      companyId,
       id: `${socket.id}-assignment`,
-      imageUrl: placement.company?.posterUrl || placement.company?.heroAssetUrl || placement.company?.logo_url || null,
-      label: placement.company?.name || placement.sectorName || 'Sponsor',
+      imageUrl,
+      label,
       renderIntent: {
         ...renderIntent,
         primitives: buildAssignmentPrimitives({
-          accentColor: placement.color,
-          imageUrl: placement.company?.posterUrl || placement.company?.heroAssetUrl || placement.company?.logo_url || null,
+          accentColor,
+          imageUrl,
           intent: renderIntent,
-          label: placement.company?.name || placement.sectorName || 'Sponsor',
-          subtitle: placement.company?.tagline || placement.sectorName || getDefaultZoneSubtitle(args.zoneId),
+          label,
+          subtitle,
           tier,
         }),
       },
       sections: socket.sections,
       socketId: socket.id,
-      subtitle: placement.company?.tagline || placement.sectorName || getDefaultZoneSubtitle(args.zoneId),
+      subtitle,
       tier,
     } satisfies CityScreenAssignment];
   });

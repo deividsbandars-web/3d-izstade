@@ -1,12 +1,13 @@
 import assert from 'node:assert/strict';
 import { buildCanonicalWorldPlan, buildCanonicalWorldPlanFromWorldContract, EXPO_CANONICAL_DISTRICT_STRIDE } from '../runtime/planning/index.js';
-import { buildCleanTowerLandmarks, buildSignatureMegaLandmarks } from '../runtime/planning/legacy/worldCityGeometry.js';
+import { buildCleanTowerLandmarks, buildRightSupportBlocks, buildSignatureMegaLandmarks } from '../runtime/planning/legacy/worldCityGeometry.js';
 import { buildCityScreenHostMasses } from '../runtime/planning/screens/buildCityScreenHostMassPlan.js';
 import { buildCityScreenSurfacePool } from '../runtime/planning/screens/buildCityScreenSurfacePool.js';
 import type { CanonicalPrimitiveTexturePlane } from '../runtime/planning/types/index.js';
 import { buildBoothWorldObjectRegistry } from '../runtime/world/inspection/worldObjectRegistry.js';
 import { selectSectionVisibleBoothPlacements, selectVisibleBoothPlacements } from '../runtime/world/scene/useExpoWorldSceneRuntime.js';
 import { buildCityPerimeterConnectors } from '../runtime/world/WorldCityPerimeterLayout.js';
+import { buildWorldCityMegaLandmarkBounds } from '../runtime/world/WorldCityMegaLandmarkBounds.js';
 import { buildExpoWorldContract } from '../../../shared/expo/worldContract.js';
 
 const world = buildExpoWorldContract({
@@ -75,13 +76,14 @@ const unfilteredScreenSurfaceById = new Map(unfilteredScreenSurfaces.map((surfac
 const unfilteredScreenHostById = new Map(
   buildCityScreenHostMasses(unfilteredScreenSurfaces).map((mass) => [mass.id, mass])
 );
+const clearanceDistrictPrograms = ['arrival-core', 'meetings', 'showcase-row'].map((sectorId, index) => ({
+  ...world.districtPrograms[0],
+  clusterIndex: index,
+  sectorId,
+}));
 const clearanceTowerById = new Map(
   buildCleanTowerLandmarks(
-    ['arrival-core', 'meetings', 'showcase-row'].map((sectorId, index) => ({
-      ...world.districtPrograms[0],
-      clusterIndex: index,
-      sectorId,
-    })),
+    clearanceDistrictPrograms,
     [],
     EXPO_CANONICAL_DISTRICT_STRIDE,
     world.visualProfile,
@@ -94,7 +96,16 @@ const clearanceTowerById = new Map(
     },
   ])
 );
+const rightSupportMassById = new Map(buildRightSupportBlocks(
+  clearanceDistrictPrograms,
+  [],
+  EXPO_CANONICAL_DISTRICT_STRIDE,
+).map((mass) => [mass.id, mass]));
 const signatureMegaById = new Map(buildSignatureMegaLandmarks(3, EXPO_CANONICAL_DISTRICT_STRIDE).map((mass) => [mass.id, mass]));
+const megaLandmarkBoundsById = new Map(buildWorldCityMegaLandmarkBounds({
+  districtCount: 3,
+  districtStride: EXPO_CANONICAL_DISTRICT_STRIDE,
+}).map((mass) => [mass.id, mass]));
 const perimeterById = new Map(buildCityPerimeterConnectors(canonicalPlan.stadiumReserve).map((connector) => [connector.id, connector]));
 const sideArrayScreenSurfaces = canonicalPlan.filteredScreenSurfaces
   .filter((surface) => surface.id.startsWith('screen-array-'))
@@ -132,8 +143,8 @@ function gapXZ(left: { position: number[]; rotation?: number[]; size: number[] }
   return Math.sqrt((dx * dx) + (dz * dz));
 }
 function assertMinGap(idA: string, idB: string, minGap: number) {
-  const left = cityMassById.get(idA) ?? unfilteredScreenHostById.get(idA) ?? clearanceTowerById.get(idA) ?? signatureMegaById.get(idA) ?? perimeterById.get(idA);
-  const right = cityMassById.get(idB) ?? unfilteredScreenHostById.get(idB) ?? clearanceTowerById.get(idB) ?? signatureMegaById.get(idB) ?? perimeterById.get(idB);
+  const left = cityMassById.get(idA) ?? unfilteredScreenHostById.get(idA) ?? rightSupportMassById.get(idA) ?? clearanceTowerById.get(idA) ?? signatureMegaById.get(idA) ?? megaLandmarkBoundsById.get(idA) ?? perimeterById.get(idA);
+  const right = cityMassById.get(idB) ?? unfilteredScreenHostById.get(idB) ?? rightSupportMassById.get(idB) ?? clearanceTowerById.get(idB) ?? signatureMegaById.get(idB) ?? megaLandmarkBoundsById.get(idB) ?? perimeterById.get(idB);
   assert.ok(left, `${idA} must exist for city clearance checks`);
   assert.ok(right, `${idB} must exist for city clearance checks`);
   assert.ok(gapXZ(left, right) >= minGap, `${idA} must stay at least ${minGap} units from ${idB}`);
@@ -285,8 +296,19 @@ assertMinGap('screen-array-left-upper-1-host', 'city-perimeter-left-wall', 72);
 assertMinGap('screen-array-left-upper-1-host', 'city-perimeter-left-stadium-terminus', 72);
 assertMinGap('screen-array-left-upper-1-host', 'signature-mega-pylon-left', 72);
 assertMinGap('screen-array-left-2-host', 'showcase-row-outer-support-tower-left', 72);
+assertMinGap('screen-marquee-left-0-host', 'mega-landmark-left-grand-rampart', 72);
+assertMinGap('screen-marquee-left-1-host', 'mega-landmark-left-disc-habitat', 72);
+assertMinGap('screen-marquee-left-1-host', 'mega-landmark-left-split-monolith-pair', 72);
+assertMinGap('screen-marquee-right-0-host', 'arrival-core-outer-support-tower-right', 72);
+assertMinGap('screen-marquee-right-0-host', 'mega-landmark-right-media-halo', 72);
+assertMinGap('screen-marquee-right-1-host', 'meetings-outer-support-tower-right', 72);
 assertMinGap('screen-array-right-upper-0-host', 'city-perimeter-right-wall', 72);
 assertMinGap('screen-array-right-upper-1-host', 'city-perimeter-right-wall', 72);
+assertMinGap('arrival-core-right-support-rear', 'arrival-core-outer-support-tower-right', 72);
+assertMinGap('arrival-core-mid-tower-right', 'mega-landmark-right-support-spire', 72);
+assertMinGap('meetings-hero-tower-right', 'mega-landmark-media-frame-wall', 72);
+assertMinGap('showcase-row-outer-support-tower-right', 'mega-landmark-media-frame-wall', 72);
+assertSurfaceZSpacing('screen-marquee-left-1', 'screen-array-left-1', 96);
 assertSurfaceZSpacing('screen-array-left-1', 'screen-array-left-upper-1', 96);
 assertWorldBoothScreenHostClearance(world, 'primary-world');
 assertWorldBoothScreenHostClearance(buildExpoWorldContract({

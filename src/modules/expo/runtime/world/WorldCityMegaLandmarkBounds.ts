@@ -62,14 +62,14 @@ export function buildWorldCityMegaLandmarkBounds({
     createMegaLandmarkBound({ id: 'mega-landmark-discovery-garden-spine', planningSection: 'left', planningZone: 'left-district', position: [-492, 8, discoveryBaseZ + 212], size: [236, 16, 72] }),
     createMegaLandmarkBound({ id: 'mega-landmark-right-skyfold-citadel', planningSection: 'right', planningZone: 'right-district', position: [844, 146, -164], size: [300, 292, 96] }),
     createMegaLandmarkBound({ id: 'mega-landmark-right-skybridge-beacon', planningSection: 'right', planningZone: 'right-district', position: [580, 134, 30], size: [360, 268, 116] }),
-    createMegaLandmarkBound({ id: 'mega-landmark-right-media-halo', planningSection: 'right', planningZone: 'right-district', position: [1120, 126, -400], size: [260, 180, 220] }),
+    createMegaLandmarkBound({ id: 'mega-landmark-right-media-halo', planningSection: 'right', planningZone: 'right-district', position: [1136, 126, -400], size: [260, 180, 220] }),
     createMegaLandmarkBound({ id: 'mega-landmark-right-support-spire', planningSection: 'right', planningZone: 'right-district', position: [360, 90, -460], reviewTargetPosition: [360, 118, -460], size: [132, 180, 64] }),
     createMegaLandmarkBound({ id: 'mega-landmark-left-grand-rampart', planningSection: 'left', planningZone: 'left-district', position: [-870, 138, -80], size: [220, 276, 72] }),
     createMegaLandmarkBound({ id: 'mega-landmark-left-cantilever-forum', planningSection: 'left', planningZone: 'left-district', position: [-520, 104, -48], size: [320, 208, 96] }),
     createMegaLandmarkBound({ id: 'mega-landmark-left-split-crown-gate', planningSection: 'left', planningZone: 'left-district', position: [-1450, 146, -415], size: [340, 292, 96] }),
     createMegaLandmarkBound({ id: 'mega-landmark-left-broken-wall-monument', planningSection: 'left', planningZone: 'left-district', position: [-420, 112, -480], reviewTargetPosition: [-420, 112, -480], size: [140, 224, 96] }),
     createMegaLandmarkBound({ id: 'mega-landmark-left-disc-habitat', planningSection: 'left', planningZone: 'left-district', position: [-940, 178, -600], size: [296, 212, 296] }),
-    createMegaLandmarkBound({ id: 'mega-landmark-left-split-monolith-pair', planningSection: 'left', planningZone: 'left-district', position: [-700, 146, -1030], size: [160, 292, 72] }),
+    createMegaLandmarkBound({ id: 'mega-landmark-left-split-monolith-pair', planningSection: 'left', planningZone: 'left-district', position: [-600, 146, -1030], size: [160, 292, 72] }),
   ];
 }
 

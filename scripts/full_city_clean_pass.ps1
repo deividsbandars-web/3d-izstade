@@ -625,8 +625,12 @@ foreach ($zone in $reviewRaw) {
   }
 
   if ($duplicateMediaWallTargetsByZone.ContainsKey($zoneId)) {
-    foreach ($duplicateTarget in @($duplicateMediaWallTargetsByZone[$zoneId])) {
-      $sharedZones = @($duplicateTarget.zones | Where-Object { $_ -ne $zoneId })
+    $duplicateTargets = New-Object 'System.Collections.Generic.List[object]'
+    foreach ($duplicateTargetItem in $duplicateMediaWallTargetsByZone[$zoneId]) {
+      [void]$duplicateTargets.Add($duplicateTargetItem)
+    }
+    foreach ($duplicateTarget in $duplicateTargets) {
+      $sharedZones = @($duplicateTarget.zones) | Where-Object { $_ -ne $zoneId }
       Add-UniqueIssue -Target $zoneIssues -Issue (New-Issue -Severity 'high' -Code 'camera-duplicate-media-wall-target' -Message "Media wall target $($duplicateTarget.screenId) is reused by zones: $($sharedZones -join ', ').")
     }
   }

@@ -173,10 +173,10 @@ export function WorldCityMegaLandmarks({
   const rightCitadelBase: [number, number, number] = [844, 0, -164];
   const leftDiscBase: [number, number, number] = [-940, 0, -600];
   const rightBeaconBase: [number, number, number] = [580, 0, 30];
-  const rightHaloBase: [number, number, number] = [1120, 0, -400];
+  const rightHaloBase: [number, number, number] = [1136, 0, -400];
   const rightSupportBase: [number, number, number] = [360, 0, -460];
   const leftRampartBase: [number, number, number] = [-870, 0, -80];
-  const leftMonolithBase: [number, number, number] = [-700, 0, -1030];
+  const leftMonolithBase: [number, number, number] = [-600, 0, -1030];
   const leftForumBase: [number, number, number] = [-520, 0, -48];
   const leftCrownBase: [number, number, number] = [-1450, 0, -415];
   const leftSupportBase: [number, number, number] = [-420, 0, -480];

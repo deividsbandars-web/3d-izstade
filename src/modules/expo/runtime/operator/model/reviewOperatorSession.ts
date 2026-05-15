@@ -266,8 +266,8 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
         targetIds: ['screen-marquee-left-1'],
       },
       startView: {
-        lookAt: [-836, 180, -792],
-        position: [-386, 218, -812],
+        lookAt: [-1128, 180, -916],
+        position: [-678, 218, -936],
         source: 'arrival-main',
       },
       watchItems: [
@@ -369,20 +369,20 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
     },
     {
       expectedKeyObjectIds: [
-        'screen-spine-primary-1',
+        'screen-spine-primary-0-host',
       ],
-      expectedVisibleLayers: ['city-screen-surface'],
+      expectedVisibleLayers: ['city-screen-surface', 'city-mass'],
       id: 'center-spine-side',
       intent: 'center-civic-spine-side-review',
       label: 'Center Spine Side',
       camera: {
         lookAtOffset: [0, 52, 0],
         positionOffset: [420, 92, 140],
-        targetIds: ['screen-spine-primary-1'],
+        targetIds: ['screen-spine-primary-0'],
       },
       startView: {
-        lookAt: [-184, 160, -796],
-        position: [236, 200, -656],
+        lookAt: [-184, 154, -248],
+        position: [236, 194, -108],
         source: 'arrival-main',
       },
       watchItems: [
@@ -554,8 +554,8 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
     },
     {
       expectedKeyObjectIds: [
-        'screen-array-left-upper-0',
-        'screen-array-right-upper-0',
+        'screen-array-left-upper-1',
+        'screen-array-right-upper-1',
       ],
       expectedVisibleLayers: ['city-screen-surface'],
       id: 'array-band-south',
@@ -564,7 +564,7 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       camera: {
         lookAtOffset: [0, 44, 0],
         positionOffset: [0, 310, 1240],
-        targetIds: ['screen-array-left-upper-0', 'screen-array-right-upper-0'],
+        targetIds: ['screen-array-left-upper-1', 'screen-array-right-upper-1'],
       },
       startView: {
         lookAt: [0, 102, -548],

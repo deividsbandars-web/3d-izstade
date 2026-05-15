@@ -862,7 +862,7 @@ export function buildRightSupportBlocks(
     const baseZ = -196 - (districtIndex * districtStride);
     return [
       { id: `${district.sectorId ?? district.clusterIndex}-right-support-front`, position: [512, 18, baseZ + 78], size: [48, 18, 48], color: '#c8d4dc' },
-      { id: `${district.sectorId ?? district.clusterIndex}-right-support-rear`, position: [592, 36, baseZ - 210], size: [64, 54, 76], color: '#95a8b4' },
+      { id: `${district.sectorId ?? district.clusterIndex}-right-support-rear`, position: [584, 36, baseZ - 210], size: [64, 54, 76], color: '#95a8b4' },
       { id: `${district.sectorId ?? district.clusterIndex}-center-transition-left`, position: [-102, 12, baseZ + 108], size: [28, 16, 28], color: '#d4dee5' },
       { id: `${district.sectorId ?? district.clusterIndex}-center-transition-right`, position: [102, 12, baseZ + 96], size: [28, 16, 28], color: '#d4dee5' },
       { id: `${district.sectorId ?? district.clusterIndex}-center-transition-rear-left`, position: [-146, 10, baseZ - 42], size: [22, 12, 22], color: '#dde6ec' },
@@ -1021,7 +1021,7 @@ export function buildCleanTowerLandmarks(
         heroLeft: [-620, -380],
         heroRight: [620, -420],
         midLeft: [-348, -138],
-        midRight: [372, -172],
+        midRight: [372, -142],
         outerLeft: [-1160, -188],
         outerRight: [704, -170],
         supportLeft: [-496, 88],
@@ -1029,7 +1029,7 @@ export function buildCleanTowerLandmarks(
       },
       {
         heroLeft: [-540, -332],
-        heroRight: [690, -486],
+        heroRight: [690, -556],
         midLeft: [-438, -34],
         midRight: [322, -236],
         outerLeft: [-1450, 120],
@@ -1042,8 +1042,8 @@ export function buildCleanTowerLandmarks(
         heroRight: [560, -374],
         midLeft: [-286, -208],
         midRight: [432, -74],
-        outerLeft: [-990, 250],
-        outerRight: [930, 28],
+        outerLeft: [-990, 230],
+        outerRight: [930, 4],
         supportLeft: [-370, 176],
         supportRight: [552, 116],
       },
