@@ -13,7 +13,8 @@ export function buildCityScreenSurfacePool(districtCount: number, districtStride
   const flankYawRight = -1.08;
   const marqueeClearanceZ = 52;
   const marqueeLeftOutwardX = 128;
-  const marqueeRightOutwardX = 135.5;
+  const marqueeRightOutwardX = (districtIndex: number) => (districtIndex === 2 ? 604 : 135.5);
+  const marqueeRightYaw = (districtIndex: number) => (districtIndex === 2 ? -1.5 : inwardYawRight);
   const sideArrayClearanceX = 236;
   const sideArrayLeftForwardZ = 64;
   const sideArrayRightForwardZ = 0;
@@ -57,8 +58,8 @@ export function buildCityScreenSurfacePool(districtCount: number, districtStride
       },
       {
         id: `screen-marquee-right-${districtIndex}`,
-        position: [708 + marqueeRightOutwardX, 144, baseZ - 114 - marqueeClearanceZ + marqueeRightDepthOffset(districtIndex)],
-        rotation: [0, inwardYawRight, 0],
+        position: [708 + marqueeRightOutwardX(districtIndex), 144, baseZ - 114 - marqueeClearanceZ + marqueeRightDepthOffset(districtIndex)],
+        rotation: [0, marqueeRightYaw(districtIndex), 0],
         size: [150, 178, 3.4],
         color: '#091320',
         glowColor: palette.heroRight,

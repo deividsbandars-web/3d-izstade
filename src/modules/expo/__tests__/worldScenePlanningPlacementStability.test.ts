@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { buildCanonicalWorldPlan, buildCanonicalWorldPlanFromWorldContract, EXPO_CANONICAL_DISTRICT_STRIDE } from '../runtime/planning/index.js';
-import { buildCleanTowerLandmarks, buildRightSupportBlocks, buildSignatureMegaLandmarks } from '../runtime/planning/legacy/worldCityGeometry.js';
+import { buildCleanTowerLandmarks, buildRightSupportBlocks, buildSignatureMegaLandmarks, buildTowerScreenSurfaces } from '../runtime/planning/legacy/worldCityGeometry.js';
 import { buildCityScreenHostMasses } from '../runtime/planning/screens/buildCityScreenHostMassPlan.js';
 import { buildCityScreenSurfacePool } from '../runtime/planning/screens/buildCityScreenSurfacePool.js';
 import type { CanonicalPrimitiveTexturePlane } from '../runtime/planning/types/index.js';
@@ -81,13 +81,14 @@ const clearanceDistrictPrograms = ['arrival-core', 'meetings', 'showcase-row'].m
   clusterIndex: index,
   sectorId,
 }));
+const clearanceTowers = buildCleanTowerLandmarks(
+  clearanceDistrictPrograms,
+  [],
+  EXPO_CANONICAL_DISTRICT_STRIDE,
+  world.visualProfile,
+);
 const clearanceTowerById = new Map(
-  buildCleanTowerLandmarks(
-    clearanceDistrictPrograms,
-    [],
-    EXPO_CANONICAL_DISTRICT_STRIDE,
-    world.visualProfile,
-  ).map((tower) => [
+  clearanceTowers.map((tower) => [
     tower.id,
     {
       position: tower.position,
@@ -96,6 +97,7 @@ const clearanceTowerById = new Map(
     },
   ])
 );
+const clearanceTowerScreenSurfaceById = new Map(buildTowerScreenSurfaces(clearanceTowers).map((surface) => [surface.id, surface]));
 const rightSupportMassById = new Map(buildRightSupportBlocks(
   clearanceDistrictPrograms,
   [],
@@ -155,6 +157,16 @@ function assertSurfaceZSpacing(idA: string, idB: string, minSpacing: number) {
   assert.ok(left, `${idA} must exist for screen rhythm checks`);
   assert.ok(right, `${idB} must exist for screen rhythm checks`);
   assert.ok(Math.abs(left.position[2] - right.position[2]) >= minSpacing, `${idA} and ${idB} must keep at least ${minSpacing} units of Z rhythm`);
+}
+function assertSurfaceCenterDistance(idA: string, idB: string, minDistance: number) {
+  const left = screenSurfaceById.get(idA) ?? unfilteredScreenSurfaceById.get(idA) ?? clearanceTowerScreenSurfaceById.get(idA);
+  const right = screenSurfaceById.get(idB) ?? unfilteredScreenSurfaceById.get(idB) ?? clearanceTowerScreenSurfaceById.get(idB);
+  assert.ok(left, `${idA} must exist for screen distance checks`);
+  assert.ok(right, `${idB} must exist for screen distance checks`);
+  assert.ok(
+    Math.hypot(left.position[0] - right.position[0], left.position[2] - right.position[2]) >= minDistance,
+    `${idA} and ${idB} must stay at least ${minDistance} units apart in X/Z`,
+  );
 }
 function screenAssignmentFaceClearance(
   surface: NonNullable<ReturnType<typeof screenSurfaceById.get>>,
@@ -312,6 +324,8 @@ assertMinGap('meetings-outer-support-tower-right', 'mega-landmark-media-frame-wa
 assertMinGap('showcase-row-outer-support-tower-right', 'mega-landmark-media-frame-wall', 72);
 assertSurfaceZSpacing('screen-marquee-left-1', 'screen-array-left-1', 96);
 assertSurfaceZSpacing('screen-array-left-1', 'screen-array-left-upper-1', 96);
+assertSurfaceCenterDistance('screen-marquee-right-2', 'meetings-hero-tower-right-crown-beacon', 320);
+assertSurfaceCenterDistance('screen-marquee-right-2', 'meetings-hero-tower-right-tower-ribbon', 320);
 assertWorldBoothScreenHostClearance(world, 'primary-world');
 assertWorldBoothScreenHostClearance(buildExpoWorldContract({
   companies: [
