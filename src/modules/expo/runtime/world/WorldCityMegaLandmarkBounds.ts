@@ -11,6 +11,10 @@ export type WorldCityMegaLandmarkBound = {
   size: [number, number, number];
 };
 
+const HIDDEN_WORLD_CITY_MEGA_LANDMARK_IDS = new Set([
+  'mega-landmark-showcase',
+]);
+
 function overlapsReserve(
   position: [number, number, number],
   reserve: StadiumReserve,
@@ -70,7 +74,7 @@ export function buildWorldCityMegaLandmarkBounds({
     createMegaLandmarkBound({ id: 'mega-landmark-left-broken-wall-monument', planningSection: 'left', planningZone: 'left-district', position: [-420, 112, -480], reviewTargetPosition: [-420, 112, -480], size: [140, 224, 96] }),
     createMegaLandmarkBound({ id: 'mega-landmark-left-disc-habitat', planningSection: 'left', planningZone: 'left-district', position: [-940, 178, -600], size: [296, 212, 296] }),
     createMegaLandmarkBound({ id: 'mega-landmark-left-split-monolith-pair', planningSection: 'left', planningZone: 'left-district', position: [-600, 146, -1030], size: [160, 292, 72] }),
-  ];
+  ].filter((landmark) => !HIDDEN_WORLD_CITY_MEGA_LANDMARK_IDS.has(landmark.id));
 }
 
 export function filterWorldCityMegaLandmarkBounds(

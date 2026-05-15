@@ -185,16 +185,15 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
     {
       expectedKeyObjectIds: [
         'mega-landmark-arrival',
-        'mega-landmark-showcase',
       ],
       expectedVisibleLayers: ['mega-landmark'],
       id: 'arrival-gate',
       intent: 'arrival-gateway-hierarchy',
       label: 'Arrival Gate',
       camera: {
-        lookAtOffset: [0, 64, 0],
-        positionOffset: [0, 160, 300],
-        targetIds: ['mega-landmark-arrival', 'mega-landmark-showcase'],
+        lookAtOffset: [0, 144, 0],
+        positionOffset: [0, 260, 700],
+        targetIds: ['mega-landmark-arrival'],
       },
       startView: {
         lookAt: [0, 170, 220],
@@ -215,8 +214,8 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       intent: 'arrival-civic-axis-review',
       label: 'Arrival Civic Axis',
       camera: {
-        lookAtOffset: [0, 30, 0],
-        positionOffset: [360, 196, 700],
+        lookAtOffset: [0, 80, 0],
+        positionOffset: [180, 90, 180],
         targetIds: ['screen-spine-primary-0'],
       },
       startView: {
@@ -368,16 +367,14 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       ],
     },
     {
-      expectedKeyObjectIds: [
-        'screen-spine-primary-0-host',
-      ],
-      expectedVisibleLayers: ['city-screen-surface', 'city-mass'],
+      expectedKeyObjectIds: [],
+      expectedVisibleLayers: ['city-screen-surface'],
       id: 'center-spine-side',
       intent: 'center-civic-spine-side-review',
       label: 'Center Spine Side',
       camera: {
-        lookAtOffset: [0, 52, 0],
-        positionOffset: [420, 92, 140],
+        lookAtOffset: [0, 82, 0],
+        positionOffset: [220, 95, 120],
         targetIds: ['screen-spine-primary-0'],
       },
       startView: {
@@ -529,10 +526,7 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       ],
     },
     {
-      expectedKeyObjectIds: [
-        'screen-array-left-0',
-        'screen-array-right-0',
-      ],
+      expectedKeyObjectIds: [],
       expectedVisibleLayers: ['city-screen-surface'],
       id: 'array-band',
       intent: 'array-band-cross-city-review',
@@ -553,10 +547,7 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       ],
     },
     {
-      expectedKeyObjectIds: [
-        'screen-array-left-upper-1',
-        'screen-array-right-upper-1',
-      ],
+      expectedKeyObjectIds: [],
       expectedVisibleLayers: ['city-screen-surface'],
       id: 'array-band-south',
       intent: 'array-band-south-review',
@@ -574,6 +565,48 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       watchItems: [
         'array screen spacing',
         'district continuity from south axis',
+      ],
+    },
+    {
+      expectedKeyObjectIds: ['screen-array-left-0', 'screen-array-left-0-host'],
+      expectedVisibleLayers: ['city-screen-surface', 'city-mass'],
+      id: 'array-left-near-direct',
+      intent: 'left-near-array-direct-hit-review',
+      label: 'Array Left Near Direct',
+      camera: {
+        lookAtOffset: [0, 50, 0],
+        positionOffset: [320, 110, 360],
+        targetIds: ['screen-array-left-0'],
+      },
+      startView: {
+        lookAt: [-1204, 198, -46],
+        position: [-884, 258, 314],
+        source: 'arrival-main',
+      },
+      watchItems: [
+        'left near array direct target hit',
+        'near array screen host attachment',
+      ],
+    },
+    {
+      expectedKeyObjectIds: ['screen-array-right-0', 'screen-array-right-0-host'],
+      expectedVisibleLayers: ['city-screen-surface', 'city-mass'],
+      id: 'array-right-near-direct',
+      intent: 'right-near-array-direct-hit-review',
+      label: 'Array Right Near Direct',
+      camera: {
+        lookAtOffset: [0, 50, 0],
+        positionOffset: [-320, 110, 360],
+        targetIds: ['screen-array-right-0'],
+      },
+      startView: {
+        lookAt: [1204, 196, -114],
+        position: [884, 256, 246],
+        source: 'arrival-main',
+      },
+      watchItems: [
+        'right near array direct target hit',
+        'near array screen host attachment',
       ],
     },
     {
@@ -616,6 +649,48 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       watchItems: [
         'right upper array direct target hit',
         'outer screen host separation',
+      ],
+    },
+    {
+      expectedKeyObjectIds: ['screen-array-left-upper-1', 'screen-array-left-upper-1-host'],
+      expectedVisibleLayers: ['city-screen-surface', 'city-mass'],
+      id: 'array-upper-left-1-direct',
+      intent: 'left-upper-array-1-direct-hit-review',
+      label: 'Array Upper Left 1 Direct',
+      camera: {
+        lookAtOffset: [0, 54, 0],
+        positionOffset: [330, 120, 420],
+        targetIds: ['screen-array-left-upper-1'],
+      },
+      startView: {
+        lookAt: [-1546, 288, -910],
+        position: [-1216, 354, -490],
+        source: 'arrival-main',
+      },
+      watchItems: [
+        'left upper array 1 direct target hit',
+        'second-row array host attachment',
+      ],
+    },
+    {
+      expectedKeyObjectIds: ['screen-array-right-upper-1', 'screen-array-right-upper-1-host'],
+      expectedVisibleLayers: ['city-screen-surface', 'city-mass'],
+      id: 'array-upper-right-1-direct',
+      intent: 'right-upper-array-1-direct-hit-review',
+      label: 'Array Upper Right 1 Direct',
+      camera: {
+        lookAtOffset: [0, 54, 0],
+        positionOffset: [-330, 120, 420],
+        targetIds: ['screen-array-right-upper-1'],
+      },
+      startView: {
+        lookAt: [1546, 286, -806],
+        position: [1216, 352, -386],
+        source: 'arrival-main',
+      },
+      watchItems: [
+        'right upper array 1 direct target hit',
+        'second-row array host attachment',
       ],
     },
     {
