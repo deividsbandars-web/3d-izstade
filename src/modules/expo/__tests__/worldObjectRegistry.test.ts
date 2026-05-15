@@ -5,6 +5,7 @@ import {
   buildGroundWorldObjectRegistry,
   buildStadiumWorldObjectRegistry,
 } from '../runtime/world/inspection/worldObjectRegistry.js';
+import { resolveRearCampusScreenHostId } from '../runtime/world/rearCampusScreenHosts.js';
 import type {
   CanonicalWorldPlan,
   CityMass,
@@ -317,6 +318,9 @@ assert.ok(stadiumRegistry.some((entry) => entry.id === stadiumAssignment.id && e
 assert.equal(stadiumRegistry.filter((entry) => entry.layer === 'stadium-screen-feed').length, 0);
 assert.ok(stadiumRegistry.some((entry) => entry.id === 'rear-campus-bowl-center-deck-screen-host-shell' && entry.layer === 'stadium-structure'));
 assert.equal(stadiumRegistry.find((entry) => entry.id === 'rear-campus-bowl-center-deck-screen-host-shell')?.planningRole, 'screen-host-shell');
+assert.equal(resolveRearCampusScreenHostId('rear-campus-bowl-feed-surface'), 'rear-campus-bowl-center-deck-screen-host-shell');
+assert.equal(resolveRearCampusScreenHostId('rear-campus-stage-monolith-canopy-host-surface'), 'rear-campus-stage-monolith-canopy');
+assert.equal(resolveRearCampusScreenHostId('rear-campus-mega-civic-hall-host-surface'), 'rear-campus-mega-civic-hall');
 assert.ok(stadiumRegistry.some((entry) => entry.id === 'rear-forecourt-1' && entry.layer === 'stadium-plane'));
 assert.equal(stadiumRegistry.find((entry) => entry.id === 'rear-forecourt-1')?.groundOwner, 'stadium');
 assert.equal(stadiumRegistry.find((entry) => entry.id === 'rear-forecourt-1')?.groundRole, 'structural');
@@ -327,10 +331,13 @@ assert.ok(stadiumRegistry.some((entry) => entry.id === 'rear-tower-1' && entry.l
 assert.deepEqual(stadiumRegistry.find((entry) => entry.id === 'rear-pavilion-1')?.position, [180, 40, -2500]);
 assert.deepEqual(stadiumRegistry.find((entry) => entry.id === 'rear-tower-1')?.position, [220, 360, -3000]);
 assert.equal(stadiumRegistry.some((entry) => entry.id === 'stadium-bowl' && entry.layer === 'stadium-structure'), false);
+assert.ok(stadiumRegistry.some((entry) => entry.id === 'rear-campus-stage-monolith-canopy' && entry.layer === 'stadium-structure'));
+assert.deepEqual(stadiumRegistry.find((entry) => entry.id === 'rear-campus-stage-monolith-canopy')?.position, [47, 116, -3018]);
+assert.equal(stadiumRegistry.find((entry) => entry.id === 'rear-campus-stage-monolith-canopy')?.planningRole, 'recovered-large-landmark');
 assert.ok(stadiumRegistry.some((entry) => entry.id === 'rear-campus-mega-civic-hall' && entry.layer === 'stadium-structure'));
 assert.deepEqual(stadiumRegistry.find((entry) => entry.id === 'rear-campus-mega-civic-hall')?.position, [-2490, 176, -3670]);
 assert.equal(stadiumRegistry.find((entry) => entry.id === 'rear-campus-mega-civic-hall')?.planningRole, 'recovered-large-landmark');
-assert.equal(stadiumRegistry.some((entry) => entry.id === 'rear-campus-mega-civic-hall-screen-host-shell'), true);
+assert.equal(stadiumRegistry.some((entry) => entry.id === 'rear-campus-mega-civic-hall-screen-host-shell'), false);
 assert.ok(stadiumRegistry.some((entry) => entry.id === 'rear-campus-test-perimeter' && entry.layer === 'stadium-structure'));
 assert.equal(stadiumRegistry.some((entry) => entry.id === 'stadium-axis-center-1180'), false);
 

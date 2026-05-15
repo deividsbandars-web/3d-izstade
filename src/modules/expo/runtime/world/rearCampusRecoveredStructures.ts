@@ -10,6 +10,12 @@ export type RecoveredRearCampusStructure = {
 
 export const RECOVERED_REAR_CAMPUS_STRUCTURES: RecoveredRearCampusStructure[] = [
   {
+    authoredZ: -3018,
+    id: 'rear-campus-stage-monolith-canopy',
+    positionX: 47,
+    size: [564, 232, 176],
+  },
+  {
     authoredZ: -3670,
     id: 'rear-campus-mega-civic-hall',
     positionX: -2490,
@@ -59,6 +65,14 @@ export const RECOVERED_REAR_CAMPUS_STRUCTURES: RecoveredRearCampusStructure[] = 
     size: [276, 670, 168],
   },
 ];
+
+const RECOVERED_REAR_CAMPUS_STRUCTURE_ID_SET = new Set(
+  RECOVERED_REAR_CAMPUS_STRUCTURES.map((structure) => structure.id),
+);
+
+export function isRecoveredRearCampusStructureId(id: string): boolean {
+  return RECOVERED_REAR_CAMPUS_STRUCTURE_ID_SET.has(id);
+}
 
 export function resolveRecoveredRearCampusGroupPosition(
   structure: RecoveredRearCampusStructure,

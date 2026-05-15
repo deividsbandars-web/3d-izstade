@@ -22,6 +22,37 @@ export function ExpoRearCampusRecoveredStructures({
 
   return (
     <group name="rear-campus-recovered-structures">
+      <group name="stadium-structure:rear-campus-stage-monolith-canopy" position={groupPosition('rear-campus-stage-monolith-canopy')}>
+        <mesh position={[0, 10, 0]} receiveShadow>
+          <boxGeometry args={[564, 20, 176]} />
+          <meshStandardMaterial color="#84919a" roughness={0.74} metalness={0.04} emissive={accent} emissiveIntensity={0.026} />
+        </mesh>
+        <mesh position={[-164, 110, -12]} castShadow={enableHeavyShadows} receiveShadow>
+          <boxGeometry args={[112, 200, 118]} />
+          <meshStandardMaterial color="#98a4ad" roughness={0.62} metalness={0.06} emissive={accent} emissiveIntensity={0.055} />
+        </mesh>
+        <mesh position={[164, 110, -12]} castShadow={enableHeavyShadows} receiveShadow>
+          <boxGeometry args={[112, 200, 118]} />
+          <meshStandardMaterial color="#84919a" roughness={0.66} metalness={0.05} emissive={accent} emissiveIntensity={0.05} />
+        </mesh>
+        <mesh position={[0, 96, 10]} castShadow={enableHeavyShadows} receiveShadow>
+          <boxGeometry args={[216, 156, 96]} />
+          <meshStandardMaterial color="#6f7b84" roughness={0.68} metalness={0.05} emissive={accent} emissiveIntensity={0.04} />
+        </mesh>
+        <mesh position={[0, 220, -4]} castShadow={enableHeavyShadows} receiveShadow>
+          <boxGeometry args={[472, 24, 168]} />
+          <meshStandardMaterial color="#98a4ad" roughness={0.54} metalness={0.08} emissive={accent} emissiveIntensity={0.09} />
+        </mesh>
+        <mesh position={[0, 192, -76]} castShadow={enableHeavyShadows} receiveShadow>
+          <boxGeometry args={[308, 28, 18]} />
+          <meshStandardMaterial color="#9aa7b0" roughness={0.5} metalness={0.08} emissive={accent} emissiveIntensity={0.1} />
+        </mesh>
+        <mesh position={[0, 54, 66]} castShadow={enableHeavyShadows} receiveShadow>
+          <boxGeometry args={[248, 18, 38]} />
+          <meshStandardMaterial color="#90a5b3" roughness={0.62} metalness={0.06} emissive={accent} emissiveIntensity={0.08} />
+        </mesh>
+      </group>
+
       <group name="stadium-structure:rear-campus-mega-civic-hall" position={groupPosition('rear-campus-mega-civic-hall')}>
         <mesh position={[0, 18, 0]} receiveShadow>
           <boxGeometry args={[724, 28, 324]} />

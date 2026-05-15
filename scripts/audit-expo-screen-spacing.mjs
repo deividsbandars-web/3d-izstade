@@ -6,6 +6,17 @@ const DEFAULT_MIN_CENTER_DISTANCE = 220;
 const DEFAULT_MIN_SAME_FACING_DISTANCE = 320;
 const HIGH_DISTANCE = 120;
 const HIGH_OVERLAP_AREA = 900;
+const RECOVERED_REAR_CAMPUS_STRUCTURE_IDS = new Set([
+  'rear-campus-stage-monolith-canopy',
+  'rear-campus-mega-civic-hall',
+  'rear-campus-linked-mini-skyline',
+  'rear-campus-petal-tower',
+  'rear-campus-bridge-linked-campus',
+  'rear-campus-helix-spire',
+  'rear-campus-grand-prism-citadel',
+  'rear-campus-void-courtyard-monument',
+  'rear-campus-twin-void-monolith',
+]);
 
 function printUsageAndExit() {
   console.error('Usage: node scripts/audit-expo-screen-spacing.mjs <snapshot.json|full-city-run-dir> [--out <report.json>] [--md <report.md>]');
@@ -140,7 +151,11 @@ function inferRearCampusScreenHostId(screenId) {
     baseId = screenId.slice(0, -'-feed-surface'.length);
   }
 
-  return baseId ? `${baseId}-screen-host-shell` : null;
+  if (!baseId) {
+    return null;
+  }
+
+  return RECOVERED_REAR_CAMPUS_STRUCTURE_IDS.has(baseId) ? baseId : `${baseId}-screen-host-shell`;
 }
 
 function inferHostId(screenId) {

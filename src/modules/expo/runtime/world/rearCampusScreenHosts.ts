@@ -1,4 +1,5 @@
 import type { CityScreenSurface } from '../planning/types';
+import { isRecoveredRearCampusStructureId } from './rearCampusRecoveredStructures';
 
 export type RearCampusScreenHostShell = {
   id: string;
@@ -35,7 +36,11 @@ export function resolveRearCampusScreenHostBaseId(surfaceId: string): string | n
 
 export function resolveRearCampusScreenHostId(surfaceId: string): string | null {
   const baseId = resolveRearCampusScreenHostBaseId(surfaceId);
-  return baseId ? `${baseId}-screen-host-shell` : null;
+  if (!baseId) {
+    return null;
+  }
+
+  return isRecoveredRearCampusStructureId(baseId) ? baseId : `${baseId}-screen-host-shell`;
 }
 
 export function buildRearCampusScreenHostShells(
@@ -44,10 +49,12 @@ export function buildRearCampusScreenHostShells(
   const shells = new Map<string, RearCampusScreenHostShell>();
 
   for (const surface of surfaces) {
-    const hostId = resolveRearCampusScreenHostId(surface.id);
-    if (!hostId) {
+    const baseId = resolveRearCampusScreenHostBaseId(surface.id);
+    if (!baseId || isRecoveredRearCampusStructureId(baseId)) {
       continue;
     }
+
+    const hostId = `${baseId}-screen-host-shell`;
 
     const yaw = surface.rotation[1] ?? 0;
     const normal = { x: Math.sin(yaw), z: Math.cos(yaw) };

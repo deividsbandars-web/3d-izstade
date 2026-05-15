@@ -62,6 +62,17 @@ const VALID_CITY_OBJECT_PLANNING_ZONES = new Set([
 ]);
 const GENERIC_CITY_WORLD_PLAN_SOURCE = 'src/modules/expo/runtime/planning/world-plan/buildCanonicalWorldPlan.ts';
 const SOURCE_TRACE_CITY_LAYERS = new Set(['city-mass', 'city-tower']);
+const RECOVERED_REAR_CAMPUS_STRUCTURE_IDS = new Set([
+  'rear-campus-stage-monolith-canopy',
+  'rear-campus-mega-civic-hall',
+  'rear-campus-linked-mini-skyline',
+  'rear-campus-petal-tower',
+  'rear-campus-bridge-linked-campus',
+  'rear-campus-helix-spire',
+  'rear-campus-grand-prism-citadel',
+  'rear-campus-void-courtyard-monument',
+  'rear-campus-twin-void-monolith',
+]);
 
 function resolveRearCampusScreenHostId(screenId) {
   let baseId = null;
@@ -80,7 +91,11 @@ function resolveRearCampusScreenHostId(screenId) {
     }
   }
 
-  return baseId ? `${baseId}-screen-host-shell` : null;
+  if (!baseId) {
+    return null;
+  }
+
+  return RECOVERED_REAR_CAMPUS_STRUCTURE_IDS.has(baseId) ? baseId : `${baseId}-screen-host-shell`;
 }
 
 function resolveScreenHostBinding(screenId) {
