@@ -584,12 +584,12 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       label: 'Array Upper Left Direct',
       camera: {
         lookAtOffset: [0, 50, 0],
-        positionOffset: [-320, 110, 360],
+        positionOffset: [320, 110, 360],
         targetIds: ['screen-array-left-upper-0'],
       },
       startView: {
         lookAt: [-1470, 268, -216],
-        position: [-1790, 328, 144],
+        position: [-1226, 328, 144],
         source: 'arrival-main',
       },
       watchItems: [
@@ -605,12 +605,12 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       label: 'Array Upper Right Direct',
       camera: {
         lookAtOffset: [0, 50, 0],
-        positionOffset: [320, 110, 360],
+        positionOffset: [-320, 110, 360],
         targetIds: ['screen-array-right-upper-0'],
       },
       startView: {
         lookAt: [1470, 266, -258],
-        position: [1790, 326, 102],
+        position: [1226, 326, 102],
         source: 'arrival-main',
       },
       watchItems: [

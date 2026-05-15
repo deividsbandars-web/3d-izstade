@@ -62,6 +62,7 @@ function renderPrimitive(primitive: CanonicalPrimitive, key: string) {
         <planeGeometry args={primitive.size} />
         <SponsorTextureSurface
           depthWrite={false}
+          doubleSided
           fallbackColor={primitive.fallbackColor}
           opacity={primitive.opacity ?? 0.92}
           url={primitive.url}
