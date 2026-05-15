@@ -63,9 +63,17 @@ function ScreenFirstEngagementPad({
   stageScale: number;
 }) {
   const scale = (isHeroFeature ? 1.18 : isEliteFeature ? 1.08 : isFeatureBooth ? 1 : 0.86) * stageScale;
-  const padWidth = 6.8 * scale;
-  const padDepth = 3.2 * scale;
-  const beaconHeight = (isHeroFeature ? 2.4 : isEliteFeature ? 2.08 : 1.72) * Math.max(0.9, stageScale * 0.72);
+  const padWidth = 7.6 * scale;
+  const padDepth = 3.7 * scale;
+  const tileWidth = padWidth * 0.26;
+  const tileHeight = 0.56 * Math.min(1.16, scale);
+  const tileDepth = 0.68 * scale;
+  const beaconHeight = (isHeroFeature ? 2.35 : isEliteFeature ? 2.02 : 1.64) * Math.max(0.86, stageScale * 0.68);
+  const ctaTiles = [
+    { id: '4k-room', label: '4K', sublabel: 'ROOM', x: -padWidth * 0.29, color: '#eef7fb' },
+    { id: 'book-demo', label: 'BOOK', sublabel: 'DEMO', x: 0, color: accentColor },
+    { id: 'roi-leads', label: 'ROI', sublabel: 'LEADS', x: padWidth * 0.29, color: '#c8f7ff' },
+  ];
 
   return (
     <group position={[0, 0, 1.42]}>
@@ -73,16 +81,64 @@ function ScreenFirstEngagementPad({
         <boxGeometry args={[padWidth, 0.22, padDepth]} />
         <meshStandardMaterial color="#16283a" emissive={accentColor} emissiveIntensity={0.035} metalness={0.12} roughness={0.58} />
       </mesh>
-      <mesh position={[0, 0.34, 0.16]} receiveShadow>
-        <boxGeometry args={[padWidth * 0.78, 0.08, padDepth * 0.36]} />
-        <meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={0.16} metalness={0.16} roughness={0.32} />
+      <mesh position={[0, 0.34, -padDepth * 0.04]} receiveShadow>
+        <boxGeometry args={[padWidth * 0.84, 0.1, padDepth * 0.54]} />
+        <meshStandardMaterial color="#21364b" emissive={accentColor} emissiveIntensity={0.05} metalness={0.16} roughness={0.42} />
       </mesh>
-      <mesh position={[0, 0.42, -padDepth * 0.28]} receiveShadow>
-        <boxGeometry args={[padWidth * 0.52, 0.06, 0.18]} />
-        <meshStandardMaterial color="#e6f3fa" emissive={accentColor} emissiveIntensity={0.08} metalness={0.12} roughness={0.34} />
+      <mesh position={[0, 0.43, padDepth * 0.39]} receiveShadow>
+        <boxGeometry args={[padWidth * 0.9, 0.08, 0.16 * scale]} />
+        <meshStandardMaterial color="#f8fbfe" emissive={accentColor} emissiveIntensity={0.09} metalness={0.08} roughness={0.3} />
+      </mesh>
+      <mesh position={[0, 0.45, -padDepth * 0.34]} receiveShadow>
+        <boxGeometry args={[padWidth * 0.46, 0.06, 0.14 * scale]} />
+        <meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={0.18} metalness={0.1} roughness={0.24} />
+      </mesh>
+      <mesh position={[0, 0.31, -padDepth * 0.78]} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[0.72 * scale, 1.04 * scale, 44]} />
+        <meshBasicMaterial color={accentColor} transparent opacity={0.28} depthWrite={false} side={THREE.DoubleSide} />
+      </mesh>
+      <mesh position={[0, 0.32, -padDepth * 0.78]} rotation={[-Math.PI / 2, 0, 0]}>
+        <circleGeometry args={[0.42 * scale, 36]} />
+        <meshBasicMaterial color="#f8fbfe" transparent opacity={0.12} depthWrite={false} side={THREE.DoubleSide} />
+      </mesh>
+      <mesh position={[0, 0.56, -padDepth * 0.78]} castShadow receiveShadow>
+        <cylinderGeometry args={[0.56 * scale, 0.68 * scale, 0.22 * scale, 24]} />
+        <meshStandardMaterial color="#102033" emissive={accentColor} emissiveIntensity={0.08} metalness={0.18} roughness={0.36} />
+      </mesh>
+      <mesh position={[0, 1.02, -padDepth * 0.78]} rotation={[0.18, Math.PI / 4, 0.1]} castShadow>
+        <octahedronGeometry args={[0.34 * scale, 0]} />
+        <meshStandardMaterial color="#f8fbfe" emissive={accentColor} emissiveIntensity={0.18} metalness={0.2} roughness={0.24} />
+      </mesh>
+      <mesh position={[0, 1.02, -padDepth * 0.78]}>
+        <torusGeometry args={[0.54 * scale, 0.025 * scale, 10, 36]} />
+        <meshBasicMaterial color={accentColor} transparent opacity={0.42} depthWrite={false} />
       </mesh>
       {[-1, 1].map((side) => (
-        <group key={`screen-first-pad-beacon-${side}`} position={[side * padWidth * 0.38, beaconHeight * 0.5 + 0.28, -padDepth * 0.04]}>
+        <mesh key={`screen-first-pad-runner-${side}`} position={[side * padWidth * 0.18, 0.47, -padDepth * 0.5]} rotation={[0, side * 0.18, 0]} receiveShadow>
+          <boxGeometry args={[padWidth * 0.38, 0.055, 0.11 * scale]} />
+          <meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={0.16} metalness={0.12} roughness={0.28} />
+        </mesh>
+      ))}
+      {ctaTiles.map((tile) => (
+        <group key={`screen-first-pad-cta-${tile.id}`} position={[tile.x, 0.72, 0.2]}>
+          <mesh castShadow receiveShadow>
+            <boxGeometry args={[tileWidth, tileHeight, tileDepth]} />
+            <meshStandardMaterial color={tile.id === 'book-demo' ? '#18304a' : '#e5eef5'} emissive={tile.color} emissiveIntensity={tile.id === 'book-demo' ? 0.12 : 0.055} metalness={0.12} roughness={0.42} />
+          </mesh>
+          <mesh position={[0, 0.02, tileDepth * 0.52 + 0.025]}>
+            <boxGeometry args={[tileWidth * 0.78, tileHeight * 0.7, 0.04]} />
+            <meshBasicMaterial color={tile.color} transparent opacity={tile.id === 'book-demo' ? 0.78 : 0.42} />
+          </mesh>
+          <Text position={[0, 0.08, tileDepth * 0.55 + 0.06]} fontSize={0.24 * Math.min(1.2, scale)} color={tile.id === 'book-demo' ? '#f8fafc' : '#102033'} anchorX="center" anchorY="middle" maxWidth={tileWidth * 0.74}>
+            {tile.label}
+          </Text>
+          <Text position={[0, -0.15, tileDepth * 0.55 + 0.06]} fontSize={0.13 * Math.min(1.18, scale)} color={tile.id === 'book-demo' ? '#e6f3fa' : '#314155'} anchorX="center" anchorY="middle" maxWidth={tileWidth * 0.76}>
+            {tile.sublabel}
+          </Text>
+        </group>
+      ))}
+      {[-1, 1].map((side) => (
+        <group key={`screen-first-pad-beacon-${side}`} position={[side * padWidth * 0.45, beaconHeight * 0.5 + 0.28, -padDepth * 0.2]}>
           <mesh castShadow receiveShadow>
             <boxGeometry args={[0.18, beaconHeight, 0.18]} />
             <meshStandardMaterial color="#d7e8f1" emissive={accentColor} emissiveIntensity={0.07} metalness={0.16} roughness={0.36} />
@@ -93,8 +149,8 @@ function ScreenFirstEngagementPad({
           </mesh>
         </group>
       ))}
-      <Text position={[0, 0.54, 0.22]} fontSize={0.32 * Math.min(1.18, scale)} color="#f8fafc" anchorX="center" anchorY="middle" maxWidth={padWidth * 0.62}>
-        {`${fallbackMonogram} 4K ROOM`}
+      <Text position={[0, 0.62, -padDepth * 0.24]} fontSize={0.25 * Math.min(1.18, scale)} color="#f8fafc" anchorX="center" anchorY="middle" maxWidth={padWidth * 0.62}>
+        {`${fallbackMonogram} LIVE SALES DOCK`}
       </Text>
     </group>
   );
