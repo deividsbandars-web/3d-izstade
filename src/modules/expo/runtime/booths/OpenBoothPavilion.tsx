@@ -35,6 +35,8 @@ export function resolveOpenBoothPavilionLayout(
   const screenSurfaceHeight = isScreenFirstBooth
     ? screenFrameHeight * 0.982
     : isHero ? 6.16 : isElite ? 5.46 : isPremium ? 4.82 : 4.18;
+  const signalTowerHeight = screenFrameHeight + (isHero ? 6.2 : isElite ? 4.8 : isPremium ? 3.8 : 2.6);
+  const signalTowerOffsetX = (screenFrameWidth * 0.5) + (isHero ? 1.65 : isElite ? 1.38 : isPremium ? 1.18 : 0.92);
 
   return {
     depth,
@@ -50,6 +52,7 @@ export function resolveOpenBoothPavilionLayout(
     screenFrameWidth,
     screenSurfaceHeight,
     screenSurfaceWidth,
+    showSignalTowers: isScreenFirstBooth,
     showFrontThreshold: false,
     showFrontageCanopy: false,
     showFrontageFins: false,
@@ -58,6 +61,8 @@ export function resolveOpenBoothPavilionLayout(
     showPremiumPortalShell: isPremium && !isElite && !isHero && !isScreenFirstBooth,
     showScreenTrimOverlays: !isScreenFirstBooth,
     showTierSideBanners: false,
+    signalTowerHeight,
+    signalTowerOffsetX,
     width,
   };
 }
@@ -97,7 +102,10 @@ export function OpenBoothPavilion({
     showPremiumOrEliteBlades,
     showPremiumPortalShell,
     showScreenTrimOverlays,
+    showSignalTowers,
     showTierSideBanners,
+    signalTowerHeight,
+    signalTowerOffsetX,
     width,
   } = resolveOpenBoothPavilionLayout(metrics, tier);
   const postOffsetX = (width * 0.5) - (isHero ? 1.52 : isElite ? 1.36 : isPremium ? 1.24 : 1.1);
@@ -163,6 +171,13 @@ export function OpenBoothPavilion({
     const screenFirstFrameColor = isElite ? '#102232' : '#14283a';
     const screenFirstBackColor = isElite ? '#09131f' : '#0d1724';
     const screenFirstEdgeColor = isElite ? '#d2edf8' : '#c6e2f2';
+    const signalTowerWidth = isHero ? 0.72 : isElite ? 0.62 : isPremium ? 0.54 : 0.42;
+    const signalTowerDepth = isHero ? 0.86 : isElite ? 0.74 : isPremium ? 0.66 : 0.54;
+    const signalTowerZ = wallZ + 0.48;
+    const signalTowerAccentHeight = signalTowerHeight * (isHero ? 0.54 : isElite ? 0.5 : isPremium ? 0.46 : 0.4);
+    const signalTowerAccentY = 0.72 + signalTowerHeight * 0.56;
+    const signalTowerBaseWidth = signalTowerWidth * (isHero ? 3.35 : isElite ? 3.05 : isPremium ? 2.8 : 2.4);
+    const signalTowerBaseDepth = signalTowerDepth * 1.85;
 
     return (
       <group name="booth-open-pavilion booth-media-wall">
@@ -204,6 +219,30 @@ export function OpenBoothPavilion({
             </mesh>
           ))}
         </group>
+        {showSignalTowers && [-1, 1].map((side) => (
+          <group key={`media-wall-signal-tower-${side}`} name={`booth-signal-tower-${side}`} position={[side * signalTowerOffsetX, 0, signalTowerZ]}>
+            <mesh position={[0, 0.22, 0]} castShadow receiveShadow>
+              <boxGeometry args={[signalTowerBaseWidth, 0.42, signalTowerBaseDepth]} />
+              <meshStandardMaterial color="#d8e4ec" emissive={accentColor} emissiveIntensity={0.025} metalness={0.08} roughness={0.64} />
+            </mesh>
+            <mesh position={[0, (signalTowerHeight * 0.5) + 0.42, 0]} castShadow receiveShadow>
+              <boxGeometry args={[signalTowerWidth, signalTowerHeight, signalTowerDepth]} />
+              <meshStandardMaterial color="#132233" emissive={accentColor} emissiveIntensity={0.045} metalness={0.14} roughness={0.46} />
+            </mesh>
+            <mesh position={[0, signalTowerAccentY, (signalTowerDepth * 0.5) + 0.035]}>
+              <boxGeometry args={[signalTowerWidth * 0.46, signalTowerAccentHeight, 0.07]} />
+              <meshBasicMaterial color={accentColor} toneMapped={false} />
+            </mesh>
+            <mesh position={[0, signalTowerHeight + 0.8, 0]} castShadow>
+              <cylinderGeometry args={[signalTowerWidth * 0.82, signalTowerWidth * 0.58, 0.58, 10]} />
+              <meshStandardMaterial color="#e6f3fa" emissive={accentColor} emissiveIntensity={0.18} metalness={0.12} roughness={0.3} />
+            </mesh>
+            <mesh position={[0, signalTowerHeight + 1.28, 0]}>
+              <sphereGeometry args={[signalTowerWidth * 0.54, 12, 12]} />
+              <meshBasicMaterial color={accentColor} toneMapped={false} />
+            </mesh>
+          </group>
+        ))}
         <mesh position={[0, wallY, mediaPanelZ]}>
           <planeGeometry args={[screenSurfaceWidth, screenSurfaceHeight]} />
           {screenUrl ? (
