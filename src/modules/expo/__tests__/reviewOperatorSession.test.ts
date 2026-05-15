@@ -4,6 +4,15 @@ import {
   buildReviewOperatorZones,
   resolveReviewOperatorZoneStartView,
 } from '../runtime/operator/model/reviewOperatorSession.js';
+import { buildCanonicalWorldPlanFromWorldContract } from '../runtime/planning/index.js';
+import {
+  buildBoothWorldObjectRegistry,
+  buildCityWorldObjectRegistry,
+  buildGroundWorldObjectRegistry,
+  buildStadiumWorldObjectRegistry,
+} from '../runtime/world/inspection/worldObjectRegistry.js';
+import { PRODUCTION_SAFE_COMPANIES, PRODUCTION_SAFE_SECTORS } from '../state/expoRuntime.js';
+import { buildExpoWorldContract } from '../../../shared/expo/worldContract.js';
 
 const zones = buildReviewOperatorZones();
 const zoneIds = zones.map((zone) => zone.id);
@@ -62,6 +71,46 @@ assert.ok(zones.every((zone) => zone.expectedVisibleLayers.length > 0));
 assert.ok(zones.every((zone) => zone.watchItems.length > 0));
 assert.ok(zones.every((zone) => zone.startView.position.length === 3));
 assert.ok(zones.every((zone) => zone.startView.lookAt.length === 3));
+
+const productionSafeWorld = buildExpoWorldContract({
+  companies: PRODUCTION_SAFE_COMPANIES,
+  sectors: PRODUCTION_SAFE_SECTORS,
+});
+const productionSafePlan = buildCanonicalWorldPlanFromWorldContract(productionSafeWorld);
+const productionSafeRearCampusPlan = productionSafePlan.zones.find((zone) => zone.id === 'rear-campus');
+const productionSafeRearCampus = productionSafeRearCampusPlan?.zoneExtension?.rearCampus;
+assert.ok(productionSafeRearCampusPlan);
+assert.ok(productionSafeRearCampus);
+const productionSafeRegistryEntries = [
+  ...buildGroundWorldObjectRegistry(),
+  ...buildCityWorldObjectRegistry({
+    districtCount: productionSafeWorld.districtPrograms.length,
+    districtStride: productionSafePlan.districtStride,
+    plan: productionSafePlan,
+  }),
+  ...buildStadiumWorldObjectRegistry({
+    campusCenterZ: productionSafeRearCampus.campusCenterZ,
+    rearCampusPlan: productionSafeRearCampusPlan,
+  }),
+  ...buildBoothWorldObjectRegistry(productionSafeWorld.boothPlacements),
+];
+const productionSafeRegistryById = new Map(productionSafeRegistryEntries.map((entry) => [entry.id, entry]));
+for (const entry of productionSafeRegistryEntries) {
+  for (const alias of entry.aliases ?? []) {
+    if (!productionSafeRegistryById.has(alias)) {
+      productionSafeRegistryById.set(alias, entry);
+    }
+  }
+}
+for (const zone of zones) {
+  const registryTargetIds = [...zone.expectedKeyObjectIds, ...(zone.camera?.targetIds ?? [])];
+  for (const targetId of registryTargetIds) {
+    assert.ok(
+      productionSafeRegistryById.has(targetId),
+      `${zone.id} operator target ${targetId} must resolve in production-safe world registry`,
+    );
+  }
+}
 
 const screenSurfaceTargetsById = new Map<string, string[]>();
 const allowedDuplicateScreenSurfaceTargetZones = new Set([
