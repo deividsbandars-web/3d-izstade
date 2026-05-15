@@ -93,32 +93,6 @@ function ScreenFirstEngagementPad({
         <boxGeometry args={[padWidth * 0.46, 0.06, 0.14 * scale]} />
         <meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={0.18} metalness={0.1} roughness={0.24} />
       </mesh>
-      <mesh position={[0, 0.31, -padDepth * 0.78]} rotation={[-Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[0.72 * scale, 1.04 * scale, 44]} />
-        <meshBasicMaterial color={accentColor} transparent opacity={0.28} depthWrite={false} side={THREE.DoubleSide} />
-      </mesh>
-      <mesh position={[0, 0.32, -padDepth * 0.78]} rotation={[-Math.PI / 2, 0, 0]}>
-        <circleGeometry args={[0.42 * scale, 36]} />
-        <meshBasicMaterial color="#f8fbfe" transparent opacity={0.12} depthWrite={false} side={THREE.DoubleSide} />
-      </mesh>
-      <mesh position={[0, 0.56, -padDepth * 0.78]} castShadow receiveShadow>
-        <cylinderGeometry args={[0.56 * scale, 0.68 * scale, 0.22 * scale, 24]} />
-        <meshStandardMaterial color="#102033" emissive={accentColor} emissiveIntensity={0.08} metalness={0.18} roughness={0.36} />
-      </mesh>
-      <mesh position={[0, 1.02, -padDepth * 0.78]} rotation={[0.18, Math.PI / 4, 0.1]} castShadow>
-        <octahedronGeometry args={[0.34 * scale, 0]} />
-        <meshStandardMaterial color="#f8fbfe" emissive={accentColor} emissiveIntensity={0.18} metalness={0.2} roughness={0.24} />
-      </mesh>
-      <mesh position={[0, 1.02, -padDepth * 0.78]}>
-        <torusGeometry args={[0.54 * scale, 0.025 * scale, 10, 36]} />
-        <meshBasicMaterial color={accentColor} transparent opacity={0.42} depthWrite={false} />
-      </mesh>
-      {[-1, 1].map((side) => (
-        <mesh key={`screen-first-pad-runner-${side}`} position={[side * padWidth * 0.18, 0.47, -padDepth * 0.5]} rotation={[0, side * 0.18, 0]} receiveShadow>
-          <boxGeometry args={[padWidth * 0.38, 0.055, 0.11 * scale]} />
-          <meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={0.16} metalness={0.12} roughness={0.28} />
-        </mesh>
-      ))}
       {ctaTiles.map((tile) => (
         <group key={`screen-first-pad-cta-${tile.id}`} position={[tile.x, 0.72, 0.2]}>
           <mesh castShadow receiveShadow>
