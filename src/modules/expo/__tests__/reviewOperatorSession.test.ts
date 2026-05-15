@@ -169,8 +169,8 @@ assert.ok(midStartDeep);
 const resolvedMidStartDeepView = resolveReviewOperatorZoneStartView(midStartDeep, new Map([
   ['screen-spine-primary-2', { position: [-184, 108, -1344] }],
 ]));
-assert.deepEqual(resolvedMidStartDeepView.lookAt, [-184, 156, -1344]);
-assert.deepEqual(resolvedMidStartDeepView.position, [246, 150, -1114]);
+assert.deepEqual(resolvedMidStartDeepView.lookAt, [-184, 204, -1344]);
+assert.deepEqual(resolvedMidStartDeepView.position, [176, 208, -1124]);
 
 const sponsorBoulevardLeft = zones.find((zone) => zone.id === 'sponsor-boulevard-left');
 assert.ok(sponsorBoulevardLeft);

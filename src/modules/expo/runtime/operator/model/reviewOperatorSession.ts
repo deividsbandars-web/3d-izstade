@@ -353,8 +353,8 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       intent: 'mid-start-deep-review',
       label: 'Mid Start Deep',
       camera: {
-        lookAtOffset: [0, 48, 0],
-        positionOffset: [430, 42, 230],
+        lookAtOffset: [0, 96, 0],
+        positionOffset: [360, 100, 220],
         targetIds: ['screen-spine-primary-2'],
       },
       startView: {
