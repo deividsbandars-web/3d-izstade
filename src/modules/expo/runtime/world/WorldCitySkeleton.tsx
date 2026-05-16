@@ -1,7 +1,7 @@
 import { useCallback, useMemo } from 'react';
 import type { ExpoBoothPlacement } from '../../layout-engine';
 import type { ExpoDistrictProgramSummary, ExpoWorldVisualProfile } from '../../world-contract';
-import type { ExpoPlanningSectionId } from '../planning/types';
+import type { ExpoPlanningSectionId, ExpoVerticalAccessNode } from '../planning/types';
 import { buildCanonicalWorldPlan, EXPO_CANONICAL_DISTRICT_STRIDE } from '../planning';
 import { useWorldInspectionRegistry } from './inspection/worldInspectionState';
 import { buildCityWorldObjectRegistry, buildGroundWorldObjectRegistry } from './inspection/worldObjectRegistry';
@@ -13,6 +13,7 @@ import { WorldCityScreenAssignments } from './WorldCityScreenAssignments';
 import { WorldCityScreenSockets } from './WorldCityScreenSockets';
 import { WorldCityScreenSurfaces } from './WorldCityScreenSurfaces';
 import { WorldCityTowers } from './WorldCityTowers';
+import { WorldVerticalAccessNodes } from './WorldVerticalAccessNodes';
 import { WorldCityWaterCourt } from './WorldCityWaterCourt';
 
 export function WorldCitySkeleton({
@@ -20,6 +21,7 @@ export function WorldCitySkeleton({
   districtPrograms,
   playerPosition = [0, 0, 0],
   sectionToggles = { arrival: true, left: true, middle: true, right: true },
+  verticalAccessNodes,
   visualProfile,
 }: {
   boothPlacements: ExpoBoothPlacement[];
@@ -31,6 +33,7 @@ export function WorldCitySkeleton({
     middle: boolean;
     right: boolean;
   };
+  verticalAccessNodes?: ExpoVerticalAccessNode[];
   visualProfile: ExpoWorldVisualProfile;
 }) {
   const districtStride = EXPO_CANONICAL_DISTRICT_STRIDE;
@@ -39,6 +42,7 @@ export function WorldCitySkeleton({
     [boothPlacements, districtPrograms, districtStride, visualProfile]
   );
   const stadiumReserve = canonicalWorldPlan.stadiumReserve;
+  const renderedVerticalAccessNodes = verticalAccessNodes ?? canonicalWorldPlan.verticalSystem.accessNodes;
 
   const isVisibleBySections = useCallback((sections?: ExpoPlanningSectionId[]) => {
     if (!sections || sections.length === 0) {
@@ -104,6 +108,10 @@ export function WorldCitySkeleton({
         screenAssignments,
         screenSockets,
         showcasePlazas: filteredShowcasePlazas,
+        verticalSystem: {
+          ...canonicalWorldPlan.verticalSystem,
+          accessNodes: renderedVerticalAccessNodes,
+        },
       },
     }),
   ], [
@@ -117,6 +125,7 @@ export function WorldCitySkeleton({
     filteredScreenSurfaces,
     filteredShowcasePlazas,
     filteredTowerLandmarks,
+    renderedVerticalAccessNodes,
     screenAssignments,
     screenSockets,
   ]);
@@ -134,6 +143,10 @@ export function WorldCitySkeleton({
         masses={filteredMasses}
         stadiumReserve={stadiumReserve}
         visualProfile={visualProfile}
+      />
+      <WorldVerticalAccessNodes
+        accessNodes={renderedVerticalAccessNodes}
+        playerPosition={playerPosition}
       />
       <WorldCityPerimeter
         accent={visualProfile.global.hudAccent}

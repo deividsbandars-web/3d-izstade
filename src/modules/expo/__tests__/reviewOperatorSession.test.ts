@@ -24,7 +24,7 @@ function assertVectorClose(actual: number[], expected: number[]) {
   });
 }
 
-assert.equal(zones.length, 42);
+assert.equal(zones.length, 43);
 assert.equal(DEFAULT_REVIEW_OPERATOR_ZONE_ID, 'arrival-gate');
 assert.deepEqual(zoneIds, [
   'arrival-gate',
@@ -41,6 +41,7 @@ assert.deepEqual(zoneIds, [
   'right-marquee-close',
   'right-edge-far',
   'tower-cluster',
+  'tower-cluster-vertical-pilot',
   'tower-cluster-reverse-wide',
   'array-band',
   'array-band-south',
@@ -256,6 +257,17 @@ const resolvedTowerClusterView = resolveReviewOperatorZoneStartView(towerCluster
 ]));
 assertVectorClose(resolvedTowerClusterView.lookAt, [518.8230613285318, 163.04, -518.881157475684]);
 assertVectorClose(resolvedTowerClusterView.position, [258.8230613285318, 257.04, -158.881157475684]);
+
+const towerClusterVerticalPilot = zones.find((zone) => zone.id === 'tower-cluster-vertical-pilot');
+assert.ok(towerClusterVerticalPilot);
+const resolvedTowerClusterVerticalPilotView = resolveReviewOperatorZoneStartView(towerClusterVerticalPilot, new Map([
+  ['tower-cluster-vertical-pilot-core-left', { position: [764, 54, -680] }],
+  ['tower-cluster-vertical-pilot-core-right', { position: [1036, 54, -680] }],
+  ['tower-cluster-vertical-pilot-level-1-deck', { position: [900, 57, -650] }],
+  ['tower-cluster-vertical-pilot-level-2-deck', { position: [900, 108, -680] }],
+]));
+assert.deepEqual(resolvedTowerClusterVerticalPilotView.lookAt, [900, 100.25, -672.5]);
+assert.deepEqual(resolvedTowerClusterVerticalPilotView.position, [1320, 296.25, -972.5]);
 
 const stadiumRightFlank = zones.find((zone) => zone.id === 'stadium-right-flank');
 assert.ok(stadiumRightFlank);

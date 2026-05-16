@@ -32,6 +32,7 @@ import type {
   ExpoPlanningZonePlan,
   ExpoZonePlannerContext,
 } from '../types';
+import { EXPO_VERTICAL_CITY_SYSTEM } from '../vertical/verticalCitySystem';
 import { buildArrivalZonePlan } from '../zones/arrival';
 import { buildCenterSpineZonePlan } from '../zones/center-spine';
 import { buildLeftDistrictZonePlan } from '../zones/left-district';
@@ -457,6 +458,7 @@ export function buildCanonicalWorldPlan(inputs: ExpoPlanningInputs): CanonicalWo
     screenSockets,
     showcasePlazas: pickZonePlanes(cityPlanes, (plane) => plane.id.includes('showcase') && shouldRenderPlane(plane)),
     stadiumReserve: geometry.stadiumReserve,
+    verticalSystem: EXPO_VERTICAL_CITY_SYSTEM,
     zones,
   };
 }

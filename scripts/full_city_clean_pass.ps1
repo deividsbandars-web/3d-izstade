@@ -106,6 +106,103 @@ function Test-OperatorTargetHit {
   return $false
 }
 
+function Resolve-OperatorLayerFromInspectableName {
+  param([string]$Name)
+
+  if (-not $Name) {
+    return $null
+  }
+
+  if ($Name.StartsWith('world-city-screen-surface-hit:')) {
+    return 'city-screen-surface'
+  }
+  if ($Name.StartsWith('world-city-screen:')) {
+    return 'city-screen-assignment'
+  }
+  if ($Name.StartsWith('world-stadium-screen-surface-hit:')) {
+    return 'stadium-screen-surface'
+  }
+  if ($Name.StartsWith('stadium-screen:')) {
+    return 'stadium-screen-assignment'
+  }
+
+  $prefix = ($Name -split ':')[0]
+  $knownLayers = @(
+    'booth',
+    'city-mass',
+    'city-plane',
+    'city-screen-assignment',
+    'city-screen-socket',
+    'city-screen-surface',
+    'city-tower',
+    'ground-base',
+    'ground-detail',
+    'mega-landmark',
+    'stadium-pavilion',
+    'stadium-plane',
+    'stadium-screen-assignment',
+    'stadium-screen-feed',
+    'stadium-screen-socket',
+    'stadium-screen-surface',
+    'stadium-structure',
+    'stadium-tower',
+    'vertical-access-node'
+  )
+
+  if ($knownLayers -contains $prefix) {
+    return $prefix
+  }
+
+  return $null
+}
+
+function Test-OperatorLayerHit {
+  param(
+    [object]$Snapshot,
+    [string]$Layer
+  )
+
+  if (-not $Snapshot -or -not $Layer) {
+    return $false
+  }
+
+  foreach ($sample in @($Snapshot.operatorHitSamples)) {
+    if (-not $sample) {
+      continue
+    }
+
+    foreach ($inspectableName in @($sample.clickStack)) {
+      $sampleLayer = Resolve-OperatorLayerFromInspectableName -Name ([string]$inspectableName)
+      if ($sampleLayer -eq $Layer) {
+        return $true
+      }
+    }
+  }
+
+  return $false
+}
+
+function Test-ReviewWarningVerified {
+  param(
+    [object]$Snapshot,
+    [string]$Warning
+  )
+
+  if (-not $Snapshot -or -not $Warning) {
+    return $false
+  }
+
+  if ($Warning -match '^Missing expected layer:\s*(.+)$') {
+    return Test-OperatorLayerHit -Snapshot $Snapshot -Layer ([string]$Matches[1])
+  }
+
+  if ($Warning -match '^Missing expected object:\s*(.+)$') {
+    return Test-OperatorTargetHit -Snapshot $Snapshot -ObjectId ([string]$Matches[1])
+  }
+
+  return $false
+}
+
 function Get-ScreenshotQualityStats {
   param(
     [string]$Path,
@@ -524,13 +621,22 @@ $allIssues = New-Object 'System.Collections.Generic.List[object]'
 foreach ($zone in $reviewRaw) {
   $zoneId = [string]$zone.zoneId
   $zoneIssues = New-Object 'System.Collections.Generic.List[object]'
+  $captureSnapshot = $captureSnapshotByZone[$zoneId]
+  $liveValidation = if ($captureSnapshot) { $captureSnapshot.operatorZoneValidation } else { $null }
+  $unverifiedReviewWarnings = New-Object 'System.Collections.Generic.List[string]'
+
+  foreach ($warning in @($zone.warnings)) {
+    if ($warning -and -not (Test-ReviewWarningVerified -Snapshot $captureSnapshot -Warning ([string]$warning))) {
+      [void]$unverifiedReviewWarnings.Add([string]$warning)
+    }
+  }
 
   $statusSeverity = Resolve-IssueSeverityFromStatus -Status ([string]$zone.status)
-  if ($zone.status -and [string]$zone.status -ne 'ok') {
+  if ($zone.status -and [string]$zone.status -ne 'ok' -and ($unverifiedReviewWarnings.Count -gt 0 -or @($zone.warnings).Count -eq 0)) {
     Add-UniqueIssue -Target $zoneIssues -Issue (New-Issue -Severity $statusSeverity -Code 'zone-status' -Message "Zone status is '$($zone.status)'.")
   }
 
-  foreach ($warning in @($zone.warnings)) {
+  foreach ($warning in @($unverifiedReviewWarnings)) {
     if ($warning) {
       Add-UniqueIssue -Target $zoneIssues -Issue (New-Issue -Severity 'high' -Code 'review-warning' -Message ([string]$warning))
     }
@@ -548,8 +654,6 @@ foreach ($zone in $reviewRaw) {
     }
   }
 
-  $captureSnapshot = $captureSnapshotByZone[$zoneId]
-  $liveValidation = if ($captureSnapshot) { $captureSnapshot.operatorZoneValidation } else { $null }
   if ($liveValidation) {
     $liveStatus = [string]$liveValidation.status
     $unverifiedMissingExpectedObjectIds = New-Object 'System.Collections.Generic.List[string]'
@@ -558,11 +662,17 @@ foreach ($zone in $reviewRaw) {
         [void]$unverifiedMissingExpectedObjectIds.Add([string]$id)
       }
     }
+    $unverifiedMissingExpectedLayers = New-Object 'System.Collections.Generic.List[string]'
+    foreach ($layer in @($liveValidation.missingExpectedLayers)) {
+      if ($layer -and -not (Test-OperatorLayerHit -Snapshot $captureSnapshot -Layer ([string]$layer))) {
+        [void]$unverifiedMissingExpectedLayers.Add([string]$layer)
+      }
+    }
 
     $hasUnverifiedLiveValidationIssue = (
       $unverifiedMissingExpectedObjectIds.Count -gt 0 `
       -or @($liveValidation.unknownExpectedObjectIds).Count -gt 0 `
-      -or @($liveValidation.missingExpectedLayers).Count -gt 0 `
+      -or $unverifiedMissingExpectedLayers.Count -gt 0 `
       -or @($liveValidation.forbiddenObjectIdsPresent).Count -gt 0 `
       -or @($liveValidation.forbiddenExpectedLayersPresent).Count -gt 0
     )
@@ -581,7 +691,7 @@ foreach ($zone in $reviewRaw) {
         Add-UniqueIssue -Target $zoneIssues -Issue (New-Issue -Severity 'high' -Code 'live-unknown-expected-object' -Message "Live snapshot unknown expected object: $id")
       }
     }
-    foreach ($layer in @($liveValidation.missingExpectedLayers)) {
+    foreach ($layer in @($unverifiedMissingExpectedLayers)) {
       if ($layer) {
         Add-UniqueIssue -Target $zoneIssues -Issue (New-Issue -Severity 'medium' -Code 'live-missing-expected-layer' -Message "Live snapshot missing expected layer: $layer")
       }

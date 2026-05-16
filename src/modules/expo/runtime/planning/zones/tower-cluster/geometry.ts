@@ -1,4 +1,5 @@
 import type { CityGeometryPlanningSource, CityMass, CityPlane, CityTower, ExpoZonePlannerContext } from '../../types';
+import { createVerticalPlacement } from '../../vertical/verticalCitySystem';
 
 const TOWER_CLUSTER_GEOMETRY_SOURCE_FILE = 'src/modules/expo/runtime/planning/zones/tower-cluster/geometry.ts';
 
@@ -62,11 +63,82 @@ function buildTowerPodiumMasses(towers: CityTower[]): CityMass[] {
   });
 }
 
+function buildTowerClusterVerticalPilotMasses(): CityMass[] {
+  const planningSource = createTowerClusterPlanningSource('buildTowerClusterVerticalPilotMasses', 'tower-cluster-vertical-pilot-mass');
+
+  return [
+    {
+      color: '#8f9ea8',
+      id: 'tower-cluster-vertical-pilot-core-left',
+      planningSource,
+      position: [764, 0, -680],
+      role: 'structural',
+      size: [24, 108, 24],
+      vertical: createVerticalPlacement({
+        baseY: 0,
+        floorCount: 3,
+        floorHeight: 36,
+        heightBand: 'mid-rise',
+        level: 'ground',
+        verticalOwner: 'city',
+      }),
+    },
+    {
+      color: '#8f9ea8',
+      id: 'tower-cluster-vertical-pilot-core-right',
+      planningSource,
+      position: [1036, 0, -680],
+      role: 'structural',
+      size: [24, 108, 24],
+      vertical: createVerticalPlacement({
+        baseY: 0,
+        floorCount: 3,
+        floorHeight: 36,
+        heightBand: 'mid-rise',
+        level: 'ground',
+        verticalOwner: 'city',
+      }),
+    },
+    {
+      color: '#a2b0ba',
+      id: 'tower-cluster-vertical-pilot-level-1-deck',
+      planningSource,
+      position: [900, 0, -650],
+      role: 'structural',
+      size: [228, 18, 46],
+      vertical: createVerticalPlacement({
+        baseY: 48,
+        floorCount: 1,
+        floorHeight: 36,
+        heightBand: 'low-rise',
+        level: 'level-1',
+        verticalOwner: 'city',
+      }),
+    },
+    {
+      color: '#a2b0ba',
+      id: 'tower-cluster-vertical-pilot-level-2-deck',
+      planningSource,
+      position: [900, 0, -680],
+      role: 'structural',
+      size: [276, 24, 54],
+      vertical: createVerticalPlacement({
+        baseY: 96,
+        floorCount: 1,
+        floorHeight: 36,
+        heightBand: 'roof',
+        level: 'level-2',
+        verticalOwner: 'city',
+      }),
+    },
+  ];
+}
+
 export function buildTowerClusterZoneGeometry(context: ExpoZonePlannerContext) {
   const towers = context.geometry.towers.filter(isTowerClusterTower);
 
   return {
-    masses: buildTowerPodiumMasses(towers),
+    masses: [...buildTowerPodiumMasses(towers), ...buildTowerClusterVerticalPilotMasses()],
     planes: buildTowerPodiumPlanes(towers),
     towers,
   };

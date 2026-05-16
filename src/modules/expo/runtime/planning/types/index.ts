@@ -17,6 +17,17 @@ import type {
   CityTower,
   StadiumReserve,
 } from '../legacy/worldCityGeometry';
+import type {
+  ExpoVerticalAccessMode,
+  ExpoVerticalAccessNode,
+  ExpoVerticalCitySystemPlan,
+  ExpoVerticalHeightBand,
+  ExpoVerticalLevelDefinition,
+  ExpoVerticalLevelId,
+  ExpoVerticalOwner,
+  ExpoVerticalPlacement,
+  ExpoVerticalWalkableRegion,
+} from '../vertical/verticalCitySystem';
 
 export type {
   CanonicalPrimitive,
@@ -34,6 +45,17 @@ export type {
   CityScreenSurface,
   CityTower,
   StadiumReserve,
+};
+export type {
+  ExpoVerticalAccessMode,
+  ExpoVerticalAccessNode,
+  ExpoVerticalCitySystemPlan,
+  ExpoVerticalHeightBand,
+  ExpoVerticalLevelDefinition,
+  ExpoVerticalLevelId,
+  ExpoVerticalOwner,
+  ExpoVerticalPlacement,
+  ExpoVerticalWalkableRegion,
 };
 
 export type ExpoPlanningZoneId =
@@ -168,6 +190,7 @@ export type CanonicalWorldPlan = {
   screenSockets: CityScreenSocket[];
   showcasePlazas: CityPlane[];
   stadiumReserve: StadiumReserve;
+  verticalSystem: ExpoVerticalCitySystemPlan;
   zones: ExpoPlanningZonePlan[];
 };
 

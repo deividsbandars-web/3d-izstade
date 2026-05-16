@@ -4,6 +4,11 @@ import type {
   CityScreenSocket,
   CityScreenSurface,
   CityTower,
+  ExpoVerticalAccessNode,
+  ExpoVerticalHeightBand,
+  ExpoVerticalLevelId,
+  ExpoVerticalOwner,
+  ExpoVerticalPlacement,
   ExpoPlanningSectionId,
   ExpoPlanningZonePlan,
 } from '../../planning/types';
@@ -45,7 +50,8 @@ export type WorldObjectLayer =
   | 'stadium-screen-socket'
   | 'stadium-screen-surface'
   | 'stadium-structure'
-  | 'stadium-tower';
+  | 'stadium-tower'
+  | 'vertical-access-node';
 
 export type WorldObjectRegistryEntry = {
   aliases?: string[];
@@ -55,6 +61,11 @@ export type WorldObjectRegistryEntry = {
   id: string;
   interactionOwner: string | null;
   layer: WorldObjectLayer;
+  baseY?: number;
+  floorCount?: number;
+  floorHeight?: number;
+  heightBand?: ExpoVerticalHeightBand;
+  level?: ExpoVerticalLevelId;
   material?: {
     color?: string;
     opacity?: number;
@@ -72,6 +83,7 @@ export type WorldObjectRegistryEntry = {
   sourceFile: string;
   sourceFunction: string;
   sourceKind: string;
+  verticalOwner?: ExpoVerticalOwner;
 };
 
 type BuildCityWorldObjectRegistryArgs = {
@@ -92,8 +104,22 @@ function createEntry(entry: WorldObjectRegistryEntry): WorldObjectRegistryEntry 
 function baseAnchoredBoxCenter(
   position: [number, number, number],
   size: [number, number, number],
+  baseY = 0,
 ): [number, number, number] {
-  return [position[0], size[1] * 0.5, position[2]];
+  return [position[0], baseY + (size[1] * 0.5), position[2]];
+}
+
+function verticalRegistryFields(vertical?: ExpoVerticalPlacement) {
+  return vertical
+    ? {
+        baseY: vertical.baseY,
+        floorCount: vertical.floorCount,
+        floorHeight: vertical.floorHeight,
+        heightBand: vertical.heightBand,
+        level: vertical.level,
+        verticalOwner: vertical.verticalOwner,
+      }
+    : {};
 }
 
 function resolveCityTowerAuditSize(tower: CityTower): [number, number, number] {
@@ -278,6 +304,29 @@ function buildCityPerimeterEntries(stadiumReserve: CanonicalWorldPlan['stadiumRe
   }));
 }
 
+function buildVerticalAccessNodeEntries(nodes: ExpoVerticalAccessNode[]): WorldObjectRegistryEntry[] {
+  return nodes.map((node) => createEntry({
+    aliases: [node.label],
+    diagnosticOwners: [
+      'src/modules/expo/runtime/world/WorldVerticalAccessNodes.tsx',
+      'src/modules/expo/runtime/world/scene/ExpoWorldPlayerLayer.tsx',
+    ],
+    id: node.id,
+    interactionOwner: 'src/modules/expo/runtime/world/scene/ExpoWorldPlayerLayer.tsx',
+    layer: 'vertical-access-node',
+    planningRole: node.mode,
+    planningZone: node.zoneId,
+    position: [node.position[0], Math.max(5, node.position[1]), node.position[2]],
+    reviewTargetPosition: [node.position[0], Math.max(8, node.position[1] + 8), node.position[2]],
+    rotation: [0, 0, 0],
+    safeEditSeam: 'src/modules/expo/runtime/planning/vertical/verticalCitySystem.ts',
+    size: [node.radius * 2, 10, node.radius * 2],
+    sourceFile: 'src/modules/expo/runtime/planning/vertical/verticalCitySystem.ts',
+    sourceFunction: 'EXPO_VERTICAL_CITY_SYSTEM',
+    sourceKind: 'vertical-access-node',
+  }));
+}
+
 export function buildGroundWorldObjectRegistry(): WorldObjectRegistryEntry[] {
   return [
     createEntry({
@@ -324,13 +373,14 @@ export function buildCityWorldObjectRegistry({
       planningSections: mass.sections,
       planningRole: mass.role ?? null,
       planningZone: mass.planningZone ?? 'canonical-city',
-      position: baseAnchoredBoxCenter(mass.position, mass.size),
+      position: baseAnchoredBoxCenter(mass.position, mass.size, mass.vertical?.baseY),
       rotation: mass.rotation ?? [0, 0, 0],
       safeEditSeam: mass.planningSource?.safeEditSeam ?? 'src/modules/expo/runtime/planning/world-plan/buildCanonicalWorldPlan.ts',
       size: mass.size,
       sourceFile: mass.planningSource?.sourceFile ?? 'src/modules/expo/runtime/planning/world-plan/buildCanonicalWorldPlan.ts',
       sourceFunction: mass.planningSource?.sourceFunction ?? 'buildCanonicalWorldPlan',
       sourceKind: mass.planningSource?.sourceKind ?? 'city-mass',
+      ...verticalRegistryFields(mass.vertical),
     })),
     ...plan.filteredTowerLandmarks.map((tower) => {
       const size = resolveCityTowerAuditSize(tower);
@@ -345,13 +395,14 @@ export function buildCityWorldObjectRegistry({
         layer: 'city-tower',
         planningSections: tower.sections,
         planningZone: tower.planningZone ?? 'canonical-city',
-        position: baseAnchoredBoxCenter(tower.position, size),
+        position: baseAnchoredBoxCenter(tower.position, size, tower.vertical?.baseY),
         rotation: [0, 0, 0],
         safeEditSeam: tower.planningSource?.safeEditSeam ?? 'src/modules/expo/runtime/planning/world-plan/buildCanonicalWorldPlan.ts',
         size,
         sourceFile: tower.planningSource?.sourceFile ?? 'src/modules/expo/runtime/planning/world-plan/buildCanonicalWorldPlan.ts',
         sourceFunction: tower.planningSource?.sourceFunction ?? 'buildCanonicalWorldPlan',
         sourceKind: tower.planningSource?.sourceKind ?? 'city-tower',
+        ...verticalRegistryFields(tower.vertical),
       });
     }),
     ...plan.filteredScreenSurfaces.map((surface) => createEntry({
@@ -397,6 +448,7 @@ export function buildCityWorldObjectRegistry({
       planningZone: 'canonical-city',
       sockets: plan.screenSockets,
     }),
+    ...buildVerticalAccessNodeEntries(plan.verticalSystem.accessNodes),
     ...buildMegaLandmarkEntries({ districtCount, districtStride, stadiumReserve: plan.stadiumReserve }),
   ];
 }

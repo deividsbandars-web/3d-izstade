@@ -5,6 +5,7 @@ import { EXPO_CITY_QUALITY_TIER, EXPO_FEATURE_FLAGS, type ExpoMode } from '../..
 import type { ExpoBoothPlacement, ExpoSectorMarker } from '../../../layout-engine';
 import type { ExpoDistrictProgramSummary, ExpoWorldContract, ExpoWorldVisualProfile } from '../../../world-contract';
 import type { ExpoWalkRegion } from '../../../walk-region';
+import type { ExpoVerticalAccessNode } from '../../planning/types';
 import type { ExpoWorldLayerToggles, ExpoWorldSectionToggles } from '../debug/worldSceneDebugContract';
 import { CuratedSkylineRing } from '../CuratedSkylineRing';
 import { ExpoEvidenceProbe } from '../../../components/ExpoEvidenceProbe';
@@ -27,6 +28,7 @@ export function ExpoWorldSceneLayers({
   sectorMarkers,
   sectionToggles,
   sectionVisibleBoothPlacements,
+  verticalAccessNodes,
   visualProfile,
   walkRegions,
 }: {
@@ -42,6 +44,7 @@ export function ExpoWorldSceneLayers({
   sectorMarkers: ExpoSectorMarker[];
   sectionToggles: ExpoWorldSectionToggles;
   sectionVisibleBoothPlacements: ExpoBoothPlacement[];
+  verticalAccessNodes: ExpoVerticalAccessNode[];
   visualProfile: ExpoWorldVisualProfile;
   walkRegions: ExpoWalkRegion[];
 }) {
@@ -72,6 +75,7 @@ export function ExpoWorldSceneLayers({
           districtPrograms={districtPrograms}
           playerPosition={playerPosition}
           sectionToggles={sectionToggles}
+          verticalAccessNodes={verticalAccessNodes}
           visualProfile={visualProfile}
         />
       )}

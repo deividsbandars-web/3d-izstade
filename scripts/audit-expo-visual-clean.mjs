@@ -273,6 +273,89 @@ function countLayersNearPlayer(snapshot, maxDistance) {
   return counts;
 }
 
+function resolveLayerFromInspectableName(value) {
+  if (typeof value !== 'string') {
+    return null;
+  }
+
+  if (value.startsWith('world-city-screen-surface-hit:')) {
+    return 'city-screen-surface';
+  }
+  if (value.startsWith('world-city-screen:')) {
+    return 'city-screen-assignment';
+  }
+  if (value.startsWith('world-stadium-screen-surface-hit:')) {
+    return 'stadium-screen-surface';
+  }
+  if (value.startsWith('stadium-screen:')) {
+    return 'stadium-screen-assignment';
+  }
+
+  const prefix = value.split(':')[0];
+  return [
+    'booth',
+    'city-mass',
+    'city-plane',
+    'city-screen-assignment',
+    'city-screen-socket',
+    'city-screen-surface',
+    'city-tower',
+    'ground-base',
+    'ground-detail',
+    'mega-landmark',
+    'stadium-pavilion',
+    'stadium-plane',
+    'stadium-screen-assignment',
+    'stadium-screen-feed',
+    'stadium-screen-socket',
+    'stadium-screen-surface',
+    'stadium-structure',
+    'stadium-tower',
+    'vertical-access-node',
+  ].includes(prefix)
+    ? prefix
+    : null;
+}
+
+function collectSampleVisibleLayers(snapshot) {
+  const layers = new Set();
+  const samples = Array.isArray(snapshot?.operatorHitSamples) ? snapshot.operatorHitSamples : [];
+
+  for (const sample of samples) {
+    const clickStack = Array.isArray(sample?.clickStack) ? sample.clickStack : [];
+    for (const inspectableName of clickStack) {
+      const layer = resolveLayerFromInspectableName(inspectableName);
+      if (layer) {
+        layers.add(layer);
+      }
+    }
+  }
+
+  return layers;
+}
+
+function sampleHitsExpectedObject(snapshot, expectedObjectIds) {
+  if (!Array.isArray(expectedObjectIds) || expectedObjectIds.length === 0) {
+    return false;
+  }
+
+  const samples = Array.isArray(snapshot?.operatorHitSamples) ? snapshot.operatorHitSamples : [];
+  for (const sample of samples) {
+    const stack = Array.isArray(sample?.clickStack) ? sample.clickStack : [];
+    const hitStrings = [
+      typeof sample?.clickTarget === 'string' ? sample.clickTarget : '',
+      typeof sample?.targetObjectId === 'string' ? sample.targetObjectId : '',
+      ...stack.filter((entry) => typeof entry === 'string'),
+    ];
+
+    if (expectedObjectIds.some((objectId) => hitStrings.some((hit) => hit.includes(objectId)))) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 function auditZone({ imageStats, manifestEntry, snapshot, zoneId }) {
   const findings = [];
   const full = imageStats.regions.full;
@@ -285,13 +368,17 @@ function auditZone({ imageStats, manifestEntry, snapshot, zoneId }) {
   const nearbyLayerCounts = countLayersNearPlayer(snapshot, 420);
   const expectedLayers = new Set(zone?.expectedVisibleLayers ?? []);
   const expectedKeyObjectIds = Array.isArray(zone?.expectedKeyObjectIds) ? zone.expectedKeyObjectIds : [];
-  const actualLayers = new Set(snapshot?.operatorZoneValidation?.actualVisibleLayers ?? []);
+  const actualLayers = new Set([
+    ...(snapshot?.operatorZoneValidation?.actualVisibleLayers ?? []),
+    ...collectSampleVisibleLayers(snapshot),
+  ]);
   const centerTarget = typeof snapshot?.centerTarget === 'string' ? snapshot.centerTarget : '';
   const hasExpectedCenterTarget = expectedKeyObjectIds.some((objectId) => centerTarget.includes(objectId));
+  const hasExpectedSampleTarget = sampleHitsExpectedObject(snapshot, expectedKeyObjectIds);
   const isValidatedPerimeterCornerFocus = typeof zone?.intent === 'string'
     && zone.intent.includes('perimeter-corner-review')
     && expectedKeyObjectIds.length > 0
-    && hasExpectedCenterTarget;
+    && (hasExpectedCenterTarget || hasExpectedSampleTarget);
   const validationStatus = String(snapshot?.operatorZoneValidation?.status ?? '').toLowerCase();
   const isValidatedBoothFocus = zoneId.startsWith('sponsor-boulevard-')
     && expectedLayers.has('booth')
@@ -377,6 +464,7 @@ function auditZone({ imageStats, manifestEntry, snapshot, zoneId }) {
     && zone.intent.includes('perimeter-corner-review')
     && expectedKeyObjectIds.length > 0
     && !hasExpectedCenterTarget
+    && !hasExpectedSampleTarget
   ) {
     pushFinding(
       findings,
@@ -387,6 +475,7 @@ function auditZone({ imageStats, manifestEntry, snapshot, zoneId }) {
       {
         centerTarget: centerTarget || null,
         expectedKeyObjectIds,
+        hasExpectedSampleTarget,
       },
       ['src/modules/expo/runtime/operator/model/reviewOperatorSession.ts'],
       false,

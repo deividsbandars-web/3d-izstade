@@ -504,6 +504,35 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
     },
     {
       expectedKeyObjectIds: [
+        'tower-cluster-vertical-pilot-level-2-deck',
+      ],
+      expectedVisibleLayers: ['city-mass'],
+      id: 'tower-cluster-vertical-pilot',
+      intent: 'tower-cluster-vertical-system-review',
+      label: 'Tower Cluster Vertical Pilot',
+      camera: {
+        lookAtOffset: [0, 32, 0],
+        positionOffset: [420, 228, -300],
+        targetIds: [
+          'tower-cluster-vertical-pilot-core-left',
+          'tower-cluster-vertical-pilot-core-right',
+          'tower-cluster-vertical-pilot-level-1-deck',
+          'tower-cluster-vertical-pilot-level-2-deck',
+        ],
+      },
+      startView: {
+        lookAt: [900, 104, -680],
+        position: [1320, 300, -980],
+        source: 'arrival-main',
+      },
+      watchItems: [
+        'vertical pilot deck readability',
+        'multi-floor core spacing',
+        'level metadata traceability',
+      ],
+    },
+    {
+      expectedKeyObjectIds: [
         'arrival-core-hero-tower-right-tower-ribbon',
       ],
       expectedVisibleLayers: ['city-screen-surface'],

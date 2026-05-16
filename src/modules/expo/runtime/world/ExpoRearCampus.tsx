@@ -12,6 +12,10 @@ import { ExpoRearCampusRecoveredStructures } from './ExpoRearCampusRecoveredStru
 import { ExpoRearCampusStructures } from './ExpoRearCampusStructures';
 import { buildRearCampusScreenHostShells } from './rearCampusScreenHosts';
 import {
+  buildRenderedRearCampusRegistryPlan,
+  filterRenderedRearCampusSidePavilions,
+} from './rearCampusRenderPolicy';
+import {
   ColliderMaterial,
   usePlayerColliderRegistration,
 } from './WorldSceneSupport';
@@ -40,11 +44,6 @@ const EMPTY_PLANNING_GEOMETRY = {
   skybridgeMasses: [],
   towers: [],
 };
-
-const RENDERED_REAR_CAMPUS_PAVILION_IDS = new Set([
-  'rear-campus-event-pavilion-left',
-  'rear-campus-event-pavilion-right',
-]);
 
 function resolvePerimeterMaterial(connector: { accent: string; id: string }) {
   switch (connector.accent) {
@@ -93,10 +92,7 @@ export function ExpoRearCampus({
   const stadiumBackWallZ = rearCampus?.stadiumBackWallZ ?? campusCenterZ - 1520;
   const accent = visualProfile.global.hudAccent;
   usePlayerColliderRegistration(campusColliderRef, 'rear-campus-collider');
-  const filteredStadiumForecourts = (rearCampus?.forecourts ?? []).filter(() => false);
-  const filteredStadiumSidePavilions = (rearCampus?.sidePavilions ?? []).filter((pavilion) => (
-    RENDERED_REAR_CAMPUS_PAVILION_IDS.has(pavilion.id)
-  ));
+  const filteredStadiumSidePavilions = filterRenderedRearCampusSidePavilions(rearCampus?.sidePavilions ?? []);
   const filteredStadiumLandmarkTowers = (rearCampus?.landmarkTowers ?? []).filter(() => false);
   const perimeterConnectors = rearCampus?.perimeterConnectors ?? [];
   const screenHostShells = useMemo(
@@ -106,31 +102,8 @@ export function ExpoRearCampus({
 
   const stadiumInspectionEntries = useMemo(() => buildStadiumWorldObjectRegistry({
     campusCenterZ,
-    rearCampusPlan: {
-      ...rearCampusPlan,
-      assignments: rearCampusPlan.assignments,
-      planes: filteredStadiumForecourts.map((plane) => ({
-        color: plane.color,
-        id: plane.id,
-        position: plane.position,
-        role: 'decorative',
-        size: plane.size,
-      })),
-      screenSockets: rearCampusPlan.screenSockets,
-      screenSurfaces: rearCampusPlan.screenSurfaces,
-      towers: rearCampusPlan.towers,
-      zoneExtension: {
-        rearCampus: rearCampus
-          ? {
-              ...rearCampus,
-              forecourts: filteredStadiumForecourts,
-              landmarkTowers: filteredStadiumLandmarkTowers,
-              sidePavilions: filteredStadiumSidePavilions,
-            }
-          : undefined,
-      },
-    },
-  }), [campusCenterZ, filteredStadiumForecourts, filteredStadiumLandmarkTowers, filteredStadiumSidePavilions, rearCampus, rearCampusPlan]);
+    rearCampusPlan: buildRenderedRearCampusRegistryPlan(rearCampusPlan),
+  }), [campusCenterZ, rearCampusPlan]);
   useWorldInspectionRegistry('stadium', stadiumInspectionEntries);
 
   return (

@@ -51,6 +51,11 @@ export function WorldCityMasses({
     <>
       {masses.map((mass) => {
           const intent = mass.renderIntent;
+          const verticalBaseY = mass.vertical?.baseY ?? 0;
+          const floorBandYs = mass.vertical && mass.vertical.floorCount > 1
+            ? Array.from({ length: mass.vertical.floorCount - 1 }, (_, index) => (index + 1) * mass.vertical!.floorHeight)
+                .filter((floorY) => floorY > 4 && floorY < mass.size[1] - 4)
+            : [];
 
           if (intent?.skipBase) {
             return null;
@@ -60,7 +65,7 @@ export function WorldCityMasses({
             <group
               key={mass.id}
               name={`city-mass:${mass.id}`}
-              position={[mass.position[0], 0, mass.position[2]]}
+              position={[mass.position[0], verticalBaseY, mass.position[2]]}
               rotation={mass.rotation ?? [0, 0, 0]}
             >
               <mesh receiveShadow position={[0, mass.size[1] * 0.5, 0]}>
@@ -114,6 +119,12 @@ export function WorldCityMasses({
                   <meshStandardMaterial color="#91a0ab" emissive="#bdd7e6" emissiveIntensity={0.01} roughness={0.46} metalness={0.16} />
                 </mesh>
               )}
+              {floorBandYs.map((floorY) => (
+                <mesh key={`${mass.id}:floor-band:${floorY}`} position={[0, floorY, mass.size[2] * 0.51]}>
+                  <boxGeometry args={[Math.max(12, mass.size[0] * 0.86), 1.6, 2.2]} />
+                  <meshStandardMaterial color="#c8d8e2" emissive="#bfe8ff" emissiveIntensity={0.014} roughness={0.42} metalness={0.16} />
+                </mesh>
+              ))}
             </group>
           );
         })}

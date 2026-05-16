@@ -5,6 +5,7 @@ import {
   buildGroundWorldObjectRegistry,
   buildStadiumWorldObjectRegistry,
 } from '../runtime/world/inspection/worldObjectRegistry.js';
+import { EXPO_VERTICAL_CITY_SYSTEM } from '../runtime/planning/vertical/verticalCitySystem.js';
 import { resolveRearCampusScreenHostId } from '../runtime/world/rearCampusScreenHosts.js';
 import type {
   CanonicalWorldPlan,
@@ -29,6 +30,21 @@ const cityMass: CityMass = {
   id: 'city-mass-1',
   position: [10, 20, -40],
   size: [120, 180, 90],
+};
+
+const verticalCityMass: CityMass = {
+  color: '#667788',
+  id: 'city-vertical-mass-1',
+  position: [260, 0, -280],
+  size: [80, 72, 54],
+  vertical: {
+    baseY: 96,
+    floorCount: 2,
+    floorHeight: 36,
+    heightBand: 'mid-rise',
+    level: 'level-2',
+    verticalOwner: 'city',
+  },
 };
 
 const cityTower: CityTower = {
@@ -112,7 +128,7 @@ const cityPlan: CanonicalWorldPlan = {
   boothForecourtPlanes: [cityPlane],
   districtStride: 548,
   filteredCityPlanes: [cityPlane],
-  filteredMasses: [cityMass],
+  filteredMasses: [cityMass, verticalCityMass],
   filteredScreenSurfaces: [citySurface, semanticTowerSurface],
   filteredTowerLandmarks: [cityTower, semanticTower],
   promenadeAxisPlanes: [cityPlane],
@@ -125,6 +141,7 @@ const cityPlan: CanonicalWorldPlan = {
     halfDepth: 300,
     halfWidth: 300,
   },
+  verticalSystem: EXPO_VERTICAL_CITY_SYSTEM,
   zones: [],
 };
 
@@ -275,9 +292,21 @@ assert.ok(cityRegistry.some((entry) => entry.id === citySurface.id && entry.laye
 assert.ok(cityRegistry.some((entry) => entry.id === citySocket.id && entry.layer === 'city-screen-socket'));
 assert.ok(cityRegistry.some((entry) => entry.id === cityAssignment.id && entry.layer === 'city-screen-assignment'));
 assert.ok(cityRegistry.some((entry) => entry.id === cityMass.id && entry.layer === 'city-mass'));
+assert.ok(cityRegistry.some((entry) => entry.id === verticalCityMass.id && entry.layer === 'city-mass'));
 assert.ok(cityRegistry.some((entry) => entry.id === cityTower.id && entry.layer === 'city-tower'));
+assert.ok(cityRegistry.some((entry) => entry.id === 'tower-cluster-vertical-pilot-lift-ground' && entry.layer === 'vertical-access-node'));
+assert.ok(cityRegistry.some((entry) => entry.id === 'tower-cluster-vertical-pilot-lift-level-1-to-level-2' && entry.layer === 'vertical-access-node'));
 assert.equal(cityRegistry.some((entry) => entry.id === cityPlane.id), false);
 assert.deepEqual(cityRegistry.find((entry) => entry.id === cityMass.id)?.position, [10, 90, -40]);
+assert.deepEqual(cityRegistry.find((entry) => entry.id === verticalCityMass.id)?.position, [260, 132, -280]);
+assert.equal(cityRegistry.find((entry) => entry.id === verticalCityMass.id)?.level, 'level-2');
+assert.equal(cityRegistry.find((entry) => entry.id === verticalCityMass.id)?.baseY, 96);
+assert.equal(cityRegistry.find((entry) => entry.id === verticalCityMass.id)?.heightBand, 'mid-rise');
+assert.equal(cityRegistry.find((entry) => entry.id === verticalCityMass.id)?.verticalOwner, 'city');
+assert.deepEqual(cityRegistry.find((entry) => entry.id === 'tower-cluster-vertical-pilot-lift-ground')?.position, [900, 5, -620]);
+assert.equal(cityRegistry.find((entry) => entry.id === 'tower-cluster-vertical-pilot-lift-ground')?.interactionOwner, 'src/modules/expo/runtime/world/scene/ExpoWorldPlayerLayer.tsx');
+assert.deepEqual(cityRegistry.find((entry) => entry.id === 'tower-cluster-vertical-pilot-lift-level-1-to-level-2')?.position, [980, 67, -650]);
+assert.deepEqual(cityRegistry.find((entry) => entry.id === 'tower-cluster-vertical-pilot-lift-level-1-to-level-2')?.size, [56, 10, 56]);
 assert.deepEqual(cityRegistry.find((entry) => entry.id === cityTower.id)?.position, [120, 151, -160]);
 assert.deepEqual(
   cityRegistry.find((entry) => entry.id === semanticTower.id)?.aliases,
@@ -351,6 +380,7 @@ const requiredBoundedLayers = new Set([
   'stadium-pavilion',
   'stadium-structure',
   'stadium-tower',
+  'vertical-access-node',
 ]);
 for (const entry of [...cityRegistry, ...stadiumRegistry]) {
   if (requiredBoundedLayers.has(entry.layer)) {

@@ -3,6 +3,10 @@ import { Canvas } from '@react-three/fiber';
 import { useEffect, useMemo, useState } from 'react';
 import { EXPO_CITY_QUALITY_TIER, type ExpoMode } from '../../../state/expoRuntime';
 import type { ExpoStartView, ExpoWorldContract } from '../../../world-contract';
+import type { ExpoVerticalAccessNode } from '../../planning/types';
+import type { WorldPhysicsAccessAudit } from '../physics/worldPhysicsAccessAudit';
+import type { WorldPhysicsSurfaceRegistry } from '../physics/worldPhysicsSurfaceRegistry';
+import type { WorldPhysicsTraversalGraph } from '../physics/worldPhysicsTraversalGraph';
 import type { ExpoWorldLayerToggles, ExpoWorldSectionToggles } from '../debug/worldSceneDebugContract';
 import { ExpoWorldDebugLayer } from '../debug/ExpoWorldDebugLayer';
 import { CenterScreenInspector, ClickInspector, WorldSceneBridge } from '../inspection/worldInspectionContract';
@@ -55,6 +59,9 @@ export function ExpoWorldCanvasShell({
   mobileMoveIntent,
   mode,
   onMove,
+  physicsAccessAudit,
+  physicsSurfaceRegistry,
+  physicsTraversalGraph,
   playBounds,
   playerPosition,
   planningBoothPlacements,
@@ -65,6 +72,7 @@ export function ExpoWorldCanvasShell({
   sectionToggles,
   sectionVisibleBoothPlacements,
   setSceneUserData,
+  verticalAccessNodes,
   visualProfile,
   walkRegions,
 }: {
@@ -80,6 +88,9 @@ export function ExpoWorldCanvasShell({
   mobileMoveIntent?: { f: boolean; b: boolean; l: boolean; r: boolean; s?: boolean };
   mode: ExpoMode;
   onMove: (position: number[]) => void;
+  physicsAccessAudit: WorldPhysicsAccessAudit;
+  physicsSurfaceRegistry: WorldPhysicsSurfaceRegistry;
+  physicsTraversalGraph: WorldPhysicsTraversalGraph;
   playBounds: ExpoWorldContract['playBounds'];
   playerPosition: [number, number, number];
   planningBoothPlacements: ExpoBoothPlacement[];
@@ -90,6 +101,7 @@ export function ExpoWorldCanvasShell({
   sectionToggles: ExpoWorldSectionToggles;
   sectionVisibleBoothPlacements: ExpoBoothPlacement[];
   setSceneUserData: (scene: THREE.Scene, key: string, value: unknown) => void;
+  verticalAccessNodes: ExpoVerticalAccessNode[];
   visualProfile: ExpoWorldContract['visualProfile'];
   walkRegions: ExpoWorldContract['walkRegions'];
 }) {
@@ -103,6 +115,28 @@ export function ExpoWorldCanvasShell({
       reportExpoDevError('webgl.unavailable', 'WebGL unavailable at startup', { reason: webglAvailability.reason });
     }
   }, [webglAvailability.available, webglAvailability.reason]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || (!debug && !inspectionEnabled)) {
+      return;
+    }
+
+    (window as unknown as {
+      __WARPALA_EXPO_WORLD_PHYSICS__?: unknown;
+    }).__WARPALA_EXPO_WORLD_PHYSICS__ = {
+      accessAudit: physicsAccessAudit,
+      solids: physicsSurfaceRegistry.solids,
+      summary: {
+        access: physicsAccessAudit.summary,
+        solidCount: physicsSurfaceRegistry.solids.length,
+        traversal: physicsTraversalGraph.summary,
+        verticalAccessNodeCount: verticalAccessNodes.length,
+        walkableSurfaceCount: physicsSurfaceRegistry.walkableSurfaces.length,
+      },
+      traversalGraph: physicsTraversalGraph,
+      walkableSurfaces: physicsSurfaceRegistry.walkableSurfaces,
+    };
+  }, [debug, inspectionEnabled, physicsAccessAudit, physicsSurfaceRegistry, physicsTraversalGraph, verticalAccessNodes]);
 
   const onCreated = useMemo(() => ({ gl }: { gl: THREE.WebGLRenderer }) => {
     const canvas = gl.domElement;
@@ -228,6 +262,7 @@ export function ExpoWorldCanvasShell({
         sectorMarkers={sectorMarkers}
         sectionToggles={sectionToggles}
         sectionVisibleBoothPlacements={sectionVisibleBoothPlacements}
+        verticalAccessNodes={verticalAccessNodes}
         visualProfile={visualProfile}
         walkRegions={walkRegions}
       />
@@ -238,8 +273,10 @@ export function ExpoWorldCanvasShell({
         mobileMoveIntent={mobileMoveIntent}
         mode={mode}
         onMove={onMove}
+        physicsSurfaceRegistry={physicsSurfaceRegistry}
         preserveReviewElevation={inspectionEnabled}
         startView={effectiveStartView}
+        verticalAccessNodes={verticalAccessNodes}
       />
       </Canvas>
       )}

@@ -11,6 +11,7 @@
  */
 import type { ExpoBoothPlacement } from '../../../layout-engine';
 import type { ExpoDistrictProgramSummary, ExpoWorldVisualProfile } from '../../../world-contract';
+import type { ExpoVerticalPlacement } from '../vertical/verticalCitySystem';
 import { buildRearCampusMetrics } from '../../world/ExpoRearCampusLayout';
 
 export type CityGeometryPlanningSource = {
@@ -120,6 +121,7 @@ export type CityMass = {
   planningZone?: 'arrival' | 'left-district' | 'center-spine' | 'right-district' | 'tower-cluster' | 'rear-campus';
   renderIntent?: CityMassRenderIntent;
   sections?: Array<'arrival' | 'left' | 'middle' | 'right'>;
+  vertical?: ExpoVerticalPlacement;
 };
 
 export type CityTower = {
@@ -132,6 +134,7 @@ export type CityTower = {
   planningSource?: CityGeometryPlanningSource;
   planningZone?: 'arrival' | 'left-district' | 'center-spine' | 'right-district' | 'tower-cluster' | 'rear-campus';
   role?: 'hero' | 'mid' | 'support' | 'outer-support';
+  vertical?: ExpoVerticalPlacement;
   composition?: 'hero' | 'standard' | 'minimal';
   renderIntent?: {
     crownBandEmissiveIntensity: number;

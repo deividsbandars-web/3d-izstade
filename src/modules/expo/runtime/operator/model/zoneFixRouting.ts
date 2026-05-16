@@ -39,6 +39,11 @@ function buildLayerRoute(layer: WorldObjectLayer): Omit<ZoneFixRoute, 'issue' | 
         safeEditSeam: 'src/modules/expo/runtime/planning/world-plan/buildCanonicalWorldPlan.ts',
         sourceFile: 'src/modules/expo/runtime/planning/world-plan/buildCanonicalWorldPlan.ts',
       };
+    case 'vertical-access-node':
+      return {
+        safeEditSeam: 'src/modules/expo/runtime/planning/vertical/verticalCitySystem.ts',
+        sourceFile: 'src/modules/expo/runtime/planning/vertical/verticalCitySystem.ts',
+      };
     case 'ground-base':
     case 'ground-detail':
       return {

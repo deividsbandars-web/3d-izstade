@@ -63,3 +63,18 @@ assert.equal(routes[2]?.issue, 'forbidden-object');
 assert.equal(routes[2]?.target, 'city-screen-1');
 assert.equal(routes[3]?.issue, 'forbidden-layer');
 assert.equal(routes[3]?.target, 'booth');
+
+const verticalLayerRoutes = buildZoneFixRoutes({
+  registryById: {},
+  validation: {
+    ...validation,
+    forbiddenExpectedLayersPresent: [],
+    forbiddenObjectIdsPresent: [],
+    missingExpectedLayers: ['vertical-access-node'],
+    missingExpectedObjectIds: [],
+  },
+  zone,
+});
+
+assert.equal(verticalLayerRoutes[0]?.target, 'vertical-access-node');
+assert.equal(verticalLayerRoutes[0]?.safeEditSeam, 'src/modules/expo/runtime/planning/vertical/verticalCitySystem.ts');

@@ -3,6 +3,25 @@ import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useWorldInspectionPublisher } from './worldInspectionState';
 
+const INSPECTION_TRANSPARENT_FLAG = 'expoInspectionTransparent';
+
+function resolveInspectableName(object: THREE.Object3D) {
+  let current: THREE.Object3D | null = object;
+  let inspectableName: string | null = null;
+
+  while (current) {
+    if (current.userData?.[INSPECTION_TRANSPARENT_FLAG] === true) {
+      return null;
+    }
+    if (!inspectableName && current.name && current.name.includes(':')) {
+      inspectableName = current.name;
+    }
+    current = current.parent;
+  }
+
+  return inspectableName;
+}
+
 export function WorldSceneBridge({
   sceneKey,
   startViewKey,
@@ -53,16 +72,7 @@ export function CenterScreenInspector({ inspectionEnabled }: { inspectionEnabled
 
     raycasterRef.current.setFromCamera(directionRef.current, camera);
     const intersections = raycasterRef.current.intersectObjects(scene.children, true);
-    const hit = intersections.find((entry) => {
-      let current: THREE.Object3D | null = entry.object;
-      while (current) {
-        if (current.name && current.name.includes(':')) {
-          return true;
-        }
-        current = current.parent;
-      }
-      return false;
-    });
+    const hit = intersections.find((entry) => Boolean(resolveInspectableName(entry.object)));
 
     if (!hit) {
       inspection.setCenterSelection(null, []);
@@ -70,16 +80,7 @@ export function CenterScreenInspector({ inspectionEnabled }: { inspectionEnabled
     }
 
     const centerStack = intersections
-      .map((entry) => {
-        let current: THREE.Object3D | null = entry.object;
-        while (current) {
-          if (current.name && current.name.includes(':')) {
-            return current.name;
-          }
-          current = current.parent;
-        }
-        return null;
-      })
+      .map((entry) => resolveInspectableName(entry.object))
       .filter((value): value is string => Boolean(value))
       .filter((value, index, array) => array.indexOf(value) === index)
       .slice(0, 5);
@@ -125,16 +126,7 @@ export function ClickInspector({ clickInspectionEnabled }: { clickInspectionEnab
     const resolveInspectableStack = (x: number, y: number) => {
       const intersections = resolveIntersections(x, y);
       return intersections
-        .map((entry) => {
-          let current: THREE.Object3D | null = entry.object;
-          while (current) {
-            if (current.name && current.name.includes(':')) {
-              return current.name;
-            }
-            current = current.parent;
-          }
-          return null;
-        })
+        .map((entry) => resolveInspectableName(entry.object))
         .filter((value): value is string => Boolean(value))
         .filter((value, index, array) => array.indexOf(value) === index)
         .slice(0, 5);
@@ -204,16 +196,7 @@ export function ClickInspector({ clickInspectionEnabled }: { clickInspectionEnab
       raycasterRef.current.setFromCamera(ndc, camera);
       const intersections = raycasterRef.current.intersectObjects(scene.children, true);
       const clickStack = intersections
-        .map((entry) => {
-          let current: THREE.Object3D | null = entry.object;
-          while (current) {
-            if (current.name && current.name.includes(':')) {
-              return current.name;
-            }
-            current = current.parent;
-          }
-          return null;
-        })
+        .map((entry) => resolveInspectableName(entry.object))
         .filter((value): value is string => Boolean(value))
         .filter((value, index, array) => array.indexOf(value) === index)
         .slice(0, 5);

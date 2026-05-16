@@ -169,6 +169,9 @@ function ExpoWorldSceneRootView({
             runtime.setPlayerPosition([position[0], position[1], position[2]]);
             onMove(position);
           }}
+          physicsAccessAudit={runtime.physicsAccessAudit}
+          physicsSurfaceRegistry={runtime.physicsSurfaceRegistry}
+          physicsTraversalGraph={runtime.physicsTraversalGraph}
           playBounds={runtime.playBounds}
           playerPosition={runtime.playerPosition}
           planningBoothPlacements={runtime.visibleBoothPlacements}
@@ -181,6 +184,7 @@ function ExpoWorldSceneRootView({
           sectionToggles={runtime.sectionToggles}
           sectionVisibleBoothPlacements={runtime.sectionVisibleBoothPlacements}
           setSceneUserData={setSceneUserData}
+          verticalAccessNodes={runtime.verticalAccessNodes}
           visualProfile={runtime.visualProfile}
           walkRegions={runtime.walkRegions}
         />

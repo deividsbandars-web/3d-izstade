@@ -4,6 +4,23 @@ import { OrbitControls, PointerLockControls } from '@react-three/drei';
 import * as THREE from 'three';
 import type { ExpoMode } from '../../../state/expoRuntime';
 import type { ExpoStartView } from '../../../world-contract';
+import type { ExpoVerticalAccessNode, ExpoVerticalWalkableRegion } from '../../planning/types';
+import { EXPO_VERTICAL_CITY_SYSTEM } from '../../planning/vertical/verticalCitySystem';
+import {
+  WORLD_PHYSICS_DEFAULT_EDGE_SLACK,
+  WORLD_PHYSICS_DEFAULT_Y_TOLERANCE,
+  WORLD_PHYSICS_PLAYER_SURFACE_OFFSET,
+  findBlockingWorldPhysicsSolid,
+  findCurrentWorldPhysicsSurfaceY,
+  findWorldPhysicsLandingY,
+  findWorldPhysicsTraversalSurface,
+  isWorldPhysicsPositionOnWalkableSurface,
+  isWorldPhysicsSurfacePlayerY,
+  type WorldPhysicsSolid,
+  type WorldPhysicsTraversalSurfaceCandidate,
+  type WorldPhysicsWalkableSurface,
+  type WorldPhysicsSurfaceRegistry,
+} from '../physics/worldPhysicsSurfaceRegistry';
 import { EXPO_START_VIEW_KEY, collectPlayerCollisionTargets, isCollisionMesh } from '../WorldSceneSupport';
 
 const PLAYER_RADIUS = 0.92;
@@ -11,6 +28,16 @@ const PLAYER_WALK_SPEED = 108;
 const PLAYER_SPRINT_MULTIPLIER = 1.8;
 const PLAYER_KEYBOARD_TURN_SPEED = 2.25;
 const OPERATOR_TELEPORT_SETTLE_MS = 1200;
+const VERTICAL_LIFT_COOLDOWN_MS = 1400;
+const VERTICAL_GRAVITY = 360;
+const VERTICAL_JUMP_SPEED = 86;
+const VERTICAL_LANDING_EPSILON = 0.45;
+const VERTICAL_WALKABLE_EDGE_SLACK = 6;
+const VERTICAL_WALKABLE_Y_TOLERANCE = 10;
+const VERTICAL_STEP_UP_MAX_DELTA = 18;
+const VERTICAL_MANTLE_MAX_DELTA = 82;
+const VERTICAL_MANTLE_FORWARD_REACH = 16;
+const LIFT_TRIGGER_KEYS = new Set(['KeyF']);
 const WALK_CONTROL_KEYS = new Set([
   'ArrowLeft',
   'ArrowRight',
@@ -19,6 +46,8 @@ const WALK_CONTROL_KEYS = new Set([
   'KeyE',
   'KeyQ',
   'KeyS',
+  'KeyF',
+  'Space',
   'KeyW',
   'ShiftLeft',
   'ShiftRight',
@@ -29,22 +58,35 @@ type OperatorTeleportDetail = {
   zoneId?: string;
 };
 
+type VerticalLiftRequest = {
+  nodeId?: string | null;
+  requireNearby: boolean;
+};
+
+type VerticalLiftRequestDetail = {
+  nodeId?: string | null;
+};
+
 export function ExpoWorldPlayerLayer({
   bounds,
   debug = false,
   mobileMoveIntent,
   mode,
   onMove,
+  physicsSurfaceRegistry,
   preserveReviewElevation = false,
   startView,
+  verticalAccessNodes = [],
 }: {
   bounds: { minX: number; maxX: number; minZ: number; maxZ: number };
   debug?: boolean;
   mobileMoveIntent?: { f: boolean; b: boolean; l: boolean; r: boolean; s?: boolean };
   mode: ExpoMode;
   onMove: (pos: number[]) => void;
+  physicsSurfaceRegistry?: WorldPhysicsSurfaceRegistry;
   preserveReviewElevation?: boolean;
   startView: ExpoStartView;
+  verticalAccessNodes?: ExpoVerticalAccessNode[];
 }) {
   const { camera, scene } = useThree();
   const [mov, setMov] = useState({ f: false, b: false, l: false, r: false, s: false, turnL: false, turnR: false });
@@ -58,6 +100,21 @@ export function ExpoWorldPlayerLayer({
   const lastMoveTime = useRef(0);
   const lastReportedPosition = useRef<[number, number, number]>([0, 0, 0]);
   const operatorTeleportUntil = useRef(0);
+  const liftExitArmed = useRef(true);
+  const liftCooldownUntil = useRef(0);
+  const pendingLiftRequest = useRef<VerticalLiftRequest | null>(null);
+  const pendingJumpRequest = useRef(false);
+  const lastTraversalAction = useRef<string | null>(null);
+  const verticalVelocityY = useRef(0);
+  const verticalAirborne = useRef(false);
+  const activeViewElevationY = useRef(startView.position[1]);
+  const verticalLevelY = useRef(5);
+  const effectiveVerticalAccessNodes = verticalAccessNodes.length > 0
+    ? verticalAccessNodes
+    : EXPO_VERTICAL_CITY_SYSTEM.accessNodes;
+  const effectiveVerticalWalkableRegions = EXPO_VERTICAL_CITY_SYSTEM.walkableRegions;
+  const effectivePhysicsSolids = physicsSurfaceRegistry?.solids ?? [];
+  const effectivePhysicsWalkableSurfaces = physicsSurfaceRegistry?.walkableSurfaces ?? [];
   const startViewSignature = `${startView.position.join(',')}|${startView.lookAt.join(',')}|${startView.source}`;
 
   const applyStartView = useCallback((
@@ -72,7 +129,17 @@ export function ExpoWorldPlayerLayer({
     camera.lookAt(...nextStartView.lookAt);
     orbitControlsRef.current?.update();
     camera.updateMatrixWorld();
-    lastReportedPosition.current = [nextStartView.position[0], nextStartView.position[1], nextStartView.position[2]];
+    activeViewElevationY.current = nextStartView.position[1];
+    verticalLevelY.current = nextStartView.position[1] > 12 ? nextStartView.position[1] : 5;
+    desiredMoveVector.current.set(0, 0, 0);
+    moveVelocity.current.set(0, 0, 0);
+    pendingJumpRequest.current = false;
+    verticalVelocityY.current = 0;
+    verticalAirborne.current = false;
+    lastTraversalAction.current = null;
+    liftExitArmed.current = true;
+    liftCooldownUntil.current = Date.now() + 450;
+    lastReportedPosition.current = [nextStartView.position[0], verticalLevelY.current, nextStartView.position[2]];
     onMove(lastReportedPosition.current);
     logExpoWorldDebug(debug, reason, nextStartView);
   }, [camera, debug, onMove]);
@@ -109,6 +176,76 @@ export function ExpoWorldPlayerLayer({
     };
   }, [applyStartView]);
 
+  const activateVerticalLift = useCallback((
+    node: ExpoVerticalAccessNode,
+    reason: 'auto' | 'manual' | 'operator-event',
+  ) => {
+    const nextY = Math.max(5, node.targetPosition[1]);
+    verticalLevelY.current = nextY;
+    activeViewElevationY.current = nextY;
+    verticalVelocityY.current = 0;
+    verticalAirborne.current = false;
+    lastTraversalAction.current = null;
+    pendingJumpRequest.current = false;
+    liftExitArmed.current = false;
+    liftCooldownUntil.current = Date.now() + VERTICAL_LIFT_COOLDOWN_MS;
+    pendingLiftRequest.current = null;
+    moveVelocity.current.set(0, 0, 0);
+    camera.position.set(node.targetPosition[0], nextY, node.targetPosition[2]);
+    camera.updateMatrixWorld();
+    lastReportedPosition.current = [camera.position.x, camera.position.y, camera.position.z];
+    onMove(lastReportedPosition.current);
+    logExpoWorldDebug(debug, '[ExpoView][VerticalLift]', {
+      nodeId: node.id,
+      reason,
+      targetLevel: node.targetLevel,
+      targetPosition: lastReportedPosition.current,
+    });
+  }, [camera, debug, onMove]);
+
+  const activateTraversalSurface = useCallback((
+    candidate: WorldPhysicsTraversalSurfaceCandidate,
+    reason: 'mantle' | 'step-up',
+  ) => {
+    verticalLevelY.current = candidate.surface.playerY;
+    activeViewElevationY.current = candidate.surface.playerY;
+    verticalVelocityY.current = 0;
+    verticalAirborne.current = false;
+    pendingJumpRequest.current = false;
+    liftExitArmed.current = false;
+    lastTraversalAction.current = `${reason}:${candidate.surface.ownerId}`;
+    moveVelocity.current.multiplyScalar(reason === 'mantle' ? 0 : 0.35);
+    camera.position.set(
+      candidate.landingPosition.x,
+      candidate.surface.playerY,
+      candidate.landingPosition.z,
+    );
+    camera.updateMatrixWorld();
+    lastReportedPosition.current = [camera.position.x, camera.position.y, camera.position.z];
+    onMove(lastReportedPosition.current);
+    logExpoWorldDebug(debug, '[ExpoView][VerticalTraversal]', {
+      delta: candidate.elevationDelta,
+      ownerId: candidate.surface.ownerId,
+      reason,
+      targetY: candidate.surface.playerY,
+    });
+  }, [camera, debug, onMove]);
+
+  useEffect(() => {
+    const handleVerticalLiftRequest = (event: Event) => {
+      const detail = (event as CustomEvent<VerticalLiftRequestDetail>).detail;
+      pendingLiftRequest.current = {
+        nodeId: detail?.nodeId ?? null,
+        requireNearby: false,
+      };
+    };
+
+    window.addEventListener('expo:vertical-lift', handleVerticalLiftRequest as EventListener);
+    return () => {
+      window.removeEventListener('expo:vertical-lift', handleVerticalLiftRequest as EventListener);
+    };
+  }, []);
+
   useEffect(() => {
     const timer = setTimeout(() => {
       if (spawnChecked.current) {
@@ -144,6 +281,17 @@ export function ExpoWorldPlayerLayer({
     const onKeyDown = (event: KeyboardEvent) => {
       if (WALK_CONTROL_KEYS.has(event.code)) {
         event.preventDefault();
+      }
+
+      if (LIFT_TRIGGER_KEYS.has(event.code)) {
+        pendingLiftRequest.current = {
+          nodeId: null,
+          requireNearby: true,
+        };
+      }
+
+      if (event.code === 'Space' && !event.repeat) {
+        pendingJumpRequest.current = true;
       }
 
       switch (event.code) {
@@ -198,6 +346,10 @@ export function ExpoWorldPlayerLayer({
         camera.lookAt(...sceneStartView.lookAt);
         camera.updateMatrixWorld();
         startFramingApplied.current = true;
+        activeViewElevationY.current = sceneStartView.position[1];
+        verticalLevelY.current = sceneStartView.position[1] > 12 ? sceneStartView.position[1] : 5;
+        verticalVelocityY.current = 0;
+        verticalAirborne.current = false;
         lastReportedPosition.current = [sceneStartView.position[0], sceneStartView.position[1], sceneStartView.position[2]];
         onMove(lastReportedPosition.current);
         logExpoWorldDebug(debug, '[ExpoView][StartFraming]', sceneStartView);
@@ -208,10 +360,12 @@ export function ExpoWorldPlayerLayer({
       return;
     }
 
-    const isOperatorReviewFrame = preserveReviewElevation && startView.position[1] > 12;
+    const activeElevationY = activeViewElevationY.current;
+    const isOperatorReviewFrame = preserveReviewElevation && activeElevationY > 12;
     const operatorTeleportSettling = operatorTeleportUntil.current > Date.now();
 
     const stableDelta = Math.min(delta, 1 / 90);
+    const physicsDelta = Math.min(delta, 1 / 30);
     const hasKeyboardTurnIntent = mov.turnL || mov.turnR;
     const hasMoveIntent = mov.f || mov.b || mov.l || mov.r || mov.s || hasKeyboardTurnIntent || mobileMoveIntent?.f || mobileMoveIntent?.b || mobileMoveIntent?.l || mobileMoveIntent?.r || mobileMoveIntent?.s;
     const sprintMultiplier = mov.s || mobileMoveIntent?.s ? PLAYER_SPRINT_MULTIPLIER : 1;
@@ -243,18 +397,38 @@ export function ExpoWorldPlayerLayer({
       const origin = camera.position.clone().add(moveDir);
       origin.y -= 1;
       const collisionTargets = collectPlayerCollisionTargets(scene);
+      const currentPhysicsHit = findBlockingWorldPhysicsSolid(camera.position, effectivePhysicsSolids, {
+        playerSurfaceOffset: WORLD_PHYSICS_PLAYER_SURFACE_OFFSET,
+        radius: PLAYER_RADIUS,
+      });
 
       const checkCollision = (pos: THREE.Vector3, dir: THREE.Vector3) => {
         raycaster.current.set(pos, dir);
         const intersects = raycaster.current.intersectObjects(collisionTargets, false);
         return intersects.find((entry) => entry.object.visible && isCollisionMesh(entry.object));
       };
+      const checkPhysicsCollision = (pos: THREE.Vector3) => {
+        const hit = findBlockingWorldPhysicsSolid(pos, effectivePhysicsSolids, {
+          playerSurfaceOffset: WORLD_PHYSICS_PLAYER_SURFACE_OFFSET,
+          radius: PLAYER_RADIUS,
+        });
+        if (!hit) {
+          return null;
+        }
+        if (!currentPhysicsHit || hit.solid.id !== currentPhysicsHit.solid.id) {
+          return hit;
+        }
+
+        return hit.penetrationXZ >= currentPhysicsHit.penetrationXZ + 0.02 ? hit : null;
+      };
 
       const forwardDir = moveDir.clone().setY(0).normalize();
       const sideDir = new THREE.Vector3(-forwardDir.z, 0, forwardDir.x).normalize();
       const collisionDirections = [forwardDir, sideDir, sideDir.clone().multiplyScalar(-1)];
 
-      let isBlocked = false;
+      const nextMovePosition = camera.position.clone().add(moveDir);
+      let movementBlockingPhysicsHit = checkPhysicsCollision(nextMovePosition);
+      let isBlocked = Boolean(movementBlockingPhysicsHit);
       for (const direction of collisionDirections) {
         const hit = checkCollision(origin, direction);
         if (hit && hit.distance < PLAYER_RADIUS) {
@@ -266,6 +440,20 @@ export function ExpoWorldPlayerLayer({
       if (!isBlocked) {
         camera.position.add(moveDir);
       } else {
+        const stepCandidate = movementBlockingPhysicsHit && !verticalAirborne.current && !operatorTeleportSettling
+          ? findWorldPhysicsTraversalSurface({
+            blockingSolidId: movementBlockingPhysicsHit.solid.id,
+            desiredPosition: nextMovePosition,
+            edgeSlack: PLAYER_RADIUS + 2,
+            maxElevationDelta: VERTICAL_STEP_UP_MAX_DELTA,
+            playerPosition: camera.position,
+            surfaces: effectivePhysicsWalkableSurfaces,
+          })
+          : null;
+
+        if (stepCandidate) {
+          activateTraversalSurface(stepCandidate, 'step-up');
+        } else {
         const slideX = new THREE.Vector3(moveDir.x * 0.88, 0, 0);
         const slideZ = new THREE.Vector3(0, 0, moveDir.z * 0.88);
         const trySlide = (candidate: THREE.Vector3) => {
@@ -276,6 +464,11 @@ export function ExpoWorldPlayerLayer({
           const nextCandidate = camera.position.clone().add(candidate);
           const candidateOrigin = nextCandidate.clone();
           candidateOrigin.y -= 1;
+
+          movementBlockingPhysicsHit = checkPhysicsCollision(nextCandidate);
+          if (movementBlockingPhysicsHit) {
+            return false;
+          }
 
           for (const direction of collisionDirections) {
             const hit = checkCollision(candidateOrigin, direction);
@@ -295,11 +488,171 @@ export function ExpoWorldPlayerLayer({
         } else if (!trySlide(slideZ)) {
           trySlide(slideX);
         }
+        }
       }
     }
 
-    const shouldPreserveStartElevation = preserveReviewElevation && !hasMoveIntent && startView.position[1] > 12;
-    camera.position.setY(shouldPreserveStartElevation ? startView.position[1] : 5);
+    const nearbyLiftNode = findNearbyVerticalAccessNode(camera.position, effectiveVerticalAccessNodes);
+    const pendingLift = pendingLiftRequest.current;
+    let liftActivatedThisFrame = false;
+    if (
+      pendingLift
+      && Date.now() >= liftCooldownUntil.current
+      && !operatorTeleportSettling
+    ) {
+      const requestedNode = pendingLift.nodeId
+        ? effectiveVerticalAccessNodes.find((node) => node.id === pendingLift.nodeId) ?? null
+        : nearbyLiftNode;
+      const canUseRequestedNode = Boolean(
+        requestedNode
+        && (!pendingLift.requireNearby || requestedNode === nearbyLiftNode)
+      );
+
+      if (requestedNode && canUseRequestedNode) {
+        activateVerticalLift(requestedNode, pendingLift.requireNearby ? 'manual' : 'operator-event');
+        liftActivatedThisFrame = true;
+      } else {
+        pendingLiftRequest.current = null;
+      }
+    } else if (!nearbyLiftNode) {
+      liftExitArmed.current = true;
+    } else if (
+      nearbyLiftNode.autoActivate !== false
+      &&
+      liftExitArmed.current
+      && Date.now() >= liftCooldownUntil.current
+      && !operatorTeleportSettling
+    ) {
+      activateVerticalLift(nearbyLiftNode, 'auto');
+      liftActivatedThisFrame = true;
+    }
+
+    if (!liftActivatedThisFrame) {
+      const isOnPlanWalkable = isPositionOnVerticalWalkableRegion(camera.position, verticalLevelY.current, effectiveVerticalWalkableRegions);
+      const isOnPhysicsWalkable = isWorldPhysicsPositionOnWalkableSurface(
+        camera.position,
+        verticalLevelY.current,
+        effectivePhysicsWalkableSurfaces,
+        {
+          edgeSlack: WORLD_PHYSICS_DEFAULT_EDGE_SLACK,
+          yTolerance: WORLD_PHYSICS_DEFAULT_Y_TOLERANCE,
+        },
+      );
+      const isOnVerticalWalkable = isOnPlanWalkable || isOnPhysicsWalkable;
+      const isVerticalSystemElevation = (
+        isVerticalSystemPlayerY(verticalLevelY.current, effectiveVerticalWalkableRegions)
+        || isWorldPhysicsSurfacePlayerY(
+          verticalLevelY.current,
+          effectivePhysicsWalkableSurfaces,
+          WORLD_PHYSICS_DEFAULT_Y_TOLERANCE,
+        )
+      );
+      const isGrounded = verticalLevelY.current <= 5 + VERTICAL_LANDING_EPSILON || isOnVerticalWalkable;
+      const canUseVerticalPhysics = !operatorTeleportSettling && (
+        verticalAirborne.current
+        || isVerticalSystemElevation
+        || verticalLevelY.current <= 5 + VERTICAL_LANDING_EPSILON
+      );
+      if (debug || preserveReviewElevation) {
+        updateVerticalRuntimeDebug({
+          canUseVerticalPhysics,
+          isGrounded,
+          isOnVerticalWalkable,
+          isVerticalSystemElevation,
+          lastTraversalAction: lastTraversalAction.current,
+          operatorTeleportSettling,
+          playerY: verticalLevelY.current,
+          verticalAirborne: verticalAirborne.current,
+          verticalVelocityY: verticalVelocityY.current,
+        });
+      }
+
+      if (pendingJumpRequest.current) {
+        const mantleCandidate = canUseVerticalPhysics && isGrounded && !verticalAirborne.current && !operatorTeleportSettling
+          ? findMantleTraversalSurface(
+            camera,
+            effectivePhysicsSolids,
+            effectivePhysicsWalkableSurfaces,
+            verticalLevelY.current,
+          )
+          : null;
+
+        if (mantleCandidate) {
+          activateTraversalSurface(mantleCandidate, 'mantle');
+        } else if (canUseVerticalPhysics && isGrounded && !verticalAirborne.current) {
+          verticalVelocityY.current = VERTICAL_JUMP_SPEED;
+          verticalAirborne.current = true;
+          liftExitArmed.current = false;
+          logExpoWorldDebug(debug, '[ExpoView][VerticalJump]', {
+            fromY: verticalLevelY.current,
+            position: [camera.position.x, verticalLevelY.current, camera.position.z],
+          });
+        }
+        pendingJumpRequest.current = false;
+      }
+
+      if (canUseVerticalPhysics) {
+        if (!verticalAirborne.current && verticalLevelY.current > 5 + VERTICAL_LANDING_EPSILON && !isOnVerticalWalkable) {
+          verticalAirborne.current = true;
+          verticalVelocityY.current = Math.min(0, verticalVelocityY.current);
+          logExpoWorldDebug(debug, '[ExpoView][VerticalFallStart]', {
+            fromY: verticalLevelY.current,
+            position: [camera.position.x, verticalLevelY.current, camera.position.z],
+          });
+        }
+
+        if (verticalAirborne.current) {
+          verticalVelocityY.current -= VERTICAL_GRAVITY * physicsDelta;
+          const nextY = verticalLevelY.current + (verticalVelocityY.current * physicsDelta);
+          const fromY = Math.max(verticalLevelY.current, nextY);
+          const landingY = Math.max(
+            findVerticalLandingY(camera.position, fromY, effectiveVerticalWalkableRegions),
+            findWorldPhysicsLandingY(camera.position, fromY, effectivePhysicsWalkableSurfaces, {
+              edgeSlack: WORLD_PHYSICS_DEFAULT_EDGE_SLACK,
+              landingEpsilon: VERTICAL_LANDING_EPSILON,
+            }),
+          );
+
+          if (nextY <= landingY + VERTICAL_LANDING_EPSILON && verticalVelocityY.current <= 0) {
+            verticalLevelY.current = landingY;
+            activeViewElevationY.current = landingY;
+            verticalVelocityY.current = 0;
+            verticalAirborne.current = false;
+            liftExitArmed.current = false;
+            liftCooldownUntil.current = Date.now() + 260;
+            lastReportedPosition.current = [camera.position.x, landingY, camera.position.z];
+            onMove(lastReportedPosition.current);
+            logExpoWorldDebug(debug, '[ExpoView][VerticalLanding]', {
+              landingY,
+              position: lastReportedPosition.current,
+            });
+          } else {
+            verticalLevelY.current = nextY;
+            activeViewElevationY.current = nextY;
+            const now = Date.now();
+            const dy = Math.abs(verticalLevelY.current - lastReportedPosition.current[1]);
+            if (now - lastMoveTime.current > 180 || dy > 4) {
+              lastMoveTime.current = now;
+              lastReportedPosition.current = [camera.position.x, verticalLevelY.current, camera.position.z];
+              onMove(lastReportedPosition.current);
+            }
+          }
+        } else if (isOnVerticalWalkable) {
+          const snappedY = findCurrentVerticalRegionY(camera.position, verticalLevelY.current, effectiveVerticalWalkableRegions)
+            ?? findCurrentWorldPhysicsSurfaceY(camera.position, verticalLevelY.current, effectivePhysicsWalkableSurfaces, {
+              edgeSlack: WORLD_PHYSICS_DEFAULT_EDGE_SLACK,
+              yTolerance: WORLD_PHYSICS_DEFAULT_Y_TOLERANCE,
+            });
+          if (snappedY !== null) {
+            verticalLevelY.current = snappedY;
+            activeViewElevationY.current = snappedY;
+          }
+        }
+      }
+    }
+
+    const shouldPreserveStartElevation = preserveReviewElevation && !hasMoveIntent && activeViewElevationY.current > 12;
+    camera.position.setY(shouldPreserveStartElevation ? activeViewElevationY.current : verticalLevelY.current);
 
     if (!isOperatorReviewFrame && !operatorTeleportSettling) {
       camera.position.setX(Math.min(bounds.maxX, Math.max(bounds.minX, camera.position.x)));
@@ -323,6 +676,153 @@ export function ExpoWorldPlayerLayer({
   return mode === 'fly'
     ? <OrbitControls ref={orbitControlsRef} enablePan enableZoom enableRotate maxDistance={500} enableDamping dampingFactor={0.05} />
     : (mode === 'walk' ? <PointerLockControls onUnlock={() => document.body.style.cursor = 'auto'} pointerSpeed={0.18} /> : null);
+}
+
+function findNearbyVerticalAccessNode(
+  playerPosition: THREE.Vector3,
+  nodes: ExpoVerticalAccessNode[],
+) {
+  const candidates = nodes
+    .map((node) => {
+      const dx = playerPosition.x - node.position[0];
+      const dz = playerPosition.z - node.position[2];
+      const distanceXZ = Math.hypot(dx, dz);
+      const nodePlayerY = Math.max(5, node.position[1]);
+      const distanceY = Math.abs(playerPosition.y - nodePlayerY);
+      return { distanceXZ, distanceY, node };
+    })
+    .filter(({ distanceXZ, distanceY, node }) => (
+      distanceXZ <= node.radius
+      && distanceY <= Math.max(18, node.radius * 0.65)
+    ))
+    .sort((left, right) => left.distanceXZ - right.distanceXZ);
+
+  return candidates[0]?.node ?? null;
+}
+
+function findMantleTraversalSurface(
+  camera: THREE.Camera,
+  solids: ReadonlyArray<WorldPhysicsSolid>,
+  surfaces: ReadonlyArray<WorldPhysicsWalkableSurface>,
+  playerY: number,
+) {
+  const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion).setY(0);
+  if (forward.lengthSq() <= 0.0001) {
+    return null;
+  }
+
+  forward.normalize();
+  const playerPosition = {
+    x: camera.position.x,
+    y: playerY,
+    z: camera.position.z,
+  };
+  const desiredPosition = {
+    x: camera.position.x + (forward.x * VERTICAL_MANTLE_FORWARD_REACH),
+    y: playerY,
+    z: camera.position.z + (forward.z * VERTICAL_MANTLE_FORWARD_REACH),
+  };
+  const blockingHit = findBlockingWorldPhysicsSolid(desiredPosition, solids, {
+    playerSurfaceOffset: WORLD_PHYSICS_PLAYER_SURFACE_OFFSET,
+    radius: PLAYER_RADIUS,
+  });
+
+  if (!blockingHit) {
+    return null;
+  }
+
+  return findWorldPhysicsTraversalSurface({
+    blockingSolidId: blockingHit.solid.id,
+    desiredPosition,
+    edgeSlack: PLAYER_RADIUS + 4,
+    landingMargin: PLAYER_RADIUS + 0.5,
+    maxElevationDelta: VERTICAL_MANTLE_MAX_DELTA,
+    playerPosition,
+    surfaces,
+  });
+}
+
+function isPositionOnVerticalWalkableRegion(
+  playerPosition: THREE.Vector3,
+  playerY: number,
+  regions: ExpoVerticalWalkableRegion[],
+) {
+  return regions.some((region) => {
+    if (Math.abs(playerY - region.playerY) > VERTICAL_WALKABLE_Y_TOLERANCE) {
+      return false;
+    }
+
+    const halfWidth = (region.size[0] * 0.5) + VERTICAL_WALKABLE_EDGE_SLACK;
+    const halfDepth = (region.size[1] * 0.5) + VERTICAL_WALKABLE_EDGE_SLACK;
+    return (
+      Math.abs(playerPosition.x - region.position[0]) <= halfWidth
+      && Math.abs(playerPosition.z - region.position[2]) <= halfDepth
+    );
+  });
+}
+
+function isVerticalSystemPlayerY(
+  playerY: number,
+  regions: ExpoVerticalWalkableRegion[],
+) {
+  return regions.some((region) => Math.abs(playerY - region.playerY) <= VERTICAL_WALKABLE_Y_TOLERANCE);
+}
+
+function findCurrentVerticalRegionY(
+  playerPosition: THREE.Vector3,
+  playerY: number,
+  regions: ExpoVerticalWalkableRegion[],
+) {
+  const region = regions.find((candidate) => (
+    Math.abs(playerY - candidate.playerY) <= VERTICAL_WALKABLE_Y_TOLERANCE
+    && isPointInsideVerticalWalkableRegion(playerPosition, candidate)
+  ));
+  return region?.playerY ?? null;
+}
+
+function findVerticalLandingY(
+  playerPosition: THREE.Vector3,
+  fromY: number,
+  regions: ExpoVerticalWalkableRegion[],
+) {
+  const lowerWalkableRegions = regions
+    .filter((region) => (
+      region.playerY < fromY - VERTICAL_LANDING_EPSILON
+      && isPointInsideVerticalWalkableRegion(playerPosition, region)
+    ))
+    .sort((left, right) => right.playerY - left.playerY);
+
+  return lowerWalkableRegions[0]?.playerY ?? 5;
+}
+
+function isPointInsideVerticalWalkableRegion(
+  playerPosition: THREE.Vector3,
+  region: ExpoVerticalWalkableRegion,
+) {
+  const halfWidth = (region.size[0] * 0.5) + VERTICAL_WALKABLE_EDGE_SLACK;
+  const halfDepth = (region.size[1] * 0.5) + VERTICAL_WALKABLE_EDGE_SLACK;
+  return (
+    Math.abs(playerPosition.x - region.position[0]) <= halfWidth
+    && Math.abs(playerPosition.z - region.position[2]) <= halfDepth
+  );
+}
+
+function updateVerticalRuntimeDebug(state: {
+  canUseVerticalPhysics: boolean;
+  isGrounded: boolean;
+  isOnVerticalWalkable: boolean;
+  isVerticalSystemElevation: boolean;
+  lastTraversalAction: string | null;
+  operatorTeleportSettling: boolean;
+  playerY: number;
+  verticalAirborne: boolean;
+  verticalVelocityY: number;
+}) {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  (window as unknown as { __WARPALA_EXPO_VERTICAL_RUNTIME__?: typeof state }).__WARPALA_EXPO_VERTICAL_RUNTIME__ = state;
 }
 
 function logExpoWorldDebug(enabled: boolean, ...args: unknown[]) {

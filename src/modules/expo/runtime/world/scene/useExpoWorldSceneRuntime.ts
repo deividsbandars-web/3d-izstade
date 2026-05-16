@@ -2,7 +2,20 @@ import { useMemo } from 'react';
 import type { ExpoBoothPlacement } from '../../../layout-engine';
 import type { ExpoMode } from '../../../state/expoRuntime';
 import type { ExpoStartView, ExpoWorldContract } from '../../../world-contract';
-import { matchesWorldSection, normalizeWorldLayerToggles, normalizeWorldSectionToggles } from '../debug/worldSceneDebugContract';
+import { buildCanonicalWorldPlanFromWorldContract } from '../../planning';
+import type { CanonicalWorldPlan, ExpoPlanningSectionId } from '../../planning/types';
+import { matchesWorldSection, normalizeWorldLayerToggles, normalizeWorldSectionToggles, type ExpoWorldSectionToggles } from '../debug/worldSceneDebugContract';
+import {
+  buildBoothWorldObjectRegistry,
+  buildCityWorldObjectRegistry,
+  buildStadiumWorldObjectRegistry,
+  type WorldObjectRegistryEntry,
+} from '../inspection/worldObjectRegistry';
+import { buildWorldPhysicsSurfaceRegistry } from '../physics/worldPhysicsSurfaceRegistry';
+import { buildWorldPhysicsAccessAudit } from '../physics/worldPhysicsAccessAudit';
+import { buildWorldPhysicsTraversalGraph } from '../physics/worldPhysicsTraversalGraph';
+import { buildWorldPhysicsVerticalAccessNodes } from '../physics/worldPhysicsVerticalAccessNodes';
+import { buildRenderedRearCampusRegistryPlan } from '../rearCampusRenderPolicy';
 import { useExpoWorldAnalyticsActions, useExpoWorldAnalyticsState } from './ExpoWorldAnalyticsProvider';
 
 export function useExpoWorldSceneRuntime({
@@ -47,6 +60,10 @@ export function useExpoWorldSceneRuntime({
   const effectiveStartView = startViewOverride ?? startView;
   const layerToggles = normalizeWorldLayerToggles(runtimeLayerToggles);
   const sectionToggles = normalizeWorldSectionToggles(runtimeSectionToggles);
+  const canonicalWorldPlan = useMemo(
+    () => buildCanonicalWorldPlanFromWorldContract(worldContract),
+    [worldContract],
+  );
   const visibleBoothPlacements = useMemo(
     () => selectVisibleBoothPlacements(boothPlacements, districtPrograms),
     [boothPlacements, districtPrograms],
@@ -57,6 +74,69 @@ export function useExpoWorldSceneRuntime({
   );
   const analyticsState = useExpoWorldAnalyticsState();
   const analyticsActions = useExpoWorldAnalyticsActions();
+  const physicsSurfaceRegistry = useMemo(() => {
+    const entries: WorldObjectRegistryEntry[] = [];
+    const sectionFilteredPlan = filterCanonicalWorldPlanForSections(canonicalWorldPlan, sectionToggles);
+
+    if (layerToggles.city) {
+      entries.push(...buildCityWorldObjectRegistry({
+        districtCount: districtPrograms.length,
+        districtStride: canonicalWorldPlan.districtStride,
+        plan: sectionFilteredPlan,
+      }));
+    }
+
+    if (layerToggles.stadium && sectionToggles.stadium) {
+      const rearCampusPlan = canonicalWorldPlan.zones.find((zone) => zone.id === 'rear-campus');
+      const rearCampus = rearCampusPlan?.zoneExtension?.rearCampus;
+      if (rearCampusPlan && rearCampus) {
+        entries.push(...buildStadiumWorldObjectRegistry({
+          campusCenterZ: rearCampus.campusCenterZ,
+          rearCampusPlan: buildRenderedRearCampusRegistryPlan(rearCampusPlan),
+        }));
+      }
+    }
+
+    if (layerToggles.booths) {
+      entries.push(...buildBoothWorldObjectRegistry(sectionVisibleBoothPlacements));
+    }
+
+    return buildWorldPhysicsSurfaceRegistry(entries);
+  }, [
+    canonicalWorldPlan,
+    districtPrograms.length,
+    layerToggles.booths,
+    layerToggles.city,
+    layerToggles.stadium,
+    sectionToggles.arrival,
+    sectionToggles.left,
+    sectionToggles.middle,
+    sectionToggles.right,
+    sectionToggles.stadium,
+    sectionVisibleBoothPlacements,
+  ]);
+  const physicsTraversalGraph = useMemo(
+    () => buildWorldPhysicsTraversalGraph(physicsSurfaceRegistry),
+    [physicsSurfaceRegistry],
+  );
+  const physicsAccessAudit = useMemo(
+    () => buildWorldPhysicsAccessAudit({
+      registry: physicsSurfaceRegistry,
+      traversalGraph: physicsTraversalGraph,
+    }),
+    [physicsSurfaceRegistry, physicsTraversalGraph],
+  );
+  const physicsVerticalAccessNodes = useMemo(
+    () => buildWorldPhysicsVerticalAccessNodes(physicsAccessAudit),
+    [physicsAccessAudit],
+  );
+  const verticalAccessNodes = useMemo(
+    () => [
+      ...canonicalWorldPlan.verticalSystem.accessNodes,
+      ...physicsVerticalAccessNodes,
+    ],
+    [canonicalWorldPlan.verticalSystem.accessNodes, physicsVerticalAccessNodes],
+  );
   void activeZone;
   void mode;
   void sectorMarkers;
@@ -68,14 +148,45 @@ export function useExpoWorldSceneRuntime({
     layerToggles,
     playBounds,
     playerPosition: analyticsState.playerPosition,
+    physicsSurfaceRegistry,
+    physicsAccessAudit,
+    physicsTraversalGraph,
     qualityProfileInputs,
     sectorMarkers,
     sectionToggles,
     setPlayerPosition: analyticsActions.setPlayerPosition,
     sectionVisibleBoothPlacements,
+    verticalAccessNodes,
     visualProfile,
     visibleBoothPlacements,
     walkRegions,
+  };
+}
+
+function filterCanonicalWorldPlanForSections(
+  plan: CanonicalWorldPlan,
+  sectionToggles: ExpoWorldSectionToggles,
+): CanonicalWorldPlan {
+  const isVisibleBySections = (sections?: ExpoPlanningSectionId[]) => {
+    if (!sections || sections.length === 0) {
+      return true;
+    }
+
+    return sections.some((section) => sectionToggles[section]);
+  };
+
+  return {
+    ...plan,
+    arrivalPlanes: plan.arrivalPlanes.filter((plane) => isVisibleBySections(plane.sections)),
+    boothForecourtPlanes: plan.boothForecourtPlanes.filter((plane) => isVisibleBySections(plane.sections)),
+    filteredCityPlanes: plan.filteredCityPlanes.filter((plane) => isVisibleBySections(plane.sections)),
+    filteredMasses: plan.filteredMasses.filter((mass) => isVisibleBySections(mass.sections)),
+    filteredScreenSurfaces: plan.filteredScreenSurfaces.filter((surface) => isVisibleBySections(surface.sections)),
+    filteredTowerLandmarks: plan.filteredTowerLandmarks.filter((tower) => isVisibleBySections(tower.sections)),
+    promenadeAxisPlanes: plan.promenadeAxisPlanes.filter((plane) => isVisibleBySections(plane.sections)),
+    screenAssignments: plan.screenAssignments.filter((assignment) => isVisibleBySections(assignment.sections)),
+    screenSockets: plan.screenSockets.filter((socket) => isVisibleBySections(socket.sections)),
+    showcasePlazas: plan.showcasePlazas.filter((plane) => isVisibleBySections(plane.sections)),
   };
 }
 

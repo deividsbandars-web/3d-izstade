@@ -62,6 +62,9 @@ const VALID_CITY_OBJECT_PLANNING_ZONES = new Set([
 ]);
 const GENERIC_CITY_WORLD_PLAN_SOURCE = 'src/modules/expo/runtime/planning/world-plan/buildCanonicalWorldPlan.ts';
 const SOURCE_TRACE_CITY_LAYERS = new Set(['city-mass', 'city-tower']);
+const VALID_VERTICAL_LEVELS = new Set(['ground', 'level-1', 'level-2', 'roof', 'tower']);
+const VALID_VERTICAL_HEIGHT_BANDS = new Set(['ground', 'low-rise', 'mid-rise', 'high-rise', 'roof', 'tower']);
+const VALID_VERTICAL_OWNERS = new Set(['booth', 'city', 'stadium', 'system']);
 const RECOVERED_REAR_CAMPUS_STRUCTURE_IDS = new Set([
   'rear-campus-stage-monolith-canopy',
   'rear-campus-mega-civic-hall',
@@ -429,6 +432,10 @@ function isIntentionalCitySolidOverlap(left, right) {
     return true;
   }
 
+  if (isIntentionalVerticalCityAssembly(left, right)) {
+    return true;
+  }
+
   if (
     typeof left.id === 'string'
     && typeof right.id === 'string'
@@ -457,6 +464,20 @@ function isIntentionalCitySolidOverlap(left, right) {
     && candidate.endsWith('-tower-cluster-plinth')
     && candidate.slice(0, -'-tower-cluster-plinth'.length) === host
   ));
+}
+
+function isIntentionalVerticalCityAssembly(left, right) {
+  const ids = [left.id, right.id];
+  if (ids.every((id) => typeof id === 'string' && id.startsWith('tower-cluster-vertical-pilot-'))) {
+    return true;
+  }
+
+  return (
+    left.sourceKind === 'tower-cluster-vertical-pilot-mass'
+    && right.sourceKind === 'tower-cluster-vertical-pilot-mass'
+    && left.verticalOwner === 'city'
+    && right.verticalOwner === 'city'
+  );
 }
 
 function auditGroundOwnershipMetadata(entries) {
@@ -551,6 +572,84 @@ function auditGroundVisualContinuity(entries) {
           },
         );
       }
+    }
+  }
+
+  return issues;
+}
+
+function auditVerticalMetadata(entries) {
+  const issues = [];
+
+  for (const entry of entries) {
+    const verticalKeys = ['baseY', 'floorCount', 'floorHeight', 'heightBand', 'level', 'verticalOwner'];
+    const hasVerticalMetadata = verticalKeys.some((key) => entry[key] !== undefined);
+    if (!hasVerticalMetadata) {
+      continue;
+    }
+
+    const missing = verticalKeys.filter((key) => entry[key] === undefined);
+    if (missing.length > 0) {
+      pushIssue(
+        issues,
+        'high',
+        'vertical-metadata-incomplete',
+        `${entry.layer} ${entry.id} has partial vertical metadata: missing ${missing.join(', ')}.`,
+        [entry.id],
+        { missing },
+      );
+      continue;
+    }
+
+    const bounds = resolveBounds(entry);
+    const baseY = entry.baseY;
+    const floorCount = entry.floorCount;
+    const floorHeight = entry.floorHeight;
+    const expectedCenterY = isFiniteNumber(baseY) && positiveTuple3(entry.size)
+      ? baseY + (entry.size[1] * 0.5)
+      : null;
+
+    if (
+      !VALID_VERTICAL_LEVELS.has(entry.level)
+      || !VALID_VERTICAL_HEIGHT_BANDS.has(entry.heightBand)
+      || !VALID_VERTICAL_OWNERS.has(entry.verticalOwner)
+      || !isFiniteNumber(baseY)
+      || !Number.isInteger(floorCount)
+      || floorCount <= 0
+      || !isFiniteNumber(floorHeight)
+      || floorHeight <= 0
+      || !bounds
+    ) {
+      pushIssue(
+        issues,
+        'high',
+        'vertical-metadata-invalid',
+        `${entry.layer} ${entry.id} has invalid vertical metadata; multi-floor objects need level/baseY/floorCount/floorHeight/heightBand/owner.`,
+        [entry.id],
+        {
+          baseY,
+          floorCount,
+          floorHeight,
+          heightBand: entry.heightBand ?? null,
+          level: entry.level ?? null,
+          verticalOwner: entry.verticalOwner ?? null,
+        },
+      );
+      continue;
+    }
+
+    if (expectedCenterY !== null && Math.abs(entry.position[1] - expectedCenterY) > 0.01) {
+      pushIssue(
+        issues,
+        'high',
+        'vertical-registry-center-mismatch',
+        `${entry.layer} ${entry.id} registry centerY does not match baseY + half height.`,
+        [entry.id],
+        {
+          centerY: entry.position[1],
+          expectedCenterY,
+        },
+      );
     }
   }
 
@@ -1890,6 +1989,7 @@ const issues = [
   ...auditSolidBoundsCoverage(entries),
   ...auditGroundOwnershipMetadata(entries),
   ...auditGroundVisualContinuity(entries),
+  ...auditVerticalMetadata(entries),
   ...auditGroundAndCrossLayerOverlaps(entries),
   ...auditCitySolidOverlaps(entries),
   ...auditCitySolidClearance(entries),
