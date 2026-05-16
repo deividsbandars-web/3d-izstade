@@ -11,8 +11,10 @@ export type WorldPhysicsBounds = {
 
 export type WorldPhysicsSolid = {
   bounds: WorldPhysicsBounds;
+  entryId: string;
   id: string;
   layer: WorldObjectLayer;
+  partId?: string;
   planningRole?: string | null;
   planningZone: string | null;
   position: [number, number, number];
@@ -61,6 +63,12 @@ export type WorldPhysicsTraversalSurfaceCandidate = {
   surface: WorldPhysicsWalkableSurface;
 };
 
+export type WorldPhysicsSolidTopLanding = {
+  playerY: number;
+  solid: WorldPhysicsSolid;
+  topY: number;
+};
+
 export const WORLD_PHYSICS_PLAYER_SURFACE_OFFSET = 4;
 export const WORLD_PHYSICS_GROUND_PLAYER_Y = 5;
 export const WORLD_PHYSICS_DEFAULT_EDGE_SLACK = 6;
@@ -98,13 +106,17 @@ function resolveYawAabbSize(size: [number, number, number], rotation: [number, n
   return [widthX, size[1], depthZ] as [number, number, number];
 }
 
-export function resolveWorldPhysicsBounds(entry: WorldObjectRegistryEntry): WorldPhysicsBounds | null {
-  if (!isFinitePositiveSize(entry.size)) {
+function resolveWorldPhysicsBoundsFromBox(box: {
+  position: [number, number, number];
+  rotation?: [number, number, number];
+  size?: [number, number, number];
+}): WorldPhysicsBounds | null {
+  if (!isFinitePositiveSize(box.size)) {
     return null;
   }
 
-  const aabbSize = resolveYawAabbSize(entry.size, normalizeRotation(entry.rotation));
-  const [centerX, centerY, centerZ] = entry.position;
+  const aabbSize = resolveYawAabbSize(box.size, normalizeRotation(box.rotation));
+  const [centerX, centerY, centerZ] = box.position;
   const halfX = aabbSize[0] * 0.5;
   const halfY = aabbSize[1] * 0.5;
   const halfZ = aabbSize[2] * 0.5;
@@ -117,6 +129,10 @@ export function resolveWorldPhysicsBounds(entry: WorldObjectRegistryEntry): Worl
     minY: centerY - halfY,
     minZ: centerZ - halfZ,
   };
+}
+
+export function resolveWorldPhysicsBounds(entry: WorldObjectRegistryEntry): WorldPhysicsBounds | null {
+  return resolveWorldPhysicsBoundsFromBox(entry);
 }
 
 function isPhysicsSolidEntry(entry: WorldObjectRegistryEntry) {
@@ -135,10 +151,37 @@ function isPerimeterStructure(entry: WorldObjectRegistryEntry) {
 function isNonWalkableSupportStructure(entry: WorldObjectRegistryEntry) {
   return (
     isPerimeterStructure(entry)
+    || entry.sourceKind === 'tower-cluster-plinth-mass'
+    || entry.id.endsWith('-tower-cluster-plinth')
+    || (entry.sourceKind === 'tower-cluster-vertical-pilot-mass' && entry.id.includes('-core-'))
     || entry.sourceKind === 'city-screen-host-mass'
     || entry.planningRole === 'screen-host-shell'
     || entry.sourceKind === 'rear-campus-screen-host-shell'
   );
+}
+
+function resolvePhysicsBoxes(entry: WorldObjectRegistryEntry) {
+  if (entry.physicsParts?.length) {
+    return entry.physicsParts
+      .filter((part) => isFinitePositiveSize(part.size))
+      .map((part) => ({
+        id: `${entry.id}:${part.id}`,
+        partId: part.id,
+        position: part.position,
+        rotation: part.rotation,
+        size: part.size,
+        walkableTopOverride: part.walkableTop,
+      }));
+  }
+
+  return [{
+    id: entry.id,
+    partId: undefined,
+    position: entry.position,
+    rotation: entry.rotation,
+    size: entry.size,
+    walkableTopOverride: undefined,
+  }];
 }
 
 function shouldExposeWalkableTop(entry: WorldObjectRegistryEntry, bounds: WorldPhysicsBounds) {
@@ -167,29 +210,36 @@ export function buildWorldPhysicsSurfaceRegistry(
       continue;
     }
 
-    const bounds = resolveWorldPhysicsBounds(entry);
-    if (!bounds || !entry.size) {
-      continue;
-    }
+    for (const box of resolvePhysicsBoxes(entry)) {
+      const bounds = resolveWorldPhysicsBoundsFromBox(box);
+      if (!bounds || !box.size) {
+        continue;
+      }
 
-    const walkableTop = shouldExposeWalkableTop(entry, bounds);
-    const solid: WorldPhysicsSolid = {
-      bounds,
-      id: entry.id,
-      layer: entry.layer,
-      planningRole: entry.planningRole,
-      planningZone: entry.planningZone,
-      position: entry.position,
-      rotation: normalizeRotation(entry.rotation),
-      size: entry.size,
-      sourceFile: entry.sourceFile,
-      sourceFunction: entry.sourceFunction,
-      sourceKind: entry.sourceKind,
-      walkableTop,
-    };
-    solids.push(solid);
+      const resolvedWalkableTop = shouldExposeWalkableTop(entry, bounds);
+      const walkableTop = box.walkableTopOverride ?? resolvedWalkableTop;
+      const solid: WorldPhysicsSolid = {
+        bounds,
+        entryId: entry.id,
+        id: box.id,
+        layer: entry.layer,
+        partId: box.partId,
+        planningRole: entry.planningRole,
+        planningZone: entry.planningZone,
+        position: box.position,
+        rotation: normalizeRotation(box.rotation),
+        size: box.size,
+        sourceFile: entry.sourceFile,
+        sourceFunction: entry.sourceFunction,
+        sourceKind: entry.sourceKind,
+        walkableTop,
+      };
+      solids.push(solid);
 
-    if (walkableTop) {
+      if (!walkableTop) {
+        continue;
+      }
+
       const footprintX = bounds.maxX - bounds.minX;
       const footprintZ = bounds.maxZ - bounds.minZ;
       const playerY = bounds.maxY + WORLD_PHYSICS_PLAYER_SURFACE_OFFSET;
@@ -199,12 +249,12 @@ export function buildWorldPhysicsSurfaceRegistry(
           minY: playerY - WORLD_PHYSICS_DEFAULT_Y_TOLERANCE,
           maxY: playerY + WORLD_PHYSICS_DEFAULT_Y_TOLERANCE,
         },
-        id: `${entry.id}:top`,
-        ownerId: entry.id,
+        id: `${box.id}:top`,
+        ownerId: box.id,
         ownerLayer: entry.layer,
         planningZone: entry.planningZone,
         playerY,
-        position: [entry.position[0], playerY, entry.position[2]],
+        position: [box.position[0], playerY, box.position[2]],
         size: [footprintX, footprintZ],
         sourceFile: entry.sourceFile,
         sourceFunction: entry.sourceFunction,
@@ -214,7 +264,16 @@ export function buildWorldPhysicsSurfaceRegistry(
     }
   }
 
-  return { solids, walkableSurfaces };
+  return {
+    solids,
+    walkableSurfaces: walkableSurfaces.filter((surface) => (
+      findBlockingWorldPhysicsSolid(
+        { x: surface.position[0], y: surface.playerY, z: surface.position[2] },
+        solids,
+        { radius: 1 },
+      ) === null
+    )),
+  };
 }
 
 export function findBlockingWorldPhysicsSolid(
@@ -313,6 +372,28 @@ export function findCurrentWorldPhysicsSurfaceY(
   return surface?.playerY ?? null;
 }
 
+export function findCurrentWorldPhysicsSolidTopY(
+  playerPosition: WorldPhysicsPoint,
+  playerY: number,
+  solids: ReadonlyArray<WorldPhysicsSolid>,
+  options: {
+    edgeSlack?: number;
+    radius?: number;
+    yTolerance?: number;
+  } = {},
+) {
+  const yTolerance = options.yTolerance ?? WORLD_PHYSICS_DEFAULT_Y_TOLERANCE;
+  const solidTop = findClearWorldPhysicsSolidTopCandidate(
+    playerPosition,
+    playerY + yTolerance,
+    playerY - yTolerance,
+    solids,
+    options,
+  );
+
+  return solidTop?.playerY ?? null;
+}
+
 export function findWorldPhysicsLandingY(
   playerPosition: WorldPhysicsPoint,
   fromY: number,
@@ -331,6 +412,51 @@ export function findWorldPhysicsLandingY(
     .sort((left, right) => right.playerY - left.playerY);
 
   return lowerSurfaces[0]?.playerY ?? WORLD_PHYSICS_GROUND_PLAYER_Y;
+}
+
+export function findWorldPhysicsSolidTopLanding(
+  playerPosition: WorldPhysicsPoint,
+  fromY: number,
+  toY: number,
+  solids: ReadonlyArray<WorldPhysicsSolid>,
+  options: {
+    edgeSlack?: number;
+    landingEpsilon?: number;
+    radius?: number;
+  } = {},
+): WorldPhysicsSolidTopLanding | null {
+  const landingEpsilon = options.landingEpsilon ?? 0.45;
+  return findClearWorldPhysicsSolidTopCandidate(
+    playerPosition,
+    Math.max(fromY, toY) + landingEpsilon,
+    Math.min(fromY, toY) - landingEpsilon,
+    solids,
+    options,
+  );
+}
+
+export function findWorldPhysicsLandingSurface(
+  playerPosition: WorldPhysicsPoint,
+  fromY: number,
+  toY: number,
+  surfaces: ReadonlyArray<WorldPhysicsWalkableSurface>,
+  options: {
+    edgeSlack?: number;
+    landingEpsilon?: number;
+  } = {},
+) {
+  const landingEpsilon = options.landingEpsilon ?? 0.45;
+  const upperY = Math.max(fromY, toY);
+  const lowerY = Math.min(fromY, toY);
+  const crossedSurfaces = surfaces
+    .filter((surface) => (
+      surface.playerY <= upperY + landingEpsilon
+      && surface.playerY >= lowerY - landingEpsilon
+      && isPointInsideWorldPhysicsWalkableSurface(playerPosition, surface, options.edgeSlack)
+    ))
+    .sort((left, right) => right.playerY - left.playerY);
+
+  return crossedSurfaces[0] ?? null;
 }
 
 export function findWorldPhysicsTraversalSurface({
@@ -393,6 +519,51 @@ function isPointInsideWorldPhysicsWalkableSurface(
     && playerPosition.x <= surface.bounds.maxX + edgeSlack
     && playerPosition.z >= surface.bounds.minZ - edgeSlack
     && playerPosition.z <= surface.bounds.maxZ + edgeSlack
+  );
+}
+
+function findClearWorldPhysicsSolidTopCandidate(
+  playerPosition: WorldPhysicsPoint,
+  upperY: number,
+  lowerY: number,
+  solids: ReadonlyArray<WorldPhysicsSolid>,
+  options: {
+    edgeSlack?: number;
+    radius?: number;
+  } = {},
+): WorldPhysicsSolidTopLanding | null {
+  const edgeSlack = options.edgeSlack ?? 0;
+  const radius = options.radius ?? 1;
+  const candidates = solids
+    .map((solid) => {
+      const playerY = solid.bounds.maxY + WORLD_PHYSICS_PLAYER_SURFACE_OFFSET;
+      return { playerY, solid, topY: solid.bounds.maxY };
+    })
+    .filter((candidate) => (
+      candidate.playerY <= upperY
+      && candidate.playerY >= lowerY
+      && isPointInsideWorldPhysicsSolidTop(playerPosition, candidate.solid, edgeSlack)
+      && findBlockingWorldPhysicsSolid(
+        { x: playerPosition.x, y: candidate.playerY, z: playerPosition.z },
+        solids,
+        { radius },
+      ) === null
+    ))
+    .sort((left, right) => right.playerY - left.playerY);
+
+  return candidates[0] ?? null;
+}
+
+function isPointInsideWorldPhysicsSolidTop(
+  playerPosition: WorldPhysicsPoint,
+  solid: WorldPhysicsSolid,
+  edgeSlack = 0,
+) {
+  return (
+    playerPosition.x >= solid.bounds.minX - edgeSlack
+    && playerPosition.x <= solid.bounds.maxX + edgeSlack
+    && playerPosition.z >= solid.bounds.minZ - edgeSlack
+    && playerPosition.z <= solid.bounds.maxZ + edgeSlack
   );
 }
 

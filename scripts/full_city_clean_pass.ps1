@@ -1044,6 +1044,9 @@ $summaryLines = @(
   $(if ($registryAudit -and $registryAudit.coverage) {
     "coverage: screens=$($registryAudit.coverage.screens.surfaces), screenHostBindings=$($registryAudit.coverage.screens.hostBindings), ground=$($registryAudit.coverage.ground.total)"
   }),
+  $(if ($registryAudit -and $registryAudit.coverage -and $registryAudit.coverage.physics) {
+    "physics: solids=$($registryAudit.coverage.physics.solids), compoundEntries=$($registryAudit.coverage.physics.compoundEntries), compoundPartSolids=$($registryAudit.coverage.physics.compoundPartSolids), walkable=$($registryAudit.coverage.physics.walkableSurfaces), step=$($registryAudit.coverage.physics.stepReachableSurfaces), mantle=$($registryAudit.coverage.physics.mantleReachableSurfaces), high=$($registryAudit.coverage.physics.highWalkableSurfaces), nonWalkableSupports=$($registryAudit.coverage.physics.nonWalkableSupports), groundBlocking=$($registryAudit.coverage.physics.groundBlockingSolids)"
+  }),
   "reportPath: $registryAuditPath",
   "",
   "review coverage audit:",

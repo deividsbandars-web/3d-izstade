@@ -182,24 +182,24 @@ assert.ok(sponsorBoulevardLeft);
 const resolvedSponsorBoulevardLeftView = resolveReviewOperatorZoneStartView(sponsorBoulevardLeft, new Map([
   ['left-front-booth', { layer: 'booth', position: [-536, 0, -244] }],
 ]));
-assert.deepEqual(resolvedSponsorBoulevardLeftView.lookAt, [-536, 28, -244]);
-assert.deepEqual(resolvedSponsorBoulevardLeftView.position, [-418, 46, -186]);
+assert.deepEqual(resolvedSponsorBoulevardLeftView.lookAt, [-536, 72, -244]);
+assert.deepEqual(resolvedSponsorBoulevardLeftView.position, [-386, 80, -158]);
 
 const sponsorBoulevardLeftClose = zones.find((zone) => zone.id === 'sponsor-boulevard-left-close');
 assert.ok(sponsorBoulevardLeftClose);
 const resolvedSponsorBoulevardLeftCloseView = resolveReviewOperatorZoneStartView(sponsorBoulevardLeftClose, new Map([
   ['left-rear-booth', { layer: 'booth', position: [-430, 0, -1412] }],
 ]));
-assert.deepEqual(resolvedSponsorBoulevardLeftCloseView.lookAt, [-430, 18, -1412]);
-assert.deepEqual(resolvedSponsorBoulevardLeftCloseView.position, [-342, 32, -1388]);
+assert.deepEqual(resolvedSponsorBoulevardLeftCloseView.lookAt, [-430, 24, -1412]);
+assert.deepEqual(resolvedSponsorBoulevardLeftCloseView.position, [-384, 24, -1394]);
 
 const sponsorBoulevardRight = zones.find((zone) => zone.id === 'sponsor-boulevard-right');
 assert.ok(sponsorBoulevardRight);
 const resolvedSponsorBoulevardRightView = resolveReviewOperatorZoneStartView(sponsorBoulevardRight, new Map([
   ['right-front-booth', { layer: 'booth', position: [80, 0, -798] }],
 ]));
-assert.deepEqual(resolvedSponsorBoulevardRightView.lookAt, [78, 24, -796]);
-assert.deepEqual(resolvedSponsorBoulevardRightView.position, [30, 36, -762]);
+assert.deepEqual(resolvedSponsorBoulevardRightView.lookAt, [78, 20, -796]);
+assert.deepEqual(resolvedSponsorBoulevardRightView.position, [48, 22, -780]);
 
 const rearCampusCenter = zones.find((zone) => zone.id === 'rear-campus-center');
 assert.ok(rearCampusCenter);
@@ -261,13 +261,15 @@ assertVectorClose(resolvedTowerClusterView.position, [258.8230613285318, 257.04,
 const towerClusterVerticalPilot = zones.find((zone) => zone.id === 'tower-cluster-vertical-pilot');
 assert.ok(towerClusterVerticalPilot);
 const resolvedTowerClusterVerticalPilotView = resolveReviewOperatorZoneStartView(towerClusterVerticalPilot, new Map([
-  ['tower-cluster-vertical-pilot-core-left', { position: [764, 54, -680] }],
-  ['tower-cluster-vertical-pilot-core-right', { position: [1036, 54, -680] }],
+  ['tower-cluster-vertical-pilot-core-left', { position: [764, 126, -680] }],
+  ['tower-cluster-vertical-pilot-core-right', { position: [1036, 126, -680] }],
   ['tower-cluster-vertical-pilot-level-1-deck', { position: [900, 57, -650] }],
   ['tower-cluster-vertical-pilot-level-2-deck', { position: [900, 108, -680] }],
+  ['tower-cluster-vertical-pilot-roof-deck', { position: [900, 155, -710] }],
+  ['tower-cluster-vertical-pilot-tower-deck', { position: [900, 230, -650] }],
 ]));
-assert.deepEqual(resolvedTowerClusterVerticalPilotView.lookAt, [900, 100.25, -672.5]);
-assert.deepEqual(resolvedTowerClusterVerticalPilotView.position, [1320, 296.25, -972.5]);
+assert.deepEqual(resolvedTowerClusterVerticalPilotView.lookAt, [900, 165.66666666666666, -675]);
+assert.deepEqual(resolvedTowerClusterVerticalPilotView.position, [1320, 361.66666666666663, -975]);
 
 const stadiumRightFlank = zones.find((zone) => zone.id === 'stadium-right-flank');
 assert.ok(stadiumRightFlank);

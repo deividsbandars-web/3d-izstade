@@ -2,7 +2,10 @@ import assert from 'node:assert/strict';
 import {
   buildWorldPhysicsSurfaceRegistry,
   findBlockingWorldPhysicsSolid,
+  findCurrentWorldPhysicsSolidTopY,
   findCurrentWorldPhysicsSurfaceY,
+  findWorldPhysicsLandingSurface,
+  findWorldPhysicsSolidTopLanding,
   findWorldPhysicsTraversalSurface,
   findWorldPhysicsLandingY,
   isWorldPhysicsPositionOnWalkableSurface,
@@ -86,6 +89,23 @@ const screenHostRegistry = buildWorldPhysicsSurfaceRegistry([
 ]);
 assert.equal(screenHostRegistry.solids.some((solid) => solid.id === 'city-screen-host-a'), true);
 assert.equal(screenHostRegistry.walkableSurfaces.some((surface) => surface.ownerId === 'city-screen-host-a'), false);
+assert.equal(
+  findWorldPhysicsSolidTopLanding(
+    { x: 50, y: 100, z: -80 },
+    110,
+    90,
+    screenHostRegistry.solids,
+  )?.playerY,
+  104,
+);
+assert.equal(
+  findCurrentWorldPhysicsSolidTopY(
+    { x: 50, y: 104, z: -80 },
+    104,
+    screenHostRegistry.solids,
+  ),
+  104,
+);
 
 const cityBounds = resolveWorldPhysicsBounds(cityMass);
 assert.deepEqual(cityBounds, {
@@ -102,6 +122,15 @@ assert.ok(citySurface);
 assert.equal(citySurface.playerY, 39);
 assert.deepEqual(citySurface.size, [40, 50]);
 assert.equal(findWorldPhysicsLandingY({ x: 10, y: 58, z: -30 }, 58, registry.walkableSurfaces), 39);
+assert.equal(
+  findWorldPhysicsLandingSurface(
+    { x: 10, y: 39.1, z: -30 },
+    39.3,
+    38.9,
+    registry.walkableSurfaces,
+  )?.ownerId,
+  'city-block-a',
+);
 assert.equal(findCurrentWorldPhysicsSurfaceY({ x: 10, y: 39, z: -30 }, 39, registry.walkableSurfaces), 39);
 assert.equal(isWorldPhysicsPositionOnWalkableSurface({ x: 10, y: 39, z: -30 }, 39, registry.walkableSurfaces), true);
 assert.equal(findCurrentWorldPhysicsSurfaceY({ x: 40, y: 39, z: -30 }, 39, registry.walkableSurfaces), null);
@@ -117,6 +146,38 @@ const groundPointInsideBlock: WorldPhysicsPoint = { x: 10, y: 5, z: -30 };
 const topPointInsideBlock: WorldPhysicsPoint = { x: 10, y: 39, z: -30 };
 assert.equal(findBlockingWorldPhysicsSolid(groundPointInsideBlock, registry.solids, { radius: 1 })?.solid.id, 'city-block-a');
 assert.equal(findBlockingWorldPhysicsSolid(topPointInsideBlock, registry.solids, { radius: 1 }), null);
+
+const compoundPostRegistry = buildWorldPhysicsSurfaceRegistry([
+  entry('compound-post-gate', 'mega-landmark', [0, 50, 0], [120, 100, 40], {
+    physicsParts: [
+      { id: 'left-post', position: [-40, 50, 0], size: [20, 100, 24] },
+      { id: 'right-post', position: [40, 50, 0], size: [20, 100, 24] },
+    ],
+  }),
+]);
+assert.equal(compoundPostRegistry.solids.some((solid) => solid.id === 'compound-post-gate'), false);
+assert.equal(
+  findBlockingWorldPhysicsSolid({ x: -40, y: 5, z: 0 }, compoundPostRegistry.solids, { radius: 1 })?.solid.id,
+  'compound-post-gate:left-post',
+);
+assert.equal(findBlockingWorldPhysicsSolid({ x: 0, y: 5, z: 0 }, compoundPostRegistry.solids, { radius: 1 }), null);
+
+const blockedTopRegistry = buildWorldPhysicsSurfaceRegistry([
+  entry('low-deck-with-post', 'mega-landmark', [0, 20, 0], [100, 40, 50], {
+    physicsParts: [
+      { id: 'deck', position: [0, 4, 0], size: [80, 8, 40], walkableTop: false },
+      { id: 'post', position: [0, 50, 0], size: [20, 100, 20], walkableTop: false },
+    ],
+  }),
+]);
+assert.equal(
+  findWorldPhysicsSolidTopLanding({ x: 0, y: 12, z: 0 }, 20, 10, blockedTopRegistry.solids),
+  null,
+);
+assert.equal(
+  findWorldPhysicsSolidTopLanding({ x: 30, y: 12, z: 0 }, 20, 10, blockedTopRegistry.solids)?.solid.id,
+  'low-deck-with-post:deck',
+);
 
 const lowStep = entry('low-step-a', 'city-mass', [120, 6, -30], [36, 12, 36]);
 const highMantle = entry('high-mantle-a', 'city-mass', [180, 36, -30], [44, 72, 44]);
@@ -225,11 +286,13 @@ const productionAccessAudit = buildWorldPhysicsAccessAudit({
 });
 const productionAccessNodes = buildWorldPhysicsVerticalAccessNodes(productionAccessAudit);
 assert.ok(productionPhysics.solids.length >= 100, 'production-safe physics should expose broad solid coverage');
-assert.ok(productionPhysics.walkableSurfaces.length >= 45, 'production-safe physics should expose broad walkable top coverage');
+assert.ok(productionPhysics.walkableSurfaces.length >= 40, 'production-safe physics should expose broad walkable top coverage');
 assert.ok(productionPhysics.walkableSurfaces.every((surface) => productionSolidIds.has(surface.ownerId)));
 assert.equal(productionPhysics.walkableSurfaces.some((surface) => surface.ownerId.includes('perimeter')), false);
 assert.equal(productionPhysics.walkableSurfaces.some((surface) => surface.sourceKind === 'city-screen-host-mass'), false);
 assert.equal(productionPhysics.walkableSurfaces.some((surface) => surface.sourceKind === 'rear-campus-screen-host-shell'), false);
+assert.equal(productionPhysics.walkableSurfaces.some((surface) => surface.sourceKind === 'tower-cluster-plinth-mass'), false);
+assert.equal(productionPhysics.walkableSurfaces.some((surface) => surface.ownerId.includes('tower-cluster-vertical-pilot-core-')), false);
 assert.equal(productionTraversalGraph.summary.surfaceCount, productionPhysics.walkableSurfaces.length);
 assert.ok(productionTraversalGraph.summary.reachableSurfaces > 0);
 assert.ok(productionTraversalGraph.summary.unreachableSurfaces >= 0);

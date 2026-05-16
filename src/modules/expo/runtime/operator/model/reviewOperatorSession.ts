@@ -504,7 +504,7 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
     },
     {
       expectedKeyObjectIds: [
-        'tower-cluster-vertical-pilot-level-2-deck',
+        'tower-cluster-vertical-pilot-tower-deck',
       ],
       expectedVisibleLayers: ['city-mass'],
       id: 'tower-cluster-vertical-pilot',
@@ -518,15 +518,18 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
           'tower-cluster-vertical-pilot-core-right',
           'tower-cluster-vertical-pilot-level-1-deck',
           'tower-cluster-vertical-pilot-level-2-deck',
+          'tower-cluster-vertical-pilot-roof-deck',
+          'tower-cluster-vertical-pilot-tower-deck',
         ],
       },
       startView: {
-        lookAt: [900, 104, -680],
-        position: [1320, 300, -980],
+        lookAt: [900, 166, -675],
+        position: [1320, 362, -975],
         source: 'arrival-main',
       },
       watchItems: [
         'vertical pilot deck readability',
+        'roof and tower deck height readability',
         'multi-floor core spacing',
         'level metadata traceability',
       ],
@@ -729,8 +732,8 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       intent: 'left-sponsor-boulevard-frontage-review',
       label: 'Sponsor Boulevard Left',
       camera: {
-        lookAtOffset: [0, 28, 0],
-        positionOffset: [118, 46, 58],
+        lookAtOffset: [0, 72, 0],
+        positionOffset: [150, 80, 86],
         targetDepth: 'frontmost',
         targetIds: [],
         targetLayer: 'booth',
@@ -753,8 +756,8 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       intent: 'left-sponsor-boulevard-close-review',
       label: 'Sponsor Boulevard Left Close',
       camera: {
-        lookAtOffset: [0, 18, 0],
-        positionOffset: [88, 32, 24],
+        lookAtOffset: [0, 24, 0],
+        positionOffset: [46, 24, 18],
         targetDepth: 'rearmost',
         targetIds: [],
         targetLayer: 'booth',
@@ -777,8 +780,8 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       intent: 'right-sponsor-boulevard-frontage-review',
       label: 'Sponsor Boulevard Right',
       camera: {
-        lookAtOffset: [-2, 24, 2],
-        positionOffset: [-50, 36, 36],
+        lookAtOffset: [-2, 20, 2],
+        positionOffset: [-32, 22, 18],
         targetDepth: 'frontmost',
         targetIds: [],
         targetLayer: 'booth',
@@ -802,7 +805,7 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       label: 'Sponsor Boulevard Right Medium',
       camera: {
         lookAtOffset: [-2, 24, 2],
-        positionOffset: [-44, 36, 34],
+        positionOffset: [-48, 26, 20],
         targetDepth: 'rearmost',
         targetIds: [],
         targetLayer: 'booth',

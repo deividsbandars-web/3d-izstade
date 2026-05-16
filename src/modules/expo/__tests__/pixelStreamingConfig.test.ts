@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { buildFallbackPixelStreamingRuntimeStatus, buildPixelStreamingStatusEndpointUrl, derivePixelStreamingAvailability, type PixelStreamingRuntimeStatus } from '../services/pixelStreamingConfig.js';
+import { buildFallbackPixelStreamingRuntimeStatus, buildPixelStreamingStatusEndpointUrl, derivePixelStreamingAvailability, isPixelStreamingStatusFetchFallbackError, type PixelStreamingRuntimeStatus } from '../services/pixelStreamingConfig.js';
 
 const readyStatus: PixelStreamingRuntimeStatus = {
   checkedAt: '2026-03-28T00:00:00.000Z',
@@ -36,3 +36,10 @@ const boothAwareFallback = buildFallbackPixelStreamingRuntimeStatus(true, {
   statusEndpointUrl: boothAwareUrl,
 });
 assert.equal(boothAwareFallback.session.selectionPolicy, 'booth_preferred');
+
+assert.equal(isPixelStreamingStatusFetchFallbackError(new TypeError('Failed to fetch')), true);
+assert.equal(isPixelStreamingStatusFetchFallbackError(new TypeError('fetch failed')), true);
+const abortError = new Error('The operation was aborted');
+abortError.name = 'AbortError';
+assert.equal(isPixelStreamingStatusFetchFallbackError(abortError), true);
+assert.equal(isPixelStreamingStatusFetchFallbackError(new Error('STATUS_HTTP_500')), false);
