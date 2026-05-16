@@ -55,9 +55,9 @@ export type WorldPhysicsTraversalGraphOptions = {
 };
 
 const DEFAULT_HORIZONTAL_REACH = 18;
-const DEFAULT_MANTLE_MAX_DELTA = 82;
+const DEFAULT_MANTLE_MAX_DELTA = 112;
 const DEFAULT_SAME_LEVEL_Y_TOLERANCE = 4;
-const DEFAULT_STEP_UP_MAX_DELTA = 18;
+const DEFAULT_STEP_UP_MAX_DELTA = 24;
 
 export function buildWorldPhysicsTraversalGraph(
   registry: WorldPhysicsSurfaceRegistry,

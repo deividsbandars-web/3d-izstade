@@ -1,5 +1,7 @@
 import type {
   CanonicalWorldPlan,
+  CanonicalPrimitive,
+  CityMass,
   CityScreenAssignment,
   CityScreenSocket,
   CityScreenSurface,
@@ -24,13 +26,17 @@ import {
 import { buildCityPerimeterConnectors } from '../WorldCityPerimeterLayout';
 import { buildRearCampusScreenHostShells } from '../rearCampusScreenHosts';
 import {
+  RECOVERED_REAR_CAMPUS_PHYSICS_PARTS_BY_ID,
   RECOVERED_REAR_CAMPUS_STRUCTURES,
+  resolveRecoveredRearCampusGroupPosition,
   resolveRecoveredRearCampusRegistryPosition,
 } from '../rearCampusRecoveredStructures';
 import {
   buildExpoBoothLocalFootprint,
   type ExpoBoothLocalFootprint,
 } from '../../../../../shared/expo/lib/boothLocalFootprint';
+import { getBoothColliderSegments } from '../../../components/BoothArchitectureKit';
+import { pickSponsorBoothTemplate } from '../../../lib/sponsorBoothPresentation';
 
 export type WorldObjectLayer =
   | 'booth'
@@ -53,6 +59,14 @@ export type WorldObjectLayer =
   | 'stadium-tower'
   | 'vertical-access-node';
 
+export type WorldObjectRegistryPhysicsPart = {
+  id: string;
+  position: [number, number, number];
+  rotation?: [number, number, number];
+  size: [number, number, number];
+  walkableTop?: boolean;
+};
+
 export type WorldObjectRegistryEntry = {
   aliases?: string[];
   diagnosticOwners: string[];
@@ -72,6 +86,7 @@ export type WorldObjectRegistryEntry = {
     transparent?: boolean;
   };
   nodeType?: string | null;
+  physicsParts?: WorldObjectRegistryPhysicsPart[];
   planningSections?: ExpoPlanningSectionId[];
   planningRole?: string | null;
   planningZone: string | null;
@@ -128,6 +143,303 @@ function resolveCityTowerAuditSize(tower: CityTower): [number, number, number] {
     tower.baseSize[1] + tower.upperSize[1],
     Math.max(tower.baseSize[2], tower.upperSize[2]),
   ];
+}
+
+function rotateLocalOffset(
+  offset: [number, number, number],
+  rotation?: [number, number, number],
+): [number, number, number] {
+  const yaw = rotation?.[1] ?? 0;
+  if (!yaw) {
+    return offset;
+  }
+
+  const cos = Math.cos(yaw);
+  const sin = Math.sin(yaw);
+  return [
+    (offset[0] * cos) + (offset[2] * sin),
+    offset[1],
+    (offset[2] * cos) - (offset[0] * sin),
+  ];
+}
+
+function combineLocalRotation(
+  parentRotation?: [number, number, number],
+  localRotation?: [number, number, number],
+): [number, number, number] | undefined {
+  if (!parentRotation && !localRotation) {
+    return undefined;
+  }
+
+  return [
+    (parentRotation?.[0] ?? 0) + (localRotation?.[0] ?? 0),
+    (parentRotation?.[1] ?? 0) + (localRotation?.[1] ?? 0),
+    (parentRotation?.[2] ?? 0) + (localRotation?.[2] ?? 0),
+  ];
+}
+
+function createLocalPhysicsPart({
+  baseY = 0,
+  id,
+  localPosition,
+  localRotation,
+  origin,
+  parentRotation,
+  size,
+  walkableTop,
+}: {
+  baseY?: number;
+  id: string;
+  localPosition: [number, number, number];
+  localRotation?: [number, number, number];
+  origin: [number, number, number];
+  parentRotation?: [number, number, number];
+  size: [number, number, number];
+  walkableTop?: boolean;
+}): WorldObjectRegistryPhysicsPart {
+  const rotatedOffset = rotateLocalOffset(localPosition, parentRotation);
+
+  return {
+    id,
+    position: [
+      origin[0] + rotatedOffset[0],
+      baseY + rotatedOffset[1],
+      origin[2] + rotatedOffset[2],
+    ],
+    rotation: combineLocalRotation(parentRotation, localRotation),
+    size,
+    ...(typeof walkableTop === 'boolean' ? { walkableTop } : {}),
+  };
+}
+
+function buildCityMassPhysicsParts(mass: CityMass): WorldObjectRegistryPhysicsPart[] {
+  const baseY = mass.vertical?.baseY ?? 0;
+  const parentRotation = mass.rotation ?? [0, 0, 0];
+  const parts: WorldObjectRegistryPhysicsPart[] = [
+    createLocalPhysicsPart({
+      baseY,
+      id: 'base',
+      localPosition: [0, mass.size[1] * 0.5, 0],
+      origin: mass.position,
+      parentRotation,
+      size: mass.size,
+    }),
+  ];
+
+  const intent = mass.renderIntent;
+  if (intent?.showHorizontalCap) {
+    parts.push(createLocalPhysicsPart({
+      baseY,
+      id: 'horizontal-cap',
+      localPosition: [0, mass.size[1] + 0.4, 0],
+      origin: mass.position,
+      parentRotation,
+      size: [mass.size[0] * 0.78, 0.9, mass.size[2] * 0.78],
+    }));
+  }
+
+  if (intent?.showSignatureBand) {
+    parts.push(createLocalPhysicsPart({
+      baseY,
+      id: 'signature-band',
+      localPosition: [0, mass.size[1] * 0.28, mass.size[2] * 0.18],
+      origin: mass.position,
+      parentRotation,
+      size: [Math.max(12, mass.size[0] * 0.28), Math.max(8, mass.size[1] * 0.08), Math.max(6, mass.size[2] * 0.1)],
+      walkableTop: false,
+    }));
+  }
+
+  if (intent?.showSideInset) {
+    parts.push(
+      createLocalPhysicsPart({
+        baseY,
+        id: 'side-inset-left',
+        localPosition: [-mass.size[0] * 0.24, mass.size[1] * 0.54, 0],
+        origin: mass.position,
+        parentRotation,
+        size: [Math.max(8, mass.size[0] * 0.1), Math.max(16, mass.size[1] * 0.24), Math.max(8, mass.size[2] * 0.16)],
+        walkableTop: false,
+      }),
+      createLocalPhysicsPart({
+        baseY,
+        id: 'side-inset-right',
+        localPosition: [mass.size[0] * 0.24, mass.size[1] * 0.5, 0],
+        origin: mass.position,
+        parentRotation,
+        size: [Math.max(8, mass.size[0] * 0.08), Math.max(14, mass.size[1] * 0.2), Math.max(8, mass.size[2] * 0.14)],
+        walkableTop: false,
+      }),
+    );
+  }
+
+  if (intent?.showSignatureBand && mass.size[1] > 48) {
+    parts.push(createLocalPhysicsPart({
+      baseY,
+      id: 'upper-signature-band',
+      localPosition: [0, mass.size[1] * 0.62, 0],
+      origin: mass.position,
+      parentRotation,
+      size: [Math.max(8, mass.size[0] * 0.16), Math.max(18, mass.size[1] * 0.18), Math.max(8, mass.size[2] * 0.16)],
+      walkableTop: false,
+    }));
+  }
+
+  if (intent?.showRearSpine) {
+    parts.push(createLocalPhysicsPart({
+      baseY,
+      id: 'rear-spine',
+      localPosition: [0, mass.size[1] * 0.68, -mass.size[2] * 0.22],
+      origin: mass.position,
+      parentRotation,
+      size: [Math.max(8, mass.size[0] * 0.12), Math.max(18, mass.size[1] * 0.18), Math.max(6, mass.size[2] * 0.1)],
+      walkableTop: false,
+    }));
+  }
+
+  if (intent?.showFrontWing) {
+    parts.push(createLocalPhysicsPart({
+      baseY,
+      id: 'front-wing',
+      localPosition: [0, mass.size[1] * 0.34, mass.size[2] * 0.22],
+      origin: mass.position,
+      parentRotation,
+      size: [Math.max(12, mass.size[0] * 0.26), Math.max(10, mass.size[1] * 0.12), Math.max(6, mass.size[2] * 0.1)],
+      walkableTop: false,
+    }));
+  }
+
+  if (mass.vertical && mass.vertical.floorCount > 1) {
+    Array.from({ length: mass.vertical.floorCount - 1 }, (_, index) => (index + 1) * mass.vertical!.floorHeight)
+      .filter((floorY) => floorY > 4 && floorY < mass.size[1] - 4)
+      .forEach((floorY) => {
+        parts.push(createLocalPhysicsPart({
+          baseY,
+          id: `floor-band-${floorY}`,
+          localPosition: [0, floorY, mass.size[2] * 0.51],
+          origin: mass.position,
+          parentRotation,
+          size: [Math.max(12, mass.size[0] * 0.86), 1.6, 2.2],
+          walkableTop: false,
+        }));
+      });
+  }
+
+  return parts;
+}
+
+function buildPrimitivePhysicsParts({
+  baseY = 0,
+  idPrefix,
+  origin,
+  parentRotation,
+  primitives,
+}: {
+  baseY?: number;
+  idPrefix: string;
+  origin: [number, number, number];
+  parentRotation?: [number, number, number];
+  primitives?: CanonicalPrimitive[];
+}): WorldObjectRegistryPhysicsPart[] | undefined {
+  const parts = (primitives ?? []).flatMap((primitive, index): WorldObjectRegistryPhysicsPart[] => {
+    if (primitive.kind === 'box') {
+      return [createLocalPhysicsPart({
+        baseY,
+        id: `${idPrefix}-${index}`,
+        localPosition: primitive.position,
+        localRotation: primitive.rotation,
+        origin,
+        parentRotation,
+        size: primitive.size,
+        walkableTop: false,
+      })];
+    }
+
+    if (primitive.kind === 'cylinder') {
+      const radius = Math.max(primitive.radiusTop, primitive.radiusBottom);
+      return [createLocalPhysicsPart({
+        baseY,
+        id: `${idPrefix}-${index}`,
+        localPosition: primitive.position,
+        localRotation: primitive.rotation,
+        origin,
+        parentRotation,
+        size: [radius * 2, primitive.height, radius * 2],
+        walkableTop: false,
+      })];
+    }
+
+    return [];
+  });
+
+  return parts.length > 0 ? parts : undefined;
+}
+
+function buildRearCampusPavilionPhysicsParts(pavilion: {
+  accentSide: number;
+  position: [number, number, number];
+  size: [number, number, number];
+}): WorldObjectRegistryPhysicsPart[] {
+  const [width, height, depth] = pavilion.size;
+  const bodyDepth = depth * 0.62;
+  const bodyOffsetZ = -(depth * 0.18);
+  const accentX = pavilion.accentSide * (width * 0.5 - Math.max(6, width * 0.045));
+
+  return [
+    createLocalPhysicsPart({
+      id: 'base',
+      localPosition: [0, 8, bodyOffsetZ],
+      origin: pavilion.position,
+      size: [width * 1.08, 16, bodyDepth * 1.08],
+      walkableTop: false,
+    }),
+    createLocalPhysicsPart({
+      id: 'body',
+      localPosition: [0, height * 0.5, bodyOffsetZ],
+      origin: pavilion.position,
+      size: [width, height, bodyDepth],
+    }),
+    createLocalPhysicsPart({
+      id: 'crown',
+      localPosition: [0, height + 10, bodyOffsetZ - (depth * 0.03)],
+      origin: pavilion.position,
+      size: [width * 1.12, 20, bodyDepth * 0.86],
+    }),
+    createLocalPhysicsPart({
+      id: 'accent-primary',
+      localPosition: [accentX, height * 0.58, bodyOffsetZ + (bodyDepth * 0.12)],
+      origin: pavilion.position,
+      size: [Math.max(8, width * 0.09), height * 0.72, Math.max(18, bodyDepth * 0.28)],
+      walkableTop: false,
+    }),
+    createLocalPhysicsPart({
+      id: 'accent-secondary',
+      localPosition: [-accentX, height * 0.62, bodyOffsetZ - (bodyDepth * 0.16)],
+      origin: pavilion.position,
+      size: [Math.max(6, width * 0.062), height * 0.52, Math.max(14, bodyDepth * 0.2)],
+      walkableTop: false,
+    }),
+  ];
+}
+
+function buildRecoveredStadiumStructurePhysicsParts(
+  structure: (typeof RECOVERED_REAR_CAMPUS_STRUCTURES)[number],
+  campusCenterZ: number,
+): WorldObjectRegistryPhysicsPart[] | undefined {
+  const localParts = RECOVERED_REAR_CAMPUS_PHYSICS_PARTS_BY_ID[structure.id];
+  if (!localParts?.length) {
+    return undefined;
+  }
+
+  const origin = resolveRecoveredRearCampusGroupPosition(structure, campusCenterZ);
+  return localParts.map((part) => createLocalPhysicsPart({
+    id: part.id,
+    localPosition: part.localPosition,
+    localRotation: part.rotation,
+    origin,
+    size: part.size,
+    walkableTop: part.walkableTop,
+  }));
 }
 
 function resolveStadiumGroundOwner(planeId: string): NonNullable<WorldObjectRegistryEntry['groundOwner']> {
@@ -237,6 +549,7 @@ function buildMegaLandmarkEntries(args: {
     layer: 'mega-landmark',
     planningSections: landmark.planningSections,
     planningZone: landmark.planningZone,
+    ...(landmark.physicsParts ? { physicsParts: landmark.physicsParts } : {}),
     position: landmark.position,
     ...(landmark.reviewTargetPosition ? { reviewTargetPosition: landmark.reviewTargetPosition } : {}),
     safeEditSeam: 'src/modules/expo/runtime/world/WorldCityMegaLandmarks.tsx',
@@ -365,11 +678,12 @@ export function buildCityWorldObjectRegistry({
 
   return [
     ...buildCityPerimeterEntries(plan.stadiumReserve),
-    ...plan.filteredMasses.map((mass) => createEntry({
+    ...plan.filteredMasses.filter((mass) => mass.renderIntent?.skipBase !== true).map((mass) => createEntry({
       diagnosticOwners: [],
       id: mass.id,
       interactionOwner: null,
       layer: 'city-mass',
+      physicsParts: buildCityMassPhysicsParts(mass),
       planningSections: mass.sections,
       planningRole: mass.role ?? null,
       planningZone: mass.planningZone ?? 'canonical-city',
@@ -384,6 +698,12 @@ export function buildCityWorldObjectRegistry({
     })),
     ...plan.filteredTowerLandmarks.map((tower) => {
       const size = resolveCityTowerAuditSize(tower);
+      const physicsParts = buildPrimitivePhysicsParts({
+        baseY: tower.vertical?.baseY ?? 0,
+        idPrefix: 'primitive',
+        origin: tower.position,
+        primitives: tower.renderIntent?.primitives,
+      });
 
       return createEntry({
         aliases: compactAliases(tower.id, towerAliasesById.get(tower.id) ?? []),
@@ -393,6 +713,7 @@ export function buildCityWorldObjectRegistry({
         id: tower.id,
         interactionOwner: null,
         layer: 'city-tower',
+        ...(physicsParts ? { physicsParts } : {}),
         planningSections: tower.sections,
         planningZone: tower.planningZone ?? 'canonical-city',
         position: baseAnchoredBoxCenter(tower.position, size, tower.vertical?.baseY),
@@ -476,24 +797,29 @@ function buildStadiumScreenHostShellEntries(
 }
 
 function buildRecoveredStadiumStructureEntries(campusCenterZ: number): WorldObjectRegistryEntry[] {
-  return RECOVERED_REAR_CAMPUS_STRUCTURES.map((structure) => createEntry({
-    diagnosticOwners: [
-      'scripts/audit-expo-structure-recovery.mjs',
-      'scripts/audit-expo-world-registry.mjs',
-    ],
-    id: structure.id,
-    interactionOwner: null,
-    layer: 'stadium-structure',
-    planningRole: 'recovered-large-landmark',
-    planningZone: 'rear-campus',
-    position: resolveRecoveredRearCampusRegistryPosition(structure, campusCenterZ),
-    rotation: [0, 0, 0],
-    safeEditSeam: 'src/modules/expo/runtime/world/ExpoRearCampusRecoveredStructures.tsx',
-    size: structure.size,
-    sourceFile: 'src/modules/expo/runtime/world/ExpoRearCampusRecoveredStructures.tsx',
-    sourceFunction: 'ExpoRearCampusRecoveredStructures',
-    sourceKind: 'recovered-rear-campus-structure',
-  }));
+  return RECOVERED_REAR_CAMPUS_STRUCTURES.map((structure) => {
+    const physicsParts = buildRecoveredStadiumStructurePhysicsParts(structure, campusCenterZ);
+
+    return createEntry({
+      diagnosticOwners: [
+        'scripts/audit-expo-structure-recovery.mjs',
+        'scripts/audit-expo-world-registry.mjs',
+      ],
+      id: structure.id,
+      interactionOwner: null,
+      layer: 'stadium-structure',
+      physicsParts,
+      planningRole: 'recovered-large-landmark',
+      planningZone: 'rear-campus',
+      position: resolveRecoveredRearCampusRegistryPosition(structure, campusCenterZ),
+      rotation: [0, 0, 0],
+      safeEditSeam: 'src/modules/expo/runtime/world/ExpoRearCampusRecoveredStructures.tsx',
+      size: structure.size,
+      sourceFile: 'src/modules/expo/runtime/world/ExpoRearCampusRecoveredStructures.tsx',
+      sourceFunction: 'ExpoRearCampusRecoveredStructures',
+      sourceKind: 'recovered-rear-campus-structure',
+    });
+  });
 }
 
 export function buildStadiumWorldObjectRegistry({
@@ -529,6 +855,7 @@ export function buildStadiumWorldObjectRegistry({
       id: pavilion.id,
       interactionOwner: null,
       layer: 'stadium-pavilion',
+      physicsParts: buildRearCampusPavilionPhysicsParts(pavilion),
       planningZone: 'rear-campus',
       position: baseAnchoredBoxCenter(pavilion.position, pavilion.size),
       rotation: [0, 0, 0],
@@ -617,6 +944,7 @@ export function buildBoothWorldObjectRegistry(
       id?: string | number | null;
       slug?: string | null;
     } | null;
+    districtThemeId?: string | null;
     id: string;
     localFootprint?: ExpoBoothLocalFootprint;
     nodeType?: string | null;
@@ -643,6 +971,19 @@ export function buildBoothWorldObjectRegistry(
       rotation: placement.rotation,
       sponsorTier: placement.sponsorTier,
     });
+    const boothTemplate = pickSponsorBoothTemplate({
+      boothType: placement.boothType,
+      districtThemeId: placement.districtThemeId,
+      nodeType: placement.nodeType,
+      sponsorTier: placement.sponsorTier as Parameters<typeof pickSponsorBoothTemplate>[0]['sponsorTier'],
+    });
+    const physicsParts = getBoothColliderSegments(boothTemplate).map((segment) => createLocalPhysicsPart({
+      id: `collider-${segment.id}`,
+      localPosition: segment.position,
+      origin: placement.position,
+      parentRotation: placement.rotation ?? [0, 0, 0],
+      size: segment.size,
+    }));
     const footprintWidth = footprint.worldBounds.maxX - footprint.worldBounds.minX;
     const footprintDepth = footprint.worldBounds.maxZ - footprint.worldBounds.minZ;
 
@@ -655,6 +996,7 @@ export function buildBoothWorldObjectRegistry(
       interactionOwner: 'src/modules/expo/runtime/booths/DistrictBooth.tsx',
       layer: 'booth',
       nodeType: placement.nodeType ?? null,
+      physicsParts,
       planningZone: placement.sectorId ?? null,
       position: placement.position,
       rotation: placement.rotation ?? [0, 0, 0],

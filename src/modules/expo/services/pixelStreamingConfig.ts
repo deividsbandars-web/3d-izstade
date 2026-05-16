@@ -161,6 +161,19 @@ export async function fetchPixelStreamingRuntimeStatus(config: PixelStreamingRun
   }
 }
 
+export function isPixelStreamingStatusFetchFallbackError(error: unknown): boolean {
+  if (!(error instanceof Error)) {
+    return false;
+  }
+
+  if (error.name === 'AbortError') {
+    return true;
+  }
+
+  return error instanceof TypeError
+    && /failed to fetch|fetch failed|networkerror/i.test(error.message);
+}
+
 export function buildFallbackPixelStreamingRuntimeStatus(
   signalingReachable: boolean,
   config: PixelStreamingRuntimeConfig

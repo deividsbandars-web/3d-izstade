@@ -5,6 +5,7 @@ import {
   derivePixelStreamingAvailability,
   fetchPixelStreamingRuntimeStatus,
   getPixelStreamingRuntimeConfig,
+  isPixelStreamingStatusFetchFallbackError,
   probePixelStreamingAvailability,
   type PixelStreamingBoothContext,
   type PixelStreamingAvailability,
@@ -51,10 +52,12 @@ export function usePixelStreamingStatus({ boothContext, shouldProbe = true }: Us
         setRuntimeStatus(status);
         setAvailability(derivePixelStreamingAvailability(status));
       } catch (error) {
-        reportExpoDevError('usePixelStreamingStatus.fetchPixelStreamingRuntimeStatus', error, {
-          signalingUrl: config.signalingUrl,
-          statusEndpointUrl: config.statusEndpointUrl,
-        });
+        if (!isPixelStreamingStatusFetchFallbackError(error)) {
+          reportExpoDevError('usePixelStreamingStatus.fetchPixelStreamingRuntimeStatus', error, {
+            signalingUrl: config.signalingUrl,
+            statusEndpointUrl: config.statusEndpointUrl,
+          });
+        }
         const isReachable = await probePixelStreamingAvailability(config);
         if (!isActive) return;
 

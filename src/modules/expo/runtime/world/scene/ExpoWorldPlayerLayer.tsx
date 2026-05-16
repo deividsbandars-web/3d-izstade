@@ -11,8 +11,10 @@ import {
   WORLD_PHYSICS_DEFAULT_Y_TOLERANCE,
   WORLD_PHYSICS_PLAYER_SURFACE_OFFSET,
   findBlockingWorldPhysicsSolid,
+  findCurrentWorldPhysicsSolidTopY,
   findCurrentWorldPhysicsSurfaceY,
-  findWorldPhysicsLandingY,
+  findWorldPhysicsLandingSurface,
+  findWorldPhysicsSolidTopLanding,
   findWorldPhysicsTraversalSurface,
   isWorldPhysicsPositionOnWalkableSurface,
   isWorldPhysicsSurfacePlayerY,
@@ -29,14 +31,15 @@ const PLAYER_SPRINT_MULTIPLIER = 1.8;
 const PLAYER_KEYBOARD_TURN_SPEED = 2.25;
 const OPERATOR_TELEPORT_SETTLE_MS = 1200;
 const VERTICAL_LIFT_COOLDOWN_MS = 1400;
-const VERTICAL_GRAVITY = 360;
-const VERTICAL_JUMP_SPEED = 86;
+const VERTICAL_GRAVITY = 340;
+const VERTICAL_JUMP_SPEED = 220;
 const VERTICAL_LANDING_EPSILON = 0.45;
+const VERTICAL_SOLID_TOP_Y_TOLERANCE = 1.25;
 const VERTICAL_WALKABLE_EDGE_SLACK = 6;
 const VERTICAL_WALKABLE_Y_TOLERANCE = 10;
-const VERTICAL_STEP_UP_MAX_DELTA = 18;
-const VERTICAL_MANTLE_MAX_DELTA = 82;
-const VERTICAL_MANTLE_FORWARD_REACH = 16;
+const VERTICAL_STEP_UP_MAX_DELTA = 24;
+const VERTICAL_MANTLE_MAX_DELTA = 112;
+const VERTICAL_MANTLE_FORWARD_REACH = 26;
 const LIFT_TRIGGER_KEYS = new Set(['KeyF']);
 const WALK_CONTROL_KEYS = new Set([
   'ArrowLeft',
@@ -538,7 +541,18 @@ export function ExpoWorldPlayerLayer({
           yTolerance: WORLD_PHYSICS_DEFAULT_Y_TOLERANCE,
         },
       );
-      const isOnVerticalWalkable = isOnPlanWalkable || isOnPhysicsWalkable;
+      const currentPhysicsSolidTopY = findCurrentWorldPhysicsSolidTopY(
+        camera.position,
+        verticalLevelY.current,
+        effectivePhysicsSolids,
+        {
+          edgeSlack: PLAYER_RADIUS,
+          radius: PLAYER_RADIUS,
+          yTolerance: VERTICAL_SOLID_TOP_Y_TOLERANCE,
+        },
+      );
+      const isOnPhysicsSolidTop = currentPhysicsSolidTopY !== null;
+      const isOnVerticalWalkable = isOnPlanWalkable || isOnPhysicsWalkable || isOnPhysicsSolidTop;
       const isVerticalSystemElevation = (
         isVerticalSystemPlayerY(verticalLevelY.current, effectiveVerticalWalkableRegions)
         || isWorldPhysicsSurfacePlayerY(
@@ -546,6 +560,7 @@ export function ExpoWorldPlayerLayer({
           effectivePhysicsWalkableSurfaces,
           WORLD_PHYSICS_DEFAULT_Y_TOLERANCE,
         )
+        || isOnPhysicsSolidTop
       );
       const isGrounded = verticalLevelY.current <= 5 + VERTICAL_LANDING_EPSILON || isOnVerticalWalkable;
       const canUseVerticalPhysics = !operatorTeleportSettling && (
@@ -604,13 +619,30 @@ export function ExpoWorldPlayerLayer({
         if (verticalAirborne.current) {
           verticalVelocityY.current -= VERTICAL_GRAVITY * physicsDelta;
           const nextY = verticalLevelY.current + (verticalVelocityY.current * physicsDelta);
-          const fromY = Math.max(verticalLevelY.current, nextY);
+          const fromY = verticalLevelY.current;
           const landingY = Math.max(
-            findVerticalLandingY(camera.position, fromY, effectiveVerticalWalkableRegions),
-            findWorldPhysicsLandingY(camera.position, fromY, effectivePhysicsWalkableSurfaces, {
-              edgeSlack: WORLD_PHYSICS_DEFAULT_EDGE_SLACK,
-              landingEpsilon: VERTICAL_LANDING_EPSILON,
-            }),
+            findVerticalLandingY(camera.position, fromY, nextY, effectiveVerticalWalkableRegions),
+            findWorldPhysicsLandingSurface(
+              camera.position,
+              fromY,
+              nextY,
+              effectivePhysicsWalkableSurfaces,
+              {
+                edgeSlack: WORLD_PHYSICS_DEFAULT_EDGE_SLACK,
+                landingEpsilon: VERTICAL_LANDING_EPSILON,
+              },
+            )?.playerY ?? 5,
+            findWorldPhysicsSolidTopLanding(
+              camera.position,
+              fromY,
+              nextY,
+              effectivePhysicsSolids,
+              {
+                edgeSlack: PLAYER_RADIUS,
+                landingEpsilon: VERTICAL_LANDING_EPSILON,
+                radius: PLAYER_RADIUS,
+              },
+            )?.playerY ?? 5,
           );
 
           if (nextY <= landingY + VERTICAL_LANDING_EPSILON && verticalVelocityY.current <= 0) {
@@ -642,7 +674,8 @@ export function ExpoWorldPlayerLayer({
             ?? findCurrentWorldPhysicsSurfaceY(camera.position, verticalLevelY.current, effectivePhysicsWalkableSurfaces, {
               edgeSlack: WORLD_PHYSICS_DEFAULT_EDGE_SLACK,
               yTolerance: WORLD_PHYSICS_DEFAULT_Y_TOLERANCE,
-            });
+            })
+            ?? currentPhysicsSolidTopY;
           if (snappedY !== null) {
             verticalLevelY.current = snappedY;
             activeViewElevationY.current = snappedY;
@@ -783,11 +816,15 @@ function findCurrentVerticalRegionY(
 function findVerticalLandingY(
   playerPosition: THREE.Vector3,
   fromY: number,
+  toY: number,
   regions: ExpoVerticalWalkableRegion[],
 ) {
+  const upperY = Math.max(fromY, toY);
+  const lowerY = Math.min(fromY, toY);
   const lowerWalkableRegions = regions
     .filter((region) => (
-      region.playerY < fromY - VERTICAL_LANDING_EPSILON
+      region.playerY <= upperY + VERTICAL_LANDING_EPSILON
+      && region.playerY >= lowerY - VERTICAL_LANDING_EPSILON
       && isPointInsideVerticalWalkableRegion(playerPosition, region)
     ))
     .sort((left, right) => right.playerY - left.playerY);

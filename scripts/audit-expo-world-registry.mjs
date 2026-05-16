@@ -65,6 +65,15 @@ const SOURCE_TRACE_CITY_LAYERS = new Set(['city-mass', 'city-tower']);
 const VALID_VERTICAL_LEVELS = new Set(['ground', 'level-1', 'level-2', 'roof', 'tower']);
 const VALID_VERTICAL_HEIGHT_BANDS = new Set(['ground', 'low-rise', 'mid-rise', 'high-rise', 'roof', 'tower']);
 const VALID_VERTICAL_OWNERS = new Set(['booth', 'city', 'stadium', 'system']);
+const WORLD_PHYSICS_PLAYER_SURFACE_OFFSET = 4;
+const WORLD_PHYSICS_GROUND_PLAYER_Y = 5;
+const WORLD_PHYSICS_DEFAULT_EDGE_SLACK = 6;
+const WORLD_PHYSICS_DEFAULT_Y_TOLERANCE = 10;
+const WORLD_PHYSICS_WALKABLE_MIN_FOOTPRINT = 18;
+const WORLD_PHYSICS_COLLISION_VERTICAL_FOOT_CLEARANCE = 0.75;
+const WORLD_PHYSICS_COLLISION_HEAD_CLEARANCE = 2;
+const WORLD_PHYSICS_STEP_UP_MAX_DELTA = 24;
+const WORLD_PHYSICS_MANTLE_MAX_DELTA = 112;
 const RECOVERED_REAR_CAMPUS_STRUCTURE_IDS = new Set([
   'rear-campus-stage-monolith-canopy',
   'rear-campus-mega-civic-hall',
@@ -478,6 +487,305 @@ function isIntentionalVerticalCityAssembly(left, right) {
     && left.verticalOwner === 'city'
     && right.verticalOwner === 'city'
   );
+}
+
+function isPhysicsSolidEntry(entry) {
+  return SOLID_LAYERS.has(entry.layer) && positiveTuple3(entry.size);
+}
+
+function isPhysicsPerimeterStructure(entry) {
+  const role = String(entry?.planningRole ?? '');
+  const sourceKind = String(entry?.sourceKind ?? '');
+  const id = String(entry?.id ?? '');
+  return role.includes('perimeter') || sourceKind.includes('perimeter') || id.includes('perimeter');
+}
+
+function isPhysicsNonWalkableSupportStructure(entry) {
+  return (
+    isPhysicsPerimeterStructure(entry)
+    || entry.sourceKind === 'tower-cluster-plinth-mass'
+    || String(entry?.id ?? '').endsWith('-tower-cluster-plinth')
+    || (entry.sourceKind === 'tower-cluster-vertical-pilot-mass' && String(entry?.id ?? '').includes('-core-'))
+    || entry.sourceKind === 'city-screen-host-mass'
+    || entry.planningRole === 'screen-host-shell'
+    || entry.sourceKind === 'rear-campus-screen-host-shell'
+  );
+}
+
+function shouldExposePhysicsWalkableTop(entry, bounds) {
+  if (isPhysicsNonWalkableSupportStructure(entry)) {
+    return false;
+  }
+
+  const footprintX = bounds.maxX - bounds.minX;
+  const footprintZ = bounds.maxZ - bounds.minZ;
+  return footprintX >= WORLD_PHYSICS_WALKABLE_MIN_FOOTPRINT
+    && footprintZ >= WORLD_PHYSICS_WALKABLE_MIN_FOOTPRINT
+    && bounds.maxY > 1;
+}
+
+function resolvePhysicsBoxes(entry) {
+  if (Array.isArray(entry.physicsParts) && entry.physicsParts.length > 0) {
+    return entry.physicsParts.flatMap((part) => {
+      const partId = String(part?.id ?? '').trim();
+      const position = tuple3(part?.position);
+      const size = positiveTuple3(part?.size);
+      if (!partId || !position || !size) {
+        return [];
+      }
+
+      return [{
+        id: `${entry.id}:${partId}`,
+        partId,
+        position,
+        rotation: tuple3(part?.rotation),
+        size,
+        walkableTopOverride: typeof part?.walkableTop === 'boolean' ? part.walkableTop : undefined,
+      }];
+    });
+  }
+
+  return [{
+    id: entry.id,
+    partId: null,
+    position: tuple3(entry.position),
+    rotation: tuple3(entry.rotation),
+    size: positiveTuple3(entry.size),
+    walkableTopOverride: undefined,
+  }];
+}
+
+function buildAuditPhysicsRegistry(entries) {
+  const solids = [];
+  const walkableSurfaces = [];
+
+  for (const entry of entries) {
+    if (!isPhysicsSolidEntry(entry)) {
+      continue;
+    }
+
+    for (const box of resolvePhysicsBoxes(entry)) {
+      const bounds = resolveBounds(box);
+      if (!bounds) {
+        continue;
+      }
+
+      const walkableTop = box.walkableTopOverride ?? shouldExposePhysicsWalkableTop(entry, bounds);
+      const solid = {
+        bounds,
+        entry,
+        id: box.id,
+        partId: box.partId,
+        walkableTop,
+      };
+      solids.push(solid);
+
+      if (!walkableTop) {
+        continue;
+      }
+
+      const footprintX = bounds.maxX - bounds.minX;
+      const footprintZ = bounds.maxZ - bounds.minZ;
+      const playerY = bounds.maxY + WORLD_PHYSICS_PLAYER_SURFACE_OFFSET;
+      walkableSurfaces.push({
+        bounds: {
+          ...bounds,
+          minY: playerY - WORLD_PHYSICS_DEFAULT_Y_TOLERANCE,
+          maxY: playerY + WORLD_PHYSICS_DEFAULT_Y_TOLERANCE,
+        },
+        id: `${box.id}:top`,
+        ownerId: box.id,
+        ownerLayer: entry.layer,
+        playerY,
+        size: [footprintX, footprintZ],
+        solid,
+        topY: bounds.maxY,
+      });
+    }
+  }
+
+  return {
+    solids,
+    walkableSurfaces: walkableSurfaces.filter((surface) => (
+      findBlockingAuditPhysicsSolid(
+        { x: surface.bounds.centerX, y: surface.playerY, z: surface.bounds.centerZ },
+        solids,
+        { radius: 1 },
+      ) === null
+    )),
+  };
+}
+
+function findBlockingAuditPhysicsSolid(playerPosition, solids, options = {}) {
+  const radius = options.radius ?? 1;
+  const surfaceOffset = options.playerSurfaceOffset ?? WORLD_PHYSICS_PLAYER_SURFACE_OFFSET;
+  const headClearance = options.headClearance ?? WORLD_PHYSICS_COLLISION_HEAD_CLEARANCE;
+  const feetY = playerPosition.y - surfaceOffset;
+  const headY = playerPosition.y + headClearance;
+  const hits = [];
+
+  for (const solid of solids) {
+    const bounds = solid.bounds;
+    if (
+      bounds.maxY <= feetY + WORLD_PHYSICS_COLLISION_VERTICAL_FOOT_CLEARANCE
+      || bounds.minY >= headY
+    ) {
+      continue;
+    }
+
+    const overlapX = Math.min(
+      playerPosition.x - (bounds.minX - radius),
+      (bounds.maxX + radius) - playerPosition.x,
+    );
+    const overlapZ = Math.min(
+      playerPosition.z - (bounds.minZ - radius),
+      (bounds.maxZ + radius) - playerPosition.z,
+    );
+    if (overlapX <= 0 || overlapZ <= 0) {
+      continue;
+    }
+
+    hits.push({
+      penetrationXZ: Math.min(overlapX, overlapZ),
+      solid,
+    });
+  }
+
+  return hits.sort((left, right) => right.penetrationXZ - left.penetrationXZ)[0] ?? null;
+}
+
+function isPointInsideAuditWalkableSurface(point, surface, edgeSlack = WORLD_PHYSICS_DEFAULT_EDGE_SLACK) {
+  return point.x >= surface.bounds.minX - edgeSlack
+    && point.x <= surface.bounds.maxX + edgeSlack
+    && point.z >= surface.bounds.minZ - edgeSlack
+    && point.z <= surface.bounds.maxZ + edgeSlack;
+}
+
+function isOnAuditWalkableSurface(point, playerY, surfaces, options = {}) {
+  const yTolerance = options.yTolerance ?? WORLD_PHYSICS_DEFAULT_Y_TOLERANCE;
+  return surfaces.some((surface) => (
+    Math.abs(playerY - surface.playerY) <= yTolerance
+    && isPointInsideAuditWalkableSurface(point, surface, options.edgeSlack)
+  ));
+}
+
+function findAuditLandingY(point, fromY, surfaces) {
+  const lowerSurfaces = surfaces
+    .filter((surface) => (
+      surface.playerY < fromY - 0.45
+      && isPointInsideAuditWalkableSurface(point, surface)
+    ))
+    .sort((left, right) => right.playerY - left.playerY);
+
+  return lowerSurfaces[0]?.playerY ?? WORLD_PHYSICS_GROUND_PLAYER_Y;
+}
+
+function auditPhysicsTraversalContract(entries) {
+  const issues = [];
+  const physics = buildAuditPhysicsRegistry(entries);
+
+  if (physics.solids.length > 0 && physics.walkableSurfaces.length === 0) {
+    pushIssue(
+      issues,
+      'high',
+      'physics-no-walkable-surfaces',
+      'Physics registry has solid objects but no walkable top surfaces; vertical gameplay cannot be audited.',
+      [],
+      { solidCount: physics.solids.length },
+    );
+  }
+
+  for (const solid of physics.solids) {
+    const bounds = solid.bounds;
+    const crossesGroundPlayer = bounds.minY <= WORLD_PHYSICS_GROUND_PLAYER_Y + 1
+      && bounds.maxY > WORLD_PHYSICS_GROUND_PLAYER_Y + WORLD_PHYSICS_COLLISION_VERTICAL_FOOT_CLEARANCE;
+    if (!crossesGroundPlayer) {
+      continue;
+    }
+
+    const hit = findBlockingAuditPhysicsSolid(
+      { x: bounds.centerX, y: WORLD_PHYSICS_GROUND_PLAYER_Y, z: bounds.centerZ },
+      physics.solids,
+      { radius: 1 },
+    );
+    if (!hit) {
+      pushIssue(
+        issues,
+        'high',
+        'physics-solid-pass-through-risk',
+        `${solid.entry.layer} ${solid.entry.id} crosses player ground height but does not block a center collision probe.`,
+        [solid.entry.id],
+        {
+          maxY: Math.round(bounds.maxY),
+          minY: Math.round(bounds.minY),
+          sourceKind: solid.entry.sourceKind ?? null,
+        },
+      );
+    }
+  }
+
+  for (const surface of physics.walkableSurfaces) {
+    const centerPoint = { x: surface.bounds.centerX, y: surface.playerY, z: surface.bounds.centerZ };
+    const centerBlocked = findBlockingAuditPhysicsSolid(centerPoint, physics.solids, { radius: 1 });
+    if (centerBlocked) {
+      pushIssue(
+        issues,
+        'high',
+        'physics-walkable-top-blocked',
+        `${surface.ownerLayer} ${surface.ownerId} exposes a walkable top, but the player collision probe is still blocked on the top surface.`,
+        [surface.ownerId, centerBlocked.solid.id],
+        {
+          blockingSolidId: centerBlocked.solid.id,
+          playerY: Math.round(surface.playerY),
+        },
+      );
+    }
+
+    const probeOffset = WORLD_PHYSICS_DEFAULT_EDGE_SLACK + 2;
+    const edgeProbes = [
+      { x: surface.bounds.minX - probeOffset, y: surface.playerY, z: surface.bounds.centerZ },
+      { x: surface.bounds.maxX + probeOffset, y: surface.playerY, z: surface.bounds.centerZ },
+      { x: surface.bounds.centerX, y: surface.playerY, z: surface.bounds.minZ - probeOffset },
+      { x: surface.bounds.centerX, y: surface.playerY, z: surface.bounds.maxZ + probeOffset },
+    ];
+
+    for (const probe of edgeProbes) {
+      if (isPointInsideAuditWalkableSurface(probe, surface)) {
+        pushIssue(
+          issues,
+          'high',
+          'physics-walkable-edge-leak',
+          `${surface.ownerLayer} ${surface.ownerId} keeps a probe outside its edge on the same walkable surface; walking off can become air-walking.`,
+          [surface.ownerId],
+          {
+            edgeSlack: WORLD_PHYSICS_DEFAULT_EDGE_SLACK,
+            playerY: Math.round(surface.playerY),
+            probeX: Math.round(probe.x),
+            probeZ: Math.round(probe.z),
+          },
+        );
+      }
+
+      if (!isOnAuditWalkableSurface(probe, surface.playerY, physics.walkableSurfaces)) {
+        const landingY = findAuditLandingY(probe, surface.playerY + 1, physics.walkableSurfaces);
+        if (landingY >= surface.playerY - 0.45) {
+          pushIssue(
+            issues,
+            'high',
+            'physics-walkable-drop-risk',
+            `${surface.ownerLayer} ${surface.ownerId} has no lower landing result outside an edge probe; walking off may preserve height instead of falling.`,
+            [surface.ownerId],
+            {
+              landingY: Math.round(landingY),
+              playerY: Math.round(surface.playerY),
+            },
+          );
+        }
+      }
+    }
+  }
+
+  return issues;
 }
 
 function auditGroundOwnershipMetadata(entries) {
@@ -1299,6 +1607,71 @@ function auditSolidBoundsCoverage(entries) {
   return issues;
 }
 
+function requiresCompoundPhysicsParts(entry) {
+  if (entry.sourceKind === 'recovered-rear-campus-structure') {
+    return true;
+  }
+
+  if (entry.sourceKind === 'rear-campus-pavilion') {
+    return true;
+  }
+
+  if (
+    entry.layer === 'city-mass'
+    && entry.sourceKind !== 'city-perimeter-connector'
+    && entry.sourceKind !== 'rear-campus-perimeter-connector'
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
+function auditCompoundPhysicsPartCoverage(entries) {
+  const issues = [];
+
+  for (const entry of entries) {
+    if (!SOLID_LAYERS.has(entry.layer)) {
+      continue;
+    }
+
+    const physicsParts = Array.isArray(entry.physicsParts) ? entry.physicsParts : [];
+    const resolvedPartBoxes = physicsParts.length > 0 ? resolvePhysicsBoxes(entry) : [];
+
+    if (requiresCompoundPhysicsParts(entry) && resolvedPartBoxes.length === 0) {
+      pushIssue(
+        issues,
+        'high',
+        'compound-solid-missing-physics-parts',
+        `${entry.layer} ${entry.id} is rendered as a compound object but exposes only one coarse physics box; this can create invisible blockers or pass-through visual parts.`,
+        [entry.id],
+        {
+          sourceFile: entry.sourceFile ?? null,
+          sourceKind: entry.sourceKind ?? null,
+        },
+      );
+      continue;
+    }
+
+    if (physicsParts.length > 0 && resolvedPartBoxes.length === 0) {
+      pushIssue(
+        issues,
+        'high',
+        'compound-solid-invalid-physics-parts',
+        `${entry.layer} ${entry.id} exposes physicsParts, but none resolve to valid positive boxes.`,
+        [entry.id],
+        {
+          physicsPartCount: physicsParts.length,
+          sourceFile: entry.sourceFile ?? null,
+          sourceKind: entry.sourceKind ?? null,
+        },
+      );
+    }
+  }
+
+  return issues;
+}
+
 function auditCitySmallBlockClutter(entries) {
   const issues = [];
 
@@ -1948,6 +2321,28 @@ function summarizeCoverage(entries) {
   const byLayer = {};
   const groundByOwner = {};
   const groundByRole = {};
+  const physics = buildAuditPhysicsRegistry(entries);
+  const nonWalkableSupports = physics.solids.filter((solid) => isPhysicsNonWalkableSupportStructure(solid.entry));
+  const groundBlockingSolids = physics.solids.filter((solid) => (
+    solid.bounds.minY <= WORLD_PHYSICS_GROUND_PLAYER_Y + 1
+    && solid.bounds.maxY > WORLD_PHYSICS_GROUND_PLAYER_Y + WORLD_PHYSICS_COLLISION_VERTICAL_FOOT_CLEARANCE
+  ));
+  const highWalkableSurfaces = physics.walkableSurfaces.filter((surface) => (
+    surface.playerY - WORLD_PHYSICS_GROUND_PLAYER_Y > WORLD_PHYSICS_MANTLE_MAX_DELTA
+  ));
+  const compoundPhysicsEntries = entries.filter((entry) => (
+    SOLID_LAYERS.has(entry.layer)
+    && Array.isArray(entry.physicsParts)
+    && entry.physicsParts.length > 0
+  ));
+  const compoundPhysicsSolids = physics.solids.filter((solid) => solid.partId);
+  const stepReachableSurfaces = physics.walkableSurfaces.filter((surface) => (
+    surface.playerY - WORLD_PHYSICS_GROUND_PLAYER_Y <= WORLD_PHYSICS_STEP_UP_MAX_DELTA
+  ));
+  const mantleReachableSurfaces = physics.walkableSurfaces.filter((surface) => {
+    const delta = surface.playerY - WORLD_PHYSICS_GROUND_PLAYER_Y;
+    return delta > WORLD_PHYSICS_STEP_UP_MAX_DELTA && delta <= WORLD_PHYSICS_MANTLE_MAX_DELTA;
+  });
   let screenHostBindings = 0;
   let screenSurfaces = 0;
 
@@ -1974,6 +2369,17 @@ function summarizeCoverage(entries) {
       byRole: groundByRole,
       total: Object.values(groundByOwner).reduce((sum, count) => sum + count, 0),
     },
+    physics: {
+      compoundEntries: compoundPhysicsEntries.length,
+      compoundPartSolids: compoundPhysicsSolids.length,
+      groundBlockingSolids: groundBlockingSolids.length,
+      highWalkableSurfaces: highWalkableSurfaces.length,
+      mantleReachableSurfaces: mantleReachableSurfaces.length,
+      nonWalkableSupports: nonWalkableSupports.length,
+      solids: physics.solids.length,
+      stepReachableSurfaces: stepReachableSurfaces.length,
+      walkableSurfaces: physics.walkableSurfaces.length,
+    },
     screens: {
       hostBindings: screenHostBindings,
       surfaces: screenSurfaces,
@@ -1987,6 +2393,7 @@ const snapshot = JSON.parse(fs.readFileSync(snapshotPath, 'utf8').replace(/^\uFE
 const entries = uniqueRegistryEntries(snapshot);
 const issues = [
   ...auditSolidBoundsCoverage(entries),
+  ...auditCompoundPhysicsPartCoverage(entries),
   ...auditGroundOwnershipMetadata(entries),
   ...auditGroundVisualContinuity(entries),
   ...auditVerticalMetadata(entries),
@@ -2012,6 +2419,7 @@ const issues = [
   ...auditScreenHostVerticalAttachment(entries),
   ...auditScreenHostPlanarAttachment(entries),
   ...auditStadiumScreenHostFaceAttachment(entries),
+  ...auditPhysicsTraversalContract(entries),
 ].sort((left, right) => {
   const severityDelta = SEVERITY_RANK[right.severity] - SEVERITY_RANK[left.severity];
   if (severityDelta !== 0) {

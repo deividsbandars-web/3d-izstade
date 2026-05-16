@@ -29,7 +29,34 @@ const cityMass: CityMass = {
   color: '#445566',
   id: 'city-mass-1',
   position: [10, 20, -40],
+  renderIntent: {
+    emissive: '#000000',
+    emissiveIntensity: 0,
+    showFrontWing: false,
+    showHorizontalCap: true,
+    showRearSpine: false,
+    showSideInset: false,
+    showSignatureBand: false,
+    skipBase: false,
+  },
   size: [120, 180, 90],
+};
+
+const skippedCityMass: CityMass = {
+  color: '#778899',
+  id: 'city-mass-skipped',
+  position: [80, 0, -40],
+  renderIntent: {
+    emissive: '#000000',
+    emissiveIntensity: 0,
+    showFrontWing: false,
+    showHorizontalCap: false,
+    showRearSpine: false,
+    showSideInset: false,
+    showSignatureBand: false,
+    skipBase: true,
+  },
+  size: [80, 120, 70],
 };
 
 const verticalCityMass: CityMass = {
@@ -128,7 +155,7 @@ const cityPlan: CanonicalWorldPlan = {
   boothForecourtPlanes: [cityPlane],
   districtStride: 548,
   filteredCityPlanes: [cityPlane],
-  filteredMasses: [cityMass, verticalCityMass],
+  filteredMasses: [cityMass, skippedCityMass, verticalCityMass],
   filteredScreenSurfaces: [citySurface, semanticTowerSurface],
   filteredTowerLandmarks: [cityTower, semanticTower],
   promenadeAxisPlanes: [cityPlane],
@@ -292,12 +319,15 @@ assert.ok(cityRegistry.some((entry) => entry.id === citySurface.id && entry.laye
 assert.ok(cityRegistry.some((entry) => entry.id === citySocket.id && entry.layer === 'city-screen-socket'));
 assert.ok(cityRegistry.some((entry) => entry.id === cityAssignment.id && entry.layer === 'city-screen-assignment'));
 assert.ok(cityRegistry.some((entry) => entry.id === cityMass.id && entry.layer === 'city-mass'));
+assert.equal(cityRegistry.some((entry) => entry.id === skippedCityMass.id), false);
 assert.ok(cityRegistry.some((entry) => entry.id === verticalCityMass.id && entry.layer === 'city-mass'));
 assert.ok(cityRegistry.some((entry) => entry.id === cityTower.id && entry.layer === 'city-tower'));
 assert.ok(cityRegistry.some((entry) => entry.id === 'tower-cluster-vertical-pilot-lift-ground' && entry.layer === 'vertical-access-node'));
 assert.ok(cityRegistry.some((entry) => entry.id === 'tower-cluster-vertical-pilot-lift-level-1-to-level-2' && entry.layer === 'vertical-access-node'));
 assert.equal(cityRegistry.some((entry) => entry.id === cityPlane.id), false);
 assert.deepEqual(cityRegistry.find((entry) => entry.id === cityMass.id)?.position, [10, 90, -40]);
+assert.ok(cityRegistry.find((entry) => entry.id === cityMass.id)?.physicsParts?.some((part) => part.id === 'base'));
+assert.ok(cityRegistry.find((entry) => entry.id === cityMass.id)?.physicsParts?.some((part) => part.id === 'horizontal-cap'));
 assert.deepEqual(cityRegistry.find((entry) => entry.id === verticalCityMass.id)?.position, [260, 132, -280]);
 assert.equal(cityRegistry.find((entry) => entry.id === verticalCityMass.id)?.level, 'level-2');
 assert.equal(cityRegistry.find((entry) => entry.id === verticalCityMass.id)?.baseY, 96);
@@ -358,10 +388,12 @@ assert.ok((stadiumRegistry.find((entry) => entry.id === 'rear-forecourt-1')?.mat
 assert.ok(stadiumRegistry.some((entry) => entry.id === 'rear-pavilion-1' && entry.layer === 'stadium-pavilion'));
 assert.ok(stadiumRegistry.some((entry) => entry.id === 'rear-tower-1' && entry.layer === 'stadium-tower'));
 assert.deepEqual(stadiumRegistry.find((entry) => entry.id === 'rear-pavilion-1')?.position, [180, 40, -2500]);
+assert.ok(stadiumRegistry.find((entry) => entry.id === 'rear-pavilion-1')?.physicsParts?.some((part) => part.id === 'crown'));
 assert.deepEqual(stadiumRegistry.find((entry) => entry.id === 'rear-tower-1')?.position, [220, 360, -3000]);
 assert.equal(stadiumRegistry.some((entry) => entry.id === 'stadium-bowl' && entry.layer === 'stadium-structure'), false);
 assert.ok(stadiumRegistry.some((entry) => entry.id === 'rear-campus-stage-monolith-canopy' && entry.layer === 'stadium-structure'));
 assert.deepEqual(stadiumRegistry.find((entry) => entry.id === 'rear-campus-stage-monolith-canopy')?.position, [47, 116, -3018]);
+assert.ok(stadiumRegistry.find((entry) => entry.id === 'rear-campus-stage-monolith-canopy')?.physicsParts?.some((part) => part.id === 'roof-canopy'));
 assert.equal(stadiumRegistry.find((entry) => entry.id === 'rear-campus-stage-monolith-canopy')?.planningRole, 'recovered-large-landmark');
 assert.ok(stadiumRegistry.some((entry) => entry.id === 'rear-campus-mega-civic-hall' && entry.layer === 'stadium-structure'));
 assert.deepEqual(stadiumRegistry.find((entry) => entry.id === 'rear-campus-mega-civic-hall')?.position, [-2490, 176, -3670]);
@@ -394,6 +426,7 @@ assert.equal(JSON.stringify(boothPlacements), boothsBefore);
 assert.deepEqual(boothRegistry.map((entry) => entry.id), ['booth-1']);
 assert.deepEqual(boothRegistry[0]?.aliases, ['sponsor-concierge', 'company-sponsor-concierge', 'booth-sponsor-concierge']);
 assert.equal(boothRegistry[0]?.layer, 'booth');
+assert.deepEqual(boothRegistry[0]?.physicsParts?.map((part) => part.id).sort(), ['collider-left', 'collider-rear', 'collider-right']);
 assert.ok(boothRegistry[0]?.size?.every((value) => value > 0), 'booth registry entries must expose positive audit bounds');
 
 const groundRegistry = buildGroundWorldObjectRegistry();
