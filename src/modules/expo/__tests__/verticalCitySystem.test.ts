@@ -37,6 +37,8 @@ assert.deepEqual(groundNodes.map((node) => node.id), [
   'tower-cluster-vertical-pilot-lift-ground',
   'tower-cluster-vertical-pilot-lift-ground-to-level-1',
   'tower-cluster-mega-highrise-lift-ground-to-skybridge',
+  'tower-cluster-east-needle-jump-ground-to-landing',
+  'tower-cluster-rear-needle-jump-ground-to-landing',
 ]);
 assert.deepEqual(level1Nodes.map((node) => node.id), [
   'tower-cluster-vertical-pilot-lift-level-1-to-ground',
@@ -55,9 +57,13 @@ assert.deepEqual(towerNodes.map((node) => node.id), [
   'tower-cluster-vertical-pilot-lift-tower-to-roof',
   'tower-cluster-mega-highrise-lift-skybridge-to-ground',
   'tower-cluster-mega-highrise-lift-skybridge-to-skydeck',
+  'tower-cluster-east-needle-jump-landing-to-ground',
+  'tower-cluster-east-needle-lift-landing-to-skydeck',
+  'tower-cluster-rear-needle-jump-landing-to-ground',
 ]);
 assert.deepEqual(skydeckNodes.map((node) => node.id), [
   'tower-cluster-mega-highrise-lift-skydeck-to-skybridge',
+  'tower-cluster-east-needle-lift-skydeck-to-landing',
 ]);
 assert.equal(groundNodes[0]?.targetLevel, 'level-2');
 assert.deepEqual(groundNodes[0]?.position, [900, 0.25, -620]);
@@ -101,12 +107,32 @@ assert.deepEqual(towerNodes[2]?.targetPosition, [1380, 456, -1020]);
 assert.equal(skydeckNodes[0]?.targetLevel, 'tower');
 assert.deepEqual(skydeckNodes[0]?.position, [1380, 452, -1020]);
 assert.deepEqual(skydeckNodes[0]?.targetPosition, [1260, 242, -1015]);
+assert.equal(groundNodes[3]?.targetLevel, 'tower');
+assert.deepEqual(groundNodes[3]?.position, [1488, 0.25, -1015]);
+assert.deepEqual(groundNodes[3]?.targetPosition, [1488, 310, -1062]);
+assert.equal(groundNodes[4]?.targetLevel, 'tower');
+assert.deepEqual(groundNodes[4]?.position, [1065, 0.25, -1368]);
+assert.deepEqual(groundNodes[4]?.targetPosition, [1120, 236, -1424]);
+assert.equal(towerNodes[3]?.targetLevel, 'ground');
+assert.deepEqual(towerNodes[3]?.position, [1488, 306, -1062]);
+assert.deepEqual(towerNodes[3]?.targetPosition, [1488, 5, -1015]);
+assert.equal(towerNodes[4]?.targetLevel, 'skydeck');
+assert.deepEqual(towerNodes[4]?.position, [1454, 306, -1062]);
+assert.deepEqual(towerNodes[4]?.targetPosition, [1380, 456, -1020]);
+assert.equal(towerNodes[5]?.targetLevel, 'ground');
+assert.deepEqual(towerNodes[5]?.position, [1120, 232, -1424]);
+assert.deepEqual(towerNodes[5]?.targetPosition, [1065, 5, -1368]);
+assert.equal(skydeckNodes[1]?.targetLevel, 'tower');
+assert.deepEqual(skydeckNodes[1]?.position, [1338, 452, -1020]);
+assert.deepEqual(skydeckNodes[1]?.targetPosition, [1488, 310, -1062]);
 assert.deepEqual(level1WalkableRegions.map((region) => region.id), ['tower-cluster-vertical-pilot-level-1-walkable-deck']);
 assert.deepEqual(level2WalkableRegions.map((region) => region.id), ['tower-cluster-vertical-pilot-level-2-walkable-deck']);
 assert.deepEqual(roofWalkableRegions.map((region) => region.id), ['tower-cluster-vertical-pilot-roof-walkable-deck']);
 assert.deepEqual(towerWalkableRegions.map((region) => region.id), [
   'tower-cluster-vertical-pilot-tower-walkable-deck',
   'tower-cluster-mega-highrise-skybridge-deck-walkable',
+  'tower-cluster-mega-highrise-east-needle-landing-walkable',
+  'tower-cluster-mega-highrise-rear-needle-landing-walkable',
 ]);
 assert.deepEqual(skydeckWalkableRegions.map((region) => region.id), ['tower-cluster-mega-highrise-crown-skydeck-walkable']);
 assert.deepEqual(level1WalkableRegions[0]?.position, [900, 70, -650]);
@@ -124,6 +150,12 @@ assert.equal(towerWalkableRegions[0]?.playerY, 248);
 assert.deepEqual(towerWalkableRegions[1]?.position, [1260, 242, -1015]);
 assert.deepEqual(towerWalkableRegions[1]?.size, [180, 48]);
 assert.equal(towerWalkableRegions[1]?.playerY, 242);
+assert.deepEqual(towerWalkableRegions[2]?.position, [1488, 310, -1062]);
+assert.deepEqual(towerWalkableRegions[2]?.size, [84, 48]);
+assert.equal(towerWalkableRegions[2]?.playerY, 310);
+assert.deepEqual(towerWalkableRegions[3]?.position, [1120, 236, -1424]);
+assert.deepEqual(towerWalkableRegions[3]?.size, [108, 44]);
+assert.equal(towerWalkableRegions[3]?.playerY, 236);
 assert.deepEqual(skydeckWalkableRegions[0]?.position, [1380, 456, -1020]);
 assert.deepEqual(skydeckWalkableRegions[0]?.size, [148, 82]);
 assert.equal(skydeckWalkableRegions[0]?.playerY, 456);

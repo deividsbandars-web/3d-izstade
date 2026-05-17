@@ -322,6 +322,29 @@ function buildCityMassPhysicsParts(mass: CityMass): WorldObjectRegistryPhysicsPa
           size: [Math.max(12, mass.size[0] * 0.86), 1.6, 2.2],
           walkableTop: false,
         }));
+
+        if (intent?.showSideFloorBands) {
+          parts.push(
+            createLocalPhysicsPart({
+              baseY,
+              id: `floor-band-left-${floorY}`,
+              localPosition: [-mass.size[0] * 0.51, floorY, 0],
+              origin: mass.position,
+              parentRotation,
+              size: [2.2, 1.6, Math.max(12, mass.size[2] * 0.74)],
+              walkableTop: false,
+            }),
+            createLocalPhysicsPart({
+              baseY,
+              id: `floor-band-right-${floorY}`,
+              localPosition: [mass.size[0] * 0.51, floorY, 0],
+              origin: mass.position,
+              parentRotation,
+              size: [2.2, 1.6, Math.max(12, mass.size[2] * 0.74)],
+              walkableTop: false,
+            }),
+          );
+        }
       });
   }
 

@@ -565,46 +565,56 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
     {
       expectedKeyObjectIds: [
         'tower-cluster-mega-highrise-east-needle',
+        'tower-cluster-mega-highrise-east-needle-landing',
       ],
-      expectedVisibleLayers: ['city-mass'],
+      expectedVisibleLayers: ['city-mass', 'vertical-access-node'],
       id: 'tower-cluster-east-needle',
       intent: 'tower-cluster-east-needle-review',
       label: 'Tower Cluster East Needle',
       camera: {
         lookAtOffset: [0, 82, 0],
         positionOffset: [230, 308, 330],
-        targetIds: ['tower-cluster-mega-highrise-east-needle'],
+        targetIds: [
+          'tower-cluster-mega-highrise-east-needle',
+          'tower-cluster-mega-highrise-east-needle-landing',
+        ],
       },
       startView: {
-        lookAt: [1530, 334, -1110],
-        position: [1760, 560, -780],
+        lookAt: [1509, 356.5, -1086],
+        position: [1739, 582.5, -756],
         source: 'arrival-main',
       },
       watchItems: [
         'east needle front read',
+        'east needle landing access',
         'right perimeter setback',
       ],
     },
     {
       expectedKeyObjectIds: [
         'tower-cluster-mega-highrise-rear-needle',
+        'tower-cluster-mega-highrise-rear-needle-landing',
       ],
-      expectedVisibleLayers: ['city-mass'],
+      expectedVisibleLayers: ['city-mass', 'vertical-access-node'],
       id: 'tower-cluster-rear-needle',
       intent: 'tower-cluster-rear-needle-review',
       label: 'Tower Cluster Rear Needle',
       camera: {
         lookAtOffset: [0, 82, 0],
         positionOffset: [400, 302, 410],
-        targetIds: ['tower-cluster-mega-highrise-rear-needle'],
+        targetIds: [
+          'tower-cluster-mega-highrise-rear-needle',
+          'tower-cluster-mega-highrise-rear-needle-landing',
+        ],
       },
       startView: {
-        lookAt: [1120, 280, -1450],
-        position: [1520, 500, -1040],
+        lookAt: [1120, 293, -1437],
+        position: [1520, 513, -1027],
         source: 'arrival-main',
       },
       watchItems: [
         'rear needle skyline depth',
+        'rear needle landing access',
         'rear screen-host clearance',
       ],
     },

@@ -208,8 +208,8 @@ function buildTowerClusterMegaHighriseMasses(): CityMass[] {
         verticalOwner: 'city',
       }),
     })),
-    ...decks.map((deck, index): CityMass => ({
-      color: index === decks.length - 1 ? '#b8c8d2' : '#9fb0bc',
+    ...decks.map((deck): CityMass => ({
+      color: deck.color,
       decorPolicy: 'standard',
       id: deck.id,
       planningSource,

@@ -288,17 +288,19 @@ const towerClusterEastNeedle = zones.find((zone) => zone.id === 'tower-cluster-e
 assert.ok(towerClusterEastNeedle);
 const resolvedTowerClusterEastNeedleView = resolveReviewOperatorZoneStartView(towerClusterEastNeedle, new Map([
   ['tower-cluster-mega-highrise-east-needle', { position: [1530, 252, -1110] }],
+  ['tower-cluster-mega-highrise-east-needle-landing', { position: [1488, 297, -1062] }],
 ]));
-assertVectorClose(resolvedTowerClusterEastNeedleView.lookAt, [1530, 334, -1110]);
-assertVectorClose(resolvedTowerClusterEastNeedleView.position, [1760, 560, -780]);
+assertVectorClose(resolvedTowerClusterEastNeedleView.lookAt, [1509, 356.5, -1086]);
+assertVectorClose(resolvedTowerClusterEastNeedleView.position, [1739, 582.5, -756]);
 
 const towerClusterRearNeedle = zones.find((zone) => zone.id === 'tower-cluster-rear-needle');
 assert.ok(towerClusterRearNeedle);
 const resolvedTowerClusterRearNeedleView = resolveReviewOperatorZoneStartView(towerClusterRearNeedle, new Map([
   ['tower-cluster-mega-highrise-rear-needle', { position: [1120, 198, -1450] }],
+  ['tower-cluster-mega-highrise-rear-needle-landing', { position: [1120, 224, -1424] }],
 ]));
-assertVectorClose(resolvedTowerClusterRearNeedleView.lookAt, [1120, 280, -1450]);
-assertVectorClose(resolvedTowerClusterRearNeedleView.position, [1520, 500, -1040]);
+assertVectorClose(resolvedTowerClusterRearNeedleView.lookAt, [1120, 293, -1437]);
+assertVectorClose(resolvedTowerClusterRearNeedleView.position, [1520, 513, -1027]);
 
 const stadiumRightFlank = zones.find((zone) => zone.id === 'stadium-right-flank');
 assert.ok(stadiumRightFlank);

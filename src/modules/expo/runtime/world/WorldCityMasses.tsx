@@ -125,6 +125,28 @@ export function WorldCityMasses({
                   <meshStandardMaterial color="#c8d8e2" emissive="#bfe8ff" emissiveIntensity={0.014} roughness={0.42} metalness={0.16} />
                 </mesh>
               ))}
+              {intent?.showSideFloorBands && floorBandYs.flatMap((floorY) => ([
+                <mesh key={`${mass.id}:floor-band-left:${floorY}`} position={[-mass.size[0] * 0.51, floorY, 0]}>
+                  <boxGeometry args={[2.2, 1.6, Math.max(12, mass.size[2] * 0.74)]} />
+                  <meshStandardMaterial color="#bfd0da" emissive="#bfe8ff" emissiveIntensity={0.012} roughness={0.42} metalness={0.16} />
+                </mesh>,
+                <mesh key={`${mass.id}:floor-band-right:${floorY}`} position={[mass.size[0] * 0.51, floorY, 0]}>
+                  <boxGeometry args={[2.2, 1.6, Math.max(12, mass.size[2] * 0.74)]} />
+                  <meshStandardMaterial color="#b3c4cf" emissive="#bfe8ff" emissiveIntensity={0.01} roughness={0.44} metalness={0.16} />
+                </mesh>,
+              ]))}
+              {intent?.showCrownBeacon && (
+                <>
+                  <mesh position={[0, mass.size[1] + 13, 0]}>
+                    <cylinderGeometry args={[2.2, 3.2, 26, 12]} />
+                    <meshStandardMaterial color="#7ed5f4" emissive="#7ed5f4" emissiveIntensity={0.036} roughness={0.38} metalness={0.22} />
+                  </mesh>
+                  <mesh position={[0, mass.size[1] + 27.5, 0]}>
+                    <boxGeometry args={[Math.max(10, mass.size[0] * 0.18), 2.2, Math.max(10, mass.size[2] * 0.18)]} />
+                    <meshStandardMaterial color="#a8d9eb" emissive="#7ed5f4" emissiveIntensity={0.024} roughness={0.36} metalness={0.24} />
+                  </mesh>
+                </>
+              )}
             </group>
           );
         })}

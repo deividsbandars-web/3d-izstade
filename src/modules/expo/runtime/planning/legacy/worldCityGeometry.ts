@@ -34,10 +34,12 @@ export type CityPlane = {
 export type CityMassRenderIntent = {
   emissive: string;
   emissiveIntensity: number;
+  showCrownBeacon: boolean;
   showFrontWing: boolean;
   showHorizontalCap: boolean;
   showRearSpine: boolean;
   showSideInset: boolean;
+  showSideFloorBands: boolean;
   showSignatureBand: boolean;
   skipBase: boolean;
 };
