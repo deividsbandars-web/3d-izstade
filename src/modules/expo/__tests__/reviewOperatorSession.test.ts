@@ -169,10 +169,10 @@ assert.deepEqual(resolvedCityLeftFrontCornerView.position, [-1770, 60, 835]);
 const leftCivilizationMonument = zones.find((zone) => zone.id === 'left-civilization-monument');
 assert.ok(leftCivilizationMonument);
 const resolvedLeftCivilizationMonumentView = resolveReviewOperatorZoneStartView(leftCivilizationMonument, new Map([
-  ['screen-array-left-upper-3', { position: [-900, 1320, 198.2] }],
+  ['screen-array-left-upper-3', { position: [-900, 1320, 431.8] }],
 ]));
-assertVectorClose(resolvedLeftCivilizationMonumentView.lookAt, [-900, 1400, 198.2]);
-assertVectorClose(resolvedLeftCivilizationMonumentView.position, [2400, 840, -5001.8]);
+assertVectorClose(resolvedLeftCivilizationMonumentView.lookAt, [-900, 1400, 431.8]);
+assertVectorClose(resolvedLeftCivilizationMonumentView.position, [2400, 840, 5631.8]);
 
 const centerSpine = zones.find((zone) => zone.id === 'center-spine');
 assert.ok(centerSpine);

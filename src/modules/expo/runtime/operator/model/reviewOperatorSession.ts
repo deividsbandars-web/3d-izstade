@@ -331,14 +331,14 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       label: 'Left Civilization Monument',
       camera: {
         lookAtOffset: [0, 80, 0],
-        positionOffset: [3300, -480, -5200],
+        positionOffset: [3300, -480, 5200],
         targetIds: [
           'screen-array-left-upper-3',
         ],
       },
       startView: {
-        lookAt: [-900, 1400, 198.2],
-        position: [2400, 840, -5001.8],
+        lookAt: [-900, 1400, 431.8],
+        position: [2400, 840, 5631.8],
         source: 'arrival-main',
       },
       watchItems: [

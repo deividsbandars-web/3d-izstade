@@ -51,7 +51,7 @@ function buildPreviousCivilizationMonumentMasses(): CityMass[] {
     PREVIOUS_CIVILIZATION_MONUMENT_SOURCE_KIND,
   );
   const center: [number, number, number] = [-900, 0, 350];
-  const relicCityFaceZ = center[2] - 118;
+  const relicCityFaceZ = center[2] + 48;
 
   return [
     {
