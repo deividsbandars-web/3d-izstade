@@ -34,11 +34,11 @@ function buildPreviousCivilizationMonumentScreenSurface(): CityScreenSurface {
     color: '#091320',
     glowColor: '#67e8f9',
     id: 'screen-array-left-upper-3',
-    position: [-705, 258, 420.4],
+    position: [-1025, 434, 431.4],
     role: 'support-wall',
     rotation: [0, 0, 0],
     sections: ['left'],
-    size: [72, 212, 2.8],
+    size: [520, 276, 3.2],
     type: 'wall',
   };
 }

@@ -330,20 +330,21 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       intent: 'left-civilization-monument-review',
       label: 'Left Civilization Monument',
       camera: {
-        lookAtOffset: [0, 12, 0],
-        positionOffset: [470, 132, 560],
+        lookAtOffset: [0, 40, 0],
+        positionOffset: [2600, 1000, 4600],
         targetIds: [
           'screen-array-left-upper-3',
         ],
       },
       startView: {
-        lookAt: [-705, 270, 420.4],
-        position: [-235, 390, 980.4],
+        lookAt: [-1025, 474, 431.4],
+        position: [1575, 1434, 5031.4],
         source: 'arrival-main',
       },
       watchItems: [
-        'high monument screen readability',
-        'screen host attached to right pylon face',
+        'giant high screen readability',
+        'previous civilization portal silhouette',
+        'screen host embedded in upper relic frame',
       ],
     },
     {
