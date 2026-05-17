@@ -536,6 +536,80 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
     },
     {
       expectedKeyObjectIds: [
+        'tower-cluster-mega-highrise-crown-skydeck',
+      ],
+      expectedVisibleLayers: ['city-mass', 'vertical-access-node'],
+      id: 'tower-cluster-mega-highrise',
+      intent: 'tower-cluster-mega-highrise-review',
+      label: 'Tower Cluster Mega Highrise',
+      camera: {
+        lookAtOffset: [0, 64, 0],
+        positionOffset: [420, 260, -360],
+        targetIds: [
+          'tower-cluster-mega-highrise-core',
+          'tower-cluster-mega-highrise-skybridge-deck',
+          'tower-cluster-mega-highrise-crown-skydeck',
+        ],
+      },
+      startView: {
+        lookAt: [1340, 360, -1018],
+        position: [1760, 556, -1378],
+        source: 'arrival-main',
+      },
+      watchItems: [
+        'mega highrise skyline read',
+        'skybridge and crown deck separation',
+        'skydeck lift node accessibility',
+      ],
+    },
+    {
+      expectedKeyObjectIds: [
+        'tower-cluster-mega-highrise-east-needle',
+      ],
+      expectedVisibleLayers: ['city-mass'],
+      id: 'tower-cluster-east-needle',
+      intent: 'tower-cluster-east-needle-review',
+      label: 'Tower Cluster East Needle',
+      camera: {
+        lookAtOffset: [0, 82, 0],
+        positionOffset: [230, 308, 330],
+        targetIds: ['tower-cluster-mega-highrise-east-needle'],
+      },
+      startView: {
+        lookAt: [1530, 334, -1110],
+        position: [1760, 560, -780],
+        source: 'arrival-main',
+      },
+      watchItems: [
+        'east needle front read',
+        'right perimeter setback',
+      ],
+    },
+    {
+      expectedKeyObjectIds: [
+        'tower-cluster-mega-highrise-rear-needle',
+      ],
+      expectedVisibleLayers: ['city-mass'],
+      id: 'tower-cluster-rear-needle',
+      intent: 'tower-cluster-rear-needle-review',
+      label: 'Tower Cluster Rear Needle',
+      camera: {
+        lookAtOffset: [0, 82, 0],
+        positionOffset: [400, 302, 410],
+        targetIds: ['tower-cluster-mega-highrise-rear-needle'],
+      },
+      startView: {
+        lookAt: [1120, 280, -1450],
+        position: [1520, 500, -1040],
+        source: 'arrival-main',
+      },
+      watchItems: [
+        'rear needle skyline depth',
+        'rear screen-host clearance',
+      ],
+    },
+    {
+      expectedKeyObjectIds: [
         'arrival-core-hero-tower-right-tower-ribbon',
       ],
       expectedVisibleLayers: ['city-screen-surface'],

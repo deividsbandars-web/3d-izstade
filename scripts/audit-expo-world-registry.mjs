@@ -62,7 +62,7 @@ const VALID_CITY_OBJECT_PLANNING_ZONES = new Set([
 ]);
 const GENERIC_CITY_WORLD_PLAN_SOURCE = 'src/modules/expo/runtime/planning/world-plan/buildCanonicalWorldPlan.ts';
 const SOURCE_TRACE_CITY_LAYERS = new Set(['city-mass', 'city-tower']);
-const VALID_VERTICAL_LEVELS = new Set(['ground', 'level-1', 'level-2', 'roof', 'tower']);
+const VALID_VERTICAL_LEVELS = new Set(['ground', 'level-1', 'level-2', 'roof', 'tower', 'skydeck']);
 const VALID_VERTICAL_HEIGHT_BANDS = new Set(['ground', 'low-rise', 'mid-rise', 'high-rise', 'roof', 'tower']);
 const VALID_VERTICAL_OWNERS = new Set(['booth', 'city', 'stadium', 'system']);
 const WORLD_PHYSICS_PLAYER_SURFACE_OFFSET = 4;
@@ -481,9 +481,14 @@ function isIntentionalVerticalCityAssembly(left, right) {
     return true;
   }
 
+  const verticalAssemblySourceKinds = new Set([
+    'tower-cluster-vertical-pilot-mass',
+    'tower-cluster-mega-highrise-mass',
+  ]);
+
   return (
-    left.sourceKind === 'tower-cluster-vertical-pilot-mass'
-    && right.sourceKind === 'tower-cluster-vertical-pilot-mass'
+    verticalAssemblySourceKinds.has(left.sourceKind)
+    && left.sourceKind === right.sourceKind
     && left.verticalOwner === 'city'
     && right.verticalOwner === 'city'
   );

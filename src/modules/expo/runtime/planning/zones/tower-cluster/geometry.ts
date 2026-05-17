@@ -1,5 +1,8 @@
 import type { CityGeometryPlanningSource, CityMass, CityPlane, CityTower, ExpoZonePlannerContext } from '../../types';
-import { createVerticalPlacement } from '../../vertical/verticalCitySystem';
+import {
+  EXPO_TOWER_CLUSTER_MEGA_STRUCTURE_LAYOUT,
+  createVerticalPlacement,
+} from '../../vertical/verticalCitySystem';
 
 const TOWER_CLUSTER_GEOMETRY_SOURCE_FILE = 'src/modules/expo/runtime/planning/zones/tower-cluster/geometry.ts';
 
@@ -166,11 +169,74 @@ function buildTowerClusterVerticalPilotMasses(): CityMass[] {
   ];
 }
 
+function buildTowerClusterMegaHighriseMasses(): CityMass[] {
+  const planningSource = createTowerClusterPlanningSource('buildTowerClusterMegaHighriseMasses', 'tower-cluster-mega-highrise-mass');
+  const { companionTowers, core, decks } = EXPO_TOWER_CLUSTER_MEGA_STRUCTURE_LAYOUT;
+
+  return [
+    {
+      color: '#6f8290',
+      decorPolicy: 'signature',
+      id: core.id,
+      planningSource,
+      position: core.position,
+      role: 'signature',
+      size: core.size,
+      vertical: createVerticalPlacement({
+        baseY: core.baseY,
+        floorCount: core.floorCount,
+        floorHeight: core.floorHeight,
+        heightBand: core.heightBand,
+        level: core.level,
+        verticalOwner: 'city',
+      }),
+    },
+    ...companionTowers.map((tower): CityMass => ({
+      color: tower.color,
+      decorPolicy: 'signature',
+      id: tower.id,
+      planningSource,
+      position: tower.position,
+      role: 'signature',
+      size: tower.size,
+      vertical: createVerticalPlacement({
+        baseY: tower.baseY,
+        floorCount: tower.floorCount,
+        floorHeight: tower.floorHeight,
+        heightBand: tower.heightBand,
+        level: tower.level,
+        verticalOwner: 'city',
+      }),
+    })),
+    ...decks.map((deck, index): CityMass => ({
+      color: index === decks.length - 1 ? '#b8c8d2' : '#9fb0bc',
+      decorPolicy: 'standard',
+      id: deck.id,
+      planningSource,
+      position: deck.position,
+      role: 'structural',
+      size: deck.size,
+      vertical: createVerticalPlacement({
+        baseY: deck.baseY,
+        floorCount: deck.floorCount,
+        floorHeight: deck.floorHeight,
+        heightBand: deck.heightBand,
+        level: deck.level,
+        verticalOwner: 'city',
+      }),
+    })),
+  ];
+}
+
 export function buildTowerClusterZoneGeometry(context: ExpoZonePlannerContext) {
   const towers = context.geometry.towers.filter(isTowerClusterTower);
 
   return {
-    masses: [...buildTowerPodiumMasses(towers), ...buildTowerClusterVerticalPilotMasses()],
+    masses: [
+      ...buildTowerPodiumMasses(towers),
+      ...buildTowerClusterVerticalPilotMasses(),
+      ...buildTowerClusterMegaHighriseMasses(),
+    ],
     planes: buildTowerPodiumPlanes(towers),
     towers,
   };
