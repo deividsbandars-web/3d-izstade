@@ -121,88 +121,88 @@ export const EXPO_TOWER_CLUSTER_MEGA_STRUCTURE_LAYOUT: ExpoVerticalMegaStructure
     {
       baseY: 0,
       color: '#7d8f9c',
-      floorCount: 28,
+      floorCount: 36,
       floorHeight: 54,
       heightBand: 'tower',
       id: 'tower-cluster-mega-highrise-east-needle',
       level: 'ground',
-      position: [1530, 0, -1110],
-      size: [64, 1512, 64],
+      position: [-360, 0, -1340],
+      size: [96, 1944, 96],
     },
     {
       baseY: 0,
       color: '#8799a6',
-      floorCount: 24,
+      floorCount: 32,
       floorHeight: 54,
       heightBand: 'tower',
       id: 'tower-cluster-mega-highrise-rear-needle',
       level: 'ground',
-      position: [1120, 0, -1450],
-      size: [68, 1296, 68],
+      position: [-550, 0, -1500],
+      size: [100, 1728, 100],
     },
   ],
   core: {
     baseY: 0,
-    floorCount: 24,
+    floorCount: 32,
     floorHeight: 48,
     heightBand: 'tower',
     id: 'tower-cluster-mega-highrise-core',
     level: 'ground',
-    position: [1380, 0, -1020],
-    size: [116, 1152, 116],
+    position: [-450, 0, -1250],
+    size: [240, 1536, 180],
   },
   decks: [
     {
-      baseY: 420,
+      baseY: 520,
       color: '#9fb0bc',
       floorCount: 1,
       floorHeight: 48,
       heightBand: 'tower',
       id: 'tower-cluster-mega-highrise-skybridge-deck',
       level: 'tower',
-      playerY: 450,
-      position: [1260, 0, -1015],
-      size: [220, 26, 58],
-      walkableSize: [220, 58],
+      playerY: 552,
+      position: [-570, 0, -1245],
+      size: [260, 30, 74],
+      walkableSize: [260, 74],
     },
     {
-      baseY: 720,
+      baseY: 840,
       color: '#a9bac6',
       floorCount: 1,
       floorHeight: 48,
       heightBand: 'tower',
       id: 'tower-cluster-mega-highrise-east-needle-landing',
       level: 'tower',
-      playerY: 744,
-      position: [1488, 0, -1062],
-      size: [104, 20, 58],
-      walkableSize: [104, 58],
+      playerY: 868,
+      position: [-360, 0, -1292],
+      size: [132, 22, 72],
+      walkableSize: [132, 72],
     },
     {
-      baseY: 540,
+      baseY: 650,
       color: '#9eb0bd',
       floorCount: 1,
       floorHeight: 48,
       heightBand: 'tower',
       id: 'tower-cluster-mega-highrise-rear-needle-landing',
       level: 'tower',
-      playerY: 562,
-      position: [1120, 0, -1424],
-      size: [124, 18, 54],
-      walkableSize: [124, 54],
+      playerY: 676,
+      position: [-550, 0, -1474],
+      size: [148, 20, 66],
+      walkableSize: [148, 66],
     },
     {
-      baseY: 1152,
+      baseY: 1536,
       color: '#b8c8d2',
       floorCount: 1,
       floorHeight: 96,
       heightBand: 'tower',
       id: 'tower-cluster-mega-highrise-crown-skydeck',
       level: 'skydeck',
-      playerY: 1182,
-      position: [1380, 0, -1020],
-      size: [164, 26, 96],
-      walkableSize: [164, 96],
+      playerY: 1572,
+      position: [-450, 0, -1250],
+      size: [300, 32, 180],
+      walkableSize: [300, 180],
     },
   ],
   id: 'tower-cluster-mega-highrise',
@@ -339,12 +339,12 @@ export const EXPO_VERTICAL_CITY_SYSTEM: ExpoVerticalCitySystemPlan = {
       label: 'Mega Highrise Skybridge Lift',
       level: 'ground',
       mode: 'lift',
-      position: [1260, 0.25, -955],
+      position: [-570, 0.25, -1185],
       radius: 36,
       targetLevel: 'tower',
       targetPosition: TOWER_CLUSTER_MEGA_SKYBRIDGE_DECK
         ? [TOWER_CLUSTER_MEGA_SKYBRIDGE_DECK.position[0], TOWER_CLUSTER_MEGA_SKYBRIDGE_DECK.playerY, TOWER_CLUSTER_MEGA_SKYBRIDGE_DECK.position[2]]
-        : [1260, 450, -1015],
+        : [-570, 552, -1245],
       zoneId: 'tower-cluster',
     },
     {
@@ -357,7 +357,7 @@ export const EXPO_VERTICAL_CITY_SYSTEM: ExpoVerticalCitySystemPlan = {
         : [1060, 238, -780],
       radius: 28,
       targetLevel: 'ground',
-      targetPosition: [1260, 5, -955],
+      targetPosition: [-570, 5, -1185],
       zoneId: 'tower-cluster',
     },
     {
@@ -367,12 +367,12 @@ export const EXPO_VERTICAL_CITY_SYSTEM: ExpoVerticalCitySystemPlan = {
       mode: 'lift',
       position: TOWER_CLUSTER_MEGA_SKYBRIDGE_DECK
         ? [TOWER_CLUSTER_MEGA_SKYBRIDGE_DECK.position[0] + 74, TOWER_CLUSTER_MEGA_SKYBRIDGE_DECK.playerY - 4, TOWER_CLUSTER_MEGA_SKYBRIDGE_DECK.position[2]]
-        : [1334, 446, -1015],
+        : [-496, 548, -1245],
       radius: 30,
       targetLevel: 'skydeck',
       targetPosition: TOWER_CLUSTER_MEGA_CROWN_SKYDECK
         ? [TOWER_CLUSTER_MEGA_CROWN_SKYDECK.position[0], TOWER_CLUSTER_MEGA_CROWN_SKYDECK.playerY, TOWER_CLUSTER_MEGA_CROWN_SKYDECK.position[2]]
-        : [1380, 1182, -1020],
+        : [-450, 1572, -1250],
       zoneId: 'tower-cluster',
     },
     {
@@ -382,12 +382,12 @@ export const EXPO_VERTICAL_CITY_SYSTEM: ExpoVerticalCitySystemPlan = {
       mode: 'lift',
       position: TOWER_CLUSTER_MEGA_CROWN_SKYDECK
         ? [TOWER_CLUSTER_MEGA_CROWN_SKYDECK.position[0], TOWER_CLUSTER_MEGA_CROWN_SKYDECK.playerY - 4, TOWER_CLUSTER_MEGA_CROWN_SKYDECK.position[2]]
-        : [1380, 1178, -1020],
+        : [-450, 1568, -1250],
       radius: 30,
       targetLevel: 'tower',
       targetPosition: TOWER_CLUSTER_MEGA_SKYBRIDGE_DECK
         ? [TOWER_CLUSTER_MEGA_SKYBRIDGE_DECK.position[0], TOWER_CLUSTER_MEGA_SKYBRIDGE_DECK.playerY, TOWER_CLUSTER_MEGA_SKYBRIDGE_DECK.position[2]]
-        : [1260, 450, -1015],
+        : [-570, 552, -1245],
       zoneId: 'tower-cluster',
     },
     {
@@ -395,12 +395,12 @@ export const EXPO_VERTICAL_CITY_SYSTEM: ExpoVerticalCitySystemPlan = {
       label: 'East Needle Landing Jump',
       level: 'ground',
       mode: 'jump-pad',
-      position: [1488, 0.25, -1015],
+      position: [-360, 0.25, -1245],
       radius: 28,
       targetLevel: 'tower',
       targetPosition: TOWER_CLUSTER_MEGA_EAST_NEEDLE_LANDING
         ? [TOWER_CLUSTER_MEGA_EAST_NEEDLE_LANDING.position[0], TOWER_CLUSTER_MEGA_EAST_NEEDLE_LANDING.playerY, TOWER_CLUSTER_MEGA_EAST_NEEDLE_LANDING.position[2]]
-        : [1488, 744, -1062],
+        : [-360, 868, -1292],
       zoneId: 'tower-cluster',
     },
     {
@@ -410,10 +410,10 @@ export const EXPO_VERTICAL_CITY_SYSTEM: ExpoVerticalCitySystemPlan = {
       mode: 'jump-pad',
       position: TOWER_CLUSTER_MEGA_EAST_NEEDLE_LANDING
         ? [TOWER_CLUSTER_MEGA_EAST_NEEDLE_LANDING.position[0], TOWER_CLUSTER_MEGA_EAST_NEEDLE_LANDING.playerY - 4, TOWER_CLUSTER_MEGA_EAST_NEEDLE_LANDING.position[2]]
-        : [1488, 740, -1062],
+        : [-360, 864, -1292],
       radius: 24,
       targetLevel: 'ground',
-      targetPosition: [1488, 5, -1015],
+      targetPosition: [-360, 5, -1245],
       zoneId: 'tower-cluster',
     },
     {
@@ -423,12 +423,12 @@ export const EXPO_VERTICAL_CITY_SYSTEM: ExpoVerticalCitySystemPlan = {
       mode: 'lift',
       position: TOWER_CLUSTER_MEGA_EAST_NEEDLE_LANDING
         ? [TOWER_CLUSTER_MEGA_EAST_NEEDLE_LANDING.position[0] - 34, TOWER_CLUSTER_MEGA_EAST_NEEDLE_LANDING.playerY - 4, TOWER_CLUSTER_MEGA_EAST_NEEDLE_LANDING.position[2]]
-        : [1454, 740, -1062],
+        : [-394, 864, -1292],
       radius: 24,
       targetLevel: 'skydeck',
       targetPosition: TOWER_CLUSTER_MEGA_CROWN_SKYDECK
         ? [TOWER_CLUSTER_MEGA_CROWN_SKYDECK.position[0], TOWER_CLUSTER_MEGA_CROWN_SKYDECK.playerY, TOWER_CLUSTER_MEGA_CROWN_SKYDECK.position[2]]
-        : [1380, 1182, -1020],
+        : [-450, 1572, -1250],
       zoneId: 'tower-cluster',
     },
     {
@@ -438,12 +438,12 @@ export const EXPO_VERTICAL_CITY_SYSTEM: ExpoVerticalCitySystemPlan = {
       mode: 'lift',
       position: TOWER_CLUSTER_MEGA_CROWN_SKYDECK
         ? [TOWER_CLUSTER_MEGA_CROWN_SKYDECK.position[0] - 42, TOWER_CLUSTER_MEGA_CROWN_SKYDECK.playerY - 4, TOWER_CLUSTER_MEGA_CROWN_SKYDECK.position[2]]
-        : [1338, 1178, -1020],
+        : [-492, 1568, -1250],
       radius: 24,
       targetLevel: 'tower',
       targetPosition: TOWER_CLUSTER_MEGA_EAST_NEEDLE_LANDING
         ? [TOWER_CLUSTER_MEGA_EAST_NEEDLE_LANDING.position[0], TOWER_CLUSTER_MEGA_EAST_NEEDLE_LANDING.playerY, TOWER_CLUSTER_MEGA_EAST_NEEDLE_LANDING.position[2]]
-        : [1488, 744, -1062],
+        : [-360, 868, -1292],
       zoneId: 'tower-cluster',
     },
     {
@@ -451,12 +451,12 @@ export const EXPO_VERTICAL_CITY_SYSTEM: ExpoVerticalCitySystemPlan = {
       label: 'Rear Needle Landing Jump',
       level: 'ground',
       mode: 'jump-pad',
-      position: [1065, 0.25, -1368],
+      position: [-605, 0.25, -1418],
       radius: 28,
       targetLevel: 'tower',
       targetPosition: TOWER_CLUSTER_MEGA_REAR_NEEDLE_LANDING
         ? [TOWER_CLUSTER_MEGA_REAR_NEEDLE_LANDING.position[0], TOWER_CLUSTER_MEGA_REAR_NEEDLE_LANDING.playerY, TOWER_CLUSTER_MEGA_REAR_NEEDLE_LANDING.position[2]]
-        : [1120, 562, -1424],
+        : [-550, 676, -1474],
       zoneId: 'tower-cluster',
     },
     {
@@ -466,10 +466,10 @@ export const EXPO_VERTICAL_CITY_SYSTEM: ExpoVerticalCitySystemPlan = {
       mode: 'jump-pad',
       position: TOWER_CLUSTER_MEGA_REAR_NEEDLE_LANDING
         ? [TOWER_CLUSTER_MEGA_REAR_NEEDLE_LANDING.position[0], TOWER_CLUSTER_MEGA_REAR_NEEDLE_LANDING.playerY - 4, TOWER_CLUSTER_MEGA_REAR_NEEDLE_LANDING.position[2]]
-        : [1120, 558, -1424],
+        : [-550, 672, -1474],
       radius: 24,
       targetLevel: 'ground',
-      targetPosition: [1065, 5, -1368],
+      targetPosition: [-605, 5, -1418],
       zoneId: 'tower-cluster',
     },
   ],
@@ -480,7 +480,7 @@ export const EXPO_VERTICAL_CITY_SYSTEM: ExpoVerticalCitySystemPlan = {
     { baseY: 96, floorHeight: 36, id: 'level-2', label: 'Level 2' },
     { baseY: 144, floorHeight: 36, id: 'roof', label: 'Roof' },
     { baseY: 216, floorHeight: 72, id: 'tower', label: 'Tower' },
-    { baseY: 1152, floorHeight: 96, id: 'skydeck', label: 'Skydeck' },
+    { baseY: 1536, floorHeight: 96, id: 'skydeck', label: 'Skydeck' },
   ],
   pilotZoneId: 'tower-cluster',
   walkableRegions: [
