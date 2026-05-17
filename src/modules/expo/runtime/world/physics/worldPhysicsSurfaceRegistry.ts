@@ -154,6 +154,7 @@ function isNonWalkableSupportStructure(entry: WorldObjectRegistryEntry) {
     isPerimeterStructure(entry)
     || entry.sourceKind === LEFT_CIVILIZATION_MONUMENT_SOURCE_KIND
     || entry.sourceKind === 'tower-cluster-plinth-mass'
+    || entry.sourceKind === 'tower-cluster-television-tower-mass'
     || entry.id.endsWith('-tower-cluster-plinth')
     || (entry.sourceKind === 'tower-cluster-vertical-pilot-mass' && entry.id.includes('-core-'))
     || entry.sourceKind === 'city-screen-host-mass'

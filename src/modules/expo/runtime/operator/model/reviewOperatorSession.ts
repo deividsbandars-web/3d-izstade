@@ -617,6 +617,54 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       ],
     },
     {
+      expectedKeyObjectIds: [],
+      expectedVisibleLayers: ['city-mass'],
+      id: 'tower-cluster-television-tower',
+      intent: 'tower-cluster-television-tower-review',
+      label: 'Tower Cluster Television Tower',
+      startView: {
+        lookAt: [360, 3566.6666666666665, -1240],
+        position: [-3440, 4316.666666666666, 4360],
+        source: 'arrival-main',
+      },
+      watchItems: [
+        '5x television tower full-height read',
+        'observation deck and signal-ring silhouette',
+        'mega-highrise separation from broadcast tower',
+      ],
+    },
+    {
+      expectedKeyObjectIds: [
+        'tower-cluster-television-tower-top-beacon',
+      ],
+      expectedVisibleLayers: ['city-mass'],
+      id: 'tower-cluster-television-tower-crown',
+      intent: 'tower-cluster-television-tower-crown-review',
+      label: 'Tower Cluster Television Tower Crown',
+      camera: {
+        lookAtOffset: [0, 450, 0],
+        positionOffset: [-1600, 900, 2600],
+        targetIds: [
+          'tower-cluster-television-tower-top-beacon',
+          'tower-cluster-television-tower-needle-spire',
+          'tower-cluster-television-tower-broadcast-collar-west',
+          'tower-cluster-television-tower-broadcast-collar-east',
+          'tower-cluster-television-tower-broadcast-collar-front',
+          'tower-cluster-television-tower-broadcast-collar-rear',
+        ],
+      },
+      startView: {
+        lookAt: [360, 4203, -1240],
+        position: [-1240, 4653, 1360],
+        source: 'arrival-main',
+      },
+      watchItems: [
+        'top beacon visibility',
+        'broadcast collar separation',
+        'upper needle silhouette',
+      ],
+    },
+    {
       expectedKeyObjectIds: [
         'tower-cluster-mega-highrise-east-needle',
         'tower-cluster-mega-highrise-east-needle-landing',

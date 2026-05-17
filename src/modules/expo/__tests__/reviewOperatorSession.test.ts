@@ -24,7 +24,7 @@ function assertVectorClose(actual: number[], expected: number[]) {
   });
 }
 
-assert.equal(zones.length, 48);
+assert.equal(zones.length, 50);
 assert.equal(DEFAULT_REVIEW_OPERATOR_ZONE_ID, 'arrival-gate');
 assert.deepEqual(zoneIds, [
   'arrival-gate',
@@ -45,6 +45,8 @@ assert.deepEqual(zoneIds, [
   'tower-cluster-vertical-pilot',
   'tower-cluster-mega-highrise',
   'tower-cluster-mega-skyline',
+  'tower-cluster-television-tower',
+  'tower-cluster-television-tower-crown',
   'tower-cluster-east-needle',
   'tower-cluster-rear-needle',
   'tower-cluster-reverse-wide',
@@ -304,6 +306,29 @@ const resolvedTowerClusterMegaSkylineView = resolveReviewOperatorZoneStartView(t
 ]));
 assertVectorClose(resolvedTowerClusterMegaSkylineView.lookAt, [-452.5, 1339, -1335]);
 assertVectorClose(resolvedTowerClusterMegaSkylineView.position, [-2852.5, 2039, 1265]);
+
+const towerClusterTelevisionTower = zones.find((zone) => zone.id === 'tower-cluster-television-tower');
+assert.ok(towerClusterTelevisionTower);
+const resolvedTowerClusterTelevisionTowerView = resolveReviewOperatorZoneStartView(towerClusterTelevisionTower, new Map([
+  ['tower-cluster-television-tower-lower-shaft', { position: [360, 925, -1240] }],
+  ['tower-cluster-television-tower-upper-shaft', { position: [360, 2775, -1240] }],
+  ['tower-cluster-television-tower-needle-spire', { position: [360, 4450, -1240] }],
+]));
+assertVectorClose(resolvedTowerClusterTelevisionTowerView.lookAt, [360, 3566.6666666666665, -1240]);
+assertVectorClose(resolvedTowerClusterTelevisionTowerView.position, [-3440, 4316.666666666666, 4360]);
+
+const towerClusterTelevisionTowerCrown = zones.find((zone) => zone.id === 'tower-cluster-television-tower-crown');
+assert.ok(towerClusterTelevisionTowerCrown);
+const resolvedTowerClusterTelevisionTowerCrownView = resolveReviewOperatorZoneStartView(towerClusterTelevisionTowerCrown, new Map([
+  ['tower-cluster-television-tower-top-beacon', { position: [360, 5224, -1240] }],
+  ['tower-cluster-television-tower-needle-spire', { position: [360, 4450, -1240] }],
+  ['tower-cluster-television-tower-broadcast-collar-west', { position: [273, 3211, -1240] }],
+  ['tower-cluster-television-tower-broadcast-collar-east', { position: [447, 3211, -1240] }],
+  ['tower-cluster-television-tower-broadcast-collar-front', { position: [360, 3211, -1153] }],
+  ['tower-cluster-television-tower-broadcast-collar-rear', { position: [360, 3211, -1327] }],
+]));
+assertVectorClose(resolvedTowerClusterTelevisionTowerCrownView.lookAt, [360, 4203, -1240]);
+assertVectorClose(resolvedTowerClusterTelevisionTowerCrownView.position, [-1240, 4653, 1360]);
 
 const towerClusterEastNeedle = zones.find((zone) => zone.id === 'tower-cluster-east-needle');
 assert.ok(towerClusterEastNeedle);
