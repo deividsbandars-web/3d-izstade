@@ -100,6 +100,10 @@ function resolveVerticalLevelFromPlayerY(playerY: number): ExpoVerticalLevelId {
     return 'roof';
   }
 
+  if (playerY >= 400) {
+    return 'skydeck';
+  }
+
   return 'tower';
 }
 
