@@ -47,6 +47,9 @@ const CITY_SMALL_BLOCK_MAX_HEIGHT = 8;
 const CITY_SMALL_BLOCK_MAX_FOOTPRINT_AREA = 900;
 const CITY_SMALL_BLOCK_MAX_ASPECT_RATIO = 3;
 const LEFT_CIVILIZATION_MONUMENT_SOURCE_KIND = 'left-civilization-monument-mass';
+const PREVIOUS_CIVILIZATION_MONUMENT_SCREEN_HOST_IDS = new Set([
+  'screen-array-left-upper-3-host',
+]);
 const CITY_NON_RENDERABLE_DECORATIVE_MASS_PATTERNS = [
   'boulevard-edge-',
   'media-wall-flank-',
@@ -437,8 +440,25 @@ function isIntentionalCityStadiumPerimeterJoint(left, right) {
   ));
 }
 
+function isIntentionalCivilizationMonumentScreenHostJoint(left, right) {
+  const pairs = [
+    [left, right],
+    [right, left],
+  ];
+
+  return pairs.some(([host, monument]) => (
+    PREVIOUS_CIVILIZATION_MONUMENT_SCREEN_HOST_IDS.has(host?.id)
+    && monument?.sourceKind === LEFT_CIVILIZATION_MONUMENT_SOURCE_KIND
+    && Number(host?.baseY ?? host?.vertical?.baseY ?? 0) >= 96
+  ));
+}
+
 function isIntentionalCitySolidOverlap(left, right) {
   if (isAllowedScreenHostFacadeOverlap(left, right)) {
+    return true;
+  }
+
+  if (isIntentionalCivilizationMonumentScreenHostJoint(left, right)) {
     return true;
   }
 
@@ -1299,8 +1319,10 @@ function auditSideArrayScreenHostScale(entries) {
     }
 
     const minHostWidth = surface.size[0] * 1.25;
-    const minHostHeight = surface.position[1] + (surface.size[1] * 0.5) + 38;
-    if (hostSize[0] < minHostWidth || hostSize[1] < minHostHeight) {
+    const minHostTopY = surface.position[1] + (surface.size[1] * 0.5) + 38;
+    const hostBaseY = Number(host?.baseY ?? host?.vertical?.baseY ?? 0);
+    const hostTopY = hostBaseY + hostSize[1];
+    if (hostSize[0] < minHostWidth || hostTopY < minHostTopY) {
       pushIssue(
         issues,
         'medium',
@@ -1308,9 +1330,11 @@ function auditSideArrayScreenHostScale(entries) {
         `${host.id} is not large enough for ${surface.entry.id}; side/far screen host plates must read as enlarged support slabs.`,
         [host.id, surface.entry.id],
         {
+          hostBaseY: Math.round(hostBaseY),
           hostHeight: Math.round(hostSize[1]),
+          hostTopY: Math.round(hostTopY),
           hostWidth: Math.round(hostSize[0]),
-          minHostHeight: Math.round(minHostHeight),
+          minHostTopY: Math.round(minHostTopY),
           minHostWidth: Math.round(minHostWidth),
           sourceA: host.sourceFile ?? null,
           sourceB: surface.entry.sourceFile ?? null,

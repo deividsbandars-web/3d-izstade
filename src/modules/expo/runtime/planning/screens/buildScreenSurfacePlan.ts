@@ -29,6 +29,20 @@ function getZoneSections(zoneId: ExpoPlanningZoneId): ExpoPlanningSectionId[] {
   }
 }
 
+function buildPreviousCivilizationMonumentScreenSurface(): CityScreenSurface {
+  return {
+    color: '#091320',
+    glowColor: '#67e8f9',
+    id: 'screen-array-left-upper-3',
+    position: [-705, 258, 420.4],
+    role: 'support-wall',
+    rotation: [0, 0, 0],
+    sections: ['left'],
+    size: [72, 212, 2.8],
+    type: 'wall',
+  };
+}
+
 function isMarqueeOrSpineHeroSurface(surface: CityScreenSurface) {
   return surface.role === 'hero-wall' && (
     surface.id.startsWith('screen-marquee-left-') ||
@@ -792,9 +806,12 @@ export function buildZoneScreenSurfacePlan(args: {
     case 'arrival':
       return [] as CityScreenSurface[];
     case 'left-district':
-      return cityScreenSurfaces.filter((surface) =>
-        surface.id.startsWith('screen-marquee-left-') || surface.id.startsWith('screen-array-left-')
-      ).map((surface) => enrichSurfaceIntent(zoneId, surface));
+      return [
+        ...cityScreenSurfaces.filter((surface) =>
+          surface.id.startsWith('screen-marquee-left-') || surface.id.startsWith('screen-array-left-')
+        ),
+        buildPreviousCivilizationMonumentScreenSurface(),
+      ].map((surface) => enrichSurfaceIntent(zoneId, surface));
     case 'center-spine':
       return cityScreenSurfaces
         .filter((surface) => surface.id.startsWith('screen-spine-primary-'))

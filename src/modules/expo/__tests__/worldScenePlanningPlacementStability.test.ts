@@ -269,7 +269,8 @@ for (const surface of sideArrayScreenSurfaces) {
   const host = sideArrayHostMassById.get(`${surface.id}-host`);
   assert.ok(host, `${surface.id} must have a planned host mass`);
   assert.ok(host.size[0] >= surface.size[0] * 1.25, `${host?.id} must be wider than its side-array screen`);
-  assert.ok(host.size[1] >= surface.position[1] + (surface.size[1] * 0.5) + 38, `${host?.id} must carry the elevated side-array plate`);
+  const hostTopY = (host.vertical?.baseY ?? 0) + host.size[1];
+  assert.ok(hostTopY >= surface.position[1] + (surface.size[1] * 0.5) + 38, `${host?.id} must carry the elevated side-array plate`);
 
   const socket = sideArraySocketBySurfaceId.get(surface.id);
   assert.ok(socket, `${surface.id} must have a screen socket`);

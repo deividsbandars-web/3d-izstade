@@ -322,27 +322,28 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
     },
     {
       expectedKeyObjectIds: [
-        'previous-civilization-monument-right-pylon',
+        'screen-array-left-upper-3',
+        'screen-array-left-upper-3-host',
       ],
-      expectedVisibleLayers: ['city-mass'],
+      expectedVisibleLayers: ['city-screen-surface', 'city-mass'],
       id: 'left-civilization-monument',
       intent: 'left-civilization-monument-review',
       label: 'Left Civilization Monument',
       camera: {
-        lookAtOffset: [0, 0, 0],
-        positionOffset: [520, 180, 620],
+        lookAtOffset: [0, 12, 0],
+        positionOffset: [470, 132, 560],
         targetIds: [
-          'previous-civilization-monument-right-pylon',
+          'screen-array-left-upper-3',
         ],
       },
       startView: {
-        lookAt: [-705, 206, 334],
-        position: [-185, 386, 954],
+        lookAt: [-705, 270, 420.4],
+        position: [-235, 390, 980.4],
         source: 'arrival-main',
       },
       watchItems: [
-        'broad monument width and height readability',
-        'previous civilization object clearance',
+        'high monument screen readability',
+        'screen host attached to right pylon face',
       ],
     },
     {
