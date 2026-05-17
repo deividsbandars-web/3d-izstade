@@ -20,7 +20,7 @@ export function buildCityScreenHostMasses(surfaces: ReadonlyArray<CityScreenSurf
       const isSideArray = surface.id.startsWith('screen-array-');
       const isMonumentScreen = isPreviousCivilizationMonumentScreen(surface);
       const hostTop = surface.position[1] + (surface.size[1] * 0.5) + (isSideArray ? 42 : isMarquee ? 8 : 6);
-      const hostBaseY = isMonumentScreen ? 196 : 0;
+      const hostBaseY = isMonumentScreen ? 820 : 0;
       const hostWidth = Math.max(
         surface.size[0] + (isSideArray ? 36 : 8),
         surface.size[0] * (isSideArray ? 1.26 : 1.08),

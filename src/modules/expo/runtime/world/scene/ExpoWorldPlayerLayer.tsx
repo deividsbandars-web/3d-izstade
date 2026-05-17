@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls, PointerLockControls } from '@react-three/drei';
 import * as THREE from 'three';
@@ -119,6 +119,15 @@ export function ExpoWorldPlayerLayer({
   const effectivePhysicsSolids = physicsSurfaceRegistry?.solids ?? [];
   const effectivePhysicsWalkableSurfaces = physicsSurfaceRegistry?.walkableSurfaces ?? [];
   const startViewSignature = `${startView.position.join(',')}|${startView.lookAt.join(',')}|${startView.source}`;
+  const orbitMaxDistance = useMemo(() => {
+    const startDistance = Math.hypot(
+      startView.position[0] - startView.lookAt[0],
+      startView.position[1] - startView.lookAt[1],
+      startView.position[2] - startView.lookAt[2],
+    );
+
+    return Math.max(500, Math.min(16000, startDistance + 250));
+  }, [startViewSignature, startView]);
 
   const applyStartView = useCallback((
     nextStartView: ExpoStartView,
@@ -707,7 +716,7 @@ export function ExpoWorldPlayerLayer({
   });
 
   return mode === 'fly'
-    ? <OrbitControls ref={orbitControlsRef} enablePan enableZoom enableRotate maxDistance={500} enableDamping dampingFactor={0.05} />
+    ? <OrbitControls ref={orbitControlsRef} enablePan enableZoom enableRotate maxDistance={orbitMaxDistance} enableDamping dampingFactor={0.05} />
     : (mode === 'walk' ? <PointerLockControls onUnlock={() => document.body.style.cursor = 'auto'} pointerSpeed={0.18} /> : null);
 }
 
