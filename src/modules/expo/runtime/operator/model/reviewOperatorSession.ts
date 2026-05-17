@@ -330,15 +330,15 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       intent: 'left-civilization-monument-review',
       label: 'Left Civilization Monument',
       camera: {
-        lookAtOffset: [0, -80, 0],
-        positionOffset: [4900, -760, 8200],
+        lookAtOffset: [0, 80, 0],
+        positionOffset: [3300, -480, -5200],
         targetIds: [
           'screen-array-left-upper-3',
         ],
       },
       startView: {
-        lookAt: [-900, 1240, 431.8],
-        position: [4000, 560, 8631.8],
+        lookAt: [-900, 1400, 198.2],
+        position: [2400, 840, -5001.8],
         source: 'arrival-main',
       },
       watchItems: [

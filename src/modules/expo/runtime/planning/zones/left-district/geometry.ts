@@ -51,7 +51,7 @@ function buildPreviousCivilizationMonumentMasses(): CityMass[] {
     PREVIOUS_CIVILIZATION_MONUMENT_SOURCE_KIND,
   );
   const center: [number, number, number] = [-900, 0, 350];
-  const relicFaceZ = center[2] + 48;
+  const relicCityFaceZ = center[2] - 118;
 
   return [
     {
@@ -209,7 +209,7 @@ function buildPreviousCivilizationMonumentMasses(): CityMass[] {
       decorPolicy: 'signature',
       id: 'previous-civilization-monument-screen-left-anchor',
       planningSource,
-      position: [center[0] - 470, 0, relicFaceZ],
+      position: [center[0] - 470, 0, relicCityFaceZ],
       role: 'signature',
       size: [70, 800, 72],
       vertical: monumentVerticalPlacement({
@@ -224,7 +224,7 @@ function buildPreviousCivilizationMonumentMasses(): CityMass[] {
       decorPolicy: 'signature',
       id: 'previous-civilization-monument-screen-right-anchor',
       planningSource,
-      position: [center[0] + 470, 0, relicFaceZ],
+      position: [center[0] + 470, 0, relicCityFaceZ],
       role: 'signature',
       size: [70, 800, 72],
       vertical: monumentVerticalPlacement({
@@ -239,7 +239,7 @@ function buildPreviousCivilizationMonumentMasses(): CityMass[] {
       decorPolicy: 'signature',
       id: 'previous-civilization-monument-screen-top-relic-rail',
       planningSource,
-      position: [center[0], 0, relicFaceZ],
+      position: [center[0], 0, relicCityFaceZ],
       role: 'signature',
       size: [980, 74, 76],
       vertical: monumentVerticalPlacement({
@@ -254,7 +254,7 @@ function buildPreviousCivilizationMonumentMasses(): CityMass[] {
       decorPolicy: 'signature',
       id: 'previous-civilization-monument-screen-bottom-relic-rail',
       planningSource,
-      position: [center[0], 0, relicFaceZ],
+      position: [center[0], 0, relicCityFaceZ],
       role: 'signature',
       size: [980, 58, 76],
       vertical: monumentVerticalPlacement({
