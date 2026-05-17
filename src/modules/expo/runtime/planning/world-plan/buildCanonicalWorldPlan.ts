@@ -312,6 +312,7 @@ function withMassIntent(mass: CityMass, stadiumReserve: CanonicalWorldPlan['stad
       showCrownBeacon: isSignature && mass.size[1] >= 360,
       showFrontWing: !suppressDecorativeStack && decorPolicy === 'signature' && mass.size[0] >= 28 && mass.size[1] > 24,
       showHorizontalCap: !suppressDecorativeStack && mass.size[1] > 18 && mass.size[0] > 20 && mass.size[2] > 20,
+      showMegaVerticalSpines: isSignature && mass.size[1] >= 900,
       showRearSpine: !suppressDecorativeStack && mass.size[1] > 40 && mass.size[0] >= 18 && mass.size[2] >= 14,
       showSideInset: !suppressDecorativeStack && mass.size[1] > 28 && mass.size[0] >= 42 && mass.size[2] >= 18,
       showSideFloorBands: Boolean(mass.vertical && mass.vertical.floorCount >= 8 && mass.size[1] >= 300),

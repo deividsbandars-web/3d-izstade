@@ -543,23 +543,51 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       intent: 'tower-cluster-mega-highrise-review',
       label: 'Tower Cluster Mega Highrise',
       camera: {
-        lookAtOffset: [0, 64, 0],
-        positionOffset: [420, 260, -360],
+        lookAtOffset: [0, 45, 0],
+        positionOffset: [420, 360, -520],
         targetIds: [
-          'tower-cluster-mega-highrise-core',
-          'tower-cluster-mega-highrise-skybridge-deck',
           'tower-cluster-mega-highrise-crown-skydeck',
         ],
       },
       startView: {
-        lookAt: [1340, 360, -1018],
-        position: [1760, 556, -1378],
+        lookAt: [1380, 1210, -1020],
+        position: [1800, 1525, -1540],
         source: 'arrival-main',
       },
       watchItems: [
-        'mega highrise skyline read',
+        '2.5x mega highrise skyline read',
         'skybridge and crown deck separation',
         'skydeck lift node accessibility',
+      ],
+    },
+    {
+      expectedKeyObjectIds: [
+        'tower-cluster-mega-highrise-core',
+        'tower-cluster-mega-highrise-crown-skydeck',
+      ],
+      expectedVisibleLayers: ['city-mass'],
+      id: 'tower-cluster-mega-skyline',
+      intent: 'tower-cluster-mega-skyline-review',
+      label: 'Tower Cluster Mega Skyline',
+      camera: {
+        lookAtOffset: [0, 360, 0],
+        positionOffset: [-1500, 850, 2000],
+        targetIds: [
+          'tower-cluster-mega-highrise-core',
+          'tower-cluster-mega-highrise-east-needle',
+          'tower-cluster-mega-highrise-rear-needle',
+          'tower-cluster-mega-highrise-crown-skydeck',
+        ],
+      },
+      startView: {
+        lookAt: [1352.5, 1146.25, -1150],
+        position: [-147.5, 1636.25, 850],
+        source: 'arrival-main',
+      },
+      watchItems: [
+        'full mega tower height read',
+        'needle/core/crown hierarchy',
+        'distant skyline silhouette',
       ],
     },
     {
@@ -572,16 +600,15 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       intent: 'tower-cluster-east-needle-review',
       label: 'Tower Cluster East Needle',
       camera: {
-        lookAtOffset: [0, 82, 0],
-        positionOffset: [230, 308, 330],
+        lookAtOffset: [0, 58, 0],
+        positionOffset: [180, 118, 210],
         targetIds: [
-          'tower-cluster-mega-highrise-east-needle',
           'tower-cluster-mega-highrise-east-needle-landing',
         ],
       },
       startView: {
-        lookAt: [1509, 356.5, -1086],
-        position: [1739, 582.5, -756],
+        lookAt: [1488, 788, -1062],
+        position: [1668, 848, -852],
         source: 'arrival-main',
       },
       watchItems: [
@@ -600,16 +627,15 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       intent: 'tower-cluster-rear-needle-review',
       label: 'Tower Cluster Rear Needle',
       camera: {
-        lookAtOffset: [0, 82, 0],
-        positionOffset: [400, 302, 410],
+        lookAtOffset: [0, 58, 0],
+        positionOffset: [210, 118, 240],
         targetIds: [
-          'tower-cluster-mega-highrise-rear-needle',
           'tower-cluster-mega-highrise-rear-needle-landing',
         ],
       },
       startView: {
-        lookAt: [1120, 293, -1437],
-        position: [1520, 513, -1027],
+        lookAt: [1120, 607, -1424],
+        position: [1330, 667, -1184],
         source: 'arrival-main',
       },
       watchItems: [

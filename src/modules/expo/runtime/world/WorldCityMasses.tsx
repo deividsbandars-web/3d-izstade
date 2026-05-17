@@ -56,6 +56,10 @@ export function WorldCityMasses({
             ? Array.from({ length: mass.vertical.floorCount - 1 }, (_, index) => (index + 1) * mass.vertical!.floorHeight)
                 .filter((floorY) => floorY > 4 && floorY < mass.size[1] - 4)
             : [];
+          const crownMastHeight = Math.max(26, Math.min(180, mass.size[1] * 0.08));
+          const crownMastRadius = Math.max(2.2, Math.min(7.5, Math.min(mass.size[0], mass.size[2]) * 0.07));
+          const megaSpineHeight = mass.size[1] * 0.88;
+          const megaSpineWidth = Math.max(3.2, Math.min(7, Math.min(mass.size[0], mass.size[2]) * 0.055));
 
           if (intent?.skipBase) {
             return null;
@@ -135,14 +139,46 @@ export function WorldCityMasses({
                   <meshStandardMaterial color="#b3c4cf" emissive="#bfe8ff" emissiveIntensity={0.01} roughness={0.44} metalness={0.16} />
                 </mesh>,
               ]))}
+              {intent?.showMegaVerticalSpines && (
+                <>
+                  {[
+                    [-0.43, 0.515, '#8ee8ff', 0.026],
+                    [0.43, 0.515, '#8ee8ff', 0.026],
+                    [-0.49, -0.43, '#b6e4f8', 0.018],
+                    [0.49, -0.43, '#b6e4f8', 0.018],
+                  ].map(([xRatio, zRatio, color, intensity]) => (
+                    <mesh
+                      key={`${mass.id}:mega-spine:${xRatio}:${zRatio}`}
+                      position={[mass.size[0] * Number(xRatio), mass.size[1] * 0.5, mass.size[2] * Number(zRatio)]}
+                    >
+                      <boxGeometry args={[megaSpineWidth, megaSpineHeight, megaSpineWidth]} />
+                      <meshStandardMaterial
+                        color={String(color)}
+                        emissive={String(color)}
+                        emissiveIntensity={Number(intensity)}
+                        roughness={0.34}
+                        metalness={0.26}
+                      />
+                    </mesh>
+                  ))}
+                  <mesh position={[0, mass.size[1] * 0.78, mass.size[2] * 0.515]}>
+                    <boxGeometry args={[mass.size[0] * 1.08, Math.max(8, mass.size[1] * 0.018), 4.2]} />
+                    <meshStandardMaterial color="#c7e4f0" emissive="#9fe8ff" emissiveIntensity={0.024} roughness={0.36} metalness={0.22} />
+                  </mesh>
+                  <mesh position={[0, mass.size[1] * 0.92, 0]}>
+                    <boxGeometry args={[mass.size[0] * 0.72, Math.max(8, mass.size[1] * 0.014), mass.size[2] * 0.72]} />
+                    <meshStandardMaterial color="#a9c3cf" emissive="#93e1ff" emissiveIntensity={0.018} roughness={0.38} metalness={0.24} />
+                  </mesh>
+                </>
+              )}
               {intent?.showCrownBeacon && (
                 <>
-                  <mesh position={[0, mass.size[1] + 13, 0]}>
-                    <cylinderGeometry args={[2.2, 3.2, 26, 12]} />
+                  <mesh position={[0, mass.size[1] + (crownMastHeight * 0.5), 0]}>
+                    <cylinderGeometry args={[crownMastRadius * 0.68, crownMastRadius, crownMastHeight, 12]} />
                     <meshStandardMaterial color="#7ed5f4" emissive="#7ed5f4" emissiveIntensity={0.036} roughness={0.38} metalness={0.22} />
                   </mesh>
-                  <mesh position={[0, mass.size[1] + 27.5, 0]}>
-                    <boxGeometry args={[Math.max(10, mass.size[0] * 0.18), 2.2, Math.max(10, mass.size[2] * 0.18)]} />
+                  <mesh position={[0, mass.size[1] + crownMastHeight + 3.2, 0]}>
+                    <boxGeometry args={[Math.max(12, mass.size[0] * 0.22), 3.2, Math.max(12, mass.size[2] * 0.22)]} />
                     <meshStandardMaterial color="#a8d9eb" emissive="#7ed5f4" emissiveIntensity={0.024} roughness={0.36} metalness={0.24} />
                   </mesh>
                 </>

@@ -37,6 +37,7 @@ export type CityMassRenderIntent = {
   showCrownBeacon: boolean;
   showFrontWing: boolean;
   showHorizontalCap: boolean;
+  showMegaVerticalSpines: boolean;
   showRearSpine: boolean;
   showSideInset: boolean;
   showSideFloorBands: boolean;

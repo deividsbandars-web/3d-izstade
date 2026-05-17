@@ -63,7 +63,7 @@ export function ExpoWorldSceneLayers({
       <ambientLight intensity={runtimeCaptureSafe ? 0.16 : 0.24} />
       <directionalLight position={[16, 26, 10]} intensity={runtimeCaptureSafe ? 0.66 : 0.96} castShadow={false} />
       <hemisphereLight args={['#94a8b8', '#4f5d69', runtimeCaptureSafe ? 0.24 : 0.36]} />
-      {EXPO_FEATURE_FLAGS.enableFog && <fog attach="fog" args={['#748392', 230, 620]} />}
+      {EXPO_FEATURE_FLAGS.enableFog && <fog attach="fog" args={['#748392', 420, 2400]} />}
 
       <WorldGroundPlane visualProfile={visualProfile} />
       {layerToggles.promenade && (
