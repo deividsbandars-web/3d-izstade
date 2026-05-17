@@ -24,7 +24,7 @@ function assertVectorClose(actual: number[], expected: number[]) {
   });
 }
 
-assert.equal(zones.length, 47);
+assert.equal(zones.length, 48);
 assert.equal(DEFAULT_REVIEW_OPERATOR_ZONE_ID, 'arrival-gate');
 assert.deepEqual(zoneIds, [
   'arrival-gate',
@@ -33,6 +33,7 @@ assert.deepEqual(zoneIds, [
   'left-marquee-close',
   'left-edge-far',
   'city-left-front-corner',
+  'left-civilization-monument',
   'center-spine',
   'mid-start-deep',
   'center-spine-side',
@@ -164,6 +165,14 @@ const resolvedCityLeftFrontCornerView = resolveReviewOperatorZoneStartView(cityL
 ]));
 assert.deepEqual(resolvedCityLeftFrontCornerView.lookAt, [-1710, 35, 770]);
 assert.deepEqual(resolvedCityLeftFrontCornerView.position, [-1770, 60, 835]);
+
+const leftCivilizationMonument = zones.find((zone) => zone.id === 'left-civilization-monument');
+assert.ok(leftCivilizationMonument);
+const resolvedLeftCivilizationMonumentView = resolveReviewOperatorZoneStartView(leftCivilizationMonument, new Map([
+  ['previous-civilization-monument-right-pylon', { position: [-705, 206, 334] }],
+]));
+assertVectorClose(resolvedLeftCivilizationMonumentView.lookAt, [-705, 206, 334]);
+assertVectorClose(resolvedLeftCivilizationMonumentView.position, [-185, 386, 954]);
 
 const centerSpine = zones.find((zone) => zone.id === 'center-spine');
 assert.ok(centerSpine);

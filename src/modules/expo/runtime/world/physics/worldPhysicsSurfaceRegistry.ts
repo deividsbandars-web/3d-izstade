@@ -77,6 +77,7 @@ export const WORLD_PHYSICS_DEFAULT_Y_TOLERANCE = 10;
 const WALKABLE_MIN_FOOTPRINT = 18;
 const COLLISION_VERTICAL_FOOT_CLEARANCE = 0.75;
 const COLLISION_HEAD_CLEARANCE = 2;
+const LEFT_CIVILIZATION_MONUMENT_SOURCE_KIND = 'left-civilization-monument-mass';
 
 const SOLID_LAYERS = new Set<WorldObjectLayer>([
   'booth',
@@ -151,6 +152,7 @@ function isPerimeterStructure(entry: WorldObjectRegistryEntry) {
 function isNonWalkableSupportStructure(entry: WorldObjectRegistryEntry) {
   return (
     isPerimeterStructure(entry)
+    || entry.sourceKind === LEFT_CIVILIZATION_MONUMENT_SOURCE_KIND
     || entry.sourceKind === 'tower-cluster-plinth-mass'
     || entry.id.endsWith('-tower-cluster-plinth')
     || (entry.sourceKind === 'tower-cluster-vertical-pilot-mass' && entry.id.includes('-core-'))
