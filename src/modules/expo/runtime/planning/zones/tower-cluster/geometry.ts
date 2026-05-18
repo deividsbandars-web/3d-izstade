@@ -367,6 +367,17 @@ function buildTowerClusterTelevisionTowerMasses(): CityMass[] {
     }),
     createMass({
       baseY: 1842,
+      color: '#c7d7df',
+      decorPolicy: 'standard',
+      floorCount: 1,
+      floorHeight: 86,
+      id: 'tower-cluster-television-tower-observation-lift-landing',
+      position: [towerPosition[0], 0, -978],
+      role: 'structural',
+      size: [88, 86, 82],
+    }),
+    createMass({
+      baseY: 1842,
       color: '#9aacb8',
       decorPolicy: 'standard',
       floorCount: 1,
@@ -455,6 +466,17 @@ function buildTowerClusterTelevisionTowerMasses(): CityMass[] {
     }),
     createMass({
       baseY: 3180,
+      color: '#c3d4dd',
+      decorPolicy: 'standard',
+      floorCount: 1,
+      floorHeight: 62,
+      id: 'tower-cluster-television-tower-broadcast-lift-landing',
+      position: [towerPosition[0], 0, -1060],
+      role: 'structural',
+      size: [88, 62, 86],
+    }),
+    createMass({
+      baseY: 3180,
       color: '#94a8b6',
       decorPolicy: 'standard',
       floorCount: 1,
@@ -483,6 +505,17 @@ function buildTowerClusterTelevisionTowerMasses(): CityMass[] {
       id: 'tower-cluster-television-tower-top-beacon',
       role: 'structural',
       size: [96, 48, 96],
+    }),
+    createMass({
+      baseY: 5200,
+      color: '#cfe2ea',
+      decorPolicy: 'standard',
+      floorCount: 1,
+      floorHeight: 48,
+      id: 'tower-cluster-television-tower-top-lift-bridge',
+      position: [towerPosition[0], 0, -1106],
+      role: 'structural',
+      size: [88, 48, 168],
     }),
   ];
 }

@@ -62,9 +62,9 @@ assert.equal(EXPO_VERTICAL_CITY_SYSTEM.elevatorRoutes[0]?.cycleSeconds, 38);
 assert.equal(EXPO_VERTICAL_CITY_SYSTEM.elevatorRoutes[0]?.stationDwellSeconds, 3.2);
 assert.deepEqual(EXPO_VERTICAL_CITY_SYSTEM.elevatorRoutes[1]?.waypoints, [
   [360, 48, -1030],
-  [360, 1973, -1104],
-  [360, 3287, -1153],
-  [360, 5293, -1240],
+  [360, 1973, -1030],
+  [360, 3287, -1030],
+  [360, 5293, -1030],
 ]);
 assert.deepEqual(EXPO_VERTICAL_CITY_SYSTEM.elevatorRoutes[1]?.cabinSize, [72, 106, 58]);
 assert.deepEqual(EXPO_VERTICAL_CITY_SYSTEM.elevatorRoutes[1]?.rideable, {
@@ -87,7 +87,7 @@ const televisionElevatorPositionAtObservationStop = resolveElevatorRoutePosition
   segments: televisionElevatorSegments,
   totalLength: getElevatorRouteTotalLength(televisionElevatorSegments),
 });
-assert.deepEqual(televisionElevatorPositionAtObservationStop, [360, 1973, -1104]);
+assert.deepEqual(televisionElevatorPositionAtObservationStop, [360, 1973, -1030]);
 assert.equal(resolveElevatorRideablePlayerY(EXPO_VERTICAL_CITY_SYSTEM.elevatorRoutes[1], televisionElevatorPositionAtObservationStop[1]), 1932);
 const televisionElevatorPositionAtTopStop = resolveElevatorRoutePosition({
   elapsedTime: 44,
@@ -96,7 +96,7 @@ const televisionElevatorPositionAtTopStop = resolveElevatorRoutePosition({
   segments: televisionElevatorSegments,
   totalLength: getElevatorRouteTotalLength(televisionElevatorSegments),
 });
-assert.deepEqual(televisionElevatorPositionAtTopStop, [360, 5293, -1240]);
+assert.deepEqual(televisionElevatorPositionAtTopStop, [360, 5293, -1030]);
 assert.equal(resolveElevatorRideablePlayerY(EXPO_VERTICAL_CITY_SYSTEM.elevatorRoutes[1], televisionElevatorPositionAtTopStop[1]), 5252);
 
 const groundNodes = getVerticalAccessNodesForLevel(EXPO_VERTICAL_CITY_SYSTEM, 'ground');
@@ -237,10 +237,12 @@ assert.deepEqual(towerWalkableRegions.map((region) => region.id), [
   'tower-cluster-mega-highrise-skybridge-deck-walkable',
   'tower-cluster-mega-highrise-east-needle-landing-walkable',
   'tower-cluster-mega-highrise-rear-needle-landing-walkable',
+  'tower-cluster-television-tower-observation-lift-landing-walkable',
   'tower-cluster-television-tower-observation-ring-west-walkable',
   'tower-cluster-television-tower-observation-ring-east-walkable',
   'tower-cluster-television-tower-observation-ring-front-walkable',
   'tower-cluster-television-tower-observation-ring-rear-walkable',
+  'tower-cluster-television-tower-broadcast-lift-landing-walkable',
   'tower-cluster-television-tower-broadcast-collar-west-walkable',
   'tower-cluster-television-tower-broadcast-collar-east-walkable',
   'tower-cluster-television-tower-broadcast-collar-front-walkable',
@@ -248,6 +250,7 @@ assert.deepEqual(towerWalkableRegions.map((region) => region.id), [
 ]);
 assert.deepEqual(skydeckWalkableRegions.map((region) => region.id), [
   'tower-cluster-mega-highrise-crown-skydeck-walkable',
+  'tower-cluster-television-tower-top-lift-bridge-walkable',
   'tower-cluster-television-tower-top-beacon-walkable',
 ]);
 assert.deepEqual(level1WalkableRegions[0]?.position, [900, 70, -650]);
@@ -271,33 +274,42 @@ assert.equal(towerWalkableRegions[2]?.playerY, 868);
 assert.deepEqual(towerWalkableRegions[3]?.position, [-550, 676, -1474]);
 assert.deepEqual(towerWalkableRegions[3]?.size, [148, 66]);
 assert.equal(towerWalkableRegions[3]?.playerY, 676);
-assert.deepEqual(towerWalkableRegions[4]?.position, [224, 1932, -1240]);
-assert.deepEqual(towerWalkableRegions[4]?.size, [170, 440]);
+assert.deepEqual(towerWalkableRegions[4]?.position, [360, 1932, -978]);
+assert.deepEqual(towerWalkableRegions[4]?.size, [88, 82]);
 assert.equal(towerWalkableRegions[4]?.playerY, 1932);
-assert.deepEqual(towerWalkableRegions[5]?.position, [496, 1932, -1240]);
+assert.deepEqual(towerWalkableRegions[5]?.position, [224, 1932, -1240]);
 assert.deepEqual(towerWalkableRegions[5]?.size, [170, 440]);
 assert.equal(towerWalkableRegions[5]?.playerY, 1932);
-assert.deepEqual(towerWalkableRegions[6]?.position, [360, 1932, -1104]);
-assert.deepEqual(towerWalkableRegions[6]?.size, [70, 170]);
+assert.deepEqual(towerWalkableRegions[6]?.position, [496, 1932, -1240]);
+assert.deepEqual(towerWalkableRegions[6]?.size, [170, 440]);
 assert.equal(towerWalkableRegions[6]?.playerY, 1932);
-assert.deepEqual(towerWalkableRegions[7]?.position, [360, 1932, -1376]);
+assert.deepEqual(towerWalkableRegions[7]?.position, [360, 1932, -1104]);
 assert.deepEqual(towerWalkableRegions[7]?.size, [70, 170]);
 assert.equal(towerWalkableRegions[7]?.playerY, 1932);
-assert.deepEqual(towerWalkableRegions[8]?.position, [273, 3246, -1240]);
-assert.deepEqual(towerWalkableRegions[8]?.size, [100, 280]);
-assert.equal(towerWalkableRegions[8]?.playerY, 3246);
-assert.deepEqual(towerWalkableRegions[9]?.position, [447, 3246, -1240]);
-assert.deepEqual(towerWalkableRegions[9]?.size, [100, 280]);
+assert.deepEqual(towerWalkableRegions[8]?.position, [360, 1932, -1376]);
+assert.deepEqual(towerWalkableRegions[8]?.size, [70, 170]);
+assert.equal(towerWalkableRegions[8]?.playerY, 1932);
+assert.deepEqual(towerWalkableRegions[9]?.position, [360, 3246, -1060]);
+assert.deepEqual(towerWalkableRegions[9]?.size, [88, 86]);
 assert.equal(towerWalkableRegions[9]?.playerY, 3246);
-assert.deepEqual(towerWalkableRegions[10]?.position, [360, 3246, -1153]);
-assert.deepEqual(towerWalkableRegions[10]?.size, [70, 100]);
+assert.deepEqual(towerWalkableRegions[10]?.position, [273, 3246, -1240]);
+assert.deepEqual(towerWalkableRegions[10]?.size, [100, 280]);
 assert.equal(towerWalkableRegions[10]?.playerY, 3246);
-assert.deepEqual(towerWalkableRegions[11]?.position, [360, 3246, -1327]);
-assert.deepEqual(towerWalkableRegions[11]?.size, [70, 100]);
+assert.deepEqual(towerWalkableRegions[11]?.position, [447, 3246, -1240]);
+assert.deepEqual(towerWalkableRegions[11]?.size, [100, 280]);
 assert.equal(towerWalkableRegions[11]?.playerY, 3246);
+assert.deepEqual(towerWalkableRegions[12]?.position, [360, 3246, -1153]);
+assert.deepEqual(towerWalkableRegions[12]?.size, [70, 100]);
+assert.equal(towerWalkableRegions[12]?.playerY, 3246);
+assert.deepEqual(towerWalkableRegions[13]?.position, [360, 3246, -1327]);
+assert.deepEqual(towerWalkableRegions[13]?.size, [70, 100]);
+assert.equal(towerWalkableRegions[13]?.playerY, 3246);
 assert.deepEqual(skydeckWalkableRegions[0]?.position, [-450, 1572, -1250]);
 assert.deepEqual(skydeckWalkableRegions[0]?.size, [300, 180]);
 assert.equal(skydeckWalkableRegions[0]?.playerY, 1572);
-assert.deepEqual(skydeckWalkableRegions[1]?.position, [360, 5252, -1240]);
-assert.deepEqual(skydeckWalkableRegions[1]?.size, [96, 96]);
+assert.deepEqual(skydeckWalkableRegions[1]?.position, [360, 5252, -1106]);
+assert.deepEqual(skydeckWalkableRegions[1]?.size, [88, 168]);
 assert.equal(skydeckWalkableRegions[1]?.playerY, 5252);
+assert.deepEqual(skydeckWalkableRegions[2]?.position, [360, 5252, -1240]);
+assert.deepEqual(skydeckWalkableRegions[2]?.size, [96, 96]);
+assert.equal(skydeckWalkableRegions[2]?.playerY, 5252);

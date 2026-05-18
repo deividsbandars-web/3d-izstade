@@ -40,10 +40,10 @@ assert.equal(currentTvElevator?.playerY, 7);
 assert.equal(findCurrentRideableElevator({ x: 460, y: 7, z: -1030 }, 7, 0, runtimeRoutes), null);
 
 const midRideElapsedSeconds = 17;
-const detachedByFastCabinMotion = findCurrentRideableElevator({ x: 360, y: 7, z: -1104 }, 7, midRideElapsedSeconds, runtimeRoutes);
+const detachedByFastCabinMotion = findCurrentRideableElevator({ x: 360, y: 7, z: -1030 }, 7, midRideElapsedSeconds, runtimeRoutes);
 assert.equal(detachedByFastCabinMotion, null);
 const attachedMidRide = findAttachedRideableElevator(
-  { x: 360, y: 7, z: -1104 },
+  { x: 360, y: 7, z: -1030 },
   midRideElapsedSeconds,
   runtimeRoutes,
   'tower-cluster-television-tower-animated-city-lift',
@@ -52,7 +52,7 @@ assert.equal(attachedMidRide?.route.id, 'tower-cluster-television-tower-animated
 assert.ok((attachedMidRide?.playerY ?? 0) > 1000);
 assert.equal(
   findAttachedRideableElevator(
-    { x: 460, y: 7, z: -1104 },
+    { x: 460, y: 7, z: -1030 },
     midRideElapsedSeconds,
     runtimeRoutes,
     'tower-cluster-television-tower-animated-city-lift',

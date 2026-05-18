@@ -623,9 +623,9 @@ export const EXPO_VERTICAL_CITY_SYSTEM: ExpoVerticalCitySystemPlan = {
       stationSize: [148, 14, 76],
       waypoints: [
         [360, 48, -1030],
-        [360, TOWER_CLUSTER_TELEVISION_TOWER.observationPlayerY + 41, -1104],
-        [360, TOWER_CLUSTER_TELEVISION_TOWER.broadcastPlayerY + 41, -1153],
-        [360, TOWER_CLUSTER_TELEVISION_TOWER.topPlayerY + 41, -1240],
+        [360, TOWER_CLUSTER_TELEVISION_TOWER.observationPlayerY + 41, -1030],
+        [360, TOWER_CLUSTER_TELEVISION_TOWER.broadcastPlayerY + 41, -1030],
+        [360, TOWER_CLUSTER_TELEVISION_TOWER.topPlayerY + 41, -1030],
       ],
       zoneId: 'tower-cluster',
     },
@@ -681,6 +681,14 @@ export const EXPO_VERTICAL_CITY_SYSTEM: ExpoVerticalCitySystemPlan = {
       zoneId: EXPO_TOWER_CLUSTER_MEGA_STRUCTURE_LAYOUT.zoneId,
     })),
     {
+      id: 'tower-cluster-television-tower-observation-lift-landing-walkable',
+      level: 'tower',
+      playerY: TOWER_CLUSTER_TELEVISION_TOWER.observationPlayerY,
+      position: [360, TOWER_CLUSTER_TELEVISION_TOWER.observationPlayerY, -978],
+      size: [88, 82],
+      zoneId: 'tower-cluster',
+    },
+    {
       id: 'tower-cluster-television-tower-observation-ring-west-walkable',
       level: 'tower',
       playerY: TOWER_CLUSTER_TELEVISION_TOWER.observationPlayerY,
@@ -713,6 +721,14 @@ export const EXPO_VERTICAL_CITY_SYSTEM: ExpoVerticalCitySystemPlan = {
       zoneId: 'tower-cluster',
     },
     {
+      id: 'tower-cluster-television-tower-broadcast-lift-landing-walkable',
+      level: 'tower',
+      playerY: TOWER_CLUSTER_TELEVISION_TOWER.broadcastPlayerY,
+      position: [360, TOWER_CLUSTER_TELEVISION_TOWER.broadcastPlayerY, -1060],
+      size: [88, 86],
+      zoneId: 'tower-cluster',
+    },
+    {
       id: 'tower-cluster-television-tower-broadcast-collar-west-walkable',
       level: 'tower',
       playerY: TOWER_CLUSTER_TELEVISION_TOWER.broadcastPlayerY,
@@ -742,6 +758,14 @@ export const EXPO_VERTICAL_CITY_SYSTEM: ExpoVerticalCitySystemPlan = {
       playerY: TOWER_CLUSTER_TELEVISION_TOWER.broadcastPlayerY,
       position: [360, TOWER_CLUSTER_TELEVISION_TOWER.broadcastPlayerY, -1327],
       size: [70, 100],
+      zoneId: 'tower-cluster',
+    },
+    {
+      id: 'tower-cluster-television-tower-top-lift-bridge-walkable',
+      level: 'skydeck',
+      playerY: TOWER_CLUSTER_TELEVISION_TOWER.topPlayerY,
+      position: [360, TOWER_CLUSTER_TELEVISION_TOWER.topPlayerY, -1106],
+      size: [88, 168],
       zoneId: 'tower-cluster',
     },
     {
