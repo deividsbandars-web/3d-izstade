@@ -10,7 +10,7 @@ function isPreviousCivilizationMonumentScreen(surface: CityScreenSurface) {
   return surface.id === 'screen-array-left-upper-3';
 }
 
-function isCelestialArchiveGateScreen(surface: CityScreenSurface) {
+function isOrbitalBroadcastFoundryScreen(surface: CityScreenSurface) {
   return surface.id === 'screen-array-right-upper-3';
 }
 
@@ -23,10 +23,10 @@ export function buildCityScreenHostMasses(surfaces: ReadonlyArray<CityScreenSurf
       const isSpine = surface.id.startsWith('screen-spine-');
       const isSideArray = surface.id.startsWith('screen-array-');
       const isMonumentScreen = isPreviousCivilizationMonumentScreen(surface);
-      const isArchiveGateScreen = isCelestialArchiveGateScreen(surface);
-      const isElevatedLandmarkScreen = isMonumentScreen || isArchiveGateScreen;
+      const isFoundryScreen = isOrbitalBroadcastFoundryScreen(surface);
+      const isElevatedLandmarkScreen = isMonumentScreen || isFoundryScreen;
       const hostTop = surface.position[1] + (surface.size[1] * 0.5) + (isSideArray ? 42 : isMarquee ? 8 : 6);
-      const hostBaseY = isMonumentScreen ? 820 : isArchiveGateScreen ? 1920 : 0;
+      const hostBaseY = isMonumentScreen ? 820 : isFoundryScreen ? 2140 : 0;
       const hostWidth = Math.max(
         surface.size[0] + (isSideArray ? 36 : 8),
         surface.size[0] * (isSideArray ? 1.26 : 1.08),
@@ -66,7 +66,7 @@ export function buildCityScreenHostMasses(surfaces: ReadonlyArray<CityScreenSurf
               verticalOwner: 'city',
             }
           : undefined,
-        color: isMonumentScreen ? '#a9b9c1' : isArchiveGateScreen ? '#9fb5c1' : isSpine ? '#7c909e' : isMarquee ? '#718795' : '#8294a0',
+        color: isMonumentScreen ? '#a9b9c1' : isFoundryScreen ? '#9fb5c1' : isSpine ? '#7c909e' : isMarquee ? '#718795' : '#8294a0',
         sections: surface.sections,
       } satisfies CityMass;
     });

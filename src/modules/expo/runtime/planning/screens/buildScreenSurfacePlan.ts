@@ -43,16 +43,16 @@ function buildPreviousCivilizationMonumentScreenSurface(): CityScreenSurface {
   };
 }
 
-function buildCelestialArchiveGateScreenSurface(): CityScreenSurface {
+function buildOrbitalBroadcastFoundryScreenSurface(): CityScreenSurface {
   return {
     color: '#07111f',
     glowColor: '#a5f3fc',
     id: 'screen-array-right-upper-3',
-    position: [890, 2250, 300],
+    position: [890, 2530, 300],
     role: 'support-wall',
     rotation: [0, -3.08, 0],
     sections: ['right'],
-    size: [840, 560, 4.2],
+    size: [960, 540, 4.2],
     type: 'wall',
   };
 }
@@ -835,7 +835,7 @@ export function buildZoneScreenSurfacePlan(args: {
         ...cityScreenSurfaces.filter((surface) =>
           surface.id.startsWith('screen-marquee-right-') || surface.id.startsWith('screen-array-right-')
         ),
-        buildCelestialArchiveGateScreenSurface(),
+        buildOrbitalBroadcastFoundryScreenSurface(),
       ].map((surface) => enrichSurfaceIntent(zoneId, surface));
     case 'tower-cluster':
       return buildTowerScreenSurfaces(towers).map((surface) => enrichSurfaceIntent(zoneId, surface));

@@ -41,7 +41,7 @@ assert.deepEqual(zoneIds, [
   'right-skybridge-landmark',
   'right-marquee-close',
   'right-edge-far',
-  'right-celestial-archive-gate',
+  'right-orbital-broadcast-foundry',
   'tower-cluster',
   'tower-cluster-vertical-pilot',
   'tower-cluster-mega-highrise',
@@ -177,13 +177,13 @@ const resolvedLeftCivilizationMonumentView = resolveReviewOperatorZoneStartView(
 assertVectorClose(resolvedLeftCivilizationMonumentView.lookAt, [-900, 1400, 268.2]);
 assertVectorClose(resolvedLeftCivilizationMonumentView.position, [2400, 840, -4931.8]);
 
-const rightCelestialArchiveGate = zones.find((zone) => zone.id === 'right-celestial-archive-gate');
-assert.ok(rightCelestialArchiveGate);
-const resolvedRightCelestialArchiveGateView = resolveReviewOperatorZoneStartView(rightCelestialArchiveGate, new Map([
-  ['screen-array-right-upper-3', { position: [890, 2250, 300] }],
+const rightOrbitalBroadcastFoundry = zones.find((zone) => zone.id === 'right-orbital-broadcast-foundry');
+assert.ok(rightOrbitalBroadcastFoundry);
+const resolvedRightOrbitalBroadcastFoundryView = resolveReviewOperatorZoneStartView(rightOrbitalBroadcastFoundry, new Map([
+  ['screen-array-right-upper-3', { position: [890, 2530, 300] }],
 ]));
-assertVectorClose(resolvedRightCelestialArchiveGateView.lookAt, [890, 2370, 300]);
-assertVectorClose(resolvedRightCelestialArchiveGateView.position, [270, 2590, -460]);
+assertVectorClose(resolvedRightOrbitalBroadcastFoundryView.lookAt, [890, 2650, 300]);
+assertVectorClose(resolvedRightOrbitalBroadcastFoundryView.position, [130, 2950, -600]);
 
 const centerSpine = zones.find((zone) => zone.id === 'center-spine');
 assert.ok(centerSpine);

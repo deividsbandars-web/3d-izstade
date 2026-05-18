@@ -508,28 +508,28 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
     },
     {
       expectedKeyObjectIds: [
-        'celestial-archive-gate-sky-bridge',
+        'orbital-broadcast-foundry-orbit-ring-right-diagonal',
         'screen-array-right-upper-3',
         'screen-array-right-upper-3-host',
       ],
       expectedVisibleLayers: ['city-mass', 'city-screen-surface'],
-      id: 'right-celestial-archive-gate',
-      intent: 'right-celestial-archive-gate-review',
-      label: 'Right Celestial Archive Gate',
+      id: 'right-orbital-broadcast-foundry',
+      intent: 'right-orbital-broadcast-foundry-review',
+      label: 'Right Orbital Broadcast Foundry',
       camera: {
         lookAtOffset: [0, 120, 0],
-        positionOffset: [-620, 340, -760],
+        positionOffset: [-760, 420, -900],
         targetIds: ['screen-array-right-upper-3'],
       },
       startView: {
-        lookAt: [890, 2370, 300],
-        position: [270, 2590, -460],
+        lookAt: [890, 2650, 300],
+        position: [130, 2950, -600],
         source: 'arrival-main',
       },
       watchItems: [
-        'new separate 5x landmark silhouette',
+        'separate asymmetric broadcast foundry silhouette',
         'large high screen facing the city',
-        'screen host embedded in archive gate frame',
+        'screen host embedded in foundry frame',
       ],
     },
     {
