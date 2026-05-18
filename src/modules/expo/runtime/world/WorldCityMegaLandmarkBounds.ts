@@ -25,6 +25,7 @@ export type WorldCityMegaLandmarkBound = {
 };
 
 const HIDDEN_WORLD_CITY_MEGA_LANDMARK_IDS = new Set([
+  'mega-landmark-media',
   'mega-landmark-showcase',
 ]);
 
@@ -119,7 +120,7 @@ export function buildWorldCityMegaLandmarkBounds({
       ],
       planningSection: 'middle',
       planningZone: 'center-spine',
-      position: [860, 122, mediaBaseZ - 148],
+      position: [860, 122, mediaBaseZ - 78],
       size: [296, 244, 70],
     }),
     createMegaLandmarkBound({

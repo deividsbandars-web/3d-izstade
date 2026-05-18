@@ -61,7 +61,7 @@ function buildPreviousCivilizationMonumentMasses(): CityMass[] {
       planningSource,
       position: center,
       role: 'structural',
-      size: [1420, 56, 280],
+      size: [1360, 56, 280],
       vertical: monumentVerticalPlacement({
         baseY: 0,
         floorHeight: 56,
@@ -106,7 +106,7 @@ function buildPreviousCivilizationMonumentMasses(): CityMass[] {
       planningSource,
       position: [center[0] - 620, 0, center[2] - 24],
       role: 'signature',
-      size: [190, 1780, 190],
+      size: [150, 1780, 190],
       vertical: monumentVerticalPlacement({
         baseY: 56,
         floorHeight: 1780,
@@ -121,7 +121,7 @@ function buildPreviousCivilizationMonumentMasses(): CityMass[] {
       planningSource,
       position: [center[0] + 620, 0, center[2] - 24],
       role: 'signature',
-      size: [190, 1780, 190],
+      size: [150, 1780, 190],
       vertical: monumentVerticalPlacement({
         baseY: 56,
         floorHeight: 1780,

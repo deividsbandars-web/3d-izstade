@@ -470,6 +470,26 @@ function isIntentionalOrbitalBroadcastFoundryScreenHostJoint(left, right) {
   ));
 }
 
+function resolveIntentionalCitySolidCompositionKey(entry) {
+  const id = String(entry?.id ?? '');
+  const sourceKind = String(entry?.sourceKind ?? '');
+
+  if (
+    sourceKind === 'tower-cluster-television-tower-mass'
+    && id.startsWith('tower-cluster-television-tower-')
+  ) {
+    return 'tower-cluster-television-tower';
+  }
+
+  return null;
+}
+
+function isSameIntentionalCitySolidComposition(left, right) {
+  const leftKey = resolveIntentionalCitySolidCompositionKey(left);
+  const rightKey = resolveIntentionalCitySolidCompositionKey(right);
+  return leftKey !== null && leftKey === rightKey;
+}
+
 function isIntentionalCitySolidOverlap(left, right) {
   if (isAllowedScreenHostFacadeOverlap(left, right)) {
     return true;
@@ -496,11 +516,7 @@ function isIntentionalCitySolidOverlap(left, right) {
     return true;
   }
 
-  if (
-    typeof left.id === 'string'
-    && typeof right.id === 'string'
-    && (left.id.includes('-tower-cluster-') || right.id.includes('-tower-cluster-'))
-  ) {
+  if (isSameIntentionalCitySolidComposition(left, right)) {
     return true;
   }
 

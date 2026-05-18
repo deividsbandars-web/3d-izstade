@@ -1043,8 +1043,16 @@ export function buildCleanTowerLandmarks(
     switch (id) {
       case 'arrival-core-outer-support-tower-right':
         return [1420, position[1], -40];
+      case 'meetings-hero-tower-right':
+        return [1450, position[1], -1760];
+      case 'meetings-outer-support-tower-right':
+        return [1500, position[1], -1100];
       case 'showcase-row-mid-tower-right':
         return [680, position[1], -1530];
+      case 'showcase-row-outer-support-tower-left':
+        return [-1380, position[1], -1280];
+      case 'showcase-row-outer-support-tower-right':
+        return [1650, position[1], -1600];
       default:
         return position;
     }

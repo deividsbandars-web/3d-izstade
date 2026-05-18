@@ -663,7 +663,7 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
     },
     {
       expectedKeyObjectIds: [
-        'arrival-core-hero-tower-right-tower-ribbon',
+        'screen-marquee-right-2',
       ],
       expectedVisibleLayers: ['city-screen-surface'],
       id: 'tower-cluster',
@@ -671,12 +671,12 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       label: 'Tower Cluster',
       camera: {
         lookAtOffset: [0, 18, 0],
-        positionOffset: [-260, 112, 360],
-        targetIds: ['arrival-core-hero-tower-right-tower-ribbon'],
+        positionOffset: [-680, 260, 860],
+        targetIds: ['screen-marquee-right-2'],
       },
       startView: {
-        lookAt: [518.8230613285318, 155.04, -518.881157475684],
-        position: [766.8230613285318, 239.04, -190.88115747568395],
+        lookAt: [1312, 162, -1476],
+        position: [632, 404, -616],
         source: 'arrival-main',
       },
       watchItems: [
@@ -874,9 +874,7 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       ],
     },
     {
-      expectedKeyObjectIds: [
-        'arrival-core-hero-tower-right-tower-ribbon',
-      ],
+      expectedKeyObjectIds: [],
       expectedVisibleLayers: ['city-screen-surface'],
       id: 'tower-cluster-reverse-wide',
       intent: 'tower-cluster-reverse-wide-review',
@@ -884,7 +882,7 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       camera: {
         lookAtOffset: [0, 28, 0],
         positionOffset: [-460, 190, 560],
-        targetIds: ['arrival-core-hero-tower-right-tower-ribbon'],
+        targetIds: ['screen-marquee-right-2'],
       },
       startView: {
         lookAt: [708, 200, -700],
