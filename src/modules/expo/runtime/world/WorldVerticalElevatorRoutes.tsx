@@ -3,17 +3,22 @@ import { Text } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
 import type { Group } from 'three';
 import type { ExpoVerticalElevatorRoute } from '../planning/types';
+import { resolveRideableElevatorPhysicalLayout } from './physics/elevatorPhysics';
 import {
   buildElevatorRouteSegments,
   getElevatorRouteTotalLength,
   resolveElevatorRoutePosition,
 } from '../planning/vertical/elevatorRouteMotion';
+import { usePlayerColliderRegistration } from './WorldSceneSupport';
 
 function WorldVerticalElevatorRouteVisual({ route }: { route: ExpoVerticalElevatorRoute }) {
   const cabinRef = useRef<Group>(null);
+  const cabinColliderRef = useRef<Group>(null);
   const segments = useMemo(() => buildElevatorRouteSegments(route.waypoints), [route.waypoints]);
   const totalLength = useMemo(() => getElevatorRouteTotalLength(segments), [segments]);
+  const physicalLayout = useMemo(() => resolveRideableElevatorPhysicalLayout(route), [route]);
   const fallbackPosition = route.waypoints[0] ?? [0, 0, 0];
+  usePlayerColliderRegistration(cabinColliderRef, `vertical-elevator-cabin:${route.id}`);
 
   useFrame((state) => {
     const position = resolveElevatorRoutePosition({
@@ -81,38 +86,50 @@ function WorldVerticalElevatorRouteVisual({ route }: { route: ExpoVerticalElevat
       ))}
 
       <group ref={cabinRef} name={`vertical-elevator-cabin:${route.id}`} position={fallbackPosition}>
-        <mesh>
-          <boxGeometry args={route.cabinSize} />
+        <mesh position={[0, physicalLayout.floorCenterOffsetY, 0]}>
+          <boxGeometry args={physicalLayout.floorSize} />
           <meshStandardMaterial
-            color="#c7f7ff"
+            color="#0f1f29"
             emissive={route.accentColor}
-            emissiveIntensity={0.18}
-            metalness={0.24}
-            opacity={0.94}
-            roughness={0.22}
-            transparent
+            emissiveIntensity={0.16}
+            metalness={0.34}
+            roughness={0.32}
           />
         </mesh>
-        <mesh position={[0, (route.rideable?.floorPlayerOffsetY ?? ((route.cabinSize[1] * -0.5) + 12)) - 8, 0]}>
-          <boxGeometry args={[route.cabinSize[0] * 0.96, 7.5, route.cabinSize[2] * 0.96]} />
-          <meshStandardMaterial
-            color="#17242c"
-            emissive={route.accentColor}
-            emissiveIntensity={0.08}
-            metalness={0.22}
-            roughness={0.4}
-          />
-        </mesh>
-        <mesh position={[0, 0, route.cabinSize[2] * 0.52]}>
-          <boxGeometry args={[route.cabinSize[0] * 0.74, route.cabinSize[1] * 0.7, 1.8]} />
-          <meshBasicMaterial
-            color="#ecfeff"
-            depthWrite={false}
-            opacity={0.34}
-            transparent
-            toneMapped={false}
-          />
-        </mesh>
+        {[-1, 1].map((side) => (
+          <mesh
+            key={`${route.id}:physical-side-wall:${side}`}
+            position={[physicalLayout.sideWallOffsetX * side, physicalLayout.sideWallCenterOffsetY, 0]}
+          >
+            <boxGeometry args={physicalLayout.sideWallSize} />
+            <meshStandardMaterial
+              color="#9deaff"
+              emissive={route.accentColor}
+              emissiveIntensity={0.16}
+              metalness={0.28}
+              roughness={0.26}
+            />
+          </mesh>
+        ))}
+        {[-1, 1].map((side) => (
+          <mesh
+            key={`${route.id}:front-post:${side}`}
+            position={[
+              physicalLayout.sideWallOffsetX * side,
+              physicalLayout.sideWallCenterOffsetY,
+              physicalLayout.floorSize[2] * 0.52,
+            ]}
+          >
+            <boxGeometry args={[7, physicalLayout.sideWallHeight, 7]} />
+            <meshStandardMaterial
+              color="#d9fbff"
+              emissive={route.accentColor}
+              emissiveIntensity={0.2}
+              metalness={0.32}
+              roughness={0.24}
+            />
+          </mesh>
+        ))}
         <mesh position={[0, route.cabinSize[1] * 0.55, 0]}>
           <boxGeometry args={[route.cabinSize[0] * 1.08, 4, route.cabinSize[2] * 1.08]} />
           <meshStandardMaterial
@@ -136,12 +153,27 @@ function WorldVerticalElevatorRouteVisual({ route }: { route: ExpoVerticalElevat
         <Text
           anchorX="center"
           anchorY="middle"
-          color="#001018"
+          color="#e0faff"
           fontSize={9}
           position={[0, -route.cabinSize[1] * 0.08, route.cabinSize[2] * 0.57]}
         >
           LIFT
         </Text>
+        <group ref={cabinColliderRef} name={`vertical-elevator-cabin-collider:${route.id}`}>
+          <mesh position={[0, physicalLayout.floorCenterOffsetY, 0]}>
+            <boxGeometry args={physicalLayout.floorSize} />
+            <meshBasicMaterial color="#00ffff" depthWrite={false} opacity={0} transparent toneMapped={false} />
+          </mesh>
+          {[-1, 1].map((side) => (
+            <mesh
+              key={`${route.id}:physical-collider-side-wall:${side}`}
+              position={[physicalLayout.sideWallOffsetX * side, physicalLayout.sideWallCenterOffsetY, 0]}
+            >
+              <boxGeometry args={physicalLayout.sideWallSize} />
+              <meshBasicMaterial color="#00ffff" depthWrite={false} opacity={0} transparent toneMapped={false} />
+            </mesh>
+          ))}
+        </group>
       </group>
     </group>
   );
