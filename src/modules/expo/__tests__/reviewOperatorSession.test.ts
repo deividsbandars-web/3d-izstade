@@ -24,7 +24,7 @@ function assertVectorClose(actual: number[], expected: number[]) {
   });
 }
 
-assert.equal(zones.length, 55);
+assert.equal(zones.length, 56);
 assert.equal(DEFAULT_REVIEW_OPERATOR_ZONE_ID, 'arrival-gate');
 assert.deepEqual(zoneIds, [
   'arrival-gate',
@@ -46,6 +46,7 @@ assert.deepEqual(zoneIds, [
   'right-marquee-close',
   'right-edge-far',
   'right-orbital-broadcast-foundry',
+  'right-orbital-broadcast-foundry-skyline',
   'tower-cluster',
   'tower-cluster-vertical-pilot',
   'tower-cluster-mega-highrise',
@@ -188,6 +189,15 @@ const resolvedRightOrbitalBroadcastFoundryView = resolveReviewOperatorZoneStartV
 ]));
 assertVectorClose(resolvedRightOrbitalBroadcastFoundryView.lookAt, [890, 2650, 300]);
 assertVectorClose(resolvedRightOrbitalBroadcastFoundryView.position, [130, 2950, -600]);
+
+const rightOrbitalBroadcastFoundrySkyline = zones.find((zone) => zone.id === 'right-orbital-broadcast-foundry-skyline');
+assert.ok(rightOrbitalBroadcastFoundrySkyline);
+const resolvedRightOrbitalBroadcastFoundrySkylineView = resolveReviewOperatorZoneStartView(rightOrbitalBroadcastFoundrySkyline, new Map([
+  ['orbital-broadcast-foundry-upper-broadcast-core', { position: [1060, 4070, 528] }],
+  ['orbital-broadcast-foundry-signal-spire', { position: [1060, 4850, 528] }],
+]));
+assertVectorClose(resolvedRightOrbitalBroadcastFoundrySkylineView.lookAt, [1060, 3240, 528]);
+assertVectorClose(resolvedRightOrbitalBroadcastFoundrySkylineView.position, [-820, 5360, -1652]);
 
 const centerSpine = zones.find((zone) => zone.id === 'center-spine');
 assert.ok(centerSpine);

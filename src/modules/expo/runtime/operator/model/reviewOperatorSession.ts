@@ -611,7 +611,6 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
     },
     {
       expectedKeyObjectIds: [
-        'orbital-broadcast-foundry-primitive-rig',
         'screen-array-right-upper-3',
         'screen-array-right-upper-3-host',
       ],
@@ -633,6 +632,33 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
         'separate asymmetric broadcast foundry silhouette',
         'large high screen facing the city',
         'screen host embedded in foundry frame',
+      ],
+    },
+    {
+      expectedKeyObjectIds: [
+        'orbital-broadcast-foundry-primitive-rig',
+      ],
+      expectedVisibleLayers: ['city-mass'],
+      id: 'right-orbital-broadcast-foundry-skyline',
+      intent: 'right-orbital-broadcast-foundry-skyline-review',
+      label: 'Right Orbital Broadcast Foundry Skyline',
+      camera: {
+        lookAtOffset: [0, -1220, 0],
+        positionOffset: [-1880, 900, -2180],
+        targetIds: [
+          'orbital-broadcast-foundry-upper-broadcast-core',
+          'orbital-broadcast-foundry-signal-spire',
+        ],
+      },
+      startView: {
+        lookAt: [1060, 3240, 528],
+        position: [-820, 5360, -1652],
+        source: 'arrival-main',
+      },
+      watchItems: [
+        'full foundry silhouette visible above right district',
+        'primitive rig reads as one intentional landmark',
+        'large screen frame does not mutate into tower clutter',
       ],
     },
     {
