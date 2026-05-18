@@ -255,16 +255,18 @@ const TOWER_CLUSTER_TELEVISION_TOWER = {
   topPlayerY: 5252,
 } as const;
 
+const SKY_MARKET_SPINE_Z = -520;
+
 const SKY_MARKET_SPINE_VERTICAL = {
-  center: [0, 0, -920] as [number, number, number],
-  groundLiftPosition: [-520, 0.25, -920] as [number, number, number],
+  center: [0, 0, SKY_MARKET_SPINE_Z] as [number, number, number],
+  groundLiftPosition: [-520, 0.25, SKY_MARKET_SPINE_Z] as [number, number, number],
   lowerDeckPlayerY: 541,
-  lowerDeckPosition: [0, 541, -920] as [number, number, number],
-  lowerLiftPosition: [-520, 537, -920] as [number, number, number],
-  lowerToUpperLiftPosition: [520, 537, -920] as [number, number, number],
+  lowerDeckPosition: [0, 541, SKY_MARKET_SPINE_Z] as [number, number, number],
+  lowerLiftPosition: [-520, 537, SKY_MARKET_SPINE_Z] as [number, number, number],
+  lowerToUpperLiftPosition: [520, 537, SKY_MARKET_SPINE_Z] as [number, number, number],
   upperDeckPlayerY: 919,
-  upperDeckPosition: [0, 919, -920] as [number, number, number],
-  upperLiftPosition: [520, 915, -920] as [number, number, number],
+  upperDeckPosition: [0, 919, SKY_MARKET_SPINE_Z] as [number, number, number],
+  upperLiftPosition: [520, 915, SKY_MARKET_SPINE_Z] as [number, number, number],
 } as const;
 
 export const EXPO_VERTICAL_CITY_SYSTEM: ExpoVerticalCitySystemPlan = {
@@ -278,7 +280,7 @@ export const EXPO_VERTICAL_CITY_SYSTEM: ExpoVerticalCitySystemPlan = {
       position: SKY_MARKET_SPINE_VERTICAL.groundLiftPosition,
       radius: 38,
       targetLevel: 'tower',
-      targetPosition: [-520, SKY_MARKET_SPINE_VERTICAL.lowerDeckPlayerY, -920],
+      targetPosition: [-520, SKY_MARKET_SPINE_VERTICAL.lowerDeckPlayerY, SKY_MARKET_SPINE_Z],
       zoneId: 'center-spine',
     },
     {
@@ -290,7 +292,7 @@ export const EXPO_VERTICAL_CITY_SYSTEM: ExpoVerticalCitySystemPlan = {
       position: SKY_MARKET_SPINE_VERTICAL.lowerLiftPosition,
       radius: 30,
       targetLevel: 'ground',
-      targetPosition: [-520, 5, -920],
+      targetPosition: [-520, 5, SKY_MARKET_SPINE_Z],
       zoneId: 'center-spine',
     },
     {
@@ -302,7 +304,7 @@ export const EXPO_VERTICAL_CITY_SYSTEM: ExpoVerticalCitySystemPlan = {
       position: SKY_MARKET_SPINE_VERTICAL.lowerToUpperLiftPosition,
       radius: 30,
       targetLevel: 'skydeck',
-      targetPosition: [520, SKY_MARKET_SPINE_VERTICAL.upperDeckPlayerY, -920],
+      targetPosition: [520, SKY_MARKET_SPINE_VERTICAL.upperDeckPlayerY, SKY_MARKET_SPINE_Z],
       zoneId: 'center-spine',
     },
     {
@@ -314,7 +316,7 @@ export const EXPO_VERTICAL_CITY_SYSTEM: ExpoVerticalCitySystemPlan = {
       position: SKY_MARKET_SPINE_VERTICAL.upperLiftPosition,
       radius: 28,
       targetLevel: 'tower',
-      targetPosition: [520, SKY_MARKET_SPINE_VERTICAL.lowerDeckPlayerY, -920],
+      targetPosition: [520, SKY_MARKET_SPINE_VERTICAL.lowerDeckPlayerY, SKY_MARKET_SPINE_Z],
       zoneId: 'center-spine',
     },
     {
@@ -660,9 +662,9 @@ export const EXPO_VERTICAL_CITY_SYSTEM: ExpoVerticalCitySystemPlan = {
       stationDwellSeconds: 3.2,
       stationSize: [158, 14, 92],
       waypoints: [
-        [-520, 41, -920],
-        [-520, SKY_MARKET_SPINE_VERTICAL.lowerDeckPlayerY + 36, -920],
-        [-520, SKY_MARKET_SPINE_VERTICAL.upperDeckPlayerY + 36, -920],
+        [-520, 41, SKY_MARKET_SPINE_Z],
+        [-520, SKY_MARKET_SPINE_VERTICAL.lowerDeckPlayerY + 36, SKY_MARKET_SPINE_Z],
+        [-520, SKY_MARKET_SPINE_VERTICAL.upperDeckPlayerY + 36, SKY_MARKET_SPINE_Z],
       ],
       zoneId: 'center-spine',
     },

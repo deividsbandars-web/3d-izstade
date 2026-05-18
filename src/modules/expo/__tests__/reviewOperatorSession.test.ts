@@ -24,7 +24,7 @@ function assertVectorClose(actual: number[], expected: number[]) {
   });
 }
 
-assert.equal(zones.length, 54);
+assert.equal(zones.length, 55);
 assert.equal(DEFAULT_REVIEW_OPERATOR_ZONE_ID, 'arrival-gate');
 assert.deepEqual(zoneIds, [
   'arrival-gate',
@@ -38,6 +38,7 @@ assert.deepEqual(zoneIds, [
   'mid-start-deep',
   'center-spine-side',
   'sky-market-spine',
+  'sky-market-spine-access',
   'ai-reactor-core',
   'center-sky-compass',
   'right-marquee',

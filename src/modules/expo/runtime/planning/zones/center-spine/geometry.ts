@@ -26,7 +26,7 @@ function isCenterSpineMass(mass: CityMass) {
 }
 
 function buildSkyMarketSpineMasses(): CityMass[] {
-  const center: [number, number, number] = [0, 0, -920];
+  const center: [number, number, number] = [0, 0, -520];
   const accent = '#ffe08a';
   const podZs = [-390, -130, 130, 390];
 
@@ -222,7 +222,7 @@ function buildSkyMarketSpineMasses(): CityMass[] {
 }
 
 function buildAiReactorCoreMasses(): CityMass[] {
-  const center: [number, number, number] = [0, 0, -520];
+  const center: [number, number, number] = [-2200, 0, -520];
   const accent = '#6fffe9';
 
   return [
@@ -357,15 +357,16 @@ function buildAiReactorCoreMasses(): CityMass[] {
         showSignatureBand: false,
         skipBase: true,
       },
+      planningZone: 'left-district',
       role: 'structural',
-      sections: ['middle'],
+      sections: ['left'],
       size: [1, 1, 1],
     },
   ];
 }
 
 function buildCenterSkyCompassMasses(): CityMass[] {
-  const center: [number, number, number] = [0, 0, -1540];
+  const center: [number, number, number] = [2200, 0, -960];
   const accent = '#8ee8ff';
 
   return [
@@ -527,8 +528,9 @@ function buildCenterSkyCompassMasses(): CityMass[] {
         showSignatureBand: false,
         skipBase: true,
       },
+      planningZone: 'right-district',
       role: 'structural',
-      sections: ['middle'],
+      sections: ['right'],
       size: [1, 1, 1],
     },
   ];
