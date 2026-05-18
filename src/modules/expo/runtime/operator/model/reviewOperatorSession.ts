@@ -416,6 +416,54 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
     },
     {
       expectedKeyObjectIds: [
+        'sky-market-spine-primitive-rig',
+      ],
+      expectedVisibleLayers: ['city-mass'],
+      id: 'sky-market-spine',
+      intent: 'sky-market-spine-review',
+      label: 'Sky Market Spine',
+      camera: {
+        lookAtOffset: [0, 820, 0],
+        positionOffset: [1450, 1220, 1900],
+        targetIds: ['sky-market-spine-primitive-rig'],
+      },
+      startView: {
+        lookAt: [0, 820, -920],
+        position: [1450, 1220, 980],
+        source: 'arrival-main',
+      },
+      watchItems: [
+        'multi-storey market bridge over center axis',
+        'clear stall pod rhythm, not random block clutter',
+        'continuous central light spine readable from distance',
+      ],
+    },
+    {
+      expectedKeyObjectIds: [
+        'ai-reactor-core-primitive-rig',
+      ],
+      expectedVisibleLayers: ['city-mass'],
+      id: 'ai-reactor-core',
+      intent: 'ai-reactor-core-review',
+      label: 'AI Reactor Core',
+      camera: {
+        lookAtOffset: [0, 960, 0],
+        positionOffset: [1320, 1180, 1680],
+        targetIds: ['ai-reactor-core-primitive-rig'],
+      },
+      startView: {
+        lookAt: [0, 960, -520],
+        position: [1320, 1180, 1160],
+        source: 'arrival-main',
+      },
+      watchItems: [
+        'central energy core landmark readability',
+        'clean orbital rings around vertical light column',
+        'no collapsed debris silhouette or layer conflict',
+      ],
+    },
+    {
+      expectedKeyObjectIds: [
         'center-sky-compass-primitive-rig',
       ],
       expectedVisibleLayers: ['city-mass'],
