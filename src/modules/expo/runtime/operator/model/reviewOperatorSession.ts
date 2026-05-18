@@ -337,8 +337,8 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
         ],
       },
       startView: {
-        lookAt: [-915, 1640, 268.2],
-        position: [2385, 1080, -4931.8],
+        lookAt: [-900, 1400, 268.2],
+        position: [2400, 840, -4931.8],
         source: 'arrival-main',
       },
       watchItems: [
@@ -504,6 +504,32 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       watchItems: [
         'far-right skyline/media coverage',
         'outer-right placement sanity',
+      ],
+    },
+    {
+      expectedKeyObjectIds: [
+        'celestial-archive-gate-sky-bridge',
+        'screen-array-right-upper-3',
+        'screen-array-right-upper-3-host',
+      ],
+      expectedVisibleLayers: ['city-mass', 'city-screen-surface'],
+      id: 'right-celestial-archive-gate',
+      intent: 'right-celestial-archive-gate-review',
+      label: 'Right Celestial Archive Gate',
+      camera: {
+        lookAtOffset: [0, 120, 0],
+        positionOffset: [-620, 340, -760],
+        targetIds: ['screen-array-right-upper-3'],
+      },
+      startView: {
+        lookAt: [890, 2370, 300],
+        position: [270, 2590, -460],
+        source: 'arrival-main',
+      },
+      watchItems: [
+        'new separate 5x landmark silhouette',
+        'large high screen facing the city',
+        'screen host embedded in archive gate frame',
       ],
     },
     {

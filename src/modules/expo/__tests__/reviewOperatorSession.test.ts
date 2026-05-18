@@ -24,7 +24,7 @@ function assertVectorClose(actual: number[], expected: number[]) {
   });
 }
 
-assert.equal(zones.length, 50);
+assert.equal(zones.length, 51);
 assert.equal(DEFAULT_REVIEW_OPERATOR_ZONE_ID, 'arrival-gate');
 assert.deepEqual(zoneIds, [
   'arrival-gate',
@@ -41,6 +41,7 @@ assert.deepEqual(zoneIds, [
   'right-skybridge-landmark',
   'right-marquee-close',
   'right-edge-far',
+  'right-celestial-archive-gate',
   'tower-cluster',
   'tower-cluster-vertical-pilot',
   'tower-cluster-mega-highrise',
@@ -171,10 +172,18 @@ assert.deepEqual(resolvedCityLeftFrontCornerView.position, [-1770, 60, 835]);
 const leftCivilizationMonument = zones.find((zone) => zone.id === 'left-civilization-monument');
 assert.ok(leftCivilizationMonument);
 const resolvedLeftCivilizationMonumentView = resolveReviewOperatorZoneStartView(leftCivilizationMonument, new Map([
-  ['screen-array-left-upper-3', { position: [-915, 1560, 268.2] }],
+  ['screen-array-left-upper-3', { position: [-900, 1320, 268.2] }],
 ]));
-assertVectorClose(resolvedLeftCivilizationMonumentView.lookAt, [-915, 1640, 268.2]);
-assertVectorClose(resolvedLeftCivilizationMonumentView.position, [2385, 1080, -4931.8]);
+assertVectorClose(resolvedLeftCivilizationMonumentView.lookAt, [-900, 1400, 268.2]);
+assertVectorClose(resolvedLeftCivilizationMonumentView.position, [2400, 840, -4931.8]);
+
+const rightCelestialArchiveGate = zones.find((zone) => zone.id === 'right-celestial-archive-gate');
+assert.ok(rightCelestialArchiveGate);
+const resolvedRightCelestialArchiveGateView = resolveReviewOperatorZoneStartView(rightCelestialArchiveGate, new Map([
+  ['screen-array-right-upper-3', { position: [890, 2250, 300] }],
+]));
+assertVectorClose(resolvedRightCelestialArchiveGateView.lookAt, [890, 2370, 300]);
+assertVectorClose(resolvedRightCelestialArchiveGateView.position, [270, 2590, -460]);
 
 const centerSpine = zones.find((zone) => zone.id === 'center-spine');
 assert.ok(centerSpine);

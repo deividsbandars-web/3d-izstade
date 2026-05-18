@@ -37,8 +37,8 @@ for (const socket of plan.screenSockets) {
 }
 
 const rightDistrictSockets = plan.screenSockets.filter((socket) => socket.planningZone === 'right-district');
-assert.equal(rightDistrictSockets.length, 9);
-assert.equal(rightDistrictSockets.filter((socket) => assignmentBySocketId.has(socket.id)).length, 9);
+assert.equal(rightDistrictSockets.length, 10);
+assert.equal(rightDistrictSockets.filter((socket) => assignmentBySocketId.has(socket.id)).length, 10);
 
 const rightDistrictLabels = rightDistrictSockets.map((socket) => assignmentBySocketId.get(socket.id)?.label ?? '');
 const labelCounts = new Map<string, number>();

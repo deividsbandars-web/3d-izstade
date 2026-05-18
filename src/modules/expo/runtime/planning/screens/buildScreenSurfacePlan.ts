@@ -34,11 +34,25 @@ function buildPreviousCivilizationMonumentScreenSurface(): CityScreenSurface {
     color: '#091320',
     glowColor: '#67e8f9',
     id: 'screen-array-left-upper-3',
-    position: [-915, 1560, 268.2],
+    position: [-900, 1320, 268.2],
     role: 'support-wall',
     rotation: [0, Math.PI, 0],
     sections: ['left'],
-    size: [1040, 720, 4.2],
+    size: [820, 600, 4.2],
+    type: 'wall',
+  };
+}
+
+function buildCelestialArchiveGateScreenSurface(): CityScreenSurface {
+  return {
+    color: '#07111f',
+    glowColor: '#a5f3fc',
+    id: 'screen-array-right-upper-3',
+    position: [890, 2250, 300],
+    role: 'support-wall',
+    rotation: [0, -3.08, 0],
+    sections: ['right'],
+    size: [840, 560, 4.2],
     type: 'wall',
   };
 }
@@ -817,9 +831,12 @@ export function buildZoneScreenSurfacePlan(args: {
         .filter((surface) => surface.id.startsWith('screen-spine-primary-'))
         .map((surface) => enrichSurfaceIntent(zoneId, surface));
     case 'right-district':
-      return cityScreenSurfaces.filter((surface) =>
-        surface.id.startsWith('screen-marquee-right-') || surface.id.startsWith('screen-array-right-')
-      ).map((surface) => enrichSurfaceIntent(zoneId, surface));
+      return [
+        ...cityScreenSurfaces.filter((surface) =>
+          surface.id.startsWith('screen-marquee-right-') || surface.id.startsWith('screen-array-right-')
+        ),
+        buildCelestialArchiveGateScreenSurface(),
+      ].map((surface) => enrichSurfaceIntent(zoneId, surface));
     case 'tower-cluster':
       return buildTowerScreenSurfaces(towers).map((surface) => enrichSurfaceIntent(zoneId, surface));
     case 'rear-campus':

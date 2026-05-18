@@ -10,6 +10,10 @@ function isPreviousCivilizationMonumentScreen(surface: CityScreenSurface) {
   return surface.id === 'screen-array-left-upper-3';
 }
 
+function isCelestialArchiveGateScreen(surface: CityScreenSurface) {
+  return surface.id === 'screen-array-right-upper-3';
+}
+
 export function buildCityScreenHostMasses(surfaces: ReadonlyArray<CityScreenSurface>): CityMass[] {
   return surfaces
     .filter((surface) => surface.type === 'wall')
@@ -19,15 +23,17 @@ export function buildCityScreenHostMasses(surfaces: ReadonlyArray<CityScreenSurf
       const isSpine = surface.id.startsWith('screen-spine-');
       const isSideArray = surface.id.startsWith('screen-array-');
       const isMonumentScreen = isPreviousCivilizationMonumentScreen(surface);
+      const isArchiveGateScreen = isCelestialArchiveGateScreen(surface);
+      const isElevatedLandmarkScreen = isMonumentScreen || isArchiveGateScreen;
       const hostTop = surface.position[1] + (surface.size[1] * 0.5) + (isSideArray ? 42 : isMarquee ? 8 : 6);
-      const hostBaseY = isMonumentScreen ? 820 : 0;
+      const hostBaseY = isMonumentScreen ? 820 : isArchiveGateScreen ? 1920 : 0;
       const hostWidth = Math.max(
         surface.size[0] + (isSideArray ? 36 : 8),
         surface.size[0] * (isSideArray ? 1.26 : 1.08),
       );
       const hostDepth = Math.max(isSideArray ? 32 : 24, surface.size[2] * (isSideArray ? 9.4 : 7.2));
       const backset = (hostDepth * 0.5) + (surface.size[2] * 0.5) - 1.2;
-      const hostHeight = isMonumentScreen
+      const hostHeight = isElevatedLandmarkScreen
         ? Math.max(surface.size[1] + 56, hostTop - hostBaseY)
         : Math.max(surface.size[1] + (isMarquee ? 58 : isSpine ? 46 : isSideArray ? 126 : 34), hostTop);
 
@@ -50,7 +56,7 @@ export function buildCityScreenHostMasses(surfaces: ReadonlyArray<CityScreenSurf
           round1(hostHeight),
           round1(hostDepth),
         ],
-        vertical: isMonumentScreen
+        vertical: isElevatedLandmarkScreen
           ? {
               baseY: hostBaseY,
               floorCount: 1,
@@ -60,7 +66,7 @@ export function buildCityScreenHostMasses(surfaces: ReadonlyArray<CityScreenSurf
               verticalOwner: 'city',
             }
           : undefined,
-        color: isMonumentScreen ? '#a9b9c1' : isSpine ? '#7c909e' : isMarquee ? '#718795' : '#8294a0',
+        color: isMonumentScreen ? '#a9b9c1' : isArchiveGateScreen ? '#9fb5c1' : isSpine ? '#7c909e' : isMarquee ? '#718795' : '#8294a0',
         sections: surface.sections,
       } satisfies CityMass;
     });

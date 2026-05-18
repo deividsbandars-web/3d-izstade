@@ -47,8 +47,12 @@ const CITY_SMALL_BLOCK_MAX_HEIGHT = 8;
 const CITY_SMALL_BLOCK_MAX_FOOTPRINT_AREA = 900;
 const CITY_SMALL_BLOCK_MAX_ASPECT_RATIO = 3;
 const LEFT_CIVILIZATION_MONUMENT_SOURCE_KIND = 'left-civilization-monument-mass';
+const RIGHT_CELESTIAL_ARCHIVE_GATE_SOURCE_KIND = 'right-celestial-archive-gate-mass';
 const PREVIOUS_CIVILIZATION_MONUMENT_SCREEN_HOST_IDS = new Set([
   'screen-array-left-upper-3-host',
+]);
+const CELESTIAL_ARCHIVE_GATE_SCREEN_HOST_IDS = new Set([
+  'screen-array-right-upper-3-host',
 ]);
 const CITY_NON_RENDERABLE_DECORATIVE_MASS_PATTERNS = [
   'boulevard-edge-',
@@ -453,12 +457,29 @@ function isIntentionalCivilizationMonumentScreenHostJoint(left, right) {
   ));
 }
 
+function isIntentionalCelestialArchiveGateScreenHostJoint(left, right) {
+  const pairs = [
+    [left, right],
+    [right, left],
+  ];
+
+  return pairs.some(([host, gate]) => (
+    CELESTIAL_ARCHIVE_GATE_SCREEN_HOST_IDS.has(host?.id)
+    && gate?.sourceKind === RIGHT_CELESTIAL_ARCHIVE_GATE_SOURCE_KIND
+    && Number(host?.baseY ?? host?.vertical?.baseY ?? 0) >= 96
+  ));
+}
+
 function isIntentionalCitySolidOverlap(left, right) {
   if (isAllowedScreenHostFacadeOverlap(left, right)) {
     return true;
   }
 
   if (isIntentionalCivilizationMonumentScreenHostJoint(left, right)) {
+    return true;
+  }
+
+  if (isIntentionalCelestialArchiveGateScreenHostJoint(left, right)) {
     return true;
   }
 
@@ -504,6 +525,7 @@ function isIntentionalVerticalCityAssembly(left, right) {
 
   const verticalAssemblySourceKinds = new Set([
     LEFT_CIVILIZATION_MONUMENT_SOURCE_KIND,
+    RIGHT_CELESTIAL_ARCHIVE_GATE_SOURCE_KIND,
     'tower-cluster-vertical-pilot-mass',
     'tower-cluster-mega-highrise-mass',
   ]);
@@ -531,6 +553,7 @@ function isPhysicsNonWalkableSupportStructure(entry) {
   return (
     isPhysicsPerimeterStructure(entry)
     || entry.sourceKind === LEFT_CIVILIZATION_MONUMENT_SOURCE_KIND
+    || entry.sourceKind === RIGHT_CELESTIAL_ARCHIVE_GATE_SOURCE_KIND
     || entry.sourceKind === 'tower-cluster-plinth-mass'
     || String(entry?.id ?? '').endsWith('-tower-cluster-plinth')
     || (entry.sourceKind === 'tower-cluster-vertical-pilot-mass' && String(entry?.id ?? '').includes('-core-'))

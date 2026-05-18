@@ -78,6 +78,7 @@ const WALKABLE_MIN_FOOTPRINT = 18;
 const COLLISION_VERTICAL_FOOT_CLEARANCE = 0.75;
 const COLLISION_HEAD_CLEARANCE = 2;
 const LEFT_CIVILIZATION_MONUMENT_SOURCE_KIND = 'left-civilization-monument-mass';
+const RIGHT_CELESTIAL_ARCHIVE_GATE_SOURCE_KIND = 'right-celestial-archive-gate-mass';
 
 const SOLID_LAYERS = new Set<WorldObjectLayer>([
   'booth',
@@ -153,6 +154,7 @@ function isNonWalkableSupportStructure(entry: WorldObjectRegistryEntry) {
   return (
     isPerimeterStructure(entry)
     || entry.sourceKind === LEFT_CIVILIZATION_MONUMENT_SOURCE_KIND
+    || entry.sourceKind === RIGHT_CELESTIAL_ARCHIVE_GATE_SOURCE_KIND
     || entry.sourceKind === 'tower-cluster-plinth-mass'
     || entry.sourceKind === 'tower-cluster-television-tower-mass'
     || entry.id.endsWith('-tower-cluster-plinth')

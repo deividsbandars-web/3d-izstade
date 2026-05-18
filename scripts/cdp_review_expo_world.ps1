@@ -165,7 +165,7 @@ function Clear-SiteOriginStorage {
 function Wait-ForOperatorApi {
   param([System.Net.WebSockets.ClientWebSocket]$Ws)
 
-  for ($i = 0; $i -lt 40; $i++) {
+  for ($i = 0; $i -lt 120; $i++) {
     $result = Eval-Expr -Ws $Ws -Expression @"
 (() => {
   const api = window.__WARPALA_EXPO_REVIEW_OPERATOR__;
