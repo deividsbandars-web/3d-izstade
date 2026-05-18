@@ -21,6 +21,26 @@ for (const node of EXPO_VERTICAL_CITY_SYSTEM.accessNodes) {
   assert.ok(node.targetPosition.every(Number.isFinite));
 }
 
+for (const route of EXPO_VERTICAL_CITY_SYSTEM.elevatorRoutes) {
+  assert.ok(route.waypoints.length >= 2, `${route.id} must have at least two waypoints`);
+  assert.ok(route.cycleSeconds >= 6, `${route.id} must have a readable animation cycle`);
+  assert.ok(route.cabinSize.every((value) => value > 0 && Number.isFinite(value)));
+  assert.ok(route.stationSize.every((value) => value > 0 && Number.isFinite(value)));
+  assert.ok(route.waypoints.every((point) => point.length === 3 && point.every(Number.isFinite)));
+}
+
+assert.deepEqual(EXPO_VERTICAL_CITY_SYSTEM.elevatorRoutes.map((route) => route.id), [
+  'tower-cluster-television-tower-animated-city-lift',
+]);
+assert.deepEqual(EXPO_VERTICAL_CITY_SYSTEM.elevatorRoutes[0]?.waypoints, [
+  [360, 48, -1012],
+  [360, 1932, -1012],
+  [360, 3246, -1012],
+  [360, 5200, -1012],
+]);
+assert.deepEqual(EXPO_VERTICAL_CITY_SYSTEM.elevatorRoutes[0]?.cabinSize, [72, 106, 58]);
+assert.equal(EXPO_VERTICAL_CITY_SYSTEM.elevatorRoutes[0]?.cycleSeconds, 18);
+
 const groundNodes = getVerticalAccessNodesForLevel(EXPO_VERTICAL_CITY_SYSTEM, 'ground');
 const level1Nodes = getVerticalAccessNodesForLevel(EXPO_VERTICAL_CITY_SYSTEM, 'level-1');
 const level2Nodes = getVerticalAccessNodesForLevel(EXPO_VERTICAL_CITY_SYSTEM, 'level-2');

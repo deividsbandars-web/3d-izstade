@@ -14,6 +14,7 @@ import { WorldCityScreenSockets } from './WorldCityScreenSockets';
 import { WorldCityScreenSurfaces } from './WorldCityScreenSurfaces';
 import { WorldCityTowers } from './WorldCityTowers';
 import { WorldVerticalAccessNodes } from './WorldVerticalAccessNodes';
+import { WorldVerticalElevatorRoutes } from './WorldVerticalElevatorRoutes';
 import { WorldCityWaterCourt } from './WorldCityWaterCourt';
 
 export function WorldCitySkeleton({
@@ -148,6 +149,7 @@ export function WorldCitySkeleton({
         accessNodes={renderedVerticalAccessNodes}
         playerPosition={playerPosition}
       />
+      <WorldVerticalElevatorRoutes routes={canonicalWorldPlan.verticalSystem.elevatorRoutes} />
       <WorldCityPerimeter
         accent={visualProfile.global.hudAccent}
         stadiumReserve={stadiumReserve}

@@ -7,6 +7,7 @@ import type {
   CityScreenSurface,
   CityTower,
   ExpoVerticalAccessNode,
+  ExpoVerticalElevatorRoute,
   ExpoVerticalHeightBand,
   ExpoVerticalLevelId,
   ExpoVerticalOwner,
@@ -57,7 +58,8 @@ export type WorldObjectLayer =
   | 'stadium-screen-surface'
   | 'stadium-structure'
   | 'stadium-tower'
-  | 'vertical-access-node';
+  | 'vertical-access-node'
+  | 'vertical-elevator-route';
 
 export type WorldObjectRegistryPhysicsPart = {
   id: string;
@@ -663,6 +665,52 @@ function buildVerticalAccessNodeEntries(nodes: ExpoVerticalAccessNode[]): WorldO
   }));
 }
 
+function buildVerticalElevatorRouteEntries(routes: ExpoVerticalElevatorRoute[]): WorldObjectRegistryEntry[] {
+  return routes.map((route) => {
+    const xs = route.waypoints.map((point) => point[0]);
+    const ys = route.waypoints.map((point) => point[1]);
+    const zs = route.waypoints.map((point) => point[2]);
+    const minX = Math.min(...xs);
+    const maxX = Math.max(...xs);
+    const minY = Math.min(...ys);
+    const maxY = Math.max(...ys);
+    const minZ = Math.min(...zs);
+    const maxZ = Math.max(...zs);
+
+    return createEntry({
+      aliases: [route.label],
+      diagnosticOwners: [
+        'src/modules/expo/runtime/world/WorldVerticalElevatorRoutes.tsx',
+      ],
+      id: route.id,
+      interactionOwner: null,
+      layer: 'vertical-elevator-route',
+      planningRole: 'animated-lift-route',
+      planningZone: route.zoneId,
+      position: [
+        (minX + maxX) * 0.5,
+        (minY + maxY) * 0.5,
+        (minZ + maxZ) * 0.5,
+      ],
+      reviewTargetPosition: [
+        (minX + maxX) * 0.5,
+        Math.min(maxY, minY + ((maxY - minY) * 0.72)),
+        (minZ + maxZ) * 0.5,
+      ],
+      rotation: [0, 0, 0],
+      safeEditSeam: 'src/modules/expo/runtime/planning/vertical/verticalCitySystem.ts',
+      size: [
+        (maxX - minX) + route.cabinSize[0] + route.railSpacing,
+        (maxY - minY) + route.cabinSize[1],
+        (maxZ - minZ) + Math.max(route.cabinSize[2], route.stationSize[2]),
+      ],
+      sourceFile: 'src/modules/expo/runtime/planning/vertical/verticalCitySystem.ts',
+      sourceFunction: 'EXPO_VERTICAL_CITY_SYSTEM',
+      sourceKind: 'vertical-elevator-route',
+    });
+  });
+}
+
 export function buildGroundWorldObjectRegistry(): WorldObjectRegistryEntry[] {
   return [
     createEntry({
@@ -793,6 +841,7 @@ export function buildCityWorldObjectRegistry({
       sockets: plan.screenSockets,
     }),
     ...buildVerticalAccessNodeEntries(plan.verticalSystem.accessNodes),
+    ...buildVerticalElevatorRouteEntries(plan.verticalSystem.elevatorRoutes),
     ...buildMegaLandmarkEntries({ districtCount, districtStride, stadiumReserve: plan.stadiumReserve }),
   ];
 }

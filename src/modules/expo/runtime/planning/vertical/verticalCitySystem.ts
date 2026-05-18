@@ -65,9 +65,23 @@ export type ExpoVerticalWalkableRegion = {
   zoneId: string;
 };
 
+export type ExpoVerticalElevatorRoute = {
+  accentColor: string;
+  cabinSize: [number, number, number];
+  cycleSeconds: number;
+  id: string;
+  label: string;
+  phase: number;
+  railSpacing: number;
+  stationSize: [number, number, number];
+  waypoints: [number, number, number][];
+  zoneId: string;
+};
+
 export type ExpoVerticalCitySystemPlan = {
   accessNodes: ExpoVerticalAccessNode[];
   defaultFloorHeight: number;
+  elevatorRoutes: ExpoVerticalElevatorRoute[];
   levels: ExpoVerticalLevelDefinition[];
   pilotZoneId: 'tower-cluster';
   walkableRegions: ExpoVerticalWalkableRegion[];
@@ -226,6 +240,7 @@ const TOWER_CLUSTER_TELEVISION_TOWER = {
   broadcastEastPosition: [447, 3246, -1240] as [number, number, number],
   broadcastFrontPosition: [360, 3246, -1153] as [number, number, number],
   broadcastPlayerY: 3246,
+  elevatorShaftZ: -1012,
   groundLiftPosition: [360, 0.25, -1030] as [number, number, number],
   observationEastPosition: [496, 1932, -1240] as [number, number, number],
   observationFrontPosition: [360, 1932, -1104] as [number, number, number],
@@ -552,6 +567,25 @@ export const EXPO_VERTICAL_CITY_SYSTEM: ExpoVerticalCitySystemPlan = {
     },
   ],
   defaultFloorHeight: 36,
+  elevatorRoutes: [
+    {
+      accentColor: '#22d3ee',
+      cabinSize: [72, 106, 58],
+      cycleSeconds: 18,
+      id: 'tower-cluster-television-tower-animated-city-lift',
+      label: 'Television Tower Moving Lift',
+      phase: 0,
+      railSpacing: 56,
+      stationSize: [148, 14, 76],
+      waypoints: [
+        [360, 48, TOWER_CLUSTER_TELEVISION_TOWER.elevatorShaftZ],
+        [360, TOWER_CLUSTER_TELEVISION_TOWER.observationPlayerY, TOWER_CLUSTER_TELEVISION_TOWER.elevatorShaftZ],
+        [360, TOWER_CLUSTER_TELEVISION_TOWER.broadcastPlayerY, TOWER_CLUSTER_TELEVISION_TOWER.elevatorShaftZ],
+        [360, 5200, TOWER_CLUSTER_TELEVISION_TOWER.elevatorShaftZ],
+      ],
+      zoneId: 'tower-cluster',
+    },
+  ],
   levels: [
     { baseY: 0, floorHeight: 36, id: 'ground', label: 'Ground' },
     { baseY: 48, floorHeight: 36, id: 'level-1', label: 'Level 1' },
