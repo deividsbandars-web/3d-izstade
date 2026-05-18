@@ -1,5 +1,6 @@
 WarpalaUE5
 diagnostics
+review-screenshots/
 .tmp-*
 .tmp_release_pr_diff.txt
 dist
