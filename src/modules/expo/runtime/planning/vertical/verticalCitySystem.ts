@@ -569,6 +569,22 @@ export const EXPO_VERTICAL_CITY_SYSTEM: ExpoVerticalCitySystemPlan = {
   defaultFloorHeight: 36,
   elevatorRoutes: [
     {
+      accentColor: '#fbbf24',
+      cabinSize: [82, 96, 60],
+      cycleSeconds: 14,
+      id: 'tower-cluster-mega-highrise-animated-panoramic-lift',
+      label: 'Mega Highrise Panoramic Lift',
+      phase: 0.32,
+      railSpacing: 62,
+      stationSize: [154, 14, 78],
+      waypoints: [
+        [-296, 42, -1134],
+        [-296, 552, -1134],
+        [-296, 1572, -1134],
+      ],
+      zoneId: 'tower-cluster',
+    },
+    {
       accentColor: '#22d3ee',
       cabinSize: [72, 106, 58],
       cycleSeconds: 18,

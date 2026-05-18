@@ -30,16 +30,24 @@ for (const route of EXPO_VERTICAL_CITY_SYSTEM.elevatorRoutes) {
 }
 
 assert.deepEqual(EXPO_VERTICAL_CITY_SYSTEM.elevatorRoutes.map((route) => route.id), [
+  'tower-cluster-mega-highrise-animated-panoramic-lift',
   'tower-cluster-television-tower-animated-city-lift',
 ]);
 assert.deepEqual(EXPO_VERTICAL_CITY_SYSTEM.elevatorRoutes[0]?.waypoints, [
+  [-296, 42, -1134],
+  [-296, 552, -1134],
+  [-296, 1572, -1134],
+]);
+assert.deepEqual(EXPO_VERTICAL_CITY_SYSTEM.elevatorRoutes[0]?.cabinSize, [82, 96, 60]);
+assert.equal(EXPO_VERTICAL_CITY_SYSTEM.elevatorRoutes[0]?.cycleSeconds, 14);
+assert.deepEqual(EXPO_VERTICAL_CITY_SYSTEM.elevatorRoutes[1]?.waypoints, [
   [360, 48, -1012],
   [360, 1932, -1012],
   [360, 3246, -1012],
   [360, 5200, -1012],
 ]);
-assert.deepEqual(EXPO_VERTICAL_CITY_SYSTEM.elevatorRoutes[0]?.cabinSize, [72, 106, 58]);
-assert.equal(EXPO_VERTICAL_CITY_SYSTEM.elevatorRoutes[0]?.cycleSeconds, 18);
+assert.deepEqual(EXPO_VERTICAL_CITY_SYSTEM.elevatorRoutes[1]?.cabinSize, [72, 106, 58]);
+assert.equal(EXPO_VERTICAL_CITY_SYSTEM.elevatorRoutes[1]?.cycleSeconds, 18);
 
 const groundNodes = getVerticalAccessNodesForLevel(EXPO_VERTICAL_CITY_SYSTEM, 'ground');
 const level1Nodes = getVerticalAccessNodesForLevel(EXPO_VERTICAL_CITY_SYSTEM, 'level-1');
