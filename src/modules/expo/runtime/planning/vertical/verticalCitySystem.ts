@@ -255,8 +255,68 @@ const TOWER_CLUSTER_TELEVISION_TOWER = {
   topPlayerY: 5252,
 } as const;
 
+const SKY_MARKET_SPINE_VERTICAL = {
+  center: [0, 0, -920] as [number, number, number],
+  groundLiftPosition: [-520, 0.25, -920] as [number, number, number],
+  lowerDeckPlayerY: 541,
+  lowerDeckPosition: [0, 541, -920] as [number, number, number],
+  lowerLiftPosition: [-520, 537, -920] as [number, number, number],
+  lowerToUpperLiftPosition: [520, 537, -920] as [number, number, number],
+  upperDeckPlayerY: 919,
+  upperDeckPosition: [0, 919, -920] as [number, number, number],
+  upperLiftPosition: [520, 915, -920] as [number, number, number],
+} as const;
+
 export const EXPO_VERTICAL_CITY_SYSTEM: ExpoVerticalCitySystemPlan = {
   accessNodes: [
+    {
+      autoActivate: false,
+      id: 'sky-market-spine-lift-ground-to-lower',
+      label: 'Sky Market Lower Deck Lift',
+      level: 'ground',
+      mode: 'lift',
+      position: SKY_MARKET_SPINE_VERTICAL.groundLiftPosition,
+      radius: 38,
+      targetLevel: 'tower',
+      targetPosition: [-520, SKY_MARKET_SPINE_VERTICAL.lowerDeckPlayerY, -920],
+      zoneId: 'center-spine',
+    },
+    {
+      autoActivate: false,
+      id: 'sky-market-spine-lift-lower-to-ground',
+      label: 'Sky Market Ground Return',
+      level: 'tower',
+      mode: 'lift',
+      position: SKY_MARKET_SPINE_VERTICAL.lowerLiftPosition,
+      radius: 30,
+      targetLevel: 'ground',
+      targetPosition: [-520, 5, -920],
+      zoneId: 'center-spine',
+    },
+    {
+      autoActivate: false,
+      id: 'sky-market-spine-lift-lower-to-upper',
+      label: 'Sky Market Upper Deck Lift',
+      level: 'tower',
+      mode: 'lift',
+      position: SKY_MARKET_SPINE_VERTICAL.lowerToUpperLiftPosition,
+      radius: 30,
+      targetLevel: 'skydeck',
+      targetPosition: [520, SKY_MARKET_SPINE_VERTICAL.upperDeckPlayerY, -920],
+      zoneId: 'center-spine',
+    },
+    {
+      autoActivate: false,
+      id: 'sky-market-spine-lift-upper-to-lower',
+      label: 'Sky Market Lower Deck Return',
+      level: 'skydeck',
+      mode: 'lift',
+      position: SKY_MARKET_SPINE_VERTICAL.upperLiftPosition,
+      radius: 28,
+      targetLevel: 'tower',
+      targetPosition: [520, SKY_MARKET_SPINE_VERTICAL.lowerDeckPlayerY, -920],
+      zoneId: 'center-spine',
+    },
     {
       id: 'tower-cluster-vertical-pilot-lift-ground',
       label: 'Vertical Pilot Ground Lift',
@@ -585,6 +645,28 @@ export const EXPO_VERTICAL_CITY_SYSTEM: ExpoVerticalCitySystemPlan = {
   defaultFloorHeight: 36,
   elevatorRoutes: [
     {
+      accentColor: '#ffe08a',
+      cabinSize: [86, 96, 70],
+      cycleSeconds: 42,
+      id: 'sky-market-spine-animated-market-lift',
+      label: 'Sky Market Moving Lift',
+      phase: 0.08,
+      railSpacing: 64,
+      rideable: {
+        floorPlayerOffsetY: -36,
+        footprintSize: [98, 78],
+        pickupToleranceY: 18,
+      },
+      stationDwellSeconds: 3.2,
+      stationSize: [158, 14, 92],
+      waypoints: [
+        [-520, 41, -920],
+        [-520, SKY_MARKET_SPINE_VERTICAL.lowerDeckPlayerY + 36, -920],
+        [-520, SKY_MARKET_SPINE_VERTICAL.upperDeckPlayerY + 36, -920],
+      ],
+      zoneId: 'center-spine',
+    },
+    {
       accentColor: '#fbbf24',
       cabinSize: [82, 96, 60],
       cycleSeconds: 38,
@@ -640,6 +722,22 @@ export const EXPO_VERTICAL_CITY_SYSTEM: ExpoVerticalCitySystemPlan = {
   ],
   pilotZoneId: 'tower-cluster',
   walkableRegions: [
+    {
+      id: 'sky-market-spine-lower-market-deck-walkable',
+      level: 'tower',
+      playerY: SKY_MARKET_SPINE_VERTICAL.lowerDeckPlayerY,
+      position: SKY_MARKET_SPINE_VERTICAL.lowerDeckPosition,
+      size: [780, 1040],
+      zoneId: 'center-spine',
+    },
+    {
+      id: 'sky-market-spine-upper-market-deck-walkable',
+      level: 'skydeck',
+      playerY: SKY_MARKET_SPINE_VERTICAL.upperDeckPlayerY,
+      position: SKY_MARKET_SPINE_VERTICAL.upperDeckPosition,
+      size: [580, 900],
+      zoneId: 'center-spine',
+    },
     {
       id: 'tower-cluster-vertical-pilot-level-1-walkable-deck',
       level: 'level-1',

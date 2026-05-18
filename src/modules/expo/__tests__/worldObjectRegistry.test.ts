@@ -321,6 +321,15 @@ const cityRegistry = buildCityWorldObjectRegistry({
   plan: cityPlan,
 });
 assert.equal(JSON.stringify(cityPlan), cityBefore);
+assert.deepEqual(
+  EXPO_VERTICAL_CITY_SYSTEM.walkableRegions
+    .filter((region) => region.id.startsWith('sky-market-spine-'))
+    .map((region) => [region.id, region.playerY, region.zoneId]),
+  [
+    ['sky-market-spine-lower-market-deck-walkable', 541, 'center-spine'],
+    ['sky-market-spine-upper-market-deck-walkable', 919, 'center-spine'],
+  ],
+);
 assert.ok(cityRegistry.some((entry) => entry.id === citySurface.id && entry.layer === 'city-screen-surface'));
 assert.ok(cityRegistry.some((entry) => entry.id === citySocket.id && entry.layer === 'city-screen-socket'));
 assert.ok(cityRegistry.some((entry) => entry.id === cityAssignment.id && entry.layer === 'city-screen-assignment'));
@@ -330,6 +339,9 @@ assert.ok(cityRegistry.some((entry) => entry.id === verticalCityMass.id && entry
 assert.ok(cityRegistry.some((entry) => entry.id === cityTower.id && entry.layer === 'city-tower'));
 assert.ok(cityRegistry.some((entry) => entry.id === 'tower-cluster-vertical-pilot-lift-ground' && entry.layer === 'vertical-access-node'));
 assert.ok(cityRegistry.some((entry) => entry.id === 'tower-cluster-vertical-pilot-lift-level-1-to-level-2' && entry.layer === 'vertical-access-node'));
+assert.ok(cityRegistry.some((entry) => entry.id === 'sky-market-spine-lift-ground-to-lower' && entry.layer === 'vertical-access-node'));
+assert.ok(cityRegistry.some((entry) => entry.id === 'sky-market-spine-lift-lower-to-upper' && entry.layer === 'vertical-access-node'));
+assert.ok(cityRegistry.some((entry) => entry.id === 'sky-market-spine-animated-market-lift' && entry.layer === 'vertical-elevator-route'));
 assert.ok(cityRegistry.some((entry) => entry.id === 'tower-cluster-mega-highrise-animated-panoramic-lift' && entry.layer === 'vertical-elevator-route'));
 assert.ok(cityRegistry.some((entry) => entry.id === 'tower-cluster-television-tower-animated-city-lift' && entry.layer === 'vertical-elevator-route'));
 assert.equal(cityRegistry.some((entry) => entry.id === cityPlane.id), false);
@@ -345,6 +357,11 @@ assert.deepEqual(cityRegistry.find((entry) => entry.id === 'tower-cluster-vertic
 assert.equal(cityRegistry.find((entry) => entry.id === 'tower-cluster-vertical-pilot-lift-ground')?.interactionOwner, 'src/modules/expo/runtime/world/scene/ExpoWorldPlayerLayer.tsx');
 assert.deepEqual(cityRegistry.find((entry) => entry.id === 'tower-cluster-vertical-pilot-lift-level-1-to-level-2')?.position, [980, 67, -650]);
 assert.deepEqual(cityRegistry.find((entry) => entry.id === 'tower-cluster-vertical-pilot-lift-level-1-to-level-2')?.size, [56, 10, 56]);
+assert.deepEqual(cityRegistry.find((entry) => entry.id === 'sky-market-spine-lift-ground-to-lower')?.position, [-520, 5, -920]);
+assert.deepEqual(cityRegistry.find((entry) => entry.id === 'sky-market-spine-lift-ground-to-lower')?.size, [76, 10, 76]);
+assert.deepEqual(cityRegistry.find((entry) => entry.id === 'sky-market-spine-lift-lower-to-upper')?.position, [520, 537, -920]);
+assert.deepEqual(cityRegistry.find((entry) => entry.id === 'sky-market-spine-animated-market-lift')?.position, [-520, 498, -920]);
+assert.deepEqual(cityRegistry.find((entry) => entry.id === 'sky-market-spine-animated-market-lift')?.size, [150, 1010, 92]);
 assert.deepEqual(cityRegistry.find((entry) => entry.id === 'tower-cluster-mega-highrise-animated-panoramic-lift')?.position, [-510, 825, -1217.5]);
 assert.deepEqual(cityRegistry.find((entry) => entry.id === 'tower-cluster-mega-highrise-animated-panoramic-lift')?.size, [264, 1662, 143]);
 assert.deepEqual(cityRegistry.find((entry) => entry.id === 'tower-cluster-television-tower-animated-city-lift')?.position, [360, 2670.5, -1030]);

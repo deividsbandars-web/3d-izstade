@@ -417,8 +417,11 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
     {
       expectedKeyObjectIds: [
         'sky-market-spine-primitive-rig',
+        'sky-market-spine-lift-ground-to-lower',
+        'sky-market-spine-lift-lower-to-upper',
+        'sky-market-spine-animated-market-lift',
       ],
-      expectedVisibleLayers: ['city-mass'],
+      expectedVisibleLayers: ['city-mass', 'vertical-access-node', 'vertical-elevator-route'],
       id: 'sky-market-spine',
       intent: 'sky-market-spine-review',
       label: 'Sky Market Spine',
@@ -436,6 +439,7 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
         'multi-storey market bridge over center axis',
         'clear stall pod rhythm, not random block clutter',
         'continuous central light spine readable from distance',
+        'visible lift pads and moving market lift access',
       ],
     },
     {
