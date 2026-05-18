@@ -22,6 +22,10 @@ function easeInOutSine(progress: number) {
   return 0.5 - (Math.cos(progress * Math.PI) * 0.5);
 }
 
+function clamp01(value: number) {
+  return Math.max(0, Math.min(1, value));
+}
+
 export function buildElevatorRouteSegments(waypoints: [number, number, number][]): ExpoVerticalElevatorRouteSegment[] {
   return waypoints.slice(0, -1).map((start, index) => {
     const end = waypoints[index + 1];
@@ -72,6 +76,92 @@ export function sampleElevatorRoutePosition(
   return segments[segments.length - 1].end;
 }
 
+function sampleStationStopElevatorRoutePosition(args: {
+  cycleSeconds: number;
+  dwellSeconds: number;
+  elapsedTime: number;
+  fallbackPosition: [number, number, number];
+  phase: number;
+  segments: ExpoVerticalElevatorRouteSegment[];
+  totalLength: number;
+}) {
+  if (args.segments.length === 0 || args.totalLength <= 0) {
+    return args.fallbackPosition;
+  }
+
+  const travelDistance = args.totalLength * 2;
+  const dwellCount = args.segments.length * 2;
+  const dwellTotal = Math.max(0, args.dwellSeconds) * dwellCount;
+  const travelTime = Math.max(args.cycleSeconds - dwellTotal, args.segments.length * 2);
+  const effectiveCycleSeconds = dwellTotal + travelTime;
+  let time = (((args.elapsedTime / effectiveCycleSeconds) + args.phase) % 1) * effectiveCycleSeconds;
+
+  const consumeDwell = (position: [number, number, number]) => {
+    if (args.dwellSeconds <= 0) {
+      return null;
+    }
+
+    if (time <= args.dwellSeconds) {
+      return position;
+    }
+
+    time -= args.dwellSeconds;
+    return null;
+  };
+
+  const consumeTravel = (segment: ExpoVerticalElevatorRouteSegment, reverse = false) => {
+    const segmentDuration = Math.max(0.001, (segment.length / travelDistance) * travelTime);
+    if (time > segmentDuration) {
+      time -= segmentDuration;
+      return null;
+    }
+
+    const localProgress = easeInOutSine(clamp01(time / segmentDuration));
+    const start = reverse ? segment.end : segment.start;
+    const end = reverse ? segment.start : segment.end;
+
+    return [
+      start[0] + ((end[0] - start[0]) * localProgress),
+      start[1] + ((end[1] - start[1]) * localProgress),
+      start[2] + ((end[2] - start[2]) * localProgress),
+    ] as [number, number, number];
+  };
+
+  const firstDwell = consumeDwell(args.segments[0].start);
+  if (firstDwell) {
+    return firstDwell;
+  }
+
+  for (const segment of args.segments) {
+    const travelPosition = consumeTravel(segment);
+    if (travelPosition) {
+      return travelPosition;
+    }
+
+    const dwellPosition = consumeDwell(segment.end);
+    if (dwellPosition) {
+      return dwellPosition;
+    }
+  }
+
+  for (let index = args.segments.length - 1; index >= 0; index -= 1) {
+    const segment = args.segments[index];
+    const travelPosition = consumeTravel(segment, true);
+    if (travelPosition) {
+      return travelPosition;
+    }
+
+    if (index > 0) {
+      const dwellPosition = consumeDwell(segment.start);
+      if (dwellPosition) {
+        return dwellPosition;
+      }
+    }
+  }
+
+  return args.segments[0].start;
+}
+
 export function resolveElevatorRoutePosition(args: {
   elapsedTime: number;
   fallbackPosition: [number, number, number];
@@ -80,6 +170,19 @@ export function resolveElevatorRoutePosition(args: {
   totalLength: number;
 }) {
   const cycle = Math.max(6, args.route.cycleSeconds);
+  const dwellSeconds = args.route.stationDwellSeconds ?? 0;
+  if (dwellSeconds > 0) {
+    return sampleStationStopElevatorRoutePosition({
+      cycleSeconds: cycle,
+      dwellSeconds,
+      elapsedTime: args.elapsedTime,
+      fallbackPosition: args.fallbackPosition,
+      phase: args.route.phase,
+      segments: args.segments,
+      totalLength: args.totalLength,
+    });
+  }
+
   const rawProgress = ((args.elapsedTime / cycle) + args.route.phase) % 1;
   const progress = easeInOutSine(pingPong(rawProgress));
 

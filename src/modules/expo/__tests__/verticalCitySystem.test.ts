@@ -4,7 +4,12 @@ import {
   getVerticalAccessNodesForLevel,
   getVerticalWalkableRegionsForLevel,
 } from '../runtime/planning/vertical/verticalCitySystem.js';
-import { resolveElevatorRideablePlayerY } from '../runtime/planning/vertical/elevatorRouteMotion.js';
+import {
+  buildElevatorRouteSegments,
+  getElevatorRouteTotalLength,
+  resolveElevatorRideablePlayerY,
+  resolveElevatorRoutePosition,
+} from '../runtime/planning/vertical/elevatorRouteMotion.js';
 
 const levels = new Set(EXPO_VERTICAL_CITY_SYSTEM.levels.map((level) => level.id));
 
@@ -30,6 +35,7 @@ for (const route of EXPO_VERTICAL_CITY_SYSTEM.elevatorRoutes) {
   assert.ok(route.rideable.footprintSize.every((value) => value > 0 && Number.isFinite(value)));
   assert.ok(Number.isFinite(route.rideable.floorPlayerOffsetY));
   assert.ok(route.rideable.pickupToleranceY > 0);
+  assert.ok((route.stationDwellSeconds ?? 0) > 0, `${route.id} must pause at each passenger station`);
   assert.ok(route.stationSize.every((value) => value > 0 && Number.isFinite(value)));
   assert.ok(route.waypoints.every((point) => point.length === 3 && point.every(Number.isFinite)));
 }
@@ -39,9 +45,9 @@ assert.deepEqual(EXPO_VERTICAL_CITY_SYSTEM.elevatorRoutes.map((route) => route.i
   'tower-cluster-television-tower-animated-city-lift',
 ]);
 assert.deepEqual(EXPO_VERTICAL_CITY_SYSTEM.elevatorRoutes[0]?.waypoints, [
-  [-296, 42, -1134],
-  [-296, 552, -1134],
-  [-296, 1572, -1134],
+  [-570, 42, -1185],
+  [-570, 588, -1245],
+  [-450, 1608, -1250],
 ]);
 assert.deepEqual(EXPO_VERTICAL_CITY_SYSTEM.elevatorRoutes[0]?.cabinSize, [82, 96, 60]);
 assert.deepEqual(EXPO_VERTICAL_CITY_SYSTEM.elevatorRoutes[0]?.rideable, {
@@ -50,12 +56,15 @@ assert.deepEqual(EXPO_VERTICAL_CITY_SYSTEM.elevatorRoutes[0]?.rideable, {
   pickupToleranceY: 18,
 });
 assert.equal(resolveElevatorRideablePlayerY(EXPO_VERTICAL_CITY_SYSTEM.elevatorRoutes[0], 42), 6);
-assert.equal(EXPO_VERTICAL_CITY_SYSTEM.elevatorRoutes[0]?.cycleSeconds, 14);
+assert.equal(resolveElevatorRideablePlayerY(EXPO_VERTICAL_CITY_SYSTEM.elevatorRoutes[0], 588), 552);
+assert.equal(resolveElevatorRideablePlayerY(EXPO_VERTICAL_CITY_SYSTEM.elevatorRoutes[0], 1608), 1572);
+assert.equal(EXPO_VERTICAL_CITY_SYSTEM.elevatorRoutes[0]?.cycleSeconds, 38);
+assert.equal(EXPO_VERTICAL_CITY_SYSTEM.elevatorRoutes[0]?.stationDwellSeconds, 3.2);
 assert.deepEqual(EXPO_VERTICAL_CITY_SYSTEM.elevatorRoutes[1]?.waypoints, [
-  [360, 48, -1012],
-  [360, 1932, -1012],
-  [360, 3246, -1012],
-  [360, 5200, -1012],
+  [360, 48, -1030],
+  [360, 1973, -1104],
+  [360, 3287, -1153],
+  [360, 5293, -1240],
 ]);
 assert.deepEqual(EXPO_VERTICAL_CITY_SYSTEM.elevatorRoutes[1]?.cabinSize, [72, 106, 58]);
 assert.deepEqual(EXPO_VERTICAL_CITY_SYSTEM.elevatorRoutes[1]?.rideable, {
@@ -64,7 +73,31 @@ assert.deepEqual(EXPO_VERTICAL_CITY_SYSTEM.elevatorRoutes[1]?.rideable, {
   pickupToleranceY: 18,
 });
 assert.equal(resolveElevatorRideablePlayerY(EXPO_VERTICAL_CITY_SYSTEM.elevatorRoutes[1], 48), 7);
-assert.equal(EXPO_VERTICAL_CITY_SYSTEM.elevatorRoutes[1]?.cycleSeconds, 18);
+assert.equal(resolveElevatorRideablePlayerY(EXPO_VERTICAL_CITY_SYSTEM.elevatorRoutes[1], 1973), 1932);
+assert.equal(resolveElevatorRideablePlayerY(EXPO_VERTICAL_CITY_SYSTEM.elevatorRoutes[1], 3287), 3246);
+assert.equal(resolveElevatorRideablePlayerY(EXPO_VERTICAL_CITY_SYSTEM.elevatorRoutes[1], 5293), 5252);
+assert.equal(EXPO_VERTICAL_CITY_SYSTEM.elevatorRoutes[1]?.cycleSeconds, 86);
+assert.equal(EXPO_VERTICAL_CITY_SYSTEM.elevatorRoutes[1]?.stationDwellSeconds, 4);
+
+const televisionElevatorSegments = buildElevatorRouteSegments(EXPO_VERTICAL_CITY_SYSTEM.elevatorRoutes[1].waypoints);
+const televisionElevatorPositionAtObservationStop = resolveElevatorRoutePosition({
+  elapsedTime: 17,
+  fallbackPosition: EXPO_VERTICAL_CITY_SYSTEM.elevatorRoutes[1].waypoints[0],
+  route: EXPO_VERTICAL_CITY_SYSTEM.elevatorRoutes[1],
+  segments: televisionElevatorSegments,
+  totalLength: getElevatorRouteTotalLength(televisionElevatorSegments),
+});
+assert.deepEqual(televisionElevatorPositionAtObservationStop, [360, 1973, -1104]);
+assert.equal(resolveElevatorRideablePlayerY(EXPO_VERTICAL_CITY_SYSTEM.elevatorRoutes[1], televisionElevatorPositionAtObservationStop[1]), 1932);
+const televisionElevatorPositionAtTopStop = resolveElevatorRoutePosition({
+  elapsedTime: 44,
+  fallbackPosition: EXPO_VERTICAL_CITY_SYSTEM.elevatorRoutes[1].waypoints[0],
+  route: EXPO_VERTICAL_CITY_SYSTEM.elevatorRoutes[1],
+  segments: televisionElevatorSegments,
+  totalLength: getElevatorRouteTotalLength(televisionElevatorSegments),
+});
+assert.deepEqual(televisionElevatorPositionAtTopStop, [360, 5293, -1240]);
+assert.equal(resolveElevatorRideablePlayerY(EXPO_VERTICAL_CITY_SYSTEM.elevatorRoutes[1], televisionElevatorPositionAtTopStop[1]), 5252);
 
 const groundNodes = getVerticalAccessNodesForLevel(EXPO_VERTICAL_CITY_SYSTEM, 'ground');
 const level1Nodes = getVerticalAccessNodesForLevel(EXPO_VERTICAL_CITY_SYSTEM, 'level-1');

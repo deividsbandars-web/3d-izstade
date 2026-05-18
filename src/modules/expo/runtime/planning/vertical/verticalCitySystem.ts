@@ -78,6 +78,7 @@ export type ExpoVerticalElevatorRoute = {
     footprintSize: [number, number];
     pickupToleranceY: number;
   };
+  stationDwellSeconds?: number;
   stationSize: [number, number, number];
   waypoints: [number, number, number][];
   zoneId: string;
@@ -586,7 +587,7 @@ export const EXPO_VERTICAL_CITY_SYSTEM: ExpoVerticalCitySystemPlan = {
     {
       accentColor: '#fbbf24',
       cabinSize: [82, 96, 60],
-      cycleSeconds: 14,
+      cycleSeconds: 38,
       id: 'tower-cluster-mega-highrise-animated-panoramic-lift',
       label: 'Mega Highrise Panoramic Lift',
       phase: 0.32,
@@ -596,18 +597,19 @@ export const EXPO_VERTICAL_CITY_SYSTEM: ExpoVerticalCitySystemPlan = {
         footprintSize: [98, 68],
         pickupToleranceY: 18,
       },
+      stationDwellSeconds: 3.2,
       stationSize: [154, 14, 78],
       waypoints: [
-        [-296, 42, -1134],
-        [-296, 552, -1134],
-        [-296, 1572, -1134],
+        [-570, 42, -1185],
+        [-570, 588, -1245],
+        [-450, 1608, -1250],
       ],
       zoneId: 'tower-cluster',
     },
     {
       accentColor: '#22d3ee',
       cabinSize: [72, 106, 58],
-      cycleSeconds: 18,
+      cycleSeconds: 86,
       id: 'tower-cluster-television-tower-animated-city-lift',
       label: 'Television Tower Moving Lift',
       phase: 0,
@@ -617,12 +619,13 @@ export const EXPO_VERTICAL_CITY_SYSTEM: ExpoVerticalCitySystemPlan = {
         footprintSize: [88, 68],
         pickupToleranceY: 18,
       },
+      stationDwellSeconds: 4,
       stationSize: [148, 14, 76],
       waypoints: [
-        [360, 48, TOWER_CLUSTER_TELEVISION_TOWER.elevatorShaftZ],
-        [360, TOWER_CLUSTER_TELEVISION_TOWER.observationPlayerY, TOWER_CLUSTER_TELEVISION_TOWER.elevatorShaftZ],
-        [360, TOWER_CLUSTER_TELEVISION_TOWER.broadcastPlayerY, TOWER_CLUSTER_TELEVISION_TOWER.elevatorShaftZ],
-        [360, 5200, TOWER_CLUSTER_TELEVISION_TOWER.elevatorShaftZ],
+        [360, 48, -1030],
+        [360, TOWER_CLUSTER_TELEVISION_TOWER.observationPlayerY + 41, -1104],
+        [360, TOWER_CLUSTER_TELEVISION_TOWER.broadcastPlayerY + 41, -1153],
+        [360, TOWER_CLUSTER_TELEVISION_TOWER.topPlayerY + 41, -1240],
       ],
       zoneId: 'tower-cluster',
     },

@@ -345,10 +345,10 @@ assert.deepEqual(cityRegistry.find((entry) => entry.id === 'tower-cluster-vertic
 assert.equal(cityRegistry.find((entry) => entry.id === 'tower-cluster-vertical-pilot-lift-ground')?.interactionOwner, 'src/modules/expo/runtime/world/scene/ExpoWorldPlayerLayer.tsx');
 assert.deepEqual(cityRegistry.find((entry) => entry.id === 'tower-cluster-vertical-pilot-lift-level-1-to-level-2')?.position, [980, 67, -650]);
 assert.deepEqual(cityRegistry.find((entry) => entry.id === 'tower-cluster-vertical-pilot-lift-level-1-to-level-2')?.size, [56, 10, 56]);
-assert.deepEqual(cityRegistry.find((entry) => entry.id === 'tower-cluster-mega-highrise-animated-panoramic-lift')?.position, [-296, 807, -1134]);
-assert.deepEqual(cityRegistry.find((entry) => entry.id === 'tower-cluster-mega-highrise-animated-panoramic-lift')?.size, [144, 1626, 78]);
-assert.deepEqual(cityRegistry.find((entry) => entry.id === 'tower-cluster-television-tower-animated-city-lift')?.position, [360, 2624, -1012]);
-assert.deepEqual(cityRegistry.find((entry) => entry.id === 'tower-cluster-television-tower-animated-city-lift')?.size, [128, 5258, 76]);
+assert.deepEqual(cityRegistry.find((entry) => entry.id === 'tower-cluster-mega-highrise-animated-panoramic-lift')?.position, [-510, 825, -1217.5]);
+assert.deepEqual(cityRegistry.find((entry) => entry.id === 'tower-cluster-mega-highrise-animated-panoramic-lift')?.size, [264, 1662, 143]);
+assert.deepEqual(cityRegistry.find((entry) => entry.id === 'tower-cluster-television-tower-animated-city-lift')?.position, [360, 2670.5, -1135]);
+assert.deepEqual(cityRegistry.find((entry) => entry.id === 'tower-cluster-television-tower-animated-city-lift')?.size, [128, 5351, 286]);
 assert.deepEqual(cityRegistry.find((entry) => entry.id === cityTower.id)?.position, [120, 151, -160]);
 assert.deepEqual(
   cityRegistry.find((entry) => entry.id === semanticTower.id)?.aliases,
