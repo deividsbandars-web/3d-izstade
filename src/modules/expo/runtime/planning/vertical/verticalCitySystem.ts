@@ -73,6 +73,11 @@ export type ExpoVerticalElevatorRoute = {
   label: string;
   phase: number;
   railSpacing: number;
+  rideable?: {
+    floorPlayerOffsetY: number;
+    footprintSize: [number, number];
+    pickupToleranceY: number;
+  };
   stationSize: [number, number, number];
   waypoints: [number, number, number][];
   zoneId: string;
@@ -362,6 +367,7 @@ export const EXPO_VERTICAL_CITY_SYSTEM: ExpoVerticalCitySystemPlan = {
       zoneId: 'tower-cluster',
     },
     {
+      autoActivate: false,
       id: 'tower-cluster-mega-highrise-lift-ground-to-skybridge',
       label: 'Mega Highrise Skybridge Lift',
       level: 'ground',
@@ -375,6 +381,7 @@ export const EXPO_VERTICAL_CITY_SYSTEM: ExpoVerticalCitySystemPlan = {
       zoneId: 'tower-cluster',
     },
     {
+      autoActivate: false,
       id: 'tower-cluster-mega-highrise-lift-skybridge-to-ground',
       label: 'Mega Highrise Ground Return',
       level: 'tower',
@@ -388,6 +395,7 @@ export const EXPO_VERTICAL_CITY_SYSTEM: ExpoVerticalCitySystemPlan = {
       zoneId: 'tower-cluster',
     },
     {
+      autoActivate: false,
       id: 'tower-cluster-mega-highrise-lift-skybridge-to-skydeck',
       label: 'Mega Highrise Crown Skydeck Lift',
       level: 'tower',
@@ -403,6 +411,7 @@ export const EXPO_VERTICAL_CITY_SYSTEM: ExpoVerticalCitySystemPlan = {
       zoneId: 'tower-cluster',
     },
     {
+      autoActivate: false,
       id: 'tower-cluster-mega-highrise-lift-skydeck-to-skybridge',
       label: 'Mega Highrise Skybridge Return',
       level: 'skydeck',
@@ -500,6 +509,7 @@ export const EXPO_VERTICAL_CITY_SYSTEM: ExpoVerticalCitySystemPlan = {
       zoneId: 'tower-cluster',
     },
     {
+      autoActivate: false,
       id: 'tower-cluster-television-tower-lift-ground-to-observation',
       label: 'Television Tower Observation Lift',
       level: 'ground',
@@ -511,6 +521,7 @@ export const EXPO_VERTICAL_CITY_SYSTEM: ExpoVerticalCitySystemPlan = {
       zoneId: 'tower-cluster',
     },
     {
+      autoActivate: false,
       id: 'tower-cluster-television-tower-lift-observation-to-ground',
       label: 'Television Tower Ground Return',
       level: 'tower',
@@ -522,6 +533,7 @@ export const EXPO_VERTICAL_CITY_SYSTEM: ExpoVerticalCitySystemPlan = {
       zoneId: 'tower-cluster',
     },
     {
+      autoActivate: false,
       id: 'tower-cluster-television-tower-lift-observation-to-broadcast',
       label: 'Television Tower Broadcast Lift',
       level: 'tower',
@@ -533,6 +545,7 @@ export const EXPO_VERTICAL_CITY_SYSTEM: ExpoVerticalCitySystemPlan = {
       zoneId: 'tower-cluster',
     },
     {
+      autoActivate: false,
       id: 'tower-cluster-television-tower-lift-broadcast-to-observation',
       label: 'Television Tower Observation Return',
       level: 'tower',
@@ -544,6 +557,7 @@ export const EXPO_VERTICAL_CITY_SYSTEM: ExpoVerticalCitySystemPlan = {
       zoneId: 'tower-cluster',
     },
     {
+      autoActivate: false,
       id: 'tower-cluster-television-tower-lift-broadcast-to-top',
       label: 'Television Tower Top Lift',
       level: 'tower',
@@ -555,6 +569,7 @@ export const EXPO_VERTICAL_CITY_SYSTEM: ExpoVerticalCitySystemPlan = {
       zoneId: 'tower-cluster',
     },
     {
+      autoActivate: false,
       id: 'tower-cluster-television-tower-lift-top-to-broadcast',
       label: 'Television Tower Broadcast Return',
       level: 'skydeck',
@@ -576,6 +591,11 @@ export const EXPO_VERTICAL_CITY_SYSTEM: ExpoVerticalCitySystemPlan = {
       label: 'Mega Highrise Panoramic Lift',
       phase: 0.32,
       railSpacing: 62,
+      rideable: {
+        floorPlayerOffsetY: -36,
+        footprintSize: [98, 68],
+        pickupToleranceY: 18,
+      },
       stationSize: [154, 14, 78],
       waypoints: [
         [-296, 42, -1134],
@@ -592,6 +612,11 @@ export const EXPO_VERTICAL_CITY_SYSTEM: ExpoVerticalCitySystemPlan = {
       label: 'Television Tower Moving Lift',
       phase: 0,
       railSpacing: 56,
+      rideable: {
+        floorPlayerOffsetY: -41,
+        footprintSize: [88, 68],
+        pickupToleranceY: 18,
+      },
       stationSize: [148, 14, 76],
       waypoints: [
         [360, 48, TOWER_CLUSTER_TELEVISION_TOWER.elevatorShaftZ],

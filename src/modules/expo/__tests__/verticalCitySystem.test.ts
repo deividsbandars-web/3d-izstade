@@ -4,6 +4,7 @@ import {
   getVerticalAccessNodesForLevel,
   getVerticalWalkableRegionsForLevel,
 } from '../runtime/planning/vertical/verticalCitySystem.js';
+import { resolveElevatorRideablePlayerY } from '../runtime/planning/vertical/elevatorRouteMotion.js';
 
 const levels = new Set(EXPO_VERTICAL_CITY_SYSTEM.levels.map((level) => level.id));
 
@@ -24,7 +25,11 @@ for (const node of EXPO_VERTICAL_CITY_SYSTEM.accessNodes) {
 for (const route of EXPO_VERTICAL_CITY_SYSTEM.elevatorRoutes) {
   assert.ok(route.waypoints.length >= 2, `${route.id} must have at least two waypoints`);
   assert.ok(route.cycleSeconds >= 6, `${route.id} must have a readable animation cycle`);
+  assert.ok(route.rideable, `${route.id} must expose a rideable cabin floor`);
   assert.ok(route.cabinSize.every((value) => value > 0 && Number.isFinite(value)));
+  assert.ok(route.rideable.footprintSize.every((value) => value > 0 && Number.isFinite(value)));
+  assert.ok(Number.isFinite(route.rideable.floorPlayerOffsetY));
+  assert.ok(route.rideable.pickupToleranceY > 0);
   assert.ok(route.stationSize.every((value) => value > 0 && Number.isFinite(value)));
   assert.ok(route.waypoints.every((point) => point.length === 3 && point.every(Number.isFinite)));
 }
@@ -39,6 +44,12 @@ assert.deepEqual(EXPO_VERTICAL_CITY_SYSTEM.elevatorRoutes[0]?.waypoints, [
   [-296, 1572, -1134],
 ]);
 assert.deepEqual(EXPO_VERTICAL_CITY_SYSTEM.elevatorRoutes[0]?.cabinSize, [82, 96, 60]);
+assert.deepEqual(EXPO_VERTICAL_CITY_SYSTEM.elevatorRoutes[0]?.rideable, {
+  floorPlayerOffsetY: -36,
+  footprintSize: [98, 68],
+  pickupToleranceY: 18,
+});
+assert.equal(resolveElevatorRideablePlayerY(EXPO_VERTICAL_CITY_SYSTEM.elevatorRoutes[0], 42), 6);
 assert.equal(EXPO_VERTICAL_CITY_SYSTEM.elevatorRoutes[0]?.cycleSeconds, 14);
 assert.deepEqual(EXPO_VERTICAL_CITY_SYSTEM.elevatorRoutes[1]?.waypoints, [
   [360, 48, -1012],
@@ -47,6 +58,12 @@ assert.deepEqual(EXPO_VERTICAL_CITY_SYSTEM.elevatorRoutes[1]?.waypoints, [
   [360, 5200, -1012],
 ]);
 assert.deepEqual(EXPO_VERTICAL_CITY_SYSTEM.elevatorRoutes[1]?.cabinSize, [72, 106, 58]);
+assert.deepEqual(EXPO_VERTICAL_CITY_SYSTEM.elevatorRoutes[1]?.rideable, {
+  floorPlayerOffsetY: -41,
+  footprintSize: [88, 68],
+  pickupToleranceY: 18,
+});
+assert.equal(resolveElevatorRideablePlayerY(EXPO_VERTICAL_CITY_SYSTEM.elevatorRoutes[1], 48), 7);
 assert.equal(EXPO_VERTICAL_CITY_SYSTEM.elevatorRoutes[1]?.cycleSeconds, 18);
 
 const groundNodes = getVerticalAccessNodesForLevel(EXPO_VERTICAL_CITY_SYSTEM, 'ground');
@@ -130,6 +147,7 @@ assert.equal(towerNodes[0]?.targetLevel, 'roof');
 assert.deepEqual(towerNodes[0]?.position, [900, 245, -650]);
 assert.deepEqual(towerNodes[0]?.targetPosition, [900, 170, -710]);
 assert.equal(groundNodes[2]?.targetLevel, 'tower');
+assert.equal(groundNodes[2]?.autoActivate, false);
 assert.deepEqual(groundNodes[2]?.position, [-570, 0.25, -1185]);
 assert.deepEqual(groundNodes[2]?.targetPosition, [-570, 552, -1245]);
 assert.equal(towerNodes[1]?.targetLevel, 'ground');
@@ -148,6 +166,7 @@ assert.equal(groundNodes[4]?.targetLevel, 'tower');
 assert.deepEqual(groundNodes[4]?.position, [-605, 0.25, -1418]);
 assert.deepEqual(groundNodes[4]?.targetPosition, [-550, 676, -1474]);
 assert.equal(groundNodes[5]?.targetLevel, 'tower');
+assert.equal(groundNodes[5]?.autoActivate, false);
 assert.deepEqual(groundNodes[5]?.position, [360, 0.25, -1030]);
 assert.deepEqual(groundNodes[5]?.targetPosition, [360, 1932, -1104]);
 assert.equal(towerNodes[3]?.targetLevel, 'ground');

@@ -4,7 +4,15 @@ import { OrbitControls, PointerLockControls } from '@react-three/drei';
 import * as THREE from 'three';
 import type { ExpoMode } from '../../../state/expoRuntime';
 import type { ExpoStartView } from '../../../world-contract';
-import type { ExpoVerticalAccessNode, ExpoVerticalWalkableRegion } from '../../planning/types';
+import type { ExpoVerticalAccessNode, ExpoVerticalElevatorRoute, ExpoVerticalWalkableRegion } from '../../planning/types';
+import {
+  buildElevatorRouteSegments,
+  getElevatorRouteTotalLength,
+  resolveElevatorRideableFootprint,
+  resolveElevatorRideablePlayerY,
+  resolveElevatorRoutePosition,
+  type ExpoVerticalElevatorRouteSegment,
+} from '../../planning/vertical/elevatorRouteMotion';
 import { EXPO_VERTICAL_CITY_SYSTEM } from '../../planning/vertical/verticalCitySystem';
 import {
   WORLD_PHYSICS_DEFAULT_EDGE_SLACK,
@@ -40,6 +48,7 @@ const VERTICAL_WALKABLE_Y_TOLERANCE = 10;
 const VERTICAL_STEP_UP_MAX_DELTA = 24;
 const VERTICAL_MANTLE_MAX_DELTA = 112;
 const VERTICAL_MANTLE_FORWARD_REACH = 26;
+const RIDEABLE_ELEVATOR_EDGE_SLACK = 5;
 const LIFT_TRIGGER_KEYS = new Set(['KeyF']);
 const WALK_CONTROL_KEYS = new Set([
   'ArrowLeft',
@@ -68,6 +77,19 @@ type VerticalLiftRequest = {
 
 type VerticalLiftRequestDetail = {
   nodeId?: string | null;
+};
+
+type RideableElevatorRuntimeRoute = {
+  fallbackPosition: [number, number, number];
+  route: ExpoVerticalElevatorRoute;
+  segments: ExpoVerticalElevatorRouteSegment[];
+  totalLength: number;
+};
+
+type RideableElevatorHit = {
+  playerY: number;
+  position: [number, number, number];
+  route: ExpoVerticalElevatorRoute;
 };
 
 export function ExpoWorldPlayerLayer({
@@ -116,6 +138,19 @@ export function ExpoWorldPlayerLayer({
     ? verticalAccessNodes
     : EXPO_VERTICAL_CITY_SYSTEM.accessNodes;
   const effectiveVerticalWalkableRegions = EXPO_VERTICAL_CITY_SYSTEM.walkableRegions;
+  const rideableElevatorRoutes = useMemo<RideableElevatorRuntimeRoute[]>(() => (
+    EXPO_VERTICAL_CITY_SYSTEM.elevatorRoutes
+      .filter((route) => Boolean(route.rideable))
+      .map((route) => {
+        const segments = buildElevatorRouteSegments(route.waypoints);
+        return {
+          fallbackPosition: route.waypoints[0] ?? [0, 0, 0],
+          route,
+          segments,
+          totalLength: getElevatorRouteTotalLength(segments),
+        };
+      })
+  ), []);
   const effectivePhysicsSolids = physicsSurfaceRegistry?.solids ?? [];
   const effectivePhysicsWalkableSurfaces = physicsSurfaceRegistry?.walkableSurfaces ?? [];
   const startViewSignature = `${startView.position.join(',')}|${startView.lookAt.join(',')}|${startView.source}`;
@@ -350,7 +385,7 @@ export function ExpoWorldPlayerLayer({
     };
   }, [mode]);
 
-  useFrame((_, delta) => {
+  useFrame((state, delta) => {
     if (!startFramingApplied.current) {
       const sceneStartView = scene.userData[EXPO_START_VIEW_KEY] as ExpoStartView | undefined;
       if (sceneStartView?.lookAt) {
@@ -375,6 +410,7 @@ export function ExpoWorldPlayerLayer({
     const activeElevationY = activeViewElevationY.current;
     const isOperatorReviewFrame = preserveReviewElevation && activeElevationY > 12;
     const operatorTeleportSettling = operatorTeleportUntil.current > Date.now();
+    const elapsedTime = state.clock.getElapsedTime();
 
     const stableDelta = Math.min(delta, 1 / 90);
     const physicsDelta = Math.min(delta, 1 / 30);
@@ -539,7 +575,23 @@ export function ExpoWorldPlayerLayer({
       liftActivatedThisFrame = true;
     }
 
+    let rideableElevatorThisFrame: RideableElevatorHit | null = null;
+
     if (!liftActivatedThisFrame) {
+      rideableElevatorThisFrame = findCurrentRideableElevator(
+        camera.position,
+        verticalLevelY.current,
+        elapsedTime,
+        rideableElevatorRoutes,
+      );
+      if (rideableElevatorThisFrame && !operatorTeleportSettling) {
+        verticalLevelY.current = rideableElevatorThisFrame.playerY;
+        activeViewElevationY.current = rideableElevatorThisFrame.playerY;
+        verticalVelocityY.current = 0;
+        verticalAirborne.current = false;
+        lastTraversalAction.current = `elevator-ride:${rideableElevatorThisFrame.route.id}`;
+      }
+
       const isOnPlanWalkable = isPositionOnVerticalWalkableRegion(camera.position, verticalLevelY.current, effectiveVerticalWalkableRegions);
       const isOnPhysicsWalkable = isWorldPhysicsPositionOnWalkableSurface(
         camera.position,
@@ -561,7 +613,8 @@ export function ExpoWorldPlayerLayer({
         },
       );
       const isOnPhysicsSolidTop = currentPhysicsSolidTopY !== null;
-      const isOnVerticalWalkable = isOnPlanWalkable || isOnPhysicsWalkable || isOnPhysicsSolidTop;
+      const isOnRideableElevator = Boolean(rideableElevatorThisFrame);
+      const isOnVerticalWalkable = isOnPlanWalkable || isOnPhysicsWalkable || isOnPhysicsSolidTop || isOnRideableElevator;
       const isVerticalSystemElevation = (
         isVerticalSystemPlayerY(verticalLevelY.current, effectiveVerticalWalkableRegions)
         || isWorldPhysicsSurfacePlayerY(
@@ -570,6 +623,7 @@ export function ExpoWorldPlayerLayer({
           WORLD_PHYSICS_DEFAULT_Y_TOLERANCE,
         )
         || isOnPhysicsSolidTop
+        || isOnRideableElevator
       );
       const isGrounded = verticalLevelY.current <= 5 + VERTICAL_LANDING_EPSILON || isOnVerticalWalkable;
       const canUseVerticalPhysics = !operatorTeleportSettling && (
@@ -631,6 +685,13 @@ export function ExpoWorldPlayerLayer({
           const fromY = verticalLevelY.current;
           const landingY = Math.max(
             findVerticalLandingY(camera.position, fromY, nextY, effectiveVerticalWalkableRegions),
+            findRideableElevatorLandingY(
+              camera.position,
+              fromY,
+              nextY,
+              elapsedTime,
+              rideableElevatorRoutes,
+            ) ?? 5,
             findWorldPhysicsLandingSurface(
               camera.position,
               fromY,
@@ -684,7 +745,9 @@ export function ExpoWorldPlayerLayer({
               edgeSlack: WORLD_PHYSICS_DEFAULT_EDGE_SLACK,
               yTolerance: WORLD_PHYSICS_DEFAULT_Y_TOLERANCE,
             })
-            ?? currentPhysicsSolidTopY;
+            ?? currentPhysicsSolidTopY
+            ?? rideableElevatorThisFrame?.playerY
+            ?? null;
           if (snappedY !== null) {
             verticalLevelY.current = snappedY;
             activeViewElevationY.current = snappedY;
@@ -701,7 +764,16 @@ export function ExpoWorldPlayerLayer({
       camera.position.setZ(Math.min(bounds.maxZ, Math.max(bounds.minZ, camera.position.z)));
     }
 
-    if (moved) {
+    if (rideableElevatorThisFrame && !moved) {
+      const now = Date.now();
+      const dy = Math.abs(camera.position.y - lastReportedPosition.current[1]);
+
+      if (now - lastMoveTime.current > 180 || dy > 4) {
+        lastMoveTime.current = now;
+        lastReportedPosition.current = [camera.position.x, camera.position.y, camera.position.z];
+        onMove(lastReportedPosition.current);
+      }
+    } else if (moved) {
       const now = Date.now();
       const dx = camera.position.x - lastReportedPosition.current[0];
       const dz = camera.position.z - lastReportedPosition.current[2];
@@ -740,6 +812,69 @@ function findNearbyVerticalAccessNode(
     .sort((left, right) => left.distanceXZ - right.distanceXZ);
 
   return candidates[0]?.node ?? null;
+}
+
+function resolveRideableElevatorHit(
+  playerPosition: THREE.Vector3,
+  elapsedTime: number,
+  runtimeRoute: RideableElevatorRuntimeRoute,
+) {
+  const cabinPosition = resolveElevatorRoutePosition({
+    elapsedTime,
+    fallbackPosition: runtimeRoute.fallbackPosition,
+    route: runtimeRoute.route,
+    segments: runtimeRoute.segments,
+    totalLength: runtimeRoute.totalLength,
+  });
+  const footprint = resolveElevatorRideableFootprint(runtimeRoute.route);
+  const halfWidth = (footprint[0] * 0.5) + RIDEABLE_ELEVATOR_EDGE_SLACK;
+  const halfDepth = (footprint[1] * 0.5) + RIDEABLE_ELEVATOR_EDGE_SLACK;
+
+  if (
+    Math.abs(playerPosition.x - cabinPosition[0]) > halfWidth
+    || Math.abs(playerPosition.z - cabinPosition[2]) > halfDepth
+  ) {
+    return null;
+  }
+
+  return {
+    playerY: resolveElevatorRideablePlayerY(runtimeRoute.route, cabinPosition[1]),
+    position: cabinPosition,
+    route: runtimeRoute.route,
+  } satisfies RideableElevatorHit;
+}
+
+function findCurrentRideableElevator(
+  playerPosition: THREE.Vector3,
+  playerY: number,
+  elapsedTime: number,
+  runtimeRoutes: RideableElevatorRuntimeRoute[],
+) {
+  const hits = runtimeRoutes
+    .map((runtimeRoute) => resolveRideableElevatorHit(playerPosition, elapsedTime, runtimeRoute))
+    .filter((hit): hit is RideableElevatorHit => Boolean(hit))
+    .filter((hit) => Math.abs(playerY - hit.playerY) <= (hit.route.rideable?.pickupToleranceY ?? 14))
+    .sort((left, right) => Math.abs(playerY - left.playerY) - Math.abs(playerY - right.playerY));
+
+  return hits[0] ?? null;
+}
+
+function findRideableElevatorLandingY(
+  playerPosition: THREE.Vector3,
+  fromY: number,
+  toY: number,
+  elapsedTime: number,
+  runtimeRoutes: RideableElevatorRuntimeRoute[],
+) {
+  const upperY = Math.max(fromY, toY);
+  const lowerY = Math.min(fromY, toY);
+  const landings = runtimeRoutes
+    .map((runtimeRoute) => resolveRideableElevatorHit(playerPosition, elapsedTime, runtimeRoute))
+    .filter((hit): hit is RideableElevatorHit => Boolean(hit))
+    .filter((hit) => hit.playerY <= upperY + VERTICAL_LANDING_EPSILON && hit.playerY >= lowerY - VERTICAL_LANDING_EPSILON)
+    .sort((left, right) => right.playerY - left.playerY);
+
+  return landings[0]?.playerY ?? null;
 }
 
 function findMantleTraversalSurface(
