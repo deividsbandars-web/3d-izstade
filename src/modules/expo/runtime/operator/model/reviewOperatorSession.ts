@@ -416,6 +416,30 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
     },
     {
       expectedKeyObjectIds: [
+        'center-sky-compass-primitive-rig',
+      ],
+      expectedVisibleLayers: ['city-mass'],
+      id: 'center-sky-compass',
+      intent: 'center-sky-compass-review',
+      label: 'Center Sky Compass',
+      camera: {
+        lookAtOffset: [0, 3000, 0],
+        positionOffset: [1800, 3500, 2600],
+        targetIds: ['center-sky-compass-primitive-rig'],
+      },
+      startView: {
+        lookAt: [0, 3000, -1540],
+        position: [1800, 3500, 1060],
+        source: 'arrival-main',
+      },
+      watchItems: [
+        'new separate giant center landmark silhouette',
+        'clean vertical compass crown, not collapsed debris',
+        'clear separation from foundry and previous monument',
+      ],
+    },
+    {
+      expectedKeyObjectIds: [
         'screen-marquee-right-0',
       ],
       expectedVisibleLayers: ['city-screen-surface'],
