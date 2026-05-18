@@ -125,6 +125,24 @@ export function findCurrentRideableElevator(
   return hits[0] ?? null;
 }
 
+export function findAttachedRideableElevator(
+  playerPosition: ElevatorPhysicsPoint,
+  elapsedTime: number,
+  runtimeRoutes: ReadonlyArray<RideableElevatorRuntimeRoute>,
+  routeId: string | null,
+) {
+  if (!routeId) {
+    return null;
+  }
+
+  const runtimeRoute = runtimeRoutes.find((candidate) => candidate.route.id === routeId);
+  if (!runtimeRoute) {
+    return null;
+  }
+
+  return resolveRideableElevatorHit(playerPosition, elapsedTime, runtimeRoute);
+}
+
 export function findRideableElevatorLandingY(
   playerPosition: ElevatorPhysicsPoint,
   fromY: number,

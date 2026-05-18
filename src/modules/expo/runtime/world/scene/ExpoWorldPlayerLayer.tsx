@@ -26,6 +26,7 @@ import {
 import {
   buildRideableElevatorPhysicsFrame,
   buildRideableElevatorRuntimeRoutes,
+  findAttachedRideableElevator,
   findCurrentRideableElevator,
   findRideableElevatorLandingY,
   type RideableElevatorHit,
@@ -115,6 +116,7 @@ export function ExpoWorldPlayerLayer({
   const liftCooldownUntil = useRef(0);
   const pendingLiftRequest = useRef<VerticalLiftRequest | null>(null);
   const pendingJumpRequest = useRef(false);
+  const activeRideableElevatorRouteId = useRef<string | null>(null);
   const lastTraversalAction = useRef<string | null>(null);
   const verticalVelocityY = useRef(0);
   const verticalAirborne = useRef(false);
@@ -157,6 +159,7 @@ export function ExpoWorldPlayerLayer({
     desiredMoveVector.current.set(0, 0, 0);
     moveVelocity.current.set(0, 0, 0);
     pendingJumpRequest.current = false;
+    activeRideableElevatorRouteId.current = null;
     verticalVelocityY.current = 0;
     verticalAirborne.current = false;
     lastTraversalAction.current = null;
@@ -213,6 +216,7 @@ export function ExpoWorldPlayerLayer({
     liftExitArmed.current = false;
     liftCooldownUntil.current = Date.now() + VERTICAL_LIFT_COOLDOWN_MS;
     pendingLiftRequest.current = null;
+    activeRideableElevatorRouteId.current = null;
     moveVelocity.current.set(0, 0, 0);
     camera.position.set(node.targetPosition[0], nextY, node.targetPosition[2]);
     camera.updateMatrixWorld();
@@ -235,6 +239,7 @@ export function ExpoWorldPlayerLayer({
     verticalVelocityY.current = 0;
     verticalAirborne.current = false;
     pendingJumpRequest.current = false;
+    activeRideableElevatorRouteId.current = null;
     liftExitArmed.current = false;
     lastTraversalAction.current = `${reason}:${candidate.surface.ownerId}`;
     moveVelocity.current.multiplyScalar(reason === 'mantle' ? 0 : 0.35);
@@ -399,6 +404,7 @@ export function ExpoWorldPlayerLayer({
     const physicsDelta = Math.min(delta, 1 / 30);
     const hasKeyboardTurnIntent = mov.turnL || mov.turnR;
     const hasMoveIntent = mov.f || mov.b || mov.l || mov.r || mov.s || hasKeyboardTurnIntent || mobileMoveIntent?.f || mobileMoveIntent?.b || mobileMoveIntent?.l || mobileMoveIntent?.r || mobileMoveIntent?.s;
+    const shouldPreserveStartElevation = preserveReviewElevation && !hasMoveIntent && activeViewElevationY.current > 12;
     const sprintMultiplier = mov.s || mobileMoveIntent?.s ? PLAYER_SPRINT_MULTIPLIER : 1;
     const speed = PLAYER_WALK_SPEED * sprintMultiplier * stableDelta;
     const turnDirection = (mov.turnR ? 1 : 0) - (mov.turnL ? 1 : 0);
@@ -561,18 +567,26 @@ export function ExpoWorldPlayerLayer({
     let rideableElevatorThisFrame: RideableElevatorHit | null = null;
 
     if (!liftActivatedThisFrame) {
-      rideableElevatorThisFrame = findCurrentRideableElevator(
+      rideableElevatorThisFrame = findAttachedRideableElevator(
+        camera.position,
+        elapsedTime,
+        rideableElevatorRoutes,
+        activeRideableElevatorRouteId.current,
+      ) ?? findCurrentRideableElevator(
         camera.position,
         verticalLevelY.current,
         elapsedTime,
         rideableElevatorRoutes,
       );
       if (rideableElevatorThisFrame && !operatorTeleportSettling) {
+        activeRideableElevatorRouteId.current = rideableElevatorThisFrame.route.id;
         verticalLevelY.current = rideableElevatorThisFrame.playerY;
         activeViewElevationY.current = rideableElevatorThisFrame.playerY;
         verticalVelocityY.current = 0;
         verticalAirborne.current = false;
         lastTraversalAction.current = `elevator-ride:${rideableElevatorThisFrame.route.id}`;
+      } else if (!rideableElevatorThisFrame) {
+        activeRideableElevatorRouteId.current = null;
       }
 
       const isOnPlanWalkable = isPositionOnVerticalWalkableRegion(camera.position, verticalLevelY.current, effectiveVerticalWalkableRegions);
@@ -609,11 +623,7 @@ export function ExpoWorldPlayerLayer({
         || isOnRideableElevator
       );
       const isGrounded = verticalLevelY.current <= 5 + VERTICAL_LANDING_EPSILON || isOnVerticalWalkable;
-      const canUseVerticalPhysics = !operatorTeleportSettling && (
-        verticalAirborne.current
-        || isVerticalSystemElevation
-        || verticalLevelY.current <= 5 + VERTICAL_LANDING_EPSILON
-      );
+      const canUseVerticalPhysics = !operatorTeleportSettling && !shouldPreserveStartElevation;
       if (debug || preserveReviewElevation) {
         updateVerticalRuntimeDebug({
           canUseVerticalPhysics,
@@ -654,6 +664,7 @@ export function ExpoWorldPlayerLayer({
 
       if (canUseVerticalPhysics) {
         if (!verticalAirborne.current && verticalLevelY.current > 5 + VERTICAL_LANDING_EPSILON && !isOnVerticalWalkable) {
+          activeRideableElevatorRouteId.current = null;
           verticalAirborne.current = true;
           verticalVelocityY.current = Math.min(0, verticalVelocityY.current);
           logExpoWorldDebug(debug, '[ExpoView][VerticalFallStart]', {
@@ -723,13 +734,13 @@ export function ExpoWorldPlayerLayer({
             }
           }
         } else if (isOnVerticalWalkable) {
-          const snappedY = findCurrentVerticalRegionY(camera.position, verticalLevelY.current, effectiveVerticalWalkableRegions)
+          const snappedY = rideableElevatorThisFrame?.playerY
+            ?? findCurrentVerticalRegionY(camera.position, verticalLevelY.current, effectiveVerticalWalkableRegions)
             ?? findCurrentWorldPhysicsSurfaceY(camera.position, verticalLevelY.current, effectivePhysicsWalkableSurfaces, {
               edgeSlack: WORLD_PHYSICS_DEFAULT_EDGE_SLACK,
               yTolerance: WORLD_PHYSICS_DEFAULT_Y_TOLERANCE,
             })
             ?? currentPhysicsSolidTopY
-            ?? rideableElevatorThisFrame?.playerY
             ?? null;
           if (snappedY !== null) {
             verticalLevelY.current = snappedY;
@@ -739,7 +750,6 @@ export function ExpoWorldPlayerLayer({
       }
     }
 
-    const shouldPreserveStartElevation = preserveReviewElevation && !hasMoveIntent && activeViewElevationY.current > 12;
     camera.position.setY(shouldPreserveStartElevation ? activeViewElevationY.current : verticalLevelY.current);
 
     if (!isOperatorReviewFrame && !operatorTeleportSettling) {
