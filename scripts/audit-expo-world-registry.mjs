@@ -576,7 +576,7 @@ function shouldExposePhysicsWalkableTop(entry, bounds) {
 }
 
 function resolvePhysicsBoxes(entry) {
-  if (Array.isArray(entry.physicsParts) && entry.physicsParts.length > 0) {
+  if (Array.isArray(entry.physicsParts)) {
     return entry.physicsParts.flatMap((part) => {
       const partId = String(part?.id ?? '').trim();
       const position = tuple3(part?.position);
@@ -1663,6 +1663,10 @@ function auditSolidBoundsCoverage(entries) {
 }
 
 function requiresCompoundPhysicsParts(entry) {
+  if (entry.nodeType === 'decorative-render-rig') {
+    return false;
+  }
+
   if (entry.sourceKind === 'recovered-rear-campus-structure') {
     return true;
   }
@@ -1733,6 +1737,9 @@ function auditCitySmallBlockClutter(entries) {
   for (const entry of entries) {
     const size = positiveTuple3(entry.size);
     if (entry.layer !== 'city-mass' || !size) {
+      continue;
+    }
+    if (entry.nodeType === 'decorative-render-rig') {
       continue;
     }
 

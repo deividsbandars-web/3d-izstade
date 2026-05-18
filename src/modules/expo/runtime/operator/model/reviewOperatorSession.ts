@@ -508,7 +508,7 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
     },
     {
       expectedKeyObjectIds: [
-        'orbital-broadcast-foundry-orbit-ring-right-diagonal',
+        'orbital-broadcast-foundry-primitive-rig',
         'screen-array-right-upper-3',
         'screen-array-right-upper-3-host',
       ],

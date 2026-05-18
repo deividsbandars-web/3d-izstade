@@ -166,7 +166,7 @@ function isNonWalkableSupportStructure(entry: WorldObjectRegistryEntry) {
 }
 
 function resolvePhysicsBoxes(entry: WorldObjectRegistryEntry) {
-  if (entry.physicsParts?.length) {
+  if (entry.physicsParts) {
     return entry.physicsParts
       .filter((part) => isFinitePositiveSize(part.size))
       .map((part) => ({

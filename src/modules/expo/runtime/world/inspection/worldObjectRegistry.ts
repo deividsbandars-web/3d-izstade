@@ -217,18 +217,20 @@ function createLocalPhysicsPart({
 function buildCityMassPhysicsParts(mass: CityMass): WorldObjectRegistryPhysicsPart[] {
   const baseY = mass.vertical?.baseY ?? 0;
   const parentRotation = mass.rotation ?? [0, 0, 0];
-  const parts: WorldObjectRegistryPhysicsPart[] = [
-    createLocalPhysicsPart({
+  const intent = mass.renderIntent;
+  const parts: WorldObjectRegistryPhysicsPart[] = [];
+
+  if (intent?.skipBase !== true) {
+    parts.push(createLocalPhysicsPart({
       baseY,
       id: 'base',
       localPosition: [0, mass.size[1] * 0.5, 0],
       origin: mass.position,
       parentRotation,
       size: mass.size,
-    }),
-  ];
+    }));
+  }
 
-  const intent = mass.renderIntent;
   if (intent?.showHorizontalCap) {
     parts.push(createLocalPhysicsPart({
       baseY,
@@ -350,6 +352,17 @@ function buildCityMassPhysicsParts(mass: CityMass): WorldObjectRegistryPhysicsPa
       });
   }
 
+  const primitiveParts = buildPrimitivePhysicsParts({
+    baseY,
+    idPrefix: 'primitive',
+    origin: mass.position,
+    parentRotation,
+    primitives: intent?.primitives,
+  });
+  if (primitiveParts) {
+    parts.push(...primitiveParts);
+  }
+
   return parts;
 }
 
@@ -367,6 +380,10 @@ function buildPrimitivePhysicsParts({
   primitives?: CanonicalPrimitive[];
 }): WorldObjectRegistryPhysicsPart[] | undefined {
   const parts = (primitives ?? []).flatMap((primitive, index): WorldObjectRegistryPhysicsPart[] => {
+    if ('physics' in primitive && primitive.physics === 'decorative') {
+      return [];
+    }
+
     if (primitive.kind === 'box') {
       return [createLocalPhysicsPart({
         baseY,
@@ -749,11 +766,16 @@ export function buildCityWorldObjectRegistry({
 
   return [
     ...buildCityPerimeterEntries(plan.stadiumReserve),
-    ...plan.filteredMasses.filter((mass) => mass.renderIntent?.skipBase !== true).map((mass) => createEntry({
+    ...plan.filteredMasses.filter((mass) => (
+      mass.renderIntent?.skipBase !== true || (mass.renderIntent?.primitives?.length ?? 0) > 0
+    )).map((mass) => createEntry({
       diagnosticOwners: [],
       id: mass.id,
       interactionOwner: null,
       layer: 'city-mass',
+      nodeType: mass.renderIntent?.skipBase === true && (mass.renderIntent?.primitives?.length ?? 0) > 0
+        ? 'decorative-render-rig'
+        : null,
       physicsParts: buildCityMassPhysicsParts(mass),
       planningSections: mass.sections,
       planningRole: mass.role ?? null,

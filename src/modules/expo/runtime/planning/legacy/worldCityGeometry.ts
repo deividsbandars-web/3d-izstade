@@ -34,6 +34,7 @@ export type CityPlane = {
 export type CityMassRenderIntent = {
   emissive: string;
   emissiveIntensity: number;
+  primitives?: CanonicalPrimitive[];
   showCrownBeacon: boolean;
   showFrontWing: boolean;
   showHorizontalCap: boolean;
@@ -51,6 +52,7 @@ export type CanonicalPrimitiveBox = {
   emissiveIntensity?: number;
   kind: 'box';
   metalness?: number;
+  physics?: 'solid' | 'decorative';
   position: [number, number, number];
   roughness?: number;
   rotation?: [number, number, number];
@@ -63,6 +65,7 @@ export type CanonicalPrimitivePlane = {
   color: string;
   kind: 'plane';
   opacity?: number;
+  physics?: 'solid' | 'decorative';
   position: [number, number, number];
   rotation?: [number, number, number];
   size: [number, number];
@@ -75,12 +78,15 @@ export type CanonicalPrimitiveCylinder = {
   emissiveIntensity?: number;
   kind: 'cylinder';
   metalness?: number;
+  opacity?: number;
+  physics?: 'solid' | 'decorative';
   position: [number, number, number];
   radiusBottom: number;
   radiusTop: number;
   roughness?: number;
   rotation?: [number, number, number];
   radialSegments?: number;
+  transparent?: boolean;
   height: number;
 };
 

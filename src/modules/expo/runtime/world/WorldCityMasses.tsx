@@ -1,5 +1,5 @@
 import type { ExpoWorldVisualProfile } from '../../world-contract';
-import type { CityMass } from '../planning/types';
+import type { CanonicalPrimitive, CityMass } from '../planning/types';
 import type { StadiumReserve } from './WorldCitySkeletonLayout';
 
 function tintHex(hex: string, ratio: number) {
@@ -36,6 +36,64 @@ function WorldArchitecturalMassMaterial({
   );
 }
 
+function renderCityMassPrimitive(
+  primitive: CanonicalPrimitive,
+  key: string,
+  globalHudAccent: string,
+) {
+  if (primitive.kind === 'box') {
+    return (
+      <mesh key={key} name={key} position={primitive.position} rotation={primitive.rotation} receiveShadow>
+        <boxGeometry args={primitive.size} />
+        <WorldArchitecturalMassMaterial
+          fallbackColor={primitive.color}
+          globalHudAccent={globalHudAccent}
+          emissive={primitive.emissive}
+          emissiveIntensity={primitive.emissiveIntensity}
+        />
+      </mesh>
+    );
+  }
+
+  if (primitive.kind === 'cylinder') {
+    return (
+      <mesh key={key} name={key} position={primitive.position} rotation={primitive.rotation}>
+        <cylinderGeometry args={[primitive.radiusTop, primitive.radiusBottom, primitive.height, primitive.radialSegments ?? 16]} />
+        <meshStandardMaterial
+          color={primitive.color}
+          depthWrite={primitive.transparent ? false : true}
+          emissive={primitive.emissive}
+          emissiveIntensity={primitive.emissiveIntensity ?? 0}
+          metalness={primitive.metalness ?? 0.16}
+          opacity={primitive.opacity}
+          roughness={primitive.roughness ?? 0.34}
+          transparent={primitive.transparent}
+        />
+      </mesh>
+    );
+  }
+
+  if (primitive.kind === 'plane') {
+    return (
+      <mesh key={key} name={key} position={primitive.position} rotation={primitive.rotation} renderOrder={2}>
+        <planeGeometry args={primitive.size} />
+        <meshStandardMaterial
+          color={primitive.color}
+          depthWrite={primitive.transparent ? false : true}
+          opacity={primitive.opacity}
+          polygonOffset={primitive.transparent}
+          polygonOffsetFactor={primitive.transparent ? -2 : 0}
+          polygonOffsetUnits={primitive.transparent ? -2 : 0}
+          roughness={0.42}
+          transparent={primitive.transparent}
+        />
+      </mesh>
+    );
+  }
+
+  return null;
+}
+
 export function WorldCityMasses({
   masses,
   stadiumReserve: _stadiumReserve,
@@ -51,6 +109,7 @@ export function WorldCityMasses({
     <>
       {masses.map((mass) => {
           const intent = mass.renderIntent;
+          const primitives = intent?.primitives ?? [];
           const verticalBaseY = mass.vertical?.baseY ?? 0;
           const floorBandYs = mass.vertical && mass.vertical.floorCount > 1
             ? Array.from({ length: mass.vertical.floorCount - 1 }, (_, index) => (index + 1) * mass.vertical!.floorHeight)
@@ -61,8 +120,23 @@ export function WorldCityMasses({
           const megaSpineHeight = mass.size[1] * 0.88;
           const megaSpineWidth = Math.max(3.2, Math.min(7, Math.min(mass.size[0], mass.size[2]) * 0.055));
 
-          if (intent?.skipBase) {
+          if (intent?.skipBase && primitives.length === 0) {
             return null;
+          }
+
+          if (intent?.skipBase) {
+            return (
+              <group
+                key={mass.id}
+                name={`city-mass:${mass.id}`}
+                position={[mass.position[0], verticalBaseY, mass.position[2]]}
+                rotation={mass.rotation ?? [0, 0, 0]}
+              >
+                {primitives.map((primitive, index) =>
+                  renderCityMassPrimitive(primitive, `${mass.id}:${primitive.kind}:${index}`, visualProfile.global.hudAccent),
+                )}
+              </group>
+            );
           }
 
           return (
@@ -182,6 +256,9 @@ export function WorldCityMasses({
                     <meshStandardMaterial color="#a8d9eb" emissive="#7ed5f4" emissiveIntensity={0.024} roughness={0.36} metalness={0.24} />
                   </mesh>
                 </>
+              )}
+              {primitives.map((primitive, index) =>
+                renderCityMassPrimitive(primitive, `${mass.id}:${primitive.kind}:${index}`, visualProfile.global.hudAccent),
               )}
             </group>
           );
