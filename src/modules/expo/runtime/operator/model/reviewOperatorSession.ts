@@ -337,8 +337,8 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
         ],
       },
       startView: {
-        lookAt: [-900, 1400, 268.2],
-        position: [2400, 840, -4931.8],
+        lookAt: [-915, 1640, 268.2],
+        position: [2385, 1080, -4931.8],
         source: 'arrival-main',
       },
       watchItems: [
