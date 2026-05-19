@@ -6,7 +6,11 @@ import {
   type GlobalChatOpenDetail,
 } from './globalChatEvents';
 
-export default function GlobalChat() {
+interface GlobalChatProps {
+  expoMobileCompact?: boolean;
+}
+
+export default function GlobalChat({ expoMobileCompact = false }: GlobalChatProps = {}) {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<any[]>([]);
   const [input, setInput] = useState('');
@@ -116,27 +120,34 @@ export default function GlobalChat() {
   };
 
   return (
-    <div style={{ position: 'fixed', bottom: '30px', right: '30px', zIndex: 9999 }}>
+    <div
+      style={{
+        position: 'fixed',
+        bottom: expoMobileCompact ? 'calc(env(safe-area-inset-bottom) + 94px)' : '30px',
+        right: expoMobileCompact ? 'max(12px, env(safe-area-inset-right))' : '30px',
+        zIndex: 9999,
+      }}
+    >
       {/* CHAT BUBBLE */}
       {!isOpen && (
         <button 
           onClick={() => setIsOpen(true)}
           aria-label="Open global chat"
-          style={{ width: '60px', height: '60px', borderRadius: '50%', background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)', border: 'none', color: '#fff', fontSize: '1.5rem', cursor: 'pointer', boxShadow: '0 10px 30px rgba(59, 130, 246, 0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          style={{ width: expoMobileCompact ? '52px' : '60px', height: expoMobileCompact ? '44px' : '60px', borderRadius: expoMobileCompact ? '16px' : '50%', background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)', border: 'none', color: '#fff', fontSize: expoMobileCompact ? '0.62rem' : '0.82rem', fontWeight: 900, letterSpacing: expoMobileCompact ? '0.08em' : '0.04em', cursor: 'pointer', boxShadow: '0 10px 30px rgba(59, 130, 246, 0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
         >
-          💬
+          CHAT
         </button>
       )}
 
       {/* CHAT WINDOW */}
       {isOpen && (
-        <div className="glass-card" style={{ width: '350px', height: '500px', display: 'flex', flexDirection: 'column', overflow: 'hidden', background: 'rgba(15, 23, 42, 0.95)', borderColor: 'rgba(59, 130, 246, 0.3)' }}>
+        <div className="glass-card" style={{ width: expoMobileCompact ? 'min(330px, calc(100vw - 24px))' : '350px', height: expoMobileCompact ? 'min(420px, 58vh)' : '500px', display: 'flex', flexDirection: 'column', overflow: 'hidden', background: 'rgba(15, 23, 42, 0.95)', borderColor: 'rgba(59, 130, 246, 0.3)' }}>
           <div style={{ padding: '15px 20px', background: 'rgba(59, 130, 246, 0.1)', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div style={{ fontWeight: 800, fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
               <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#10b981' }}></div>
               WARPALA LIVE SUPPORT
             </div>
-            <button onClick={() => setIsOpen(false)} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: '1.2rem' }}>×</button>
+            <button onClick={() => setIsOpen(false)} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: '1.2rem' }}>X</button>
           </div>
 
           <div ref={scrollRef} style={{ flex: 1, padding: '20px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '15px' }}>
@@ -167,7 +178,7 @@ export default function GlobalChat() {
                 cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center'
               }}
             >
-              🎤
+              MIC
             </button>
             <button type="submit" style={{ display: 'none' }}></button>
           </form>

@@ -54,6 +54,7 @@ export function ExpoWorldCanvasShell({
   hardIsolateNonTargets,
   highlightedTargets,
   inspectionEnabled,
+  isTouchDevice,
   isolateNonTargets,
   layerToggles,
   mobileMoveIntent,
@@ -83,9 +84,10 @@ export function ExpoWorldCanvasShell({
   hardIsolateNonTargets: boolean;
   highlightedTargets: string[];
   inspectionEnabled: boolean;
+  isTouchDevice: boolean;
   isolateNonTargets: boolean;
   layerToggles: ExpoWorldLayerToggles;
-  mobileMoveIntent?: { f: boolean; b: boolean; l: boolean; r: boolean; s?: boolean };
+  mobileMoveIntent?: { f: boolean; b: boolean; l: boolean; r: boolean; s?: boolean; turnL?: boolean; turnR?: boolean; jump?: boolean; lift?: boolean; lookX?: number };
   mode: ExpoMode;
   onMove: (position: number[]) => void;
   physicsAccessAudit: WorldPhysicsAccessAudit;
@@ -109,6 +111,15 @@ export function ExpoWorldCanvasShell({
   const [webglLostAt, setWebglLostAt] = useState<string | null>(null);
   const [webglStatusKey, setWebglStatusKey] = useState(0);
   const [webglAvailability] = useState<WebglAvailability>(() => detectWebglAvailability());
+  const canvasDpr: number | [number, number] = runtimeCaptureSafe
+    ? 1
+    : isTouchDevice
+      ? [0.58, 0.85]
+      : (EXPO_CITY_QUALITY_TIER === 'quality' ? [0.85, 1.2] : [0.55, 0.8]);
+  const canvasShadows = !isTouchDevice && EXPO_CITY_QUALITY_TIER === 'quality';
+  const canvasPerformanceMin = isTouchDevice
+    ? 0.9
+    : (EXPO_CITY_QUALITY_TIER === 'quality' ? 0.5 : 0.85);
 
   useEffect(() => {
     if (!webglAvailability.available) {
@@ -224,11 +235,11 @@ export function ExpoWorldCanvasShell({
       {webglAvailability.available && (
       <Canvas
         key={`expo-webgl-${webglStatusKey}`}
-      shadows={EXPO_CITY_QUALITY_TIER === 'quality'}
-      dpr={runtimeCaptureSafe ? 1 : (EXPO_CITY_QUALITY_TIER === 'quality' ? [0.85, 1.2] : [0.55, 0.8])}
+      shadows={canvasShadows}
+      dpr={canvasDpr}
       gl={{ antialias: false, powerPreference: 'high-performance' }}
-      performance={{ min: EXPO_CITY_QUALITY_TIER === 'quality' ? 0.5 : 0.85 }}
-      camera={{ position: [0, 2, 10], fov: 60, far: 10000 }}
+      performance={{ min: canvasPerformanceMin }}
+      camera={{ position: [0, 2, 10], fov: isTouchDevice ? 66 : 60, far: 10000 }}
       onCreated={onCreated as never}
     >
       <WorldSceneBridge

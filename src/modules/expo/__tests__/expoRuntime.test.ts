@@ -12,14 +12,14 @@ assert.equal(EXPO_QUALITY_PRESETS.performance.enablePremiumGroundTextures, false
 assert.equal(EXPO_QUALITY_PRESETS.balanced.enablePremiumGroundTextures, false);
 assert.equal(EXPO_QUALITY_PRESETS.quality.enablePremiumGroundTextures, true);
 assert.equal(EXPO_QUALITY_PRESETS.performance.enablePromenadeTexture, false);
-assert.equal(EXPO_QUALITY_PRESETS.balanced.enablePromenadeTexture, true);
+assert.equal(EXPO_QUALITY_PRESETS.balanced.enablePromenadeTexture, false);
 assert.equal(EXPO_QUALITY_PRESETS.quality.enablePromenadeTexture, true);
 
 assert.equal(EXPO_QUALITY_PRESETS.performance.enableCuratedSkylineRing, false);
-assert.equal(EXPO_QUALITY_PRESETS.balanced.enableCuratedSkylineRing, true);
+assert.equal(EXPO_QUALITY_PRESETS.balanced.enableCuratedSkylineRing, false);
 assert.equal(EXPO_QUALITY_PRESETS.quality.enableCuratedSkylineRing, true);
 assert.equal(EXPO_QUALITY_PRESETS.performance.enableCuratedExpoProps, false);
-assert.equal(EXPO_QUALITY_PRESETS.balanced.enableCuratedExpoProps, true);
+assert.equal(EXPO_QUALITY_PRESETS.balanced.enableCuratedExpoProps, false);
 assert.equal(EXPO_QUALITY_PRESETS.quality.enableCuratedExpoProps, true);
 
 assert.ok(['performance', 'balanced', 'quality'].includes(EXPO_CITY_QUALITY_TIER));

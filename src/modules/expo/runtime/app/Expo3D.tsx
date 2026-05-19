@@ -1,11 +1,13 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useZoneSystem } from '../../../../hooks/useZoneSystem';
 import { ExpoWorldHud } from './ExpoWorldHud';
 import { useExpoPresence } from '../../hooks/useExpoPresence';
 import { useExpoSceneData } from '../../hooks/useExpoSceneData';
 import { usePixelStreamingStatus } from '../../hooks/usePixelStreamingStatus';
+import { EXPO_FEATURE_FLAGS } from '../../state/expoRuntime';
 import { buildExpoWorldContract } from '../../world-contract';
+import { bindBoothPresentation, openShowcaseRoom } from '../booths';
 import { useExpoOperatorLayer } from '../operator';
 import { ExpoRuntimeShell } from './ExpoRuntimeShell';
 import { ExpoSceneShell } from './ExpoSceneShell';
@@ -45,6 +47,46 @@ function ExpoRuntimeExperience({
   const pixelStreamingStatus = usePixelStreamingStatus();
   const { guests, playerPos, isMicOn, isSpeaking, setIsMicOn, handlePlayerMove } = useExpoPresence(runtimeSession.mode);
   const { activeZone, zoneSystem } = useZoneSystem(playerPos as any);
+  const mobileNearbyBooth = useMemo(() => {
+    if (!runtimeSession.isTouchDevice || runtimeSession.mode !== 'walk') {
+      return null;
+    }
+
+    const nearest = worldContract.boothPlacements
+      .map((placement) => ({
+        distance: Math.round(Math.hypot(placement.position[0] - playerPos[0], placement.position[2] - playerPos[2])),
+        placement,
+      }))
+      .filter((entry) => entry.distance <= 230)
+      .sort((left, right) => left.distance - right.distance)[0];
+
+    if (!nearest) {
+      return null;
+    }
+
+    return {
+      distance: nearest.distance,
+      id: nearest.placement.id,
+      label: String(nearest.placement.company?.name || nearest.placement.sectorName || 'Sponsor Booth'),
+      sectorName: nearest.placement.sectorName ?? null,
+    };
+  }, [playerPos, runtimeSession.isTouchDevice, runtimeSession.mode, worldContract.boothPlacements]);
+  const openMobileNearbyBooth = useCallback((boothPlacementId: string) => {
+    const placement = worldContract.boothPlacements.find((candidate) => candidate.id === boothPlacementId);
+    if (!placement) {
+      return;
+    }
+
+    const { booth, presentation } = bindBoothPresentation(placement.company, placement);
+    openShowcaseRoom({
+      analyticsEnabled: EXPO_FEATURE_FLAGS.enableAnalytics,
+      boothId: String(booth?.id ?? placement.id),
+      company: placement.company,
+      navigate: nav,
+      presentation,
+      sectorName: placement.sectorName,
+    });
+  }, [nav, worldContract.boothPlacements]);
   const operatorSceneLayer = useExpoOperatorLayer({
     activeZoneId: activeZone?.id ? String(activeZone.id) : null,
     initialUrlFocus: runtimeSession.initialUrlFocus,
@@ -96,7 +138,10 @@ function ExpoRuntimeExperience({
           isMicOn={isMicOn}
           isSpeaking={isSpeaking}
           isTouchDevice={runtimeSession.isTouchDevice}
+          mode={runtimeSession.mode}
+          nearbyBooth={mobileNearbyBooth}
           onMoveTouch={runtimeSession.setMobileMoveIntent}
+          onOpenNearbyBooth={openMobileNearbyBooth}
           playerPos={playerPos}
           sectorMarkers={worldContract.sectorMarkers}
           visualProfile={worldContract.visualProfile}
@@ -108,6 +153,7 @@ function ExpoRuntimeExperience({
           }}
         />
       )}
+      isTouchDevice={runtimeSession.isTouchDevice}
       isLoading={isLoading}
       mode={runtimeSession.mode}
       onBack={() => nav('/')}
@@ -120,6 +166,7 @@ function ExpoRuntimeExperience({
           debug={operatorSceneLayer.debug}
           guests={guests}
           mobileMoveIntent={runtimeSession.mobileMoveIntent}
+          isTouchDevice={runtimeSession.isTouchDevice}
           mode={runtimeSession.mode}
           onMove={handlePlayerMove}
           inspectionEnabled={inspectionEnabled}

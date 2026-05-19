@@ -38,6 +38,7 @@ const PLAYER_RADIUS = 0.92;
 const PLAYER_WALK_SPEED = 108;
 const PLAYER_SPRINT_MULTIPLIER = 1.8;
 const PLAYER_KEYBOARD_TURN_SPEED = 2.25;
+const PLAYER_MOBILE_LOOK_TURN_SPEED = 3.35;
 const OPERATOR_TELEPORT_SETTLE_MS = 1200;
 const VERTICAL_LIFT_COOLDOWN_MS = 1400;
 const VERTICAL_GRAVITY = 340;
@@ -92,7 +93,7 @@ export function ExpoWorldPlayerLayer({
 }: {
   bounds: { minX: number; maxX: number; minZ: number; maxZ: number };
   debug?: boolean;
-  mobileMoveIntent?: { f: boolean; b: boolean; l: boolean; r: boolean; s?: boolean };
+  mobileMoveIntent?: { f: boolean; b: boolean; l: boolean; r: boolean; s?: boolean; turnL?: boolean; turnR?: boolean; jump?: boolean; lift?: boolean; lookX?: number };
   mode: ExpoMode;
   onMove: (pos: number[]) => void;
   physicsSurfaceRegistry?: WorldPhysicsSurfaceRegistry;
@@ -116,6 +117,8 @@ export function ExpoWorldPlayerLayer({
   const liftCooldownUntil = useRef(0);
   const pendingLiftRequest = useRef<VerticalLiftRequest | null>(null);
   const pendingJumpRequest = useRef(false);
+  const lastMobileJumpIntent = useRef(false);
+  const lastMobileLiftIntent = useRef(false);
   const activeRideableElevatorRouteId = useRef<string | null>(null);
   const lastTraversalAction = useRef<string | null>(null);
   const verticalVelocityY = useRef(0);
@@ -402,15 +405,41 @@ export function ExpoWorldPlayerLayer({
 
     const stableDelta = Math.min(delta, 1 / 90);
     const physicsDelta = Math.min(delta, 1 / 30);
-    const hasKeyboardTurnIntent = mov.turnL || mov.turnR;
-    const hasMoveIntent = mov.f || mov.b || mov.l || mov.r || mov.s || hasKeyboardTurnIntent || mobileMoveIntent?.f || mobileMoveIntent?.b || mobileMoveIntent?.l || mobileMoveIntent?.r || mobileMoveIntent?.s;
+    const mobileJumpIntent = Boolean(mobileMoveIntent?.jump);
+    const mobileLiftIntent = Boolean(mobileMoveIntent?.lift);
+    const mobileTurnL = Boolean(mobileMoveIntent?.turnL);
+    const mobileTurnR = Boolean(mobileMoveIntent?.turnR);
+    const mobileLookX = Math.max(-1, Math.min(1, Number(mobileMoveIntent?.lookX ?? 0)));
+
+    if (mobileJumpIntent && !lastMobileJumpIntent.current) {
+      pendingJumpRequest.current = true;
+    }
+
+    if (mobileLiftIntent && !lastMobileLiftIntent.current) {
+      pendingLiftRequest.current = {
+        nodeId: null,
+        requireNearby: true,
+      };
+    }
+
+    lastMobileJumpIntent.current = mobileJumpIntent;
+    lastMobileLiftIntent.current = mobileLiftIntent;
+
+    const keyboardTurnDirection = (mov.turnR ? 1 : 0) - (mov.turnL ? 1 : 0);
+    const mobileTurnDirection = Math.abs(mobileLookX) > 0.05
+      ? mobileLookX
+      : ((mobileTurnR ? 1 : 0) - (mobileTurnL ? 1 : 0));
+    const hasKeyboardTurnIntent = keyboardTurnDirection !== 0 || mobileTurnDirection !== 0;
+    const hasMoveIntent = mov.f || mov.b || mov.l || mov.r || mov.s || hasKeyboardTurnIntent || mobileMoveIntent?.f || mobileMoveIntent?.b || mobileMoveIntent?.l || mobileMoveIntent?.r || mobileMoveIntent?.s || mobileJumpIntent || mobileLiftIntent || Math.abs(mobileLookX) > 0.05;
     const shouldPreserveStartElevation = preserveReviewElevation && !hasMoveIntent && activeViewElevationY.current > 12;
     const sprintMultiplier = mov.s || mobileMoveIntent?.s ? PLAYER_SPRINT_MULTIPLIER : 1;
     const speed = PLAYER_WALK_SPEED * sprintMultiplier * stableDelta;
-    const turnDirection = (mov.turnR ? 1 : 0) - (mov.turnL ? 1 : 0);
 
-    if (turnDirection !== 0) {
-      camera.rotateY(-turnDirection * PLAYER_KEYBOARD_TURN_SPEED * stableDelta);
+    if (keyboardTurnDirection !== 0 || mobileTurnDirection !== 0) {
+      camera.rotateY(
+        -(keyboardTurnDirection * PLAYER_KEYBOARD_TURN_SPEED * stableDelta)
+        - (mobileTurnDirection * PLAYER_MOBILE_LOOK_TURN_SPEED * stableDelta),
+      );
       camera.updateMatrixWorld();
     }
 

@@ -6,6 +6,7 @@ export function ExpoSceneShell({
   debug,
   guests,
   inspectionEnabled,
+  isTouchDevice,
   mobileMoveIntent,
   mode,
   onMove,
@@ -22,7 +23,8 @@ export function ExpoSceneShell({
   debug: boolean;
   guests: unknown[];
   inspectionEnabled: boolean;
-  mobileMoveIntent: { f: boolean; b: boolean; l: boolean; r: boolean; s: boolean };
+  isTouchDevice: boolean;
+  mobileMoveIntent: { f: boolean; b: boolean; l: boolean; r: boolean; s: boolean; turnL?: boolean; turnR?: boolean; jump?: boolean; lift?: boolean; lookX?: number };
   mode: ExpoMode;
   onMove: (position: number[]) => void;
   runtimeFocusIsolation?: boolean;
@@ -52,6 +54,7 @@ export function ExpoSceneShell({
       debug={debug}
       guests={guests as never}
       inspectionEnabled={inspectionEnabled}
+      isTouchDevice={isTouchDevice}
       mobileMoveIntent={mobileMoveIntent}
       mode={mode}
       onMove={onMove}
