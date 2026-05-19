@@ -9,6 +9,7 @@ export type ExpoMobileMoveIntent = {
   l: boolean;
   lift: boolean;
   lookX: number;
+  lookY: number;
   r: boolean;
   s: boolean;
   turnL: boolean;
@@ -22,6 +23,7 @@ export const EXPO_MOBILE_MOVE_IDLE: ExpoMobileMoveIntent = {
   l: false,
   lift: false,
   lookX: 0,
+  lookY: 0,
   r: false,
   s: false,
   turnL: false,

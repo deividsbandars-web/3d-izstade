@@ -38,6 +38,8 @@ const PLAYER_RADIUS = 0.92;
 const PLAYER_WALK_SPEED = 108;
 const PLAYER_SPRINT_MULTIPLIER = 1.8;
 const PLAYER_KEYBOARD_TURN_SPEED = 2.25;
+const PLAYER_LOOK_PITCH_LIMIT = 1.32;
+const PLAYER_MOBILE_LOOK_PITCH_SPEED = 2.45;
 const PLAYER_MOBILE_LOOK_TURN_SPEED = 3.35;
 const OPERATOR_TELEPORT_SETTLE_MS = 1200;
 const VERTICAL_LIFT_COOLDOWN_MS = 1400;
@@ -93,7 +95,7 @@ export function ExpoWorldPlayerLayer({
 }: {
   bounds: { minX: number; maxX: number; minZ: number; maxZ: number };
   debug?: boolean;
-  mobileMoveIntent?: { f: boolean; b: boolean; l: boolean; r: boolean; s?: boolean; turnL?: boolean; turnR?: boolean; jump?: boolean; lift?: boolean; lookX?: number };
+  mobileMoveIntent?: { f: boolean; b: boolean; l: boolean; r: boolean; s?: boolean; turnL?: boolean; turnR?: boolean; jump?: boolean; lift?: boolean; lookX?: number; lookY?: number };
   mode: ExpoMode;
   onMove: (pos: number[]) => void;
   physicsSurfaceRegistry?: WorldPhysicsSurfaceRegistry;
@@ -104,6 +106,7 @@ export function ExpoWorldPlayerLayer({
   const { camera, scene } = useThree();
   const [mov, setMov] = useState({ f: false, b: false, l: false, r: false, s: false, turnL: false, turnR: false });
   const raycaster = useRef(new THREE.Raycaster());
+  const cameraViewEuler = useRef(new THREE.Euler(0, 0, 0, 'YXZ'));
   const desiredMoveVector = useRef(new THREE.Vector3());
   const moveVelocity = useRef(new THREE.Vector3());
   const orbitControlsRef = useRef<any>(null);
@@ -410,6 +413,7 @@ export function ExpoWorldPlayerLayer({
     const mobileTurnL = Boolean(mobileMoveIntent?.turnL);
     const mobileTurnR = Boolean(mobileMoveIntent?.turnR);
     const mobileLookX = Math.max(-1, Math.min(1, Number(mobileMoveIntent?.lookX ?? 0)));
+    const mobileLookY = Math.max(-1, Math.min(1, Number(mobileMoveIntent?.lookY ?? 0)));
 
     if (mobileJumpIntent && !lastMobileJumpIntent.current) {
       pendingJumpRequest.current = true;
@@ -430,16 +434,22 @@ export function ExpoWorldPlayerLayer({
       ? mobileLookX
       : ((mobileTurnR ? 1 : 0) - (mobileTurnL ? 1 : 0));
     const hasKeyboardTurnIntent = keyboardTurnDirection !== 0 || mobileTurnDirection !== 0;
-    const hasMoveIntent = mov.f || mov.b || mov.l || mov.r || mov.s || hasKeyboardTurnIntent || mobileMoveIntent?.f || mobileMoveIntent?.b || mobileMoveIntent?.l || mobileMoveIntent?.r || mobileMoveIntent?.s || mobileJumpIntent || mobileLiftIntent || Math.abs(mobileLookX) > 0.05;
+    const hasMobilePitchIntent = Math.abs(mobileLookY) > 0.05;
+    const hasMoveIntent = mov.f || mov.b || mov.l || mov.r || mov.s || hasKeyboardTurnIntent || mobileMoveIntent?.f || mobileMoveIntent?.b || mobileMoveIntent?.l || mobileMoveIntent?.r || mobileMoveIntent?.s || mobileJumpIntent || mobileLiftIntent || Math.abs(mobileLookX) > 0.05 || hasMobilePitchIntent;
     const shouldPreserveStartElevation = preserveReviewElevation && !hasMoveIntent && activeViewElevationY.current > 12;
     const sprintMultiplier = mov.s || mobileMoveIntent?.s ? PLAYER_SPRINT_MULTIPLIER : 1;
     const speed = PLAYER_WALK_SPEED * sprintMultiplier * stableDelta;
 
-    if (keyboardTurnDirection !== 0 || mobileTurnDirection !== 0) {
-      camera.rotateY(
-        -(keyboardTurnDirection * PLAYER_KEYBOARD_TURN_SPEED * stableDelta)
-        - (mobileTurnDirection * PLAYER_MOBILE_LOOK_TURN_SPEED * stableDelta),
+    if (keyboardTurnDirection !== 0 || mobileTurnDirection !== 0 || hasMobilePitchIntent) {
+      const viewEuler = cameraViewEuler.current.setFromQuaternion(camera.quaternion, 'YXZ');
+      viewEuler.y -= (keyboardTurnDirection * PLAYER_KEYBOARD_TURN_SPEED * stableDelta)
+        + (mobileTurnDirection * PLAYER_MOBILE_LOOK_TURN_SPEED * stableDelta);
+      viewEuler.x = Math.max(
+        -PLAYER_LOOK_PITCH_LIMIT,
+        Math.min(PLAYER_LOOK_PITCH_LIMIT, viewEuler.x + (mobileLookY * PLAYER_MOBILE_LOOK_PITCH_SPEED * stableDelta)),
       );
+      viewEuler.z = 0;
+      camera.quaternion.setFromEuler(viewEuler);
       camera.updateMatrixWorld();
     }
 

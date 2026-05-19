@@ -14,7 +14,7 @@ interface ExpoWorldSceneProps {
   guests: any[];
   inspectionEnabled: boolean;
   isTouchDevice: boolean;
-  mobileMoveIntent?: { f: boolean; b: boolean; l: boolean; r: boolean; s?: boolean; turnL?: boolean; turnR?: boolean; jump?: boolean; lift?: boolean; lookX?: number };
+  mobileMoveIntent?: { f: boolean; b: boolean; l: boolean; r: boolean; s?: boolean; turnL?: boolean; turnR?: boolean; jump?: boolean; lift?: boolean; lookX?: number; lookY?: number };
   mode: ExpoMode;
   onMove: (pos: number[]) => void;
   runtimeFocusIsolation?: boolean;

@@ -187,13 +187,18 @@ export function ExpoWorldHud({
 
     const anchor = lookAnchorRef.current;
     const rawX = clientX - anchor.x;
+    const rawY = clientY - anchor.y;
     const maxX = Math.max(44, Math.min(96, rect.width * 0.22));
+    const maxY = Math.max(34, Math.min(82, rect.height * 0.22));
     const offsetX = Math.max(-maxX, Math.min(maxX, rawX));
+    const offsetY = Math.max(-maxY, Math.min(maxY, rawY));
     const lookX = Math.abs(offsetX) < maxX * 0.1 ? 0 : offsetX / maxX;
+    const lookY = Math.abs(offsetY) < maxY * 0.1 ? 0 : -offsetY / maxY;
 
     setMobileGuideDismissed(true);
     emitMobileIntent({
       lookX,
+      lookY,
       turnL: lookX < -0.08,
       turnR: lookX > 0.08,
     });
@@ -201,7 +206,7 @@ export function ExpoWorldHud({
 
   const resetLookIntent = () => {
     lookAnchorRef.current = null;
-    emitMobileIntent({ lookX: 0, turnL: false, turnR: false });
+    emitMobileIntent({ lookX: 0, lookY: 0, turnL: false, turnR: false });
   };
 
   const pulseMobileAction = (key: 'jump' | 'lift', active: boolean) => {
@@ -305,7 +310,7 @@ export function ExpoWorldHud({
               }}
             >
               {isWalkMode
-                ? 'LEFT STICK MOVE | SWIPE RIGHT SIDE TO LOOK | AUTO WALK | JUMP/LIFT'
+                ? 'LEFT STICK MOVE | SWIPE RIGHT SIDE TO LOOK UP/DOWN | AUTO WALK | JUMP/LIFT'
                 : 'DRAG TO ORBIT | PINCH TO ZOOM | MAP shows nearest zones'}
             </button>
           )}
