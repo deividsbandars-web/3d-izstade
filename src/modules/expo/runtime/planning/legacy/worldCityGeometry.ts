@@ -90,6 +90,41 @@ export type CanonicalPrimitiveCylinder = {
   height: number;
 };
 
+export type CanonicalPrimitiveTorus = {
+  arc?: number;
+  color: string;
+  emissive?: string;
+  emissiveIntensity?: number;
+  kind: 'torus';
+  metalness?: number;
+  opacity?: number;
+  physics?: 'decorative';
+  position: [number, number, number];
+  radialSegments?: number;
+  radius: number;
+  roughness?: number;
+  rotation?: [number, number, number];
+  transparent?: boolean;
+  tube: number;
+  tubularSegments?: number;
+};
+
+export type CanonicalPrimitiveSphere = {
+  color: string;
+  emissive?: string;
+  emissiveIntensity?: number;
+  heightSegments?: number;
+  kind: 'sphere';
+  metalness?: number;
+  opacity?: number;
+  physics?: 'decorative';
+  position: [number, number, number];
+  radius: number;
+  roughness?: number;
+  transparent?: boolean;
+  widthSegments?: number;
+};
+
 export type CanonicalPrimitiveText = {
   color: string;
   kind: 'text';
@@ -115,6 +150,8 @@ export type CanonicalPrimitive =
   | CanonicalPrimitiveBox
   | CanonicalPrimitivePlane
   | CanonicalPrimitiveCylinder
+  | CanonicalPrimitiveTorus
+  | CanonicalPrimitiveSphere
   | CanonicalPrimitiveText
   | CanonicalPrimitiveTexturePlane;
 

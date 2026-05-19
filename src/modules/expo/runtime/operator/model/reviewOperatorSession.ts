@@ -471,6 +471,31 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
     },
     {
       expectedKeyObjectIds: [
+        'genesis-portal-gate-primitive-rig',
+      ],
+      expectedVisibleLayers: ['city-mass'],
+      id: 'genesis-portal-gate',
+      intent: 'genesis-portal-gate-review',
+      label: 'Genesis Portal Gate',
+      camera: {
+        lookAtOffset: [0, 30, 0],
+        positionOffset: [-900, 500, 1680],
+        targetIds: ['genesis-portal-gate-primitive-rig'],
+      },
+      startView: {
+        lookAt: [0, 1180, 1120],
+        position: [-900, 1650, 2800],
+        source: 'arrival-main',
+      },
+      watchItems: [
+        'large front portal frames the city axis',
+        'portal reads as a gateway, not another tower block',
+        'data veil and ring are visible without covering existing screens',
+        'front perimeter remains readable behind the gate',
+      ],
+    },
+    {
+      expectedKeyObjectIds: [
         'ai-reactor-core-primitive-rig',
       ],
       expectedVisibleLayers: ['city-mass'],
@@ -478,19 +503,68 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       intent: 'ai-reactor-core-review',
       label: 'Left AI Reactor Core',
       camera: {
-        lookAtOffset: [0, 960, 0],
-        positionOffset: [-1300, 1180, 1680],
+        lookAtOffset: [0, 0, 0],
+        positionOffset: [-2900, 2100, 4600],
         targetIds: ['ai-reactor-core-primitive-rig'],
       },
       startView: {
-        lookAt: [-2200, 960, -520],
-        position: [-3500, 1180, 1160],
+        lookAt: [-2380, 2100, -520],
+        position: [-5280, 4200, 4080],
         source: 'arrival-main',
       },
       watchItems: [
-        'left energy core landmark readability',
-        'clean orbital rings around vertical light column',
+        'left energy core skyline readability from city side',
+        'clean orbital torus rings around one vertical light column',
+        'high energy feed beams visible without blocking screens',
         'no collapsed debris silhouette or layer conflict',
+      ],
+    },
+    {
+      expectedKeyObjectIds: [
+        'energy-grid-network-primitive-rig',
+      ],
+      expectedVisibleLayers: ['city-mass'],
+      id: 'energy-grid-network',
+      intent: 'energy-grid-network-review',
+      label: 'Energy Grid Network',
+      camera: {
+        lookAtOffset: [0, 250, 0],
+        positionOffset: [-2300, 1300, 2800],
+        targetIds: ['energy-grid-network-primitive-rig'],
+      },
+      startView: {
+        lookAt: [-520, 1100, -700],
+        position: [-2820, 2150, 2100],
+        source: 'arrival-main',
+      },
+      watchItems: [
+        'reactor energy lines connect left, middle, and right districts',
+        'grid beams stay high enough to avoid booth and walking clutter',
+        'node rhythm reads as city infrastructure, not random floating debris',
+      ],
+    },
+    {
+      expectedKeyObjectIds: [
+        'ai-oracle-chamber-primitive-rig',
+      ],
+      expectedVisibleLayers: ['city-mass'],
+      id: 'ai-oracle-chamber',
+      intent: 'ai-oracle-chamber-review',
+      label: 'AI Oracle Chamber',
+      camera: {
+        lookAtOffset: [0, 250, 0],
+        positionOffset: [-1500, 1100, 2200],
+        targetIds: ['ai-oracle-chamber-primitive-rig'],
+      },
+      startView: {
+        lookAt: [2380, 1150, 420],
+        position: [880, 2000, 2620],
+        source: 'arrival-main',
+      },
+      watchItems: [
+        'large oracle chamber reads as a different structure from towers',
+        'holographic AI orb visible inside the chamber',
+        'right-front placement stays separate from screen hosts and perimeter',
       ],
     },
     {

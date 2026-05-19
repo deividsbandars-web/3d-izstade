@@ -73,6 +73,50 @@ function renderCityMassPrimitive(
     );
   }
 
+  if (primitive.kind === 'torus') {
+    return (
+      <mesh key={key} name={key} position={primitive.position} rotation={primitive.rotation}>
+        <torusGeometry
+          args={[
+            primitive.radius,
+            primitive.tube,
+            primitive.radialSegments ?? 12,
+            primitive.tubularSegments ?? 96,
+            primitive.arc ?? Math.PI * 2,
+          ]}
+        />
+        <meshStandardMaterial
+          color={primitive.color}
+          depthWrite={primitive.transparent ? false : true}
+          emissive={primitive.emissive}
+          emissiveIntensity={primitive.emissiveIntensity ?? 0}
+          metalness={primitive.metalness ?? 0.18}
+          opacity={primitive.opacity}
+          roughness={primitive.roughness ?? 0.34}
+          transparent={primitive.transparent}
+        />
+      </mesh>
+    );
+  }
+
+  if (primitive.kind === 'sphere') {
+    return (
+      <mesh key={key} name={key} position={primitive.position}>
+        <sphereGeometry args={[primitive.radius, primitive.widthSegments ?? 32, primitive.heightSegments ?? 18]} />
+        <meshStandardMaterial
+          color={primitive.color}
+          depthWrite={primitive.transparent ? false : true}
+          emissive={primitive.emissive}
+          emissiveIntensity={primitive.emissiveIntensity ?? 0}
+          metalness={primitive.metalness ?? 0.12}
+          opacity={primitive.opacity}
+          roughness={primitive.roughness ?? 0.28}
+          transparent={primitive.transparent}
+        />
+      </mesh>
+    );
+  }
+
   if (primitive.kind === 'plane') {
     return (
       <mesh key={key} name={key} position={primitive.position} rotation={primitive.rotation} renderOrder={2}>
