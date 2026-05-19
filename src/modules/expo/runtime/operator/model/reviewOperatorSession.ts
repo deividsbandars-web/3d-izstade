@@ -513,8 +513,8 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
         source: 'arrival-main',
       },
       watchItems: [
-        'left energy core skyline readability from city side',
-        'clean orbital torus rings around one vertical light column',
+        'left reactor vessel skyline readability from city side',
+        'visible containment shell, glowing core, and cooling towers',
         'high energy feed beams visible without blocking screens',
         'no collapsed debris silhouette or layer conflict',
       ],
