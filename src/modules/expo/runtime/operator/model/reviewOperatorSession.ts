@@ -503,13 +503,13 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       intent: 'ai-reactor-core-review',
       label: 'Left AI Reactor Core',
       camera: {
-        lookAtOffset: [0, 0, 0],
-        positionOffset: [-2900, 2100, 4600],
+        lookAtOffset: [0, -20, 0],
+        positionOffset: [-2400, 850, 1200],
         targetIds: ['ai-reactor-core-primitive-rig'],
       },
       startView: {
-        lookAt: [-2380, 2100, -520],
-        position: [-5280, 4200, 4080],
+        lookAt: [-2380, 830, -520],
+        position: [-4780, 1700, 680],
         source: 'arrival-main',
       },
       watchItems: [

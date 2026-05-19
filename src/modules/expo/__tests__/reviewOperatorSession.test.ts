@@ -136,8 +136,8 @@ for (const zone of zones) {
 const productionAiReactor = productionSafeRegistryById.get('ai-reactor-core-primitive-rig');
 assert.ok(productionAiReactor);
 assert.equal(productionAiReactor.sourceKind, 'ai-reactor-core-render-rig');
-assert.deepEqual(productionAiReactor.position, [-2380, 2100, -520]);
-assert.deepEqual(productionAiReactor.size, [1320, 4200, 1320]);
+assert.deepEqual(productionAiReactor.position, [-2380, 850, -520]);
+assert.deepEqual(productionAiReactor.size, [1320, 1700, 1320]);
 const productionGenesisPortal = productionSafeRegistryById.get('genesis-portal-gate-primitive-rig');
 assert.ok(productionGenesisPortal);
 assert.equal(productionGenesisPortal.sourceKind, 'genesis-portal-gate-render-rig');
@@ -234,10 +234,10 @@ assert.deepEqual(resolvedCenterSpineView.position, [-4, 208, -576]);
 const aiReactorCore = zones.find((zone) => zone.id === 'ai-reactor-core');
 assert.ok(aiReactorCore);
 const resolvedAiReactorCoreView = resolveReviewOperatorZoneStartView(aiReactorCore, new Map([
-  ['ai-reactor-core-primitive-rig', { position: [-2380, 2100, -520] }],
+  ['ai-reactor-core-primitive-rig', { position: [-2380, 850, -520] }],
 ]));
-assert.deepEqual(resolvedAiReactorCoreView.lookAt, [-2380, 2100, -520]);
-assert.deepEqual(resolvedAiReactorCoreView.position, [-5280, 4200, 4080]);
+assert.deepEqual(resolvedAiReactorCoreView.lookAt, [-2380, 830, -520]);
+assert.deepEqual(resolvedAiReactorCoreView.position, [-4780, 1700, 680]);
 
 const genesisPortalGate = zones.find((zone) => zone.id === 'genesis-portal-gate');
 assert.ok(genesisPortalGate);
