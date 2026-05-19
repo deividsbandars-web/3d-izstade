@@ -24,7 +24,7 @@ function assertVectorClose(actual: number[], expected: number[]) {
   });
 }
 
-assert.equal(zones.length, 59);
+assert.equal(zones.length, 61);
 assert.equal(DEFAULT_REVIEW_OPERATOR_ZONE_ID, 'arrival-gate');
 assert.deepEqual(zoneIds, [
   'arrival-gate',
@@ -72,9 +72,11 @@ assert.deepEqual(zoneIds, [
   'sponsor-boulevard-right',
   'sponsor-boulevard-right-medium',
   'stadium-approach',
+  'rear-campus-entry-pulse-arches',
   'stadium-left-flank',
   'rear-campus-center',
   'stadium-feed-axis',
+  'rear-campus-orbital-scoregate',
   'stadium-right-flank',
   'rear-campus-right-landmark-feed',
   'rear-campus-sky-slab-feed',
@@ -311,6 +313,14 @@ const resolvedStadiumLeftFlankView = resolveReviewOperatorZoneStartView(stadiumL
 assert.deepEqual(resolvedStadiumLeftFlankView.lookAt, [-720, 129.68, -1923.3]);
 assert.deepEqual(resolvedStadiumLeftFlankView.position, [-960, 103.68, -1703.3]);
 
+const rearCampusEntryPulseArches = zones.find((zone) => zone.id === 'rear-campus-entry-pulse-arches');
+assert.ok(rearCampusEntryPulseArches);
+const resolvedRearCampusEntryPulseArchesView = resolveReviewOperatorZoneStartView(rearCampusEntryPulseArches, new Map([
+  ['rear-campus-entry-pulse-arches', { position: [0, 280, -2534] }],
+]));
+assert.deepEqual(resolvedRearCampusEntryPulseArchesView.lookAt, [0, 400, -2534]);
+assert.deepEqual(resolvedRearCampusEntryPulseArchesView.position, [780, 440, -1814]);
+
 const stadiumFeedAxis = zones.find((zone) => zone.id === 'stadium-feed-axis');
 assert.ok(stadiumFeedAxis);
 const resolvedStadiumFeedAxisView = resolveReviewOperatorZoneStartView(stadiumFeedAxis, new Map([
@@ -318,6 +328,14 @@ const resolvedStadiumFeedAxisView = resolveReviewOperatorZoneStartView(stadiumFe
 ]));
 assert.deepEqual(resolvedStadiumFeedAxisView.lookAt, [0, 348, -4084]);
 assert.deepEqual(resolvedStadiumFeedAxisView.position, [980, 592, -2872]);
+
+const rearCampusOrbitalScoregate = zones.find((zone) => zone.id === 'rear-campus-orbital-scoregate');
+assert.ok(rearCampusOrbitalScoregate);
+const resolvedRearCampusOrbitalScoregateView = resolveReviewOperatorZoneStartView(rearCampusOrbitalScoregate, new Map([
+  ['rear-campus-orbital-scoregate-host-surface', { position: [0, 512, -4970.1] }],
+]));
+assertVectorClose(resolvedRearCampusOrbitalScoregateView.lookAt, [0, 692, -4970.1]);
+assertVectorClose(resolvedRearCampusOrbitalScoregateView.position, [900, 872, -3930.1]);
 
 const rearCampusMegaHall = zones.find((zone) => zone.id === 'rear-campus-mega-hall');
 assert.ok(rearCampusMegaHall);

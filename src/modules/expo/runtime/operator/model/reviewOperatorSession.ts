@@ -1260,6 +1260,30 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
     },
     {
       expectedKeyObjectIds: [
+        'rear-campus-entry-pulse-arches',
+      ],
+      expectedVisibleLayers: ['stadium-structure'],
+      forbiddenVisibleLayers: STADIUM_REVIEW_FORBIDDEN_LAYERS,
+      id: 'rear-campus-entry-pulse-arches',
+      intent: 'rear-campus-entry-pulse-arches-review',
+      label: 'Rear Campus Entry Pulse Arches',
+      camera: {
+        lookAtOffset: [0, 120, 0],
+        positionOffset: [780, 160, 720],
+        targetIds: ['rear-campus-entry-pulse-arches'],
+      },
+      startView: {
+        lookAt: [0, 400, -2534],
+        position: [780, 440, -1814],
+        source: 'arrival-main',
+      },
+      watchItems: [
+        'stadium entry landmark reads as gateway',
+        'central walking route remains visually open',
+      ],
+    },
+    {
+      expectedKeyObjectIds: [
         'rear-campus-event-pavilion-left-feed-surface',
       ],
       expectedVisibleLayers: ['stadium-screen-surface'],
@@ -1331,6 +1355,31 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       watchItems: [
         'rear-campus feed ownership clarity',
         'custom-feed vs screen-system split',
+      ],
+    },
+    {
+      expectedKeyObjectIds: [
+        'rear-campus-orbital-scoregate-host-surface',
+      ],
+      expectedVisibleLayers: ['stadium-screen-surface'],
+      forbiddenKeyObjectIds: STADIUM_TRANSITION_FORBIDDEN_OBJECT_IDS,
+      forbiddenVisibleLayers: [...STADIUM_REVIEW_FORBIDDEN_LAYERS, 'stadium-screen-feed'],
+      id: 'rear-campus-orbital-scoregate',
+      intent: 'rear-campus-orbital-scoregate-review',
+      label: 'Rear Campus Orbital Scoregate',
+      camera: {
+        lookAtOffset: [0, 180, 0],
+        positionOffset: [900, 360, 1040],
+        targetIds: ['rear-campus-orbital-scoregate-host-surface'],
+      },
+      startView: {
+        lookAt: [0, 692, -4970.1],
+        position: [900, 872, -3930.1],
+        source: 'arrival-main',
+      },
+      watchItems: [
+        'large scoregate screen faces city side',
+        'rear stadium landmark silhouette reads from distance',
       ],
     },
     {

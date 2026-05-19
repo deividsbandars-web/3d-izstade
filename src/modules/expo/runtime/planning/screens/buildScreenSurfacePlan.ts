@@ -786,6 +786,15 @@ function buildRearCampusScreenSurfaces(
       role: 'hero-wall',
     }),
     buildMegaHostSurface({
+      id: 'rear-campus-orbital-scoregate-host-surface',
+      position: [0, 512, resolvePositiveZFaceMountedZ(rearCampusZ(-4800), 320, 4.2)],
+      width: 920,
+      height: 360,
+      depth: 4.2,
+      glowColor: '#38bdf8',
+      role: 'hero-wall',
+    }),
+    buildMegaHostSurface({
       id: 'rear-campus-sky-slab-tower-host-surface',
       position: [1087, 438, resolvePositiveZFaceMountedZ(rearCampusZ(-1329), 136, 3)],
       width: 174,

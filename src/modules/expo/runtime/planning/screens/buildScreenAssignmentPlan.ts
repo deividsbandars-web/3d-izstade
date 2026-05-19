@@ -196,6 +196,9 @@ function rankSocketsForZone(zoneId: ExpoPlanningZoneId, sockets: CityScreenSocke
         if (socket.id.includes('bowl-feed-surface')) {
           return 6;
         }
+        if (socket.id.includes('orbital-scoregate-host-surface')) {
+          return 6;
+        }
         if (socket.id.includes('stage-monolith-canopy-host-surface') || socket.id.includes('mega-civic-hall-host-surface')) {
           return 5;
         }

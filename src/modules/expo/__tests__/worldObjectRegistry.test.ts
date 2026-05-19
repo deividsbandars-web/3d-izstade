@@ -409,6 +409,7 @@ assert.equal(stadiumRegistry.find((entry) => entry.id === 'rear-campus-bowl-cent
 assert.equal(resolveRearCampusScreenHostId('rear-campus-bowl-feed-surface'), 'rear-campus-bowl-center-deck-screen-host-shell');
 assert.equal(resolveRearCampusScreenHostId('rear-campus-stage-monolith-canopy-host-surface'), 'rear-campus-stage-monolith-canopy');
 assert.equal(resolveRearCampusScreenHostId('rear-campus-mega-civic-hall-host-surface'), 'rear-campus-mega-civic-hall');
+assert.equal(resolveRearCampusScreenHostId('rear-campus-orbital-scoregate-host-surface'), 'rear-campus-orbital-scoregate');
 assert.ok(stadiumRegistry.some((entry) => entry.id === 'rear-forecourt-1' && entry.layer === 'stadium-plane'));
 assert.equal(stadiumRegistry.find((entry) => entry.id === 'rear-forecourt-1')?.groundOwner, 'stadium');
 assert.equal(stadiumRegistry.find((entry) => entry.id === 'rear-forecourt-1')?.groundRole, 'structural');
@@ -428,6 +429,13 @@ assert.ok(stadiumRegistry.some((entry) => entry.id === 'rear-campus-mega-civic-h
 assert.deepEqual(stadiumRegistry.find((entry) => entry.id === 'rear-campus-mega-civic-hall')?.position, [-2490, 176, -3670]);
 assert.equal(stadiumRegistry.find((entry) => entry.id === 'rear-campus-mega-civic-hall')?.planningRole, 'recovered-large-landmark');
 assert.equal(stadiumRegistry.some((entry) => entry.id === 'rear-campus-mega-civic-hall-screen-host-shell'), false);
+assert.ok(stadiumRegistry.some((entry) => entry.id === 'rear-campus-orbital-scoregate' && entry.layer === 'stadium-structure'));
+assert.deepEqual(stadiumRegistry.find((entry) => entry.id === 'rear-campus-orbital-scoregate')?.position, [0, 515, -4800]);
+assert.ok(stadiumRegistry.find((entry) => entry.id === 'rear-campus-orbital-scoregate')?.physicsParts?.some((part) => part.id === 'scoreboard-backplate'));
+assert.equal(stadiumRegistry.find((entry) => entry.id === 'rear-campus-orbital-scoregate')?.planningRole, 'recovered-large-landmark');
+assert.ok(stadiumRegistry.some((entry) => entry.id === 'rear-campus-entry-pulse-arches' && entry.layer === 'stadium-structure'));
+assert.deepEqual(stadiumRegistry.find((entry) => entry.id === 'rear-campus-entry-pulse-arches')?.position, [0, 280, -2210]);
+assert.ok(stadiumRegistry.find((entry) => entry.id === 'rear-campus-entry-pulse-arches')?.physicsParts?.some((part) => part.id === 'upper-arch-beam'));
 assert.ok(stadiumRegistry.some((entry) => entry.id === 'rear-campus-test-perimeter' && entry.layer === 'stadium-structure'));
 assert.equal(stadiumRegistry.some((entry) => entry.id === 'stadium-axis-center-1180'), false);
 
