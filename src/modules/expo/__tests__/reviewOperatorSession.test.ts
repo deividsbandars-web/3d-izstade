@@ -171,8 +171,8 @@ assert.ok(cityLeftFrontCorner);
 const resolvedCityLeftFrontCornerView = resolveReviewOperatorZoneStartView(cityLeftFrontCorner, new Map([
   ['city-perimeter-left-front-corner', { position: [-1710, 35, 770] }],
 ]));
-assert.deepEqual(resolvedCityLeftFrontCornerView.lookAt, [-1710, 35, 770]);
-assert.deepEqual(resolvedCityLeftFrontCornerView.position, [-1770, 60, 835]);
+assert.deepEqual(resolvedCityLeftFrontCornerView.lookAt, [-1650, 145, 650]);
+assert.deepEqual(resolvedCityLeftFrontCornerView.position, [-1450, 185, 1130]);
 
 const leftCivilizationMonument = zones.find((zone) => zone.id === 'left-civilization-monument');
 assert.ok(leftCivilizationMonument);
@@ -228,8 +228,8 @@ assert.ok(sponsorBoulevardLeftClose);
 const resolvedSponsorBoulevardLeftCloseView = resolveReviewOperatorZoneStartView(sponsorBoulevardLeftClose, new Map([
   ['left-rear-booth', { layer: 'booth', position: [-430, 0, -1412] }],
 ]));
-assert.deepEqual(resolvedSponsorBoulevardLeftCloseView.lookAt, [-430, 24, -1412]);
-assert.deepEqual(resolvedSponsorBoulevardLeftCloseView.position, [-384, 24, -1394]);
+assert.deepEqual(resolvedSponsorBoulevardLeftCloseView.lookAt, [-430, 70, -1412]);
+assert.deepEqual(resolvedSponsorBoulevardLeftCloseView.position, [-690, 80, -1112]);
 
 const sponsorBoulevardRight = zones.find((zone) => zone.id === 'sponsor-boulevard-right');
 assert.ok(sponsorBoulevardRight);
@@ -242,10 +242,10 @@ assert.deepEqual(resolvedSponsorBoulevardRightView.position, [48, 22, -780]);
 const rearCampusCenter = zones.find((zone) => zone.id === 'rear-campus-center');
 assert.ok(rearCampusCenter);
 const resolvedRearCampusCenterView = resolveReviewOperatorZoneStartView(rearCampusCenter, new Map([
-  ['rear-campus-stage-monolith-canopy-host-surface', { position: [47, 126, -3266] }],
+  ['rear-campus-stage-monolith-canopy-host-surface', { position: [47, 126, -3250] }],
 ]));
-assert.deepEqual(resolvedRearCampusCenterView.lookAt, [47, 212, -3266]);
-assert.deepEqual(resolvedRearCampusCenterView.position, [47, 296, -2726]);
+assert.deepEqual(resolvedRearCampusCenterView.lookAt, [47, 336, -3250]);
+assert.deepEqual(resolvedRearCampusCenterView.position, [467, 306, -2630]);
 
 const stadiumLeftFlank = zones.find((zone) => zone.id === 'stadium-left-flank');
 assert.ok(stadiumLeftFlank);
@@ -266,10 +266,10 @@ assert.deepEqual(resolvedStadiumFeedAxisView.position, [980, 592, -2872]);
 const rearCampusMegaHall = zones.find((zone) => zone.id === 'rear-campus-mega-hall');
 assert.ok(rearCampusMegaHall);
 const resolvedRearCampusMegaHallView = resolveReviewOperatorZoneStartView(rearCampusMegaHall, new Map([
-  ['rear-campus-mega-civic-hall-host-surface', { position: [-2490, 168, -3828] }],
+  ['rear-campus-mega-civic-hall-host-surface', { position: [-2490, 168, -3838.1] }],
 ]));
-assert.deepEqual(resolvedRearCampusMegaHallView.lookAt, [-2410, 266, -3828]);
-assert.deepEqual(resolvedRearCampusMegaHallView.position, [-1710, 508, -2848]);
+assert.deepEqual(resolvedRearCampusMegaHallView.lookAt, [-2450, 378, -3838.1]);
+assert.deepEqual(resolvedRearCampusMegaHallView.position, [-2060, 338, -3338.1]);
 
 const rearCampusNeedleCrown = zones.find((zone) => zone.id === 'rear-campus-needle-crown');
 assert.ok(rearCampusNeedleCrown);
@@ -283,10 +283,10 @@ assertVectorClose(resolvedRearCampusNeedleCrownView.position, [1720, 456.66, -14
 const rightSkybridgeLandmark = zones.find((zone) => zone.id === 'right-skybridge-landmark');
 assert.ok(rightSkybridgeLandmark);
 const resolvedRightSkybridgeLandmarkView = resolveReviewOperatorZoneStartView(rightSkybridgeLandmark, new Map([
-  ['mega-landmark-right-skybridge-beacon', { position: [580, 134, 30] }],
+  ['mega-landmark-right-skyfold-citadel', { position: [844, 146, -164] }],
 ]));
-assert.deepEqual(resolvedRightSkybridgeLandmarkView.lookAt, [580, 220, 30]);
-assert.deepEqual(resolvedRightSkybridgeLandmarkView.position, [580, 270, 330]);
+assert.deepEqual(resolvedRightSkybridgeLandmarkView.lookAt, [844, 236, -164]);
+assert.deepEqual(resolvedRightSkybridgeLandmarkView.position, [-256, 666, 1116]);
 
 const towerCluster = zones.find((zone) => zone.id === 'tower-cluster');
 assert.ok(towerCluster);
@@ -306,8 +306,8 @@ const resolvedTowerClusterVerticalPilotView = resolveReviewOperatorZoneStartView
   ['tower-cluster-vertical-pilot-roof-deck', { position: [900, 155, -710] }],
   ['tower-cluster-vertical-pilot-tower-deck', { position: [900, 230, -650] }],
 ]));
-assert.deepEqual(resolvedTowerClusterVerticalPilotView.lookAt, [900, 165.66666666666666, -675]);
-assert.deepEqual(resolvedTowerClusterVerticalPilotView.position, [1320, 361.66666666666663, -975]);
+assert.deepEqual(resolvedTowerClusterVerticalPilotView.lookAt, [900, 233.66666666666666, -675]);
+assert.deepEqual(resolvedTowerClusterVerticalPilotView.position, [1660, 553.6666666666666, -55]);
 
 const towerClusterMegaHighrise = zones.find((zone) => zone.id === 'tower-cluster-mega-highrise');
 assert.ok(towerClusterMegaHighrise);
@@ -374,10 +374,10 @@ assertVectorClose(resolvedTowerClusterRearNeedleView.position, [-1030, 960, -954
 const stadiumRightFlank = zones.find((zone) => zone.id === 'stadium-right-flank');
 assert.ok(stadiumRightFlank);
 const resolvedStadiumRightFlankView = resolveReviewOperatorZoneStartView(stadiumRightFlank, new Map([
-  ['rear-campus-event-pavilion-right-feed-surface', { position: [720, 85.68, -1939.3] }],
+  ['rear-campus-event-pavilion-right-feed-surface', { position: [720, 85.68, -1923.3] }],
 ]));
-assert.deepEqual(resolvedStadiumRightFlankView.lookAt, [720, 147.68, -1947.3]);
-assert.deepEqual(resolvedStadiumRightFlankView.position, [970, 235.68, -2319.3]);
+assert.deepEqual(resolvedStadiumRightFlankView.lookAt, [700, 210.68, -1943.3]);
+assert.deepEqual(resolvedStadiumRightFlankView.position, [1240, 275.68, -2443.3]);
 
 const rearCampusRightLandmarkFeed = zones.find((zone) => zone.id === 'rear-campus-right-landmark-feed');
 assert.ok(rearCampusRightLandmarkFeed);
@@ -408,5 +408,5 @@ assert.ok(rearCampusLeftFrontCorner);
 const resolvedRearCampusLeftFrontCornerView = resolveReviewOperatorZoneStartView(rearCampusLeftFrontCorner, new Map([
   ['rear-campus-perimeter-left-front-corner', { position: [-3050, 42, -1074] }],
 ]));
-assert.deepEqual(resolvedRearCampusLeftFrontCornerView.lookAt, [-3050, 62, -1074]);
-assert.deepEqual(resolvedRearCampusLeftFrontCornerView.position, [-2630, 196, -1574]);
+assert.deepEqual(resolvedRearCampusLeftFrontCornerView.lookAt, [-3050, 112, -1074]);
+assert.deepEqual(resolvedRearCampusLeftFrontCornerView.position, [-2790, 112, -1334]);
