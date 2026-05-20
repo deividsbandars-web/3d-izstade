@@ -1081,7 +1081,7 @@ export function buildCleanTowerLandmarks(
       case 'arrival-core-outer-support-tower-right':
         return [1420, position[1], -40];
       case 'meetings-hero-tower-right':
-        return [1450, position[1], -1760];
+        return [1450, position[1], -1888];
       case 'meetings-outer-support-tower-right':
         return [1500, position[1], -1100];
       case 'showcase-row-mid-tower-right':
