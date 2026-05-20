@@ -1,35 +1,20 @@
 import { useEffect, useState } from 'react';
 import * as THREE from 'three';
 import { resolveExpoTextureCandidateUrls } from '../../lib/expoTexturePipeline';
-
-const GENERATED_BILLBOARD_PREFIX = 'generated-billboard:';
-
-type GeneratedBillboardPayload = {
-  accentColor?: string;
-  aspect?: number;
-  chip?: string;
-  label?: string;
-  subtitle?: string;
-  tier?: string;
-  tierAccent?: string;
-};
-
-export function buildGeneratedBillboardTextureUrl(payload: GeneratedBillboardPayload) {
-  return `${GENERATED_BILLBOARD_PREFIX}${encodeURIComponent(JSON.stringify(payload))}`;
-}
-
-function parseGeneratedBillboardPayload(url: string): GeneratedBillboardPayload | null {
-  if (!url.startsWith(GENERATED_BILLBOARD_PREFIX)) {
-    return null;
-  }
-
-  try {
-    const rawPayload = decodeURIComponent(url.slice(GENERATED_BILLBOARD_PREFIX.length));
-    return JSON.parse(rawPayload) as GeneratedBillboardPayload;
-  } catch {
-    return null;
-  }
-}
+import {
+  isGeneratedBillboardTextureUrl,
+  parseGeneratedBillboardPayload,
+} from './generatedBillboardTextureUrl';
+import type { ExpoScreenTextureQualityHint } from '../world/quality/expoScreenRuntimePolicy';
+import {
+  DEFAULT_TEXTURE_CACHE_LIMIT,
+  recordExpoGeneratedBillboardCacheEviction,
+  recordExpoGeneratedBillboardCacheHit,
+  recordExpoGeneratedBillboardCacheMiss,
+  recordExpoGeneratedBillboardTextureCreated,
+  resolveExpoGeneratedBillboardQualityConfig,
+  updateExpoTextureCacheRuntimeStats,
+} from '../world/quality/expoScreenTextureRuntimeStats';
 
 function drawBillboardText(
   context: CanvasRenderingContext2D,
@@ -52,44 +37,78 @@ function drawBillboardText(
   context.fillText(value, x, y);
 }
 
-function configureExpoTexture(texture: THREE.Texture) {
+type ExpoCachedTextureKind = 'generated-billboard' | 'image' | 'missing';
+
+type ExpoCachedTextureEntry = {
+  kind: ExpoCachedTextureKind;
+  lastUsedAt: number;
+  texture: THREE.Texture | null;
+};
+
+function configureExpoTexture(texture: THREE.Texture, textureQualityHint: ExpoScreenTextureQualityHint) {
+  const qualityConfig = resolveExpoGeneratedBillboardQualityConfig(textureQualityHint);
   texture.colorSpace = THREE.SRGBColorSpace;
-  texture.generateMipmaps = true;
-  texture.minFilter = THREE.LinearMipmapLinearFilter;
+  texture.generateMipmaps = qualityConfig.generateMipmaps;
+  texture.minFilter = qualityConfig.generateMipmaps ? THREE.LinearMipmapLinearFilter : THREE.LinearFilter;
   texture.magFilter = THREE.LinearFilter;
   texture.wrapS = THREE.ClampToEdgeWrapping;
   texture.wrapT = THREE.ClampToEdgeWrapping;
-  texture.anisotropy = Math.max(texture.anisotropy || 1, 8);
+  texture.anisotropy = qualityConfig.anisotropy;
   texture.needsUpdate = true;
   return texture;
 }
 
-function resolveGeneratedBillboardCanvasSize(aspect: number | undefined) {
-  const normalizedAspect = Number.isFinite(aspect) && aspect ? Math.max(0.35, Math.min(4.5, aspect)) : 0.7;
+function capGeneratedBillboardCanvasSize(
+  size: { height: number; width: number },
+  textureQualityHint: ExpoScreenTextureQualityHint,
+) {
+  const qualityConfig = resolveExpoGeneratedBillboardQualityConfig(textureQualityHint);
+  const longSide = Math.max(size.width, size.height);
+  const shortSide = Math.min(size.width, size.height);
+  const scale = Math.min(
+    1,
+    qualityConfig.maxLongSide / Math.max(1, longSide),
+    qualityConfig.maxShortSide / Math.max(1, shortSide),
+  );
 
-  if (normalizedAspect >= 2.15) {
-    return { height: 512, width: 2048 };
-  }
-
-  if (normalizedAspect >= 1.12) {
-    return { height: 1024, width: 2048 };
-  }
-
-  if (normalizedAspect >= 0.86) {
-    return { height: 1024, width: 1024 };
-  }
-
-  return { height: 2048, width: 1024 };
+  return {
+    height: Math.max(128, Math.round(size.height * scale)),
+    width: Math.max(128, Math.round(size.width * scale)),
+  };
 }
 
-function createGeneratedBillboardTexture(url: string) {
+function resolveGeneratedBillboardCanvasSize(
+  aspect: number | undefined,
+  textureQualityHint: ExpoScreenTextureQualityHint,
+) {
+  const normalizedAspect = Number.isFinite(aspect) && aspect ? Math.max(0.35, Math.min(4.5, aspect)) : 0.7;
+  const baseSize = (() => {
+    if (normalizedAspect >= 2.15) {
+      return { height: 512, width: 2048 };
+    }
+
+    if (normalizedAspect >= 1.12) {
+      return { height: 1024, width: 2048 };
+    }
+
+    if (normalizedAspect >= 0.86) {
+      return { height: 1024, width: 1024 };
+    }
+
+    return { height: 2048, width: 1024 };
+  })();
+
+  return capGeneratedBillboardCanvasSize(baseSize, textureQualityHint);
+}
+
+function createGeneratedBillboardTexture(url: string, textureQualityHint: ExpoScreenTextureQualityHint) {
   const payload = parseGeneratedBillboardPayload(url);
   if (!payload || typeof document === 'undefined') {
     return null;
   }
 
   const canvas = document.createElement('canvas');
-  const canvasSize = resolveGeneratedBillboardCanvasSize(payload.aspect);
+  const canvasSize = resolveGeneratedBillboardCanvasSize(payload.aspect, textureQualityHint);
   canvas.width = canvasSize.width;
   canvas.height = canvasSize.height;
 
@@ -137,7 +156,12 @@ function createGeneratedBillboardTexture(url: string) {
     drawBillboardText(context, `${payload.tier || 'PREMIUM'} PARTNER`, pad * 1.22, contentTop + titleSize * 0.92, width * 0.52, font(800, tierSize), '#dbeafe');
     drawBillboardText(context, payload.subtitle || 'EXPO SPONSOR FRONTAGE', width * 0.52, height * 0.8, width * 0.36, font(700, subtitleSize), '#e2e8f0');
 
-    return configureExpoTexture(new THREE.CanvasTexture(canvas));
+    recordExpoGeneratedBillboardTextureCreated({
+      height: canvas.height,
+      qualityHint: textureQualityHint,
+      width: canvas.width,
+    });
+    return configureExpoTexture(new THREE.CanvasTexture(canvas), textureQualityHint);
   }
 
   context.fillStyle = 'rgba(248, 250, 252, 0.18)';
@@ -150,7 +174,12 @@ function createGeneratedBillboardTexture(url: string) {
   drawBillboardText(context, `${payload.tier || 'PREMIUM'} PARTNER`, pad * 1.18, height * 0.502, width - pad * 2.7, font(800, height * 0.034), '#dbeafe');
   drawBillboardText(context, payload.subtitle || 'EXPO SPONSOR FRONTAGE', pad * 1.18, height * 0.876, width - pad * 2.5, font(700, height * 0.028), '#e2e8f0');
 
-  return configureExpoTexture(new THREE.CanvasTexture(canvas));
+  recordExpoGeneratedBillboardTextureCreated({
+    height: canvas.height,
+    qualityHint: textureQualityHint,
+    width: canvas.width,
+  });
+  return configureExpoTexture(new THREE.CanvasTexture(canvas), textureQualityHint);
 }
 
 function loadTextureWithCandidateUrls(loader: THREE.TextureLoader, urls: string[]) {
@@ -173,41 +202,163 @@ function loadTextureWithCandidateUrls(loader: THREE.TextureLoader, urls: string[
   });
 }
 
-const EXPO_TEXTURE_CACHE = new Map<string, THREE.Texture | null>();
+const EXPO_TEXTURE_CACHE = new Map<string, ExpoCachedTextureEntry>();
 const EXPO_TEXTURE_PROMISE_CACHE = new Map<string, Promise<THREE.Texture | null>>();
+const EXPO_TEXTURE_REF_COUNTS = new Map<string, number>();
+let expoTextureCacheClock = 0;
 
-function resolveGeneratedBillboardTextureSync(url: string) {
-  if (!url.startsWith(GENERATED_BILLBOARD_PREFIX)) {
+function normalizeTextureQualityHint(
+  textureQualityHint: ExpoScreenTextureQualityHint | null | undefined,
+): ExpoScreenTextureQualityHint {
+  return textureQualityHint ?? 'medium';
+}
+
+function resolveExpoTextureCacheKey(url: string, textureQualityHint: ExpoScreenTextureQualityHint) {
+  return `${url}::texture-quality=${textureQualityHint}`;
+}
+
+function countGeneratedBillboardCacheEntries() {
+  let count = 0;
+  EXPO_TEXTURE_CACHE.forEach((entry) => {
+    if (entry.kind === 'generated-billboard') {
+      count += 1;
+    }
+  });
+  return count;
+}
+
+function syncExpoTextureCacheStats() {
+  updateExpoTextureCacheRuntimeStats({
+    generatedBillboardCacheSize: countGeneratedBillboardCacheEntries(),
+    textureCacheLimit: DEFAULT_TEXTURE_CACHE_LIMIT,
+    textureCacheSize: EXPO_TEXTURE_CACHE.size,
+  });
+}
+
+function retainExpoTextureCacheKey(cacheKey: string) {
+  EXPO_TEXTURE_REF_COUNTS.set(cacheKey, (EXPO_TEXTURE_REF_COUNTS.get(cacheKey) ?? 0) + 1);
+}
+
+function releaseExpoTextureCacheKey(cacheKey: string) {
+  const nextCount = Math.max(0, (EXPO_TEXTURE_REF_COUNTS.get(cacheKey) ?? 0) - 1);
+  if (nextCount <= 0) {
+    EXPO_TEXTURE_REF_COUNTS.delete(cacheKey);
+    pruneExpoTextureCache();
+    return;
+  }
+
+  EXPO_TEXTURE_REF_COUNTS.set(cacheKey, nextCount);
+}
+
+function pruneExpoTextureCache() {
+  while (EXPO_TEXTURE_CACHE.size > DEFAULT_TEXTURE_CACHE_LIMIT) {
+    let candidateKey: string | null = null;
+    let candidateLastUsedAt = Number.POSITIVE_INFINITY;
+
+    EXPO_TEXTURE_CACHE.forEach((entry, cacheKey) => {
+      if ((EXPO_TEXTURE_REF_COUNTS.get(cacheKey) ?? 0) > 0) {
+        return;
+      }
+
+      if (entry.lastUsedAt < candidateLastUsedAt) {
+        candidateKey = cacheKey;
+        candidateLastUsedAt = entry.lastUsedAt;
+      }
+    });
+
+    if (!candidateKey) {
+      break;
+    }
+
+    const candidateEntry = EXPO_TEXTURE_CACHE.get(candidateKey);
+    if (candidateEntry?.texture) {
+      candidateEntry.texture.dispose();
+    }
+
+    if (candidateEntry?.kind === 'generated-billboard') {
+      recordExpoGeneratedBillboardCacheEviction();
+    }
+
+    EXPO_TEXTURE_CACHE.delete(candidateKey);
+    EXPO_TEXTURE_PROMISE_CACHE.delete(candidateKey);
+  }
+
+  syncExpoTextureCacheStats();
+}
+
+function readExpoTextureCache(cacheKey: string, kind: ExpoCachedTextureKind) {
+  const cachedEntry = EXPO_TEXTURE_CACHE.get(cacheKey);
+  if (cachedEntry === undefined) {
+    if (kind === 'generated-billboard') {
+      recordExpoGeneratedBillboardCacheMiss();
+    }
+    return undefined;
+  }
+
+  cachedEntry.lastUsedAt = ++expoTextureCacheClock;
+  if (kind === 'generated-billboard') {
+    recordExpoGeneratedBillboardCacheHit();
+  }
+  syncExpoTextureCacheStats();
+  return cachedEntry.texture;
+}
+
+function writeExpoTextureCache(
+  cacheKey: string,
+  texture: THREE.Texture | null,
+  kind: ExpoCachedTextureKind,
+) {
+  EXPO_TEXTURE_CACHE.set(cacheKey, {
+    kind,
+    lastUsedAt: ++expoTextureCacheClock,
+    texture,
+  });
+  syncExpoTextureCacheStats();
+  pruneExpoTextureCache();
+  return texture;
+}
+
+function resolveGeneratedBillboardTextureSync(
+  url: string,
+  textureQualityHint: ExpoScreenTextureQualityHint,
+) {
+  if (!isGeneratedBillboardTextureUrl(url)) {
     return null;
   }
 
-  const cachedTexture = EXPO_TEXTURE_CACHE.get(url);
+  const cacheKey = resolveExpoTextureCacheKey(url, textureQualityHint);
+  const cachedTexture = readExpoTextureCache(cacheKey, 'generated-billboard');
   if (cachedTexture !== undefined) {
     return cachedTexture;
   }
 
-  const generatedTexture = createGeneratedBillboardTexture(url);
+  const generatedTexture = createGeneratedBillboardTexture(url, textureQualityHint);
   if (generatedTexture) {
-    EXPO_TEXTURE_CACHE.set(url, generatedTexture);
-    return generatedTexture;
+    return writeExpoTextureCache(cacheKey, generatedTexture, 'generated-billboard');
   }
 
   return null;
 }
 
-function loadCachedExpoTexture(url: string) {
-  const cachedTexture = EXPO_TEXTURE_CACHE.get(url);
+function loadCachedExpoTexture(url: string, textureQualityHint: ExpoScreenTextureQualityHint) {
+  const isGeneratedBillboard = isGeneratedBillboardTextureUrl(url);
+  const cacheKind: ExpoCachedTextureKind = isGeneratedBillboard ? 'generated-billboard' : 'image';
+  const cacheKey = resolveExpoTextureCacheKey(url, textureQualityHint);
+  const cachedTexture = readExpoTextureCache(cacheKey, cacheKind);
   if (cachedTexture !== undefined) {
     return Promise.resolve(cachedTexture);
   }
 
-  const generatedTexture = createGeneratedBillboardTexture(url);
+  const generatedTexture = isGeneratedBillboard ? createGeneratedBillboardTexture(url, textureQualityHint) : null;
   if (generatedTexture) {
-    EXPO_TEXTURE_CACHE.set(url, generatedTexture);
-    return Promise.resolve(generatedTexture);
+    return Promise.resolve(writeExpoTextureCache(cacheKey, generatedTexture, 'generated-billboard'));
   }
 
-  const cachedPromise = EXPO_TEXTURE_PROMISE_CACHE.get(url);
+  if (isGeneratedBillboard) {
+    return Promise.resolve(null);
+  }
+
+  const cachedPromise = EXPO_TEXTURE_PROMISE_CACHE.get(cacheKey);
   if (cachedPromise) {
     return cachedPromise;
   }
@@ -216,17 +367,18 @@ function loadCachedExpoTexture(url: string) {
   const candidateUrls = resolveExpoTextureCandidateUrls(url);
   const promise = loadTextureWithCandidateUrls(loader, candidateUrls)
     .then((texture) => {
-      EXPO_TEXTURE_CACHE.set(url, configureExpoTexture(texture));
-      EXPO_TEXTURE_PROMISE_CACHE.delete(url);
-      return texture;
+      const configuredTexture = configureExpoTexture(texture, textureQualityHint);
+      writeExpoTextureCache(cacheKey, configuredTexture, 'image');
+      EXPO_TEXTURE_PROMISE_CACHE.delete(cacheKey);
+      return configuredTexture;
     })
     .catch(() => {
-      EXPO_TEXTURE_CACHE.set(url, null);
-      EXPO_TEXTURE_PROMISE_CACHE.delete(url);
+      writeExpoTextureCache(cacheKey, null, 'missing');
+      EXPO_TEXTURE_PROMISE_CACHE.delete(cacheKey);
       return null;
     });
 
-  EXPO_TEXTURE_PROMISE_CACHE.set(url, promise);
+  EXPO_TEXTURE_PROMISE_CACHE.set(cacheKey, promise);
   return promise;
 }
 
@@ -237,6 +389,7 @@ export function SponsorTextureSurface({
   emissiveColor,
   emissiveIntensity = 0,
   opacity = 1,
+  textureQualityHint,
   url,
 }: {
   depthWrite?: boolean;
@@ -245,20 +398,21 @@ export function SponsorTextureSurface({
   emissiveIntensity?: number;
   fallbackColor: string;
   opacity?: number;
+  textureQualityHint?: ExpoScreenTextureQualityHint;
   url: string;
 }) {
-  const [mappedTexture, setMappedTexture] = useState<THREE.Texture | null>(() => resolveGeneratedBillboardTextureSync(url));
-  const isGeneratedBillboard = url.startsWith(GENERATED_BILLBOARD_PREFIX);
+  const normalizedTextureQualityHint = normalizeTextureQualityHint(textureQualityHint);
+  const textureCacheKey = resolveExpoTextureCacheKey(url, normalizedTextureQualityHint);
+  const [mappedTexture, setMappedTexture] = useState<THREE.Texture | null>(() => (
+    resolveGeneratedBillboardTextureSync(url, normalizedTextureQualityHint)
+  ));
+  const isGeneratedBillboard = isGeneratedBillboardTextureUrl(url);
   const side = doubleSided ? THREE.DoubleSide : THREE.FrontSide;
 
   useEffect(() => {
-    if (isGeneratedBillboard) {
-      setMappedTexture(resolveGeneratedBillboardTextureSync(url));
-      return;
-    }
-
+    retainExpoTextureCacheKey(textureCacheKey);
     let isActive = true;
-    loadCachedExpoTexture(url)
+    loadCachedExpoTexture(url, normalizedTextureQualityHint)
       .then((texture) => {
         if (!isActive) {
           return;
@@ -274,8 +428,9 @@ export function SponsorTextureSurface({
 
     return () => {
       isActive = false;
+      releaseExpoTextureCacheKey(textureCacheKey);
     };
-  }, [isGeneratedBillboard, url]);
+  }, [normalizedTextureQualityHint, textureCacheKey, url]);
 
   if (mappedTexture && isGeneratedBillboard) {
     return (
@@ -313,12 +468,23 @@ export function SponsorTextureSurface({
   );
 }
 
-export function ScreenTextureMaterial({ fallbackColor, url }: { fallbackColor: string; url: string }) {
+export function ScreenTextureMaterial({
+  fallbackColor,
+  textureQualityHint,
+  url,
+}: {
+  fallbackColor: string;
+  textureQualityHint?: ExpoScreenTextureQualityHint;
+  url: string;
+}) {
+  const normalizedTextureQualityHint = normalizeTextureQualityHint(textureQualityHint);
+  const textureCacheKey = resolveExpoTextureCacheKey(url, normalizedTextureQualityHint);
   const [mappedTexture, setMappedTexture] = useState<THREE.Texture | null>(null);
 
   useEffect(() => {
+    retainExpoTextureCacheKey(textureCacheKey);
     let isActive = true;
-    loadCachedExpoTexture(url)
+    loadCachedExpoTexture(url, normalizedTextureQualityHint)
       .then((texture) => {
         if (!isActive) {
           return;
@@ -334,8 +500,9 @@ export function ScreenTextureMaterial({ fallbackColor, url }: { fallbackColor: s
 
     return () => {
       isActive = false;
+      releaseExpoTextureCacheKey(textureCacheKey);
     };
-  }, [url]);
+  }, [normalizedTextureQualityHint, textureCacheKey, url]);
 
   return <meshBasicMaterial color={fallbackColor} map={mappedTexture ?? undefined} toneMapped={false} />;
 }

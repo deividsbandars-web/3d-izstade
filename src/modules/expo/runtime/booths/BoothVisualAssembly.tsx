@@ -14,7 +14,7 @@ import {
   formatExpoDisplayName,
 } from './index';
 import { OpenBoothPavilion, resolveOpenBoothPavilionLayout } from './OpenBoothPavilion';
-import { buildGeneratedBillboardTextureUrl } from './BoothTextureMaterials';
+import { buildGeneratedBillboardTextureUrl } from './generatedBillboardTextureUrl';
 import type { DistrictThemeId } from '../../../../shared/expo/lib/districtTheme';
 
 type DistrictVisual = {

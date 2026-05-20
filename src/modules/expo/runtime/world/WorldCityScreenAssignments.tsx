@@ -3,6 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { trackExpoScreenRouteClicked } from '../../lib/expoAnalytics';
 import { SponsorTextureSurface } from '../booths';
 import { resolveSponsorScreenInteraction } from '../../lib/sponsorScreenInteractionResolver';
+import { getExpoActiveVideoScreensCount } from './quality/expoActiveVideoScreenRegistry';
+import { resolveExpoScreenRuntimePolicy, type ExpoScreenTextureQualityHint } from './quality/expoScreenRuntimePolicy';
+import type { ExpoQualitySettings } from './quality/expoQualitySettings';
 import type { CanonicalPrimitive, CityScreenAssignment, CityScreenSocket } from '../planning/types';
 
 function isOpaquePrimitive(opacity: number | undefined) {
@@ -17,7 +20,11 @@ function shouldCullDistantScreens() {
   return new URLSearchParams(window.location.search).get('screenDistanceCulling') === '1';
 }
 
-function renderPrimitive(primitive: CanonicalPrimitive, key: string) {
+function renderPrimitive(
+  primitive: CanonicalPrimitive,
+  key: string,
+  textureQualityHint?: ExpoScreenTextureQualityHint,
+) {
   if (primitive.kind === 'plane') {
     const isOpaque = isOpaquePrimitive(primitive.opacity);
     return (
@@ -65,6 +72,7 @@ function renderPrimitive(primitive: CanonicalPrimitive, key: string) {
           doubleSided
           fallbackColor={primitive.fallbackColor}
           opacity={primitive.opacity ?? 0.92}
+          textureQualityHint={textureQualityHint}
           url={primitive.url}
         />
       </mesh>
@@ -97,10 +105,12 @@ function renderPrimitive(primitive: CanonicalPrimitive, key: string) {
 export function WorldCityScreenAssignments({
   assignments,
   playerPosition,
+  qualitySettings,
   sockets,
 }: {
   assignments: CityScreenAssignment[];
   playerPosition: [number, number, number];
+  qualitySettings: ExpoQualitySettings;
   sockets: CityScreenSocket[];
 }) {
   const navigate = useNavigate();
@@ -155,6 +165,13 @@ export function WorldCityScreenAssignments({
 
           return true;
         });
+        const screenRuntimePolicy = resolveExpoScreenRuntimePolicy({
+          currentActiveVideoCount: getExpoActiveVideoScreensCount(),
+          distanceToCamera: distance,
+          isHeroScreen: assignment.tier === 'hero' || socket.kind === 'hero_wall',
+          isInActiveSection: true,
+          qualitySettings,
+        });
 
         return (
           <group
@@ -162,6 +179,11 @@ export function WorldCityScreenAssignments({
             name={`world-city-screen:${intent?.semanticMode ?? 'wayfinding'}:${assignment.id}`}
             position={socket.position}
             rotation={socket.rotation}
+            userData={{
+              expoScreenRuntimePolicy: screenRuntimePolicy.status,
+              expoScreenTextureQualityHint: screenRuntimePolicy.textureQualityHint,
+              expoVideoPlaybackAllowed: screenRuntimePolicy.allowVideoPlayback,
+            }}
             onClick={isRouteAction
               ? (event) => {
                   event.stopPropagation();
@@ -180,7 +202,7 @@ export function WorldCityScreenAssignments({
               : undefined}
           >
             {primitives.map((primitive, index) =>
-              renderPrimitive(primitive, `${assignment.id}:${primitive.kind}:${index}`),
+              renderPrimitive(primitive, `${assignment.id}:${primitive.kind}:${index}`, screenRuntimePolicy.textureQualityHint),
             )}
           </group>
         );

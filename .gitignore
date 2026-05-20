@@ -33,6 +33,8 @@ dist-phase3f
 apps/frontend/.next
 diagnostics
 review-screenshots/
+review_artifacts/
+handoff/
 .tmp-*
 .tmp*
 tmp/

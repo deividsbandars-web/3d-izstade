@@ -1,7 +1,7 @@
 import type * as THREE from 'three';
 import { Canvas } from '@react-three/fiber';
-import { useEffect, useMemo, useState } from 'react';
-import { EXPO_CITY_QUALITY_TIER, type ExpoMode } from '../../../state/expoRuntime';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import type { ExpoMode } from '../../../state/expoRuntime';
 import type { ExpoStartView, ExpoWorldContract } from '../../../world-contract';
 import type { ExpoVerticalAccessNode } from '../../planning/types';
 import type { WorldPhysicsAccessAudit } from '../physics/worldPhysicsAccessAudit';
@@ -15,6 +15,22 @@ import type { ExpoDistrictProgramSummary } from '../../../world-contract';
 import { EXPO_START_VIEW_KEY } from '../WorldSceneSupport';
 import { ExpoWorldPlayerLayer } from './ExpoWorldPlayerLayer';
 import { ExpoWorldSceneLayers } from './ExpoWorldSceneLayers';
+import {
+  ExpoPerformanceOverlay,
+  ExpoPerformanceSampler,
+} from './ExpoPerformanceOverlay';
+import {
+  shouldEnableExpoPerformanceOverlay,
+  type ExpoPerformanceOverlayMetrics,
+} from './expoPerformanceOverlayState';
+import { useExpoActiveVideoScreensCount } from '../quality/expoActiveVideoScreenRegistry';
+import { resolveExpoScreenRuntimePolicy } from '../quality/expoScreenRuntimePolicy';
+import { useExpoQualitySettings } from '../quality/expoQualitySettings';
+import {
+  resolveExpoGeneratedBillboardQualityConfig,
+  useExpoScreenTextureRuntimeStats,
+} from '../quality/expoScreenTextureRuntimeStats';
+import { useExpoZoneRuntimeState } from '../zones/expoZoneRuntimeState';
 import { reportExpoDevError } from '../../../lib/devErrorReporter';
 
 type WebglAvailability = {
@@ -111,15 +127,32 @@ export function ExpoWorldCanvasShell({
   const [webglLostAt, setWebglLostAt] = useState<string | null>(null);
   const [webglStatusKey, setWebglStatusKey] = useState(0);
   const [webglAvailability] = useState<WebglAvailability>(() => detectWebglAvailability());
-  const canvasDpr: number | [number, number] = runtimeCaptureSafe
-    ? 1
-    : isTouchDevice
-      ? [0.58, 0.85]
-      : (EXPO_CITY_QUALITY_TIER === 'quality' ? [0.85, 1.2] : [0.55, 0.8]);
-  const canvasShadows = !isTouchDevice && EXPO_CITY_QUALITY_TIER === 'quality';
-  const canvasPerformanceMin = isTouchDevice
-    ? 0.9
-    : (EXPO_CITY_QUALITY_TIER === 'quality' ? 0.5 : 0.85);
+  const [performanceMetrics, setPerformanceMetrics] = useState<ExpoPerformanceOverlayMetrics | null>(null);
+  const performanceOverlayEnabled = useMemo(() => shouldEnableExpoPerformanceOverlay(), []);
+  const qualitySettings = useExpoQualitySettings({ isTouchDevice, runtimeCaptureSafe });
+  const activeVideoScreensCount = useExpoActiveVideoScreensCount();
+  const screenTextureStats = useExpoScreenTextureRuntimeStats();
+  const zoneRuntimeState = useExpoZoneRuntimeState({
+    externalActiveZoneId: activeZoneId,
+    playerPosition,
+    qualitySettings,
+    runtimeCaptureSafe,
+  });
+  const screenRuntimePolicy = useMemo(
+    () => resolveExpoScreenRuntimePolicy({
+      currentActiveVideoCount: activeVideoScreensCount,
+      isInActiveSection: true,
+      qualitySettings,
+    }),
+    [activeVideoScreensCount, qualitySettings],
+  );
+  const generatedBillboardQualityConfig = useMemo(
+    () => resolveExpoGeneratedBillboardQualityConfig(screenRuntimePolicy.textureQualityHint),
+    [screenRuntimePolicy.textureQualityHint],
+  );
+  const handlePerformanceSample = useCallback((metrics: ExpoPerformanceOverlayMetrics) => {
+    setPerformanceMetrics(metrics);
+  }, []);
 
   useEffect(() => {
     if (!webglAvailability.available) {
@@ -232,13 +265,31 @@ export function ExpoWorldCanvasShell({
           </div>
         </div>
       )}
+      <ExpoPerformanceOverlay
+        enabled={performanceOverlayEnabled}
+        layerToggles={layerToggles}
+        metrics={performanceMetrics}
+        mode={mode}
+        qualitySettings={qualitySettings}
+        sceneVersion={sceneVersion}
+        screenTextureQualityConfig={generatedBillboardQualityConfig}
+        screenTextureStats={screenTextureStats}
+        screenTextureQualityHint={screenRuntimePolicy.textureQualityHint}
+        screenPolicyStatus={screenRuntimePolicy.status}
+        sectionToggles={sectionToggles}
+        activeVideoScreensCount={activeVideoScreensCount}
+        visibleBoothCount={sectionVisibleBoothPlacements.length}
+        webglAvailability={webglAvailability}
+        webglLost={webglLost}
+        zoneRuntimeState={zoneRuntimeState}
+      />
       {webglAvailability.available && (
       <Canvas
         key={`expo-webgl-${webglStatusKey}`}
-      shadows={canvasShadows}
-      dpr={canvasDpr}
-      gl={{ antialias: false, powerPreference: 'high-performance' }}
-      performance={{ min: canvasPerformanceMin }}
+      shadows={qualitySettings.shadowsEnabled}
+      dpr={qualitySettings.canvasDpr}
+      gl={{ antialias: qualitySettings.antialiasEnabled, powerPreference: 'high-performance' }}
+      performance={{ min: qualitySettings.performanceMin }}
       camera={{ position: [0, 2, 10], fov: isTouchDevice ? 66 : 60, far: 10000 }}
       onCreated={onCreated as never}
     >
@@ -248,6 +299,9 @@ export function ExpoWorldCanvasShell({
         startView={effectiveStartView}
         startViewKey={EXPO_START_VIEW_KEY}
       />
+      {performanceOverlayEnabled && (
+        <ExpoPerformanceSampler enabled={performanceOverlayEnabled} onSample={handlePerformanceSample} />
+      )}
       <CenterScreenInspector inspectionEnabled={inspectionEnabled} />
       <ClickInspector clickInspectionEnabled={inspectionEnabled} />
 
@@ -267,6 +321,7 @@ export function ExpoWorldCanvasShell({
         mode={mode}
         playerPosition={playerPosition}
         planningBoothPlacements={planningBoothPlacements}
+        qualitySettings={qualitySettings}
         qualityProfileInputs={qualityProfileInputs}
         runtimeCaptureSafe={runtimeCaptureSafe}
         sceneVersion={sceneVersion}
@@ -276,6 +331,7 @@ export function ExpoWorldCanvasShell({
         verticalAccessNodes={verticalAccessNodes}
         visualProfile={visualProfile}
         walkRegions={walkRegions}
+        zoneRuntimeState={zoneRuntimeState}
       />
 
       <ExpoWorldPlayerLayer

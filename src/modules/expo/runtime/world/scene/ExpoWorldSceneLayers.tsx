@@ -6,7 +6,10 @@ import type { ExpoBoothPlacement, ExpoSectorMarker } from '../../../layout-engin
 import type { ExpoDistrictProgramSummary, ExpoWorldContract, ExpoWorldVisualProfile } from '../../../world-contract';
 import type { ExpoWalkRegion } from '../../../walk-region';
 import type { ExpoVerticalAccessNode } from '../../planning/types';
+import type { ExpoQualitySettings } from '../quality/expoQualitySettings';
+import type { ExpoZoneRuntimeState } from '../zones/expoZoneRuntimeState';
 import type { ExpoWorldLayerToggles, ExpoWorldSectionToggles } from '../debug/worldSceneDebugContract';
+import { ExpoZoneGroup } from '../zones/ExpoZoneGroup';
 import { CuratedSkylineRing } from '../CuratedSkylineRing';
 import { ExpoEvidenceProbe } from '../../../components/ExpoEvidenceProbe';
 import { ExpoRearCampus } from '../ExpoRearCampus';
@@ -22,6 +25,7 @@ export function ExpoWorldSceneLayers({
   mode,
   playerPosition,
   planningBoothPlacements,
+  qualitySettings,
   qualityProfileInputs,
   runtimeCaptureSafe,
   sceneVersion,
@@ -31,6 +35,7 @@ export function ExpoWorldSceneLayers({
   verticalAccessNodes,
   visualProfile,
   walkRegions,
+  zoneRuntimeState,
 }: {
   activeZoneId: string | null;
   districtPrograms: ExpoDistrictProgramSummary[];
@@ -38,6 +43,7 @@ export function ExpoWorldSceneLayers({
   mode: ExpoMode;
   playerPosition: [number, number, number];
   planningBoothPlacements: ExpoBoothPlacement[];
+  qualitySettings: ExpoQualitySettings;
   qualityProfileInputs: ExpoWorldContract['qualityProfileInputs'];
   runtimeCaptureSafe: boolean;
   sceneVersion: string | null;
@@ -47,11 +53,12 @@ export function ExpoWorldSceneLayers({
   verticalAccessNodes: ExpoVerticalAccessNode[];
   visualProfile: ExpoWorldVisualProfile;
   walkRegions: ExpoWalkRegion[];
+  zoneRuntimeState: ExpoZoneRuntimeState;
 }) {
   return (
     <Suspense fallback={null}>
-      {!runtimeCaptureSafe && <AdaptiveDpr />}
-      {!runtimeCaptureSafe && <AdaptiveEvents />}
+      {qualitySettings.adaptiveDprEnabled && <AdaptiveDpr />}
+      {qualitySettings.adaptiveEventsEnabled && <AdaptiveEvents />}
       {runtimeCaptureSafe ? (
         <color attach="background" args={['#d8e4ef']} />
       ) : (
@@ -65,36 +72,71 @@ export function ExpoWorldSceneLayers({
       <hemisphereLight args={['#94a8b8', '#4f5d69', runtimeCaptureSafe ? 0.24 : 0.36]} />
       {EXPO_FEATURE_FLAGS.enableFog && <fog attach="fog" args={['#748392', 420, 2400]} />}
 
-      <WorldGroundPlane visualProfile={visualProfile} />
+      <ExpoZoneGroup
+        alwaysVisible
+        groupId="world-ground-global"
+        runtimeState={zoneRuntimeState}
+        zoneId="perimeter"
+      >
+        <WorldGroundPlane visualProfile={visualProfile} />
+      </ExpoZoneGroup>
       {layerToggles.promenade && (
-        <WorldPromenade boothPlacements={sectionVisibleBoothPlacements} sectorMarkers={sectorMarkers} visualProfile={visualProfile} />
+        <ExpoZoneGroup
+          groupId="world-promenade"
+          runtimeState={zoneRuntimeState}
+          zoneId="center"
+        >
+          <WorldPromenade boothPlacements={sectionVisibleBoothPlacements} sectorMarkers={sectorMarkers} visualProfile={visualProfile} />
+        </ExpoZoneGroup>
       )}
       {layerToggles.city && (
         <WorldCitySkeleton
           boothPlacements={planningBoothPlacements}
           districtPrograms={districtPrograms}
           playerPosition={playerPosition}
+          qualitySettings={qualitySettings}
           sectionToggles={sectionToggles}
           verticalAccessNodes={verticalAccessNodes}
           visualProfile={visualProfile}
+          zoneRuntimeState={zoneRuntimeState}
         />
       )}
       {layerToggles.stadium && sectionToggles.stadium && (
-        <ExpoRearCampus boothPlacements={planningBoothPlacements} playerPosition={playerPosition} visualProfile={visualProfile} />
+        <ExpoRearCampus
+          boothPlacements={planningBoothPlacements}
+          playerPosition={playerPosition}
+          qualitySettings={qualitySettings}
+          visualProfile={visualProfile}
+          zoneRuntimeState={zoneRuntimeState}
+        />
       )}
       {(layerToggles.city || layerToggles.booths) && (
-        <WorldWayfinding
-          boothPlacements={sectionVisibleBoothPlacements}
-          playerPosition={playerPosition}
-          sectorMarkers={sectorMarkers}
-        />
+        <ExpoZoneGroup
+          alwaysVisible
+          groupId="world-wayfinding"
+          runtimeState={zoneRuntimeState}
+          zoneId="center"
+        >
+          <WorldWayfinding
+            boothPlacements={sectionVisibleBoothPlacements}
+            playerPosition={playerPosition}
+            sectorMarkers={sectorMarkers}
+          />
+        </ExpoZoneGroup>
       )}
       {layerToggles.skyline && EXPO_FEATURE_FLAGS.enableCuratedSkylineRing && (
-        <CuratedSkylineRing
-          density={EXPO_FEATURE_FLAGS.enableShowcaseSkylineDensity ? 'standard' : 'minimal'}
-          visualProfile={visualProfile}
-          walkRegions={walkRegions}
-        />
+        <ExpoZoneGroup
+          canHideInLowQuality
+          groupId="curated-skyline-ring"
+          runtimeState={zoneRuntimeState}
+          zoneId="legacy"
+        >
+          <CuratedSkylineRing
+            density={EXPO_FEATURE_FLAGS.enableShowcaseSkylineDensity ? 'standard' : 'minimal'}
+            visualProfile={visualProfile}
+            walkRegions={walkRegions}
+          />
+        </ExpoZoneGroup>
       )}
       <ExpoEvidenceProbe
         activeZoneId={activeZoneId}
@@ -108,7 +150,11 @@ export function ExpoWorldSceneLayers({
       />
 
       {layerToggles.booths && (
-        <group>
+        <ExpoZoneGroup
+          groupId="district-booths"
+          runtimeState={zoneRuntimeState}
+          zoneId="sponsorBoulevard"
+        >
           {sectionVisibleBoothPlacements.map((placement) => (
             <RuntimeDistrictBooth
               key={placement.id}
@@ -117,7 +163,7 @@ export function ExpoWorldSceneLayers({
               playerPosition={playerPosition}
             />
           ))}
-        </group>
+        </ExpoZoneGroup>
       )}
 
       {layerToggles.booths && sectionVisibleBoothPlacements.length === 0 && (

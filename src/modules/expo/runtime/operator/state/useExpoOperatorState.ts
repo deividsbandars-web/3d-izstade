@@ -15,7 +15,9 @@ import {
   type WorldObjectLayer,
   type WorldObjectRegistryEntry,
 } from '../../world/inspection/worldObjectRegistry';
+import { resolveExpoQualitySettings } from '../../world/quality/expoQualitySettings';
 import { resolveRearCampusScreenHostId } from '../../world/rearCampusScreenHosts';
+import { resolveExpoZoneRuntimeState } from '../../world/zones/expoZoneRuntimeState';
 
 type LayerStates = {
   booths: boolean;
@@ -125,6 +127,37 @@ function rotatePointAroundPivotY(
     point[1],
     pivot[2] + (dx * sin) + (dz * cos),
   ];
+}
+
+function normalizeOperatorPlayerPosition(position: number[]): [number, number, number] {
+  const x = Number(position[0]);
+  const y = Number(position[1]);
+  const z = Number(position[2]);
+
+  return [
+    Number.isFinite(x) ? x : 0,
+    Number.isFinite(y) ? y : 0,
+    Number.isFinite(z) ? z : 0,
+  ];
+}
+
+function buildSnapshotZoneRuntime(args: {
+  activeZoneId: string | null;
+  operatorZoneId: string | null;
+  playerPos: number[];
+}) {
+  const qualitySettings = resolveExpoQualitySettings({
+    isTouchDevice: false,
+    runtimeCaptureSafe: false,
+  });
+
+  return resolveExpoZoneRuntimeState({
+    externalActiveZoneId: args.operatorZoneId ?? args.activeZoneId,
+    playerPosition: normalizeOperatorPlayerPosition(args.playerPos),
+    previousActiveZoneId: null,
+    qualitySettings,
+    runtimeCaptureSafe: false,
+  });
 }
 
 export function buildZoneObservationsFromSnapshot(
@@ -948,6 +981,11 @@ export function buildExpoReviewOperatorSnapshot(args: {
     sceneVersion: args.sceneVersion,
     sectionStates: args.sectionStates,
     targetBasket: args.targetBasket,
+    zoneRuntime: buildSnapshotZoneRuntime({
+      activeZoneId: args.activeZoneId,
+      operatorZoneId: args.operatorZoneId,
+      playerPos: args.playerPos,
+    }),
     zones: zoneValidations,
   };
 }

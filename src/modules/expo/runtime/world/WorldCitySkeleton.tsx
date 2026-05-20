@@ -2,6 +2,7 @@ import { useCallback, useMemo } from 'react';
 import type { ExpoBoothPlacement } from '../../layout-engine';
 import type { ExpoDistrictProgramSummary, ExpoWorldVisualProfile } from '../../world-contract';
 import type { ExpoPlanningSectionId, ExpoVerticalAccessNode } from '../planning/types';
+import type { ExpoQualitySettings } from './quality/expoQualitySettings';
 import { buildCanonicalWorldPlan, EXPO_CANONICAL_DISTRICT_STRIDE } from '../planning';
 import { useWorldInspectionRegistry } from './inspection/worldInspectionState';
 import { buildCityWorldObjectRegistry, buildGroundWorldObjectRegistry } from './inspection/worldObjectRegistry';
@@ -16,18 +17,26 @@ import { WorldCityTowers } from './WorldCityTowers';
 import { WorldVerticalAccessNodes } from './WorldVerticalAccessNodes';
 import { WorldVerticalElevatorRoutes } from './WorldVerticalElevatorRoutes';
 import { WorldCityWaterCourt } from './WorldCityWaterCourt';
+import { ExpoZoneGroup } from './zones/ExpoZoneGroup';
+import {
+  resolveExpoZoneRuntimeState,
+  type ExpoZoneRuntimeState,
+} from './zones/expoZoneRuntimeState';
 
 export function WorldCitySkeleton({
   boothPlacements,
   districtPrograms,
   playerPosition = [0, 0, 0],
+  qualitySettings,
   sectionToggles = { arrival: true, left: true, middle: true, right: true },
   verticalAccessNodes,
   visualProfile,
+  zoneRuntimeState,
 }: {
   boothPlacements: ExpoBoothPlacement[];
   districtPrograms: ExpoDistrictProgramSummary[];
   playerPosition?: [number, number, number];
+  qualitySettings: ExpoQualitySettings;
   sectionToggles?: {
     arrival: boolean;
     left: boolean;
@@ -36,6 +45,7 @@ export function WorldCitySkeleton({
   };
   verticalAccessNodes?: ExpoVerticalAccessNode[];
   visualProfile: ExpoWorldVisualProfile;
+  zoneRuntimeState?: ExpoZoneRuntimeState;
 }) {
   const districtStride = EXPO_CANONICAL_DISTRICT_STRIDE;
   const canonicalWorldPlan = useMemo(
@@ -92,6 +102,14 @@ export function WorldCitySkeleton({
     () => canonicalWorldPlan.screenAssignments.filter((assignment) => isVisibleBySections(assignment.sections)),
     [canonicalWorldPlan.screenAssignments, isVisibleBySections]
   );
+  const effectiveZoneRuntimeState = useMemo(
+    () => zoneRuntimeState ?? resolveExpoZoneRuntimeState({
+      playerPosition,
+      qualitySettings,
+      runtimeCaptureSafe: false,
+    }),
+    [playerPosition, qualitySettings, zoneRuntimeState],
+  );
 
   const cityInspectionEntries = useMemo(() => [
     ...buildGroundWorldObjectRegistry(),
@@ -133,49 +151,110 @@ export function WorldCitySkeleton({
   useWorldInspectionRegistry('city', cityInspectionEntries);
 
   return (
-    <group name="clean-expo-city-skeleton">
-      <WorldCityPlanes
-        planes={filteredCityPlanes}
-        stadiumReserve={stadiumReserve}
-        visualProfile={visualProfile}
-      />
-      <WorldCityWaterCourt planes={[]} />
-      <WorldCityMasses
-        masses={filteredMasses}
-        stadiumReserve={stadiumReserve}
-        visualProfile={visualProfile}
-      />
-      <WorldVerticalAccessNodes
-        accessNodes={renderedVerticalAccessNodes}
-        playerPosition={playerPosition}
-      />
-      <WorldVerticalElevatorRoutes routes={canonicalWorldPlan.verticalSystem.elevatorRoutes} />
-      <WorldCityPerimeter
-        accent={visualProfile.global.hudAccent}
-        stadiumReserve={stadiumReserve}
-      />
-      <WorldCityScreenSurfaces
-        playerPosition={playerPosition}
-        stadiumReserve={stadiumReserve}
-        surfaces={filteredScreenSurfaces}
-      />
-      <WorldCityScreenSockets
-        playerPosition={playerPosition}
-        sockets={screenSockets}
-        stadiumReserve={stadiumReserve}
-      />
-      <WorldCityScreenAssignments
-        assignments={screenAssignments}
-        playerPosition={playerPosition}
-        sockets={screenSockets}
-      />
-      <WorldCityMegaLandmarks
-        districtCount={districtPrograms.length}
-        districtStride={districtStride}
-        sectionToggles={sectionToggles}
-        stadiumReserve={stadiumReserve}
-      />
-      <WorldCityTowers towers={filteredTowerLandmarks} stadiumReserve={stadiumReserve} visualProfile={visualProfile} />
-    </group>
+    <ExpoZoneGroup
+      groupId="city-skeleton-root"
+      name="clean-expo-city-skeleton"
+      runtimeState={effectiveZoneRuntimeState}
+      zoneId="center"
+    >
+      <ExpoZoneGroup
+        groupId="city-floor-planes"
+        runtimeState={effectiveZoneRuntimeState}
+        zoneId="center"
+      >
+        <WorldCityPlanes
+          planes={filteredCityPlanes}
+          stadiumReserve={stadiumReserve}
+          visualProfile={visualProfile}
+        />
+        <WorldCityWaterCourt planes={[]} />
+      </ExpoZoneGroup>
+      <ExpoZoneGroup
+        groupId="city-masses"
+        runtimeState={effectiveZoneRuntimeState}
+        zoneId="center"
+      >
+        <WorldCityMasses
+          masses={filteredMasses}
+          stadiumReserve={stadiumReserve}
+          visualProfile={visualProfile}
+        />
+      </ExpoZoneGroup>
+      <ExpoZoneGroup
+        groupId="city-vertical-access"
+        runtimeState={effectiveZoneRuntimeState}
+        zoneId="towerCluster"
+      >
+        <WorldVerticalAccessNodes
+          accessNodes={renderedVerticalAccessNodes}
+          playerPosition={playerPosition}
+        />
+        <WorldVerticalElevatorRoutes routes={canonicalWorldPlan.verticalSystem.elevatorRoutes} />
+      </ExpoZoneGroup>
+      <ExpoZoneGroup
+        canHideInLowQuality
+        groupId="city-perimeter"
+        runtimeState={effectiveZoneRuntimeState}
+        zoneId="perimeter"
+      >
+        <WorldCityPerimeter
+          accent={visualProfile.global.hudAccent}
+          stadiumReserve={stadiumReserve}
+        />
+      </ExpoZoneGroup>
+      <ExpoZoneGroup
+        groupId="city-screen-surfaces"
+        runtimeState={effectiveZoneRuntimeState}
+        zoneId="sponsorBoulevard"
+      >
+        <WorldCityScreenSurfaces
+          playerPosition={playerPosition}
+          stadiumReserve={stadiumReserve}
+          surfaces={filteredScreenSurfaces}
+        />
+      </ExpoZoneGroup>
+      <ExpoZoneGroup
+        groupId="city-screen-sockets"
+        runtimeState={effectiveZoneRuntimeState}
+        zoneId="sponsorBoulevard"
+      >
+        <WorldCityScreenSockets
+          playerPosition={playerPosition}
+          sockets={screenSockets}
+          stadiumReserve={stadiumReserve}
+        />
+      </ExpoZoneGroup>
+      <ExpoZoneGroup
+        groupId="city-screen-assignments"
+        runtimeState={effectiveZoneRuntimeState}
+        zoneId="sponsorBoulevard"
+      >
+        <WorldCityScreenAssignments
+          assignments={screenAssignments}
+          playerPosition={playerPosition}
+          qualitySettings={qualitySettings}
+          sockets={screenSockets}
+        />
+      </ExpoZoneGroup>
+      <ExpoZoneGroup
+        groupId="city-mega-landmarks"
+        runtimeState={effectiveZoneRuntimeState}
+        zoneId="skyMarket"
+      >
+        <WorldCityMegaLandmarks
+          districtCount={districtPrograms.length}
+          districtStride={districtStride}
+          sectionToggles={sectionToggles}
+          stadiumReserve={stadiumReserve}
+        />
+      </ExpoZoneGroup>
+      <ExpoZoneGroup
+        groupId="city-towers"
+        runtimeState={effectiveZoneRuntimeState}
+        zoneId="towerCluster"
+      >
+        <WorldCityTowers towers={filteredTowerLandmarks} stadiumReserve={stadiumReserve} visualProfile={visualProfile} />
+      </ExpoZoneGroup>
+    </ExpoZoneGroup>
   );
 }
