@@ -144,7 +144,8 @@ assert.deepEqual(productionAiReactor.size, [1120, 1800, 1120]);
 const productionGenesisPortal = productionSafeRegistryById.get('genesis-portal-gate-primitive-rig');
 assert.ok(productionGenesisPortal);
 assert.equal(productionGenesisPortal.sourceKind, 'genesis-portal-gate-render-rig');
-assert.deepEqual(productionGenesisPortal.position, [0, 1150, 1120]);
+assert.equal(productionGenesisPortal.layer, 'stadium-structure');
+assert.deepEqual(productionGenesisPortal.position, [-2080, 1150, -4560]);
 assert.deepEqual(productionGenesisPortal.size, [1480, 2300, 620]);
 const productionEnergyGrid = productionSafeRegistryById.get('energy-grid-network-primitive-rig');
 assert.ok(productionEnergyGrid);
@@ -253,10 +254,10 @@ assert.deepEqual(resolvedAiReactorCoreView.position, [-1220, 2000, -704]);
 const genesisPortalGate = zones.find((zone) => zone.id === 'genesis-portal-gate');
 assert.ok(genesisPortalGate);
 const resolvedGenesisPortalGateView = resolveReviewOperatorZoneStartView(genesisPortalGate, new Map([
-  ['genesis-portal-gate-primitive-rig', { position: [0, 1150, 1120] }],
+  ['genesis-portal-gate-primitive-rig', { position: [-2080, 1150, -4560] }],
 ]));
-assert.deepEqual(resolvedGenesisPortalGateView.lookAt, [0, 1180, 1120]);
-assert.deepEqual(resolvedGenesisPortalGateView.position, [-900, 1650, 2800]);
+assert.deepEqual(resolvedGenesisPortalGateView.lookAt, [-2080, 1410, -4560]);
+assert.deepEqual(resolvedGenesisPortalGateView.position, [-900, 1770, -3300]);
 
 const energyGridNetwork = zones.find((zone) => zone.id === 'energy-grid-network');
 assert.ok(energyGridNetwork);

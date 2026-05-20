@@ -473,25 +473,25 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       expectedKeyObjectIds: [
         'genesis-portal-gate-primitive-rig',
       ],
-      expectedVisibleLayers: ['city-mass'],
+      expectedVisibleLayers: ['stadium-structure'],
       id: 'genesis-portal-gate',
       intent: 'genesis-portal-gate-review',
       label: 'Genesis Portal Gate',
       camera: {
-        lookAtOffset: [0, 30, 0],
-        positionOffset: [-900, 500, 1680],
+        lookAtOffset: [0, 260, 0],
+        positionOffset: [1180, 620, 1260],
         targetIds: ['genesis-portal-gate-primitive-rig'],
       },
       startView: {
-        lookAt: [0, 1180, 1120],
-        position: [-900, 1650, 2800],
+        lookAt: [-2080, 1410, -4560],
+        position: [-900, 1770, -3300],
         source: 'arrival-main',
       },
       watchItems: [
-        'large front portal frames the city axis',
+        'portal ring is inside the stadium-left campus, not outside the arrival perimeter',
         'portal reads as a gateway, not another tower block',
-        'data veil and ring are visible without covering existing screens',
-        'front perimeter remains readable behind the gate',
+        'data veil and ring are visible without covering the rear scoregate',
+        'left-side spacing remains clean around neighboring recovered structures',
       ],
     },
     {

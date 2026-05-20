@@ -20,6 +20,7 @@ const CENTER_SPINE_LANDMARK_LAYOUT = {
 
 const AI_REACTOR_VISUAL_SCALE = 0.28;
 const AI_ORACLE_VISUAL_SCALE = 0.3;
+const ENABLE_CENTER_SPINE_GENESIS_PORTAL_GATE = false;
 const ENABLE_CENTER_SPINE_AI_LANDMARKS = false;
 
 function createCenterSpinePlanningSource(
@@ -1601,7 +1602,7 @@ export function buildCenterSpineZoneGeometry(context: ExpoZonePlannerContext) {
     ...context.geometry.signatureMasses.filter(isCenterSpineMass),
     ...context.geometry.skybridgeMasses.filter(isCenterSpineMass),
     ...buildSkyMarketSpineMasses(),
-    ...buildGenesisPortalGateMasses(),
+    ...(ENABLE_CENTER_SPINE_GENESIS_PORTAL_GATE ? buildGenesisPortalGateMasses() : []),
     ...(ENABLE_CENTER_SPINE_AI_LANDMARKS ? buildAiReactorCoreMasses() : []),
     ...(ENABLE_CENTER_SPINE_AI_LANDMARKS ? buildEnergyGridNetworkMasses() : []),
     ...(ENABLE_CENTER_SPINE_AI_LANDMARKS ? buildAiOracleChamberMasses() : []),

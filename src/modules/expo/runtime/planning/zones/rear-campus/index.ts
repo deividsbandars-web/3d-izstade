@@ -20,6 +20,7 @@ import type {
 import { collectZoneBoothPlacements, createZonePlan, getZoneRule } from '../shared';
 
 const REAR_CAMPUS_GEOMETRY_SOURCE_FILE = 'src/modules/expo/runtime/planning/zones/rear-campus/index.ts';
+const GENESIS_PORTAL_GATE_SOURCE_KIND = 'genesis-portal-gate-render-rig';
 const AI_REACTOR_CORE_SOURCE_KIND = 'ai-reactor-core-render-rig';
 const ENERGY_GRID_NETWORK_SOURCE_KIND = 'energy-grid-network-render-rig';
 const AI_ORACLE_CHAMBER_SOURCE_KIND = 'ai-oracle-chamber-render-rig';
@@ -202,6 +203,220 @@ function buildRearCampusTower(tower: RearCampusLandmarkTower, crownColor: string
     role: 'hero',
     sections: ['middle'],
   };
+}
+
+function buildRearCampusGenesisPortalGateMasses(campusCenterZ: number): CityMass[] {
+  const center: [number, number, number] = [-2080, 0, campusCenterZ - 1356];
+  const accent = '#ffdf8a';
+  const cyan = '#80fff2';
+  const shell = '#182736';
+
+  const sidePylons = [-560, 560].flatMap((x, index): CanonicalPrimitive[] => [
+    {
+      color: index === 0 ? '#26384a' : '#223445',
+      emissive: accent,
+      emissiveIntensity: 0.024,
+      kind: 'box',
+      metalness: 0.2,
+      physics: 'decorative',
+      position: [x, 560, 0],
+      roughness: 0.36,
+      size: [112, 1120, 150],
+    },
+    {
+      color: '#ffe7a6',
+      emissive: accent,
+      emissiveIntensity: 0.082,
+      kind: 'box',
+      metalness: 0.24,
+      opacity: 0.88,
+      physics: 'decorative',
+      position: [x, 1160, 0],
+      roughness: 0.22,
+      size: [168, 18, 38],
+      transparent: true,
+    },
+    {
+      color: '#0d1b2c',
+      emissive: cyan,
+      emissiveIntensity: 0.042,
+      kind: 'box',
+      metalness: 0.22,
+      physics: 'decorative',
+      position: [x * 0.985, 700, 82],
+      roughness: 0.28,
+      size: [22, 520, 96],
+    },
+  ]);
+
+  const dataVeilLines = [-240, -120, 0, 120, 240].map((x): CanonicalPrimitive => ({
+    color: cyan,
+    emissive: cyan,
+    emissiveIntensity: 0.07,
+    kind: 'box',
+    metalness: 0.14,
+    opacity: 0.72,
+    physics: 'decorative',
+    position: [x, 900, -18],
+    roughness: 0.18,
+    size: [10, 920, 8],
+    transparent: true,
+  }));
+
+  const crownBeacons = [-360, 0, 360].map((x, index): CanonicalPrimitive => ({
+    color: index === 1 ? '#fff3c6' : '#ffe08a',
+    emissive: accent,
+    emissiveIntensity: index === 1 ? 0.1 : 0.068,
+    height: index === 1 ? 360 : 260,
+    kind: 'cylinder',
+    metalness: 0.24,
+    opacity: 0.88,
+    physics: 'decorative',
+    position: [x, index === 1 ? 1770 : 1710, 0],
+    radialSegments: 16,
+    radiusBottom: index === 1 ? 28 : 20,
+    radiusTop: 7,
+    roughness: 0.2,
+    transparent: true,
+  }));
+
+  return [
+    {
+      color: '#101e2d',
+      decorPolicy: 'none',
+      id: 'genesis-portal-gate-primitive-rig',
+      planningSource: createRearCampusPlanningSource('buildRearCampusGenesisPortalGateMasses', GENESIS_PORTAL_GATE_SOURCE_KIND),
+      position: center,
+      renderIntent: {
+        emissive: accent,
+        emissiveIntensity: 0.026,
+        primitives: [
+          {
+            color: shell,
+            emissive: accent,
+            emissiveIntensity: 0.018,
+            kind: 'box',
+            metalness: 0.22,
+            physics: 'decorative',
+            position: [0, 42, 0],
+            roughness: 0.34,
+            size: [1300, 84, 330],
+          },
+          {
+            color: '#243444',
+            emissive: accent,
+            emissiveIntensity: 0.016,
+            kind: 'box',
+            metalness: 0.18,
+            physics: 'decorative',
+            position: [0, 96, 168],
+            roughness: 0.38,
+            size: [980, 44, 120],
+          },
+          {
+            color: '#ffe08a',
+            emissive: accent,
+            emissiveIntensity: 0.085,
+            kind: 'torus',
+            metalness: 0.28,
+            opacity: 0.9,
+            physics: 'decorative',
+            position: [0, 1020, 0],
+            radialSegments: 18,
+            radius: 570,
+            roughness: 0.2,
+            transparent: true,
+            tube: 16,
+            tubularSegments: 168,
+          },
+          {
+            color: '#80fff2',
+            emissive: cyan,
+            emissiveIntensity: 0.076,
+            kind: 'torus',
+            metalness: 0.2,
+            opacity: 0.74,
+            physics: 'decorative',
+            position: [0, 1020, -10],
+            radialSegments: 14,
+            radius: 456,
+            roughness: 0.18,
+            transparent: true,
+            tube: 7,
+            tubularSegments: 144,
+          },
+          {
+            color: '#fff5c8',
+            emissive: accent,
+            emissiveIntensity: 0.066,
+            kind: 'torus',
+            metalness: 0.22,
+            opacity: 0.7,
+            physics: 'decorative',
+            position: [0, 1020, 10],
+            radialSegments: 10,
+            radius: 660,
+            rotation: [0, 0, 0.18],
+            roughness: 0.2,
+            transparent: true,
+            tube: 5,
+            tubularSegments: 144,
+          },
+          {
+            color: '#80fff2',
+            kind: 'plane',
+            opacity: 0.24,
+            physics: 'decorative',
+            position: [0, 920, -26],
+            size: [760, 1040],
+            transparent: true,
+          },
+          {
+            color: '#ffd56e',
+            emissive: accent,
+            emissiveIntensity: 0.055,
+            kind: 'box',
+            metalness: 0.24,
+            opacity: 0.88,
+            physics: 'decorative',
+            position: [0, 1410, 0],
+            roughness: 0.24,
+            size: [720, 18, 34],
+            transparent: true,
+          },
+          {
+            color: '#ffd56e',
+            emissive: accent,
+            emissiveIntensity: 0.05,
+            kind: 'box',
+            metalness: 0.24,
+            opacity: 0.86,
+            physics: 'decorative',
+            position: [0, 640, 0],
+            roughness: 0.24,
+            size: [660, 14, 30],
+            transparent: true,
+          },
+          ...sidePylons,
+          ...dataVeilLines,
+          ...crownBeacons,
+        ],
+        showCrownBeacon: false,
+        showFrontWing: false,
+        showHorizontalCap: false,
+        showMegaVerticalSpines: false,
+        showRearSpine: false,
+        showSideFloorBands: false,
+        showSideInset: false,
+        showSignatureBand: false,
+        skipBase: true,
+      },
+      planningZone: 'rear-campus',
+      role: 'structural',
+      sections: ['middle'],
+      size: [1480, 2300, 620],
+    },
+  ];
 }
 
 function buildRearCampusAiReactorCoreMasses(campusCenterZ: number): CityMass[] {
@@ -703,37 +918,48 @@ function buildRearCampusSkyCompassMasses(campusCenterZ: number): CityMass[] {
 function buildRearCampusEnergyGridNetworkMasses(campusCenterZ: number): CityMass[] {
   const origin: [number, number, number] = [0, 0, campusCenterZ - 220];
   const reactorHub: [number, number, number] = [-2260, 1420, campusCenterZ + 780];
+  const reactorCrownHub: [number, number, number] = [-2260, 1640, campusCenterZ + 780];
+  const genesisPortalHub: [number, number, number] = [-2080, 1460, campusCenterZ - 1356];
   const oracleHub: [number, number, number] = [2150, 1440, campusCenterZ + 240];
   const skyCompassHub: [number, number, number] = [1760, 3400, campusCenterZ - 1276];
   const entryHub: [number, number, number] = [0, 1120, campusCenterZ + 670];
+  const entryArchHub: [number, number, number] = [1700, 1020, campusCenterZ + 980];
   const rearHub: [number, number, number] = [0, 1380, campusCenterZ - 1500];
   const leftCampusHub: [number, number, number] = [-1420, 1160, campusCenterZ + 1040];
   const rightCampusHub: [number, number, number] = [1420, 1160, campusCenterZ + 1040];
-  const stadiumBackHub: [number, number, number] = [0, 1320, campusCenterZ - 1920];
+  const stadiumBackHub: [number, number, number] = [0, 1500, campusCenterZ - 1920];
 
   const beams = [
-    buildEnergyGridBeam({ color: '#6fffe9', emissiveIntensity: 0.072, origin, start: reactorHub, end: entryHub, thickness: 14 }),
-    buildEnergyGridBeam({ color: '#d9fffb', emissiveIntensity: 0.064, origin, start: reactorHub, end: rearHub, thickness: 12 }),
+    buildEnergyGridBeam({ color: '#6fffe9', emissiveIntensity: 0.074, origin, start: reactorCrownHub, end: entryHub, thickness: 14 }),
+    buildEnergyGridBeam({ color: '#d9fffb', emissiveIntensity: 0.066, origin, start: reactorCrownHub, end: rearHub, thickness: 12 }),
+    buildEnergyGridBeam({ color: '#fff0a8', emissiveIntensity: 0.072, origin, start: reactorCrownHub, end: genesisPortalHub, thickness: 13 }),
+    buildEnergyGridBeam({ color: '#8ffef4', emissiveIntensity: 0.064, origin, start: genesisPortalHub, end: stadiumBackHub, thickness: 11 }),
     buildEnergyGridBeam({ color: '#d8fffb', emissiveIntensity: 0.066, origin, start: rearHub, end: oracleHub, thickness: 12 }),
     buildEnergyGridBeam({ color: '#94fff5', emissiveIntensity: 0.058, origin, start: entryHub, end: leftCampusHub, thickness: 10 }),
     buildEnergyGridBeam({ color: '#94fff5', emissiveIntensity: 0.058, origin, start: entryHub, end: rightCampusHub, thickness: 10 }),
+    buildEnergyGridBeam({ color: '#80fff2', emissiveIntensity: 0.064, origin, start: entryHub, end: entryArchHub, thickness: 11 }),
+    buildEnergyGridBeam({ color: '#80fff2', emissiveIntensity: 0.058, origin, start: entryArchHub, end: rightCampusHub, thickness: 10 }),
     buildEnergyGridBeam({ color: '#ffe08a', emissiveIntensity: 0.064, origin, start: rearHub, end: skyCompassHub, thickness: 12 }),
+    buildEnergyGridBeam({ color: '#d8fffb', emissiveIntensity: 0.062, origin, start: oracleHub, end: skyCompassHub, thickness: 11 }),
     buildEnergyGridBeam({ color: '#8ee8ff', emissiveIntensity: 0.056, origin, start: skyCompassHub, end: stadiumBackHub, thickness: 10 }),
   ];
   const nodes = [
     reactorHub,
+    reactorCrownHub,
+    genesisPortalHub,
     oracleHub,
     skyCompassHub,
     entryHub,
+    entryArchHub,
     rearHub,
     leftCampusHub,
     rightCampusHub,
     stadiumBackHub,
   ].flatMap((point) => buildEnergyGridNode({
-    height: point === skyCompassHub ? 360 : 240,
+    height: point === skyCompassHub ? 360 : point === genesisPortalHub ? 320 : 240,
     origin,
     point,
-    radius: point === skyCompassHub ? 34 : point === rearHub ? 30 : 22,
+    radius: point === skyCompassHub ? 34 : point === rearHub || point === genesisPortalHub ? 30 : 22,
   }));
 
   return [
@@ -770,6 +996,7 @@ function buildRearCampusEnergyGridNetworkMasses(campusCenterZ: number): CityMass
 
 function buildRearCampusAiLandmarkMasses(campusCenterZ: number): CityMass[] {
   return [
+    ...buildRearCampusGenesisPortalGateMasses(campusCenterZ),
     ...buildRearCampusAiReactorCoreMasses(campusCenterZ),
     ...buildRearCampusEnergyGridNetworkMasses(campusCenterZ),
     ...buildRearCampusAiOracleChamberMasses(campusCenterZ),
