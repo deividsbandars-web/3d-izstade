@@ -1,6 +1,8 @@
 WarpalaUE5
 diagnostics
 review-screenshots/
+review_artifacts/
+handoff/
 .tmp/
 .tmp-*
 .tmp_release_pr_diff.txt
