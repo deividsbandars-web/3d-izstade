@@ -140,10 +140,12 @@ function renderCityMassPrimitive(
 
 export function WorldCityMasses({
   masses,
+  meshNamePrefix = 'city-mass',
   stadiumReserve: _stadiumReserve,
   visualProfile,
 }: {
   masses: CityMass[];
+  meshNamePrefix?: string;
   stadiumReserve: StadiumReserve;
   visualProfile: ExpoWorldVisualProfile;
 }) {
@@ -172,7 +174,7 @@ export function WorldCityMasses({
             return (
               <group
                 key={mass.id}
-                name={`city-mass:${mass.id}`}
+                name={`${meshNamePrefix}:${mass.id}`}
                 position={[mass.position[0], verticalBaseY, mass.position[2]]}
                 rotation={mass.rotation ?? [0, 0, 0]}
               >
@@ -186,7 +188,7 @@ export function WorldCityMasses({
           return (
             <group
               key={mass.id}
-              name={`city-mass:${mass.id}`}
+              name={`${meshNamePrefix}:${mass.id}`}
               position={[mass.position[0], verticalBaseY, mass.position[2]]}
               rotation={mass.rotation ?? [0, 0, 0]}
             >

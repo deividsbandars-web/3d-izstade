@@ -154,20 +154,6 @@ function assertMinGap(idA: string, idB: string, minGap: number) {
   assert.ok(right, `${idB} must exist for city clearance checks`);
   assert.ok(gapXZ(left, right) >= minGap, `${idA} must stay at least ${minGap} units from ${idB}`);
 }
-function assertMinGapIfPresent(idA: string, idB: string, minGap: number) {
-  if (!resolveClearanceEntry(idA) || !resolveClearanceEntry(idB)) {
-    return;
-  }
-  assertMinGap(idA, idB, minGap);
-}
-function assertWithinFrontCityPerimeter(id: string) {
-  const mass = cityMassById.get(id);
-  assert.ok(mass, `${id} must exist for city perimeter checks`);
-  const bounds = resolveBounds(mass);
-  assert.ok(bounds.minX >= -1720, `${id} must stay inside the left city perimeter`);
-  assert.ok(bounds.maxX <= 1720, `${id} must stay inside the right city perimeter`);
-  assert.ok(bounds.maxZ <= 780, `${id} must stay behind the front city perimeter`);
-}
 function assertSurfaceZSpacing(idA: string, idB: string, minSpacing: number) {
   const left = screenSurfaceById.get(idA) ?? unfilteredScreenSurfaceById.get(idA);
   const right = screenSurfaceById.get(idB) ?? unfilteredScreenSurfaceById.get(idB);
@@ -340,29 +326,17 @@ assertMinGap('arrival-core-mid-tower-right', 'mega-landmark-right-support-spire'
 assertMinGap('meetings-hero-tower-right', 'mega-landmark-media-frame-wall', 72);
 assertMinGap('meetings-outer-support-tower-right', 'mega-landmark-media-frame-wall', 72);
 assertMinGap('showcase-row-outer-support-tower-right', 'mega-landmark-media-frame-wall', 72);
-assertMinGap('screen-marquee-left-0-host', 'ai-reactor-core-primitive-rig', 72);
-assertMinGap('screen-array-left-0-host', 'ai-reactor-core-primitive-rig', 72);
-assertMinGap('screen-array-left-upper-0-host', 'ai-reactor-core-primitive-rig', 72);
-assertMinGap('screen-marquee-left-1-host', 'ai-reactor-core-primitive-rig', 72);
-assertMinGap('screen-array-left-1-host', 'ai-reactor-core-primitive-rig', 72);
-assertMinGap('screen-array-left-upper-1-host', 'ai-reactor-core-primitive-rig', 72);
-assertMinGapIfPresent('screen-array-left-2-host', 'ai-reactor-core-primitive-rig', 72);
-assertMinGapIfPresent('screen-array-left-upper-2-host', 'ai-reactor-core-primitive-rig', 72);
-assertMinGap('screen-marquee-right-0-host', 'ai-oracle-chamber-primitive-rig', 72);
-assertMinGap('screen-array-right-0-host', 'ai-oracle-chamber-primitive-rig', 72);
-assertMinGap('screen-array-right-upper-0-host', 'ai-oracle-chamber-primitive-rig', 72);
-assertMinGap('screen-marquee-right-1-host', 'ai-oracle-chamber-primitive-rig', 72);
-assertMinGap('screen-array-right-1-host', 'ai-oracle-chamber-primitive-rig', 72);
-assertMinGap('screen-array-right-upper-1-host', 'ai-oracle-chamber-primitive-rig', 72);
-assertMinGapIfPresent('screen-array-right-2-host', 'ai-oracle-chamber-primitive-rig', 72);
-assertMinGapIfPresent('screen-array-right-upper-2-host', 'ai-oracle-chamber-primitive-rig', 72);
-assertMinGap('screen-spine-primary-1-host', 'ai-oracle-chamber-primitive-rig', 72);
-assertMinGap('ai-oracle-chamber-primitive-rig', 'orbital-broadcast-foundry-curved-dish-core', 72);
-assertMinGap('ai-oracle-chamber-primitive-rig', 'orbital-broadcast-foundry-main-deck', 72);
-assertMinGap('ai-oracle-chamber-primitive-rig', 'screen-array-right-upper-3-host', 72);
-assertWithinFrontCityPerimeter('ai-reactor-core-primitive-rig');
-assertWithinFrontCityPerimeter('ai-oracle-chamber-primitive-rig');
-assertWithinFrontCityPerimeter('center-sky-compass-primitive-rig');
+for (const migratedRearCampusLandmarkId of [
+  'ai-reactor-core-primitive-rig',
+  'energy-grid-network-primitive-rig',
+  'ai-oracle-chamber-primitive-rig',
+  'center-sky-compass-primitive-rig',
+]) {
+  assert.ok(
+    !cityMassById.has(migratedRearCampusLandmarkId),
+    `${migratedRearCampusLandmarkId} must not be authored as a front-city mass`,
+  );
+}
 assertSurfaceZSpacing('screen-marquee-left-1', 'screen-array-left-1', 96);
 assertSurfaceZSpacing('screen-array-left-1', 'screen-array-left-upper-1', 96);
 assertSurfaceCenterDistance('screen-marquee-right-2', 'screen-array-right-2', 340);

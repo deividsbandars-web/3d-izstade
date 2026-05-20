@@ -6,6 +6,7 @@ import { buildRearCampusZonePlan, EXPO_CANONICAL_DISTRICT_STRIDE } from '../plan
 import { useWorldInspectionRegistry } from './inspection/worldInspectionState';
 import { buildStadiumWorldObjectRegistry } from './inspection/worldObjectRegistry';
 import { WorldCityScreenAssignments } from './WorldCityScreenAssignments';
+import { WorldCityMasses } from './WorldCityMasses';
 import { WorldCityScreenSockets } from './WorldCityScreenSockets';
 import { WorldCityScreenSurfaces } from './WorldCityScreenSurfaces';
 import { ExpoRearCampusRecoveredStructures } from './ExpoRearCampusRecoveredStructures';
@@ -95,6 +96,10 @@ export function ExpoRearCampus({
   const filteredStadiumSidePavilions = filterRenderedRearCampusSidePavilions(rearCampus?.sidePavilions ?? []);
   const filteredStadiumLandmarkTowers = (rearCampus?.landmarkTowers ?? []).filter(() => false);
   const perimeterConnectors = rearCampus?.perimeterConnectors ?? [];
+  const renderedRearCampusMasses = useMemo(() => {
+    const perimeterConnectorIds = new Set(perimeterConnectors.map((connector) => connector.id));
+    return rearCampusPlan.masses.filter((mass) => !perimeterConnectorIds.has(mass.id));
+  }, [perimeterConnectors, rearCampusPlan.masses]);
   const screenHostShells = useMemo(
     () => buildRearCampusScreenHostShells(rearCampusPlan.screenSurfaces),
     [rearCampusPlan.screenSurfaces]
@@ -135,6 +140,12 @@ export function ExpoRearCampus({
         accent={accent}
         campusCenterZ={campusCenterZ}
         enableHeavyShadows={false}
+      />
+      <WorldCityMasses
+        masses={renderedRearCampusMasses}
+        meshNamePrefix="stadium-structure"
+        stadiumReserve={EMPTY_PLANNING_GEOMETRY.stadiumReserve}
+        visualProfile={visualProfile}
       />
       <ExpoRearCampusStructures
         accent={accent}

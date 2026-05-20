@@ -138,8 +138,9 @@ for (const zone of zones) {
 const productionAiReactor = productionSafeRegistryById.get('ai-reactor-core-primitive-rig');
 assert.ok(productionAiReactor);
 assert.equal(productionAiReactor.sourceKind, 'ai-reactor-core-render-rig');
-assert.deepEqual(productionAiReactor.position, [-1540, 410, -550]);
-assert.deepEqual(productionAiReactor.size, [360, 820, 360]);
+assert.equal(productionAiReactor.layer, 'stadium-structure');
+assert.deepEqual(productionAiReactor.position, [-2350, 900, -1824]);
+assert.deepEqual(productionAiReactor.size, [1120, 1800, 1120]);
 const productionGenesisPortal = productionSafeRegistryById.get('genesis-portal-gate-primitive-rig');
 assert.ok(productionGenesisPortal);
 assert.equal(productionGenesisPortal.sourceKind, 'genesis-portal-gate-render-rig');
@@ -148,13 +149,21 @@ assert.deepEqual(productionGenesisPortal.size, [1480, 2300, 620]);
 const productionEnergyGrid = productionSafeRegistryById.get('energy-grid-network-primitive-rig');
 assert.ok(productionEnergyGrid);
 assert.equal(productionEnergyGrid.sourceKind, 'energy-grid-network-render-rig');
-assert.deepEqual(productionEnergyGrid.position, [-420, 850, -520]);
-assert.deepEqual(productionEnergyGrid.size, [1, 1700, 1]);
+assert.equal(productionEnergyGrid.layer, 'stadium-structure');
+assert.deepEqual(productionEnergyGrid.position, [0, 1100, -3424]);
+assert.deepEqual(productionEnergyGrid.size, [1, 2200, 1]);
 const productionAiOracle = productionSafeRegistryById.get('ai-oracle-chamber-primitive-rig');
 assert.ok(productionAiOracle);
 assert.equal(productionAiOracle.sourceKind, 'ai-oracle-chamber-render-rig');
-assert.deepEqual(productionAiOracle.position, [1540, 410, -540]);
-assert.deepEqual(productionAiOracle.size, [260, 820, 260]);
+assert.equal(productionAiOracle.layer, 'stadium-structure');
+assert.deepEqual(productionAiOracle.position, [2150, 950, -2964]);
+assert.deepEqual(productionAiOracle.size, [1050, 1900, 1050]);
+const productionSkyCompass = productionSafeRegistryById.get('center-sky-compass-primitive-rig');
+assert.ok(productionSkyCompass);
+assert.equal(productionSkyCompass.sourceKind, 'center-sky-compass-render-rig');
+assert.equal(productionSkyCompass.layer, 'stadium-structure');
+assert.deepEqual(productionSkyCompass.position, [0, 2600, -4084]);
+assert.deepEqual(productionSkyCompass.size, [1600, 5200, 1600]);
 
 const screenSurfaceTargetsById = new Map<string, string[]>();
 const allowedDuplicateScreenSurfaceTargetZones = new Set([
@@ -236,10 +245,10 @@ assert.deepEqual(resolvedCenterSpineView.position, [-4, 208, -576]);
 const aiReactorCore = zones.find((zone) => zone.id === 'ai-reactor-core');
 assert.ok(aiReactorCore);
 const resolvedAiReactorCoreView = resolveReviewOperatorZoneStartView(aiReactorCore, new Map([
-  ['ai-reactor-core-primitive-rig', { position: [-1540, 410, -550] }],
+  ['ai-reactor-core-primitive-rig', { position: [-2350, 900, -1824] }],
 ]));
-assert.deepEqual(resolvedAiReactorCoreView.lookAt, [-1540, 490, -550]);
-assert.deepEqual(resolvedAiReactorCoreView.position, [-1840, 1060, 170]);
+assert.deepEqual(resolvedAiReactorCoreView.lookAt, [-2350, 1200, -1824]);
+assert.deepEqual(resolvedAiReactorCoreView.position, [-1310, 2000, -104]);
 
 const genesisPortalGate = zones.find((zone) => zone.id === 'genesis-portal-gate');
 assert.ok(genesisPortalGate);
@@ -252,18 +261,18 @@ assert.deepEqual(resolvedGenesisPortalGateView.position, [-900, 1650, 2800]);
 const energyGridNetwork = zones.find((zone) => zone.id === 'energy-grid-network');
 assert.ok(energyGridNetwork);
 const resolvedEnergyGridNetworkView = resolveReviewOperatorZoneStartView(energyGridNetwork, new Map([
-  ['energy-grid-network-primitive-rig', { position: [-420, 850, -520] }],
+  ['energy-grid-network-primitive-rig', { position: [0, 1100, -3424] }],
 ]));
-assert.deepEqual(resolvedEnergyGridNetworkView.lookAt, [-420, 1100, -520]);
-assert.deepEqual(resolvedEnergyGridNetworkView.position, [-1920, 1900, 1580]);
+assert.deepEqual(resolvedEnergyGridNetworkView.lookAt, [0, 1350, -3424]);
+assert.deepEqual(resolvedEnergyGridNetworkView.position, [-1700, 2300, -1124]);
 
 const aiOracleChamber = zones.find((zone) => zone.id === 'ai-oracle-chamber');
 assert.ok(aiOracleChamber);
 const resolvedAiOracleChamberView = resolveReviewOperatorZoneStartView(aiOracleChamber, new Map([
-  ['ai-oracle-chamber-primitive-rig', { position: [1540, 410, -540] }],
+  ['ai-oracle-chamber-primitive-rig', { position: [2150, 950, -2964] }],
 ]));
-assert.deepEqual(resolvedAiOracleChamberView.lookAt, [1540, 510, -540]);
-assert.deepEqual(resolvedAiOracleChamberView.position, [2280, 930, 380]);
+assert.deepEqual(resolvedAiOracleChamberView.lookAt, [2150, 1310, -2964]);
+assert.deepEqual(resolvedAiOracleChamberView.position, [900, 1950, -1414]);
 
 const midStartDeep = zones.find((zone) => zone.id === 'mid-start-deep');
 assert.ok(midStartDeep);

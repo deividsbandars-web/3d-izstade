@@ -921,6 +921,9 @@ export function buildStadiumWorldObjectRegistry({
   rearCampusPlan,
 }: BuildStadiumWorldObjectRegistryArgs): WorldObjectRegistryEntry[] {
   const rearCampus = rearCampusPlan.zoneExtension?.rearCampus;
+  const rearCampusPerimeterConnectorIds = new Set(
+    (rearCampus?.perimeterConnectors ?? []).map((connector) => connector.id),
+  );
 
   return [
     ...(rearCampus?.forecourts ?? []).map((plane) => createEntry({
@@ -985,6 +988,30 @@ export function buildStadiumWorldObjectRegistry({
       sourceFile: 'src/modules/expo/runtime/planning/zones/rear-campus/index.ts',
       sourceFunction: 'buildRearCampusZonePlan',
       sourceKind: 'rear-campus-perimeter-connector',
+    })),
+    ...rearCampusPlan.masses.filter((mass) => (
+      !rearCampusPerimeterConnectorIds.has(mass.id)
+      && (mass.renderIntent?.skipBase !== true || (mass.renderIntent?.primitives?.length ?? 0) > 0)
+    )).map((mass) => createEntry({
+      diagnosticOwners: [],
+      id: mass.id,
+      interactionOwner: null,
+      layer: 'stadium-structure',
+      nodeType: mass.renderIntent?.skipBase === true && (mass.renderIntent?.primitives?.length ?? 0) > 0
+        ? 'decorative-render-rig'
+        : null,
+      physicsParts: buildCityMassPhysicsParts(mass),
+      planningSections: mass.sections,
+      planningRole: mass.role ?? null,
+      planningZone: mass.planningZone ?? 'rear-campus',
+      position: baseAnchoredBoxCenter(mass.position, mass.size, mass.vertical?.baseY),
+      rotation: mass.rotation ?? [0, 0, 0],
+      safeEditSeam: mass.planningSource?.safeEditSeam ?? 'src/modules/expo/runtime/planning/zones/rear-campus/index.ts',
+      size: mass.size,
+      sourceFile: mass.planningSource?.sourceFile ?? 'src/modules/expo/runtime/planning/zones/rear-campus/index.ts',
+      sourceFunction: mass.planningSource?.sourceFunction ?? 'buildRearCampusZonePlan',
+      sourceKind: mass.planningSource?.sourceKind ?? 'rear-campus-mass',
+      ...verticalRegistryFields(mass.vertical),
     })),
     ...buildRecoveredStadiumStructureEntries(campusCenterZ),
     ...buildStadiumScreenHostShellEntries(rearCampusPlan.screenSurfaces),
