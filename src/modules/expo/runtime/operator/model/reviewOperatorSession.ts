@@ -503,13 +503,13 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       intent: 'ai-reactor-core-review',
       label: 'Left AI Reactor Core',
       camera: {
-        lookAtOffset: [0, -20, 0],
+        lookAtOffset: [0, 80, 0],
         positionOffset: [-1450, 780, 980],
         targetIds: ['ai-reactor-core-primitive-rig'],
       },
       startView: {
-        lookAt: [-1040, 830, 20],
-        position: [-2490, 1630, 1000],
+        lookAt: [-1340, 630, -760],
+        position: [-2790, 1330, 220],
         source: 'arrival-main',
       },
       watchItems: [
@@ -552,13 +552,13 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       intent: 'ai-oracle-chamber-review',
       label: 'AI Oracle Chamber',
       camera: {
-        lookAtOffset: [0, 250, 0],
-        positionOffset: [-1150, 950, 1600],
+        lookAtOffset: [0, 150, 0],
+        positionOffset: [1500, 1100, 1400],
         targetIds: ['ai-oracle-chamber-primitive-rig'],
       },
       startView: {
-        lookAt: [1120, 1150, 220],
-        position: [-30, 1850, 1820],
+        lookAt: [1340, 850, 400],
+        position: [2840, 1800, 1800],
         source: 'arrival-main',
       },
       watchItems: [

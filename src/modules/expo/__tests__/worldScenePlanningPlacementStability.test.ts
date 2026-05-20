@@ -331,6 +331,12 @@ assertMinGap('arrival-core-mid-tower-right', 'mega-landmark-right-support-spire'
 assertMinGap('meetings-hero-tower-right', 'mega-landmark-media-frame-wall', 72);
 assertMinGap('meetings-outer-support-tower-right', 'mega-landmark-media-frame-wall', 72);
 assertMinGap('showcase-row-outer-support-tower-right', 'mega-landmark-media-frame-wall', 72);
+assertMinGap('screen-marquee-left-0-host', 'ai-reactor-core-primitive-rig', 72);
+assertMinGap('screen-array-left-0-host', 'ai-reactor-core-primitive-rig', 72);
+assertMinGap('screen-array-left-upper-0-host', 'ai-reactor-core-primitive-rig', 72);
+assertMinGap('screen-marquee-right-0-host', 'ai-oracle-chamber-primitive-rig', 72);
+assertMinGap('screen-array-right-0-host', 'ai-oracle-chamber-primitive-rig', 72);
+assertMinGap('screen-array-right-upper-0-host', 'ai-oracle-chamber-primitive-rig', 72);
 assertWithinFrontCityPerimeter('ai-reactor-core-primitive-rig');
 assertWithinFrontCityPerimeter('ai-oracle-chamber-primitive-rig');
 assertWithinFrontCityPerimeter('center-sky-compass-primitive-rig');

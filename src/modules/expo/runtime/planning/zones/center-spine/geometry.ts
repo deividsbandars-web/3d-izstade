@@ -9,14 +9,17 @@ const ENERGY_GRID_NETWORK_SOURCE_KIND = 'energy-grid-network-render-rig';
 const AI_ORACLE_CHAMBER_SOURCE_KIND = 'ai-oracle-chamber-render-rig';
 
 const CENTER_SPINE_LANDMARK_LAYOUT = {
-  aiOracleChamber: [1120, 0, 220] as [number, number, number],
-  aiOracleHub: [1120, 980, 220] as [number, number, number],
-  aiReactorCore: [-1040, 0, 20] as [number, number, number],
-  aiReactorHub: [-1040, 1040, 20] as [number, number, number],
+  aiOracleChamber: [1340, 0, 400] as [number, number, number],
+  aiOracleHub: [1340, 820, 400] as [number, number, number],
+  aiReactorCore: [-1340, 0, -760] as [number, number, number],
+  aiReactorHub: [-1340, 860, -760] as [number, number, number],
   centerSkyCompass: [1240, 0, -760] as [number, number, number],
   energyGridOrigin: [-420, 0, -520] as [number, number, number],
   towerClusterHub: [1298, 1180, -1588] as [number, number, number],
 };
+
+const AI_REACTOR_VISUAL_SCALE = 0.62;
+const AI_ORACLE_VISUAL_SCALE = 0.76;
 
 function createCenterSpinePlanningSource(
   sourceFunction: string,
@@ -28,6 +31,42 @@ function createCenterSpinePlanningSource(
     sourceFunction,
     sourceKind,
   };
+}
+
+function scaleVector3(vector: [number, number, number], scale: number): [number, number, number] {
+  return [vector[0] * scale, vector[1] * scale, vector[2] * scale];
+}
+
+function scaleVector2(vector: [number, number], scale: number): [number, number] {
+  return [vector[0] * scale, vector[1] * scale];
+}
+
+function scaleCanonicalPrimitive(primitive: CanonicalPrimitive, scale: number): CanonicalPrimitive {
+  const position = scaleVector3(primitive.position, scale);
+  switch (primitive.kind) {
+    case 'box':
+      return { ...primitive, position, size: scaleVector3(primitive.size, scale) };
+    case 'plane':
+      return { ...primitive, position, size: scaleVector2(primitive.size, scale) };
+    case 'cylinder':
+      return {
+        ...primitive,
+        height: primitive.height * scale,
+        position,
+        radiusBottom: primitive.radiusBottom * scale,
+        radiusTop: primitive.radiusTop * scale,
+      };
+    case 'torus':
+      return { ...primitive, position, radius: primitive.radius * scale, tube: primitive.tube * scale };
+    case 'sphere':
+      return { ...primitive, position, radius: primitive.radius * scale };
+    case 'text':
+      return { ...primitive, position, maxWidth: primitive.maxWidth * scale, size: primitive.size * scale };
+    case 'texture-plane':
+      return { ...primitive, position, size: scaleVector2(primitive.size, scale) };
+    default:
+      return primitive;
+  }
 }
 
 function isCenterSpinePlane(plane: CityPlane) {
@@ -743,7 +782,7 @@ function buildAiReactorCoreMasses(): CityMass[] {
       renderIntent: {
         emissive: accent,
         emissiveIntensity: 0.024,
-        primitives: [
+        primitives: ([
           {
             color: '#0f2631',
             emissive: accent,
@@ -911,7 +950,7 @@ function buildAiReactorCoreMasses(): CityMass[] {
           },
           ...containmentPylons,
           ...cityEnergyFeeds,
-        ],
+        ] as CanonicalPrimitive[]).map((primitive) => scaleCanonicalPrimitive(primitive, AI_REACTOR_VISUAL_SCALE)),
         showCrownBeacon: false,
         showFrontWing: false,
         showHorizontalCap: false,
@@ -925,7 +964,7 @@ function buildAiReactorCoreMasses(): CityMass[] {
       planningZone: 'left-district',
       role: 'structural',
       sections: ['left'],
-      size: [1320, 1700, 1320],
+      size: [620, 1100, 600],
     },
   ];
 }
@@ -1175,7 +1214,7 @@ function buildAiOracleChamberMasses(): CityMass[] {
       renderIntent: {
         emissive: accent,
         emissiveIntensity: 0.028,
-        primitives: [
+        primitives: ([
           {
             color: '#102633',
             emissive: accent,
@@ -1356,7 +1395,7 @@ function buildAiOracleChamberMasses(): CityMass[] {
           },
           ...pylons,
           ...portalPanels,
-        ],
+        ] as CanonicalPrimitive[]).map((primitive) => scaleCanonicalPrimitive(primitive, AI_ORACLE_VISUAL_SCALE)),
         showCrownBeacon: false,
         showFrontWing: false,
         showHorizontalCap: false,
@@ -1370,7 +1409,7 @@ function buildAiOracleChamberMasses(): CityMass[] {
       planningZone: 'right-district',
       role: 'structural',
       sections: ['right'],
-      size: [980, 1800, 980],
+      size: [720, 1400, 720],
     },
   ];
 }
