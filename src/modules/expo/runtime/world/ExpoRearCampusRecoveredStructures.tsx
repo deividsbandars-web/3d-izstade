@@ -381,26 +381,34 @@ export function ExpoRearCampusRecoveredStructures({
             </mesh>
           </group>
         ))}
-        <mesh position={[0, 474, 0]} castShadow={enableHeavyShadows} receiveShadow>
-          <boxGeometry args={[1900, 56, 92]} />
-          <meshStandardMaterial color="#aebbc5" roughness={0.5} metalness={0.1} emissive={accent} emissiveIntensity={0.11} />
-        </mesh>
-        <mesh position={[0, 414, -96]} castShadow={enableHeavyShadows} receiveShadow>
-          <boxGeometry args={[1640, 24, 34]} />
-          <meshStandardMaterial color="#91c7da" roughness={0.42} metalness={0.14} emissive="#7dd3fc" emissiveIntensity={0.16} />
-        </mesh>
-        <mesh position={[0, 414, 96]} castShadow={enableHeavyShadows} receiveShadow>
-          <boxGeometry args={[1640, 24, 34]} />
-          <meshStandardMaterial color="#91c7da" roughness={0.42} metalness={0.14} emissive="#7dd3fc" emissiveIntensity={0.16} />
-        </mesh>
-        <mesh position={[0, 268, 0]} scale={[1.92, 0.64, 1]}>
-          <torusGeometry args={[420, 7, 12, 96]} />
-          <meshStandardMaterial color="#e0f2fe" roughness={0.38} metalness={0.16} emissive="#7dd3fc" emissiveIntensity={0.14} />
-        </mesh>
-        <mesh position={[0, 268, 0]} scale={[1.32, 0.44, 1]}>
-          <torusGeometry args={[420, 4, 10, 96]} />
-          <meshStandardMaterial color="#67e8f9" roughness={0.34} metalness={0.18} emissive="#67e8f9" emissiveIntensity={0.18} />
-        </mesh>
+        {[-1, 1].map((side) => (
+          <group key={`entry-pulse-open-span-${side}`}>
+            <mesh position={[side * 940, 476, 0]} castShadow={enableHeavyShadows} receiveShadow>
+              <boxGeometry args={[520, 42, 82]} />
+              <meshStandardMaterial color="#aebbc5" roughness={0.5} metalness={0.1} emissive={accent} emissiveIntensity={0.11} />
+            </mesh>
+            <mesh position={[side * 940, 424, -96]} castShadow={enableHeavyShadows} receiveShadow>
+              <boxGeometry args={[520, 14, 28]} />
+              <meshStandardMaterial color="#91c7da" roughness={0.42} metalness={0.14} emissive="#7dd3fc" emissiveIntensity={0.16} />
+            </mesh>
+            <mesh position={[side * 940, 424, 96]} castShadow={enableHeavyShadows} receiveShadow>
+              <boxGeometry args={[520, 14, 28]} />
+              <meshStandardMaterial color="#91c7da" roughness={0.42} metalness={0.14} emissive="#7dd3fc" emissiveIntensity={0.16} />
+            </mesh>
+          </group>
+        ))}
+        {[-1, 1].map((side) => (
+          <group key={`entry-pulse-side-arc-${side}`} position={[side * 940, 268, 0]}>
+            <mesh scale={[0.48, 0.68, 1]}>
+              <torusGeometry args={[420, 7, 12, 64, Math.PI]} />
+              <meshStandardMaterial color="#e0f2fe" roughness={0.38} metalness={0.16} emissive="#7dd3fc" emissiveIntensity={0.14} />
+            </mesh>
+            <mesh scale={[0.34, 0.48, 1]}>
+              <torusGeometry args={[420, 4, 10, 64, Math.PI]} />
+              <meshStandardMaterial color="#67e8f9" roughness={0.34} metalness={0.18} emissive="#67e8f9" emissiveIntensity={0.18} />
+            </mesh>
+          </group>
+        ))}
       </group>
     </group>
   );
