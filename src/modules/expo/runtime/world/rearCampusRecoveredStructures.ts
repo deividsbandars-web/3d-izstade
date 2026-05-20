@@ -79,9 +79,9 @@ export const RECOVERED_REAR_CAMPUS_STRUCTURES: RecoveredRearCampusStructure[] = 
     size: [1540, 1030, 320],
   },
   {
-    authoredZ: -2210,
+    authoredZ: -1900,
     id: 'rear-campus-entry-pulse-arches',
-    positionX: 0,
+    positionX: 1700,
     size: [2340, 560, 260],
   },
 ];

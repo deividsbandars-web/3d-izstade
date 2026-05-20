@@ -139,7 +139,7 @@ const productionAiReactor = productionSafeRegistryById.get('ai-reactor-core-prim
 assert.ok(productionAiReactor);
 assert.equal(productionAiReactor.sourceKind, 'ai-reactor-core-render-rig');
 assert.equal(productionAiReactor.layer, 'stadium-structure');
-assert.deepEqual(productionAiReactor.position, [-2350, 900, -1824]);
+assert.deepEqual(productionAiReactor.position, [-2260, 900, -2424]);
 assert.deepEqual(productionAiReactor.size, [1120, 1800, 1120]);
 const productionGenesisPortal = productionSafeRegistryById.get('genesis-portal-gate-primitive-rig');
 assert.ok(productionGenesisPortal);
@@ -162,7 +162,7 @@ const productionSkyCompass = productionSafeRegistryById.get('center-sky-compass-
 assert.ok(productionSkyCompass);
 assert.equal(productionSkyCompass.sourceKind, 'center-sky-compass-render-rig');
 assert.equal(productionSkyCompass.layer, 'stadium-structure');
-assert.deepEqual(productionSkyCompass.position, [0, 2600, -4084]);
+assert.deepEqual(productionSkyCompass.position, [1760, 2600, -4480]);
 assert.deepEqual(productionSkyCompass.size, [1600, 5200, 1600]);
 
 const screenSurfaceTargetsById = new Map<string, string[]>();
@@ -245,10 +245,10 @@ assert.deepEqual(resolvedCenterSpineView.position, [-4, 208, -576]);
 const aiReactorCore = zones.find((zone) => zone.id === 'ai-reactor-core');
 assert.ok(aiReactorCore);
 const resolvedAiReactorCoreView = resolveReviewOperatorZoneStartView(aiReactorCore, new Map([
-  ['ai-reactor-core-primitive-rig', { position: [-2350, 900, -1824] }],
+  ['ai-reactor-core-primitive-rig', { position: [-2260, 900, -2424] }],
 ]));
-assert.deepEqual(resolvedAiReactorCoreView.lookAt, [-2350, 1200, -1824]);
-assert.deepEqual(resolvedAiReactorCoreView.position, [-1310, 2000, -104]);
+assert.deepEqual(resolvedAiReactorCoreView.lookAt, [-2260, 1200, -2424]);
+assert.deepEqual(resolvedAiReactorCoreView.position, [-1220, 2000, -704]);
 
 const genesisPortalGate = zones.find((zone) => zone.id === 'genesis-portal-gate');
 assert.ok(genesisPortalGate);
@@ -325,10 +325,10 @@ assert.deepEqual(resolvedStadiumLeftFlankView.position, [-960, 103.68, -1703.3])
 const rearCampusEntryPulseArches = zones.find((zone) => zone.id === 'rear-campus-entry-pulse-arches');
 assert.ok(rearCampusEntryPulseArches);
 const resolvedRearCampusEntryPulseArchesView = resolveReviewOperatorZoneStartView(rearCampusEntryPulseArches, new Map([
-  ['rear-campus-entry-pulse-arches', { position: [0, 280, -2534] }],
+  ['rear-campus-entry-pulse-arches', { position: [1700, 280, -2224] }],
 ]));
-assert.deepEqual(resolvedRearCampusEntryPulseArchesView.lookAt, [0, 400, -2534]);
-assert.deepEqual(resolvedRearCampusEntryPulseArchesView.position, [780, 440, -1814]);
+assert.deepEqual(resolvedRearCampusEntryPulseArchesView.lookAt, [1700, 400, -2224]);
+assert.deepEqual(resolvedRearCampusEntryPulseArchesView.position, [2480, 440, -1504]);
 
 const stadiumFeedAxis = zones.find((zone) => zone.id === 'stadium-feed-axis');
 assert.ok(stadiumFeedAxis);

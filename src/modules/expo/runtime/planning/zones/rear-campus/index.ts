@@ -205,7 +205,7 @@ function buildRearCampusTower(tower: RearCampusLandmarkTower, crownColor: string
 }
 
 function buildRearCampusAiReactorCoreMasses(campusCenterZ: number): CityMass[] {
-  const center: [number, number, number] = [-2350, 0, campusCenterZ + 1380];
+  const center: [number, number, number] = [-2260, 0, campusCenterZ + 780];
   const accent = '#6fffe9';
   const deepAccent = '#1bc9bd';
   const pylons: CanonicalPrimitive[] = [
@@ -560,7 +560,7 @@ function buildRearCampusAiOracleChamberMasses(campusCenterZ: number): CityMass[]
 }
 
 function buildRearCampusSkyCompassMasses(campusCenterZ: number): CityMass[] {
-  const center: [number, number, number] = [0, 0, campusCenterZ - 880];
+  const center: [number, number, number] = [1760, 0, campusCenterZ - 1276];
   const accent = '#8ee8ff';
 
   return [
@@ -702,9 +702,9 @@ function buildRearCampusSkyCompassMasses(campusCenterZ: number): CityMass[] {
 
 function buildRearCampusEnergyGridNetworkMasses(campusCenterZ: number): CityMass[] {
   const origin: [number, number, number] = [0, 0, campusCenterZ - 220];
-  const reactorHub: [number, number, number] = [-2350, 1420, campusCenterZ + 1380];
+  const reactorHub: [number, number, number] = [-2260, 1420, campusCenterZ + 780];
   const oracleHub: [number, number, number] = [2150, 1440, campusCenterZ + 240];
-  const skyCompassHub: [number, number, number] = [0, 3400, campusCenterZ - 880];
+  const skyCompassHub: [number, number, number] = [1760, 3400, campusCenterZ - 1276];
   const entryHub: [number, number, number] = [0, 1120, campusCenterZ + 670];
   const rearHub: [number, number, number] = [0, 1380, campusCenterZ - 1500];
   const leftCampusHub: [number, number, number] = [-1420, 1160, campusCenterZ + 1040];

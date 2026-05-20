@@ -508,8 +508,8 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
         targetIds: ['ai-reactor-core-primitive-rig'],
       },
       startView: {
-        lookAt: [-2350, 1200, -1824],
-        position: [-1310, 2000, -104],
+        lookAt: [-2260, 1200, -2424],
+        position: [-1220, 2000, -704],
         source: 'arrival-main',
       },
       watchItems: [
@@ -581,8 +581,8 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
         targetIds: ['center-sky-compass-primitive-rig'],
       },
       startView: {
-        lookAt: [0, 3800, -4084],
-        position: [-2000, 6000, -1484],
+        lookAt: [1760, 3800, -4480],
+        position: [-240, 6000, -1880],
         source: 'arrival-main',
       },
       watchItems: [
@@ -1273,8 +1273,8 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
         targetIds: ['rear-campus-entry-pulse-arches'],
       },
       startView: {
-        lookAt: [0, 400, -2534],
-        position: [780, 440, -1814],
+        lookAt: [1700, 400, -2224],
+        position: [2480, 440, -1504],
         source: 'arrival-main',
       },
       watchItems: [
