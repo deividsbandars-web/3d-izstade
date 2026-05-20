@@ -9,17 +9,17 @@ const ENERGY_GRID_NETWORK_SOURCE_KIND = 'energy-grid-network-render-rig';
 const AI_ORACLE_CHAMBER_SOURCE_KIND = 'ai-oracle-chamber-render-rig';
 
 const CENTER_SPINE_LANDMARK_LAYOUT = {
-  aiOracleChamber: [300, 0, -670] as [number, number, number],
-  aiOracleHub: [300, 760, -670] as [number, number, number],
-  aiReactorCore: [-700, 0, -600] as [number, number, number],
-  aiReactorHub: [-700, 700, -600] as [number, number, number],
+  aiOracleChamber: [1540, 0, -540] as [number, number, number],
+  aiOracleHub: [1540, 760, -540] as [number, number, number],
+  aiReactorCore: [-1540, 0, -550] as [number, number, number],
+  aiReactorHub: [-1540, 700, -550] as [number, number, number],
   centerSkyCompass: [1240, 0, -760] as [number, number, number],
   energyGridOrigin: [-420, 0, -520] as [number, number, number],
   towerClusterHub: [1298, 1180, -1588] as [number, number, number],
 };
 
-const AI_REACTOR_VISUAL_SCALE = 0.34;
-const AI_ORACLE_VISUAL_SCALE = 0.5;
+const AI_REACTOR_VISUAL_SCALE = 0.28;
+const AI_ORACLE_VISUAL_SCALE = 0.3;
 
 function createCenterSpinePlanningSource(
   sourceFunction: string,
@@ -964,7 +964,7 @@ function buildAiReactorCoreMasses(): CityMass[] {
       planningZone: 'left-district',
       role: 'structural',
       sections: ['left'],
-      size: [280, 820, 280],
+      size: [360, 820, 360],
     },
   ];
 }
@@ -1409,7 +1409,7 @@ function buildAiOracleChamberMasses(): CityMass[] {
       planningZone: 'right-district',
       role: 'structural',
       sections: ['right'],
-      size: [380, 1000, 380],
+      size: [260, 820, 260],
     },
   ];
 }

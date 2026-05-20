@@ -504,16 +504,16 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       label: 'Left AI Reactor Core',
       camera: {
         lookAtOffset: [0, 80, 0],
-        positionOffset: [-1150, 650, 840],
+        positionOffset: [-300, 650, 720],
         targetIds: ['ai-reactor-core-primitive-rig'],
       },
       startView: {
-        lookAt: [-700, 490, -600],
-        position: [-1850, 1060, 240],
+        lookAt: [-1540, 490, -550],
+        position: [-1840, 1060, 170],
         source: 'arrival-main',
       },
       watchItems: [
-        'left reactor vessel sits inside the city perimeter, not outside the wall',
+        'left-edge reactor vessel sits inside the city perimeter, not outside the wall',
         'visible containment shell, glowing core, and cooling towers',
         'high energy feed beams visible without blocking screens',
         'no collapsed debris silhouette or layer conflict',
@@ -552,19 +552,19 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       intent: 'ai-oracle-chamber-review',
       label: 'AI Oracle Chamber',
       camera: {
-        lookAtOffset: [0, 150, 0],
-        positionOffset: [1400, 1000, 1140],
+        lookAtOffset: [0, 100, 0],
+        positionOffset: [740, 520, 920],
         targetIds: ['ai-oracle-chamber-primitive-rig'],
       },
       startView: {
-        lookAt: [300, 650, -670],
-        position: [1700, 1500, 470],
+        lookAt: [1540, 510, -540],
+        position: [2280, 930, 380],
         source: 'arrival-main',
       },
       watchItems: [
         'large oracle chamber reads as a different structure from towers',
         'holographic AI orb visible inside the chamber',
-        'right-front placement stays separate from screen hosts and perimeter',
+        'right-edge placement stays separate from screen hosts and perimeter',
       ],
     },
     {

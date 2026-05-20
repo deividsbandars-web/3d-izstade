@@ -144,12 +144,21 @@ function gapXZ(left: { position: number[]; rotation?: number[]; size: number[] }
   const dz = Math.max(0, Math.max(leftBounds.minZ - rightBounds.maxZ, rightBounds.minZ - leftBounds.maxZ));
   return Math.sqrt((dx * dx) + (dz * dz));
 }
+function resolveClearanceEntry(id: string) {
+  return cityMassById.get(id) ?? unfilteredScreenHostById.get(id) ?? rightSupportMassById.get(id) ?? clearanceTowerById.get(id) ?? signatureMegaById.get(id) ?? megaLandmarkBoundsById.get(id) ?? perimeterById.get(id);
+}
 function assertMinGap(idA: string, idB: string, minGap: number) {
-  const left = cityMassById.get(idA) ?? unfilteredScreenHostById.get(idA) ?? rightSupportMassById.get(idA) ?? clearanceTowerById.get(idA) ?? signatureMegaById.get(idA) ?? megaLandmarkBoundsById.get(idA) ?? perimeterById.get(idA);
-  const right = cityMassById.get(idB) ?? unfilteredScreenHostById.get(idB) ?? rightSupportMassById.get(idB) ?? clearanceTowerById.get(idB) ?? signatureMegaById.get(idB) ?? megaLandmarkBoundsById.get(idB) ?? perimeterById.get(idB);
+  const left = resolveClearanceEntry(idA);
+  const right = resolveClearanceEntry(idB);
   assert.ok(left, `${idA} must exist for city clearance checks`);
   assert.ok(right, `${idB} must exist for city clearance checks`);
   assert.ok(gapXZ(left, right) >= minGap, `${idA} must stay at least ${minGap} units from ${idB}`);
+}
+function assertMinGapIfPresent(idA: string, idB: string, minGap: number) {
+  if (!resolveClearanceEntry(idA) || !resolveClearanceEntry(idB)) {
+    return;
+  }
+  assertMinGap(idA, idB, minGap);
 }
 function assertWithinFrontCityPerimeter(id: string) {
   const mass = cityMassById.get(id);
@@ -337,12 +346,16 @@ assertMinGap('screen-array-left-upper-0-host', 'ai-reactor-core-primitive-rig', 
 assertMinGap('screen-marquee-left-1-host', 'ai-reactor-core-primitive-rig', 72);
 assertMinGap('screen-array-left-1-host', 'ai-reactor-core-primitive-rig', 72);
 assertMinGap('screen-array-left-upper-1-host', 'ai-reactor-core-primitive-rig', 72);
+assertMinGapIfPresent('screen-array-left-2-host', 'ai-reactor-core-primitive-rig', 72);
+assertMinGapIfPresent('screen-array-left-upper-2-host', 'ai-reactor-core-primitive-rig', 72);
 assertMinGap('screen-marquee-right-0-host', 'ai-oracle-chamber-primitive-rig', 72);
 assertMinGap('screen-array-right-0-host', 'ai-oracle-chamber-primitive-rig', 72);
 assertMinGap('screen-array-right-upper-0-host', 'ai-oracle-chamber-primitive-rig', 72);
 assertMinGap('screen-marquee-right-1-host', 'ai-oracle-chamber-primitive-rig', 72);
 assertMinGap('screen-array-right-1-host', 'ai-oracle-chamber-primitive-rig', 72);
 assertMinGap('screen-array-right-upper-1-host', 'ai-oracle-chamber-primitive-rig', 72);
+assertMinGapIfPresent('screen-array-right-2-host', 'ai-oracle-chamber-primitive-rig', 72);
+assertMinGapIfPresent('screen-array-right-upper-2-host', 'ai-oracle-chamber-primitive-rig', 72);
 assertMinGap('screen-spine-primary-1-host', 'ai-oracle-chamber-primitive-rig', 72);
 assertMinGap('ai-oracle-chamber-primitive-rig', 'orbital-broadcast-foundry-curved-dish-core', 72);
 assertMinGap('ai-oracle-chamber-primitive-rig', 'orbital-broadcast-foundry-main-deck', 72);
