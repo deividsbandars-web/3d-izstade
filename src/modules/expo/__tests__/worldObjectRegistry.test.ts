@@ -363,9 +363,9 @@ assert.deepEqual(cityRegistry.find((entry) => entry.id === 'sky-market-spine-lif
 assert.deepEqual(cityRegistry.find((entry) => entry.id === 'sky-market-spine-lift-lower-to-upper')?.position, [-650, 537, -520]);
 assert.deepEqual(cityRegistry.find((entry) => entry.id === 'sky-market-spine-animated-market-lift')?.position, [-650, 498, -520]);
 assert.deepEqual(cityRegistry.find((entry) => entry.id === 'sky-market-spine-animated-market-lift')?.size, [150, 1010, 92]);
-assert.deepEqual(cityRegistry.find((entry) => entry.id === 'tower-cluster-mega-highrise-animated-panoramic-lift')?.position, [-240, 825, -1075]);
+assert.deepEqual(cityRegistry.find((entry) => entry.id === 'tower-cluster-mega-highrise-animated-panoramic-lift')?.position, [-220, 825, -1130]);
 assert.deepEqual(cityRegistry.find((entry) => entry.id === 'tower-cluster-mega-highrise-animated-panoramic-lift')?.size, [144, 1662, 78]);
-assert.deepEqual(cityRegistry.find((entry) => entry.id === 'tower-cluster-television-tower-animated-city-lift')?.position, [360, 2670.5, -820]);
+assert.deepEqual(cityRegistry.find((entry) => entry.id === 'tower-cluster-television-tower-animated-city-lift')?.position, [620, 2670.5, -900]);
 assert.deepEqual(cityRegistry.find((entry) => entry.id === 'tower-cluster-television-tower-animated-city-lift')?.size, [128, 5351, 76]);
 
 type SizedWorldObjectRegistryEntry = WorldObjectRegistryEntry & { size: [number, number, number] };
@@ -384,6 +384,12 @@ const objectBoundsOverlap = (left: SizedWorldObjectRegistryEntry, right: SizedWo
   const leftBounds = buildObjectBounds(left);
   const rightBounds = buildObjectBounds(right);
 
+  return boundsOverlap(leftBounds, rightBounds);
+};
+const boundsOverlap = (
+  leftBounds: ReturnType<typeof buildObjectBounds>,
+  rightBounds: ReturnType<typeof buildObjectBounds>,
+) => {
   return (
     Math.min(leftBounds.maxX, rightBounds.maxX) > Math.max(leftBounds.minX, rightBounds.minX)
     && Math.min(leftBounds.maxY, rightBounds.maxY) > Math.max(leftBounds.minY, rightBounds.minY)
@@ -407,6 +413,24 @@ const towerElevatorMassIntersections = cityRegistry
     .filter((mass) => objectBoundsOverlap(route, mass))
     .map((mass) => `${route.id}->${mass.id}`));
 assert.deepEqual(towerElevatorMassIntersections, []);
+
+const towerElevatorWalkableRegionIntersections = cityRegistry
+  .filter(isTowerClusterElevatorRoute)
+  .flatMap((route) => EXPO_VERTICAL_CITY_SYSTEM.walkableRegions
+    .map((region) => ({
+      bounds: {
+        maxX: region.position[0] + (region.size[0] * 0.5),
+        maxY: region.playerY + 12,
+        maxZ: region.position[2] + (region.size[1] * 0.5),
+        minX: region.position[0] - (region.size[0] * 0.5),
+        minY: region.playerY - 12,
+        minZ: region.position[2] - (region.size[1] * 0.5),
+      },
+      region,
+    }))
+    .filter(({ bounds }) => boundsOverlap(buildObjectBounds(route), bounds))
+    .map(({ region }) => `${route.id}->${region.id}`));
+assert.deepEqual(towerElevatorWalkableRegionIntersections, []);
 assert.deepEqual(cityRegistry.find((entry) => entry.id === cityTower.id)?.position, [120, 151, -160]);
 assert.deepEqual(
   cityRegistry.find((entry) => entry.id === semanticTower.id)?.aliases,

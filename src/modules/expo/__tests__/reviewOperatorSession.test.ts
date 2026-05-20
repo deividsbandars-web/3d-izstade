@@ -24,7 +24,7 @@ function assertVectorClose(actual: number[], expected: number[]) {
   });
 }
 
-assert.equal(zones.length, 63);
+assert.equal(zones.length, 64);
 assert.equal(DEFAULT_REVIEW_OPERATOR_ZONE_ID, 'arrival-gate');
 assert.deepEqual(zoneIds, [
   'arrival-gate',
@@ -58,6 +58,7 @@ assert.deepEqual(zoneIds, [
   'tower-cluster-television-tower',
   'tower-cluster-television-tower-crown',
   'tower-cluster-television-tower-lift-side',
+  'tower-cluster-lift-deck-clearance',
   'tower-cluster-east-needle',
   'tower-cluster-rear-needle',
   'tower-cluster-reverse-wide',
@@ -408,10 +409,10 @@ assertVectorClose(resolvedTowerClusterMegaHighriseView.position, [-30, 1912, -17
 const towerClusterMegaHighriseLiftSide = zones.find((zone) => zone.id === 'tower-cluster-mega-highrise-lift-side');
 assert.ok(towerClusterMegaHighriseLiftSide);
 const resolvedTowerClusterMegaHighriseLiftSideView = resolveReviewOperatorZoneStartView(towerClusterMegaHighriseLiftSide, new Map([
-  ['tower-cluster-mega-highrise-animated-panoramic-lift', { position: [-240, 825, -1075] }],
+  ['tower-cluster-mega-highrise-animated-panoramic-lift', { position: [-220, 825, -1130] }],
 ]));
-assertVectorClose(resolvedTowerClusterMegaHighriseLiftSideView.lookAt, [-240, 945, -1075]);
-assertVectorClose(resolvedTowerClusterMegaHighriseLiftSideView.position, [300, 1185, -455]);
+assertVectorClose(resolvedTowerClusterMegaHighriseLiftSideView.lookAt, [-220, 945, -1130]);
+assertVectorClose(resolvedTowerClusterMegaHighriseLiftSideView.position, [320, 1185, -510]);
 
 const towerClusterMegaSkyline = zones.find((zone) => zone.id === 'tower-cluster-mega-skyline');
 assert.ok(towerClusterMegaSkyline);
@@ -450,10 +451,19 @@ assertVectorClose(resolvedTowerClusterTelevisionTowerCrownView.position, [-1240,
 const towerClusterTelevisionTowerLiftSide = zones.find((zone) => zone.id === 'tower-cluster-television-tower-lift-side');
 assert.ok(towerClusterTelevisionTowerLiftSide);
 const resolvedTowerClusterTelevisionTowerLiftSideView = resolveReviewOperatorZoneStartView(towerClusterTelevisionTowerLiftSide, new Map([
-  ['tower-cluster-television-tower-animated-city-lift', { position: [360, 2670.5, -820] }],
+  ['tower-cluster-television-tower-animated-city-lift', { position: [620, 2670.5, -900] }],
 ]));
-assertVectorClose(resolvedTowerClusterTelevisionTowerLiftSideView.lookAt, [360, 2990.5, -820]);
-assertVectorClose(resolvedTowerClusterTelevisionTowerLiftSideView.position, [1120, 3370.5, 100]);
+assertVectorClose(resolvedTowerClusterTelevisionTowerLiftSideView.lookAt, [620, 2990.5, -900]);
+assertVectorClose(resolvedTowerClusterTelevisionTowerLiftSideView.position, [1380, 3370.5, 20]);
+
+const towerClusterLiftDeckClearance = zones.find((zone) => zone.id === 'tower-cluster-lift-deck-clearance');
+assert.ok(towerClusterLiftDeckClearance);
+const resolvedTowerClusterLiftDeckClearanceView = resolveReviewOperatorZoneStartView(towerClusterLiftDeckClearance, new Map([
+  ['tower-cluster-mega-highrise-animated-panoramic-lift', { position: [-220, 825, -1130] }],
+  ['tower-cluster-television-tower-animated-city-lift', { position: [620, 2670.5, -900] }],
+]));
+assertVectorClose(resolvedTowerClusterLiftDeckClearanceView.lookAt, [200, 767.75, -1015]);
+assertVectorClose(resolvedTowerClusterLiftDeckClearanceView.position, [960, 2007.75, -235]);
 
 const towerClusterEastNeedle = zones.find((zone) => zone.id === 'tower-cluster-east-needle');
 assert.ok(towerClusterEastNeedle);

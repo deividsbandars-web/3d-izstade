@@ -832,13 +832,14 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
         ],
       },
       startView: {
-        lookAt: [-240, 945, -1075],
-        position: [300, 1185, -455],
+        lookAt: [-220, 945, -1130],
+        position: [320, 1185, -510],
         source: 'arrival-main',
       },
       watchItems: [
         'yellow lift rail is outside the highrise shell',
         'moving cabin does not cut through deck/facade geometry',
+        'lift shaft clears the lower sky-market deck footprint',
         'ground-to-skydeck route remains readable from the side',
       ],
     },
@@ -935,14 +936,43 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
         ],
       },
       startView: {
-        lookAt: [360, 2990, -820],
-        position: [1120, 3370, 100],
+        lookAt: [620, 2990, -900],
+        position: [1380, 3370, 20],
         source: 'arrival-main',
       },
       watchItems: [
+        'blue lift shaft sits outside the lower sky-market deck footprint',
         'blue lift rail clears the front signal ring',
         'moving cabin does not pass through collar or deck masses',
         'full 5x tower lift route is visible as exterior access',
+      ],
+    },
+    {
+      expectedKeyObjectIds: [
+        'tower-cluster-mega-highrise-animated-panoramic-lift',
+        'tower-cluster-television-tower-animated-city-lift',
+      ],
+      expectedVisibleLayers: ['vertical-elevator-route'],
+      id: 'tower-cluster-lift-deck-clearance',
+      intent: 'tower-cluster-lift-deck-clearance-review',
+      label: 'Tower Lift Deck Clearance',
+      camera: {
+        lookAtOffset: [0, -980, 0],
+        positionOffset: [760, 260, 780],
+        targetIds: [
+          'tower-cluster-mega-highrise-animated-panoramic-lift',
+          'tower-cluster-television-tower-animated-city-lift',
+        ],
+      },
+      startView: {
+        lookAt: [200, 767, -1015],
+        position: [960, 2007, -235],
+        source: 'arrival-main',
+      },
+      watchItems: [
+        'both tower lift shafts are outside the sky-market lower deck footprint',
+        'yellow and blue lift lines do not pass through second-level road/deck geometry',
+        'clear side separation remains visible without relying only on registry math',
       ],
     },
     {
