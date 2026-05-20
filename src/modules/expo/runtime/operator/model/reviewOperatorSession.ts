@@ -504,16 +504,16 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       label: 'Left AI Reactor Core',
       camera: {
         lookAtOffset: [0, -20, 0],
-        positionOffset: [-2400, 850, 1200],
+        positionOffset: [-1450, 780, 980],
         targetIds: ['ai-reactor-core-primitive-rig'],
       },
       startView: {
-        lookAt: [-2380, 830, -520],
-        position: [-4780, 1700, 680],
+        lookAt: [-1040, 830, 20],
+        position: [-2490, 1630, 1000],
         source: 'arrival-main',
       },
       watchItems: [
-        'left reactor vessel skyline readability from city side',
+        'left reactor vessel sits inside the city perimeter, not outside the wall',
         'visible containment shell, glowing core, and cooling towers',
         'high energy feed beams visible without blocking screens',
         'no collapsed debris silhouette or layer conflict',
@@ -529,12 +529,12 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       label: 'Energy Grid Network',
       camera: {
         lookAtOffset: [0, 250, 0],
-        positionOffset: [-2300, 1300, 2800],
+        positionOffset: [-1500, 1050, 2100],
         targetIds: ['energy-grid-network-primitive-rig'],
       },
       startView: {
-        lookAt: [-520, 1100, -700],
-        position: [-2820, 2150, 2100],
+        lookAt: [-420, 1100, -520],
+        position: [-1920, 1900, 1580],
         source: 'arrival-main',
       },
       watchItems: [
@@ -553,12 +553,12 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       label: 'AI Oracle Chamber',
       camera: {
         lookAtOffset: [0, 250, 0],
-        positionOffset: [-1500, 1100, 2200],
+        positionOffset: [-1150, 950, 1600],
         targetIds: ['ai-oracle-chamber-primitive-rig'],
       },
       startView: {
-        lookAt: [2380, 1150, 420],
-        position: [880, 2000, 2620],
+        lookAt: [1120, 1150, 220],
+        position: [-30, 1850, 1820],
         source: 'arrival-main',
       },
       watchItems: [
@@ -581,8 +581,8 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
         targetIds: ['center-sky-compass-primitive-rig'],
       },
       startView: {
-        lookAt: [2200, 3000, -960],
-        position: [600, 3500, 1640],
+        lookAt: [1240, 3000, -760],
+        position: [-360, 3500, 1840],
         source: 'arrival-main',
       },
       watchItems: [

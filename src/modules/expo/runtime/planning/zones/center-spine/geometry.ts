@@ -8,6 +8,16 @@ const AI_REACTOR_CORE_SOURCE_KIND = 'ai-reactor-core-render-rig';
 const ENERGY_GRID_NETWORK_SOURCE_KIND = 'energy-grid-network-render-rig';
 const AI_ORACLE_CHAMBER_SOURCE_KIND = 'ai-oracle-chamber-render-rig';
 
+const CENTER_SPINE_LANDMARK_LAYOUT = {
+  aiOracleChamber: [1120, 0, 220] as [number, number, number],
+  aiOracleHub: [1120, 980, 220] as [number, number, number],
+  aiReactorCore: [-1040, 0, 20] as [number, number, number],
+  aiReactorHub: [-1040, 1040, 20] as [number, number, number],
+  centerSkyCompass: [1240, 0, -760] as [number, number, number],
+  energyGridOrigin: [-420, 0, -520] as [number, number, number],
+  towerClusterHub: [1298, 1180, -1588] as [number, number, number],
+};
+
 function createCenterSpinePlanningSource(
   sourceFunction: string,
   sourceKind: string,
@@ -439,7 +449,7 @@ function buildGenesisPortalGateMasses(): CityMass[] {
 }
 
 function buildAiReactorCoreMasses(): CityMass[] {
-  const center: [number, number, number] = [-2380, 0, -520];
+  const center = CENTER_SPINE_LANDMARK_LAYOUT.aiReactorCore;
   const accent = '#6fffe9';
   const deepAccent = '#1bc9bd';
   const shell = '#112c38';
@@ -1015,8 +1025,8 @@ function buildEnergyGridNode(args: {
 }
 
 function buildEnergyGridNetworkMasses(): CityMass[] {
-  const origin: [number, number, number] = [-520, 0, -700];
-  const reactorHub: [number, number, number] = [-2380, 1040, -520];
+  const origin = CENTER_SPINE_LANDMARK_LAYOUT.energyGridOrigin;
+  const reactorHub = CENTER_SPINE_LANDMARK_LAYOUT.aiReactorHub;
   const trunkHub: [number, number, number] = [-760, 1040, -520];
   const exchangeHub: [number, number, number] = [-520, 920, -700];
   const skyMarketHub: [number, number, number] = [0, 1160, -520];
@@ -1026,8 +1036,8 @@ function buildEnergyGridNetworkMasses(): CityMass[] {
   const leftRearHub: [number, number, number] = [-1546, 980, -910];
   const rightHaloHub: [number, number, number] = [1136, 940, -400];
   const rightCitadelHub: [number, number, number] = [844, 1020, -164];
-  const towerClusterHub: [number, number, number] = [1312, 1180, -1476];
-  const oracleHub: [number, number, number] = [2380, 980, 420];
+  const towerClusterHub = CENTER_SPINE_LANDMARK_LAYOUT.towerClusterHub;
+  const oracleHub = CENTER_SPINE_LANDMARK_LAYOUT.aiOracleHub;
   const genesisPortalHub: [number, number, number] = [0, 1040, 1120];
 
   const beams = [
@@ -1093,13 +1103,13 @@ function buildEnergyGridNetworkMasses(): CityMass[] {
       planningZone: 'center-spine',
       role: 'structural',
       sections: ['left', 'middle', 'right'],
-      size: [4400, 1700, 1700],
+      size: [1, 1700, 1],
     },
   ];
 }
 
 function buildAiOracleChamberMasses(): CityMass[] {
-  const center: [number, number, number] = [2380, 0, 420];
+  const center = CENTER_SPINE_LANDMARK_LAYOUT.aiOracleChamber;
   const accent = '#b7fff8';
   const violet = '#9da7ff';
   const shell = '#172d3a';
@@ -1366,7 +1376,7 @@ function buildAiOracleChamberMasses(): CityMass[] {
 }
 
 function buildCenterSkyCompassMasses(): CityMass[] {
-  const center: [number, number, number] = [2200, 0, -960];
+  const center = CENTER_SPINE_LANDMARK_LAYOUT.centerSkyCompass;
   const accent = '#8ee8ff';
 
   return [

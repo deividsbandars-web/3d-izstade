@@ -151,6 +151,14 @@ function assertMinGap(idA: string, idB: string, minGap: number) {
   assert.ok(right, `${idB} must exist for city clearance checks`);
   assert.ok(gapXZ(left, right) >= minGap, `${idA} must stay at least ${minGap} units from ${idB}`);
 }
+function assertWithinFrontCityPerimeter(id: string) {
+  const mass = cityMassById.get(id);
+  assert.ok(mass, `${id} must exist for city perimeter checks`);
+  const bounds = resolveBounds(mass);
+  assert.ok(bounds.minX >= -1720, `${id} must stay inside the left city perimeter`);
+  assert.ok(bounds.maxX <= 1720, `${id} must stay inside the right city perimeter`);
+  assert.ok(bounds.maxZ <= 780, `${id} must stay behind the front city perimeter`);
+}
 function assertSurfaceZSpacing(idA: string, idB: string, minSpacing: number) {
   const left = screenSurfaceById.get(idA) ?? unfilteredScreenSurfaceById.get(idA);
   const right = screenSurfaceById.get(idB) ?? unfilteredScreenSurfaceById.get(idB);
@@ -323,6 +331,9 @@ assertMinGap('arrival-core-mid-tower-right', 'mega-landmark-right-support-spire'
 assertMinGap('meetings-hero-tower-right', 'mega-landmark-media-frame-wall', 72);
 assertMinGap('meetings-outer-support-tower-right', 'mega-landmark-media-frame-wall', 72);
 assertMinGap('showcase-row-outer-support-tower-right', 'mega-landmark-media-frame-wall', 72);
+assertWithinFrontCityPerimeter('ai-reactor-core-primitive-rig');
+assertWithinFrontCityPerimeter('ai-oracle-chamber-primitive-rig');
+assertWithinFrontCityPerimeter('center-sky-compass-primitive-rig');
 assertSurfaceZSpacing('screen-marquee-left-1', 'screen-array-left-1', 96);
 assertSurfaceZSpacing('screen-array-left-1', 'screen-array-left-upper-1', 96);
 assertSurfaceCenterDistance('screen-marquee-right-2', 'screen-array-right-2', 340);
