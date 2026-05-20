@@ -62,16 +62,6 @@ function WorldVerticalElevatorRouteVisual({ route }: { route: ExpoVerticalElevat
 
       {route.waypoints.map((station, index) => (
         <group key={`${route.id}:station:${index}`} position={station}>
-          <mesh position={[0, -route.cabinSize[1] * 0.56, 0]}>
-            <boxGeometry args={route.stationSize} />
-            <meshStandardMaterial
-              color="#6f8796"
-              emissive={route.accentColor}
-              emissiveIntensity={0.035}
-              metalness={0.18}
-              roughness={0.42}
-            />
-          </mesh>
           <mesh rotation={[Math.PI / 2, 0, 0]}>
             <torusGeometry args={[route.railSpacing * 0.82, 1.4, 8, 64]} />
             <meshBasicMaterial

@@ -327,9 +327,7 @@ assert.deepEqual(
     .map((region) => [region.id, region.playerY, region.zoneId]),
   [
     ['sky-market-spine-lower-market-deck-walkable', 541, 'center-spine'],
-    ['sky-market-spine-exterior-lift-lower-landing-walkable', 541, 'center-spine'],
     ['sky-market-spine-upper-market-deck-walkable', 919, 'center-spine'],
-    ['sky-market-spine-exterior-lift-upper-landing-walkable', 919, 'center-spine'],
   ],
 );
 assert.ok(cityRegistry.some((entry) => entry.id === citySurface.id && entry.layer === 'city-screen-surface'));
