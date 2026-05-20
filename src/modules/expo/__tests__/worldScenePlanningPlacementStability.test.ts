@@ -325,6 +325,8 @@ assertMinGap('meetings-outer-support-tower-right', 'mega-landmark-media-frame-wa
 assertMinGap('showcase-row-outer-support-tower-right', 'mega-landmark-media-frame-wall', 72);
 assertSurfaceZSpacing('screen-marquee-left-1', 'screen-array-left-1', 96);
 assertSurfaceZSpacing('screen-array-left-1', 'screen-array-left-upper-1', 96);
+assertSurfaceCenterDistance('screen-marquee-right-2', 'screen-array-right-2', 340);
+assertSurfaceCenterDistance('screen-marquee-right-2', 'screen-array-right-upper-2', 340);
 assertSurfaceCenterDistance('screen-marquee-right-2', 'meetings-hero-tower-right-crown-beacon', 320);
 assertSurfaceCenterDistance('screen-marquee-right-2', 'meetings-hero-tower-right-tower-ribbon', 320);
 assertWorldBoothScreenHostClearance(world, 'primary-world');

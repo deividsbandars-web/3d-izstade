@@ -38,7 +38,7 @@ export function buildCityScreenSurfacePool(districtCount: number, districtStride
     districtIndex === 0 ? -10 : districtIndex === 1 ? -138 : 0
   );
   const marqueeRightDepthOffset = (districtIndex: number) => (
-    districtIndex === 1 ? 44 : 0
+    districtIndex === 2 ? -126 : districtIndex === 1 ? 44 : 0
   );
 
   return Array.from({ length: Math.max(3, districtCount) }, (_, districtIndex) => {
