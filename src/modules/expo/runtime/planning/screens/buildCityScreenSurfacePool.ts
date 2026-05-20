@@ -13,7 +13,7 @@ export function buildCityScreenSurfacePool(districtCount: number, districtStride
   const flankYawRight = -1.08;
   const marqueeClearanceZ = 52;
   const marqueeLeftOutwardX = 128;
-  const marqueeRightOutwardX = (districtIndex: number) => (districtIndex === 2 ? 604 : 135.5);
+  const marqueeRightOutwardX = (districtIndex: number) => (districtIndex === 2 ? 590 : 135.5);
   const marqueeRightYaw = (districtIndex: number) => (districtIndex === 2 ? -1.5 : inwardYawRight);
   const sideArrayClearanceX = 236;
   const sideArrayLeftForwardZ = 64;
@@ -38,7 +38,7 @@ export function buildCityScreenSurfacePool(districtCount: number, districtStride
     districtIndex === 0 ? -10 : districtIndex === 1 ? -138 : 0
   );
   const marqueeRightDepthOffset = (districtIndex: number) => (
-    districtIndex === 2 ? -126 : districtIndex === 1 ? 44 : 0
+    districtIndex === 2 ? -112 : districtIndex === 1 ? 44 : 0
   );
 
   return Array.from({ length: Math.max(3, districtCount) }, (_, districtIndex) => {

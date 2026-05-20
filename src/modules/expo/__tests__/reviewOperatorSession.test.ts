@@ -365,10 +365,10 @@ assert.deepEqual(resolvedRightSkybridgeLandmarkView.position, [-256, 666, 1116])
 const towerCluster = zones.find((zone) => zone.id === 'tower-cluster');
 assert.ok(towerCluster);
 const resolvedTowerClusterView = resolveReviewOperatorZoneStartView(towerCluster, new Map([
-  ['screen-marquee-right-2', { position: [1312, 144, -1602] }],
+  ['screen-marquee-right-2', { position: [1298, 144, -1588] }],
 ]));
-assertVectorClose(resolvedTowerClusterView.lookAt, [1312, 162, -1602]);
-assertVectorClose(resolvedTowerClusterView.position, [632, 404, -742]);
+assertVectorClose(resolvedTowerClusterView.lookAt, [1298, 162, -1588]);
+assertVectorClose(resolvedTowerClusterView.position, [618, 404, -728]);
 
 const towerClusterVerticalPilot = zones.find((zone) => zone.id === 'tower-cluster-vertical-pilot');
 assert.ok(towerClusterVerticalPilot);
