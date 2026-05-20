@@ -5,6 +5,7 @@ import {
   buildGroundWorldObjectRegistry,
   buildStadiumWorldObjectRegistry,
 } from '../runtime/world/inspection/worldObjectRegistry.js';
+import type { WorldObjectRegistryEntry } from '../runtime/world/inspection/worldObjectRegistry.js';
 import { EXPO_VERTICAL_CITY_SYSTEM } from '../runtime/planning/vertical/verticalCitySystem.js';
 import { resolveRearCampusScreenHostId } from '../runtime/world/rearCampusScreenHosts.js';
 import type {
@@ -362,10 +363,50 @@ assert.deepEqual(cityRegistry.find((entry) => entry.id === 'sky-market-spine-lif
 assert.deepEqual(cityRegistry.find((entry) => entry.id === 'sky-market-spine-lift-lower-to-upper')?.position, [-650, 537, -520]);
 assert.deepEqual(cityRegistry.find((entry) => entry.id === 'sky-market-spine-animated-market-lift')?.position, [-650, 498, -520]);
 assert.deepEqual(cityRegistry.find((entry) => entry.id === 'sky-market-spine-animated-market-lift')?.size, [150, 1010, 92]);
-assert.deepEqual(cityRegistry.find((entry) => entry.id === 'tower-cluster-mega-highrise-animated-panoramic-lift')?.position, [-320, 825, -1075]);
+assert.deepEqual(cityRegistry.find((entry) => entry.id === 'tower-cluster-mega-highrise-animated-panoramic-lift')?.position, [-240, 825, -1075]);
 assert.deepEqual(cityRegistry.find((entry) => entry.id === 'tower-cluster-mega-highrise-animated-panoramic-lift')?.size, [144, 1662, 78]);
-assert.deepEqual(cityRegistry.find((entry) => entry.id === 'tower-cluster-television-tower-animated-city-lift')?.position, [360, 2670.5, -900]);
+assert.deepEqual(cityRegistry.find((entry) => entry.id === 'tower-cluster-television-tower-animated-city-lift')?.position, [360, 2670.5, -820]);
 assert.deepEqual(cityRegistry.find((entry) => entry.id === 'tower-cluster-television-tower-animated-city-lift')?.size, [128, 5351, 76]);
+
+type SizedWorldObjectRegistryEntry = WorldObjectRegistryEntry & { size: [number, number, number] };
+const hasRegistrySize = (entry: WorldObjectRegistryEntry): entry is SizedWorldObjectRegistryEntry => (
+  Array.isArray(entry.size) && entry.size.length === 3 && entry.size.every(Number.isFinite)
+);
+const buildObjectBounds = (entry: SizedWorldObjectRegistryEntry) => ({
+  maxX: entry.position[0] + (entry.size[0] * 0.5),
+  maxY: entry.position[1] + (entry.size[1] * 0.5),
+  maxZ: entry.position[2] + (entry.size[2] * 0.5),
+  minX: entry.position[0] - (entry.size[0] * 0.5),
+  minY: entry.position[1] - (entry.size[1] * 0.5),
+  minZ: entry.position[2] - (entry.size[2] * 0.5),
+});
+const objectBoundsOverlap = (left: SizedWorldObjectRegistryEntry, right: SizedWorldObjectRegistryEntry) => {
+  const leftBounds = buildObjectBounds(left);
+  const rightBounds = buildObjectBounds(right);
+
+  return (
+    Math.min(leftBounds.maxX, rightBounds.maxX) > Math.max(leftBounds.minX, rightBounds.minX)
+    && Math.min(leftBounds.maxY, rightBounds.maxY) > Math.max(leftBounds.minY, rightBounds.minY)
+    && Math.min(leftBounds.maxZ, rightBounds.maxZ) > Math.max(leftBounds.minZ, rightBounds.minZ)
+  );
+};
+const isTowerClusterElevatorRoute = (entry: WorldObjectRegistryEntry): entry is SizedWorldObjectRegistryEntry => (
+  entry.layer === 'vertical-elevator-route'
+  && entry.planningZone === 'tower-cluster'
+  && hasRegistrySize(entry)
+);
+const isTowerClusterMass = (entry: WorldObjectRegistryEntry): entry is SizedWorldObjectRegistryEntry => (
+  entry.layer === 'city-mass'
+  && String(entry.sourceKind).startsWith('tower-cluster-')
+  && hasRegistrySize(entry)
+);
+const towerElevatorMassIntersections = cityRegistry
+  .filter(isTowerClusterElevatorRoute)
+  .flatMap((route) => cityRegistry
+    .filter(isTowerClusterMass)
+    .filter((mass) => objectBoundsOverlap(route, mass))
+    .map((mass) => `${route.id}->${mass.id}`));
+assert.deepEqual(towerElevatorMassIntersections, []);
 assert.deepEqual(cityRegistry.find((entry) => entry.id === cityTower.id)?.position, [120, 151, -160]);
 assert.deepEqual(
   cityRegistry.find((entry) => entry.id === semanticTower.id)?.aliases,

@@ -794,7 +794,7 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       expectedKeyObjectIds: [
         'tower-cluster-mega-highrise-crown-skydeck',
       ],
-      expectedVisibleLayers: ['city-mass', 'vertical-access-node'],
+      expectedVisibleLayers: ['city-mass'],
       id: 'tower-cluster-mega-highrise',
       intent: 'tower-cluster-mega-highrise-review',
       label: 'Tower Cluster Mega Highrise',
@@ -814,6 +814,32 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
         '2.5x mega highrise skyline read',
         'skybridge and crown deck separation',
         'skydeck lift node accessibility',
+      ],
+    },
+    {
+      expectedKeyObjectIds: [
+        'tower-cluster-mega-highrise-animated-panoramic-lift',
+      ],
+      expectedVisibleLayers: ['vertical-elevator-route'],
+      id: 'tower-cluster-mega-highrise-lift-side',
+      intent: 'tower-cluster-mega-highrise-lift-side-review',
+      label: 'Mega Highrise Lift Side',
+      camera: {
+        lookAtOffset: [0, 120, 0],
+        positionOffset: [540, 360, 620],
+        targetIds: [
+          'tower-cluster-mega-highrise-animated-panoramic-lift',
+        ],
+      },
+      startView: {
+        lookAt: [-240, 945, -1075],
+        position: [300, 1185, -455],
+        source: 'arrival-main',
+      },
+      watchItems: [
+        'yellow lift rail is outside the highrise shell',
+        'moving cabin does not cut through deck/facade geometry',
+        'ground-to-skydeck route remains readable from the side',
       ],
     },
     {
@@ -891,6 +917,32 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
         'top beacon visibility',
         'broadcast collar separation',
         'upper needle silhouette',
+      ],
+    },
+    {
+      expectedKeyObjectIds: [
+        'tower-cluster-television-tower-animated-city-lift',
+      ],
+      expectedVisibleLayers: ['vertical-elevator-route'],
+      id: 'tower-cluster-television-tower-lift-side',
+      intent: 'tower-cluster-television-tower-lift-side-review',
+      label: 'Television Tower Lift Side',
+      camera: {
+        lookAtOffset: [0, 320, 0],
+        positionOffset: [760, 700, 920],
+        targetIds: [
+          'tower-cluster-television-tower-animated-city-lift',
+        ],
+      },
+      startView: {
+        lookAt: [360, 2990, -820],
+        position: [1120, 3370, 100],
+        source: 'arrival-main',
+      },
+      watchItems: [
+        'blue lift rail clears the front signal ring',
+        'moving cabin does not pass through collar or deck masses',
+        'full 5x tower lift route is visible as exterior access',
       ],
     },
     {

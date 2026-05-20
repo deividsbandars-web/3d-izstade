@@ -76,9 +76,9 @@ assert.equal(skyMarketRoute.stationDwellSeconds, 0);
 
 const megaHighriseRoute = getRoute('tower-cluster-mega-highrise-animated-panoramic-lift');
 assert.deepEqual(megaHighriseRoute.waypoints, [
-  [-320, 42, -1075],
-  [-320, 588, -1075],
-  [-320, 1608, -1075],
+  [-240, 42, -1075],
+  [-240, 588, -1075],
+  [-240, 1608, -1075],
 ]);
 assert.deepEqual(megaHighriseRoute.cabinSize, [82, 96, 60]);
 assert.deepEqual(megaHighriseRoute.rideable, {
@@ -94,10 +94,10 @@ assert.equal(megaHighriseRoute.stationDwellSeconds, 0);
 
 const televisionTowerRoute = getRoute('tower-cluster-television-tower-animated-city-lift');
 assert.deepEqual(televisionTowerRoute.waypoints, [
-  [360, 48, -900],
-  [360, 1973, -900],
-  [360, 3287, -900],
-  [360, 5293, -900],
+  [360, 48, -820],
+  [360, 1973, -820],
+  [360, 3287, -820],
+  [360, 5293, -820],
 ]);
 assert.deepEqual(televisionTowerRoute.cabinSize, [72, 106, 58]);
 assert.deepEqual(televisionTowerRoute.rideable, {
@@ -121,10 +121,10 @@ const televisionElevatorPositionDuringAscent = resolveElevatorRoutePosition({
   totalLength: getElevatorRouteTotalLength(televisionElevatorSegments),
 });
 assert.equal(televisionElevatorPositionDuringAscent[0], 360);
-assert.equal(televisionElevatorPositionDuringAscent[2], -900);
+assert.equal(televisionElevatorPositionDuringAscent[2], -820);
 assert.ok(televisionElevatorPositionDuringAscent[1] > 48);
 assert.ok(televisionElevatorPositionDuringAscent[1] < 5293);
-assert.notDeepEqual(televisionElevatorPositionDuringAscent, [360, 1973, -900]);
+assert.notDeepEqual(televisionElevatorPositionDuringAscent, [360, 1973, -820]);
 const televisionElevatorPositionDuringReturn = resolveElevatorRoutePosition({
   elapsedTime: 44,
   fallbackPosition: televisionTowerRoute.waypoints[0],
@@ -133,10 +133,10 @@ const televisionElevatorPositionDuringReturn = resolveElevatorRoutePosition({
   totalLength: getElevatorRouteTotalLength(televisionElevatorSegments),
 });
 assert.equal(televisionElevatorPositionDuringReturn[0], 360);
-assert.equal(televisionElevatorPositionDuringReturn[2], -900);
+assert.equal(televisionElevatorPositionDuringReturn[2], -820);
 assert.ok(televisionElevatorPositionDuringReturn[1] > 48);
 assert.ok(televisionElevatorPositionDuringReturn[1] < 5293);
-assert.notDeepEqual(televisionElevatorPositionDuringReturn, [360, 5293, -900]);
+assert.notDeepEqual(televisionElevatorPositionDuringReturn, [360, 5293, -820]);
 
 const groundNodes = getVerticalAccessNodesForLevel(EXPO_VERTICAL_CITY_SYSTEM, 'ground');
 const level1Nodes = getVerticalAccessNodesForLevel(EXPO_VERTICAL_CITY_SYSTEM, 'level-1');
@@ -225,22 +225,22 @@ assertNode('tower-cluster-vertical-pilot-lift-level-2-to-roof', [760, 121, -690]
 assertNode('tower-cluster-vertical-pilot-lift-roof-to-level-2', [760, 167, -710], [900, 124, -680], 'level-2');
 assertNode('tower-cluster-vertical-pilot-lift-roof-to-tower', [900, 167, -710], [900, 248, -650], 'tower');
 assertNode('tower-cluster-vertical-pilot-lift-tower-to-roof', [900, 245, -650], [900, 170, -710], 'roof');
-assertNode('tower-cluster-mega-highrise-lift-ground-to-skybridge', [-320, 0.25, -1075], [-320, 552, -1075], 'tower', false);
-assertNode('tower-cluster-mega-highrise-lift-skybridge-to-ground', [-320, 548, -1075], [-320, 5, -1075], 'ground', false);
-assertNode('tower-cluster-mega-highrise-lift-skybridge-to-skydeck', [-320, 548, -1075], [-320, 1572, -1075], 'skydeck', false);
-assertNode('tower-cluster-mega-highrise-lift-skydeck-to-skybridge', [-320, 1568, -1075], [-320, 552, -1075], 'tower', false);
+assertNode('tower-cluster-mega-highrise-lift-ground-to-skybridge', [-240, 0.25, -1075], [-240, 552, -1075], 'tower', false);
+assertNode('tower-cluster-mega-highrise-lift-skybridge-to-ground', [-240, 548, -1075], [-240, 5, -1075], 'ground', false);
+assertNode('tower-cluster-mega-highrise-lift-skybridge-to-skydeck', [-240, 548, -1075], [-240, 1572, -1075], 'skydeck', false);
+assertNode('tower-cluster-mega-highrise-lift-skydeck-to-skybridge', [-240, 1568, -1075], [-240, 552, -1075], 'tower', false);
 assertNode('tower-cluster-east-needle-jump-ground-to-landing', [-360, 0.25, -1245], [-360, 868, -1292], 'tower');
 assertNode('tower-cluster-east-needle-jump-landing-to-ground', [-360, 864, -1292], [-360, 5, -1245], 'ground');
 assertNode('tower-cluster-east-needle-lift-landing-to-skydeck', [-394, 864, -1292], [-450, 1572, -1250], 'skydeck');
 assertNode('tower-cluster-east-needle-lift-skydeck-to-landing', [-492, 1568, -1250], [-360, 868, -1292], 'tower');
 assertNode('tower-cluster-rear-needle-jump-ground-to-landing', [-605, 0.25, -1418], [-550, 676, -1474], 'tower');
 assertNode('tower-cluster-rear-needle-jump-landing-to-ground', [-550, 672, -1474], [-605, 5, -1418], 'ground');
-assertNode('tower-cluster-television-tower-lift-ground-to-observation', [360, 0.25, -900], [360, 1932, -900], 'tower', false);
-assertNode('tower-cluster-television-tower-lift-observation-to-ground', [360, 1928, -900], [360, 5, -900], 'ground', false);
-assertNode('tower-cluster-television-tower-lift-observation-to-broadcast', [360, 1928, -900], [360, 3246, -900], 'tower', false);
-assertNode('tower-cluster-television-tower-lift-broadcast-to-observation', [360, 3242, -900], [360, 1932, -900], 'tower', false);
-assertNode('tower-cluster-television-tower-lift-broadcast-to-top', [360, 3242, -900], [360, 5252, -900], 'skydeck', false);
-assertNode('tower-cluster-television-tower-lift-top-to-broadcast', [360, 5248, -900], [360, 3246, -900], 'tower', false);
+assertNode('tower-cluster-television-tower-lift-ground-to-observation', [360, 0.25, -820], [360, 1932, -820], 'tower', false);
+assertNode('tower-cluster-television-tower-lift-observation-to-ground', [360, 1928, -820], [360, 5, -820], 'ground', false);
+assertNode('tower-cluster-television-tower-lift-observation-to-broadcast', [360, 1928, -820], [360, 3246, -820], 'tower', false);
+assertNode('tower-cluster-television-tower-lift-broadcast-to-observation', [360, 3242, -820], [360, 1932, -820], 'tower', false);
+assertNode('tower-cluster-television-tower-lift-broadcast-to-top', [360, 3242, -820], [360, 5252, -820], 'skydeck', false);
+assertNode('tower-cluster-television-tower-lift-top-to-broadcast', [360, 5248, -820], [360, 3246, -820], 'tower', false);
 
 assert.deepEqual(level1WalkableRegions.map((region) => region.id), ['tower-cluster-vertical-pilot-level-1-walkable-deck']);
 assert.deepEqual(level2WalkableRegions.map((region) => region.id), ['tower-cluster-vertical-pilot-level-2-walkable-deck']);

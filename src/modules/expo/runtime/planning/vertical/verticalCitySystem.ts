@@ -240,8 +240,8 @@ const TOWER_CLUSTER_MEGA_CROWN_SKYDECK = EXPO_TOWER_CLUSTER_MEGA_STRUCTURE_LAYOU
 ));
 
 const TOWER_CLUSTER_MEGA_EXTERNAL_LIFT = {
-  groundPosition: [-320, 0.25, -1075] as [number, number, number],
-  shaftX: -320,
+  groundPosition: [-240, 0.25, -1075] as [number, number, number],
+  shaftX: -240,
   shaftZ: -1075,
   skybridgeCabinY: 588,
   skybridgePlayerY: 552,
@@ -253,8 +253,8 @@ const TOWER_CLUSTER_TELEVISION_TOWER = {
   broadcastEastPosition: [447, 3246, -1240] as [number, number, number],
   broadcastFrontPosition: [360, 3246, -1153] as [number, number, number],
   broadcastPlayerY: 3246,
-  elevatorShaftZ: -900,
-  groundLiftPosition: [360, 0.25, -900] as [number, number, number],
+  elevatorShaftZ: -820,
+  groundLiftPosition: [360, 0.25, -820] as [number, number, number],
   observationEastPosition: [496, 1932, -1240] as [number, number, number],
   observationFrontPosition: [360, 1932, -1104] as [number, number, number],
   observationPlayerY: 1932,
