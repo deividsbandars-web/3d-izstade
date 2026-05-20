@@ -172,6 +172,10 @@ function buildTowerClusterVerticalPilotMasses(): CityMass[] {
 function buildTowerClusterMegaHighriseMasses(): CityMass[] {
   const planningSource = createTowerClusterPlanningSource('buildTowerClusterMegaHighriseMasses', 'tower-cluster-mega-highrise-mass');
   const { companionTowers, core, decks } = EXPO_TOWER_CLUSTER_MEGA_STRUCTURE_LAYOUT;
+  const exteriorLiftX = -320;
+  const exteriorLiftZ = -1075;
+  const exteriorLiftConnectorX = -345;
+  const exteriorLiftConnectorZ = -1152;
 
   return [
     {
@@ -225,12 +229,81 @@ function buildTowerClusterMegaHighriseMasses(): CityMass[] {
         verticalOwner: 'city',
       }),
     })),
+    {
+      color: '#c6d4de',
+      decorPolicy: 'standard',
+      id: 'tower-cluster-mega-highrise-exterior-lift-skybridge-landing',
+      planningSource,
+      position: [exteriorLiftX, 0, exteriorLiftZ],
+      role: 'structural',
+      size: [170, 30, 130],
+      vertical: createVerticalPlacement({
+        baseY: 520,
+        floorCount: 1,
+        floorHeight: 48,
+        heightBand: 'tower',
+        level: 'tower',
+        verticalOwner: 'city',
+      }),
+    },
+    {
+      color: '#aebdc7',
+      decorPolicy: 'standard',
+      id: 'tower-cluster-mega-highrise-exterior-lift-skybridge-connector',
+      planningSource,
+      position: [exteriorLiftConnectorX, 0, exteriorLiftConnectorZ],
+      role: 'structural',
+      size: [190, 22, 170],
+      vertical: createVerticalPlacement({
+        baseY: 520,
+        floorCount: 1,
+        floorHeight: 48,
+        heightBand: 'tower',
+        level: 'tower',
+        verticalOwner: 'city',
+      }),
+    },
+    {
+      color: '#d3e0e8',
+      decorPolicy: 'standard',
+      id: 'tower-cluster-mega-highrise-exterior-lift-skydeck-landing',
+      planningSource,
+      position: [exteriorLiftX, 0, exteriorLiftZ],
+      role: 'structural',
+      size: [180, 32, 140],
+      vertical: createVerticalPlacement({
+        baseY: 1536,
+        floorCount: 1,
+        floorHeight: 96,
+        heightBand: 'tower',
+        level: 'skydeck',
+        verticalOwner: 'city',
+      }),
+    },
+    {
+      color: '#b9c9d3',
+      decorPolicy: 'standard',
+      id: 'tower-cluster-mega-highrise-exterior-lift-skydeck-connector',
+      planningSource,
+      position: [exteriorLiftConnectorX, 0, exteriorLiftConnectorZ - 3],
+      role: 'structural',
+      size: [190, 28, 190],
+      vertical: createVerticalPlacement({
+        baseY: 1536,
+        floorCount: 1,
+        floorHeight: 96,
+        heightBand: 'tower',
+        level: 'skydeck',
+        verticalOwner: 'city',
+      }),
+    },
   ];
 }
 
 function buildTowerClusterTelevisionTowerMasses(): CityMass[] {
   const planningSource = createTowerClusterPlanningSource('buildTowerClusterTelevisionTowerMasses', 'tower-cluster-television-tower-mass');
   const towerPosition: [number, number, number] = [360, 0, -1240];
+  const elevatorShaftZ = -900;
   const createMass = ({
     baseY,
     color,
@@ -372,9 +445,9 @@ function buildTowerClusterTelevisionTowerMasses(): CityMass[] {
       floorCount: 1,
       floorHeight: 86,
       id: 'tower-cluster-television-tower-observation-lift-landing',
-      position: [towerPosition[0], 0, -978],
+      position: [towerPosition[0], 0, elevatorShaftZ],
       role: 'structural',
-      size: [88, 86, 82],
+      size: [118, 86, 118],
     }),
     createMass({
       baseY: 1842,
@@ -471,9 +544,9 @@ function buildTowerClusterTelevisionTowerMasses(): CityMass[] {
       floorCount: 1,
       floorHeight: 62,
       id: 'tower-cluster-television-tower-broadcast-lift-landing',
-      position: [towerPosition[0], 0, -1060],
+      position: [towerPosition[0], 0, elevatorShaftZ],
       role: 'structural',
-      size: [88, 62, 86],
+      size: [118, 62, 118],
     }),
     createMass({
       baseY: 3180,
@@ -513,9 +586,9 @@ function buildTowerClusterTelevisionTowerMasses(): CityMass[] {
       floorCount: 1,
       floorHeight: 48,
       id: 'tower-cluster-television-tower-top-lift-bridge',
-      position: [towerPosition[0], 0, -1106],
+      position: [towerPosition[0], 0, elevatorShaftZ],
       role: 'structural',
-      size: [88, 48, 168],
+      size: [118, 48, 126],
     }),
   ];
 }

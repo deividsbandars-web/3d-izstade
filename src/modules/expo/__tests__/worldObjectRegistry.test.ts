@@ -327,7 +327,9 @@ assert.deepEqual(
     .map((region) => [region.id, region.playerY, region.zoneId]),
   [
     ['sky-market-spine-lower-market-deck-walkable', 541, 'center-spine'],
+    ['sky-market-spine-exterior-lift-lower-landing-walkable', 541, 'center-spine'],
     ['sky-market-spine-upper-market-deck-walkable', 919, 'center-spine'],
+    ['sky-market-spine-exterior-lift-upper-landing-walkable', 919, 'center-spine'],
   ],
 );
 assert.ok(cityRegistry.some((entry) => entry.id === citySurface.id && entry.layer === 'city-screen-surface'));
@@ -357,14 +359,14 @@ assert.deepEqual(cityRegistry.find((entry) => entry.id === 'tower-cluster-vertic
 assert.equal(cityRegistry.find((entry) => entry.id === 'tower-cluster-vertical-pilot-lift-ground')?.interactionOwner, 'src/modules/expo/runtime/world/scene/ExpoWorldPlayerLayer.tsx');
 assert.deepEqual(cityRegistry.find((entry) => entry.id === 'tower-cluster-vertical-pilot-lift-level-1-to-level-2')?.position, [980, 67, -650]);
 assert.deepEqual(cityRegistry.find((entry) => entry.id === 'tower-cluster-vertical-pilot-lift-level-1-to-level-2')?.size, [56, 10, 56]);
-assert.deepEqual(cityRegistry.find((entry) => entry.id === 'sky-market-spine-lift-ground-to-lower')?.position, [-520, 5, -520]);
+assert.deepEqual(cityRegistry.find((entry) => entry.id === 'sky-market-spine-lift-ground-to-lower')?.position, [-650, 5, -520]);
 assert.deepEqual(cityRegistry.find((entry) => entry.id === 'sky-market-spine-lift-ground-to-lower')?.size, [76, 10, 76]);
-assert.deepEqual(cityRegistry.find((entry) => entry.id === 'sky-market-spine-lift-lower-to-upper')?.position, [520, 537, -520]);
-assert.deepEqual(cityRegistry.find((entry) => entry.id === 'sky-market-spine-animated-market-lift')?.position, [-520, 498, -520]);
+assert.deepEqual(cityRegistry.find((entry) => entry.id === 'sky-market-spine-lift-lower-to-upper')?.position, [-650, 537, -520]);
+assert.deepEqual(cityRegistry.find((entry) => entry.id === 'sky-market-spine-animated-market-lift')?.position, [-650, 498, -520]);
 assert.deepEqual(cityRegistry.find((entry) => entry.id === 'sky-market-spine-animated-market-lift')?.size, [150, 1010, 92]);
-assert.deepEqual(cityRegistry.find((entry) => entry.id === 'tower-cluster-mega-highrise-animated-panoramic-lift')?.position, [-510, 825, -1217.5]);
-assert.deepEqual(cityRegistry.find((entry) => entry.id === 'tower-cluster-mega-highrise-animated-panoramic-lift')?.size, [264, 1662, 143]);
-assert.deepEqual(cityRegistry.find((entry) => entry.id === 'tower-cluster-television-tower-animated-city-lift')?.position, [360, 2670.5, -1030]);
+assert.deepEqual(cityRegistry.find((entry) => entry.id === 'tower-cluster-mega-highrise-animated-panoramic-lift')?.position, [-320, 825, -1075]);
+assert.deepEqual(cityRegistry.find((entry) => entry.id === 'tower-cluster-mega-highrise-animated-panoramic-lift')?.size, [144, 1662, 78]);
+assert.deepEqual(cityRegistry.find((entry) => entry.id === 'tower-cluster-television-tower-animated-city-lift')?.position, [360, 2670.5, -900]);
 assert.deepEqual(cityRegistry.find((entry) => entry.id === 'tower-cluster-television-tower-animated-city-lift')?.size, [128, 5351, 76]);
 assert.deepEqual(cityRegistry.find((entry) => entry.id === cityTower.id)?.position, [120, 151, -160]);
 assert.deepEqual(

@@ -167,7 +167,7 @@ export function WorldCityMegaLandmarks({
   const discoveryBaseZ = -196 - ((Math.max(1, districtCount) - 1) * districtStride) - 1080;
   const mediaBaseZ = -214 - districtStride - 260;
   const mediaFrameBase: [number, number, number] = [860, 0, mediaBaseZ - 78];
-  const mediaPodsBase: [number, number, number] = [500, 0, mediaBaseZ + 222];
+  const mediaPodsBase: [number, number, number] = [1160, 0, mediaBaseZ + 122];
   const discoveryCrownBase: [number, number, number] = [-368, 0, discoveryBaseZ - 32];
   const discoverySpineBase: [number, number, number] = [-492, 0, discoveryBaseZ + 212];
   const rightCitadelBase: [number, number, number] = [844, 0, -164];

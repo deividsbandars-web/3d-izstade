@@ -133,7 +133,7 @@ export function buildWorldCityMegaLandmarkBounds({
       ],
       planningSection: 'middle',
       planningZone: 'center-spine',
-      position: [500, 54, mediaBaseZ + 222],
+      position: [1160, 54, mediaBaseZ + 122],
       size: [320, 108, 70],
     }),
     createMegaLandmarkBound({

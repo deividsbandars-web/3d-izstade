@@ -229,9 +229,6 @@ export const EXPO_TOWER_CLUSTER_MEGA_STRUCTURE_LAYOUT: ExpoVerticalMegaStructure
   zoneId: 'tower-cluster',
 };
 
-const TOWER_CLUSTER_MEGA_SKYBRIDGE_DECK = EXPO_TOWER_CLUSTER_MEGA_STRUCTURE_LAYOUT.decks.find((deck) => (
-  deck.id === 'tower-cluster-mega-highrise-skybridge-deck'
-));
 const TOWER_CLUSTER_MEGA_EAST_NEEDLE_LANDING = EXPO_TOWER_CLUSTER_MEGA_STRUCTURE_LAYOUT.decks.find((deck) => (
   deck.id === 'tower-cluster-mega-highrise-east-needle-landing'
 ));
@@ -242,12 +239,22 @@ const TOWER_CLUSTER_MEGA_CROWN_SKYDECK = EXPO_TOWER_CLUSTER_MEGA_STRUCTURE_LAYOU
   deck.id === 'tower-cluster-mega-highrise-crown-skydeck'
 ));
 
+const TOWER_CLUSTER_MEGA_EXTERNAL_LIFT = {
+  groundPosition: [-320, 0.25, -1075] as [number, number, number],
+  shaftX: -320,
+  shaftZ: -1075,
+  skybridgeCabinY: 588,
+  skybridgePlayerY: 552,
+  skydeckCabinY: 1608,
+  skydeckPlayerY: 1572,
+} as const;
+
 const TOWER_CLUSTER_TELEVISION_TOWER = {
   broadcastEastPosition: [447, 3246, -1240] as [number, number, number],
   broadcastFrontPosition: [360, 3246, -1153] as [number, number, number],
   broadcastPlayerY: 3246,
-  elevatorShaftZ: -1012,
-  groundLiftPosition: [360, 0.25, -1030] as [number, number, number],
+  elevatorShaftZ: -900,
+  groundLiftPosition: [360, 0.25, -900] as [number, number, number],
   observationEastPosition: [496, 1932, -1240] as [number, number, number],
   observationFrontPosition: [360, 1932, -1104] as [number, number, number],
   observationPlayerY: 1932,
@@ -256,17 +263,18 @@ const TOWER_CLUSTER_TELEVISION_TOWER = {
 } as const;
 
 const SKY_MARKET_SPINE_Z = -520;
+const SKY_MARKET_SPINE_LIFT_X = -650;
 
 const SKY_MARKET_SPINE_VERTICAL = {
   center: [0, 0, SKY_MARKET_SPINE_Z] as [number, number, number],
-  groundLiftPosition: [-520, 0.25, SKY_MARKET_SPINE_Z] as [number, number, number],
+  groundLiftPosition: [SKY_MARKET_SPINE_LIFT_X, 0.25, SKY_MARKET_SPINE_Z] as [number, number, number],
   lowerDeckPlayerY: 541,
   lowerDeckPosition: [0, 541, SKY_MARKET_SPINE_Z] as [number, number, number],
-  lowerLiftPosition: [-520, 537, SKY_MARKET_SPINE_Z] as [number, number, number],
-  lowerToUpperLiftPosition: [520, 537, SKY_MARKET_SPINE_Z] as [number, number, number],
+  lowerLiftPosition: [SKY_MARKET_SPINE_LIFT_X, 537, SKY_MARKET_SPINE_Z] as [number, number, number],
+  lowerToUpperLiftPosition: [SKY_MARKET_SPINE_LIFT_X, 537, SKY_MARKET_SPINE_Z] as [number, number, number],
   upperDeckPlayerY: 919,
   upperDeckPosition: [0, 919, SKY_MARKET_SPINE_Z] as [number, number, number],
-  upperLiftPosition: [520, 915, SKY_MARKET_SPINE_Z] as [number, number, number],
+  upperLiftPosition: [SKY_MARKET_SPINE_LIFT_X, 915, SKY_MARKET_SPINE_Z] as [number, number, number],
 } as const;
 
 export const EXPO_VERTICAL_CITY_SYSTEM: ExpoVerticalCitySystemPlan = {
@@ -280,7 +288,7 @@ export const EXPO_VERTICAL_CITY_SYSTEM: ExpoVerticalCitySystemPlan = {
       position: SKY_MARKET_SPINE_VERTICAL.groundLiftPosition,
       radius: 38,
       targetLevel: 'tower',
-      targetPosition: [-520, SKY_MARKET_SPINE_VERTICAL.lowerDeckPlayerY, SKY_MARKET_SPINE_Z],
+      targetPosition: [SKY_MARKET_SPINE_LIFT_X, SKY_MARKET_SPINE_VERTICAL.lowerDeckPlayerY, SKY_MARKET_SPINE_Z],
       zoneId: 'center-spine',
     },
     {
@@ -292,7 +300,7 @@ export const EXPO_VERTICAL_CITY_SYSTEM: ExpoVerticalCitySystemPlan = {
       position: SKY_MARKET_SPINE_VERTICAL.lowerLiftPosition,
       radius: 30,
       targetLevel: 'ground',
-      targetPosition: [-520, 5, SKY_MARKET_SPINE_Z],
+      targetPosition: [SKY_MARKET_SPINE_LIFT_X, 5, SKY_MARKET_SPINE_Z],
       zoneId: 'center-spine',
     },
     {
@@ -304,7 +312,7 @@ export const EXPO_VERTICAL_CITY_SYSTEM: ExpoVerticalCitySystemPlan = {
       position: SKY_MARKET_SPINE_VERTICAL.lowerToUpperLiftPosition,
       radius: 30,
       targetLevel: 'skydeck',
-      targetPosition: [520, SKY_MARKET_SPINE_VERTICAL.upperDeckPlayerY, SKY_MARKET_SPINE_Z],
+      targetPosition: [SKY_MARKET_SPINE_LIFT_X, SKY_MARKET_SPINE_VERTICAL.upperDeckPlayerY, SKY_MARKET_SPINE_Z],
       zoneId: 'center-spine',
     },
     {
@@ -316,7 +324,7 @@ export const EXPO_VERTICAL_CITY_SYSTEM: ExpoVerticalCitySystemPlan = {
       position: SKY_MARKET_SPINE_VERTICAL.upperLiftPosition,
       radius: 28,
       targetLevel: 'tower',
-      targetPosition: [520, SKY_MARKET_SPINE_VERTICAL.lowerDeckPlayerY, SKY_MARKET_SPINE_Z],
+      targetPosition: [SKY_MARKET_SPINE_LIFT_X, SKY_MARKET_SPINE_VERTICAL.lowerDeckPlayerY, SKY_MARKET_SPINE_Z],
       zoneId: 'center-spine',
     },
     {
@@ -435,12 +443,14 @@ export const EXPO_VERTICAL_CITY_SYSTEM: ExpoVerticalCitySystemPlan = {
       label: 'Mega Highrise Skybridge Lift',
       level: 'ground',
       mode: 'lift',
-      position: [-570, 0.25, -1185],
+      position: TOWER_CLUSTER_MEGA_EXTERNAL_LIFT.groundPosition,
       radius: 36,
       targetLevel: 'tower',
-      targetPosition: TOWER_CLUSTER_MEGA_SKYBRIDGE_DECK
-        ? [TOWER_CLUSTER_MEGA_SKYBRIDGE_DECK.position[0], TOWER_CLUSTER_MEGA_SKYBRIDGE_DECK.playerY, TOWER_CLUSTER_MEGA_SKYBRIDGE_DECK.position[2]]
-        : [-570, 552, -1245],
+      targetPosition: [
+        TOWER_CLUSTER_MEGA_EXTERNAL_LIFT.shaftX,
+        TOWER_CLUSTER_MEGA_EXTERNAL_LIFT.skybridgePlayerY,
+        TOWER_CLUSTER_MEGA_EXTERNAL_LIFT.shaftZ,
+      ],
       zoneId: 'tower-cluster',
     },
     {
@@ -449,12 +459,14 @@ export const EXPO_VERTICAL_CITY_SYSTEM: ExpoVerticalCitySystemPlan = {
       label: 'Mega Highrise Ground Return',
       level: 'tower',
       mode: 'lift',
-      position: TOWER_CLUSTER_MEGA_SKYBRIDGE_DECK
-        ? [TOWER_CLUSTER_MEGA_SKYBRIDGE_DECK.position[0], TOWER_CLUSTER_MEGA_SKYBRIDGE_DECK.playerY - 4, TOWER_CLUSTER_MEGA_SKYBRIDGE_DECK.position[2]]
-        : [1060, 238, -780],
+      position: [
+        TOWER_CLUSTER_MEGA_EXTERNAL_LIFT.shaftX,
+        TOWER_CLUSTER_MEGA_EXTERNAL_LIFT.skybridgePlayerY - 4,
+        TOWER_CLUSTER_MEGA_EXTERNAL_LIFT.shaftZ,
+      ],
       radius: 28,
       targetLevel: 'ground',
-      targetPosition: [-570, 5, -1185],
+      targetPosition: [TOWER_CLUSTER_MEGA_EXTERNAL_LIFT.shaftX, 5, TOWER_CLUSTER_MEGA_EXTERNAL_LIFT.shaftZ],
       zoneId: 'tower-cluster',
     },
     {
@@ -463,14 +475,18 @@ export const EXPO_VERTICAL_CITY_SYSTEM: ExpoVerticalCitySystemPlan = {
       label: 'Mega Highrise Crown Skydeck Lift',
       level: 'tower',
       mode: 'lift',
-      position: TOWER_CLUSTER_MEGA_SKYBRIDGE_DECK
-        ? [TOWER_CLUSTER_MEGA_SKYBRIDGE_DECK.position[0] + 74, TOWER_CLUSTER_MEGA_SKYBRIDGE_DECK.playerY - 4, TOWER_CLUSTER_MEGA_SKYBRIDGE_DECK.position[2]]
-        : [-496, 548, -1245],
+      position: [
+        TOWER_CLUSTER_MEGA_EXTERNAL_LIFT.shaftX,
+        TOWER_CLUSTER_MEGA_EXTERNAL_LIFT.skybridgePlayerY - 4,
+        TOWER_CLUSTER_MEGA_EXTERNAL_LIFT.shaftZ,
+      ],
       radius: 30,
       targetLevel: 'skydeck',
-      targetPosition: TOWER_CLUSTER_MEGA_CROWN_SKYDECK
-        ? [TOWER_CLUSTER_MEGA_CROWN_SKYDECK.position[0], TOWER_CLUSTER_MEGA_CROWN_SKYDECK.playerY, TOWER_CLUSTER_MEGA_CROWN_SKYDECK.position[2]]
-        : [-450, 1572, -1250],
+      targetPosition: [
+        TOWER_CLUSTER_MEGA_EXTERNAL_LIFT.shaftX,
+        TOWER_CLUSTER_MEGA_EXTERNAL_LIFT.skydeckPlayerY,
+        TOWER_CLUSTER_MEGA_EXTERNAL_LIFT.shaftZ,
+      ],
       zoneId: 'tower-cluster',
     },
     {
@@ -479,14 +495,18 @@ export const EXPO_VERTICAL_CITY_SYSTEM: ExpoVerticalCitySystemPlan = {
       label: 'Mega Highrise Skybridge Return',
       level: 'skydeck',
       mode: 'lift',
-      position: TOWER_CLUSTER_MEGA_CROWN_SKYDECK
-        ? [TOWER_CLUSTER_MEGA_CROWN_SKYDECK.position[0], TOWER_CLUSTER_MEGA_CROWN_SKYDECK.playerY - 4, TOWER_CLUSTER_MEGA_CROWN_SKYDECK.position[2]]
-        : [-450, 1568, -1250],
+      position: [
+        TOWER_CLUSTER_MEGA_EXTERNAL_LIFT.shaftX,
+        TOWER_CLUSTER_MEGA_EXTERNAL_LIFT.skydeckPlayerY - 4,
+        TOWER_CLUSTER_MEGA_EXTERNAL_LIFT.shaftZ,
+      ],
       radius: 30,
       targetLevel: 'tower',
-      targetPosition: TOWER_CLUSTER_MEGA_SKYBRIDGE_DECK
-        ? [TOWER_CLUSTER_MEGA_SKYBRIDGE_DECK.position[0], TOWER_CLUSTER_MEGA_SKYBRIDGE_DECK.playerY, TOWER_CLUSTER_MEGA_SKYBRIDGE_DECK.position[2]]
-        : [-570, 552, -1245],
+      targetPosition: [
+        TOWER_CLUSTER_MEGA_EXTERNAL_LIFT.shaftX,
+        TOWER_CLUSTER_MEGA_EXTERNAL_LIFT.skybridgePlayerY,
+        TOWER_CLUSTER_MEGA_EXTERNAL_LIFT.shaftZ,
+      ],
       zoneId: 'tower-cluster',
     },
     {
@@ -580,7 +600,7 @@ export const EXPO_VERTICAL_CITY_SYSTEM: ExpoVerticalCitySystemPlan = {
       position: TOWER_CLUSTER_TELEVISION_TOWER.groundLiftPosition,
       radius: 34,
       targetLevel: 'tower',
-      targetPosition: TOWER_CLUSTER_TELEVISION_TOWER.observationFrontPosition,
+      targetPosition: [360, TOWER_CLUSTER_TELEVISION_TOWER.observationPlayerY, TOWER_CLUSTER_TELEVISION_TOWER.elevatorShaftZ],
       zoneId: 'tower-cluster',
     },
     {
@@ -589,10 +609,10 @@ export const EXPO_VERTICAL_CITY_SYSTEM: ExpoVerticalCitySystemPlan = {
       label: 'Television Tower Ground Return',
       level: 'tower',
       mode: 'lift',
-      position: [360, TOWER_CLUSTER_TELEVISION_TOWER.observationPlayerY - 4, -1104],
+      position: [360, TOWER_CLUSTER_TELEVISION_TOWER.observationPlayerY - 4, TOWER_CLUSTER_TELEVISION_TOWER.elevatorShaftZ],
       radius: 28,
       targetLevel: 'ground',
-      targetPosition: [360, 5, -1030],
+      targetPosition: [360, 5, TOWER_CLUSTER_TELEVISION_TOWER.elevatorShaftZ],
       zoneId: 'tower-cluster',
     },
     {
@@ -601,10 +621,10 @@ export const EXPO_VERTICAL_CITY_SYSTEM: ExpoVerticalCitySystemPlan = {
       label: 'Television Tower Broadcast Lift',
       level: 'tower',
       mode: 'lift',
-      position: [496, TOWER_CLUSTER_TELEVISION_TOWER.observationPlayerY - 4, -1240],
+      position: [360, TOWER_CLUSTER_TELEVISION_TOWER.observationPlayerY - 4, TOWER_CLUSTER_TELEVISION_TOWER.elevatorShaftZ],
       radius: 28,
       targetLevel: 'tower',
-      targetPosition: TOWER_CLUSTER_TELEVISION_TOWER.broadcastEastPosition,
+      targetPosition: [360, TOWER_CLUSTER_TELEVISION_TOWER.broadcastPlayerY, TOWER_CLUSTER_TELEVISION_TOWER.elevatorShaftZ],
       zoneId: 'tower-cluster',
     },
     {
@@ -613,10 +633,10 @@ export const EXPO_VERTICAL_CITY_SYSTEM: ExpoVerticalCitySystemPlan = {
       label: 'Television Tower Observation Return',
       level: 'tower',
       mode: 'lift',
-      position: [447, TOWER_CLUSTER_TELEVISION_TOWER.broadcastPlayerY - 4, -1240],
+      position: [360, TOWER_CLUSTER_TELEVISION_TOWER.broadcastPlayerY - 4, TOWER_CLUSTER_TELEVISION_TOWER.elevatorShaftZ],
       radius: 26,
       targetLevel: 'tower',
-      targetPosition: TOWER_CLUSTER_TELEVISION_TOWER.observationEastPosition,
+      targetPosition: [360, TOWER_CLUSTER_TELEVISION_TOWER.observationPlayerY, TOWER_CLUSTER_TELEVISION_TOWER.elevatorShaftZ],
       zoneId: 'tower-cluster',
     },
     {
@@ -625,10 +645,10 @@ export const EXPO_VERTICAL_CITY_SYSTEM: ExpoVerticalCitySystemPlan = {
       label: 'Television Tower Top Lift',
       level: 'tower',
       mode: 'lift',
-      position: [360, TOWER_CLUSTER_TELEVISION_TOWER.broadcastPlayerY - 4, -1153],
+      position: [360, TOWER_CLUSTER_TELEVISION_TOWER.broadcastPlayerY - 4, TOWER_CLUSTER_TELEVISION_TOWER.elevatorShaftZ],
       radius: 24,
       targetLevel: 'skydeck',
-      targetPosition: TOWER_CLUSTER_TELEVISION_TOWER.topBeaconPosition,
+      targetPosition: [360, TOWER_CLUSTER_TELEVISION_TOWER.topPlayerY, TOWER_CLUSTER_TELEVISION_TOWER.elevatorShaftZ],
       zoneId: 'tower-cluster',
     },
     {
@@ -637,10 +657,10 @@ export const EXPO_VERTICAL_CITY_SYSTEM: ExpoVerticalCitySystemPlan = {
       label: 'Television Tower Broadcast Return',
       level: 'skydeck',
       mode: 'lift',
-      position: [360, TOWER_CLUSTER_TELEVISION_TOWER.topPlayerY - 4, -1240],
+      position: [360, TOWER_CLUSTER_TELEVISION_TOWER.topPlayerY - 4, TOWER_CLUSTER_TELEVISION_TOWER.elevatorShaftZ],
       radius: 22,
       targetLevel: 'tower',
-      targetPosition: TOWER_CLUSTER_TELEVISION_TOWER.broadcastFrontPosition,
+      targetPosition: [360, TOWER_CLUSTER_TELEVISION_TOWER.broadcastPlayerY, TOWER_CLUSTER_TELEVISION_TOWER.elevatorShaftZ],
       zoneId: 'tower-cluster',
     },
   ],
@@ -662,9 +682,9 @@ export const EXPO_VERTICAL_CITY_SYSTEM: ExpoVerticalCitySystemPlan = {
       stationDwellSeconds: 3.2,
       stationSize: [158, 14, 92],
       waypoints: [
-        [-520, 41, SKY_MARKET_SPINE_Z],
-        [-520, SKY_MARKET_SPINE_VERTICAL.lowerDeckPlayerY + 36, SKY_MARKET_SPINE_Z],
-        [-520, SKY_MARKET_SPINE_VERTICAL.upperDeckPlayerY + 36, SKY_MARKET_SPINE_Z],
+        [SKY_MARKET_SPINE_LIFT_X, 41, SKY_MARKET_SPINE_Z],
+        [SKY_MARKET_SPINE_LIFT_X, SKY_MARKET_SPINE_VERTICAL.lowerDeckPlayerY + 36, SKY_MARKET_SPINE_Z],
+        [SKY_MARKET_SPINE_LIFT_X, SKY_MARKET_SPINE_VERTICAL.upperDeckPlayerY + 36, SKY_MARKET_SPINE_Z],
       ],
       zoneId: 'center-spine',
     },
@@ -684,9 +704,9 @@ export const EXPO_VERTICAL_CITY_SYSTEM: ExpoVerticalCitySystemPlan = {
       stationDwellSeconds: 3.2,
       stationSize: [154, 14, 78],
       waypoints: [
-        [-570, 42, -1185],
-        [-570, 588, -1245],
-        [-450, 1608, -1250],
+        [TOWER_CLUSTER_MEGA_EXTERNAL_LIFT.shaftX, 42, TOWER_CLUSTER_MEGA_EXTERNAL_LIFT.shaftZ],
+        [TOWER_CLUSTER_MEGA_EXTERNAL_LIFT.shaftX, TOWER_CLUSTER_MEGA_EXTERNAL_LIFT.skybridgeCabinY, TOWER_CLUSTER_MEGA_EXTERNAL_LIFT.shaftZ],
+        [TOWER_CLUSTER_MEGA_EXTERNAL_LIFT.shaftX, TOWER_CLUSTER_MEGA_EXTERNAL_LIFT.skydeckCabinY, TOWER_CLUSTER_MEGA_EXTERNAL_LIFT.shaftZ],
       ],
       zoneId: 'tower-cluster',
     },
@@ -706,10 +726,10 @@ export const EXPO_VERTICAL_CITY_SYSTEM: ExpoVerticalCitySystemPlan = {
       stationDwellSeconds: 4,
       stationSize: [148, 14, 76],
       waypoints: [
-        [360, 48, -1030],
-        [360, TOWER_CLUSTER_TELEVISION_TOWER.observationPlayerY + 41, -1030],
-        [360, TOWER_CLUSTER_TELEVISION_TOWER.broadcastPlayerY + 41, -1030],
-        [360, TOWER_CLUSTER_TELEVISION_TOWER.topPlayerY + 41, -1030],
+        [360, 48, TOWER_CLUSTER_TELEVISION_TOWER.elevatorShaftZ],
+        [360, TOWER_CLUSTER_TELEVISION_TOWER.observationPlayerY + 41, TOWER_CLUSTER_TELEVISION_TOWER.elevatorShaftZ],
+        [360, TOWER_CLUSTER_TELEVISION_TOWER.broadcastPlayerY + 41, TOWER_CLUSTER_TELEVISION_TOWER.elevatorShaftZ],
+        [360, TOWER_CLUSTER_TELEVISION_TOWER.topPlayerY + 41, TOWER_CLUSTER_TELEVISION_TOWER.elevatorShaftZ],
       ],
       zoneId: 'tower-cluster',
     },
@@ -733,11 +753,27 @@ export const EXPO_VERTICAL_CITY_SYSTEM: ExpoVerticalCitySystemPlan = {
       zoneId: 'center-spine',
     },
     {
+      id: 'sky-market-spine-exterior-lift-lower-landing-walkable',
+      level: 'tower',
+      playerY: SKY_MARKET_SPINE_VERTICAL.lowerDeckPlayerY,
+      position: [SKY_MARKET_SPINE_LIFT_X, SKY_MARKET_SPINE_VERTICAL.lowerDeckPlayerY, SKY_MARKET_SPINE_Z],
+      size: [160, 110],
+      zoneId: 'center-spine',
+    },
+    {
       id: 'sky-market-spine-upper-market-deck-walkable',
       level: 'skydeck',
       playerY: SKY_MARKET_SPINE_VERTICAL.upperDeckPlayerY,
       position: SKY_MARKET_SPINE_VERTICAL.upperDeckPosition,
       size: [580, 900],
+      zoneId: 'center-spine',
+    },
+    {
+      id: 'sky-market-spine-exterior-lift-upper-landing-walkable',
+      level: 'skydeck',
+      playerY: SKY_MARKET_SPINE_VERTICAL.upperDeckPlayerY,
+      position: [SKY_MARKET_SPINE_LIFT_X, SKY_MARKET_SPINE_VERTICAL.upperDeckPlayerY, SKY_MARKET_SPINE_Z],
+      size: [160, 110],
       zoneId: 'center-spine',
     },
     {
@@ -781,11 +817,35 @@ export const EXPO_VERTICAL_CITY_SYSTEM: ExpoVerticalCitySystemPlan = {
       zoneId: EXPO_TOWER_CLUSTER_MEGA_STRUCTURE_LAYOUT.zoneId,
     })),
     {
+      id: 'tower-cluster-mega-highrise-exterior-lift-skybridge-landing-walkable',
+      level: 'tower',
+      playerY: TOWER_CLUSTER_MEGA_EXTERNAL_LIFT.skybridgePlayerY,
+      position: [
+        TOWER_CLUSTER_MEGA_EXTERNAL_LIFT.shaftX,
+        TOWER_CLUSTER_MEGA_EXTERNAL_LIFT.skybridgePlayerY,
+        TOWER_CLUSTER_MEGA_EXTERNAL_LIFT.shaftZ,
+      ],
+      size: [170, 130],
+      zoneId: 'tower-cluster',
+    },
+    {
+      id: 'tower-cluster-mega-highrise-exterior-lift-skydeck-landing-walkable',
+      level: 'skydeck',
+      playerY: TOWER_CLUSTER_MEGA_EXTERNAL_LIFT.skydeckPlayerY,
+      position: [
+        TOWER_CLUSTER_MEGA_EXTERNAL_LIFT.shaftX,
+        TOWER_CLUSTER_MEGA_EXTERNAL_LIFT.skydeckPlayerY,
+        TOWER_CLUSTER_MEGA_EXTERNAL_LIFT.shaftZ,
+      ],
+      size: [180, 140],
+      zoneId: 'tower-cluster',
+    },
+    {
       id: 'tower-cluster-television-tower-observation-lift-landing-walkable',
       level: 'tower',
       playerY: TOWER_CLUSTER_TELEVISION_TOWER.observationPlayerY,
-      position: [360, TOWER_CLUSTER_TELEVISION_TOWER.observationPlayerY, -978],
-      size: [88, 82],
+      position: [360, TOWER_CLUSTER_TELEVISION_TOWER.observationPlayerY, TOWER_CLUSTER_TELEVISION_TOWER.elevatorShaftZ],
+      size: [118, 118],
       zoneId: 'tower-cluster',
     },
     {
@@ -824,8 +884,8 @@ export const EXPO_VERTICAL_CITY_SYSTEM: ExpoVerticalCitySystemPlan = {
       id: 'tower-cluster-television-tower-broadcast-lift-landing-walkable',
       level: 'tower',
       playerY: TOWER_CLUSTER_TELEVISION_TOWER.broadcastPlayerY,
-      position: [360, TOWER_CLUSTER_TELEVISION_TOWER.broadcastPlayerY, -1060],
-      size: [88, 86],
+      position: [360, TOWER_CLUSTER_TELEVISION_TOWER.broadcastPlayerY, TOWER_CLUSTER_TELEVISION_TOWER.elevatorShaftZ],
+      size: [118, 118],
       zoneId: 'tower-cluster',
     },
     {
@@ -864,8 +924,8 @@ export const EXPO_VERTICAL_CITY_SYSTEM: ExpoVerticalCitySystemPlan = {
       id: 'tower-cluster-television-tower-top-lift-bridge-walkable',
       level: 'skydeck',
       playerY: TOWER_CLUSTER_TELEVISION_TOWER.topPlayerY,
-      position: [360, TOWER_CLUSTER_TELEVISION_TOWER.topPlayerY, -1106],
-      size: [88, 168],
+      position: [360, TOWER_CLUSTER_TELEVISION_TOWER.topPlayerY, TOWER_CLUSTER_TELEVISION_TOWER.elevatorShaftZ],
+      size: [118, 126],
       zoneId: 'tower-cluster',
     },
     {
