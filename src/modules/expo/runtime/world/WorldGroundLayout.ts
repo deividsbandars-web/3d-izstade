@@ -22,6 +22,27 @@ export const CITY_STRUCTURAL_GROUND_OPACITY = 0.095;
 export const CITY_STRUCTURAL_GROUND_ARRIVAL_OPACITY = 0.085;
 export const STADIUM_FORECOURT_GROUND_OPACITY = 0.085;
 
+export const GROUND_SEAM_TRANSITION_PLATE = {
+  color: '#89949d',
+  id: 'city-stadium-seam-transition-plate',
+  position: [0, GROUND_DETAIL_Y, -1210] as [number, number, number],
+  size: [1760, 760] as [number, number],
+};
+
+export const SPONSOR_BOULEVARD_RIGHT_FLOOR_ANCHOR = {
+  color: '#7f8b94',
+  id: 'sponsor-boulevard-right-floor-anchor',
+  position: [270, GROUND_ACCENT_Y, -900] as [number, number, number],
+  size: [680, 320] as [number, number],
+};
+
+export const ARRIVAL_GATE_FLOOR_ANCHOR = {
+  color: '#909ba3',
+  id: 'arrival-gate-floor-anchor',
+  position: [0, GROUND_ACCENT_Y, 250] as [number, number, number],
+  size: [1280, 360] as [number, number],
+};
+
 export function resolveGroundDetailOpacity(ribbon: Pick<GroundDetailRibbon, 'opacity' | 'position'>) {
   const opacity = ribbon.opacity ?? (ribbon.position[1] === GROUND_ACCENT_Y
     ? GROUND_DETAIL_ACCENT_OPACITY
