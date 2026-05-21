@@ -7,13 +7,26 @@ import {
   GROUND_SEAM_TRANSITION_PLATE,
   SPONSOR_BOULEVARD_RIGHT_FLOOR_ANCHOR,
 } from './WorldGroundLayout';
+import { FLOOR_MATERIAL_INTENTS } from './floor/FloorVisualLanguage';
 
 export function WorldGroundPlane({ visualProfile }: { visualProfile: ExpoWorldVisualProfile }) {
+  const arrivalAnchorMaterial = FLOOR_MATERIAL_INTENTS[ARRIVAL_GATE_FLOOR_ANCHOR.materialIntent];
+  const centerSpineGuideMaterial = FLOOR_MATERIAL_INTENTS[CENTER_SPINE_FLOOR_GUIDE.materialIntent];
+  const globalBaseMaterial = FLOOR_MATERIAL_INTENTS.globalBase;
+  const seamTransitionMaterial = FLOOR_MATERIAL_INTENTS[GROUND_SEAM_TRANSITION_PLATE.materialIntent];
+  const sponsorAnchorMaterial = FLOOR_MATERIAL_INTENTS[SPONSOR_BOULEVARD_RIGHT_FLOOR_ANCHOR.materialIntent];
+
   return (
     <group name="world-ground:global">
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={GLOBAL_GROUND_POSITION} receiveShadow={false} name="world-ground:global-base">
         <planeGeometry args={GLOBAL_GROUND_SIZE} />
-        <meshStandardMaterial color={visualProfile.global.groundBase} emissive="#d8e4ec" emissiveIntensity={0.016} roughness={0.96} metalness={0.01} />
+        <meshStandardMaterial
+          color={visualProfile.global.groundBase}
+          emissive={globalBaseMaterial.emissive}
+          emissiveIntensity={globalBaseMaterial.emissiveIntensity}
+          metalness={globalBaseMaterial.metalness}
+          roughness={globalBaseMaterial.roughness}
+        />
       </mesh>
       <mesh
         name={`world-ground:${GROUND_SEAM_TRANSITION_PLATE.id}`}
@@ -23,6 +36,8 @@ export function WorldGroundPlane({ visualProfile }: { visualProfile: ExpoWorldVi
         rotation={[-Math.PI / 2, 0, 0]}
         userData={{
           expoGroundDetailRole: 'city-stadium-transition-polish',
+          expoGroundFloorLanguageToken: GROUND_SEAM_TRANSITION_PLATE.floorLanguageToken,
+          expoGroundIntent: GROUND_SEAM_TRANSITION_PLATE.intent,
           expoInspectionTransparent: true,
           expoRaycastDisabled: true,
         }}
@@ -30,10 +45,10 @@ export function WorldGroundPlane({ visualProfile }: { visualProfile: ExpoWorldVi
         <planeGeometry args={GROUND_SEAM_TRANSITION_PLATE.size} />
         <meshStandardMaterial
           color={GROUND_SEAM_TRANSITION_PLATE.color}
-          emissive="#d8e4ec"
-          emissiveIntensity={0.012}
-          metalness={0.015}
-          roughness={0.94}
+          emissive={seamTransitionMaterial.emissive}
+          emissiveIntensity={seamTransitionMaterial.emissiveIntensity}
+          metalness={seamTransitionMaterial.metalness}
+          roughness={seamTransitionMaterial.roughness}
         />
       </mesh>
       <mesh
@@ -44,6 +59,8 @@ export function WorldGroundPlane({ visualProfile }: { visualProfile: ExpoWorldVi
         rotation={[-Math.PI / 2, 0, 0]}
         userData={{
           expoGroundDetailRole: 'sponsor-boulevard-right-floor-anchor',
+          expoGroundFloorLanguageToken: SPONSOR_BOULEVARD_RIGHT_FLOOR_ANCHOR.floorLanguageToken,
+          expoGroundIntent: SPONSOR_BOULEVARD_RIGHT_FLOOR_ANCHOR.intent,
           expoInspectionTransparent: true,
           expoRaycastDisabled: true,
         }}
@@ -51,10 +68,10 @@ export function WorldGroundPlane({ visualProfile }: { visualProfile: ExpoWorldVi
         <planeGeometry args={SPONSOR_BOULEVARD_RIGHT_FLOOR_ANCHOR.size} />
         <meshStandardMaterial
           color={SPONSOR_BOULEVARD_RIGHT_FLOOR_ANCHOR.color}
-          emissive="#d8e4ec"
-          emissiveIntensity={0.01}
-          metalness={0.018}
-          roughness={0.92}
+          emissive={sponsorAnchorMaterial.emissive}
+          emissiveIntensity={sponsorAnchorMaterial.emissiveIntensity}
+          metalness={sponsorAnchorMaterial.metalness}
+          roughness={sponsorAnchorMaterial.roughness}
         />
       </mesh>
       <mesh
@@ -65,6 +82,8 @@ export function WorldGroundPlane({ visualProfile }: { visualProfile: ExpoWorldVi
         rotation={[-Math.PI / 2, 0, 0]}
         userData={{
           expoGroundDetailRole: 'arrival-gate-floor-anchor',
+          expoGroundFloorLanguageToken: ARRIVAL_GATE_FLOOR_ANCHOR.floorLanguageToken,
+          expoGroundIntent: ARRIVAL_GATE_FLOOR_ANCHOR.intent,
           expoInspectionTransparent: true,
           expoRaycastDisabled: true,
         }}
@@ -72,10 +91,10 @@ export function WorldGroundPlane({ visualProfile }: { visualProfile: ExpoWorldVi
         <planeGeometry args={ARRIVAL_GATE_FLOOR_ANCHOR.size} />
         <meshStandardMaterial
           color={ARRIVAL_GATE_FLOOR_ANCHOR.color}
-          emissive="#d8e4ec"
-          emissiveIntensity={0.011}
-          metalness={0.016}
-          roughness={0.92}
+          emissive={arrivalAnchorMaterial.emissive}
+          emissiveIntensity={arrivalAnchorMaterial.emissiveIntensity}
+          metalness={arrivalAnchorMaterial.metalness}
+          roughness={arrivalAnchorMaterial.roughness}
         />
       </mesh>
       <mesh
@@ -86,6 +105,8 @@ export function WorldGroundPlane({ visualProfile }: { visualProfile: ExpoWorldVi
         rotation={[-Math.PI / 2, 0, 0]}
         userData={{
           expoGroundDetailRole: 'center-spine-floor-guide',
+          expoGroundFloorLanguageToken: CENTER_SPINE_FLOOR_GUIDE.floorLanguageToken,
+          expoGroundIntent: CENTER_SPINE_FLOOR_GUIDE.intent,
           expoInspectionTransparent: true,
           expoRaycastDisabled: true,
         }}
@@ -93,10 +114,10 @@ export function WorldGroundPlane({ visualProfile }: { visualProfile: ExpoWorldVi
         <planeGeometry args={CENTER_SPINE_FLOOR_GUIDE.size} />
         <meshStandardMaterial
           color={CENTER_SPINE_FLOOR_GUIDE.color}
-          emissive="#d8e4ec"
-          emissiveIntensity={0.01}
-          metalness={0.016}
-          roughness={0.92}
+          emissive={centerSpineGuideMaterial.emissive}
+          emissiveIntensity={centerSpineGuideMaterial.emissiveIntensity}
+          metalness={centerSpineGuideMaterial.metalness}
+          roughness={centerSpineGuideMaterial.roughness}
         />
       </mesh>
     </group>
