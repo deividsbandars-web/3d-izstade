@@ -1,6 +1,7 @@
 import type { ExpoWorldVisualProfile } from '../../world-contract';
 import {
   ARRIVAL_GATE_FLOOR_ANCHOR,
+  CENTER_SPINE_FLOOR_GUIDE,
   GLOBAL_GROUND_POSITION,
   GLOBAL_GROUND_SIZE,
   GROUND_SEAM_TRANSITION_PLATE,
@@ -73,6 +74,27 @@ export function WorldGroundPlane({ visualProfile }: { visualProfile: ExpoWorldVi
           color={ARRIVAL_GATE_FLOOR_ANCHOR.color}
           emissive="#d8e4ec"
           emissiveIntensity={0.011}
+          metalness={0.016}
+          roughness={0.92}
+        />
+      </mesh>
+      <mesh
+        name={`world-ground:${CENTER_SPINE_FLOOR_GUIDE.id}`}
+        position={CENTER_SPINE_FLOOR_GUIDE.position}
+        raycast={() => undefined}
+        receiveShadow={false}
+        rotation={[-Math.PI / 2, 0, 0]}
+        userData={{
+          expoGroundDetailRole: 'center-spine-floor-guide',
+          expoInspectionTransparent: true,
+          expoRaycastDisabled: true,
+        }}
+      >
+        <planeGeometry args={CENTER_SPINE_FLOOR_GUIDE.size} />
+        <meshStandardMaterial
+          color={CENTER_SPINE_FLOOR_GUIDE.color}
+          emissive="#d8e4ec"
+          emissiveIntensity={0.01}
           metalness={0.016}
           roughness={0.92}
         />

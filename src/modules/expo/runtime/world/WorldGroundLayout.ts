@@ -43,6 +43,13 @@ export const ARRIVAL_GATE_FLOOR_ANCHOR = {
   size: [1280, 360] as [number, number],
 };
 
+export const CENTER_SPINE_FLOOR_GUIDE = {
+  color: '#9aa5ad',
+  id: 'center-spine-floor-guide',
+  position: [0, GROUND_ACCENT_Y, -350] as [number, number, number],
+  size: [180, 760] as [number, number],
+};
+
 export function resolveGroundDetailOpacity(ribbon: Pick<GroundDetailRibbon, 'opacity' | 'position'>) {
   const opacity = ribbon.opacity ?? (ribbon.position[1] === GROUND_ACCENT_Y
     ? GROUND_DETAIL_ACCENT_OPACITY
