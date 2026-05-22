@@ -136,6 +136,7 @@ function getCardTextForPurpose(
   const titleParts = event.title.split(':');
   const shortTitle = titleParts[0]?.trim() || 'AI Demo Battle';
   const eventTheme = titleParts.slice(1).join(':').trim() || event.title;
+  const demoCount = event.participants.length;
   const participant = buildParticipantSummary(event);
   const sponsor = buildSponsorSummary(event);
 
@@ -200,9 +201,9 @@ function getCardTextForPurpose(
         accentColor: DEMO_ARENA_PREVIEW_COLORS.accent,
         chip: shortTitle.toUpperCase(),
         label: truncateScreenText(eventTheme, 34),
-        subtitle: `${event.dateLabel} - Next: startup pitches`,
+        subtitle: `${demoCount} demos - live judging later - sponsor slot open`,
         tierAccent: DEMO_ARENA_PREVIEW_COLORS.tierAccent,
-        tierLabel: 'ARENA',
+        tierLabel: 'STAGE',
       };
   }
 }
