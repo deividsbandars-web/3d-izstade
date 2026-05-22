@@ -18,6 +18,7 @@ import {
 import { resolveExpoQualitySettings } from '../../world/quality/expoQualitySettings';
 import { resolveRearCampusScreenHostId } from '../../world/rearCampusScreenHosts';
 import { resolveExpoZoneRuntimeState } from '../../world/zones/expoZoneRuntimeState';
+import { getDemoArenaPreviewRuntimeSummary } from '../../demoArena';
 
 type LayerStates = {
   booths: boolean;
@@ -934,6 +935,8 @@ export function buildExpoReviewOperatorSnapshot(args: {
     }),
   }));
 
+  const demoArenaPreview = getDemoArenaPreviewRuntimeSummary();
+
   return {
     activeZoneId: args.activeZoneId,
     centerStack: args.centerStack,
@@ -941,6 +944,7 @@ export function buildExpoReviewOperatorSnapshot(args: {
     clickStack: args.clickStack,
     clickTarget: args.clickTarget,
     dataMode: args.dataMode,
+    ...(demoArenaPreview.enabled ? { demoArenaPreview } : {}),
     diagnostics: args.diagnosticReport,
     focusSlug: args.focusSlug,
     inspector: args.inspector,

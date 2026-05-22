@@ -1,7 +1,14 @@
 import { Text } from '@react-three/drei';
+import { useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { trackExpoScreenRouteClicked } from '../../lib/expoAnalytics';
 import { SponsorTextureSurface } from '../booths';
+import {
+  buildDemoArenaPreviewAssignment,
+  buildDemoArenaPreviewRuntimeSummary,
+  isDemoArenaPreviewEnabled,
+  publishDemoArenaPreviewRuntimeSummary,
+} from '../demoArena';
 import { resolveSponsorScreenInteraction } from '../../lib/sponsorScreenInteractionResolver';
 import { getExpoActiveVideoScreensCount } from './quality/expoActiveVideoScreenRegistry';
 import { resolveExpoScreenRuntimePolicy, type ExpoScreenTextureQualityHint } from './quality/expoScreenRuntimePolicy';
@@ -114,8 +121,17 @@ export function WorldCityScreenAssignments({
   sockets: CityScreenSocket[];
 }) {
   const navigate = useNavigate();
-  const socketById = new Map(sockets.map((socket) => [socket.id, socket]));
+  const socketById = useMemo(() => new Map(sockets.map((socket) => [socket.id, socket])), [sockets]);
   const cullDistantScreens = shouldCullDistantScreens();
+  const demoArenaPreviewEnabled = isDemoArenaPreviewEnabled();
+  const demoArenaPreviewSummary = useMemo(
+    () => buildDemoArenaPreviewRuntimeSummary(assignments, sockets, demoArenaPreviewEnabled),
+    [assignments, demoArenaPreviewEnabled, sockets],
+  );
+
+  useEffect(() => {
+    publishDemoArenaPreviewRuntimeSummary(demoArenaPreviewSummary);
+  }, [demoArenaPreviewSummary]);
 
   return (
     <group name="world-city-screen-assignments">
@@ -137,7 +153,11 @@ export function WorldCityScreenAssignments({
         const dz = socket.position[2] - playerPosition[2];
         const distanceSq = (dx * dx) + (dz * dz);
         const distance = Math.sqrt(distanceSq);
-        const intent = assignment.renderIntent;
+        const previewAssignment = demoArenaPreviewEnabled
+          ? buildDemoArenaPreviewAssignment(assignment, socket)
+          : null;
+        const effectiveAssignment = previewAssignment?.assignment ?? assignment;
+        const intent = effectiveAssignment.renderIntent;
         const maxDistance = intent?.maxDistance ?? 980;
         if (cullDistantScreens && distanceSq > maxDistance * maxDistance) {
           return null;
@@ -151,15 +171,15 @@ export function WorldCityScreenAssignments({
             return true;
           }
 
-          if (primitive.text === assignment.subtitle) {
+          if (primitive.text === effectiveAssignment.subtitle) {
             return detailMode === 'near';
           }
 
-          if (primitive.text === assignment.label) {
+          if (primitive.text === effectiveAssignment.label) {
             return distance <= (intent?.showCenterTitleDistance ?? detailDistance);
           }
 
-          if (primitive.text === assignment.tier.toUpperCase()) {
+          if (primitive.text === effectiveAssignment.tier.toUpperCase()) {
             return distance <= detailDistance;
           }
 
@@ -168,7 +188,7 @@ export function WorldCityScreenAssignments({
         const screenRuntimePolicy = resolveExpoScreenRuntimePolicy({
           currentActiveVideoCount: getExpoActiveVideoScreensCount(),
           distanceToCamera: distance,
-          isHeroScreen: assignment.tier === 'hero' || socket.kind === 'hero_wall',
+          isHeroScreen: effectiveAssignment.tier === 'hero' || socket.kind === 'hero_wall',
           isInActiveSection: true,
           qualitySettings,
         });
@@ -183,6 +203,14 @@ export function WorldCityScreenAssignments({
               expoScreenRuntimePolicy: screenRuntimePolicy.status,
               expoScreenTextureQualityHint: screenRuntimePolicy.textureQualityHint,
               expoVideoPlaybackAllowed: screenRuntimePolicy.allowVideoPlayback,
+              ...(previewAssignment
+                ? {
+                    expoDemoArenaPreview: true,
+                    expoDemoArenaPreviewEventId: previewAssignment.content.activeEventId,
+                    expoDemoArenaPreviewPurpose: previewAssignment.content.purpose,
+                    expoDemoArenaPreviewTargetId: previewAssignment.target.id,
+                  }
+                : {}),
             }}
             onClick={isRouteAction
               ? (event) => {
