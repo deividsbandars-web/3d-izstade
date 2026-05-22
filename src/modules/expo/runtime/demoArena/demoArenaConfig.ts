@@ -1,4 +1,5 @@
 import type {
+  DemoArenaCtaDefinition,
   DemoArenaEvent,
   DemoArenaScreenTarget,
   DemoArenaSponsorInventory,
@@ -106,6 +107,71 @@ const DEMO_ARENA_SAMPLE_SPONSOR_INVENTORY: DemoArenaSponsorInventory[] = [
   },
 ];
 
+const DEMO_ARENA_SAMPLE_CTA_DEFINITIONS: DemoArenaCtaDefinition[] = [
+  {
+    analyticsId: 'demo-arena-automation-tools-apply-to-pitch',
+    enabledInPreview: true,
+    enabledInProduction: false,
+    id: 'demo-arena-apply-to-pitch',
+    isExternal: false,
+    label: 'Apply to Pitch',
+    notes: 'Preview-only CTA metadata for future founder intake; no click behavior in Round 22.',
+    screenTargetId: 'demo-arena-bowl-feed',
+    shortLabel: 'Apply',
+    type: 'applyToPitch',
+  },
+  {
+    analyticsId: 'demo-arena-automation-tools-sponsor-battle',
+    enabledInPreview: true,
+    enabledInProduction: false,
+    id: 'demo-arena-sponsor-this-battle',
+    isExternal: false,
+    label: 'Sponsor This Battle',
+    notes: 'Preview-only CTA metadata for future sponsor inventory; no booking or redirect yet.',
+    screenTargetId: 'demo-arena-left-sponsor-feed',
+    shortLabel: 'Sponsor Slot',
+    sponsorInventoryId: 'demo-arena-stage-naming-slot',
+    type: 'sponsorBattle',
+  },
+  {
+    analyticsId: 'demo-arena-automation-tools-view-agenda',
+    enabledInPreview: true,
+    enabledInProduction: false,
+    id: 'demo-arena-view-agenda',
+    isExternal: false,
+    label: 'View Agenda',
+    notes: 'Preview-only CTA metadata for later agenda panel routing.',
+    screenTargetId: 'demo-arena-sky-slab-agenda',
+    shortLabel: 'Agenda',
+    type: 'viewAgenda',
+  },
+  {
+    analyticsId: 'demo-arena-automation-tools-reserve-stage-slot',
+    enabledInPreview: true,
+    enabledInProduction: false,
+    id: 'demo-arena-reserve-stage-slot',
+    isExternal: false,
+    label: 'Reserve Stage Slot',
+    notes: 'Preview-only CTA metadata for future organizer workflow.',
+    screenTargetId: 'demo-arena-main-stage',
+    shortLabel: 'Reserve Slot',
+    sponsorInventoryId: 'demo-arena-hero-screen-slot',
+    type: 'reserveStageSlot',
+  },
+  {
+    analyticsId: 'demo-arena-automation-tools-watch-replay',
+    enabledInPreview: false,
+    enabledInProduction: false,
+    id: 'demo-arena-watch-replay',
+    isExternal: false,
+    label: 'Watch Replay',
+    notes: 'Defined for future replay state; disabled until replay content exists.',
+    screenTargetId: 'demo-arena-recap-hall',
+    shortLabel: 'Replay',
+    type: 'watchReplay',
+  },
+];
+
 export const DEMO_ARENA_EVENTS: DemoArenaEvent[] = [
   {
     agendaItems: [
@@ -155,6 +221,7 @@ export const DEMO_ARENA_EVENTS: DemoArenaEvent[] = [
       },
     ],
     analyticsId: 'demo-arena-event-automation-tools',
+    ctaDefinitions: DEMO_ARENA_SAMPLE_CTA_DEFINITIONS,
     dateLabel: 'Monthly showcase',
     eventType: 'AI_DEMO_BATTLE',
     id: 'ai-demo-battle-automation-tools',

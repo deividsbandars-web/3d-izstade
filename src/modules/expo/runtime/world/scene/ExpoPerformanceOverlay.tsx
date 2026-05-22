@@ -12,7 +12,7 @@ import type {
 import type { ExpoZoneRuntimeState } from '../zones/expoZoneRuntimeState';
 import { getExpoInstancingRuntimeStats } from '../performance/expoInstancingUtils';
 import { getExpoRaycastOptimizationRuntimeStats } from '../performance/expoRaycastUtils';
-import { getDemoArenaPreviewRuntimeSummary } from '../../demoArena';
+import { getDemoArenaAnalyticsSummary, getDemoArenaPreviewRuntimeSummary } from '../../demoArena';
 
 type WebglOverlayStatus = {
   available: boolean;
@@ -180,6 +180,7 @@ export function ExpoPerformanceOverlay({
   const instancingStats = getExpoInstancingRuntimeStats();
   const raycastStats = getExpoRaycastOptimizationRuntimeStats();
   const demoArenaPreviewStats = getDemoArenaPreviewRuntimeSummary();
+  const demoArenaCtaStats = getDemoArenaAnalyticsSummary(undefined, demoArenaPreviewStats.enabled);
 
   const rowStyle: CSSProperties = {
     display: 'flex',
@@ -235,6 +236,7 @@ export function ExpoPerformanceOverlay({
     ['demo arena', demoArenaPreviewStats.enabled ? 'preview' : 'off'],
     ['demo event', demoArenaPreviewStats.enabled ? demoArenaPreviewStats.activeEventId ?? 'n/a' : 'n/a'],
     ['demo screens', `${demoArenaPreviewStats.mappedScreenCount}/${demoArenaPreviewStats.totalTargets}`],
+    ['demo ctas', demoArenaPreviewStats.enabled ? `${demoArenaCtaStats.previewEnabledCtaCount}/${demoArenaCtaStats.ctaCount}` : 'off'],
     ['static screens', formatBoolean(qualitySettings.preferStaticScreens)],
     ['far details', formatBoolean(qualitySettings.farDetailsEnabled)],
     ['transparent fx', formatBoolean(qualitySettings.transparentEffectsEnabled)],

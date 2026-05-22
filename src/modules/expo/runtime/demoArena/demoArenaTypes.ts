@@ -35,6 +35,26 @@ export type DemoArenaScreenPurpose =
   | 'participantFeature'
   | 'recap';
 
+export type DemoArenaCtaType =
+  | 'applyToPitch'
+  | 'sponsorBattle'
+  | 'viewAgenda'
+  | 'reserveStageSlot'
+  | 'joinLiveEvent'
+  | 'watchReplay'
+  | 'contactOrganizer'
+  | 'learnMore';
+
+export type DemoArenaAnalyticsEventName =
+  | 'demo_arena_preview_view'
+  | 'demo_arena_screen_view'
+  | 'demo_arena_cta_visible'
+  | 'demo_arena_cta_click'
+  | 'demo_arena_sponsor_slot_view'
+  | 'demo_arena_participant_feature_view'
+  | 'demo_arena_agenda_view'
+  | 'demo_arena_voting_preview_view';
+
 export type DemoArenaParticipant = {
   category: string;
   ctaLabel: string;
@@ -65,6 +85,21 @@ export type DemoArenaSponsorInventory = {
   sponsorId: string;
 };
 
+export type DemoArenaCtaDefinition = {
+  analyticsId: string;
+  enabledInPreview: boolean;
+  enabledInProduction: boolean;
+  id: string;
+  isExternal: boolean;
+  label: string;
+  notes?: string;
+  screenTargetId?: string;
+  shortLabel: string;
+  sponsorInventoryId?: string;
+  targetUrl?: string;
+  type: DemoArenaCtaType;
+};
+
 export type DemoArenaScreenTarget = {
   assignmentId?: string;
   existingScreenId?: string;
@@ -78,6 +113,7 @@ export type DemoArenaScreenTarget = {
 export type DemoArenaEvent = {
   agendaItems: DemoArenaAgendaItem[];
   analyticsId: string;
+  ctaDefinitions: DemoArenaCtaDefinition[];
   dateLabel: string;
   eventType: DemoArenaEventType;
   id: string;
@@ -90,4 +126,20 @@ export type DemoArenaEvent = {
   stageZoneId: ExpoZoneId;
   status: DemoArenaEventStatus;
   title: string;
+};
+
+export type DemoArenaAnalyticsPayload = {
+  analyticsId?: string;
+  ctaId?: string;
+  eventId: string;
+  eventName: DemoArenaAnalyticsEventName;
+  metadata?: Record<string, string | number | boolean | null>;
+  operatorZoneId?: string | null;
+  participantId?: string;
+  placementType?: DemoArenaSponsorPlacementType;
+  previewEnabled: boolean;
+  qualityTier?: string | null;
+  screenTargetId?: string;
+  sponsorInventoryId?: string;
+  timestamp?: string;
 };

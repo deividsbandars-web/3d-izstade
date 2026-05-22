@@ -21,9 +21,22 @@ export {
   publishDemoArenaPreviewRuntimeSummary,
 } from './demoArenaScreenContent';
 
+export {
+  buildDemoArenaCtaVisiblePayload,
+  buildDemoArenaPreviewViewPayload,
+  buildDemoArenaScreenViewPayload,
+  DEMO_ARENA_ANALYTICS_EVENT_NAMES,
+  getDemoArenaAnalyticsSummary,
+  getDemoArenaCtasForScreen,
+} from './demoArenaAnalytics';
+
 export type {
   DemoArenaAgendaItem,
   DemoArenaAgendaItemType,
+  DemoArenaAnalyticsEventName,
+  DemoArenaAnalyticsPayload,
+  DemoArenaCtaDefinition,
+  DemoArenaCtaType,
   DemoArenaEvent,
   DemoArenaEventStatus,
   DemoArenaEventType,
@@ -39,5 +52,10 @@ export type {
   DemoArenaPreviewRuntimeSummary,
   DemoArenaPreviewScreenContent,
 } from './demoArenaScreenContent';
+
+export type {
+  DemoArenaAnalyticsContext,
+  DemoArenaCtaAnalyticsSummary,
+} from './demoArenaAnalytics';
 
 export type { DemoArenaPreviewMode } from './demoArenaPreviewFlags';
