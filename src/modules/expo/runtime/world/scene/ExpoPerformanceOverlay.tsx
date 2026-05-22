@@ -12,7 +12,11 @@ import type {
 import type { ExpoZoneRuntimeState } from '../zones/expoZoneRuntimeState';
 import { getExpoInstancingRuntimeStats } from '../performance/expoInstancingUtils';
 import { getExpoRaycastOptimizationRuntimeStats } from '../performance/expoRaycastUtils';
-import { getDemoArenaAnalyticsSummary, getDemoArenaPreviewRuntimeSummary } from '../../demoArena';
+import {
+  getDemoArenaAnalyticsSummary,
+  getDemoArenaCtaInteractionSummary,
+  getDemoArenaPreviewRuntimeSummary,
+} from '../../demoArena';
 
 type WebglOverlayStatus = {
   available: boolean;
@@ -181,6 +185,7 @@ export function ExpoPerformanceOverlay({
   const raycastStats = getExpoRaycastOptimizationRuntimeStats();
   const demoArenaPreviewStats = getDemoArenaPreviewRuntimeSummary();
   const demoArenaCtaStats = getDemoArenaAnalyticsSummary(undefined, demoArenaPreviewStats.enabled);
+  const demoArenaCtaInteractionStats = getDemoArenaCtaInteractionSummary(undefined, demoArenaPreviewStats.enabled);
 
   const rowStyle: CSSProperties = {
     display: 'flex',
@@ -237,6 +242,7 @@ export function ExpoPerformanceOverlay({
     ['demo event', demoArenaPreviewStats.enabled ? demoArenaPreviewStats.activeEventId ?? 'n/a' : 'n/a'],
     ['demo screens', `${demoArenaPreviewStats.mappedScreenCount}/${demoArenaPreviewStats.totalTargets}`],
     ['demo ctas', demoArenaPreviewStats.enabled ? `${demoArenaCtaStats.previewEnabledCtaCount}/${demoArenaCtaStats.ctaCount}` : 'off'],
+    ['demo cta click', demoArenaPreviewStats.enabled ? `disabled / ${demoArenaCtaInteractionStats.ctaClickableCount} clickable` : 'off'],
     ['static screens', formatBoolean(qualitySettings.preferStaticScreens)],
     ['far details', formatBoolean(qualitySettings.farDetailsEnabled)],
     ['transparent fx', formatBoolean(qualitySettings.transparentEffectsEnabled)],

@@ -30,6 +30,14 @@ export {
   getDemoArenaCtasForScreen,
 } from './demoArenaAnalytics';
 
+export {
+  buildDemoArenaCtaInteractionPreview,
+  getDemoArenaCtaForScreenTarget,
+  getDemoArenaCtaInteractionPolicy,
+  getDemoArenaCtaInteractionSummary,
+  isDemoArenaCtaInteractionEnabled,
+} from './demoArenaCtaInteraction';
+
 export type {
   DemoArenaAgendaItem,
   DemoArenaAgendaItemType,
@@ -57,5 +65,10 @@ export type {
   DemoArenaAnalyticsContext,
   DemoArenaCtaAnalyticsSummary,
 } from './demoArenaAnalytics';
+
+export type {
+  DemoArenaCtaInteractionPolicy,
+  DemoArenaCtaInteractionPreview,
+} from './demoArenaCtaInteraction';
 
 export type { DemoArenaPreviewMode } from './demoArenaPreviewFlags';
