@@ -46,6 +46,25 @@ const DEMO_ARENA_PREVIEW_COLORS = {
   tierAccent: '#0f172a',
 } as const;
 
+const DEMO_ARENA_PREVIEW_ROLE_CHIPS = {
+  agenda: 'AGENDA',
+  countdown: 'STATUS',
+  leaderboard: 'VOTING PREVIEW',
+  participantFeature: 'DEMO',
+  recap: 'RECAP',
+  sponsorBanner: 'SPONSOR',
+} as const;
+
+const DEMO_ARENA_PREVIEW_TIER_LABELS = {
+  agenda: 'AGENDA',
+  countdown: 'STATUS',
+  leaderboard: 'VOTE',
+  participantFeature: 'DEMO',
+  recap: 'RECAP',
+  sponsorBanner: 'SPONSOR',
+  stage: 'STAGE',
+} as const;
+
 let runtimeSummary: DemoArenaPreviewRuntimeSummary = createDisabledDemoArenaPreviewRuntimeSummary();
 
 function createDisabledDemoArenaPreviewRuntimeSummary(): DemoArenaPreviewRuntimeSummary {
@@ -124,8 +143,8 @@ function buildSponsorSummary(event: DemoArenaEvent): { label: string; subtitle: 
   const sponsorInventory = event.sponsorInventory[0];
 
   return {
-    label: sponsorInventory?.ctaLabel ?? 'Stage Sponsor Slot',
-    subtitle: 'Available for partners',
+    label: 'Stage Sponsor Slot',
+    subtitle: sponsorInventory?.ctaLabel ?? 'Available for partners',
   };
 }
 
@@ -144,56 +163,56 @@ function getCardTextForPurpose(
     case 'agenda':
       return {
         accentColor: DEMO_ARENA_PREVIEW_COLORS.agenda,
-        chip: 'AGENDA',
+        chip: DEMO_ARENA_PREVIEW_ROLE_CHIPS.agenda,
         label: 'Tonight in the Arena',
         subtitle: buildAgendaSummary(event),
         tierAccent: DEMO_ARENA_PREVIEW_COLORS.tierAccent,
-        tierLabel: 'SCHEDULE',
+        tierLabel: DEMO_ARENA_PREVIEW_TIER_LABELS.agenda,
       };
     case 'countdown':
       return {
         accentColor: DEMO_ARENA_PREVIEW_COLORS.accent,
-        chip: 'COUNTDOWN',
+        chip: DEMO_ARENA_PREVIEW_ROLE_CHIPS.countdown,
         label: 'Monthly Showcase',
-        subtitle: `${event.dateLabel} - Demo Arena preview`,
+        subtitle: `${event.dateLabel} - preview mode`,
         tierAccent: DEMO_ARENA_PREVIEW_COLORS.tierAccent,
-        tierLabel: 'UPCOMING',
+        tierLabel: DEMO_ARENA_PREVIEW_TIER_LABELS.countdown,
       };
     case 'leaderboard':
       return {
         accentColor: DEMO_ARENA_PREVIEW_COLORS.leaderboard,
-        chip: 'LEADERBOARD PREVIEW',
-        label: 'Voting Opens Live',
-        subtitle: 'Preview only - no voting enabled',
+        chip: DEMO_ARENA_PREVIEW_ROLE_CHIPS.leaderboard,
+        label: 'Voting Preview',
+        subtitle: 'Opens during live event - no voting UI',
         tierAccent: DEMO_ARENA_PREVIEW_COLORS.tierAccent,
-        tierLabel: 'NO VOTE UI',
+        tierLabel: DEMO_ARENA_PREVIEW_TIER_LABELS.leaderboard,
       };
     case 'participantFeature':
       return {
         accentColor: DEMO_ARENA_PREVIEW_COLORS.accent,
-        chip: 'FEATURED DEMO',
+        chip: DEMO_ARENA_PREVIEW_ROLE_CHIPS.participantFeature,
         label: truncateScreenText(participant.label, 34),
         subtitle: participant.subtitle,
         tierAccent: DEMO_ARENA_PREVIEW_COLORS.tierAccent,
-        tierLabel: 'STARTUP',
+        tierLabel: DEMO_ARENA_PREVIEW_TIER_LABELS.participantFeature,
       };
     case 'recap':
       return {
         accentColor: DEMO_ARENA_PREVIEW_COLORS.accent,
-        chip: 'RECAP',
+        chip: DEMO_ARENA_PREVIEW_ROLE_CHIPS.recap,
         label: 'Winner Recap',
         subtitle: 'Highlights and sponsor CTAs after the event',
         tierAccent: DEMO_ARENA_PREVIEW_COLORS.tierAccent,
-        tierLabel: 'POST EVENT',
+        tierLabel: DEMO_ARENA_PREVIEW_TIER_LABELS.recap,
       };
     case 'sponsorBanner':
       return {
         accentColor: DEMO_ARENA_PREVIEW_COLORS.sponsor,
-        chip: 'SPONSOR SLOT',
+        chip: DEMO_ARENA_PREVIEW_ROLE_CHIPS.sponsorBanner,
         label: truncateScreenText(sponsor.label, 34),
         subtitle: sponsor.subtitle,
         tierAccent: DEMO_ARENA_PREVIEW_COLORS.tierAccent,
-        tierLabel: 'PARTNER',
+        tierLabel: DEMO_ARENA_PREVIEW_TIER_LABELS.sponsorBanner,
       };
     case 'mainStage':
     default:
@@ -203,7 +222,7 @@ function getCardTextForPurpose(
         label: truncateScreenText(eventTheme, 34),
         subtitle: `${demoCount} demos - live judging later - sponsor slot open`,
         tierAccent: DEMO_ARENA_PREVIEW_COLORS.tierAccent,
-        tierLabel: 'STAGE',
+        tierLabel: DEMO_ARENA_PREVIEW_TIER_LABELS.stage,
       };
   }
 }
