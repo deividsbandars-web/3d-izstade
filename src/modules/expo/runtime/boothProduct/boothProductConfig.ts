@@ -1,0 +1,330 @@
+import type {
+  BoothPackageDefinition,
+  BoothPackageTier,
+  BoothProductAnalyticsSummary,
+  BoothProductCta,
+  BoothProductProfile,
+  BoothProductReadinessSummary,
+} from './boothProductTypes';
+
+const NO_BACKEND_INTEGRATION = false;
+const NO_RUNTIME_RENDERING = false;
+
+const STANDARD_CTA_SET: readonly BoothProductCta[] = [
+  {
+    analyticsId: 'booth_product_cta_learn_more_visible',
+    enabledInPreview: true,
+    enabledInProduction: false,
+    id: 'standard-learn-more',
+    label: 'Learn More',
+    shortLabel: 'Learn',
+    type: 'learnMore',
+  },
+  {
+    analyticsId: 'booth_product_cta_request_demo_visible',
+    enabledInPreview: true,
+    enabledInProduction: false,
+    id: 'standard-request-demo',
+    label: 'Request Demo',
+    shortLabel: 'Demo',
+    type: 'requestDemo',
+  },
+  {
+    analyticsId: 'booth_product_cta_download_pdf_visible',
+    enabledInPreview: false,
+    enabledInProduction: false,
+    id: 'standard-download-pdf',
+    label: 'Download PDF',
+    notes: 'Placeholder only; no brochure UI or file delivery exists in Round 24.',
+    shortLabel: 'PDF',
+    type: 'downloadPdf',
+  },
+];
+
+const PREMIUM_CTA_SET: readonly BoothProductCta[] = [
+  {
+    analyticsId: 'booth_product_cta_book_meeting_visible',
+    enabledInPreview: true,
+    enabledInProduction: false,
+    id: 'premium-book-meeting',
+    label: 'Book Meeting',
+    notes: 'Metadata only; no meeting booking flow exists in Round 24.',
+    shortLabel: 'Meet',
+    type: 'bookMeeting',
+  },
+  {
+    analyticsId: 'booth_product_cta_run_diagnostic_visible',
+    enabledInPreview: true,
+    enabledInProduction: false,
+    id: 'premium-run-diagnostic',
+    label: 'Run Diagnostic',
+    notes: 'Metadata only; diagnostic UI is intentionally deferred.',
+    shortLabel: 'Diagnostic',
+    type: 'runDiagnostic',
+  },
+  {
+    analyticsId: 'booth_product_cta_ai_agent_visible',
+    enabledInPreview: false,
+    enabledInProduction: false,
+    id: 'premium-talk-to-ai-agent',
+    label: 'Talk to AI Agent',
+    notes: 'Placeholder only; AI booth agents are not implemented in Round 24.',
+    shortLabel: 'AI Agent',
+    type: 'talkToAiAgent',
+  },
+];
+
+const LANDMARK_CTA_SET: readonly BoothProductCta[] = [
+  {
+    analyticsId: 'booth_product_cta_join_event_visible',
+    enabledInPreview: true,
+    enabledInProduction: false,
+    id: 'landmark-join-event',
+    label: 'Join Event',
+    notes: 'Metadata only; no event registration UI exists in Round 24.',
+    shortLabel: 'Event',
+    type: 'joinEvent',
+  },
+  {
+    analyticsId: 'booth_product_cta_sponsor_zone_visible',
+    enabledInPreview: true,
+    enabledInProduction: false,
+    id: 'landmark-sponsor-zone',
+    label: 'Sponsor Zone',
+    shortLabel: 'Sponsor',
+    type: 'learnMore',
+  },
+];
+
+export const BOOTH_PACKAGE_DEFINITIONS = [
+  {
+    futureUpsells: ['Lead capture form', 'meeting scheduler', 'sponsor dashboard reporting'],
+    includedFeatures: ['Logo presence', 'short pitch', 'CTA placeholders', 'brochure placeholder'],
+    label: 'Standard Booth',
+    priceHint: 'Entry sponsor package placeholder',
+    sponsorValue: ['Basic sponsor discovery', 'product-card readiness', 'future CTA analytics readiness'],
+    tier: 'standard',
+  },
+  {
+    futureUpsells: ['AI diagnostic', 'lead scoring', 'meeting booking', 'AI booth agent'],
+    includedFeatures: ['Premium product profile', 'diagnostic placeholder', 'meeting CTA placeholder', 'lead scoring placeholder'],
+    label: 'Premium AI Diagnostic Booth',
+    priceHint: 'Premium sponsor package placeholder',
+    sponsorValue: ['Higher-intent lead capture readiness', 'diagnostic differentiation', 'future AI-assisted selling'],
+    tier: 'premium',
+  },
+  {
+    futureUpsells: ['Zone analytics report', 'event sponsorship bundle', 'landmark hero creative'],
+    includedFeatures: ['Zone naming concept', 'hero screen concept', 'event slot placeholder', 'report sponsor placeholder'],
+    label: 'Landmark Zone Sponsor',
+    priceHint: 'Landmark sponsor package placeholder',
+    sponsorValue: ['Owns a named city moment', 'ties booth package to Demo Arena/event inventory', 'supports premium sponsorship storytelling'],
+    tier: 'landmarkZone',
+  },
+] as const satisfies readonly BoothPackageDefinition[];
+
+export const BOOTH_PRODUCT_PROFILES = [
+  {
+    aiAgent: {
+      enabledInPreview: false,
+      enabledInProduction: false,
+      personaLabel: 'Product concierge placeholder',
+      promptIntent: 'Explain product value and route qualified visitors to sponsor CTAs later.',
+    },
+    analytics: {
+      ctaClickAnalyticsId: 'flowforge_cta_click_placeholder',
+      ctaVisibleAnalyticsId: 'flowforge_cta_visible_placeholder',
+      profileViewAnalyticsId: 'flowforge_profile_view_placeholder',
+    },
+    assets: {
+      brochureKey: 'flowforge-brochure-placeholder',
+      logoKey: 'flowforge-logo-placeholder',
+    },
+    boothId: 'standard-booth-flowforge-ai',
+    category: 'Automation',
+    ctas: STANDARD_CTA_SET,
+    diagnostics: {
+      enabledInPreview: false,
+      enabledInProduction: false,
+    },
+    displayName: 'FlowForge AI',
+    featureBullets: ['Workflow automation audit', 'No-code operations templates', 'Team handoff recommendations'],
+    heroMessage: 'Automate repeatable operations without losing human control.',
+    id: 'flowforge-ai-standard-profile',
+    leadCapture: {
+      enabledInPreview: false,
+      enabledInProduction: false,
+      fields: ['name', 'email', 'company'],
+    },
+    notes: 'Mock Standard Booth profile for product-package structure only.',
+    packageTier: 'standard',
+    shortPitch: 'A compact product profile for teams evaluating automation workflows.',
+    sponsorId: 'mock-flowforge-ai',
+    tagline: 'Ops automation readiness',
+  },
+  {
+    aiAgent: {
+      enabledInPreview: false,
+      enabledInProduction: false,
+      personaLabel: 'Prompt advisor placeholder',
+      promptIntent: 'Answer common sponsor-product questions after AI agents are approved.',
+    },
+    analytics: {
+      ctaClickAnalyticsId: 'promptgrid_cta_click_placeholder',
+      ctaVisibleAnalyticsId: 'promptgrid_cta_visible_placeholder',
+      profileViewAnalyticsId: 'promptgrid_profile_view_placeholder',
+    },
+    assets: {
+      brochureKey: 'promptgrid-brochure-placeholder',
+      logoKey: 'promptgrid-logo-placeholder',
+    },
+    boothId: 'standard-booth-promptgrid',
+    category: 'AI Enablement',
+    ctas: STANDARD_CTA_SET,
+    diagnostics: {
+      enabledInPreview: false,
+      enabledInProduction: false,
+    },
+    displayName: 'PromptGrid',
+    featureBullets: ['Prompt library governance', 'Role-based rollout templates', 'Usage policy checklist'],
+    heroMessage: 'Launch internal AI workspaces with governance built in.',
+    id: 'promptgrid-standard-profile',
+    leadCapture: {
+      enabledInPreview: false,
+      enabledInProduction: false,
+      fields: ['name', 'email', 'role'],
+    },
+    notes: 'Mock Standard Booth profile for package comparison.',
+    packageTier: 'standard',
+    shortPitch: 'A standard sponsor booth profile for AI adoption teams.',
+    sponsorId: 'mock-promptgrid',
+    tagline: 'Governed AI adoption',
+  },
+  {
+    aiAgent: {
+      enabledInPreview: false,
+      enabledInProduction: false,
+      personaLabel: 'Diagnostic consultant placeholder',
+      promptIntent: 'Guide visitors through a future AI diagnostic once that system exists.',
+    },
+    analytics: {
+      ctaClickAnalyticsId: 'metricmesh_cta_click_placeholder',
+      ctaVisibleAnalyticsId: 'metricmesh_cta_visible_placeholder',
+      profileViewAnalyticsId: 'metricmesh_profile_view_placeholder',
+    },
+    assets: {
+      brochureKey: 'metricmesh-premium-brief-placeholder',
+      logoKey: 'metricmesh-logo-placeholder',
+      videoKey: 'metricmesh-video-placeholder',
+    },
+    boothId: 'premium-booth-metricmesh',
+    category: 'Revenue Intelligence',
+    ctas: PREMIUM_CTA_SET,
+    diagnostics: {
+      diagnosticId: 'metricmesh-revenue-readiness-placeholder',
+      enabledInPreview: true,
+      enabledInProduction: false,
+    },
+    displayName: 'MetricMesh',
+    featureBullets: ['Revenue operations diagnostic placeholder', 'Meeting CTA readiness', 'Future lead scoring placeholder'],
+    heroMessage: 'Find the fastest revenue workflow gaps before the first sales call.',
+    id: 'metricmesh-premium-profile',
+    leadCapture: {
+      enabledInPreview: true,
+      enabledInProduction: false,
+      fields: ['name', 'email', 'company', 'team_size'],
+    },
+    notes: 'Mock Premium Booth profile; diagnostic and lead capture are metadata-only.',
+    packageTier: 'premium',
+    shortPitch: 'A premium sponsor profile prepared for future diagnostic and meeting workflows.',
+    sponsorId: 'mock-metricmesh',
+    tagline: 'Revenue workflow diagnostic',
+  },
+  {
+    aiAgent: {
+      enabledInPreview: false,
+      enabledInProduction: false,
+      personaLabel: 'Zone host placeholder',
+      promptIntent: 'Introduce the zone sponsor and route visitors to future sponsored events.',
+    },
+    analytics: {
+      ctaClickAnalyticsId: 'automation_arena_cta_click_placeholder',
+      ctaVisibleAnalyticsId: 'automation_arena_cta_visible_placeholder',
+      profileViewAnalyticsId: 'automation_arena_profile_view_placeholder',
+    },
+    assets: {
+      brochureKey: 'automation-arena-zone-brief-placeholder',
+      logoKey: 'automation-arena-logo-placeholder',
+    },
+    boothId: 'landmark-zone-automation-arena',
+    category: 'Landmark Sponsorship',
+    ctas: LANDMARK_CTA_SET,
+    diagnostics: {
+      enabledInPreview: false,
+      enabledInProduction: false,
+    },
+    displayName: 'Automation Arena Zone Sponsor',
+    featureBullets: ['Zone naming concept', 'hero screen inventory concept', 'Demo Arena event slot placeholder'],
+    heroMessage: 'Own the automation district moment across booth, screen and event inventory.',
+    id: 'automation-arena-landmark-profile',
+    leadCapture: {
+      enabledInPreview: false,
+      enabledInProduction: false,
+      fields: ['name', 'email', 'company', 'sponsor_interest'],
+    },
+    notes: 'Mock Landmark Zone Sponsor concept; no zone naming or screen ownership is rendered in Round 24.',
+    packageTier: 'landmarkZone',
+    shortPitch: 'A future sponsor package tying a city zone to Demo Arena programming.',
+    sponsorId: 'mock-automation-arena',
+    tagline: 'Zone ownership concept',
+  },
+] as const satisfies readonly BoothProductProfile[];
+
+export function getBoothProductProfile(boothId: string) {
+  const normalizedBoothId = boothId.trim();
+  return BOOTH_PRODUCT_PROFILES.find((profile) => (
+    profile.boothId === normalizedBoothId || profile.id === normalizedBoothId
+  )) ?? null;
+}
+
+export function getBoothProductProfilesByTier(tier: BoothPackageTier) {
+  return BOOTH_PRODUCT_PROFILES.filter((profile) => profile.packageTier === tier);
+}
+
+export function getBoothPackageDefinition(tier: BoothPackageTier) {
+  return BOOTH_PACKAGE_DEFINITIONS.find((definition) => definition.tier === tier) ?? null;
+}
+
+export function getBoothProductCtas(boothId: string) {
+  return getBoothProductProfile(boothId)?.ctas ?? [];
+}
+
+export function getBoothProductAnalyticsSummary(): BoothProductAnalyticsSummary {
+  const ctas = BOOTH_PRODUCT_PROFILES.flatMap((profile) => profile.ctas);
+
+  return {
+    backendEnabled: NO_BACKEND_INTEGRATION,
+    ctaCount: ctas.length,
+    previewEnabledCtaCount: ctas.filter((cta) => cta.enabledInPreview).length,
+    productionEnabledCtaCount: ctas.filter((cta) => cta.enabledInProduction).length,
+    profileCount: BOOTH_PRODUCT_PROFILES.length,
+  };
+}
+
+export function getBoothProductReadinessSummary(): BoothProductReadinessSummary {
+  return {
+    aiAgentPreviewEnabledCount: BOOTH_PRODUCT_PROFILES.filter((profile) => profile.aiAgent.enabledInPreview).length,
+    backendEnabled: NO_BACKEND_INTEGRATION,
+    diagnosticPreviewEnabledCount: BOOTH_PRODUCT_PROFILES.filter((profile) => profile.diagnostics.enabledInPreview).length,
+    landmarkZoneCount: getBoothProductProfilesByTier('landmarkZone').length,
+    leadCapturePreviewEnabledCount: BOOTH_PRODUCT_PROFILES.filter((profile) => profile.leadCapture.enabledInPreview).length,
+    packageTierCount: BOOTH_PACKAGE_DEFINITIONS.length,
+    premiumBoothCount: getBoothProductProfilesByTier('premium').length,
+    productionEnabledAiAgentCount: BOOTH_PRODUCT_PROFILES.filter((profile) => profile.aiAgent.enabledInProduction).length,
+    productionEnabledDiagnosticCount: BOOTH_PRODUCT_PROFILES.filter((profile) => profile.diagnostics.enabledInProduction).length,
+    productionEnabledLeadCaptureCount: BOOTH_PRODUCT_PROFILES.filter((profile) => profile.leadCapture.enabledInProduction).length,
+    profileCount: BOOTH_PRODUCT_PROFILES.length,
+    rendered: NO_RUNTIME_RENDERING,
+    standardBoothCount: getBoothProductProfilesByTier('standard').length,
+  };
+}
