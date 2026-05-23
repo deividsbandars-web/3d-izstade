@@ -105,3 +105,32 @@ export type BoothProductReadinessSummary = {
   rendered: false;
   standardBoothCount: number;
 };
+
+export type BoothProductMappingStatus = 'exact' | 'approximate' | 'missing' | 'deferred';
+
+export type BoothProductPlacementMapping = {
+  boothId: string;
+  mappingStatus: BoothProductMappingStatus;
+  notes: string;
+  operatorZoneId?: string;
+  packageTier: BoothPackageTier;
+  productProfileId: string;
+  runtimeBoothId?: string;
+  runtimeSponsorId?: string;
+  safeForDefault: boolean;
+  safeForPreview: boolean;
+  sponsorId?: string;
+  zoneId?: string;
+};
+
+export type BoothProductMappingSummary = {
+  approximateCount: number;
+  defaultSafeCount: number;
+  deferredCount: number;
+  exactCount: number;
+  mappedCount: number;
+  missingCount: number;
+  previewSafeCount: number;
+  profileCount: number;
+  rendered: false;
+};

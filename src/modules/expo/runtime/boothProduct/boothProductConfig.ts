@@ -74,6 +74,49 @@ const PREMIUM_CTA_SET: readonly BoothProductCta[] = [
   },
 ];
 
+const SPONSOR_CONCIERGE_PREMIUM_CTA_SET: readonly BoothProductCta[] = [
+  {
+    analyticsId: 'sponsor_concierge_request_demo_visible_placeholder',
+    enabledInPreview: true,
+    enabledInProduction: false,
+    id: 'sponsor-concierge-request-demo',
+    label: 'Request Demo',
+    notes: 'Metadata only; no request-demo UI or routing is wired in Round 26.',
+    shortLabel: 'Demo',
+    type: 'requestDemo',
+  },
+  {
+    analyticsId: 'sponsor_concierge_book_meeting_visible_placeholder',
+    enabledInPreview: true,
+    enabledInProduction: false,
+    id: 'sponsor-concierge-book-meeting',
+    label: 'Book Meeting',
+    notes: 'Metadata only; existing booth booking behavior is not changed in Round 26.',
+    shortLabel: 'Meet',
+    type: 'bookMeeting',
+  },
+  {
+    analyticsId: 'sponsor_concierge_run_diagnostic_visible_placeholder',
+    enabledInPreview: false,
+    enabledInProduction: false,
+    id: 'sponsor-concierge-run-diagnostic',
+    label: 'Run Diagnostic',
+    notes: 'Placeholder only; no diagnostic UI exists in Round 26.',
+    shortLabel: 'Diagnostic',
+    type: 'runDiagnostic',
+  },
+  {
+    analyticsId: 'sponsor_concierge_download_pdf_visible_placeholder',
+    enabledInPreview: false,
+    enabledInProduction: false,
+    id: 'sponsor-concierge-download-pdf',
+    label: 'Download PDF',
+    notes: 'Placeholder only; no brochure UI or file delivery exists in Round 26.',
+    shortLabel: 'PDF',
+    type: 'downloadPdf',
+  },
+];
+
 const LANDMARK_CTA_SET: readonly BoothProductCta[] = [
   {
     analyticsId: 'booth_product_cta_join_event_visible',
@@ -124,6 +167,49 @@ export const BOOTH_PACKAGE_DEFINITIONS = [
 ] as const satisfies readonly BoothPackageDefinition[];
 
 export const BOOTH_PRODUCT_PROFILES = [
+  {
+    aiAgent: {
+      enabledInPreview: false,
+      enabledInProduction: false,
+      personaLabel: 'Sponsor concierge placeholder',
+      promptIntent: 'Future AI-guided qualification for sponsor meetings and lead routing.',
+    },
+    analytics: {
+      ctaClickAnalyticsId: 'sponsor_concierge_cta_click_placeholder',
+      ctaVisibleAnalyticsId: 'sponsor_concierge_cta_visible_placeholder',
+      profileViewAnalyticsId: 'sponsor_concierge_profile_view_placeholder',
+    },
+    assets: {
+      brochureKey: 'sponsor-concierge-premium-brief-placeholder',
+      logoKey: 'sponsor-concierge-logo-placeholder',
+    },
+    boothId: 'sponsor-concierge',
+    category: 'Sponsor Operations / Event Partnerships',
+    ctas: SPONSOR_CONCIERGE_PREMIUM_CTA_SET,
+    diagnostics: {
+      diagnosticId: 'sponsor-concierge-qualification-placeholder',
+      enabledInPreview: false,
+      enabledInProduction: false,
+    },
+    displayName: 'Sponsor Concierge',
+    featureBullets: [
+      'Meeting-oriented premium sponsor package readiness',
+      'CTA metadata for demo requests and future qualification',
+      'Future lead scoring and AI-guided sponsor follow-up placeholders',
+    ],
+    heroMessage: 'Premium sponsor booth for meetings, demo requests and future AI-guided qualification.',
+    id: 'sponsor-concierge-premium-profile',
+    leadCapture: {
+      enabledInPreview: false,
+      enabledInProduction: false,
+      fields: ['name', 'email', 'company', 'sponsor_interest'],
+    },
+    notes: 'Exact preview-safe mapping only; no rendering integration, lead UI, AI agent UI or click behavior is added in Round 26.',
+    packageTier: 'premium',
+    shortPitch: 'A premium booth package concept focused on sponsor conversion, CTA readiness and future lead scoring.',
+    sponsorId: 'sponsor-concierge',
+    tagline: 'Helps partners turn expo presence into meetings and measurable leads.',
+  },
   {
     aiAgent: {
       enabledInPreview: false,

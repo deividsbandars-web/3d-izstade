@@ -8,6 +8,17 @@ export {
   getBoothProductProfilesByTier,
   getBoothProductReadinessSummary,
 } from './boothProductConfig';
+export {
+  BOOTH_PRODUCT_PLACEMENT_MAPPINGS,
+  getDefaultSafeBoothProductMappings,
+  getBoothProductMappingForBooth,
+  getBoothProductMappingForProfile,
+  getBoothProductMappingSummary,
+  getBoothProductPlacementMappings,
+  getMappedBoothProductProfiles,
+  getPreviewSafeBoothProductMappings,
+  getUnmappedBoothProductProfiles,
+} from './boothProductMapping';
 export type {
   BoothAiAgentConfig,
   BoothCtaType,
@@ -19,6 +30,9 @@ export type {
   BoothProductAnalyticsSummary,
   BoothProductAssets,
   BoothProductCta,
+  BoothProductMappingStatus,
+  BoothProductMappingSummary,
+  BoothProductPlacementMapping,
   BoothProductProfile,
   BoothProductReadinessSummary,
 } from './boothProductTypes';
