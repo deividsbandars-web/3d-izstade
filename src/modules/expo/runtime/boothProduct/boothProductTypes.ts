@@ -134,3 +134,20 @@ export type BoothProductMappingSummary = {
   profileCount: number;
   rendered: false;
 };
+
+export type BoothProductDebugSummary = {
+  defaultSafeCount: number;
+  deferredMappingCount: number;
+  exactMappingCount: number;
+  firstPreviewSafeBoothId: string | null;
+  firstPreviewSafeProfileId: string | null;
+  firstPreviewSafeTier: BoothPackageTier | null;
+  hasAiAgentUi: false;
+  hasBackend: false;
+  hasBookingUi: false;
+  hasLeadCaptureUi: false;
+  mappingCount: number;
+  previewSafeCount: number;
+  profileCount: number;
+  rendered: false;
+};

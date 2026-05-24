@@ -1,5 +1,6 @@
 import { BOOTH_PRODUCT_PROFILES } from './boothProductConfig';
 import type {
+  BoothProductDebugSummary,
   BoothProductMappingStatus,
   BoothProductMappingSummary,
   BoothProductPlacementMapping,
@@ -8,6 +9,10 @@ import type {
 
 const MAPPED_STATUSES: readonly BoothProductMappingStatus[] = ['exact', 'approximate'];
 const RUNTIME_RENDERING_ENABLED = false;
+const BOOTH_PRODUCT_HAS_BACKEND = false;
+const BOOTH_PRODUCT_HAS_LEAD_CAPTURE_UI = false;
+const BOOTH_PRODUCT_HAS_AI_AGENT_UI = false;
+const BOOTH_PRODUCT_HAS_BOOKING_UI = false;
 const EXACT_PREVIEW_SAFE_PROFILE_IDS = new Set(['sponsor-concierge-premium-profile']);
 
 const EXACT_PREVIEW_SAFE_MAPPINGS = [
@@ -111,4 +116,30 @@ export function getBoothProductMappingSummary(): BoothProductMappingSummary {
     profileCount: BOOTH_PRODUCT_PROFILES.length,
     rendered: RUNTIME_RENDERING_ENABLED,
   };
+}
+
+export function getBoothProductDebugSummary(): BoothProductDebugSummary {
+  const mappings = BOOTH_PRODUCT_PLACEMENT_MAPPINGS;
+  const firstPreviewSafeMapping = getPreviewSafeBoothProductMappings()[0] ?? null;
+
+  return {
+    defaultSafeCount: mappings.filter((mapping) => mapping.safeForDefault).length,
+    deferredMappingCount: mappings.filter((mapping) => mapping.mappingStatus === 'deferred').length,
+    exactMappingCount: mappings.filter((mapping) => mapping.mappingStatus === 'exact').length,
+    firstPreviewSafeBoothId: firstPreviewSafeMapping?.boothId ?? null,
+    firstPreviewSafeProfileId: firstPreviewSafeMapping?.productProfileId ?? null,
+    firstPreviewSafeTier: firstPreviewSafeMapping?.packageTier ?? null,
+    hasAiAgentUi: BOOTH_PRODUCT_HAS_AI_AGENT_UI,
+    hasBackend: BOOTH_PRODUCT_HAS_BACKEND,
+    hasBookingUi: BOOTH_PRODUCT_HAS_BOOKING_UI,
+    hasLeadCaptureUi: BOOTH_PRODUCT_HAS_LEAD_CAPTURE_UI,
+    mappingCount: mappings.length,
+    previewSafeCount: mappings.filter((mapping) => mapping.safeForPreview).length,
+    profileCount: BOOTH_PRODUCT_PROFILES.length,
+    rendered: RUNTIME_RENDERING_ENABLED,
+  };
+}
+
+export function getBoothProductPreviewReadinessSummary() {
+  return getBoothProductDebugSummary();
 }

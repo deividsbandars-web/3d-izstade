@@ -10,6 +10,8 @@ export {
 } from './boothProductConfig';
 export {
   BOOTH_PRODUCT_PLACEMENT_MAPPINGS,
+  getBoothProductDebugSummary,
+  getBoothProductPreviewReadinessSummary,
   getDefaultSafeBoothProductMappings,
   getBoothProductMappingForBooth,
   getBoothProductMappingForProfile,
@@ -30,6 +32,7 @@ export type {
   BoothProductAnalyticsSummary,
   BoothProductAssets,
   BoothProductCta,
+  BoothProductDebugSummary,
   BoothProductMappingStatus,
   BoothProductMappingSummary,
   BoothProductPlacementMapping,

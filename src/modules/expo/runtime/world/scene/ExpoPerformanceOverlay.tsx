@@ -17,6 +17,7 @@ import {
   getDemoArenaCtaInteractionSummary,
   getDemoArenaPreviewRuntimeSummary,
 } from '../../demoArena';
+import { getBoothProductDebugSummary } from '../../boothProduct';
 
 type WebglOverlayStatus = {
   available: boolean;
@@ -186,6 +187,7 @@ export function ExpoPerformanceOverlay({
   const demoArenaPreviewStats = getDemoArenaPreviewRuntimeSummary();
   const demoArenaCtaStats = getDemoArenaAnalyticsSummary(undefined, demoArenaPreviewStats.enabled);
   const demoArenaCtaInteractionStats = getDemoArenaCtaInteractionSummary(undefined, demoArenaPreviewStats.enabled);
+  const boothProductStats = getBoothProductDebugSummary();
 
   const rowStyle: CSSProperties = {
     display: 'flex',
@@ -243,6 +245,7 @@ export function ExpoPerformanceOverlay({
     ['demo screens', `${demoArenaPreviewStats.mappedScreenCount}/${demoArenaPreviewStats.totalTargets}`],
     ['demo ctas', demoArenaPreviewStats.enabled ? `${demoArenaCtaStats.previewEnabledCtaCount}/${demoArenaCtaStats.ctaCount}` : 'off'],
     ['demo cta click', demoArenaPreviewStats.enabled ? `disabled / ${demoArenaCtaInteractionStats.ctaClickableCount} clickable` : 'off'],
+    ['boothProduct', `${boothProductStats.profileCount} profiles / ${boothProductStats.previewSafeCount} preview-safe / rendered ${boothProductStats.rendered ? 'on' : 'off'}`],
     ['static screens', formatBoolean(qualitySettings.preferStaticScreens)],
     ['far details', formatBoolean(qualitySettings.farDetailsEnabled)],
     ['transparent fx', formatBoolean(qualitySettings.transparentEffectsEnabled)],
