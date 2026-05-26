@@ -16,6 +16,7 @@ import { maybeRunExpoOperatorFreshCacheReset } from './expoOperatorFreshCache';
 import { useExpoRuntimeErrorBridge } from './useExpoRuntimeErrorBridge';
 import { useExpoRuntimeSession } from './useExpoRuntimeSession';
 import { WorldInspectionProvider } from '../world/inspection/worldInspectionState';
+import { SalesDemoGuideOverlay } from '../salesDemo';
 
 export default function Expo3D() {
   const runtimeSession = useExpoRuntimeSession();
@@ -133,25 +134,28 @@ function ExpoRuntimeExperience({
   return (
     <ExpoRuntimeShell
       hudLayer={(
-        <ExpoWorldHud
-          guests={guests}
-          isMicOn={isMicOn}
-          isSpeaking={isSpeaking}
-          isTouchDevice={runtimeSession.isTouchDevice}
-          mode={runtimeSession.mode}
-          nearbyBooth={mobileNearbyBooth}
-          onMoveTouch={runtimeSession.setMobileMoveIntent}
-          onOpenNearbyBooth={openMobileNearbyBooth}
-          playerPos={playerPos}
-          sectorMarkers={worldContract.sectorMarkers}
-          visualProfile={worldContract.visualProfile}
-          onToggleMic={() => setIsMicOn((value) => !value)}
-          operatorBuildStamp={runtimeSession.operatorSession.enabled ? EXPO_REVIEW_BUILD_STAMP : null}
-          onExit={() => {
-            document.exitPointerLock();
-            runtimeSession.setMode('menu');
-          }}
-        />
+        <>
+          <ExpoWorldHud
+            guests={guests}
+            isMicOn={isMicOn}
+            isSpeaking={isSpeaking}
+            isTouchDevice={runtimeSession.isTouchDevice}
+            mode={runtimeSession.mode}
+            nearbyBooth={mobileNearbyBooth}
+            onMoveTouch={runtimeSession.setMobileMoveIntent}
+            onOpenNearbyBooth={openMobileNearbyBooth}
+            playerPos={playerPos}
+            sectorMarkers={worldContract.sectorMarkers}
+            visualProfile={worldContract.visualProfile}
+            onToggleMic={() => setIsMicOn((value) => !value)}
+            operatorBuildStamp={runtimeSession.operatorSession.enabled ? EXPO_REVIEW_BUILD_STAMP : null}
+            onExit={() => {
+              document.exitPointerLock();
+              runtimeSession.setMode('menu');
+            }}
+          />
+          <SalesDemoGuideOverlay isTouchDevice={runtimeSession.isTouchDevice} />
+        </>
       )}
       isTouchDevice={runtimeSession.isTouchDevice}
       isLoading={isLoading}
