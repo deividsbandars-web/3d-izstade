@@ -117,7 +117,7 @@ const SPONSOR_CONCIERGE_PREMIUM_CTA_SET: readonly BoothProductCta[] = [
   },
 ];
 
-const IMMERSIVE_FABRIC_LABS_PREMIUM_CTA_SET: readonly BoothProductCta[] = [
+const IMMERSIVE_FABRIC_LABS_STANDARD_CTA_SET: readonly BoothProductCta[] = [
   {
     analyticsId: 'immersive_fabric_labs_view_demo_visible_placeholder',
     enabledInPreview: true,
@@ -129,14 +129,14 @@ const IMMERSIVE_FABRIC_LABS_PREMIUM_CTA_SET: readonly BoothProductCta[] = [
     type: 'learnMore',
   },
   {
-    analyticsId: 'immersive_fabric_labs_request_meeting_visible_placeholder',
+    analyticsId: 'immersive_fabric_labs_request_info_visible_placeholder',
     enabledInPreview: true,
     enabledInProduction: false,
-    id: 'immersive-fabric-labs-request-meeting',
-    label: 'Request Meeting',
-    notes: 'Metadata only; no meeting booking UI or redirect is wired in Round 30.',
-    shortLabel: 'Meeting',
-    type: 'bookMeeting',
+    id: 'immersive-fabric-labs-request-info',
+    label: 'Request Info',
+    notes: 'Metadata only; no info request form, redirect or backend call is wired in Round 31.',
+    shortLabel: 'Info',
+    type: 'learnMore',
   },
   {
     analyticsId: 'immersive_fabric_labs_get_package_visible_placeholder',
@@ -144,7 +144,7 @@ const IMMERSIVE_FABRIC_LABS_PREMIUM_CTA_SET: readonly BoothProductCta[] = [
     enabledInProduction: false,
     id: 'immersive-fabric-labs-get-package',
     label: 'Get Package',
-    notes: 'Metadata only; no lead capture, package form or backend call is wired in Round 30.',
+    notes: 'Metadata only; no lead capture, package form or backend call is wired in Round 31.',
     shortLabel: 'Package',
     type: 'learnMore',
   },
@@ -256,36 +256,34 @@ export const BOOTH_PRODUCT_PROFILES = [
       profileViewAnalyticsId: 'immersive_fabric_labs_profile_view_placeholder',
     },
     assets: {
-      brochureKey: 'immersive-fabric-labs-premium-brief-placeholder',
+      brochureKey: 'immersive-fabric-labs-standard-brief-placeholder',
       logoKey: 'immersive-fabric-labs-logo-placeholder',
-      videoKey: 'immersive-fabric-labs-demo-video-placeholder',
     },
     boothId: 'immersive-fabric-labs',
     category: 'XR / Web3D Product Showcases',
-    ctas: IMMERSIVE_FABRIC_LABS_PREMIUM_CTA_SET,
+    ctas: IMMERSIVE_FABRIC_LABS_STANDARD_CTA_SET,
     diagnostics: {
-      diagnosticId: 'immersive-fabric-labs-demo-readiness-placeholder',
       enabledInPreview: false,
       enabledInProduction: false,
     },
     displayName: 'Immersive Fabric Labs',
     featureBullets: [
-      'Interactive product storytelling readiness',
-      'XR/Web3D demo package placeholders',
-      'Sponsor interest and lead report metadata',
+      'Product profile and short pitch readiness',
+      'Demo showcase screen placeholder',
+      'Sponsor package request metadata',
     ],
-    heroMessage: 'Premium booth package for immersive product demos and qualified sponsor interest.',
-    id: 'immersive-fabric-labs-premium-profile',
+    heroMessage: 'Standard booth package for immersive product storytelling and sponsor interest.',
+    id: 'immersive-fabric-labs-standard-profile',
     leadCapture: {
       enabledInPreview: false,
       enabledInProduction: false,
       fields: ['name', 'email', 'company', 'demo_interest'],
     },
-    notes: 'Exact preview-safe mapping only; no rendering beyond the review-only boothProduct preview card, lead UI, AI agent UI or click behavior is added in Round 30.',
-    packageTier: 'premium',
-    shortPitch: 'A premium booth package concept for XR/Web3D demo storytelling and sponsor lead reporting.',
+    notes: 'Exact preview-safe Standard Booth mapping only; no rendering beyond the review-only boothProduct preview card, lead UI, AI agent UI or click behavior is added in Round 31.',
+    packageTier: 'standard',
+    shortPitch: 'A standard booth package concept for product showcase, short pitch and sponsor package requests.',
     sponsorId: 'immersive-fabric-labs',
-    tagline: 'Immersive product demo readiness',
+    tagline: 'Immersive product showcase readiness',
   },
   {
     aiAgent: {

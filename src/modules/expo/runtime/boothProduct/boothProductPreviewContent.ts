@@ -14,16 +14,16 @@ type BoothProductPreviewCardRequest = {
 };
 
 const BOOTH_PRODUCT_PREVIEW_CARDS = {
-  'immersive-fabric-labs-premium-profile': {
+  'immersive-fabric-labs-standard-profile': {
     bullets: [
-      'Interactive product storytelling',
-      'XR/Web3D demo-ready package',
-      'Sponsor lead report ready',
+      'Product profile and pitch',
+      'Demo-ready showcase screen',
+      'Sponsor package request',
     ],
-    ctaLabels: ['View Demo', 'Request Meeting', 'Get Package'],
+    ctaLabels: ['View Demo', 'Request Info', 'Get Package'],
     statusLabel: 'Preview only \u00b7 no live capture yet',
-    subtitle: 'Showcase immersive product demos and capture qualified sponsor interest.',
-    tierLabel: 'PREMIUM BOOTH',
+    subtitle: 'Showcase an immersive product story and collect sponsor interest.',
+    tierLabel: 'STANDARD BOOTH',
     title: 'Immersive Fabric Labs',
   },
   'sponsor-concierge-premium-profile': {

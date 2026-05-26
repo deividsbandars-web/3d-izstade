@@ -17,7 +17,7 @@ const BOOTH_PRODUCT_HAS_AI_AGENT_UI = false;
 const BOOTH_PRODUCT_HAS_BOOKING_UI = false;
 const EXACT_PREVIEW_SAFE_PROFILE_IDS = new Set([
   'sponsor-concierge-premium-profile',
-  'immersive-fabric-labs-premium-profile',
+  'immersive-fabric-labs-standard-profile',
 ]);
 
 const EXACT_PREVIEW_SAFE_MAPPINGS = [
@@ -38,10 +38,10 @@ const EXACT_PREVIEW_SAFE_MAPPINGS = [
   {
     boothId: 'immersive-fabric-labs',
     mappingStatus: 'exact',
-    notes: 'Verified production-safe runtime booth/company id and booth alias; preview-safe product card only, with default rendering still disabled.',
+    notes: 'Verified production-safe runtime booth/company id and booth alias; preview-safe Standard Booth product card only, with default rendering still disabled.',
     operatorZoneId: 'right-marquee',
-    packageTier: 'premium',
-    productProfileId: 'immersive-fabric-labs-premium-profile',
+    packageTier: 'standard',
+    productProfileId: 'immersive-fabric-labs-standard-profile',
     runtimeBoothId: 'booth-immersive-fabric-labs',
     runtimeSponsorId: 'immersive-fabric-labs',
     safeForDefault: false,
