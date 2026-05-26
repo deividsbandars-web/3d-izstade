@@ -137,14 +137,14 @@ function drawBoothProductPreviewBillboard(args: {
   const ctaLabels = normalizeGeneratedBillboardLines(payload.ctaLabels, 3);
   const title = payload.label || 'Sponsor Concierge';
   const tier = payload.tier || 'Premium Booth';
-  const subtitle = payload.subtitle || 'Turn sponsor presence into meetings and qualified leads.';
+  const subtitle = payload.subtitle || 'Turn expo traffic into booked meetings and qualified leads.';
   const statusLabel = payload.statusLabel || 'Preview only - no live lead capture yet';
-  const titleSize = isLandscape ? height * 0.15 : height * 0.052;
-  const tierSize = isLandscape ? height * 0.065 : height * 0.026;
-  const subtitleSize = isLandscape ? height * 0.056 : height * 0.024;
-  const bodySize = isLandscape ? height * 0.052 : height * 0.022;
-  const ctaSize = isLandscape ? height * 0.042 : height * 0.018;
-  const statusSize = isLandscape ? height * 0.037 : height * 0.017;
+  const titleSize = isLandscape ? height * 0.12 : height * 0.052;
+  const tierSize = isLandscape ? height * 0.056 : height * 0.026;
+  const subtitleSize = isLandscape ? height * 0.049 : height * 0.024;
+  const bodySize = isLandscape ? height * 0.045 : height * 0.022;
+  const ctaSize = isLandscape ? height * 0.04 : height * 0.018;
+  const statusSize = isLandscape ? height * 0.033 : height * 0.017;
 
   const gradient = context.createLinearGradient(0, 0, width, height);
   gradient.addColorStop(0, '#07101b');
@@ -171,22 +171,22 @@ function drawBoothProductPreviewBillboard(args: {
 
   const left = pad * 1.32;
   const maxTextWidth = width - left - pad * 1.32;
-  const tierWidth = Math.min(width * (isLandscape ? 0.28 : 0.54), Math.max(240, tier.length * tierSize * 0.7));
-  const tierHeight = tierSize * 1.55;
-  const tierY = isLandscape ? height * 0.13 : height * 0.085;
+  const tierWidth = Math.min(width * (isLandscape ? 0.32 : 0.54), Math.max(270, tier.length * tierSize * 0.72));
+  const tierHeight = tierSize * 1.6;
+  const tierY = isLandscape ? height * 0.105 : height * 0.085;
 
-  context.fillStyle = 'rgba(186, 230, 253, 0.13)';
+  context.fillStyle = 'rgba(45, 212, 191, 0.2)';
   context.beginPath();
   context.roundRect(left, tierY, tierWidth, tierHeight, tierHeight * 0.5);
   context.fill();
   drawBillboardText(context, tier.toUpperCase(), left + tierHeight * 0.55, tierY + tierHeight * 0.22, tierWidth - tierHeight, font(900, tierSize), tierAccent);
 
-  const titleY = isLandscape ? height * 0.28 : height * 0.18;
+  const titleY = isLandscape ? height * 0.245 : height * 0.18;
   drawBillboardText(context, title, left, titleY, maxTextWidth, font(900, titleSize), '#ffffff');
-  drawBillboardText(context, subtitle, left, titleY + titleSize * (isLandscape ? 1.12 : 1.28), maxTextWidth, font(700, subtitleSize), '#dbeafe');
+  drawBillboardText(context, subtitle, left, titleY + titleSize * (isLandscape ? 1.08 : 1.28), maxTextWidth, font(750, subtitleSize), '#dbeafe');
 
-  const bulletStartY = titleY + titleSize * (isLandscape ? 1.9 : 2.45);
-  const bulletGap = bodySize * (isLandscape ? 1.45 : 1.62);
+  const bulletStartY = titleY + titleSize * (isLandscape ? 1.82 : 2.45);
+  const bulletGap = bodySize * (isLandscape ? 1.5 : 1.62);
   bullets.forEach((line, index) => {
     const y = bulletStartY + bulletGap * index;
     context.fillStyle = accentColor;
@@ -196,17 +196,20 @@ function drawBoothProductPreviewBillboard(args: {
     drawBillboardText(context, line, left + bodySize * 0.9, y, maxTextWidth - bodySize, font(700, bodySize), '#f8fafc');
   });
 
-  const ctaY = isLandscape ? height * 0.72 : height * 0.72;
-  const ctaGap = isLandscape ? width * 0.225 : 0;
-  const ctaWidth = isLandscape ? width * 0.18 : maxTextWidth;
-  const ctaHeight = ctaSize * 2.05;
+  const ctaY = isLandscape ? height * 0.705 : height * 0.72;
+  const ctaGap = isLandscape ? width * 0.242 : 0;
+  const ctaWidth = isLandscape ? width * 0.205 : maxTextWidth;
+  const ctaHeight = ctaSize * 2.2;
   ctaLabels.forEach((label, index) => {
     const x = isLandscape ? left + ctaGap * index : left;
     const y = isLandscape ? ctaY : ctaY + index * ctaHeight * 1.22;
-    context.fillStyle = index === 0 ? accentColor : 'rgba(148, 163, 184, 0.2)';
+    context.fillStyle = index === 0 ? accentColor : 'rgba(30, 41, 59, 0.82)';
     context.beginPath();
     context.roundRect(x, y, ctaWidth, ctaHeight, Math.max(12, ctaHeight * 0.45));
     context.fill();
+    context.strokeStyle = index === 0 ? 'rgba(204, 251, 241, 0.88)' : 'rgba(148, 163, 184, 0.5)';
+    context.lineWidth = Math.max(3, shortSide * 0.004);
+    context.stroke();
     drawBillboardText(context, label.toUpperCase(), x + ctaHeight * 0.55, y + ctaHeight * 0.28, ctaWidth - ctaHeight, font(900, ctaSize), '#ffffff');
   });
 

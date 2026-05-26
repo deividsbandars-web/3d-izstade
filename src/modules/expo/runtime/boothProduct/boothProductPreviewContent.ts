@@ -16,13 +16,13 @@ type BoothProductPreviewCardRequest = {
 const SPONSOR_CONCIERGE_PREVIEW_CARD = {
   bullets: [
     'Meeting-ready sponsor package',
-    'Future AI diagnostic flow',
-    'Lead scoring and sponsor report ready',
+    'AI qualification preview',
+    'Lead report package',
   ],
   ctaLabels: ['Request Demo', 'Book Meeting', 'Run Diagnostic'],
-  statusLabel: 'Preview only · no live lead capture yet',
-  subtitle: 'Turn sponsor presence into meetings and qualified leads.',
-  tierLabel: 'Premium Booth',
+  statusLabel: 'Preview only · no live capture yet',
+  subtitle: 'Turn expo traffic into booked meetings and qualified leads.',
+  tierLabel: 'PREMIUM BOOTH',
   title: 'Sponsor Concierge',
 } as const;
 
