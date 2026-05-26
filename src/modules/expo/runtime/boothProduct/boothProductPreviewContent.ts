@@ -14,6 +14,18 @@ type BoothProductPreviewCardRequest = {
 };
 
 const BOOTH_PRODUCT_PREVIEW_CARDS = {
+  'automation-arena-landmark-profile': {
+    bullets: [
+      'Zone naming rights',
+      'Hero screen placement',
+      'Demo Arena slot + sponsor report',
+    ],
+    ctaLabels: ['Sponsor Zone', 'View Package', 'Reserve Slot'],
+    statusLabel: 'Preview only \u00b7 sponsorship package concept',
+    subtitle: 'Own the highest-visibility zone across demos, booths and event traffic.',
+    tierLabel: 'LANDMARK ZONE SPONSOR',
+    title: 'AI District Sponsor',
+  },
   'immersive-fabric-labs-standard-profile': {
     bullets: [
       'Product profile and pitch',

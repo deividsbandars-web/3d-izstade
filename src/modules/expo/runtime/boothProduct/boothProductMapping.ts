@@ -18,6 +18,7 @@ const BOOTH_PRODUCT_HAS_BOOKING_UI = false;
 const EXACT_PREVIEW_SAFE_PROFILE_IDS = new Set([
   'sponsor-concierge-premium-profile',
   'immersive-fabric-labs-standard-profile',
+  'automation-arena-landmark-profile',
 ]);
 
 const EXACT_PREVIEW_SAFE_MAPPINGS = [
@@ -48,6 +49,20 @@ const EXACT_PREVIEW_SAFE_MAPPINGS = [
     safeForPreview: true,
     sponsorId: 'immersive-fabric-labs',
     zoneId: 'showcase-row',
+  },
+  {
+    boothId: 'warpala-platform',
+    mappingStatus: 'exact',
+    notes: 'Verified production-safe hero/platform booth/company id; preview-safe Landmark Zone Sponsor card only, with default rendering still disabled.',
+    operatorZoneId: 'arrival-gate',
+    packageTier: 'landmarkZone',
+    productProfileId: 'automation-arena-landmark-profile',
+    runtimeBoothId: 'booth-warpala-platform',
+    runtimeSponsorId: 'warpala-platform',
+    safeForDefault: false,
+    safeForPreview: true,
+    sponsorId: 'warpala-platform',
+    zoneId: 'arrival-core',
   },
 ] as const satisfies readonly BoothProductPlacementMapping[];
 
