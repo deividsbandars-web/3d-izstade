@@ -151,3 +151,31 @@ export type BoothProductDebugSummary = {
   profileCount: number;
   rendered: false;
 };
+
+export type BoothProductPreviewMode = 'off' | 'preview';
+
+export type BoothProductPreviewSummary = {
+  defaultSafeCount: number;
+  enabled: boolean;
+  exactMappingCount: number;
+  firstPreviewSafeBoothId: string | null;
+  firstPreviewSafeProfileId: string | null;
+  firstPreviewSafeTier: BoothPackageTier | null;
+  mode: BoothProductPreviewMode;
+  previewSafeCount: number;
+  profileCount: number;
+  rendered: false;
+  visiblePreviewCardCount: number;
+};
+
+export type BoothProductPreviewCard = {
+  boothId: string;
+  bullets: readonly string[];
+  ctaLabels: readonly string[];
+  productProfileId: string;
+  runtimeBoothId: string | null;
+  statusLabel: string;
+  subtitle: string;
+  tierLabel: string;
+  title: string;
+};

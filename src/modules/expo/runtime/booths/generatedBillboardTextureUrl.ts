@@ -3,8 +3,12 @@ export const GENERATED_BILLBOARD_PREFIX = 'generated-billboard:';
 export type GeneratedBillboardPayload = {
   accentColor?: string;
   aspect?: number;
+  bullets?: readonly string[];
   chip?: string;
+  ctaLabels?: readonly string[];
   label?: string;
+  layout?: 'booth-product-preview';
+  statusLabel?: string;
   subtitle?: string;
   tier?: string;
   tierAccent?: string;

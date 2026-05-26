@@ -1,6 +1,7 @@
 import type { RefObject } from 'react';
 import type * as THREE from 'three';
 import { getSponsorNameFontSize, type SponsorBoothPresentation, type SponsorCta } from '../../lib/sponsorBoothPresentation';
+import type { BoothProductPreviewCard } from '../boothProduct';
 import { EXPO_SPATIAL_DEBUG_FLAGS } from '../../state/expoRuntime';
 import { getBoothArchitectureMetrics, getBoothColliderSegments } from '../../components/BoothArchitectureKit';
 import {
@@ -27,6 +28,7 @@ type DistrictVisual = {
 export function BoothVisualAssembly({
   accentColor,
   boothColliderRef,
+  boothProductPreviewCard,
   fallbackMonogram,
   onAction,
   presentation,
@@ -35,6 +37,7 @@ export function BoothVisualAssembly({
 }: {
   accentColor: string;
   boothColliderRef: RefObject<THREE.Group | null>;
+  boothProductPreviewCard?: BoothProductPreviewCard | null;
   districtThemeId?: DistrictThemeId | string | null;
   fallbackMonogram: string;
   onAction: (action: SponsorCta) => void;
@@ -59,10 +62,23 @@ export function BoothVisualAssembly({
   const boothPresentationScreenUrl = buildGeneratedBillboardTextureUrl({
     accentColor,
     aspect: pavilionLayout.screenSurfaceWidth / Math.max(1, pavilionLayout.screenSurfaceHeight),
-    chip: presentation.badgeLabel ?? premiumLabel,
-    label: presentation.displayName,
-    subtitle: presentation.tagline ?? premiumLabel,
-    tier: tierState.contractTier.toUpperCase(),
+    ...(boothProductPreviewCard
+      ? {
+          bullets: boothProductPreviewCard.bullets,
+          chip: 'BOOTH PRODUCT PREVIEW',
+          ctaLabels: boothProductPreviewCard.ctaLabels,
+          label: boothProductPreviewCard.title,
+          layout: 'booth-product-preview' as const,
+          statusLabel: boothProductPreviewCard.statusLabel,
+          subtitle: boothProductPreviewCard.subtitle,
+          tier: boothProductPreviewCard.tierLabel,
+        }
+      : {
+          chip: presentation.badgeLabel ?? premiumLabel,
+          label: presentation.displayName,
+          subtitle: presentation.tagline ?? premiumLabel,
+          tier: tierState.contractTier.toUpperCase(),
+        }),
     tierAccent: tierState.districtVisual.shellAccent,
   });
 

@@ -4,6 +4,7 @@ import * as THREE from 'three';
 import type { SponsorCta } from '../../lib/sponsorBoothPresentation';
 import { EXPO_FEATURE_FLAGS } from '../../state/expoRuntime';
 import type { ExpoBoothPlacement } from '../../layout-engine';
+import { getBoothProductPreviewCardForBooth } from '../boothProduct';
 import { usePlayerColliderRegistration } from '../world';
 import {
   bindBoothPresentation,
@@ -48,6 +49,12 @@ export function DistrictBooth({
     skylineDensityEnabled: EXPO_FEATURE_FLAGS.enableShowcaseSkylineDensity,
   });
   const boothId = String(booth?.id ?? placement.id);
+  const boothProductPreviewCard = getBoothProductPreviewCardForBooth({
+    boothId,
+    companyId: company?.id,
+    placementId: placement.id,
+    runtimeBoothId: booth?.id,
+  });
   const openRoom = () => openShowcaseRoom({
     analyticsEnabled: EXPO_FEATURE_FLAGS.enableAnalytics,
     boothId,
@@ -96,6 +103,7 @@ export function DistrictBooth({
       <BoothVisualAssembly
         accentColor={placement.color}
         boothColliderRef={boothColliderRef}
+        boothProductPreviewCard={boothProductPreviewCard}
         districtThemeId={placement.districtThemeId}
         fallbackMonogram={presentation.fallbackIdentity.monogram}
         onAction={onAction}

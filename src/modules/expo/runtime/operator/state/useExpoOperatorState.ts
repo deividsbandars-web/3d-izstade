@@ -23,7 +23,7 @@ import {
   getDemoArenaCtaInteractionSummary,
   getDemoArenaPreviewRuntimeSummary,
 } from '../../demoArena';
-import { getBoothProductDebugSummary } from '../../boothProduct';
+import { getBoothProductDebugSummary, getBoothProductPreviewSummary } from '../../boothProduct';
 
 type LayerStates = {
   booths: boolean;
@@ -944,10 +944,12 @@ export function buildExpoReviewOperatorSnapshot(args: {
   const demoArenaCtaAnalytics = getDemoArenaAnalyticsSummary(undefined, demoArenaPreview.enabled);
   const demoArenaCtaInteraction = getDemoArenaCtaInteractionSummary(undefined, demoArenaPreview.enabled);
   const boothProduct = getBoothProductDebugSummary();
+  const boothProductPreview = getBoothProductPreviewSummary();
 
   return {
     activeZoneId: args.activeZoneId,
     boothProduct,
+    boothProductPreview,
     centerStack: args.centerStack,
     centerTarget: args.centerTarget,
     clickStack: args.clickStack,

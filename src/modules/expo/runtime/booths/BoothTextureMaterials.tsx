@@ -101,6 +101,126 @@ function resolveGeneratedBillboardCanvasSize(
   return capGeneratedBillboardCanvasSize(baseSize, textureQualityHint);
 }
 
+function normalizeGeneratedBillboardLines(lines: readonly string[] | undefined, limit: number) {
+  return Array.isArray(lines)
+    ? lines
+      .map((line) => String(line || '').trim())
+      .filter(Boolean)
+      .slice(0, limit)
+    : [];
+}
+
+function drawBoothProductPreviewBillboard(args: {
+  accentColor: string;
+  context: CanvasRenderingContext2D;
+  font: (weight: number, size: number) => string;
+  height: number;
+  pad: number;
+  payload: NonNullable<ReturnType<typeof parseGeneratedBillboardPayload>>;
+  shortSide: number;
+  tierAccent: string;
+  width: number;
+}) {
+  const {
+    accentColor,
+    context,
+    font,
+    height,
+    pad,
+    payload,
+    shortSide,
+    tierAccent,
+    width,
+  } = args;
+  const isLandscape = width > height * 1.08;
+  const bullets = normalizeGeneratedBillboardLines(payload.bullets, 3);
+  const ctaLabels = normalizeGeneratedBillboardLines(payload.ctaLabels, 3);
+  const title = payload.label || 'Sponsor Concierge';
+  const tier = payload.tier || 'Premium Booth';
+  const subtitle = payload.subtitle || 'Turn sponsor presence into meetings and qualified leads.';
+  const statusLabel = payload.statusLabel || 'Preview only - no live lead capture yet';
+  const titleSize = isLandscape ? height * 0.15 : height * 0.052;
+  const tierSize = isLandscape ? height * 0.065 : height * 0.026;
+  const subtitleSize = isLandscape ? height * 0.056 : height * 0.024;
+  const bodySize = isLandscape ? height * 0.052 : height * 0.022;
+  const ctaSize = isLandscape ? height * 0.042 : height * 0.018;
+  const statusSize = isLandscape ? height * 0.037 : height * 0.017;
+
+  const gradient = context.createLinearGradient(0, 0, width, height);
+  gradient.addColorStop(0, '#07101b');
+  gradient.addColorStop(0.42, '#0e2032');
+  gradient.addColorStop(1, '#08111c');
+  context.fillStyle = gradient;
+  context.fillRect(0, 0, width, height);
+
+  context.fillStyle = accentColor;
+  context.globalAlpha = 0.7;
+  context.fillRect(0, 0, Math.max(10, width * 0.024), height);
+  context.fillRect(0, 0, width, Math.max(8, height * 0.02));
+  context.globalAlpha = 1;
+
+  context.fillStyle = 'rgba(248, 250, 252, 0.08)';
+  context.beginPath();
+  context.roundRect(pad * 0.7, pad * 0.7, width - pad * 1.4, height - pad * 1.4, Math.max(18, shortSide * 0.03));
+  context.fill();
+
+  context.fillStyle = 'rgba(14, 32, 50, 0.9)';
+  context.beginPath();
+  context.roundRect(pad, pad, width - pad * 2, height - pad * 2, Math.max(14, shortSide * 0.024));
+  context.fill();
+
+  const left = pad * 1.32;
+  const maxTextWidth = width - left - pad * 1.32;
+  const tierWidth = Math.min(width * (isLandscape ? 0.28 : 0.54), Math.max(240, tier.length * tierSize * 0.7));
+  const tierHeight = tierSize * 1.55;
+  const tierY = isLandscape ? height * 0.13 : height * 0.085;
+
+  context.fillStyle = 'rgba(186, 230, 253, 0.13)';
+  context.beginPath();
+  context.roundRect(left, tierY, tierWidth, tierHeight, tierHeight * 0.5);
+  context.fill();
+  drawBillboardText(context, tier.toUpperCase(), left + tierHeight * 0.55, tierY + tierHeight * 0.22, tierWidth - tierHeight, font(900, tierSize), tierAccent);
+
+  const titleY = isLandscape ? height * 0.28 : height * 0.18;
+  drawBillboardText(context, title, left, titleY, maxTextWidth, font(900, titleSize), '#ffffff');
+  drawBillboardText(context, subtitle, left, titleY + titleSize * (isLandscape ? 1.12 : 1.28), maxTextWidth, font(700, subtitleSize), '#dbeafe');
+
+  const bulletStartY = titleY + titleSize * (isLandscape ? 1.9 : 2.45);
+  const bulletGap = bodySize * (isLandscape ? 1.45 : 1.62);
+  bullets.forEach((line, index) => {
+    const y = bulletStartY + bulletGap * index;
+    context.fillStyle = accentColor;
+    context.beginPath();
+    context.arc(left + bodySize * 0.32, y + bodySize * 0.48, Math.max(4, bodySize * 0.18), 0, Math.PI * 2);
+    context.fill();
+    drawBillboardText(context, line, left + bodySize * 0.9, y, maxTextWidth - bodySize, font(700, bodySize), '#f8fafc');
+  });
+
+  const ctaY = isLandscape ? height * 0.72 : height * 0.72;
+  const ctaGap = isLandscape ? width * 0.225 : 0;
+  const ctaWidth = isLandscape ? width * 0.18 : maxTextWidth;
+  const ctaHeight = ctaSize * 2.05;
+  ctaLabels.forEach((label, index) => {
+    const x = isLandscape ? left + ctaGap * index : left;
+    const y = isLandscape ? ctaY : ctaY + index * ctaHeight * 1.22;
+    context.fillStyle = index === 0 ? accentColor : 'rgba(148, 163, 184, 0.2)';
+    context.beginPath();
+    context.roundRect(x, y, ctaWidth, ctaHeight, Math.max(12, ctaHeight * 0.45));
+    context.fill();
+    drawBillboardText(context, label.toUpperCase(), x + ctaHeight * 0.55, y + ctaHeight * 0.28, ctaWidth - ctaHeight, font(900, ctaSize), '#ffffff');
+  });
+
+  drawBillboardText(
+    context,
+    statusLabel,
+    left,
+    height - pad * 1.36,
+    maxTextWidth,
+    font(700, statusSize),
+    '#93a4b8',
+  );
+}
+
 function createGeneratedBillboardTexture(url: string, textureQualityHint: ExpoScreenTextureQualityHint) {
   const payload = parseGeneratedBillboardPayload(url);
   if (!payload || typeof document === 'undefined') {
@@ -126,6 +246,27 @@ function createGeneratedBillboardTexture(url: string, textureQualityHint: ExpoSc
   const isLandscape = width > height * 1.08;
   const isUltraWide = width > height * 2.4;
   const font = (weight: number, size: number) => `${weight} ${Math.round(size)}px Verdana, Arial, sans-serif`;
+
+  if (payload.layout === 'booth-product-preview') {
+    drawBoothProductPreviewBillboard({
+      accentColor,
+      context,
+      font,
+      height,
+      pad,
+      payload,
+      shortSide,
+      tierAccent,
+      width,
+    });
+
+    recordExpoGeneratedBillboardTextureCreated({
+      height: canvas.height,
+      qualityHint: textureQualityHint,
+      width: canvas.width,
+    });
+    return configureExpoTexture(new THREE.CanvasTexture(canvas), textureQualityHint);
+  }
 
   context.fillStyle = '#07101b';
   context.fillRect(0, 0, width, height);

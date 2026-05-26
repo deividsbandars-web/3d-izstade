@@ -4,8 +4,10 @@ import type {
   BoothProductMappingStatus,
   BoothProductMappingSummary,
   BoothProductPlacementMapping,
+  BoothProductPreviewSummary,
   BoothProductProfile,
 } from './boothProductTypes';
+import { getBoothProductPreviewMode } from './boothProductPreviewFlags';
 
 const MAPPED_STATUSES: readonly BoothProductMappingStatus[] = ['exact', 'approximate'];
 const RUNTIME_RENDERING_ENABLED = false;
@@ -142,4 +144,23 @@ export function getBoothProductDebugSummary(): BoothProductDebugSummary {
 
 export function getBoothProductPreviewReadinessSummary() {
   return getBoothProductDebugSummary();
+}
+
+export function getBoothProductPreviewSummary(input?: Parameters<typeof getBoothProductPreviewMode>[0]): BoothProductPreviewSummary {
+  const debugSummary = getBoothProductDebugSummary();
+  const mode = getBoothProductPreviewMode(input);
+
+  return {
+    defaultSafeCount: debugSummary.defaultSafeCount,
+    enabled: mode === 'preview',
+    exactMappingCount: debugSummary.exactMappingCount,
+    firstPreviewSafeBoothId: debugSummary.firstPreviewSafeBoothId,
+    firstPreviewSafeProfileId: debugSummary.firstPreviewSafeProfileId,
+    firstPreviewSafeTier: debugSummary.firstPreviewSafeTier,
+    mode,
+    previewSafeCount: debugSummary.previewSafeCount,
+    profileCount: debugSummary.profileCount,
+    rendered: debugSummary.rendered,
+    visiblePreviewCardCount: mode === 'preview' ? debugSummary.previewSafeCount : 0,
+  };
 }
