@@ -1,5 +1,6 @@
 export {
   getSalesDemoMode,
+  getSalesDemoStep,
   getSalesDemoSummary,
   isSalesDemoEnabled,
 } from './salesDemoFlags';
@@ -10,5 +11,6 @@ export {
 export type {
   SalesDemoMode,
   SalesDemoSearchInput,
+  SalesDemoStep,
   SalesDemoSummary,
 } from './salesDemoFlags';

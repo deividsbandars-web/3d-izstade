@@ -1,4 +1,5 @@
 export type SalesDemoMode = 'off' | 'sales';
+export type SalesDemoStep = 'none' | 'landmark' | 'premium' | 'standard' | 'arena';
 
 export type SalesDemoSearchInput =
   | URLSearchParams
@@ -14,6 +15,7 @@ export type SalesDemoSummary = {
   demoArenaPreviewEnabled: boolean;
   enabled: boolean;
   mode: SalesDemoMode;
+  step: SalesDemoStep;
 };
 
 type SalesDemoSummaryArgs = {
@@ -61,6 +63,27 @@ export function isSalesDemoEnabled(input?: SalesDemoSearchInput): boolean {
   return getSalesDemoMode(input) === 'sales';
 }
 
+export function getSalesDemoStep(input?: SalesDemoSearchInput): SalesDemoStep {
+  if (!isSalesDemoEnabled(input)) {
+    return 'none';
+  }
+
+  const search = readSearchInput(input);
+  const params = new URLSearchParams(search);
+  const requestedStep = params.get('salesDemoStep')?.trim().toLowerCase();
+
+  if (
+    requestedStep === 'landmark'
+    || requestedStep === 'premium'
+    || requestedStep === 'standard'
+    || requestedStep === 'arena'
+  ) {
+    return requestedStep;
+  }
+
+  return 'none';
+}
+
 export function getSalesDemoSummary(args: SalesDemoSummaryArgs = {}): SalesDemoSummary {
   const enabled = isSalesDemoEnabled(args.input);
 
@@ -69,5 +92,6 @@ export function getSalesDemoSummary(args: SalesDemoSummaryArgs = {}): SalesDemoS
     demoArenaPreviewEnabled: args.demoArenaPreviewEnabled ?? enabled,
     enabled,
     mode: enabled ? 'sales' : 'off',
+    step: getSalesDemoStep(args.input),
   };
 }

@@ -247,6 +247,7 @@ export function ExpoPerformanceOverlay({
     ['raycast opt', `${raycastStats.optimizedTargetCount} targets / ${raycastStats.optimizedObjectCount} objects`],
     ['raycast ids', formatShortList(raycastStats.optimizedTargetIds, 2)],
     ['salesDemo', salesDemoStats.enabled ? 'on' : 'off'],
+    ['salesDemo step', salesDemoStats.step],
     ['demo arena', demoArenaPreviewStats.enabled ? 'preview' : 'off'],
     ['demo event', demoArenaPreviewStats.enabled ? demoArenaPreviewStats.activeEventId ?? 'n/a' : 'n/a'],
     ['demo screens', `${demoArenaPreviewStats.mappedScreenCount}/${demoArenaPreviewStats.totalTargets}`],

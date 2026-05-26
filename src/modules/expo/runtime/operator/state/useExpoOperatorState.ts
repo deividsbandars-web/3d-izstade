@@ -1001,6 +1001,7 @@ export function buildExpoReviewOperatorSnapshot(args: {
       targetBasketEntries: args.targetBasket.map((id) => registryById[id]).filter(Boolean),
     },
     salesDemo,
+    salesDemoStep: salesDemo.step,
     sceneVersion: args.sceneVersion,
     sectionStates: args.sectionStates,
     targetBasket: args.targetBasket,
