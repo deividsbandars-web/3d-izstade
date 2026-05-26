@@ -117,6 +117,39 @@ const SPONSOR_CONCIERGE_PREMIUM_CTA_SET: readonly BoothProductCta[] = [
   },
 ];
 
+const IMMERSIVE_FABRIC_LABS_PREMIUM_CTA_SET: readonly BoothProductCta[] = [
+  {
+    analyticsId: 'immersive_fabric_labs_view_demo_visible_placeholder',
+    enabledInPreview: true,
+    enabledInProduction: false,
+    id: 'immersive-fabric-labs-view-demo',
+    label: 'View Demo',
+    notes: 'Metadata only; no demo route, modal, video or click behavior is wired in Round 30.',
+    shortLabel: 'Demo',
+    type: 'learnMore',
+  },
+  {
+    analyticsId: 'immersive_fabric_labs_request_meeting_visible_placeholder',
+    enabledInPreview: true,
+    enabledInProduction: false,
+    id: 'immersive-fabric-labs-request-meeting',
+    label: 'Request Meeting',
+    notes: 'Metadata only; no meeting booking UI or redirect is wired in Round 30.',
+    shortLabel: 'Meeting',
+    type: 'bookMeeting',
+  },
+  {
+    analyticsId: 'immersive_fabric_labs_get_package_visible_placeholder',
+    enabledInPreview: true,
+    enabledInProduction: false,
+    id: 'immersive-fabric-labs-get-package',
+    label: 'Get Package',
+    notes: 'Metadata only; no lead capture, package form or backend call is wired in Round 30.',
+    shortLabel: 'Package',
+    type: 'learnMore',
+  },
+];
+
 const LANDMARK_CTA_SET: readonly BoothProductCta[] = [
   {
     analyticsId: 'booth_product_cta_join_event_visible',
@@ -209,6 +242,50 @@ export const BOOTH_PRODUCT_PROFILES = [
     shortPitch: 'A premium booth package concept focused on sponsor conversion, CTA readiness and future lead scoring.',
     sponsorId: 'sponsor-concierge',
     tagline: 'Helps partners turn expo presence into meetings and measurable leads.',
+  },
+  {
+    aiAgent: {
+      enabledInPreview: false,
+      enabledInProduction: false,
+      personaLabel: 'Immersive demo guide placeholder',
+      promptIntent: 'Future AI-guided qualification for immersive product demo interest.',
+    },
+    analytics: {
+      ctaClickAnalyticsId: 'immersive_fabric_labs_cta_click_placeholder',
+      ctaVisibleAnalyticsId: 'immersive_fabric_labs_cta_visible_placeholder',
+      profileViewAnalyticsId: 'immersive_fabric_labs_profile_view_placeholder',
+    },
+    assets: {
+      brochureKey: 'immersive-fabric-labs-premium-brief-placeholder',
+      logoKey: 'immersive-fabric-labs-logo-placeholder',
+      videoKey: 'immersive-fabric-labs-demo-video-placeholder',
+    },
+    boothId: 'immersive-fabric-labs',
+    category: 'XR / Web3D Product Showcases',
+    ctas: IMMERSIVE_FABRIC_LABS_PREMIUM_CTA_SET,
+    diagnostics: {
+      diagnosticId: 'immersive-fabric-labs-demo-readiness-placeholder',
+      enabledInPreview: false,
+      enabledInProduction: false,
+    },
+    displayName: 'Immersive Fabric Labs',
+    featureBullets: [
+      'Interactive product storytelling readiness',
+      'XR/Web3D demo package placeholders',
+      'Sponsor interest and lead report metadata',
+    ],
+    heroMessage: 'Premium booth package for immersive product demos and qualified sponsor interest.',
+    id: 'immersive-fabric-labs-premium-profile',
+    leadCapture: {
+      enabledInPreview: false,
+      enabledInProduction: false,
+      fields: ['name', 'email', 'company', 'demo_interest'],
+    },
+    notes: 'Exact preview-safe mapping only; no rendering beyond the review-only boothProduct preview card, lead UI, AI agent UI or click behavior is added in Round 30.',
+    packageTier: 'premium',
+    shortPitch: 'A premium booth package concept for XR/Web3D demo storytelling and sponsor lead reporting.',
+    sponsorId: 'immersive-fabric-labs',
+    tagline: 'Immersive product demo readiness',
   },
   {
     aiAgent: {

@@ -248,7 +248,7 @@ export function ExpoPerformanceOverlay({
     ['demo cta click', demoArenaPreviewStats.enabled ? `disabled / ${demoArenaCtaInteractionStats.ctaClickableCount} clickable` : 'off'],
     ['boothProduct', `${boothProductStats.profileCount} profiles / ${boothProductStats.previewSafeCount} preview-safe / rendered ${boothProductStats.rendered ? 'on' : 'off'}`],
     ['boothProduct preview', boothProductPreviewStats.enabled
-      ? `on / ${boothProductPreviewStats.visiblePreviewCardCount} card / default off`
+      ? `on / ${boothProductPreviewStats.visiblePreviewCardCount} ${boothProductPreviewStats.visiblePreviewCardCount === 1 ? 'card' : 'cards'} / default off`
       : 'off / card off'],
     ['static screens', formatBoolean(qualitySettings.preferStaticScreens)],
     ['far details', formatBoolean(qualitySettings.farDetailsEnabled)],

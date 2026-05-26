@@ -15,7 +15,10 @@ const BOOTH_PRODUCT_HAS_BACKEND = false;
 const BOOTH_PRODUCT_HAS_LEAD_CAPTURE_UI = false;
 const BOOTH_PRODUCT_HAS_AI_AGENT_UI = false;
 const BOOTH_PRODUCT_HAS_BOOKING_UI = false;
-const EXACT_PREVIEW_SAFE_PROFILE_IDS = new Set(['sponsor-concierge-premium-profile']);
+const EXACT_PREVIEW_SAFE_PROFILE_IDS = new Set([
+  'sponsor-concierge-premium-profile',
+  'immersive-fabric-labs-premium-profile',
+]);
 
 const EXACT_PREVIEW_SAFE_MAPPINGS = [
   {
@@ -32,6 +35,20 @@ const EXACT_PREVIEW_SAFE_MAPPINGS = [
     sponsorId: 'sponsor-concierge',
     zoneId: 'meetings',
   },
+  {
+    boothId: 'immersive-fabric-labs',
+    mappingStatus: 'exact',
+    notes: 'Verified production-safe runtime booth/company id and booth alias; preview-safe product card only, with default rendering still disabled.',
+    operatorZoneId: 'right-marquee',
+    packageTier: 'premium',
+    productProfileId: 'immersive-fabric-labs-premium-profile',
+    runtimeBoothId: 'booth-immersive-fabric-labs',
+    runtimeSponsorId: 'immersive-fabric-labs',
+    safeForDefault: false,
+    safeForPreview: true,
+    sponsorId: 'immersive-fabric-labs',
+    zoneId: 'showcase-row',
+  },
 ] as const satisfies readonly BoothProductPlacementMapping[];
 
 const DEFERRED_MOCK_PROFILE_MAPPINGS = BOOTH_PRODUCT_PROFILES
@@ -47,8 +64,8 @@ const DEFERRED_MOCK_PROFILE_MAPPINGS = BOOTH_PRODUCT_PROFILES
     ...(profile.sponsorId ? { sponsorId: profile.sponsorId } : {}),
   })) as readonly BoothProductPlacementMapping[];
 
-// Round 26 keeps boothProduct detached from rendering. The one exact mapping is
-// preview-safe metadata only; the remaining mock profiles stay deferred.
+// Exact mappings are rendered only by the explicit review preview flag; the
+// remaining mock profiles stay deferred and are never forced onto runtime booths.
 export const BOOTH_PRODUCT_PLACEMENT_MAPPINGS = [
   ...EXACT_PREVIEW_SAFE_MAPPINGS,
   ...DEFERRED_MOCK_PROFILE_MAPPINGS,

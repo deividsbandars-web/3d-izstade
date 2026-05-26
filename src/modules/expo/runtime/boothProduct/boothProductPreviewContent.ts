@@ -13,17 +13,31 @@ type BoothProductPreviewCardRequest = {
   search?: BoothProductPreviewSearchInput;
 };
 
-const SPONSOR_CONCIERGE_PREVIEW_CARD = {
-  bullets: [
-    'Meeting-ready sponsor package',
-    'AI qualification preview',
-    'Lead report package',
-  ],
-  ctaLabels: ['Request Demo', 'Book Meeting', 'Run Diagnostic'],
-  statusLabel: 'Preview only · no live capture yet',
-  subtitle: 'Turn expo traffic into booked meetings and qualified leads.',
-  tierLabel: 'PREMIUM BOOTH',
-  title: 'Sponsor Concierge',
+const BOOTH_PRODUCT_PREVIEW_CARDS = {
+  'immersive-fabric-labs-premium-profile': {
+    bullets: [
+      'Interactive product storytelling',
+      'XR/Web3D demo-ready package',
+      'Sponsor lead report ready',
+    ],
+    ctaLabels: ['View Demo', 'Request Meeting', 'Get Package'],
+    statusLabel: 'Preview only \u00b7 no live capture yet',
+    subtitle: 'Showcase immersive product demos and capture qualified sponsor interest.',
+    tierLabel: 'PREMIUM BOOTH',
+    title: 'Immersive Fabric Labs',
+  },
+  'sponsor-concierge-premium-profile': {
+    bullets: [
+      'Meeting-ready sponsor package',
+      'AI qualification preview',
+      'Lead report package',
+    ],
+    ctaLabels: ['Request Demo', 'Book Meeting', 'Run Diagnostic'],
+    statusLabel: 'Preview only \u00b7 no live capture yet',
+    subtitle: 'Turn expo traffic into booked meetings and qualified leads.',
+    tierLabel: 'PREMIUM BOOTH',
+    title: 'Sponsor Concierge',
+  },
 } as const;
 
 function collectLookupIds(request: BoothProductPreviewCardRequest) {
@@ -54,17 +68,18 @@ export function getBoothProductPreviewCardForBooth(request: BoothProductPreviewC
   }
 
   const mapping = findPreviewSafeMapping(collectLookupIds(request));
-  if (!mapping || mapping.productProfileId !== 'sponsor-concierge-premium-profile') {
+  const previewCard = mapping ? BOOTH_PRODUCT_PREVIEW_CARDS[mapping.productProfileId as keyof typeof BOOTH_PRODUCT_PREVIEW_CARDS] : null;
+  if (!mapping || !previewCard) {
     return null;
   }
 
   const profile = getBoothProductProfile(mapping.productProfileId);
-  if (!profile || profile.boothId !== 'sponsor-concierge') {
+  if (!profile || profile.boothId !== mapping.boothId) {
     return null;
   }
 
   return {
-    ...SPONSOR_CONCIERGE_PREVIEW_CARD,
+    ...previewCard,
     boothId: profile.boothId,
     productProfileId: profile.id,
     runtimeBoothId: mapping.runtimeBoothId ?? null,
