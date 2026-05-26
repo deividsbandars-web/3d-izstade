@@ -18,6 +18,7 @@ import {
   getDemoArenaPreviewRuntimeSummary,
 } from '../../demoArena';
 import { getBoothProductDebugSummary, getBoothProductPreviewSummary } from '../../boothProduct';
+import { getSalesDemoSummary } from '../../salesDemo';
 
 type WebglOverlayStatus = {
   available: boolean;
@@ -189,6 +190,10 @@ export function ExpoPerformanceOverlay({
   const demoArenaCtaInteractionStats = getDemoArenaCtaInteractionSummary(undefined, demoArenaPreviewStats.enabled);
   const boothProductStats = getBoothProductDebugSummary();
   const boothProductPreviewStats = getBoothProductPreviewSummary();
+  const salesDemoStats = getSalesDemoSummary({
+    boothProductPreviewEnabled: boothProductPreviewStats.enabled,
+    demoArenaPreviewEnabled: demoArenaPreviewStats.enabled,
+  });
 
   const rowStyle: CSSProperties = {
     display: 'flex',
@@ -241,6 +246,7 @@ export function ExpoPerformanceOverlay({
     ['instancing ids', formatShortList(instancingStats.optimizedTargetIds, 2)],
     ['raycast opt', `${raycastStats.optimizedTargetCount} targets / ${raycastStats.optimizedObjectCount} objects`],
     ['raycast ids', formatShortList(raycastStats.optimizedTargetIds, 2)],
+    ['salesDemo', salesDemoStats.enabled ? 'on' : 'off'],
     ['demo arena', demoArenaPreviewStats.enabled ? 'preview' : 'off'],
     ['demo event', demoArenaPreviewStats.enabled ? demoArenaPreviewStats.activeEventId ?? 'n/a' : 'n/a'],
     ['demo screens', `${demoArenaPreviewStats.mappedScreenCount}/${demoArenaPreviewStats.totalTargets}`],

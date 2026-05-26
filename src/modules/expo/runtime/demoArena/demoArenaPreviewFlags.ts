@@ -1,3 +1,5 @@
+import { isSalesDemoEnabled } from '../salesDemo';
+
 export type DemoArenaPreviewMode = 'off' | 'preview';
 
 type DemoArenaPreviewSearchInput =
@@ -32,6 +34,10 @@ function readSearchInput(input?: DemoArenaPreviewSearchInput): string {
 export function getDemoArenaPreviewMode(input?: DemoArenaPreviewSearchInput): DemoArenaPreviewMode {
   const search = readSearchInput(input);
   const params = new URLSearchParams(search);
+
+  if (isSalesDemoEnabled(input)) {
+    return 'preview';
+  }
 
   if (params.get('demoArenaPreview') === '1') {
     return 'preview';

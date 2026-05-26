@@ -1,3 +1,5 @@
+import { isSalesDemoEnabled } from '../salesDemo';
+
 export type BoothProductPreviewMode = 'off' | 'preview';
 
 type BoothProductPreviewSearchInput =
@@ -32,6 +34,10 @@ function readSearchInput(input?: BoothProductPreviewSearchInput): string {
 export function getBoothProductPreviewMode(input?: BoothProductPreviewSearchInput): BoothProductPreviewMode {
   const search = readSearchInput(input);
   const params = new URLSearchParams(search);
+
+  if (isSalesDemoEnabled(input)) {
+    return 'preview';
+  }
 
   if (params.get('boothProductPreview') === '1') {
     return 'preview';

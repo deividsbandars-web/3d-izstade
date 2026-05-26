@@ -24,6 +24,7 @@ import {
   getDemoArenaPreviewRuntimeSummary,
 } from '../../demoArena';
 import { getBoothProductDebugSummary, getBoothProductPreviewSummary } from '../../boothProduct';
+import { getSalesDemoSummary } from '../../salesDemo';
 
 type LayerStates = {
   booths: boolean;
@@ -945,6 +946,10 @@ export function buildExpoReviewOperatorSnapshot(args: {
   const demoArenaCtaInteraction = getDemoArenaCtaInteractionSummary(undefined, demoArenaPreview.enabled);
   const boothProduct = getBoothProductDebugSummary();
   const boothProductPreview = getBoothProductPreviewSummary();
+  const salesDemo = getSalesDemoSummary({
+    boothProductPreviewEnabled: boothProductPreview.enabled,
+    demoArenaPreviewEnabled: demoArenaPreview.enabled,
+  });
 
   return {
     activeZoneId: args.activeZoneId,
@@ -995,6 +1000,7 @@ export function buildExpoReviewOperatorSnapshot(args: {
       inspectorEntries: resolvedInspectorEntries,
       targetBasketEntries: args.targetBasket.map((id) => registryById[id]).filter(Boolean),
     },
+    salesDemo,
     sceneVersion: args.sceneVersion,
     sectionStates: args.sectionStates,
     targetBasket: args.targetBasket,
