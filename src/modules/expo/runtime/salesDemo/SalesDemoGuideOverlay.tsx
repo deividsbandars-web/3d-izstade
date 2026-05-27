@@ -239,6 +239,61 @@ export function SalesDemoGuideOverlay({ isTouchDevice = false }: SalesDemoGuideO
       </div>
 
       <div
+        data-sales-demo-cta-section="true"
+        style={{
+          background: 'linear-gradient(135deg, rgba(34, 197, 94, 0.12), rgba(14, 165, 233, 0.1))',
+          border: '1px solid rgba(125, 211, 252, 0.24)',
+          borderRadius: '15px',
+          marginTop: isTouchDevice ? '9px' : '11px',
+          padding: isTouchDevice ? '8px 9px' : '9px 10px',
+        }}
+      >
+        <div
+          style={{
+            color: '#f8fafc',
+            fontSize: isTouchDevice ? '0.68rem' : '0.74rem',
+            fontWeight: 950,
+            letterSpacing: '0.01em',
+          }}
+        >
+          Ready to sponsor a Web3D expo?
+        </div>
+        <div
+          style={{
+            color: '#c7d2fe',
+            fontSize: isTouchDevice ? '0.6rem' : '0.64rem',
+            fontWeight: 750,
+            lineHeight: 1.25,
+            marginTop: '4px',
+          }}
+        >
+          Start with a Premium Booth, sponsor the Demo Arena, or own a Landmark Zone.
+        </div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '8px' }}>
+          {['Sponsor Walkthrough', 'View Packages'].map((label) => (
+            <span
+              key={label}
+              data-sales-demo-cta-label={label}
+              style={{
+                background: 'rgba(15, 23, 42, 0.58)',
+                border: '1px solid rgba(134, 239, 172, 0.34)',
+                borderRadius: '999px',
+                color: '#dcfce7',
+                fontSize: isTouchDevice ? '0.56rem' : '0.58rem',
+                fontWeight: 950,
+                letterSpacing: '0.01em',
+                lineHeight: 1,
+                padding: isTouchDevice ? '6px 7px' : '6px 8px',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {label}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      <div
         style={{
           borderTop: '1px solid rgba(148, 163, 184, 0.14)',
           color: '#a8b5c7',
