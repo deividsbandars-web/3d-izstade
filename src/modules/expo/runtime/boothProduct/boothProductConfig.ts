@@ -244,11 +244,11 @@ export const BOOTH_PRODUCT_PROFILES = [
     heroMessage: 'Premium sponsor booth for meetings, demo requests and future AI-guided qualification.',
     id: 'sponsor-concierge-premium-profile',
     leadCapture: {
-      enabledInPreview: false,
+      enabledInPreview: true,
       enabledInProduction: false,
       fields: ['name', 'email', 'company', 'sponsor_interest'],
     },
-    notes: 'Exact preview-safe mapping only; no rendering integration, lead UI, AI agent UI or click behavior is added in Round 26.',
+    notes: 'Exact preview-safe mapping with review-only lead capture HUD in Round 40; no backend persistence, AI agent UI, booking UI or 3D click behavior is added.',
     packageTier: 'premium',
     shortPitch: 'A premium booth package concept focused on sponsor conversion, CTA readiness and future lead scoring.',
     sponsorId: 'sponsor-concierge',

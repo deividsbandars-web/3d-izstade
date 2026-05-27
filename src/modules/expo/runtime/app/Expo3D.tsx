@@ -17,6 +17,7 @@ import { useExpoRuntimeErrorBridge } from './useExpoRuntimeErrorBridge';
 import { useExpoRuntimeSession } from './useExpoRuntimeSession';
 import { WorldInspectionProvider } from '../world/inspection/worldInspectionState';
 import { SalesDemoGuideOverlay } from '../salesDemo';
+import { SponsorConciergeLeadCaptureOverlay } from '../boothProduct';
 
 export default function Expo3D() {
   const runtimeSession = useExpoRuntimeSession();
@@ -48,7 +49,7 @@ function ExpoRuntimeExperience({
   const pixelStreamingStatus = usePixelStreamingStatus();
   const { guests, playerPos, isMicOn, isSpeaking, setIsMicOn, handlePlayerMove } = useExpoPresence(
     runtimeSession.mode,
-    { enabled: !runtimeSession.salesDemoEnabled },
+    { enabled: !runtimeSession.salesDemoEnabled && !runtimeSession.boothProductPreviewEnabled },
   );
   const { activeZone, zoneSystem } = useZoneSystem(playerPos as any);
   const mobileNearbyBooth = useMemo(() => {
@@ -158,6 +159,7 @@ function ExpoRuntimeExperience({
             }}
           />
           <SalesDemoGuideOverlay isTouchDevice={runtimeSession.isTouchDevice} />
+          <SponsorConciergeLeadCaptureOverlay isTouchDevice={runtimeSession.isTouchDevice} />
         </>
       )}
       isTouchDevice={runtimeSession.isTouchDevice}

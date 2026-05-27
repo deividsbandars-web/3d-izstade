@@ -12,7 +12,7 @@ import { getBoothProductPreviewMode } from './boothProductPreviewFlags';
 const MAPPED_STATUSES: readonly BoothProductMappingStatus[] = ['exact', 'approximate'];
 const RUNTIME_RENDERING_ENABLED = false;
 const BOOTH_PRODUCT_HAS_BACKEND = false;
-const BOOTH_PRODUCT_HAS_LEAD_CAPTURE_UI = false;
+const BOOTH_PRODUCT_HAS_LEAD_CAPTURE_UI = true;
 const BOOTH_PRODUCT_HAS_AI_AGENT_UI = false;
 const BOOTH_PRODUCT_HAS_BOOKING_UI = false;
 const EXACT_PREVIEW_SAFE_PROFILE_IDS = new Set([

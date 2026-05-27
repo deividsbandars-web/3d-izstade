@@ -1,4 +1,5 @@
 import { isSalesDemoEnabled } from '../salesDemo/salesDemoFlags';
+import { isBoothProductPreviewEnabled } from '../boothProduct/boothProductPreviewFlags';
 
 export type ExpoDataMode = 'default' | 'live' | 'review' | 'seeded';
 
@@ -46,6 +47,10 @@ function hasSalesDemoFlag(search: string | null | undefined) {
   return isSalesDemoEnabled(search || '');
 }
 
+function hasBoothProductPreviewFlag(search: string | null | undefined) {
+  return isBoothProductPreviewEnabled(search || '');
+}
+
 export function shouldUseReviewExpoSceneSource({
   hostname,
   isDev,
@@ -58,7 +63,7 @@ export function shouldUseReviewExpoSceneSource({
   }
 
   if (mode !== 'review' && mode !== 'seeded') {
-    return hasSalesDemoFlag(search) && isReviewSceneHost(hostname);
+    return (hasSalesDemoFlag(search) || hasBoothProductPreviewFlag(search)) && isReviewSceneHost(hostname);
   }
 
   return hasOperatorFlag(search) && isReviewSceneHost(hostname);

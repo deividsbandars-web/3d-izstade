@@ -29,6 +29,9 @@ export {
 export {
   getBoothProductPreviewCardForBooth,
 } from './boothProductPreviewContent';
+export {
+  SponsorConciergeLeadCaptureOverlay,
+} from './SponsorConciergeLeadCaptureOverlay';
 export type {
   BoothAiAgentConfig,
   BoothCtaType,

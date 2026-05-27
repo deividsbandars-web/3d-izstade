@@ -145,7 +145,7 @@ export type BoothProductDebugSummary = {
   hasAiAgentUi: false;
   hasBackend: false;
   hasBookingUi: false;
-  hasLeadCaptureUi: false;
+  hasLeadCaptureUi: boolean;
   mappingCount: number;
   previewSafeCount: number;
   profileCount: number;
