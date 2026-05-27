@@ -61,6 +61,8 @@ protectedRouter.get('/expo/scenes/city', expoDataController.getCityScene);
 protectedRouter.get('/expo/review/snapshot', expoDataController.getExpoReviewSnapshot);
 protectedRouter.get('/expo/review/booths/:boothId', expoDataController.getExpoReviewBooth);
 protectedRouter.get('/expo/lead-inbox/:companySlug', expoLeadInboxController.getExpoSponsorLeadInbox);
+protectedRouter.patch('/expo/lead-inbox/:companySlug/leads/:leadId', expoLeadInboxController.updateExpoSponsorLeadStatus);
+protectedRouter.patch('/expo/lead-inbox/:companySlug/leads/:leadId/ops', expoLeadInboxController.updateExpoSponsorLeadOps);
 protectedRouter.patch('/expo/review/booths/:boothId/leads/:leadId', expoDataController.updateExpoReviewLeadStatus);
 protectedRouter.patch('/expo/review/booths/:boothId/leads/:leadId/ops', expoDataController.updateExpoReviewLeadOps);
 

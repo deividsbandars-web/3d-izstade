@@ -9,6 +9,13 @@ export const ExpoDataAPI = {
   getReviewBooth: async (boothId: string) => serverApiGet(`/api/expo/review/booths/${boothId}`),
   getSponsorLeadInbox: async (companySlug: string, limit = 50) =>
     serverApiGet(`/api/expo/lead-inbox/${encodeURIComponent(companySlug)}?limit=${encodeURIComponent(String(limit))}`),
+  updateSponsorLeadInboxStatus: async (companySlug: string, leadId: string, status: string) =>
+    serverApiPatch(`/api/expo/lead-inbox/${encodeURIComponent(companySlug)}/leads/${encodeURIComponent(leadId)}`, { status }),
+  updateSponsorLeadInboxOps: async (
+    companySlug: string,
+    leadId: string,
+    payload: { followUpAt?: string | null; opsNotes?: string | null },
+  ) => serverApiPatch(`/api/expo/lead-inbox/${encodeURIComponent(companySlug)}/leads/${encodeURIComponent(leadId)}/ops`, payload),
   updateReviewLeadStatus: async (boothId: string, leadId: string, status: string) =>
     serverApiPatch(`/api/expo/review/booths/${boothId}/leads/${leadId}`, { status }),
   updateReviewLeadOps: async (

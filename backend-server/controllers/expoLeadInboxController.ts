@@ -13,6 +13,8 @@ type LeadInboxSummary = {
   total: number;
 };
 
+const SUPPORTED_LEAD_STATUSES = ['pending', 'contacted', 'closed', 'rejected'] as const;
+
 function normalizeSponsorSlug(value: unknown) {
   const slug = typeof value === 'string' ? value.trim().toLowerCase() : '';
   if (!/^[a-z0-9-]{2,80}$/.test(slug)) {
@@ -29,6 +31,42 @@ function normalizeLimit(value: unknown) {
   }
 
   return Math.min(Math.max(parsed, 1), 100);
+}
+
+function normalizeLeadId(value: unknown) {
+  const leadId = typeof value === 'string' ? value.trim() : '';
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(leadId)) {
+    throw new Error('EXPO_LEAD_INBOX_INVALID_LEAD');
+  }
+
+  return leadId;
+}
+
+function normalizeLeadStatus(value: unknown) {
+  const status = typeof value === 'string' ? value.trim().toLowerCase() : '';
+  if (!SUPPORTED_LEAD_STATUSES.includes(status as typeof SUPPORTED_LEAD_STATUSES[number])) {
+    throw new Error('EXPO_LEAD_INBOX_INVALID_STATUS');
+  }
+
+  return status;
+}
+
+function normalizeOptionalText(value: unknown) {
+  const text = typeof value === 'string' ? value.trim() : '';
+  return text ? text : null;
+}
+
+function normalizeFollowUpAt(value: unknown) {
+  const text = normalizeOptionalText(value);
+  if (!text) {
+    return null;
+  }
+
+  if (Number.isNaN(Date.parse(text))) {
+    throw new Error('EXPO_LEAD_INBOX_INVALID_FOLLOW_UP');
+  }
+
+  return text;
 }
 
 export function buildExpoLeadInboxSummary(leads: LeadInboxRecord[]): LeadInboxSummary {
@@ -159,12 +197,49 @@ async function listLeadOpsRows(leadIds: string[]) {
   return (data ?? []) as LeadInboxRecord[];
 }
 
+function leadBelongsToSponsor(lead: LeadInboxRecord, sponsorSlug: string, companyId: string | null) {
+  const leadCompanyId = String(lead.company_id || '').trim();
+  const serviceName = String(lead.service_name || '').trim();
+
+  if (companyId && leadCompanyId && leadCompanyId === companyId) {
+    return true;
+  }
+
+  return serviceName === `expo_sponsor_lead:${sponsorSlug}`;
+}
+
+async function resolveLeadForSponsor(leadId: string, sponsorSlug: string, companyId: string | null) {
+  const supabase = getSupabase();
+  const { data, error } = await supabase
+    .from('service_requests')
+    .select('*')
+    .eq('id', leadId)
+    .single();
+
+  if (error || !data) {
+    throw new Error('EXPO_LEAD_INBOX_LEAD_NOT_FOUND');
+  }
+
+  const lead = data as LeadInboxRecord;
+  if (!leadBelongsToSponsor(lead, sponsorSlug, companyId)) {
+    throw new Error('EXPO_LEAD_INBOX_LEAD_NOT_FOUND');
+  }
+
+  return lead;
+}
+
+async function resolveSponsorContext(companySlug: unknown) {
+  const sponsorSlug = normalizeSponsorSlug(companySlug);
+  const company = await resolveCompanyBySlug(sponsorSlug);
+  const companyId = typeof company?.id === 'string' ? company.id : null;
+
+  return { company, companyId, sponsorSlug };
+}
+
 export async function getExpoSponsorLeadInbox(req: Request, res: Response) {
   try {
-    const sponsorSlug = normalizeSponsorSlug(req.params.companySlug);
+    const { company, companyId, sponsorSlug } = await resolveSponsorContext(req.params.companySlug);
     const limit = normalizeLimit(req.query.limit);
-    const company = await resolveCompanyBySlug(sponsorSlug);
-    const companyId = typeof company?.id === 'string' ? company.id : null;
     const rawLeads = await listSponsorLeadRows(sponsorSlug, companyId, limit);
     const opsRows = await listLeadOpsRows(rawLeads.map((lead) => String(lead.id || '')).filter(Boolean));
     const leads = mergeLeadOps(rawLeads, opsRows);
@@ -181,6 +256,73 @@ export async function getExpoSponsorLeadInbox(req: Request, res: Response) {
   } catch (error: any) {
     const code = String(error?.message || 'EXPO_LEAD_INBOX_UNKNOWN');
     const status = code.startsWith('EXPO_LEAD_INBOX_') ? 400 : 500;
+    res.status(status).json({ error: code });
+  }
+}
+
+export async function updateExpoSponsorLeadStatus(req: Request, res: Response) {
+  try {
+    const { companyId, sponsorSlug } = await resolveSponsorContext(req.params.companySlug);
+    const leadId = normalizeLeadId(req.params.leadId);
+    const status = normalizeLeadStatus(req.body?.status);
+    await resolveLeadForSponsor(leadId, sponsorSlug, companyId);
+
+    const supabase = getSupabase();
+    const { data, error } = await supabase
+      .from('service_requests')
+      .update({ status })
+      .eq('id', leadId)
+      .select('*')
+      .single();
+
+    if (error || !data) {
+      throw error || new Error('EXPO_LEAD_INBOX_UPDATE_FAILED');
+    }
+
+    res.json({ lead: data, status });
+  } catch (error: any) {
+    const code = String(error?.message || 'EXPO_LEAD_INBOX_UNKNOWN');
+    const status = code === 'EXPO_LEAD_INBOX_LEAD_NOT_FOUND' ? 404 : code.startsWith('EXPO_LEAD_INBOX_') ? 400 : 500;
+    res.status(status).json({ error: code });
+  }
+}
+
+export async function updateExpoSponsorLeadOps(req: Request, res: Response) {
+  try {
+    const { companyId, sponsorSlug } = await resolveSponsorContext(req.params.companySlug);
+    const leadId = normalizeLeadId(req.params.leadId);
+    const opsNotes = normalizeOptionalText(req.body?.opsNotes);
+    const followUpAt = normalizeFollowUpAt(req.body?.followUpAt);
+    await resolveLeadForSponsor(leadId, sponsorSlug, companyId);
+
+    const user = (req as { user?: { id?: string | null } }).user;
+    const payload = {
+      follow_up_at: followUpAt,
+      ops_notes: opsNotes,
+      service_request_id: leadId,
+      updated_at: new Date().toISOString(),
+      updated_by_user_id: user?.id ?? null,
+    };
+
+    const supabase = getSupabase();
+    const { data, error } = await supabase
+      .from('expo_lead_ops')
+      .upsert(payload, { onConflict: 'service_request_id' })
+      .select('*')
+      .single();
+
+    if (error || !data) {
+      throw error || new Error('EXPO_LEAD_INBOX_OPS_UPDATE_FAILED');
+    }
+
+    res.json({
+      follow_up_at: data.follow_up_at ?? null,
+      ops_notes: data.ops_notes ?? null,
+      ops_updated_at: data.updated_at ?? null,
+    });
+  } catch (error: any) {
+    const code = String(error?.message || 'EXPO_LEAD_INBOX_UNKNOWN');
+    const status = code === 'EXPO_LEAD_INBOX_LEAD_NOT_FOUND' ? 404 : code.startsWith('EXPO_LEAD_INBOX_') ? 400 : 500;
     res.status(status).json({ error: code });
   }
 }

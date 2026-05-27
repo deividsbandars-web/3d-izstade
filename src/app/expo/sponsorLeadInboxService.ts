@@ -1,5 +1,7 @@
 import { ExpoDataAPI } from '../../services/expo';
 
+export type SponsorLeadStatus = 'pending' | 'contacted' | 'closed' | 'rejected';
+
 export type SponsorLeadInboxLead = {
   client_email?: string | null;
   client_name?: string | null;
@@ -35,4 +37,24 @@ export type SponsorLeadInboxResponse = {
 
 export async function getSponsorLeadInbox(companySlug = 'sponsor-concierge') {
   return await ExpoDataAPI.getSponsorLeadInbox(companySlug, 50) as SponsorLeadInboxResponse;
+}
+
+export async function updateSponsorLeadInboxStatus(
+  companySlug: string,
+  leadId: string,
+  status: SponsorLeadStatus,
+) {
+  return await ExpoDataAPI.updateSponsorLeadInboxStatus(companySlug, leadId, status) as { lead: SponsorLeadInboxLead; status: SponsorLeadStatus };
+}
+
+export async function updateSponsorLeadInboxOps(
+  companySlug: string,
+  leadId: string,
+  payload: { followUpAt?: string | null; opsNotes?: string | null },
+) {
+  return await ExpoDataAPI.updateSponsorLeadInboxOps(companySlug, leadId, payload) as {
+    follow_up_at: string | null;
+    ops_notes: string | null;
+    ops_updated_at: string | null;
+  };
 }
