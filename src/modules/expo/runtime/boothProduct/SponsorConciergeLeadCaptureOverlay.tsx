@@ -1,119 +1,39 @@
 import { useMemo, useState, type ChangeEvent, type FormEvent } from 'react';
 import { isBoothProductPreviewEnabled } from './boothProductPreviewFlags';
+import {
+  INITIAL_SPONSOR_CONCIERGE_LEAD_FORM,
+  submitSponsorConciergeLead,
+  validateSponsorConciergeLeadForm,
+  type SponsorConciergeLeadFormState,
+} from './sponsorConciergeLeadCapture';
+
+type SubmitStatus =
+  | { message: string; tone: 'idle' }
+  | { message: string; tone: 'error' }
+  | { message: string; tone: 'submitting' }
+  | { message: string; tone: 'warning' }
+  | { message: string; tone: 'success' };
 
 type SponsorConciergeLeadCaptureOverlayProps = {
   isTouchDevice?: boolean;
 };
 
-type LeadCaptureFormState = {
-  company: string;
-  email: string;
-  interest: string;
-  name: string;
-};
-
-type SubmitStatus =
-  | { message: string; tone: 'idle' }
-  | { message: string; tone: 'error' }
-  | { message: string; tone: 'success' };
-
-type PreviewLeadRecord = LeadCaptureFormState & {
-  boothId: 'sponsor-concierge';
-  capturedAt: string;
-  packageTier: 'premium';
-  persistence: 'local-preview';
-  sourcePath: string;
-};
-
-const SPONSOR_CONCIERGE_LEAD_STORAGE_KEY = 'warpala.expo.sponsorConcierge.previewLeads';
-
-const INITIAL_FORM_STATE: LeadCaptureFormState = {
-  company: '',
-  email: '',
-  interest: '',
-  name: '',
-};
-
-function normalizeFormState(form: LeadCaptureFormState): LeadCaptureFormState {
-  return {
-    company: form.company.trim(),
-    email: form.email.trim(),
-    interest: form.interest.trim(),
-    name: form.name.trim(),
-  };
-}
-
-function validateLeadForm(form: LeadCaptureFormState) {
-  const normalized = normalizeFormState(form);
-
-  if (!normalized.name) {
-    return 'Enter a contact name.';
-  }
-
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized.email)) {
-    return 'Enter a valid work email.';
-  }
-
-  if (!normalized.company) {
-    return 'Enter a company name.';
-  }
-
-  if (!normalized.interest) {
-    return 'Add what the sponsor wants to discuss.';
-  }
-
-  return null;
-}
-
-function readPreviewLeadQueue(): PreviewLeadRecord[] {
-  if (typeof window === 'undefined') {
-    return [];
-  }
-
-  try {
-    const rawValue = window.localStorage.getItem(SPONSOR_CONCIERGE_LEAD_STORAGE_KEY);
-    const parsed = rawValue ? JSON.parse(rawValue) : [];
-    return Array.isArray(parsed) ? parsed.slice(-24) as PreviewLeadRecord[] : [];
-  } catch {
-    return [];
-  }
-}
-
-function savePreviewLead(form: LeadCaptureFormState) {
-  const normalized = normalizeFormState(form);
-  const record: PreviewLeadRecord = {
-    ...normalized,
-    boothId: 'sponsor-concierge',
-    capturedAt: new Date().toISOString(),
-    packageTier: 'premium',
-    persistence: 'local-preview',
-    sourcePath: typeof window === 'undefined' ? '/expo-3d' : `${window.location.pathname}${window.location.search}`,
-  };
-  const nextQueue = [...readPreviewLeadQueue(), record].slice(-25);
-
-  if (typeof window !== 'undefined') {
-    window.localStorage.setItem(SPONSOR_CONCIERGE_LEAD_STORAGE_KEY, JSON.stringify(nextQueue));
-  }
-
-  return nextQueue.length;
-}
-
 export function SponsorConciergeLeadCaptureOverlay({
   isTouchDevice = false,
 }: SponsorConciergeLeadCaptureOverlayProps) {
   const previewEnabled = isBoothProductPreviewEnabled();
-  const [form, setForm] = useState<LeadCaptureFormState>(INITIAL_FORM_STATE);
+  const [form, setForm] = useState<SponsorConciergeLeadFormState>(INITIAL_SPONSOR_CONCIERGE_LEAD_FORM);
   const [submitStatus, setSubmitStatus] = useState<SubmitStatus>({
-    message: 'Preview lead capture stores locally only. Backend persistence is not connected yet.',
+    message: 'Submits to the expo lead API when available; falls back to local preview storage.',
     tone: 'idle',
   });
-  const isFormReady = useMemo(() => validateLeadForm(form) === null, [form]);
+  const isFormReady = useMemo(() => validateSponsorConciergeLeadForm(form) === null, [form]);
 
   if (!previewEnabled) {
     return null;
   }
 
-  const updateField = (field: keyof LeadCaptureFormState) => (
+  const updateField = (field: keyof SponsorConciergeLeadFormState) => (
     event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
     const nextValue = event.target.value;
@@ -123,15 +43,15 @@ export function SponsorConciergeLeadCaptureOverlay({
     }));
     if (submitStatus.tone !== 'idle') {
       setSubmitStatus({
-        message: 'Preview lead capture stores locally only. Backend persistence is not connected yet.',
+        message: 'Submits to the expo lead API when available; falls back to local preview storage.',
         tone: 'idle',
       });
     }
   };
 
-  const submitLead = (event: FormEvent<HTMLFormElement>) => {
+  const submitLead = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const validationError = validateLeadForm(form);
+    const validationError = validateSponsorConciergeLeadForm(form);
 
     if (validationError) {
       setSubmitStatus({ message: validationError, tone: 'error' });
@@ -139,14 +59,24 @@ export function SponsorConciergeLeadCaptureOverlay({
     }
 
     try {
-      const queuedCount = savePreviewLead(form);
+      setSubmitStatus({ message: 'Sending sponsor lead...', tone: 'submitting' });
+      const result = await submitSponsorConciergeLead(form);
+      if (result.persistence === 'backend') {
+        setSubmitStatus({
+          message: 'Lead sent to the staging sponsor inbox. No booking or AI workflow started.',
+          tone: 'success',
+        });
+        setForm(INITIAL_SPONSOR_CONCIERGE_LEAD_FORM);
+        return;
+      }
+
       setSubmitStatus({
-        message: `Preview lead saved locally. Queue: ${queuedCount}. Backend handoff still required.`,
-        tone: 'success',
+        message: `Lead API unavailable (${result.reason}); saved locally for handoff. Queue: ${result.localQueueCount}.`,
+        tone: 'warning',
       });
     } catch {
       setSubmitStatus({
-        message: 'Preview lead captured in the form, but local browser storage is unavailable.',
+        message: 'Lead capture failed before submit. Check required fields and try again.',
         tone: 'error',
       });
     }
@@ -167,16 +97,19 @@ export function SponsorConciergeLeadCaptureOverlay({
 
   const statusColor = submitStatus.tone === 'success'
     ? '#86efac'
+    : submitStatus.tone === 'warning'
+      ? '#fde68a'
     : submitStatus.tone === 'error'
       ? '#fecaca'
       : '#a8b5c7';
+  const isSubmitting = submitStatus.tone === 'submitting';
 
   return (
     <form
       aria-label="Sponsor Concierge lead capture"
       data-booth-product-lead-capture-booth="sponsor-concierge"
       data-booth-product-lead-capture-overlay="true"
-      data-booth-product-lead-submit-mode="local-preview"
+      data-booth-product-lead-submit-mode="backend-with-local-fallback"
       onSubmit={submitLead}
       style={{
         background:
@@ -226,7 +159,7 @@ export function SponsorConciergeLeadCaptureOverlay({
             whiteSpace: 'nowrap',
           }}
         >
-          Local MVP
+          Lead MVP
         </span>
       </div>
 
@@ -270,14 +203,15 @@ export function SponsorConciergeLeadCaptureOverlay({
 
       <button
         data-booth-product-lead-submit="true"
+        disabled={isSubmitting}
         style={{
-          background: isFormReady
+          background: isFormReady && !isSubmitting
             ? 'linear-gradient(135deg, rgba(34, 197, 94, 0.94), rgba(20, 184, 166, 0.82))'
             : 'rgba(71, 85, 105, 0.62)',
           border: '1px solid rgba(220, 252, 231, 0.2)',
           borderRadius: '999px',
-          color: isFormReady ? '#052e16' : '#cbd5e1',
-          cursor: 'pointer',
+          color: isFormReady && !isSubmitting ? '#052e16' : '#cbd5e1',
+          cursor: isSubmitting ? 'progress' : 'pointer',
           fontSize: isTouchDevice ? '0.64rem' : '0.68rem',
           fontWeight: 950,
           letterSpacing: '0.08em',
@@ -286,7 +220,7 @@ export function SponsorConciergeLeadCaptureOverlay({
         }}
         type="submit"
       >
-        Save Preview Lead
+        {isSubmitting ? 'Sending Lead...' : 'Send Sponsor Lead'}
       </button>
 
       <div

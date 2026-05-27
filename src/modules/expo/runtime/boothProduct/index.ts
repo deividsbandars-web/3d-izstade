@@ -32,6 +32,16 @@ export {
 export {
   SponsorConciergeLeadCaptureOverlay,
 } from './SponsorConciergeLeadCaptureOverlay';
+export {
+  buildSponsorConciergeLeadPayload,
+  INITIAL_SPONSOR_CONCIERGE_LEAD_FORM,
+  normalizeSponsorConciergeLeadForm,
+  readSponsorConciergePreviewLeadQueue,
+  saveSponsorConciergePreviewLead,
+  SPONSOR_CONCIERGE_LEAD_STORAGE_KEY,
+  submitSponsorConciergeLead,
+  validateSponsorConciergeLeadForm,
+} from './sponsorConciergeLeadCapture';
 export type {
   BoothAiAgentConfig,
   BoothCtaType,
@@ -56,3 +66,10 @@ export type {
 export type {
   BoothProductPreviewMode as BoothProductPreviewFlagMode,
 } from './boothProductPreviewFlags';
+export type {
+  SponsorConciergeLeadFormState,
+  SponsorConciergeLeadPersistence,
+  SponsorConciergeLeadRequestPayload,
+  SponsorConciergeLeadSubmitResult,
+  SponsorConciergePreviewLeadRecord,
+} from './sponsorConciergeLeadCapture';

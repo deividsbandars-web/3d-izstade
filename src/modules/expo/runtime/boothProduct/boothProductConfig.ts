@@ -248,7 +248,7 @@ export const BOOTH_PRODUCT_PROFILES = [
       enabledInProduction: false,
       fields: ['name', 'email', 'company', 'sponsor_interest'],
     },
-    notes: 'Exact preview-safe mapping with review-only lead capture HUD in Round 40; no backend persistence, AI agent UI, booking UI or 3D click behavior is added.',
+    notes: 'Exact preview-safe mapping with Sponsor Concierge lead capture HUD; submits to the expo lead API when available and falls back to local preview storage. No AI agent UI, booking UI or 3D click behavior is added.',
     packageTier: 'premium',
     shortPitch: 'A premium booth package concept focused on sponsor conversion, CTA readiness and future lead scoring.',
     sponsorId: 'sponsor-concierge',

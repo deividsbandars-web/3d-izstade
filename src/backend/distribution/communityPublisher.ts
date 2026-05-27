@@ -1,4 +1,3 @@
-// @ts-expect-error - tsraw package.json does not export types properly
 import { TSRAW } from 'tsraw';
 import { logger } from '../logging/logger.js';
 

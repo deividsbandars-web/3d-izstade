@@ -143,7 +143,7 @@ export type BoothProductDebugSummary = {
   firstPreviewSafeProfileId: string | null;
   firstPreviewSafeTier: BoothPackageTier | null;
   hasAiAgentUi: false;
-  hasBackend: false;
+  hasBackend: boolean;
   hasBookingUi: false;
   hasLeadCaptureUi: boolean;
   mappingCount: number;
