@@ -31,6 +31,38 @@ const GUIDE_ITEMS = [
   step: Exclude<SalesDemoStep, 'none'>;
 }>;
 
+const STEP_LINKS = [
+  {
+    href: '/expo-3d?salesDemo=1',
+    label: 'Overview',
+    step: 'none',
+  },
+  {
+    href: '/expo-3d?salesDemo=1&salesDemoStep=landmark',
+    label: 'Landmark Sponsor',
+    step: 'landmark',
+  },
+  {
+    href: '/expo-3d?salesDemo=1&salesDemoStep=premium',
+    label: 'Premium Booth',
+    step: 'premium',
+  },
+  {
+    href: '/expo-3d?salesDemo=1&salesDemoStep=standard',
+    label: 'Standard Booth',
+    step: 'standard',
+  },
+  {
+    href: '/expo-3d?salesDemo=1&salesDemoStep=arena',
+    label: 'Demo Arena',
+    step: 'arena',
+  },
+] as const satisfies ReadonlyArray<{
+  href: string;
+  label: string;
+  step: SalesDemoStep;
+}>;
+
 export function SalesDemoGuideOverlay({ isTouchDevice = false }: SalesDemoGuideOverlayProps) {
   if (!isSalesDemoEnabled()) {
     return null;
@@ -58,7 +90,7 @@ export function SalesDemoGuideOverlay({ isTouchDevice = false }: SalesDemoGuideO
         boxShadow: '0 18px 44px rgba(2, 6, 23, 0.34)',
         color: '#f8fafc',
         fontFamily: 'inherit',
-        pointerEvents: 'none',
+        pointerEvents: 'auto',
       }}
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', alignItems: 'start' }}>
@@ -86,6 +118,45 @@ export function SalesDemoGuideOverlay({ isTouchDevice = false }: SalesDemoGuideO
           Preview
         </div>
       </div>
+
+      <nav
+        aria-label="Sales Demo step links"
+        data-sales-demo-step-link-panel="true"
+        style={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: '5px',
+          marginTop: isTouchDevice ? '9px' : '10px',
+        }}
+      >
+        {STEP_LINKS.map((link) => {
+          const isActive = activeStep === link.step;
+
+          return (
+            <a
+              key={link.href}
+              aria-current={isActive ? 'page' : undefined}
+              data-sales-demo-step-link={link.step}
+              href={link.href}
+              style={{
+                background: isActive ? 'rgba(34, 211, 238, 0.2)' : 'rgba(15, 23, 42, 0.62)',
+                border: isActive ? '1px solid rgba(103, 232, 249, 0.52)' : '1px solid rgba(148, 163, 184, 0.22)',
+                borderRadius: '999px',
+                color: isActive ? '#ecfeff' : '#cbd5e1',
+                fontSize: isTouchDevice ? '0.58rem' : '0.6rem',
+                fontWeight: 900,
+                letterSpacing: '0.01em',
+                lineHeight: 1,
+                padding: isTouchDevice ? '6px 7px' : '6px 8px',
+                textDecoration: 'none',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {link.label}
+            </a>
+          );
+        })}
+      </nav>
 
       <div style={{ display: 'grid', gap: isTouchDevice ? '6px' : '7px', marginTop: isTouchDevice ? '9px' : '11px' }}>
         {GUIDE_ITEMS.map((item, index) => {
