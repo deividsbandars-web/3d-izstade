@@ -7,6 +7,8 @@ export const ExpoDataAPI = {
   getBooth: async (boothId: string) => serverApiGet(`/api/expo/booths/${boothId}`),
   getBooths: async () => serverApiGet('/api/expo/booths'),
   getReviewBooth: async (boothId: string) => serverApiGet(`/api/expo/review/booths/${boothId}`),
+  getSponsorLeadInbox: async (companySlug: string, limit = 50) =>
+    serverApiGet(`/api/expo/lead-inbox/${encodeURIComponent(companySlug)}?limit=${encodeURIComponent(String(limit))}`),
   updateReviewLeadStatus: async (boothId: string, leadId: string, status: string) =>
     serverApiPatch(`/api/expo/review/booths/${boothId}/leads/${leadId}`, { status }),
   updateReviewLeadOps: async (

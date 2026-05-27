@@ -56,6 +56,7 @@ const ProjectorRoom = lazy(() => import('./modules/expo/ProjectorRoom'));
 const BoothRoom = lazy(() => import('./pages/expo/BoothRoom'));
 const BoothStreamRoom = lazy(() => import('./pages/expo/BoothStreamRoom'));
 const CompanyAdmin = lazy(() => import('./pages/expo/CompanyAdmin'));
+const SponsorLeadInbox = lazy(() => import('./pages/expo/SponsorLeadInbox'));
 const Marketplace = lazy(() => import('./modules/expo/Marketplace'));
 const UrgentServices = lazy(() => import('./modules/expo/UrgentServices'));
 const EventsHub = lazy(() => import('./modules/expo/EventsHub'));
@@ -134,6 +135,7 @@ export default function App() {
             <Route path="plumbing-calculator" element={<Suspense fallback={null}><PlumbingCalculator /></Suspense>} />
             
             <Route path="expo/admin" element={<Suspense fallback={null}><CompanyAdmin /></Suspense>} />
+            <Route path="expo/sponsor-leads" element={<Suspense fallback={null}><SponsorLeadInbox /></Suspense>} />
             <Route path="expo" element={<Navigate to="/expo-3d" />} />
           </Route>
           

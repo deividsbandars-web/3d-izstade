@@ -7,6 +7,7 @@ import * as outreachController from '../controllers/outreachController.js';
 import * as expoController from '../controllers/expoController.js';
 import * as expoDataController from '../controllers/expoDataController.js';
 import * as expoLeadController from '../controllers/expoLeadController.js';
+import * as expoLeadInboxController from '../controllers/expoLeadInboxController.js';
 import * as analyticsController from '../controllers/analyticsController.js';
 import * as aiController from '../controllers/aiController.js';
 import * as automationController from '../controllers/automationController.js';
@@ -59,6 +60,7 @@ protectedRouter.get('/expo/scenes/booth/:boothId', expoDataController.getBoothSc
 protectedRouter.get('/expo/scenes/city', expoDataController.getCityScene);
 protectedRouter.get('/expo/review/snapshot', expoDataController.getExpoReviewSnapshot);
 protectedRouter.get('/expo/review/booths/:boothId', expoDataController.getExpoReviewBooth);
+protectedRouter.get('/expo/lead-inbox/:companySlug', expoLeadInboxController.getExpoSponsorLeadInbox);
 protectedRouter.patch('/expo/review/booths/:boothId/leads/:leadId', expoDataController.updateExpoReviewLeadStatus);
 protectedRouter.patch('/expo/review/booths/:boothId/leads/:leadId/ops', expoDataController.updateExpoReviewLeadOps);
 
