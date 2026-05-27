@@ -1,3 +1,5 @@
+import { isSalesDemoEnabled } from '../salesDemo/salesDemoFlags';
+
 export type ExpoDataMode = 'default' | 'live' | 'review' | 'seeded';
 
 export type ExpoReviewSceneSourceInput = {
@@ -40,6 +42,10 @@ function hasOperatorFlag(search: string | null | undefined) {
   return new URLSearchParams(search || '').get('operator') === '1';
 }
 
+function hasSalesDemoFlag(search: string | null | undefined) {
+  return isSalesDemoEnabled(search || '');
+}
+
 export function shouldUseReviewExpoSceneSource({
   hostname,
   isDev,
@@ -52,7 +58,7 @@ export function shouldUseReviewExpoSceneSource({
   }
 
   if (mode !== 'review' && mode !== 'seeded') {
-    return false;
+    return hasSalesDemoFlag(search) && isReviewSceneHost(hostname);
   }
 
   return hasOperatorFlag(search) && isReviewSceneHost(hostname);

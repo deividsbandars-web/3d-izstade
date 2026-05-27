@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { ExpoMode } from '../../state/expoRuntime';
 import { resolveExpoOperatorSession } from '../operator';
+import { isSalesDemoEnabled } from '../salesDemo/salesDemoFlags';
 
 export type ExpoMobileMoveIntent = {
   b: boolean;
@@ -46,7 +47,8 @@ function detectTouchDevice() {
 
 export function useExpoRuntimeSession() {
   const operatorSession = useMemo(() => resolveExpoOperatorSession(), []);
-  const [mode, setModeState] = useState<ExpoMode>(() => (operatorSession.enabled ? 'fly' : 'menu'));
+  const salesDemoEnabled = useMemo(() => isSalesDemoEnabled(), []);
+  const [mode, setModeState] = useState<ExpoMode>(() => (operatorSession.enabled || salesDemoEnabled ? 'fly' : 'menu'));
   const [mobileMoveIntent, setMobileMoveIntent] = useState<ExpoMobileMoveIntent>(EXPO_MOBILE_MOVE_IDLE);
   const [isTouchDevice, setIsTouchDevice] = useState(() => detectTouchDevice());
   const setMode = useCallback((nextMode: ExpoMode) => {
@@ -82,6 +84,7 @@ export function useExpoRuntimeSession() {
     mobileMoveIntent,
     mode,
     operatorSession,
+    salesDemoEnabled,
     setIsTouchDevice,
     setMobileMoveIntent,
     setMode,

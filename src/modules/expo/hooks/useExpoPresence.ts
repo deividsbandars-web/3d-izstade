@@ -4,17 +4,18 @@ import { supabase } from '../../../core/supabase';
 import { quantizeVectorArray } from '../../../utils/threeUtils';
 import { EXPO_SYNC_THROTTLE, type ExpoMode } from '../state/expoRuntime';
 
-export function useExpoPresence(mode: ExpoMode) {
+export function useExpoPresence(mode: ExpoMode, options: { enabled?: boolean } = {}) {
   const [guests, setGuests] = useState<any[]>([]);
   const [playerPos, setPlayerPos] = useState<number[]>([0, 5, 10]);
   const [isMicOn, setIsMicOn] = useState(false);
   const [isSpeaking] = useState(false);
+  const presenceEnabled = options.enabled ?? true;
 
   const channelRef = useRef<any>(null);
   const lastSyncTime = useRef(0);
 
   useEffect(() => {
-    if (mode === 'menu') {
+    if (mode === 'menu' || !presenceEnabled) {
       return;
     }
 
@@ -44,7 +45,7 @@ export function useExpoPresence(mode: ExpoMode) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [mode]);
+  }, [mode, presenceEnabled]);
 
   const handlePlayerMove = (pos: number[]) => {
     setPlayerPos(pos);

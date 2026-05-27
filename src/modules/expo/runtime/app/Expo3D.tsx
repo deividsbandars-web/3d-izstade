@@ -46,7 +46,10 @@ function ExpoRuntimeExperience({
   const worldContract = useMemo(() => buildExpoWorldContract(data), [data]);
   const inspectionEnabled = import.meta.env.DEV || runtimeSession.operatorSession.enabled;
   const pixelStreamingStatus = usePixelStreamingStatus();
-  const { guests, playerPos, isMicOn, isSpeaking, setIsMicOn, handlePlayerMove } = useExpoPresence(runtimeSession.mode);
+  const { guests, playerPos, isMicOn, isSpeaking, setIsMicOn, handlePlayerMove } = useExpoPresence(
+    runtimeSession.mode,
+    { enabled: !runtimeSession.salesDemoEnabled },
+  );
   const { activeZone, zoneSystem } = useZoneSystem(playerPos as any);
   const mobileNearbyBooth = useMemo(() => {
     if (!runtimeSession.isTouchDevice || runtimeSession.mode !== 'walk') {
