@@ -10,6 +10,7 @@ import {
   type SponsorLeadInboxResponse,
   type SponsorLeadStatus,
 } from '../../app/expo/sponsorLeadInboxService';
+import { parseSponsorPackageLeadMessage } from '../../app/expo/sponsorPackageLead';
 import { supabaseClient } from '../../lib/supabaseClient';
 
 const STATUS_COLORS: Record<string, string> = {
@@ -33,6 +34,8 @@ type InboxAccessState =
   | 'access-denied'
   | 'backend-unavailable'
   | 'unavailable';
+
+type LeadFilter = 'all' | 'needs-action' | 'package-requests';
 
 function formatDate(value?: string | null) {
   if (!value) {
@@ -197,6 +200,7 @@ export default function SponsorLeadInbox() {
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [activeStatusAction, setActiveStatusAction] = useState<string | null>(null);
   const [activeOpsSave, setActiveOpsSave] = useState<string | null>(null);
+  const [leadFilter, setLeadFilter] = useState<LeadFilter>('all');
   const [opsDrafts, setOpsDrafts] = useState<Record<string, { followUpAt: string; opsNotes: string }>>({});
 
   const loadInbox = useCallback(async (cancelled: () => boolean) => {
@@ -251,6 +255,22 @@ export default function SponsorLeadInbox() {
       String(right.created_at || '').localeCompare(String(left.created_at || '')),
     );
   }, [data]);
+
+  const packageRequestCount = useMemo(() => {
+    return sortedLeads.filter((lead) => parseSponsorPackageLeadMessage(lead.message)).length;
+  }, [sortedLeads]);
+
+  const visibleLeads = useMemo(() => {
+    if (leadFilter === 'package-requests') {
+      return sortedLeads.filter((lead) => parseSponsorPackageLeadMessage(lead.message));
+    }
+
+    if (leadFilter === 'needs-action') {
+      return sortedLeads.filter((lead) => ['pending', 'contacted'].includes(normalizeStatus(lead)));
+    }
+
+    return sortedLeads;
+  }, [leadFilter, sortedLeads]);
 
   useEffect(() => {
     setOpsDrafts((current) => {
@@ -322,8 +342,14 @@ export default function SponsorLeadInbox() {
   const summaryCards = [
     { label: 'Total leads', value: data?.summary.total ?? 0, color: '#f8fafc' },
     { label: 'Needs action', value: data?.summary.needsAction ?? 0, color: '#fbbf24' },
+    { label: 'Package requests', value: packageRequestCount, color: '#34d399' },
     { label: 'Contacted', value: data?.summary.contacted ?? 0, color: '#93c5fd' },
     { label: 'Closed', value: data?.summary.closed ?? 0, color: '#34d399' },
+  ];
+  const leadFilters: Array<{ count: number; label: string; value: LeadFilter }> = [
+    { count: sortedLeads.length, label: 'All leads', value: 'all' },
+    { count: data?.summary.needsAction ?? 0, label: 'Needs action', value: 'needs-action' },
+    { count: packageRequestCount, label: 'Package requests', value: 'package-requests' },
   ];
   const accessNotice = getAccessNotice(accessState, error);
   const shouldShowInboxContent = loading || accessState === 'ready' || Boolean(data);
@@ -387,7 +413,7 @@ export default function SponsorLeadInbox() {
 
       {shouldShowInboxContent && (
         <>
-          <section style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: '14px', marginBottom: '24px' }}>
+          <section style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '14px', marginBottom: '24px' }}>
             {summaryCards.map((entry) => (
               <div key={entry.label} className="glass-card" style={{ padding: '18px', borderRadius: '20px' }}>
                 <div style={{ color: '#94a3b8', fontSize: '0.72rem', fontWeight: 900, letterSpacing: '0.1em', textTransform: 'uppercase' }}>{entry.label}</div>
@@ -400,20 +426,46 @@ export default function SponsorLeadInbox() {
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: '16px', alignItems: 'baseline', marginBottom: '18px', flexWrap: 'wrap' }}>
               <h2 style={{ margin: 0 }}>Inbound Sponsor Leads</h2>
               <div style={{ color: '#94a3b8', fontSize: '0.78rem', fontWeight: 800, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-                {loading ? 'Loading' : `${sortedLeads.length} loaded`}
+                {loading ? 'Loading' : `${visibleLeads.length} shown / ${sortedLeads.length} loaded`}
               </div>
+            </div>
+
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '18px' }}>
+              {leadFilters.map((filter) => (
+                <button
+                  key={filter.value}
+                  type="button"
+                  aria-pressed={leadFilter === filter.value}
+                  onClick={() => setLeadFilter(filter.value)}
+                  style={{
+                    background: leadFilter === filter.value ? 'rgba(56, 189, 248, 0.22)' : 'rgba(15, 23, 42, 0.78)',
+                    border: `1px solid ${leadFilter === filter.value ? 'rgba(56, 189, 248, 0.68)' : 'rgba(148, 163, 184, 0.22)'}`,
+                    borderRadius: '999px',
+                    color: leadFilter === filter.value ? '#e0f2fe' : '#cbd5e1',
+                    cursor: 'pointer',
+                    fontSize: '0.74rem',
+                    fontWeight: 900,
+                    letterSpacing: '0.05em',
+                    padding: '9px 12px',
+                    textTransform: 'uppercase',
+                  }}
+                >
+                  {filter.label} · {filter.count}
+                </button>
+              ))}
             </div>
 
             {loading ? (
               <div style={{ padding: '32px', color: '#94a3b8', textAlign: 'center' }}>Loading sponsor leads...</div>
-            ) : sortedLeads.length === 0 ? (
-              <div style={{ padding: '32px', color: '#94a3b8', textAlign: 'center' }}>No sponsor leads found yet.</div>
+            ) : visibleLeads.length === 0 ? (
+              <div style={{ padding: '32px', color: '#94a3b8', textAlign: 'center' }}>No sponsor leads match this filter.</div>
             ) : (
               <div style={{ display: 'grid', gap: '14px' }}>
-                {sortedLeads.map((lead) => {
+                {visibleLeads.map((lead) => {
                   const status = normalizeStatus(lead);
                   const leadId = String(lead.id || '');
                   const draft = opsDrafts[leadId] ?? { followUpAt: '', opsNotes: '' };
+                  const packageDetails = parseSponsorPackageLeadMessage(lead.message);
                   return (
                     <article key={leadId || `${lead.client_email}:${lead.created_at}`} style={{ padding: '18px', borderRadius: '18px', background: 'rgba(2, 6, 23, 0.72)', border: '1px solid rgba(148, 163, 184, 0.18)' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', gap: '14px', alignItems: 'flex-start', flexWrap: 'wrap' }}>
@@ -425,7 +477,42 @@ export default function SponsorLeadInbox() {
                       {status}
                     </span>
                   </div>
-                  <p style={{ color: '#cbd5e1', lineHeight: 1.55, margin: '14px 0 0' }}>{lead.message || 'No message provided.'}</p>
+                  {packageDetails ? (
+                    <div
+                      style={{
+                        background: 'linear-gradient(135deg, rgba(20, 83, 45, 0.44), rgba(8, 47, 73, 0.4))',
+                        border: '1px solid rgba(52, 211, 153, 0.28)',
+                        borderRadius: '16px',
+                        marginTop: '14px',
+                        padding: '14px',
+                      }}
+                    >
+                      <div style={{ alignItems: 'center', display: 'flex', flexWrap: 'wrap', gap: '8px', justifyContent: 'space-between' }}>
+                        <div style={{ color: '#bbf7d0', fontSize: '0.72rem', fontWeight: 950, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+                          Sponsor package request
+                        </div>
+                        <span style={{ background: 'rgba(52, 211, 153, 0.14)', border: '1px solid rgba(52, 211, 153, 0.44)', borderRadius: '999px', color: '#bbf7d0', fontSize: '0.7rem', fontWeight: 950, padding: '6px 10px', textTransform: 'uppercase' }}>
+                          {packageDetails.packageInterest}
+                        </span>
+                      </div>
+                      <div style={{ display: 'grid', gap: '10px', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', marginTop: '12px' }}>
+                        {[
+                          ['Company', packageDetails.company],
+                          ['Website', packageDetails.website],
+                          ['Budget', packageDetails.budgetSignal],
+                          ['Timeline', packageDetails.timeline],
+                        ].map(([label, value]) => (
+                          <div key={label} style={{ background: 'rgba(2, 6, 23, 0.46)', borderRadius: '12px', padding: '10px' }}>
+                            <div style={{ color: '#94a3b8', fontSize: '0.68rem', fontWeight: 900, letterSpacing: '0.08em', textTransform: 'uppercase' }}>{label}</div>
+                            <div style={{ color: '#f8fafc', fontSize: '0.9rem', fontWeight: 850, marginTop: '4px', overflowWrap: 'anywhere' }}>{value || 'Not provided'}</div>
+                          </div>
+                        ))}
+                      </div>
+                      <p style={{ color: '#e2e8f0', lineHeight: 1.55, margin: '12px 0 0' }}>{packageDetails.message}</p>
+                    </div>
+                  ) : (
+                    <p style={{ color: '#cbd5e1', lineHeight: 1.55, margin: '14px 0 0' }}>{lead.message || 'No message provided.'}</p>
+                  )}
                   <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', marginTop: '14px', color: '#64748b', fontSize: '0.76rem', flexWrap: 'wrap' }}>
                     <span>{lead.service_name || 'expo_sponsor_lead'}</span>
                     <span>{formatDate(lead.created_at)}</span>
