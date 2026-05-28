@@ -10,6 +10,7 @@ import {
   type SponsorLeadInboxResponse,
   type SponsorLeadStatus,
 } from '../../app/expo/sponsorLeadInboxService';
+import { supabaseClient } from '../../lib/supabaseClient';
 
 const STATUS_COLORS: Record<string, string> = {
   closed: '#34d399',
@@ -24,6 +25,14 @@ const STATUS_LABELS: Record<SponsorLeadStatus, string> = {
   pending: 'Pending',
   rejected: 'Rejected',
 };
+
+type InboxAccessState =
+  | 'checking-auth'
+  | 'ready'
+  | 'signed-out'
+  | 'access-denied'
+  | 'backend-unavailable'
+  | 'unavailable';
 
 function formatDate(value?: string | null) {
   if (!value) {
@@ -102,11 +111,88 @@ function updateLeadInInbox(
   };
 }
 
+function formatRequestError(error: unknown) {
+  return error instanceof Error ? error.message : String(error);
+}
+
+function resolveAccessStateFromError(errorText: string): Exclude<InboxAccessState, 'checking-auth' | 'ready'> {
+  if (errorText.includes('SERVER_API_HTTP_401')) {
+    return 'signed-out';
+  }
+
+  if (errorText.includes('SERVER_API_HTTP_403')) {
+    return 'access-denied';
+  }
+
+  if (
+    errorText.includes('SERVER_API_HTTP_500') ||
+    errorText.includes('SERVER_API_HTTP_502') ||
+    errorText.includes('SERVER_API_HTTP_503') ||
+    errorText.includes('SERVER_API_HTTP_504') ||
+    errorText.toLowerCase().includes('failed to fetch') ||
+    errorText.toLowerCase().includes('networkerror') ||
+    errorText.toLowerCase().includes('err_connection')
+  ) {
+    return 'backend-unavailable';
+  }
+
+  return 'unavailable';
+}
+
+function getAccessNotice(accessState: InboxAccessState, technicalError: string | null) {
+  if (accessState === 'signed-out') {
+    return {
+      accent: '#fbbf24',
+      actionHref: '/login',
+      actionLabel: 'Sign in',
+      body: 'Sponsor lead inbox is protected. Sign in with a sponsor or admin account, then return to this page.',
+      detail: 'If you are already signed in, refresh the page so the current Supabase session can be attached to the API request.',
+      title: 'Sign in required',
+    };
+  }
+
+  if (accessState === 'access-denied') {
+    return {
+      accent: '#fb7185',
+      actionHref: '/expo-3d?salesDemo=1',
+      actionLabel: 'Open sales demo',
+      body: 'Your session is valid, but this account is not authorized for this sponsor lead inbox.',
+      detail: 'Use the correct sponsor/admin account or ask an admin to grant access for this sponsor.',
+      title: 'Access denied',
+    };
+  }
+
+  if (accessState === 'backend-unavailable') {
+    return {
+      accent: '#38bdf8',
+      actionHref: '/expo-3d?salesDemo=1',
+      actionLabel: 'Open sales demo',
+      body: 'The Sponsor Lead Inbox UI is ready, but the backend API is not reachable right now.',
+      detail: 'After staging services are restored, run: npm.cmd run check:expo-sponsor-ops -- --public --skip-frontend',
+      title: 'Backend unavailable',
+    };
+  }
+
+  if (accessState === 'unavailable') {
+    return {
+      accent: '#f87171',
+      actionHref: '/expo-3d?salesDemo=1',
+      actionLabel: 'Open sales demo',
+      body: 'The Sponsor Lead Inbox could not load.',
+      detail: technicalError ? `Technical detail: ${technicalError}` : 'Retry after checking the backend and auth session.',
+      title: 'Inbox unavailable',
+    };
+  }
+
+  return null;
+}
+
 export default function SponsorLeadInbox() {
   const [searchParams] = useSearchParams();
   const sponsorSlug = searchParams.get('sponsor') || 'sponsor-concierge';
   const [data, setData] = useState<SponsorLeadInboxResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [accessState, setAccessState] = useState<InboxAccessState>('checking-auth');
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [activeStatusAction, setActiveStatusAction] = useState<string | null>(null);
@@ -114,24 +200,40 @@ export default function SponsorLeadInbox() {
   const [opsDrafts, setOpsDrafts] = useState<Record<string, { followUpAt: string; opsNotes: string }>>({});
 
   const loadInbox = useCallback(async (cancelled: () => boolean) => {
-      setLoading(true);
-      setError(null);
+    setLoading(true);
+    setError(null);
+    setAccessState('checking-auth');
 
-      try {
-        const response = await getSponsorLeadInbox(sponsorSlug);
+    try {
+      const { data: sessionData } = await supabaseClient.auth.getSession();
+      const hasSession = Boolean(sessionData.session?.access_token);
+
+      if (!hasSession) {
         if (!cancelled()) {
-          setData(response);
-        }
-      } catch (requestError) {
-        if (!cancelled()) {
-          setError(String(requestError));
+          setAccessState('signed-out');
           setData(null);
-        }
-      } finally {
-        if (!cancelled()) {
           setLoading(false);
         }
+        return;
       }
+
+      const response = await getSponsorLeadInbox(sponsorSlug);
+      if (!cancelled()) {
+        setAccessState('ready');
+        setData(response);
+      }
+    } catch (requestError) {
+      if (!cancelled()) {
+        const errorText = formatRequestError(requestError);
+        setError(errorText);
+        setAccessState(resolveAccessStateFromError(errorText));
+        setData(null);
+      }
+    } finally {
+      if (!cancelled()) {
+        setLoading(false);
+      }
+    }
   }, [sponsorSlug]);
 
   useEffect(() => {
@@ -182,7 +284,7 @@ export default function SponsorLeadInbox() {
       setData((current) => updateLeadInInbox(current, leadId, { status }));
       setMessage({ type: 'success', text: `Lead marked ${STATUS_LABELS[status].toLowerCase()}.` });
     } catch (updateError) {
-      setMessage({ type: 'error', text: `Failed to update lead status: ${String(updateError)}` });
+      setMessage({ type: 'error', text: `Failed to update lead status: ${formatRequestError(updateError)}` });
     } finally {
       setActiveStatusAction(null);
     }
@@ -211,7 +313,7 @@ export default function SponsorLeadInbox() {
       );
       setMessage({ type: 'success', text: 'Lead ops note saved.' });
     } catch (updateError) {
-      setMessage({ type: 'error', text: `Failed to save lead ops note: ${String(updateError)}` });
+      setMessage({ type: 'error', text: `Failed to save lead ops note: ${formatRequestError(updateError)}` });
     } finally {
       setActiveOpsSave(null);
     }
@@ -223,6 +325,8 @@ export default function SponsorLeadInbox() {
     { label: 'Contacted', value: data?.summary.contacted ?? 0, color: '#93c5fd' },
     { label: 'Closed', value: data?.summary.closed ?? 0, color: '#34d399' },
   ];
+  const accessNotice = getAccessNotice(accessState, error);
+  const shouldShowInboxContent = loading || accessState === 'ready' || Boolean(data);
 
   return (
     <div className="calculator-pro-wrapper" style={{ maxWidth: '1180px', margin: '0 auto', padding: '40px 20px', color: 'white' }}>
@@ -257,12 +361,12 @@ export default function SponsorLeadInbox() {
         </div>
       </section>
 
-      {error && (
-        <section className="glass-card" style={{ padding: '22px', borderRadius: '20px', marginBottom: '24px', border: '1px solid rgba(248,113,113,0.45)' }}>
-          <h2 style={{ marginTop: 0, color: '#f87171' }}>Inbox unavailable</h2>
-          <p style={{ color: '#cbd5e1', lineHeight: 1.55 }}>
-            The lead inbox endpoint requires the staging/backend API and an authenticated Supabase session. Current error: {error}
-          </p>
+      {accessNotice && (
+        <section className="glass-card" style={{ padding: '22px', borderRadius: '20px', marginBottom: '24px', border: `1px solid ${accessNotice.accent}73` }}>
+          <h2 style={{ marginTop: 0, color: accessNotice.accent }}>{accessNotice.title}</h2>
+          <p style={{ color: '#cbd5e1', lineHeight: 1.55, marginBottom: '10px' }}>{accessNotice.body}</p>
+          <p style={{ color: '#94a3b8', lineHeight: 1.55, margin: '0 0 16px' }}>{accessNotice.detail}</p>
+          <a href={accessNotice.actionHref} className="btn-glass" style={{ textDecoration: 'none' }}>{accessNotice.actionLabel}</a>
         </section>
       )}
 
@@ -281,35 +385,37 @@ export default function SponsorLeadInbox() {
         </section>
       )}
 
-      <section style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: '14px', marginBottom: '24px' }}>
-        {summaryCards.map((entry) => (
-          <div key={entry.label} className="glass-card" style={{ padding: '18px', borderRadius: '20px' }}>
-            <div style={{ color: '#94a3b8', fontSize: '0.72rem', fontWeight: 900, letterSpacing: '0.1em', textTransform: 'uppercase' }}>{entry.label}</div>
-            <div style={{ color: entry.color, fontSize: '2rem', fontWeight: 950, marginTop: '6px' }}>{loading ? '-' : entry.value}</div>
-          </div>
-        ))}
-      </section>
+      {shouldShowInboxContent && (
+        <>
+          <section style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: '14px', marginBottom: '24px' }}>
+            {summaryCards.map((entry) => (
+              <div key={entry.label} className="glass-card" style={{ padding: '18px', borderRadius: '20px' }}>
+                <div style={{ color: '#94a3b8', fontSize: '0.72rem', fontWeight: 900, letterSpacing: '0.1em', textTransform: 'uppercase' }}>{entry.label}</div>
+                <div style={{ color: entry.color, fontSize: '2rem', fontWeight: 950, marginTop: '6px' }}>{loading ? '-' : entry.value}</div>
+              </div>
+            ))}
+          </section>
 
-      <section className="glass-card" style={{ padding: '24px', borderRadius: '24px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', gap: '16px', alignItems: 'baseline', marginBottom: '18px', flexWrap: 'wrap' }}>
-          <h2 style={{ margin: 0 }}>Inbound Sponsor Leads</h2>
-          <div style={{ color: '#94a3b8', fontSize: '0.78rem', fontWeight: 800, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-            {loading ? 'Loading' : `${sortedLeads.length} loaded`}
-          </div>
-        </div>
+          <section className="glass-card" style={{ padding: '24px', borderRadius: '24px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: '16px', alignItems: 'baseline', marginBottom: '18px', flexWrap: 'wrap' }}>
+              <h2 style={{ margin: 0 }}>Inbound Sponsor Leads</h2>
+              <div style={{ color: '#94a3b8', fontSize: '0.78rem', fontWeight: 800, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                {loading ? 'Loading' : `${sortedLeads.length} loaded`}
+              </div>
+            </div>
 
-        {loading ? (
-          <div style={{ padding: '32px', color: '#94a3b8', textAlign: 'center' }}>Loading sponsor leads...</div>
-        ) : sortedLeads.length === 0 ? (
-          <div style={{ padding: '32px', color: '#94a3b8', textAlign: 'center' }}>No sponsor leads found yet.</div>
-        ) : (
-          <div style={{ display: 'grid', gap: '14px' }}>
-            {sortedLeads.map((lead) => {
-              const status = normalizeStatus(lead);
-              const leadId = String(lead.id || '');
-              const draft = opsDrafts[leadId] ?? { followUpAt: '', opsNotes: '' };
-              return (
-                <article key={leadId || `${lead.client_email}:${lead.created_at}`} style={{ padding: '18px', borderRadius: '18px', background: 'rgba(2, 6, 23, 0.72)', border: '1px solid rgba(148, 163, 184, 0.18)' }}>
+            {loading ? (
+              <div style={{ padding: '32px', color: '#94a3b8', textAlign: 'center' }}>Loading sponsor leads...</div>
+            ) : sortedLeads.length === 0 ? (
+              <div style={{ padding: '32px', color: '#94a3b8', textAlign: 'center' }}>No sponsor leads found yet.</div>
+            ) : (
+              <div style={{ display: 'grid', gap: '14px' }}>
+                {sortedLeads.map((lead) => {
+                  const status = normalizeStatus(lead);
+                  const leadId = String(lead.id || '');
+                  const draft = opsDrafts[leadId] ?? { followUpAt: '', opsNotes: '' };
+                  return (
+                    <article key={leadId || `${lead.client_email}:${lead.created_at}`} style={{ padding: '18px', borderRadius: '18px', background: 'rgba(2, 6, 23, 0.72)', border: '1px solid rgba(148, 163, 184, 0.18)' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', gap: '14px', alignItems: 'flex-start', flexWrap: 'wrap' }}>
                     <div>
                       <h3 style={{ margin: 0, color: '#f8fafc' }}>{lead.client_name || 'Unnamed lead'}</h3>
@@ -420,12 +526,14 @@ export default function SponsorLeadInbox() {
                       Last ops update: {formatDate(lead.ops_updated_at)}
                     </div>
                   </div>
-                </article>
-              );
-            })}
-          </div>
-        )}
-      </section>
+                    </article>
+                  );
+                })}
+              </div>
+            )}
+          </section>
+        </>
+      )}
     </div>
   );
 }
