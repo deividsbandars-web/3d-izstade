@@ -1,4 +1,13 @@
+import { useState, type CSSProperties, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
+import {
+  INITIAL_SPONSOR_PACKAGE_REQUEST_FORM,
+  readSponsorPackageRequestQueue,
+  saveSponsorPackageRequest,
+  validateSponsorPackageRequestForm,
+  type SponsorPackageInterest,
+  type SponsorPackageRequestForm,
+} from '../../app/expo/sponsorPackageRequest';
 import '../../components/calculator/styles/CalculatorPro.css';
 import WarpalaLogo from '../../shared/Logo';
 
@@ -8,7 +17,7 @@ type PackageCard = {
   cta: string;
   description: string;
   features: string[];
-  id: string;
+  id: Exclude<SponsorPackageInterest, 'unsure'>;
   label: string;
   readiness: string;
   title: string;
@@ -68,7 +77,90 @@ const READINESS_ROWS = [
   ['Package page', 'Ready now', '/expo/sponsor-packages'],
 ];
 
+const PACKAGE_INTEREST_OPTIONS: Array<{ label: string; value: SponsorPackageInterest }> = [
+  { label: 'Premium Booth', value: 'premium' },
+  { label: 'Standard Booth', value: 'standard' },
+  { label: 'Landmark Zone Sponsor', value: 'landmark' },
+  { label: 'Demo Arena Sponsor', value: 'arena' },
+  { label: 'Not sure yet', value: 'unsure' },
+];
+
+const BUDGET_OPTIONS = [
+  'Under 5k',
+  '5k-15k',
+  '15k-50k',
+  '50k+',
+  'Need package guidance',
+];
+
+const TIMELINE_OPTIONS = [
+  'This month',
+  'Next month',
+  'This quarter',
+  'Planning ahead',
+];
+
+const inputStyle: CSSProperties = {
+  background: 'rgba(2, 6, 23, 0.78)',
+  border: '1px solid rgba(148, 163, 184, 0.24)',
+  borderRadius: '15px',
+  color: '#f8fafc',
+  font: 'inherit',
+  padding: '13px 14px',
+  width: '100%',
+};
+
+const labelStyle: CSSProperties = {
+  color: '#cbd5e1',
+  display: 'grid',
+  fontSize: '0.78rem',
+  fontWeight: 800,
+  gap: '8px',
+};
+
 export default function SponsorPackages() {
+  const [requestForm, setRequestForm] = useState<SponsorPackageRequestForm>(INITIAL_SPONSOR_PACKAGE_REQUEST_FORM);
+  const [requestStatus, setRequestStatus] = useState<{ text: string; tone: 'error' | 'idle' | 'success' }>({
+    text: 'Requests are saved locally until the backend service is restored.',
+    tone: 'idle',
+  });
+  const [queuedRequestCount, setQueuedRequestCount] = useState(() => readSponsorPackageRequestQueue().length);
+
+  function updateRequestField<Field extends keyof SponsorPackageRequestForm>(
+    field: Field,
+    value: SponsorPackageRequestForm[Field],
+  ) {
+    setRequestForm((current) => ({ ...current, [field]: value }));
+  }
+
+  function handleRequestSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    const validationError = validateSponsorPackageRequestForm(requestForm);
+    if (validationError) {
+      setRequestStatus({ text: validationError, tone: 'error' });
+      return;
+    }
+
+    try {
+      const result = saveSponsorPackageRequest(requestForm);
+      setQueuedRequestCount(result.queueCount);
+      setRequestForm({
+        ...INITIAL_SPONSOR_PACKAGE_REQUEST_FORM,
+        packageInterest: requestForm.packageInterest,
+      });
+      setRequestStatus({
+        text: `Saved locally as sponsor package request #${result.queueCount}. Backend sync is pending until the API is back online.`,
+        tone: 'success',
+      });
+    } catch (error) {
+      setRequestStatus({
+        text: `Could not save the request locally: ${error instanceof Error ? error.message : String(error)}`,
+        tone: 'error',
+      });
+    }
+  }
+
   return (
     <main
       style={{
@@ -206,6 +298,170 @@ export default function SponsorPackages() {
               </div>
             </article>
           ))}
+        </section>
+
+        <section
+          className="glass-card"
+          data-sponsor-package-request-form="true"
+          style={{ borderRadius: '28px', marginBottom: '24px', padding: '26px' }}
+        >
+          <div style={{ display: 'grid', gap: '24px', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))' }}>
+            <div>
+              <div style={{ color: '#34d399', fontSize: '0.74rem', fontWeight: 950, letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+                Sponsor package request
+              </div>
+              <h2 style={{ fontSize: 'clamp(1.9rem, 4vw, 3.2rem)', letterSpacing: '-0.05em', lineHeight: 1, margin: '10px 0 12px' }}>
+                Capture sponsor intent before the backend is back.
+              </h2>
+              <p style={{ color: '#cbd5e1', fontSize: '1rem', lineHeight: 1.58, margin: 0 }}>
+                This form is frontend-only for now. It validates sponsor interest and stores requests in this browser so the sales flow can be reviewed without live server access.
+              </p>
+              <div
+                style={{
+                  background: 'rgba(15, 23, 42, 0.72)',
+                  border: '1px solid rgba(52, 211, 153, 0.26)',
+                  borderRadius: '18px',
+                  color: '#bbf7d0',
+                  fontSize: '0.85rem',
+                  fontWeight: 800,
+                  lineHeight: 1.45,
+                  marginTop: '18px',
+                  padding: '14px 15px',
+                }}
+              >
+                Local queue: {queuedRequestCount} request{queuedRequestCount === 1 ? '' : 's'} waiting for backend sync.
+              </div>
+            </div>
+
+            <form onSubmit={handleRequestSubmit} style={{ display: 'grid', gap: '13px' }}>
+              <div style={{ display: 'grid', gap: '13px', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))' }}>
+                <label style={labelStyle}>
+                  Contact name
+                  <input
+                    autoComplete="name"
+                    onChange={(event) => updateRequestField('name', event.target.value)}
+                    placeholder="Jane Sponsor"
+                    style={inputStyle}
+                    type="text"
+                    value={requestForm.name}
+                  />
+                </label>
+                <label style={labelStyle}>
+                  Work email
+                  <input
+                    autoComplete="email"
+                    onChange={(event) => updateRequestField('email', event.target.value)}
+                    placeholder="jane@company.com"
+                    style={inputStyle}
+                    type="email"
+                    value={requestForm.email}
+                  />
+                </label>
+              </div>
+              <div style={{ display: 'grid', gap: '13px', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))' }}>
+                <label style={labelStyle}>
+                  Company
+                  <input
+                    autoComplete="organization"
+                    onChange={(event) => updateRequestField('company', event.target.value)}
+                    placeholder="Company name"
+                    style={inputStyle}
+                    type="text"
+                    value={requestForm.company}
+                  />
+                </label>
+                <label style={labelStyle}>
+                  Website
+                  <input
+                    autoComplete="url"
+                    onChange={(event) => updateRequestField('website', event.target.value)}
+                    placeholder="https://company.com"
+                    style={inputStyle}
+                    type="url"
+                    value={requestForm.website}
+                  />
+                </label>
+              </div>
+              <div style={{ display: 'grid', gap: '13px', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))' }}>
+                <label style={labelStyle}>
+                  Package interest
+                  <select
+                    onChange={(event) => updateRequestField('packageInterest', event.target.value as SponsorPackageInterest)}
+                    style={inputStyle}
+                    value={requestForm.packageInterest}
+                  >
+                    {PACKAGE_INTEREST_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>{option.label}</option>
+                    ))}
+                  </select>
+                </label>
+                <label style={labelStyle}>
+                  Budget signal
+                  <select
+                    onChange={(event) => updateRequestField('budgetRange', event.target.value)}
+                    style={inputStyle}
+                    value={requestForm.budgetRange}
+                  >
+                    <option value="">Select range</option>
+                    {BUDGET_OPTIONS.map((option) => (
+                      <option key={option} value={option}>{option}</option>
+                    ))}
+                  </select>
+                </label>
+                <label style={labelStyle}>
+                  Timeline
+                  <select
+                    onChange={(event) => updateRequestField('timeline', event.target.value)}
+                    style={inputStyle}
+                    value={requestForm.timeline}
+                  >
+                    <option value="">Select timeline</option>
+                    {TIMELINE_OPTIONS.map((option) => (
+                      <option key={option} value={option}>{option}</option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+              <label style={labelStyle}>
+                Sponsorship goal
+                <textarea
+                  onChange={(event) => updateRequestField('message', event.target.value)}
+                  placeholder="Tell us what you want to sponsor, launch, or measure."
+                  rows={4}
+                  style={{ ...inputStyle, resize: 'vertical' }}
+                  value={requestForm.message}
+                />
+              </label>
+              <button
+                type="submit"
+                style={{
+                  background: 'linear-gradient(135deg, #22c55e, #0ea5e9)',
+                  border: 'none',
+                  borderRadius: '16px',
+                  color: '#03131a',
+                  cursor: 'pointer',
+                  fontSize: '0.92rem',
+                  fontWeight: 950,
+                  letterSpacing: '0.04em',
+                  padding: '15px 18px',
+                  textTransform: 'uppercase',
+                }}
+              >
+                Save sponsor request
+              </button>
+              <div
+                data-sponsor-package-request-status={requestStatus.tone}
+                style={{
+                  color: requestStatus.tone === 'error' ? '#fecaca' : requestStatus.tone === 'success' ? '#bbf7d0' : '#94a3b8',
+                  fontSize: '0.82rem',
+                  fontWeight: 750,
+                  lineHeight: 1.45,
+                }}
+              >
+                {requestStatus.text}
+              </div>
+            </form>
+          </div>
         </section>
 
         <section className="glass-card" style={{ borderRadius: '26px', padding: '24px' }}>
