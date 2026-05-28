@@ -2,6 +2,7 @@ import { serverApiGet, serverApiPatch, serverApiPost } from './serverApi';
 
 export const ExpoDataAPI = {
   createBooth: async (payload: unknown) => serverApiPost('/api/expo/booths', payload),
+  createExpoLead: async (payload: unknown) => serverApiPost('/api/expo/lead', payload),
   updateBooth: async (boothId: string, payload: unknown) => serverApiPatch(`/api/expo/booths/${boothId}`, payload),
   getManagedBooths: async () => serverApiGet('/api/expo/booths/managed'),
   getBooth: async (boothId: string) => serverApiGet(`/api/expo/booths/${boothId}`),

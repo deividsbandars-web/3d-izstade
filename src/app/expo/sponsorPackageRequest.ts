@@ -1,4 +1,10 @@
+import { ExpoDataAPI } from '../../services/expo';
+
 export type SponsorPackageInterest = 'arena' | 'landmark' | 'premium' | 'standard' | 'unsure';
+
+export type SponsorPackageRequestPersistence = 'backend' | 'local-preview';
+
+export type SponsorPackageRequestSyncStatus = 'backend-pending' | 'backend-synced';
 
 export type SponsorPackageRequestForm = {
   budgetRange: string;
@@ -14,12 +20,24 @@ export type SponsorPackageRequestForm = {
 export type SponsorPackageRequestRecord = SponsorPackageRequestForm & {
   capturedAt: string;
   id: string;
-  persistence: 'local-preview';
+  persistence: SponsorPackageRequestPersistence;
   sourcePath: string;
-  syncStatus: 'backend-pending';
+  syncStatus: SponsorPackageRequestSyncStatus;
+};
+
+export type SponsorPackageLeadPayload = {
+  clientEmail: string;
+  clientName: string;
+  companyId: string;
+  companySlug: string;
+  message: string;
+  sourcePath: string;
 };
 
 export const SPONSOR_PACKAGE_REQUEST_STORAGE_KEY = 'warpala.expo.sponsorPackageRequests';
+
+const SPONSOR_PACKAGE_LEAD_COMPANY_ID = 'sponsor-concierge';
+const SPONSOR_PACKAGE_LEAD_COMPANY_SLUG = 'sponsor-concierge';
 
 export const INITIAL_SPONSOR_PACKAGE_REQUEST_FORM: SponsorPackageRequestForm = {
   budgetRange: '',
@@ -69,6 +87,23 @@ export function validateSponsorPackageRequestForm(form: SponsorPackageRequestFor
   return null;
 }
 
+export function getSponsorPackageInterestLabel(packageInterest: SponsorPackageInterest) {
+  switch (packageInterest) {
+    case 'arena':
+      return 'Demo Arena Sponsor';
+    case 'landmark':
+      return 'Landmark Zone Sponsor';
+    case 'premium':
+      return 'Premium Booth';
+    case 'standard':
+      return 'Standard Booth';
+    case 'unsure':
+      return 'Not sure yet';
+    default:
+      return 'Not sure yet';
+  }
+}
+
 export function getSponsorPackageRequestSourcePath() {
   if (typeof window === 'undefined') {
     return '/expo/sponsor-packages';
@@ -91,16 +126,51 @@ export function readSponsorPackageRequestQueue(): SponsorPackageRequestRecord[] 
   }
 }
 
-export function saveSponsorPackageRequest(form: SponsorPackageRequestForm) {
+export function buildSponsorPackageLeadPayload(
+  form: SponsorPackageRequestForm,
+  sourcePath = getSponsorPackageRequestSourcePath(),
+): SponsorPackageLeadPayload {
+  const normalized = normalizeSponsorPackageRequestForm(form);
+  const details = [
+    `Sponsor package interest: ${getSponsorPackageInterestLabel(normalized.packageInterest)}`,
+    `Sponsor company: ${normalized.company}`,
+    normalized.website ? `Website: ${normalized.website}` : null,
+    normalized.budgetRange ? `Budget signal: ${normalized.budgetRange}` : null,
+    normalized.timeline ? `Timeline: ${normalized.timeline}` : null,
+    '',
+    normalized.message,
+  ].filter((line): line is string => line !== null);
+
+  return {
+    clientEmail: normalized.email,
+    clientName: normalized.name,
+    companyId: SPONSOR_PACKAGE_LEAD_COMPANY_ID,
+    companySlug: SPONSOR_PACKAGE_LEAD_COMPANY_SLUG,
+    message: details.join('\n'),
+    sourcePath,
+  };
+}
+
+export async function submitSponsorPackageRequestToBackend(form: SponsorPackageRequestForm) {
+  return await ExpoDataAPI.createExpoLead(buildSponsorPackageLeadPayload(form));
+}
+
+export function saveSponsorPackageRequest(
+  form: SponsorPackageRequestForm,
+  options: {
+    persistence?: SponsorPackageRequestPersistence;
+    syncStatus?: SponsorPackageRequestSyncStatus;
+  } = {},
+) {
   const normalized = normalizeSponsorPackageRequestForm(form);
   const capturedAt = new Date().toISOString();
   const record: SponsorPackageRequestRecord = {
     ...normalized,
     capturedAt,
     id: `sponsor-package-${capturedAt}`,
-    persistence: 'local-preview',
+    persistence: options.persistence ?? 'local-preview',
     sourcePath: getSponsorPackageRequestSourcePath(),
-    syncStatus: 'backend-pending',
+    syncStatus: options.syncStatus ?? 'backend-pending',
   };
   const nextQueue = [...readSponsorPackageRequestQueue(), record].slice(-50);
 

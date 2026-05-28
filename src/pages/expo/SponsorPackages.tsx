@@ -4,6 +4,7 @@ import {
   INITIAL_SPONSOR_PACKAGE_REQUEST_FORM,
   readSponsorPackageRequestQueue,
   saveSponsorPackageRequest,
+  submitSponsorPackageRequestToBackend,
   validateSponsorPackageRequestForm,
   type SponsorPackageInterest,
   type SponsorPackageRequestForm,
@@ -120,8 +121,8 @@ const labelStyle: CSSProperties = {
 
 export default function SponsorPackages() {
   const [requestForm, setRequestForm] = useState<SponsorPackageRequestForm>(INITIAL_SPONSOR_PACKAGE_REQUEST_FORM);
-  const [requestStatus, setRequestStatus] = useState<{ text: string; tone: 'error' | 'idle' | 'success' }>({
-    text: 'Requests are saved locally until the backend service is restored.',
+  const [requestStatus, setRequestStatus] = useState<{ text: string; tone: 'error' | 'idle' | 'submitting' | 'success' }>({
+    text: 'Requests are sent to sponsor ops when the API is available. A local backup is kept in this browser.',
     tone: 'idle',
   });
   const [queuedRequestCount, setQueuedRequestCount] = useState(() => readSponsorPackageRequestQueue().length);
@@ -133,7 +134,7 @@ export default function SponsorPackages() {
     setRequestForm((current) => ({ ...current, [field]: value }));
   }
 
-  function handleRequestSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleRequestSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     const validationError = validateSponsorPackageRequestForm(requestForm);
@@ -142,22 +143,45 @@ export default function SponsorPackages() {
       return;
     }
 
+    setRequestStatus({ text: 'Sending sponsor request...', tone: 'submitting' });
+
     try {
-      const result = saveSponsorPackageRequest(requestForm);
-      setQueuedRequestCount(result.queueCount);
+      await submitSponsorPackageRequestToBackend(requestForm);
+      let backupText = 'Local backup was not available in this browser.';
+
+      try {
+        const result = saveSponsorPackageRequest(requestForm, {
+          persistence: 'backend',
+          syncStatus: 'backend-synced',
+        });
+        setQueuedRequestCount(result.queueCount);
+        backupText = `Saved as local backup #${result.queueCount}.`;
+      } catch (localError) {
+        backupText = `Server received it, but local backup failed: ${localError instanceof Error ? localError.message : String(localError)}`;
+      }
+
       setRequestForm({
         ...INITIAL_SPONSOR_PACKAGE_REQUEST_FORM,
         packageInterest: requestForm.packageInterest,
       });
       setRequestStatus({
-        text: `Saved locally as sponsor package request #${result.queueCount}. Backend sync is pending until the API is back online.`,
+        text: `Sent to sponsor ops. ${backupText}`,
         tone: 'success',
       });
     } catch (error) {
-      setRequestStatus({
-        text: `Could not save the request locally: ${error instanceof Error ? error.message : String(error)}`,
-        tone: 'error',
-      });
+      try {
+        const result = saveSponsorPackageRequest(requestForm);
+        setQueuedRequestCount(result.queueCount);
+        setRequestStatus({
+          text: `Backend submit failed (${error instanceof Error ? error.message : String(error)}). Saved locally as request #${result.queueCount} for later sync.`,
+          tone: 'error',
+        });
+      } catch (localError) {
+        setRequestStatus({
+          text: `Could not submit or save the request locally: ${localError instanceof Error ? localError.message : String(localError)}`,
+          tone: 'error',
+        });
+      }
     }
   }
 
@@ -311,10 +335,10 @@ export default function SponsorPackages() {
                 Sponsor package request
               </div>
               <h2 style={{ fontSize: 'clamp(1.9rem, 4vw, 3.2rem)', letterSpacing: '-0.05em', lineHeight: 1, margin: '10px 0 12px' }}>
-                Capture sponsor intent before the backend is back.
+                Capture sponsor intent into the sponsor ops pipeline.
               </h2>
               <p style={{ color: '#cbd5e1', fontSize: '1rem', lineHeight: 1.58, margin: 0 }}>
-                This form is frontend-only for now. It validates sponsor interest and stores requests in this browser so the sales flow can be reviewed without live server access.
+                This form validates sponsor interest, submits it to the Expo lead endpoint when available, and keeps a local backup if the API cannot be reached.
               </p>
               <div
                 style={{
@@ -329,7 +353,7 @@ export default function SponsorPackages() {
                   padding: '14px 15px',
                 }}
               >
-                Local queue: {queuedRequestCount} request{queuedRequestCount === 1 ? '' : 's'} waiting for backend sync.
+                Local backup: {queuedRequestCount} request{queuedRequestCount === 1 ? '' : 's'} stored in this browser.
               </div>
             </div>
 
@@ -433,13 +457,15 @@ export default function SponsorPackages() {
                 />
               </label>
               <button
+                disabled={requestStatus.tone === 'submitting'}
                 type="submit"
                 style={{
                   background: 'linear-gradient(135deg, #22c55e, #0ea5e9)',
                   border: 'none',
                   borderRadius: '16px',
                   color: '#03131a',
-                  cursor: 'pointer',
+                  cursor: requestStatus.tone === 'submitting' ? 'wait' : 'pointer',
+                  opacity: requestStatus.tone === 'submitting' ? 0.72 : 1,
                   fontSize: '0.92rem',
                   fontWeight: 950,
                   letterSpacing: '0.04em',
@@ -447,12 +473,12 @@ export default function SponsorPackages() {
                   textTransform: 'uppercase',
                 }}
               >
-                Save sponsor request
+                {requestStatus.tone === 'submitting' ? 'Sending request...' : 'Send sponsor request'}
               </button>
               <div
                 data-sponsor-package-request-status={requestStatus.tone}
                 style={{
-                  color: requestStatus.tone === 'error' ? '#fecaca' : requestStatus.tone === 'success' ? '#bbf7d0' : '#94a3b8',
+                  color: requestStatus.tone === 'error' ? '#fecaca' : requestStatus.tone === 'success' ? '#bbf7d0' : requestStatus.tone === 'submitting' ? '#bae6fd' : '#94a3b8',
                   fontSize: '0.82rem',
                   fontWeight: 750,
                   lineHeight: 1.45,
