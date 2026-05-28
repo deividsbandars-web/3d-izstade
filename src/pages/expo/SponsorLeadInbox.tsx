@@ -14,6 +14,7 @@ import {
   buildSponsorLeadCopySummary,
   serializeSponsorLeadCsv,
 } from '../../app/expo/sponsorLeadExport';
+import { getSponsorPackageLeadQualification } from '../../app/expo/sponsorLeadQualification';
 import { parseSponsorPackageLeadMessage } from '../../app/expo/sponsorPackageLead';
 import { supabaseClient } from '../../lib/supabaseClient';
 
@@ -30,6 +31,12 @@ const STATUS_LABELS: Record<SponsorLeadStatus, string> = {
   pending: 'Pending',
   rejected: 'Rejected',
 };
+
+const LEAD_PRIORITY_COLORS = {
+  hot: '#fb7185',
+  standard: '#94a3b8',
+  warm: '#fbbf24',
+} as const;
 
 type InboxAccessState =
   | 'checking-auth'
@@ -544,6 +551,7 @@ export default function SponsorLeadInbox() {
                   const leadId = String(lead.id || '');
                   const draft = opsDrafts[leadId] ?? { followUpAt: '', opsNotes: '' };
                   const packageDetails = parseSponsorPackageLeadMessage(lead.message);
+                  const packageQualification = packageDetails ? getSponsorPackageLeadQualification(packageDetails) : null;
                   return (
                     <article key={leadId || `${lead.client_email}:${lead.created_at}`} style={{ padding: '18px', borderRadius: '18px', background: 'rgba(2, 6, 23, 0.72)', border: '1px solid rgba(148, 163, 184, 0.18)' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', gap: '14px', alignItems: 'flex-start', flexWrap: 'wrap' }}>
@@ -593,6 +601,41 @@ export default function SponsorLeadInbox() {
                           {packageDetails.packageInterest}
                         </span>
                       </div>
+                      {packageQualification && (
+                        <div
+                          style={{
+                            background: 'rgba(2, 6, 23, 0.38)',
+                            border: '1px solid rgba(148, 163, 184, 0.16)',
+                            borderRadius: '14px',
+                            marginTop: '12px',
+                            padding: '12px',
+                          }}
+                        >
+                          <div style={{ alignItems: 'center', display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                            <span
+                              style={{
+                                background: `${LEAD_PRIORITY_COLORS[packageQualification.priority]}24`,
+                                border: `1px solid ${LEAD_PRIORITY_COLORS[packageQualification.priority]}66`,
+                                borderRadius: '999px',
+                                color: LEAD_PRIORITY_COLORS[packageQualification.priority],
+                                fontSize: '0.68rem',
+                                fontWeight: 950,
+                                letterSpacing: '0.08em',
+                                padding: '6px 10px',
+                                textTransform: 'uppercase',
+                              }}
+                            >
+                              {packageQualification.priorityLabel}
+                            </span>
+                            <span style={{ color: '#cbd5e1', fontSize: '0.78rem', fontWeight: 800 }}>
+                              {packageQualification.reason}
+                            </span>
+                          </div>
+                          <div style={{ color: '#e0f2fe', fontSize: '0.86rem', fontWeight: 850, marginTop: '8px' }}>
+                            Next action: {packageQualification.nextAction}
+                          </div>
+                        </div>
+                      )}
                       <div style={{ display: 'grid', gap: '10px', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', marginTop: '12px' }}>
                         {[
                           ['Company', packageDetails.company],

@@ -32,16 +32,21 @@ assert.equal(rows[0].packageInterest, 'Premium Booth');
 assert.equal(rows[0].company, 'Warpala Sponsor');
 assert.equal(rows[0].budgetSignal, '15k-50k');
 assert.equal(rows[0].message, 'We want a premium booth and arena package.');
+assert.equal(rows[0].priority, 'Hot lead');
+assert.equal(rows[0].nextAction, 'Reply today and propose a sponsor walkthrough.');
 
 const csv = serializeSponsorLeadCsv([packageLead]);
 
 assert.match(csv, /^id,createdAt,status,clientName,clientEmail/);
 assert.match(csv, /"Premium Booth"/);
+assert.match(csv, /"Hot lead"/);
 assert.match(csv, /"We want a premium booth and arena package\."/);
 
 const summary = buildSponsorLeadCopySummary(packageLead);
 
 assert.match(summary, /Lead: Sponsor Buyer/);
 assert.match(summary, /Package: Premium Booth/);
+assert.match(summary, /Priority: Hot lead/);
+assert.match(summary, /Next action: Reply today and propose a sponsor walkthrough\./);
 assert.match(summary, /Budget: 15k-50k/);
 assert.match(summary, /We want a premium booth and arena package\./);

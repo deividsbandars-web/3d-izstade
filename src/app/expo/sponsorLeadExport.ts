@@ -1,4 +1,5 @@
 import type { SponsorLeadInboxLead } from './sponsorLeadInboxService';
+import { getSponsorPackageLeadQualification } from './sponsorLeadQualification';
 import { parseSponsorPackageLeadMessage } from './sponsorPackageLead';
 
 export type SponsorLeadExportRow = {
@@ -10,7 +11,9 @@ export type SponsorLeadExportRow = {
   followUpAt: string;
   id: string;
   message: string;
+  nextAction: string;
   packageInterest: string;
+  priority: string;
   serviceName: string;
   status: string;
   timeline: string;
@@ -29,6 +32,8 @@ const CSV_HEADERS: Array<keyof SponsorLeadExportRow> = [
   'website',
   'budgetSignal',
   'timeline',
+  'priority',
+  'nextAction',
   'message',
   'followUpAt',
 ];
@@ -44,6 +49,7 @@ function escapeCsvValue(value: string) {
 export function buildSponsorLeadExportRows(leads: SponsorLeadInboxLead[]): SponsorLeadExportRow[] {
   return leads.map((lead) => {
     const packageDetails = parseSponsorPackageLeadMessage(lead.message);
+    const qualification = packageDetails ? getSponsorPackageLeadQualification(packageDetails) : null;
 
     return {
       budgetSignal: normalizeValue(packageDetails?.budgetSignal),
@@ -54,7 +60,9 @@ export function buildSponsorLeadExportRows(leads: SponsorLeadInboxLead[]): Spons
       followUpAt: normalizeValue(lead.follow_up_at),
       id: normalizeValue(lead.id),
       message: normalizeValue(packageDetails?.message ?? lead.message),
+      nextAction: normalizeValue(qualification?.nextAction),
       packageInterest: normalizeValue(packageDetails?.packageInterest),
+      priority: normalizeValue(qualification?.priorityLabel),
       serviceName: normalizeValue(lead.service_name),
       status: normalizeValue(lead.status || 'pending'),
       timeline: normalizeValue(packageDetails?.timeline),
@@ -75,12 +83,15 @@ export function serializeSponsorLeadCsv(leads: SponsorLeadInboxLead[]) {
 
 export function buildSponsorLeadCopySummary(lead: SponsorLeadInboxLead) {
   const packageDetails = parseSponsorPackageLeadMessage(lead.message);
+  const qualification = packageDetails ? getSponsorPackageLeadQualification(packageDetails) : null;
   const lines = [
     `Lead: ${normalizeValue(lead.client_name) || 'Unnamed lead'}`,
     `Email: ${normalizeValue(lead.client_email) || 'No email provided'}`,
     `Status: ${normalizeValue(lead.status || 'pending')}`,
     `Created: ${normalizeValue(lead.created_at) || 'No timestamp'}`,
     packageDetails ? `Package: ${packageDetails.packageInterest}` : null,
+    qualification ? `Priority: ${qualification.priorityLabel}` : null,
+    qualification ? `Next action: ${qualification.nextAction}` : null,
     packageDetails?.company ? `Company: ${packageDetails.company}` : null,
     packageDetails?.website ? `Website: ${packageDetails.website}` : null,
     packageDetails?.budgetSignal ? `Budget: ${packageDetails.budgetSignal}` : null,
