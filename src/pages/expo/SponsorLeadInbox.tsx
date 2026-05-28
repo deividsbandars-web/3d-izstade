@@ -10,6 +10,10 @@ import {
   type SponsorLeadInboxResponse,
   type SponsorLeadStatus,
 } from '../../app/expo/sponsorLeadInboxService';
+import {
+  buildSponsorLeadCopySummary,
+  serializeSponsorLeadCsv,
+} from '../../app/expo/sponsorLeadExport';
 import { parseSponsorPackageLeadMessage } from '../../app/expo/sponsorPackageLead';
 import { supabaseClient } from '../../lib/supabaseClient';
 
@@ -116,6 +120,27 @@ function updateLeadInInbox(
 
 function formatRequestError(error: unknown) {
   return error instanceof Error ? error.message : String(error);
+}
+
+async function copyTextToClipboard(text: string) {
+  if (navigator.clipboard?.writeText) {
+    await navigator.clipboard.writeText(text);
+    return;
+  }
+
+  const textarea = document.createElement('textarea');
+  textarea.value = text;
+  textarea.setAttribute('readonly', 'true');
+  textarea.style.position = 'fixed';
+  textarea.style.left = '-9999px';
+  document.body.appendChild(textarea);
+  textarea.select();
+  const copied = document.execCommand('copy');
+  document.body.removeChild(textarea);
+
+  if (!copied) {
+    throw new Error('CLIPBOARD_COPY_FAILED');
+  }
 }
 
 function resolveAccessStateFromError(errorText: string): Exclude<InboxAccessState, 'checking-auth' | 'ready'> {
@@ -354,6 +379,36 @@ export default function SponsorLeadInbox() {
   const accessNotice = getAccessNotice(accessState, error);
   const shouldShowInboxContent = loading || accessState === 'ready' || Boolean(data);
 
+  function handleCsvExport() {
+    if (visibleLeads.length === 0) {
+      setMessage({ type: 'error', text: 'No visible leads to export.' });
+      return;
+    }
+
+    const csv = serializeSponsorLeadCsv(visibleLeads);
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    const date = new Date().toISOString().slice(0, 10);
+
+    anchor.href = url;
+    anchor.download = `expo-sponsor-leads-${sponsorSlug}-${leadFilter}-${date}.csv`;
+    document.body.appendChild(anchor);
+    anchor.click();
+    document.body.removeChild(anchor);
+    URL.revokeObjectURL(url);
+    setMessage({ type: 'success', text: `Exported ${visibleLeads.length} sponsor lead${visibleLeads.length === 1 ? '' : 's'} to CSV.` });
+  }
+
+  async function handleCopyLeadSummary(lead: SponsorLeadInboxLead) {
+    try {
+      await copyTextToClipboard(buildSponsorLeadCopySummary(lead));
+      setMessage({ type: 'success', text: 'Lead summary copied.' });
+    } catch (copyError) {
+      setMessage({ type: 'error', text: `Could not copy lead summary: ${formatRequestError(copyError)}` });
+    }
+  }
+
   return (
     <div className="calculator-pro-wrapper" style={{ maxWidth: '1180px', margin: '0 auto', padding: '40px 20px', color: 'white' }}>
       <header style={{ display: 'flex', justifyContent: 'space-between', gap: '20px', alignItems: 'center', marginBottom: '34px', flexWrap: 'wrap' }}>
@@ -450,9 +505,32 @@ export default function SponsorLeadInbox() {
                     textTransform: 'uppercase',
                   }}
                 >
-                  {filter.label} · {filter.count}
+                  {filter.label} - {filter.count}
                 </button>
               ))}
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '18px' }}>
+              <button
+                type="button"
+                disabled={loading || visibleLeads.length === 0}
+                onClick={handleCsvExport}
+                style={{
+                  background: 'rgba(20, 83, 45, 0.64)',
+                  border: '1px solid rgba(52, 211, 153, 0.58)',
+                  borderRadius: '999px',
+                  color: '#bbf7d0',
+                  cursor: loading || visibleLeads.length === 0 ? 'default' : 'pointer',
+                  fontSize: '0.74rem',
+                  fontWeight: 950,
+                  letterSpacing: '0.06em',
+                  opacity: loading || visibleLeads.length === 0 ? 0.58 : 1,
+                  padding: '9px 13px',
+                  textTransform: 'uppercase',
+                }}
+              >
+                Export CSV
+              </button>
             </div>
 
             {loading ? (
@@ -473,9 +551,29 @@ export default function SponsorLeadInbox() {
                       <h3 style={{ margin: 0, color: '#f8fafc' }}>{lead.client_name || 'Unnamed lead'}</h3>
                       <div style={{ color: '#93c5fd', fontSize: '0.9rem', marginTop: '4px' }}>{lead.client_email || 'No email provided'}</div>
                     </div>
-                    <span style={{ padding: '6px 10px', borderRadius: '999px', color: STATUS_COLORS[status], border: `1px solid ${STATUS_COLORS[status]}66`, background: `${STATUS_COLORS[status]}1f`, fontSize: '0.7rem', fontWeight: 900, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-                      {status}
-                    </span>
+                    <div style={{ alignItems: 'flex-end', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      <span style={{ padding: '6px 10px', borderRadius: '999px', color: STATUS_COLORS[status], border: `1px solid ${STATUS_COLORS[status]}66`, background: `${STATUS_COLORS[status]}1f`, fontSize: '0.7rem', fontWeight: 900, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                        {status}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => void handleCopyLeadSummary(lead)}
+                        style={{
+                          background: 'rgba(15, 23, 42, 0.82)',
+                          border: '1px solid rgba(148, 163, 184, 0.24)',
+                          borderRadius: '999px',
+                          color: '#cbd5e1',
+                          cursor: 'pointer',
+                          fontSize: '0.68rem',
+                          fontWeight: 900,
+                          letterSpacing: '0.06em',
+                          padding: '7px 10px',
+                          textTransform: 'uppercase',
+                        }}
+                      >
+                        Copy summary
+                      </button>
+                    </div>
                   </div>
                   {packageDetails ? (
                     <div
