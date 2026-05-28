@@ -383,6 +383,7 @@ export default function CompanyAdmin() {
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '40px', alignItems: 'center' }}>
         <WarpalaLogo size={50} />
         <div style={{ display: 'flex', gap: '15px' }}>
+          <button onClick={() => nav('/expo/sponsor-leads?sponsor=sponsor-concierge')} className="btn-glass">SPONSOR LEADS</button>
           <button onClick={() => nav('/expo-3d?operator=1')} className="btn-glass">OPEN 3D OPERATOR</button>
           <button onClick={() => nav('/dashboard')} className="btn-glass">DASHBOARD</button>
         </div>
