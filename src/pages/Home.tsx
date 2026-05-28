@@ -9,15 +9,15 @@ const topCalculations = [
 
 export default function Home() {
   return (
-    <div style={{ 
-      padding: '60px 20px', 
-      maxWidth: '1200px', 
-      margin: '0 auto', 
+    <div style={{
+      padding: '60px 20px',
+      maxWidth: '1200px',
+      margin: '0 auto',
       minHeight: '100vh',
       background: '#f8fafc',
       color: '#0f172a'
     }}>
-      
+
       <div style={{ marginBottom: '80px', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
         <WarpalaLogo size={180} />
         <h2 style={{ marginTop: '20px', fontSize: '1.5rem', color: '#64748b', fontWeight: 400 }}>
@@ -43,12 +43,12 @@ export default function Home() {
       </div>
 
       <div style={{ display: 'flex', justifyContent: 'center', gap: '20px', marginBottom: '60px', flexWrap: 'wrap' }}>
-        <Link to="/expo-3d" style={{ 
-          padding: '15px 40px', 
-          background: '#0f172a', 
-          color: '#fff', 
-          borderRadius: '12px', 
-          textDecoration: 'none', 
+        <Link to="/expo-3d" style={{
+          padding: '15px 40px',
+          background: '#0f172a',
+          color: '#fff',
+          borderRadius: '12px',
+          textDecoration: 'none',
           fontWeight: 'bold',
           boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
           display: 'flex',
@@ -57,19 +57,47 @@ export default function Home() {
         }}>
           🏙️ IEEJ 3D PILSĒTĀ
         </Link>
-        <Link to="/expo/admin" style={{ 
-          padding: '15px 40px', 
-          background: '#fff', 
-          color: '#0f172a', 
+        <Link to="/expo/admin" style={{
+          padding: '15px 40px',
+          background: '#fff',
+          color: '#0f172a',
           border: '2px solid #0f172a',
-          borderRadius: '12px', 
-          textDecoration: 'none', 
+          borderRadius: '12px',
+          textDecoration: 'none',
           fontWeight: 'bold',
           display: 'flex',
           alignItems: 'center',
           gap: '10px'
         }}>
           🏢 UZŅĒMUMIEM
+        </Link>
+        <Link to="/expo/sponsor-packages" style={{
+          padding: '15px 40px',
+          background: 'linear-gradient(135deg, #0f172a, #0369a1)',
+          color: '#fff',
+          borderRadius: '12px',
+          textDecoration: 'none',
+          fontWeight: 'bold',
+          boxShadow: '0 10px 25px rgba(14,165,233,0.2)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '10px'
+        }}>
+          SPONSOR PACKAGES
+        </Link>
+        <Link to="/expo-3d?salesDemo=1" style={{
+          padding: '15px 40px',
+          background: '#ecfeff',
+          color: '#0e7490',
+          border: '2px solid #67e8f9',
+          borderRadius: '12px',
+          textDecoration: 'none',
+          fontWeight: 'bold',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '10px'
+        }}>
+          SALES DEMO
         </Link>
       </div>
 
@@ -83,20 +111,23 @@ export default function Home() {
         <div style={{ background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '16px', padding: '18px 20px', color: '#475569' }}>
           <strong style={{ color: '#0f172a' }}>Fallback:</strong> ja premium straume nav pieejama, Web3D apskate un booth room paliek lietojami kā pilnvērtīgs expo maršruts.
         </div>
+        <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '16px', padding: '18px 20px', color: '#1e3a8a' }}>
+          <strong style={{ color: '#172554' }}>Sponsor sales:</strong> <Link to="/expo/sponsor-packages" style={{ color: '#0369a1', fontWeight: 900 }}>Sponsor Packages</Link> explains Standard Booth, Premium Booth, Landmark Zone Sponsor and Demo Arena sponsorship without backend dependency.
+        </div>
       </div>
 
-      <div style={{ 
-        display: 'grid', 
-        gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', 
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
         gap: '20px',
         marginTop: '40px'
       }}>
         {topCalculations.map((c, i) => (
-          <Link to={c.href} key={i} style={{ 
-            padding: '30px', 
-            background: '#fff', 
-            borderRadius: '20px', 
-            textDecoration: 'none', 
+          <Link to={c.href} key={i} style={{
+            padding: '30px',
+            background: '#fff',
+            borderRadius: '20px',
+            textDecoration: 'none',
             color: 'inherit',
             border: '1px solid #e2e8f0',
             transition: 'all 0.2s ease',
@@ -125,6 +156,7 @@ export default function Home() {
         <div style={{ display: 'flex', justifyContent: 'center', gap: '30px', flexWrap: 'wrap' }}>
           <Link to="/city-map" style={{ color: '#64748b', textDecoration: 'none', fontWeight: 'bold' }}>2D Karte</Link>
           <Link to="/marketplace" style={{ color: '#64748b', textDecoration: 'none', fontWeight: 'bold' }}>Marketplace</Link>
+          <Link to="/expo/sponsor-packages" style={{ color: '#64748b', textDecoration: 'none', fontWeight: 'bold' }}>Sponsor Packages</Link>
           <Link to="/urgent-services" style={{ color: '#64748b', textDecoration: 'none', fontWeight: 'bold' }}>SOS Pakalpojumi</Link>
           <Link to="/dashboard" style={{ color: '#64748b', textDecoration: 'none', fontWeight: 'bold' }}>Lietotāja Panelis</Link>
         </div>
