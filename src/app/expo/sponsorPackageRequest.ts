@@ -36,7 +36,8 @@ export type SponsorPackageLeadPayload = {
 
 export const SPONSOR_PACKAGE_REQUEST_STORAGE_KEY = 'warpala.expo.sponsorPackageRequests';
 
-const SPONSOR_PACKAGE_LEAD_COMPANY_ID = 'sponsor-concierge';
+// Current seeded Sponsor Concierge company id in the Expo scene; the live lead API expects a UUID companyId.
+const SPONSOR_PACKAGE_LEAD_COMPANY_ID = '1a14ad1c-1536-4c27-9c0c-00c4f3224819';
 const SPONSOR_PACKAGE_LEAD_COMPANY_SLUG = 'sponsor-concierge';
 
 export const INITIAL_SPONSOR_PACKAGE_REQUEST_FORM: SponsorPackageRequestForm = {

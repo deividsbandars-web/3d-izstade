@@ -42,7 +42,7 @@ const payload = buildSponsorPackageLeadPayload(validForm, '/expo/sponsor-package
 
 assert.equal(payload.clientEmail, 'buyer@example.com');
 assert.equal(payload.clientName, 'Sponsor Buyer');
-assert.equal(payload.companyId, 'sponsor-concierge');
+assert.equal(payload.companyId, '1a14ad1c-1536-4c27-9c0c-00c4f3224819');
 assert.equal(payload.companySlug, 'sponsor-concierge');
 assert.equal(payload.sourcePath, '/expo/sponsor-packages?source=test');
 assert.match(payload.message, /Sponsor package interest: Premium Booth/);
