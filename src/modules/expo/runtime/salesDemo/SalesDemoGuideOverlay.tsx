@@ -63,6 +63,17 @@ const STEP_LINKS = [
   step: SalesDemoStep;
 }>;
 
+const CTA_LINKS = [
+  {
+    href: '/expo-3d?salesDemo=1',
+    label: 'Sponsor Walkthrough',
+  },
+  {
+    href: '/expo/sponsor-packages',
+    label: 'View Packages',
+  },
+] as const;
+
 export function SalesDemoGuideOverlay({ isTouchDevice = false }: SalesDemoGuideOverlayProps) {
   if (!isSalesDemoEnabled()) {
     return null;
@@ -270,10 +281,11 @@ export function SalesDemoGuideOverlay({ isTouchDevice = false }: SalesDemoGuideO
           Start with a Premium Booth, sponsor the Demo Arena, or own a Landmark Zone.
         </div>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '8px' }}>
-          {['Sponsor Walkthrough', 'View Packages'].map((label) => (
-            <span
-              key={label}
-              data-sales-demo-cta-label={label}
+          {CTA_LINKS.map((link) => (
+            <a
+              href={link.href}
+              key={link.label}
+              data-sales-demo-cta-label={link.label}
               style={{
                 background: 'rgba(15, 23, 42, 0.58)',
                 border: '1px solid rgba(134, 239, 172, 0.34)',
@@ -284,11 +296,12 @@ export function SalesDemoGuideOverlay({ isTouchDevice = false }: SalesDemoGuideO
                 letterSpacing: '0.01em',
                 lineHeight: 1,
                 padding: isTouchDevice ? '6px 7px' : '6px 8px',
+                textDecoration: 'none',
                 whiteSpace: 'nowrap',
               }}
             >
-              {label}
-            </span>
+              {link.label}
+            </a>
           ))}
         </div>
       </div>
