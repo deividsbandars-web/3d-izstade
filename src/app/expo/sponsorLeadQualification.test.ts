@@ -1,5 +1,8 @@
 import assert from 'node:assert/strict';
-import { getSponsorPackageLeadQualification } from './sponsorLeadQualification';
+import {
+  getSponsorLeadQualificationForMessage,
+  getSponsorPackageLeadQualification,
+} from './sponsorLeadQualification';
 import type { SponsorPackageLeadDetails } from './sponsorPackageLead';
 
 const baseLead: SponsorPackageLeadDetails = {
@@ -34,3 +37,12 @@ assert.deepEqual(getSponsorPackageLeadQualification(baseLead), {
   priorityLabel: 'Standard lead',
   reason: 'Package interest is present, but urgency and budget are not clear yet.',
 });
+
+assert.equal(getSponsorLeadQualificationForMessage([
+  'Sponsor package interest: Demo Arena Sponsor',
+  'Sponsor company: Arena Buyer',
+  '',
+  'We want the monthly event sponsorship.',
+].join('\n'))?.priority, 'hot');
+
+assert.equal(getSponsorLeadQualificationForMessage('Normal lead message'), null);

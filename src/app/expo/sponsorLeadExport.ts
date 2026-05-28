@@ -1,5 +1,5 @@
 import type { SponsorLeadInboxLead } from './sponsorLeadInboxService';
-import { getSponsorPackageLeadQualification } from './sponsorLeadQualification';
+import { getSponsorLeadQualificationForMessage } from './sponsorLeadQualification';
 import { parseSponsorPackageLeadMessage } from './sponsorPackageLead';
 
 export type SponsorLeadExportRow = {
@@ -49,7 +49,7 @@ function escapeCsvValue(value: string) {
 export function buildSponsorLeadExportRows(leads: SponsorLeadInboxLead[]): SponsorLeadExportRow[] {
   return leads.map((lead) => {
     const packageDetails = parseSponsorPackageLeadMessage(lead.message);
-    const qualification = packageDetails ? getSponsorPackageLeadQualification(packageDetails) : null;
+    const qualification = getSponsorLeadQualificationForMessage(lead.message);
 
     return {
       budgetSignal: normalizeValue(packageDetails?.budgetSignal),
@@ -83,7 +83,7 @@ export function serializeSponsorLeadCsv(leads: SponsorLeadInboxLead[]) {
 
 export function buildSponsorLeadCopySummary(lead: SponsorLeadInboxLead) {
   const packageDetails = parseSponsorPackageLeadMessage(lead.message);
-  const qualification = packageDetails ? getSponsorPackageLeadQualification(packageDetails) : null;
+  const qualification = getSponsorLeadQualificationForMessage(lead.message);
   const lines = [
     `Lead: ${normalizeValue(lead.client_name) || 'Unnamed lead'}`,
     `Email: ${normalizeValue(lead.client_email) || 'No email provided'}`,

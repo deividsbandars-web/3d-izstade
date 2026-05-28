@@ -14,7 +14,10 @@ import {
   buildSponsorLeadCopySummary,
   serializeSponsorLeadCsv,
 } from '../../app/expo/sponsorLeadExport';
-import { getSponsorPackageLeadQualification } from '../../app/expo/sponsorLeadQualification';
+import {
+  getSponsorLeadQualificationForMessage,
+  getSponsorPackageLeadQualification,
+} from '../../app/expo/sponsorLeadQualification';
 import { parseSponsorPackageLeadMessage } from '../../app/expo/sponsorPackageLead';
 import { supabaseClient } from '../../lib/supabaseClient';
 
@@ -46,7 +49,7 @@ type InboxAccessState =
   | 'backend-unavailable'
   | 'unavailable';
 
-type LeadFilter = 'all' | 'needs-action' | 'package-requests';
+type LeadFilter = 'all' | 'hot-leads' | 'needs-action' | 'package-requests';
 
 function formatDate(value?: string | null) {
   if (!value) {
@@ -292,7 +295,15 @@ export default function SponsorLeadInbox() {
     return sortedLeads.filter((lead) => parseSponsorPackageLeadMessage(lead.message)).length;
   }, [sortedLeads]);
 
+  const hotLeadCount = useMemo(() => {
+    return sortedLeads.filter((lead) => getSponsorLeadQualificationForMessage(lead.message)?.priority === 'hot').length;
+  }, [sortedLeads]);
+
   const visibleLeads = useMemo(() => {
+    if (leadFilter === 'hot-leads') {
+      return sortedLeads.filter((lead) => getSponsorLeadQualificationForMessage(lead.message)?.priority === 'hot');
+    }
+
     if (leadFilter === 'package-requests') {
       return sortedLeads.filter((lead) => parseSponsorPackageLeadMessage(lead.message));
     }
@@ -373,6 +384,7 @@ export default function SponsorLeadInbox() {
 
   const summaryCards = [
     { label: 'Total leads', value: data?.summary.total ?? 0, color: '#f8fafc' },
+    { label: 'Hot leads', value: hotLeadCount, color: '#fb7185' },
     { label: 'Needs action', value: data?.summary.needsAction ?? 0, color: '#fbbf24' },
     { label: 'Package requests', value: packageRequestCount, color: '#34d399' },
     { label: 'Contacted', value: data?.summary.contacted ?? 0, color: '#93c5fd' },
@@ -380,6 +392,7 @@ export default function SponsorLeadInbox() {
   ];
   const leadFilters: Array<{ count: number; label: string; value: LeadFilter }> = [
     { count: sortedLeads.length, label: 'All leads', value: 'all' },
+    { count: hotLeadCount, label: 'Hot leads', value: 'hot-leads' },
     { count: data?.summary.needsAction ?? 0, label: 'Needs action', value: 'needs-action' },
     { count: packageRequestCount, label: 'Package requests', value: 'package-requests' },
   ];

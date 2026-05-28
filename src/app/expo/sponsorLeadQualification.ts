@@ -1,4 +1,7 @@
-import type { SponsorPackageLeadDetails } from './sponsorPackageLead';
+import {
+  parseSponsorPackageLeadMessage,
+  type SponsorPackageLeadDetails,
+} from './sponsorPackageLead';
 
 export type SponsorLeadPriority = 'hot' | 'standard' | 'warm';
 
@@ -59,4 +62,9 @@ export function getSponsorPackageLeadQualification(
     priorityLabel: 'Standard lead',
     reason: 'Package interest is present, but urgency and budget are not clear yet.',
   };
+}
+
+export function getSponsorLeadQualificationForMessage(message?: string | null) {
+  const details = parseSponsorPackageLeadMessage(message);
+  return details ? getSponsorPackageLeadQualification(details) : null;
 }
