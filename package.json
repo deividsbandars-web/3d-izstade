@@ -10,6 +10,7 @@
     "build:expo-textures": "node scripts/build-expo-texture-pipeline.mjs",
     "check:expo-boundaries": "node scripts/check-expo-boundaries.mjs",
     "check:expo-release-assets": "node scripts/check-expo-release-assets.mjs",
+    "check:expo-sponsor-inbox-auth": "node scripts/check-expo-sponsor-inbox-auth.mjs",
     "check:expo-sponsor-ops": "node scripts/check-expo-sponsor-ops-readiness.mjs",
     "check:expo-texture-pipeline": "node scripts/check-expo-texture-pipeline.mjs",
     "city:audit:visual": "node scripts/audit-expo-visual-clean.mjs",
