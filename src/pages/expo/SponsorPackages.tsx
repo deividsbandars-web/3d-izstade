@@ -71,11 +71,11 @@ const SPONSOR_PACKAGES: PackageCard[] = [
   },
 ];
 
-const READINESS_ROWS = [
-  ['Clean sales demo URL', 'Ready now', '/expo-3d?salesDemo=1'],
-  ['Sponsor lead capture frontend', 'Ready; backend required for live storage', '/expo-3d?salesDemo=1&salesDemoStep=premium'],
-  ['Sponsor lead inbox UI', 'Ready; requires login and backend API', '/expo/sponsor-leads?sponsor=sponsor-concierge'],
-  ['Package page', 'Ready now', '/expo/sponsor-packages'],
+const SALES_ASSET_ROWS = [
+  ['Sales demo walkthrough', 'Landmark, Premium, Standard and Demo Arena sponsor preview', '/expo-3d?salesDemo=1'],
+  ['Premium lead capture', 'Sponsor Concierge meeting-interest form in the Web3D demo', '/expo-3d?salesDemo=1&salesDemoStep=premium'],
+  ['Sponsor follow-up workspace', 'Protected internal inbox for submitted sponsor leads', '/expo/sponsor-leads?sponsor=sponsor-concierge'],
+  ['Calculator lead funnels', 'Estimate-to-lead examples for service and construction partners', '/calculators'],
 ];
 
 const PACKAGE_INTEREST_OPTIONS: Array<{ label: string; value: SponsorPackageInterest }> = [
@@ -122,7 +122,7 @@ const labelStyle: CSSProperties = {
 export default function SponsorPackages() {
   const [requestForm, setRequestForm] = useState<SponsorPackageRequestForm>(INITIAL_SPONSOR_PACKAGE_REQUEST_FORM);
   const [requestStatus, setRequestStatus] = useState<{ text: string; tone: 'error' | 'idle' | 'submitting' | 'success' }>({
-    text: 'Requests are sent to sponsor ops when the API is available. A local backup is kept in this browser.',
+    text: 'Tell us what you want to sponsor. The request is sent to sponsor ops and protected with a browser backup.',
     tone: 'idle',
   });
   const [queuedRequestCount, setQueuedRequestCount] = useState(() => readSponsorPackageRequestQueue().length);
@@ -147,7 +147,7 @@ export default function SponsorPackages() {
 
     try {
       await submitSponsorPackageRequestToBackend(requestForm);
-      let backupText = 'Local backup was not available in this browser.';
+      let backupText = 'Browser backup was not available on this device.';
 
       try {
         const result = saveSponsorPackageRequest(requestForm, {
@@ -155,9 +155,9 @@ export default function SponsorPackages() {
           syncStatus: 'backend-synced',
         });
         setQueuedRequestCount(result.queueCount);
-        backupText = `Saved as local backup #${result.queueCount}.`;
+        backupText = `Protected browser backup #${result.queueCount} saved.`;
       } catch (localError) {
-        backupText = `Server received it, but local backup failed: ${localError instanceof Error ? localError.message : String(localError)}`;
+        backupText = `Request was received, but browser backup failed: ${localError instanceof Error ? localError.message : String(localError)}`;
       }
 
       setRequestForm({
@@ -165,20 +165,20 @@ export default function SponsorPackages() {
         packageInterest: requestForm.packageInterest,
       });
       setRequestStatus({
-        text: `Sent to sponsor ops. ${backupText}`,
+        text: `Sponsor request received. ${backupText}`,
         tone: 'success',
       });
-    } catch (error) {
+    } catch {
       try {
         const result = saveSponsorPackageRequest(requestForm);
         setQueuedRequestCount(result.queueCount);
         setRequestStatus({
-          text: `Backend submit failed (${error instanceof Error ? error.message : String(error)}). Saved locally as request #${result.queueCount} for later sync.`,
+          text: `Connection was interrupted, so the request was saved in this browser as backup #${result.queueCount}. We can sync it when backend access is available.`,
           tone: 'error',
         });
       } catch (localError) {
         setRequestStatus({
-          text: `Could not submit or save the request locally: ${localError instanceof Error ? localError.message : String(localError)}`,
+          text: `The request could not be saved in this browser: ${localError instanceof Error ? localError.message : String(localError)}`,
           tone: 'error',
         });
       }
@@ -221,7 +221,7 @@ export default function SponsorPackages() {
                 Web3D Expo Sponsorship
               </div>
               <h1 style={{ fontSize: 'clamp(2.3rem, 6vw, 5rem)', letterSpacing: '-0.055em', lineHeight: 0.96, margin: '6px 0 0' }}>
-                Sponsor packages that turn expo traffic into leads.
+                Sponsor the Web3D Expo before your competitors own the zone.
               </h1>
             </div>
           </div>
@@ -239,8 +239,8 @@ export default function SponsorPackages() {
           <div style={{ display: 'grid', gap: '24px', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))' }}>
             <div>
               <p style={{ color: '#cbd5e1', fontSize: '1.06rem', lineHeight: 1.62, margin: 0, maxWidth: '760px' }}>
-                This page is the non-3D sponsor sales layer for the expo. It explains what can be sold today,
-                what appears in the Web3D sales demo, and what becomes live once backend services are restored.
+                Choose a package, review the Web3D sales demo, and send a sponsor request. The offer is built around
+                three commercial layers: visible expo presence, monthly event inventory and qualified lead follow-up.
               </p>
             </div>
             <div
@@ -252,13 +252,13 @@ export default function SponsorPackages() {
               }}
             >
               <div style={{ color: '#93c5fd', fontSize: '0.72rem', fontWeight: 900, letterSpacing: '0.12em', textTransform: 'uppercase' }}>
-                Current readiness
+                Sponsor funnel
               </div>
               <div style={{ color: '#f8fafc', fontSize: '1.45rem', fontWeight: 950, marginTop: '8px' }}>
-                Frontend sales flow ready
+                Demo, packages and lead capture are connected
               </div>
               <p style={{ color: '#94a3b8', lineHeight: 1.45, margin: '8px 0 0' }}>
-                Live lead storage and inbox data depend on the staging/backend API being online.
+                Sponsors can review the package options, open the live sales demo and submit interest for follow-up.
               </p>
             </div>
           </div>
@@ -335,10 +335,10 @@ export default function SponsorPackages() {
                 Sponsor package request
               </div>
               <h2 style={{ fontSize: 'clamp(1.9rem, 4vw, 3.2rem)', letterSpacing: '-0.05em', lineHeight: 1, margin: '10px 0 12px' }}>
-                Capture sponsor intent into the sponsor ops pipeline.
+                Request a sponsor walkthrough.
               </h2>
               <p style={{ color: '#cbd5e1', fontSize: '1rem', lineHeight: 1.58, margin: 0 }}>
-                This form validates sponsor interest, submits it to the Expo lead endpoint when available, and keeps a local backup if the API cannot be reached.
+                Share your company, budget signal and sponsorship goal. We will map it to the right booth, zone or Demo Arena package.
               </p>
               <div
                 style={{
@@ -353,7 +353,7 @@ export default function SponsorPackages() {
                   padding: '14px 15px',
                 }}
               >
-                Local backup: {queuedRequestCount} request{queuedRequestCount === 1 ? '' : 's'} stored in this browser.
+                Protected browser backup: {queuedRequestCount} request{queuedRequestCount === 1 ? '' : 's'} stored on this device.
               </div>
             </div>
 
@@ -420,7 +420,7 @@ export default function SponsorPackages() {
                   </select>
                 </label>
                 <label style={labelStyle}>
-                  Budget signal
+                  Estimated budget
                   <select
                     onChange={(event) => updateRequestField('budgetRange', event.target.value)}
                     style={inputStyle}
@@ -450,7 +450,7 @@ export default function SponsorPackages() {
                 Sponsorship goal
                 <textarea
                   onChange={(event) => updateRequestField('message', event.target.value)}
-                  placeholder="Tell us what you want to sponsor, launch, or measure."
+                  placeholder="Tell us what you want to sponsor, launch, measure or promote."
                   rows={4}
                   style={{ ...inputStyle, resize: 'vertical' }}
                   value={requestForm.message}
@@ -492,13 +492,13 @@ export default function SponsorPackages() {
 
         <section className="glass-card" style={{ borderRadius: '26px', padding: '24px' }}>
           <div style={{ alignItems: 'baseline', display: 'flex', flexWrap: 'wrap', gap: '12px', justifyContent: 'space-between', marginBottom: '16px' }}>
-            <h2 style={{ fontSize: '1.65rem', letterSpacing: '-0.035em', margin: 0 }}>Expo function readiness</h2>
+            <h2 style={{ fontSize: '1.65rem', letterSpacing: '-0.035em', margin: 0 }}>What sponsors can review today</h2>
             <span style={{ color: '#94a3b8', fontSize: '0.76rem', fontWeight: 900, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
-              No server required to view this page
+              Sales assets
             </span>
           </div>
           <div style={{ display: 'grid', gap: '10px' }}>
-            {READINESS_ROWS.map(([name, status, href]) => (
+            {SALES_ASSET_ROWS.map(([name, status, href]) => (
               <Link
                 key={name}
                 to={href}
