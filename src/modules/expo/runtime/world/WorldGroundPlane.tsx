@@ -7,7 +7,17 @@ import {
   GROUND_SEAM_TRANSITION_PLATE,
   SPONSOR_BOULEVARD_RIGHT_FLOOR_ANCHOR,
 } from './WorldGroundLayout';
-import { FLOOR_MATERIAL_INTENTS } from './floor/FloorVisualLanguage';
+import { FLOOR_LAYER_ORDER, FLOOR_MATERIAL_INTENTS } from './floor/FloorVisualLanguage';
+
+const GROUND_BASE_POLYGON_OFFSET = {
+  factor: 1,
+  units: 1,
+} as const;
+
+const GROUND_POLISH_POLYGON_OFFSET = {
+  factor: -4,
+  units: -4,
+} as const;
 
 export function WorldGroundPlane({ visualProfile }: { visualProfile: ExpoWorldVisualProfile }) {
   const arrivalAnchorMaterial = FLOOR_MATERIAL_INTENTS[ARRIVAL_GATE_FLOOR_ANCHOR.materialIntent];
@@ -25,6 +35,9 @@ export function WorldGroundPlane({ visualProfile }: { visualProfile: ExpoWorldVi
           emissive={globalBaseMaterial.emissive}
           emissiveIntensity={globalBaseMaterial.emissiveIntensity}
           metalness={globalBaseMaterial.metalness}
+          polygonOffset
+          polygonOffsetFactor={GROUND_BASE_POLYGON_OFFSET.factor}
+          polygonOffsetUnits={GROUND_BASE_POLYGON_OFFSET.units}
           roughness={globalBaseMaterial.roughness}
         />
       </mesh>
@@ -33,6 +46,7 @@ export function WorldGroundPlane({ visualProfile }: { visualProfile: ExpoWorldVi
         position={GROUND_SEAM_TRANSITION_PLATE.position}
         raycast={() => undefined}
         receiveShadow={false}
+        renderOrder={FLOOR_LAYER_ORDER.polishAnchor}
         rotation={[-Math.PI / 2, 0, 0]}
         userData={{
           expoGroundDetailRole: 'city-stadium-transition-polish',
@@ -45,9 +59,13 @@ export function WorldGroundPlane({ visualProfile }: { visualProfile: ExpoWorldVi
         <planeGeometry args={GROUND_SEAM_TRANSITION_PLATE.size} />
         <meshStandardMaterial
           color={GROUND_SEAM_TRANSITION_PLATE.color}
+          depthWrite={false}
           emissive={seamTransitionMaterial.emissive}
           emissiveIntensity={seamTransitionMaterial.emissiveIntensity}
           metalness={seamTransitionMaterial.metalness}
+          polygonOffset
+          polygonOffsetFactor={GROUND_POLISH_POLYGON_OFFSET.factor}
+          polygonOffsetUnits={GROUND_POLISH_POLYGON_OFFSET.units}
           roughness={seamTransitionMaterial.roughness}
         />
       </mesh>
@@ -56,6 +74,7 @@ export function WorldGroundPlane({ visualProfile }: { visualProfile: ExpoWorldVi
         position={SPONSOR_BOULEVARD_RIGHT_FLOOR_ANCHOR.position}
         raycast={() => undefined}
         receiveShadow={false}
+        renderOrder={FLOOR_LAYER_ORDER.polishAnchor}
         rotation={[-Math.PI / 2, 0, 0]}
         userData={{
           expoGroundDetailRole: 'sponsor-boulevard-right-floor-anchor',
@@ -68,9 +87,13 @@ export function WorldGroundPlane({ visualProfile }: { visualProfile: ExpoWorldVi
         <planeGeometry args={SPONSOR_BOULEVARD_RIGHT_FLOOR_ANCHOR.size} />
         <meshStandardMaterial
           color={SPONSOR_BOULEVARD_RIGHT_FLOOR_ANCHOR.color}
+          depthWrite={false}
           emissive={sponsorAnchorMaterial.emissive}
           emissiveIntensity={sponsorAnchorMaterial.emissiveIntensity}
           metalness={sponsorAnchorMaterial.metalness}
+          polygonOffset
+          polygonOffsetFactor={GROUND_POLISH_POLYGON_OFFSET.factor}
+          polygonOffsetUnits={GROUND_POLISH_POLYGON_OFFSET.units}
           roughness={sponsorAnchorMaterial.roughness}
         />
       </mesh>
@@ -79,6 +102,7 @@ export function WorldGroundPlane({ visualProfile }: { visualProfile: ExpoWorldVi
         position={ARRIVAL_GATE_FLOOR_ANCHOR.position}
         raycast={() => undefined}
         receiveShadow={false}
+        renderOrder={FLOOR_LAYER_ORDER.polishAnchor}
         rotation={[-Math.PI / 2, 0, 0]}
         userData={{
           expoGroundDetailRole: 'arrival-gate-floor-anchor',
@@ -91,9 +115,13 @@ export function WorldGroundPlane({ visualProfile }: { visualProfile: ExpoWorldVi
         <planeGeometry args={ARRIVAL_GATE_FLOOR_ANCHOR.size} />
         <meshStandardMaterial
           color={ARRIVAL_GATE_FLOOR_ANCHOR.color}
+          depthWrite={false}
           emissive={arrivalAnchorMaterial.emissive}
           emissiveIntensity={arrivalAnchorMaterial.emissiveIntensity}
           metalness={arrivalAnchorMaterial.metalness}
+          polygonOffset
+          polygonOffsetFactor={GROUND_POLISH_POLYGON_OFFSET.factor}
+          polygonOffsetUnits={GROUND_POLISH_POLYGON_OFFSET.units}
           roughness={arrivalAnchorMaterial.roughness}
         />
       </mesh>
@@ -102,6 +130,7 @@ export function WorldGroundPlane({ visualProfile }: { visualProfile: ExpoWorldVi
         position={CENTER_SPINE_FLOOR_GUIDE.position}
         raycast={() => undefined}
         receiveShadow={false}
+        renderOrder={FLOOR_LAYER_ORDER.polishAnchor}
         rotation={[-Math.PI / 2, 0, 0]}
         userData={{
           expoGroundDetailRole: 'center-spine-floor-guide',
@@ -114,9 +143,13 @@ export function WorldGroundPlane({ visualProfile }: { visualProfile: ExpoWorldVi
         <planeGeometry args={CENTER_SPINE_FLOOR_GUIDE.size} />
         <meshStandardMaterial
           color={CENTER_SPINE_FLOOR_GUIDE.color}
+          depthWrite={false}
           emissive={centerSpineGuideMaterial.emissive}
           emissiveIntensity={centerSpineGuideMaterial.emissiveIntensity}
           metalness={centerSpineGuideMaterial.metalness}
+          polygonOffset
+          polygonOffsetFactor={GROUND_POLISH_POLYGON_OFFSET.factor}
+          polygonOffsetUnits={GROUND_POLISH_POLYGON_OFFSET.units}
           roughness={centerSpineGuideMaterial.roughness}
         />
       </mesh>
