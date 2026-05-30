@@ -45,7 +45,7 @@ const TimberHouseCalculator = lazy(() => import('./modules/calculators/TimberHou
 const WindowsCalculator = lazy(() => import('./modules/calculators/WindowsCalc'));
 const VisualsCalculator = lazy(() => import('./modules/calculators/VisualsCalc'));
 const DigitalArtCalculator = lazy(() => import('./modules/calculators/DigitalArtCalc'));
-const AutoserviceCalculator = lazy(() => import('./modules/calculators/AutoserviceCalc'));
+const PavingCalculator = lazy(() => import('./modules/calculators/PavingCalc'));
 const CleaningCalculator = lazy(() => import('./modules/calculators/CleaningCalc'));
 const QuickFixCalculator = lazy(() => import('./modules/calculators/QuickFixCalc'));
 const PlumbingCalculator = lazy(() => import('./modules/calculators/PlumbingCalc'));
@@ -134,7 +134,8 @@ export default function App() {
             <Route path="windows-calculator" element={<Suspense fallback={null}><WindowsCalculator /></Suspense>} />
             <Route path="visuals-calculator" element={<Suspense fallback={null}><VisualsCalculator /></Suspense>} />
             <Route path="digital-art-calculator" element={<Suspense fallback={null}><DigitalArtCalculator /></Suspense>} />
-            <Route path="autoservice-calculator" element={<Suspense fallback={null}><AutoserviceCalculator /></Suspense>} />
+            <Route path="paving-calculator" element={<Suspense fallback={null}><PavingCalculator /></Suspense>} />
+            <Route path="autoservice-calculator" element={<Navigate to="/paving-calculator" replace />} />
             <Route path="cleaning-calculator" element={<Suspense fallback={null}><CleaningCalculator /></Suspense>} />
             <Route path="quick-fix-calculator" element={<Suspense fallback={null}><QuickFixCalculator /></Suspense>} />
             <Route path="plumbing-calculator" element={<Suspense fallback={null}><PlumbingCalculator /></Suspense>} />
