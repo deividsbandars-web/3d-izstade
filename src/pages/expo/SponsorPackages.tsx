@@ -16,58 +16,55 @@ type PackageCard = {
   accent: string;
   audience: string;
   cta: string;
+  demoHref: string;
   description: string;
   features: string[];
-  id: Exclude<SponsorPackageInterest, 'unsure'>;
+  id: Exclude<SponsorPackageInterest, 'arena' | 'unsure'>;
   label: string;
-  readiness: string;
+  outcome: string;
+  priceSignal: string;
   title: string;
 };
 
 const SPONSOR_PACKAGES: PackageCard[] = [
   {
     accent: '#38bdf8',
-    audience: 'Best for product launches, founder showcases and sponsor discovery.',
-    cta: 'Open Standard preview',
-    description: 'A clear product profile inside the Web3D Expo with a short pitch, demo CTA and sponsor interest path.',
-    features: ['Product profile and pitch', 'Demo-ready showcase screen', 'Sponsor package request path'],
+    audience: 'Best for teams that need a credible Web3D presence without a custom sponsor program.',
+    cta: 'Request Standard Booth',
+    demoHref: '/expo-3d?salesDemo=1&salesDemoStep=standard',
+    description: 'A focused sponsor booth with a product story, demo surface and clear interest path.',
+    features: ['Product profile and short pitch', 'Demo-ready showcase screen', 'Sponsor interest capture'],
     id: 'standard',
     label: 'Standard Booth',
-    readiness: 'Visible in sales demo',
+    outcome: 'Launch a visible expo booth and collect sponsor interest.',
+    priceSignal: 'Entry package',
     title: 'Standard Booth',
   },
   {
     accent: '#fbbf24',
-    audience: 'Best for sponsors that need meetings, lead quality and follow-up operations.',
-    cta: 'Open Premium preview',
-    description: 'A premium booth package for booked meetings, AI qualification preview and lead report readiness.',
+    audience: 'Best for sponsors that want meetings, stronger follow-up and lead-quality signals.',
+    cta: 'Request Premium Booth',
+    demoHref: '/expo-3d?salesDemo=1&salesDemoStep=premium',
+    description: 'A higher-value booth package built around conversion, qualification and sponsor reporting.',
     features: ['Meeting-ready sponsor package', 'AI qualification preview', 'Lead report package'],
     id: 'premium',
     label: 'Premium Booth',
-    readiness: 'Visible in sales demo',
+    outcome: 'Turn expo traffic into booked sponsor conversations.',
+    priceSignal: 'Lead-gen package',
     title: 'Premium Booth',
   },
   {
     accent: '#34d399',
     audience: 'Best for anchor sponsors that want zone ownership and high visibility.',
-    cta: 'Open Landmark preview',
-    description: 'A top-tier sponsor package with zone naming, hero sponsor presence and event inventory.',
-    features: ['Zone naming rights', 'Hero screen placement', 'Demo Arena sponsor slot'],
+    cta: 'Request Landmark Sponsor',
+    demoHref: '/expo-3d?salesDemo=1&salesDemoStep=landmark',
+    description: 'The flagship sponsor package: own a zone, appear on hero surfaces and tie into event programming.',
+    features: ['Zone naming rights', 'Hero sponsor presence', 'Demo Arena sponsor slot', 'Monthly sponsor report'],
     id: 'landmark',
     label: 'Landmark Zone Sponsor',
-    readiness: 'Visible in sales demo',
+    outcome: 'Own the highest-visibility sponsor story in the expo.',
+    priceSignal: 'Flagship package',
     title: 'Landmark Zone Sponsor',
-  },
-  {
-    accent: '#a78bfa',
-    audience: 'Best for monthly campaigns, investor days and product battle sponsorship.',
-    cta: 'Open Arena preview',
-    description: 'Event programming inventory for demo battles, startup nights, recaps and sponsor reporting.',
-    features: ['Monthly demo battles', 'Sponsor slot inventory', 'Agenda, status and recap screens'],
-    id: 'arena',
-    label: 'Demo Arena Sponsor',
-    readiness: 'Preview only',
-    title: 'Demo Arena Sponsor',
   },
 ];
 
@@ -132,6 +129,23 @@ export default function SponsorPackages() {
     value: SponsorPackageRequestForm[Field],
   ) {
     setRequestForm((current) => ({ ...current, [field]: value }));
+  }
+
+  function selectPackage(packageInterest: PackageCard['id']) {
+    const selectedPackage = SPONSOR_PACKAGES.find((entry) => entry.id === packageInterest);
+    setRequestForm((current) => ({ ...current, packageInterest }));
+    setRequestStatus({
+      text: `${selectedPackage?.title ?? 'Sponsor package'} selected. Add contact details and we will follow up with the right package walkthrough.`,
+      tone: 'idle',
+    });
+
+    if (typeof document !== 'undefined') {
+      window.requestAnimationFrame(() => {
+        document
+          .querySelector('[data-sponsor-package-request-form="true"]')
+          ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    }
   }
 
   async function handleRequestSubmit(event: FormEvent<HTMLFormElement>) {
@@ -239,8 +253,8 @@ export default function SponsorPackages() {
           <div style={{ display: 'grid', gap: '24px', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))' }}>
             <div>
               <p style={{ color: '#cbd5e1', fontSize: '1.06rem', lineHeight: 1.62, margin: 0, maxWidth: '760px' }}>
-                Choose a package, review the Web3D sales demo, and send a sponsor request. The offer is built around
-                three commercial layers: visible expo presence, monthly event inventory and qualified lead follow-up.
+                Choose one of three sponsor packages, review the Web3D sales demo, and send a request with enough context
+                for follow-up. The offer is built around booth presence, lead generation and landmark sponsorship.
               </p>
             </div>
             <div
@@ -255,10 +269,11 @@ export default function SponsorPackages() {
                 Sponsor funnel
               </div>
               <div style={{ color: '#f8fafc', fontSize: '1.45rem', fontWeight: 950, marginTop: '8px' }}>
-                Demo, packages and lead capture are connected
+                Three packages, one sponsor follow-up flow
               </div>
               <p style={{ color: '#94a3b8', lineHeight: 1.45, margin: '8px 0 0' }}>
-                Sponsors can review the package options, open the live sales demo and submit interest for follow-up.
+                Standard, Premium and Landmark requests all land in the sponsor inbox with package interest, phone and
+                follow-up context.
               </p>
             </div>
           </div>
@@ -279,7 +294,7 @@ export default function SponsorPackages() {
               }}
             >
               <div style={{ color: entry.accent, fontSize: '0.68rem', fontWeight: 950, letterSpacing: '0.12em', textTransform: 'uppercase' }}>
-                {entry.label}
+                {entry.priceSignal}
               </div>
               <h2 style={{ fontSize: '1.55rem', letterSpacing: '-0.035em', lineHeight: 1.05, margin: '10px 0 10px' }}>{entry.title}</h2>
               <p style={{ color: '#cbd5e1', lineHeight: 1.48, margin: 0 }}>{entry.description}</p>
@@ -291,8 +306,48 @@ export default function SponsorPackages() {
                   </li>
                 ))}
               </ul>
-              <p style={{ color: '#94a3b8', lineHeight: 1.45, margin: 'auto 0 16px' }}>{entry.audience}</p>
-              <div style={{ alignItems: 'center', display: 'flex', flexWrap: 'wrap', gap: '8px', justifyContent: 'space-between' }}>
+              <p style={{ color: '#f8fafc', fontWeight: 850, lineHeight: 1.45, margin: 'auto 0 8px' }}>{entry.outcome}</p>
+              <p style={{ color: '#94a3b8', lineHeight: 1.45, margin: '0 0 16px' }}>{entry.audience}</p>
+              <div style={{ display: 'grid', gap: '9px', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))' }}>
+                <button
+                  onClick={() => selectPackage(entry.id)}
+                  style={{
+                    background: `linear-gradient(135deg, ${entry.accent}, #f8fafc)`,
+                    border: 'none',
+                    borderRadius: '13px',
+                    color: '#020617',
+                    cursor: 'pointer',
+                    fontSize: '0.76rem',
+                    fontWeight: 950,
+                    letterSpacing: '0.04em',
+                    padding: '11px 12px',
+                    textTransform: 'uppercase',
+                  }}
+                  type="button"
+                >
+                  {entry.cta}
+                </button>
+                <Link
+                  to={entry.demoHref}
+                  style={{
+                    alignItems: 'center',
+                    background: 'rgba(15, 23, 42, 0.72)',
+                    border: `1px solid ${entry.accent}55`,
+                    borderRadius: '13px',
+                    color: '#e0f2fe',
+                    display: 'flex',
+                    fontSize: '0.76rem',
+                    fontWeight: 900,
+                    justifyContent: 'center',
+                    padding: '10px 12px',
+                    textDecoration: 'none',
+                    textTransform: 'uppercase',
+                  }}
+                >
+                  View in demo
+                </Link>
+              </div>
+              <div style={{ marginTop: '12px' }}>
                 <span
                   style={{
                     background: `${entry.accent}1c`,
@@ -306,19 +361,8 @@ export default function SponsorPackages() {
                     textTransform: 'uppercase',
                   }}
                 >
-                  {entry.readiness}
+                  {entry.label}
                 </span>
-                <Link
-                  to={`/expo-3d?salesDemo=1&salesDemoStep=${entry.id === 'arena' ? 'arena' : entry.id}`}
-                  style={{
-                    color: '#e0f2fe',
-                    fontSize: '0.78rem',
-                    fontWeight: 900,
-                    textDecoration: 'none',
-                  }}
-                >
-                  {entry.cta}
-                </Link>
               </div>
             </article>
           ))}
@@ -338,7 +382,8 @@ export default function SponsorPackages() {
                 Request a sponsor walkthrough.
               </h2>
               <p style={{ color: '#cbd5e1', fontSize: '1rem', lineHeight: 1.58, margin: 0 }}>
-                Share your company, budget signal and sponsorship goal. We will map it to the right booth, zone or Demo Arena package.
+                Choose a package above or select one here, then share the sponsor goal. The lead goes to the sponsor
+                follow-up workspace with the selected package and contact phone.
               </p>
               <div
                 style={{
