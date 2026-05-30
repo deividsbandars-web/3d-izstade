@@ -51,7 +51,17 @@ export function useExpoRuntimeSession() {
   const salesDemoEnabled = useMemo(() => isSalesDemoEnabled(), []);
   const boothProductPreviewEnabled = useMemo(() => isBoothProductPreviewEnabled(), []);
   const previewSessionEnabled = salesDemoEnabled || boothProductPreviewEnabled;
-  const [mode, setModeState] = useState<ExpoMode>(() => (operatorSession.enabled || previewSessionEnabled ? 'fly' : 'menu'));
+  const [mode, setModeState] = useState<ExpoMode>(() => {
+    if (operatorSession.enabled) {
+      return 'fly';
+    }
+
+    if (salesDemoEnabled) {
+      return 'walk';
+    }
+
+    return previewSessionEnabled ? 'fly' : 'menu';
+  });
   const [mobileMoveIntent, setMobileMoveIntent] = useState<ExpoMobileMoveIntent>(EXPO_MOBILE_MOVE_IDLE);
   const [isTouchDevice, setIsTouchDevice] = useState(() => detectTouchDevice());
   const setMode = useCallback((nextMode: ExpoMode) => {
