@@ -2,76 +2,114 @@ import { useState } from 'react';
 import '../../components/calculator/styles/CalculatorPro.css';
 import { COUNTRIES, renderCountryOptions } from '../../core/constants';
 import { useLocalStorage } from '../../hooks/useLocalStorage';
+import { CalculatorLeadCta } from './CalculatorLeadCta';
 
-// ------------------------------------------------------------------
-// DATUBĀZE: Jumtu un noteksistēmu detaļas
-// ------------------------------------------------------------------
 const PRICES = {
   materials: {
-    metal: { name: 'Metāla dakstiņš (Ruukki)', matPrice: 15, workPrice: 12, overlapMult: 1.15 }, 
-    bitumen: { name: 'Bitumena šindelis', matPrice: 12, workPrice: 15, overlapMult: 1.05 }, 
-    clay: { name: 'Māla dakstiņš (Monier)', matPrice: 28, workPrice: 25, overlapMult: 1.05 }, 
-    slate: { name: 'Bezazbesta šīferis (Eternit)', matPrice: 18, workPrice: 14, overlapMult: 1.15 }, 
-    standing_seam: { name: 'Valcprofils (Classic)', matPrice: 22, workPrice: 20, overlapMult: 1.10 }, 
+    metal: { name: 'Metāla dakstiņš (Ruukki)', matPrice: 15, workPrice: 12, overlapMult: 1.15 },
+    bitumen: { name: 'Bitumena šindelis', matPrice: 12, workPrice: 15, overlapMult: 1.05 },
+    clay: { name: 'Māla dakstiņš (Monier)', matPrice: 28, workPrice: 25, overlapMult: 1.05 },
+    slate: { name: 'Bezazbesta šīferis (Eternit)', matPrice: 18, workPrice: 14, overlapMult: 1.15 },
+    standing_seam: { name: 'Valcprofils (Classic)', matPrice: 22, workPrice: 20, overlapMult: 1.1 },
   },
   accessories: {
-    wind_film: { name: 'Pretvēja izolācijas plēve', matPrice: 1.5, workPrice: 1.0 }, // m2
-    fasteners_metal: { matPrice: 0.8 }, // Skrūves uz m2
-    fasteners_clay: { matPrice: 1.5 }, // Stiprinājumi uz m2
-    ridge: { name: 'Kores elementi', matPrice: 12, workPrice: 5 }, // tek. metri
-    eaves: { name: 'Vējmalas / Karnīzes', matPrice: 8, workPrice: 4 }, // tek. metri
+    wind_film: { name: 'Pretvēja izolācijas plēve', matPrice: 1.5, workPrice: 1 },
+    fasteners_metal: { matPrice: 0.8 },
+    fasteners_clay: { matPrice: 1.5 },
+    ridge: { name: 'Kores elementi', matPrice: 12, workPrice: 5 },
+    eaves: { name: 'Vējmalas / karnīzes', matPrice: 8, workPrice: 4 },
   },
   lumber: {
-    rafters: { name: 'Spāres (50x200mm)', matPrice: 4.5, workPrice: 5 }, // tek. metri
-    battens: { name: 'Latojums (50x50mm)', matPrice: 1.2, workPrice: 1.5 }, // tek. metri
-    counter_battens: { name: 'Pretlatojums (25x50mm)', matPrice: 0.8, workPrice: 1.0 }, // tek. metri
+    rafters: { name: 'Spāres (50x200mm)', matPrice: 4.5, workPrice: 5 },
+    battens: { name: 'Latojums (50x50mm)', matPrice: 1.2, workPrice: 1.5 },
+    counter_battens: { name: 'Pretlatojums (25x50mm)', matPrice: 0.8, workPrice: 1 },
   },
   gutters: {
-    pvc: { name: 'Plastmasas renes un notekas', matPrice: 9, workPrice: 6 }, // tek. metri
-    metal: { name: 'Cinkota metāla renes (Ruukki)', matPrice: 16, workPrice: 8 }, 
-    hidden: { name: 'Iebūvētā sistēma (slēptā)', matPrice: 45, workPrice: 25 }, 
-  }
+    pvc: { name: 'Plastmasas renes un notekas', matPrice: 9, workPrice: 6 },
+    metal: { name: 'Cinkota metāla renes (Ruukki)', matPrice: 16, workPrice: 8 },
+    hidden: { name: 'Iebūvēta sistēma (slēptā)', matPrice: 45, workPrice: 25 },
+  },
+} as const;
+
+type RoofMaterialId = keyof typeof PRICES.materials;
+type RoofType = 'flat' | 'gable' | 'hip';
+type GutterMaterialId = keyof typeof PRICES.gutters;
+
+type RoofParams = {
+  country: string;
+  gutterMaterial: GutterMaterialId;
+  houseArea: number;
+  includeGutters: boolean;
+  includeTimber: boolean;
+  material: RoofMaterialId;
+  overhang: number;
+  pitch: number;
+  roofType: RoofType;
 };
 
+type RoofResults = {
+  coverCost: { mat: number; work: number };
+  geom: {
+    battensLength: number;
+    eavesLength: number;
+    raftersLength: number;
+    ridgeLength: number;
+    roofAreaGross: number;
+    roofAreaNet: number;
+  };
+  grandTotal: number;
+  guttersCost: { mat: number; work: number };
+  timberCost: { mat: number; work: number };
+  totalMat: number;
+  totalWork: number;
+  trimsCost: { mat: number; work: number };
+};
+
+const INITIAL_ROOF_PARAMS: RoofParams = {
+  country: 'lv',
+  gutterMaterial: 'metal',
+  houseArea: 100,
+  includeGutters: true,
+  includeTimber: true,
+  material: 'metal',
+  overhang: 0.6,
+  pitch: 30,
+  roofType: 'gable',
+};
+
+function formatEuro(value: number) {
+  return `${Math.round(value).toLocaleString('lv-LV')} €`;
+}
+
 export default function RoofCalc() {
-  const [params, setParams] = useLocalStorage('calc_params_roof', {
-    country: 'lv',
-    houseArea: 100, // Mājas pamata platība
-    roofType: 'gable', // gable (divslīpju), hip (četrslīpju), flat (plakanais)
-    pitch: 30, // Jumta leņķis
-    material: 'metal',
-    overhang: 0.6, // Pārkares garums (m)
-    includeTimber: true, // Vai rēķināt jaunas spāres un latojumu
-    includeGutters: true,
-    gutterMaterial: 'metal'
-  });
+  const [params, setParams] = useLocalStorage<RoofParams>('calc_params_roof', INITIAL_ROOF_PARAMS);
+  const [results, setResults] = useState<RoofResults | null>(null);
 
-  const [results, setResults] = useState<any>(null);
+  const handleChange = (event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value, type } = event.target;
+    let finalValue: boolean | number | string = value;
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value, type } = e.target;
-    let finalValue: string | number | boolean = value;
-    if (type === 'checkbox') finalValue = (e.target as HTMLInputElement).checked;
-    else if (type === 'number') finalValue = parseFloat(value) || 0;
-    
-    setParams(prev => ({ ...prev, [name]: finalValue }));
+    if (type === 'checkbox') {
+      finalValue = (event.target as HTMLInputElement).checked;
+    } else if (type === 'number') {
+      finalValue = parseFloat(value) || 0;
+    }
+
+    setParams((current) => ({ ...current, [name]: finalValue }));
   };
 
   const handleCalculate = () => {
-    const workMult = COUNTRIES[params.country as keyof typeof COUNTRIES].workMult;
-    const matMult = COUNTRIES[params.country as keyof typeof COUNTRIES].matMult;
+    const country = COUNTRIES[params.country as keyof typeof COUNTRIES] ?? COUNTRIES.lv;
+    const workMult = country.workMult;
+    const matMult = country.matMult;
 
-    // 1. ĢEOMETRIJAS APRĒĶINS
-    // Mājas izmērs (pieņemam kvadrātu vienkāršībai)
     const side = Math.sqrt(params.houseArea);
     const sideWithOverhang = side + (params.overhang * 2);
-    
-    // Jumta laukums, ņemot vērā leņķi (cos)
     const pitchRad = params.pitch * (Math.PI / 180);
     let roofAreaNet = 0;
     let ridgeLength = 0;
-    let eavesLength = 0; // Karnīzes (sāni, kur tek ūdens)
-    let gableEndsLength = 0; // Vējmalas
+    let eavesLength = 0;
+    let gableEndsLength = 0;
 
     if (params.roofType === 'gable') {
       roofAreaNet = (sideWithOverhang * sideWithOverhang) / Math.cos(pitchRad);
@@ -80,22 +118,19 @@ export default function RoofCalc() {
       gableEndsLength = (sideWithOverhang / Math.cos(pitchRad)) * 2;
     } else if (params.roofType === 'hip') {
       roofAreaNet = (sideWithOverhang * sideWithOverhang) / Math.cos(pitchRad);
-      ridgeLength = sideWithOverhang * 0.4; // aptuveni
+      ridgeLength = sideWithOverhang * 0.4;
       eavesLength = sideWithOverhang * 4;
-      gableEndsLength = 0; // Četrslīpju nav klasisko vējmalu
-    } else { // flat
+      gableEndsLength = 0;
+    } else {
       roofAreaNet = sideWithOverhang * sideWithOverhang;
       ridgeLength = 0;
-      eavesLength = sideWithOverhang * 4; // parapets
+      eavesLength = sideWithOverhang * 4;
       gableEndsLength = 0;
     }
 
-    const matData = PRICES.materials[params.material as keyof typeof PRICES.materials];
-    
-    // Materiāla zudumi un pārlaidumi
+    const matData = PRICES.materials[params.material];
     const roofAreaGross = roofAreaNet * matData.overlapMult;
 
-    // 2. KOKA KONSTRUKCIJAS (Spāres, latojums)
     let timberMat = 0;
     let timberWork = 0;
     let raftersLength = 0;
@@ -103,131 +138,125 @@ export default function RoofCalc() {
     let counterBattensLength = 0;
 
     if (params.includeTimber) {
-      // Spāres ar soli 0.6m
       raftersLength = (sideWithOverhang / 0.6) * (sideWithOverhang / Math.cos(pitchRad));
-      // Latojums ar soli 0.35m
       battensLength = (sideWithOverhang / Math.cos(pitchRad) / 0.35) * sideWithOverhang * 2;
-      // Pretlatojums sakrīt ar spārēm
       counterBattensLength = raftersLength;
 
       timberMat = (
-        (raftersLength * PRICES.lumber.rafters.matPrice) + 
-        (battensLength * PRICES.lumber.battens.matPrice) + 
-        (counterBattensLength * PRICES.lumber.counter_battens.matPrice)
+        (raftersLength * PRICES.lumber.rafters.matPrice)
+        + (battensLength * PRICES.lumber.battens.matPrice)
+        + (counterBattensLength * PRICES.lumber.counter_battens.matPrice)
       ) * matMult;
-      
+
       timberWork = (
-        (raftersLength * PRICES.lumber.rafters.workPrice) + 
-        (battensLength * PRICES.lumber.battens.workPrice) + 
-        (counterBattensLength * PRICES.lumber.counter_battens.workPrice)
+        (raftersLength * PRICES.lumber.rafters.workPrice)
+        + (battensLength * PRICES.lumber.battens.workPrice)
+        + (counterBattensLength * PRICES.lumber.counter_battens.workPrice)
       ) * workMult;
     }
 
-    // 3. JUMTA SEGUMS UN AKSESUĀRI
     const coverMat = roofAreaGross * matData.matPrice * matMult;
     const coverWork = roofAreaNet * matData.workPrice * workMult;
 
     const filmMat = roofAreaGross * PRICES.accessories.wind_film.matPrice * matMult;
     const filmWork = roofAreaNet * PRICES.accessories.wind_film.workPrice * workMult;
 
-    // Stiprinājumi (Aptuveni uz m2)
-    const fastMat = roofAreaGross * (params.material === 'clay' ? PRICES.accessories.fasteners_clay.matPrice : PRICES.accessories.fasteners_metal.matPrice) * matMult;
+    const fastMat = roofAreaGross * (params.material === 'clay'
+      ? PRICES.accessories.fasteners_clay.matPrice
+      : PRICES.accessories.fasteners_metal.matPrice) * matMult;
 
-    // Kores un Vējmalas
     const trimsMat = ((ridgeLength * PRICES.accessories.ridge.matPrice) + (gableEndsLength * PRICES.accessories.eaves.matPrice)) * matMult;
     const trimsWork = ((ridgeLength * PRICES.accessories.ridge.workPrice) + (gableEndsLength * PRICES.accessories.eaves.workPrice)) * workMult;
 
-    // 4. NOTEKSISTĒMA
     let guttersMat = 0;
     let guttersWork = 0;
     if (params.includeGutters) {
-      const gData = PRICES.gutters[params.gutterMaterial as keyof typeof PRICES.gutters];
-      guttersMat = eavesLength * gData.matPrice * matMult;
-      guttersWork = eavesLength * gData.workPrice * workMult;
+      const gutterData = PRICES.gutters[params.gutterMaterial];
+      guttersMat = eavesLength * gutterData.matPrice * matMult;
+      guttersWork = eavesLength * gutterData.workPrice * workMult;
     }
 
-    // KOPSAVILKUMS
     const totalMat = timberMat + coverMat + filmMat + fastMat + trimsMat + guttersMat;
     const totalWork = timberWork + coverWork + filmWork + trimsWork + guttersWork;
 
     setResults({
-      geom: { roofAreaNet, roofAreaGross, ridgeLength, eavesLength, raftersLength, battensLength },
-      timberCost: { mat: timberMat, work: timberWork },
       coverCost: { mat: coverMat + filmMat + fastMat, work: coverWork + filmWork },
-      trimsCost: { mat: trimsMat, work: trimsWork },
+      geom: { roofAreaNet, roofAreaGross, ridgeLength, eavesLength, raftersLength, battensLength },
+      grandTotal: totalMat + totalWork,
       guttersCost: { mat: guttersMat, work: guttersWork },
-      totalMat, totalWork, grandTotal: totalMat + totalWork
+      timberCost: { mat: timberMat, work: timberWork },
+      totalMat,
+      totalWork,
+      trimsCost: { mat: trimsMat, work: trimsWork },
     });
   };
 
   return (
     <div className="calculator-pro-wrapper">
       <div className="calc-header">
-        <h1>PRO Jumta un Noteksistēmu Tāme</h1>
-        <p>Smalks inženiertehniskais aprēķins ar koka konstrukcijām un materiālu zudumiem.</p>
+        <h1>PRO Jumta un noteksistēmu tāme</h1>
+        <p>Detalizēts jumta seguma, koka konstrukciju, aksesuāru un noteksistēmu izmaksu aprēķins.</p>
       </div>
 
       <div className="calc-grid">
-        {/* KREISĀ PUSE */}
         <div className="calc-form-column">
-
           <section className="calc-section">
-            <h2>🌍 Lokācija un Reģions</h2>
+            <h2>Lokācija un reģions</h2>
             <div className="input-group">
               <select name="country" value={params.country} onChange={handleChange}>
                 {renderCountryOptions()}
               </select>
             </div>
           </section>
-          
+
           <section className="calc-section">
-            <h2>1. Mājas un Jumta Ģeometrija</h2>
+            <h2>1. Mājas un jumta ģeometrija</h2>
             <div className="input-group-2">
               <label>Mājas apbūves laukums (m²)
                 <input type="number" name="houseArea" value={params.houseArea} onChange={handleChange} min="20" />
               </label>
               <label>Jumta tips
                 <select name="roofType" value={params.roofType} onChange={handleChange}>
-                  <option value="gable">Divslīpju (Klasisks)</option>
-                  <option value="hip">Četrslīpju (Telts)</option>
-                  <option value="flat">Plakanais</option>
+                  <option value="gable">Divslīpju jumts</option>
+                  <option value="hip">Četrslīpju jumts</option>
+                  <option value="flat">Plakanais jumts</option>
                 </select>
               </label>
             </div>
             <div className="input-group-2" style={{ marginTop: '20px' }}>
-              <label>Slīpums (Grādos)
+              <label>Slīpums grādos
                 <input type="number" name="pitch" value={params.pitch} onChange={handleChange} min="0" max="60" />
               </label>
-              <label>Pārkare / Karnīze (m)
+              <label>Pārkare / karnīze (m)
                 <input type="number" name="overhang" value={params.overhang} onChange={handleChange} min="0" step="0.1" />
               </label>
             </div>
           </section>
 
           <section className="calc-section">
-            <h2>2. Koka Konstrukcijas</h2>
+            <h2>2. Koka konstrukcijas</h2>
             <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
               <input type="checkbox" name="includeTimber" checked={params.includeTimber} onChange={handleChange} style={{ width: '22px', height: '22px', accentColor: '#3b82f6' }} />
-              <span style={{ fontSize: '1rem', fontWeight: 600 }}>Aprēķināt jaunas spāres un latojumu</span>
+              <span style={{ fontSize: '1rem', fontWeight: 600 }}>Aprēķināt jaunas spāres, latojumu un pretlatojumu</span>
             </div>
             {params.includeTimber && (
               <p style={{ fontSize: '0.85rem', color: 'var(--text-dim)', marginTop: '15px' }}>
-                * Tiks automātiski aprēķināts 50x200 spāru un 50x50 latojuma apjoms balstoties uz jumta platību.
+                Tiks aprēķināts 50x200 spāru, 50x50 latojuma un pretlatojuma apjoms pēc jumta laukuma.
               </p>
             )}
           </section>
 
           <section className="calc-section">
-            <h2>3. Jumta Segums un Detalizācija</h2>
+            <h2>3. Jumta segums un detaļas</h2>
             <div className="input-group">
-              <label>Izvēlētais Materiāls
+              <label>Izvēlētais materiāls
                 <select name="material" value={params.material} onChange={handleChange}>
-                  {Object.entries(PRICES.materials).map(([k, v]) => <option key={k} value={k}>{v.name}</option>)}
+                  {Object.entries(PRICES.materials).map(([key, value]) => <option key={key} value={key}>{value.name}</option>)}
                 </select>
               </label>
             </div>
             <p style={{ fontSize: '0.85rem', color: 'var(--text-dim)', marginTop: '15px' }}>
-              * Seguma cenā automātiski tiks iekļauti materiālu pārlaiduma zudumi (5-15%), pretvēja plēve un stiprinājumi.
+              Seguma cenā tiek iekļauti materiālu pārlaiduma zudumi, pretvēja plēve un stiprinājumi.
             </p>
           </section>
 
@@ -241,7 +270,7 @@ export default function RoofCalc() {
               {params.includeGutters && (
                 <label>Sistēmas materiāls
                   <select name="gutterMaterial" value={params.gutterMaterial} onChange={handleChange}>
-                    {Object.entries(PRICES.gutters).map(([k, v]) => <option key={k} value={k}>{v.name}</option>)}
+                    {Object.entries(PRICES.gutters).map(([key, value]) => <option key={key} value={key}>{value.name}</option>)}
                   </select>
                 </label>
               )}
@@ -249,42 +278,40 @@ export default function RoofCalc() {
           </section>
 
           <button onClick={handleCalculate} className="btn-primary" style={{ width: '100%', padding: '18px', fontSize: '1.1rem' }}>
-            Ģenerēt Profesionālo Tāmi
+            Ģenerēt profesionālo tāmi
           </button>
-
         </div>
 
-        {/* LABĀ PUSE: REZULTĀTI */}
         <div className="calc-results-column">
           <div className="sticky-results">
-            <h3 className="results-title">Būvniecības Specifikācija</h3>
-            
+            <h3 className="results-title">Būvniecības specifikācija</h3>
+
             {!results ? (
               <div className="empty-state">
-                <div className="empty-state-icon">🏘️</div>
-                <p>Aizpildi ģeometriju un ģenerē tāmi</p>
+                <div className="empty-state-icon">⌂</div>
+                <p>Aizpildi ģeometriju un ģenerē jumta tāmi.</p>
               </div>
             ) : (
               <>
-                <div style={{ 
-                  display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', 
-                  marginBottom: '25px', padding: '20px', background: 'rgba(255,255,255,0.03)', 
-                  borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)' 
+                <div style={{
+                  display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px',
+                  marginBottom: '25px', padding: '20px', background: 'rgba(255,255,255,0.03)',
+                  borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)',
                 }}>
                   <div>
-                    <span style={{ fontSize: '0.7rem', color: 'var(--text-dim)', display: 'block' }}>Jumta platība (tīrā):</span>
+                    <span style={{ fontSize: '0.7rem', color: 'var(--text-dim)', display: 'block' }}>Jumta platība tīrā</span>
                     <strong style={{ fontSize: '1.1rem' }}>{results.geom.roofAreaNet.toFixed(1)} m²</strong>
                   </div>
                   <div>
-                    <span style={{ fontSize: '0.7rem', color: 'var(--text-dim)', display: 'block' }}>Materiāls (+zudumi):</span>
+                    <span style={{ fontSize: '0.7rem', color: 'var(--text-dim)', display: 'block' }}>Materiāls ar zudumiem</span>
                     <strong style={{ fontSize: '1.1rem' }}>{results.geom.roofAreaGross.toFixed(1)} m²</strong>
                   </div>
                   <div>
-                    <span style={{ fontSize: '0.7rem', color: 'var(--text-dim)', display: 'block' }}>Nepieciešamās Spāres:</span>
+                    <span style={{ fontSize: '0.7rem', color: 'var(--text-dim)', display: 'block' }}>Nepieciešamās spāres</span>
                     <strong style={{ fontSize: '1.1rem' }}>{results.geom.raftersLength.toFixed(0)} m</strong>
                   </div>
                   <div>
-                    <span style={{ fontSize: '0.7rem', color: 'var(--text-dim)', display: 'block' }}>Latojuma brusas:</span>
+                    <span style={{ fontSize: '0.7rem', color: 'var(--text-dim)', display: 'block' }}>Latojuma brusas</span>
                     <strong style={{ fontSize: '1.1rem' }}>{results.geom.battensLength.toFixed(0)} m</strong>
                   </div>
                 </div>
@@ -300,46 +327,57 @@ export default function RoofCalc() {
                   <tbody>
                     {params.includeTimber && (
                       <tr>
-                        <td>Koka Karkass (Spāres, Latojums)</td>
-                        <td>{results.timberCost.mat.toFixed(0)} €</td>
-                        <td>{results.timberCost.work.toFixed(0)} €</td>
+                        <td>Koka karkass, spāres un latojums</td>
+                        <td>{formatEuro(results.timberCost.mat)}</td>
+                        <td>{formatEuro(results.timberCost.work)}</td>
                       </tr>
                     )}
                     <tr>
-                      <td>Segums + Plēve + Skrūves</td>
-                      <td>{results.coverCost.mat.toFixed(0)} €</td>
-                      <td>{results.coverCost.work.toFixed(0)} €</td>
+                      <td>Segums, plēve un stiprinājumi</td>
+                      <td>{formatEuro(results.coverCost.mat)}</td>
+                      <td>{formatEuro(results.coverCost.work)}</td>
                     </tr>
                     <tr>
-                      <td>Skārda detaļas (Kores, Vējmalas)</td>
-                      <td>{results.trimsCost.mat.toFixed(0)} €</td>
-                      <td>{results.trimsCost.work.toFixed(0)} €</td>
+                      <td>Skārda detaļas, kores un vējmalas</td>
+                      <td>{formatEuro(results.trimsCost.mat)}</td>
+                      <td>{formatEuro(results.trimsCost.work)}</td>
                     </tr>
                     {params.includeGutters && (
                       <tr>
-                        <td>Noteksistēmas ({results.geom.eavesLength.toFixed(0)}m)</td>
-                        <td>{results.guttersCost.mat.toFixed(0)} €</td>
-                        <td>{results.guttersCost.work.toFixed(0)} €</td>
+                        <td>Noteksistēmas ({results.geom.eavesLength.toFixed(0)} m)</td>
+                        <td>{formatEuro(results.guttersCost.mat)}</td>
+                        <td>{formatEuro(results.guttersCost.work)}</td>
                       </tr>
                     )}
                   </tbody>
                   <tfoot className="table-totals">
                     <tr>
-                      <td>KOPUMMĀ:</td>
-                      <td style={{ color: 'var(--accent-blue)' }}>{results.totalMat.toFixed(0)} €</td>
-                      <td style={{ color: 'var(--accent-purple)' }}>{results.totalWork.toFixed(0)} €</td>
+                      <td>Kopā</td>
+                      <td style={{ color: 'var(--accent-blue)' }}>{formatEuro(results.totalMat)}</td>
+                      <td style={{ color: 'var(--accent-purple)' }}>{formatEuro(results.totalWork)}</td>
                     </tr>
                   </tfoot>
                 </table>
 
                 <div className="grand-total-box">
-                  <span className="gt-label">Jumta Izbūves Projekts</span>
-                  <span className="gt-value">{results.grandTotal.toFixed(0)} €</span>
-                  <span className="gt-subtext">Summās nav iekļauts PVN (21%)</span>
+                  <span className="gt-label">Jumta izbūves projekts</span>
+                  <span className="gt-value">{formatEuro(results.grandTotal)}</span>
+                  <span className="gt-subtext">Summā nav iekļauts PVN. Gala piedāvājums jāprecizē pēc objekta apskates.</span>
                 </div>
+
+                <CalculatorLeadCta
+                  calculatorId="roof"
+                  calculatorTitle="Jumta tāme"
+                  estimateTotal={results.grandTotal}
+                  summaryItems={[
+                    { label: 'Jumta tips', value: params.roofType === 'gable' ? 'Divslīpju' : params.roofType === 'hip' ? 'Četrslīpju' : 'Plakanais' },
+                    { label: 'Materiāls', value: PRICES.materials[params.material].name },
+                    { label: 'Platība', value: `${results.geom.roofAreaGross.toFixed(1)} m²` },
+                    { label: 'Noteksistēma', value: params.includeGutters ? PRICES.gutters[params.gutterMaterial].name : 'Nav iekļauta' },
+                  ]}
+                />
               </>
             )}
-
           </div>
         </div>
       </div>
