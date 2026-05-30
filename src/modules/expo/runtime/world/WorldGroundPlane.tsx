@@ -25,6 +25,7 @@ export function WorldGroundPlane({ visualProfile }: { visualProfile: ExpoWorldVi
   const globalBaseMaterial = FLOOR_MATERIAL_INTENTS.globalBase;
   const seamTransitionMaterial = FLOOR_MATERIAL_INTENTS[GROUND_SEAM_TRANSITION_PLATE.materialIntent];
   const sponsorAnchorMaterial = FLOOR_MATERIAL_INTENTS[SPONSOR_BOULEVARD_RIGHT_FLOOR_ANCHOR.materialIntent];
+  const unifiedGroundColor = visualProfile.global.groundBase;
 
   return (
     <group name="world-ground:global">
@@ -58,7 +59,7 @@ export function WorldGroundPlane({ visualProfile }: { visualProfile: ExpoWorldVi
       >
         <planeGeometry args={GROUND_SEAM_TRANSITION_PLATE.size} />
         <meshStandardMaterial
-          color={GROUND_SEAM_TRANSITION_PLATE.color}
+          color={unifiedGroundColor}
           depthWrite={false}
           emissive={seamTransitionMaterial.emissive}
           emissiveIntensity={seamTransitionMaterial.emissiveIntensity}
@@ -86,7 +87,7 @@ export function WorldGroundPlane({ visualProfile }: { visualProfile: ExpoWorldVi
       >
         <planeGeometry args={SPONSOR_BOULEVARD_RIGHT_FLOOR_ANCHOR.size} />
         <meshStandardMaterial
-          color={SPONSOR_BOULEVARD_RIGHT_FLOOR_ANCHOR.color}
+          color={unifiedGroundColor}
           depthWrite={false}
           emissive={sponsorAnchorMaterial.emissive}
           emissiveIntensity={sponsorAnchorMaterial.emissiveIntensity}
@@ -114,7 +115,7 @@ export function WorldGroundPlane({ visualProfile }: { visualProfile: ExpoWorldVi
       >
         <planeGeometry args={ARRIVAL_GATE_FLOOR_ANCHOR.size} />
         <meshStandardMaterial
-          color={ARRIVAL_GATE_FLOOR_ANCHOR.color}
+          color={unifiedGroundColor}
           depthWrite={false}
           emissive={arrivalAnchorMaterial.emissive}
           emissiveIntensity={arrivalAnchorMaterial.emissiveIntensity}
@@ -142,7 +143,7 @@ export function WorldGroundPlane({ visualProfile }: { visualProfile: ExpoWorldVi
       >
         <planeGeometry args={CENTER_SPINE_FLOOR_GUIDE.size} />
         <meshStandardMaterial
-          color={CENTER_SPINE_FLOOR_GUIDE.color}
+          color={unifiedGroundColor}
           depthWrite={false}
           emissive={centerSpineGuideMaterial.emissive}
           emissiveIntensity={centerSpineGuideMaterial.emissiveIntensity}
