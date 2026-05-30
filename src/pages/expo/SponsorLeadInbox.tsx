@@ -74,6 +74,13 @@ function toDateTimeInputValue(value?: string | null) {
   return Number.isNaN(date.getTime()) ? '' : date.toISOString().slice(0, 16);
 }
 
+function getTomorrowMorningFollowUpIso(now = new Date()) {
+  const followUpAt = new Date(now);
+  followUpAt.setDate(followUpAt.getDate() + 1);
+  followUpAt.setHours(9, 0, 0, 0);
+  return followUpAt.toISOString();
+}
+
 function buildSummary(leads: SponsorLeadInboxLead[]) {
   return leads.reduce<SponsorLeadInboxResponse['summary']>((summary, lead) => {
     const status = normalizeStatus(lead);
@@ -235,6 +242,7 @@ export default function SponsorLeadInbox() {
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [activeStatusAction, setActiveStatusAction] = useState<string | null>(null);
   const [activeOpsSave, setActiveOpsSave] = useState<string | null>(null);
+  const [activeQuickAction, setActiveQuickAction] = useState<string | null>(null);
   const [leadFilter, setLeadFilter] = useState<LeadFilter>('all');
   const [opsDrafts, setOpsDrafts] = useState<Record<string, { followUpAt: string; opsNotes: string }>>({});
 
@@ -379,6 +387,53 @@ export default function SponsorLeadInbox() {
       setMessage({ type: 'error', text: `Failed to save lead ops note: ${formatRequestError(updateError)}` });
     } finally {
       setActiveOpsSave(null);
+    }
+  }
+
+  async function handleContactedTomorrow(lead: SponsorLeadInboxLead) {
+    const leadId = String(lead.id || '');
+    if (!leadId) {
+      return;
+    }
+
+    const draft = opsDrafts[leadId] ?? {
+      followUpAt: toDateTimeInputValue(lead.follow_up_at),
+      opsNotes: String(lead.ops_notes || ''),
+    };
+    const followUpAt = getTomorrowMorningFollowUpIso();
+
+    setActiveQuickAction(leadId);
+    setMessage(null);
+
+    try {
+      await updateSponsorLeadInboxStatus(sponsorSlug, leadId, 'contacted');
+      setData((current) => updateLeadInInbox(current, leadId, { status: 'contacted' }));
+
+      const result = await updateSponsorLeadInboxOps(sponsorSlug, leadId, {
+        followUpAt,
+        opsNotes: draft.opsNotes.trim() || null,
+      });
+
+      setData((current) =>
+        updateLeadInInbox(current, leadId, {
+          follow_up_at: result.follow_up_at,
+          ops_notes: result.ops_notes,
+          ops_updated_at: result.ops_updated_at,
+          status: 'contacted',
+        }),
+      );
+      setOpsDrafts((current) => ({
+        ...current,
+        [leadId]: {
+          followUpAt: toDateTimeInputValue(result.follow_up_at),
+          opsNotes: String(result.ops_notes || ''),
+        },
+      }));
+      setMessage({ type: 'success', text: 'Lead marked contacted and follow-up set for tomorrow.' });
+    } catch (quickActionError) {
+      setMessage({ type: 'error', text: `Failed to schedule quick follow-up: ${formatRequestError(quickActionError)}` });
+    } finally {
+      setActiveQuickAction(null);
     }
   }
 
@@ -678,6 +733,26 @@ export default function SponsorLeadInbox() {
                     </div>
                   )}
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '16px' }}>
+                    <button
+                      type="button"
+                      disabled={!leadId || activeQuickAction === leadId || status === 'closed' || status === 'rejected'}
+                      onClick={() => void handleContactedTomorrow(lead)}
+                      style={{
+                        padding: '8px 12px',
+                        borderRadius: '999px',
+                        border: '1px solid rgba(56, 189, 248, 0.72)',
+                        background: 'rgba(14, 116, 144, 0.28)',
+                        color: '#bae6fd',
+                        cursor: !leadId || status === 'closed' || status === 'rejected' ? 'default' : 'pointer',
+                        fontSize: '0.72rem',
+                        fontWeight: 950,
+                        letterSpacing: '0.04em',
+                        opacity: !leadId || activeQuickAction === leadId || status === 'closed' || status === 'rejected' ? 0.58 : 1,
+                        textTransform: 'uppercase',
+                      }}
+                    >
+                      {activeQuickAction === leadId ? 'Scheduling...' : 'Contacted + tomorrow'}
+                    </button>
                     {(['pending', 'contacted', 'closed', 'rejected'] as SponsorLeadStatus[]).map((nextStatus) => (
                       <button
                         key={nextStatus}
