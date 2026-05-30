@@ -69,6 +69,7 @@ protectedRouter.patch('/expo/review/booths/:boothId/leads/:leadId', expoDataCont
 protectedRouter.patch('/expo/review/booths/:boothId/leads/:leadId/ops', expoDataController.updateExpoReviewLeadOps);
 
 // Leads
+protectedRouter.get('/calculator/leads', calculatorLeadController.getCalculatorLeads);
 protectedRouter.get('/leads', leadsController.getLeads);
 protectedRouter.post('/leads', leadsController.createLead);
 protectedRouter.patch('/leads/:leadId', leadsController.updateLead);

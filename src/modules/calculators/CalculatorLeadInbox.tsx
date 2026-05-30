@@ -13,9 +13,11 @@ type BackendCalculatorLead = {
   created_at?: string | null;
   id?: string | number | null;
   message?: string | null;
+  notes?: string | null;
   score?: number | null;
   source?: string | null;
   status?: string | null;
+  value?: number | string | null;
 };
 
 type BackendLoadState =
@@ -93,7 +95,7 @@ function getBackendCalculatorId(lead: BackendCalculatorLead) {
 
 function getBackendEstimate(lead: BackendCalculatorLead) {
   const contactInfo = getContactInfo(lead);
-  return Number(contactInfo.estimateTotal || 0) || 0;
+  return Number(contactInfo.estimateTotal || lead.value || 0) || 0;
 }
 
 function getBackendLeadName(lead: BackendCalculatorLead) {
@@ -109,6 +111,11 @@ function getBackendLeadEmail(lead: BackendCalculatorLead) {
 function getBackendLeadPhone(lead: BackendCalculatorLead) {
   const contactInfo = getContactInfo(lead);
   return String(contactInfo.phone || 'Nav tālruņa');
+}
+
+function getBackendLeadMessage(lead: BackendCalculatorLead) {
+  const contactInfo = getContactInfo(lead);
+  return String(lead.message || lead.notes || contactInfo.message || contactInfo.notes || '').trim();
 }
 
 function getBackendSummaryItems(lead: BackendCalculatorLead): CalculatorLeadSummaryItem[] {
@@ -162,7 +169,7 @@ export default function CalculatorLeadInbox() {
   const loadBackendLeads = useCallback(async () => {
     setBackendState({ message: 'Ielādēju backend calculator leadus...', rows: [], status: 'loading' });
     try {
-      const response = await LeadsAPI.getLeadsBySource('calculator:');
+      const response = await LeadsAPI.getCalculatorLeads();
       const rows = normalizeBackendRows(response);
       setBackendState({
         message: rows.length > 0 ? `Atrasti ${rows.length} backend leadi.` : 'Backend atbildēja, bet calculator leadi nav atrasti.',
@@ -305,8 +312,11 @@ export default function CalculatorLeadInbox() {
             </div>
           ) : (
             <div style={{ display: 'grid', gap: '12px' }}>
-              {backendState.rows.map((lead, index) => (
-                <article key={String(lead.id ?? `${lead.source}:${index}`)} style={{ background: 'rgba(2, 6, 23, 0.54)', border: '1px solid rgba(148, 163, 184, 0.16)', borderRadius: '18px', padding: '16px' }}>
+              {backendState.rows.map((lead, index) => {
+                const backendMessage = getBackendLeadMessage(lead);
+
+                return (
+                  <article key={String(lead.id ?? `${lead.source}:${index}`)} style={{ background: 'rgba(2, 6, 23, 0.54)', border: '1px solid rgba(148, 163, 184, 0.16)', borderRadius: '18px', padding: '16px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px' }}>
                     <div>
                       <h3 style={{ margin: 0 }}>{getBackendLeadName(lead)}</h3>
@@ -318,10 +328,11 @@ export default function CalculatorLeadInbox() {
                   <div style={{ color: '#94a3b8', fontSize: '0.82rem', marginTop: '10px' }}>
                     {getBackendCalculatorId(lead)} · {lead.status || 'no status'} · {formatDate(lead.created_at)}
                   </div>
-                  {lead.message && <p style={{ color: '#e2e8f0', lineHeight: 1.5, margin: '12px 0 0', whiteSpace: 'pre-wrap' }}>{lead.message}</p>}
+                  {backendMessage && <p style={{ color: '#e2e8f0', lineHeight: 1.5, margin: '12px 0 0', whiteSpace: 'pre-wrap' }}>{backendMessage}</p>}
                   {summaryPills(getBackendSummaryItems(lead))}
                 </article>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
