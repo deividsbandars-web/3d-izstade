@@ -4,6 +4,7 @@ import { isSponsorPackageLead, parseSponsorPackageLeadMessage } from './sponsorP
 const packageMessage = [
   'Sponsor package interest: Premium Booth',
   'Sponsor company: Warpala Sponsor',
+  'Contact phone: +371 20000000',
   'Website: https://example.com',
   'Budget signal: 15k-50k',
   'Timeline: This quarter',
@@ -16,6 +17,7 @@ const details = parseSponsorPackageLeadMessage(packageMessage);
 assert.ok(details);
 assert.equal(details.packageInterest, 'Premium Booth');
 assert.equal(details.company, 'Warpala Sponsor');
+assert.equal(details.phone, '+371 20000000');
 assert.equal(details.website, 'https://example.com');
 assert.equal(details.budgetSignal, '15k-50k');
 assert.equal(details.timeline, 'This quarter');

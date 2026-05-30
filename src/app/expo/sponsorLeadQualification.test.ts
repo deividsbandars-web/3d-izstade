@@ -10,6 +10,7 @@ const baseLead: SponsorPackageLeadDetails = {
   company: 'Example Sponsor',
   message: 'We want to understand package options.',
   packageInterest: 'Standard Booth',
+  phone: null,
   timeline: null,
   website: 'https://example.com',
 };

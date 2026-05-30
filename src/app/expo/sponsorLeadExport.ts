@@ -13,6 +13,7 @@ export type SponsorLeadExportRow = {
   message: string;
   nextAction: string;
   packageInterest: string;
+  phone: string;
   priority: string;
   serviceName: string;
   status: string;
@@ -29,6 +30,7 @@ const CSV_HEADERS: Array<keyof SponsorLeadExportRow> = [
   'serviceName',
   'packageInterest',
   'company',
+  'phone',
   'website',
   'budgetSignal',
   'timeline',
@@ -62,6 +64,7 @@ export function buildSponsorLeadExportRows(leads: SponsorLeadInboxLead[]): Spons
       message: normalizeValue(packageDetails?.message ?? lead.message),
       nextAction: normalizeValue(qualification?.nextAction),
       packageInterest: normalizeValue(packageDetails?.packageInterest),
+      phone: normalizeValue(packageDetails?.phone),
       priority: normalizeValue(qualification?.priorityLabel),
       serviceName: normalizeValue(lead.service_name),
       status: normalizeValue(lead.status || 'pending'),
@@ -93,6 +96,7 @@ export function buildSponsorLeadCopySummary(lead: SponsorLeadInboxLead) {
     qualification ? `Priority: ${qualification.priorityLabel}` : null,
     qualification ? `Next action: ${qualification.nextAction}` : null,
     packageDetails?.company ? `Company: ${packageDetails.company}` : null,
+    packageDetails?.phone ? `Phone: ${packageDetails.phone}` : null,
     packageDetails?.website ? `Website: ${packageDetails.website}` : null,
     packageDetails?.budgetSignal ? `Budget: ${packageDetails.budgetSignal}` : null,
     packageDetails?.timeline ? `Timeline: ${packageDetails.timeline}` : null,

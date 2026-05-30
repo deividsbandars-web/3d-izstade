@@ -812,6 +812,7 @@ export default function SponsorLeadInbox() {
                       <div style={{ display: 'grid', gap: '10px', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', marginTop: '12px' }}>
                         {[
                           ['Company', packageDetails.company],
+                          ['Phone', packageDetails.phone],
                           ['Website', packageDetails.website],
                           ['Budget', packageDetails.budgetSignal],
                           ['Timeline', packageDetails.timeline],

@@ -3,6 +3,7 @@ export type SponsorPackageLeadDetails = {
   company: string | null;
   message: string;
   packageInterest: string;
+  phone: string | null;
   timeline: string | null;
   website: string | null;
 };
@@ -10,6 +11,7 @@ export type SponsorPackageLeadDetails = {
 const PACKAGE_FIELD_PREFIXES = {
   budgetSignal: 'Budget signal:',
   company: 'Sponsor company:',
+  phone: 'Contact phone:',
   packageInterest: 'Sponsor package interest:',
   timeline: 'Timeline:',
   website: 'Website:',
@@ -42,6 +44,7 @@ export function parseSponsorPackageLeadMessage(message?: string | null): Sponsor
     company: readField(lines, PACKAGE_FIELD_PREFIXES.company),
     message: requestMessage || normalizedMessage,
     packageInterest,
+    phone: readField(lines, PACKAGE_FIELD_PREFIXES.phone),
     timeline: readField(lines, PACKAGE_FIELD_PREFIXES.timeline),
     website: readField(lines, PACKAGE_FIELD_PREFIXES.website),
   };

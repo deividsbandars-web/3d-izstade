@@ -395,6 +395,17 @@ export default function SponsorPackages() {
                   />
                 </label>
                 <label style={labelStyle}>
+                  Phone / WhatsApp
+                  <input
+                    autoComplete="tel"
+                    onChange={(event) => updateRequestField('phone', event.target.value)}
+                    placeholder="+371 20000000"
+                    style={inputStyle}
+                    type="tel"
+                    value={requestForm.phone}
+                  />
+                </label>
+                <label style={labelStyle}>
                   Website
                   <input
                     autoComplete="url"

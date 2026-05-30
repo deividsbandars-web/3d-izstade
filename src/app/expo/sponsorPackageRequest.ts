@@ -13,6 +13,7 @@ export type SponsorPackageRequestForm = {
   message: string;
   name: string;
   packageInterest: SponsorPackageInterest;
+  phone: string;
   timeline: string;
   website: string;
 };
@@ -47,6 +48,7 @@ export const INITIAL_SPONSOR_PACKAGE_REQUEST_FORM: SponsorPackageRequestForm = {
   message: '',
   name: '',
   packageInterest: 'premium',
+  phone: '',
   timeline: '',
   website: '',
 };
@@ -61,6 +63,7 @@ export function normalizeSponsorPackageRequestForm(
     message: form.message.trim(),
     name: form.name.trim(),
     packageInterest: form.packageInterest,
+    phone: form.phone.trim(),
     timeline: form.timeline.trim(),
     website: form.website.trim(),
   };
@@ -135,6 +138,7 @@ export function buildSponsorPackageLeadPayload(
   const details = [
     `Sponsor package interest: ${getSponsorPackageInterestLabel(normalized.packageInterest)}`,
     `Sponsor company: ${normalized.company}`,
+    normalized.phone ? `Contact phone: ${normalized.phone}` : null,
     normalized.website ? `Website: ${normalized.website}` : null,
     normalized.budgetRange ? `Budget signal: ${normalized.budgetRange}` : null,
     normalized.timeline ? `Timeline: ${normalized.timeline}` : null,

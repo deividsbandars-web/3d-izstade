@@ -36,6 +36,7 @@ export function buildSponsorLeadReplyDraft(lead: SponsorLeadInboxLead): SponsorL
   const recipientEmail = normalizeValue(lead.client_email);
   const contextLines = [
     packageDetails?.company ? `Company: ${packageDetails.company}` : null,
+    packageDetails?.phone ? `Phone: ${packageDetails.phone}` : null,
     packageDetails?.budgetSignal ? `Budget signal: ${packageDetails.budgetSignal}` : null,
     packageDetails?.timeline ? `Timeline: ${packageDetails.timeline}` : null,
     qualification?.nextAction ? `Internal next action: ${qualification.nextAction}` : null,

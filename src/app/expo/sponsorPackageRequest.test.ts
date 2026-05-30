@@ -17,6 +17,7 @@ const validForm: SponsorPackageRequestForm = {
   message: ' Interested in Premium Booth and Demo Arena sponsorship. ',
   name: ' Sponsor Buyer ',
   packageInterest: 'premium',
+  phone: ' +371 20000000 ',
   timeline: ' next-month ',
   website: ' https://example.com ',
 };
@@ -28,6 +29,7 @@ assert.deepEqual(normalizeSponsorPackageRequestForm(validForm), {
   message: 'Interested in Premium Booth and Demo Arena sponsorship.',
   name: 'Sponsor Buyer',
   packageInterest: 'premium',
+  phone: '+371 20000000',
   timeline: 'next-month',
   website: 'https://example.com',
 });
@@ -47,6 +49,7 @@ assert.equal(payload.companySlug, 'sponsor-concierge');
 assert.equal(payload.sourcePath, '/expo/sponsor-packages?source=test');
 assert.match(payload.message, /Sponsor package interest: Premium Booth/);
 assert.match(payload.message, /Sponsor company: Warpala Sponsor/);
+assert.match(payload.message, /Contact phone: \+371 20000000/);
 assert.match(payload.message, /Website: https:\/\/example\.com/);
 assert.match(payload.message, /Interested in Premium Booth and Demo Arena sponsorship\./);
 

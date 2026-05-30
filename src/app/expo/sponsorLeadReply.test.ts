@@ -15,6 +15,7 @@ const packageLead: SponsorLeadInboxLead = {
   message: [
     'Sponsor package interest: Premium Booth',
     'Sponsor company: Warpala Sponsor',
+    'Contact phone: +371 20000000',
     'Website: https://example.com',
     'Budget signal: 15k-50k',
     'Timeline: This quarter',
@@ -34,6 +35,7 @@ assert.match(draft.body, /Hi Sponsor,/);
 assert.match(draft.body, /Thanks for your interest in the Premium Booth\./);
 assert.match(draft.body, /Would you be available for a 20-minute walkthrough this week\?/);
 assert.match(draft.body, /Company: Warpala Sponsor/);
+assert.match(draft.body, /Phone: \+371 20000000/);
 assert.match(draft.body, /Budget signal: 15k-50k/);
 assert.match(draft.body, /Timeline: This quarter/);
 assert.match(draft.mailtoHref, /^mailto:buyer%40example\.com\?/);
