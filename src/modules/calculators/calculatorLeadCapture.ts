@@ -174,7 +174,7 @@ export async function submitCalculatorLeadRequest(
   }
 
   try {
-    await LeadsAPI.createLead(buildCalculatorLeadPayload(form, context));
+    await LeadsAPI.createCalculatorLead(buildCalculatorLeadPayload(form, context));
     return { persistence: 'backend' };
   } catch (error) {
     const localQueueCount = saveCalculatorLeadRequest(form, context, 'backend-fallback');

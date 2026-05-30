@@ -16,6 +16,7 @@ import * as billingController from '../controllers/billingController.js';
 import * as platformController from '../controllers/platformController.js';
 import * as businessController from '../controllers/businessController.js';
 import * as growthController from '../controllers/growthController.js';
+import * as calculatorLeadController from '../controllers/calculatorLeadController.js';
 import { authMiddleware } from '../middleware/authMiddleware.js';
 import { rateLimitMiddleware } from '../middleware/rateLimit.js';
 
@@ -31,6 +32,7 @@ router.post('/analytics/track', analyticsController.trackAnalytics);
 router.get('/pixel-streaming/status', expoController.getPixelStreamingRuntimeStatus);
 router.post('/pixel-streaming/session', expoController.createPixelStreamingSession);
 router.post('/expo/lead', expoLeadController.captureExpoLead);
+router.post('/calculator/lead', calculatorLeadController.captureCalculatorLead);
 router.post('/ai-estimate', aiController.estimateWithAi);
 
 // Public read-only scene contract used by the Web3D client. Keep auth policy here only.
