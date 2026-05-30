@@ -14,6 +14,7 @@ import {
   buildSponsorLeadCopySummary,
   serializeSponsorLeadCsv,
 } from '../../app/expo/sponsorLeadExport';
+import { buildSponsorLeadReplyDraft } from '../../app/expo/sponsorLeadReply';
 import {
   getSponsorLeadQualificationForMessage,
   getSponsorPackageLeadQualification,
@@ -484,6 +485,17 @@ export default function SponsorLeadInbox() {
     }
   }
 
+  async function handleCopyReplyDraft(lead: SponsorLeadInboxLead) {
+    const draft = buildSponsorLeadReplyDraft(lead);
+
+    try {
+      await copyTextToClipboard(`Subject: ${draft.subject}\n\n${draft.body}`);
+      setMessage({ type: 'success', text: 'Sponsor reply draft copied.' });
+    } catch (copyError) {
+      setMessage({ type: 'error', text: `Could not copy reply draft: ${formatRequestError(copyError)}` });
+    }
+  }
+
   return (
     <div className="calculator-pro-wrapper" style={{ maxWidth: '1180px', margin: '0 auto', padding: '40px 20px', color: 'white' }}>
       <header style={{ display: 'flex', justifyContent: 'space-between', gap: '20px', alignItems: 'center', marginBottom: '34px', flexWrap: 'wrap' }}>
@@ -620,6 +632,7 @@ export default function SponsorLeadInbox() {
                   const draft = opsDrafts[leadId] ?? { followUpAt: '', opsNotes: '' };
                   const packageDetails = parseSponsorPackageLeadMessage(lead.message);
                   const packageQualification = packageDetails ? getSponsorPackageLeadQualification(packageDetails) : null;
+                  const replyDraft = buildSponsorLeadReplyDraft(lead);
                   return (
                     <article key={leadId || `${lead.client_email}:${lead.created_at}`} style={{ padding: '18px', borderRadius: '18px', background: 'rgba(2, 6, 23, 0.72)', border: '1px solid rgba(148, 163, 184, 0.18)' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', gap: '14px', alignItems: 'flex-start', flexWrap: 'wrap' }}>
@@ -649,6 +662,43 @@ export default function SponsorLeadInbox() {
                       >
                         Copy summary
                       </button>
+                      <button
+                        type="button"
+                        onClick={() => void handleCopyReplyDraft(lead)}
+                        style={{
+                          background: 'rgba(14, 116, 144, 0.24)',
+                          border: '1px solid rgba(56, 189, 248, 0.38)',
+                          borderRadius: '999px',
+                          color: '#bae6fd',
+                          cursor: 'pointer',
+                          fontSize: '0.68rem',
+                          fontWeight: 900,
+                          letterSpacing: '0.06em',
+                          padding: '7px 10px',
+                          textTransform: 'uppercase',
+                        }}
+                      >
+                        Copy reply
+                      </button>
+                      {replyDraft.hasRecipient ? (
+                        <a
+                          href={replyDraft.mailtoHref}
+                          style={{
+                            background: 'rgba(20, 83, 45, 0.36)',
+                            border: '1px solid rgba(52, 211, 153, 0.38)',
+                            borderRadius: '999px',
+                            color: '#bbf7d0',
+                            fontSize: '0.68rem',
+                            fontWeight: 900,
+                            letterSpacing: '0.06em',
+                            padding: '7px 10px',
+                            textDecoration: 'none',
+                            textTransform: 'uppercase',
+                          }}
+                        >
+                          Email draft
+                        </a>
+                      ) : null}
                     </div>
                   </div>
                   {packageDetails ? (
