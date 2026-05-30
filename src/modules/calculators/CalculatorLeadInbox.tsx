@@ -27,6 +27,15 @@ type BackendLoadState =
   | { message: string; rows: BackendCalculatorLead[]; status: 'success' };
 
 type CalculatorLeadStatus = 'new' | 'contacted' | 'qualified' | 'rejected';
+type CalculatorLeadPriority = 'low' | 'medium' | 'high' | 'urgent';
+type CalculatorLeadQuality = 'unreviewed' | 'low' | 'medium' | 'high';
+
+type BackendLeadOpsPayload = {
+  leadQuality?: CalculatorLeadQuality;
+  salesNotes?: string;
+  salesPriority?: CalculatorLeadPriority;
+  status?: CalculatorLeadStatus;
+};
 
 const ALL_FILTER_VALUE = 'all';
 const CALCULATOR_LEAD_STATUS_OPTIONS: Array<{ label: string; value: CalculatorLeadStatus }> = [
@@ -34,6 +43,18 @@ const CALCULATOR_LEAD_STATUS_OPTIONS: Array<{ label: string; value: CalculatorLe
   { label: 'Sazinats', value: 'contacted' },
   { label: 'Kvalificets', value: 'qualified' },
   { label: 'Noraidits', value: 'rejected' },
+];
+const CALCULATOR_LEAD_PRIORITY_OPTIONS: Array<{ label: string; value: CalculatorLeadPriority }> = [
+  { label: 'Zema', value: 'low' },
+  { label: 'Videja', value: 'medium' },
+  { label: 'Augsta', value: 'high' },
+  { label: 'Steidzama', value: 'urgent' },
+];
+const CALCULATOR_LEAD_QUALITY_OPTIONS: Array<{ label: string; value: CalculatorLeadQuality }> = [
+  { label: 'Nav skatits', value: 'unreviewed' },
+  { label: 'Vaja', value: 'low' },
+  { label: 'Videja', value: 'medium' },
+  { label: 'Laba', value: 'high' },
 ];
 
 function getBackendAccessNotice(message: string) {
@@ -197,6 +218,88 @@ function getStatusTone(status?: string | null) {
   }
 }
 
+function normalizeLeadPriority(priority: unknown): CalculatorLeadPriority {
+  const normalized = String(priority || '').trim().toLowerCase();
+  return CALCULATOR_LEAD_PRIORITY_OPTIONS.some((option) => option.value === normalized)
+    ? normalized as CalculatorLeadPriority
+    : 'medium';
+}
+
+function normalizeLeadQuality(quality: unknown): CalculatorLeadQuality {
+  const normalized = String(quality || '').trim().toLowerCase();
+  return CALCULATOR_LEAD_QUALITY_OPTIONS.some((option) => option.value === normalized)
+    ? normalized as CalculatorLeadQuality
+    : 'unreviewed';
+}
+
+function getPriorityLabel(priority: unknown) {
+  const normalized = normalizeLeadPriority(priority);
+  return CALCULATOR_LEAD_PRIORITY_OPTIONS.find((option) => option.value === normalized)?.label ?? normalized;
+}
+
+function getQualityLabel(quality: unknown) {
+  const normalized = normalizeLeadQuality(quality);
+  return CALCULATOR_LEAD_QUALITY_OPTIONS.find((option) => option.value === normalized)?.label ?? normalized;
+}
+
+function getPriorityTone(priority: unknown) {
+  switch (normalizeLeadPriority(priority)) {
+    case 'urgent':
+      return '#fb7185';
+    case 'high':
+      return '#f59e0b';
+    case 'low':
+      return '#94a3b8';
+    default:
+      return '#38bdf8';
+  }
+}
+
+function getQualityTone(quality: unknown) {
+  switch (normalizeLeadQuality(quality)) {
+    case 'high':
+      return '#22c55e';
+    case 'medium':
+      return '#38bdf8';
+    case 'low':
+      return '#f87171';
+    default:
+      return '#94a3b8';
+  }
+}
+
+function getSuggestedPriority(lead: BackendCalculatorLead): CalculatorLeadPriority {
+  const estimate = getBackendEstimate(lead);
+  if (estimate >= 25000) {
+    return 'urgent';
+  }
+
+  if (estimate >= 10000) {
+    return 'high';
+  }
+
+  if (estimate >= 3000) {
+    return 'medium';
+  }
+
+  return 'low';
+}
+
+function getBackendLeadPriority(lead: BackendCalculatorLead) {
+  const contactInfo = getContactInfo(lead);
+  return normalizeLeadPriority(contactInfo.salesPriority || getSuggestedPriority(lead));
+}
+
+function getBackendLeadQuality(lead: BackendCalculatorLead) {
+  const contactInfo = getContactInfo(lead);
+  return normalizeLeadQuality(contactInfo.leadQuality);
+}
+
+function getBackendSalesNotes(lead: BackendCalculatorLead) {
+  const contactInfo = getContactInfo(lead);
+  return typeof contactInfo.salesNotes === 'string' ? contactInfo.salesNotes : '';
+}
+
 function matchesBackendSearch(lead: BackendCalculatorLead, searchTerm: string) {
   const normalizedSearch = searchTerm.trim().toLowerCase();
   if (!normalizedSearch) {
@@ -210,6 +313,9 @@ function matchesBackendSearch(lead: BackendCalculatorLead, searchTerm: string) {
     getBackendLeadEmail(lead),
     getBackendLeadPhone(lead),
     getBackendLeadMessage(lead),
+    getBackendSalesNotes(lead),
+    getPriorityLabel(getBackendLeadPriority(lead)),
+    getQualityLabel(getBackendLeadQuality(lead)),
   ].some((value) => value.toLowerCase().includes(normalizedSearch));
 }
 
@@ -219,6 +325,42 @@ function getLocalEstimateTotal(queue: CalculatorLeadRecord[]) {
 
 function getBackendEstimateTotal(leads: BackendCalculatorLead[]) {
   return leads.reduce((sum, lead) => sum + getBackendEstimate(lead), 0);
+}
+
+function escapeCsvCell(value: unknown) {
+  const text = String(value ?? '').replace(/\r?\n/g, ' ').trim();
+  return `"${text.replace(/"/g, '""')}"`;
+}
+
+function buildBackendLeadsCsv(leads: BackendCalculatorLead[]) {
+  const header = [
+    'Created',
+    'Status',
+    'Priority',
+    'Quality',
+    'Calculator',
+    'Name',
+    'Email',
+    'Phone',
+    'Estimate',
+    'Customer message',
+    'Sales notes',
+  ];
+  const rows = leads.map((lead) => [
+    formatDate(lead.created_at),
+    getStatusLabel(lead.status),
+    getPriorityLabel(getBackendLeadPriority(lead)),
+    getQualityLabel(getBackendLeadQuality(lead)),
+    getBackendCalculatorTitle(lead),
+    getBackendLeadName(lead),
+    getBackendLeadEmail(lead),
+    getBackendLeadPhone(lead),
+    getBackendEstimate(lead),
+    getBackendLeadMessage(lead),
+    getBackendSalesNotes(lead),
+  ]);
+
+  return [header, ...rows].map((row) => row.map(escapeCsvCell).join(',')).join('\n');
 }
 
 function statCard(label: string, value: string | number, tone: string) {
@@ -255,6 +397,9 @@ export default function CalculatorLeadInbox() {
     rows: [],
     status: 'idle',
   });
+  const [qualityFilter, setQualityFilter] = useState(ALL_FILTER_VALUE);
+  const [salesNotesDrafts, setSalesNotesDrafts] = useState<Record<string, string>>({});
+  const [priorityFilter, setPriorityFilter] = useState(ALL_FILTER_VALUE);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState(ALL_FILTER_VALUE);
   const [updatingLeadId, setUpdatingLeadId] = useState('');
@@ -266,6 +411,14 @@ export default function CalculatorLeadInbox() {
     try {
       const response = await LeadsAPI.getCalculatorLeads();
       const rows = normalizeBackendRows(response);
+      setSalesNotesDrafts((current) => rows.reduce<Record<string, string>>((drafts, lead) => {
+        const leadId = getBackendLeadId(lead);
+        if (leadId) {
+          drafts[leadId] = current[leadId] ?? getBackendSalesNotes(lead);
+        }
+
+        return drafts;
+      }, {}));
       setBackendState({
         message: rows.length > 0 ? `Atrasti ${rows.length} backend leadi.` : 'Backend atbildÄ“ja, bet calculator leadi nav atrasti.',
         rows,
@@ -297,8 +450,10 @@ export default function CalculatorLeadInbox() {
   const filteredBackendRows = useMemo(() => backendState.rows.filter((lead) => {
     const calculatorMatches = calculatorFilter === ALL_FILTER_VALUE || getBackendCalculatorId(lead) === calculatorFilter;
     const statusMatches = statusFilter === ALL_FILTER_VALUE || normalizeLeadStatus(lead.status) === statusFilter;
-    return calculatorMatches && statusMatches && matchesBackendSearch(lead, searchTerm);
-  }), [backendState.rows, calculatorFilter, searchTerm, statusFilter]);
+    const priorityMatches = priorityFilter === ALL_FILTER_VALUE || getBackendLeadPriority(lead) === priorityFilter;
+    const qualityMatches = qualityFilter === ALL_FILTER_VALUE || getBackendLeadQuality(lead) === qualityFilter;
+    return calculatorMatches && statusMatches && priorityMatches && qualityMatches && matchesBackendSearch(lead, searchTerm);
+  }), [backendState.rows, calculatorFilter, priorityFilter, qualityFilter, searchTerm, statusFilter]);
   const filteredBackendTotal = useMemo(() => getBackendEstimateTotal(filteredBackendRows), [filteredBackendRows]);
   const newBackendLeadCount = useMemo(
     () => backendState.rows.filter((lead) => normalizeLeadStatus(lead.status) === 'new').length,
@@ -336,27 +491,49 @@ export default function CalculatorLeadInbox() {
     URL.revokeObjectURL(url);
   };
 
-  const updateBackendLeadStatus = async (lead: BackendCalculatorLead, status: CalculatorLeadStatus) => {
+  const exportBackendCsv = () => {
+    if (typeof window === 'undefined' || filteredBackendRows.length === 0) {
+      return;
+    }
+
+    const blob = new Blob([buildBackendLeadsCsv(filteredBackendRows)], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = `calculator-leads-backend-${new Date().toISOString().slice(0, 10)}.csv`;
+    anchor.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const updateBackendLeadOps = async (lead: BackendCalculatorLead, payload: BackendLeadOpsPayload, successMessage: string) => {
     const leadId = getBackendLeadId(lead);
     if (!leadId) {
-      setActionMessage('Lead ID nav pieejams, statusu nevar atjaunot.');
+      setActionMessage('Lead ID nav pieejams, izmainas nevar saglabat.');
       return;
     }
 
     setActionMessage('');
     setUpdatingLeadId(leadId);
     try {
-      const updatedLead = await LeadsAPI.updateCalculatorLead(leadId, { status }) as BackendCalculatorLead;
+      const updatedLead = await LeadsAPI.updateCalculatorLead(leadId, payload) as BackendCalculatorLead;
       setBackendState((current) => ({
         ...current,
-        rows: current.rows.map((row) => (getBackendLeadId(row) === leadId ? { ...row, ...updatedLead, status } : row)),
+        rows: current.rows.map((row) => (getBackendLeadId(row) === leadId ? { ...row, ...updatedLead } : row)),
       }));
-      setActionMessage(`Lead statuss atjaunots: ${getStatusLabel(status)}.`);
+      setSalesNotesDrafts((current) => ({
+        ...current,
+        [leadId]: payload.salesNotes ?? getBackendSalesNotes(updatedLead),
+      }));
+      setActionMessage(successMessage);
     } catch (error) {
-      setActionMessage(error instanceof Error ? error.message : 'Lead statusu neizdevas atjaunot.');
+      setActionMessage(error instanceof Error ? error.message : 'Lead izmainas neizdevas saglabat.');
     } finally {
       setUpdatingLeadId('');
     }
+  };
+
+  const updateBackendLeadStatus = async (lead: BackendCalculatorLead, status: CalculatorLeadStatus) => {
+    await updateBackendLeadOps(lead, { status }, `Lead statuss atjaunots: ${getStatusLabel(status)}.`);
   };
 
   return (
@@ -459,12 +636,17 @@ export default function CalculatorLeadInbox() {
         </div>
 
         <div style={{ background: 'rgba(15, 23, 42, 0.72)', border: '1px solid rgba(34, 197, 94, 0.2)', borderRadius: '24px', padding: '22px' }}>
-          <div style={{ marginBottom: '16px' }}>
-            <h2 style={{ margin: 0 }}>Backend calculator leadi</h2>
-            <p style={{ color: backendState.status === 'error' ? '#fecaca' : '#94a3b8', margin: '6px 0 0' }}>{backendState.message}</p>
+          <div style={{ alignItems: 'flex-start', display: 'flex', gap: '12px', justifyContent: 'space-between', marginBottom: '16px' }}>
+            <div>
+              <h2 style={{ margin: 0 }}>Backend calculator leadi</h2>
+              <p style={{ color: backendState.status === 'error' ? '#fecaca' : '#94a3b8', margin: '6px 0 0' }}>{backendState.message}</p>
+            </div>
+            <button disabled={filteredBackendRows.length === 0} onClick={exportBackendCsv} style={{ background: 'rgba(34, 197, 94, 0.13)', border: '1px solid rgba(34, 197, 94, 0.32)', borderRadius: '12px', color: '#bbf7d0', cursor: filteredBackendRows.length === 0 ? 'default' : 'pointer', fontWeight: 900, opacity: filteredBackendRows.length === 0 ? 0.5 : 1, padding: '10px 12px', whiteSpace: 'nowrap' }} type="button">
+              Export CSV
+            </button>
           </div>
 
-          <div style={{ background: 'rgba(2, 6, 23, 0.42)', border: '1px solid rgba(148, 163, 184, 0.16)', borderRadius: '18px', display: 'grid', gap: '12px', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', marginBottom: '16px', padding: '14px' }}>
+          <div style={{ background: 'rgba(2, 6, 23, 0.42)', border: '1px solid rgba(148, 163, 184, 0.16)', borderRadius: '18px', display: 'grid', gap: '12px', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', marginBottom: '16px', padding: '14px' }}>
             <label style={{ color: '#cbd5e1', display: 'grid', fontSize: '0.78rem', fontWeight: 850, gap: '7px' }}>
               Kalkulators
               <select onChange={(event) => setCalculatorFilter(event.target.value)} style={{ background: 'rgba(15, 23, 42, 0.86)', border: '1px solid rgba(148, 163, 184, 0.24)', borderRadius: '12px', color: '#f8fafc', font: 'inherit', padding: '10px' }} value={calculatorFilter}>
@@ -479,6 +661,24 @@ export default function CalculatorLeadInbox() {
               <select onChange={(event) => setStatusFilter(event.target.value)} style={{ background: 'rgba(15, 23, 42, 0.86)', border: '1px solid rgba(148, 163, 184, 0.24)', borderRadius: '12px', color: '#f8fafc', font: 'inherit', padding: '10px' }} value={statusFilter}>
                 <option value={ALL_FILTER_VALUE}>Visi statusi</option>
                 {CALCULATOR_LEAD_STATUS_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
+              </select>
+            </label>
+            <label style={{ color: '#cbd5e1', display: 'grid', fontSize: '0.78rem', fontWeight: 850, gap: '7px' }}>
+              Prioritate
+              <select onChange={(event) => setPriorityFilter(event.target.value)} style={{ background: 'rgba(15, 23, 42, 0.86)', border: '1px solid rgba(148, 163, 184, 0.24)', borderRadius: '12px', color: '#f8fafc', font: 'inherit', padding: '10px' }} value={priorityFilter}>
+                <option value={ALL_FILTER_VALUE}>Visas prioritates</option>
+                {CALCULATOR_LEAD_PRIORITY_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
+              </select>
+            </label>
+            <label style={{ color: '#cbd5e1', display: 'grid', fontSize: '0.78rem', fontWeight: 850, gap: '7px' }}>
+              Kvalitate
+              <select onChange={(event) => setQualityFilter(event.target.value)} style={{ background: 'rgba(15, 23, 42, 0.86)', border: '1px solid rgba(148, 163, 184, 0.24)', borderRadius: '12px', color: '#f8fafc', font: 'inherit', padding: '10px' }} value={qualityFilter}>
+                <option value={ALL_FILTER_VALUE}>Visa kvalitate</option>
+                {CALCULATOR_LEAD_QUALITY_OPTIONS.map((option) => (
                   <option key={option.value} value={option.value}>{option.label}</option>
                 ))}
               </select>
@@ -506,6 +706,11 @@ export default function CalculatorLeadInbox() {
                 const leadId = getBackendLeadId(lead);
                 const leadStatus = normalizeLeadStatus(lead.status);
                 const statusTone = getStatusTone(lead.status);
+                const leadPriority = getBackendLeadPriority(lead);
+                const priorityTone = getPriorityTone(leadPriority);
+                const leadQuality = getBackendLeadQuality(lead);
+                const qualityTone = getQualityTone(leadQuality);
+                const salesNotesDraft = leadId ? salesNotesDrafts[leadId] ?? getBackendSalesNotes(lead) : getBackendSalesNotes(lead);
                 const isUpdating = updatingLeadId === leadId;
 
                 return (
@@ -523,9 +728,68 @@ export default function CalculatorLeadInbox() {
                     <span style={{ background: `${statusTone}22`, border: `1px solid ${statusTone}55`, borderRadius: '999px', color: statusTone, display: 'inline-block', fontSize: '0.7rem', fontWeight: 950, marginLeft: '8px', padding: '4px 8px', textTransform: 'uppercase' }}>
                       {getStatusLabel(lead.status)}
                     </span>
+                    <span style={{ background: `${priorityTone}22`, border: `1px solid ${priorityTone}55`, borderRadius: '999px', color: priorityTone, display: 'inline-block', fontSize: '0.7rem', fontWeight: 950, marginLeft: '8px', padding: '4px 8px', textTransform: 'uppercase' }}>
+                      {getPriorityLabel(leadPriority)}
+                    </span>
+                    <span style={{ background: `${qualityTone}22`, border: `1px solid ${qualityTone}55`, borderRadius: '999px', color: qualityTone, display: 'inline-block', fontSize: '0.7rem', fontWeight: 950, marginLeft: '8px', padding: '4px 8px', textTransform: 'uppercase' }}>
+                      {getQualityLabel(leadQuality)}
+                    </span>
                   </div>
                   {backendMessage && <p style={{ color: '#e2e8f0', lineHeight: 1.5, margin: '12px 0 0', whiteSpace: 'pre-wrap' }}>{backendMessage}</p>}
                   {summaryPills(getBackendSummaryItems(lead))}
+                  <div style={{ background: 'rgba(15, 23, 42, 0.5)', border: '1px solid rgba(148, 163, 184, 0.14)', borderRadius: '16px', display: 'grid', gap: '10px', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', marginTop: '14px', padding: '12px' }}>
+                    <label style={{ color: '#cbd5e1', display: 'grid', fontSize: '0.74rem', fontWeight: 850, gap: '6px' }}>
+                      Sales prioritate
+                      <select
+                        disabled={isUpdating}
+                        onChange={(event) => void updateBackendLeadOps(lead, { salesPriority: event.target.value as CalculatorLeadPriority }, `Prioritate atjaunota: ${getPriorityLabel(event.target.value)}.`)}
+                        style={{ background: 'rgba(2, 6, 23, 0.72)', border: '1px solid rgba(148, 163, 184, 0.24)', borderRadius: '10px', color: '#f8fafc', font: 'inherit', padding: '9px' }}
+                        value={leadPriority}
+                      >
+                        {CALCULATOR_LEAD_PRIORITY_OPTIONS.map((option) => (
+                          <option key={option.value} value={option.value}>{option.label}</option>
+                        ))}
+                      </select>
+                    </label>
+                    <label style={{ color: '#cbd5e1', display: 'grid', fontSize: '0.74rem', fontWeight: 850, gap: '6px' }}>
+                      Lead kvalitate
+                      <select
+                        disabled={isUpdating}
+                        onChange={(event) => void updateBackendLeadOps(lead, { leadQuality: event.target.value as CalculatorLeadQuality }, `Kvalitate atjaunota: ${getQualityLabel(event.target.value)}.`)}
+                        style={{ background: 'rgba(2, 6, 23, 0.72)', border: '1px solid rgba(148, 163, 184, 0.24)', borderRadius: '10px', color: '#f8fafc', font: 'inherit', padding: '9px' }}
+                        value={leadQuality}
+                      >
+                        {CALCULATOR_LEAD_QUALITY_OPTIONS.map((option) => (
+                          <option key={option.value} value={option.value}>{option.label}</option>
+                        ))}
+                      </select>
+                    </label>
+                  </div>
+                  <label style={{ color: '#cbd5e1', display: 'grid', fontSize: '0.76rem', fontWeight: 850, gap: '7px', marginTop: '12px' }}>
+                    Ieksejas sales piezimes
+                    <textarea
+                      disabled={isUpdating || !leadId}
+                      onChange={(event) => {
+                        if (!leadId) {
+                          return;
+                        }
+
+                        setSalesNotesDrafts((current) => ({ ...current, [leadId]: event.target.value }));
+                      }}
+                      placeholder="Piem.: atzvanit rit, prasija premium piedavajumu, budzets apstiprinats..."
+                      rows={3}
+                      style={{ background: 'rgba(2, 6, 23, 0.72)', border: '1px solid rgba(148, 163, 184, 0.22)', borderRadius: '12px', color: '#f8fafc', font: 'inherit', lineHeight: 1.45, padding: '10px', resize: 'vertical' }}
+                      value={salesNotesDraft}
+                    />
+                  </label>
+                  <button
+                    disabled={isUpdating || !leadId || salesNotesDraft === getBackendSalesNotes(lead)}
+                    onClick={() => void updateBackendLeadOps(lead, { salesNotes: salesNotesDraft }, 'Sales piezimes saglabatas.')}
+                    style={{ background: 'rgba(56, 189, 248, 0.14)', border: '1px solid rgba(56, 189, 248, 0.28)', borderRadius: '999px', color: '#bae6fd', cursor: isUpdating || !leadId || salesNotesDraft === getBackendSalesNotes(lead) ? 'default' : 'pointer', fontSize: '0.72rem', fontWeight: 900, marginTop: '8px', opacity: isUpdating || !leadId || salesNotesDraft === getBackendSalesNotes(lead) ? 0.55 : 1, padding: '8px 11px', textTransform: 'uppercase' }}
+                    type="button"
+                  >
+                    {isUpdating ? 'Saglabaju...' : 'Saglabat piezimes'}
+                  </button>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '14px' }}>
                     {CALCULATOR_LEAD_STATUS_OPTIONS.map((option) => {
                       const isActive = leadStatus === option.value;

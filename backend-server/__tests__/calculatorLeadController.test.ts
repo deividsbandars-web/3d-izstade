@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { normalizeCalculatorLeadOpsUpdate } from '../controllers/calculatorLeadController.js';
 import { validateCalculatorLeadRequest } from '../controllers/calculatorLeadValidation.js';
 
 const valid = validateCalculatorLeadRequest({
@@ -63,3 +64,24 @@ assert.throws(() => validateCalculatorLeadRequest({
   },
   source: 'calculator:roof',
 }), /CALCULATOR_LEAD_ESTIMATE_INVALID/);
+
+const opsUpdate = normalizeCalculatorLeadOpsUpdate({
+  leadQuality: 'high',
+  salesNotes: 'Call tomorrow with premium offer.',
+  salesPriority: 'urgent',
+  status: 'contacted',
+});
+
+assert.equal(opsUpdate.status, 'contacted');
+assert.equal(opsUpdate.salesPriority, 'urgent');
+assert.equal(opsUpdate.leadQuality, 'high');
+assert.equal(opsUpdate.salesNotes, 'Call tomorrow with premium offer.');
+
+assert.deepEqual(normalizeCalculatorLeadOpsUpdate({ priority: 'medium', quality: 'low' }), {
+  leadQuality: 'low',
+  salesPriority: 'medium',
+});
+
+assert.throws(() => normalizeCalculatorLeadOpsUpdate({}), /CALCULATOR_LEAD_UPDATE_EMPTY/);
+assert.throws(() => normalizeCalculatorLeadOpsUpdate({ salesPriority: 'now' }), /CALCULATOR_LEAD_PRIORITY_INVALID/);
+assert.throws(() => normalizeCalculatorLeadOpsUpdate({ leadQuality: 'maybe' }), /CALCULATOR_LEAD_QUALITY_INVALID/);
