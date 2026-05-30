@@ -1,5 +1,10 @@
 import assert from 'node:assert/strict';
-import { buildSponsorLeadReplyDraft } from './sponsorLeadReply';
+import {
+  appendSponsorLeadOpsNote,
+  buildSponsorLeadReplyDraft,
+  buildSponsorLeadReplySentNote,
+  getLatestSponsorLeadReplySentAt,
+} from './sponsorLeadReply';
 import type { SponsorLeadInboxLead } from './sponsorLeadInboxService';
 
 const packageLead: SponsorLeadInboxLead = {
@@ -43,3 +48,24 @@ assert.equal(anonymousDraft.hasRecipient, false);
 assert.equal(anonymousDraft.mailtoHref, '');
 assert.match(anonymousDraft.body, /Hi there,/);
 assert.match(anonymousDraft.body, /Web3D Expo sponsor package/);
+
+const sentAt = new Date('2026-05-30T09:15:00.000Z');
+const replySentNote = buildSponsorLeadReplySentNote(packageLead, sentAt);
+
+assert.equal(replySentNote, '[2026-05-30T09:15:00.000Z] Reply sent: Web3D Expo Premium Booth follow-up');
+assert.equal(appendSponsorLeadOpsNote('', replySentNote), replySentNote);
+assert.equal(
+  appendSponsorLeadOpsNote('Initial note', replySentNote),
+  `Initial note\n${replySentNote}`,
+);
+assert.equal(getLatestSponsorLeadReplySentAt({ ...packageLead, ops_notes: replySentNote }), '2026-05-30T09:15:00.000Z');
+assert.equal(
+  getLatestSponsorLeadReplySentAt({
+    ...packageLead,
+    ops_notes: [
+      '[2026-05-29T12:00:00.000Z] Reply sent: Old',
+      '[2026-05-30T09:15:00.000Z] Reply sent: New',
+    ].join('\n'),
+  }),
+  '2026-05-30T09:15:00.000Z',
+);

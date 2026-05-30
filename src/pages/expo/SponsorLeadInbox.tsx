@@ -14,7 +14,12 @@ import {
   buildSponsorLeadCopySummary,
   serializeSponsorLeadCsv,
 } from '../../app/expo/sponsorLeadExport';
-import { buildSponsorLeadReplyDraft } from '../../app/expo/sponsorLeadReply';
+import {
+  appendSponsorLeadOpsNote,
+  buildSponsorLeadReplyDraft,
+  buildSponsorLeadReplySentNote,
+  getLatestSponsorLeadReplySentAt,
+} from '../../app/expo/sponsorLeadReply';
 import {
   getSponsorLeadQualificationForMessage,
   getSponsorPackageLeadQualification,
@@ -244,6 +249,7 @@ export default function SponsorLeadInbox() {
   const [activeStatusAction, setActiveStatusAction] = useState<string | null>(null);
   const [activeOpsSave, setActiveOpsSave] = useState<string | null>(null);
   const [activeQuickAction, setActiveQuickAction] = useState<string | null>(null);
+  const [activeReplySentAction, setActiveReplySentAction] = useState<string | null>(null);
   const [leadFilter, setLeadFilter] = useState<LeadFilter>('all');
   const [opsDrafts, setOpsDrafts] = useState<Record<string, { followUpAt: string; opsNotes: string }>>({});
 
@@ -435,6 +441,54 @@ export default function SponsorLeadInbox() {
       setMessage({ type: 'error', text: `Failed to schedule quick follow-up: ${formatRequestError(quickActionError)}` });
     } finally {
       setActiveQuickAction(null);
+    }
+  }
+
+  async function handleReplySentTomorrow(lead: SponsorLeadInboxLead) {
+    const leadId = String(lead.id || '');
+    if (!leadId) {
+      return;
+    }
+
+    const draft = opsDrafts[leadId] ?? {
+      followUpAt: toDateTimeInputValue(lead.follow_up_at),
+      opsNotes: String(lead.ops_notes || ''),
+    };
+    const followUpAt = getTomorrowMorningFollowUpIso();
+    const opsNotes = appendSponsorLeadOpsNote(draft.opsNotes || lead.ops_notes, buildSponsorLeadReplySentNote(lead));
+
+    setActiveReplySentAction(leadId);
+    setMessage(null);
+
+    try {
+      await updateSponsorLeadInboxStatus(sponsorSlug, leadId, 'contacted');
+      setData((current) => updateLeadInInbox(current, leadId, { status: 'contacted' }));
+
+      const result = await updateSponsorLeadInboxOps(sponsorSlug, leadId, {
+        followUpAt,
+        opsNotes,
+      });
+
+      setData((current) =>
+        updateLeadInInbox(current, leadId, {
+          follow_up_at: result.follow_up_at,
+          ops_notes: result.ops_notes,
+          ops_updated_at: result.ops_updated_at,
+          status: 'contacted',
+        }),
+      );
+      setOpsDrafts((current) => ({
+        ...current,
+        [leadId]: {
+          followUpAt: toDateTimeInputValue(result.follow_up_at),
+          opsNotes: String(result.ops_notes || ''),
+        },
+      }));
+      setMessage({ type: 'success', text: 'Reply marked sent and follow-up set for tomorrow.' });
+    } catch (replySentError) {
+      setMessage({ type: 'error', text: `Failed to mark reply sent: ${formatRequestError(replySentError)}` });
+    } finally {
+      setActiveReplySentAction(null);
     }
   }
 
@@ -633,6 +687,7 @@ export default function SponsorLeadInbox() {
                   const packageDetails = parseSponsorPackageLeadMessage(lead.message);
                   const packageQualification = packageDetails ? getSponsorPackageLeadQualification(packageDetails) : null;
                   const replyDraft = buildSponsorLeadReplyDraft(lead);
+                  const latestReplySentAt = getLatestSponsorLeadReplySentAt(lead);
                   return (
                     <article key={leadId || `${lead.client_email}:${lead.created_at}`} style={{ padding: '18px', borderRadius: '18px', background: 'rgba(2, 6, 23, 0.72)', border: '1px solid rgba(148, 163, 184, 0.18)' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', gap: '14px', alignItems: 'flex-start', flexWrap: 'wrap' }}>
@@ -778,6 +833,7 @@ export default function SponsorLeadInbox() {
                   </div>
                   {(lead.ops_notes || lead.follow_up_at) && (
                     <div style={{ marginTop: '14px', paddingTop: '14px', borderTop: '1px solid rgba(148, 163, 184, 0.16)', color: '#94a3b8', fontSize: '0.82rem', lineHeight: 1.5 }}>
+                      {latestReplySentAt && <div>Last reply: {formatDate(latestReplySentAt)}</div>}
                       {lead.follow_up_at && <div>Follow-up: {formatDate(lead.follow_up_at)}</div>}
                       {lead.ops_notes && <div>Ops note: {lead.ops_notes}</div>}
                     </div>
@@ -803,6 +859,28 @@ export default function SponsorLeadInbox() {
                     >
                       {activeQuickAction === leadId ? 'Scheduling...' : 'Contacted + tomorrow'}
                     </button>
+                    {replyDraft.hasRecipient ? (
+                      <button
+                        type="button"
+                        disabled={!leadId || activeReplySentAction === leadId || status === 'closed' || status === 'rejected'}
+                        onClick={() => void handleReplySentTomorrow(lead)}
+                        style={{
+                          padding: '8px 12px',
+                          borderRadius: '999px',
+                          border: '1px solid rgba(52, 211, 153, 0.68)',
+                          background: 'rgba(20, 83, 45, 0.34)',
+                          color: '#bbf7d0',
+                          cursor: !leadId || status === 'closed' || status === 'rejected' ? 'default' : 'pointer',
+                          fontSize: '0.72rem',
+                          fontWeight: 950,
+                          letterSpacing: '0.04em',
+                          opacity: !leadId || activeReplySentAction === leadId || status === 'closed' || status === 'rejected' ? 0.58 : 1,
+                          textTransform: 'uppercase',
+                        }}
+                      >
+                        {activeReplySentAction === leadId ? 'Marking...' : 'Reply sent + tomorrow'}
+                      </button>
+                    ) : null}
                     {(['pending', 'contacted', 'closed', 'rejected'] as SponsorLeadStatus[]).map((nextStatus) => (
                       <button
                         key={nextStatus}

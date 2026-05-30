@@ -10,6 +10,8 @@ export type SponsorLeadReplyDraft = {
   subject: string;
 };
 
+const REPLY_SENT_NOTE_PATTERN = /^\[(?<sentAt>[^\]]+)\] Reply sent:/;
+
 function normalizeValue(value?: string | null) {
   return String(value || '').trim();
 }
@@ -74,4 +76,41 @@ export function buildSponsorLeadReplyDraft(lead: SponsorLeadInboxLead): SponsorL
     recipientEmail,
     subject,
   };
+}
+
+export function buildSponsorLeadReplySentNote(lead: SponsorLeadInboxLead, sentAt = new Date()) {
+  const draft = buildSponsorLeadReplyDraft(lead);
+
+  return `[${sentAt.toISOString()}] Reply sent: ${draft.subject}`;
+}
+
+export function appendSponsorLeadOpsNote(existingNotes: string | null | undefined, nextNote: string) {
+  const current = normalizeValue(existingNotes);
+  const note = normalizeValue(nextNote);
+
+  if (!current) {
+    return note;
+  }
+
+  if (!note) {
+    return current;
+  }
+
+  return `${current}\n${note}`;
+}
+
+export function getLatestSponsorLeadReplySentAt(lead: SponsorLeadInboxLead) {
+  const lines = normalizeValue(lead.ops_notes).split('\n');
+  let latestReplySentAt: string | null = null;
+
+  lines.forEach((line) => {
+    const match = line.match(REPLY_SENT_NOTE_PATTERN);
+    const sentAt = match?.groups?.sentAt;
+
+    if (sentAt && !Number.isNaN(Date.parse(sentAt))) {
+      latestReplySentAt = !latestReplySentAt || sentAt > latestReplySentAt ? sentAt : latestReplySentAt;
+    }
+  });
+
+  return latestReplySentAt;
 }
