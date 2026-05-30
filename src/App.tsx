@@ -48,6 +48,7 @@ const AutoserviceCalculator = lazy(() => import('./modules/calculators/Autoservi
 const CleaningCalculator = lazy(() => import('./modules/calculators/CleaningCalc'));
 const QuickFixCalculator = lazy(() => import('./modules/calculators/QuickFixCalc'));
 const PlumbingCalculator = lazy(() => import('./modules/calculators/PlumbingCalc'));
+const CalculatorLeadInbox = lazy(() => import('./modules/calculators/CalculatorLeadInbox'));
 
 // Expo
 const Expo3D = lazy(() => import('./modules/expo/Expo3D'));
@@ -103,6 +104,7 @@ export default function App() {
             <Route path="clients" element={<Suspense fallback={null}><ClientsDashboard /></Suspense>} />
             <Route path="inventory" element={<Suspense fallback={null}><InventoryManager /></Suspense>} />
             <Route path="calculators" element={<Suspense fallback={null}><CalculatorsHub /></Suspense>} />
+            <Route path="calculators/leads" element={<Suspense fallback={null}><CalculatorLeadInbox /></Suspense>} />
             <Route path="marketplace" element={<Suspense fallback={null}><Marketplace /></Suspense>} />
             <Route path="urgent-services" element={<Suspense fallback={null}><UrgentServices /></Suspense>} />
             <Route path="events" element={<Suspense fallback={null}><EventsHub /></Suspense>} />

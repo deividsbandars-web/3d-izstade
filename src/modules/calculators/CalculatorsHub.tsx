@@ -259,6 +259,24 @@ export default function CalculatorsHub() {
             >
               Savienot ar sponsor/lead plūsmu
             </Link>
+            <Link
+              to="/calculators/leads"
+              style={{
+                background: 'rgba(15, 23, 42, 0.72)',
+                border: '1px solid rgba(125, 211, 252, 0.22)',
+                borderRadius: '16px',
+                color: '#bae6fd',
+                fontSize: '0.78rem',
+                fontWeight: 950,
+                letterSpacing: '0.05em',
+                padding: '12px 14px',
+                textAlign: 'center',
+                textDecoration: 'none',
+                textTransform: 'uppercase',
+              }}
+            >
+              Atvērt kalkulatoru lead rindu
+            </Link>
           </aside>
         </div>
       </section>
