@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { CalculatorLeadCta } from './CalculatorLeadCta';
 import '../../components/calculator/styles/CalculatorPro.css';
 
 const SERVICES = {
@@ -44,10 +45,21 @@ export default function VisualsCalc() {
           <div className="sticky-results">
             <h3 className="results-title">Vizuāļu Tāme</h3>
             {!results ? <div className="empty-state">📸 Izvēlieties pakalpojumu</div> : (
-              <div className="grand-total-box">
-                <span className="gt-label">INVESTĪCIJA DIZAINĀ</span>
-                <span className="gt-value">{results.grandTotal.toFixed(0)} €</span>
-              </div>
+              <>
+                <div className="grand-total-box">
+                  <span className="gt-label">INVESTĪCIJA DIZAINĀ</span>
+                  <span className="gt-value">{results.grandTotal.toFixed(0)} €</span>
+                </div>
+                <CalculatorLeadCta
+                  calculatorId="visuals"
+                  calculatorTitle="3D vizualu tame"
+                  estimateTotal={results.grandTotal}
+                  summaryItems={[
+                    { label: 'Pakalpojums', value: SERVICES[params.service as keyof typeof SERVICES].name },
+                    { label: 'Apjoms', value: String(params.count) },
+                  ]}
+                />
+              </>
             )}
           </div>
         </div>

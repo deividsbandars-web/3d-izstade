@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { CalculatorLeadCta } from './CalculatorLeadCta';
 import '../../components/calculator/styles/CalculatorPro.css';
 
 const SERVICES = {
@@ -49,10 +50,22 @@ export default function AutoserviceCalc() {
           <div className="sticky-results">
             <h3 className="results-title">Servisa Tāme</h3>
             {!results ? <div className="empty-state">🚗 Izvēlieties pakalpojumu</div> : (
-              <div className="grand-total-box">
-                <span className="gt-label">PROGNOZĒTĀ SUMMA</span>
-                <span className="gt-value">{results.grandTotal.toFixed(0)} €</span>
-              </div>
+              <>
+                <div className="grand-total-box">
+                  <span className="gt-label">PROGNOZĒTĀ SUMMA</span>
+                  <span className="gt-value">{results.grandTotal.toFixed(0)} €</span>
+                </div>
+                <CalculatorLeadCta
+                  calculatorId="autoservice"
+                  calculatorTitle="Auto servisa tame"
+                  estimateTotal={results.grandTotal}
+                  summaryItems={[
+                    { label: 'Darbs', value: SERVICES[params.service as keyof typeof SERVICES].name },
+                    { label: 'Steidzamiba', value: params.urgency },
+                    { label: 'Auto gads', value: params.carAge },
+                  ]}
+                />
+              </>
             )}
           </div>
         </div>

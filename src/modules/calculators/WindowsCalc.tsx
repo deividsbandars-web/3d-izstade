@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { CalculatorLeadCta } from './CalculatorLeadCta';
 import '../../components/calculator/styles/CalculatorPro.css';
 import { COUNTRIES, renderCountryOptions } from '../../core/constants';
 
@@ -60,10 +61,22 @@ export default function WindowsCalc() {
           <div className="sticky-results">
             <h3 className="results-title">Konstrukciju Tāme</h3>
             {!results ? <div className="empty-state">🪟 Norādiet logu skaitu</div> : (
-              <div className="grand-total-box">
-                <span className="gt-label">KOPĒJĀ SUMMA</span>
-                <span className="gt-value">{results.grandTotal.toFixed(0)} €</span>
-              </div>
+              <>
+                <div className="grand-total-box">
+                  <span className="gt-label">KOPĒJĀ SUMMA</span>
+                  <span className="gt-value">{results.grandTotal.toFixed(0)} €</span>
+                </div>
+                <CalculatorLeadCta
+                  calculatorId="windows"
+                  calculatorTitle="Logi un durvis"
+                  estimateTotal={results.grandTotal}
+                  summaryItems={[
+                    { label: 'Logi', value: String(params.windowCount) },
+                    { label: 'Profils', value: PRICES.types[params.type as keyof typeof PRICES.types].name },
+                    { label: 'Montaza', value: params.includeInstallation ? 'Ieklauta' : 'Bez montazas' },
+                  ]}
+                />
+              </>
             )}
           </div>
         </div>

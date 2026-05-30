@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { CalculatorLeadCta } from './CalculatorLeadCta';
 import '../../components/calculator/styles/CalculatorPro.css';
 
 const RATES = {
@@ -46,10 +47,22 @@ export default function CleaningCalc() {
           <div className="sticky-results">
             <h3 className="results-title">Uzkopšanas Specifikācija</h3>
             {!results ? <div className="empty-state">🧹 Norādiet platību</div> : (
-              <div className="grand-total-box">
-                <span className="gt-label">KOPĒJĀS IZMAKSAS</span>
-                <span className="gt-value">{results.grandTotal.toFixed(0)} €</span>
-              </div>
+              <>
+                <div className="grand-total-box">
+                  <span className="gt-label">KOPĒJĀS IZMAKSAS</span>
+                  <span className="gt-value">{results.grandTotal.toFixed(0)} €</span>
+                </div>
+                <CalculatorLeadCta
+                  calculatorId="cleaning"
+                  calculatorTitle="Uzkopsanas tame"
+                  estimateTotal={results.grandTotal}
+                  summaryItems={[
+                    { label: 'Veids', value: RATES[params.type as keyof typeof RATES].name },
+                    { label: 'Platiba', value: String(params.area) + ' m2' },
+                    { label: 'Biezums', value: params.frequency },
+                  ]}
+                />
+              </>
             )}
           </div>
         </div>

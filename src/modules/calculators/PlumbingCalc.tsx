@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { CalculatorLeadCta } from './CalculatorLeadCta';
 import '../../components/calculator/styles/CalculatorPro.css';
 import { COUNTRIES, renderCountryOptions } from '../../core/constants';
 
@@ -62,10 +63,22 @@ export default function PlumbingCalc() {
           <div className="sticky-results">
             <h3 className="results-title">Santehnikas Specifikācija</h3>
             {!results ? <div className="empty-state">🏘️ Norādiet mezglu skaitu</div> : (
-              <div className="grand-total-box">
-                <span className="gt-label">KOPĒJĀ INVESTĪCIJA</span>
-                <span className="gt-value">{results.grandTotal.toFixed(0)} €</span>
-              </div>
+              <>
+                <div className="grand-total-box">
+                  <span className="gt-label">KOPĒJĀ INVESTĪCIJA</span>
+                  <span className="gt-value">{results.grandTotal.toFixed(0)} €</span>
+                </div>
+                <CalculatorLeadCta
+                  calculatorId="plumbing"
+                  calculatorTitle="Santehnikas tame"
+                  estimateTotal={results.grandTotal}
+                  summaryItems={[
+                    { label: 'Mezgli', value: String(params.bathrooms) },
+                    { label: 'Virtuve', value: String(params.kitchenPoints) },
+                    { label: 'Caurules', value: PRICES.pipes[params.pipeType as keyof typeof PRICES.pipes].name },
+                  ]}
+                />
+              </>
             )}
           </div>
         </div>

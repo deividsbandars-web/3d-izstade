@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { CalculatorLeadCta } from './CalculatorLeadCta';
 import '../../components/calculator/styles/CalculatorPro.css';
 import { COUNTRIES, renderCountryOptions } from '../../core/constants';
 
@@ -48,10 +49,22 @@ export default function TimberHouseCalc() {
           <div className="sticky-results">
             <h3 className="results-title">Būvniecības Tāme</h3>
             {!results ? <div className="empty-state">🌲 Norādiet platību</div> : (
-              <div className="grand-total-box">
-                <span className="gt-label">PROGNOZĒTĀS IZMAKSAS</span>
-                <span className="gt-value">{results.grandTotal.toFixed(0)} €</span>
-              </div>
+              <>
+                <div className="grand-total-box">
+                  <span className="gt-label">PROGNOZĒTĀS IZMAKSAS</span>
+                  <span className="gt-value">{results.grandTotal.toFixed(0)} €</span>
+                </div>
+                <CalculatorLeadCta
+                  calculatorId="timber"
+                  calculatorTitle="Koka karkasa tame"
+                  estimateTotal={results.grandTotal}
+                  summaryItems={[
+                    { label: 'Platiba', value: String(params.area) + ' m2' },
+                    { label: 'Tips', value: RATES[params.type as keyof typeof RATES].name },
+                    { label: 'Regions', value: params.country.toUpperCase() },
+                  ]}
+                />
+              </>
             )}
           </div>
         </div>
