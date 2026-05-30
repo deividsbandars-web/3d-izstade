@@ -20,11 +20,7 @@ const GROUND_POLISH_POLYGON_OFFSET = {
 } as const;
 
 export function WorldGroundPlane({ visualProfile }: { visualProfile: ExpoWorldVisualProfile }) {
-  const arrivalAnchorMaterial = FLOOR_MATERIAL_INTENTS[ARRIVAL_GATE_FLOOR_ANCHOR.materialIntent];
-  const centerSpineGuideMaterial = FLOOR_MATERIAL_INTENTS[CENTER_SPINE_FLOOR_GUIDE.materialIntent];
   const globalBaseMaterial = FLOOR_MATERIAL_INTENTS.globalBase;
-  const seamTransitionMaterial = FLOOR_MATERIAL_INTENTS[GROUND_SEAM_TRANSITION_PLATE.materialIntent];
-  const sponsorAnchorMaterial = FLOOR_MATERIAL_INTENTS[SPONSOR_BOULEVARD_RIGHT_FLOOR_ANCHOR.materialIntent];
   const unifiedGroundColor = visualProfile.global.groundBase;
 
   return (
@@ -61,13 +57,13 @@ export function WorldGroundPlane({ visualProfile }: { visualProfile: ExpoWorldVi
         <meshStandardMaterial
           color={unifiedGroundColor}
           depthWrite={false}
-          emissive={seamTransitionMaterial.emissive}
-          emissiveIntensity={seamTransitionMaterial.emissiveIntensity}
-          metalness={seamTransitionMaterial.metalness}
+          emissive={globalBaseMaterial.emissive}
+          emissiveIntensity={globalBaseMaterial.emissiveIntensity}
+          metalness={globalBaseMaterial.metalness}
           polygonOffset
           polygonOffsetFactor={GROUND_POLISH_POLYGON_OFFSET.factor}
           polygonOffsetUnits={GROUND_POLISH_POLYGON_OFFSET.units}
-          roughness={seamTransitionMaterial.roughness}
+          roughness={globalBaseMaterial.roughness}
         />
       </mesh>
       <mesh
@@ -89,13 +85,13 @@ export function WorldGroundPlane({ visualProfile }: { visualProfile: ExpoWorldVi
         <meshStandardMaterial
           color={unifiedGroundColor}
           depthWrite={false}
-          emissive={sponsorAnchorMaterial.emissive}
-          emissiveIntensity={sponsorAnchorMaterial.emissiveIntensity}
-          metalness={sponsorAnchorMaterial.metalness}
+          emissive={globalBaseMaterial.emissive}
+          emissiveIntensity={globalBaseMaterial.emissiveIntensity}
+          metalness={globalBaseMaterial.metalness}
           polygonOffset
           polygonOffsetFactor={GROUND_POLISH_POLYGON_OFFSET.factor}
           polygonOffsetUnits={GROUND_POLISH_POLYGON_OFFSET.units}
-          roughness={sponsorAnchorMaterial.roughness}
+          roughness={globalBaseMaterial.roughness}
         />
       </mesh>
       <mesh
@@ -117,13 +113,13 @@ export function WorldGroundPlane({ visualProfile }: { visualProfile: ExpoWorldVi
         <meshStandardMaterial
           color={unifiedGroundColor}
           depthWrite={false}
-          emissive={arrivalAnchorMaterial.emissive}
-          emissiveIntensity={arrivalAnchorMaterial.emissiveIntensity}
-          metalness={arrivalAnchorMaterial.metalness}
+          emissive={globalBaseMaterial.emissive}
+          emissiveIntensity={globalBaseMaterial.emissiveIntensity}
+          metalness={globalBaseMaterial.metalness}
           polygonOffset
           polygonOffsetFactor={GROUND_POLISH_POLYGON_OFFSET.factor}
           polygonOffsetUnits={GROUND_POLISH_POLYGON_OFFSET.units}
-          roughness={arrivalAnchorMaterial.roughness}
+          roughness={globalBaseMaterial.roughness}
         />
       </mesh>
       <mesh
@@ -145,13 +141,13 @@ export function WorldGroundPlane({ visualProfile }: { visualProfile: ExpoWorldVi
         <meshStandardMaterial
           color={unifiedGroundColor}
           depthWrite={false}
-          emissive={centerSpineGuideMaterial.emissive}
-          emissiveIntensity={centerSpineGuideMaterial.emissiveIntensity}
-          metalness={centerSpineGuideMaterial.metalness}
+          emissive={globalBaseMaterial.emissive}
+          emissiveIntensity={globalBaseMaterial.emissiveIntensity}
+          metalness={globalBaseMaterial.metalness}
           polygonOffset
           polygonOffsetFactor={GROUND_POLISH_POLYGON_OFFSET.factor}
           polygonOffsetUnits={GROUND_POLISH_POLYGON_OFFSET.units}
-          roughness={centerSpineGuideMaterial.roughness}
+          roughness={globalBaseMaterial.roughness}
         />
       </mesh>
     </group>
