@@ -56,12 +56,12 @@ export default function TimberHouseCalc() {
                 </div>
                 <CalculatorLeadCta
                   calculatorId="timber"
-                  calculatorTitle="Koka karkasa tame"
+                  calculatorTitle="Koka karkasa tāme"
                   estimateTotal={results.grandTotal}
                   summaryItems={[
-                    { label: 'Platiba', value: String(params.area) + ' m2' },
+                    { label: 'Platība', value: String(params.area) + ' m²' },
                     { label: 'Tips', value: RATES[params.type as keyof typeof RATES].name },
-                    { label: 'Regions', value: params.country.toUpperCase() },
+                    { label: 'Reģions', value: params.country.toUpperCase() },
                   ]}
                 />
               </>

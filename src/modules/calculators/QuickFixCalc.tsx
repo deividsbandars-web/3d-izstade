@@ -53,7 +53,7 @@ export default function QuickFixCalc() {
                 </div>
                 <CalculatorLeadCta
                   calculatorId="quick-fix"
-                  calculatorTitle="Saimnieka paliga tame"
+                  calculatorTitle="Saimnieka palīga tāme"
                   estimateTotal={results.grandTotal}
                   summaryItems={[
                     { label: 'Pakalpojums', value: SERVICES[params.service as keyof typeof SERVICES].name },

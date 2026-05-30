@@ -39,6 +39,12 @@ export default function CleaningCalc() {
               <label style={{ marginTop: '20px' }}>Platība (m²)
                 <input type="number" value={params.area} onChange={(e) => setParams({...params, area: parseInt(e.target.value)})} min="10" />
               </label>
+              <label style={{ marginTop: '20px' }}>Biežums
+                <select value={params.frequency} onChange={(e) => setParams({...params, frequency: e.target.value})}>
+                  <option value="once">Vienreizēja uzkopšana</option>
+                  <option value="weekly">Regulāri katru nedēļu (-20%)</option>
+                </select>
+              </label>
             </div>
           </section>
           <button onClick={handleCalculate} className="btn-primary" style={{ width: '100%', padding: '18px' }}>ĢENERĒT TĀMI</button>
@@ -54,12 +60,12 @@ export default function CleaningCalc() {
                 </div>
                 <CalculatorLeadCta
                   calculatorId="cleaning"
-                  calculatorTitle="Uzkopsanas tame"
+                  calculatorTitle="Uzkopšanas tāme"
                   estimateTotal={results.grandTotal}
                   summaryItems={[
                     { label: 'Veids', value: RATES[params.type as keyof typeof RATES].name },
-                    { label: 'Platiba', value: String(params.area) + ' m2' },
-                    { label: 'Biezums', value: params.frequency },
+                    { label: 'Platība', value: String(params.area) + ' m²' },
+                    { label: 'Biežums', value: params.frequency === 'weekly' ? 'Katru nedēļu' : 'Vienreiz' },
                   ]}
                 />
               </>

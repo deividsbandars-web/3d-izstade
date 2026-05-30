@@ -57,11 +57,11 @@ export default function AutoserviceCalc() {
                 </div>
                 <CalculatorLeadCta
                   calculatorId="autoservice"
-                  calculatorTitle="Auto servisa tame"
+                  calculatorTitle="Auto servisa tāme"
                   estimateTotal={results.grandTotal}
                   summaryItems={[
                     { label: 'Darbs', value: SERVICES[params.service as keyof typeof SERVICES].name },
-                    { label: 'Steidzamiba', value: params.urgency },
+                    { label: 'Steidzamība', value: params.urgency === 'express' ? 'Ekspress' : 'Standarta' },
                     { label: 'Auto gads', value: params.carAge },
                   ]}
                 />

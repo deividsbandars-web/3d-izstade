@@ -70,7 +70,7 @@ export default function PlumbingCalc() {
                 </div>
                 <CalculatorLeadCta
                   calculatorId="plumbing"
-                  calculatorTitle="Santehnikas tame"
+                  calculatorTitle="Santehnikas tāme"
                   estimateTotal={results.grandTotal}
                   summaryItems={[
                     { label: 'Mezgli', value: String(params.bathrooms) },

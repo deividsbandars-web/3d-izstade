@@ -73,7 +73,7 @@ export default function WindowsCalc() {
                   summaryItems={[
                     { label: 'Logi', value: String(params.windowCount) },
                     { label: 'Profils', value: PRICES.types[params.type as keyof typeof PRICES.types].name },
-                    { label: 'Montaza', value: params.includeInstallation ? 'Ieklauta' : 'Bez montazas' },
+                    { label: 'Montāža', value: params.includeInstallation ? 'Iekļauta' : 'Bez montāžas' },
                   ]}
                 />
               </>

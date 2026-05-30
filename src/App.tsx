@@ -5,6 +5,7 @@ import Layout from './components/Layout';
 // Core un pamata lapas
 import Home from './pages/Home';
 import Login from './pages/Login';
+const Privacy = lazy(() => import('./pages/Privacy'));
 
 // ==========================================
 // PHASE 15: AI Platform Pages
@@ -83,6 +84,7 @@ export default function App() {
           <Route path="/" element={<Layout />}>
             <Route index element={<Home />} />
             <Route path="login" element={<Login />} />
+            <Route path="privacy" element={<Suspense fallback={null}><Privacy /></Suspense>} />
             
             {/* Jaunie AI Platformas Maršruti (Phase 15) */}
             <Route path="economy-simulator" element={<Suspense fallback={<div style={{ color: 'white', padding: '50px' }}>Loading...</div>}><EconomySimulatorPage /></Suspense>} />

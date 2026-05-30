@@ -29,6 +29,15 @@ const inputStyle = {
   width: '100%',
 } as const;
 
+const idleStatusMessage =
+  'Nosūti aprēķinu pārbaudei. Speciālists precizēs apjomu un nākamo soli pirms gala cenas.';
+
+const trustItems = [
+  'Speciālists pārbauda aprēķinu',
+  'Atbilde ar nākamo soli',
+  'Nav gala cena bez objekta precizēšanas',
+];
+
 function getStatusColor(tone: SubmitStatus['tone']) {
   switch (tone) {
     case 'success':
@@ -53,7 +62,7 @@ export function CalculatorLeadCta({
 }: CalculatorLeadCtaProps) {
   const [form, setForm] = useState<CalculatorLeadFormState>(INITIAL_CALCULATOR_LEAD_FORM);
   const [submitStatus, setSubmitStatus] = useState<SubmitStatus>({
-    message: 'Nosūta uz lead API, ja tas ir pieejams; citādi saglabā lokālu rezerves pieprasījumu.',
+    message: idleStatusMessage,
     tone: 'idle',
   });
   const isFormReady = useMemo(() => validateCalculatorLeadForm(form) === null, [form]);
@@ -70,7 +79,7 @@ export function CalculatorLeadCta({
 
     if (submitStatus.tone !== 'idle') {
       setSubmitStatus({
-        message: 'Nosūta uz lead API, ja tas ir pieejams; citādi saglabā lokālu rezerves pieprasījumu.',
+        message: idleStatusMessage,
         tone: 'idle',
       });
     }
@@ -97,7 +106,7 @@ export function CalculatorLeadCta({
 
       if (result.persistence === 'backend') {
         setSubmitStatus({
-          message: 'Pieprasījums nosūtīts. Komanda var to apstrādāt lead panelī.',
+          message: 'Pieprasījums nosūtīts. Komanda pārbaudīs aprēķinu un sazināsies par nākamo soli.',
           tone: 'success',
         });
         setForm(INITIAL_CALCULATOR_LEAD_FORM);
@@ -105,7 +114,7 @@ export function CalculatorLeadCta({
       }
 
       setSubmitStatus({
-        message: `Lead API nav sasniedzams (${result.reason}); pieprasījums saglabāts pārlūkā. Rinda: ${result.localQueueCount}.`,
+        message: `Savienojums īslaicīgi nav pieejams (${result.reason}); pieprasījums saglabāts šajā pārlūkā. Rinda: ${result.localQueueCount}.`,
         tone: 'warning',
       });
     } catch {
@@ -141,7 +150,7 @@ export function CalculatorLeadCta({
             Saņemt pārbaudītu piedāvājumu
           </h4>
           <p style={{ color: '#cbd5e1', fontSize: '0.88rem', lineHeight: 1.45, margin: 0 }}>
-            Nosūti aprēķinu komandai, lai meistars pārbauda objektu, materiālus un darbu apjomu.
+            Nosūti aprēķinu pārbaudei, lai speciālists precizē objektu, materiālus un darbu apjomu.
           </p>
         </div>
         <div style={{ textAlign: 'right' }}>
@@ -161,10 +170,30 @@ export function CalculatorLeadCta({
         </div>
       )}
 
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+        {trustItems.map((item) => (
+          <span
+            key={item}
+            style={{
+              background: 'rgba(14, 165, 233, 0.12)',
+              border: '1px solid rgba(125, 211, 252, 0.2)',
+              borderRadius: '999px',
+              color: '#bae6fd',
+              fontSize: '0.68rem',
+              fontWeight: 850,
+              letterSpacing: '0.03em',
+              padding: '7px 10px',
+            }}
+          >
+            {item}
+          </span>
+        ))}
+      </div>
+
       <div style={{ display: 'grid', gap: '10px', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))' }}>
-        <input aria-label="Vārds" onChange={updateField('name')} placeholder="Vārds" style={inputStyle} value={form.name} />
-        <input aria-label="E-pasts" inputMode="email" onChange={updateField('email')} placeholder="E-pasts" style={inputStyle} type="email" value={form.email} />
-        <input aria-label="Tālrunis" inputMode="tel" onChange={updateField('phone')} placeholder="Tālrunis" style={inputStyle} value={form.phone} />
+        <input aria-label="Vārds" autoComplete="name" onChange={updateField('name')} placeholder="Vārds" style={inputStyle} value={form.name} />
+        <input aria-label="E-pasts" autoComplete="email" inputMode="email" onChange={updateField('email')} placeholder="E-pasts" style={inputStyle} type="email" value={form.email} />
+        <input aria-label="Tālrunis" autoComplete="tel" inputMode="tel" onChange={updateField('phone')} placeholder="Tālrunis" style={inputStyle} value={form.phone} />
       </div>
 
       <textarea
@@ -194,6 +223,14 @@ export function CalculatorLeadCta({
       >
         {isSubmitting ? 'Sūta pieprasījumu...' : 'Saņemt piedāvājumu'}
       </button>
+
+      <p style={{ color: '#94a3b8', fontSize: '0.7rem', lineHeight: 1.45, margin: 0 }}>
+        Nosūtot pieprasījumu, kontaktinformācija tiek izmantota tāmes sagatavošanai un saziņai par šo aprēķinu.{' '}
+        <a href="/privacy" style={{ color: '#bae6fd', fontWeight: 900, textDecoration: 'underline' }}>
+          Privātuma politika
+        </a>
+        .
+      </p>
 
       <div data-calculator-lead-status={submitStatus.tone} style={{ color: getStatusColor(submitStatus.tone), fontSize: '0.74rem', fontWeight: 800, lineHeight: 1.38 }}>
         {submitStatus.message}

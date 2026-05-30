@@ -56,11 +56,11 @@ export default function DigitalArtCalc() {
                 </div>
                 <CalculatorLeadCta
                   calculatorId="digital-art"
-                  calculatorTitle="Digitala dizaina tame"
+                  calculatorTitle="Digitālā dizaina tāme"
                   estimateTotal={results.grandTotal}
                   summaryItems={[
                     { label: 'Pakalpojums', value: SERVICES[params.service as keyof typeof SERVICES].name },
-                    { label: 'Limenis', value: params.complexity },
+                    { label: 'Līmenis', value: params.complexity === 'premium' ? 'Premium' : 'Standarta' },
                   ]}
                 />
               </>

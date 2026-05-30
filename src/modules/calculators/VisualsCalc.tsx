@@ -52,7 +52,7 @@ export default function VisualsCalc() {
                 </div>
                 <CalculatorLeadCta
                   calculatorId="visuals"
-                  calculatorTitle="3D vizualu tame"
+                  calculatorTitle="3D vizuāļu tāme"
                   estimateTotal={results.grandTotal}
                   summaryItems={[
                     { label: 'Pakalpojums', value: SERVICES[params.service as keyof typeof SERVICES].name },
