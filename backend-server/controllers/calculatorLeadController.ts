@@ -1,11 +1,26 @@
 ﻿import { Request, Response } from 'express';
-import { leadsApplicationService } from '../../src/backend/leads/leadsApplicationService.js';
+import { getSupabase } from '../services/supabase.js';
 import { validateCalculatorLeadRequest } from './calculatorLeadValidation.js';
 
 export async function captureCalculatorLead(req: Request, res: Response) {
   try {
     const payload = validateCalculatorLeadRequest(req.body);
-    const { data, error } = await leadsApplicationService.createLeadForUser(undefined, payload);
+    const supabase = getSupabase();
+    const { data, error } = await supabase
+      .from('leads')
+      .insert([{
+        contact_info: {
+          ...payload.contact_info,
+          message: payload.message,
+          score: payload.score,
+        },
+        notes: payload.message,
+        source: payload.source,
+        status: payload.status,
+        value: payload.contact_info.estimateTotal,
+      }])
+      .select('id')
+      .single();
 
     if (error) {
       throw error;
