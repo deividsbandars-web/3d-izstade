@@ -1,4 +1,4 @@
-import { Suspense, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
+import { Suspense, useEffect, useMemo, useRef, useState, type CSSProperties, type MutableRefObject, type PointerEvent as ReactPointerEvent } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { ContactShadows, OrbitControls, useGLTF, useTexture } from '@react-three/drei';
 import { Link, useNavigate, useParams } from 'react-router-dom';
@@ -44,6 +44,57 @@ type HallProfile = {
   sideScreenY: number;
   sideScreenRotation: number;
 };
+
+type RoomMovementKey = 'backward' | 'forward' | 'left' | 'right';
+
+type RoomMovementState = Record<RoomMovementKey, boolean>;
+
+const ROOM_MOVEMENT_KEY_MAP: Record<string, RoomMovementKey> = {
+  ArrowDown: 'backward',
+  ArrowLeft: 'left',
+  ArrowRight: 'right',
+  ArrowUp: 'forward',
+  KeyA: 'left',
+  KeyD: 'right',
+  KeyS: 'backward',
+  KeyW: 'forward',
+  a: 'left',
+  d: 'right',
+  s: 'backward',
+  w: 'forward',
+};
+
+function createRoomMovementState(): RoomMovementState {
+  return {
+    backward: false,
+    forward: false,
+    left: false,
+    right: false,
+  };
+}
+
+function setRoomMovement(input: MutableRefObject<RoomMovementState>, key: RoomMovementKey, active: boolean) {
+  input.current[key] = active;
+}
+
+function resetRoomMovement(input: MutableRefObject<RoomMovementState>) {
+  input.current.backward = false;
+  input.current.forward = false;
+  input.current.left = false;
+  input.current.right = false;
+}
+
+function resolveRoomMovementKey(event: KeyboardEvent) {
+  return ROOM_MOVEMENT_KEY_MAP[event.code] ?? ROOM_MOVEMENT_KEY_MAP[event.key] ?? null;
+}
+
+function isEditableKeyboardTarget(target: EventTarget | null) {
+  if (!(target instanceof HTMLElement)) {
+    return false;
+  }
+
+  return target.isContentEditable || target.tagName === 'INPUT' || target.tagName === 'SELECT' || target.tagName === 'TEXTAREA';
+}
 
 function roomShellStyle(color: string) {
   return {
@@ -422,11 +473,210 @@ function CustomHeroInsert({ accent, url, y }: { accent: string; url: string; y: 
   );
 }
 
+function SponsorRoomWalkControls({
+  movementInput,
+  profile,
+}: {
+  movementInput: MutableRefObject<RoomMovementState>;
+  profile: HallProfile;
+}) {
+  const controlsRef = useRef<any>(null);
+  const roomBounds = useMemo(() => ({
+    maxX: (profile.floorSize[0] / 2) - 5,
+    maxZ: (profile.floorSize[1] / 2) - 5,
+    minX: (-profile.floorSize[0] / 2) + 5,
+    minZ: (-profile.floorSize[1] / 2) + 5,
+  }), [profile.floorSize]);
+
+  useEffect(() => {
+    function onKeyDown(event: KeyboardEvent) {
+      if (isEditableKeyboardTarget(event.target)) {
+        return;
+      }
+
+      const key = resolveRoomMovementKey(event);
+      if (!key) {
+        return;
+      }
+
+      event.preventDefault();
+      setRoomMovement(movementInput, key, true);
+    }
+
+    function onKeyUp(event: KeyboardEvent) {
+      const key = resolveRoomMovementKey(event);
+      if (!key) {
+        return;
+      }
+
+      event.preventDefault();
+      setRoomMovement(movementInput, key, false);
+    }
+
+    window.addEventListener('keydown', onKeyDown);
+    window.addEventListener('keyup', onKeyUp);
+
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+      window.removeEventListener('keyup', onKeyUp);
+      resetRoomMovement(movementInput);
+    };
+  }, [movementInput]);
+
+  useFrame(({ camera }, delta) => {
+    const input = movementInput.current;
+    const forwardInput = Number(input.forward) - Number(input.backward);
+    const strafeInput = Number(input.right) - Number(input.left);
+
+    if (forwardInput === 0 && strafeInput === 0) {
+      return;
+    }
+
+    const target = controlsRef.current?.target as THREE.Vector3 | undefined;
+    const forward = target
+      ? target.clone().sub(camera.position)
+      : new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
+    forward.y = 0;
+
+    if (forward.lengthSq() < 0.0001) {
+      forward.set(0, 0, -1);
+    } else {
+      forward.normalize();
+    }
+
+    const right = new THREE.Vector3(-forward.z, 0, forward.x).normalize();
+    const move = forward
+      .multiplyScalar(forwardInput)
+      .add(right.multiplyScalar(strafeInput));
+
+    if (move.lengthSq() < 0.0001) {
+      return;
+    }
+
+    const distance = Math.min(18, 12 * delta);
+    move.normalize().multiplyScalar(distance);
+
+    const nextX = THREE.MathUtils.clamp(camera.position.x + move.x, roomBounds.minX, roomBounds.maxX);
+    const nextZ = THREE.MathUtils.clamp(camera.position.z + move.z, roomBounds.minZ, roomBounds.maxZ);
+    const applied = new THREE.Vector3(nextX - camera.position.x, 0, nextZ - camera.position.z);
+
+    if (applied.lengthSq() < 0.0001) {
+      return;
+    }
+
+    camera.position.x = nextX;
+    camera.position.z = nextZ;
+    target?.add(applied);
+    controlsRef.current?.update();
+  });
+
+  return (
+    <OrbitControls
+      ref={controlsRef}
+      enablePan
+      minDistance={profile.orbitMin}
+      maxDistance={profile.orbitMax}
+      maxPolarAngle={Math.PI / 2 - 0.02}
+      minPolarAngle={0.18}
+      rotateSpeed={0.9}
+      zoomSpeed={0.95}
+      panSpeed={0.9}
+      target={[0, profile.heroY + 1.1, -8]}
+    />
+  );
+}
+
+function SponsorRoomMovementPad({
+  accent,
+  movementInput,
+}: {
+  accent: string;
+  movementInput: MutableRefObject<RoomMovementState>;
+}) {
+  const startMovement = (key: RoomMovementKey) => (event: ReactPointerEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    event.currentTarget.setPointerCapture(event.pointerId);
+    setRoomMovement(movementInput, key, true);
+  };
+  const stopMovement = (key: RoomMovementKey) => (event: ReactPointerEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+    setRoomMovement(movementInput, key, false);
+  };
+
+  const buttonStyle: CSSProperties = {
+    alignItems: 'center',
+    background: 'rgba(5, 10, 18, 0.78)',
+    border: `1px solid ${accent}40`,
+    borderRadius: '14px',
+    color: '#f8fafc',
+    cursor: 'pointer',
+    display: 'flex',
+    fontSize: '0.78rem',
+    fontWeight: 900,
+    justifyContent: 'center',
+    minHeight: '42px',
+    minWidth: '52px',
+    padding: '10px 12px',
+    touchAction: 'none',
+    userSelect: 'none',
+  };
+
+  function controlButton(key: RoomMovementKey, label: string) {
+    return (
+      <button
+        key={key}
+        aria-label={`Move ${key}`}
+        onPointerCancel={stopMovement(key)}
+        onPointerDown={startMovement(key)}
+        onPointerLeave={stopMovement(key)}
+        onPointerUp={stopMovement(key)}
+        style={buttonStyle}
+        type="button"
+      >
+        {label}
+      </button>
+    );
+  }
+
+  return (
+    <div style={{
+      background: 'linear-gradient(180deg, rgba(8,12,18,0.22), rgba(5,9,14,0.42))',
+      border: `1px solid ${accent}12`,
+      borderRadius: '18px',
+      bottom: '18px',
+      left: '18px',
+      padding: '12px',
+      pointerEvents: 'auto',
+      position: 'absolute',
+      width: 'min(246px, calc(100vw - 36px))',
+    }}>
+      <div style={{ color: accent, fontSize: '0.68rem', fontWeight: 900, letterSpacing: '0.16em', marginBottom: '10px', textTransform: 'uppercase' }}>
+        Walk controls
+      </div>
+      <div style={{ display: 'grid', gap: '8px', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))' }}>
+        <span />
+        {controlButton('forward', 'W')}
+        <span />
+        {controlButton('left', 'A')}
+        {controlButton('backward', 'S')}
+        {controlButton('right', 'D')}
+      </div>
+      <div style={{ color: '#94a3b8', fontSize: '0.72rem', lineHeight: 1.45, marginTop: '10px' }}>
+        Use WASD, arrow keys, or hold the buttons.
+      </div>
+    </div>
+  );
+}
+
 function ShowcaseHallCanvas({
   accent,
   adTier,
   customInsertUrl,
   logoUrl,
+  movementInput,
   mode,
   posterUrl,
 }: {
@@ -434,6 +684,7 @@ function ShowcaseHallCanvas({
   adTier: SponsorRoomRecord['presentation']['adTier'];
   customInsertUrl: string | null;
   logoUrl: string | null;
+  movementInput: MutableRefObject<RoomMovementState>;
   mode: 'immersive' | 'hero-object' | 'product' | 'support';
   posterUrl: string | null;
 }) {
@@ -496,17 +747,7 @@ function ShowcaseHallCanvas({
       )}
 
       <ContactShadows scale={44} blur={2.8} opacity={0.42} far={32} resolution={1024} />
-      <OrbitControls
-        enablePan
-        minDistance={profile.orbitMin}
-        maxDistance={profile.orbitMax}
-        maxPolarAngle={Math.PI / 2 - 0.02}
-        minPolarAngle={0.18}
-        rotateSpeed={0.9}
-        zoomSpeed={0.95}
-        panSpeed={0.9}
-        target={[0, profile.heroY + 1.1, -8]}
-      />
+      <SponsorRoomWalkControls movementInput={movementInput} profile={profile} />
     </>
   );
 }
@@ -517,9 +758,11 @@ export default function BoothRoom() {
   const [state, setState] = useState<RoomState>({ status: 'loading' });
   const [leadForm, setLeadForm] = useState<LeadFormState>({ clientEmail: '', clientName: '', message: '' });
   const [leadStatus, setLeadStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
+  const movementInput = useRef<RoomMovementState>(createRoomMovementState());
 
   useEffect(() => {
     let active = true;
+    resetRoomMovement(movementInput);
 
     loadExpoSceneForRelease()
       .then((scene) => {
@@ -630,6 +873,7 @@ export default function BoothRoom() {
                 adTier={presentation.adTier}
                 customInsertUrl={presentation.customInsertUrl}
                 logoUrl={presentation.logoUrl}
+                movementInput={movementInput}
                 mode={presentation.showcaseMode}
                 posterUrl={presentation.posterUrl || presentation.logoUrl}
               />
@@ -640,6 +884,8 @@ export default function BoothRoom() {
             <div style={{ width: 'fit-content', padding: '10px 14px', borderRadius: '999px', background: `${accent}22`, color: accent, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.16em', fontSize: '0.74rem' }}>{presentation.adTier}</div>
             <div style={{ width: 'fit-content', padding: '10px 14px', borderRadius: '999px', background: 'rgba(8,13,20,0.42)', color: '#dbe7f1', border: '1px solid rgba(148,163,184,0.08)', fontWeight: 700 }}>Private isolated hall</div>
           </div>
+
+          <SponsorRoomMovementPad accent={accent} movementInput={movementInput} />
 
           <div style={{ position: 'absolute', right: '18px', bottom: '18px', width: 'min(520px, calc(100vw - 36px))', display: 'grid', gap: '12px', alignItems: 'end', pointerEvents: 'none' }}>
             <div style={{ display: 'grid', gap: '12px', padding: '12px 14px', borderRadius: '18px', border: `1px solid ${accent}10`, background: 'linear-gradient(180deg, rgba(8,12,18,0.16), rgba(5,9,14,0.34))', backdropFilter: 'blur(4px)', pointerEvents: 'auto' }}>
