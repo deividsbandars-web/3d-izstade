@@ -36,6 +36,36 @@ const CALCULATOR_LEAD_STATUS_OPTIONS: Array<{ label: string; value: CalculatorLe
   { label: 'Noraidits', value: 'rejected' },
 ];
 
+function getBackendAccessNotice(message: string) {
+  if (message.includes('SERVER_API_HTTP_401')) {
+    return {
+      actionHref: '/login?next=%2Fcalculators%2Fleads',
+      actionLabel: 'Pieslegties',
+      body: 'Backend calculator lead rinda ir aizsargata. Piesledzies ar admin vai sales kontu, un pec login tiksi atpakal uz so inbox.',
+      tone: '#fbbf24',
+      title: 'Nepieciesama pieslegsanas',
+    };
+  }
+
+  if (message.includes('SERVER_API_HTTP_403')) {
+    return {
+      actionHref: '/calculators',
+      actionLabel: 'Atvert kalkulatorus',
+      body: 'Sesija ir deriga, bet sim kontam nav atlautas calculator lead rindas darbiba.',
+      tone: '#fb7185',
+      title: 'Nav piekluves',
+    };
+  }
+
+  return {
+    actionHref: '/calculators',
+    actionLabel: 'Atvert kalkulatorus',
+    body: 'Backend lead API sobrid nav sasniedzams vai atgrieza kludu. Lokalais fallback bloks joprojam var radit saja parluka saglabatus pieprasijumus.',
+    tone: '#38bdf8',
+    title: 'Backend lead API nav pieejams',
+  };
+}
+
 function asRecord(value: unknown): Record<string, unknown> | null {
   return value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : null;
 }
@@ -274,6 +304,9 @@ export default function CalculatorLeadInbox() {
     () => backendState.rows.filter((lead) => normalizeLeadStatus(lead.status) === 'new').length,
     [backendState.rows],
   );
+  const backendAccessNotice = backendState.status === 'error'
+    ? getBackendAccessNotice(backendState.message)
+    : null;
 
   const clearLocalQueue = () => {
     if (typeof window === 'undefined') {
@@ -350,6 +383,26 @@ export default function CalculatorLeadInbox() {
           </button>
         </div>
       </section>
+
+      {backendAccessNotice && (
+        <section style={{ background: `${backendAccessNotice.tone}12`, border: `1px solid ${backendAccessNotice.tone}55`, borderRadius: '22px', display: 'grid', gap: '14px', marginBottom: '24px', padding: '18px' }}>
+          <div>
+            <div style={{ color: backendAccessNotice.tone, fontSize: '0.72rem', fontWeight: 950, letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+              Backend access
+            </div>
+            <h2 style={{ color: '#f8fafc', fontSize: '1.25rem', margin: '6px 0 6px' }}>{backendAccessNotice.title}</h2>
+            <p style={{ color: '#cbd5e1', lineHeight: 1.5, margin: 0, maxWidth: '840px' }}>{backendAccessNotice.body}</p>
+          </div>
+          <div style={{ alignItems: 'center', display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+            <Link to={backendAccessNotice.actionHref} style={{ background: backendAccessNotice.tone, borderRadius: '999px', color: '#020617', fontSize: '0.82rem', fontWeight: 950, padding: '10px 14px', textDecoration: 'none', textTransform: 'uppercase' }}>
+              {backendAccessNotice.actionLabel}
+            </Link>
+            <button onClick={() => void loadBackendLeads()} style={{ background: 'rgba(15, 23, 42, 0.78)', border: '1px solid rgba(148, 163, 184, 0.24)', borderRadius: '999px', color: '#cbd5e1', cursor: 'pointer', fontSize: '0.82rem', fontWeight: 900, padding: '10px 14px' }} type="button">
+              Parbaudit velreiz
+            </button>
+          </div>
+        </section>
+      )}
 
       <section style={{ display: 'grid', gap: '14px', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', marginBottom: '24px' }}>
         {statCard('LokÄlie fallback', localQueue.length, '#38bdf8')}
