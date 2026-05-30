@@ -1,63 +1,65 @@
 import { useState } from 'react';
 import '../../components/calculator/styles/CalculatorPro.css';
 import { COUNTRIES, renderCountryOptions } from '../../core/constants';
-
-// ------------------------------------------------------------------
-// DATUBĀZE: Pamatu veidi, materiāli un zemes darbi (Bāze EUR)
-// ------------------------------------------------------------------
+import { CalculatorLeadCta } from './CalculatorLeadCta';
 
 const PRICES = {
   types: {
-    strip: { name: 'Lentveida pamati (Monolītie)', mat: 85, work: 120 },
-    slab: { name: 'Siltinātā zviedru plātne (U-Plātne)', mat: 110, work: 95 },
-    pile: { name: 'Pāļu pamati (Urbtie / Dzītie)', mat: 145, work: 180 },
-    block: { name: 'Fibo / Betonbloku pamati', mat: 65, work: 85 },
+    strip: { name: 'Lentveida pamati', mat: 85, work: 120 },
+    slab: { name: 'Siltinātā zviedru plātne', mat: 110, work: 95 },
+    pile: { name: 'Pāļu pamati', mat: 145, work: 180 },
+    block: { name: 'Fibo / betonbloku pamati', mat: 65, work: 85 },
   },
   earthworks: {
-    excavation: { name: 'Tranšeju rakšana / Bedres izstrāde', price: 15 },
-    sand_fill: { name: 'Smilts / Šķembu spilvens (ar blīvēšanu)', price: 28 },
+    excavation: { name: 'Tranšeju rakšana / bedres izstrāde', price: 15 },
+    sand_fill: { name: 'Smilts / šķembu spilvens ar blīvēšanu', price: 28 },
     soil_removal: { name: 'Grunts izvešana', price: 12 },
   },
   insulation: {
-    eps_100: { name: 'EPS 100 Siltinājums (100mm)', price: 18 },
-    xps: { name: 'XPS Ekstrudētais putuplasts (100mm)', price: 28 },
-    membrane: { name: 'Hidroizolācijas membrāna / Bitumens', price: 12 },
+    eps_100: { name: 'EPS 100 siltinājums (100mm)', price: 18 },
+    xps: { name: 'XPS ekstrudētais putuplasts (100mm)', price: 28 },
+    membrane: { name: 'Hidroizolācijas membrāna / bitumens', price: 12 },
   },
   concrete_m3: { name: 'Betons C25/30 ar sūkni', price: 135 },
-  reinforcement_t: { name: 'Armatūra (Ø10-12mm)', price: 1250 },
-};
+  reinforcement_t: { name: 'Armatūra Ø10-12mm', price: 1250 },
+} as const;
+
+function formatEuro(value: number) {
+  return `${Math.round(value).toLocaleString('lv-LV')} €`;
+}
 
 export default function FoundationCalc() {
   const [params, setParams] = useState({
-    country: 'lv',
     area: 100,
-    perimeter: 45,
-    type: 'slab',
+    country: 'lv',
     depth: 1.2,
+    imageUrl: '',
     includeExcavation: true,
     includeInsulation: true,
     insulationType: 'xps',
+    perimeter: 45,
     soilType: 'sand',
-    imageUrl: '',
+    type: 'slab',
   });
 
   const [results, setResults] = useState<any>(null);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value, type } = e.target;
-    setParams(prev => ({
-      ...prev,
-      [name]: type === 'number' ? parseFloat(value) || 0 : value
+  const handleChange = (event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value, type } = event.target;
+    setParams((current) => ({
+      ...current,
+      [name]: type === 'number' ? parseFloat(value) || 0 : value,
     }));
   };
 
   const handleCalculate = () => {
-    const workMult = COUNTRIES[params.country as keyof typeof COUNTRIES].workMult;
-    const matMult = COUNTRIES[params.country as keyof typeof COUNTRIES].matMult;
+    const country = COUNTRIES[params.country as keyof typeof COUNTRIES] ?? COUNTRIES.lv;
+    const workMult = country.workMult;
+    const matMult = country.matMult;
 
     const typeRate = PRICES.types[params.type as keyof typeof PRICES.types];
     const unitValue = params.type === 'slab' ? params.area : params.perimeter;
-    
+
     const structureCost = {
       mat: (unitValue * typeRate.mat) * matMult,
       work: (unitValue * typeRate.work) * workMult,
@@ -65,14 +67,14 @@ export default function FoundationCalc() {
 
     let earthworkCost = 0;
     if (params.includeExcavation) {
-      const volume = (params.perimeter * 0.6 * params.depth);
+      const volume = params.perimeter * 0.6 * params.depth;
       earthworkCost = (volume * (PRICES.earthworks.excavation.price + PRICES.earthworks.sand_fill.price)) * workMult;
     }
 
     let insulationCost = 0;
     if (params.includeInsulation) {
-      const insRate = PRICES.insulation[params.insulationType as keyof typeof PRICES.insulation];
-      insulationCost = (params.area * insRate.price) * matMult;
+      const insulationRate = PRICES.insulation[params.insulationType as keyof typeof PRICES.insulation];
+      insulationCost = (params.area * insulationRate.price) * matMult;
     }
 
     const totalMat = structureCost.mat + insulationCost;
@@ -80,28 +82,27 @@ export default function FoundationCalc() {
     const grandTotal = totalMat + totalWork;
 
     setResults({
-      structureCost,
       earthworkCost,
-      insulationCost,
-      totalMat,
-      totalWork,
       grandTotal,
       imageUrl: params.imageUrl,
+      insulationCost,
+      structureCost,
+      totalMat,
+      totalWork,
     });
   };
 
   return (
     <div className="calculator-pro-wrapper">
       <div className="calc-header">
-        <h1>PRO Pamatu Izbūves Tāme</h1>
-        <p>Pilns nulles cikla aprēķins: zemes darbi, betonēšana, armēšana un hidroizolācija.</p>
+        <h1>PRO pamatu izbūves tāme</h1>
+        <p>Nulles cikla aprēķins: zemes darbi, pamatu konstrukcija, siltināšana un hidroizolācija.</p>
       </div>
 
       <div className="calc-grid">
         <div className="calc-form-column">
-          
           <section className="calc-section">
-            <h2>🌍 Objekta ģeometrija</h2>
+            <h2>Objekta ģeometrija</h2>
             <div className="input-group">
               <label>Reģions
                 <select name="country" value={params.country} onChange={handleChange}>
@@ -120,12 +121,12 @@ export default function FoundationCalc() {
           </section>
 
           <section className="calc-section">
-            <h2>🏗️ Pamatu tips un dziļums</h2>
+            <h2>Pamatu tips un dziļums</h2>
             <div className="input-group">
               <label>Konstrukcijas veids
                 <select name="type" value={params.type} onChange={handleChange}>
-                  {Object.entries(PRICES.types).map(([k, v]) => (
-                    <option key={k} value={k}>{v.name}</option>
+                  {Object.entries(PRICES.types).map(([key, value]) => (
+                    <option key={key} value={key}>{value.name}</option>
                   ))}
                 </select>
               </label>
@@ -136,21 +137,21 @@ export default function FoundationCalc() {
           </section>
 
           <section className="calc-section">
-            <h2>🛠️ Papildus darbi un Siltināšana</h2>
+            <h2>Papildu darbi un siltināšana</h2>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
               <label style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }}>
-                <input type="checkbox" name="includeExcavation" checked={params.includeExcavation} onChange={(e) => setParams({...params, includeExcavation: e.target.checked})} style={{ width: '20px', height: '20px', accentColor: '#3b82f6' }} />
-                <span>Iekļaut zemes darbus un smilts spilvenu</span>
+                <input type="checkbox" name="includeExcavation" checked={params.includeExcavation} onChange={(event) => setParams({ ...params, includeExcavation: event.target.checked })} style={{ width: '20px', height: '20px', accentColor: '#3b82f6' }} />
+                <span>Iekļaut zemes darbus un smilts/šķembu spilvenu</span>
               </label>
               <label style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }}>
-                <input type="checkbox" name="includeInsulation" checked={params.includeInsulation} onChange={(e) => setParams({...params, includeInsulation: e.target.checked})} style={{ width: '20px', height: '20px', accentColor: '#3b82f6' }} />
-                <span>Iekļaut siltināšanu (L-bloki / Plāksnes)</span>
+                <input type="checkbox" name="includeInsulation" checked={params.includeInsulation} onChange={(event) => setParams({ ...params, includeInsulation: event.target.checked })} style={{ width: '20px', height: '20px', accentColor: '#3b82f6' }} />
+                <span>Iekļaut pamatu siltināšanu</span>
               </label>
               {params.includeInsulation && (
                 <div style={{ paddingLeft: '32px' }}>
                   <select name="insulationType" value={params.insulationType} onChange={handleChange}>
-                    {Object.entries(PRICES.insulation).map(([k, v]) => (
-                      <option key={k} value={k}>{v.name}</option>
+                    {Object.entries(PRICES.insulation).map(([key, value]) => (
+                      <option key={key} value={key}>{value.name}</option>
                     ))}
                   </select>
                 </div>
@@ -159,7 +160,7 @@ export default function FoundationCalc() {
           </section>
 
           <section className="calc-section">
-            <h2>🖼️ Grunts plāns / Foto</h2>
+            <h2>Grunts plāns / foto</h2>
             <div className="input-group">
               <label>Objekta foto vai ģeodēzija (URL)
                 <input type="text" name="imageUrl" value={params.imageUrl} onChange={handleChange} placeholder="https://..." />
@@ -168,76 +169,87 @@ export default function FoundationCalc() {
           </section>
 
           <button onClick={handleCalculate} className="btn-primary" style={{ width: '100%', padding: '18px', fontSize: '1.1rem' }}>
-            Ģenerēt Pamatu Tāmi
+            Ģenerēt pamatu tāmi
           </button>
         </div>
 
         <div className="calc-results-column">
           <div className="sticky-results">
-            <h3 className="results-title">Nulles Cikla Specifikācija</h3>
-            
+            <h3 className="results-title">Nulles cikla specifikācija</h3>
+
             {!results ? (
               <div className="empty-state">
-                <div className="empty-state-icon">🏛️</div>
-                <p>Norādiet ēkas perimetru un tipu</p>
+                <div className="empty-state-icon">▰</div>
+                <p>Norādi ēkas perimetru, platību un pamatu tipu.</p>
               </div>
             ) : (
               <>
-                <div style={{ 
-                  marginBottom: '25px', padding: '20px', background: 'rgba(59, 130, 246, 0.1)', 
-                  borderRadius: '16px', border: '1px solid rgba(59, 130, 246, 0.2)', color: '#fff' 
+                <div style={{
+                  background: 'rgba(59, 130, 246, 0.1)',
+                  border: '1px solid rgba(59, 130, 246, 0.2)',
+                  borderRadius: '16px',
+                  color: '#fff',
+                  marginBottom: '25px',
+                  padding: '20px',
                 }}>
-                  Tips: <strong>{PRICES.types[params.type as keyof typeof PRICES.types].name}</strong><br/>
+                  Tips: <strong>{PRICES.types[params.type as keyof typeof PRICES.types].name}</strong><br />
                   Platība: <strong>{params.area} m²</strong> | Dziļums: <strong>{params.depth} m</strong>
                 </div>
 
                 {results.imageUrl && (
-                   <div style={{ position: 'relative', overflow: 'hidden', borderRadius: '16px', marginBottom: '25px' }}>
-                     <img src={results.imageUrl} style={{ width: '100%', display: 'block' }} alt="Grunts" />
-                   </div>
+                  <div style={{ position: 'relative', overflow: 'hidden', borderRadius: '16px', marginBottom: '25px' }}>
+                    <img src={results.imageUrl} style={{ width: '100%', display: 'block' }} alt="Grunts plāns" />
+                  </div>
                 )}
 
                 <table className="results-table">
                   <thead>
                     <tr>
                       <th>Pozīcija</th>
-                      <th>Mat.</th>
+                      <th>Materiāli</th>
                       <th>Darbs</th>
                     </tr>
                   </thead>
                   <tbody>
                     <tr>
                       <td>Pamatu konstrukcija</td>
-                      <td>{results.structureCost.mat.toFixed(0)} €</td>
-                      <td>{results.structureCost.work.toFixed(0)} €</td>
+                      <td>{formatEuro(results.structureCost.mat)}</td>
+                      <td>{formatEuro(results.structureCost.work)}</td>
                     </tr>
                     {params.includeExcavation && (
                       <tr>
-                        <td>Zemes darbi & Spilvens</td>
-                        <td>0 €</td>
-                        <td>{results.earthworkCost.toFixed(0)} €</td>
+                        <td>Zemes darbi un spilvens</td>
+                        <td>{formatEuro(0)}</td>
+                        <td>{formatEuro(results.earthworkCost)}</td>
                       </tr>
                     )}
                     {params.includeInsulation && (
                       <tr>
                         <td>Siltināšana ({params.insulationType.toUpperCase()})</td>
-                        <td>{results.insulationCost.toFixed(0)} €</td>
-                        <td>0 €</td>
+                        <td>{formatEuro(results.insulationCost)}</td>
+                        <td>{formatEuro(0)}</td>
                       </tr>
                     )}
                   </tbody>
                 </table>
 
                 <div className="grand-total-box">
-                  <span className="gt-label">Pamatu Izbūves Investīcija</span>
-                  <span className="gt-value">{results.grandTotal.toFixed(0)} €</span>
-                  <span className="gt-subtext">Aprēķinā iekļauta betona sūkņa īre un veidņi.</span>
+                  <span className="gt-label">Pamatu izbūves investīcija</span>
+                  <span className="gt-value">{formatEuro(results.grandTotal)}</span>
+                  <span className="gt-subtext">Gala piedāvājumam vajag grunts apstākļu un projekta mezglu pārbaudi.</span>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginTop: '25px' }}>
-                  <button className="btn-glass" style={{ justifyContent: 'center' }}>PDF Eksports</button>
-                  <button className="btn-glass" style={{ justifyContent: 'center', borderColor: 'var(--accent-blue)' }}>Ģeodēzija</button>
-                </div>
+                <CalculatorLeadCta
+                  calculatorId="foundation"
+                  calculatorTitle="Pamatu izbūves tāme"
+                  estimateTotal={results.grandTotal}
+                  summaryItems={[
+                    { label: 'Pamatu tips', value: PRICES.types[params.type as keyof typeof PRICES.types].name },
+                    { label: 'Platība', value: `${params.area} m²` },
+                    { label: 'Perimetrs', value: `${params.perimeter} m` },
+                    { label: 'Siltināšana', value: params.includeInsulation ? PRICES.insulation[params.insulationType as keyof typeof PRICES.insulation].name : 'Nav iekļauta' },
+                  ]}
+                />
               </>
             )}
           </div>
