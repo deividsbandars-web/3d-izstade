@@ -158,7 +158,11 @@ function ExpoRuntimeExperience({
               runtimeSession.setMode('menu');
             }}
           />
-          <SalesDemoGuideOverlay isTouchDevice={runtimeSession.isTouchDevice} />
+          <SalesDemoGuideOverlay
+            isTouchDevice={runtimeSession.isTouchDevice}
+            mode={runtimeSession.mode}
+            onSetMode={runtimeSession.setMode}
+          />
           <SponsorConciergeLeadCaptureOverlay isTouchDevice={runtimeSession.isTouchDevice} />
         </>
       )}

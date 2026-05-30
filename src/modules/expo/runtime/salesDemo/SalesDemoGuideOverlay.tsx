@@ -1,7 +1,10 @@
 import { getSalesDemoStep, isSalesDemoEnabled, type SalesDemoStep } from './salesDemoFlags';
+import type { ExpoMode } from '../../state/expoRuntime';
 
 type SalesDemoGuideOverlayProps = {
   isTouchDevice?: boolean;
+  mode?: ExpoMode;
+  onSetMode?: (mode: ExpoMode) => void;
 };
 
 const GUIDE_ITEMS = [
@@ -74,12 +77,14 @@ const CTA_LINKS = [
   },
 ] as const;
 
-export function SalesDemoGuideOverlay({ isTouchDevice = false }: SalesDemoGuideOverlayProps) {
+export function SalesDemoGuideOverlay({ isTouchDevice = false, mode = 'walk', onSetMode }: SalesDemoGuideOverlayProps) {
   if (!isSalesDemoEnabled()) {
     return null;
   }
 
   const activeStep = getSalesDemoStep();
+  const isWalkMode = mode === 'walk';
+  const isFlyMode = mode === 'fly';
 
   return (
     <aside
@@ -247,6 +252,77 @@ export function SalesDemoGuideOverlay({ isTouchDevice = false }: SalesDemoGuideO
             </div>
           );
         })}
+      </div>
+
+      <div
+        data-sales-demo-movement-controls="true"
+        style={{
+          background: 'rgba(15, 23, 42, 0.58)',
+          border: '1px solid rgba(148, 163, 184, 0.2)',
+          borderRadius: '14px',
+          marginTop: isTouchDevice ? '9px' : '11px',
+          padding: isTouchDevice ? '8px 9px' : '9px 10px',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+          <div
+            style={{
+              color: '#e2e8f0',
+              fontSize: isTouchDevice ? '0.6rem' : '0.64rem',
+              fontWeight: 950,
+              letterSpacing: '0.08em',
+              textTransform: 'uppercase',
+            }}
+          >
+            Movement
+          </div>
+          <div style={{ display: 'flex', gap: '5px' }}>
+            {(['walk', 'fly'] as const).map((nextMode) => {
+              const isActive = mode === nextMode;
+
+              return (
+                <button
+                  key={nextMode}
+                  type="button"
+                  aria-pressed={isActive}
+                  data-sales-demo-movement-mode={nextMode}
+                  onClick={() => onSetMode?.(nextMode)}
+                  style={{
+                    background: isActive ? 'linear-gradient(135deg, rgba(34, 211, 238, 0.3), rgba(59, 130, 246, 0.18))' : 'rgba(2, 6, 23, 0.46)',
+                    border: isActive ? '1px solid rgba(103, 232, 249, 0.56)' : '1px solid rgba(148, 163, 184, 0.2)',
+                    borderRadius: '999px',
+                    color: isActive ? '#ecfeff' : '#cbd5e1',
+                    cursor: 'pointer',
+                    fontSize: isTouchDevice ? '0.54rem' : '0.56rem',
+                    fontWeight: 950,
+                    letterSpacing: '0.08em',
+                    lineHeight: 1,
+                    padding: isTouchDevice ? '6px 7px' : '6px 8px',
+                    textTransform: 'uppercase',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {nextMode}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+        <div
+          style={{
+            color: '#a8b5c7',
+            fontSize: isTouchDevice ? '0.56rem' : '0.6rem',
+            fontWeight: 800,
+            lineHeight: 1.3,
+            marginTop: '7px',
+          }}
+        >
+          {isWalkMode
+            ? 'Walk: WASD or arrow keys move. Q/E turns. Click the scene once for mouse look.'
+            : isFlyMode
+              ? 'Fly: drag the scene to orbit and scroll or pinch to zoom.'
+              : 'Choose Walk or Fly for client demo navigation.'}
+        </div>
       </div>
 
       <div

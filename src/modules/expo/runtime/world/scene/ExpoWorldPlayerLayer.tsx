@@ -56,6 +56,8 @@ const LIFT_TRIGGER_KEYS = new Set(['KeyF']);
 const WALK_CONTROL_KEYS = new Set([
   'ArrowLeft',
   'ArrowRight',
+  'ArrowUp',
+  'ArrowDown',
   'KeyA',
   'KeyD',
   'KeyE',
@@ -329,7 +331,9 @@ export function ExpoWorldPlayerLayer({
       }
 
       switch (event.code) {
+        case 'ArrowUp':
         case 'KeyW': setMov((value) => ({ ...value, f: true })); break;
+        case 'ArrowDown':
         case 'KeyS': setMov((value) => ({ ...value, b: true })); break;
         case 'KeyA': setMov((value) => ({ ...value, l: true })); break;
         case 'KeyD': setMov((value) => ({ ...value, r: true })); break;
@@ -348,7 +352,9 @@ export function ExpoWorldPlayerLayer({
       }
 
       switch (event.code) {
+        case 'ArrowUp':
         case 'KeyW': setMov((value) => ({ ...value, f: false })); break;
+        case 'ArrowDown':
         case 'KeyS': setMov((value) => ({ ...value, b: false })); break;
         case 'KeyA': setMov((value) => ({ ...value, l: false })); break;
         case 'KeyD': setMov((value) => ({ ...value, r: false })); break;
