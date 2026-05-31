@@ -140,6 +140,7 @@ function drawBoothProductPreviewBillboard(args: {
   const subtitle = payload.subtitle || 'Turn expo traffic into booked meetings and qualified leads.';
   const statusLabel = payload.statusLabel || 'Preview only - no live lead capture yet';
   const isStandardBooth = tier.toUpperCase().includes('STANDARD');
+  const isPremiumBooth = tier.toUpperCase().includes('PREMIUM');
   const titleSize = isLandscape ? height * 0.12 : height * 0.052;
   const tierSize = isLandscape ? height * 0.056 : height * 0.026;
   const subtitleSize = isLandscape ? height * 0.049 : height * 0.024;
@@ -199,6 +200,32 @@ function drawBoothProductPreviewBillboard(args: {
       context.roundRect(showcasePanelX + showcasePanelWidth * 0.1, itemY, showcasePanelWidth * 0.08, bodySize * 0.5, Math.max(4, bodySize * 0.18));
       context.fill();
       drawBillboardText(context, label, showcasePanelX + showcasePanelWidth * 0.22, itemY - bodySize * 0.18, showcasePanelWidth * 0.66, font(760, bodySize * 0.78), '#eaf4fb');
+    });
+  }
+
+  if (isPremiumBooth && isLandscape) {
+    const conversionPanelWidth = width * 0.23;
+    const conversionPanelX = width - pad * 1.18 - conversionPanelWidth;
+    const conversionPanelY = height * 0.18;
+    const conversionPanelHeight = height * 0.45;
+    maxTextWidth = conversionPanelX - left - pad * 0.55;
+
+    context.fillStyle = 'rgba(8, 23, 38, 0.94)';
+    context.beginPath();
+    context.roundRect(conversionPanelX, conversionPanelY, conversionPanelWidth, conversionPanelHeight, Math.max(14, shortSide * 0.024));
+    context.fill();
+    context.strokeStyle = 'rgba(45, 212, 191, 0.42)';
+    context.lineWidth = Math.max(2, shortSide * 0.0032);
+    context.stroke();
+
+    drawBillboardText(context, 'CONVERSION FLOW', conversionPanelX + conversionPanelWidth * 0.1, conversionPanelY + conversionPanelHeight * 0.12, conversionPanelWidth * 0.8, font(900, bodySize * 0.82), tierAccent);
+    ['Booked meeting', 'AI diagnostic', 'Lead report'].forEach((label, index) => {
+      const itemY = conversionPanelY + conversionPanelHeight * (0.34 + index * 0.19);
+      context.fillStyle = index === 0 ? accentColor : 'rgba(45, 212, 191, 0.22)';
+      context.beginPath();
+      context.arc(conversionPanelX + conversionPanelWidth * 0.14, itemY + bodySize * 0.16, Math.max(5, bodySize * 0.18), 0, Math.PI * 2);
+      context.fill();
+      drawBillboardText(context, label, conversionPanelX + conversionPanelWidth * 0.24, itemY - bodySize * 0.18, conversionPanelWidth * 0.64, font(760, bodySize * 0.78), '#e7f8f6');
     });
   }
 
