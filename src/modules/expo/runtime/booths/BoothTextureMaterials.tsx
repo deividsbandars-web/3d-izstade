@@ -277,7 +277,7 @@ export function SponsorTextureSurface({
     };
   }, [isGeneratedBillboard, url]);
 
-  if (mappedTexture && isGeneratedBillboard) {
+  if (mappedTexture) {
     return (
       <meshBasicMaterial
         depthWrite={depthWrite ?? opacity >= 0.999}
