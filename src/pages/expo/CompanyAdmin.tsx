@@ -144,6 +144,10 @@ const LEAD_STATUS_COLORS: Record<string, string> = {
 };
 
 const EXPO_SCREEN_TEST_IMAGE_PATH = '/expo/media/warpala-expo-camera-orbit-test.gif';
+const DEFAULT_VISIBLE_SCENE_COMPANY_NAME = 'Warpala Platform';
+const DEFAULT_SCREEN_TEST_TITLE = 'Warpala Expo Screen Test';
+const DEFAULT_SCREEN_TEST_SUBTITLE = 'Camera orbit test loop for booth and city screen replacement.';
+const DEFAULT_SCREEN_TEST_CTA = 'Open Booth';
 
 const DEFAULT_COMPANY: AdminCompanyState = {
   booth: { video_url: '' },
@@ -151,7 +155,7 @@ const DEFAULT_COMPANY: AdminCompanyState = {
   district: EXPO_CANONICAL_DISTRICT_CATALOG[0]?.id ?? '',
   id: '',
   logo_url: '',
-  name: 'Warpala',
+  name: DEFAULT_VISIBLE_SCENE_COMPANY_NAME,
   screenContent: {
     ctaLabel: '',
     imageUrl: '',
@@ -186,6 +190,18 @@ function normalizeScreenMode(value: unknown): AdminScreenContentMode {
 
 function normalizeScreenStatus(value: unknown): AdminScreenContentStatus {
   return String(value || '').trim().toLowerCase() === 'published' ? 'published' : 'draft';
+}
+
+function normalizeAdminLookupKey(value: unknown) {
+  return String(value || '')
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .toLowerCase();
+}
+
+function resolveVisibleSceneCompanyName(value: string) {
+  return normalizeAdminLookupKey(value) === 'warpala' ? DEFAULT_VISIBLE_SCENE_COMPANY_NAME : value;
 }
 
 function readAdminScreenContent(assets3d: unknown): AdminScreenContentState {
@@ -437,11 +453,12 @@ export default function CompanyAdmin() {
       return;
     }
 
+    const companyNameForSave = resolveVisibleSceneCompanyName(company.name.trim());
     setLoading(true);
     try {
       const result = await expoDashboardService.saveManagedBooth({
         boothId: company.id || undefined,
-        companyName: company.name,
+        companyName: companyNameForSave,
         description: company.description,
         district: company.district,
         screenContent: company.screenContent,
@@ -456,6 +473,7 @@ export default function CompanyAdmin() {
       setCompany((current) => ({
         ...current,
         id: savedId,
+        name: companyNameForSave,
       }));
       if (savedId) {
         const [analyticsResult, reviewResult] = await Promise.all([
@@ -572,6 +590,18 @@ export default function CompanyAdmin() {
     }));
   }
 
+  function updateScreenImageUrl(imageUrl: string) {
+    const normalizedUrl = imageUrl.trim();
+    updateScreenContent({
+      ctaLabel: normalizedUrl ? company.screenContent.ctaLabel || DEFAULT_SCREEN_TEST_CTA : company.screenContent.ctaLabel,
+      imageUrl,
+      mode: normalizedUrl ? 'image' : company.screenContent.mode,
+      status: normalizedUrl ? 'published' : company.screenContent.status,
+      subtitle: normalizedUrl ? company.screenContent.subtitle || DEFAULT_SCREEN_TEST_SUBTITLE : company.screenContent.subtitle,
+      title: normalizedUrl ? company.screenContent.title || DEFAULT_SCREEN_TEST_TITLE : company.screenContent.title,
+    });
+  }
+
   const selectedDistrictColor =
     EXPO_CANONICAL_DISTRICT_CATALOG.find((district) => district.id === company.district)?.color || '#3b82f6';
   const leadStatusCounts = leads.reduce<Record<string, number>>((acc, lead) => {
@@ -609,6 +639,18 @@ export default function CompanyAdmin() {
   const sampleScreenImageUrl = typeof window !== 'undefined' && window.location.protocol === 'https:'
     ? `${window.location.origin}${EXPO_SCREEN_TEST_IMAGE_PATH}`
     : '';
+  const companyNameForSave = resolveVisibleSceneCompanyName(company.name.trim());
+  const willUseVisibleSceneCompanyAlias = Boolean(company.name.trim()) && companyNameForSave !== company.name.trim();
+  const hasScreenImageUrl = company.screenContent.imageUrl.trim().length > 0;
+  const isPublishedImageContent = company.screenContent.status === 'published'
+    && company.screenContent.mode === 'image'
+    && hasScreenImageUrl
+    && screenContentValidation.ok;
+  const screenVisibilityHint = isPublishedImageContent
+    ? 'VISIBLE READY: published image content is ready for the matched 3D booth screen.'
+    : hasScreenImageUrl
+      ? 'NOT VISIBLE YET: image URLs must be saved as PUBLISHED / IMAGE and matched to a visible 3D booth.'
+      : 'No image URL saved yet.';
   const screenInventorySlots = getExpoScreenInventorySlots();
   const screenInventorySummary = getExpoScreenInventorySummary();
   const availableScreenSlots = getAvailableExpoScreenSlots();
@@ -730,10 +772,15 @@ export default function CompanyAdmin() {
                 Company name
                 <input
                   type="text"
-                  placeholder="Warpala"
+                  placeholder={DEFAULT_VISIBLE_SCENE_COMPANY_NAME}
                   value={company.name}
                   onChange={(event) => setCompany({ ...company, name: event.target.value })}
                 />
+                {willUseVisibleSceneCompanyAlias && (
+                  <span style={{ display: 'block', marginTop: '7px', color: '#bae6fd', fontSize: '0.76rem', lineHeight: 1.45 }}>
+                    This saves as {companyNameForSave} so the screen content can match the visible 3D scene booth.
+                  </span>
+                )}
               </label>
 
               <label style={{ marginTop: '20px' }}>
@@ -877,10 +924,10 @@ export default function CompanyAdmin() {
                   type="text"
                   placeholder="https://cdn.example.com/sponsor-screen.png"
                   value={company.screenContent.imageUrl}
-                  onChange={(event) => updateScreenContent({ imageUrl: event.target.value })}
+                  onChange={(event) => updateScreenImageUrl(event.target.value)}
                 />
                 <span style={{ display: 'block', marginTop: '7px', color: '#94a3b8', fontSize: '0.76rem', lineHeight: 1.45 }}>
-                  Use for live screen replacement. Supported: {EXPO_SCREEN_CONTENT_IMAGE_EXTENSIONS.join(', ')}.
+                  Pasting an image URL sets Screen mode to Image and Status to Published. Supported: {EXPO_SCREEN_CONTENT_IMAGE_EXTENSIONS.join(', ')}.
                 </span>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', marginTop: '9px' }}>
                   <button
@@ -888,12 +935,12 @@ export default function CompanyAdmin() {
                     className="btn-glass"
                     disabled={!sampleScreenImageUrl}
                     onClick={() => sampleScreenImageUrl && updateScreenContent({
-                      ctaLabel: company.screenContent.ctaLabel || 'Open Booth',
+                      ctaLabel: company.screenContent.ctaLabel || DEFAULT_SCREEN_TEST_CTA,
                       imageUrl: sampleScreenImageUrl,
                       mode: 'image',
                       status: 'published',
-                      subtitle: company.screenContent.subtitle || 'Camera orbit test loop for booth and city screen replacement.',
-                      title: company.screenContent.title || 'Warpala Expo Screen Test',
+                      subtitle: company.screenContent.subtitle || DEFAULT_SCREEN_TEST_SUBTITLE,
+                      title: company.screenContent.title || DEFAULT_SCREEN_TEST_TITLE,
                     })}
                     style={{ padding: '7px 10px', fontSize: '0.72rem' }}
                   >
@@ -933,6 +980,8 @@ export default function CompanyAdmin() {
                 Current screen content: {company.screenContent.status.toUpperCase()} / {company.screenContent.mode.toUpperCase()}
                 <br />
                 URL safety: {screenContentValidation.ok && boothVideoValidation.ok ? 'READY TO SAVE' : screenContentIssueText}
+                <br />
+                Screen visibility: {screenVisibilityHint}
               </div>
             </div>
 
