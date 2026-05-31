@@ -87,12 +87,12 @@ const calculators: CalculatorEntry[] = [
   {
     accent: '#0ea5e9',
     category: 'construction',
-    depth: 'Quick estimate',
-    desc: 'Logu skaits, konstrukcijas tips, montāža un demontāžas izmaksas.',
+    depth: 'Detailed estimate',
+    desc: 'Profils, stiklojums, logu izmērs, balkona durvis, siltais montāžas mezgls, palodzes, ailes un demontāža.',
     id: 'windows',
     path: '/windows-calculator',
-    primaryUse: 'Logu nomaiņa vai jaunas ailes',
-    status: 'Īss cenu signāls',
+    primaryUse: 'Logu, balkona durvju vai vitrīnu nomaiņa',
+    status: 'Praktisks energoefektivitātes leads',
     title: 'Logi un durvis',
   },
   {
