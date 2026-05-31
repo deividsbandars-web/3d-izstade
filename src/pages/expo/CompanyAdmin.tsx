@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Canvas } from '@react-three/fiber';
 import { Environment, OrbitControls, Text, useVideoTexture } from '@react-three/drei';
 import { expoDashboardService } from '../../app/expo/expoDashboardService';
+import { supabaseClient } from '../../lib/supabaseClient';
 import { EXPO_CANONICAL_DISTRICT_CATALOG } from '../../services/expoService';
 import {
   EXPO_SCREEN_CONTENT_IMAGE_EXTENSIONS,
@@ -120,6 +121,14 @@ type ManagedLeadOpsDraft = {
   opsNotes: string;
 };
 
+type AdminAccessState =
+  | 'checking-auth'
+  | 'ready'
+  | 'signed-out'
+  | 'access-denied'
+  | 'backend-unavailable'
+  | 'unavailable';
+
 const LEAD_STATUS_LABELS: Record<string, string> = {
   closed: 'Closed',
   contacted: 'Contacted',
@@ -195,9 +204,83 @@ function readAdminScreenContent(assets3d: unknown): AdminScreenContentState {
   };
 }
 
+function formatRequestError(error: unknown) {
+  return error instanceof Error ? error.message : String(error);
+}
+
+function resolveAdminAccessStateFromError(errorText: string): Exclude<AdminAccessState, 'checking-auth' | 'ready'> {
+  if (errorText.includes('SERVER_API_HTTP_401')) {
+    return 'signed-out';
+  }
+
+  if (errorText.includes('SERVER_API_HTTP_403')) {
+    return 'access-denied';
+  }
+
+  if (
+    errorText.includes('SERVER_API_HTTP_500') ||
+    errorText.includes('SERVER_API_HTTP_502') ||
+    errorText.includes('SERVER_API_HTTP_503') ||
+    errorText.includes('SERVER_API_HTTP_504') ||
+    errorText.toLowerCase().includes('failed to fetch') ||
+    errorText.toLowerCase().includes('networkerror') ||
+    errorText.toLowerCase().includes('err_connection')
+  ) {
+    return 'backend-unavailable';
+  }
+
+  return 'unavailable';
+}
+
+function getAdminAccessNotice(accessState: AdminAccessState, technicalError: string | null) {
+  if (accessState === 'signed-out') {
+    return {
+      actionLabel: 'Sign in to save',
+      actionPath: '/login?next=/expo/admin',
+      body: 'Expo Admin uses your signed-in Supabase session automatically. No separate Expo API key should be pasted here.',
+      detail: 'After signing in, return to this page and save the booth screen normally.',
+      title: 'Sign in required',
+    };
+  }
+
+  if (accessState === 'access-denied') {
+    return {
+      actionLabel: 'Open sales demo',
+      actionPath: '/expo-3d?salesDemo=1',
+      body: 'This account is signed in, but it is not allowed to manage this booth.',
+      detail: 'Use the sponsor owner account or an admin account before saving screen content.',
+      title: 'Booth access required',
+    };
+  }
+
+  if (accessState === 'backend-unavailable') {
+    return {
+      actionLabel: 'Open sales demo',
+      actionPath: '/expo-3d?salesDemo=1',
+      body: 'The admin UI is loaded, but the Expo backend API is not reachable right now.',
+      detail: technicalError ? `Technical detail: ${technicalError}` : 'Check the staging backend service, then reload this page.',
+      title: 'Backend unavailable',
+    };
+  }
+
+  if (accessState === 'unavailable') {
+    return {
+      actionLabel: 'Open sales demo',
+      actionPath: '/expo-3d?salesDemo=1',
+      body: 'Expo Admin could not load the booth management data.',
+      detail: technicalError ? `Technical detail: ${technicalError}` : 'Retry after checking the backend and auth session.',
+      title: 'Admin unavailable',
+    };
+  }
+
+  return null;
+}
+
 export default function CompanyAdmin() {
   const nav = useNavigate();
   const [loading, setLoading] = useState(true);
+  const [adminAccessState, setAdminAccessState] = useState<AdminAccessState>('checking-auth');
+  const [adminAccessError, setAdminAccessError] = useState<string | null>(null);
   const [districts, setDistricts] = useState<string[]>([...EXPO_CANONICAL_DISTRICT_CATALOG.map((district) => district.id)]);
   const [managedBooths, setManagedBooths] = useState<Array<{ company_name?: string | null; district?: string | null; id?: string }>>([]);
   const [analytics, setAnalytics] = useState<ManagedAnalytics>(null);
@@ -213,10 +296,20 @@ export default function CompanyAdmin() {
   useEffect(() => {
     async function init() {
       try {
+        setAdminAccessState('checking-auth');
+        setAdminAccessError(null);
+        const { data: sessionData } = await supabaseClient.auth.getSession();
+        if (!sessionData.session?.access_token) {
+          setAdminAccessState('signed-out');
+          return;
+        }
+
         const [districtResult, boothsResult] = await Promise.all([
           expoDashboardService.getDistricts(),
           expoDashboardService.getManagedBooths(),
         ]);
+
+        setAdminAccessState('ready');
 
         if (Array.isArray(districtResult.data) && districtResult.data.length > 0) {
           setDistricts(districtResult.data.map((entry) => String(entry)));
@@ -257,8 +350,11 @@ export default function CompanyAdmin() {
             setRoomRouteId(String((reviewResult.data as { reviewContext?: { roomRouteId?: string } } | null)?.reviewContext?.roomRouteId || first.id || ''));
           }
         }
-      } catch {
-        console.warn('EXPO_ADMIN_INIT_FALLBACK');
+      } catch (error) {
+        const errorText = formatRequestError(error);
+        setAdminAccessError(errorText);
+        setAdminAccessState(resolveAdminAccessStateFromError(errorText));
+        console.warn('EXPO_ADMIN_INIT_UNAVAILABLE', error);
       } finally {
         setLoading(false);
       }
@@ -329,6 +425,11 @@ export default function CompanyAdmin() {
   }
 
   async function handleSave() {
+    if (adminAccessState !== 'ready') {
+      setMessage({ type: 'error', text: 'Sign in with a sponsor/admin account before saving booth screen content.' });
+      return;
+    }
+
     if (!company.name || !company.district) {
       setMessage({ type: 'error', text: 'Please provide a company name and district.' });
       return;
@@ -371,9 +472,25 @@ export default function CompanyAdmin() {
           })));
         }
       }
-      setMessage({ type: 'success', text: 'Booth configuration saved through Expo API.' });
+      setMessage({ type: 'success', text: 'Booth screen settings saved.' });
     } catch (error) {
-      setMessage({ type: 'error', text: error instanceof Error ? error.message : 'Failed to save booth configuration.' });
+      const errorText = formatRequestError(error);
+      const accessState = resolveAdminAccessStateFromError(errorText);
+      if (errorText.includes('SERVER_API_HTTP_')) {
+        setAdminAccessError(errorText);
+        setAdminAccessState(accessState);
+      }
+
+      setMessage({
+        type: 'error',
+        text: accessState === 'signed-out'
+          ? 'Your admin session is missing or expired. Sign in again, then save the booth screen.'
+          : accessState === 'access-denied'
+            ? 'This account is not allowed to save this booth.'
+            : accessState === 'backend-unavailable'
+              ? 'The Expo backend is unavailable right now. Try again after the staging service is restored.'
+              : 'Failed to save booth screen settings.',
+      });
     } finally {
       setLoading(false);
     }
@@ -495,6 +612,17 @@ export default function CompanyAdmin() {
   const availableScreenSlots = getAvailableExpoScreenSlots();
   const selectedScreenSlot = getExpoScreenSlotById(company.screenContent.screenSlotId);
   const ownedScreenSlots = getExpoScreenSlotsForBooth(company.id);
+  const adminAccessNotice = getAdminAccessNotice(adminAccessState, adminAccessError);
+  const canSaveBooth = adminAccessState === 'ready' && !loading;
+  const saveButtonLabel = loading
+    ? 'SAVING...'
+    : adminAccessState === 'signed-out'
+      ? 'SIGN IN TO SAVE'
+      : adminAccessState === 'access-denied'
+        ? 'NO BOOTH ACCESS'
+        : adminAccessState === 'backend-unavailable'
+          ? 'BACKEND UNAVAILABLE'
+          : 'SAVE BOOTH SCREEN';
 
   return (
     <div className="calculator-pro-wrapper" style={{ maxWidth: '1200px', margin: '0 auto', padding: '40px 20px', color: 'white' }}>
@@ -509,7 +637,7 @@ export default function CompanyAdmin() {
 
       <div className="calc-header">
         <h1 className="text-accent" style={{ fontSize: '3rem' }}>EXPO ADMIN</h1>
-        <p>Manage booth identity, district placement, and preview the presentation surface through the unified Expo API.</p>
+        <p>Manage booth identity, paid screen placement, and published sponsor screen content.</p>
       </div>
 
       {message && (
@@ -529,13 +657,48 @@ export default function CompanyAdmin() {
         </div>
       )}
 
+      {adminAccessNotice && (
+        <div
+          className="glass-card"
+          style={{
+            padding: '20px',
+            borderRadius: '18px',
+            marginBottom: '30px',
+            background: 'rgba(15, 23, 42, 0.82)',
+            border: '1px solid rgba(251, 191, 36, 0.42)',
+          }}
+        >
+          <div style={{ color: '#fbbf24', fontSize: '0.74rem', fontWeight: 950, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+            {adminAccessNotice.title}
+          </div>
+          <div style={{ color: '#f8fafc', fontSize: '1rem', fontWeight: 800, marginTop: '8px' }}>
+            {adminAccessNotice.body}
+          </div>
+          <div style={{ color: '#94a3b8', fontSize: '0.82rem', lineHeight: 1.5, marginTop: '8px' }}>
+            {adminAccessNotice.detail}
+          </div>
+          <button
+            type="button"
+            className="btn-glass"
+            onClick={() => nav(adminAccessNotice.actionPath)}
+            style={{ marginTop: '14px' }}
+          >
+            {adminAccessNotice.actionLabel}
+          </button>
+        </div>
+      )}
+
       <div className="calc-grid" style={{ gridTemplateColumns: '1fr 1fr' }}>
         <div className="calc-form-column">
           <section className="calc-section" style={{ marginBottom: '25px' }}>
             <h2>Managed Booths</h2>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               {managedBooths.length === 0 ? (
-                <div style={{ color: '#94a3b8' }}>No managed booths loaded for this user yet.</div>
+                <div style={{ color: '#94a3b8' }}>
+                  {adminAccessState === 'ready'
+                    ? 'No saved booths loaded for this account yet. Fill the booth details below and save to create one.'
+                    : 'Sign in to load and save managed booths.'}
+                </div>
               ) : managedBooths.map((booth) => (
                 <button
                   key={String(booth.id)}
@@ -772,8 +935,13 @@ export default function CompanyAdmin() {
             </div>
 
             <div style={{ marginTop: '30px' }}>
-              <button onClick={() => void handleSave()} className="btn-primary" style={{ width: '100%', padding: '18px', fontSize: '1.1rem' }}>
-                {loading ? 'SAVING...' : 'SAVE THROUGH EXPO API'}
+              <button
+                onClick={() => adminAccessState === 'signed-out' ? nav('/login?next=/expo/admin') : void handleSave()}
+                className="btn-primary"
+                disabled={!canSaveBooth && adminAccessState !== 'signed-out'}
+                style={{ width: '100%', padding: '18px', fontSize: '1.1rem', opacity: canSaveBooth || adminAccessState === 'signed-out' ? 1 : 0.62 }}
+              >
+                {saveButtonLabel}
               </button>
             </div>
           </section>
