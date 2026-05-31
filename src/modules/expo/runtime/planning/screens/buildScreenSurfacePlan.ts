@@ -579,7 +579,7 @@ function buildRearCampusScreenSurfaces(
 
   const bowlSurface: CityScreenSurface = {
     id: 'rear-campus-bowl-feed-surface',
-    position: [0, 292, resolvePositiveZFaceMountedZ(campusCenterZ - 972, 228, 4.2)],
+    position: [760, 292, resolvePositiveZFaceMountedZ(campusCenterZ - 972, 228, 4.2)],
     rotation: [0, 0, 0],
     size: [560, 168, 4.2],
     color: '#08111c',
@@ -761,7 +761,7 @@ function buildRearCampusScreenSurfaces(
   const megaHostSurfaces: CityScreenSurface[] = [
     buildMegaHostSurface({
       id: 'rear-campus-stage-monolith-canopy-host-surface',
-      position: [47, 126, rearCampusZ(-2926)],
+      position: [-620, 126, rearCampusZ(-2926)],
       width: 308,
       height: 136,
       depth: 4.2,
