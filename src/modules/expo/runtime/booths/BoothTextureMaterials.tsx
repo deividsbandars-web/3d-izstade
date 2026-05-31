@@ -141,6 +141,7 @@ function drawBoothProductPreviewBillboard(args: {
   const statusLabel = payload.statusLabel || 'Preview only - no live lead capture yet';
   const isStandardBooth = tier.toUpperCase().includes('STANDARD');
   const isPremiumBooth = tier.toUpperCase().includes('PREMIUM');
+  const isLandmarkZone = tier.toUpperCase().includes('LANDMARK');
   const titleSize = isLandscape ? height * 0.12 : height * 0.052;
   const tierSize = isLandscape ? height * 0.056 : height * 0.026;
   const subtitleSize = isLandscape ? height * 0.049 : height * 0.024;
@@ -149,9 +150,9 @@ function drawBoothProductPreviewBillboard(args: {
   const statusSize = isLandscape ? height * 0.033 : height * 0.017;
 
   const gradient = context.createLinearGradient(0, 0, width, height);
-  gradient.addColorStop(0, isStandardBooth ? '#06131b' : '#07101b');
-  gradient.addColorStop(0.42, isStandardBooth ? '#102637' : '#0e2032');
-  gradient.addColorStop(1, isStandardBooth ? '#071923' : '#08111c');
+  gradient.addColorStop(0, isLandmarkZone ? '#11100a' : isStandardBooth ? '#06131b' : '#07101b');
+  gradient.addColorStop(0.42, isLandmarkZone ? '#2b2410' : isStandardBooth ? '#102637' : '#0e2032');
+  gradient.addColorStop(1, isLandmarkZone ? '#0b1520' : isStandardBooth ? '#071923' : '#08111c');
   context.fillStyle = gradient;
   context.fillRect(0, 0, width, height);
 
@@ -229,7 +230,35 @@ function drawBoothProductPreviewBillboard(args: {
     });
   }
 
-  context.fillStyle = isStandardBooth ? 'rgba(125, 211, 252, 0.2)' : 'rgba(45, 212, 191, 0.2)';
+  if (isLandmarkZone && isLandscape) {
+    const ownershipPanelWidth = width * 0.25;
+    const ownershipPanelX = width - pad * 1.18 - ownershipPanelWidth;
+    const ownershipPanelY = height * 0.165;
+    const ownershipPanelHeight = height * 0.49;
+    maxTextWidth = ownershipPanelX - left - pad * 0.55;
+
+    context.fillStyle = 'rgba(18, 16, 10, 0.94)';
+    context.beginPath();
+    context.roundRect(ownershipPanelX, ownershipPanelY, ownershipPanelWidth, ownershipPanelHeight, Math.max(14, shortSide * 0.024));
+    context.fill();
+    context.strokeStyle = 'rgba(250, 204, 21, 0.44)';
+    context.lineWidth = Math.max(2, shortSide * 0.0032);
+    context.stroke();
+
+    drawBillboardText(context, 'ZONE OWNERSHIP', ownershipPanelX + ownershipPanelWidth * 0.1, ownershipPanelY + ownershipPanelHeight * 0.11, ownershipPanelWidth * 0.8, font(900, bodySize * 0.82), '#fde68a');
+    ['Naming rights', 'Hero presence', 'Arena slot', 'Sponsor report'].forEach((label, index) => {
+      const itemY = ownershipPanelY + ownershipPanelHeight * (0.3 + index * 0.155);
+      context.fillStyle = index === 0 ? '#facc15' : 'rgba(250, 204, 21, 0.24)';
+      context.beginPath();
+      context.roundRect(ownershipPanelX + ownershipPanelWidth * 0.1, itemY, ownershipPanelWidth * 0.08, bodySize * 0.5, Math.max(4, bodySize * 0.18));
+      context.fill();
+      drawBillboardText(context, label, ownershipPanelX + ownershipPanelWidth * 0.22, itemY - bodySize * 0.18, ownershipPanelWidth * 0.66, font(760, bodySize * 0.74), '#fff7d6');
+    });
+  }
+
+  context.fillStyle = isLandmarkZone
+    ? 'rgba(250, 204, 21, 0.2)'
+    : isStandardBooth ? 'rgba(125, 211, 252, 0.2)' : 'rgba(45, 212, 191, 0.2)';
   context.beginPath();
   context.roundRect(left, tierY, tierWidth, tierHeight, tierHeight * 0.5);
   context.fill();
