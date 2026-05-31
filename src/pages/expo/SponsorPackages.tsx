@@ -15,15 +15,19 @@ import WarpalaLogo from '../../shared/Logo';
 type PackageCard = {
   accent: string;
   audience: string;
+  bestFor: string;
   cta: string;
   demoHref: string;
   description: string;
+  deliverables: string[];
   features: string[];
   id: Exclude<SponsorPackageInterest, 'arena' | 'unsure'>;
   label: string;
   outcome: string;
+  priceRange: string;
   priceSignal: string;
   proof: string;
+  salesMetric: string;
   title: string;
 };
 
@@ -31,45 +35,64 @@ const SPONSOR_PACKAGES: PackageCard[] = [
   {
     accent: '#38bdf8',
     audience: 'Piemērots uzņēmumam, kam vajag kvalitatīvu digitālu klātbūtni bez lielas kampaņas sarežģītības.',
+    bestFor: 'Pirmais Web3D expo stends vai produkta vitrīna.',
     cta: 'Pieteikt Standard',
     demoHref: '/expo-3d?salesDemo=1&salesDemoStep=standard',
     description: 'Redzams stends ar produkta stāstu, demo virsmu un vienkāršu intereses savākšanu.',
+    deliverables: ['Sponsor stends', 'Produkta pitch karte', 'Demo ekrāna saturs', 'Intereses pieteikums'],
     features: ['Produkta profils un īss pitch', 'Demo-ready showcase ekrāns', 'Sponsor interest pieteikums'],
     id: 'standard',
     label: 'Standard Booth',
     outcome: 'Ātri palaist stendu un sākt vākt interesi no apmeklētājiem.',
+    priceRange: 'Sākot no 1.5k-3k / kampaņa',
     priceSignal: 'Ieejas pakete',
     proof: 'Skatāms sales demo kā Immersive Fabric Labs piemērs.',
+    salesMetric: 'Intereses pieteikumi un demo skatījumi',
     title: 'Standard Booth',
   },
   {
     accent: '#fbbf24',
     audience: 'Piemērots sponsoram, kam svarīgas tikšanās, kvalificēti lead signāli un sekojošs pārdošanas darbs.',
+    bestFor: 'Sponsors, kuram vajag kvalificētas sarunas, ne tikai redzamību.',
     cta: 'Pieteikt Premium',
     demoHref: '/expo-3d?salesDemo=1&salesDemoStep=premium',
     description: 'Augstākas vērtības sponsor stends ar fokusētu konversiju, kvalifikāciju un atskaiti.',
+    deliverables: ['Premium stends', 'Meeting CTA plūsma', 'AI kvalifikācijas preview', 'Lead report pakete'],
     features: ['Meeting-ready sponsor pakete', 'AI kvalifikācijas preview', 'Lead report pakete'],
     id: 'premium',
     label: 'Premium Booth',
     outcome: 'Pārvērst expo uzmanību konkrētās sarunās un pieteikumos.',
+    priceRange: 'Sākot no 5k-15k / kampaņa',
     priceSignal: 'Lead-gen pakete',
     proof: 'Skatāms sales demo kā Sponsor Concierge piemērs.',
+    salesMetric: 'Pieteiktas sarunas, kvalifikācijas signāli un follow-up statuss',
     title: 'Premium Booth',
   },
   {
     accent: '#34d399',
     audience: 'Piemērots anchor sponsoram, kurš grib dominēt zonā, event programmā un sponsor komunikācijā.',
+    bestFor: 'Anchor sponsors, partneru programmas un lielāki event launch.',
     cta: 'Pieteikt Landmark',
     demoHref: '/expo-3d?salesDemo=1&salesDemoStep=landmark',
     description: 'Flagship sponsora pakete ar zonas nosaukumu, hero virsmām un piesaisti Demo Arena programmām.',
+    deliverables: ['Zonas nosaukums', 'Hero sponsor virsmas', 'Demo Arena sponsor slots', 'Mēneša sponsor report'],
     features: ['Zonas naming rights', 'Hero sponsor klātbūtne', 'Demo Arena sponsor slots', 'Mēneša sponsor report'],
     id: 'landmark',
     label: 'Landmark Zone Sponsor',
     outcome: 'Iegūt redzamāko sponsor stāstu visā Web3D expo pilsētā.',
+    priceRange: 'Sākot no 15k-50k+ / kampaņa',
     priceSignal: 'Flagship pakete',
     proof: 'Skatāms sales demo kā AI District Sponsor piemērs.',
+    salesMetric: 'Zonas redzamība, event inventory un sponsor report',
     title: 'Landmark Zone Sponsor',
   },
+];
+
+const PACKAGE_COMPARISON_ROWS = [
+  ['Primārais mērķis', 'Produkta redzamība', 'Kvalificētas sarunas', 'Zonas ownership'],
+  ['Ko pērk sponsors', 'Stendu + demo ekrānu', 'Konversijas stendu + lead report', 'Hero zonu + event inventory'],
+  ['Labākais pielietojums', 'Produkta launch vai showcase', 'B2B demand-gen un tikšanās', 'Anchor sponsorship vai partneru programma'],
+  ['Nākamais upsell', 'Premium lead-gen', 'AI diagnostic + booking', 'Demo Arena / event sponsor bundle'],
 ];
 
 const SALES_ASSET_ROWS = [
@@ -344,7 +367,24 @@ export default function SponsorPackages() {
                 {entry.priceSignal}
               </div>
               <h2 style={{ fontSize: '1.55rem', letterSpacing: '-0.035em', lineHeight: 1.05, margin: '10px 0 10px' }}>{entry.title}</h2>
+              <div
+                style={{
+                  background: `${entry.accent}18`,
+                  border: `1px solid ${entry.accent}44`,
+                  borderRadius: '14px',
+                  color: '#f8fafc',
+                  fontSize: '0.92rem',
+                  fontWeight: 900,
+                  marginBottom: '12px',
+                  padding: '10px 12px',
+                }}
+              >
+                {entry.priceRange}
+              </div>
               <p style={{ color: '#cbd5e1', lineHeight: 1.48, margin: 0 }}>{entry.description}</p>
+              <p style={{ color: '#e2e8f0', fontSize: '0.92rem', fontWeight: 800, lineHeight: 1.45, margin: '12px 0 0' }}>
+                {entry.bestFor}
+              </p>
               <ul style={{ display: 'grid', gap: '10px', listStyle: 'none', margin: '18px 0', padding: 0 }}>
                 {entry.features.map((feature) => (
                   <li key={feature} style={{ alignItems: 'center', color: '#f8fafc', display: 'flex', gap: '10px', fontSize: '0.93rem' }}>
@@ -353,7 +393,30 @@ export default function SponsorPackages() {
                   </li>
                 ))}
               </ul>
+              <div
+                style={{
+                  background: 'rgba(2, 6, 23, 0.42)',
+                  border: '1px solid rgba(148, 163, 184, 0.16)',
+                  borderRadius: '16px',
+                  display: 'grid',
+                  gap: '9px',
+                  marginBottom: '14px',
+                  padding: '13px',
+                }}
+              >
+                <div style={{ color: entry.accent, fontSize: '0.68rem', fontWeight: 950, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+                  Iekļauts paketē
+                </div>
+                {entry.deliverables.map((item) => (
+                  <div key={item} style={{ color: '#cbd5e1', fontSize: '0.84rem', fontWeight: 750 }}>
+                    {item}
+                  </div>
+                ))}
+              </div>
               <p style={{ color: '#f8fafc', fontWeight: 850, lineHeight: 1.45, margin: 'auto 0 8px' }}>{entry.outcome}</p>
+              <p style={{ color: '#dbeafe', fontSize: '0.86rem', fontWeight: 850, lineHeight: 1.42, margin: '0 0 8px' }}>
+                Mērījums: {entry.salesMetric}
+              </p>
               <p style={{ color: '#94a3b8', lineHeight: 1.45, margin: '0 0 10px' }}>{entry.audience}</p>
               <p style={{ color: entry.accent, fontSize: '0.82rem', fontWeight: 850, lineHeight: 1.4, margin: '0 0 16px' }}>{entry.proof}</p>
               <div style={{ display: 'grid', gap: '9px', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))' }}>
@@ -414,6 +477,60 @@ export default function SponsorPackages() {
               </div>
             </article>
           ))}
+        </section>
+
+        <section className="glass-card" style={{ borderRadius: '26px', marginBottom: '24px', padding: '24px' }}>
+          <div style={{ alignItems: 'baseline', display: 'flex', flexWrap: 'wrap', gap: '12px', justifyContent: 'space-between', marginBottom: '16px' }}>
+            <div>
+              <div style={{ color: '#fbbf24', fontSize: '0.72rem', fontWeight: 950, letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+                Paketes salīdzinājums
+              </div>
+              <h2 style={{ fontSize: '1.7rem', letterSpacing: '-0.04em', margin: '6px 0 0' }}>
+                No stenda līdz zonas ownership.
+              </h2>
+            </div>
+            <Link className="btn-glass" to="/expo-3d?salesDemo=1" style={{ textDecoration: 'none' }}>
+              ATVĒRT KOPĒJO DEMO
+            </Link>
+          </div>
+          <div style={{ display: 'grid', gap: '10px' }}>
+            <div
+              style={{
+                color: '#94a3b8',
+                display: 'grid',
+                fontSize: '0.72rem',
+                fontWeight: 950,
+                gap: '10px',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+                letterSpacing: '0.08em',
+                textTransform: 'uppercase',
+              }}
+            >
+              <span>Jautājums</span>
+              <span>Standard</span>
+              <span>Premium</span>
+              <span>Landmark</span>
+            </div>
+            {PACKAGE_COMPARISON_ROWS.map(([label, standard, premium, landmark]) => (
+              <div
+                key={label}
+                style={{
+                  background: 'rgba(15, 23, 42, 0.58)',
+                  border: '1px solid rgba(148, 163, 184, 0.16)',
+                  borderRadius: '17px',
+                  display: 'grid',
+                  gap: '10px',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+                  padding: '14px',
+                }}
+              >
+                <strong style={{ color: '#f8fafc' }}>{label}</strong>
+                <span style={{ color: '#bae6fd' }}>{standard}</span>
+                <span style={{ color: '#fde68a' }}>{premium}</span>
+                <span style={{ color: '#bbf7d0' }}>{landmark}</span>
+              </div>
+            ))}
+          </div>
         </section>
 
         <section
