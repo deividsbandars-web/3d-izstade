@@ -98,12 +98,12 @@ const calculators: CalculatorEntry[] = [
   {
     accent: '#06b6d4',
     category: 'construction',
-    depth: 'Specialist quote',
-    desc: 'Cauruļvadi, sanitārie punkti, virtuves pieslēgumi un materiālu izvēle.',
+    depth: 'Detailed estimate',
+    desc: 'Sanitārie punkti, virtuves un ierīču pieslēgumi, boileris, ūdensvada un kanalizācijas metri, demontāža.',
     id: 'plumbing',
     path: '/plumbing-calculator',
-    primaryUse: 'Santehnikas mezgli un pieslēgumi',
-    status: 'Servisa pieprasījumiem',
+    primaryUse: 'Vannas istabas, virtuves vai privātmājas santehnika',
+    status: 'Renovācijas un inženiertīklu leads',
     title: 'Santehnika',
   },
   {
