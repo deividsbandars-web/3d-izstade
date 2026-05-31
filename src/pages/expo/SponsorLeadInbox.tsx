@@ -55,7 +55,7 @@ type InboxAccessState =
   | 'backend-unavailable'
   | 'unavailable';
 
-type LeadFilter = 'all' | 'hot-leads' | 'needs-action' | 'package-requests';
+type LeadFilter = 'all' | 'follow-up-due' | 'hot-leads' | 'needs-action' | 'package-requests';
 
 function formatDate(value?: string | null) {
   if (!value) {
@@ -85,6 +85,21 @@ function getTomorrowMorningFollowUpIso(now = new Date()) {
   followUpAt.setDate(followUpAt.getDate() + 1);
   followUpAt.setHours(9, 0, 0, 0);
   return followUpAt.toISOString();
+}
+
+function getLeadFollowUpState(lead: SponsorLeadInboxLead, now = new Date()) {
+  const normalizedStatus = normalizeStatus(lead);
+
+  if (!lead.follow_up_at || normalizedStatus === 'closed' || normalizedStatus === 'rejected') {
+    return 'none';
+  }
+
+  const followUpAt = new Date(lead.follow_up_at);
+  if (Number.isNaN(followUpAt.getTime())) {
+    return 'none';
+  }
+
+  return followUpAt.getTime() <= now.getTime() ? 'due' : 'scheduled';
 }
 
 function buildSummary(leads: SponsorLeadInboxLead[]) {
@@ -314,9 +329,24 @@ export default function SponsorLeadInbox() {
     return sortedLeads.filter((lead) => getSponsorLeadQualificationForMessage(lead.message)?.priority === 'hot').length;
   }, [sortedLeads]);
 
+  const followUpDueCount = useMemo(() => {
+    const now = new Date();
+    return sortedLeads.filter((lead) => getLeadFollowUpState(lead, now) === 'due').length;
+  }, [sortedLeads]);
+
+  const scheduledFollowUpCount = useMemo(() => {
+    const now = new Date();
+    return sortedLeads.filter((lead) => getLeadFollowUpState(lead, now) === 'scheduled').length;
+  }, [sortedLeads]);
+
   const visibleLeads = useMemo(() => {
     if (leadFilter === 'hot-leads') {
       return sortedLeads.filter((lead) => getSponsorLeadQualificationForMessage(lead.message)?.priority === 'hot');
+    }
+
+    if (leadFilter === 'follow-up-due') {
+      const now = new Date();
+      return sortedLeads.filter((lead) => getLeadFollowUpState(lead, now) === 'due');
     }
 
     if (leadFilter === 'package-requests') {
@@ -495,6 +525,7 @@ export default function SponsorLeadInbox() {
   const summaryCards = [
     { label: 'Total leads', value: data?.summary.total ?? 0, color: '#f8fafc' },
     { label: 'Hot leads', value: hotLeadCount, color: '#fb7185' },
+    { label: 'Follow-up due', value: followUpDueCount, color: '#f97316' },
     { label: 'Needs action', value: data?.summary.needsAction ?? 0, color: '#fbbf24' },
     { label: 'Package requests', value: packageRequestCount, color: '#34d399' },
     { label: 'Contacted', value: data?.summary.contacted ?? 0, color: '#93c5fd' },
@@ -503,8 +534,39 @@ export default function SponsorLeadInbox() {
   const leadFilters: Array<{ count: number; label: string; value: LeadFilter }> = [
     { count: sortedLeads.length, label: 'All leads', value: 'all' },
     { count: hotLeadCount, label: 'Hot leads', value: 'hot-leads' },
+    { count: followUpDueCount, label: 'Follow-up due', value: 'follow-up-due' },
     { count: data?.summary.needsAction ?? 0, label: 'Needs action', value: 'needs-action' },
     { count: packageRequestCount, label: 'Package requests', value: 'package-requests' },
+  ];
+  const triageRows: Array<{ color: string; count: number; description: string; filter: LeadFilter; label: string }> = [
+    {
+      color: '#fb7185',
+      count: hotLeadCount,
+      description: 'Landmark, Arena or high-intent Premium requests should get same-day reply.',
+      filter: 'hot-leads',
+      label: 'Reply today',
+    },
+    {
+      color: '#f97316',
+      count: followUpDueCount,
+      description: 'Scheduled follow-ups that are due or overdue and not closed/rejected.',
+      filter: 'follow-up-due',
+      label: 'Follow-up due',
+    },
+    {
+      color: '#fbbf24',
+      count: data?.summary.needsAction ?? 0,
+      description: 'Pending or contacted leads that still need owner action.',
+      filter: 'needs-action',
+      label: 'Needs action',
+    },
+    {
+      color: '#34d399',
+      count: packageRequestCount,
+      description: 'Structured sponsor package requests with budget, timeline and package context.',
+      filter: 'package-requests',
+      label: 'Package requests',
+    },
   ];
   const accessNotice = getAccessNotice(accessState, error);
   const shouldShowInboxContent = loading || accessState === 'ready' || Boolean(data);
@@ -618,6 +680,50 @@ export default function SponsorLeadInbox() {
             ))}
           </section>
 
+          <section className="glass-card" style={{ borderRadius: '24px', marginBottom: '24px', padding: '22px' }}>
+            <div style={{ alignItems: 'baseline', display: 'flex', flexWrap: 'wrap', gap: '12px', justifyContent: 'space-between', marginBottom: '16px' }}>
+              <div>
+                <div style={{ color: '#38bdf8', fontSize: '0.72rem', fontWeight: 950, letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+                  Sponsor ops triage
+                </div>
+                <h2 style={{ fontSize: '1.35rem', letterSpacing: '-0.03em', margin: '6px 0 0' }}>
+                  What should be handled first
+                </h2>
+              </div>
+              <span style={{ color: '#94a3b8', fontSize: '0.78rem', fontWeight: 850 }}>
+                Scheduled follow-ups: {loading ? '-' : scheduledFollowUpCount}
+              </span>
+            </div>
+            <div style={{ display: 'grid', gap: '12px', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))' }}>
+              {triageRows.map((row) => (
+                <button
+                  key={row.label}
+                  type="button"
+                  onClick={() => setLeadFilter(row.filter)}
+                  style={{
+                    background: leadFilter === row.filter ? `${row.color}24` : 'rgba(15, 23, 42, 0.72)',
+                    border: `1px solid ${leadFilter === row.filter ? row.color : 'rgba(148, 163, 184, 0.18)'}`,
+                    borderRadius: '18px',
+                    color: '#f8fafc',
+                    cursor: 'pointer',
+                    padding: '16px',
+                    textAlign: 'left',
+                  }}
+                >
+                  <div style={{ alignItems: 'center', display: 'flex', gap: '10px', justifyContent: 'space-between' }}>
+                    <span style={{ color: row.color, fontSize: '0.74rem', fontWeight: 950, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                      {row.label}
+                    </span>
+                    <strong style={{ color: row.color, fontSize: '1.45rem' }}>{loading ? '-' : row.count}</strong>
+                  </div>
+                  <p style={{ color: '#94a3b8', fontSize: '0.84rem', lineHeight: 1.45, margin: '8px 0 0' }}>
+                    {row.description}
+                  </p>
+                </button>
+              ))}
+            </div>
+          </section>
+
           <section className="glass-card" style={{ padding: '24px', borderRadius: '24px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: '16px', alignItems: 'baseline', marginBottom: '18px', flexWrap: 'wrap' }}>
               <h2 style={{ margin: 0 }}>Inbound Sponsor Leads</h2>
@@ -688,6 +794,7 @@ export default function SponsorLeadInbox() {
                   const packageQualification = packageDetails ? getSponsorPackageLeadQualification(packageDetails) : null;
                   const replyDraft = buildSponsorLeadReplyDraft(lead);
                   const latestReplySentAt = getLatestSponsorLeadReplySentAt(lead);
+                  const followUpState = getLeadFollowUpState(lead);
                   return (
                     <article key={leadId || `${lead.client_email}:${lead.created_at}`} style={{ padding: '18px', borderRadius: '18px', background: 'rgba(2, 6, 23, 0.72)', border: '1px solid rgba(148, 163, 184, 0.18)' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', gap: '14px', alignItems: 'flex-start', flexWrap: 'wrap' }}>
@@ -699,6 +806,26 @@ export default function SponsorLeadInbox() {
                       <span style={{ padding: '6px 10px', borderRadius: '999px', color: STATUS_COLORS[status], border: `1px solid ${STATUS_COLORS[status]}66`, background: `${STATUS_COLORS[status]}1f`, fontSize: '0.7rem', fontWeight: 900, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
                         {status}
                       </span>
+                      {followUpState !== 'none' && (
+                        <button
+                          type="button"
+                          onClick={() => setLeadFilter(followUpState === 'due' ? 'follow-up-due' : 'needs-action')}
+                          style={{
+                            background: followUpState === 'due' ? 'rgba(249, 115, 22, 0.18)' : 'rgba(59, 130, 246, 0.14)',
+                            border: `1px solid ${followUpState === 'due' ? 'rgba(249, 115, 22, 0.62)' : 'rgba(147, 197, 253, 0.42)'}`,
+                            borderRadius: '999px',
+                            color: followUpState === 'due' ? '#fdba74' : '#bfdbfe',
+                            cursor: 'pointer',
+                            fontSize: '0.68rem',
+                            fontWeight: 950,
+                            letterSpacing: '0.06em',
+                            padding: '7px 10px',
+                            textTransform: 'uppercase',
+                          }}
+                        >
+                          {followUpState === 'due' ? 'Follow-up due' : 'Follow-up scheduled'}
+                        </button>
+                      )}
                       <button
                         type="button"
                         onClick={() => void handleCopyLeadSummary(lead)}
