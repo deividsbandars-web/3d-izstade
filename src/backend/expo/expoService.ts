@@ -1,4 +1,4 @@
-import { supabaseClient, handleSupabaseError } from '../../lib/supabaseClient';
+import { getSupabaseAdminClient } from '../lib/supabaseAdmin.js';
 import {
   EXPO_SCENE_CONTRACT_VERSION,
   EXPO_SCENE_RELEASE_MODE,
@@ -35,6 +35,11 @@ type SupabaseLikeError = {
 function isMissingTableError(error: unknown) {
   const candidate = error as SupabaseLikeError | null;
   return candidate?.code === 'PGRST205';
+}
+
+function handleSupabaseError(error: any, context: string) {
+  console.error(`[Supabase Error - ${context}]:`, error?.message || error);
+  return { data: null, error: error?.message || 'Unknown database error' };
 }
 
 function normalizeLegacyBooth(record: Record<string, any>) {
@@ -104,6 +109,7 @@ export const expoService = {
    */
   async createBooth(boothData: Omit<ExpoBooth, 'id' | 'created_at' | 'updated_at'>) {
     try {
+      const supabaseClient = getSupabaseAdminClient();
       const normalizedPluralPayload = normalizePluralBoothPayload(boothData as Record<string, any>);
       const pluralResult = await supabaseClient
         .from('expo_booths')
@@ -136,6 +142,7 @@ export const expoService = {
    */
   async updateBooth(id: string, updates: Partial<ExpoBooth>) {
     try {
+      const supabaseClient = getSupabaseAdminClient();
       const normalizedPluralPayload = normalizePluralBoothPayload(updates as Record<string, any>);
       const pluralResult = await supabaseClient
         .from('expo_booths')
@@ -170,6 +177,7 @@ export const expoService = {
    */
   async getBooths() {
     try {
+      const supabaseClient = getSupabaseAdminClient();
       const pluralResult = await supabaseClient
         .from('expo_booths')
         .select('*')
@@ -187,7 +195,10 @@ export const expoService = {
         .order('id', { ascending: true });
 
       if (legacyResult.error) throw legacyResult.error;
-      return { data: (legacyResult.data ?? []).map((record) => normalizeLegacyBooth(record)), error: null };
+      return {
+        data: (legacyResult.data ?? []).map((record: Record<string, any>) => normalizeLegacyBooth(record)),
+        error: null,
+      };
     } catch (error) {
       return handleSupabaseError(error, 'getBooths');
     }
@@ -198,6 +209,7 @@ export const expoService = {
    */
   async getBoothById(id: string) {
     try {
+      const supabaseClient = getSupabaseAdminClient();
       const pluralResult = await supabaseClient
         .from('expo_booths')
         .select('*')

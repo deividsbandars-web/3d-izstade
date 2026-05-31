@@ -232,21 +232,50 @@ const compareCompanies = (left: any, right: any) => {
     return String(left?.name || '').localeCompare(String(right?.name || ''));
 };
 
-const normalizeLookupKey = (value: unknown) => String(value || '').trim().toLowerCase();
+const normalizeLookupKey = (value: unknown) => String(value || '')
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .toLowerCase();
 
-const getManagedBoothLookupKeys = (booth: Record<string, unknown>) => [
-    booth.id,
-    booth.company_id,
-    booth.companyId,
-]
-    .map(normalizeLookupKey)
-    .filter(Boolean);
+const getRecord = (value: unknown): Record<string, unknown> => {
+    return value && typeof value === 'object' && !Array.isArray(value)
+        ? value as Record<string, unknown>
+        : {};
+};
+
+const getManagedBoothLookupKeys = (booth: Record<string, unknown>) => {
+    const contactInfo = getRecord(booth.contact_info);
+    return [
+        booth.id,
+        booth.company_name,
+        booth.title,
+        booth.company_id,
+        booth.companyId,
+        booth.booth_id,
+        booth.boothId,
+        booth.runtime_booth_id,
+        booth.runtimeBoothId,
+        contactInfo.company_id,
+        contactInfo.companyId,
+        contactInfo.booth_id,
+        contactInfo.boothId,
+        contactInfo.slug,
+    ]
+        .map(normalizeLookupKey)
+        .filter(Boolean);
+};
 
 const getSceneBoothLookupKeys = (booth: Record<string, unknown> | null, company: Record<string, unknown>) => [
     booth?.id,
     booth?.company_id,
     booth?.companyId,
+    booth?.booth_id,
+    booth?.boothId,
+    booth?.slug,
     company.id,
+    company.name,
+    company.slug,
 ]
     .map(normalizeLookupKey)
     .filter(Boolean);
@@ -482,7 +511,8 @@ export const createGetExpoScene = (getSupabaseClient: typeof getSupabase) => asy
             booths: sortedCompanies.map((c: any) => {
                 const sponsorTier = normalizeSponsorTier(c.sponsor_tier);
                 const booth = normalizeBoothRelation(c.booths);
-                const managedScreenContent = getManagedScreenContentForSceneBooth(managedScreenContentIndex, booth, c);
+                const slug = uniqueSlugMap.get(String(c.id)) || normalizeCompanySlug(c);
+                const managedScreenContent = getManagedScreenContentForSceneBooth(managedScreenContentIndex, booth, { ...c, slug });
                 return {
                 id: booth?.id || `booth_${c.id}`,
                 companyId: c.id,
@@ -503,7 +533,7 @@ export const createGetExpoScene = (getSupabaseClient: typeof getSupabase) => asy
                 featuredAssetTitle: normalizeNullableString(booth?.featured_asset_title),
                 featuredAssetDescription: normalizeNullableString(booth?.featured_asset_description),
                 ctaLabel: normalizeNullableString(c.cta_label ?? booth?.cta_label),
-                slug: uniqueSlugMap.get(String(c.id)) || normalizeCompanySlug(c)
+                slug
                 };
             })
         });

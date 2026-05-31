@@ -89,7 +89,7 @@ export async function listManagedExpoBoothsForUser(user: ExpoBackendUserContext)
   }
 
   return {
-    data: result.data.filter((booth) => boothBelongsToUser(booth, user)),
+    data: result.data.filter((booth: ExpoBoothRecord) => boothBelongsToUser(booth, user)),
     error: null,
   };
 }

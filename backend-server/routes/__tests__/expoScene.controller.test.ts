@@ -155,6 +155,31 @@ function createMockSupabase() {
         };
       }
 
+      if (table === 'expo_booths') {
+        return {
+          select() {
+            return Promise.resolve({
+              data: [
+                {
+                  assets_3d: {
+                    screen_content: {
+                      ctaLabel: 'Book Screen',
+                      mode: 'generated-card',
+                      status: 'published',
+                      subtitle: 'Managed booth screen content',
+                      title: 'Managed Gamma Screen',
+                    },
+                  },
+                  company_name: 'Gamma Group',
+                  id: 'managed-gamma-row',
+                },
+              ],
+              error: null,
+            });
+          },
+        };
+      }
+
       throw new Error(`Unexpected table ${table}`);
     },
   };
@@ -175,6 +200,9 @@ assert.equal(state.body.companies[0].slug, 'alfa-group');
 assert.equal(state.body.booths[0].model_url, null);
 assert.equal(state.body.booths[1].model_url, null);
 assert.equal(state.body.booths[2].model_url, null);
+const gammaBooth = state.body.booths.find((booth: any) => booth.companyId === 'company-gamma');
+assert.equal(gammaBooth.heroScreenTitle, 'Managed Gamma Screen');
+assert.equal(gammaBooth.heroScreenText, 'Managed booth screen content');
 assert.equal(
   state.body.booths.some((booth: any) => booth.model_url === 'L_Booth_Default'),
   false,

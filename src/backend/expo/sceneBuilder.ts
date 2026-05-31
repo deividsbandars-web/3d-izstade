@@ -18,16 +18,38 @@ function resolveCanonicalSectorId(value: unknown, fallbackIndex = 0) {
 }
 
 function normalizeSceneLookupKey(value: unknown) {
-  return String(value || '').trim().toLowerCase();
+  return String(value || '')
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .toLowerCase();
+}
+
+function getRecord(value: unknown) {
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : {};
 }
 
 function getManagedBoothLookupKeys(booth: ExpoBoothRecord) {
   const boothRecord = booth as unknown as Record<string, unknown>;
+  const contactInfo = getRecord(booth.contact_info);
 
   return [
     booth.id,
+    booth.company_name,
+    booth.title,
     boothRecord.company_id,
     boothRecord.companyId,
+    boothRecord.booth_id,
+    boothRecord.boothId,
+    boothRecord.runtime_booth_id,
+    boothRecord.runtimeBoothId,
+    contactInfo.company_id,
+    contactInfo.companyId,
+    contactInfo.booth_id,
+    contactInfo.boothId,
+    contactInfo.slug,
   ]
     .map(normalizeSceneLookupKey)
     .filter(Boolean);
@@ -52,7 +74,12 @@ function getSceneBoothLookupKeys(booth: Record<string, any>, company?: Record<st
     booth.id,
     booth.company_id,
     booth.companyId,
+    booth.booth_id,
+    booth.boothId,
+    booth.slug,
     company?.id,
+    company?.name,
+    company?.slug,
   ]
     .map(normalizeSceneLookupKey)
     .filter(Boolean);
