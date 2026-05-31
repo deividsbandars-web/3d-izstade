@@ -76,13 +76,13 @@ const calculators: CalculatorEntry[] = [
   {
     accent: '#84cc16',
     category: 'construction',
-    depth: 'Quick estimate',
-    desc: 'Ātrs karkasa, siltināšanas un pilnas apdares izmaksu salīdzinājums.',
+    depth: 'Detailed estimate',
+    desc: 'Karkass, pamati, jumts, siltinājums, fasāde, iekšdarbi, terase/nojume un objekta piekļuve vienā tāmē.',
     id: 'timber',
     path: '/timber-house-calculator',
-    primaryUse: 'Koka karkasa mājas vai nojumes',
-    status: 'Ātrā budžeta pārbaude',
-    title: 'Koka karkass',
+    primaryUse: 'Koka karkasa māja, pirts, dārza ēka, terase vai nojume',
+    status: 'Koka būves un nojumes leads',
+    title: 'Koka karkass un nojumes',
   },
   {
     accent: '#0ea5e9',
