@@ -47,7 +47,7 @@ const VisualsCalculator = lazy(() => import('./modules/calculators/VisualsCalc')
 const FenceCalculator = lazy(() => import('./modules/calculators/FenceCalc'));
 const PavingCalculator = lazy(() => import('./modules/calculators/PavingCalc'));
 const FacadeCalculator = lazy(() => import('./modules/calculators/FacadeCalc'));
-const QuickFixCalculator = lazy(() => import('./modules/calculators/QuickFixCalc'));
+const FloorCalculator = lazy(() => import('./modules/calculators/FloorCalc'));
 const PlumbingCalculator = lazy(() => import('./modules/calculators/PlumbingCalc'));
 const CalculatorLeadInbox = lazy(() => import('./modules/calculators/CalculatorLeadInbox'));
 
@@ -139,7 +139,8 @@ export default function App() {
             <Route path="autoservice-calculator" element={<Navigate to="/paving-calculator" replace />} />
             <Route path="facade-calculator" element={<Suspense fallback={null}><FacadeCalculator /></Suspense>} />
             <Route path="cleaning-calculator" element={<Navigate to="/facade-calculator" replace />} />
-            <Route path="quick-fix-calculator" element={<Suspense fallback={null}><QuickFixCalculator /></Suspense>} />
+            <Route path="floor-calculator" element={<Suspense fallback={null}><FloorCalculator /></Suspense>} />
+            <Route path="quick-fix-calculator" element={<Navigate to="/floor-calculator" replace />} />
             <Route path="plumbing-calculator" element={<Suspense fallback={null}><PlumbingCalculator /></Suspense>} />
             
             <Route path="expo/admin" element={<Suspense fallback={null}><CompanyAdmin /></Suspense>} />
