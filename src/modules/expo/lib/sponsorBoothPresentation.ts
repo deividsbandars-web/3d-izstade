@@ -20,6 +20,18 @@ export type SponsorCta = {
   url?: string | null;
 };
 
+export type SponsorManagedScreenMode = 'generated-card' | 'image' | 'video-placeholder';
+
+export type SponsorManagedScreenContent = {
+  ctaLabel: string | null;
+  imageUrl: string | null;
+  mode: SponsorManagedScreenMode;
+  status: 'draft' | 'published';
+  subtitle: string | null;
+  title: string;
+  videoUrl: string | null;
+};
+
 export type SponsorCtaIntent =
   | { type: 'navigate'; target: string }
   | { type: 'external'; target: string }
@@ -42,6 +54,7 @@ export type SponsorBoothPresentation = {
   };
   hasBrandAssets: boolean;
   logoUrl: string | null;
+  managedScreenContent: SponsorManagedScreenContent | null;
   posterUrl: string | null;
   showcaseMode: 'immersive' | 'hero-object' | 'product' | 'support';
   sponsorTier: SponsorTier;
@@ -108,6 +121,55 @@ export function truncateSponsorText(value: string | null | undefined, maxLength 
   }
 
   return `${normalized.slice(0, Math.max(0, maxLength - 3)).trimEnd()}...`;
+}
+
+function normalizeManagedScreenMode(value: unknown): SponsorManagedScreenMode {
+  const normalized = String(value || '').trim().toLowerCase();
+
+  if (normalized === 'image') {
+    return 'image';
+  }
+
+  if (normalized === 'video' || normalized === 'video-placeholder') {
+    return 'video-placeholder';
+  }
+
+  return 'generated-card';
+}
+
+function normalizeManagedScreenStatus(value: unknown): SponsorManagedScreenContent['status'] {
+  return String(value || '').trim().toLowerCase() === 'draft' ? 'draft' : 'published';
+}
+
+function buildManagedScreenContent(
+  booth: ExpoSceneBooth | null,
+  fallbackIdentity: SponsorBoothPresentation['fallbackIdentity'],
+  displayName: string,
+): SponsorManagedScreenContent | null {
+  if (!booth) {
+    return null;
+  }
+
+  const hasManagedScreenContent = Boolean(
+    booth.heroScreenTitle
+    || booth.heroScreenText
+    || booth.heroScreenImageUrl
+    || booth.heroScreenVideoUrl
+    || booth.heroScreenType
+  );
+  if (!hasManagedScreenContent) {
+    return null;
+  }
+
+  return {
+    ctaLabel: truncateSponsorText(booth.ctaLabel || null, 26) || null,
+    imageUrl: normalizeReleaseUrl(booth.heroScreenImageUrl),
+    mode: normalizeManagedScreenMode(booth.heroScreenType),
+    status: normalizeManagedScreenStatus(booth.heroScreenStatus),
+    subtitle: truncateSponsorText(booth.heroScreenText || fallbackIdentity.supportLine, 74) || null,
+    title: truncateSponsorText(booth.heroScreenTitle || displayName, 32) || displayName,
+    videoUrl: normalizeReleaseUrl(booth.heroScreenVideoUrl),
+  };
 }
 
 export function getSponsorNameFontSize(name: string) {
@@ -258,6 +320,7 @@ export function buildSponsorBoothPresentation(
   const videoUrl = normalizeReleaseUrl(booth?.video_url);
   const customInsertUrl = pickCustomInsertUrl(company, booth);
   const fallbackIdentity = buildFallbackIdentity(company, booth, displayName);
+  const managedScreenContent = buildManagedScreenContent(booth, fallbackIdentity, displayName);
   const hasBrandAssets = Boolean(logoUrl || posterUrl || videoUrl || customInsertUrl);
   const template = pickSponsorBoothTemplate({
     boothType: company.boothType || booth?.boothType || null,
@@ -299,6 +362,7 @@ export function buildSponsorBoothPresentation(
     fallbackIdentity,
     hasBrandAssets,
     logoUrl,
+    managedScreenContent,
     posterUrl,
     showcaseMode,
     sponsorTier: company.sponsorTier,

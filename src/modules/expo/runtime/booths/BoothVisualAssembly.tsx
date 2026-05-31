@@ -381,6 +381,12 @@ export function BoothVisualAssembly({
     boothProductPreviewCard?.productProfileId === 'automation-arena-landmark-profile'
     && pavilionLayout.isScreenFirstBooth
   );
+  const managedScreenContent = !boothProductPreviewCard && presentation.managedScreenContent?.status === 'published'
+    ? presentation.managedScreenContent
+    : null;
+  const managedScreenImageUrl = managedScreenContent?.mode === 'image' && managedScreenContent.imageUrl
+    ? managedScreenContent.imageUrl
+    : null;
   const boothPresentationScreenUrl = buildGeneratedBillboardTextureUrl({
     accentColor,
     aspect: pavilionLayout.screenSurfaceWidth / Math.max(1, pavilionLayout.screenSurfaceHeight),
@@ -395,6 +401,15 @@ export function BoothVisualAssembly({
           subtitle: boothProductPreviewCard.subtitle,
           tier: boothProductPreviewCard.tierLabel,
         }
+      : managedScreenContent
+        ? {
+            chip: managedScreenContent.mode === 'video-placeholder' ? 'VIDEO SLOT READY' : 'SPONSOR SCREEN',
+            label: managedScreenContent.title,
+            subtitle: managedScreenContent.mode === 'video-placeholder'
+              ? `${managedScreenContent.subtitle || 'Owner-managed booth screen'} - video saved, playback off`
+              : managedScreenContent.subtitle || 'Owner-managed booth screen',
+            tier: managedScreenContent.ctaLabel || 'PUBLISHED',
+          }
       : {
           chip: presentation.badgeLabel ?? premiumLabel,
           label: presentation.displayName,
@@ -417,7 +432,7 @@ export function BoothVisualAssembly({
           districtThemeId={districtThemeId}
           fallbackText={fallbackMonogram}
           metrics={metrics}
-          screenUrl={boothPresentationScreenUrl}
+          screenUrl={managedScreenImageUrl ?? boothPresentationScreenUrl}
           tier={tierState.featureTier}
         />
       )}

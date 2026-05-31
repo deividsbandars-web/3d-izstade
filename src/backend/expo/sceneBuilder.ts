@@ -6,6 +6,7 @@ import {
   EXPO_SCENE_RELEASE_MODE,
   type ExpoSceneContract,
 } from '../../shared/expo/sceneContract.js';
+import { listExpoBooths, type ExpoBoothRecord } from './data/expoBoothStore.js';
 
 function resolveCanonicalSectorId(value: unknown, fallbackIndex = 0) {
   const normalized = String(value || '').trim().toLowerCase();
@@ -16,6 +17,69 @@ function resolveCanonicalSectorId(value: unknown, fallbackIndex = 0) {
   return EXPO_SCENE_CANONICAL_DISTRICTS[fallbackIndex % EXPO_SCENE_CANONICAL_DISTRICTS.length];
 }
 
+function normalizeSceneLookupKey(value: unknown) {
+  return String(value || '').trim().toLowerCase();
+}
+
+function getManagedBoothLookupKeys(booth: ExpoBoothRecord) {
+  const boothRecord = booth as unknown as Record<string, unknown>;
+
+  return [
+    booth.id,
+    boothRecord.company_id,
+    boothRecord.companyId,
+  ]
+    .map(normalizeSceneLookupKey)
+    .filter(Boolean);
+}
+
+function buildManagedBoothIndex(managedBooths: ExpoBoothRecord[]) {
+  const index = new Map<string, ExpoBoothRecord>();
+
+  managedBooths.forEach((booth) => {
+    getManagedBoothLookupKeys(booth).forEach((key) => {
+      if (!index.has(key)) {
+        index.set(key, booth);
+      }
+    });
+  });
+
+  return index;
+}
+
+function getSceneBoothLookupKeys(booth: Record<string, any>, company?: Record<string, any> | null) {
+  return [
+    booth.id,
+    booth.company_id,
+    booth.companyId,
+    company?.id,
+  ]
+    .map(normalizeSceneLookupKey)
+    .filter(Boolean);
+}
+
+function mergeManagedBoothScreenContent(
+  booth: Record<string, any>,
+  managedBooth: ExpoBoothRecord | null,
+) {
+  const managedAssets = managedBooth?.assets_3d && typeof managedBooth.assets_3d === 'object'
+    ? managedBooth.assets_3d
+    : null;
+  const screenContent = managedAssets?.screen_content;
+
+  if (!screenContent || typeof screenContent !== 'object' || Array.isArray(screenContent)) {
+    return booth;
+  }
+
+  return {
+    ...booth,
+    assets_3d: {
+      ...(booth.assets_3d && typeof booth.assets_3d === 'object' ? booth.assets_3d : {}),
+      screen_content: screenContent,
+    },
+  };
+}
+
 export const sceneBuilder = {
   /**
    * Compiles the entire 3D scene data into a single structured payload for the frontend / Unreal Engine.
@@ -24,21 +88,31 @@ export const sceneBuilder = {
     try {
       logger.info('SceneBuilder', 'Building Expo Scene...');
 
-      const [sectorsResult, companiesResult, boothsResult] = await Promise.all([
+      const [sectorsResult, companiesResult, boothsResult, managedBoothsResult] = await Promise.all([
         supabaseClient.from('sectors').select('*'),
         supabaseClient.from('companies').select('*').eq('is_active', true),
-        supabaseClient.from('booths').select('*')
+        supabaseClient.from('booths').select('*'),
+        listExpoBooths().catch((error) => ({ data: null, error, table: 'expo_booths' as const })),
       ]);
 
       if (sectorsResult.error) throw new Error(`Failed to load sectors: ${sectorsResult.error.message}`);
       if (companiesResult.error) throw new Error(`Failed to load companies: ${companiesResult.error.message}`);
       if (boothsResult.error) throw new Error(`Failed to load booths: ${boothsResult.error.message}`);
 
-      const booths = boothsResult.data || [];
+      const rawBooths = boothsResult.data || [];
+      const managedBoothIndex = buildManagedBoothIndex(!managedBoothsResult.error && managedBoothsResult.data ? managedBoothsResult.data : []);
       const sectors = (sectorsResult.data || []).map((sector: any, index: number) => ({
         ...sector,
         id: resolveCanonicalSectorId(sector.id || sector.name, index),
       }));
+      const booths = rawBooths.map((booth: any) => {
+        const company = (companiesResult.data || []).find((entry: any) => entry.id === booth.company_id || entry.id === booth.companyId);
+        const managedBooth = getSceneBoothLookupKeys(booth, company)
+          .map((key) => managedBoothIndex.get(key) ?? null)
+          .find(Boolean) ?? null;
+
+        return mergeManagedBoothScreenContent(booth, managedBooth);
+      });
       const companies = (companiesResult.data || []).map((company: any, index: number) => {
         const companyBooth = booths.find(b => b.company_id === company.id);
         const sectorId = resolveCanonicalSectorId(company.sector_id, index);

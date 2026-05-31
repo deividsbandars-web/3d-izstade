@@ -82,6 +82,12 @@ export function normalizeSlug(value: unknown, fallbackName: unknown) {
   return normalizedName.length > 0 ? normalizedName : null;
 }
 
+function normalizeRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : {};
+}
+
 export function normalizeBooth(rawBooth: any, fallbackCompany: any): ExpoSceneBooth | null {
   if (!rawBooth || typeof rawBooth !== 'object') {
     return null;
@@ -89,6 +95,8 @@ export function normalizeBooth(rawBooth: any, fallbackCompany: any): ExpoSceneBo
 
   const sponsorTier = normalizeSponsorTier(fallbackCompany?.sponsorTier ?? fallbackCompany?.sponsor_tier);
   const companyId = String(rawBooth.companyId || rawBooth.company_id || fallbackCompany?.id || '');
+  const assets3d = normalizeRecord(rawBooth.assets_3d);
+  const screenContent = normalizeRecord(assets3d.screen_content);
 
   if (!companyId) {
     return null;
@@ -103,17 +111,18 @@ export function normalizeBooth(rawBooth: any, fallbackCompany: any): ExpoSceneBo
     featuredAssetType: normalizeNullableString(rawBooth.featuredAssetType ?? rawBooth.featured_asset_type),
     featuredAssetUrl: normalizeReleaseMediaUrl(rawBooth.featuredAssetUrl ?? rawBooth.featured_asset_url),
     heroAssetUrl: normalizeReleaseMediaUrl(rawBooth.heroAssetUrl ?? rawBooth.hero_asset_url ?? fallbackCompany?.heroAssetUrl ?? fallbackCompany?.hero_asset_url),
-    heroScreenImageUrl: normalizeReleaseMediaUrl(rawBooth.heroScreenImageUrl ?? rawBooth.hero_screen_image_url),
-    heroScreenText: normalizeNullableString(rawBooth.heroScreenText ?? rawBooth.hero_screen_text),
-    heroScreenTitle: normalizeNullableString(rawBooth.heroScreenTitle ?? rawBooth.hero_screen_title),
-    heroScreenType: normalizeNullableString(rawBooth.heroScreenType ?? rawBooth.hero_screen_type),
-    heroScreenVideoUrl: normalizeReleaseMediaUrl(rawBooth.heroScreenVideoUrl ?? rawBooth.hero_screen_video_url),
+    heroScreenImageUrl: normalizeReleaseMediaUrl(rawBooth.heroScreenImageUrl ?? rawBooth.hero_screen_image_url ?? screenContent.imageUrl ?? screenContent.image_url ?? screenContent.assetUrl ?? screenContent.asset_url),
+    heroScreenStatus: normalizeNullableString(rawBooth.heroScreenStatus ?? rawBooth.hero_screen_status ?? screenContent.status),
+    heroScreenText: normalizeNullableString(rawBooth.heroScreenText ?? rawBooth.hero_screen_text ?? screenContent.subtitle ?? screenContent.text),
+    heroScreenTitle: normalizeNullableString(rawBooth.heroScreenTitle ?? rawBooth.hero_screen_title ?? screenContent.title),
+    heroScreenType: normalizeNullableString(rawBooth.heroScreenType ?? rawBooth.hero_screen_type ?? screenContent.mode ?? screenContent.mediaType ?? screenContent.media_type),
+    heroScreenVideoUrl: normalizeReleaseMediaUrl(rawBooth.heroScreenVideoUrl ?? rawBooth.hero_screen_video_url ?? screenContent.videoUrl ?? screenContent.video_url),
     id: String(rawBooth.id || `booth_${companyId}`),
     model_url: normalizeReleaseMediaUrl(rawBooth.model_url),
     posterUrl: normalizeReleaseMediaUrl(rawBooth.posterUrl ?? rawBooth.poster_url ?? fallbackCompany?.posterUrl ?? fallbackCompany?.poster_url),
     showroomEnabled: rawBooth.showroomEnabled === true || rawBooth.showroom_enabled === true,
     slug: normalizeSlug(rawBooth.slug, fallbackCompany?.name),
-    video_url: normalizeReleaseMediaUrl(rawBooth.video_url),
+    video_url: normalizeReleaseMediaUrl(rawBooth.video_url ?? assets3d.video_url),
   };
 }
 

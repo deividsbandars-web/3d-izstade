@@ -33,6 +33,7 @@ export interface ExpoSceneBooth {
   featuredAssetUrl?: string | null;
   heroAssetUrl: string | null;
   heroScreenImageUrl?: string | null;
+  heroScreenStatus?: string | null;
   heroScreenText?: string | null;
   heroScreenTitle?: string | null;
   heroScreenType?: string | null;

@@ -10,6 +10,16 @@ export type ExpoManagedBooth = {
   status?: string | null;
 };
 
+export type ExpoManagedBoothScreenContent = {
+  ctaLabel?: string;
+  imageUrl?: string;
+  mode?: 'generated-card' | 'image' | 'video-placeholder';
+  status?: 'draft' | 'published';
+  subtitle?: string;
+  title?: string;
+  videoUrl?: string;
+};
+
 export const expoDashboardService = {
   /**
    * Fetches the macro city layout
@@ -80,17 +90,32 @@ export const expoDashboardService = {
     companyName,
     description,
     district,
+    screenContent,
     videoUrl,
   }: {
     boothId?: string;
     companyName: string;
     description: string;
     district: string;
+    screenContent?: ExpoManagedBoothScreenContent;
     videoUrl: string;
   }) {
     try {
+      const normalizedScreenContent = screenContent
+        ? {
+            ctaLabel: String(screenContent.ctaLabel || '').trim(),
+            imageUrl: String(screenContent.imageUrl || '').trim(),
+            mode: screenContent.mode || 'generated-card',
+            status: screenContent.status || 'draft',
+            subtitle: String(screenContent.subtitle || '').trim(),
+            title: String(screenContent.title || '').trim(),
+            videoUrl: String(screenContent.videoUrl || '').trim(),
+          }
+        : undefined;
+
       const payload = {
         assets_3d: {
+          ...(normalizedScreenContent ? { screen_content: normalizedScreenContent } : {}),
           video_url: videoUrl,
         },
         company_name: companyName,

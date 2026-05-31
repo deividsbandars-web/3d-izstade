@@ -9,6 +9,16 @@ const payload = {
       companyId: 'company-1',
       boothType: 'premium',
       ctaLabel: null,
+      assets_3d: {
+        screen_content: {
+          assetUrl: 'https://cdn.example.com/owner-screen.png',
+          mode: 'image',
+          status: 'published',
+          subtitle: 'Owner managed campaign line',
+          title: 'Owner Managed Screen',
+          videoUrl: 'https://cdn.example.com/owner-screen.mp4',
+        },
+      },
       model_url: 'https://cdn.example.com/booth.glb',
       posterUrl: 'https://sample-videos.com/poster.png',
       heroAssetUrl: 'https://cdn.example.com/hero.png',
@@ -65,6 +75,12 @@ assert.equal(normalized.companies[0].logo_url, null);
 assert.equal(normalized.companies[0].booth?.posterUrl, null);
 assert.equal(normalized.companies[0].booth?.video_url, null);
 assert.equal(normalized.companies[0].booth?.heroAssetUrl, 'https://cdn.example.com/hero.png');
+assert.equal(normalized.companies[0].booth?.heroScreenImageUrl, 'https://cdn.example.com/owner-screen.png');
+assert.equal(normalized.companies[0].booth?.heroScreenStatus, 'published');
+assert.equal(normalized.companies[0].booth?.heroScreenText, 'Owner managed campaign line');
+assert.equal(normalized.companies[0].booth?.heroScreenTitle, 'Owner Managed Screen');
+assert.equal(normalized.companies[0].booth?.heroScreenType, 'image');
+assert.equal(normalized.companies[0].booth?.heroScreenVideoUrl, 'https://cdn.example.com/owner-screen.mp4');
 assert.equal(normalized.companies[1].booth, null);
 
 assert.throws(() => adaptBackendScenePayload({

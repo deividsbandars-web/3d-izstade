@@ -56,6 +56,20 @@ type AdminCompanyState = {
   id: string;
   logo_url: string;
   name: string;
+  screenContent: AdminScreenContentState;
+};
+
+type AdminScreenContentMode = 'generated-card' | 'image' | 'video-placeholder';
+type AdminScreenContentStatus = 'draft' | 'published';
+
+type AdminScreenContentState = {
+  ctaLabel: string;
+  imageUrl: string;
+  mode: AdminScreenContentMode;
+  status: AdminScreenContentStatus;
+  subtitle: string;
+  title: string;
+  videoUrl: string;
 };
 
 type ManagedAnalytics = {
@@ -103,7 +117,55 @@ const DEFAULT_COMPANY: AdminCompanyState = {
   id: '',
   logo_url: '',
   name: 'Warpala',
+  screenContent: {
+    ctaLabel: '',
+    imageUrl: '',
+    mode: 'generated-card',
+    status: 'draft',
+    subtitle: '',
+    title: '',
+    videoUrl: '',
+  },
 };
+
+function asRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : {};
+}
+
+function normalizeScreenMode(value: unknown): AdminScreenContentMode {
+  const normalized = String(value || '').trim().toLowerCase();
+
+  if (normalized === 'image') {
+    return 'image';
+  }
+
+  if (normalized === 'video' || normalized === 'video-placeholder') {
+    return 'video-placeholder';
+  }
+
+  return 'generated-card';
+}
+
+function normalizeScreenStatus(value: unknown): AdminScreenContentStatus {
+  return String(value || '').trim().toLowerCase() === 'published' ? 'published' : 'draft';
+}
+
+function readAdminScreenContent(assets3d: unknown): AdminScreenContentState {
+  const assets = asRecord(assets3d);
+  const screenContent = asRecord(assets.screen_content);
+
+  return {
+    ctaLabel: String(screenContent.ctaLabel || screenContent.cta_label || ''),
+    imageUrl: String(screenContent.imageUrl || screenContent.image_url || screenContent.assetUrl || screenContent.asset_url || ''),
+    mode: normalizeScreenMode(screenContent.mode || screenContent.mediaType || screenContent.media_type),
+    status: normalizeScreenStatus(screenContent.status),
+    subtitle: String(screenContent.subtitle || screenContent.text || ''),
+    title: String(screenContent.title || ''),
+    videoUrl: String(screenContent.videoUrl || screenContent.video_url || assets.video_url || ''),
+  };
+}
 
 export default function CompanyAdmin() {
   const nav = useNavigate();
@@ -139,7 +201,7 @@ export default function CompanyAdmin() {
             id: entry.id,
           })));
           const first = boothsResult.data[0] as {
-            assets_3d?: { video_url?: string };
+            assets_3d?: Record<string, unknown>;
             company_name?: string;
             contact_info?: { description?: string };
             district?: string;
@@ -155,6 +217,7 @@ export default function CompanyAdmin() {
             id: String(first.id || ''),
             logo_url: String(first.logo_url || ''),
             name: String(first.company_name || 'Warpala'),
+            screenContent: readAdminScreenContent(first.assets_3d),
           });
           if (first.id) {
             const [analyticsResult, reviewResult] = await Promise.all([
@@ -206,7 +269,7 @@ export default function CompanyAdmin() {
 
       const booth = (boothResult.data as {
         booth?: {
-          assets_3d?: { video_url?: string };
+          assets_3d?: Record<string, unknown>;
           company_name?: string;
           contact_info?: { description?: string };
           district?: string;
@@ -225,6 +288,7 @@ export default function CompanyAdmin() {
           id: String(booth.id || boothId),
           logo_url: String(booth.logo_url || ''),
           name: String(booth.company_name || 'Warpala'),
+          screenContent: readAdminScreenContent(booth.assets_3d),
         });
       }
 
@@ -249,6 +313,7 @@ export default function CompanyAdmin() {
         companyName: company.name,
         description: company.description,
         district: company.district,
+        screenContent: company.screenContent,
         videoUrl: company.booth.video_url,
       });
 
@@ -348,6 +413,16 @@ export default function CompanyAdmin() {
     } finally {
       setActiveLeadOpsSave(null);
     }
+  }
+
+  function updateScreenContent(patch: Partial<AdminScreenContentState>) {
+    setCompany((current) => ({
+      ...current,
+      screenContent: {
+        ...current.screenContent,
+        ...patch,
+      },
+    }));
   }
 
   const selectedDistrictColor =
@@ -499,6 +574,92 @@ export default function CompanyAdmin() {
                     })}
                 />
               </label>
+            </div>
+
+            <div style={{ marginTop: '24px', paddingTop: '22px', borderTop: '1px solid rgba(148, 163, 184, 0.16)' }}>
+              <h3 style={{ margin: '0 0 8px', color: '#f8fafc' }}>Booth Screen Content</h3>
+              <p style={{ margin: '0 0 18px', color: '#94a3b8', fontSize: '0.88rem', lineHeight: 1.5 }}>
+                Published content can replace the generated booth screen card in the 3D city. Video is stored as a safe placeholder only; live playback stays off.
+              </p>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '14px' }}>
+                <label>
+                  Screen mode
+                  <select
+                    value={company.screenContent.mode}
+                    onChange={(event) => updateScreenContent({ mode: event.target.value as AdminScreenContentMode })}
+                  >
+                    <option value="generated-card">Generated card</option>
+                    <option value="image">Image</option>
+                    <option value="video-placeholder">Video placeholder</option>
+                  </select>
+                </label>
+
+                <label>
+                  Status
+                  <select
+                    value={company.screenContent.status}
+                    onChange={(event) => updateScreenContent({ status: event.target.value as AdminScreenContentStatus })}
+                  >
+                    <option value="draft">Draft</option>
+                    <option value="published">Published</option>
+                  </select>
+                </label>
+              </div>
+
+              <label style={{ marginTop: '16px' }}>
+                Screen title
+                <input
+                  type="text"
+                  placeholder="Sponsor offer, demo title, or campaign headline"
+                  value={company.screenContent.title}
+                  onChange={(event) => updateScreenContent({ title: event.target.value })}
+                />
+              </label>
+
+              <label style={{ marginTop: '16px' }}>
+                Screen subtitle
+                <textarea
+                  placeholder="Short support copy for the booth screen."
+                  value={company.screenContent.subtitle}
+                  onChange={(event) => updateScreenContent({ subtitle: event.target.value })}
+                  style={{ height: '86px' }}
+                />
+              </label>
+
+              <label style={{ marginTop: '16px' }}>
+                Image URL
+                <input
+                  type="text"
+                  placeholder="https://example.com/sponsor-screen.png"
+                  value={company.screenContent.imageUrl}
+                  onChange={(event) => updateScreenContent({ imageUrl: event.target.value })}
+                />
+              </label>
+
+              <label style={{ marginTop: '16px' }}>
+                Video URL placeholder
+                <input
+                  type="text"
+                  placeholder="https://example.com/demo.mp4"
+                  value={company.screenContent.videoUrl}
+                  onChange={(event) => updateScreenContent({ videoUrl: event.target.value })}
+                />
+              </label>
+
+              <label style={{ marginTop: '16px' }}>
+                CTA label
+                <input
+                  type="text"
+                  placeholder="Request Demo"
+                  value={company.screenContent.ctaLabel}
+                  onChange={(event) => updateScreenContent({ ctaLabel: event.target.value })}
+                />
+              </label>
+
+              <div style={{ marginTop: '14px', padding: '12px 14px', borderRadius: '14px', background: 'rgba(15, 23, 42, 0.72)', border: '1px solid rgba(148, 163, 184, 0.16)', color: '#cbd5e1', fontSize: '0.78rem', lineHeight: 1.5 }}>
+                Current screen content: {company.screenContent.status.toUpperCase()} / {company.screenContent.mode.toUpperCase()}
+              </div>
             </div>
 
             <div style={{ marginTop: '30px' }}>
