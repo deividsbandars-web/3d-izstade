@@ -4,6 +4,7 @@ import {
   sanitizeExpoManagedBoothAssets,
   validateExpoScreenMediaUrl,
 } from '../../../shared/expo/screenContentMedia.js';
+import { getExpoScreenInventorySummary } from '../../../shared/expo/screenInventory.js';
 
 const validImage = validateExpoScreenMediaUrl('https://cdn.example.com/sponsor/screen.png?token=abc', 'image');
 assert.equal(validImage.ok, true);
@@ -24,15 +25,32 @@ const imageContent = normalizeExpoScreenContentForSave({
   ctaLabel: 'Request Demo',
   imageUrl: 'https://cdn.example.com/screen.webp',
   mode: 'image',
+  screenSlotId: 'booth-sponsor-concierge-main-screen',
   status: 'published',
   subtitle: '  Sponsor   story  ',
   title: '  Sponsor Screen  ',
 });
 assert.equal(imageContent.ok, true);
 assert.equal(imageContent.screenContent.mode, 'image');
+assert.equal(imageContent.screenContent.screenSlotId, 'booth-sponsor-concierge-main-screen');
 assert.equal(imageContent.screenContent.status, 'published');
 assert.equal(imageContent.screenContent.subtitle, 'Sponsor story');
 assert.equal(imageContent.screenContent.imageUrl, 'https://cdn.example.com/screen.webp');
+
+const invalidScreenSlot = normalizeExpoScreenContentForSave({
+  mode: 'generated-card',
+  screenSlotId: 'missing-screen-slot',
+  status: 'draft',
+  title: 'Invalid Slot',
+});
+assert.equal(invalidScreenSlot.ok, false);
+assert.ok(invalidScreenSlot.issues.some((issue) => issue.field === 'screenSlotId'));
+
+const inventorySummary = getExpoScreenInventorySummary();
+assert.equal(inventorySummary.totalCount, 7);
+assert.equal(inventorySummary.availableCount, 4);
+assert.equal(inventorySummary.reservedCount, 2);
+assert.equal(inventorySummary.previewOnlyCount, 1);
 
 const missingVideo = normalizeExpoScreenContentForSave({
   mode: 'video-placeholder',
@@ -56,6 +74,7 @@ assert.deepEqual(sanitizedAssets, {
     ctaLabel: '',
     imageUrl: 'https://cdn.example.com/screen.jpg',
     mode: 'image',
+    screenSlotId: '',
     status: 'published',
     subtitle: '',
     title: 'Safe Screen',
@@ -76,4 +95,3 @@ assert.equal('screen_content' in unsafeAssets, false);
 assert.equal(unsafeAssets.video_url, '');
 
 console.log('screen content media safety checks passed');
-

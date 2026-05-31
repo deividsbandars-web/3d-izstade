@@ -10,6 +10,13 @@ import {
   normalizeExpoScreenContentForSave,
   validateExpoScreenMediaUrl,
 } from '../../shared/expo/screenContentMedia';
+import {
+  getAvailableExpoScreenSlots,
+  getExpoScreenInventorySlots,
+  getExpoScreenInventorySummary,
+  getExpoScreenSlotById,
+  getExpoScreenSlotsForBooth,
+} from '../../shared/expo/screenInventory';
 import '../../components/calculator/styles/CalculatorPro.css';
 import WarpalaLogo from '../../shared/Logo';
 
@@ -82,6 +89,7 @@ type AdminScreenContentState = {
   ctaLabel: string;
   imageUrl: string;
   mode: AdminScreenContentMode;
+  screenSlotId: string;
   status: AdminScreenContentStatus;
   subtitle: string;
   title: string;
@@ -139,6 +147,7 @@ const DEFAULT_COMPANY: AdminCompanyState = {
     ctaLabel: '',
     imageUrl: '',
     mode: 'generated-card',
+    screenSlotId: '',
     status: 'draft',
     subtitle: '',
     title: '',
@@ -178,6 +187,7 @@ function readAdminScreenContent(assets3d: unknown): AdminScreenContentState {
     ctaLabel: String(screenContent.ctaLabel || screenContent.cta_label || ''),
     imageUrl: String(screenContent.imageUrl || screenContent.image_url || screenContent.assetUrl || screenContent.asset_url || ''),
     mode: normalizeScreenMode(screenContent.mode || screenContent.mediaType || screenContent.media_type),
+    screenSlotId: String(screenContent.screenSlotId || screenContent.screen_slot_id || ''),
     status: normalizeScreenStatus(screenContent.status),
     subtitle: String(screenContent.subtitle || screenContent.text || ''),
     title: String(screenContent.title || ''),
@@ -480,6 +490,11 @@ export default function CompanyAdmin() {
   const sampleScreenImageUrl = typeof window !== 'undefined' && window.location.protocol === 'https:'
     ? `${window.location.origin}${EXPO_SCREEN_TEST_IMAGE_PATH}`
     : '';
+  const screenInventorySlots = getExpoScreenInventorySlots();
+  const screenInventorySummary = getExpoScreenInventorySummary();
+  const availableScreenSlots = getAvailableExpoScreenSlots();
+  const selectedScreenSlot = getExpoScreenSlotById(company.screenContent.screenSlotId);
+  const ownedScreenSlots = getExpoScreenSlotsForBooth(company.id);
 
   return (
     <div className="calculator-pro-wrapper" style={{ maxWidth: '1200px', margin: '0 auto', padding: '40px 20px', color: 'white' }}>
@@ -667,6 +682,31 @@ export default function CompanyAdmin() {
               </label>
 
               <label style={{ marginTop: '16px' }}>
+                Screen placement slot
+                <select
+                  value={company.screenContent.screenSlotId}
+                  onChange={(event) => updateScreenContent({ screenSlotId: event.target.value })}
+                >
+                  <option value="">No paid screen slot selected</option>
+                  {screenInventorySlots.map((slot) => (
+                    <option key={slot.id} value={slot.id}>
+                      {slot.label} - {slot.valueTier.toUpperCase()} - EUR {slot.monthlyPriceHintEur}/mo - {slot.status}
+                    </option>
+                  ))}
+                </select>
+                <span style={{ display: 'block', marginTop: '7px', color: '#94a3b8', fontSize: '0.76rem', lineHeight: 1.45 }}>
+                  Slot selection is stored as inventory metadata first. City-wide screen rendering is the next integration step.
+                </span>
+              </label>
+              {selectedScreenSlot && (
+                <div style={{ marginTop: '10px', padding: '12px 14px', borderRadius: '14px', background: 'rgba(2, 6, 23, 0.62)', border: '1px solid rgba(125, 211, 252, 0.18)', color: '#cbd5e1', fontSize: '0.78rem', lineHeight: 1.55 }}>
+                  Selected slot: <strong style={{ color: '#f8fafc' }}>{selectedScreenSlot.valueTier.toUpperCase()}</strong> / score {selectedScreenSlot.valueScore} / {selectedScreenSlot.sizeLabel} / {selectedScreenSlot.operatorZoneId}
+                  <br />
+                  {selectedScreenSlot.placementNotes}
+                </div>
+              )}
+
+              <label style={{ marginTop: '16px' }}>
                 Image URL
                 <input
                   type="text"
@@ -682,10 +722,17 @@ export default function CompanyAdmin() {
                     type="button"
                     className="btn-glass"
                     disabled={!sampleScreenImageUrl}
-                    onClick={() => sampleScreenImageUrl && updateScreenContent({ imageUrl: sampleScreenImageUrl, mode: 'image' })}
+                    onClick={() => sampleScreenImageUrl && updateScreenContent({
+                      ctaLabel: company.screenContent.ctaLabel || 'Open Booth',
+                      imageUrl: sampleScreenImageUrl,
+                      mode: 'image',
+                      status: 'published',
+                      subtitle: company.screenContent.subtitle || 'Camera orbit test loop for booth and city screen replacement.',
+                      title: company.screenContent.title || 'Warpala Expo Screen Test',
+                    })}
                     style={{ padding: '7px 10px', fontSize: '0.72rem' }}
                   >
-                    USE TEST ORBIT IMAGE
+                    USE TEST ORBIT IMAGE + PUBLISH
                   </button>
                   <span style={{ color: '#64748b', fontSize: '0.72rem' }}>
                     {sampleScreenImageUrl || `Available after HTTPS deploy: ${EXPO_SCREEN_TEST_IMAGE_PATH}`}
@@ -774,6 +821,47 @@ export default function CompanyAdmin() {
                 <div style={{ fontWeight: 800, color: '#f8fafc' }}>{leadsNeedingAction.length} leads need action</div>
                 <div style={{ fontSize: '0.8rem', color: '#94a3b8' }}>Latest inbound: {latestLeadTimestamp}</div>
               </div>
+            </div>
+          </section>
+
+          <section className="calc-section" style={{ marginBottom: '25px' }}>
+            <h2>Screen Inventory & Pricing</h2>
+            <p style={{ marginTop: 0, color: '#94a3b8', fontSize: '0.86rem', lineHeight: 1.55 }}>
+              First commercial inventory model: booth-owned screens, premium city screens and event surfaces have separate value tiers, price hints and availability.
+            </p>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: '10px', marginBottom: '14px' }}>
+              {[
+                { label: 'Total', value: screenInventorySummary.totalCount },
+                { label: 'Available', value: screenInventorySummary.availableCount },
+                { label: 'Reserved', value: screenInventorySummary.reservedCount },
+                { label: 'Preview', value: screenInventorySummary.previewOnlyCount },
+              ].map((entry) => (
+                <div key={entry.label} style={{ padding: '12px', borderRadius: '14px', background: 'rgba(2, 6, 23, 0.62)', border: '1px solid rgba(148, 163, 184, 0.14)' }}>
+                  <div style={{ color: '#94a3b8', fontSize: '0.66rem', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{entry.label}</div>
+                  <div style={{ color: '#f8fafc', fontSize: '1.3rem', fontWeight: 900 }}>{entry.value}</div>
+                </div>
+              ))}
+            </div>
+            {ownedScreenSlots.length > 0 && (
+              <div style={{ marginBottom: '12px', padding: '12px 14px', borderRadius: '14px', background: 'rgba(14, 116, 144, 0.14)', border: '1px solid rgba(125, 211, 252, 0.2)', color: '#bae6fd', fontSize: '0.78rem', lineHeight: 1.5 }}>
+                This booth already has {ownedScreenSlots.length} reserved screen slot{ownedScreenSlots.length === 1 ? '' : 's'} in the inventory model.
+              </div>
+            )}
+            <div style={{ display: 'grid', gap: '10px' }}>
+              {availableScreenSlots.slice(0, 4).map((slot) => (
+                <div key={slot.id} style={{ padding: '12px 14px', borderRadius: '14px', background: 'rgba(15, 23, 42, 0.72)', border: '1px solid rgba(148, 163, 184, 0.14)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', alignItems: 'start' }}>
+                    <div>
+                      <div style={{ color: '#f8fafc', fontWeight: 900 }}>{slot.label}</div>
+                      <div style={{ color: '#94a3b8', fontSize: '0.76rem', marginTop: '4px' }}>{slot.sizeLabel} / {slot.operatorZoneId}</div>
+                    </div>
+                    <div style={{ color: slot.valueTier === 'landmark' ? '#fbbf24' : slot.valueTier === 'hero' ? '#93c5fd' : '#cbd5e1', fontSize: '0.72rem', fontWeight: 900, textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
+                      {slot.valueTier} / EUR {slot.monthlyPriceHintEur}
+                    </div>
+                  </div>
+                  <div style={{ color: '#cbd5e1', fontSize: '0.74rem', lineHeight: 1.45, marginTop: '7px' }}>{slot.placementNotes}</div>
+                </div>
+              ))}
             </div>
           </section>
 

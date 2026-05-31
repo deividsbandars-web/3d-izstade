@@ -1,3 +1,5 @@
+import { isValidExpoScreenSlotId } from './screenInventory.js';
+
 export type ExpoManagedScreenContentMode = 'generated-card' | 'image' | 'video-placeholder';
 export type ExpoManagedScreenContentStatus = 'draft' | 'published';
 export type ExpoScreenMediaKind = 'image' | 'video';
@@ -6,6 +8,7 @@ export type ExpoScreenContentInput = {
   ctaLabel?: unknown;
   imageUrl?: unknown;
   mode?: unknown;
+  screenSlotId?: unknown;
   status?: unknown;
   subtitle?: unknown;
   title?: unknown;
@@ -13,7 +16,7 @@ export type ExpoScreenContentInput = {
 };
 
 export type ExpoScreenContentIssue = {
-  field: 'imageUrl' | 'videoUrl' | 'mode' | 'status' | 'title' | 'subtitle' | 'ctaLabel';
+  field: 'imageUrl' | 'videoUrl' | 'mode' | 'screenSlotId' | 'status' | 'title' | 'subtitle' | 'ctaLabel';
   message: string;
 };
 
@@ -21,6 +24,7 @@ export type ExpoScreenContentSavePayload = {
   ctaLabel: string;
   imageUrl: string;
   mode: ExpoManagedScreenContentMode;
+  screenSlotId: string;
   status: ExpoManagedScreenContentStatus;
   subtitle: string;
   title: string;
@@ -161,6 +165,7 @@ export function normalizeExpoScreenContentForSave(input: ExpoScreenContentInput 
   const mode = normalizeExpoManagedScreenMode(input.mode);
   const imageResult = validateExpoScreenMediaUrl(input.imageUrl, 'image');
   const videoResult = validateExpoScreenMediaUrl(input.videoUrl, 'video');
+  const screenSlotId = asString(input.screenSlotId);
   const issues: ExpoScreenContentIssue[] = [];
 
   if (!imageResult.ok) {
@@ -179,6 +184,10 @@ export function normalizeExpoScreenContentForSave(input: ExpoScreenContentInput 
     issues.push({ field: 'videoUrl', message: 'Video placeholder mode needs a valid HTTPS .mp4 or .webm URL.' });
   }
 
+  if (screenSlotId && !isValidExpoScreenSlotId(screenSlotId)) {
+    issues.push({ field: 'screenSlotId', message: 'Selected screen slot is not in the expo screen inventory.' });
+  }
+
   return {
     issues,
     ok: issues.length === 0,
@@ -186,6 +195,7 @@ export function normalizeExpoScreenContentForSave(input: ExpoScreenContentInput 
       ctaLabel: trimForSave(input.ctaLabel, 32),
       imageUrl: imageResult.ok ? imageResult.url : '',
       mode,
+      screenSlotId: screenSlotId && isValidExpoScreenSlotId(screenSlotId) ? screenSlotId : '',
       status: normalizeExpoManagedScreenStatus(input.status),
       subtitle: trimForSave(input.subtitle, 180),
       title: trimForSave(input.title, 80),
