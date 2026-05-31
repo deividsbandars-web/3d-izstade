@@ -109,13 +109,13 @@ const calculators: CalculatorEntry[] = [
   {
     accent: '#6366f1',
     category: 'creative',
-    depth: 'Specialist quote',
-    desc: 'Arhitektūras, interjera, produkta un video pastaigas vizualizāciju budžets.',
+    depth: 'Detailed estimate',
+    desc: '3D renderi, animācija, Web3D prototips, expo stends, interaktīvie skati, revīzijas un komerciāla piegāde vienā tāmē.',
     id: 'visuals',
     path: '/visuals-calculator',
-    primaryUse: '3D vizualizācijas un walkthrough',
-    status: 'Saderīgs ar Web3D virzienu',
-    title: '3D vizuāļi',
+    primaryUse: '3D vizualizācijas, Web3D demo, produkta prezentācija vai expo stends',
+    status: 'Web3D pārdošanas leads',
+    title: '3D un Web3D demo',
   },
   {
     accent: '#64748b',
