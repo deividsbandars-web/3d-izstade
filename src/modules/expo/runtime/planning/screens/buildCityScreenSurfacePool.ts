@@ -42,11 +42,11 @@ export function buildCityScreenSurfacePool(districtCount: number, districtStride
   );
   const getSpinePrimaryPlacement = (districtIndex: number): { x: number; yaw: number } => {
     if (districtIndex === 0) {
-      return { x: -330, yaw: inwardYawLeft };
+      return { x: -620, yaw: flankYawLeft };
     }
 
     if (districtIndex === 1) {
-      return { x: 330, yaw: inwardYawRight };
+      return { x: 620, yaw: flankYawRight };
     }
 
     return { x: -110, yaw: inwardYawLeft };
