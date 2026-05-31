@@ -295,7 +295,7 @@ export function SponsorTextureSurface({
 
   return (
     <meshStandardMaterial
-      color={fallbackColor}
+      color={mappedTexture ? '#ffffff' : fallbackColor}
       depthWrite={depthWrite ?? opacity >= 0.999}
       emissive={emissiveColor ?? '#000000'}
       emissiveIntensity={mappedTexture ? emissiveIntensity : Math.min(emissiveIntensity, 0.12)}
@@ -337,5 +337,5 @@ export function ScreenTextureMaterial({ fallbackColor, url }: { fallbackColor: s
     };
   }, [url]);
 
-  return <meshBasicMaterial color={fallbackColor} map={mappedTexture ?? undefined} toneMapped={false} />;
+  return <meshBasicMaterial color={mappedTexture ? '#ffffff' : fallbackColor} map={mappedTexture ?? undefined} toneMapped={false} />;
 }
