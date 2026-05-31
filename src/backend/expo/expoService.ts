@@ -100,6 +100,16 @@ function normalizeLegacyBoothPayload(payload: Record<string, any>, options: { re
     normalized.plan_type = String(payload.plan_type || payload.subscription_type || 'standard').trim();
   }
 
+  if (options.requireTitle && normalized.position_z === undefined) {
+    normalized.position_z = Number.isFinite(Number(payload.position_z)) ? Number(payload.position_z) : 0;
+  }
+
+  if (options.requireTitle && normalized.side === undefined) {
+    normalized.side = String(payload.side || payload.district || '').toLowerCase().includes('left')
+      ? 'left'
+      : 'right';
+  }
+
   return normalized;
 }
 
