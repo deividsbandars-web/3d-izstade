@@ -237,8 +237,8 @@ function getAdminAccessNotice(accessState: AdminAccessState, technicalError: str
     return {
       actionLabel: 'Sign in to save',
       actionPath: '/login?next=/expo/admin',
-      body: 'Expo Admin uses your signed-in Supabase session automatically. No separate Expo API key should be pasted here.',
-      detail: 'After signing in, return to this page and save the booth screen normally.',
+      body: 'Sign in with your account to manage booth screens and sponsor content.',
+      detail: 'No Expo API key is required here. Admin access uses your secure login session automatically.',
       title: 'Sign in required',
     };
   }
@@ -257,9 +257,11 @@ function getAdminAccessNotice(accessState: AdminAccessState, technicalError: str
     return {
       actionLabel: 'Open sales demo',
       actionPath: '/expo-3d?salesDemo=1',
-      body: 'The admin UI is loaded, but the Expo backend API is not reachable right now.',
-      detail: technicalError ? `Technical detail: ${technicalError}` : 'Check the staging backend service, then reload this page.',
-      title: 'Backend unavailable',
+      body: 'The admin page loaded, but the Expo service connection is not reachable right now.',
+      detail: technicalError
+        ? `This is not an API key requirement. Technical detail: ${technicalError}`
+        : 'This is not an API key requirement. Check the backend service, then reload this page.',
+      title: 'Admin service unavailable',
     };
   }
 
@@ -488,7 +490,7 @@ export default function CompanyAdmin() {
           : accessState === 'access-denied'
             ? 'This account is not allowed to save this booth.'
             : accessState === 'backend-unavailable'
-              ? 'The Expo backend is unavailable right now. Try again after the staging service is restored.'
+              ? 'The Expo admin service is not reachable right now. This is not an API key issue; reload after the service is restored.'
               : 'Failed to save booth screen settings.',
       });
     } finally {
@@ -621,7 +623,7 @@ export default function CompanyAdmin() {
       : adminAccessState === 'access-denied'
         ? 'NO BOOTH ACCESS'
         : adminAccessState === 'backend-unavailable'
-          ? 'BACKEND UNAVAILABLE'
+          ? 'ADMIN SERVICE OFFLINE'
           : 'SAVE BOOTH SCREEN';
 
   return (
@@ -697,7 +699,7 @@ export default function CompanyAdmin() {
                 <div style={{ color: '#94a3b8' }}>
                   {adminAccessState === 'ready'
                     ? 'No saved booths loaded for this account yet. Fill the booth details below and save to create one.'
-                    : 'Sign in to load and save managed booths.'}
+                    : 'Sign in to load and save managed booths. No API key is required.'}
                 </div>
               ) : managedBooths.map((booth) => (
                 <button
