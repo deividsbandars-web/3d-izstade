@@ -25,6 +25,97 @@ type DistrictVisual = {
   shellAccent: string;
 };
 
+function BoothProductShowcaseFrame({
+  accentColor,
+  metrics,
+  tier,
+}: {
+  accentColor: string;
+  metrics: ReturnType<typeof getBoothArchitectureMetrics>;
+  tier: ReturnType<typeof resolveOpenBoothPavilionLayout>;
+}) {
+  const rearScreenZ = -((tier.depth * 0.5) - 0.56);
+  const wallY = (tier.screenFrameHeight * 0.5) + 1.7;
+  const wallZ = rearScreenZ - 0.04;
+  const sideX = tier.screenFrameWidth * 0.55;
+  const sidePanelHeight = tier.screenFrameHeight * 0.54;
+  const bottomY = wallY - (tier.screenFrameHeight * 0.5) - 0.52;
+  const bottomWidth = tier.screenFrameWidth * 0.58;
+  const frontDeckZ = wallZ + Math.max(1.46, tier.depth * 0.3);
+  const ctaTileWidth = Math.max(1.28, tier.screenFrameWidth * 0.13);
+  const ctaTileDepth = 0.52;
+  const ctaTileY = 0.62;
+
+  return (
+    <group name="booth-product-standard-showcase-frame">
+      {[-1, 1].map((side) => (
+        <group key={`standard-showcase-side-${side}`} position={[side * sideX, wallY, wallZ + 0.56]}>
+          <mesh castShadow receiveShadow>
+            <boxGeometry args={[0.5, sidePanelHeight, 0.22]} />
+            <meshStandardMaterial
+              color="#dbe8ef"
+              emissive={accentColor}
+              emissiveIntensity={0.08}
+              metalness={0.12}
+              roughness={0.34}
+            />
+          </mesh>
+          <mesh position={[0, 0, 0.16]}>
+            <boxGeometry args={[0.16, sidePanelHeight * 0.78, 0.08]} />
+            <meshStandardMaterial
+              color={accentColor}
+              emissive={accentColor}
+              emissiveIntensity={0.24}
+              metalness={0.1}
+              roughness={0.22}
+            />
+          </mesh>
+        </group>
+      ))}
+      <mesh position={[0, bottomY, wallZ + 0.58]} castShadow receiveShadow>
+        <boxGeometry args={[bottomWidth, 0.34, 0.24]} />
+        <meshStandardMaterial
+          color="#eef5f8"
+          emissive={accentColor}
+          emissiveIntensity={0.06}
+          metalness={0.08}
+          roughness={0.3}
+        />
+      </mesh>
+      <mesh position={[0, bottomY + 0.03, wallZ + 0.76]}>
+        <boxGeometry args={[bottomWidth * 0.72, 0.08, 0.08]} />
+        <meshStandardMaterial
+          color={accentColor}
+          emissive={accentColor}
+          emissiveIntensity={0.28}
+          metalness={0.08}
+          roughness={0.2}
+        />
+      </mesh>
+      <mesh position={[0, 0.28, frontDeckZ]} receiveShadow>
+        <boxGeometry args={[tier.screenFrameWidth * 0.62, 0.08, 1.22]} />
+        <meshStandardMaterial color="#f4f8fb" metalness={0.04} roughness={0.58} />
+      </mesh>
+      {[-1, 0, 1].map((slot) => (
+        <mesh key={`standard-showcase-cta-tile-${slot}`} position={[slot * (ctaTileWidth * 1.18), ctaTileY, frontDeckZ + 0.18]} castShadow receiveShadow>
+          <boxGeometry args={[ctaTileWidth, 0.28, ctaTileDepth]} />
+          <meshStandardMaterial
+            color={slot === 0 ? accentColor : '#172638'}
+            emissive={accentColor}
+            emissiveIntensity={slot === 0 ? 0.18 : 0.08}
+            metalness={0.1}
+            roughness={0.34}
+          />
+        </mesh>
+      ))}
+      <mesh position={[0, 0.18, frontDeckZ + 0.9]} receiveShadow>
+        <boxGeometry args={[Math.min(metrics.footprintSize[0] * 0.56, tier.screenFrameWidth * 0.72), 0.05, 0.12]} />
+        <meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={0.22} roughness={0.24} />
+      </mesh>
+    </group>
+  );
+}
+
 export function BoothVisualAssembly({
   accentColor,
   boothColliderRef,
@@ -59,6 +150,11 @@ export function BoothVisualAssembly({
       ? 'UNREAL-POWERED BUYER SUITE'
       : 'PREMIUM LIVE SHOWROOM';
   const pavilionLayout = resolveOpenBoothPavilionLayout(metrics, tierState.featureTier);
+  const showStandardProductShowcaseFrame = Boolean(
+    boothProductPreviewCard
+    && boothProductPreviewCard.tierLabel.toUpperCase().includes('STANDARD')
+    && pavilionLayout.isScreenFirstBooth
+  );
   const boothPresentationScreenUrl = buildGeneratedBillboardTextureUrl({
     accentColor,
     aspect: pavilionLayout.screenSurfaceWidth / Math.max(1, pavilionLayout.screenSurfaceHeight),
@@ -97,6 +193,13 @@ export function BoothVisualAssembly({
           metrics={metrics}
           screenUrl={boothPresentationScreenUrl}
           tier={tierState.featureTier}
+        />
+      )}
+      {showStandardProductShowcaseFrame && (
+        <BoothProductShowcaseFrame
+          accentColor={accentColor}
+          metrics={metrics}
+          tier={pavilionLayout}
         />
       )}
       {showInteractiveDressing && (
