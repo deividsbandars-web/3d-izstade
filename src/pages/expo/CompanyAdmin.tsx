@@ -4,19 +4,35 @@ import { Canvas } from '@react-three/fiber';
 import { Environment, OrbitControls, Text, useVideoTexture } from '@react-three/drei';
 import { expoDashboardService } from '../../app/expo/expoDashboardService';
 import { EXPO_CANONICAL_DISTRICT_CATALOG } from '../../services/expoService';
+import {
+  EXPO_SCREEN_CONTENT_IMAGE_EXTENSIONS,
+  EXPO_SCREEN_CONTENT_VIDEO_EXTENSIONS,
+  normalizeExpoScreenContentForSave,
+  validateExpoScreenMediaUrl,
+} from '../../shared/expo/screenContentMedia';
 import '../../components/calculator/styles/CalculatorPro.css';
 import WarpalaLogo from '../../shared/Logo';
 
-function SafeVideoPreview({ url }: { url: string | null }) {
+function VideoPreviewMaterial({ url }: { url: string }) {
   try {
     const texture = useVideoTexture(
-      url || 'https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/1080/Big_Buck_Bunny_1080_10s_1MB.mp4',
+      url,
       { crossOrigin: 'Anonymous', loop: true, muted: true },
     );
     return <meshBasicMaterial map={texture} toneMapped={false} />;
   } catch {
     return <meshStandardMaterial color="#111111" />;
   }
+}
+
+function SafeVideoPreview({ url }: { url: string | null }) {
+  const validation = validateExpoScreenMediaUrl(url, 'video');
+
+  if (!validation.ok || !validation.url) {
+    return <meshStandardMaterial color="#111111" />;
+  }
+
+  return <VideoPreviewMaterial url={validation.url} />;
 }
 
 function BoothPreview({ company, color }: { company: { booth?: { video_url?: string }; name?: string }; color: string }) {
@@ -109,6 +125,8 @@ const LEAD_STATUS_COLORS: Record<string, string> = {
   pending: '#fbbf24',
   rejected: '#f87171',
 };
+
+const EXPO_SCREEN_TEST_IMAGE_PATH = '/expo/media/warpala-expo-camera-orbit-test.gif';
 
 const DEFAULT_COMPANY: AdminCompanyState = {
   booth: { video_url: '' },
@@ -344,8 +362,8 @@ export default function CompanyAdmin() {
         }
       }
       setMessage({ type: 'success', text: 'Booth configuration saved through Expo API.' });
-    } catch {
-      setMessage({ type: 'error', text: 'Failed to save booth configuration.' });
+    } catch (error) {
+      setMessage({ type: 'error', text: error instanceof Error ? error.message : 'Failed to save booth configuration.' });
     } finally {
       setLoading(false);
     }
@@ -452,6 +470,16 @@ export default function CompanyAdmin() {
   const latestLeadTimestamp = sortedLeads[0]?.created_at
     ? new Date(String(sortedLeads[0].created_at)).toLocaleString()
     : 'No inbound activity yet';
+  const screenContentValidation = normalizeExpoScreenContentForSave(company.screenContent);
+  const boothVideoValidation = validateExpoScreenMediaUrl(company.booth.video_url, 'video');
+  const mediaPolicyText = `Images: ${EXPO_SCREEN_CONTENT_IMAGE_EXTENSIONS.join(', ')}. Video placeholders: ${EXPO_SCREEN_CONTENT_VIDEO_EXTENSIONS.join(', ')}. Public HTTPS only.`;
+  const screenContentIssueText = [
+    ...screenContentValidation.issues.map((issue) => issue.message),
+    ...(boothVideoValidation.ok ? [] : [boothVideoValidation.reason]),
+  ].filter(Boolean).join(' ');
+  const sampleScreenImageUrl = typeof window !== 'undefined' && window.location.protocol === 'https:'
+    ? `${window.location.origin}${EXPO_SCREEN_TEST_IMAGE_PATH}`
+    : '';
 
   return (
     <div className="calculator-pro-wrapper" style={{ maxWidth: '1200px', margin: '0 auto', padding: '40px 20px', color: 'white' }}>
@@ -560,12 +588,12 @@ export default function CompanyAdmin() {
 
           <section className="calc-section" style={{ marginTop: '25px' }}>
             <h2>Presentation Media</h2>
-            <div className="input-group">
-              <label>
-                Video URL
+              <div className="input-group">
+                <label>
+                Presentation video URL
                 <input
                   type="text"
-                  placeholder="https://example.com/presentation.mp4"
+                  placeholder="https://cdn.example.com/presentation.mp4"
                   value={company.booth.video_url}
                   onChange={(event) =>
                     setCompany({
@@ -573,14 +601,25 @@ export default function CompanyAdmin() {
                       booth: { ...company.booth, video_url: event.target.value },
                     })}
                 />
+                <span style={{ display: 'block', marginTop: '7px', color: '#94a3b8', fontSize: '0.76rem', lineHeight: 1.45 }}>
+                  Optional booth-room video preview. {EXPO_SCREEN_CONTENT_VIDEO_EXTENSIONS.join(' / ')} over public HTTPS only.
+                </span>
+                {!boothVideoValidation.ok && company.booth.video_url.trim() && (
+                  <span style={{ display: 'block', marginTop: '7px', color: '#fca5a5', fontSize: '0.76rem', lineHeight: 1.45 }}>
+                    {boothVideoValidation.reason}
+                  </span>
+                )}
               </label>
             </div>
 
             <div style={{ marginTop: '24px', paddingTop: '22px', borderTop: '1px solid rgba(148, 163, 184, 0.16)' }}>
               <h3 style={{ margin: '0 0 8px', color: '#f8fafc' }}>Booth Screen Content</h3>
               <p style={{ margin: '0 0 18px', color: '#94a3b8', fontSize: '0.88rem', lineHeight: 1.5 }}>
-                Published content can replace the generated booth screen card in the 3D city. Video is stored as a safe placeholder only; live playback stays off.
+                Published content can replace the generated booth screen card in the 3D city. Video URLs are stored as safe placeholders only; live playback stays off until the video pipeline is reviewed.
               </p>
+              <div style={{ marginBottom: '16px', padding: '10px 12px', borderRadius: '14px', background: 'rgba(14, 116, 144, 0.16)', border: '1px solid rgba(125, 211, 252, 0.22)', color: '#bae6fd', fontSize: '0.76rem', lineHeight: 1.5 }}>
+                Media safety: {mediaPolicyText} Localhost, private IPs, non-HTTPS URLs, SVG and embedded credentials are blocked.
+              </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '14px' }}>
                 <label>
@@ -631,20 +670,41 @@ export default function CompanyAdmin() {
                 Image URL
                 <input
                   type="text"
-                  placeholder="https://example.com/sponsor-screen.png"
+                  placeholder="https://cdn.example.com/sponsor-screen.png"
                   value={company.screenContent.imageUrl}
                   onChange={(event) => updateScreenContent({ imageUrl: event.target.value })}
                 />
+                <span style={{ display: 'block', marginTop: '7px', color: '#94a3b8', fontSize: '0.76rem', lineHeight: 1.45 }}>
+                  Use for live screen replacement. Supported: {EXPO_SCREEN_CONTENT_IMAGE_EXTENSIONS.join(', ')}.
+                </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', marginTop: '9px' }}>
+                  <button
+                    type="button"
+                    className="btn-glass"
+                    disabled={!sampleScreenImageUrl}
+                    onClick={() => sampleScreenImageUrl && updateScreenContent({ imageUrl: sampleScreenImageUrl, mode: 'image' })}
+                    style={{ padding: '7px 10px', fontSize: '0.72rem' }}
+                  >
+                    USE TEST ORBIT IMAGE
+                  </button>
+                  <span style={{ color: '#64748b', fontSize: '0.72rem' }}>
+                    {sampleScreenImageUrl || `Available after HTTPS deploy: ${EXPO_SCREEN_TEST_IMAGE_PATH}`}
+                  </span>
+                </div>
               </label>
 
               <label style={{ marginTop: '16px' }}>
                 Video URL placeholder
                 <input
-                  type="text"
-                  placeholder="https://example.com/demo.mp4"
+                  type="url"
+                  inputMode="url"
+                  placeholder="https://cdn.example.com/demo.mp4"
                   value={company.screenContent.videoUrl}
                   onChange={(event) => updateScreenContent({ videoUrl: event.target.value })}
                 />
+                <span style={{ display: 'block', marginTop: '7px', color: '#94a3b8', fontSize: '0.76rem', lineHeight: 1.45 }}>
+                  Stored for review and future playback readiness. Supported: {EXPO_SCREEN_CONTENT_VIDEO_EXTENSIONS.join(', ')}. It will not autoplay in the city yet.
+                </span>
               </label>
 
               <label style={{ marginTop: '16px' }}>
@@ -657,8 +717,10 @@ export default function CompanyAdmin() {
                 />
               </label>
 
-              <div style={{ marginTop: '14px', padding: '12px 14px', borderRadius: '14px', background: 'rgba(15, 23, 42, 0.72)', border: '1px solid rgba(148, 163, 184, 0.16)', color: '#cbd5e1', fontSize: '0.78rem', lineHeight: 1.5 }}>
+              <div style={{ marginTop: '14px', padding: '12px 14px', borderRadius: '14px', background: screenContentValidation.ok && boothVideoValidation.ok ? 'rgba(6, 78, 59, 0.26)' : 'rgba(127, 29, 29, 0.28)', border: `1px solid ${screenContentValidation.ok && boothVideoValidation.ok ? 'rgba(52, 211, 153, 0.26)' : 'rgba(248, 113, 113, 0.32)'}`, color: screenContentValidation.ok && boothVideoValidation.ok ? '#bbf7d0' : '#fecaca', fontSize: '0.78rem', lineHeight: 1.5 }}>
                 Current screen content: {company.screenContent.status.toUpperCase()} / {company.screenContent.mode.toUpperCase()}
+                <br />
+                URL safety: {screenContentValidation.ok && boothVideoValidation.ok ? 'READY TO SAVE' : screenContentIssueText}
               </div>
             </div>
 

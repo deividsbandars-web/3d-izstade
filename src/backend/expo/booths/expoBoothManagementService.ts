@@ -1,4 +1,5 @@
 import { getExpoBoothById, listExpoBooths, type ExpoBoothRecord } from '../data/expoBoothStore.js';
+import { sanitizeExpoManagedBoothAssets } from '../../../shared/expo/screenContentMedia.js';
 
 export type ExpoBackendUserContext = {
   email?: string | null;
@@ -15,14 +16,19 @@ export function mergeOwnedBoothPayload(
       ? payload.contact_info as Record<string, unknown>
       : {};
 
+  const nextPayload: Record<string, unknown> = { ...payload };
+  if (Object.prototype.hasOwnProperty.call(payload, 'assets_3d')) {
+    nextPayload.assets_3d = sanitizeExpoManagedBoothAssets(payload.assets_3d);
+  }
+
   return {
-    ...payload,
+    ...nextPayload,
     contact_info: {
       ...contactInfo,
       owner_email: user.email ?? contactInfo.owner_email ?? null,
       owner_user_id: user.id ?? contactInfo.owner_user_id ?? null,
     },
-    org_id: user.id ?? payload.org_id ?? null,
+    org_id: user.id ?? nextPayload.org_id ?? null,
   };
 }
 

@@ -1,4 +1,8 @@
 import { CityMapAPI, ExpoDataAPI } from '../../services/expo';
+import {
+  normalizeExpoScreenContentForSave,
+  validateExpoScreenMediaUrl,
+} from '../../shared/expo/screenContentMedia';
 
 export type ExpoManagedBooth = {
   assets_3d?: Record<string, unknown> | null;
@@ -101,22 +105,20 @@ export const expoDashboardService = {
     videoUrl: string;
   }) {
     try {
-      const normalizedScreenContent = screenContent
-        ? {
-            ctaLabel: String(screenContent.ctaLabel || '').trim(),
-            imageUrl: String(screenContent.imageUrl || '').trim(),
-            mode: screenContent.mode || 'generated-card',
-            status: screenContent.status || 'draft',
-            subtitle: String(screenContent.subtitle || '').trim(),
-            title: String(screenContent.title || '').trim(),
-            videoUrl: String(screenContent.videoUrl || '').trim(),
-          }
-        : undefined;
+      const screenContentResult = normalizeExpoScreenContentForSave(screenContent);
+      if (!screenContentResult.ok) {
+        throw new Error(screenContentResult.issues.map((issue) => issue.message).join(' '));
+      }
+
+      const boothVideoResult = validateExpoScreenMediaUrl(videoUrl, 'video');
+      if (!boothVideoResult.ok) {
+        throw new Error(boothVideoResult.reason);
+      }
 
       const payload = {
         assets_3d: {
-          ...(normalizedScreenContent ? { screen_content: normalizedScreenContent } : {}),
-          video_url: videoUrl,
+          screen_content: screenContentResult.screenContent,
+          video_url: boothVideoResult.url,
         },
         company_name: companyName,
         contact_info: {
