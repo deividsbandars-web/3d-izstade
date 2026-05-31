@@ -112,6 +112,7 @@ export function normalizeBooth(rawBooth: any, fallbackCompany: any): ExpoSceneBo
     featuredAssetUrl: normalizeReleaseMediaUrl(rawBooth.featuredAssetUrl ?? rawBooth.featured_asset_url),
     heroAssetUrl: normalizeReleaseMediaUrl(rawBooth.heroAssetUrl ?? rawBooth.hero_asset_url ?? fallbackCompany?.heroAssetUrl ?? fallbackCompany?.hero_asset_url),
     heroScreenImageUrl: normalizeReleaseMediaUrl(rawBooth.heroScreenImageUrl ?? rawBooth.hero_screen_image_url ?? screenContent.imageUrl ?? screenContent.image_url ?? screenContent.assetUrl ?? screenContent.asset_url),
+    heroScreenSlotId: normalizeNullableString(rawBooth.heroScreenSlotId ?? rawBooth.hero_screen_slot_id ?? screenContent.screenSlotId ?? screenContent.screen_slot_id),
     heroScreenStatus: normalizeNullableString(rawBooth.heroScreenStatus ?? rawBooth.hero_screen_status ?? screenContent.status),
     heroScreenText: normalizeNullableString(rawBooth.heroScreenText ?? rawBooth.hero_screen_text ?? screenContent.subtitle ?? screenContent.text),
     heroScreenTitle: normalizeNullableString(rawBooth.heroScreenTitle ?? rawBooth.hero_screen_title ?? screenContent.title),

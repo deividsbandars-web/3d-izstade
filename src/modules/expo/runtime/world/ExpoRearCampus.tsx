@@ -287,6 +287,7 @@ export function ExpoRearCampus({
         />
         <WorldCityScreenAssignments
           assignments={rearCampusPlan.assignments}
+          boothPlacements={boothPlacements}
           playerPosition={playerPosition}
           qualitySettings={qualitySettings}
           sockets={rearCampusPlan.screenSockets}

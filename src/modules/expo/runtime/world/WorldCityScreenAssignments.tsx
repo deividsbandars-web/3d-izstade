@@ -10,6 +10,8 @@ import {
   publishDemoArenaPreviewRuntimeSummary,
 } from '../demoArena';
 import { resolveSponsorScreenInteraction } from '../../lib/sponsorScreenInteractionResolver';
+import type { ExpoBoothPlacement } from '../../layout-engine';
+import { buildManagedScreenAssignmentOverrides } from './managedScreenContentAssignments';
 import { getExpoActiveVideoScreensCount } from './quality/expoActiveVideoScreenRegistry';
 import { resolveExpoScreenRuntimePolicy, type ExpoScreenTextureQualityHint } from './quality/expoScreenRuntimePolicy';
 import type { ExpoQualitySettings } from './quality/expoQualitySettings';
@@ -111,11 +113,13 @@ function renderPrimitive(
 
 export function WorldCityScreenAssignments({
   assignments,
+  boothPlacements,
   playerPosition,
   qualitySettings,
   sockets,
 }: {
   assignments: CityScreenAssignment[];
+  boothPlacements: ExpoBoothPlacement[];
   playerPosition: [number, number, number];
   qualitySettings: ExpoQualitySettings;
   sockets: CityScreenSocket[];
@@ -127,6 +131,10 @@ export function WorldCityScreenAssignments({
   const demoArenaPreviewSummary = useMemo(
     () => buildDemoArenaPreviewRuntimeSummary(assignments, sockets, demoArenaPreviewEnabled),
     [assignments, demoArenaPreviewEnabled, sockets],
+  );
+  const managedScreenOverrides = useMemo(
+    () => buildManagedScreenAssignmentOverrides({ assignments, boothPlacements, sockets }),
+    [assignments, boothPlacements, sockets],
   );
 
   useEffect(() => {
@@ -141,14 +149,6 @@ export function WorldCityScreenAssignments({
           return null;
         }
 
-        const resolvedAction = resolveSponsorScreenInteraction({
-          companyId: assignment.companyId,
-          id: assignment.id,
-          label: assignment.subtitle,
-          title: assignment.label,
-        });
-        const isRouteAction = resolvedAction.kind === 'route';
-
         const dx = socket.position[0] - playerPosition[0];
         const dz = socket.position[2] - playerPosition[2];
         const distanceSq = (dx * dx) + (dz * dz);
@@ -156,7 +156,15 @@ export function WorldCityScreenAssignments({
         const previewAssignment = demoArenaPreviewEnabled
           ? buildDemoArenaPreviewAssignment(assignment, socket)
           : null;
-        const effectiveAssignment = previewAssignment?.assignment ?? assignment;
+        const managedScreenOverride = managedScreenOverrides.overridesByAssignmentId.get(assignment.id) ?? null;
+        const effectiveAssignment = previewAssignment?.assignment ?? managedScreenOverride?.assignment ?? assignment;
+        const resolvedAction = resolveSponsorScreenInteraction({
+          companyId: effectiveAssignment.companyId,
+          id: effectiveAssignment.id,
+          label: effectiveAssignment.subtitle,
+          title: effectiveAssignment.label,
+        });
+        const isRouteAction = resolvedAction.kind === 'route';
         const intent = effectiveAssignment.renderIntent;
         const maxDistance = intent?.maxDistance ?? 980;
         if (cullDistantScreens && distanceSq > maxDistance * maxDistance) {
@@ -209,6 +217,14 @@ export function WorldCityScreenAssignments({
                     expoDemoArenaPreviewEventId: previewAssignment.content.activeEventId,
                     expoDemoArenaPreviewPurpose: previewAssignment.content.purpose,
                     expoDemoArenaPreviewTargetId: previewAssignment.target.id,
+                  }
+                : {}),
+              ...(managedScreenOverride && !previewAssignment
+                ? {
+                    expoManagedScreenCompanyId: managedScreenOverride.source.companyId,
+                    expoManagedScreenMode: managedScreenOverride.source.mode,
+                    expoManagedScreenSlotId: managedScreenOverride.source.screenSlotId,
+                    expoManagedScreenSlotLabel: managedScreenOverride.source.slotLabel,
                   }
                 : {}),
             }}

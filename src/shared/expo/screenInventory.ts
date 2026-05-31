@@ -11,6 +11,9 @@ export type ExpoScreenInventorySlot = {
   packageFit: readonly string[];
   placementNotes: string;
   reservedByBoothId?: string;
+  runtimeAssignmentId?: string;
+  runtimeSocketId?: string;
+  runtimeSurfaceId?: string;
   runtimeTargetId?: string;
   scope: ExpoScreenSlotScope;
   sizeLabel: string;
@@ -68,7 +71,10 @@ export const EXPO_SCREEN_INVENTORY_SLOTS: readonly ExpoScreenInventorySlot[] = [
     operatorZoneId: 'center-spine',
     packageFit: ['Landmark Zone Sponsor', 'Launch Sponsor'],
     placementNotes: 'Main arrival-to-stadium axis screen; high sponsor visibility and navigation value.',
-    runtimeTargetId: 'center-spine-hero-wall',
+    runtimeAssignmentId: 'screen-spine-primary-1-socket-assignment',
+    runtimeSocketId: 'screen-spine-primary-1-socket',
+    runtimeSurfaceId: 'screen-spine-primary-1',
+    runtimeTargetId: 'screen-spine-primary-1-socket-assignment',
     scope: 'city',
     sizeLabel: 'Hero city wall',
     status: 'available',
@@ -85,7 +91,10 @@ export const EXPO_SCREEN_INVENTORY_SLOTS: readonly ExpoScreenInventorySlot[] = [
     operatorZoneId: 'right-marquee',
     packageFit: ['Premium Booth', 'District Sponsor'],
     placementNotes: 'High-traffic right district screen near sponsor boulevard flow.',
-    runtimeTargetId: 'right-marquee-hero-wall',
+    runtimeAssignmentId: 'screen-marquee-right-1-socket-assignment',
+    runtimeSocketId: 'screen-marquee-right-1-socket',
+    runtimeSurfaceId: 'screen-marquee-right-1',
+    runtimeTargetId: 'screen-marquee-right-1-socket-assignment',
     scope: 'city',
     sizeLabel: 'Large city screen',
     status: 'available',
@@ -102,7 +111,10 @@ export const EXPO_SCREEN_INVENTORY_SLOTS: readonly ExpoScreenInventorySlot[] = [
     operatorZoneId: 'left-marquee',
     packageFit: ['Premium Booth', 'District Sponsor'],
     placementNotes: 'High-visibility district marquee for featured sponsor or campaign content.',
-    runtimeTargetId: 'left-marquee-hero-wall',
+    runtimeAssignmentId: 'screen-marquee-left-1-socket-assignment',
+    runtimeSocketId: 'screen-marquee-left-1-socket',
+    runtimeSurfaceId: 'screen-marquee-left-1',
+    runtimeTargetId: 'screen-marquee-left-1-socket-assignment',
     scope: 'city',
     sizeLabel: 'Large city screen',
     status: 'available',
@@ -119,7 +131,10 @@ export const EXPO_SCREEN_INVENTORY_SLOTS: readonly ExpoScreenInventorySlot[] = [
     operatorZoneId: 'sponsor-boulevard-right',
     packageFit: ['Standard Booth', 'Premium Booth'],
     placementNotes: 'Good booth-adjacent upsell screen for sponsor route reinforcement.',
-    runtimeTargetId: 'sponsor-boulevard-right-screen',
+    runtimeAssignmentId: 'screen-array-right-1-socket-assignment',
+    runtimeSocketId: 'screen-array-right-1-socket',
+    runtimeSurfaceId: 'screen-array-right-1',
+    runtimeTargetId: 'screen-array-right-1-socket-assignment',
     scope: 'city',
     sizeLabel: 'District screen',
     status: 'available',
@@ -136,6 +151,9 @@ export const EXPO_SCREEN_INVENTORY_SLOTS: readonly ExpoScreenInventorySlot[] = [
     operatorZoneId: 'rear-campus-center',
     packageFit: ['Landmark Zone Sponsor', 'Demo Arena Sponsor'],
     placementNotes: 'Highest-value event surface for demo battles, stage sponsor slots and monthly event inventory.',
+    runtimeAssignmentId: 'rear-campus-stage-monolith-canopy-host-surface-socket-assignment',
+    runtimeSocketId: 'rear-campus-stage-monolith-canopy-host-surface-socket',
+    runtimeSurfaceId: 'rear-campus-stage-monolith-canopy-host-surface',
     runtimeTargetId: 'demo-arena-main-stage',
     scope: 'event',
     sizeLabel: 'Arena hero screen',

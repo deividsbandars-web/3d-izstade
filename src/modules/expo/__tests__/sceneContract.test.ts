@@ -13,6 +13,7 @@ const payload = {
         screen_content: {
           assetUrl: 'https://cdn.example.com/owner-screen.png',
           mode: 'image',
+          screenSlotId: 'city-right-marquee-hero',
           status: 'published',
           subtitle: 'Owner managed campaign line',
           title: 'Owner Managed Screen',
@@ -76,6 +77,7 @@ assert.equal(normalized.companies[0].booth?.posterUrl, null);
 assert.equal(normalized.companies[0].booth?.video_url, null);
 assert.equal(normalized.companies[0].booth?.heroAssetUrl, 'https://cdn.example.com/hero.png');
 assert.equal(normalized.companies[0].booth?.heroScreenImageUrl, 'https://cdn.example.com/owner-screen.png');
+assert.equal(normalized.companies[0].booth?.heroScreenSlotId, 'city-right-marquee-hero');
 assert.equal(normalized.companies[0].booth?.heroScreenStatus, 'published');
 assert.equal(normalized.companies[0].booth?.heroScreenText, 'Owner managed campaign line');
 assert.equal(normalized.companies[0].booth?.heroScreenTitle, 'Owner Managed Screen');

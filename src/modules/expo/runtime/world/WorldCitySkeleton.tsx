@@ -231,6 +231,7 @@ export function WorldCitySkeleton({
       >
         <WorldCityScreenAssignments
           assignments={screenAssignments}
+          boothPlacements={boothPlacements}
           playerPosition={playerPosition}
           qualitySettings={qualitySettings}
           sockets={screenSockets}

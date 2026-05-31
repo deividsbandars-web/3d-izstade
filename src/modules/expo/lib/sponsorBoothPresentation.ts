@@ -26,6 +26,7 @@ export type SponsorManagedScreenContent = {
   ctaLabel: string | null;
   imageUrl: string | null;
   mode: SponsorManagedScreenMode;
+  screenSlotId: string | null;
   status: 'draft' | 'published';
   subtitle: string | null;
   title: string;
@@ -165,6 +166,7 @@ function buildManagedScreenContent(
     ctaLabel: truncateSponsorText(booth.ctaLabel || null, 26) || null,
     imageUrl: normalizeReleaseUrl(booth.heroScreenImageUrl),
     mode: normalizeManagedScreenMode(booth.heroScreenType),
+    screenSlotId: normalizeUrl(booth.heroScreenSlotId),
     status: normalizeManagedScreenStatus(booth.heroScreenStatus),
     subtitle: truncateSponsorText(booth.heroScreenText || fallbackIdentity.supportLine, 74) || null,
     title: truncateSponsorText(booth.heroScreenTitle || displayName, 32) || displayName,
