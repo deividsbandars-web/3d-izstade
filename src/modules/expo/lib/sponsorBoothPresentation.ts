@@ -244,6 +244,14 @@ function pickCustomInsertUrl(company: ExpoSceneCompany, booth: ExpoSceneBooth | 
   return preferred;
 }
 
+function pickManagedHeroScreenImageUrl(booth: ExpoSceneBooth | null) {
+  if (booth?.heroScreenStatus !== 'published' || booth.heroScreenType !== 'image') {
+    return null;
+  }
+
+  return normalizeReleaseUrl(booth.heroScreenImageUrl);
+}
+
 export function buildSponsorBoothPresentation(
   company: ExpoSceneCompany,
   booth: ExpoSceneBooth | null,
@@ -254,7 +262,7 @@ export function buildSponsorBoothPresentation(
 ): SponsorBoothPresentation {
   const displayName = truncateSponsorText(company.name, 26);
   const logoUrl = normalizeReleaseUrl(company.logo_url);
-  const posterUrl = normalizeReleaseUrl(company.posterUrl) || normalizeReleaseUrl(booth?.posterUrl);
+  const posterUrl = pickManagedHeroScreenImageUrl(booth) || normalizeReleaseUrl(company.posterUrl) || normalizeReleaseUrl(booth?.posterUrl);
   const videoUrl = normalizeReleaseUrl(booth?.video_url);
   const customInsertUrl = pickCustomInsertUrl(company, booth);
   const fallbackIdentity = buildFallbackIdentity(company, booth, displayName);

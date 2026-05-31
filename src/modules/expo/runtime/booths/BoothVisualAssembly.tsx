@@ -56,7 +56,7 @@ export function BoothVisualAssembly({
       ? 'UNREAL-POWERED BUYER SUITE'
       : 'PREMIUM LIVE SHOWROOM';
   const pavilionLayout = resolveOpenBoothPavilionLayout(metrics, tierState.featureTier);
-  const boothPresentationScreenUrl = buildGeneratedBillboardTextureUrl({
+  const fallbackGeneratedScreenUrl = buildGeneratedBillboardTextureUrl({
     accentColor,
     aspect: pavilionLayout.screenSurfaceWidth / Math.max(1, pavilionLayout.screenSurfaceHeight),
     chip: presentation.badgeLabel ?? premiumLabel,
@@ -65,6 +65,7 @@ export function BoothVisualAssembly({
     tier: tierState.contractTier.toUpperCase(),
     tierAccent: tierState.districtVisual.shellAccent,
   });
+  const boothPresentationScreenUrl = presentation.posterUrl ?? fallbackGeneratedScreenUrl;
 
   return (
     <>
