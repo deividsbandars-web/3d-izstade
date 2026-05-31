@@ -247,7 +247,7 @@ export function OpenBoothPavilion({
           <planeGeometry args={[screenSurfaceWidth, screenSurfaceHeight]} />
           {screenUrl ? (
             <Suspense fallback={<meshStandardMaterial color={mediaFallbackColor} emissive={accentColor} emissiveIntensity={mediaEmissiveIntensity} />}>
-              <SponsorTextureSurface fallbackColor={mediaFallbackColor} emissiveColor={accentColor} emissiveIntensity={mediaEmissiveIntensity} url={screenUrl} />
+              <SponsorTextureSurface doubleSided fallbackColor={mediaFallbackColor} emissiveColor={accentColor} emissiveIntensity={mediaEmissiveIntensity} url={screenUrl} />
             </Suspense>
           ) : (
             <meshStandardMaterial color={mediaFallbackColor} emissive={accentColor} emissiveIntensity={mediaEmissiveIntensity} />
@@ -508,7 +508,7 @@ export function OpenBoothPavilion({
             <planeGeometry args={[screenSurfaceWidth, screenSurfaceHeight]} />
             {screenUrl ? (
               <Suspense fallback={<meshStandardMaterial color={mediaFallbackColor} emissive={accentColor} emissiveIntensity={mediaEmissiveIntensity} />}>
-                <SponsorTextureSurface fallbackColor={mediaFallbackColor} emissiveColor={accentColor} emissiveIntensity={mediaEmissiveIntensity} url={screenUrl} />
+                <SponsorTextureSurface doubleSided fallbackColor={mediaFallbackColor} emissiveColor={accentColor} emissiveIntensity={mediaEmissiveIntensity} url={screenUrl} />
               </Suspense>
             ) : (
               <meshStandardMaterial color={mediaFallbackColor} emissive={accentColor} emissiveIntensity={mediaEmissiveIntensity} />
