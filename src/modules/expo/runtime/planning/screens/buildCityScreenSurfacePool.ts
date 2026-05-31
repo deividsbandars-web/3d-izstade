@@ -40,10 +40,22 @@ export function buildCityScreenSurfacePool(districtCount: number, districtStride
   const marqueeRightDepthOffset = (districtIndex: number) => (
     districtIndex === 2 ? -112 : districtIndex === 1 ? 44 : 0
   );
+  const getSpinePrimaryPlacement = (districtIndex: number): { x: number; yaw: number } => {
+    if (districtIndex === 0) {
+      return { x: -330, yaw: inwardYawLeft };
+    }
+
+    if (districtIndex === 1) {
+      return { x: 330, yaw: inwardYawRight };
+    }
+
+    return { x: -110, yaw: inwardYawLeft };
+  };
 
   return Array.from({ length: Math.max(3, districtCount) }, (_, districtIndex) => {
     const baseZ = -214 - (districtIndex * districtStride);
     const palette = paletteByDistrict[districtIndex % paletteByDistrict.length];
+    const spinePrimaryPlacement = getSpinePrimaryPlacement(districtIndex);
 
     return [
       {
@@ -112,8 +124,8 @@ export function buildCityScreenSurfacePool(districtCount: number, districtStride
       },
       {
         id: `screen-spine-primary-${districtIndex}`,
-        position: [-110, 108, baseZ - 34],
-        rotation: [0, inwardYawLeft, 0],
+        position: [spinePrimaryPlacement.x, 108, baseZ - 34],
+        rotation: [0, spinePrimaryPlacement.yaw, 0],
         size: [118, 136, 2.8],
         color: '#091320',
         glowColor: palette.spine,
