@@ -168,6 +168,7 @@ export function OpenBoothPavilion({
     const sideRailHeight = wallHeight + 0.24;
     const sideRailOffsetX = wallWidth * 0.5 + 0.14;
     const mediaPanelZ = wallZ + 0.28;
+    const mediaPanelZs = [mediaPanelZ, wallZ - 0.38];
     const screenFirstFrameColor = isElite ? '#102232' : '#14283a';
     const screenFirstBackColor = isElite ? '#09131f' : '#0d1724';
     const screenFirstEdgeColor = isElite ? '#d2edf8' : '#c6e2f2';
@@ -243,16 +244,18 @@ export function OpenBoothPavilion({
             </mesh>
           </group>
         ))}
-        <mesh position={[0, wallY, mediaPanelZ]}>
-          <planeGeometry args={[screenSurfaceWidth, screenSurfaceHeight]} />
-          {screenUrl ? (
-            <Suspense fallback={<meshStandardMaterial color={mediaFallbackColor} emissive={accentColor} emissiveIntensity={mediaEmissiveIntensity} />}>
-              <SponsorTextureSurface doubleSided fallbackColor={mediaFallbackColor} emissiveColor={accentColor} emissiveIntensity={mediaEmissiveIntensity} url={screenUrl} />
-            </Suspense>
-          ) : (
-            <meshStandardMaterial color={mediaFallbackColor} emissive={accentColor} emissiveIntensity={mediaEmissiveIntensity} />
-          )}
-        </mesh>
+        {mediaPanelZs.map((screenFirstMediaPanelZ) => (
+          <mesh key={`screen-first-media-panel-${screenFirstMediaPanelZ}`} position={[0, wallY, screenFirstMediaPanelZ]}>
+            <planeGeometry args={[screenSurfaceWidth, screenSurfaceHeight]} />
+            {screenUrl ? (
+              <Suspense fallback={<meshStandardMaterial color={mediaFallbackColor} emissive={accentColor} emissiveIntensity={mediaEmissiveIntensity} />}>
+                <SponsorTextureSurface doubleSided fallbackColor={mediaFallbackColor} emissiveColor={accentColor} emissiveIntensity={mediaEmissiveIntensity} url={screenUrl} />
+              </Suspense>
+            ) : (
+              <meshStandardMaterial color={mediaFallbackColor} emissive={accentColor} emissiveIntensity={mediaEmissiveIntensity} />
+            )}
+          </mesh>
+        ))}
         {!screenUrl && (
           <Text
             position={[0, wallY - 0.04, mediaPanelZ + 0.16]}
