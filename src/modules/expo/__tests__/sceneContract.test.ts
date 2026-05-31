@@ -20,6 +20,8 @@ const payload = {
           videoUrl: 'https://cdn.example.com/owner-screen.mp4',
         },
       },
+      heroScreenImageUrl: 'https://cdn.example.com/raw-screen.png',
+      heroScreenTitle: 'Raw Screen',
       model_url: 'https://cdn.example.com/booth.glb',
       posterUrl: 'https://sample-videos.com/poster.png',
       heroAssetUrl: 'https://cdn.example.com/hero.png',

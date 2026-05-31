@@ -289,6 +289,9 @@ const buildManagedBoothScreenContentIndex = (managedBooths: Array<Record<string,
         if (Object.keys(screenContent).length === 0) {
             return;
         }
+        if (String(screenContent.status || '').trim().toLowerCase() !== 'published') {
+            return;
+        }
 
         getManagedBoothLookupKeys(booth).forEach((key) => {
             if (!index.has(key)) {
@@ -522,12 +525,12 @@ export const createGetExpoScene = (getSupabaseClient: typeof getSupabase) => asy
                 posterUrl: normalizeReleaseMediaUrl(c.poster_url ?? booth?.poster_url),
                 heroAssetUrl: normalizeReleaseMediaUrl(c.hero_asset_url ?? booth?.hero_asset_url),
                 showroomEnabled: booth?.showroom_enabled === true,
-                heroScreenType: normalizeNullableString(booth?.hero_screen_type ?? managedScreenContent.mode ?? managedScreenContent.mediaType ?? managedScreenContent.media_type),
-                heroScreenImageUrl: normalizeReleaseMediaUrl(booth?.hero_screen_image_url ?? managedScreenContent.imageUrl ?? managedScreenContent.image_url ?? managedScreenContent.assetUrl ?? managedScreenContent.asset_url),
-                heroScreenStatus: normalizeNullableString(booth?.hero_screen_status ?? managedScreenContent.status),
-                heroScreenVideoUrl: normalizeReleaseMediaUrl(booth?.hero_screen_video_url ?? managedScreenContent.videoUrl ?? managedScreenContent.video_url),
-                heroScreenTitle: normalizeNullableString(booth?.hero_screen_title ?? managedScreenContent.title),
-                heroScreenText: normalizeNullableString(booth?.hero_screen_text ?? managedScreenContent.subtitle ?? managedScreenContent.text),
+                heroScreenType: normalizeNullableString(managedScreenContent.mode ?? managedScreenContent.mediaType ?? managedScreenContent.media_type ?? booth?.hero_screen_type),
+                heroScreenImageUrl: normalizeReleaseMediaUrl(managedScreenContent.imageUrl ?? managedScreenContent.image_url ?? managedScreenContent.assetUrl ?? managedScreenContent.asset_url ?? booth?.hero_screen_image_url),
+                heroScreenStatus: normalizeNullableString(managedScreenContent.status ?? booth?.hero_screen_status),
+                heroScreenVideoUrl: normalizeReleaseMediaUrl(managedScreenContent.videoUrl ?? managedScreenContent.video_url ?? booth?.hero_screen_video_url),
+                heroScreenTitle: normalizeNullableString(managedScreenContent.title ?? booth?.hero_screen_title),
+                heroScreenText: normalizeNullableString(managedScreenContent.subtitle ?? managedScreenContent.text ?? booth?.hero_screen_text),
                 featuredAssetType: normalizeNullableString(booth?.featured_asset_type),
                 featuredAssetUrl: normalizeReleaseMediaUrl(booth?.featured_asset_url),
                 featuredAssetTitle: normalizeNullableString(booth?.featured_asset_title),

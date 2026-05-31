@@ -31,6 +31,35 @@ function getRecord(value: unknown) {
     : {};
 }
 
+function getManagedScreenContentRecord(booth: ExpoBoothRecord | null) {
+  const assets = getRecord(booth?.assets_3d);
+  return getRecord(assets.screen_content);
+}
+
+function getManagedBoothMergePriority(booth: ExpoBoothRecord | null) {
+  if (!booth) {
+    return 0;
+  }
+
+  const screenContent = getManagedScreenContentRecord(booth);
+  const hasScreenContent = Object.keys(screenContent).length > 0;
+  if (!hasScreenContent) {
+    return 1;
+  }
+
+  const status = String(screenContent.status || '').trim().toLowerCase();
+  if (status !== 'published') {
+    return 0;
+  }
+
+  const mode = String(screenContent.mode || '').trim().toLowerCase();
+  const hasMedia = Boolean(screenContent.imageUrl || screenContent.image_url || screenContent.assetUrl || screenContent.asset_url || screenContent.videoUrl || screenContent.video_url);
+
+  return 100
+    + (mode === 'image' || mode === 'video-placeholder' ? 10 : 0)
+    + (hasMedia ? 5 : 0);
+}
+
 function getManagedBoothLookupKeys(booth: ExpoBoothRecord) {
   const boothRecord = booth as unknown as Record<string, unknown>;
   const contactInfo = getRecord(booth.contact_info);
@@ -60,13 +89,31 @@ function buildManagedBoothIndex(managedBooths: ExpoBoothRecord[]) {
 
   managedBooths.forEach((booth) => {
     getManagedBoothLookupKeys(booth).forEach((key) => {
-      if (!index.has(key)) {
+      const existing = index.get(key) ?? null;
+      if (!existing || getManagedBoothMergePriority(booth) > getManagedBoothMergePriority(existing)) {
         index.set(key, booth);
       }
     });
   });
 
   return index;
+}
+
+function resolveManagedBoothForSceneBooth(
+  lookupKeys: string[],
+  managedBoothIndex: Map<string, ExpoBoothRecord>,
+) {
+  const candidates = new Map<string, ExpoBoothRecord>();
+
+  lookupKeys.forEach((key) => {
+    const candidate = managedBoothIndex.get(key);
+    if (candidate) {
+      candidates.set(candidate.id, candidate);
+    }
+  });
+
+  return [...candidates.values()]
+    .sort((left, right) => getManagedBoothMergePriority(right) - getManagedBoothMergePriority(left))[0] ?? null;
 }
 
 function getSceneBoothLookupKeys(booth: Record<string, any>, company?: Record<string, any> | null) {
@@ -95,6 +142,9 @@ function mergeManagedBoothScreenContent(
   const screenContent = managedAssets?.screen_content;
 
   if (!screenContent || typeof screenContent !== 'object' || Array.isArray(screenContent)) {
+    return booth;
+  }
+  if (String((screenContent as Record<string, unknown>).status || '').trim().toLowerCase() !== 'published') {
     return booth;
   }
 
@@ -134,9 +184,10 @@ export const sceneBuilder = {
       }));
       const booths = rawBooths.map((booth: any) => {
         const company = (companiesResult.data || []).find((entry: any) => entry.id === booth.company_id || entry.id === booth.companyId);
-        const managedBooth = getSceneBoothLookupKeys(booth, company)
-          .map((key) => managedBoothIndex.get(key) ?? null)
-          .find(Boolean) ?? null;
+        const managedBooth = resolveManagedBoothForSceneBooth(
+          getSceneBoothLookupKeys(booth, company),
+          managedBoothIndex,
+        );
 
         return mergeManagedBoothScreenContent(booth, managedBooth);
       });
