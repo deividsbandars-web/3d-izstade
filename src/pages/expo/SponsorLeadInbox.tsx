@@ -47,6 +47,16 @@ const LEAD_PRIORITY_COLORS = {
   warm: '#fbbf24',
 } as const;
 
+const PACKAGE_MIX_LABELS = [
+  { color: '#facc15', key: 'landmark', label: 'Landmark' },
+  { color: '#38bdf8', key: 'arena', label: 'Demo Arena' },
+  { color: '#fb7185', key: 'premium', label: 'Premium' },
+  { color: '#34d399', key: 'standard', label: 'Standard' },
+  { color: '#94a3b8', key: 'other', label: 'Other' },
+] as const;
+
+type PackageMixKey = typeof PACKAGE_MIX_LABELS[number]['key'];
+
 type InboxAccessState =
   | 'checking-auth'
   | 'ready'
@@ -100,6 +110,78 @@ function getLeadFollowUpState(lead: SponsorLeadInboxLead, now = new Date()) {
   }
 
   return followUpAt.getTime() <= now.getTime() ? 'due' : 'scheduled';
+}
+
+function getPackageMixKey(packageInterest?: string | null): PackageMixKey {
+  const value = String(packageInterest || '').toLowerCase();
+
+  if (value.includes('landmark')) {
+    return 'landmark';
+  }
+
+  if (value.includes('arena') || value.includes('demo battle')) {
+    return 'arena';
+  }
+
+  if (value.includes('premium')) {
+    return 'premium';
+  }
+
+  if (value.includes('standard')) {
+    return 'standard';
+  }
+
+  return 'other';
+}
+
+function getSalesOpsRecommendation({
+  followUpDueCount,
+  hotLeadCount,
+  needsActionCount,
+  packageRequestCount,
+}: {
+  followUpDueCount: number;
+  hotLeadCount: number;
+  needsActionCount: number;
+  packageRequestCount: number;
+}) {
+  if (hotLeadCount > 0) {
+    return {
+      color: '#fb7185',
+      detail: 'Send same-day reply, copy the sponsor reply draft, then schedule the next follow-up.',
+      title: 'Start with hot sponsor package requests',
+    };
+  }
+
+  if (followUpDueCount > 0) {
+    return {
+      color: '#f97316',
+      detail: 'Handle overdue follow-ups before opening new low-intent leads.',
+      title: 'Clear the follow-up queue',
+    };
+  }
+
+  if (packageRequestCount > 0) {
+    return {
+      color: '#34d399',
+      detail: 'Review package interest, budget signal and timeline before marking leads contacted.',
+      title: 'Qualify package requests',
+    };
+  }
+
+  if (needsActionCount > 0) {
+    return {
+      color: '#fbbf24',
+      detail: 'Move pending or contacted leads into the next clear owner action.',
+      title: 'Clean up open lead actions',
+    };
+  }
+
+  return {
+    color: '#93c5fd',
+    detail: 'No urgent sponsor action is waiting in the current inbox.',
+    title: 'Pipeline is clear',
+  };
 }
 
 function buildSummary(leads: SponsorLeadInboxLead[]) {
@@ -339,6 +421,30 @@ export default function SponsorLeadInbox() {
     return sortedLeads.filter((lead) => getLeadFollowUpState(lead, now) === 'scheduled').length;
   }, [sortedLeads]);
 
+  const packageMix = useMemo(() => {
+    const mix = PACKAGE_MIX_LABELS.reduce<Record<PackageMixKey, number>>((current, item) => {
+      current[item.key] = 0;
+      return current;
+    }, {
+      arena: 0,
+      landmark: 0,
+      other: 0,
+      premium: 0,
+      standard: 0,
+    });
+
+    sortedLeads.forEach((lead) => {
+      const packageDetails = parseSponsorPackageLeadMessage(lead.message);
+      if (!packageDetails) {
+        return;
+      }
+
+      mix[getPackageMixKey(packageDetails.packageInterest)] += 1;
+    });
+
+    return mix;
+  }, [sortedLeads]);
+
   const visibleLeads = useMemo(() => {
     if (leadFilter === 'hot-leads') {
       return sortedLeads.filter((lead) => getSponsorLeadQualificationForMessage(lead.message)?.priority === 'hot');
@@ -568,6 +674,18 @@ export default function SponsorLeadInbox() {
       label: 'Package requests',
     },
   ];
+  const salesOpsRecommendation = getSalesOpsRecommendation({
+    followUpDueCount,
+    hotLeadCount,
+    needsActionCount: data?.summary.needsAction ?? 0,
+    packageRequestCount,
+  });
+  const salesOpsWorkflow = [
+    'Reply to hot Landmark, Arena or Premium leads first.',
+    'Use the reply draft, then mark reply sent and set tomorrow follow-up.',
+    'Confirm package interest, budget signal and timeline before exporting CSV.',
+    'Move contacted leads to closed or rejected when the commercial outcome is clear.',
+  ];
   const accessNotice = getAccessNotice(accessState, error);
   const shouldShowInboxContent = loading || accessState === 'ready' || Boolean(data);
 
@@ -678,6 +796,122 @@ export default function SponsorLeadInbox() {
                 <div style={{ color: entry.color, fontSize: '2rem', fontWeight: 950, marginTop: '6px' }}>{loading ? '-' : entry.value}</div>
               </div>
             ))}
+          </section>
+
+          <section className="glass-card" style={{ borderRadius: '24px', marginBottom: '24px', padding: '22px' }}>
+            <div style={{ alignItems: 'flex-start', display: 'flex', flexWrap: 'wrap', gap: '18px', justifyContent: 'space-between', marginBottom: '18px' }}>
+              <div>
+                <div style={{ color: '#34d399', fontSize: '0.72rem', fontWeight: 950, letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+                  Sales ops snapshot
+                </div>
+                <h2 style={{ fontSize: '1.35rem', letterSpacing: '-0.03em', margin: '6px 0 0' }}>
+                  Package pipeline and next action
+                </h2>
+              </div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                <a
+                  href="/expo/sponsor-packages"
+                  style={{
+                    background: 'rgba(15, 23, 42, 0.78)',
+                    border: '1px solid rgba(148, 163, 184, 0.24)',
+                    borderRadius: '999px',
+                    color: '#cbd5e1',
+                    fontSize: '0.72rem',
+                    fontWeight: 900,
+                    letterSpacing: '0.06em',
+                    padding: '9px 12px',
+                    textDecoration: 'none',
+                    textTransform: 'uppercase',
+                  }}
+                >
+                  Sponsor packages
+                </a>
+                <a
+                  href="/expo-3d?salesDemo=1"
+                  style={{
+                    background: 'rgba(14, 116, 144, 0.24)',
+                    border: '1px solid rgba(56, 189, 248, 0.4)',
+                    borderRadius: '999px',
+                    color: '#bae6fd',
+                    fontSize: '0.72rem',
+                    fontWeight: 900,
+                    letterSpacing: '0.06em',
+                    padding: '9px 12px',
+                    textDecoration: 'none',
+                    textTransform: 'uppercase',
+                  }}
+                >
+                  Sales demo
+                </a>
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gap: '14px', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))' }}>
+              <div
+                style={{
+                  background: `linear-gradient(135deg, ${salesOpsRecommendation.color}24, rgba(8, 47, 73, 0.34))`,
+                  border: `1px solid ${salesOpsRecommendation.color}55`,
+                  borderRadius: '18px',
+                  padding: '18px',
+                }}
+              >
+                <div style={{ color: salesOpsRecommendation.color, fontSize: '0.72rem', fontWeight: 950, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+                  Recommended next move
+                </div>
+                <h3 style={{ color: '#f8fafc', fontSize: '1.08rem', margin: '8px 0 8px' }}>
+                  {loading ? 'Loading sponsor pipeline' : salesOpsRecommendation.title}
+                </h3>
+                <p style={{ color: '#cbd5e1', lineHeight: 1.55, margin: 0 }}>
+                  {loading ? 'Fetching lead data and qualification signals.' : salesOpsRecommendation.detail}
+                </p>
+                <div style={{ display: 'grid', gap: '10px', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', marginTop: '16px' }}>
+                  {[
+                    { color: '#fb7185', label: 'Hot leads', value: hotLeadCount },
+                    { color: '#f97316', label: 'Due now', value: followUpDueCount },
+                    { color: '#fbbf24', label: 'Needs action', value: data?.summary.needsAction ?? 0 },
+                  ].map((item) => (
+                    <div key={item.label} style={{ background: 'rgba(2, 6, 23, 0.42)', borderRadius: '14px', padding: '12px' }}>
+                      <div style={{ color: '#94a3b8', fontSize: '0.68rem', fontWeight: 900, letterSpacing: '0.08em', textTransform: 'uppercase' }}>{item.label}</div>
+                      <div style={{ color: item.color, fontSize: '1.5rem', fontWeight: 950, marginTop: '4px' }}>{loading ? '-' : item.value}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div style={{ background: 'rgba(15, 23, 42, 0.68)', border: '1px solid rgba(148, 163, 184, 0.18)', borderRadius: '18px', padding: '18px' }}>
+                <div style={{ color: '#93c5fd', fontSize: '0.72rem', fontWeight: 950, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+                  Package mix
+                </div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '12px' }}>
+                  {PACKAGE_MIX_LABELS.map((item) => (
+                    <span
+                      key={item.key}
+                      style={{
+                        background: `${item.color}1f`,
+                        border: `1px solid ${item.color}55`,
+                        borderRadius: '999px',
+                        color: item.color,
+                        fontSize: '0.72rem',
+                        fontWeight: 950,
+                        letterSpacing: '0.04em',
+                        padding: '8px 10px',
+                        textTransform: 'uppercase',
+                      }}
+                    >
+                      {item.label}: {loading ? '-' : packageMix[item.key]}
+                    </span>
+                  ))}
+                </div>
+                <div style={{ color: '#cbd5e1', fontSize: '0.82rem', fontWeight: 850, marginTop: '16px' }}>
+                  Daily workflow
+                </div>
+                <ol style={{ color: '#94a3b8', lineHeight: 1.5, margin: '8px 0 0', paddingLeft: '20px' }}>
+                  {salesOpsWorkflow.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ol>
+              </div>
+            </div>
           </section>
 
           <section className="glass-card" style={{ borderRadius: '24px', marginBottom: '24px', padding: '22px' }}>
