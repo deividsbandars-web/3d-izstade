@@ -1,5 +1,8 @@
 WarpalaUE5
 diagnostics
+handoff
+review-screenshots
+review_artifacts
 .tmp-*
 .tmp_release_pr_diff.txt
 dist
@@ -19,6 +22,9 @@ node_modules
 .vscode
 .idea
 .codex-tmp
+.codex-chrome-profile
+.codex-chrome-profile*
+tmp-chrome-*
 tmp-chrome-cdp-profile
 tmp-chrome-cdp-profile*
 tmp-cdp-profile
