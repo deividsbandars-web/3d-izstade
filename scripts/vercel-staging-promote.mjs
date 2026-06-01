@@ -31,8 +31,13 @@ const result = spawnSync(
   ['vercel', 'alias', 'set', `https://${hostname}`, stagingAlias, '--scope', scope],
   {
     stdio: 'inherit',
-    shell: false,
+    shell: process.platform === 'win32',
   },
 );
+
+if (result.error) {
+  console.error(result.error.message);
+  process.exit(1);
+}
 
 process.exit(result.status ?? 1);

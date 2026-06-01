@@ -23,6 +23,9 @@ node_modules
 .vscode
 .idea
 .codex-tmp
+.codex-chrome-profile
+.codex-chrome-profile*
+tmp-chrome-*
 tmp-chrome-cdp-profile
 tmp-chrome-cdp-profile*
 tmp-cdp-profile
