@@ -94,10 +94,10 @@ export function OpenBoothPavilion({
   const forumLoungeRadius = isElite ? 1.06 : 0.94;
   const forumBackWallWidth = width * 0.34;
   const forumBackWallHeight = isElite ? 5.2 : 4.8;
-  const mediaFrameColor = isHero ? '#244d6f' : isElite ? '#214763' : isPremium ? '#20405b' : '#263f55';
-  const mediaFallbackColor = isHero ? '#1f6e9d' : isElite ? '#1b638f' : isPremium ? '#1a567d' : '#1f4d6d';
-  const mediaTrimColor = isHero ? '#d7ecff' : isElite ? '#c8e7f8' : isPremium ? '#b9dff4' : '#a9d2e9';
-  const mediaEmissiveIntensity = isHero ? 0.2 : isElite ? 0.16 : isPremium ? 0.13 : 0.1;
+  const mediaFrameColor = isHero ? '#113d61' : isElite ? '#123652' : isPremium ? '#153149' : '#18344b';
+  const mediaFallbackColor = isHero ? '#0ea5e9' : isElite ? '#0891c9' : isPremium ? '#0878ad' : '#0f5f89';
+  const mediaTrimColor = isHero ? '#a8f3ff' : isElite ? '#99ecff' : isPremium ? '#8be2fb' : '#7bd4ee';
+  const mediaEmissiveIntensity = isHero ? 0.23 : isElite ? 0.18 : isPremium ? 0.15 : 0.12;
   const mediaGlowOpacity = isHero ? 0.28 : isElite ? 0.24 : isPremium ? 0.2 : 0.18;
   const mediaFaceZ = 0.32;
   const mediaGlowZ = 0.36;
@@ -113,9 +113,9 @@ export function OpenBoothPavilion({
     const sideRailHeight = wallHeight + 0.24;
     const sideRailOffsetX = wallWidth * 0.5 + 0.14;
     const mediaPanelZ = wallZ + 0.28;
-    const screenFirstFrameColor = isElite ? '#102232' : '#14283a';
-    const screenFirstBackColor = isElite ? '#09131f' : '#0d1724';
-    const screenFirstEdgeColor = isElite ? '#d2edf8' : '#c6e2f2';
+    const screenFirstFrameColor = isElite ? '#0d2c43' : '#12324a';
+    const screenFirstBackColor = isElite ? '#071827' : '#0a1d2c';
+    const screenFirstEdgeColor = isElite ? '#9af3ff' : '#8ce8ff';
     const signalTowerWidth = isHero ? 0.72 : isElite ? 0.62 : isPremium ? 0.54 : 0.42;
     const signalTowerDepth = isHero ? 0.86 : isElite ? 0.74 : isPremium ? 0.66 : 0.54;
     const signalTowerZ = wallZ + 0.48;
@@ -128,7 +128,7 @@ export function OpenBoothPavilion({
       <group name="booth-open-pavilion booth-media-wall">
         <mesh position={[0, 0.09, wallZ + 0.62]} receiveShadow>
           <boxGeometry args={[baseWidth, 0.16, baseDepth]} />
-          <meshStandardMaterial color="#dce6ee" metalness={0.06} roughness={0.72} />
+          <meshStandardMaterial color="#e7f6ff" metalness={0.06} roughness={0.68} />
         </mesh>
         <mesh position={[0, 0.22, wallZ + 0.62]} receiveShadow>
           <boxGeometry args={[baseWidth * 0.86, 0.06, baseDepth * 0.34]} />
@@ -160,7 +160,7 @@ export function OpenBoothPavilion({
           {[-1, 1].map((side) => (
             <mesh key={`media-wall-rear-brace-${side}`} position={[side * (wallWidth * 0.43), -(wallHeight * 0.5) - 0.86, -0.28]} castShadow receiveShadow>
               <boxGeometry args={[0.22, 1.72, 0.24]} />
-              <meshStandardMaterial color="#6e8190" metalness={0.14} roughness={0.58} />
+              <meshStandardMaterial color="#527890" metalness={0.14} roughness={0.54} />
             </mesh>
           ))}
         </group>
@@ -168,11 +168,11 @@ export function OpenBoothPavilion({
           <group key={`media-wall-signal-tower-${side}`} name={`booth-signal-tower-${side}`} position={[side * signalTowerOffsetX, 0, signalTowerZ]}>
             <mesh position={[0, 0.22, 0]} castShadow receiveShadow>
               <boxGeometry args={[signalTowerBaseWidth, 0.42, signalTowerBaseDepth]} />
-              <meshStandardMaterial color="#d8e4ec" emissive={accentColor} emissiveIntensity={0.025} metalness={0.08} roughness={0.64} />
+              <meshStandardMaterial color="#e4f5ff" emissive={accentColor} emissiveIntensity={0.035} metalness={0.08} roughness={0.58} />
             </mesh>
             <mesh position={[0, (signalTowerHeight * 0.5) + 0.42, 0]} castShadow receiveShadow>
               <boxGeometry args={[signalTowerWidth, signalTowerHeight, signalTowerDepth]} />
-              <meshStandardMaterial color="#132233" emissive={accentColor} emissiveIntensity={0.045} metalness={0.14} roughness={0.46} />
+              <meshStandardMaterial color="#0f2c43" emissive={accentColor} emissiveIntensity={0.06} metalness={0.14} roughness={0.42} />
             </mesh>
             <mesh position={[0, signalTowerAccentY, (signalTowerDepth * 0.5) + 0.035]}>
               <boxGeometry args={[signalTowerWidth * 0.46, signalTowerAccentHeight, 0.07]} />
@@ -180,7 +180,7 @@ export function OpenBoothPavilion({
             </mesh>
             <mesh position={[0, signalTowerHeight + 0.8, 0]} castShadow>
               <cylinderGeometry args={[signalTowerWidth * 0.82, signalTowerWidth * 0.58, 0.58, 10]} />
-              <meshStandardMaterial color="#e6f3fa" emissive={accentColor} emissiveIntensity={0.18} metalness={0.12} roughness={0.3} />
+              <meshStandardMaterial color="#e8fbff" emissive={accentColor} emissiveIntensity={0.22} metalness={0.12} roughness={0.26} />
             </mesh>
             <mesh position={[0, signalTowerHeight + 1.28, 0]}>
               <sphereGeometry args={[signalTowerWidth * 0.54, 12, 12]} />
@@ -265,13 +265,13 @@ export function OpenBoothPavilion({
       )}
       <mesh position={[0, 0.12, 0.4]} receiveShadow>
         <boxGeometry args={[width, 0.28, depth]} />
-        <meshStandardMaterial color="#e5edf4" metalness={0.04} roughness={0.74} />
+        <meshStandardMaterial color="#e9f6ff" metalness={0.04} roughness={0.68} />
       </mesh>
       {!isPremium && !isElite && !isHero && (
         <>
           <mesh position={[0, 0.42, (depth * 0.5) - 0.28]} castShadow receiveShadow>
             <boxGeometry args={[standardFrontTrimWidth, 0.12, 0.16]} />
-            <meshStandardMaterial color="#edf4fa" metalness={0.12} roughness={0.34} />
+            <meshStandardMaterial color="#f0fbff" metalness={0.12} roughness={0.3} />
           </mesh>
           {[-1, 1].map((side) => (
             <mesh key={`standard-side-post-${side}`} position={[side * ((width * 0.5) - 0.58), postHeight * 0.44, 1.18]} castShadow receiveShadow>
@@ -301,13 +301,13 @@ export function OpenBoothPavilion({
       {pavilionPostPositions.map((position, index) => (
         <mesh key={`pavilion-post-${index}`} position={position as [number, number, number]} castShadow receiveShadow>
           <boxGeometry args={pavilionPostSize} />
-          <meshStandardMaterial color="#6c8190" metalness={0.18} roughness={0.58} />
+          <meshStandardMaterial color="#557a91" metalness={0.18} roughness={0.52} />
         </mesh>
       ))}
       {showFullRoof && (
         <mesh position={[0, postHeight + 0.22, 0]} castShadow receiveShadow>
           <boxGeometry args={[width + (isHero ? 4.4 : isElite ? 3.8 : isPremium ? 2.8 : 1.8), isHero ? 0.52 : isElite ? 0.48 : isPremium ? 0.4 : 0.34, depth * (isHero ? 0.92 : isElite ? 0.88 : isPremium ? 0.84 : 0.78)]} />
-          <meshStandardMaterial color="#c9d6df" metalness={0.1} roughness={0.46} />
+          <meshStandardMaterial color="#c6e2f0" metalness={0.1} roughness={0.42} />
         </mesh>
       )}
       {showTierSideBanners && (
@@ -316,7 +316,7 @@ export function OpenBoothPavilion({
             <group key={`tier-side-banner-${side}`} position={[side * ((width * 0.5) + sideBannerWidth * 0.55), sideBannerHeight * 0.5, 1.62]}>
               <mesh castShadow receiveShadow>
                 <boxGeometry args={[sideBannerWidth, sideBannerHeight, sideBannerDepth]} />
-                <meshStandardMaterial color={isHero ? '#dce7ef' : isElite ? '#d7e3eb' : '#d2dde7'} metalness={0.16} roughness={0.3} />
+                <meshStandardMaterial color={isHero ? '#e6f8ff' : isElite ? '#ddf2fb' : '#d4eaf5'} metalness={0.16} roughness={0.28} />
               </mesh>
               <mesh position={[0, 0, sideBannerDepth * 0.26]}>
                 <boxGeometry args={[sideBannerWidth * 0.26, sideBannerHeight - 1, sideBannerDepth * 0.2]} />
@@ -335,7 +335,7 @@ export function OpenBoothPavilion({
             <group key={`hero-spine-blade-${side}`} position={[side * heroBladeOffsetX, heroBladeHeight * 0.5, rearScreenZ + 0.28]}>
               <mesh castShadow receiveShadow>
                 <boxGeometry args={[1.14, heroBladeHeight, depth * 0.28]} />
-                <meshStandardMaterial color="#dce7ef" metalness={0.18} roughness={0.28} />
+                <meshStandardMaterial color="#e6f8ff" metalness={0.18} roughness={0.26} />
               </mesh>
               <mesh position={[0, 0.1, 0.12]}>
                 <boxGeometry args={[0.2, heroBladeHeight - 0.8, depth * 0.12]} />
@@ -355,7 +355,7 @@ export function OpenBoothPavilion({
         <group position={[0, frontageCanopyY, frontageCanopyZ]}>
           <mesh castShadow receiveShadow>
             <boxGeometry args={[frontageCanopyWidth, 0.22, frontageCanopyDepth]} />
-            <meshStandardMaterial color="#eef5fb" metalness={0.12} roughness={0.28} />
+            <meshStandardMaterial color="#f0fbff" metalness={0.12} roughness={0.26} />
           </mesh>
           <mesh position={[0, -0.12, frontageCanopyDepth * 0.18]} castShadow receiveShadow>
             <boxGeometry args={[frontageCanopyWidth * 0.88, 0.08, frontageCanopyDepth * 0.18]} />
@@ -367,7 +367,7 @@ export function OpenBoothPavilion({
         <group position={[0, 0, (depth * 0.5) + 0.18]}>
           <mesh position={[0.12, 3.16, 0.72]} castShadow receiveShadow>
             <boxGeometry args={[forumSignWidth, 0.34, 0.32]} />
-            <meshStandardMaterial color="#f6fafc" metalness={0.08} roughness={0.24} />
+            <meshStandardMaterial color="#f4fcff" metalness={0.08} roughness={0.22} />
           </mesh>
           <mesh position={[0.12, 3, 0.98]} castShadow receiveShadow>
             <boxGeometry args={[forumGuideWidth, 0.12, 0.16]} />
@@ -376,7 +376,7 @@ export function OpenBoothPavilion({
           <group position={[width * 0.28, forumBeaconHeight * 0.5 - 0.2, 0.36]}>
             <mesh castShadow receiveShadow>
               <boxGeometry args={[0.96, forumBeaconHeight, 0.66]} />
-              <meshStandardMaterial color="#e2ebf1" metalness={0.14} roughness={0.22} />
+              <meshStandardMaterial color="#e1f5ff" metalness={0.14} roughness={0.2} />
             </mesh>
             <mesh position={[0, 0.18, 0.2]}>
               <boxGeometry args={[0.26, forumBeaconHeight - 0.72, 0.22]} />
@@ -384,13 +384,13 @@ export function OpenBoothPavilion({
             </mesh>
             <mesh position={[0, (forumBeaconHeight * 0.5) - 0.66, 0.24]} castShadow receiveShadow>
               <boxGeometry args={[0.62, 0.28, 0.18]} />
-              <meshStandardMaterial color="#f6fafc" metalness={0.1} roughness={0.22} />
+              <meshStandardMaterial color="#f4fcff" metalness={0.1} roughness={0.2} />
             </mesh>
           </group>
           <group position={[-width * 0.1, 1.34, 0.84]} rotation={[0, -0.08, 0]}>
             <mesh castShadow receiveShadow>
               <boxGeometry args={[forumDeskWidth, 0.42, forumDeskDepth]} />
-              <meshStandardMaterial color="#f2f8fc" metalness={0.1} roughness={0.24} />
+              <meshStandardMaterial color="#f1fbff" metalness={0.1} roughness={0.22} />
             </mesh>
             <mesh position={[0, -0.5, 0.02]} castShadow receiveShadow>
               <boxGeometry args={[forumDeskWidth * 0.92, 0.86, forumDeskDepth * 0.54]} />
@@ -407,7 +407,7 @@ export function OpenBoothPavilion({
           </group>
           <mesh position={[-width * 0.32, 2.38, 0.16]} castShadow receiveShadow rotation={[0, 0.06, 0]}>
             <boxGeometry args={[forumBackWallWidth, forumBackWallHeight, 0.36]} />
-            <meshStandardMaterial color="#dbe6ee" metalness={0.12} roughness={0.24} />
+            <meshStandardMaterial color="#dff3ff" metalness={0.12} roughness={0.22} />
           </mesh>
           <mesh position={[-width * 0.32, 2.42, 0.34]} castShadow receiveShadow rotation={[0, 0.06, 0]}>
             <boxGeometry args={[forumBackWallWidth * 0.18, forumBackWallHeight - 0.72, 0.12]} />
@@ -415,7 +415,7 @@ export function OpenBoothPavilion({
           </mesh>
           <mesh position={[-width * 0.1, 0.24, 1.08]} receiveShadow>
             <boxGeometry args={[forumDeskWidth + 1.96, 0.08, 2.42]} />
-            <meshStandardMaterial color="#f7fbfd" metalness={0.06} roughness={0.42} />
+            <meshStandardMaterial color="#f4fcff" metalness={0.06} roughness={0.38} />
           </mesh>
           <mesh position={[-width * 0.02, 0.32, 1.22]} receiveShadow>
             <cylinderGeometry args={[forumLoungeRadius, forumLoungeRadius, 0.12, 24]} />
@@ -433,7 +433,7 @@ export function OpenBoothPavilion({
             <group key={`frontage-fin-${side}`} position={[side * frontageFinOffsetX, frontageFinHeight * 0.5, frontageFinZ]}>
               <mesh castShadow receiveShadow>
                 <boxGeometry args={[0.46, frontageFinHeight, isHero ? 1.12 : isElite ? 0.98 : 0.84]} />
-                <meshStandardMaterial color="#dce7ef" metalness={0.16} roughness={0.28} />
+                <meshStandardMaterial color="#e5f7ff" metalness={0.16} roughness={0.26} />
               </mesh>
               <mesh position={[0, 0.02, 0.14]}>
                 <boxGeometry args={[0.12, frontageFinHeight - 0.72, isHero ? 0.32 : isElite ? 0.28 : 0.24]} />
@@ -446,7 +446,7 @@ export function OpenBoothPavilion({
       {(isHero || (isElite && !isScreenFirstBooth)) && (
         <mesh position={[0, postHeight + (isHero ? 1.08 : 0.82), (depth * 0.5) - 0.08]} castShadow>
           <boxGeometry args={[width * (isHero ? 0.76 : 0.68), isHero ? 0.16 : 0.12, 0.14]} />
-          <meshStandardMaterial color="#eef5fb" emissive={accentColor} emissiveIntensity={isHero ? 0.18 : 0.12} roughness={0.24} metalness={0.14} />
+          <meshStandardMaterial color="#f0fbff" emissive={accentColor} emissiveIntensity={isHero ? 0.2 : 0.14} roughness={0.22} metalness={0.14} />
         </mesh>
       )}
       {showPremiumOrEliteBlades && (
@@ -537,7 +537,7 @@ export function OpenBoothPavilion({
         <group position={[0, 0.16, (depth * 0.5) + 0.24]}>
           <mesh receiveShadow>
             <boxGeometry args={[frontThresholdWidth, 0.08, frontThresholdDepth]} />
-            <meshStandardMaterial color="#f5f9fc" metalness={0.08} roughness={0.46} />
+            <meshStandardMaterial color="#f2fbff" metalness={0.08} roughness={0.42} />
           </mesh>
           <mesh position={[0, 0.08, 0]}>
             <boxGeometry args={[frontThresholdWidth * 0.72, 0.04, frontThresholdDepth * 0.42]} />

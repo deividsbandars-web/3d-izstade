@@ -110,10 +110,10 @@ export const FLOOR_MATERIAL_INTENTS: Record<FloorMaterialIntent, FloorMaterialIn
   },
   globalBase: {
     color: 'visual-profile-ground-base',
-    emissive: '#d8e4ec',
-    emissiveIntensity: 0.016,
-    metalness: 0.01,
-    roughness: 0.96,
+    emissive: '#5ee7ff',
+    emissiveIntensity: 0.022,
+    metalness: 0.018,
+    roughness: 0.9,
   },
   seamTransition: {
     color: '#89949d',
