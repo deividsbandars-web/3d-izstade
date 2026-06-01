@@ -252,16 +252,29 @@ export function OpenBoothPavilion({
           url={screenUrl}
         />
         {!screenUrl && (
-          <Text
-            position={[0, wallY - 0.04, mediaPanelZ + 0.16]}
-            fontSize={isElite ? 0.82 : 0.76}
-            color={accentColor}
-            anchorX="center"
-            anchorY="middle"
-            maxWidth={screenSurfaceWidth * 0.46}
-          >
-            {fallbackText}
-          </Text>
+          <>
+            <Text
+              position={[0, wallY - 0.04, mediaPanelZ + 0.16]}
+              fontSize={isElite ? 0.82 : 0.76}
+              color={accentColor}
+              anchorX="center"
+              anchorY="middle"
+              maxWidth={screenSurfaceWidth * 0.46}
+            >
+              {fallbackText}
+            </Text>
+            <Text
+              position={[0, wallY - 0.04, wallZ - 0.54]}
+              rotation={[0, Math.PI, 0]}
+              fontSize={isElite ? 0.82 : 0.76}
+              color={accentColor}
+              anchorX="center"
+              anchorY="middle"
+              maxWidth={screenSurfaceWidth * 0.46}
+            >
+              {fallbackText}
+            </Text>
+          </>
         )}
       </group>
     );
@@ -536,16 +549,29 @@ export function OpenBoothPavilion({
           </mesh>
         )}
         {!screenUrl && (
-          <Text
-            position={[0, -0.04, 0.48]}
-            fontSize={isHero ? 0.84 : isElite ? 0.76 : isPremium ? 0.7 : 0.62}
-            color={accentColor}
-            anchorX="center"
-            anchorY="middle"
-            maxWidth={isHero ? 4.2 : isElite ? 3.8 : isPremium ? 3.2 : 2.6}
-          >
-            {fallbackText}
-          </Text>
+          <>
+            <Text
+              position={[0, -0.04, 0.48]}
+              fontSize={isHero ? 0.84 : isElite ? 0.76 : isPremium ? 0.7 : 0.62}
+              color={accentColor}
+              anchorX="center"
+              anchorY="middle"
+              maxWidth={isHero ? 4.2 : isElite ? 3.8 : isPremium ? 3.2 : 2.6}
+            >
+              {fallbackText}
+            </Text>
+            <Text
+              position={[0, -0.04, -0.48]}
+              rotation={[0, Math.PI, 0]}
+              fontSize={isHero ? 0.84 : isElite ? 0.76 : isPremium ? 0.7 : 0.62}
+              color={accentColor}
+              anchorX="center"
+              anchorY="middle"
+              maxWidth={isHero ? 4.2 : isElite ? 3.8 : isPremium ? 3.2 : 2.6}
+            >
+              {fallbackText}
+            </Text>
+          </>
         )}
       </group>
       {showFrontThreshold && (
