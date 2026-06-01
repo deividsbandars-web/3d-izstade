@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import * as THREE from 'three';
 import { resolveExpoTextureCandidateUrls } from '../../lib/expoTexturePipeline';
 
@@ -233,6 +233,7 @@ function loadCachedExpoTexture(url: string) {
 export function SponsorTextureSurface({
   depthWrite,
   doubleSided = false,
+  flipX = false,
   fallbackColor,
   emissiveColor,
   emissiveIntensity = 0,
@@ -243,6 +244,7 @@ export function SponsorTextureSurface({
   doubleSided?: boolean;
   emissiveColor?: string;
   emissiveIntensity?: number;
+  flipX?: boolean;
   fallbackColor: string;
   opacity?: number;
   url: string;
@@ -250,6 +252,17 @@ export function SponsorTextureSurface({
   const [mappedTexture, setMappedTexture] = useState<THREE.Texture | null>(() => resolveGeneratedBillboardTextureSync(url));
   const isGeneratedBillboard = url.startsWith(GENERATED_BILLBOARD_PREFIX);
   const side = doubleSided ? THREE.DoubleSide : THREE.FrontSide;
+  const materialTexture = useMemo(() => {
+    if (!mappedTexture || !flipX) {
+      return mappedTexture;
+    }
+
+    const flippedTexture = mappedTexture.clone();
+    flippedTexture.repeat.x = -1;
+    flippedTexture.offset.x = 1;
+    flippedTexture.needsUpdate = true;
+    return flippedTexture;
+  }, [flipX, mappedTexture]);
 
   useEffect(() => {
     if (isGeneratedBillboard) {
@@ -277,11 +290,19 @@ export function SponsorTextureSurface({
     };
   }, [isGeneratedBillboard, url]);
 
-  if (mappedTexture) {
+  useEffect(() => {
+    return () => {
+      if (materialTexture && materialTexture !== mappedTexture) {
+        materialTexture.dispose();
+      }
+    };
+  }, [materialTexture, mappedTexture]);
+
+  if (materialTexture) {
     return (
       <meshBasicMaterial
         depthWrite={depthWrite ?? opacity >= 0.999}
-        map={mappedTexture}
+        map={materialTexture}
         polygonOffset
         polygonOffsetFactor={-5}
         polygonOffsetUnits={-5}

@@ -244,12 +244,19 @@ export function OpenBoothPavilion({
             </mesh>
           </group>
         ))}
-        {mediaPanelZs.map((screenFirstMediaPanelZ) => (
-          <mesh key={`screen-first-media-panel-${screenFirstMediaPanelZ}`} position={[0, wallY, screenFirstMediaPanelZ]}>
+        {mediaPanelZs.map((screenFirstMediaPanelZ, mediaPanelIndex) => (
+          <mesh key={`screen-first-media-panel-${mediaPanelIndex}`} position={[0, wallY, screenFirstMediaPanelZ]}>
             <planeGeometry args={[screenSurfaceWidth, screenSurfaceHeight]} />
             {screenUrl ? (
               <Suspense fallback={<meshStandardMaterial color={mediaFallbackColor} emissive={accentColor} emissiveIntensity={mediaEmissiveIntensity} />}>
-                <SponsorTextureSurface doubleSided fallbackColor={mediaFallbackColor} emissiveColor={accentColor} emissiveIntensity={mediaEmissiveIntensity} url={screenUrl} />
+                <SponsorTextureSurface
+                  doubleSided
+                  fallbackColor={mediaFallbackColor}
+                  flipX={mediaPanelIndex > 0}
+                  emissiveColor={accentColor}
+                  emissiveIntensity={mediaEmissiveIntensity}
+                  url={screenUrl}
+                />
               </Suspense>
             ) : (
               <meshStandardMaterial color={mediaFallbackColor} emissive={accentColor} emissiveIntensity={mediaEmissiveIntensity} />
