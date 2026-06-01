@@ -26,4 +26,4 @@ console.log('This does NOT move staging.30sek24.com.');
 console.log('After review, promote explicitly with: npm run promote:staging -- <deployment-url>');
 
 run(['vercel', 'link', '--yes', '--project', project, '--scope', scope]);
-run(['vercel', '--yes', '--scope', scope]);
+run(['vercel', '--prod', '--skip-domain', '--yes', '--scope', scope]);

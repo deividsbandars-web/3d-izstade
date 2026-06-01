@@ -2,11 +2,11 @@
 
 `staging.30sek24.com` should stay on the last verified deployment until a new build is reviewed.
 
-Do not use `vercel --prod` for normal staging review builds. A production deployment on the `app-staging` project automatically moves the `staging.30sek24.com` alias.
+Do not use plain `vercel --prod` for normal staging review builds. A production deployment on the `app-staging` project automatically moves the `staging.30sek24.com` alias unless `--skip-domain` is used.
 
 ## Safe Flow
 
-1. Create a preview deployment that does not move the staging alias:
+1. Create a staging candidate deployment that does not move the staging alias:
 
 ```bash
 npm run deploy:staging:preview
