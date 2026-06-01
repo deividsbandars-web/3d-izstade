@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import { Text } from '@react-three/drei';
 import { getBoothArchitectureMetrics } from '../../components/BoothArchitectureKit';
 import type { DistrictThemeId } from '../../../../shared/expo/lib/districtTheme';
@@ -9,7 +10,7 @@ import {
   PremiumPortalShell,
   TierScreenFrame,
 } from './BoothTierShells';
-import { DoubleSidedScreenSurface } from './BoothTextureMaterials';
+import { SponsorTextureSurface } from './BoothTextureMaterials';
 
 export type OpenBoothPavilionTier = 'standard' | 'premium' | 'elite' | 'hero';
 
@@ -88,6 +89,7 @@ export function OpenBoothPavilion({
     isPremium,
     isScreenFirstBooth,
     lowerMediaShelfWidth,
+    mediaSurfaceCount,
     postHeight,
     screenFrameHeight,
     screenFrameWidth,
@@ -166,6 +168,7 @@ export function OpenBoothPavilion({
     const sideRailHeight = wallHeight + 0.24;
     const sideRailOffsetX = wallWidth * 0.5 + 0.14;
     const mediaPanelZ = wallZ + 0.28;
+    const mediaPanelZs = [mediaPanelZ, wallZ - 0.38];
     const screenFirstFrameColor = isElite ? '#102232' : '#14283a';
     const screenFirstBackColor = isElite ? '#09131f' : '#0d1724';
     const screenFirstEdgeColor = isElite ? '#d2edf8' : '#c6e2f2';
@@ -241,45 +244,42 @@ export function OpenBoothPavilion({
             </mesh>
           </group>
         ))}
-        <DoubleSidedScreenSurface
-          backOffset={0.38}
-          emissiveColor={accentColor}
-          emissiveIntensity={mediaEmissiveIntensity}
-          fallbackColor={mediaFallbackColor}
-          frontOffset={0.28}
-          position={[0, wallY, wallZ]}
-          size={[screenSurfaceWidth, screenSurfaceHeight]}
-          url={screenUrl}
-        />
+        {mediaPanelZs.map((screenFirstMediaPanelZ, mediaPanelIndex) => (
+          <mesh key={`screen-first-media-panel-${mediaPanelIndex}`} position={[0, wallY, screenFirstMediaPanelZ]}>
+            <planeGeometry args={[screenSurfaceWidth, screenSurfaceHeight]} />
+            {screenUrl ? (
+              <Suspense fallback={<meshStandardMaterial color={mediaFallbackColor} emissive={accentColor} emissiveIntensity={mediaEmissiveIntensity} />}>
+                <SponsorTextureSurface
+                  doubleSided
+                  fallbackColor={mediaFallbackColor}
+                  flipX={mediaPanelIndex > 0}
+                  emissiveColor={accentColor}
+                  emissiveIntensity={mediaEmissiveIntensity}
+                  url={screenUrl}
+                />
+              </Suspense>
+            ) : (
+              <meshStandardMaterial color={mediaFallbackColor} emissive={accentColor} emissiveIntensity={mediaEmissiveIntensity} />
+            )}
+          </mesh>
+        ))}
         {!screenUrl && (
-          <>
-            <Text
-              position={[0, wallY - 0.04, mediaPanelZ + 0.16]}
-              fontSize={isElite ? 0.82 : 0.76}
-              color={accentColor}
-              anchorX="center"
-              anchorY="middle"
-              maxWidth={screenSurfaceWidth * 0.46}
-            >
-              {fallbackText}
-            </Text>
-            <Text
-              position={[0, wallY - 0.04, wallZ - 0.54]}
-              rotation={[0, Math.PI, 0]}
-              fontSize={isElite ? 0.82 : 0.76}
-              color={accentColor}
-              anchorX="center"
-              anchorY="middle"
-              maxWidth={screenSurfaceWidth * 0.46}
-            >
-              {fallbackText}
-            </Text>
-          </>
+          <Text
+            position={[0, wallY - 0.04, mediaPanelZ + 0.16]}
+            fontSize={isElite ? 0.82 : 0.76}
+            color={accentColor}
+            anchorX="center"
+            anchorY="middle"
+            maxWidth={screenSurfaceWidth * 0.46}
+          >
+            {fallbackText}
+          </Text>
         )}
       </group>
     );
   }
 
+  const mediaSurfaceZs = mediaSurfaceCount === 2 ? [mediaFaceZ, -mediaFaceZ] : [mediaFaceZ];
   const pavilionPostPositions = isScreenFirstBooth
     ? [
         [-(screenFrameWidth * 0.54), postHeight * 0.5, rearScreenZ + 0.08],
@@ -513,15 +513,18 @@ export function OpenBoothPavilion({
           <boxGeometry args={[screenFrameWidth, screenFrameHeight, 0.24]} />
           <meshStandardMaterial color={mediaFrameColor} emissive={accentColor} emissiveIntensity={0.045} metalness={0.1} roughness={0.5} />
         </mesh>
-        <DoubleSidedScreenSurface
-          backOffset={mediaFaceZ}
-          emissiveColor={accentColor}
-          emissiveIntensity={mediaEmissiveIntensity}
-          fallbackColor={mediaFallbackColor}
-          frontOffset={mediaFaceZ}
-          size={[screenSurfaceWidth, screenSurfaceHeight]}
-          url={screenUrl}
-        />
+        {mediaSurfaceZs.map((mediaSurfaceZ) => (
+          <mesh key={`booth-media-surface-${mediaSurfaceZ}`} position={[0, 0, mediaSurfaceZ]}>
+            <planeGeometry args={[screenSurfaceWidth, screenSurfaceHeight]} />
+            {screenUrl ? (
+              <Suspense fallback={<meshStandardMaterial color={mediaFallbackColor} emissive={accentColor} emissiveIntensity={mediaEmissiveIntensity} />}>
+                <SponsorTextureSurface doubleSided fallbackColor={mediaFallbackColor} emissiveColor={accentColor} emissiveIntensity={mediaEmissiveIntensity} url={screenUrl} />
+              </Suspense>
+            ) : (
+              <meshStandardMaterial color={mediaFallbackColor} emissive={accentColor} emissiveIntensity={mediaEmissiveIntensity} />
+            )}
+          </mesh>
+        ))}
         {showScreenTrimOverlays && (
           <>
             <mesh position={[0, 0, mediaGlowZ]}>
@@ -549,29 +552,16 @@ export function OpenBoothPavilion({
           </mesh>
         )}
         {!screenUrl && (
-          <>
-            <Text
-              position={[0, -0.04, 0.48]}
-              fontSize={isHero ? 0.84 : isElite ? 0.76 : isPremium ? 0.7 : 0.62}
-              color={accentColor}
-              anchorX="center"
-              anchorY="middle"
-              maxWidth={isHero ? 4.2 : isElite ? 3.8 : isPremium ? 3.2 : 2.6}
-            >
-              {fallbackText}
-            </Text>
-            <Text
-              position={[0, -0.04, -0.48]}
-              rotation={[0, Math.PI, 0]}
-              fontSize={isHero ? 0.84 : isElite ? 0.76 : isPremium ? 0.7 : 0.62}
-              color={accentColor}
-              anchorX="center"
-              anchorY="middle"
-              maxWidth={isHero ? 4.2 : isElite ? 3.8 : isPremium ? 3.2 : 2.6}
-            >
-              {fallbackText}
-            </Text>
-          </>
+          <Text
+            position={[0, -0.04, 0.48]}
+            fontSize={isHero ? 0.84 : isElite ? 0.76 : isPremium ? 0.7 : 0.62}
+            color={accentColor}
+            anchorX="center"
+            anchorY="middle"
+            maxWidth={isHero ? 4.2 : isElite ? 3.8 : isPremium ? 3.2 : 2.6}
+          >
+            {fallbackText}
+          </Text>
         )}
       </group>
       {showFrontThreshold && (

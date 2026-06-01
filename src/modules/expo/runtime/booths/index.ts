@@ -6,7 +6,7 @@ export {
   PremiumPortalShell,
 } from './BoothTierShells';
 export { OpenBoothPavilion } from './OpenBoothPavilion';
-export { DoubleSidedScreenSurface, ScreenTextureMaterial, SponsorTextureSurface } from './BoothTextureMaterials';
+export { ScreenTextureMaterial, SponsorTextureSurface } from './BoothTextureMaterials';
 export { DistrictBooth } from './DistrictBooth';
 export { BoothColliderGroup } from './BoothColliderGroup';
 export { BoothDebugShellFallback } from './BoothDebugShellFallback';
