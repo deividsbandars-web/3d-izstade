@@ -41,7 +41,13 @@ assert.equal(shouldUseReviewExpoSceneSource({
   hostname: 'staging.30sek24.com',
   isDev: false,
   search: '?expoData=review',
-}), false);
+}), true);
+
+assert.equal(shouldUseReviewExpoSceneSource({
+  hostname: 'staging.30sek24.com',
+  isDev: false,
+  search: '',
+}), true);
 
 assert.equal(shouldUseReviewExpoSceneSource({
   hostname: 'staging.30sek24.com',
@@ -83,4 +89,4 @@ assert.equal(shouldUseReviewExpoSceneSource({
   hostname: 'staging.30sek24.com',
   isDev: false,
   search: '?salesDemoStep=arena',
-}), false);
+}), true);

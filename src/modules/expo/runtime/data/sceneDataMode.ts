@@ -1,6 +1,3 @@
-import { isSalesDemoEnabled } from '../salesDemo/salesDemoFlags';
-import { isBoothProductPreviewEnabled } from '../boothProduct/boothProductPreviewFlags';
-
 export type ExpoDataMode = 'default' | 'live' | 'review' | 'seeded';
 
 export type ExpoReviewSceneSourceInput = {
@@ -39,18 +36,6 @@ function isReviewSceneHost(hostname: string | null | undefined) {
   );
 }
 
-function hasOperatorFlag(search: string | null | undefined) {
-  return new URLSearchParams(search || '').get('operator') === '1';
-}
-
-function hasSalesDemoFlag(search: string | null | undefined) {
-  return isSalesDemoEnabled(search || '');
-}
-
-function hasBoothProductPreviewFlag(search: string | null | undefined) {
-  return isBoothProductPreviewEnabled(search || '');
-}
-
 export function shouldUseReviewExpoSceneSource({
   hostname,
   isDev,
@@ -62,9 +47,13 @@ export function shouldUseReviewExpoSceneSource({
     return mode !== 'live';
   }
 
-  if (mode !== 'review' && mode !== 'seeded') {
-    return (hasSalesDemoFlag(search) || hasBoothProductPreviewFlag(search)) && isReviewSceneHost(hostname);
+  if (!isReviewSceneHost(hostname) || mode === 'live') {
+    return false;
   }
 
-  return hasOperatorFlag(search) && isReviewSceneHost(hostname);
+  if (mode === 'review' || mode === 'seeded') {
+    return true;
+  }
+
+  return true;
 }
