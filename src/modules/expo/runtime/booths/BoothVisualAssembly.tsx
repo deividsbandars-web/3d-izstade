@@ -14,7 +14,8 @@ import {
   type BoothTierState,
   formatExpoDisplayName,
 } from './index';
-import { OpenBoothPavilion, resolveOpenBoothPavilionLayout } from './OpenBoothPavilion';
+import { OpenBoothPavilion } from './OpenBoothPavilion';
+import { resolveOpenBoothPavilionLayout } from './OpenBoothPavilionLayout';
 import { buildGeneratedBillboardTextureUrl } from './generatedBillboardTextureUrl';
 import type { DistrictThemeId } from '../../../../shared/expo/lib/districtTheme';
 

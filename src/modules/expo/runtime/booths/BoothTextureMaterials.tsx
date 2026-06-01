@@ -633,7 +633,6 @@ export function SponsorTextureSurface({
   const [mappedTexture, setMappedTexture] = useState<THREE.Texture | null>(() => (
     resolveGeneratedBillboardTextureSync(url, normalizedTextureQualityHint)
   ));
-  const isGeneratedBillboard = isGeneratedBillboardTextureUrl(url);
   const side = doubleSided ? THREE.DoubleSide : THREE.FrontSide;
 
   useEffect(() => {
@@ -659,7 +658,7 @@ export function SponsorTextureSurface({
     };
   }, [normalizedTextureQualityHint, textureCacheKey, url]);
 
-  if (mappedTexture && isGeneratedBillboard) {
+  if (mappedTexture) {
     return (
       <meshBasicMaterial
         depthWrite={depthWrite ?? opacity >= 0.999}
