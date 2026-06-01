@@ -1,7 +1,7 @@
 import { Text } from '@react-three/drei';
 import { useNavigate } from 'react-router-dom';
 import { trackExpoScreenRouteClicked } from '../../lib/expoAnalytics';
-import { SponsorTextureSurface } from '../booths';
+import { DoubleSidedScreenSurface } from '../booths';
 import { resolveSponsorScreenInteraction } from '../../lib/sponsorScreenInteractionResolver';
 import type { CanonicalPrimitive, CityScreenAssignment, CityScreenSocket } from '../planning/types';
 
@@ -38,56 +38,43 @@ function renderPrimitive(primitive: CanonicalPrimitive, key: string) {
   }
 
   if (primitive.kind === 'texture-plane') {
-    const isOpaque = isOpaquePrimitive(primitive.opacity);
-    if (!primitive.url) {
-      return (
-        <mesh key={key} position={primitive.position} renderOrder={9}>
-          <planeGeometry args={primitive.size} />
-          <meshBasicMaterial
-            color={primitive.fallbackColor}
-            depthWrite={false}
-            polygonOffset
-            polygonOffsetFactor={-5}
-            polygonOffsetUnits={-5}
-            transparent={!isOpaque}
-            opacity={primitive.opacity ?? 0.22}
-            toneMapped={false}
-          />
-        </mesh>
-      );
-    }
-
     return (
-      <mesh key={key} position={primitive.position} renderOrder={9}>
-        <planeGeometry args={primitive.size} />
-        <SponsorTextureSurface
-          depthWrite={false}
-          doubleSided
-          fallbackColor={primitive.fallbackColor}
-          opacity={primitive.opacity ?? 0.92}
-          url={primitive.url}
-        />
-      </mesh>
+      <DoubleSidedScreenSurface
+        key={key}
+        depthWrite={false}
+        fallbackColor={primitive.fallbackColor}
+        opacity={primitive.url ? primitive.opacity ?? 0.92 : primitive.opacity ?? 0.22}
+        position={primitive.position}
+        renderOrder={9}
+        size={primitive.size}
+        url={primitive.url}
+      />
     );
   }
 
   if (primitive.kind === 'text') {
+    const textZ = primitive.position[2] + 0.34;
+    const sharedTextProps = {
+      anchorX: 'center' as const,
+      anchorY: 'middle' as const,
+      color: primitive.color,
+      fontSize: primitive.size,
+      maxWidth: primitive.maxWidth,
+      outlineBlur: primitive.outlineBlur,
+      outlineColor: primitive.outlineColor,
+      outlineWidth: primitive.outlineWidth,
+      renderOrder: 30,
+    };
+
     return (
-      <Text
-        key={key}
-        anchorX="center"
-        anchorY="middle"
-        color={primitive.color}
-        fontSize={primitive.size}
-        maxWidth={primitive.maxWidth}
-        outlineBlur={primitive.outlineBlur}
-        outlineColor={primitive.outlineColor}
-        outlineWidth={primitive.outlineWidth}
-        position={[primitive.position[0], primitive.position[1], primitive.position[2] + 0.34]}
-        renderOrder={30}
-      >
-        {primitive.text}
-      </Text>
+      <group key={key}>
+        <Text {...sharedTextProps} position={[primitive.position[0], primitive.position[1], textZ]}>
+          {primitive.text}
+        </Text>
+        <Text {...sharedTextProps} position={[primitive.position[0], primitive.position[1], -textZ]} rotation={[0, Math.PI, 0]}>
+          {primitive.text}
+        </Text>
+      </group>
     );
   }
 
