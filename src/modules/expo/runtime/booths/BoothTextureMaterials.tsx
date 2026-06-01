@@ -64,6 +64,21 @@ function configureExpoTexture(texture: THREE.Texture) {
   return texture;
 }
 
+function configureExpoVideoTexture(texture: THREE.VideoTexture) {
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.generateMipmaps = false;
+  texture.minFilter = THREE.LinearFilter;
+  texture.magFilter = THREE.LinearFilter;
+  texture.wrapS = THREE.ClampToEdgeWrapping;
+  texture.wrapT = THREE.ClampToEdgeWrapping;
+  texture.needsUpdate = true;
+  return texture;
+}
+
+function isExpoVideoTextureUrl(url: string) {
+  return /\.(mp4|webm|ogv|ogg)(?:[?#].*)?$/i.test(url);
+}
+
 function resolveGeneratedBillboardCanvasSize(aspect: number | undefined) {
   const normalizedAspect = Number.isFinite(aspect) && aspect ? Math.max(0.35, Math.min(4.5, aspect)) : 0.7;
 
@@ -251,6 +266,7 @@ export function SponsorTextureSurface({
 }) {
   const [mappedTexture, setMappedTexture] = useState<THREE.Texture | null>(() => resolveGeneratedBillboardTextureSync(url));
   const isGeneratedBillboard = url.startsWith(GENERATED_BILLBOARD_PREFIX);
+  const isVideoTexture = isExpoVideoTextureUrl(url);
   const side = doubleSided ? THREE.DoubleSide : THREE.FrontSide;
   const materialTexture = useMemo(() => {
     if (!mappedTexture || !flipX) {
@@ -268,6 +284,33 @@ export function SponsorTextureSurface({
     if (isGeneratedBillboard) {
       setMappedTexture(resolveGeneratedBillboardTextureSync(url));
       return;
+    }
+
+    if (isVideoTexture) {
+      if (typeof document === 'undefined') {
+        setMappedTexture(null);
+        return;
+      }
+
+      const video = document.createElement('video');
+      video.autoplay = true;
+      video.crossOrigin = 'anonymous';
+      video.loop = true;
+      video.muted = true;
+      video.playsInline = true;
+      video.preload = 'auto';
+      video.src = url;
+
+      const videoTexture = configureExpoVideoTexture(new THREE.VideoTexture(video));
+      setMappedTexture(videoTexture);
+      void video.play().catch(() => undefined);
+
+      return () => {
+        video.pause();
+        video.removeAttribute('src');
+        video.load();
+        videoTexture.dispose();
+      };
     }
 
     let isActive = true;
@@ -288,7 +331,7 @@ export function SponsorTextureSurface({
     return () => {
       isActive = false;
     };
-  }, [isGeneratedBillboard, url]);
+  }, [isGeneratedBillboard, isVideoTexture, url]);
 
   useEffect(() => {
     return () => {
