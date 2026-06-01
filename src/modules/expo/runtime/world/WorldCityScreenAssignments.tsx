@@ -1,4 +1,5 @@
 import { Text } from '@react-three/drei';
+import { Fragment } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { trackExpoScreenRouteClicked } from '../../lib/expoAnalytics';
 import { SponsorTextureSurface } from '../booths';
@@ -20,20 +21,40 @@ function shouldCullDistantScreens() {
 function renderPrimitive(primitive: CanonicalPrimitive, key: string) {
   if (primitive.kind === 'plane') {
     const isOpaque = isOpaquePrimitive(primitive.opacity);
+    const rearRotation: [number, number, number] = [
+      primitive.rotation?.[0] ?? 0,
+      (primitive.rotation?.[1] ?? 0) + Math.PI,
+      primitive.rotation?.[2] ?? 0,
+    ];
     return (
-      <mesh key={key} position={primitive.position} rotation={primitive.rotation} renderOrder={8}>
-        <planeGeometry args={primitive.size} />
-        <meshBasicMaterial
-          color={primitive.color}
-          depthWrite={false}
-          polygonOffset
-          polygonOffsetFactor={-4}
-          polygonOffsetUnits={-4}
-          transparent={primitive.transparent || !isOpaque}
-          opacity={primitive.opacity}
-          toneMapped={false}
-        />
-      </mesh>
+      <Fragment key={key}>
+        <mesh key={`${key}:front`} position={primitive.position} rotation={primitive.rotation} renderOrder={8}>
+          <planeGeometry args={primitive.size} />
+          <meshBasicMaterial
+            color={primitive.color}
+            depthWrite={false}
+            polygonOffset
+            polygonOffsetFactor={-4}
+            polygonOffsetUnits={-4}
+            transparent={primitive.transparent || !isOpaque}
+            opacity={primitive.opacity}
+            toneMapped={false}
+          />
+        </mesh>
+        <mesh key={`${key}:rear`} position={primitive.position} rotation={rearRotation} renderOrder={8}>
+          <planeGeometry args={primitive.size} />
+          <meshBasicMaterial
+            color={primitive.color}
+            depthWrite={false}
+            polygonOffset
+            polygonOffsetFactor={-4}
+            polygonOffsetUnits={-4}
+            transparent={primitive.transparent || !isOpaque}
+            opacity={primitive.opacity}
+            toneMapped={false}
+          />
+        </mesh>
+      </Fragment>
     );
   }
 
@@ -41,53 +62,96 @@ function renderPrimitive(primitive: CanonicalPrimitive, key: string) {
     const isOpaque = isOpaquePrimitive(primitive.opacity);
     if (!primitive.url) {
       return (
-        <mesh key={key} position={primitive.position} renderOrder={9}>
-          <planeGeometry args={primitive.size} />
-          <meshBasicMaterial
-            color={primitive.fallbackColor}
-            depthWrite={false}
-            polygonOffset
-            polygonOffsetFactor={-5}
-            polygonOffsetUnits={-5}
-            transparent={!isOpaque}
-            opacity={primitive.opacity ?? 0.22}
-            toneMapped={false}
-          />
-        </mesh>
+        <Fragment key={key}>
+          <mesh key={`${key}:front`} position={primitive.position} renderOrder={9}>
+            <planeGeometry args={primitive.size} />
+            <meshBasicMaterial
+              color={primitive.fallbackColor}
+              depthWrite={false}
+              polygonOffset
+              polygonOffsetFactor={-5}
+              polygonOffsetUnits={-5}
+              transparent={!isOpaque}
+              opacity={primitive.opacity ?? 0.22}
+              toneMapped={false}
+            />
+          </mesh>
+          <mesh key={`${key}:rear`} position={primitive.position} rotation={[0, Math.PI, 0]} renderOrder={9}>
+            <planeGeometry args={primitive.size} />
+            <meshBasicMaterial
+              color={primitive.fallbackColor}
+              depthWrite={false}
+              polygonOffset
+              polygonOffsetFactor={-5}
+              polygonOffsetUnits={-5}
+              transparent={!isOpaque}
+              opacity={primitive.opacity ?? 0.22}
+              toneMapped={false}
+            />
+          </mesh>
+        </Fragment>
       );
     }
 
     return (
-      <mesh key={key} position={primitive.position} renderOrder={9}>
-        <planeGeometry args={primitive.size} />
-        <SponsorTextureSurface
-          depthWrite={false}
-          doubleSided
-          fallbackColor={primitive.fallbackColor}
-          opacity={primitive.opacity ?? 0.92}
-          url={primitive.url}
-        />
-      </mesh>
+      <Fragment key={key}>
+        <mesh key={`${key}:front`} position={primitive.position} renderOrder={9}>
+          <planeGeometry args={primitive.size} />
+          <SponsorTextureSurface
+            depthWrite={false}
+            fallbackColor={primitive.fallbackColor}
+            opacity={primitive.opacity ?? 0.92}
+            url={primitive.url}
+          />
+        </mesh>
+        <mesh key={`${key}:rear`} position={primitive.position} rotation={[0, Math.PI, 0]} renderOrder={9}>
+          <planeGeometry args={primitive.size} />
+          <SponsorTextureSurface
+            depthWrite={false}
+            fallbackColor={primitive.fallbackColor}
+            opacity={primitive.opacity ?? 0.92}
+            url={primitive.url}
+          />
+        </mesh>
+      </Fragment>
     );
   }
 
   if (primitive.kind === 'text') {
     return (
-      <Text
-        key={key}
-        anchorX="center"
-        anchorY="middle"
-        color={primitive.color}
-        fontSize={primitive.size}
-        maxWidth={primitive.maxWidth}
-        outlineBlur={primitive.outlineBlur}
-        outlineColor={primitive.outlineColor}
-        outlineWidth={primitive.outlineWidth}
-        position={[primitive.position[0], primitive.position[1], primitive.position[2] + 0.34]}
-        renderOrder={30}
-      >
-        {primitive.text}
-      </Text>
+      <Fragment key={key}>
+        <Text
+          key={`${key}:front`}
+          anchorX="center"
+          anchorY="middle"
+          color={primitive.color}
+          fontSize={primitive.size}
+          maxWidth={primitive.maxWidth}
+          outlineBlur={primitive.outlineBlur}
+          outlineColor={primitive.outlineColor}
+          outlineWidth={primitive.outlineWidth}
+          position={[primitive.position[0], primitive.position[1], primitive.position[2] + 0.34]}
+          renderOrder={30}
+        >
+          {primitive.text}
+        </Text>
+        <Text
+          key={`${key}:rear`}
+          anchorX="center"
+          anchorY="middle"
+          color={primitive.color}
+          fontSize={primitive.size}
+          maxWidth={primitive.maxWidth}
+          outlineBlur={primitive.outlineBlur}
+          outlineColor={primitive.outlineColor}
+          outlineWidth={primitive.outlineWidth}
+          position={[primitive.position[0], primitive.position[1], primitive.position[2] - 0.34]}
+          rotation={[0, Math.PI, 0]}
+          renderOrder={30}
+        >
+          {primitive.text}
+        </Text>
+      </Fragment>
     );
   }
 
