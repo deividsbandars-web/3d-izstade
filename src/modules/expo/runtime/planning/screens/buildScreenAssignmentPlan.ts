@@ -289,10 +289,11 @@ function buildAssignmentPrimitives(args: {
   imageUrl: string | null;
   intent: NonNullable<CityScreenAssignment['renderIntent']>;
   label: string;
+  preferImageFullBleed?: boolean;
   subtitle: string;
   tier: CityScreenAssignment['tier'];
 }): CanonicalPrimitive[] {
-  const { accentColor, imageUrl, intent, label, subtitle, tier } = args;
+  const { accentColor, imageUrl, intent, label, preferImageFullBleed = false, subtitle, tier } = args;
   const frameWidth = intent.frameWidth;
   const frameHeight = intent.frameHeight;
   const headerHeight = intent.headerHeight;
@@ -300,7 +301,8 @@ function buildAssignmentPrimitives(args: {
   const bodyHeight = frameHeight - headerHeight - footerHeight;
   const isFullBleed = intent.fullBleed === true;
   const useTexturePlane = Boolean(imageUrl && !isFullBleed);
-  const fullBleedBillboardUrl = isFullBleed
+  const useImageFullBleed = Boolean(imageUrl && isFullBleed && preferImageFullBleed);
+  const fullBleedBillboardUrl = isFullBleed && !useImageFullBleed
     ? buildFullBleedBillboardDataUrl({
         accentColor,
         frameHeight,
@@ -319,7 +321,14 @@ function buildAssignmentPrimitives(args: {
 
   if (isFullBleed) {
     return [
-      { fallbackColor: accentColor, kind: 'texture-plane', opacity: 1, position: [0, 0, 1.16], size: [frameWidth * 0.992, frameHeight * 0.992], url: fullBleedBillboardUrl },
+      {
+        fallbackColor: accentColor,
+        kind: 'texture-plane',
+        opacity: 1,
+        position: [0, 0, 1.16],
+        size: [frameWidth * 0.992, frameHeight * 0.992],
+        url: useImageFullBleed ? imageUrl! : fullBleedBillboardUrl!,
+      },
     ];
   }
 
@@ -388,6 +397,7 @@ export function buildZoneScreenAssignmentPlan(args: {
     }
 
     const { accentColor, companyId, imageUrl, label, subtitle, tier } = content;
+    const preferImageFullBleed = companyId === 'sponsor-concierge';
     const semantic = getWorldScreenSemantic(socket.kind);
     const tierAccent = getTierAccent(tier);
     const isHeroComposition = socket.kind === 'hero_wall' && (
@@ -464,6 +474,7 @@ export function buildZoneScreenAssignmentPlan(args: {
           imageUrl,
           intent: renderIntent,
           label,
+          preferImageFullBleed,
           subtitle,
           tier,
         }),
