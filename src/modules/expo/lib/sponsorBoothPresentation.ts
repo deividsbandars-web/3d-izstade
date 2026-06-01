@@ -244,20 +244,12 @@ function pickCustomInsertUrl(company: ExpoSceneCompany, booth: ExpoSceneBooth | 
   return preferred;
 }
 
-function pickManagedHeroScreenUrl(booth: ExpoSceneBooth | null) {
-  if (booth?.heroScreenStatus !== 'published') {
+function pickManagedHeroScreenImageUrl(booth: ExpoSceneBooth | null) {
+  if (booth?.heroScreenStatus !== 'published' || booth.heroScreenType !== 'image') {
     return null;
   }
 
-  if (booth.heroScreenType === 'video') {
-    return normalizeReleaseUrl(booth.heroScreenVideoUrl);
-  }
-
-  if (booth.heroScreenType === 'image') {
-    return normalizeReleaseUrl(booth.heroScreenImageUrl);
-  }
-
-  return null;
+  return normalizeReleaseUrl(booth.heroScreenImageUrl);
 }
 
 export function buildSponsorBoothPresentation(
@@ -270,7 +262,7 @@ export function buildSponsorBoothPresentation(
 ): SponsorBoothPresentation {
   const displayName = truncateSponsorText(company.name, 26);
   const logoUrl = normalizeReleaseUrl(company.logo_url);
-  const posterUrl = pickManagedHeroScreenUrl(booth) || normalizeReleaseUrl(company.posterUrl) || normalizeReleaseUrl(booth?.posterUrl);
+  const posterUrl = pickManagedHeroScreenImageUrl(booth) || normalizeReleaseUrl(company.posterUrl) || normalizeReleaseUrl(booth?.posterUrl);
   const videoUrl = normalizeReleaseUrl(booth?.video_url);
   const customInsertUrl = pickCustomInsertUrl(company, booth);
   const fallbackIdentity = buildFallbackIdentity(company, booth, displayName);

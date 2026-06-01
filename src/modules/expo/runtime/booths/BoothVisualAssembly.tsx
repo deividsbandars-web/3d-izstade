@@ -65,7 +65,7 @@ export function BoothVisualAssembly({
     tier: tierState.contractTier.toUpperCase(),
     tierAccent: tierState.districtVisual.shellAccent,
   });
-  const boothPresentationScreenUrl = presentation.posterUrl ?? presentation.videoUrl ?? fallbackGeneratedScreenUrl;
+  const boothPresentationScreenUrl = presentation.posterUrl ?? fallbackGeneratedScreenUrl;
 
   return (
     <>
