@@ -136,31 +136,31 @@ function tintHex(hex: string, ratio: number) {
   return `#${[mix(channel(0)), mix(channel(2)), mix(channel(4))].map((value) => value.toString(16).padStart(2, '0')).join('')}`;
 }
 
-function shadeHex(hex: string, ratio: number) {
-  const normalized = hex.replace('#', '').padStart(6, '0').slice(0, 6);
-  const channel = (index: number) => parseInt(normalized.slice(index, index + 2), 16);
-  const mix = (value: number) => Math.max(0, Math.min(255, Math.round(value * (1 - ratio))));
-  return `#${[mix(channel(0)), mix(channel(2)), mix(channel(4))].map((value) => value.toString(16).padStart(2, '0')).join('')}`;
-}
-
 const EXPO_WORLD_COLORWAY = {
-  activeGround: '#5f8ba0',
-  calmGround: '#67869a',
-  featureGround: '#7095a3',
-  globalGround: '#557b8e',
-  globalSkyline: '#b8ddf2',
-  landmarkAmber: '#f5c76a',
-  plazaMist: '#d6e8f3',
-  scenicGround: '#5f907f',
-  signatureCyan: '#5ee7ff',
-  sponsorBlue: '#38bdf8',
-  tealGlow: '#5eead4',
+  activeGround: '#385b86',
+  calmGround: '#584d7d',
+  featureGround: '#76572f',
+  globalGround: '#304766',
+  globalSkyline: '#f7d48a',
+  landmarkAmber: '#ffb84d',
+  plazaMist: '#cfd7ff',
+  scenicGround: '#337057',
+  signatureCyan: '#22e7ff',
+  sponsorBlue: '#2f6bff',
+  tealGlow: '#2dd4bf',
+  violetGlow: '#c084fc',
 } as const;
 
 function buildDistrictVisualProfile(district: ExpoDistrictProgramSummary): ExpoDistrictVisualProfile {
+  const districtAccents = [
+    EXPO_WORLD_COLORWAY.signatureCyan,
+    EXPO_WORLD_COLORWAY.landmarkAmber,
+    EXPO_WORLD_COLORWAY.violetGlow,
+    EXPO_WORLD_COLORWAY.tealGlow,
+  ];
   const baseAccent = district.sectorId === null
     ? EXPO_WORLD_COLORWAY.sponsorBlue
-    : shadeHex(tintHex('#1d9bf0', district.clusterIndex * 0.035), 0.02);
+    : districtAccents[district.clusterIndex % districtAccents.length];
   const accent = district.expressionMode === 'active-commercial'
     ? tintHex(baseAccent, 0.1)
     : district.expressionMode === 'calm-dwell'
@@ -178,10 +178,10 @@ function buildDistrictVisualProfile(district: ExpoDistrictProgramSummary): ExpoD
         districtGlow: tintHex(accent, 0.18),
         expressionMode: district.expressionMode,
         frontageIntensity: district.frontageIntensity,
-        groundAccent: tintHex(EXPO_WORLD_COLORWAY.tealGlow, 0.08),
+        groundAccent: tintHex(accent, 0.04),
         groundBase: EXPO_WORLD_COLORWAY.activeGround,
         groundEdge: '#0b1220',
-        hudAccent: tintHex(EXPO_WORLD_COLORWAY.signatureCyan, 0.08),
+        hudAccent: tintHex(accent, 0.08),
         hudPanel: 'rgba(10, 18, 30, 0.82)',
         labelOpacity: 0.74,
         screenFrame: '#08111c',
@@ -195,18 +195,18 @@ function buildDistrictVisualProfile(district: ExpoDistrictProgramSummary): ExpoD
     case 'calm-dwell':
       return {
         clusterIndex: district.clusterIndex,
-        districtGlow: tintHex(EXPO_WORLD_COLORWAY.sponsorBlue, 0.16),
+        districtGlow: tintHex(EXPO_WORLD_COLORWAY.violetGlow, 0.1),
         expressionMode: district.expressionMode,
         frontageIntensity: district.frontageIntensity,
         groundAccent: EXPO_WORLD_COLORWAY.plazaMist,
         groundBase: EXPO_WORLD_COLORWAY.calmGround,
         groundEdge: '#101826',
-        hudAccent: '#c7e8ff',
+        hudAccent: '#d8b4fe',
         hudPanel: 'rgba(14, 20, 32, 0.78)',
         labelOpacity: 0.46,
         screenFrame: '#111b2a',
         sectorId: district.sectorId,
-        shellAccent: '#e0f2ff',
+        shellAccent: '#e9d5ff',
         shellBase: '#162234',
         skylineOpacity: 0.5,
         skylineScale: 0.96,
@@ -236,18 +236,18 @@ function buildDistrictVisualProfile(district: ExpoDistrictProgramSummary): ExpoD
     case 'satellite':
       return {
         clusterIndex: district.clusterIndex,
-        districtGlow: '#9fdcff',
+        districtGlow: '#a78bfa',
         expressionMode: district.expressionMode,
         frontageIntensity: district.frontageIntensity,
-        groundAccent: '#d7edf8',
-        groundBase: '#7f91a3',
+        groundAccent: '#dbc9ff',
+        groundBase: '#4b5879',
         groundEdge: '#111827',
-        hudAccent: '#a7e8ff',
+        hudAccent: '#c4b5fd',
         hudPanel: 'rgba(10, 16, 25, 0.78)',
         labelOpacity: 0.38,
         screenFrame: '#132033',
         sectorId: district.sectorId,
-        shellAccent: '#e5f6ff',
+        shellAccent: '#ddd6fe',
         shellBase: '#142131',
         skylineOpacity: 0.48,
         skylineScale: 0.92,

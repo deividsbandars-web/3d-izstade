@@ -235,68 +235,68 @@ export function WorldCityMasses({
               {intent?.showHorizontalCap && (
                 <mesh position={[0, mass.size[1] + 0.4, 0]}>
                   <boxGeometry args={[mass.size[0] * 0.78, 0.9, mass.size[2] * 0.78]} />
-                  <meshStandardMaterial color="#9bbbd0" roughness={0.52} metalness={0.16} />
+                  <meshStandardMaterial color="#b7a5e8" emissive="#c084fc" emissiveIntensity={0.012} roughness={0.52} metalness={0.16} />
                 </mesh>
               )}
               {intent?.showSignatureBand && (
                 <mesh position={[0, mass.size[1] * 0.28, mass.size[2] * 0.18]}>
                   <boxGeometry args={[Math.max(12, mass.size[0] * 0.28), Math.max(8, mass.size[1] * 0.08), Math.max(6, mass.size[2] * 0.1)]} />
-                  <meshStandardMaterial color="#7faec8" emissive="#5ee7ff" emissiveIntensity={0.018} roughness={0.42} metalness={0.2} />
+                  <meshStandardMaterial color="#5f7fba" emissive="#22e7ff" emissiveIntensity={0.02} roughness={0.42} metalness={0.2} />
                 </mesh>
               )}
               {intent?.showSideInset && (
                 <>
                   <mesh position={[-mass.size[0] * 0.24, mass.size[1] * 0.54, 0]}>
                     <boxGeometry args={[Math.max(8, mass.size[0] * 0.1), Math.max(16, mass.size[1] * 0.24), Math.max(8, mass.size[2] * 0.16)]} />
-                    <meshStandardMaterial color="#82a9bf" roughness={0.42} metalness={0.2} />
+                    <meshStandardMaterial color="#6f5d93" emissive="#c084fc" emissiveIntensity={0.012} roughness={0.42} metalness={0.2} />
                   </mesh>
                   <mesh position={[mass.size[0] * 0.24, mass.size[1] * 0.5, 0]}>
                     <boxGeometry args={[Math.max(8, mass.size[0] * 0.08), Math.max(14, mass.size[1] * 0.2), Math.max(8, mass.size[2] * 0.14)]} />
-                    <meshStandardMaterial color="#789fba" emissive="#7dd3fc" emissiveIntensity={0.016} roughness={0.44} metalness={0.18} />
+                    <meshStandardMaterial color="#6d88bd" emissive="#22e7ff" emissiveIntensity={0.018} roughness={0.44} metalness={0.18} />
                   </mesh>
                 </>
               )}
               {intent?.showSignatureBand && mass.size[1] > 48 && (
                 <mesh position={[0, mass.size[1] * 0.62, 0]}>
                   <boxGeometry args={[Math.max(8, mass.size[0] * 0.16), Math.max(18, mass.size[1] * 0.18), Math.max(8, mass.size[2] * 0.16)]} />
-                  <meshStandardMaterial color="#83abc2" emissive="#7dd3fc" emissiveIntensity={0.016} roughness={0.44} metalness={0.18} />
+                  <meshStandardMaterial color="#8c6fc5" emissive="#c084fc" emissiveIntensity={0.018} roughness={0.44} metalness={0.18} />
                 </mesh>
               )}
               {intent?.showRearSpine && (
                 <mesh position={[0, mass.size[1] * 0.68, -mass.size[2] * 0.22]}>
                   <boxGeometry args={[Math.max(8, mass.size[0] * 0.12), Math.max(18, mass.size[1] * 0.18), Math.max(6, mass.size[2] * 0.1)]} />
-                  <meshStandardMaterial color="#789cb4" emissive="#7dd3fc" emissiveIntensity={0.014} roughness={0.44} metalness={0.16} />
+                  <meshStandardMaterial color="#84643f" emissive="#ffb84d" emissiveIntensity={0.016} roughness={0.44} metalness={0.16} />
                 </mesh>
               )}
               {intent?.showFrontWing && (
                 <mesh position={[0, mass.size[1] * 0.34, mass.size[2] * 0.22]}>
                   <boxGeometry args={[Math.max(12, mass.size[0] * 0.26), Math.max(10, mass.size[1] * 0.12), Math.max(6, mass.size[2] * 0.1)]} />
-                  <meshStandardMaterial color="#82aac3" emissive="#5ee7ff" emissiveIntensity={0.014} roughness={0.42} metalness={0.18} />
+                  <meshStandardMaterial color="#3f83a6" emissive="#22e7ff" emissiveIntensity={0.016} roughness={0.42} metalness={0.18} />
                 </mesh>
               )}
               {floorBandYs.map((floorY) => (
                 <mesh key={`${mass.id}:floor-band:${floorY}`} position={[0, floorY, mass.size[2] * 0.51]}>
                   <boxGeometry args={[Math.max(12, mass.size[0] * 0.86), 1.6, 2.2]} />
-                  <meshStandardMaterial color="#d5eff9" emissive="#8ee8ff" emissiveIntensity={0.018} roughness={0.38} metalness={0.18} />
+                  <meshStandardMaterial color="#9ad7ff" emissive="#22e7ff" emissiveIntensity={0.02} roughness={0.38} metalness={0.18} />
                 </mesh>
               ))}
               {intent?.showSideFloorBands && floorBandYs.flatMap((floorY) => ([
                 <mesh key={`${mass.id}:floor-band-left:${floorY}`} position={[-mass.size[0] * 0.51, floorY, 0]}>
                   <boxGeometry args={[2.2, 1.6, Math.max(12, mass.size[2] * 0.74)]} />
-                  <meshStandardMaterial color="#c9e7f4" emissive="#8ee8ff" emissiveIntensity={0.016} roughness={0.38} metalness={0.18} />
+                  <meshStandardMaterial color="#d8b4fe" emissive="#c084fc" emissiveIntensity={0.018} roughness={0.38} metalness={0.18} />
                 </mesh>,
                 <mesh key={`${mass.id}:floor-band-right:${floorY}`} position={[mass.size[0] * 0.51, floorY, 0]}>
                   <boxGeometry args={[2.2, 1.6, Math.max(12, mass.size[2] * 0.74)]} />
-                  <meshStandardMaterial color="#b9d9e8" emissive="#8ee8ff" emissiveIntensity={0.014} roughness={0.4} metalness={0.18} />
+                  <meshStandardMaterial color="#ffe0a3" emissive="#ffb84d" emissiveIntensity={0.016} roughness={0.4} metalness={0.18} />
                 </mesh>,
               ]))}
               {intent?.showMegaVerticalSpines && (
                 <>
                   {[
-                    [-0.43, 0.515, '#8ee8ff', 0.026],
-                    [0.43, 0.515, '#8ee8ff', 0.026],
-                    [-0.49, -0.43, '#b6e4f8', 0.018],
-                    [0.49, -0.43, '#b6e4f8', 0.018],
+                    [-0.43, 0.515, '#22e7ff', 0.028],
+                    [0.43, 0.515, '#ffb84d', 0.024],
+                    [-0.49, -0.43, '#c084fc', 0.02],
+                    [0.49, -0.43, '#2dd4bf', 0.02],
                   ].map(([xRatio, zRatio, color, intensity]) => (
                     <mesh
                       key={`${mass.id}:mega-spine:${xRatio}:${zRatio}`}
@@ -314,11 +314,11 @@ export function WorldCityMasses({
                   ))}
                   <mesh position={[0, mass.size[1] * 0.78, mass.size[2] * 0.515]}>
                     <boxGeometry args={[mass.size[0] * 1.08, Math.max(8, mass.size[1] * 0.018), 4.2]} />
-                    <meshStandardMaterial color="#bff2ff" emissive="#5ee7ff" emissiveIntensity={0.03} roughness={0.32} metalness={0.24} />
+                    <meshStandardMaterial color="#ffe0a3" emissive="#ffb84d" emissiveIntensity={0.026} roughness={0.32} metalness={0.24} />
                   </mesh>
                   <mesh position={[0, mass.size[1] * 0.92, 0]}>
                     <boxGeometry args={[mass.size[0] * 0.72, Math.max(8, mass.size[1] * 0.014), mass.size[2] * 0.72]} />
-                    <meshStandardMaterial color="#9ed4e8" emissive="#5ee7ff" emissiveIntensity={0.022} roughness={0.34} metalness={0.24} />
+                    <meshStandardMaterial color="#b7a5e8" emissive="#c084fc" emissiveIntensity={0.024} roughness={0.34} metalness={0.24} />
                   </mesh>
                 </>
               )}
@@ -326,11 +326,11 @@ export function WorldCityMasses({
                 <>
                   <mesh position={[0, mass.size[1] + (crownMastHeight * 0.5), 0]}>
                     <cylinderGeometry args={[crownMastRadius * 0.68, crownMastRadius, crownMastHeight, 12]} />
-                    <meshStandardMaterial color="#7ed5f4" emissive="#7ed5f4" emissiveIntensity={0.036} roughness={0.38} metalness={0.22} />
+                    <meshStandardMaterial color="#22e7ff" emissive="#22e7ff" emissiveIntensity={0.034} roughness={0.38} metalness={0.22} />
                   </mesh>
                   <mesh position={[0, mass.size[1] + crownMastHeight + 3.2, 0]}>
                     <boxGeometry args={[Math.max(12, mass.size[0] * 0.22), 3.2, Math.max(12, mass.size[2] * 0.22)]} />
-                    <meshStandardMaterial color="#a1eaff" emissive="#5ee7ff" emissiveIntensity={0.03} roughness={0.32} metalness={0.24} />
+                    <meshStandardMaterial color="#ffcf75" emissive="#ffb84d" emissiveIntensity={0.03} roughness={0.32} metalness={0.24} />
                   </mesh>
                 </>
               )}
