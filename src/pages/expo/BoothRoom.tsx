@@ -4,6 +4,7 @@ import { Text } from '@react-three/drei';
 import { Link, Navigate, useParams } from 'react-router-dom';
 import { loadExpoSceneForRelease } from '../../modules/expo/lib/sceneDataSource';
 import { resolveSponsorRoomRecord, type SponsorRoomRecord } from '../../modules/expo/lib/sponsorRoom';
+import { isPremiumStreamingTier } from '../../modules/expo/lib/sponsorBoothPresentation';
 import type { ExpoSceneData } from '../../modules/expo/types/scene';
 
 type RoomState =
@@ -147,6 +148,33 @@ function StaticPill({ children }: { children: string }) {
   );
 }
 
+function HighResUnrealViewerPanel({ accent, streamPath }: { accent: string; streamPath: string }) {
+  return (
+    <div style={{ background: 'linear-gradient(135deg, rgba(56, 189, 248, 0.13), rgba(15, 23, 42, 0.76))', border: `1px solid ${accent}66`, borderRadius: 22, boxShadow: `0 18px 48px ${accent}22`, padding: 18 }}>
+      <div style={{ color: accent, fontSize: '0.74rem', fontWeight: 950, letterSpacing: '0.14em', marginBottom: 10, textTransform: 'uppercase' }}>
+        Unreal product viewer
+      </div>
+      <h2 style={{ color: '#f8fafc', fontSize: '1.28rem', letterSpacing: '-0.03em', lineHeight: 1.05, margin: 0 }}>
+        High-res product statue mode
+      </h2>
+      <p style={{ color: '#cbd5e1', fontSize: '0.92rem', lineHeight: 1.5, margin: '10px 0 14px' }}>
+        Launch a premium Unreal stream for a detailed product pedestal view when a dedicated slot is available.
+      </p>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 14 }}>
+        <StaticPill>Pixel stream</StaticPill>
+        <StaticPill>Product statue</StaticPill>
+        <StaticPill>Premium slot</StaticPill>
+      </div>
+      <Link to={streamPath} style={{ background: accent, borderRadius: 999, color: '#06111d', display: 'inline-flex', fontSize: '0.88rem', fontWeight: 950, letterSpacing: '0.04em', padding: '12px 15px', textDecoration: 'none', textTransform: 'uppercase' }}>
+        Open Unreal Viewer
+      </Link>
+      <p style={{ color: '#94a3b8', fontSize: '0.78rem', lineHeight: 1.45, margin: '12px 0 0' }}>
+        If the stream is unavailable, this Web3D showroom remains the safe fallback.
+      </p>
+    </div>
+  );
+}
+
 function LoadingRoom() {
   return (
     <div style={{ alignItems: 'center', background: '#050b14', color: '#f8fafc', display: 'flex', justifyContent: 'center', minHeight: '100vh' }}>
@@ -184,6 +212,10 @@ export default function BoothRoom() {
   const { record } = state;
   const displayTitle = record.company.name || record.presentation.displayName || 'Sponsor Booth';
   const roomSummary = record.presentation.tagline || roomModel.copy.summary;
+  const canOpenHighResViewer = isPremiumStreamingTier(record.presentation.adTier);
+  const highResViewerPath = record.presentation.demoRoomPath.endsWith('/stream')
+    ? record.presentation.demoRoomPath
+    : `${record.presentation.demoRoomPath.replace(/\/$/, '')}/stream`;
   const packageStatus = record.presentation.managedScreenContent?.status === 'published'
     ? 'Owner-managed screen content is published.'
     : 'Preview showroom - owner-managed content can be attached later.';
@@ -218,6 +250,10 @@ export default function BoothRoom() {
               </div>
             ))}
           </div>
+
+          {canOpenHighResViewer ? (
+            <HighResUnrealViewerPanel accent={roomModel.accent} streamPath={highResViewerPath} />
+          ) : null}
 
           <div style={{ background: 'rgba(2, 6, 23, 0.6)', border: '1px solid rgba(148, 163, 184, 0.14)', borderRadius: 22, padding: 18 }}>
             <div style={{ color: '#94a3b8', fontSize: '0.78rem', fontWeight: 900, letterSpacing: '0.12em', marginBottom: 12, textTransform: 'uppercase' }}>
