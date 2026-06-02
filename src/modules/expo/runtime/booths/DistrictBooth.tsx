@@ -16,7 +16,7 @@ import {
   trackBoothSelection,
 } from './index';
 
-const BOOTH_ENTRY_PORTAL_TRIGGER_RADIUS = 1.45;
+const BOOTH_ENTRY_PORTAL_TRIGGER_RADIUS = 2.35;
 
 function BoothEntryPortal({
   accentColor,
@@ -66,47 +66,48 @@ function BoothEntryPortal({
         expoInteractionOwner: 'DistrictBooth',
       }}
     >
-      <mesh position={[0, 0.04, 0]} receiveShadow>
-        <cylinderGeometry args={[1.18, 1.34, 0.08, 40]} />
-        <meshStandardMaterial color="#0f1b2c" emissive={accentColor} emissiveIntensity={0.1} metalness={0.1} roughness={0.42} />
+      <mesh position={[0, 0.052, 0]} receiveShadow>
+        <boxGeometry args={[3.1, 0.08, 1.72]} />
+        <meshStandardMaterial color="#101827" emissive={accentColor} emissiveIntensity={0.12} metalness={0.08} roughness={0.38} />
       </mesh>
-      <mesh position={[0, 0.092, 0]} receiveShadow>
-        <cylinderGeometry args={[0.88, 0.94, 0.035, 40]} />
-        <meshBasicMaterial color={accentColor} opacity={0.32} transparent toneMapped={false} />
+      <mesh position={[0, 0.105, 0]}>
+        <boxGeometry args={[2.58, 0.035, 1.08]} />
+        <meshBasicMaterial color={accentColor} opacity={0.42} transparent toneMapped={false} />
       </mesh>
+      <mesh position={[0, 0.128, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[0.62, 0.86, 48]} />
+        <meshBasicMaterial color="#f8fafc" opacity={0.58} side={THREE.DoubleSide} transparent toneMapped={false} />
+      </mesh>
+      <Text
+        position={[0, 0.165, 0.02]}
+        rotation={[-Math.PI / 2, 0, 0]}
+        fontSize={0.23}
+        color="#f8fafc"
+        anchorX="center"
+        anchorY="middle"
+        maxWidth={2.25}
+      >
+        ENTER BOOTH
+      </Text>
       {[-1, 1].map((side) => (
-        <mesh key={`portal-post-${side}`} position={[side * 0.72, 1.08, 0]} castShadow receiveShadow>
-          <boxGeometry args={[0.18, 2.1, 0.18]} />
-          <meshStandardMaterial color="#142233" emissive={accentColor} emissiveIntensity={0.12} metalness={0.16} roughness={0.32} />
+        <mesh key={`portal-side-rail-${side}`} position={[side * 1.62, 0.24, 0]} castShadow receiveShadow>
+          <boxGeometry args={[0.16, 0.48, 1.56]} />
+          <meshStandardMaterial color="#142233" emissive={accentColor} emissiveIntensity={0.14} metalness={0.16} roughness={0.32} />
         </mesh>
       ))}
-      <mesh position={[0, 2.16, 0]} castShadow receiveShadow>
-        <boxGeometry args={[1.62, 0.18, 0.18]} />
-        <meshStandardMaterial color="#142233" emissive={accentColor} emissiveIntensity={0.14} metalness={0.18} roughness={0.3} />
-      </mesh>
-      <mesh position={[0, 1.18, 0.025]}>
-        <torusGeometry args={[0.8, 0.032, 12, 56]} />
-        <meshBasicMaterial color={accentColor} toneMapped={false} />
-      </mesh>
       <mesh
         name="booth-entry-portal-trigger"
-        position={[0, 1.08, 0]}
+        position={[0, 0.85, 0]}
         onPointerDown={handleEnterPointer}
         userData={{
           expoBoothEntryPortalTrigger: true,
           expoInteractionOwner: 'DistrictBooth',
         }}
       >
-        <boxGeometry args={[2.08, 2.36, 1.54]} />
+        <boxGeometry args={[3.5, 1.7, 2.4]} />
         <meshBasicMaterial depthWrite={false} opacity={0} transparent />
       </mesh>
-      <Text position={[0, 1.34, 0.14]} fontSize={0.16} color="#f8fafc" anchorX="center" anchorY="middle" maxWidth={0.9}>
-        ENTER
-      </Text>
-      <Text position={[0, 1.04, 0.14]} fontSize={0.1} color="#dbeafe" anchorX="center" anchorY="middle" maxWidth={0.9}>
-        BOOTH ROOM
-      </Text>
-      <Text position={[0, 2.48, 0.04]} fontSize={0.105} color="#f8fafc" anchorX="center" anchorY="middle" maxWidth={1.7}>
+      <Text position={[0, 0.74, 0.92]} fontSize={0.13} color="#f8fafc" anchorX="center" anchorY="middle" maxWidth={2.6}>
         {safeLabel}
       </Text>
     </group>
@@ -154,9 +155,9 @@ export function DistrictBooth({
   );
   const entryPortalArmedRef = useRef(true);
   const entryPortalPosition = useMemo<[number, number, number]>(() => [
-    -Math.max(3.2, boothInteractionMetrics.footprintSize[0] * 0.42),
     0,
-    Math.max(4.8, boothInteractionMetrics.footprintSize[1] * 0.5 + 1.7),
+    0,
+    Math.max(4.35, boothInteractionMetrics.footprintSize[1] * 0.5 + 1.15),
   ], [boothInteractionMetrics.footprintSize]);
   const web3dRoomPresentation = useMemo(
     () => ({
