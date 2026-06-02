@@ -16,19 +16,6 @@ function isMainCityFlatStandaloneScreenSurface(surfaceId: string) {
   );
 }
 
-function isRearCampusScreenSurface(surfaceId: string) {
-  return (
-    surfaceId === 'rear-campus-bowl-feed-surface'
-    || (
-      surfaceId.startsWith('rear-campus-')
-      && (
-        surfaceId.endsWith('-feed-surface')
-        || surfaceId.endsWith('-host-surface')
-      )
-    )
-  );
-}
-
 function getSurfaceHousingDepth(surface: CityScreenSurface) {
   if (surface.renderIntent?.housingDepth) {
     return surface.renderIntent.housingDepth;
@@ -77,36 +64,6 @@ function getMainCityRearContentZ(surface: CityScreenSurface) {
   return -(getSocketAnchorDepth(surface) + hostBackDepthFromSurface + 0.75);
 }
 
-function getRearCampusScreenHostDepth(surface: CityScreenSurface) {
-  return Math.max(18, surface.size[2] * 5.2);
-}
-
-const REAR_CAMPUS_BODY_DEPTH_BY_SURFACE_ID: Readonly<Record<string, number>> = {
-  'rear-campus-event-pavilion-left-feed-surface': 132,
-  'rear-campus-event-pavilion-right-feed-surface': 132,
-  'rear-campus-mega-civic-hall-host-surface': 324,
-  'rear-campus-orbital-scoregate-host-surface': 320,
-  'rear-campus-stage-monolith-canopy-host-surface': 176,
-};
-
-function getRearCampusRearContentZ(surface: CityScreenSurface) {
-  const bodyDepth = REAR_CAMPUS_BODY_DEPTH_BY_SURFACE_ID[surface.id];
-  if (bodyDepth) {
-    // Some rear-campus screens are mounted on real pavilion/landmark bodies, not
-    // only the lightweight screen shell. Push the rear clone behind that body so
-    // the backside is readable instead of hidden by the structure.
-    return -(getSocketAnchorDepth(surface) + bodyDepth + 8);
-  }
-
-  const hostDepth = getRearCampusScreenHostDepth(surface);
-  const faceInset = 6;
-
-  // Rear-campus screen hosts use a separate shell formula in rearCampusScreenHosts.ts.
-  // This places the readable rear clone behind that shell so the mirrored front
-  // material backface is not the only thing visible from the stadium side.
-  return -(getSocketAnchorDepth(surface) + hostDepth - (surface.size[2] * 0.5) + faceInset + 0.75);
-}
-
 export function getCityScreenRearContentPolicy(
   socket: CityScreenSocket,
   surface: CityScreenSurface | undefined,
@@ -124,14 +81,6 @@ export function getCityScreenRearContentPolicy(
       enabled: true,
       rearZ: getMainCityRearContentZ(surface),
       zone: 'mainCity',
-    };
-  }
-
-  if (isRearCampusScreenSurface(socket.surfaceId)) {
-    return {
-      enabled: true,
-      rearZ: getRearCampusRearContentZ(surface),
-      zone: 'rearCampus',
     };
   }
 
