@@ -112,7 +112,7 @@ function ExpoRuntimeExperience({
         return;
       }
 
-      if (event.code !== 'KeyE' && event.key.toLowerCase() !== 'e') {
+      if (event.code !== 'KeyF' && event.code !== 'Enter' && event.code !== 'NumpadEnter') {
         return;
       }
 
