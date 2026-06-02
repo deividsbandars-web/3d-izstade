@@ -137,8 +137,6 @@ export function OpenBoothPavilion({
     const frontPortalHeight = houseWallHeight * (isHero ? 0.96 : isElite ? 0.92 : isPremium ? 0.86 : 0.78);
     const frontPortalY = 0.38 + frontPortalHeight * 0.5;
     const frontPortalX = houseWidth * (isHero ? 0.37 : isElite ? 0.36 : isPremium ? 0.35 : 0.34);
-    const frontLintelWidth = houseWidth * (isHero ? 0.58 : isElite ? 0.56 : isPremium ? 0.54 : 0.5);
-    const frontLintelY = frontPortalHeight + 0.78;
     const lowerRailWidth = wallWidth * (isHero ? 0.82 : isElite ? 0.76 : isPremium ? 0.7 : 0.64);
     const entryRunwayWidth = Math.max(wallWidth * (isHero ? 0.38 : isElite ? 0.34 : isPremium ? 0.3 : 0.26), 4.2);
     const entryRunwayDepth = houseDepth * 0.72;
@@ -172,10 +170,6 @@ export function OpenBoothPavilion({
         <mesh position={[0, roofY, houseCenterZ]} castShadow receiveShadow>
           <boxGeometry args={[roofWidth, isHero ? 0.68 : isElite ? 0.58 : isPremium ? 0.5 : 0.42, roofDepth]} />
           <meshStandardMaterial color={roofColor} emissive={accentColor} emissiveIntensity={0.08} metalness={0.12} roughness={0.34} />
-        </mesh>
-        <mesh position={[0, roofY - 0.36, houseFrontZ - 0.16]} castShadow receiveShadow>
-          <boxGeometry args={[roofWidth * 0.8, 0.14, 0.34]} />
-          <meshStandardMaterial color={screenFirstEdgeColor} emissive={accentColor} emissiveIntensity={0.16} metalness={0.12} roughness={0.28} />
         </mesh>
         <mesh position={[0, roofY - 0.42, houseRearZ]} castShadow receiveShadow>
           <boxGeometry args={[roofWidth * 0.72, 0.12, 0.32]} />
@@ -211,14 +205,6 @@ export function OpenBoothPavilion({
             </mesh>
           </group>
         ))}
-        <mesh position={[0, frontLintelY, houseFrontZ]} castShadow receiveShadow>
-          <boxGeometry args={[frontLintelWidth, 0.32, 0.76]} />
-          <meshStandardMaterial color="#0d2235" emissive={accentColor} emissiveIntensity={0.12} metalness={0.14} roughness={0.32} />
-        </mesh>
-        <mesh position={[0, frontLintelY + 0.22, houseFrontZ + 0.16]}>
-          <boxGeometry args={[frontLintelWidth * 0.52, 0.08, 0.1]} />
-          <meshBasicMaterial color={accentColor} toneMapped={false} />
-        </mesh>
         <group position={[0, wallY, wallZ]}>
           <mesh castShadow receiveShadow>
             <boxGeometry args={[wallWidth, wallHeight, 0.32]} />
