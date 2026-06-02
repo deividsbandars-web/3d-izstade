@@ -147,12 +147,30 @@ function getSurfaceHousingDepth(surface: CityScreenSurface) {
   return Math.max(4.4, surface.size[2] * 2.1);
 }
 
+function isElevatedLandmarkHostSurface(surface: CityScreenSurface) {
+  return surface.id === 'screen-array-left-upper-3' || surface.id === 'screen-array-right-upper-3';
+}
+
+function getSurfaceHostDepth(surface: CityScreenSurface) {
+  if (isElevatedLandmarkHostSurface(surface)) {
+    return Math.max(12, surface.size[2] * 3.2);
+  }
+
+  const isSideArray = surface.id.startsWith('screen-array-');
+
+  return Math.max(isSideArray ? 32 : 24, surface.size[2] * (isSideArray ? 9.4 : 7.2));
+}
+
 function getRearScreenContentZ(surface: CityScreenSurface) {
   const housingDepth = getSurfaceHousingDepth(surface);
+  const hostDepth = getSurfaceHostDepth(surface);
+  const hostBackDepthFromSurface = hostDepth + (surface.size[2] * 0.5) - 1.2;
+  const socketAnchorDepth = housingDepth * 0.55;
 
   // Sockets are anchored on the front face by buildScreenSockets at housingDepth * 0.55.
-  // The rear clone must cross the whole housing and rear mounting plate to be visible.
-  return -(housingDepth * 1.48);
+  // These flat city screens also sit on screen-host masses, so the rear clone must
+  // cross the host mass too or it remains hidden behind the blank rear plate.
+  return -(socketAnchorDepth + hostBackDepthFromSurface + 0.75);
 }
 
 function renderRearTexturePrimitive(
