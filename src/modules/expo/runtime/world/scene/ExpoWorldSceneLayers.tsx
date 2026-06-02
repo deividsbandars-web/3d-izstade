@@ -60,17 +60,17 @@ export function ExpoWorldSceneLayers({
       {qualitySettings.adaptiveDprEnabled && <AdaptiveDpr />}
       {qualitySettings.adaptiveEventsEnabled && <AdaptiveEvents />}
       {runtimeCaptureSafe ? (
-        <color attach="background" args={['#d8e4ef']} />
+        <color attach="background" args={['#d8f1ff']} />
       ) : (
-        <Sky distance={450000} sunPosition={[56, 10, 42]} inclination={0.42} azimuth={0.18} />
+        <Sky distance={450000} sunPosition={[56, 12, 42]} inclination={0.4} azimuth={0.18} />
       )}
       {!runtimeCaptureSafe && EXPO_FEATURE_FLAGS.enableStreetEnvironmentLighting && (
         <Environment files="/models/modern_evening_street_4k.exr" />
       )}
-      <ambientLight intensity={runtimeCaptureSafe ? 0.16 : 0.24} />
-      <directionalLight position={[16, 26, 10]} intensity={runtimeCaptureSafe ? 0.66 : 0.96} castShadow={false} />
-      <hemisphereLight args={['#94a8b8', '#4f5d69', runtimeCaptureSafe ? 0.24 : 0.36]} />
-      {EXPO_FEATURE_FLAGS.enableFog && <fog attach="fog" args={['#748392', 420, 2400]} />}
+      <ambientLight intensity={runtimeCaptureSafe ? 0.18 : 0.28} />
+      <directionalLight color="#e9fbff" position={[16, 26, 10]} intensity={runtimeCaptureSafe ? 0.68 : 1.02} castShadow={false} />
+      <hemisphereLight args={['#b7efff', '#425a66', runtimeCaptureSafe ? 0.28 : 0.42]} />
+      {EXPO_FEATURE_FLAGS.enableFog && <fog attach="fog" args={['#7fa0b1', 460, 2550]} />}
 
       <ExpoZoneGroup
         alwaysVisible

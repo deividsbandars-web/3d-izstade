@@ -144,14 +144,14 @@ function shadeHex(hex: string, ratio: number) {
 }
 
 const EXPO_WORLD_COLORWAY = {
-  activeGround: '#6f8aa1',
-  calmGround: '#788ca0',
-  featureGround: '#8297a8',
-  globalGround: '#6f8499',
+  activeGround: '#5f8ba0',
+  calmGround: '#67869a',
+  featureGround: '#7095a3',
+  globalGround: '#557b8e',
   globalSkyline: '#b8ddf2',
   landmarkAmber: '#f5c76a',
   plazaMist: '#d6e8f3',
-  scenicGround: '#78958d',
+  scenicGround: '#5f907f',
   signatureCyan: '#5ee7ff',
   sponsorBlue: '#38bdf8',
   tealGlow: '#5eead4',

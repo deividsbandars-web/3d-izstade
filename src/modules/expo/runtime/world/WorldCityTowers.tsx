@@ -9,6 +9,18 @@ function tintHex(hex: string, ratio: number) {
   return `#${[mix(channel(0)), mix(channel(2)), mix(channel(4))].map((value) => value.toString(16).padStart(2, '0')).join('')}`;
 }
 
+function mixHex(hex: string, targetHex: string, ratio: number) {
+  const normalized = hex.replace('#', '').padStart(6, '0').slice(0, 6);
+  const target = targetHex.replace('#', '').padStart(6, '0').slice(0, 6);
+  const channel = (value: string, index: number) => parseInt(value.slice(index, index + 2), 16);
+  const mix = (value: number, targetValue: number) => Math.max(0, Math.min(255, Math.round(value + ((targetValue - value) * ratio))));
+  return `#${[
+    mix(channel(normalized, 0), channel(target, 0)),
+    mix(channel(normalized, 2), channel(target, 2)),
+    mix(channel(normalized, 4), channel(target, 4)),
+  ].map((value) => value.toString(16).padStart(2, '0')).join('')}`;
+}
+
 function WorldArchitecturalMassMaterial({
   fallbackColor,
   globalHudAccent,
@@ -21,17 +33,21 @@ function WorldArchitecturalMassMaterial({
   emissiveIntensity?: number;
 }) {
   const base = emissiveIntensity > 0.012
-    ? tintHex(fallbackColor, 0.16)
-    : tintHex(fallbackColor, 0.08);
+    ? mixHex(tintHex(fallbackColor, 0.22), globalHudAccent, 0.24)
+    : mixHex(tintHex(fallbackColor, 0.12), globalHudAccent, 0.16);
   const color = emissiveIntensity > 0.02 ? tintHex(base, 0.08) : base;
+  const materialEmissive = emissiveIntensity > 0 ? emissive : globalHudAccent;
+  const materialEmissiveIntensity = emissiveIntensity > 0
+    ? emissiveIntensity + (emissive === globalHudAccent ? 0.004 : 0)
+    : 0.008;
 
   return (
     <meshStandardMaterial
       color={color}
-      roughness={emissiveIntensity > 0.012 ? 0.62 : 0.7}
-      metalness={0.06}
-      emissive={emissive}
-      emissiveIntensity={emissiveIntensity + (emissiveIntensity > 0 && emissive === globalHudAccent ? 0.004 : 0)}
+      roughness={emissiveIntensity > 0.012 ? 0.58 : 0.64}
+      metalness={0.08}
+      emissive={materialEmissive}
+      emissiveIntensity={materialEmissiveIntensity}
     />
   );
 }
@@ -70,10 +86,15 @@ export function WorldCityTowers({
               }
 
               if (primitive.kind === 'cylinder') {
+                const hasEmissive = (primitive.emissiveIntensity ?? 0) > 0;
+                const color = mixHex(tintHex(primitive.color, hasEmissive ? 0.08 : 0.03), visualProfile.global.hudAccent, hasEmissive ? 0.2 : 0.14);
+                const emissive = primitive.emissive ?? visualProfile.global.hudAccent;
+                const emissiveIntensity = (primitive.emissiveIntensity ?? 0) + (primitive.emissive ? 0 : 0.008);
+
                 return (
                   <mesh key={`${tower.id}:cylinder:${index}`} position={primitive.position} rotation={primitive.rotation}>
                     <cylinderGeometry args={[primitive.radiusTop, primitive.radiusBottom, primitive.height, primitive.radialSegments ?? 12]} />
-                    <meshStandardMaterial color={primitive.color} emissive={primitive.emissive} emissiveIntensity={primitive.emissiveIntensity ?? 0} metalness={primitive.metalness ?? 0.16} roughness={primitive.roughness ?? 0.34} />
+                    <meshStandardMaterial color={color} emissive={emissive} emissiveIntensity={emissiveIntensity} metalness={primitive.metalness ?? 0.18} roughness={primitive.roughness ?? 0.32} />
                   </mesh>
                 );
               }
