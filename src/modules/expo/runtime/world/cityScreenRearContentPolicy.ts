@@ -81,7 +81,23 @@ function getRearCampusScreenHostDepth(surface: CityScreenSurface) {
   return Math.max(18, surface.size[2] * 5.2);
 }
 
+const REAR_CAMPUS_BODY_DEPTH_BY_SURFACE_ID: Readonly<Record<string, number>> = {
+  'rear-campus-event-pavilion-left-feed-surface': 132,
+  'rear-campus-event-pavilion-right-feed-surface': 132,
+  'rear-campus-mega-civic-hall-host-surface': 324,
+  'rear-campus-orbital-scoregate-host-surface': 320,
+  'rear-campus-stage-monolith-canopy-host-surface': 176,
+};
+
 function getRearCampusRearContentZ(surface: CityScreenSurface) {
+  const bodyDepth = REAR_CAMPUS_BODY_DEPTH_BY_SURFACE_ID[surface.id];
+  if (bodyDepth) {
+    // Some rear-campus screens are mounted on real pavilion/landmark bodies, not
+    // only the lightweight screen shell. Push the rear clone behind that body so
+    // the backside is readable instead of hidden by the structure.
+    return -(getSocketAnchorDepth(surface) + bodyDepth + 8);
+  }
+
   const hostDepth = getRearCampusScreenHostDepth(surface);
   const faceInset = 6;
 
