@@ -111,6 +111,45 @@ function renderPrimitive(
   return null;
 }
 
+function shouldRenderRearScreenContent(socket: CityScreenSocket) {
+  return socket.kind === 'hero_wall' || socket.kind === 'wall';
+}
+
+function getRearScreenContentZ(socket: CityScreenSocket) {
+  return -Math.max(1.05, (socket.renderIntent?.frameDepth ?? 1.9) * 0.58);
+}
+
+function renderRearTexturePrimitive(
+  primitive: CanonicalPrimitive,
+  key: string,
+  textureQualityHint: ExpoScreenTextureQualityHint | undefined,
+  rearZ: number,
+) {
+  if (primitive.kind !== 'texture-plane' || !primitive.url) {
+    return null;
+  }
+
+  return (
+    <mesh
+      key={key}
+      name={key}
+      position={[primitive.position[0], primitive.position[1], rearZ]}
+      renderOrder={9}
+      scale={[-1, 1, 1]}
+    >
+      <planeGeometry args={primitive.size} />
+      <SponsorTextureSurface
+        depthWrite={false}
+        doubleSided
+        fallbackColor={primitive.fallbackColor}
+        opacity={primitive.opacity ?? 0.92}
+        textureQualityHint={textureQualityHint}
+        url={primitive.url}
+      />
+    </mesh>
+  );
+}
+
 export function WorldCityScreenAssignments({
   assignments,
   boothPlacements,
@@ -200,6 +239,7 @@ export function WorldCityScreenAssignments({
           isInActiveSection: true,
           qualitySettings,
         });
+        const rearScreenContentZ = getRearScreenContentZ(socket);
 
         return (
           <group
@@ -247,6 +287,14 @@ export function WorldCityScreenAssignments({
           >
             {primitives.map((primitive, index) =>
               renderPrimitive(primitive, `${assignment.id}:${primitive.kind}:${index}`, screenRuntimePolicy.textureQualityHint),
+            )}
+            {shouldRenderRearScreenContent(socket) && primitives.map((primitive, index) =>
+              renderRearTexturePrimitive(
+                primitive,
+                `${assignment.id}:rear:${primitive.kind}:${index}`,
+                screenRuntimePolicy.textureQualityHint,
+                rearScreenContentZ,
+              ),
             )}
           </group>
         );

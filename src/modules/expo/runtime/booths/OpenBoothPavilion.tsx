@@ -69,8 +69,6 @@ export function OpenBoothPavilion({
   const sideBannerWidth = isHero ? 1.48 : isElite ? 1.22 : isPremium ? 0.94 : 0.72;
   const sideBannerHeight = isHero ? 7.4 : isElite ? 6.2 : isPremium ? 5.2 : 4.4;
   const standardFrontTrimWidth = width * 0.7;
-  const screenHeaderY = (screenFrameHeight * 0.5) - (isHero ? 0.46 : isElite ? 0.4 : isPremium ? 0.34 : 0.3);
-  const screenFooterY = -(screenFrameHeight * 0.5) + (isHero ? 0.42 : isElite ? 0.36 : isPremium ? 0.3 : 0.26);
   const frontageCanopyWidth = width * (isHero ? 0.9 : isElite ? 0.82 : isPremium ? 0.78 : 0.68);
   const frontageCanopyDepth = isHero ? 2.4 : isElite ? 2.08 : isPremium ? 1.84 : 1.42;
   const frontageCanopyY = postHeight * (isHero ? 0.66 : isElite ? 0.62 : isPremium ? 0.58 : 0.54);
@@ -95,10 +93,8 @@ export function OpenBoothPavilion({
   const mediaFallbackColor = isHero ? '#0ea5e9' : isElite ? '#0891c9' : isPremium ? '#0878ad' : '#0f5f89';
   const mediaTrimColor = isHero ? '#a8f3ff' : isElite ? '#99ecff' : isPremium ? '#8be2fb' : '#7bd4ee';
   const mediaEmissiveIntensity = isHero ? 0.23 : isElite ? 0.18 : isPremium ? 0.15 : 0.12;
-  const mediaGlowOpacity = isHero ? 0.28 : isElite ? 0.24 : isPremium ? 0.2 : 0.18;
   const mediaFaceZ = 0.32;
-  const mediaGlowZ = 0.36;
-  const mediaTrimZ = 0.42;
+  const mediaSideAccentZ = 0.44;
 
   if (isScreenFirstBooth) {
     const wallY = (screenFrameHeight * 0.5) + (isElite ? 1.82 : 1.7);
@@ -541,18 +537,12 @@ export function OpenBoothPavilion({
         ))}
         {showScreenTrimOverlays && (
           <>
-            <mesh position={[0, 0, mediaGlowZ]}>
-              <planeGeometry args={[screenSurfaceWidth * 0.94, screenSurfaceHeight * 0.86]} />
-              <meshBasicMaterial color={accentColor} depthWrite={false} transparent opacity={mediaGlowOpacity * 0.48} toneMapped={false} />
-            </mesh>
-            <mesh position={[0, screenHeaderY, mediaTrimZ]} castShadow receiveShadow>
-              <boxGeometry args={[screenSurfaceWidth * (isHero ? 0.86 : isElite ? 0.82 : isPremium ? 0.76 : 0.68), 0.12, 0.12]} />
-              <meshStandardMaterial color={mediaTrimColor} emissive={accentColor} emissiveIntensity={isHero ? 0.18 : isElite ? 0.14 : isPremium ? 0.11 : 0.08} roughness={0.18} metalness={0.1} />
-            </mesh>
-            <mesh position={[0, screenFooterY, mediaTrimZ]} castShadow receiveShadow>
-              <boxGeometry args={[screenSurfaceWidth * (isHero ? 0.72 : isElite ? 0.66 : isPremium ? 0.6 : 0.52), 0.08, 0.12]} />
-              <meshStandardMaterial color={mediaTrimColor} emissive={accentColor} emissiveIntensity={isHero ? 0.16 : isElite ? 0.12 : isPremium ? 0.09 : 0.07} roughness={0.2} metalness={0.1} />
-            </mesh>
+            {[-1, 1].map((side) => (
+              <mesh key={`screen-side-accent-${side}`} position={[side * ((screenSurfaceWidth * 0.5) + 0.18), 0, mediaSideAccentZ]} castShadow receiveShadow>
+                <boxGeometry args={[0.12, screenSurfaceHeight * (isHero ? 0.88 : isElite ? 0.82 : isPremium ? 0.76 : 0.68), 0.14]} />
+                <meshStandardMaterial color={mediaTrimColor} emissive={accentColor} emissiveIntensity={isHero ? 0.18 : isElite ? 0.14 : isPremium ? 0.11 : 0.08} roughness={0.18} metalness={0.1} />
+              </mesh>
+            ))}
             <mesh position={[0, lowerMediaShelfY, 0.22]} castShadow receiveShadow>
               <boxGeometry args={[lowerMediaShelfWidth, 0.12, lowerMediaShelfDepth]} />
               <meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={isHero ? 0.14 : isElite ? 0.1 : 0.06} roughness={0.24} metalness={0.12} />
@@ -560,7 +550,7 @@ export function OpenBoothPavilion({
           </>
         )}
         {(isHero || (isElite && !isScreenFirstBooth)) && (
-          <mesh position={[0, (screenFrameHeight * 0.5) + (isHero ? 0.44 : 0.34), mediaTrimZ]} castShadow receiveShadow>
+          <mesh position={[0, (screenFrameHeight * 0.5) + (isHero ? 0.44 : 0.34), mediaSideAccentZ]} castShadow receiveShadow>
             <boxGeometry args={[screenFrameWidth * (isHero ? 0.7 : 0.62), 0.12, 0.12]} />
             <meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={isHero ? 0.22 : 0.14} roughness={0.2} metalness={0.12} />
           </mesh>
