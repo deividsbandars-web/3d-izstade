@@ -52,8 +52,10 @@ export function ExpoWorldHud({
   const joystickRef = useRef<HTMLDivElement | null>(null);
   const lookPadRef = useRef<HTMLDivElement | null>(null);
   const lookAnchorRef = useRef<{ x: number; y: number } | null>(null);
+  const lastBoothEntryRequestRef = useRef(0);
   const mobileIntentRef = useRef<ExpoMobileMoveIntent>(EXPO_MOBILE_MOVE_IDLE);
   const isWalkMode = mode === 'walk';
+  const visibleBoothEntry = mode === 'walk' || mode === 'fly' ? nearbyBoothEntry : null;
   const radarSize = isTouchDevice ? 156 : 208;
   const orderedMarkers = [...sectorMarkers].sort((left, right) => {
     const leftDistance = Math.hypot(left.position[0] - playerPos[0], left.position[2] - playerPos[2]);
@@ -214,6 +216,20 @@ export function ExpoWorldHud({
   const pulseMobileAction = (key: 'jump' | 'lift', active: boolean) => {
     setMobileGuideDismissed(true);
     emitMobileIntent({ [key]: active } as Partial<ExpoMobileMoveIntent>);
+  };
+
+  const requestBoothEntry = () => {
+    if (!nearbyBoothEntry) {
+      return;
+    }
+
+    const now = typeof performance !== 'undefined' ? performance.now() : Date.now();
+    if (now - lastBoothEntryRequestRef.current < 500) {
+      return;
+    }
+
+    lastBoothEntryRequestRef.current = now;
+    nearbyBoothEntry.onEnter();
   };
 
   return (
@@ -419,7 +435,7 @@ export function ExpoWorldHud({
         </div>
       )}
 
-      {nearbyBoothEntry && isWalkMode && (
+      {visibleBoothEntry && (
         <div
           data-expo-booth-entry-prompt="true"
           style={{
@@ -443,19 +459,25 @@ export function ExpoWorldHud({
                 Nearby booth
               </div>
               <div style={{ marginTop: '4px', color: '#f8fafc', fontSize: isTouchDevice ? '0.98rem' : '1.06rem', fontWeight: 950, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {nearbyBoothEntry.displayName}
+                {visibleBoothEntry.displayName}
               </div>
               <div style={{ marginTop: '4px', color: '#9fb2c7', fontSize: '0.72rem', fontWeight: 800 }}>
-                {nearbyBoothEntry.tierLabel}
+                {visibleBoothEntry.tierLabel}
                 {nearbyBoothDistance !== null ? ` - ${nearbyBoothDistance}u` : ''}
               </div>
             </div>
             <button
               type="button"
-              aria-label={`Enter ${nearbyBoothEntry.displayName} showroom`}
-              onClick={(event) => {
+              aria-label={`Enter ${visibleBoothEntry.displayName} showroom`}
+              onPointerDown={(event) => {
+                event.preventDefault();
                 event.stopPropagation();
-                nearbyBoothEntry.onEnter();
+                requestBoothEntry();
+              }}
+              onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                requestBoothEntry();
               }}
               style={{
                 border: '1px solid rgba(186, 230, 253, 0.42)',
@@ -471,6 +493,7 @@ export function ExpoWorldHud({
                 minHeight: isTouchDevice ? '44px' : '42px',
                 padding: isTouchDevice ? '10px 13px' : '10px 16px',
                 textTransform: 'uppercase',
+                touchAction: 'manipulation',
               }}
             >
               Enter showroom

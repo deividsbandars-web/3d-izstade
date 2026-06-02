@@ -76,9 +76,9 @@ export function ExpoRuntimeShell({
 
       {mode !== 'menu' && mode !== 'unreal' && (
         <>
+          {sceneLayer}
           {operatorLayer}
           {hudLayer}
-          {sceneLayer}
           <GlobalChat expoMobileCompact={isTouchDevice} />
         </>
       )}
