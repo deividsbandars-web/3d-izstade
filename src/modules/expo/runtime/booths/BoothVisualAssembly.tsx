@@ -1,6 +1,6 @@
 import type { RefObject } from 'react';
 import type * as THREE from 'three';
-import { getSponsorNameFontSize, type SponsorBoothPresentation, type SponsorCta } from '../../lib/sponsorBoothPresentation';
+import { getSponsorNameFontSize, type SponsorBoothPresentation } from '../../lib/sponsorBoothPresentation';
 import type { BoothProductPreviewCard } from '../boothProduct';
 import { EXPO_SPATIAL_DEBUG_FLAGS } from '../../state/expoRuntime';
 import { getBoothArchitectureMetrics, getBoothColliderSegments } from '../../components/BoothArchitectureKit';
@@ -263,7 +263,6 @@ export function BoothVisualAssembly({
   boothColliderRef,
   boothProductPreviewCard,
   fallbackMonogram,
-  onAction,
   presentation,
   districtThemeId,
   tierState,
@@ -273,7 +272,6 @@ export function BoothVisualAssembly({
   boothProductPreviewCard?: BoothProductPreviewCard | null;
   districtThemeId?: DistrictThemeId | string | null;
   fallbackMonogram: string;
-  onAction: (action: SponsorCta) => void;
   presentation: SponsorBoothPresentation;
   tierState: BoothTierState & {
     districtVisual: DistrictVisual;
@@ -416,7 +414,6 @@ export function BoothVisualAssembly({
               <BoothInfoBand
                 accentColor={accentColor}
                 badgeLabel={presentation.badgeLabel}
-                ctaActions={presentation.actions}
                 fallbackPremiumLabel={premiumLabel}
                 infoBandHeight={tierState.infoBandHeight}
                 infoBandWidth={tierState.infoBandWidth}
@@ -425,16 +422,13 @@ export function BoothVisualAssembly({
                 isHeroNode={tierState.isHeroNode}
                 metrics={{
                   badgePosition: metrics.badgePosition,
-                  ctaPosition: metrics.ctaPosition,
                   taglinePosition: metrics.taglinePosition,
                   titleMaxWidth: metrics.titleMaxWidth,
                   titlePosition: metrics.titlePosition,
                 }}
                 nameFontSize={nameFontSize}
-                onAction={onAction}
                 showBadge={tierState.showBadge}
                 showDetailedText={tierState.showDetailedText}
-                showFullBoothUi={tierState.showFullBoothUi}
                 showPremiumEyebrow={tierState.showPremiumEyebrow}
                 showTagline={tierState.showTagline}
                 tagline={presentation.tagline ?? undefined}

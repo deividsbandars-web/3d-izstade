@@ -11,14 +11,7 @@ interface ExpoWorldHudProps {
   isSpeaking: boolean;
   isTouchDevice?: boolean;
   mode: ExpoMode;
-  nearbyBooth?: {
-    distance: number;
-    id: string;
-    label: string;
-    sectorName?: string | null;
-  } | null;
   onMoveTouch?: (intent: ExpoMobileMoveIntent) => void;
-  onOpenNearbyBooth?: (boothId: string) => void;
   operatorBuildStamp?: string | null;
   playerPos: number[];
   sectorMarkers: ExpoSectorMarker[];
@@ -33,9 +26,7 @@ export function ExpoWorldHud({
   isSpeaking,
   isTouchDevice = false,
   mode,
-  nearbyBooth = null,
   onMoveTouch,
-  onOpenNearbyBooth,
   operatorBuildStamp = null,
   playerPos,
   sectorMarkers,
@@ -596,35 +587,6 @@ export function ExpoWorldHud({
             SWIPE LOOK
           </div>
         </div>
-        {nearbyBooth && onOpenNearbyBooth && !mobileMapOpen && !mobileOptionsOpen && (
-          <button
-            type="button"
-            onClick={() => onOpenNearbyBooth(nearbyBooth.id)}
-            style={{
-              ...primaryPanelStyle,
-              position: 'absolute',
-              left: '50%',
-              bottom: 'max(178px, calc(env(safe-area-inset-bottom) + 174px))',
-              zIndex: 113,
-              width: 'min(330px, calc(100vw - 32px))',
-              transform: 'translateX(-50%)',
-              padding: '11px 14px',
-              borderRadius: '18px',
-              border: `1px solid ${visualProfile.global.hudAccent}66`,
-              background: `linear-gradient(180deg, ${visualProfile.global.hudAccent}2e, rgba(2, 6, 23, 0.78))`,
-              color: '#f8fafc',
-              textAlign: 'left',
-            }}
-          >
-            <div style={{ color: visualProfile.global.hudAccent, fontSize: '0.58rem', fontWeight: 950, letterSpacing: '0.14em' }}>NEARBY BOOTH</div>
-            <div style={{ marginTop: '3px', display: 'flex', justifyContent: 'space-between', gap: '10px', alignItems: 'center' }}>
-              <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: '0.88rem', fontWeight: 950 }}>
-                OPEN {nearbyBooth.label}
-              </span>
-              <span style={{ color: '#cbd5e1', fontSize: '0.72rem', fontWeight: 850 }}>{nearbyBooth.distance}u</span>
-            </div>
-          </button>
-        )}
         <div
           style={{
             position: 'absolute',
@@ -820,55 +782,6 @@ export function ExpoWorldHud({
         </>
       )}
 
-      {!isTouchDevice && isWalkMode && nearbyBooth && onOpenNearbyBooth && (
-        <div
-          style={{
-            ...primaryPanelStyle,
-            position: 'absolute',
-            left: '50%',
-            bottom: '28px',
-            zIndex: 113,
-            width: 'min(430px, calc(100vw - 48px))',
-            transform: 'translateX(-50%)',
-            padding: '13px 15px',
-            border: `1px solid ${visualProfile.global.hudAccent}66`,
-            background: `linear-gradient(180deg, ${visualProfile.global.hudAccent}24, rgba(2, 6, 23, 0.86))`,
-          }}
-        >
-          <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', alignItems: 'center' }}>
-            <div style={{ minWidth: 0 }}>
-              <div style={{ color: visualProfile.global.hudAccent, fontSize: '0.62rem', fontWeight: 950, letterSpacing: '0.14em' }}>
-                NEARBY BOOTH
-              </div>
-              <div style={{ marginTop: '4px', color: '#f8fafc', fontSize: '0.94rem', fontWeight: 950, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {nearbyBooth.label}
-              </div>
-              <div style={{ marginTop: '3px', color: '#cbd5e1', fontSize: '0.72rem', fontWeight: 800 }}>
-                Press E or use the button to enter
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={() => onOpenNearbyBooth(nearbyBooth.id)}
-              style={{
-                flex: '0 0 auto',
-                padding: '12px 16px',
-                borderRadius: '14px',
-                border: 'none',
-                background: visualProfile.global.hudAccent,
-                color: '#06111c',
-                cursor: 'pointer',
-                fontSize: '0.78rem',
-                fontWeight: 950,
-                letterSpacing: '0.06em',
-                textTransform: 'uppercase',
-              }}
-            >
-              Open booth
-            </button>
-          </div>
-        </div>
-      )}
     </>
   );
 }

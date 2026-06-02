@@ -438,23 +438,16 @@ export function BoothFeatureHeader({ accentColor, contractTier, fallbackMonogram
   );
 }
 
-export function BoothInfoBand({ accentColor, badgeLabel, ctaActions, fallbackPremiumLabel, infoBandHeight, infoBandWidth, infoBandZ, isEliteBooth, isHeroNode, metrics, nameFontSize, onAction, showBadge, showDetailedText, showFullBoothUi, showPremiumEyebrow, showTagline, tagline, title }: { accentColor: string; badgeLabel: string | null; ctaActions: SponsorCta[]; fallbackPremiumLabel: string; infoBandHeight: number; infoBandWidth: number; infoBandZ: number; isEliteBooth: boolean; isHeroNode: boolean; metrics: { badgePosition: [number, number, number]; ctaPosition: [number, number, number]; taglinePosition: [number, number, number]; titleMaxWidth: number; titlePosition: [number, number, number] }; nameFontSize: number; onAction: (action: SponsorCta) => void; showBadge: boolean; showDetailedText: boolean; showFullBoothUi: boolean; showPremiumEyebrow: boolean; showTagline: boolean; tagline?: string; title: string }) {
-  if (!showDetailedText && !showFullBoothUi) {
+export function BoothInfoBand({ accentColor, badgeLabel, fallbackPremiumLabel, infoBandHeight, infoBandWidth, infoBandZ, isEliteBooth, isHeroNode, metrics, nameFontSize, showBadge, showDetailedText, showPremiumEyebrow, showTagline, tagline, title }: { accentColor: string; badgeLabel: string | null; fallbackPremiumLabel: string; infoBandHeight: number; infoBandWidth: number; infoBandZ: number; isEliteBooth: boolean; isHeroNode: boolean; metrics: { badgePosition: [number, number, number]; taglinePosition: [number, number, number]; titleMaxWidth: number; titlePosition: [number, number, number] }; nameFontSize: number; showBadge: boolean; showDetailedText: boolean; showPremiumEyebrow: boolean; showTagline: boolean; tagline?: string; title: string }) {
+  if (!showDetailedText) {
     return null;
   }
 
   const isPremiumBand = showPremiumEyebrow;
   const edgeGlowColor = isEliteBooth ? '#99f6e4' : isHeroNode ? '#f3f8fd' : '#bae6fd';
-  const aiAction = ctaActions.find((action) => action.kind === 'ai_chat' && !action.disabled) ?? null;
-  const calculatorAction = ctaActions.find((action) => action.kind === 'calculators' && !action.disabled) ?? null;
-  const infoStandAction = ctaActions.find((action) => action.kind === 'demo_room' && !action.disabled) ?? null;
-  const featurePanelCount = showFullBoothUi && showDetailedText
-    ? [aiAction, calculatorAction, infoStandAction].filter(Boolean).length
-    : 0;
-  const featureStackExtraHeight = Math.max(0, featurePanelCount - 1) * 1.3;
-  const backgroundHeight = infoBandHeight + 0.72 + featureStackExtraHeight;
-  const backgroundCenterY = (metrics.titlePosition[1] - 0.82) - (featureStackExtraHeight * 0.5);
-  const sideRailCenterY = (metrics.titlePosition[1] - 0.86) - (featureStackExtraHeight * 0.5);
+  const backgroundHeight = infoBandHeight + 0.72;
+  const backgroundCenterY = metrics.titlePosition[1] - 0.82;
+  const sideRailCenterY = metrics.titlePosition[1] - 0.86;
   return (
     <>
       <mesh position={[0, backgroundCenterY, infoBandZ - 0.04]} castShadow><boxGeometry args={[infoBandWidth + 1.46, backgroundHeight, 0.48]} /><meshStandardMaterial color="#142337" emissive={accentColor} emissiveIntensity={0.045} metalness={0.06} roughness={0.52} /></mesh>
@@ -477,16 +470,6 @@ export function BoothInfoBand({ accentColor, badgeLabel, ctaActions, fallbackPre
       {showDetailedText && !isHeroNode && <Text position={metrics.titlePosition} fontSize={nameFontSize * 0.84} color="#f8fafc" anchorX="center" anchorY="middle" maxWidth={metrics.titleMaxWidth - 1.1}>{title.toUpperCase()}</Text>}
       {showTagline && showDetailedText && <Text position={metrics.taglinePosition} fontSize={metrics.titleMaxWidth <= 10 ? 0.36 : 0.42} color="#94a3b8" anchorX="center" anchorY="middle" maxWidth={Math.max(8.4, metrics.titleMaxWidth - 2.4)}>{(tagline || '').toUpperCase()}</Text>}
       {showBadge && showDetailedText && badgeLabel && <SponsorBadge accentColor={accentColor} label={badgeLabel} position={[metrics.badgePosition[0], metrics.badgePosition[1] + (showPremiumEyebrow ? 0.14 : 0), metrics.badgePosition[2] - 0.46]} />}
-      {showFullBoothUi && (
-        <>
-          <mesh position={[metrics.ctaPosition[0], metrics.ctaPosition[1] - 0.12, metrics.ctaPosition[2] - 0.14]} castShadow><boxGeometry args={[7.84, 1.02, 0.44]} /><meshStandardMaterial color="#142337" emissive={accentColor} emissiveIntensity={0.04} metalness={0.08} roughness={0.56} /></mesh>
-          <mesh position={[metrics.ctaPosition[0], metrics.ctaPosition[1] - 0.12, metrics.ctaPosition[2] + 0.08]} castShadow><boxGeometry args={[6.92, 0.16, 0.18]} /><meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={0.08} /></mesh>
-          <group position={[metrics.ctaPosition[0], metrics.ctaPosition[1], metrics.ctaPosition[2] + 0.06]}><SponsorCtaStrip actions={ctaActions} color={accentColor} onAction={onAction} /></group>
-        </>
-      )}
-      {showFullBoothUi && showDetailedText && <group position={[metrics.ctaPosition[0], metrics.ctaPosition[1] - 1.12, metrics.ctaPosition[2] + 0.06]}><BoothAiFeature action={aiAction} color={accentColor} onAction={onAction} /></group>}
-      {showFullBoothUi && showDetailedText && <group position={[metrics.ctaPosition[0], metrics.ctaPosition[1] - 2.38, metrics.ctaPosition[2] + 0.06]}><BoothCalculatorFeature action={calculatorAction} color={accentColor} onAction={onAction} /></group>}
-      {showFullBoothUi && showDetailedText && <group position={[metrics.ctaPosition[0], metrics.ctaPosition[1] - 3.64, metrics.ctaPosition[2] + 0.06]}><BoothInfoStandFeature action={infoStandAction} color={accentColor} onAction={onAction} /></group>}
     </>
   );
 }

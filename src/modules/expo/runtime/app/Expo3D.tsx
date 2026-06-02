@@ -176,9 +176,7 @@ function ExpoRuntimeExperience({
             isSpeaking={isSpeaking}
             isTouchDevice={runtimeSession.isTouchDevice}
             mode={runtimeSession.mode}
-            nearbyBooth={nearbyBooth}
             onMoveTouch={runtimeSession.setMobileMoveIntent}
-            onOpenNearbyBooth={openNearbyBooth}
             playerPos={playerPos}
             sectorMarkers={worldContract.sectorMarkers}
             visualProfile={worldContract.visualProfile}
