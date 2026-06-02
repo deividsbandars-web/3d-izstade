@@ -88,10 +88,10 @@ function getRearCampusGeneratedHostShellRearContentZ(surface: CityScreenSurface)
 
 function getManualRearCampusBackplateRearContentZ(surface: CityScreenSurface) {
   if (surface.id === 'rear-campus-mega-civic-hall-host-surface') {
-    // The mega civic hall screen is mounted to the authored main-hall body,
-    // whose rear face is much closer than the full base depth. Keep the rear
-    // texture on that body plane so it reads as attached, not floating behind it.
-    return -(getSocketAnchorDepth(surface) + 256);
+    // The mega civic hall screen is mounted to a recovered authored structure,
+    // so use only the screen housing depth instead of the full landmark body.
+    // This keeps the rear texture attached to the screen back.
+    return -(getSocketAnchorDepth(surface) + getSurfaceHousingDepth(surface) + 1.2);
   }
 
   if (surface.id === 'rear-campus-orbital-scoregate-host-surface') {
