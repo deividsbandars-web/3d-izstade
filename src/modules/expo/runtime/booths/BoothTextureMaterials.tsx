@@ -400,16 +400,9 @@ function drawCameraFeedLoopBillboard(args: {
     width,
   } = args;
   const shortSide = Math.min(width, height);
-  const pad = Math.max(28, shortSide * 0.055);
-  const title = payload.label || 'Expo City Camera Loop';
-  const subtitle = payload.subtitle || 'Live camera route preview across the Web3D city';
-  const chip = payload.chip || 'CITY CAMERA LOOP';
-  const tier = payload.tier || 'CAMERA FEED';
-  const titleSize = height * 0.09;
-  const bodySize = height * 0.042;
+  const pad = Math.max(18, shortSide * 0.034);
   const smallSize = height * 0.032;
-  const phase = timeSeconds * 0.85;
-  const sweep = (Math.sin(timeSeconds * 1.55) + 1) * 0.5;
+  const label = payload.label || 'Expo City Camera';
 
   if (cameraFrames.length > 0) {
     const frameDuration = 1.65;
@@ -432,9 +425,9 @@ function drawCameraFeedLoopBillboard(args: {
       drawCoverFrame(cameraFrames[nextFrameIndex], fade);
     }
     const cameraGradient = context.createLinearGradient(0, 0, 0, height);
-    cameraGradient.addColorStop(0, 'rgba(3, 7, 18, 0.18)');
-    cameraGradient.addColorStop(0.58, 'rgba(3, 7, 18, 0.2)');
-    cameraGradient.addColorStop(1, 'rgba(3, 7, 18, 0.72)');
+    cameraGradient.addColorStop(0, 'rgba(3, 7, 18, 0.08)');
+    cameraGradient.addColorStop(0.62, 'rgba(3, 7, 18, 0.04)');
+    cameraGradient.addColorStop(1, 'rgba(3, 7, 18, 0.28)');
     context.fillStyle = cameraGradient;
     context.fillRect(0, 0, width, height);
   } else {
@@ -446,144 +439,31 @@ function drawCameraFeedLoopBillboard(args: {
     context.fillRect(0, 0, width, height);
   }
 
-  context.save();
-  context.globalAlpha = 0.32;
-  context.strokeStyle = accentColor;
-  context.lineWidth = Math.max(1, shortSide * 0.002);
-  const gridGap = Math.max(34, shortSide * 0.055);
-  for (let x = -gridGap; x < width + gridGap; x += gridGap) {
-    const offset = (timeSeconds * 18) % gridGap;
-    context.beginPath();
-    context.moveTo(x + offset, 0);
-    context.lineTo(x + offset - width * 0.22, height);
-    context.stroke();
-  }
-  for (let y = 0; y < height; y += gridGap) {
-    context.beginPath();
-    context.moveTo(0, y);
-    context.lineTo(width, y);
-    context.stroke();
-  }
-  context.restore();
-
-  context.fillStyle = 'rgba(2, 8, 18, 0.68)';
+  const badgeX = pad;
+  const badgeY = pad;
+  const badgeHeight = Math.max(28, smallSize * 1.38);
+  const badgeWidth = Math.min(width * 0.44, Math.max(250, label.length * smallSize * 0.48));
+  context.fillStyle = 'rgba(2, 8, 18, 0.58)';
   context.beginPath();
-  context.roundRect(pad * 0.7, pad * 0.7, width - pad * 1.4, height - pad * 1.4, Math.max(18, shortSide * 0.032));
+  context.roundRect(badgeX, badgeY, badgeWidth, badgeHeight, badgeHeight * 0.5);
   context.fill();
   context.strokeStyle = 'rgba(125, 211, 252, 0.26)';
-  context.lineWidth = Math.max(2, shortSide * 0.0032);
+  context.lineWidth = Math.max(1, shortSide * 0.0018);
   context.stroke();
 
-  const left = pad * 1.18;
-  const top = pad;
-  drawBillboardText(context, chip.toUpperCase(), left, top, width * 0.42, font(900, smallSize), tierAccent);
-  drawBillboardText(context, title, left, top + smallSize * 1.35, width * 0.56, font(900, titleSize), '#f8fafc');
-  drawBillboardText(context, subtitle, left, top + smallSize * 1.55 + titleSize * 1.08, width * 0.55, font(760, bodySize), '#d7ecf8');
-
-  const liveDotX = width - pad * 2.9;
-  const liveDotY = top + smallSize * 0.58;
+  const liveDotX = badgeX + badgeHeight * 0.55;
+  const liveDotY = badgeY + badgeHeight * 0.5;
   context.fillStyle = Math.sin(timeSeconds * 5.6) > 0 ? '#22c55e' : '#86efac';
   context.beginPath();
-  context.arc(liveDotX, liveDotY, Math.max(8, smallSize * 0.28), 0, Math.PI * 2);
+  context.arc(liveDotX, liveDotY, Math.max(5, smallSize * 0.18), 0, Math.PI * 2);
   context.fill();
-  drawBillboardText(context, 'LIVE LOOP', liveDotX + smallSize * 0.78, liveDotY - smallSize * 0.48, width * 0.18, font(900, smallSize), '#bbf7d0');
+  drawBillboardText(context, `LIVE CITY CAMERA - ${label}`, liveDotX + smallSize * 0.55, liveDotY - smallSize * 0.42, badgeWidth - badgeHeight, font(900, smallSize * 0.86), tierAccent);
 
-  const mapX = width * 0.64;
-  const mapY = height * 0.18;
-  const mapW = width * 0.27;
-  const mapH = height * 0.54;
-  context.fillStyle = 'rgba(8, 24, 38, 0.86)';
-  context.beginPath();
-  context.roundRect(mapX, mapY, mapW, mapH, Math.max(14, shortSide * 0.024));
-  context.fill();
-  context.strokeStyle = 'rgba(56, 189, 248, 0.44)';
-  context.stroke();
-
-  const routePoints = [
-    [mapX + mapW * 0.16, mapY + mapH * 0.74],
-    [mapX + mapW * 0.36, mapY + mapH * 0.48],
-    [mapX + mapW * 0.58, mapY + mapH * 0.34],
-    [mapX + mapW * 0.82, mapY + mapH * 0.18],
-  ] as const;
-  context.strokeStyle = 'rgba(191, 219, 254, 0.48)';
-  context.lineWidth = Math.max(4, shortSide * 0.006);
-  context.beginPath();
-  routePoints.forEach(([x, y], index) => {
-    if (index === 0) {
-      context.moveTo(x, y);
-    } else {
-      context.lineTo(x, y);
-    }
-  });
-  context.stroke();
-
-  routePoints.forEach(([x, y], index) => {
-    context.fillStyle = index === Math.floor((timeSeconds * 0.8) % routePoints.length) ? accentColor : 'rgba(226, 232, 240, 0.8)';
-    context.beginPath();
-    context.arc(x, y, Math.max(7, smallSize * 0.24), 0, Math.PI * 2);
-    context.fill();
-  });
-
-  const movingPoint = (phase % 1) * (routePoints.length - 1);
-  const segment = Math.min(routePoints.length - 2, Math.floor(movingPoint));
-  const segmentT = movingPoint - segment;
-  const [startX, startY] = routePoints[segment];
-  const [endX, endY] = routePoints[segment + 1];
-  const cameraX = startX + (endX - startX) * segmentT;
-  const cameraY = startY + (endY - startY) * segmentT;
-  context.fillStyle = '#f8fafc';
-  context.beginPath();
-  context.arc(cameraX, cameraY, Math.max(10, smallSize * 0.34), 0, Math.PI * 2);
-  context.fill();
   context.strokeStyle = accentColor;
-  context.lineWidth = Math.max(3, shortSide * 0.004);
-  context.stroke();
-
-  const viewportX = left;
-  const viewportY = height * 0.55;
-  const viewportW = width * 0.56;
-  const viewportH = height * 0.25;
-  context.fillStyle = 'rgba(5, 20, 33, 0.88)';
-  context.beginPath();
-  context.roundRect(viewportX, viewportY, viewportW, viewportH, Math.max(16, shortSide * 0.024));
-  context.fill();
-  context.strokeStyle = 'rgba(125, 211, 252, 0.34)';
+  context.globalAlpha = 0.36;
   context.lineWidth = Math.max(2, shortSide * 0.003);
-  context.stroke();
-
-  const skylineBaseY = viewportY + viewportH * 0.72;
-  const skylineCount = 18;
-  for (let index = 0; index < skylineCount; index += 1) {
-    const towerW = viewportW / skylineCount * 0.64;
-    const towerX = viewportX + (viewportW / skylineCount) * index + towerW * 0.28;
-    const towerH = viewportH * (0.18 + 0.36 * ((Math.sin(timeSeconds * 0.9 + index * 1.7) + 1) * 0.5));
-    context.fillStyle = index % 3 === 0 ? 'rgba(125, 211, 252, 0.24)' : 'rgba(148, 163, 184, 0.18)';
-    context.fillRect(towerX, skylineBaseY - towerH, towerW, towerH);
-  }
-
-  const sweepX = viewportX + viewportW * (0.08 + sweep * 0.84);
-  const sweepGradient = context.createLinearGradient(sweepX - viewportW * 0.08, 0, sweepX + viewportW * 0.08, 0);
-  sweepGradient.addColorStop(0, 'rgba(125, 211, 252, 0)');
-  sweepGradient.addColorStop(0.5, 'rgba(125, 211, 252, 0.26)');
-  sweepGradient.addColorStop(1, 'rgba(125, 211, 252, 0)');
-  context.fillStyle = sweepGradient;
-  context.fillRect(sweepX - viewportW * 0.08, viewportY, viewportW * 0.16, viewportH);
-
-  context.strokeStyle = 'rgba(186, 230, 253, 0.2)';
-  context.lineWidth = Math.max(1, shortSide * 0.002);
-  for (let line = 1; line < 4; line += 1) {
-    const y = viewportY + (viewportH / 4) * line;
-    context.beginPath();
-    context.moveTo(viewportX + viewportW * 0.04, y);
-    context.lineTo(viewportX + viewportW * 0.96, y);
-    context.stroke();
-  }
-
-  context.fillStyle = 'rgba(8, 24, 38, 0.78)';
-  context.beginPath();
-  context.roundRect(left, height - pad * 1.8, width * 0.5, smallSize * 1.56, smallSize * 0.78);
-  context.fill();
-  drawBillboardText(context, tier.toUpperCase(), left + smallSize * 0.72, height - pad * 1.55, width * 0.46, font(900, smallSize * 0.86), '#dff7ff');
+  context.strokeRect(0, 0, width, height);
+  context.globalAlpha = 1;
 }
 
 function createGeneratedBillboardTexture(url: string, textureQualityHint: ExpoScreenTextureQualityHint) {

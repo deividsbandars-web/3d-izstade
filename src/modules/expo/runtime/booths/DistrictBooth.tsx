@@ -33,6 +33,16 @@ function BoothEntryKiosk({
     <group
       name="booth-entry-kiosk"
       position={position}
+      onClick={(event) => {
+        event.stopPropagation();
+        onEnter();
+      }}
+      onPointerOver={() => {
+        document.body.style.cursor = 'pointer';
+      }}
+      onPointerOut={() => {
+        document.body.style.cursor = 'auto';
+      }}
       userData={{
         expoBoothEntryKiosk: true,
         expoInteractionOwner: 'DistrictBooth',
