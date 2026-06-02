@@ -137,6 +137,10 @@ function getSlotChip(slot: ExpoScreenInventorySlot) {
 }
 
 function buildManagedScreenTextureUrl(content: ManagedScreenContent, slot: ExpoScreenInventorySlot, aspect: number) {
+  if (content.mode === 'video-placeholder' && content.videoUrl) {
+    return content.videoUrl;
+  }
+
   if (content.mode === 'image' && content.imageUrl) {
     return content.imageUrl;
   }

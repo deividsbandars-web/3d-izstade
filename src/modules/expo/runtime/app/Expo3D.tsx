@@ -1,14 +1,11 @@
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useZoneSystem } from '../../../../hooks/useZoneSystem';
 import { ExpoWorldHud } from './ExpoWorldHud';
 import { useExpoPresence } from '../../hooks/useExpoPresence';
 import { useExpoSceneData } from '../../hooks/useExpoSceneData';
 import { usePixelStreamingStatus } from '../../hooks/usePixelStreamingStatus';
-import { buildExpoBoothWeb3DRoomRoute } from '../../lib/expoBoothRoutes';
-import { EXPO_FEATURE_FLAGS } from '../../state/expoRuntime';
 import { buildExpoWorldContract } from '../../world-contract';
-import { bindBoothPresentation, openShowcaseRoom } from '../booths';
 import { useExpoOperatorLayer } from '../operator';
 import { ExpoRuntimeShell } from './ExpoRuntimeShell';
 import { ExpoSceneShell } from './ExpoSceneShell';
@@ -53,76 +50,6 @@ function ExpoRuntimeExperience({
     { enabled: !runtimeSession.salesDemoEnabled && !runtimeSession.boothProductPreviewEnabled },
   );
   const { activeZone, zoneSystem } = useZoneSystem(playerPos as any);
-  const nearbyBooth = useMemo(() => {
-    if (runtimeSession.mode !== 'walk') {
-      return null;
-    }
-
-    const activationDistance = runtimeSession.isTouchDevice ? 230 : 320;
-    const nearest = worldContract.boothPlacements
-      .map((placement) => ({
-        distance: Math.round(Math.hypot(placement.position[0] - playerPos[0], placement.position[2] - playerPos[2])),
-        placement,
-      }))
-      .filter((entry) => entry.distance <= activationDistance)
-      .sort((left, right) => left.distance - right.distance)[0];
-
-    if (!nearest) {
-      return null;
-    }
-
-    return {
-      distance: nearest.distance,
-      id: nearest.placement.id,
-      label: String(nearest.placement.company?.name || nearest.placement.sectorName || 'Sponsor Booth'),
-      sectorName: nearest.placement.sectorName ?? null,
-    };
-  }, [playerPos, runtimeSession.isTouchDevice, runtimeSession.mode, worldContract.boothPlacements]);
-  const openNearbyBooth = useCallback((boothPlacementId: string) => {
-    const placement = worldContract.boothPlacements.find((candidate) => candidate.id === boothPlacementId);
-    if (!placement) {
-      return;
-    }
-
-    const { booth, presentation } = bindBoothPresentation(placement.company, placement);
-    openShowcaseRoom({
-      analyticsEnabled: EXPO_FEATURE_FLAGS.enableAnalytics,
-      boothId: String(booth?.id ?? placement.id),
-      company: placement.company,
-      navigate: nav,
-      presentation: {
-        demoRoomPath: buildExpoBoothWeb3DRoomRoute(presentation.demoRoomPath),
-        template: presentation.template,
-      },
-      sectorName: placement.sectorName,
-    });
-  }, [nav, worldContract.boothPlacements]);
-
-  useEffect(() => {
-    if (!nearbyBooth || runtimeSession.mode !== 'walk') {
-      return;
-    }
-
-    const handleNearbyBoothKey = (event: KeyboardEvent) => {
-      const target = event.target;
-      if (
-        target instanceof HTMLElement
-        && (target.isContentEditable || target.tagName === 'INPUT' || target.tagName === 'SELECT' || target.tagName === 'TEXTAREA')
-      ) {
-        return;
-      }
-
-      if (event.code !== 'Enter' && event.code !== 'NumpadEnter') {
-        return;
-      }
-
-      event.preventDefault();
-      openNearbyBooth(nearbyBooth.id);
-    };
-
-    window.addEventListener('keydown', handleNearbyBoothKey);
-    return () => window.removeEventListener('keydown', handleNearbyBoothKey);
-  }, [nearbyBooth, openNearbyBooth, runtimeSession.mode]);
   const operatorSceneLayer = useExpoOperatorLayer({
     activeZoneId: activeZone?.id ? String(activeZone.id) : null,
     initialUrlFocus: runtimeSession.initialUrlFocus,
@@ -176,8 +103,6 @@ function ExpoRuntimeExperience({
             isSpeaking={isSpeaking}
             isTouchDevice={runtimeSession.isTouchDevice}
             mode={runtimeSession.mode}
-            nearbyBooth={nearbyBooth}
-            onEnterNearbyBooth={openNearbyBooth}
             onMoveTouch={runtimeSession.setMobileMoveIntent}
             playerPos={playerPos}
             sectorMarkers={worldContract.sectorMarkers}

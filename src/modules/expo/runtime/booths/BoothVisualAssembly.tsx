@@ -298,9 +298,12 @@ export function BoothVisualAssembly({
   const managedScreenImageUrl = managedScreenContent?.mode === 'image' && managedScreenContent.imageUrl
     ? managedScreenContent.imageUrl
     : null;
+  const managedScreenVideoUrl = managedScreenContent?.mode === 'video-placeholder' && managedScreenContent.videoUrl
+    ? managedScreenContent.videoUrl
+    : null;
   const managedCameraPreviewImage = isManagedCameraPreviewImage(managedScreenImageUrl);
   const useCameraFeedLoop = !boothProductPreviewCard && !managedScreenImageUrl;
-  const effectiveManagedScreenImageUrl = managedCameraPreviewImage ? null : managedScreenImageUrl;
+  const effectiveManagedScreenUrl = managedScreenVideoUrl ?? (managedCameraPreviewImage ? null : managedScreenImageUrl);
   const boothPresentationScreenUrl = buildGeneratedBillboardTextureUrl({
     accentColor,
     aspect: pavilionLayout.screenSurfaceWidth / Math.max(1, pavilionLayout.screenSurfaceHeight),
@@ -348,7 +351,7 @@ export function BoothVisualAssembly({
           districtThemeId={districtThemeId}
           fallbackText={fallbackMonogram}
           metrics={metrics}
-          screenUrl={effectiveManagedScreenImageUrl ?? boothPresentationScreenUrl}
+          screenUrl={effectiveManagedScreenUrl ?? boothPresentationScreenUrl}
           tier={tierState.featureTier}
         />
       )}

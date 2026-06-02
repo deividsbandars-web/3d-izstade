@@ -7,6 +7,7 @@ import {
   parseGeneratedBillboardPayload,
 } from './generatedBillboardTextureUrl';
 import type { ExpoScreenTextureQualityHint } from '../world/quality/expoScreenRuntimePolicy';
+import { useExpoVideoScreenPlaybackRegistration } from '../world/quality/expoActiveVideoScreenRegistry';
 import {
   DEFAULT_TEXTURE_CACHE_LIMIT,
   recordExpoGeneratedBillboardCacheEviction,
@@ -45,6 +46,13 @@ type ExpoCachedTextureEntry = {
   lastUsedAt: number;
   texture: THREE.Texture | null;
 };
+
+const EXPO_CITY_CAMERA_LOOP_FRAME_URLS = [
+  '/expo/media/warpala-camera-sponsor-boulevard.png',
+  '/expo/media/warpala-camera-right-marquee.png',
+  '/expo/media/warpala-camera-center-spine.png',
+  '/expo/media/warpala-camera-demo-arena.png',
+] as const;
 
 function configureExpoTexture(texture: THREE.Texture, textureQualityHint: ExpoScreenTextureQualityHint) {
   const qualityConfig = resolveExpoGeneratedBillboardQualityConfig(textureQualityHint);
@@ -311,6 +319,7 @@ function drawBoothProductPreviewBillboard(args: {
 function drawCameraFeedLoopBillboard(args: {
   accentColor: string;
   context: CanvasRenderingContext2D;
+  cameraFrames?: CanvasImageSource[];
   font: (weight: number, size: number) => string;
   height: number;
   payload: NonNullable<ReturnType<typeof parseGeneratedBillboardPayload>>;
@@ -321,6 +330,7 @@ function drawCameraFeedLoopBillboard(args: {
   const {
     accentColor,
     context,
+    cameraFrames = [],
     font,
     height,
     payload,
@@ -340,12 +350,40 @@ function drawCameraFeedLoopBillboard(args: {
   const phase = timeSeconds * 0.85;
   const sweep = (Math.sin(timeSeconds * 1.55) + 1) * 0.5;
 
-  const gradient = context.createLinearGradient(0, 0, width, height);
-  gradient.addColorStop(0, '#03111c');
-  gradient.addColorStop(0.44, '#0b2435');
-  gradient.addColorStop(1, '#031827');
-  context.fillStyle = gradient;
-  context.fillRect(0, 0, width, height);
+  if (cameraFrames.length > 0) {
+    const frameDuration = 1.65;
+    const rawIndex = timeSeconds / frameDuration;
+    const frameIndex = Math.floor(rawIndex) % cameraFrames.length;
+    const nextFrameIndex = (frameIndex + 1) % cameraFrames.length;
+    const fade = Math.max(0, Math.min(1, ((rawIndex % 1) - 0.72) / 0.28));
+    const drawCoverFrame = (frame: CanvasImageSource, alpha: number) => {
+      const sourceWidth = Number('naturalWidth' in frame ? frame.naturalWidth : 'videoWidth' in frame ? frame.videoWidth : width) || width;
+      const sourceHeight = Number('naturalHeight' in frame ? frame.naturalHeight : 'videoHeight' in frame ? frame.videoHeight : height) || height;
+      const scale = Math.max(width / sourceWidth, height / sourceHeight);
+      const drawWidth = sourceWidth * scale;
+      const drawHeight = sourceHeight * scale;
+      context.globalAlpha = alpha;
+      context.drawImage(frame, (width - drawWidth) * 0.5, (height - drawHeight) * 0.5, drawWidth, drawHeight);
+      context.globalAlpha = 1;
+    };
+    drawCoverFrame(cameraFrames[frameIndex], 1);
+    if (fade > 0) {
+      drawCoverFrame(cameraFrames[nextFrameIndex], fade);
+    }
+    const cameraGradient = context.createLinearGradient(0, 0, 0, height);
+    cameraGradient.addColorStop(0, 'rgba(3, 7, 18, 0.18)');
+    cameraGradient.addColorStop(0.58, 'rgba(3, 7, 18, 0.2)');
+    cameraGradient.addColorStop(1, 'rgba(3, 7, 18, 0.72)');
+    context.fillStyle = cameraGradient;
+    context.fillRect(0, 0, width, height);
+  } else {
+    const gradient = context.createLinearGradient(0, 0, width, height);
+    gradient.addColorStop(0, '#03111c');
+    gradient.addColorStop(0.44, '#0b2435');
+    gradient.addColorStop(1, '#031827');
+    context.fillStyle = gradient;
+    context.fillRect(0, 0, width, height);
+  }
 
   context.save();
   context.globalAlpha = 0.32;
@@ -440,35 +478,45 @@ function drawCameraFeedLoopBillboard(args: {
   context.lineWidth = Math.max(3, shortSide * 0.004);
   context.stroke();
 
-  const panels = [
-    ['ARRIVAL CAM', 'front gate sweep'],
-    ['BOULEVARD CAM', 'sponsor screen pass'],
-    ['ARENA CAM', 'event zone orbit'],
-  ] as const;
-  const panelTop = height * 0.56;
-  const panelGap = width * 0.016;
-  const panelW = (width * 0.56 - panelGap * 2) / 3;
-  const panelH = height * 0.23;
-  panels.forEach(([panelTitle, panelSubtitle], index) => {
-    const x = left + (panelW + panelGap) * index;
-    const active = index === Math.floor((timeSeconds * 0.9) % panels.length);
-    context.fillStyle = active ? 'rgba(14, 165, 233, 0.26)' : 'rgba(15, 35, 52, 0.82)';
-    context.beginPath();
-    context.roundRect(x, panelTop, panelW, panelH, Math.max(12, shortSide * 0.02));
-    context.fill();
-    context.strokeStyle = active ? 'rgba(186, 230, 253, 0.74)' : 'rgba(125, 211, 252, 0.22)';
-    context.stroke();
+  const viewportX = left;
+  const viewportY = height * 0.55;
+  const viewportW = width * 0.56;
+  const viewportH = height * 0.25;
+  context.fillStyle = 'rgba(5, 20, 33, 0.88)';
+  context.beginPath();
+  context.roundRect(viewportX, viewportY, viewportW, viewportH, Math.max(16, shortSide * 0.024));
+  context.fill();
+  context.strokeStyle = 'rgba(125, 211, 252, 0.34)';
+  context.lineWidth = Math.max(2, shortSide * 0.003);
+  context.stroke();
 
-    const scanX = x + panelW * (0.12 + sweep * 0.76);
-    context.fillStyle = 'rgba(186, 230, 253, 0.24)';
-    context.fillRect(scanX, panelTop + panelH * 0.12, Math.max(4, panelW * 0.018), panelH * 0.76);
-    context.fillStyle = active ? accentColor : tierAccent;
+  const skylineBaseY = viewportY + viewportH * 0.72;
+  const skylineCount = 18;
+  for (let index = 0; index < skylineCount; index += 1) {
+    const towerW = viewportW / skylineCount * 0.64;
+    const towerX = viewportX + (viewportW / skylineCount) * index + towerW * 0.28;
+    const towerH = viewportH * (0.18 + 0.36 * ((Math.sin(timeSeconds * 0.9 + index * 1.7) + 1) * 0.5));
+    context.fillStyle = index % 3 === 0 ? 'rgba(125, 211, 252, 0.24)' : 'rgba(148, 163, 184, 0.18)';
+    context.fillRect(towerX, skylineBaseY - towerH, towerW, towerH);
+  }
+
+  const sweepX = viewportX + viewportW * (0.08 + sweep * 0.84);
+  const sweepGradient = context.createLinearGradient(sweepX - viewportW * 0.08, 0, sweepX + viewportW * 0.08, 0);
+  sweepGradient.addColorStop(0, 'rgba(125, 211, 252, 0)');
+  sweepGradient.addColorStop(0.5, 'rgba(125, 211, 252, 0.26)');
+  sweepGradient.addColorStop(1, 'rgba(125, 211, 252, 0)');
+  context.fillStyle = sweepGradient;
+  context.fillRect(sweepX - viewportW * 0.08, viewportY, viewportW * 0.16, viewportH);
+
+  context.strokeStyle = 'rgba(186, 230, 253, 0.2)';
+  context.lineWidth = Math.max(1, shortSide * 0.002);
+  for (let line = 1; line < 4; line += 1) {
+    const y = viewportY + (viewportH / 4) * line;
     context.beginPath();
-    context.arc(x + panelW * (0.2 + 0.08 * Math.sin(timeSeconds + index)), panelTop + panelH * 0.45, Math.max(8, smallSize * 0.26), 0, Math.PI * 2);
-    context.fill();
-    drawBillboardText(context, panelTitle, x + panelW * 0.12, panelTop + panelH * 0.12, panelW * 0.78, font(900, smallSize * 0.78), '#f8fafc');
-    drawBillboardText(context, panelSubtitle, x + panelW * 0.12, panelTop + panelH * 0.66, panelW * 0.78, font(700, smallSize * 0.62), '#a7bed3');
-  });
+    context.moveTo(viewportX + viewportW * 0.04, y);
+    context.lineTo(viewportX + viewportW * 0.96, y);
+    context.stroke();
+  }
 
   context.fillStyle = 'rgba(8, 24, 38, 0.78)';
   context.beginPath();
@@ -582,6 +630,10 @@ function createGeneratedBillboardTexture(url: string, textureQualityHint: ExpoSc
 function isCameraFeedLoopTextureUrl(url: string) {
   const payload = parseGeneratedBillboardPayload(url);
   return payload?.layout === 'camera-feed-loop';
+}
+
+function isVideoTextureUrl(url: string) {
+  return /\.(mp4|webm)(?:[?#].*)?$/i.test(url.trim());
 }
 
 function loadTextureWithCandidateUrls(loader: THREE.TextureLoader, urls: string[]) {
@@ -807,8 +859,41 @@ function AnimatedCameraFeedSurface({
   const canvasSize = resolveGeneratedBillboardCanvasSize(payload?.aspect, textureQualityHint);
   const [texture, setTexture] = useState<THREE.CanvasTexture | null>(null);
   const textureRef = useRef<THREE.CanvasTexture | null>(null);
+  const cameraFramesRef = useRef<HTMLImageElement[]>([]);
   const lastFrameTimeRef = useRef(-1);
   const side = doubleSided ? THREE.DoubleSide : THREE.FrontSide;
+
+  useEffect(() => {
+    if (typeof Image === 'undefined') {
+      return undefined;
+    }
+
+    let isActive = true;
+    const loadFrame = (sourceUrl: string) => new Promise<HTMLImageElement>((resolve, reject) => {
+      const image = new Image();
+      image.onload = () => resolve(image);
+      image.onerror = reject;
+      image.src = sourceUrl;
+    });
+
+    Promise.all(EXPO_CITY_CAMERA_LOOP_FRAME_URLS.map(loadFrame))
+      .then((frames) => {
+        if (isActive) {
+          cameraFramesRef.current = frames;
+        }
+      })
+      .catch(() => {
+        if (isActive) {
+          cameraFramesRef.current = [];
+        }
+      });
+
+    return () => {
+      isActive = false;
+      cameraFramesRef.current = [];
+    };
+  }, []);
+
   useEffect(() => {
     if (typeof document === 'undefined' || !payload) {
       return undefined;
@@ -827,6 +912,7 @@ function AnimatedCameraFeedSurface({
     drawCameraFeedLoopBillboard({
       accentColor: payload.accentColor || emissiveColor || '#38bdf8',
       context,
+      cameraFrames: cameraFramesRef.current,
       font: (weight, size) => `${weight} ${Math.round(size)}px Verdana, Arial, sans-serif`,
       height: canvas.height,
       payload,
@@ -875,6 +961,7 @@ function AnimatedCameraFeedSurface({
     drawCameraFeedLoopBillboard({
       accentColor: payload.accentColor || emissiveColor || '#38bdf8',
       context,
+      cameraFrames: cameraFramesRef.current,
       font: (weight, size) => `${weight} ${Math.round(size)}px Verdana, Arial, sans-serif`,
       height: canvas.height,
       payload,
@@ -890,6 +977,110 @@ function AnimatedCameraFeedSurface({
       <meshBasicMaterial
         depthWrite={depthWrite ?? opacity >= 0.999}
         map={texture}
+        polygonOffset
+        polygonOffsetFactor={-5}
+        polygonOffsetUnits={-5}
+        transparent={opacity < 0.999}
+        opacity={opacity}
+        side={side}
+        toneMapped={false}
+      />
+    );
+  }
+
+  return (
+    <meshStandardMaterial
+      color={fallbackColor}
+      depthWrite={depthWrite ?? opacity >= 0.999}
+      emissive={emissiveColor ?? '#000000'}
+      emissiveIntensity={Math.min(emissiveIntensity, 0.12)}
+      metalness={0.02}
+      polygonOffset
+      polygonOffsetFactor={-5}
+      polygonOffsetUnits={-5}
+      roughness={0.42}
+      side={side}
+      transparent={opacity < 0.999}
+      opacity={opacity}
+      toneMapped={false}
+    />
+  );
+}
+
+function VideoSponsorTextureSurface({
+  depthWrite,
+  doubleSided = false,
+  fallbackColor,
+  emissiveColor,
+  emissiveIntensity = 0,
+  opacity = 1,
+  textureQualityHint,
+  url,
+}: {
+  depthWrite?: boolean;
+  doubleSided?: boolean;
+  emissiveColor?: string;
+  emissiveIntensity?: number;
+  fallbackColor: string;
+  opacity?: number;
+  textureQualityHint: ExpoScreenTextureQualityHint;
+  url: string;
+}) {
+  const [videoTexture, setVideoTexture] = useState<THREE.VideoTexture | null>(null);
+  const side = doubleSided ? THREE.DoubleSide : THREE.FrontSide;
+  const playbackId = useMemo(() => `booth-video:${url}`, [url]);
+  useExpoVideoScreenPlaybackRegistration(playbackId, Boolean(videoTexture));
+
+  useEffect(() => {
+    if (typeof document === 'undefined') {
+      return undefined;
+    }
+
+    let isActive = true;
+    const video = document.createElement('video');
+    video.autoplay = true;
+    video.crossOrigin = 'anonymous';
+    video.loop = true;
+    video.muted = true;
+    video.playsInline = true;
+    video.preload = 'auto';
+    video.src = url;
+
+    const nextTexture = configureExpoTexture(new THREE.VideoTexture(video), textureQualityHint) as THREE.VideoTexture;
+    nextTexture.generateMipmaps = false;
+    nextTexture.minFilter = THREE.LinearFilter;
+    nextTexture.magFilter = THREE.LinearFilter;
+
+    const activate = () => {
+      if (!isActive) {
+        return;
+      }
+
+      void video.play().catch(() => undefined);
+      setVideoTexture(nextTexture);
+    };
+
+    video.addEventListener('loadeddata', activate);
+    video.addEventListener('canplay', activate);
+    video.load();
+    void video.play().catch(() => undefined);
+
+    return () => {
+      isActive = false;
+      video.pause();
+      video.removeEventListener('loadeddata', activate);
+      video.removeEventListener('canplay', activate);
+      video.removeAttribute('src');
+      video.load();
+      nextTexture.dispose();
+    };
+  }, [textureQualityHint, url]);
+
+  if (videoTexture) {
+    return (
+      <meshBasicMaterial
+        depthWrite={depthWrite ?? opacity >= 0.999}
+        map={videoTexture}
         polygonOffset
         polygonOffsetFactor={-5}
         polygonOffsetUnits={-5}
@@ -1030,6 +1221,21 @@ export function SponsorTextureSurface({
     return (
       <AnimatedCameraFeedSurface
         key={`${url}::${normalizedTextureQualityHint}`}
+        depthWrite={depthWrite}
+        doubleSided={doubleSided}
+        fallbackColor={fallbackColor}
+        emissiveColor={emissiveColor}
+        emissiveIntensity={emissiveIntensity}
+        opacity={opacity}
+        textureQualityHint={normalizedTextureQualityHint}
+        url={url}
+      />
+    );
+  }
+
+  if (isVideoTextureUrl(url)) {
+    return (
+      <VideoSponsorTextureSurface
         depthWrite={depthWrite}
         doubleSided={doubleSided}
         fallbackColor={fallbackColor}

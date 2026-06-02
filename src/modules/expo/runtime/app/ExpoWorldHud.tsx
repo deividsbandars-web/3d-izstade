@@ -11,18 +11,11 @@ interface ExpoWorldHudProps {
   isSpeaking: boolean;
   isTouchDevice?: boolean;
   mode: ExpoMode;
-  nearbyBooth?: {
-    distance: number;
-    id: string;
-    label: string;
-    sectorName: string | null;
-  } | null;
   onMoveTouch?: (intent: ExpoMobileMoveIntent) => void;
   operatorBuildStamp?: string | null;
   playerPos: number[];
   sectorMarkers: ExpoSectorMarker[];
   visualProfile: ExpoWorldVisualProfile;
-  onEnterNearbyBooth?: (boothPlacementId: string) => void;
   onToggleMic: () => void;
   onExit: () => void;
 }
@@ -33,13 +26,11 @@ export function ExpoWorldHud({
   isSpeaking,
   isTouchDevice = false,
   mode,
-  nearbyBooth = null,
   onMoveTouch,
   operatorBuildStamp = null,
   playerPos,
   sectorMarkers,
   visualProfile,
-  onEnterNearbyBooth,
   onToggleMic,
   onExit,
 }: ExpoWorldHudProps) {
@@ -54,7 +45,6 @@ export function ExpoWorldHud({
   const lookAnchorRef = useRef<{ x: number; y: number } | null>(null);
   const mobileIntentRef = useRef<ExpoMobileMoveIntent>(EXPO_MOBILE_MOVE_IDLE);
   const isWalkMode = mode === 'walk';
-  const nearbyBoothEntry = isWalkMode && onEnterNearbyBooth ? nearbyBooth : null;
   const radarSize = isTouchDevice ? 156 : 208;
   const orderedMarkers = [...sectorMarkers].sort((left, right) => {
     const leftDistance = Math.hypot(left.position[0] - playerPos[0], left.position[2] - playerPos[2]);
@@ -416,56 +406,6 @@ export function ExpoWorldHud({
           <button onClick={onExit} style={{ background: 'linear-gradient(180deg, #f8fafc, #e2e8f0)', padding: isTouchDevice ? '13px 14px' : '0 22px', minHeight: isTouchDevice ? '48px' : undefined, borderRadius: '16px', border: 'none', fontWeight: 800, cursor: 'pointer', color: '#0f172a', boxShadow: '0 14px 32px rgba(226, 232, 240, 0.18)' }}>
             {EXPO_MODE_COPY.exitToLobby}
           </button>
-        </div>
-      )}
-
-      {nearbyBoothEntry && onEnterNearbyBooth && (
-        <div
-          data-expo-nearby-booth-entry="true"
-          style={{
-            ...primaryPanelStyle,
-            position: 'absolute',
-            left: '50%',
-            bottom: isTouchDevice ? 'max(178px, calc(env(safe-area-inset-bottom) + 174px))' : '30px',
-            zIndex: 118,
-            width: isTouchDevice ? 'min(360px, calc(100vw - 28px))' : 'min(460px, calc(100vw - 52px))',
-            padding: isTouchDevice ? '10px 12px' : '12px 14px',
-            transform: 'translateX(-50%)',
-          }}
-        >
-          <div style={{ alignItems: 'center', display: 'grid', gap: '10px', gridTemplateColumns: 'minmax(0, 1fr) auto' }}>
-            <div style={{ minWidth: 0 }}>
-              <div style={{ color: visualProfile.global.hudAccent, fontSize: '0.62rem', fontWeight: 950, letterSpacing: '0.14em', textTransform: 'uppercase' }}>
-                Nearby booth
-              </div>
-              <div style={{ color: '#f8fafc', fontSize: isTouchDevice ? '0.88rem' : '0.98rem', fontWeight: 900, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {nearbyBoothEntry.label}
-              </div>
-              <div style={{ color: '#94a3b8', fontSize: '0.68rem', fontWeight: 800, marginTop: 2 }}>
-                {nearbyBoothEntry.distance}u away{isTouchDevice ? '' : ' | press Enter'}
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={() => onEnterNearbyBooth(nearbyBoothEntry.id)}
-              style={{
-                background: 'linear-gradient(180deg, #f8fafc, #bfdbfe)',
-                border: 'none',
-                borderRadius: '999px',
-                boxShadow: '0 12px 28px rgba(125, 211, 252, 0.18)',
-                color: '#07111f',
-                cursor: 'pointer',
-                fontSize: isTouchDevice ? '0.72rem' : '0.78rem',
-                fontWeight: 950,
-                letterSpacing: '0.08em',
-                minHeight: isTouchDevice ? '44px' : '40px',
-                padding: isTouchDevice ? '0 14px' : '0 16px',
-                textTransform: 'uppercase',
-              }}
-            >
-              Enter
-            </button>
-          </div>
         </div>
       )}
 
