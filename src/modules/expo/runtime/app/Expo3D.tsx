@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useZoneSystem } from '../../../../hooks/useZoneSystem';
 import { ExpoWorldHud } from './ExpoWorldHud';
@@ -6,8 +6,6 @@ import { useExpoPresence } from '../../hooks/useExpoPresence';
 import { useExpoSceneData } from '../../hooks/useExpoSceneData';
 import { usePixelStreamingStatus } from '../../hooks/usePixelStreamingStatus';
 import { buildExpoWorldContract } from '../../world-contract';
-import { EXPO_FEATURE_FLAGS } from '../../state/expoRuntime';
-import { getNearestExpoBoothEntryCandidate, openShowcaseRoom } from '../booths';
 import { useExpoOperatorLayer } from '../operator';
 import { ExpoRuntimeShell } from './ExpoRuntimeShell';
 import { ExpoSceneShell } from './ExpoSceneShell';
@@ -62,27 +60,6 @@ function ExpoRuntimeExperience({
     worldContract,
   });
   const lastOperatorStartViewSignature = useRef<string | null>(null);
-  const nearestBoothEntryCandidate = useMemo(
-    () => getNearestExpoBoothEntryCandidate({
-      boothPlacements: worldContract.boothPlacements,
-      playerPosition: playerPos,
-    }),
-    [playerPos, worldContract.boothPlacements],
-  );
-  const enterNearestBooth = useCallback(() => {
-    if (!nearestBoothEntryCandidate) {
-      return;
-    }
-
-    openShowcaseRoom({
-      analyticsEnabled: EXPO_FEATURE_FLAGS.enableAnalytics,
-      boothId: nearestBoothEntryCandidate.boothId,
-      company: nearestBoothEntryCandidate.company,
-      navigate: nav,
-      presentation: nearestBoothEntryCandidate.presentation,
-      sectorName: nearestBoothEntryCandidate.sectorName,
-    });
-  }, [nav, nearestBoothEntryCandidate]);
 
   useEffect(() => {
     if (!runtimeSession.operatorSession.enabled || typeof window === 'undefined') {
@@ -128,14 +105,6 @@ function ExpoRuntimeExperience({
             mode={runtimeSession.mode}
             onMoveTouch={runtimeSession.setMobileMoveIntent}
             playerPos={playerPos}
-            nearbyBoothEntry={nearestBoothEntryCandidate
-              ? {
-                displayName: nearestBoothEntryCandidate.displayName,
-                distance: nearestBoothEntryCandidate.distance,
-                onEnter: enterNearestBooth,
-                tierLabel: nearestBoothEntryCandidate.tierLabel,
-              }
-              : null}
             sectorMarkers={worldContract.sectorMarkers}
             visualProfile={worldContract.visualProfile}
             onToggleMic={() => setIsMicOn((value) => !value)}

@@ -5,20 +5,12 @@ import type { ExpoSectorMarker } from '../../layout-engine';
 import type { ExpoWorldVisualProfile } from '../../world-contract';
 import { EXPO_MOBILE_MOVE_IDLE, type ExpoMobileMoveIntent } from './useExpoRuntimeSession';
 
-type ExpoNearbyBoothEntry = {
-  displayName: string;
-  distance: number;
-  onEnter: () => void;
-  tierLabel: string;
-};
-
 interface ExpoWorldHudProps {
   guests: any[];
   isMicOn: boolean;
   isSpeaking: boolean;
   isTouchDevice?: boolean;
   mode: ExpoMode;
-  nearbyBoothEntry?: ExpoNearbyBoothEntry | null;
   onMoveTouch?: (intent: ExpoMobileMoveIntent) => void;
   operatorBuildStamp?: string | null;
   playerPos: number[];
@@ -34,7 +26,6 @@ export function ExpoWorldHud({
   isSpeaking,
   isTouchDevice = false,
   mode,
-  nearbyBoothEntry = null,
   onMoveTouch,
   operatorBuildStamp = null,
   playerPos,
@@ -52,10 +43,8 @@ export function ExpoWorldHud({
   const joystickRef = useRef<HTMLDivElement | null>(null);
   const lookPadRef = useRef<HTMLDivElement | null>(null);
   const lookAnchorRef = useRef<{ x: number; y: number } | null>(null);
-  const lastBoothEntryRequestRef = useRef(0);
   const mobileIntentRef = useRef<ExpoMobileMoveIntent>(EXPO_MOBILE_MOVE_IDLE);
   const isWalkMode = mode === 'walk';
-  const visibleBoothEntry = mode === 'walk' || mode === 'fly' ? nearbyBoothEntry : null;
   const radarSize = isTouchDevice ? 156 : 208;
   const orderedMarkers = [...sectorMarkers].sort((left, right) => {
     const leftDistance = Math.hypot(left.position[0] - playerPos[0], left.position[2] - playerPos[2]);
@@ -74,7 +63,6 @@ export function ExpoWorldHud({
   const nearestMarkerDistance = nearestMarker
     ? Math.round(Math.hypot(nearestMarker.position[0] - playerPos[0], nearestMarker.position[2] - playerPos[2]))
     : null;
-  const nearbyBoothDistance = nearbyBoothEntry ? Math.max(0, Math.round(nearbyBoothEntry.distance)) : null;
   const districtLegend = orderedMarkers.slice(0, 3).map((marker) => ({
     color: marker.color,
     distance: Math.round(Math.hypot(marker.position[0] - playerPos[0], marker.position[2] - playerPos[2])),
@@ -216,20 +204,6 @@ export function ExpoWorldHud({
   const pulseMobileAction = (key: 'jump' | 'lift', active: boolean) => {
     setMobileGuideDismissed(true);
     emitMobileIntent({ [key]: active } as Partial<ExpoMobileMoveIntent>);
-  };
-
-  const requestBoothEntry = () => {
-    if (!nearbyBoothEntry) {
-      return;
-    }
-
-    const now = typeof performance !== 'undefined' ? performance.now() : Date.now();
-    if (now - lastBoothEntryRequestRef.current < 500) {
-      return;
-    }
-
-    lastBoothEntryRequestRef.current = now;
-    nearbyBoothEntry.onEnter();
   };
 
   return (
@@ -432,76 +406,6 @@ export function ExpoWorldHud({
           <button onClick={onExit} style={{ background: 'linear-gradient(180deg, #f8fafc, #e2e8f0)', padding: isTouchDevice ? '13px 14px' : '0 22px', minHeight: isTouchDevice ? '48px' : undefined, borderRadius: '16px', border: 'none', fontWeight: 800, cursor: 'pointer', color: '#0f172a', boxShadow: '0 14px 32px rgba(226, 232, 240, 0.18)' }}>
             {EXPO_MODE_COPY.exitToLobby}
           </button>
-        </div>
-      )}
-
-      {visibleBoothEntry && (
-        <div
-          data-expo-booth-entry-prompt="true"
-          style={{
-            ...primaryPanelStyle,
-            position: 'absolute',
-            left: isTouchDevice ? '12px' : '50%',
-            right: isTouchDevice ? '12px' : 'auto',
-            bottom: isTouchDevice
-              ? 'max(184px, calc(env(safe-area-inset-bottom) + 180px))'
-              : '28px',
-            zIndex: 116,
-            width: isTouchDevice ? 'auto' : 'min(420px, calc(100vw - 360px))',
-            minWidth: isTouchDevice ? 0 : '320px',
-            padding: isTouchDevice ? '12px' : '14px 16px',
-            transform: isTouchDevice ? 'none' : 'translateX(-50%)',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
-            <div style={{ minWidth: 0 }}>
-              <div style={{ color: visualProfile.global.hudAccent, fontSize: '0.62rem', fontWeight: 950, letterSpacing: '0.16em', textTransform: 'uppercase' }}>
-                Nearby booth
-              </div>
-              <div style={{ marginTop: '4px', color: '#f8fafc', fontSize: isTouchDevice ? '0.98rem' : '1.06rem', fontWeight: 950, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {visibleBoothEntry.displayName}
-              </div>
-              <div style={{ marginTop: '4px', color: '#9fb2c7', fontSize: '0.72rem', fontWeight: 800 }}>
-                {visibleBoothEntry.tierLabel}
-                {nearbyBoothDistance !== null ? ` - ${nearbyBoothDistance}u` : ''}
-              </div>
-            </div>
-            <button
-              type="button"
-              aria-label={`Enter ${visibleBoothEntry.displayName} showroom`}
-              onPointerDown={(event) => {
-                event.preventDefault();
-                event.stopPropagation();
-                requestBoothEntry();
-              }}
-              onClick={(event) => {
-                event.preventDefault();
-                event.stopPropagation();
-                requestBoothEntry();
-              }}
-              style={{
-                border: '1px solid rgba(186, 230, 253, 0.42)',
-                borderRadius: '999px',
-                background: `linear-gradient(180deg, ${visualProfile.global.hudAccent}, #f8fafc)`,
-                boxShadow: `0 12px 28px ${visualProfile.global.hudAccent}33`,
-                color: '#07111f',
-                cursor: 'pointer',
-                flex: '0 0 auto',
-                fontSize: isTouchDevice ? '0.72rem' : '0.76rem',
-                fontWeight: 950,
-                letterSpacing: '0.08em',
-                minHeight: isTouchDevice ? '44px' : '42px',
-                padding: isTouchDevice ? '10px 13px' : '10px 16px',
-                textTransform: 'uppercase',
-                touchAction: 'manipulation',
-              }}
-            >
-              Enter showroom
-            </button>
-          </div>
-          <div style={{ marginTop: '8px', color: '#b7c4d5', fontSize: '0.66rem', fontWeight: 800, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-            Web3D room - no Unreal required
-          </div>
         </div>
       )}
 

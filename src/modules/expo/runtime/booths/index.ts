@@ -13,7 +13,6 @@ export { BoothDebugShellFallback } from './BoothDebugShellFallback';
 export { BoothVisualAssembly } from './BoothVisualAssembly';
 export { bindBoothPresentation, getNormalizedBooth } from './BoothPresentationBinding';
 export { handleBoothAction, openShowcaseRoom, trackBoothSelection } from './BoothInteractions';
-export { getNearestExpoBoothEntryCandidate, type ExpoBoothEntryCandidate } from './boothEntryHud';
 export { buildBoothTierState, type BoothFeatureTier, type BoothTierState } from './BoothTierState';
 export {
   BoothFeatureApron,
