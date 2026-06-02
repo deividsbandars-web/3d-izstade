@@ -87,13 +87,6 @@ function getRearCampusGeneratedHostShellRearContentZ(surface: CityScreenSurface)
 }
 
 function getManualRearCampusBackplateRearContentZ(surface: CityScreenSurface) {
-  if (surface.id === 'rear-campus-mega-civic-hall-host-surface') {
-    // The mega civic hall screen is mounted to a recovered authored structure,
-    // so use only the screen housing depth instead of the full landmark body.
-    // This keeps the rear texture attached to the screen back.
-    return -(getSocketAnchorDepth(surface) + getSurfaceHousingDepth(surface) + 1.2);
-  }
-
   if (surface.id === 'rear-campus-orbital-scoregate-host-surface') {
     // The orbital scoregate has an authored scoreboard-backplate in
     // ExpoRearCampusRecoveredStructures. Its rear face sits roughly 60 units
