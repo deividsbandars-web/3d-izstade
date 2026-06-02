@@ -129,8 +129,6 @@ export function OpenBoothPavilion({
     const perimeterWingWidth = isHero ? 0.64 : isElite ? 0.58 : isPremium ? 0.52 : 0.46;
     const perimeterWingY = wallY - (wallHeight * 0.02);
     const perimeterWingZ = wallZ + 0.02;
-    const crownWidth = wallWidth * (isHero ? 1.04 : isElite ? 0.98 : isPremium ? 0.92 : 0.86);
-    const crownDepth = isHero ? 0.82 : isElite ? 0.74 : isPremium ? 0.66 : 0.56;
     const lowerRailWidth = wallWidth * (isHero ? 0.82 : isElite ? 0.76 : isPremium ? 0.7 : 0.64);
 
     return (
@@ -172,14 +170,6 @@ export function OpenBoothPavilion({
               <meshStandardMaterial color="#527890" metalness={0.14} roughness={0.54} />
             </mesh>
           ))}
-          <mesh position={[0, wallHeight * 0.5 + 0.34, 0.02]} castShadow receiveShadow>
-            <boxGeometry args={[crownWidth, 0.28, crownDepth]} />
-            <meshStandardMaterial color="#13283d" emissive={accentColor} emissiveIntensity={0.075} metalness={0.16} roughness={0.36} />
-          </mesh>
-          <mesh position={[0, wallHeight * 0.5 + 0.52, 0.34]}>
-            <boxGeometry args={[crownWidth * 0.58, 0.08, 0.08]} />
-            <meshBasicMaterial color={accentColor} toneMapped={false} />
-          </mesh>
           <mesh position={[0, -(wallHeight * 0.5) - 0.38, 0.08]} castShadow receiveShadow>
             <boxGeometry args={[lowerRailWidth, 0.24, 0.46]} />
             <meshStandardMaterial color="#101e30" emissive={accentColor} emissiveIntensity={0.055} metalness={0.12} roughness={0.42} />
