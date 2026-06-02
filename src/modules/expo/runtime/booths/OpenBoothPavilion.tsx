@@ -130,6 +130,22 @@ export function OpenBoothPavilion({
     const perimeterWingY = wallY - (wallHeight * 0.02);
     const perimeterWingZ = wallZ + 0.02;
     const lowerRailWidth = wallWidth * (isHero ? 0.82 : isElite ? 0.76 : isPremium ? 0.7 : 0.64);
+    const floorLaneWidth = baseWidth * (isHero ? 0.2 : isElite ? 0.19 : isPremium ? 0.18 : 0.16);
+    const floorLaneDepth = Math.max(1.22, baseDepth * 0.6);
+    const floorLaneX = baseWidth * 0.28;
+    const floorLaneZ = wallZ + Math.max(0.92, baseDepth * 0.38);
+    const showcasePodWidth = isHero ? 1.58 : isElite ? 1.38 : isPremium ? 1.18 : 1.02;
+    const showcasePodHeight = isHero ? 1.46 : isElite ? 1.3 : isPremium ? 1.12 : 0.96;
+    const showcasePodDepth = isHero ? 1.12 : isElite ? 1.02 : isPremium ? 0.92 : 0.82;
+    const showcasePodX = (wallWidth * 0.5) + (isHero ? 1.78 : isElite ? 1.56 : isPremium ? 1.34 : 1.12);
+    const showcasePodY = 0.34 + (showcasePodHeight * 0.5);
+    const showcasePodZ = wallZ + Math.max(1.18, baseDepth * 0.42);
+    const valuePylonWidth = isHero ? 0.52 : isElite ? 0.46 : isPremium ? 0.4 : 0.34;
+    const valuePylonHeight = wallHeight * (isHero ? 0.56 : isElite ? 0.52 : isPremium ? 0.46 : 0.4);
+    const valuePylonDepth = isHero ? 0.72 : isElite ? 0.64 : isPremium ? 0.56 : 0.48;
+    const valuePylonX = (wallWidth * 0.5) + (isHero ? 2.54 : isElite ? 2.24 : isPremium ? 1.96 : 1.72);
+    const valuePylonY = 0.38 + (valuePylonHeight * 0.5);
+    const valuePylonZ = wallZ + 0.34;
 
     return (
       <group name="booth-open-pavilion booth-media-wall">
@@ -141,6 +157,22 @@ export function OpenBoothPavilion({
           <boxGeometry args={[baseWidth * 0.86, 0.06, baseDepth * 0.34]} />
           <meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={0.08} metalness={0.08} roughness={0.42} />
         </mesh>
+        {[-1, 1].map((side) => (
+          <group key={`media-wall-floor-lane-${side}`} position={[side * floorLaneX, 0.31, floorLaneZ]}>
+            <mesh receiveShadow>
+              <boxGeometry args={[floorLaneWidth, 0.05, floorLaneDepth]} />
+              <meshStandardMaterial color="#dceff6" emissive={accentColor} emissiveIntensity={0.035} metalness={0.08} roughness={0.54} />
+            </mesh>
+            <mesh position={[0, 0.04, 0]}>
+              <boxGeometry args={[floorLaneWidth * 0.28, 0.035, floorLaneDepth * 0.78]} />
+              <meshBasicMaterial color={accentColor} toneMapped={false} />
+            </mesh>
+            <mesh position={[side * (floorLaneWidth * 0.28), 0.055, -(floorLaneDepth * 0.34)]}>
+              <boxGeometry args={[floorLaneWidth * 0.42, 0.035, floorLaneDepth * 0.16]} />
+              <meshBasicMaterial color="#f5fbff" toneMapped={false} />
+            </mesh>
+          </group>
+        ))}
         <group position={[0, wallY, wallZ]}>
           <mesh castShadow receiveShadow>
             <boxGeometry args={[wallWidth, wallHeight, 0.32]} />
@@ -191,6 +223,50 @@ export function OpenBoothPavilion({
               <boxGeometry args={[perimeterWingWidth * 1.55, 0.34, perimeterWingDepth * 0.72]} />
               <meshStandardMaterial color="#e4f5ff" emissive={accentColor} emissiveIntensity={0.08} metalness={0.1} roughness={0.3} />
             </mesh>
+          </group>
+        ))}
+        {[-1, 1].map((side) => (
+          <group key={`media-wall-showcase-pod-${side}`} name={`booth-showcase-pod-${side}`} position={[side * showcasePodX, showcasePodY, showcasePodZ]}>
+            <mesh castShadow receiveShadow>
+              <boxGeometry args={[showcasePodWidth, showcasePodHeight, showcasePodDepth]} />
+              <meshStandardMaterial color="#102235" emissive={accentColor} emissiveIntensity={0.045} metalness={0.14} roughness={0.42} />
+            </mesh>
+            {[-1, 1].map((face) => (
+              <group key={`showcase-pod-face-${side}-${face}`} position={[0, 0, face * ((showcasePodDepth * 0.5) + 0.035)]}>
+                <mesh position={[0, showcasePodHeight * 0.24, 0]}>
+                  <boxGeometry args={[showcasePodWidth * 0.62, 0.09, 0.07]} />
+                  <meshBasicMaterial color={accentColor} toneMapped={false} />
+                </mesh>
+                <mesh position={[0, -showcasePodHeight * 0.08, 0]}>
+                  <boxGeometry args={[showcasePodWidth * 0.42, 0.07, 0.07]} />
+                  <meshBasicMaterial color="#f5fbff" toneMapped={false} />
+                </mesh>
+              </group>
+            ))}
+            <mesh position={[0, showcasePodHeight * 0.5 + 0.1, 0]} castShadow receiveShadow>
+              <boxGeometry args={[showcasePodWidth * 0.76, 0.16, showcasePodDepth * 0.66]} />
+              <meshStandardMaterial color="#e7f6ff" emissive={accentColor} emissiveIntensity={0.055} metalness={0.08} roughness={0.34} />
+            </mesh>
+          </group>
+        ))}
+        {[-1, 1].map((side) => (
+          <group key={`media-wall-value-pylon-${side}`} name={`booth-value-pylon-${side}`} position={[side * valuePylonX, valuePylonY, valuePylonZ]}>
+            <mesh castShadow receiveShadow>
+              <boxGeometry args={[valuePylonWidth, valuePylonHeight, valuePylonDepth]} />
+              <meshStandardMaterial color="#0c1f31" emissive={accentColor} emissiveIntensity={0.052} metalness={0.16} roughness={0.4} />
+            </mesh>
+            {[-1, 1].map((face) => (
+              <mesh key={`value-pylon-accent-${side}-${face}`} position={[0, 0, face * ((valuePylonDepth * 0.5) + 0.035)]}>
+                <boxGeometry args={[valuePylonWidth * 0.36, valuePylonHeight * 0.68, 0.07]} />
+                <meshBasicMaterial color={accentColor} toneMapped={false} />
+              </mesh>
+            ))}
+            {[0, 1, 2].map((row) => (
+              <mesh key={`value-pylon-row-${side}-${row}`} position={[0, (valuePylonHeight * 0.24) - (row * valuePylonHeight * 0.18), (valuePylonDepth * 0.5) + 0.075]}>
+                <boxGeometry args={[valuePylonWidth * (1.15 - row * 0.16), 0.045, 0.06]} />
+                <meshBasicMaterial color="#eef9ff" toneMapped={false} />
+              </mesh>
+            ))}
           </group>
         ))}
         {showSignalTowers && [-1, 1].map((side) => (
