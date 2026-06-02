@@ -66,7 +66,7 @@ export function DistrictBooth({
     playerPosition[0] - placement.position[0],
     playerPosition[2] - placement.position[2]
   );
-  const boothActionRevealDistance = Math.max(...boothActionMetrics.footprintSize) * 1.35;
+  const boothActionRevealDistance = Math.max(340, Math.max(...boothActionMetrics.footprintSize) * 1.35);
   const showBoothAction = isBoothHovered || playerDistanceToBooth <= boothActionRevealDistance;
   const boothProductPreviewCard = getBoothProductPreviewCardForBooth({
     boothId,
