@@ -47,6 +47,9 @@ export function openShowcaseRoom({
     }, analyticsTarget);
   }
 
+  if (typeof document !== 'undefined') {
+    document.exitPointerLock?.();
+  }
   navigate(presentation.demoRoomPath);
   return true;
 }
