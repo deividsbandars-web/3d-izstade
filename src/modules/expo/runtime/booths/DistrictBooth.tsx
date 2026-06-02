@@ -16,18 +16,20 @@ import {
   trackBoothSelection,
 } from './index';
 
-const BOOTH_ENTRY_PORTAL_TRIGGER_RADIUS = 2.35;
+const BOOTH_ENTRY_PORTAL_TRIGGER_RADIUS = 2.75;
 
 function BoothEntryPortal({
   accentColor,
   label,
   onEnter,
   position,
+  rotationY = 0,
 }: {
   accentColor: string;
   label: string;
   onEnter: () => void;
   position: [number, number, number];
+  rotationY?: number;
 }) {
   const safeLabel = label.trim() || 'Open Booth';
   const lastEnterRequestRef = useRef(0);
@@ -51,6 +53,7 @@ function BoothEntryPortal({
     <group
       name="booth-entry-portal"
       position={position}
+      rotation={[0, rotationY, 0]}
       onClick={(event) => {
         event.stopPropagation();
       }}
@@ -66,52 +69,127 @@ function BoothEntryPortal({
         expoInteractionOwner: 'DistrictBooth',
       }}
     >
-      <mesh position={[0, 0.052, 0]} receiveShadow>
-        <boxGeometry args={[3.1, 0.08, 1.72]} />
-        <meshStandardMaterial color="#101827" emissive={accentColor} emissiveIntensity={0.12} metalness={0.08} roughness={0.38} />
+      <mesh position={[0, 0.054, 0]} receiveShadow>
+        <boxGeometry args={[4.15, 0.08, 2.12]} />
+        <meshStandardMaterial color="#0b2033" emissive={accentColor} emissiveIntensity={0.18} metalness={0.08} roughness={0.34} />
       </mesh>
-      <mesh position={[0, 0.105, 0]}>
-        <boxGeometry args={[2.58, 0.035, 1.08]} />
-        <meshBasicMaterial color={accentColor} opacity={0.42} transparent toneMapped={false} />
+      <mesh position={[0, 0.112, 0]}>
+        <boxGeometry args={[3.52, 0.038, 1.42]} />
+        <meshBasicMaterial color={accentColor} opacity={0.78} transparent toneMapped={false} />
       </mesh>
       <mesh position={[0, 0.128, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[0.62, 0.86, 48]} />
-        <meshBasicMaterial color="#f8fafc" opacity={0.58} side={THREE.DoubleSide} transparent toneMapped={false} />
+        <ringGeometry args={[0.78, 1.06, 56]} />
+        <meshBasicMaterial color="#f8fafc" opacity={0.78} side={THREE.DoubleSide} transparent toneMapped={false} />
       </mesh>
       <Text
         position={[0, 0.165, 0.02]}
         rotation={[-Math.PI / 2, 0, 0]}
-        fontSize={0.23}
+        fontSize={0.34}
         color="#f8fafc"
         anchorX="center"
         anchorY="middle"
-        maxWidth={2.25}
+        maxWidth={3.2}
       >
         ENTER BOOTH
       </Text>
       {[-1, 1].map((side) => (
-        <mesh key={`portal-side-rail-${side}`} position={[side * 1.62, 0.24, 0]} castShadow receiveShadow>
-          <boxGeometry args={[0.16, 0.48, 1.56]} />
-          <meshStandardMaterial color="#142233" emissive={accentColor} emissiveIntensity={0.14} metalness={0.16} roughness={0.32} />
+        <mesh key={`portal-side-rail-${side}`} position={[side * 2.12, 0.28, 0]} castShadow receiveShadow>
+          <boxGeometry args={[0.18, 0.56, 1.92]} />
+          <meshStandardMaterial color="#142233" emissive={accentColor} emissiveIntensity={0.2} metalness={0.16} roughness={0.32} />
         </mesh>
       ))}
+      {[-1, 1].map((side) => (
+        <group key={`walk-in-entry-beacon-${side}`} position={[side * 2.48, 0, 0.12]}>
+          <mesh position={[0, 1.16, 0]} castShadow receiveShadow>
+            <boxGeometry args={[0.18, 2.16, 0.18]} />
+            <meshBasicMaterial color="#e8f7ff" toneMapped={false} />
+          </mesh>
+          <mesh position={[0, 1.16, 0.13]}>
+            <boxGeometry args={[0.28, 1.72, 0.05]} />
+            <meshBasicMaterial color={accentColor} opacity={0.9} transparent toneMapped={false} />
+          </mesh>
+          <mesh position={[0, 2.3, 0]}>
+            <boxGeometry args={[0.46, 0.18, 0.34]} />
+            <meshBasicMaterial color={accentColor} opacity={0.82} transparent toneMapped={false} />
+          </mesh>
+        </group>
+      ))}
+      <group position={[0, 0, 0.18]}>
+        {[-1, 1].map((side) => (
+          <mesh key={`walk-in-portal-upright-${side}`} position={[side * 1.76, 0.94, 0]} castShadow receiveShadow>
+            <boxGeometry args={[0.24, 1.68, 0.22]} />
+            <meshStandardMaterial color="#e8f7ff" emissive={accentColor} emissiveIntensity={0.3} metalness={0.12} roughness={0.28} />
+          </mesh>
+        ))}
+        <mesh position={[0, 1.68, 0]} castShadow receiveShadow>
+          <boxGeometry args={[3.78, 0.24, 0.22]} />
+          <meshStandardMaterial color="#e8f7ff" emissive={accentColor} emissiveIntensity={0.32} metalness={0.12} roughness={0.26} />
+        </mesh>
+        <mesh position={[0, 1.69, 0.14]}>
+          <boxGeometry args={[3.18, 0.08, 0.08]} />
+          <meshBasicMaterial color={accentColor} opacity={0.86} transparent toneMapped={false} />
+        </mesh>
+        <Text position={[0, 1.96, 0.16]} fontSize={0.17} color="#f8fafc" anchorX="center" anchorY="middle" maxWidth={3.1}>
+          BOOTH ENTRY
+        </Text>
+      </group>
+      <mesh
+        position={[0, 0.82, 1.12]}
+        castShadow
+        receiveShadow
+        onPointerDown={handleEnterPointer}
+      >
+        <boxGeometry args={[3.25, 0.86, 0.12]} />
+        <meshStandardMaterial color="#0b1726" emissive={accentColor} emissiveIntensity={0.22} metalness={0.12} roughness={0.28} />
+      </mesh>
+      <Text position={[0, 0.96, 1.195]} fontSize={0.2} color="#f8fafc" anchorX="center" anchorY="middle" maxWidth={2.8}>
+        WALK IN
+      </Text>
+      <Text position={[0, 0.69, 1.2]} fontSize={0.13} color="#dbeafe" anchorX="center" anchorY="middle" maxWidth={2.8}>
+        BOOTH ROOM
+      </Text>
       <mesh
         name="booth-entry-portal-trigger"
-        position={[0, 0.85, 0]}
+        position={[0, 0.86, 0.1]}
         onPointerDown={handleEnterPointer}
         userData={{
           expoBoothEntryPortalTrigger: true,
           expoInteractionOwner: 'DistrictBooth',
         }}
       >
-        <boxGeometry args={[3.5, 1.7, 2.4]} />
+        <boxGeometry args={[4.65, 1.72, 2.9]} />
         <meshBasicMaterial depthWrite={false} opacity={0} transparent />
       </mesh>
-      <Text position={[0, 0.74, 0.92]} fontSize={0.13} color="#f8fafc" anchorX="center" anchorY="middle" maxWidth={2.6}>
+      <Text position={[0, 1.31, 1.18]} fontSize={0.115} color="#f8fafc" anchorX="center" anchorY="middle" maxWidth={3.15}>
         {safeLabel}
       </Text>
     </group>
   );
+}
+
+function getBoothEntryPortalDistance({
+  placementPosition,
+  placementRotation,
+  playerPosition,
+  portalPositions,
+}: {
+  placementPosition: [number, number, number];
+  placementRotation?: [number, number, number];
+  playerPosition: [number, number, number];
+  portalPositions: [number, number, number][];
+}) {
+  const boothYaw = placementRotation?.[1] ?? 0;
+  const deltaX = playerPosition[0] - placementPosition[0];
+  const deltaZ = playerPosition[2] - placementPosition[2];
+  const cos = Math.cos(-boothYaw);
+  const sin = Math.sin(-boothYaw);
+  const localX = deltaX * cos - deltaZ * sin;
+  const localZ = deltaX * sin + deltaZ * cos;
+
+  return portalPositions.reduce((nearest, portalPosition) => {
+    const distance = Math.hypot(localX - portalPosition[0], localZ - portalPosition[2]);
+    return Math.min(nearest, distance);
+  }, Number.POSITIVE_INFINITY);
 }
 
 export function DistrictBooth({
@@ -154,11 +232,13 @@ export function DistrictBooth({
     [presentation.template]
   );
   const entryPortalArmedRef = useRef(true);
-  const entryPortalPosition = useMemo<[number, number, number]>(() => [
-    0,
-    0,
-    Math.max(4.35, boothInteractionMetrics.footprintSize[1] * 0.5 + 1.15),
-  ], [boothInteractionMetrics.footprintSize]);
+  const entryPortalPositions = useMemo<Array<{ position: [number, number, number]; rotationY: number }>>(() => {
+    const offsetZ = Math.max(5.65, boothInteractionMetrics.footprintSize[1] * 0.5 + 2.18);
+    return [
+      { position: [0, 0, offsetZ], rotationY: 0 },
+      { position: [0, 0, -offsetZ], rotationY: Math.PI },
+    ];
+  }, [boothInteractionMetrics.footprintSize]);
   const web3dRoomPresentation = useMemo(
     () => ({
       demoRoomPath: buildExpoBoothWeb3DRoomRoute(presentation.demoRoomPath),
@@ -176,6 +256,7 @@ export function DistrictBooth({
     analyticsEnabled: EXPO_FEATURE_FLAGS.enableAnalytics,
     boothId,
     company,
+    forceDocumentNavigation: true,
     navigate: nav,
     presentation: web3dRoomPresentation,
     sectorName: placement.sectorName,
@@ -199,17 +280,12 @@ export function DistrictBooth({
     openRoom();
   }, [boothId, company, openRoom, placement.nodeType, placement.sectorName, presentation]);
 
-  const entryPortalDistance = useMemo(() => {
-    const boothYaw = placement.rotation?.[1] ?? 0;
-    const deltaX = playerPosition[0] - placement.position[0];
-    const deltaZ = playerPosition[2] - placement.position[2];
-    const cos = Math.cos(-boothYaw);
-    const sin = Math.sin(-boothYaw);
-    const localX = deltaX * cos - deltaZ * sin;
-    const localZ = deltaX * sin + deltaZ * cos;
-
-    return Math.hypot(localX - entryPortalPosition[0], localZ - entryPortalPosition[2]);
-  }, [entryPortalPosition, placement.position, placement.rotation, playerPosition]);
+  const entryPortalDistance = useMemo(() => getBoothEntryPortalDistance({
+    placementPosition: placement.position,
+    placementRotation: placement.rotation,
+    playerPosition,
+    portalPositions: entryPortalPositions.map((entry) => entry.position),
+  }), [entryPortalPositions, placement.position, placement.rotation, playerPosition]);
 
   useEffect(() => {
     if (entryPortalDistance > BOOTH_ENTRY_PORTAL_TRIGGER_RADIUS) {
@@ -249,12 +325,16 @@ export function DistrictBooth({
         presentation={presentation}
         tierState={{ ...tierState, districtVisual }}
       />
-      <BoothEntryPortal
-        accentColor={districtVisual.shellAccent || placement.color}
-        label={presentation.displayName}
-        onEnter={selectBoothAndOpenRoom}
-        position={entryPortalPosition}
-      />
+      {entryPortalPositions.map((entryPortal) => (
+        <BoothEntryPortal
+          key={`booth-entry-portal-${entryPortal.position[2]}`}
+          accentColor={districtVisual.shellAccent || placement.color}
+          label={presentation.displayName}
+          onEnter={selectBoothAndOpenRoom}
+          position={entryPortal.position}
+          rotationY={entryPortal.rotationY}
+        />
+      ))}
     </group>
   );
 }

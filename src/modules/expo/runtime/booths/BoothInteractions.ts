@@ -23,6 +23,7 @@ export function openShowcaseRoom({
   analyticsTarget,
   boothId,
   company,
+  forceDocumentNavigation = false,
   navigate,
   presentation,
   sectorName,
@@ -31,6 +32,7 @@ export function openShowcaseRoom({
   analyticsTarget?: ExpoAnalyticsTarget | null;
   boothId: string;
   company: InteractionCompany;
+  forceDocumentNavigation?: boolean;
   navigate: (path: string) => void;
   presentation: Pick<SponsorBoothPresentation, 'demoRoomPath' | 'template'>;
   sectorName?: string | null;
@@ -50,6 +52,12 @@ export function openShowcaseRoom({
   if (typeof document !== 'undefined') {
     document.exitPointerLock?.();
   }
+
+  if (forceDocumentNavigation && typeof window !== 'undefined') {
+    window.location.assign(presentation.demoRoomPath);
+    return true;
+  }
+
   navigate(presentation.demoRoomPath);
   return true;
 }
