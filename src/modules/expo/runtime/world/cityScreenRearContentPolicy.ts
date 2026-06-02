@@ -1,4 +1,6 @@
 import type { CityScreenSocket, CityScreenSurface } from '../planning/types';
+import { isRecoveredRearCampusStructureId } from './rearCampusRecoveredStructures';
+import { resolveRearCampusScreenHostBaseId } from './rearCampusScreenHosts';
 
 export type CityScreenRearContentZone = 'mainCity' | 'rearCampus';
 
@@ -14,6 +16,12 @@ function isMainCityFlatStandaloneScreenSurface(surfaceId: string) {
     || surfaceId.startsWith('screen-array-')
     || surfaceId.startsWith('screen-spine-')
   );
+}
+
+function isRearCampusGeneratedHostShellSurface(surfaceId: string) {
+  const hostBaseId = resolveRearCampusScreenHostBaseId(surfaceId);
+
+  return Boolean(hostBaseId && !isRecoveredRearCampusStructureId(hostBaseId));
 }
 
 function getSurfaceHousingDepth(surface: CityScreenSurface) {
@@ -64,6 +72,20 @@ function getMainCityRearContentZ(surface: CityScreenSurface) {
   return -(getSocketAnchorDepth(surface) + hostBackDepthFromSurface + 0.75);
 }
 
+function getRearCampusGeneratedHostShellDepth(surface: CityScreenSurface) {
+  return Math.max(18, surface.size[2] * 5.2);
+}
+
+function getRearCampusGeneratedHostShellRearContentZ(surface: CityScreenSurface) {
+  const hostDepth = getRearCampusGeneratedHostShellDepth(surface);
+  const faceInset = 6;
+
+  // These rear-campus backs are only enabled for generated screen-host shells.
+  // Recovered landmark screens need manual backplates; cloning them by body depth
+  // can create detached/floating panels.
+  return -(getSocketAnchorDepth(surface) + hostDepth - (surface.size[2] * 0.5) + faceInset + 0.75);
+}
+
 export function getCityScreenRearContentPolicy(
   socket: CityScreenSocket,
   surface: CityScreenSurface | undefined,
@@ -81,6 +103,14 @@ export function getCityScreenRearContentPolicy(
       enabled: true,
       rearZ: getMainCityRearContentZ(surface),
       zone: 'mainCity',
+    };
+  }
+
+  if (isRearCampusGeneratedHostShellSurface(socket.surfaceId)) {
+    return {
+      enabled: true,
+      rearZ: getRearCampusGeneratedHostShellRearContentZ(surface),
+      zone: 'rearCampus',
     };
   }
 
