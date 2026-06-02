@@ -190,7 +190,6 @@ function renderRearTexturePrimitive(
       position={[primitive.position[0], primitive.position[1], rearZ]}
       rotation={[0, Math.PI, 0]}
       renderOrder={9}
-      scale={[-1, 1, 1]}
     >
       <planeGeometry args={primitive.size} />
       <SponsorTextureSurface
