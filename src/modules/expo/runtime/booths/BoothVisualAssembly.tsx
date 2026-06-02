@@ -1,18 +1,13 @@
 import type { RefObject } from 'react';
 import type * as THREE from 'three';
-import { getSponsorNameFontSize, type SponsorBoothPresentation } from '../../lib/sponsorBoothPresentation';
+import type { SponsorBoothPresentation } from '../../lib/sponsorBoothPresentation';
 import type { BoothProductPreviewCard } from '../boothProduct';
 import { EXPO_SPATIAL_DEBUG_FLAGS } from '../../state/expoRuntime';
 import { getBoothArchitectureMetrics, getBoothColliderSegments } from '../../components/BoothArchitectureKit';
 import {
   BoothColliderGroup,
   BoothDebugShellFallback,
-  BoothFeatureApron,
-  BoothFeatureHeader,
-  BoothFeatureStage,
-  BoothInfoBand,
   type BoothTierState,
-  formatExpoDisplayName,
 } from './index';
 import { OpenBoothPavilion } from './OpenBoothPavilion';
 import { resolveOpenBoothPavilionLayout } from './OpenBoothPavilionLayout';
@@ -279,11 +274,6 @@ export function BoothVisualAssembly({
 }) {
   const metrics = getBoothArchitectureMetrics(presentation.template);
   const colliderSegments = getBoothColliderSegments(presentation.template);
-  const nameFontSize = getSponsorNameFontSize(presentation.displayName);
-  const heroName = formatExpoDisplayName(presentation.displayName);
-  const infoBandZ = metrics.titlePosition[2] - 0.24;
-  const showInteractiveDressing = tierState.showFullBoothUi;
-  const showHeroFloatingFeatureUi = showInteractiveDressing && tierState.isHeroFeature;
   const premiumLabel = tierState.isHeroBooth
     ? 'FLAGSHIP IMMERSIVE SHOWROOM'
     : tierState.isEliteBooth
@@ -375,78 +365,6 @@ export function BoothVisualAssembly({
           accentColor={accentColor}
           layout={pavilionLayout}
         />
-      )}
-      {showInteractiveDressing && (
-        <>
-          {!pavilionLayout.isScreenFirstBooth && (
-            <BoothFeatureApron
-              accentColor={tierState.districtVisual.shellAccent}
-              contractTier={tierState.contractTier}
-              districtGlow={tierState.districtVisual.districtGlow}
-              frontApronDepth={tierState.frontApronDepth}
-              frontApronWidth={tierState.frontApronWidth}
-              isFeatureBooth={tierState.isFeatureBooth}
-            />
-          )}
-          <BoothFeatureStage
-            accentColor={accentColor}
-            fallbackMonogram={fallbackMonogram}
-            isEliteFeature={tierState.isEliteFeature}
-            isFeatureBooth={tierState.isFeatureBooth}
-            isHeroFeature={tierState.isHeroFeature}
-            mode={presentation.showcaseMode}
-            screenFirst={pavilionLayout.isScreenFirstBooth}
-            stageScale={tierState.stageScale}
-          />
-          {showHeroFloatingFeatureUi && (
-            <>
-              <BoothFeatureHeader
-                accentColor={accentColor}
-                contractTier={tierState.contractTier}
-                fallbackMonogram={fallbackMonogram}
-                heroName={heroName}
-                isEliteFeature={tierState.isEliteFeature}
-                isFeatureBooth={tierState.isFeatureBooth}
-                isHeroFeature={tierState.isHeroFeature}
-                logoUrl={presentation.logoUrl ?? null}
-                metricsColliderHeight={metrics.colliderSize[1]}
-              />
-              <BoothInfoBand
-                accentColor={accentColor}
-                badgeLabel={presentation.badgeLabel}
-                fallbackPremiumLabel={premiumLabel}
-                infoBandHeight={tierState.infoBandHeight}
-                infoBandWidth={tierState.infoBandWidth}
-                infoBandZ={infoBandZ}
-                isEliteBooth={tierState.isEliteBooth}
-                isHeroNode={tierState.isHeroNode}
-                metrics={{
-                  badgePosition: metrics.badgePosition,
-                  taglinePosition: metrics.taglinePosition,
-                  titleMaxWidth: metrics.titleMaxWidth,
-                  titlePosition: metrics.titlePosition,
-                }}
-                nameFontSize={nameFontSize}
-                showBadge={tierState.showBadge}
-                showDetailedText={tierState.showDetailedText}
-                showPremiumEyebrow={tierState.showPremiumEyebrow}
-                showTagline={tierState.showTagline}
-                tagline={presentation.tagline ?? undefined}
-                title={presentation.displayName}
-              />
-            </>
-          )}
-        </>
-      )}
-      {showInteractiveDressing && (presentation.template === 'hero_gallery' || presentation.template === 'hero_forum') && (
-        <mesh position={[0, 0.4, 8.6]} receiveShadow>
-          <boxGeometry args={[18, 0.12, 2]} />
-          <meshStandardMaterial
-            color={tierState.districtVisual.shellAccent}
-            emissive={tierState.districtVisual.districtGlow}
-            emissiveIntensity={tierState.districtVisual.expressionMode === 'active-commercial' ? 0.18 : 0.08}
-          />
-        </mesh>
       )}
     </>
   );
