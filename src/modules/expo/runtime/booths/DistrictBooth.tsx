@@ -56,11 +56,10 @@ export function DistrictBooth({
     () => getBoothArchitectureMetrics(presentation.template),
     [presentation.template]
   );
-  const boothActionOffsetX = (boothActionMetrics.footprintSize[0] * 0.5) + 1.15;
   const boothActionPosition: [number, number, number] = [
-    boothActionOffsetX,
-    Math.max(2.45, boothActionMetrics.ctaPosition[1] + 1.05),
-    Math.max(boothActionMetrics.ctaPosition[2] - 0.9, 2.8),
+    0,
+    Math.max(2.15, boothActionMetrics.ctaPosition[1] + 0.72),
+    Math.max(boothActionMetrics.ctaPosition[2] + 0.58, 3.2),
   ];
   const playerDistanceToBooth = Math.hypot(
     playerPosition[0] - placement.position[0],
