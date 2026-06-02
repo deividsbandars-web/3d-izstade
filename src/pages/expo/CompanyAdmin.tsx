@@ -148,6 +148,24 @@ const DEFAULT_VISIBLE_SCENE_COMPANY_NAME = 'Warpala Platform';
 const DEFAULT_SCREEN_TEST_TITLE = 'Warpala Expo Screen Test';
 const DEFAULT_SCREEN_TEST_SUBTITLE = 'Camera orbit test loop for booth and city screen replacement.';
 const DEFAULT_SCREEN_TEST_CTA = 'Open Booth';
+const SCREEN_MEDIA_SETUP_GUIDE = [
+  {
+    label: 'Image',
+    value: 'Direct public HTTPS image file ending .jpg, .jpeg, .png, .webp, or .gif.',
+  },
+  {
+    label: 'Video',
+    value: 'Direct public HTTPS video file ending .mp4 or .webm. Sharing pages from YouTube, Drive, or Vimeo are not direct media files.',
+  },
+  {
+    label: 'Website / CTA',
+    value: 'Use the CTA label for presentation text now. Website embeds, redirects, and forms are intentionally not enabled yet.',
+  },
+  {
+    label: 'Visibility',
+    value: 'Matched booth screens can show saved published media now. Paid city screen slots are stored as inventory metadata until the city-screen render integration is wired.',
+  },
+] as const;
 
 const DEFAULT_COMPANY: AdminCompanyState = {
   booth: { video_url: '' },
@@ -631,7 +649,7 @@ export default function CompanyAdmin() {
     : 'No inbound activity yet';
   const screenContentValidation = normalizeExpoScreenContentForSave(company.screenContent);
   const boothVideoValidation = validateExpoScreenMediaUrl(company.booth.video_url, 'video');
-  const mediaPolicyText = `Images: ${EXPO_SCREEN_CONTENT_IMAGE_EXTENSIONS.join(', ')}. Video placeholders: ${EXPO_SCREEN_CONTENT_VIDEO_EXTENSIONS.join(', ')}. Public HTTPS only.`;
+  const mediaPolicyText = `Images: ${EXPO_SCREEN_CONTENT_IMAGE_EXTENSIONS.join(', ')}. Videos: ${EXPO_SCREEN_CONTENT_VIDEO_EXTENSIONS.join(', ')}. Direct public HTTPS files only.`;
   const screenContentIssueText = [
     ...screenContentValidation.issues.map((issue) => issue.message),
     ...(boothVideoValidation.ok ? [] : [boothVideoValidation.reason]),
@@ -842,10 +860,20 @@ export default function CompanyAdmin() {
             <div style={{ marginTop: '24px', paddingTop: '22px', borderTop: '1px solid rgba(148, 163, 184, 0.16)' }}>
               <h3 style={{ margin: '0 0 8px', color: '#f8fafc' }}>Booth Screen Content</h3>
               <p style={{ margin: '0 0 18px', color: '#94a3b8', fontSize: '0.88rem', lineHeight: 1.5 }}>
-                Published content can replace the generated booth screen card in the 3D city. Video URLs are stored as safe placeholders only; live playback stays off until the video pipeline is reviewed.
+                Published image or video content can replace the generated booth screen card in the 3D city. Use direct public media URLs; city-wide paid screen slots are tracked as inventory until the next screen-slot render integration.
               </p>
               <div style={{ marginBottom: '16px', padding: '10px 12px', borderRadius: '14px', background: 'rgba(14, 116, 144, 0.16)', border: '1px solid rgba(125, 211, 252, 0.22)', color: '#bae6fd', fontSize: '0.76rem', lineHeight: 1.5 }}>
                 Media safety: {mediaPolicyText} Localhost, private IPs, non-HTTPS URLs, SVG and embedded credentials are blocked.
+              </div>
+              <div style={{ marginBottom: '16px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '10px' }}>
+                {SCREEN_MEDIA_SETUP_GUIDE.map((entry) => (
+                  <div key={entry.label} style={{ padding: '12px 13px', borderRadius: '14px', background: 'rgba(2, 6, 23, 0.58)', border: '1px solid rgba(148, 163, 184, 0.16)', color: '#cbd5e1', fontSize: '0.76rem', lineHeight: 1.45 }}>
+                    <strong style={{ display: 'block', marginBottom: '4px', color: '#f8fafc', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+                      {entry.label}
+                    </strong>
+                    {entry.value}
+                  </div>
+                ))}
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '14px' }}>
@@ -857,7 +885,7 @@ export default function CompanyAdmin() {
                   >
                     <option value="generated-card">Generated card</option>
                     <option value="image">Image</option>
-                    <option value="video-placeholder">Video placeholder</option>
+                    <option value="video-placeholder">Video (.mp4/.webm)</option>
                   </select>
                 </label>
 
@@ -907,7 +935,7 @@ export default function CompanyAdmin() {
                   ))}
                 </select>
                 <span style={{ display: 'block', marginTop: '7px', color: '#94a3b8', fontSize: '0.76rem', lineHeight: 1.45 }}>
-                  Slot selection is stored as inventory metadata first. City-wide screen rendering is the next integration step.
+                  Slot selection is stored as inventory metadata first. Booth screen media works now; city-wide screen rendering is the next integration step.
                 </span>
               </label>
               {selectedScreenSlot && (
@@ -953,7 +981,7 @@ export default function CompanyAdmin() {
               </label>
 
               <label style={{ marginTop: '16px' }}>
-                Video URL placeholder
+                Video URL
                 <input
                   type="url"
                   inputMode="url"
@@ -962,7 +990,7 @@ export default function CompanyAdmin() {
                   onChange={(event) => updateScreenContent({ videoUrl: event.target.value })}
                 />
                 <span style={{ display: 'block', marginTop: '7px', color: '#94a3b8', fontSize: '0.76rem', lineHeight: 1.45 }}>
-                  Stored for review and future playback readiness. Supported: {EXPO_SCREEN_CONTENT_VIDEO_EXTENSIONS.join(', ')}. It will not autoplay in the city yet.
+                  Direct public media file only. Supported: {EXPO_SCREEN_CONTENT_VIDEO_EXTENSIONS.join(', ')}. Do not paste YouTube, Vimeo, Google Drive, localhost, or signed/private URLs.
                 </span>
               </label>
 

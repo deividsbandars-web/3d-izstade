@@ -48,11 +48,72 @@ type ExpoCachedTextureEntry = {
 };
 
 const EXPO_CITY_CAMERA_LOOP_FRAME_URLS = [
-  '/expo/media/warpala-camera-sponsor-boulevard.png',
-  '/expo/media/warpala-camera-right-marquee.png',
-  '/expo/media/warpala-camera-center-spine.png',
-  '/expo/media/warpala-camera-demo-arena.png',
+  '/expo/media/city-camera-loop/01-arrival-gate.png',
+  '/expo/media/city-camera-loop/02-arrival-civic-axis.png',
+  '/expo/media/city-camera-loop/03-center-spine.png',
+  '/expo/media/city-camera-loop/04-center-spine-side.png',
+  '/expo/media/city-camera-loop/05-mid-start-deep.png',
+  '/expo/media/city-camera-loop/06-left-marquee.png',
+  '/expo/media/city-camera-loop/07-left-marquee-close.png',
+  '/expo/media/city-camera-loop/08-left-edge-far.png',
+  '/expo/media/city-camera-loop/09-right-marquee.png',
+  '/expo/media/city-camera-loop/10-right-marquee-close.png',
+  '/expo/media/city-camera-loop/11-right-edge-far.png',
+  '/expo/media/city-camera-loop/12-sponsor-boulevard-left.png',
+  '/expo/media/city-camera-loop/13-sponsor-boulevard-left-close.png',
+  '/expo/media/city-camera-loop/14-sponsor-boulevard-right.png',
+  '/expo/media/city-camera-loop/15-sponsor-boulevard-right-medium.png',
+  '/expo/media/city-camera-loop/16-array-band.png',
+  '/expo/media/city-camera-loop/17-array-band-south.png',
+  '/expo/media/city-camera-loop/18-sky-market-spine.png',
+  '/expo/media/city-camera-loop/19-sky-market-spine-access.png',
+  '/expo/media/city-camera-loop/20-tower-cluster.png',
+  '/expo/media/city-camera-loop/21-tower-cluster-mega-skyline.png',
+  '/expo/media/city-camera-loop/22-tower-cluster-television-tower-crown.png',
+  '/expo/media/city-camera-loop/23-ai-reactor-core.png',
+  '/expo/media/city-camera-loop/24-ai-oracle-chamber.png',
+  '/expo/media/city-camera-loop/25-center-sky-compass.png',
+  '/expo/media/city-camera-loop/26-stadium-approach.png',
+  '/expo/media/city-camera-loop/27-rear-campus-entry-pulse-arches.png',
+  '/expo/media/city-camera-loop/28-rear-campus-center.png',
+  '/expo/media/city-camera-loop/29-stadium-feed-axis.png',
+  '/expo/media/city-camera-loop/30-rear-campus-orbital-scoregate.png',
+  '/expo/media/city-camera-loop/31-rear-campus-mega-hall.png',
 ] as const;
+
+let expoCityCameraLoopFrames: HTMLImageElement[] | null = null;
+let expoCityCameraLoopFramesPromise: Promise<HTMLImageElement[]> | null = null;
+
+function loadExpoCityCameraLoopFrames() {
+  if (typeof Image === 'undefined') {
+    return Promise.resolve([]);
+  }
+
+  if (expoCityCameraLoopFrames) {
+    return Promise.resolve(expoCityCameraLoopFrames);
+  }
+
+  if (!expoCityCameraLoopFramesPromise) {
+    const loadFrame = (sourceUrl: string) => new Promise<HTMLImageElement>((resolve, reject) => {
+      const image = new Image();
+      image.onload = () => resolve(image);
+      image.onerror = reject;
+      image.src = sourceUrl;
+    });
+
+    expoCityCameraLoopFramesPromise = Promise.all(EXPO_CITY_CAMERA_LOOP_FRAME_URLS.map(loadFrame))
+      .then((frames) => {
+        expoCityCameraLoopFrames = frames;
+        return frames;
+      })
+      .catch(() => {
+        expoCityCameraLoopFrames = [];
+        return [];
+      });
+  }
+
+  return expoCityCameraLoopFramesPromise;
+}
 
 function configureExpoTexture(texture: THREE.Texture, textureQualityHint: ExpoScreenTextureQualityHint) {
   const qualityConfig = resolveExpoGeneratedBillboardQualityConfig(textureQualityHint);
@@ -864,27 +925,12 @@ function AnimatedCameraFeedSurface({
   const side = doubleSided ? THREE.DoubleSide : THREE.FrontSide;
 
   useEffect(() => {
-    if (typeof Image === 'undefined') {
-      return undefined;
-    }
-
     let isActive = true;
-    const loadFrame = (sourceUrl: string) => new Promise<HTMLImageElement>((resolve, reject) => {
-      const image = new Image();
-      image.onload = () => resolve(image);
-      image.onerror = reject;
-      image.src = sourceUrl;
-    });
 
-    Promise.all(EXPO_CITY_CAMERA_LOOP_FRAME_URLS.map(loadFrame))
+    loadExpoCityCameraLoopFrames()
       .then((frames) => {
         if (isActive) {
           cameraFramesRef.current = frames;
-        }
-      })
-      .catch(() => {
-        if (isActive) {
-          cameraFramesRef.current = [];
         }
       });
 
