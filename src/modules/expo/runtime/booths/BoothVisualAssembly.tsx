@@ -253,6 +253,10 @@ function BoothProductLandmarkZoneFrame({
   );
 }
 
+function isManagedCameraPreviewImage(url: string | null) {
+  return Boolean(url && /warpala-expo-city-camera-view\.(?:png|jpe?g|webp)$/i.test(url));
+}
+
 export function BoothVisualAssembly({
   accentColor,
   boothColliderRef,
@@ -294,7 +298,9 @@ export function BoothVisualAssembly({
   const managedScreenImageUrl = managedScreenContent?.mode === 'image' && managedScreenContent.imageUrl
     ? managedScreenContent.imageUrl
     : null;
+  const managedCameraPreviewImage = isManagedCameraPreviewImage(managedScreenImageUrl);
   const useCameraFeedLoop = !boothProductPreviewCard && !managedScreenImageUrl;
+  const effectiveManagedScreenImageUrl = managedCameraPreviewImage ? null : managedScreenImageUrl;
   const boothPresentationScreenUrl = buildGeneratedBillboardTextureUrl({
     accentColor,
     aspect: pavilionLayout.screenSurfaceWidth / Math.max(1, pavilionLayout.screenSurfaceHeight),
@@ -313,7 +319,7 @@ export function BoothVisualAssembly({
         ? {
             chip: managedScreenContent.mode === 'video-placeholder' ? 'SAVED VIDEO SLOT' : 'CITY CAMERA LOOP',
             label: managedScreenContent.title,
-            layout: useCameraFeedLoop ? 'camera-feed-loop' as const : undefined,
+            layout: (useCameraFeedLoop || managedCameraPreviewImage) ? 'camera-feed-loop' as const : undefined,
             subtitle: managedScreenContent.mode === 'video-placeholder'
               ? `${managedScreenContent.subtitle || 'Owner-managed booth screen'} - playback review pending`
               : managedScreenContent.subtitle || 'Owner-managed booth screen',
@@ -342,7 +348,7 @@ export function BoothVisualAssembly({
           districtThemeId={districtThemeId}
           fallbackText={fallbackMonogram}
           metrics={metrics}
-          screenUrl={managedScreenImageUrl ?? boothPresentationScreenUrl}
+          screenUrl={effectiveManagedScreenImageUrl ?? boothPresentationScreenUrl}
           tier={tierState.featureTier}
         />
       )}
