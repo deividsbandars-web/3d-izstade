@@ -34,6 +34,7 @@ function renderPrimitive(
   primitive: CanonicalPrimitive,
   key: string,
   textureQualityHint?: ExpoScreenTextureQualityHint,
+  doubleSidedTexture = true,
 ) {
   if (primitive.kind === 'plane') {
     const isOpaque = isOpaquePrimitive(primitive.opacity);
@@ -79,7 +80,7 @@ function renderPrimitive(
         <planeGeometry args={primitive.size} />
         <SponsorTextureSurface
           depthWrite={false}
-          doubleSided
+          doubleSided={doubleSidedTexture}
           fallbackColor={primitive.fallbackColor}
           opacity={primitive.opacity ?? 0.92}
           textureQualityHint={textureQualityHint}
@@ -284,7 +285,12 @@ export function WorldCityScreenAssignments({
               : undefined}
           >
             {primitives.map((primitive, index) =>
-              renderPrimitive(primitive, `${assignment.id}:${primitive.kind}:${index}`, screenRuntimePolicy.textureQualityHint),
+              renderPrimitive(
+                primitive,
+                `${assignment.id}:${primitive.kind}:${index}`,
+                screenRuntimePolicy.textureQualityHint,
+                rearScreenContentZ === null,
+              ),
             )}
             {rearScreenContentZ !== null && primitives.map((primitive, index) =>
               renderRearTexturePrimitive(
