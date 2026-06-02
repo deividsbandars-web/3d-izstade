@@ -112,7 +112,7 @@ function ExpoRuntimeExperience({
         return;
       }
 
-      if (event.code !== 'KeyF' && event.code !== 'Enter' && event.code !== 'NumpadEnter') {
+      if (event.code !== 'Enter' && event.code !== 'NumpadEnter') {
         return;
       }
 
@@ -176,6 +176,8 @@ function ExpoRuntimeExperience({
             isSpeaking={isSpeaking}
             isTouchDevice={runtimeSession.isTouchDevice}
             mode={runtimeSession.mode}
+            nearbyBooth={nearbyBooth}
+            onEnterNearbyBooth={openNearbyBooth}
             onMoveTouch={runtimeSession.setMobileMoveIntent}
             playerPos={playerPos}
             sectorMarkers={worldContract.sectorMarkers}

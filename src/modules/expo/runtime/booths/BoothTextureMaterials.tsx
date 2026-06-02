@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { resolveExpoTextureCandidateUrls } from '../../lib/expoTexturePipeline';
 import {
@@ -307,6 +308,175 @@ function drawBoothProductPreviewBillboard(args: {
   );
 }
 
+function drawCameraFeedLoopBillboard(args: {
+  accentColor: string;
+  context: CanvasRenderingContext2D;
+  font: (weight: number, size: number) => string;
+  height: number;
+  payload: NonNullable<ReturnType<typeof parseGeneratedBillboardPayload>>;
+  tierAccent: string;
+  timeSeconds: number;
+  width: number;
+}) {
+  const {
+    accentColor,
+    context,
+    font,
+    height,
+    payload,
+    tierAccent,
+    timeSeconds,
+    width,
+  } = args;
+  const shortSide = Math.min(width, height);
+  const pad = Math.max(28, shortSide * 0.055);
+  const title = payload.label || 'Expo City Camera Loop';
+  const subtitle = payload.subtitle || 'Live camera route preview across the Web3D city';
+  const chip = payload.chip || 'CITY CAMERA LOOP';
+  const tier = payload.tier || 'CAMERA FEED';
+  const titleSize = height * 0.09;
+  const bodySize = height * 0.042;
+  const smallSize = height * 0.032;
+  const phase = timeSeconds * 0.85;
+  const sweep = (Math.sin(timeSeconds * 1.55) + 1) * 0.5;
+
+  const gradient = context.createLinearGradient(0, 0, width, height);
+  gradient.addColorStop(0, '#03111c');
+  gradient.addColorStop(0.44, '#0b2435');
+  gradient.addColorStop(1, '#031827');
+  context.fillStyle = gradient;
+  context.fillRect(0, 0, width, height);
+
+  context.save();
+  context.globalAlpha = 0.32;
+  context.strokeStyle = accentColor;
+  context.lineWidth = Math.max(1, shortSide * 0.002);
+  const gridGap = Math.max(34, shortSide * 0.055);
+  for (let x = -gridGap; x < width + gridGap; x += gridGap) {
+    const offset = (timeSeconds * 18) % gridGap;
+    context.beginPath();
+    context.moveTo(x + offset, 0);
+    context.lineTo(x + offset - width * 0.22, height);
+    context.stroke();
+  }
+  for (let y = 0; y < height; y += gridGap) {
+    context.beginPath();
+    context.moveTo(0, y);
+    context.lineTo(width, y);
+    context.stroke();
+  }
+  context.restore();
+
+  context.fillStyle = 'rgba(2, 8, 18, 0.68)';
+  context.beginPath();
+  context.roundRect(pad * 0.7, pad * 0.7, width - pad * 1.4, height - pad * 1.4, Math.max(18, shortSide * 0.032));
+  context.fill();
+  context.strokeStyle = 'rgba(125, 211, 252, 0.26)';
+  context.lineWidth = Math.max(2, shortSide * 0.0032);
+  context.stroke();
+
+  const left = pad * 1.18;
+  const top = pad;
+  drawBillboardText(context, chip.toUpperCase(), left, top, width * 0.42, font(900, smallSize), tierAccent);
+  drawBillboardText(context, title, left, top + smallSize * 1.35, width * 0.56, font(900, titleSize), '#f8fafc');
+  drawBillboardText(context, subtitle, left, top + smallSize * 1.55 + titleSize * 1.08, width * 0.55, font(760, bodySize), '#d7ecf8');
+
+  const liveDotX = width - pad * 2.9;
+  const liveDotY = top + smallSize * 0.58;
+  context.fillStyle = Math.sin(timeSeconds * 5.6) > 0 ? '#22c55e' : '#86efac';
+  context.beginPath();
+  context.arc(liveDotX, liveDotY, Math.max(8, smallSize * 0.28), 0, Math.PI * 2);
+  context.fill();
+  drawBillboardText(context, 'LIVE LOOP', liveDotX + smallSize * 0.78, liveDotY - smallSize * 0.48, width * 0.18, font(900, smallSize), '#bbf7d0');
+
+  const mapX = width * 0.64;
+  const mapY = height * 0.18;
+  const mapW = width * 0.27;
+  const mapH = height * 0.54;
+  context.fillStyle = 'rgba(8, 24, 38, 0.86)';
+  context.beginPath();
+  context.roundRect(mapX, mapY, mapW, mapH, Math.max(14, shortSide * 0.024));
+  context.fill();
+  context.strokeStyle = 'rgba(56, 189, 248, 0.44)';
+  context.stroke();
+
+  const routePoints = [
+    [mapX + mapW * 0.16, mapY + mapH * 0.74],
+    [mapX + mapW * 0.36, mapY + mapH * 0.48],
+    [mapX + mapW * 0.58, mapY + mapH * 0.34],
+    [mapX + mapW * 0.82, mapY + mapH * 0.18],
+  ] as const;
+  context.strokeStyle = 'rgba(191, 219, 254, 0.48)';
+  context.lineWidth = Math.max(4, shortSide * 0.006);
+  context.beginPath();
+  routePoints.forEach(([x, y], index) => {
+    if (index === 0) {
+      context.moveTo(x, y);
+    } else {
+      context.lineTo(x, y);
+    }
+  });
+  context.stroke();
+
+  routePoints.forEach(([x, y], index) => {
+    context.fillStyle = index === Math.floor((timeSeconds * 0.8) % routePoints.length) ? accentColor : 'rgba(226, 232, 240, 0.8)';
+    context.beginPath();
+    context.arc(x, y, Math.max(7, smallSize * 0.24), 0, Math.PI * 2);
+    context.fill();
+  });
+
+  const movingPoint = (phase % 1) * (routePoints.length - 1);
+  const segment = Math.min(routePoints.length - 2, Math.floor(movingPoint));
+  const segmentT = movingPoint - segment;
+  const [startX, startY] = routePoints[segment];
+  const [endX, endY] = routePoints[segment + 1];
+  const cameraX = startX + (endX - startX) * segmentT;
+  const cameraY = startY + (endY - startY) * segmentT;
+  context.fillStyle = '#f8fafc';
+  context.beginPath();
+  context.arc(cameraX, cameraY, Math.max(10, smallSize * 0.34), 0, Math.PI * 2);
+  context.fill();
+  context.strokeStyle = accentColor;
+  context.lineWidth = Math.max(3, shortSide * 0.004);
+  context.stroke();
+
+  const panels = [
+    ['ARRIVAL CAM', 'front gate sweep'],
+    ['BOULEVARD CAM', 'sponsor screen pass'],
+    ['ARENA CAM', 'event zone orbit'],
+  ] as const;
+  const panelTop = height * 0.56;
+  const panelGap = width * 0.016;
+  const panelW = (width * 0.56 - panelGap * 2) / 3;
+  const panelH = height * 0.23;
+  panels.forEach(([panelTitle, panelSubtitle], index) => {
+    const x = left + (panelW + panelGap) * index;
+    const active = index === Math.floor((timeSeconds * 0.9) % panels.length);
+    context.fillStyle = active ? 'rgba(14, 165, 233, 0.26)' : 'rgba(15, 35, 52, 0.82)';
+    context.beginPath();
+    context.roundRect(x, panelTop, panelW, panelH, Math.max(12, shortSide * 0.02));
+    context.fill();
+    context.strokeStyle = active ? 'rgba(186, 230, 253, 0.74)' : 'rgba(125, 211, 252, 0.22)';
+    context.stroke();
+
+    const scanX = x + panelW * (0.12 + sweep * 0.76);
+    context.fillStyle = 'rgba(186, 230, 253, 0.24)';
+    context.fillRect(scanX, panelTop + panelH * 0.12, Math.max(4, panelW * 0.018), panelH * 0.76);
+    context.fillStyle = active ? accentColor : tierAccent;
+    context.beginPath();
+    context.arc(x + panelW * (0.2 + 0.08 * Math.sin(timeSeconds + index)), panelTop + panelH * 0.45, Math.max(8, smallSize * 0.26), 0, Math.PI * 2);
+    context.fill();
+    drawBillboardText(context, panelTitle, x + panelW * 0.12, panelTop + panelH * 0.12, panelW * 0.78, font(900, smallSize * 0.78), '#f8fafc');
+    drawBillboardText(context, panelSubtitle, x + panelW * 0.12, panelTop + panelH * 0.66, panelW * 0.78, font(700, smallSize * 0.62), '#a7bed3');
+  });
+
+  context.fillStyle = 'rgba(8, 24, 38, 0.78)';
+  context.beginPath();
+  context.roundRect(left, height - pad * 1.8, width * 0.5, smallSize * 1.56, smallSize * 0.78);
+  context.fill();
+  drawBillboardText(context, tier.toUpperCase(), left + smallSize * 0.72, height - pad * 1.55, width * 0.46, font(900, smallSize * 0.86), '#dff7ff');
+}
+
 function createGeneratedBillboardTexture(url: string, textureQualityHint: ExpoScreenTextureQualityHint) {
   const payload = parseGeneratedBillboardPayload(url);
   if (!payload || typeof document === 'undefined') {
@@ -407,6 +577,11 @@ function createGeneratedBillboardTexture(url: string, textureQualityHint: ExpoSc
     width: canvas.width,
   });
   return configureExpoTexture(new THREE.CanvasTexture(canvas), textureQualityHint);
+}
+
+function isCameraFeedLoopTextureUrl(url: string) {
+  const payload = parseGeneratedBillboardPayload(url);
+  return payload?.layout === 'camera-feed-loop';
 }
 
 function loadTextureWithCandidateUrls(loader: THREE.TextureLoader, urls: string[]) {
@@ -609,7 +784,143 @@ function loadCachedExpoTexture(url: string, textureQualityHint: ExpoScreenTextur
   return promise;
 }
 
-export function SponsorTextureSurface({
+function AnimatedCameraFeedSurface({
+  depthWrite,
+  doubleSided,
+  fallbackColor,
+  emissiveColor,
+  emissiveIntensity,
+  opacity,
+  textureQualityHint,
+  url,
+}: {
+  depthWrite?: boolean;
+  doubleSided: boolean;
+  emissiveColor?: string;
+  emissiveIntensity: number;
+  fallbackColor: string;
+  opacity: number;
+  textureQualityHint: ExpoScreenTextureQualityHint;
+  url: string;
+}) {
+  const payload = useMemo(() => parseGeneratedBillboardPayload(url), [url]);
+  const canvasSize = resolveGeneratedBillboardCanvasSize(payload?.aspect, textureQualityHint);
+  const [texture, setTexture] = useState<THREE.CanvasTexture | null>(null);
+  const textureRef = useRef<THREE.CanvasTexture | null>(null);
+  const lastFrameTimeRef = useRef(-1);
+  const side = doubleSided ? THREE.DoubleSide : THREE.FrontSide;
+  useEffect(() => {
+    if (typeof document === 'undefined' || !payload) {
+      return undefined;
+    }
+
+    let isActive = true;
+    const canvas = document.createElement('canvas');
+    canvas.width = canvasSize.width;
+    canvas.height = canvasSize.height;
+    const context = canvas.getContext('2d');
+    if (!context) {
+      return undefined;
+    }
+
+    const nextTexture = configureExpoTexture(new THREE.CanvasTexture(canvas), textureQualityHint) as THREE.CanvasTexture;
+    drawCameraFeedLoopBillboard({
+      accentColor: payload.accentColor || emissiveColor || '#38bdf8',
+      context,
+      font: (weight, size) => `${weight} ${Math.round(size)}px Verdana, Arial, sans-serif`,
+      height: canvas.height,
+      payload,
+      tierAccent: payload.tierAccent || '#bae6fd',
+      timeSeconds: 0,
+      width: canvas.width,
+    });
+    nextTexture.needsUpdate = true;
+    recordExpoGeneratedBillboardTextureCreated({
+      height: canvas.height,
+      qualityHint: textureQualityHint,
+      width: canvas.width,
+    });
+    textureRef.current = nextTexture;
+    queueMicrotask(() => {
+      if (isActive) {
+        setTexture(nextTexture);
+      }
+    });
+
+    return () => {
+      isActive = false;
+      textureRef.current = null;
+      nextTexture.dispose();
+    };
+  }, [canvasSize.height, canvasSize.width, emissiveColor, payload, textureQualityHint]);
+
+  useFrame(({ clock }) => {
+    const activeTexture = textureRef.current;
+    if (!activeTexture || !payload || !(activeTexture.image instanceof HTMLCanvasElement)) {
+      return;
+    }
+
+    const elapsed = clock.getElapsedTime();
+    if (elapsed - lastFrameTimeRef.current < 0.1) {
+      return;
+    }
+
+    lastFrameTimeRef.current = elapsed;
+    const canvas = activeTexture.image;
+    const context = canvas.getContext('2d');
+    if (!context) {
+      return;
+    }
+
+    drawCameraFeedLoopBillboard({
+      accentColor: payload.accentColor || emissiveColor || '#38bdf8',
+      context,
+      font: (weight, size) => `${weight} ${Math.round(size)}px Verdana, Arial, sans-serif`,
+      height: canvas.height,
+      payload,
+      tierAccent: payload.tierAccent || '#bae6fd',
+      timeSeconds: elapsed,
+      width: canvas.width,
+    });
+    activeTexture.needsUpdate = true;
+  });
+
+  if (texture) {
+    return (
+      <meshBasicMaterial
+        depthWrite={depthWrite ?? opacity >= 0.999}
+        map={texture}
+        polygonOffset
+        polygonOffsetFactor={-5}
+        polygonOffsetUnits={-5}
+        transparent={opacity < 0.999}
+        opacity={opacity}
+        side={side}
+        toneMapped={false}
+      />
+    );
+  }
+
+  return (
+    <meshStandardMaterial
+      color={fallbackColor}
+      depthWrite={depthWrite ?? opacity >= 0.999}
+      emissive={emissiveColor ?? '#000000'}
+      emissiveIntensity={Math.min(emissiveIntensity, 0.12)}
+      metalness={0.02}
+      polygonOffset
+      polygonOffsetFactor={-5}
+      polygonOffsetUnits={-5}
+      roughness={0.42}
+      side={side}
+      transparent={opacity < 0.999}
+      opacity={opacity}
+      toneMapped={false}
+    />
+  );
+}
+
+function StaticSponsorTextureSurface({
   depthWrite,
   doubleSided = false,
   fallbackColor,
@@ -690,6 +1001,57 @@ export function SponsorTextureSurface({
       transparent={opacity < 0.999}
       opacity={opacity}
       toneMapped={false}
+    />
+  );
+}
+
+export function SponsorTextureSurface({
+  depthWrite,
+  doubleSided = false,
+  fallbackColor,
+  emissiveColor,
+  emissiveIntensity = 0,
+  opacity = 1,
+  textureQualityHint,
+  url,
+}: {
+  depthWrite?: boolean;
+  doubleSided?: boolean;
+  emissiveColor?: string;
+  emissiveIntensity?: number;
+  fallbackColor: string;
+  opacity?: number;
+  textureQualityHint?: ExpoScreenTextureQualityHint;
+  url: string;
+}) {
+  const normalizedTextureQualityHint = normalizeTextureQualityHint(textureQualityHint);
+
+  if (isCameraFeedLoopTextureUrl(url)) {
+    return (
+      <AnimatedCameraFeedSurface
+        key={`${url}::${normalizedTextureQualityHint}`}
+        depthWrite={depthWrite}
+        doubleSided={doubleSided}
+        fallbackColor={fallbackColor}
+        emissiveColor={emissiveColor}
+        emissiveIntensity={emissiveIntensity}
+        opacity={opacity}
+        textureQualityHint={normalizedTextureQualityHint}
+        url={url}
+      />
+    );
+  }
+
+  return (
+    <StaticSponsorTextureSurface
+      depthWrite={depthWrite}
+      doubleSided={doubleSided}
+      fallbackColor={fallbackColor}
+      emissiveColor={emissiveColor}
+      emissiveIntensity={emissiveIntensity}
+      opacity={opacity}
+      textureQualityHint={normalizedTextureQualityHint}
+      url={url}
     />
   );
 }

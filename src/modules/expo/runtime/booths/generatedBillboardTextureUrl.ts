@@ -7,7 +7,7 @@ export type GeneratedBillboardPayload = {
   chip?: string;
   ctaLabels?: readonly string[];
   label?: string;
-  layout?: 'booth-product-preview';
+  layout?: 'booth-product-preview' | 'camera-feed-loop';
   statusLabel?: string;
   subtitle?: string;
   tier?: string;

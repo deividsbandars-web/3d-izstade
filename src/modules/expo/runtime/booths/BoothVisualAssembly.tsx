@@ -274,11 +274,6 @@ export function BoothVisualAssembly({
 }) {
   const metrics = getBoothArchitectureMetrics(presentation.template);
   const colliderSegments = getBoothColliderSegments(presentation.template);
-  const premiumLabel = tierState.isHeroBooth
-    ? 'FLAGSHIP IMMERSIVE SHOWROOM'
-    : tierState.isEliteBooth
-      ? 'UNREAL-POWERED BUYER SUITE'
-      : 'PREMIUM LIVE SHOWROOM';
   const pavilionLayout = resolveOpenBoothPavilionLayout(metrics, tierState.featureTier);
   const showStandardProductShowcaseFrame = Boolean(
     boothProductPreviewCard
@@ -299,6 +294,7 @@ export function BoothVisualAssembly({
   const managedScreenImageUrl = managedScreenContent?.mode === 'image' && managedScreenContent.imageUrl
     ? managedScreenContent.imageUrl
     : null;
+  const useCameraFeedLoop = !boothProductPreviewCard && !managedScreenImageUrl;
   const boothPresentationScreenUrl = buildGeneratedBillboardTextureUrl({
     accentColor,
     aspect: pavilionLayout.screenSurfaceWidth / Math.max(1, pavilionLayout.screenSurfaceHeight),
@@ -315,17 +311,19 @@ export function BoothVisualAssembly({
         }
       : managedScreenContent
         ? {
-            chip: managedScreenContent.mode === 'video-placeholder' ? 'VIDEO SLOT READY' : 'SPONSOR SCREEN',
+            chip: managedScreenContent.mode === 'video-placeholder' ? 'SAVED VIDEO SLOT' : 'CITY CAMERA LOOP',
             label: managedScreenContent.title,
+            layout: useCameraFeedLoop ? 'camera-feed-loop' as const : undefined,
             subtitle: managedScreenContent.mode === 'video-placeholder'
-              ? `${managedScreenContent.subtitle || 'Owner-managed booth screen'} - video saved, playback off`
+              ? `${managedScreenContent.subtitle || 'Owner-managed booth screen'} - playback review pending`
               : managedScreenContent.subtitle || 'Owner-managed booth screen',
             tier: managedScreenContent.ctaLabel || 'PUBLISHED',
           }
       : {
-          chip: presentation.badgeLabel ?? premiumLabel,
+          chip: 'CITY CAMERA LOOP',
           label: presentation.displayName,
-          subtitle: presentation.tagline ?? premiumLabel,
+          layout: 'camera-feed-loop' as const,
+          subtitle: presentation.tagline ?? 'Generated camera route across the Expo City',
           tier: tierState.contractTier.toUpperCase(),
         }),
     tierAccent: tierState.districtVisual.shellAccent,
