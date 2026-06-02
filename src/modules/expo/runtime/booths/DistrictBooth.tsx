@@ -1,6 +1,7 @@
 import { useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import * as THREE from 'three';
+import { getBoothArchitectureMetrics } from '../../components/BoothArchitectureKit';
 import { buildExpoBoothWeb3DRoomRoute } from '../../lib/expoBoothRoutes';
 import { EXPO_FEATURE_FLAGS } from '../../state/expoRuntime';
 import type { ExpoBoothPlacement } from '../../layout-engine';
@@ -48,6 +49,20 @@ export function DistrictBooth({
     skylineDensityEnabled: EXPO_FEATURE_FLAGS.enableShowcaseSkylineDensity,
   });
   const boothId = String(booth?.id ?? placement.id);
+  const boothInteractionMetrics = useMemo(
+    () => getBoothArchitectureMetrics(presentation.template),
+    [presentation.template]
+  );
+  const boothInteractionHitSize: [number, number, number] = [
+    Math.max(boothInteractionMetrics.colliderSize[0], boothInteractionMetrics.footprintSize[0]),
+    Math.max(4.2, boothInteractionMetrics.colliderSize[1] * 0.78),
+    Math.max(boothInteractionMetrics.colliderSize[2], boothInteractionMetrics.footprintSize[1]),
+  ];
+  const boothInteractionHitPosition: [number, number, number] = [
+    0,
+    boothInteractionHitSize[1] * 0.5,
+    0,
+  ];
   const web3dRoomPresentation = useMemo(
     () => ({
       demoRoomPath: buildExpoBoothWeb3DRoomRoute(presentation.demoRoomPath),
@@ -98,6 +113,23 @@ export function DistrictBooth({
         document.body.style.cursor = 'auto';
       }}
     >
+      <mesh
+        name="booth-interaction-hit-area"
+        position={boothInteractionHitPosition}
+        onClick={(event) => {
+          event.stopPropagation();
+          selectBoothAndOpenRoom();
+        }}
+        onPointerOver={() => {
+          document.body.style.cursor = 'pointer';
+        }}
+        onPointerOut={() => {
+          document.body.style.cursor = 'auto';
+        }}
+      >
+        <boxGeometry args={boothInteractionHitSize} />
+        <meshBasicMaterial depthWrite={false} opacity={0} transparent />
+      </mesh>
       <BoothVisualAssembly
         accentColor={placement.color}
         boothColliderRef={boothColliderRef}
