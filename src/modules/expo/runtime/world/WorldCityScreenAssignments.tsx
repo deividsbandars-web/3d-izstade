@@ -15,7 +15,7 @@ import { buildManagedScreenAssignmentOverrides } from './managedScreenContentAss
 import { getExpoActiveVideoScreensCount } from './quality/expoActiveVideoScreenRegistry';
 import { resolveExpoScreenRuntimePolicy, type ExpoScreenTextureQualityHint } from './quality/expoScreenRuntimePolicy';
 import type { ExpoQualitySettings } from './quality/expoQualitySettings';
-import type { CanonicalPrimitive, CityScreenAssignment, CityScreenSocket } from '../planning/types';
+import type { CanonicalPrimitive, CityScreenAssignment, CityScreenSocket, CityScreenSurface } from '../planning/types';
 
 function isOpaquePrimitive(opacity: number | undefined) {
   return (opacity ?? 1) >= 0.999;
@@ -111,12 +111,48 @@ function renderPrimitive(
   return null;
 }
 
-function shouldRenderRearScreenContent(socket: CityScreenSocket) {
-  return socket.kind === 'hero_wall' || socket.kind === 'wall';
+function isFlatStandaloneScreenSurface(socket: CityScreenSocket) {
+  return (
+    socket.surfaceId.startsWith('screen-marquee-')
+    || socket.surfaceId.startsWith('screen-array-')
+    || socket.surfaceId.startsWith('screen-spine-')
+  );
 }
 
-function getRearScreenContentZ(socket: CityScreenSocket) {
-  return -Math.max(1.05, (socket.renderIntent?.frameDepth ?? 1.9) * 0.58);
+function shouldRenderRearScreenContent(socket: CityScreenSocket, surface: CityScreenSurface | undefined) {
+  if (!surface || surface.type !== 'wall') {
+    return false;
+  }
+
+  return isFlatStandaloneScreenSurface(socket);
+}
+
+function getSurfaceHousingDepth(surface: CityScreenSurface) {
+  if (surface.renderIntent?.housingDepth) {
+    return surface.renderIntent.housingDepth;
+  }
+
+  if (surface.role === 'hero-wall') {
+    return Math.max(10, surface.size[2] * 4.2);
+  }
+
+  if (surface.role === 'support-wall') {
+    return Math.max(8, surface.size[2] * 3.5);
+  }
+
+  if (surface.role === 'tower-crown') {
+    return Math.max(4.8, surface.size[2] * 2.2);
+  }
+
+  return Math.max(4.4, surface.size[2] * 2.1);
+}
+
+function getRearScreenContentZ(surface: CityScreenSurface) {
+  const housingDepth = getSurfaceHousingDepth(surface);
+
+  // Sockets are anchored on the front face by buildScreenSockets at housingDepth * 0.55.
+  // The rear clone must cross the whole housing and rear mounting plate to be visible.
+  return -(housingDepth * 1.48);
 }
 
 function renderRearTexturePrimitive(
@@ -134,6 +170,7 @@ function renderRearTexturePrimitive(
       key={key}
       name={key}
       position={[primitive.position[0], primitive.position[1], rearZ]}
+      rotation={[0, Math.PI, 0]}
       renderOrder={9}
       scale={[-1, 1, 1]}
     >
@@ -155,16 +192,19 @@ export function WorldCityScreenAssignments({
   boothPlacements,
   playerPosition,
   qualitySettings,
+  surfaces,
   sockets,
 }: {
   assignments: CityScreenAssignment[];
   boothPlacements: ExpoBoothPlacement[];
   playerPosition: [number, number, number];
   qualitySettings: ExpoQualitySettings;
+  surfaces: CityScreenSurface[];
   sockets: CityScreenSocket[];
 }) {
   const navigate = useNavigate();
   const socketById = useMemo(() => new Map(sockets.map((socket) => [socket.id, socket])), [sockets]);
+  const surfaceById = useMemo(() => new Map(surfaces.map((surface) => [surface.id, surface])), [surfaces]);
   const cullDistantScreens = shouldCullDistantScreens();
   const demoArenaPreviewEnabled = isDemoArenaPreviewEnabled();
   const demoArenaPreviewSummary = useMemo(
@@ -187,6 +227,7 @@ export function WorldCityScreenAssignments({
         if (!socket) {
           return null;
         }
+        const surface = surfaceById.get(socket.surfaceId);
 
         const dx = socket.position[0] - playerPosition[0];
         const dz = socket.position[2] - playerPosition[2];
@@ -239,7 +280,7 @@ export function WorldCityScreenAssignments({
           isInActiveSection: true,
           qualitySettings,
         });
-        const rearScreenContentZ = getRearScreenContentZ(socket);
+        const rearScreenContentZ = surface ? getRearScreenContentZ(surface) : null;
 
         return (
           <group
@@ -288,7 +329,7 @@ export function WorldCityScreenAssignments({
             {primitives.map((primitive, index) =>
               renderPrimitive(primitive, `${assignment.id}:${primitive.kind}:${index}`, screenRuntimePolicy.textureQualityHint),
             )}
-            {shouldRenderRearScreenContent(socket) && primitives.map((primitive, index) =>
+            {rearScreenContentZ !== null && shouldRenderRearScreenContent(socket, surface) && primitives.map((primitive, index) =>
               renderRearTexturePrimitive(
                 primitive,
                 `${assignment.id}:rear:${primitive.kind}:${index}`,

@@ -290,6 +290,7 @@ export function ExpoRearCampus({
           boothPlacements={boothPlacements}
           playerPosition={playerPosition}
           qualitySettings={qualitySettings}
+          surfaces={rearCampusPlan.screenSurfaces}
           sockets={rearCampusPlan.screenSockets}
         />
       </ExpoZoneGroup>

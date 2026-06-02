@@ -234,6 +234,7 @@ export function WorldCitySkeleton({
           boothPlacements={boothPlacements}
           playerPosition={playerPosition}
           qualitySettings={qualitySettings}
+          surfaces={filteredScreenSurfaces}
           sockets={screenSockets}
         />
       </ExpoZoneGroup>
