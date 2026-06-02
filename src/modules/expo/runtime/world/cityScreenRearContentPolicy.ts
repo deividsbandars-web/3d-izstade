@@ -86,6 +86,17 @@ function getRearCampusGeneratedHostShellRearContentZ(surface: CityScreenSurface)
   return -(getSocketAnchorDepth(surface) + hostDepth - (surface.size[2] * 0.5) + faceInset + 0.75);
 }
 
+function getManualRearCampusBackplateRearContentZ(surface: CityScreenSurface) {
+  if (surface.id === 'rear-campus-orbital-scoregate-host-surface') {
+    // The orbital scoregate has an authored scoreboard-backplate in
+    // ExpoRearCampusRecoveredStructures. Its rear face sits roughly 60 units
+    // behind the authored front screen surface, not behind the full structure.
+    return -(getSocketAnchorDepth(surface) + 60);
+  }
+
+  return null;
+}
+
 export function getCityScreenRearContentPolicy(
   socket: CityScreenSocket,
   surface: CityScreenSurface | undefined,
@@ -110,6 +121,15 @@ export function getCityScreenRearContentPolicy(
     return {
       enabled: true,
       rearZ: getRearCampusGeneratedHostShellRearContentZ(surface),
+      zone: 'rearCampus',
+    };
+  }
+
+  const manualRearCampusBackplateZ = getManualRearCampusBackplateRearContentZ(surface);
+  if (manualRearCampusBackplateZ !== null) {
+    return {
+      enabled: true,
+      rearZ: manualRearCampusBackplateZ,
       zone: 'rearCampus',
     };
   }
