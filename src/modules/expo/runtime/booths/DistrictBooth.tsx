@@ -1,4 +1,4 @@
-import { Html } from '@react-three/drei';
+import { Text } from '@react-three/drei';
 import { useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import * as THREE from 'three';
@@ -124,56 +124,38 @@ export function DistrictBooth({
       }}
     >
       {showBoothAction && (
-        <Html
-          center
-          distanceFactor={18}
-          position={boothActionPosition}
-          style={{ pointerEvents: 'auto' }}
-          zIndexRange={[70, 20]}
-        >
-          <button
-            type="button"
-            aria-label={`Open ${company?.name ?? 'sponsor'} booth`}
-            onClick={(event) => {
-              event.stopPropagation();
-              selectBoothAndOpenRoom();
-            }}
-            style={{
-              alignItems: 'center',
-              background: 'linear-gradient(135deg, rgba(10, 22, 32, 0.94), rgba(26, 55, 74, 0.9))',
-              border: `1px solid ${placement.color}`,
-              borderRadius: '999px',
-              boxShadow: `0 0 18px ${placement.color}55, 0 10px 24px rgba(0, 0, 0, 0.28)`,
-              color: '#f4fbff',
-              cursor: 'pointer',
-              display: 'inline-flex',
-              flexDirection: 'column',
-              fontFamily: 'inherit',
-              fontSize: '11px',
-              fontWeight: 800,
-              gap: '2px',
-              letterSpacing: '0.12em',
-              lineHeight: 1,
-              minWidth: '112px',
-              padding: '9px 14px 8px',
-              textTransform: 'uppercase',
-              whiteSpace: 'nowrap',
-            }}
+        <group name="booth-open-affordance" position={boothActionPosition}>
+          <mesh castShadow receiveShadow>
+            <boxGeometry args={[4.7, 0.74, 0.18]} />
+            <meshStandardMaterial color="#0b1624" emissive={placement.color} emissiveIntensity={0.08} metalness={0.08} roughness={0.42} />
+          </mesh>
+          <mesh position={[0, 0, 0.105]}>
+            <boxGeometry args={[4.2, 0.08, 0.04]} />
+            <meshBasicMaterial color={placement.color} toneMapped={false} />
+          </mesh>
+          <Text
+            anchorX="center"
+            anchorY="middle"
+            color="#f4fbff"
+            fontSize={0.26}
+            fontWeight={800}
+            letterSpacing={0.08}
+            position={[0, 0.12, 0.16]}
           >
-            Open booth
-            <span
-              style={{
-                color: '#bfeeff',
-                fontSize: '8px',
-                fontWeight: 700,
-                letterSpacing: '0.16em',
-                opacity: 0.82,
-              }}
-            >
-              click / enter
-            </span>
-          </button>
-        </Html>
+            OPEN BOOTH
+          </Text>
+          <Text
+            anchorX="center"
+            anchorY="middle"
+            color="#bfeeff"
+            fontSize={0.13}
+            fontWeight={700}
+            letterSpacing={0.12}
+            position={[0, -0.18, 0.17]}
+          >
+            CLICK / ENTER
+          </Text>
+        </group>
       )}
       <BoothVisualAssembly
         accentColor={placement.color}
