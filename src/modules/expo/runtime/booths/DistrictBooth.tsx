@@ -1,4 +1,4 @@
-import { useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Text } from '@react-three/drei';
 import * as THREE from 'three';
@@ -16,7 +16,9 @@ import {
   trackBoothSelection,
 } from './index';
 
-function BoothEntryKiosk({
+const BOOTH_ENTRY_PORTAL_TRIGGER_RADIUS = 1.45;
+
+function BoothEntryPortal({
   accentColor,
   label,
   onEnter,
@@ -39,14 +41,15 @@ function BoothEntryKiosk({
     onEnter();
   };
 
-  const handleEnterPointer = (event: { stopPropagation: () => void }) => {
+  const handleEnterPointer = (event: { preventDefault?: () => void; stopPropagation: () => void }) => {
+    event.preventDefault?.();
     event.stopPropagation();
     requestEnter();
   };
 
   return (
     <group
-      name="booth-entry-kiosk"
+      name="booth-entry-portal"
       position={position}
       onClick={(event) => {
         event.stopPropagation();
@@ -59,35 +62,53 @@ function BoothEntryKiosk({
         document.body.style.cursor = 'auto';
       }}
       userData={{
-        expoBoothEntryKiosk: true,
+        expoBoothEntryPortal: true,
         expoInteractionOwner: 'DistrictBooth',
       }}
     >
-      <mesh position={[0, 0.24, 0]} castShadow receiveShadow>
-        <boxGeometry args={[1.22, 0.48, 1.06]} />
-        <meshStandardMaterial color="#142233" emissive={accentColor} emissiveIntensity={0.04} metalness={0.12} roughness={0.46} />
+      <mesh position={[0, 0.04, 0]} receiveShadow>
+        <cylinderGeometry args={[1.18, 1.34, 0.08, 40]} />
+        <meshStandardMaterial color="#0f1b2c" emissive={accentColor} emissiveIntensity={0.1} metalness={0.1} roughness={0.42} />
       </mesh>
-      <mesh position={[0, 0.62, 0]} castShadow receiveShadow>
-        <boxGeometry args={[0.78, 0.78, 0.34]} />
-        <meshStandardMaterial color="#e8f6ff" emissive={accentColor} emissiveIntensity={0.08} metalness={0.08} roughness={0.24} />
+      <mesh position={[0, 0.092, 0]} receiveShadow>
+        <cylinderGeometry args={[0.88, 0.94, 0.035, 40]} />
+        <meshBasicMaterial color={accentColor} opacity={0.32} transparent toneMapped={false} />
       </mesh>
-      <mesh position={[0, 0.62, 0.2]} onPointerDown={handleEnterPointer}>
-        <boxGeometry args={[0.62, 0.48, 0.08]} />
-        <meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={0.22} metalness={0.06} roughness={0.26} />
+      {[-1, 1].map((side) => (
+        <mesh key={`portal-post-${side}`} position={[side * 0.72, 1.08, 0]} castShadow receiveShadow>
+          <boxGeometry args={[0.18, 2.1, 0.18]} />
+          <meshStandardMaterial color="#142233" emissive={accentColor} emissiveIntensity={0.12} metalness={0.16} roughness={0.32} />
+        </mesh>
+      ))}
+      <mesh position={[0, 2.16, 0]} castShadow receiveShadow>
+        <boxGeometry args={[1.62, 0.18, 0.18]} />
+        <meshStandardMaterial color="#142233" emissive={accentColor} emissiveIntensity={0.14} metalness={0.18} roughness={0.3} />
       </mesh>
-      <Text position={[0, 0.73, 0.252]} fontSize={0.13} color="#f8fafc" anchorX="center" anchorY="middle" maxWidth={0.52}>
+      <mesh position={[0, 1.18, 0.025]}>
+        <torusGeometry args={[0.8, 0.032, 12, 56]} />
+        <meshBasicMaterial color={accentColor} toneMapped={false} />
+      </mesh>
+      <mesh
+        name="booth-entry-portal-trigger"
+        position={[0, 1.08, 0]}
+        onPointerDown={handleEnterPointer}
+        userData={{
+          expoBoothEntryPortalTrigger: true,
+          expoInteractionOwner: 'DistrictBooth',
+        }}
+      >
+        <boxGeometry args={[2.08, 2.36, 1.54]} />
+        <meshBasicMaterial depthWrite={false} opacity={0} transparent />
+      </mesh>
+      <Text position={[0, 1.34, 0.14]} fontSize={0.16} color="#f8fafc" anchorX="center" anchorY="middle" maxWidth={0.9}>
         ENTER
       </Text>
-      <Text position={[0, 0.5, 0.252]} fontSize={0.075} color="#dbeafe" anchorX="center" anchorY="middle" maxWidth={0.54}>
-        BOOTH
+      <Text position={[0, 1.04, 0.14]} fontSize={0.1} color="#dbeafe" anchorX="center" anchorY="middle" maxWidth={0.9}>
+        BOOTH ROOM
       </Text>
-      <Text position={[0, 1.12, 0.02]} fontSize={0.11} color="#f8fafc" anchorX="center" anchorY="middle" maxWidth={1.4}>
+      <Text position={[0, 2.48, 0.04]} fontSize={0.105} color="#f8fafc" anchorX="center" anchorY="middle" maxWidth={1.7}>
         {safeLabel}
       </Text>
-      <mesh position={[0, 0.1, 0]} receiveShadow>
-        <cylinderGeometry args={[0.72, 0.82, 0.08, 24]} />
-        <meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={0.1} metalness={0.08} roughness={0.38} />
-      </mesh>
     </group>
   );
 }
@@ -131,21 +152,12 @@ export function DistrictBooth({
     () => getBoothArchitectureMetrics(presentation.template),
     [presentation.template]
   );
-  const boothInteractionHitSize: [number, number, number] = [
-    Math.max(boothInteractionMetrics.colliderSize[0], boothInteractionMetrics.footprintSize[0]),
-    Math.max(4.2, boothInteractionMetrics.colliderSize[1] * 0.78),
-    Math.max(boothInteractionMetrics.colliderSize[2], boothInteractionMetrics.footprintSize[1]),
-  ];
-  const boothInteractionHitPosition: [number, number, number] = [
+  const entryPortalArmedRef = useRef(true);
+  const entryPortalPosition = useMemo<[number, number, number]>(() => [
+    -Math.max(3.2, boothInteractionMetrics.footprintSize[0] * 0.42),
     0,
-    boothInteractionHitSize[1] * 0.5,
-    0,
-  ];
-  const entryKioskPosition: [number, number, number] = [
-    -Math.max(2.8, boothInteractionMetrics.footprintSize[0] * 0.38),
-    0,
-    Math.max(4.2, boothInteractionMetrics.footprintSize[1] * 0.5 + 1.35),
-  ];
+    Math.max(4.8, boothInteractionMetrics.footprintSize[1] * 0.5 + 1.7),
+  ], [boothInteractionMetrics.footprintSize]);
   const web3dRoomPresentation = useMemo(
     () => ({
       demoRoomPath: buildExpoBoothWeb3DRoomRoute(presentation.demoRoomPath),
@@ -159,16 +171,16 @@ export function DistrictBooth({
     placementId: placement.id,
     runtimeBoothId: booth?.id,
   });
-  const openRoom = () => openShowcaseRoom({
+  const openRoom = useCallback(() => openShowcaseRoom({
     analyticsEnabled: EXPO_FEATURE_FLAGS.enableAnalytics,
     boothId,
     company,
     navigate: nav,
     presentation: web3dRoomPresentation,
     sectorName: placement.sectorName,
-  });
+  }), [boothId, company, nav, placement.sectorName, web3dRoomPresentation]);
 
-  const selectBoothAndOpenRoom = () => {
+  const selectBoothAndOpenRoom = useCallback(() => {
     const now = typeof performance !== 'undefined' ? performance.now() : Date.now();
     if (now - lastRoomOpenRequestRef.current < 500) {
       return;
@@ -184,17 +196,39 @@ export function DistrictBooth({
       sectorName: placement.sectorName,
     });
     openRoom();
-  };
+  }, [boothId, company, openRoom, placement.nodeType, placement.sectorName, presentation]);
+
+  const entryPortalDistance = useMemo(() => {
+    const boothYaw = placement.rotation?.[1] ?? 0;
+    const deltaX = playerPosition[0] - placement.position[0];
+    const deltaZ = playerPosition[2] - placement.position[2];
+    const cos = Math.cos(-boothYaw);
+    const sin = Math.sin(-boothYaw);
+    const localX = deltaX * cos - deltaZ * sin;
+    const localZ = deltaX * sin + deltaZ * cos;
+
+    return Math.hypot(localX - entryPortalPosition[0], localZ - entryPortalPosition[2]);
+  }, [entryPortalPosition, placement.position, placement.rotation, playerPosition]);
+
+  useEffect(() => {
+    if (entryPortalDistance > BOOTH_ENTRY_PORTAL_TRIGGER_RADIUS) {
+      entryPortalArmedRef.current = true;
+      return;
+    }
+
+    if (!entryPortalArmedRef.current) {
+      return;
+    }
+
+    entryPortalArmedRef.current = false;
+    selectBoothAndOpenRoom();
+  }, [entryPortalDistance, selectBoothAndOpenRoom]);
 
   return (
     <group
       name={`booth:${placement.id}`}
       position={placement.position}
       rotation={placement.rotation}
-      onClick={(event) => {
-        event.stopPropagation();
-        selectBoothAndOpenRoom();
-      }}
       onPointerDown={(event) => {
         event.stopPropagation();
       }}
@@ -205,27 +239,6 @@ export function DistrictBooth({
         document.body.style.cursor = 'auto';
       }}
     >
-      <mesh
-        name="booth-interaction-hit-area"
-        position={boothInteractionHitPosition}
-        onClick={(event) => {
-          event.stopPropagation();
-          selectBoothAndOpenRoom();
-        }}
-        onPointerDown={(event) => {
-          event.stopPropagation();
-          selectBoothAndOpenRoom();
-        }}
-        onPointerOver={() => {
-          document.body.style.cursor = 'pointer';
-        }}
-        onPointerOut={() => {
-          document.body.style.cursor = 'auto';
-        }}
-      >
-        <boxGeometry args={boothInteractionHitSize} />
-        <meshBasicMaterial depthWrite={false} opacity={0} transparent />
-      </mesh>
       <BoothVisualAssembly
         accentColor={placement.color}
         boothColliderRef={boothColliderRef}
@@ -235,11 +248,11 @@ export function DistrictBooth({
         presentation={presentation}
         tierState={{ ...tierState, districtVisual }}
       />
-      <BoothEntryKiosk
+      <BoothEntryPortal
         accentColor={districtVisual.shellAccent || placement.color}
         label={presentation.displayName}
         onEnter={selectBoothAndOpenRoom}
-        position={entryKioskPosition}
+        position={entryPortalPosition}
       />
     </group>
   );
