@@ -123,6 +123,15 @@ export function OpenBoothPavilion({
     const signalTowerAccentY = 0.72 + signalTowerHeight * 0.56;
     const signalTowerBaseWidth = signalTowerWidth * (isHero ? 3.35 : isElite ? 3.05 : isPremium ? 2.8 : 2.4);
     const signalTowerBaseDepth = signalTowerDepth * 1.85;
+    const perimeterWingX = (wallWidth * 0.5) + (isHero ? 1.42 : isElite ? 1.24 : isPremium ? 1.08 : 0.92);
+    const perimeterWingHeight = wallHeight * (isHero ? 0.82 : isElite ? 0.78 : isPremium ? 0.72 : 0.64);
+    const perimeterWingDepth = isHero ? 1.36 : isElite ? 1.22 : isPremium ? 1.08 : 0.92;
+    const perimeterWingWidth = isHero ? 0.64 : isElite ? 0.58 : isPremium ? 0.52 : 0.46;
+    const perimeterWingY = wallY - (wallHeight * 0.02);
+    const perimeterWingZ = wallZ + 0.02;
+    const crownWidth = wallWidth * (isHero ? 1.04 : isElite ? 0.98 : isPremium ? 0.92 : 0.86);
+    const crownDepth = isHero ? 0.82 : isElite ? 0.74 : isPremium ? 0.66 : 0.56;
+    const lowerRailWidth = wallWidth * (isHero ? 0.82 : isElite ? 0.76 : isPremium ? 0.7 : 0.64);
 
     return (
       <group name="booth-open-pavilion booth-media-wall">
@@ -163,7 +172,37 @@ export function OpenBoothPavilion({
               <meshStandardMaterial color="#527890" metalness={0.14} roughness={0.54} />
             </mesh>
           ))}
+          <mesh position={[0, wallHeight * 0.5 + 0.34, 0.02]} castShadow receiveShadow>
+            <boxGeometry args={[crownWidth, 0.28, crownDepth]} />
+            <meshStandardMaterial color="#13283d" emissive={accentColor} emissiveIntensity={0.075} metalness={0.16} roughness={0.36} />
+          </mesh>
+          <mesh position={[0, wallHeight * 0.5 + 0.52, 0.34]}>
+            <boxGeometry args={[crownWidth * 0.58, 0.08, 0.08]} />
+            <meshBasicMaterial color={accentColor} toneMapped={false} />
+          </mesh>
+          <mesh position={[0, -(wallHeight * 0.5) - 0.38, 0.08]} castShadow receiveShadow>
+            <boxGeometry args={[lowerRailWidth, 0.24, 0.46]} />
+            <meshStandardMaterial color="#101e30" emissive={accentColor} emissiveIntensity={0.055} metalness={0.12} roughness={0.42} />
+          </mesh>
         </group>
+        {[-1, 1].map((side) => (
+          <group key={`media-wall-perimeter-wing-${side}`} name={`booth-perimeter-wing-${side}`} position={[side * perimeterWingX, perimeterWingY, perimeterWingZ]}>
+            <mesh castShadow receiveShadow>
+              <boxGeometry args={[perimeterWingWidth, perimeterWingHeight, perimeterWingDepth]} />
+              <meshStandardMaterial color="#12273a" emissive={accentColor} emissiveIntensity={0.06} metalness={0.16} roughness={0.38} />
+            </mesh>
+            {[-1, 1].map((face) => (
+              <mesh key={`perimeter-wing-face-strip-${side}-${face}`} position={[0, 0, face * ((perimeterWingDepth * 0.5) + 0.035)]}>
+                <boxGeometry args={[perimeterWingWidth * 0.34, perimeterWingHeight * 0.74, 0.07]} />
+                <meshBasicMaterial color={accentColor} toneMapped={false} />
+              </mesh>
+            ))}
+            <mesh position={[0, perimeterWingHeight * 0.5 + 0.18, 0]} castShadow receiveShadow>
+              <boxGeometry args={[perimeterWingWidth * 1.55, 0.34, perimeterWingDepth * 0.72]} />
+              <meshStandardMaterial color="#e4f5ff" emissive={accentColor} emissiveIntensity={0.08} metalness={0.1} roughness={0.3} />
+            </mesh>
+          </group>
+        ))}
         {showSignalTowers && [-1, 1].map((side) => (
           <group key={`media-wall-signal-tower-${side}`} name={`booth-signal-tower-${side}`} position={[side * signalTowerOffsetX, 0, signalTowerZ]}>
             <mesh position={[0, 0.22, 0]} castShadow receiveShadow>

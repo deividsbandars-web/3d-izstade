@@ -28,11 +28,9 @@ type DistrictVisual = {
 
 function BoothProductShowcaseFrame({
   accentColor,
-  metrics,
   tier,
 }: {
   accentColor: string;
-  metrics: ReturnType<typeof getBoothArchitectureMetrics>;
   tier: ReturnType<typeof resolveOpenBoothPavilionLayout>;
 }) {
   const rearScreenZ = -((tier.depth * 0.5) - 0.56);
@@ -42,10 +40,6 @@ function BoothProductShowcaseFrame({
   const sidePanelHeight = tier.screenFrameHeight * 0.54;
   const bottomY = wallY - (tier.screenFrameHeight * 0.5) - 0.52;
   const bottomWidth = tier.screenFrameWidth * 0.58;
-  const frontDeckZ = wallZ + Math.max(1.46, tier.depth * 0.3);
-  const ctaTileWidth = Math.max(1.28, tier.screenFrameWidth * 0.13);
-  const ctaTileDepth = 0.52;
-  const ctaTileY = 0.62;
 
   return (
     <group name="booth-product-standard-showcase-frame">
@@ -93,26 +87,6 @@ function BoothProductShowcaseFrame({
           roughness={0.2}
         />
       </mesh>
-      <mesh position={[0, 0.28, frontDeckZ]} receiveShadow>
-        <boxGeometry args={[tier.screenFrameWidth * 0.62, 0.08, 1.22]} />
-        <meshStandardMaterial color="#f4f8fb" metalness={0.04} roughness={0.58} />
-      </mesh>
-      {[-1, 0, 1].map((slot) => (
-        <mesh key={`standard-showcase-cta-tile-${slot}`} position={[slot * (ctaTileWidth * 1.18), ctaTileY, frontDeckZ + 0.18]} castShadow receiveShadow>
-          <boxGeometry args={[ctaTileWidth, 0.28, ctaTileDepth]} />
-          <meshStandardMaterial
-            color={slot === 0 ? accentColor : '#172638'}
-            emissive={accentColor}
-            emissiveIntensity={slot === 0 ? 0.18 : 0.08}
-            metalness={0.1}
-            roughness={0.34}
-          />
-        </mesh>
-      ))}
-      <mesh position={[0, 0.18, frontDeckZ + 0.9]} receiveShadow>
-        <boxGeometry args={[Math.min(metrics.footprintSize[0] * 0.56, tier.screenFrameWidth * 0.72), 0.05, 0.12]} />
-        <meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={0.22} roughness={0.24} />
-      </mesh>
     </group>
   );
 }
@@ -120,11 +94,9 @@ function BoothProductShowcaseFrame({
 function BoothProductPremiumConversionLayer({
   accentColor,
   layout,
-  metrics,
 }: {
   accentColor: string;
   layout: ReturnType<typeof resolveOpenBoothPavilionLayout>;
-  metrics: ReturnType<typeof getBoothArchitectureMetrics>;
 }) {
   const rearScreenZ = -((layout.depth * 0.5) - 0.56);
   const wallY = (layout.screenFrameHeight * 0.5) + 1.7;
@@ -136,10 +108,6 @@ function BoothProductPremiumConversionLayer({
   const meetingRailWidth = layout.screenFrameWidth * 0.68;
   const meetingRailY = wallY - (layout.screenFrameHeight * 0.5) - 0.58;
   const meetingRailZ = wallZ + 0.72;
-  const deskZ = wallZ + Math.max(1.72, layout.depth * 0.34);
-  const deskWidth = Math.min(metrics.footprintSize[0] * 0.62, layout.screenFrameWidth * 0.72);
-  const statusTileWidth = Math.max(1.4, layout.screenFrameWidth * 0.135);
-  const statusTileDepth = 0.58;
 
   return (
     <group name="booth-product-premium-conversion-layer">
@@ -202,26 +170,6 @@ function BoothProductPremiumConversionLayer({
           roughness={0.28}
         />
       </mesh>
-      <mesh position={[0, 0.28, deskZ]} receiveShadow>
-        <boxGeometry args={[deskWidth, 0.1, 1.36]} />
-        <meshStandardMaterial color="#f8fbfd" metalness={0.04} roughness={0.52} />
-      </mesh>
-      {[-1, 0, 1].map((slot) => (
-        <mesh key={`premium-conversion-status-tile-${slot}`} position={[slot * (statusTileWidth * 1.2), 0.72, deskZ + 0.2]} castShadow receiveShadow>
-          <boxGeometry args={[statusTileWidth, 0.34, statusTileDepth]} />
-          <meshStandardMaterial
-            color={slot === 0 ? accentColor : '#132235'}
-            emissive={accentColor}
-            emissiveIntensity={slot === 0 ? 0.22 : 0.1}
-            metalness={0.12}
-            roughness={0.3}
-          />
-        </mesh>
-      ))}
-      <mesh position={[0, 0.2, deskZ + 1]} receiveShadow>
-        <boxGeometry args={[deskWidth * 0.82, 0.06, 0.14]} />
-        <meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={0.26} roughness={0.22} />
-      </mesh>
     </group>
   );
 }
@@ -229,11 +177,9 @@ function BoothProductPremiumConversionLayer({
 function BoothProductLandmarkZoneFrame({
   accentColor,
   layout,
-  metrics,
 }: {
   accentColor: string;
   layout: ReturnType<typeof resolveOpenBoothPavilionLayout>;
-  metrics: ReturnType<typeof getBoothArchitectureMetrics>;
 }) {
   const rearScreenZ = -((layout.depth * 0.5) - 0.56);
   const wallY = (layout.screenFrameHeight * 0.5) + 1.7;
@@ -245,11 +191,8 @@ function BoothProductLandmarkZoneFrame({
   const pylonHeight = layout.screenFrameHeight * 0.86;
   const pylonY = wallY + 0.08;
   const pylonZ = wallZ + 0.66;
-  const zoneDeckZ = wallZ + Math.max(1.98, layout.depth * 0.42);
-  const zoneDeckWidth = Math.min(metrics.footprintSize[0] * 0.7, layout.screenFrameWidth * 0.82);
   const eventRailY = wallY - (layout.screenFrameHeight * 0.5) - 0.62;
   const eventRailZ = wallZ + 0.78;
-  const markerWidth = Math.max(1.26, layout.screenFrameWidth * 0.11);
 
   return (
     <group name="booth-product-landmark-zone-sponsor-frame">
@@ -310,26 +253,6 @@ function BoothProductLandmarkZoneFrame({
           metalness={0.1}
           roughness={0.3}
         />
-      </mesh>
-      <mesh position={[0, 0.26, zoneDeckZ]} receiveShadow>
-        <boxGeometry args={[zoneDeckWidth, 0.12, 1.66]} />
-        <meshStandardMaterial color="#f8f3df" emissive={accentColor} emissiveIntensity={0.04} metalness={0.06} roughness={0.5} />
-      </mesh>
-      {[-1.5, -0.5, 0.5, 1.5].map((slot, index) => (
-        <mesh key={`landmark-zone-marker-${index}`} position={[slot * (markerWidth * 0.82), 0.74, zoneDeckZ + 0.26]} castShadow receiveShadow>
-          <boxGeometry args={[markerWidth, 0.38, 0.62]} />
-          <meshStandardMaterial
-            color={index === 1 || index === 2 ? accentColor : '#102033'}
-            emissive={accentColor}
-            emissiveIntensity={index === 1 || index === 2 ? 0.28 : 0.12}
-            metalness={0.14}
-            roughness={0.28}
-          />
-        </mesh>
-      ))}
-      <mesh position={[0, 0.18, zoneDeckZ + 1.12]} receiveShadow>
-        <boxGeometry args={[zoneDeckWidth * 0.86, 0.07, 0.16]} />
-        <meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={0.32} roughness={0.18} />
       </mesh>
     </group>
   );
@@ -440,7 +363,6 @@ export function BoothVisualAssembly({
       {showStandardProductShowcaseFrame && (
         <BoothProductShowcaseFrame
           accentColor={accentColor}
-          metrics={metrics}
           tier={pavilionLayout}
         />
       )}
@@ -448,14 +370,12 @@ export function BoothVisualAssembly({
         <BoothProductPremiumConversionLayer
           accentColor={accentColor}
           layout={pavilionLayout}
-          metrics={metrics}
         />
       )}
       {showLandmarkZoneSponsorFrame && (
         <BoothProductLandmarkZoneFrame
           accentColor={accentColor}
           layout={pavilionLayout}
-          metrics={metrics}
         />
       )}
       {showInteractiveDressing && (
