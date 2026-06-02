@@ -173,20 +173,21 @@ export function DistrictBooth({
             const isPrimary = action.kind === 'demo_room';
 
             return (
-              <group key={action.kind} position={[x, 0, 0]}>
-                <mesh
-                  castShadow
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    onAction(action);
-                  }}
-                  onPointerOver={() => {
-                    document.body.style.cursor = 'pointer';
-                  }}
-                  onPointerOut={() => {
-                    document.body.style.cursor = 'auto';
-                  }}
-                >
+              <group
+                key={action.kind}
+                position={[x, 0, 0]}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onAction(action);
+                }}
+                onPointerOver={() => {
+                  document.body.style.cursor = 'pointer';
+                }}
+                onPointerOut={() => {
+                  document.body.style.cursor = 'auto';
+                }}
+              >
+                <mesh castShadow>
                   <boxGeometry args={[buttonWidth, 0.42, 0.18]} />
                   <meshStandardMaterial
                     color={isPrimary ? placement.color : '#1d2d44'}
