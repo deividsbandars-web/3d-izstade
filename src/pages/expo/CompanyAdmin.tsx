@@ -12,6 +12,14 @@ import {
   validateExpoScreenMediaUrl,
 } from '../../shared/expo/screenContentMedia';
 import {
+  EXPO_SPONSOR_ASSET_PACK_MEDIA_POLICY_TEXT,
+  EXPO_SPONSOR_ASSET_PACK_PRODUCT_IMAGE_LIMIT,
+  getExpoSponsorAssetPackReadiness,
+  normalizeExpoSponsorAssetPackForSave,
+  readExpoSponsorAssetPackFromAssets,
+  type ExpoSponsorPackageTier,
+} from '../../shared/expo/sponsorAssetPack';
+import {
   getAvailableExpoScreenSlots,
   getExpoScreenInventorySlots,
   getExpoScreenInventorySummary,
@@ -81,6 +89,7 @@ type AdminCompanyState = {
   logo_url: string;
   name: string;
   screenContent: AdminScreenContentState;
+  sponsorAssetPack: AdminSponsorAssetPackState;
 };
 
 type AdminScreenContentMode = 'generated-card' | 'image' | 'video-placeholder';
@@ -95,6 +104,20 @@ type AdminScreenContentState = {
   subtitle: string;
   title: string;
   videoUrl: string;
+};
+
+type AdminSponsorAssetPackState = {
+  brochureUrl: string;
+  ctaPrimary: string;
+  ctaSecondary: string;
+  demoVideoUrl: string;
+  headline: string;
+  heroImageUrl: string;
+  logoUrl: string;
+  packageTier: ExpoSponsorPackageTier;
+  productImageUrls: string;
+  shortPitch: string;
+  websiteUrl: string;
 };
 
 type ManagedAnalytics = {
@@ -167,6 +190,20 @@ const SCREEN_MEDIA_SETUP_GUIDE = [
   },
 ] as const;
 
+const DEFAULT_SPONSOR_ASSET_PACK: AdminSponsorAssetPackState = {
+  brochureUrl: '',
+  ctaPrimary: 'Request Demo',
+  ctaSecondary: 'View Package',
+  demoVideoUrl: '',
+  headline: '',
+  heroImageUrl: '',
+  logoUrl: '',
+  packageTier: 'standard',
+  productImageUrls: '',
+  shortPitch: '',
+  websiteUrl: '',
+};
+
 const DEFAULT_COMPANY: AdminCompanyState = {
   booth: { video_url: '' },
   description: '',
@@ -184,6 +221,7 @@ const DEFAULT_COMPANY: AdminCompanyState = {
     title: '',
     videoUrl: '',
   },
+  sponsorAssetPack: DEFAULT_SPONSOR_ASSET_PACK,
 };
 
 function asRecord(value: unknown): Record<string, unknown> {
@@ -235,6 +273,24 @@ function readAdminScreenContent(assets3d: unknown): AdminScreenContentState {
     subtitle: String(screenContent.subtitle || screenContent.text || ''),
     title: String(screenContent.title || ''),
     videoUrl: String(screenContent.videoUrl || screenContent.video_url || assets.video_url || ''),
+  };
+}
+
+function readAdminSponsorAssetPack(assets3d: unknown): AdminSponsorAssetPackState {
+  const assetPack = readExpoSponsorAssetPackFromAssets(assets3d);
+
+  return {
+    brochureUrl: assetPack.brochureUrl,
+    ctaPrimary: assetPack.ctaPrimary || DEFAULT_SPONSOR_ASSET_PACK.ctaPrimary,
+    ctaSecondary: assetPack.ctaSecondary || DEFAULT_SPONSOR_ASSET_PACK.ctaSecondary,
+    demoVideoUrl: assetPack.demoVideoUrl,
+    headline: assetPack.headline,
+    heroImageUrl: assetPack.heroImageUrl,
+    logoUrl: assetPack.logoUrl,
+    packageTier: assetPack.packageTier,
+    productImageUrls: assetPack.productImageUrls.join('\n'),
+    shortPitch: assetPack.shortPitch,
+    websiteUrl: assetPack.websiteUrl,
   };
 }
 
@@ -375,6 +431,7 @@ export default function CompanyAdmin() {
             logo_url: String(first.logo_url || ''),
             name: String(first.company_name || 'Warpala'),
             screenContent: readAdminScreenContent(first.assets_3d),
+            sponsorAssetPack: readAdminSponsorAssetPack(first.assets_3d),
           });
           if (first.id) {
             const [analyticsResult, reviewResult] = await Promise.all([
@@ -449,6 +506,7 @@ export default function CompanyAdmin() {
           logo_url: String(booth.logo_url || ''),
           name: String(booth.company_name || 'Warpala'),
           screenContent: readAdminScreenContent(booth.assets_3d),
+          sponsorAssetPack: readAdminSponsorAssetPack(booth.assets_3d),
         });
       }
 
@@ -480,6 +538,7 @@ export default function CompanyAdmin() {
         description: company.description,
         district: company.district,
         screenContent: company.screenContent,
+        sponsorAssetPack: company.sponsorAssetPack,
         videoUrl: company.booth.video_url,
       });
 
@@ -620,6 +679,16 @@ export default function CompanyAdmin() {
     });
   }
 
+  function updateSponsorAssetPack(patch: Partial<AdminSponsorAssetPackState>) {
+    setCompany((current) => ({
+      ...current,
+      sponsorAssetPack: {
+        ...current.sponsorAssetPack,
+        ...patch,
+      },
+    }));
+  }
+
   const selectedDistrictColor =
     EXPO_CANONICAL_DISTRICT_CATALOG.find((district) => district.id === company.district)?.color || '#3b82f6';
   const leadStatusCounts = leads.reduce<Record<string, number>>((acc, lead) => {
@@ -649,11 +718,17 @@ export default function CompanyAdmin() {
     : 'No inbound activity yet';
   const screenContentValidation = normalizeExpoScreenContentForSave(company.screenContent);
   const boothVideoValidation = validateExpoScreenMediaUrl(company.booth.video_url, 'video');
+  const sponsorAssetPackValidation = normalizeExpoSponsorAssetPackForSave(company.sponsorAssetPack);
+  const sponsorAssetPackReadiness = getExpoSponsorAssetPackReadiness(company.sponsorAssetPack);
   const mediaPolicyText = `Images: ${EXPO_SCREEN_CONTENT_IMAGE_EXTENSIONS.join(', ')}. Videos: ${EXPO_SCREEN_CONTENT_VIDEO_EXTENSIONS.join(', ')}. Direct public HTTPS files only.`;
   const screenContentIssueText = [
     ...screenContentValidation.issues.map((issue) => issue.message),
     ...(boothVideoValidation.ok ? [] : [boothVideoValidation.reason]),
   ].filter(Boolean).join(' ');
+  const sponsorAssetPackIssueText = sponsorAssetPackValidation.issues
+    .map((issue) => issue.message)
+    .filter(Boolean)
+    .join(' ');
   const sampleScreenImageUrl = typeof window !== 'undefined' && window.location.protocol === 'https:'
     ? `${window.location.origin}${EXPO_SCREEN_TEST_IMAGE_PATH}`
     : '';
@@ -855,6 +930,154 @@ export default function CompanyAdmin() {
                   </span>
                 )}
               </label>
+            </div>
+
+            <div style={{ marginTop: '24px', paddingTop: '22px', borderTop: '1px solid rgba(148, 163, 184, 0.16)' }}>
+              <h3 style={{ margin: '0 0 8px', color: '#f8fafc' }}>Sponsor Asset Pack</h3>
+              <p style={{ margin: '0 0 18px', color: '#94a3b8', fontSize: '0.88rem', lineHeight: 1.5 }}>
+                Client-friendly sponsor material kit. Sponsors can provide normal web assets now; 3D product model import stays optional for operator prep.
+              </p>
+              <div style={{ marginBottom: '16px', padding: '10px 12px', borderRadius: '14px', background: 'rgba(30, 64, 175, 0.16)', border: '1px solid rgba(147, 197, 253, 0.22)', color: '#bfdbfe', fontSize: '0.76rem', lineHeight: 1.5 }}>
+                Asset safety: {EXPO_SPONSOR_ASSET_PACK_MEDIA_POLICY_TEXT}. Localhost, private IPs, non-HTTPS URLs, SVG and embedded credentials are blocked.
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px' }}>
+                <label>
+                  Package tier
+                  <select
+                    value={company.sponsorAssetPack.packageTier}
+                    onChange={(event) => updateSponsorAssetPack({ packageTier: event.target.value as ExpoSponsorPackageTier })}
+                  >
+                    <option value="standard">Standard Booth</option>
+                    <option value="premium">Premium Booth</option>
+                    <option value="landmarkZone">Landmark Zone Sponsor</option>
+                  </select>
+                </label>
+
+                <label>
+                  Headline
+                  <input
+                    type="text"
+                    placeholder="AI workflow platform for sponsor teams"
+                    value={company.sponsorAssetPack.headline}
+                    onChange={(event) => updateSponsorAssetPack({ headline: event.target.value })}
+                  />
+                </label>
+              </div>
+
+              <label style={{ marginTop: '16px' }}>
+                Short pitch
+                <textarea
+                  placeholder="One concise sales message for booth cards, screen copy, and package previews."
+                  value={company.sponsorAssetPack.shortPitch}
+                  onChange={(event) => updateSponsorAssetPack({ shortPitch: event.target.value })}
+                  style={{ height: '82px' }}
+                />
+              </label>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px', marginTop: '16px' }}>
+                <label>
+                  Logo image URL
+                  <input
+                    type="url"
+                    inputMode="url"
+                    placeholder="https://cdn.example.com/logo.png"
+                    value={company.sponsorAssetPack.logoUrl}
+                    onChange={(event) => updateSponsorAssetPack({ logoUrl: event.target.value })}
+                  />
+                </label>
+
+                <label>
+                  Hero image URL
+                  <input
+                    type="url"
+                    inputMode="url"
+                    placeholder="https://cdn.example.com/hero.webp"
+                    value={company.sponsorAssetPack.heroImageUrl}
+                    onChange={(event) => updateSponsorAssetPack({ heroImageUrl: event.target.value })}
+                  />
+                </label>
+              </div>
+
+              <label style={{ marginTop: '16px' }}>
+                Product image URLs
+                <textarea
+                  placeholder={`One public image URL per line. Up to ${EXPO_SPONSOR_ASSET_PACK_PRODUCT_IMAGE_LIMIT}.`}
+                  value={company.sponsorAssetPack.productImageUrls}
+                  onChange={(event) => updateSponsorAssetPack({ productImageUrls: event.target.value })}
+                  style={{ height: '104px' }}
+                />
+              </label>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px', marginTop: '16px' }}>
+                <label>
+                  Demo video URL
+                  <input
+                    type="url"
+                    inputMode="url"
+                    placeholder="https://cdn.example.com/demo.mp4"
+                    value={company.sponsorAssetPack.demoVideoUrl}
+                    onChange={(event) => updateSponsorAssetPack({ demoVideoUrl: event.target.value })}
+                  />
+                </label>
+
+                <label>
+                  Brochure PDF URL
+                  <input
+                    type="url"
+                    inputMode="url"
+                    placeholder="https://cdn.example.com/package.pdf"
+                    value={company.sponsorAssetPack.brochureUrl}
+                    onChange={(event) => updateSponsorAssetPack({ brochureUrl: event.target.value })}
+                  />
+                </label>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '14px', marginTop: '16px' }}>
+                <label>
+                  Primary CTA label
+                  <input
+                    type="text"
+                    placeholder="Request Demo"
+                    value={company.sponsorAssetPack.ctaPrimary}
+                    onChange={(event) => updateSponsorAssetPack({ ctaPrimary: event.target.value })}
+                  />
+                </label>
+
+                <label>
+                  Secondary CTA label
+                  <input
+                    type="text"
+                    placeholder="View Package"
+                    value={company.sponsorAssetPack.ctaSecondary}
+                    onChange={(event) => updateSponsorAssetPack({ ctaSecondary: event.target.value })}
+                  />
+                </label>
+              </div>
+
+              <label style={{ marginTop: '16px' }}>
+                Website URL
+                <input
+                  type="url"
+                  inputMode="url"
+                  placeholder="https://example.com"
+                  value={company.sponsorAssetPack.websiteUrl}
+                  onChange={(event) => updateSponsorAssetPack({ websiteUrl: event.target.value })}
+                />
+                <span style={{ display: 'block', marginTop: '7px', color: '#94a3b8', fontSize: '0.76rem', lineHeight: 1.45 }}>
+                  Stored for sponsor readiness only. No external redirects, forms, or booking flows are enabled by this field.
+                </span>
+              </label>
+
+              <div style={{ marginTop: '14px', padding: '12px 14px', borderRadius: '14px', background: sponsorAssetPackValidation.ok ? 'rgba(6, 78, 59, 0.26)' : 'rgba(127, 29, 29, 0.28)', border: `1px solid ${sponsorAssetPackValidation.ok ? 'rgba(52, 211, 153, 0.26)' : 'rgba(248, 113, 113, 0.32)'}`, color: sponsorAssetPackValidation.ok ? '#bbf7d0' : '#fecaca', fontSize: '0.78rem', lineHeight: 1.5 }}>
+                Asset pack: {sponsorAssetPackReadiness.clientFriendlyReady ? 'CLIENT PACKAGE READY' : 'MATERIALS READINESS IN PROGRESS'}
+                <br />
+                Package: {sponsorAssetPackReadiness.packageTier.toUpperCase()} / assets {sponsorAssetPackReadiness.readyAssetCount} / product images {sponsorAssetPackReadiness.productImageCount}/{EXPO_SPONSOR_ASSET_PACK_PRODUCT_IMAGE_LIMIT}
+                <br />
+                Media: logo {sponsorAssetPackReadiness.hasLogo ? 'yes' : 'no'}, hero {sponsorAssetPackReadiness.hasHeroImage ? 'yes' : 'no'}, video {sponsorAssetPackReadiness.hasDemoVideo ? 'yes' : 'no'}, brochure {sponsorAssetPackReadiness.hasBrochure ? 'yes' : 'no'}
+                <br />
+                URL safety: {sponsorAssetPackValidation.ok ? 'READY TO SAVE' : sponsorAssetPackIssueText}
+              </div>
             </div>
 
             <div style={{ marginTop: '24px', paddingTop: '22px', borderTop: '1px solid rgba(148, 163, 184, 0.16)' }}>

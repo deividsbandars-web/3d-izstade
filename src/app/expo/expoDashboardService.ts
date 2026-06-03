@@ -3,6 +3,10 @@ import {
   normalizeExpoScreenContentForSave,
   validateExpoScreenMediaUrl,
 } from '../../shared/expo/screenContentMedia';
+import {
+  normalizeExpoSponsorAssetPackForSave,
+  type ExpoSponsorAssetPackInput,
+} from '../../shared/expo/sponsorAssetPack';
 
 export type ExpoManagedBooth = {
   assets_3d?: Record<string, unknown> | null;
@@ -24,6 +28,8 @@ export type ExpoManagedBoothScreenContent = {
   title?: string;
   videoUrl?: string;
 };
+
+export type ExpoManagedBoothSponsorAssetPack = ExpoSponsorAssetPackInput;
 
 export const expoDashboardService = {
   /**
@@ -96,6 +102,7 @@ export const expoDashboardService = {
     description,
     district,
     screenContent,
+    sponsorAssetPack,
     videoUrl,
   }: {
     boothId?: string;
@@ -103,12 +110,18 @@ export const expoDashboardService = {
     description: string;
     district: string;
     screenContent?: ExpoManagedBoothScreenContent;
+    sponsorAssetPack?: ExpoManagedBoothSponsorAssetPack;
     videoUrl: string;
   }) {
     try {
       const screenContentResult = normalizeExpoScreenContentForSave(screenContent);
       if (!screenContentResult.ok) {
         throw new Error(screenContentResult.issues.map((issue) => issue.message).join(' '));
+      }
+
+      const sponsorAssetPackResult = normalizeExpoSponsorAssetPackForSave(sponsorAssetPack);
+      if (!sponsorAssetPackResult.ok) {
+        throw new Error(sponsorAssetPackResult.issues.map((issue) => issue.message).join(' '));
       }
 
       const boothVideoResult = validateExpoScreenMediaUrl(videoUrl, 'video');
@@ -119,6 +132,7 @@ export const expoDashboardService = {
       const payload = {
         assets_3d: {
           screen_content: screenContentResult.screenContent,
+          sponsor_asset_pack: sponsorAssetPackResult.assetPack,
           video_url: boothVideoResult.url,
         },
         company_name: companyName,
