@@ -61,11 +61,6 @@ def spawn_text(label, text, location, rotation, size=42):
     component = actor.get_component_by_class(unreal.TextRenderComponent)
     if component:
         component.set_text(text)
-        try:
-            set_editor_property_safe(component, "horizontal_alignment", unreal.HorizontalTextAligment.EHTA_CENTER)
-            set_editor_property_safe(component, "vertical_alignment", unreal.VerticalTextAligment.EVRTA_TEXT_CENTER)
-        except Exception as exc:
-            unreal.log_warning(f"[showroom-polish] Text alignment skipped: {exc}")
         set_editor_property_safe(component, "world_size", size)
         set_editor_property_safe(component, "text_render_color", unreal.Color(112, 234, 255, 255))
     return actor
@@ -128,7 +123,7 @@ def apply_showroom_polish():
         unreal.Vector(180, 0, 260),
         unreal.Rotator(-25, 180, 0),
         1400,
-        unreal.LinearColor(0.45, 0.9, 1.0, 1.0),
+        unreal.Color(112, 230, 255, 255),
         560,
     )
     spawn_light(
@@ -137,7 +132,7 @@ def apply_showroom_polish():
         unreal.Vector(260, -190, 320),
         unreal.Rotator(-45, 145, 0),
         2200,
-        unreal.LinearColor(1.0, 0.78, 0.48, 1.0),
+        unreal.Color(255, 198, 122, 255),
         700,
     )
     spawn_light(
@@ -146,7 +141,7 @@ def apply_showroom_polish():
         unreal.Vector(-220, 220, 180),
         unreal.Rotator(0, 0, 0),
         420,
-        unreal.LinearColor(0.32, 0.52, 1.0, 1.0),
+        unreal.Color(82, 132, 255, 255),
         650,
     )
 
