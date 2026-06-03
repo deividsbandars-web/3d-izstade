@@ -59,11 +59,19 @@ function Wait-StreamerReady {
     try {
       $status = Invoke-RestMethod -Uri $StatusUrl -TimeoutSec 5
       $activeStreamerId = [string]$status.session.activeStreamerId
-      if ($status.streamer -eq 'streamer_available' -and $activeStreamerId -eq $ExpectedStreamerId) {
+      $selectionPolicy = [string]$status.session.selectionPolicy
+      $warnings = @($status.warnings)
+      $usesFallback = $warnings -contains 'FALLBACK_SHARED_STREAM'
+      if (
+        $status.streamer -eq 'streamer_available' -and
+        $activeStreamerId -eq $ExpectedStreamerId -and
+        $selectionPolicy -eq 'booth_preferred' -and
+        -not $usesFallback
+      ) {
         Write-Host "[warpala-commercial] Streamer ready: $activeStreamerId" -ForegroundColor Green
         return $true
       }
-      Write-Host "[warpala-commercial] Waiting for streamer... signaling=$($status.signaling), streamer=$($status.streamer), active=$($activeStreamerId -replace '^$', 'none')"
+      Write-Host "[warpala-commercial] Waiting for booth-preferred streamer... signaling=$($status.signaling), streamer=$($status.streamer), active=$($activeStreamerId -replace '^$', 'none'), policy=$selectionPolicy, warnings=$($warnings -join ',')"
     } catch {
       Write-Host "[warpala-commercial] Waiting for status endpoint..."
     }
