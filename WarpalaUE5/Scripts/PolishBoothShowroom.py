@@ -41,6 +41,18 @@ def set_vector_parameter_safe(material, parameter_name, color):
         return False
 
 
+def get_auto_receive_player0():
+    auto_receive_input = getattr(unreal, "AutoReceiveInput", None)
+    if not auto_receive_input:
+        return None
+
+    for candidate in ("PLAYER0", "PLAYER_0", "Player0"):
+        value = getattr(auto_receive_input, candidate, None)
+        if value is not None:
+            return value
+    return None
+
+
 def ensure_material(name, color):
     unreal.EditorAssetLibrary.make_directory(MATERIALS_PATH)
     material_path = f"{MATERIALS_PATH}/{name}"
@@ -99,6 +111,17 @@ def spawn_text(label, text, location, rotation, size=42):
         component.set_text(text)
         set_editor_property_safe(component, "world_size", size)
         set_editor_property_safe(component, "text_render_color", unreal.Color(112, 234, 255, 255))
+    return actor
+
+
+def spawn_review_player_start(label, location, rotation):
+    player_start_class = getattr(unreal, "PlayerStart", None)
+    if not player_start_class:
+        unreal.log_warning("[showroom-polish] PlayerStart class is not available in this Unreal Python runtime.")
+        return None
+
+    actor = spawn_actor(player_start_class, label, location, rotation)
+    set_editor_property_safe(actor, "player_start_tag", "SponsorConciergeReview")
     return actor
 
 
@@ -301,7 +324,18 @@ def apply_showroom_polish():
         set_editor_property_safe(camera_component, "current_focal_length", 28.0)
         set_editor_property_safe(camera_component, "current_aperture", 3.5)
 
+    auto_receive_player0 = get_auto_receive_player0()
+    if auto_receive_player0 is not None:
+        set_editor_property_safe(camera, "auto_activate_for_player", auto_receive_player0)
+    spawn_review_player_start(
+        "WARPALA_Showroom_Review_PlayerStart",
+        unreal.Vector(470, -390, 120),
+        unreal.Rotator(0, 136, 0),
+    )
+
     unreal.EditorLevelLibrary.save_current_level()
+    unreal.log("[showroom-polish] Review camera: WARPALA_Showroom_Commercial_Camera at 500,-410,215 rot -10,136,0.")
+    unreal.log("[showroom-polish] Review player start: WARPALA_Showroom_Review_PlayerStart at 470,-390,120 rot 0,136,0.")
     unreal.log("[showroom-polish] Sponsor Concierge showroom polish applied and level saved.")
 
     if os.environ.get("WARPALA_SHOWROOM_POLISH_QUIT") == "1":
