@@ -170,6 +170,17 @@ if ($placeholders.Count -gt 0) {
   Stop-WithMessage "Placeholder env values must be replaced in ${EnvFile}: $($placeholders -join ', ')"
 }
 
+if ($Stack -eq 'local') {
+  $apiBaseUrl = [string]$envValues['VITE_PUBLIC_API_BASE_URL']
+  $signalingUrl = [string]$envValues['VITE_SIGNALING_SERVER_URL']
+  if ($apiBaseUrl -match '30sek24\.com') {
+    Stop-WithMessage "Local Docker frontend must not use hosted API URL ($apiBaseUrl). Set VITE_PUBLIC_API_BASE_URL=http://127.0.0.1:8080 so /api proxies to the local backend."
+  }
+  if ($signalingUrl -match '30sek24\.com') {
+    Stop-WithMessage "Local Docker frontend must not use hosted signaling URL ($signalingUrl). Set VITE_SIGNALING_SERVER_URL=ws://127.0.0.1:8080/ws/ so /ws proxies to the local signaling server."
+  }
+}
+
 Write-Step "validating docker compose config"
 Invoke-Checked @('docker', 'compose', '-f', $composeFile, '--env-file', $EnvFile, 'config', '--quiet')
 
