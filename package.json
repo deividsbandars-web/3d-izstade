@@ -24,6 +24,7 @@
     "promote:staging": "node scripts/vercel-staging-promote.mjs",
     "check:pixel-streaming": "node scripts/pixel-streaming-smoke-check.mjs",
     "check:expo:commercial": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/check-warpala-commercial-demo.ps1",
+    "import:unreal:sponsor-product": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/import-warpala-sponsor-product.ps1",
     "polish:unreal:booth-showroom": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/apply-warpala-booth-showroom-polish.ps1",
     "start:expo:stack": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/start-expo-pixel-streaming-stack.ps1",
     "start:expo:unreal": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/start-warpala-unreal-streamer.ps1",
