@@ -6,7 +6,7 @@ import { loadExpoSceneForRelease } from '../../modules/expo/lib/sceneDataSource'
 import { isPremiumStreamingTier } from '../../modules/expo/lib/sponsorBoothPresentation';
 import { resolveSponsorRoomRecord, type SponsorRoomRecord } from '../../modules/expo/lib/sponsorRoom';
 import { reservePixelStreamingSession, type PixelStreamingSessionReservationResponse } from '../../modules/expo/services/pixelStreamingConfig';
-import { withPreferredBoothSession } from '../../modules/expo/services/pixelStreamingBoothSession';
+import { buildBoothStreamingLevel, withPreferredBoothSession } from '../../modules/expo/services/pixelStreamingBoothSession';
 
 type StreamRoomState =
   | { status: 'loading' }
@@ -27,9 +27,9 @@ export default function BoothStreamRoom() {
   const [launchPhase, setLaunchPhase] = useState<StreamLaunchPhase>('loading_record');
   const [reservationAttempt, setReservationAttempt] = useState(0);
   const boothRecord = state.status === 'ready' ? state.record : null;
-  const boothContextBoothId = boothRecord?.boothId ?? null;
+  const boothContextBoothId = boothRecord?.preferredStreamerIds[0] ?? boothRecord?.boothId ?? null;
   const boothContextSlugOrId = boothRecord?.slugOrId ?? null;
-  const boothContextStreamingLevel = boothRecord?.streamingLevel ?? null;
+  const boothContextStreamingLevel = buildBoothStreamingLevel(boothContextBoothId) ?? boothRecord?.streamingLevel ?? null;
   const boothContext = useMemo(() => {
     if (boothContextBoothId === null || boothContextSlugOrId === null || boothContextStreamingLevel === null) {
       return undefined;
@@ -83,11 +83,11 @@ export default function BoothStreamRoom() {
       };
     }
 
-    const reservationSessionId = `booth-stream-${state.record.boothId || state.record.slugOrId}`;
+    const reservationSessionId = `booth-stream-${boothContextBoothId || state.record.boothId || state.record.slugOrId}`;
     reservePixelStreamingSession(config, {
-      boothId: state.record.boothId,
-      slug: state.record.slugOrId,
-      streamingLevel: state.record.streamingLevel,
+      boothId: boothContextBoothId,
+      slug: boothContextSlugOrId,
+      streamingLevel: boothContextStreamingLevel,
       sessionId: reservationSessionId,
       allowSharedFallback: true,
     })
@@ -130,7 +130,7 @@ export default function BoothStreamRoom() {
         window.clearTimeout(reservedTimer);
       }
     };
-  }, [config, reservationAttempt, state]);
+  }, [boothContextBoothId, boothContextSlugOrId, boothContextStreamingLevel, config, reservationAttempt, state]);
 
   if (state.status === 'loading') {
     return <div style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', background: '#020617', color: '#f8fafc' }}>Launching premium room...</div>;
