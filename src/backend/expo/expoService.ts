@@ -3,6 +3,7 @@ import {
   EXPO_SCENE_CONTRACT_VERSION,
   EXPO_SCENE_RELEASE_MODE,
 } from '../../shared/expo/sceneContract.js';
+import { normalizeExpoBoothPublicationStatus } from '../../shared/expo/boothPublicationStatus.js';
 
 export interface ExpoBooth {
   id?: string;
@@ -60,7 +61,7 @@ function pickDefined(source: Record<string, any>, keys: string[]) {
 }
 
 function normalizePluralBoothPayload(payload: Record<string, any>) {
-  return pickDefined(payload, [
+  const normalized = pickDefined(payload, [
     'company_name',
     'industry_sector',
     'subscription_type',
@@ -74,6 +75,12 @@ function normalizePluralBoothPayload(payload: Record<string, any>) {
     'contact_email',
     'district',
   ]);
+
+  if (payload.status !== undefined) {
+    normalized.status = normalizeExpoBoothPublicationStatus(payload.status);
+  }
+
+  return normalized;
 }
 
 function normalizeLegacyBoothPayload(payload: Record<string, any>, options: { requireTitle: boolean }) {
@@ -108,6 +115,10 @@ function normalizeLegacyBoothPayload(payload: Record<string, any>, options: { re
     normalized.side = String(payload.side || payload.district || '').toLowerCase().includes('left')
       ? 'left'
       : 'right';
+  }
+
+  if (payload.status !== undefined) {
+    normalized.status = normalizeExpoBoothPublicationStatus(payload.status);
   }
 
   return normalized;

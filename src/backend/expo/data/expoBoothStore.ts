@@ -17,6 +17,7 @@ export type ExpoBoothRecord = {
   org_id?: string | null;
   plan_type?: string | null;
   side?: string | null;
+  status?: string | null;
   title?: string | null;
   updated_at?: string | null;
   ['3d_model_url']?: string | null;

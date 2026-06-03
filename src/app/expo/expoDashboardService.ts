@@ -7,6 +7,10 @@ import {
   normalizeExpoSponsorAssetPackForSave,
   type ExpoSponsorAssetPackInput,
 } from '../../shared/expo/sponsorAssetPack';
+import {
+  normalizeExpoBoothPublicationStatus,
+  type ExpoBoothPublicationStatus,
+} from '../../shared/expo/boothPublicationStatus';
 
 export type ExpoManagedBooth = {
   assets_3d?: Record<string, unknown> | null;
@@ -15,7 +19,7 @@ export type ExpoManagedBooth = {
   district?: string | null;
   id?: string;
   industry_sector?: string | null;
-  status?: string | null;
+  status?: ExpoBoothPublicationStatus | string | null;
 };
 
 export type ExpoManagedBoothScreenContent = {
@@ -112,7 +116,7 @@ export const expoDashboardService = {
     district: string;
     screenContent?: ExpoManagedBoothScreenContent;
     sponsorAssetPack?: ExpoManagedBoothSponsorAssetPack;
-    status?: string;
+    status?: ExpoBoothPublicationStatus | string;
     videoUrl: string;
   }) {
     try {
@@ -143,7 +147,7 @@ export const expoDashboardService = {
         },
         district,
         industry_sector: district,
-        status: status || 'active',
+        status: normalizeExpoBoothPublicationStatus(status),
       };
 
       const booth = boothId

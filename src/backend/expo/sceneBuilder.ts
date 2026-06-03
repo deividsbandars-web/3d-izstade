@@ -6,6 +6,7 @@ import {
   EXPO_SCENE_RELEASE_MODE,
   type ExpoSceneContract,
 } from '../../shared/expo/sceneContract.js';
+import { isExpoBoothPublicSceneStatus } from '../../shared/expo/boothPublicationStatus.js';
 import { listExpoBooths, type ExpoBoothRecord } from './data/expoBoothStore.js';
 
 function resolveCanonicalSectorId(value: unknown, fallbackIndex = 0) {
@@ -88,6 +89,10 @@ function buildManagedBoothIndex(managedBooths: ExpoBoothRecord[]) {
   const index = new Map<string, ExpoBoothRecord>();
 
   managedBooths.forEach((booth) => {
+    if (!isExpoBoothPublicSceneStatus(booth.status)) {
+      return;
+    }
+
     getManagedBoothLookupKeys(booth).forEach((key) => {
       const existing = index.get(key) ?? null;
       if (!existing || getManagedBoothMergePriority(booth) > getManagedBoothMergePriority(existing)) {

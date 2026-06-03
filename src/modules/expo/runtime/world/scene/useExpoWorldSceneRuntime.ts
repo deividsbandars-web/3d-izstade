@@ -108,11 +108,7 @@ export function useExpoWorldSceneRuntime({
     layerToggles.booths,
     layerToggles.city,
     layerToggles.stadium,
-    sectionToggles.arrival,
-    sectionToggles.left,
-    sectionToggles.middle,
-    sectionToggles.right,
-    sectionToggles.stadium,
+    sectionToggles,
     sectionVisibleBoothPlacements,
   ]);
   const physicsTraversalGraph = useMemo(

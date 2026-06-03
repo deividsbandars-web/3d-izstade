@@ -32,6 +32,13 @@ import {
   getExpoScreenSlotById,
   getExpoScreenSlotsForBooth,
 } from '../../shared/expo/screenInventory';
+import {
+  EXPO_BOOTH_PUBLICATION_STATUSES,
+  getExpoBoothPublicationStatusLabel,
+  isExpoBoothPublicSceneStatus,
+  normalizeExpoBoothPublicationStatus,
+  type ExpoBoothPublicationStatus,
+} from '../../shared/expo/boothPublicationStatus';
 import '../../components/calculator/styles/CalculatorPro.css';
 import WarpalaLogo from '../../shared/Logo';
 
@@ -96,7 +103,7 @@ type AdminCompanyState = {
   name: string;
   screenContent: AdminScreenContentState;
   sponsorAssetPack: AdminSponsorAssetPackState;
-  status: string;
+  status: ExpoBoothPublicationStatus;
 };
 
 type AdminScreenContentMode = 'generated-card' | 'image' | 'video-placeholder';
@@ -261,7 +268,7 @@ const DEFAULT_COMPANY: AdminCompanyState = {
     videoUrl: '',
   },
   sponsorAssetPack: DEFAULT_SPONSOR_ASSET_PACK,
-  status: 'active',
+  status: 'draft',
 };
 
 function asRecord(value: unknown): Record<string, unknown> {
@@ -426,6 +433,7 @@ export default function CompanyAdmin() {
   const [loading, setLoading] = useState(true);
   const [adminAccessState, setAdminAccessState] = useState<AdminAccessState>('checking-auth');
   const [adminAccessError, setAdminAccessError] = useState<string | null>(null);
+  const [isOperatorAdmin, setIsOperatorAdmin] = useState(false);
   const [districts, setDistricts] = useState<string[]>([...EXPO_CANONICAL_DISTRICT_CATALOG.map((district) => district.id)]);
   const [managedBooths, setManagedBooths] = useState<Array<{ company_name?: string | null; district?: string | null; id?: string }>>([]);
   const [analytics, setAnalytics] = useState<ManagedAnalytics>(null);
@@ -447,9 +455,11 @@ export default function CompanyAdmin() {
         setAdminAccessError(null);
         const { data: sessionData } = await supabaseClient.auth.getSession();
         if (!sessionData.session?.access_token) {
+          setIsOperatorAdmin(false);
           setAdminAccessState('signed-out');
           return;
         }
+        setIsOperatorAdmin(sessionData.session.user.app_metadata?.role === 'admin');
 
         const [districtResult, boothsResult] = await Promise.all([
           expoDashboardService.getDistricts(),
@@ -488,7 +498,7 @@ export default function CompanyAdmin() {
             name: String(first.company_name || 'Warpala'),
             screenContent: readAdminScreenContent(first.assets_3d),
             sponsorAssetPack: readAdminSponsorAssetPack(first.assets_3d),
-            status: String(first.status || 'active'),
+            status: normalizeExpoBoothPublicationStatus(first.status),
           });
           if (first.id) {
             const [analyticsResult, reviewResult] = await Promise.all([
@@ -565,7 +575,7 @@ export default function CompanyAdmin() {
           name: String(booth.company_name || 'Warpala'),
           screenContent: readAdminScreenContent(booth.assets_3d),
           sponsorAssetPack: readAdminSponsorAssetPack(booth.assets_3d),
-          status: String(booth.status || 'active'),
+          status: normalizeExpoBoothPublicationStatus(booth.status),
         });
       }
 
@@ -577,29 +587,34 @@ export default function CompanyAdmin() {
     }
   }
 
-  async function handleSave() {
+  async function handleSave(nextStatus?: ExpoBoothPublicationStatus) {
     if (adminAccessState !== 'ready') {
       setMessage({ type: 'error', text: 'Sign in with a sponsor/admin account before saving booth screen content.' });
       return;
     }
 
-    if (!company.name || !company.district) {
+    const companyForSave: AdminCompanyState = {
+      ...company,
+      status: nextStatus ?? company.status,
+    };
+
+    if (!companyForSave.name || !companyForSave.district) {
       setMessage({ type: 'error', text: 'Please provide a company name and district.' });
       return;
     }
 
-    const companyNameForSave = resolveVisibleSceneCompanyName(company.name.trim());
+    const companyNameForSave = resolveVisibleSceneCompanyName(companyForSave.name.trim());
     setLoading(true);
     try {
       const result = await expoDashboardService.saveManagedBooth({
-        boothId: company.id || undefined,
+        boothId: companyForSave.id || undefined,
         companyName: companyNameForSave,
-        description: company.description,
-        district: company.district,
-        screenContent: company.screenContent,
-        sponsorAssetPack: company.sponsorAssetPack,
-        status: company.status || 'active',
-        videoUrl: company.booth.video_url,
+        description: companyForSave.description,
+        district: companyForSave.district,
+        screenContent: companyForSave.screenContent,
+        sponsorAssetPack: companyForSave.sponsorAssetPack,
+        status: companyForSave.status,
+        videoUrl: companyForSave.booth.video_url,
       });
 
       if (result.error) {
@@ -611,6 +626,7 @@ export default function CompanyAdmin() {
         ...current,
         id: savedId,
         name: companyNameForSave,
+        status: companyForSave.status,
       }));
       if (savedId) {
         const [analyticsResult, reviewResult] = await Promise.all([
@@ -629,7 +645,12 @@ export default function CompanyAdmin() {
           })));
         }
       }
-      setMessage({ type: 'success', text: 'Booth sponsor settings saved.' });
+      setMessage({
+        type: 'success',
+        text: nextStatus
+          ? `Booth saved as ${getExpoBoothPublicationStatusLabel(nextStatus).toLowerCase()}.`
+          : 'Booth sponsor settings saved.',
+      });
     } catch (error) {
       const errorText = formatRequestError(error);
       const accessState = resolveAdminAccessStateFromError(errorText);
@@ -927,14 +948,52 @@ export default function CompanyAdmin() {
           ? 'ADMIN SERVICE OFFLINE'
           : 'SAVE BOOTH SETTINGS';
   const sponsorAssetUploadDisabled = adminAccessState !== 'ready' || Boolean(activeSponsorAssetUpload);
-  const normalizedBoothStatus = String(company.status || 'active').trim().toLowerCase();
-  const boothPublicationLabel = normalizedBoothStatus === 'active'
-    ? 'Active candidate'
-    : normalizedBoothStatus === 'draft'
-      ? 'Draft/admin preview'
-      : normalizedBoothStatus || 'active';
+  const normalizedBoothStatus = normalizeExpoBoothPublicationStatus(company.status);
+  const boothPublicationLabel = getExpoBoothPublicationStatusLabel(normalizedBoothStatus);
+  const selectablePublicationStatuses = EXPO_BOOTH_PUBLICATION_STATUSES.filter(
+    (status) => isOperatorAdmin || status === 'draft' || status === 'review' || status === normalizedBoothStatus,
+  );
+  const publicationStatusHelp = isOperatorAdmin
+    ? 'Admin controls approval, activation, rejection and archive states. Only Active booths can merge into the public 3D scene.'
+    : 'Sponsor edits stay in Draft or Submitted for review. Admin approval is required before public 3D scene activation.';
   const hasSavedBoothId = company.id.trim().length > 0;
   const canOpenManagedPreview = adminAccessState === 'ready' && hasSavedBoothId && hasVisibleScreenContent;
+  const canSubmitForReview = adminAccessState === 'ready'
+    && hasSavedBoothId
+    && hasVisibleScreenContent
+    && sponsorAssetPackValidation.ok
+    && screenContentValidation.ok;
+  const publicationAction =
+    (normalizedBoothStatus === 'draft' || normalizedBoothStatus === 'rejected')
+      ? {
+          label: 'Submit for review',
+          nextStatus: 'review' as const,
+        }
+      : normalizedBoothStatus === 'review' && isOperatorAdmin
+        ? {
+            label: 'Approve for release',
+            nextStatus: 'approved' as const,
+          }
+        : normalizedBoothStatus === 'approved' && isOperatorAdmin
+          ? {
+              label: 'Activate public scene',
+              nextStatus: 'active' as const,
+            }
+          : null;
+  const publicationBody = isExpoBoothPublicSceneStatus(normalizedBoothStatus)
+    ? 'This booth is live-eligible for public scene screen merge. Keep future sponsor edits in draft/review before reactivating.'
+    : normalizedBoothStatus === 'approved'
+      ? 'Approved booths are ready for operator activation into the public scene.'
+      : normalizedBoothStatus === 'review'
+        ? 'Submitted booths stay out of the public scene until an admin approves and activates them.'
+        : normalizedBoothStatus === 'rejected'
+          ? 'Changes were requested. Update sponsor media, save, then submit for review again.'
+          : 'Draft booths are admin-preview only. Submit for review when the sponsor package and booth screen are ready.';
+  const publicationStepState: AdminLaunchStepState = isExpoBoothPublicSceneStatus(normalizedBoothStatus)
+    ? 'ready'
+    : canSubmitForReview || normalizedBoothStatus === 'review' || normalizedBoothStatus === 'approved'
+      ? 'review'
+      : 'blocked';
   const launchSteps: AdminLaunchStep[] = [
     {
       body: sponsorAssetPackReadiness.clientFriendlyReady
@@ -975,11 +1034,13 @@ export default function CompanyAdmin() {
       status: canOpenManagedPreview ? 'Preview available' : 'Preview blocked',
     },
     {
-      body: normalizedBoothStatus === 'active'
-        ? 'This booth can be treated as a public-release candidate. Final live-scene release still stays operator-controlled.'
-        : 'Keep draft booths in admin preview until sponsor material and placement are approved.',
+      actionLabel: publicationAction && (canSubmitForReview || isOperatorAdmin) ? publicationAction.label : undefined,
+      body: publicationBody,
       label: 'Public release',
-      state: 'review',
+      onAction: publicationAction && (canSubmitForReview || isOperatorAdmin)
+        ? () => void handleSave(publicationAction.nextStatus)
+        : undefined,
+      state: publicationStepState,
       status: boothPublicationLabel,
     },
   ];
@@ -1236,6 +1297,27 @@ export default function CompanyAdmin() {
                     );
                   })}
                 </select>
+              </label>
+
+              <label style={{ marginTop: '20px' }}>
+                Publication status
+                <select
+                  value={normalizedBoothStatus}
+                  onChange={(event) =>
+                    setCompany({
+                      ...company,
+                      status: normalizeExpoBoothPublicationStatus(event.target.value),
+                    })}
+                >
+                  {selectablePublicationStatuses.map((status) => (
+                    <option key={status} value={status}>
+                      {getExpoBoothPublicationStatusLabel(status)}
+                    </option>
+                  ))}
+                </select>
+                <span style={{ display: 'block', marginTop: '7px', color: '#94a3b8', fontSize: '0.76rem', lineHeight: 1.45 }}>
+                  {publicationStatusHelp}
+                </span>
               </label>
 
               <label style={{ marginTop: '20px' }}>
