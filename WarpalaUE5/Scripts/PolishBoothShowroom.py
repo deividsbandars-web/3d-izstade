@@ -317,6 +317,54 @@ def apply_showroom_polish():
         mat_glass,
     )
     spawn_mesh(
+        "WARPALA_Showroom_Product_Slot_Backplate",
+        cube,
+        unreal.Vector(-58, 0, 122),
+        unreal.Vector(0.055, 1.28, 0.72),
+        None,
+        mat_deep_blue,
+    )
+    spawn_mesh(
+        "WARPALA_Showroom_Product_Slot_Anchor_Block",
+        cube,
+        unreal.Vector(18, 0, 103),
+        unreal.Vector(0.42, 0.42, 0.42),
+        None,
+        mat_glass,
+    )
+    spawn_mesh(
+        "WARPALA_Showroom_Product_Slot_Top_Frame",
+        cube,
+        unreal.Vector(-14, 0, 181),
+        unreal.Vector(1.12, 0.035, 0.035),
+        None,
+        mat_gold,
+    )
+    spawn_mesh(
+        "WARPALA_Showroom_Product_Slot_Bottom_Frame",
+        cube,
+        unreal.Vector(-14, 0, 82),
+        unreal.Vector(1.12, 0.035, 0.035),
+        None,
+        mat_gold,
+    )
+    spawn_mesh(
+        "WARPALA_Showroom_Product_Slot_Left_Frame",
+        cube,
+        unreal.Vector(-14, -112, 132),
+        unreal.Vector(0.035, 0.035, 0.58),
+        None,
+        mat_gold,
+    )
+    spawn_mesh(
+        "WARPALA_Showroom_Product_Slot_Right_Frame",
+        cube,
+        unreal.Vector(-14, 112, 132),
+        unreal.Vector(0.035, 0.035, 0.58),
+        None,
+        mat_gold,
+    )
+    spawn_mesh(
         "WARPALA_Showroom_Product_Orbit_Left",
         cube,
         unreal.Vector(0, -98, 138),
@@ -517,6 +565,20 @@ def apply_showroom_polish():
         unreal.Vector(132, 0, 92),
         unreal.Rotator(0, 180, 0),
         16,
+    )
+    spawn_text(
+        "WARPALA_Showroom_Product_Slot_Label",
+        "SPONSOR PRODUCT SLOT",
+        unreal.Vector(-62, 0, 194),
+        unreal.Rotator(0, 180, 0),
+        15,
+    )
+    spawn_text(
+        "WARPALA_Showroom_Product_Slot_Copy",
+        "replace with client model",
+        unreal.Vector(-62, 0, 72),
+        unreal.Rotator(0, 180, 0),
+        11,
     )
     spawn_text(
         "WARPALA_Showroom_Demo_Product_Text",
