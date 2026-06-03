@@ -23,6 +23,8 @@
     "deploy:staging:preview": "node scripts/vercel-staging-preview-deploy.mjs",
     "promote:staging": "node scripts/vercel-staging-promote.mjs",
     "check:pixel-streaming": "node scripts/pixel-streaming-smoke-check.mjs",
+    "start:expo:stack": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/start-expo-pixel-streaming-stack.ps1",
+    "start:expo:unreal": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/start-warpala-unreal-streamer.ps1",
     "start:backend": "cd backend-server && npm install && npm start",
     "worker:start": "cd backend-server && npm run worker"
   },
