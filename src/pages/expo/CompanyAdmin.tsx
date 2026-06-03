@@ -694,6 +694,42 @@ export default function CompanyAdmin() {
     });
   }
 
+  function copySponsorAssetImageToBoothScreen(imageUrl: string) {
+    const normalizedUrl = imageUrl.trim();
+    if (!normalizedUrl) {
+      setMessage({ type: 'error', text: 'Add a logo, hero image, or product image before copying assets to the booth screen.' });
+      return;
+    }
+
+    updateScreenContent({
+      ctaLabel: company.sponsorAssetPack.ctaPrimary.trim() || company.screenContent.ctaLabel || DEFAULT_SCREEN_TEST_CTA,
+      imageUrl: normalizedUrl,
+      mode: 'image',
+      status: 'published',
+      subtitle: company.sponsorAssetPack.shortPitch.trim() || company.screenContent.subtitle || DEFAULT_SCREEN_TEST_SUBTITLE,
+      title: company.sponsorAssetPack.headline.trim() || company.name.trim() || company.screenContent.title || DEFAULT_SCREEN_TEST_TITLE,
+    });
+    setMessage({ type: 'success', text: 'Sponsor image copied to Booth Screen Content. Save booth settings to publish it in 3D.' });
+  }
+
+  function copySponsorAssetVideoToBoothScreen(videoUrl: string) {
+    const normalizedUrl = videoUrl.trim();
+    if (!normalizedUrl) {
+      setMessage({ type: 'error', text: 'Add a demo video URL before copying assets to the booth screen.' });
+      return;
+    }
+
+    updateScreenContent({
+      ctaLabel: company.sponsorAssetPack.ctaPrimary.trim() || company.screenContent.ctaLabel || DEFAULT_SCREEN_TEST_CTA,
+      mode: 'video-placeholder',
+      status: 'published',
+      subtitle: company.sponsorAssetPack.shortPitch.trim() || company.screenContent.subtitle || DEFAULT_SCREEN_TEST_SUBTITLE,
+      title: company.sponsorAssetPack.headline.trim() || company.name.trim() || company.screenContent.title || DEFAULT_SCREEN_TEST_TITLE,
+      videoUrl: normalizedUrl,
+    });
+    setMessage({ type: 'success', text: 'Sponsor video slot copied to Booth Screen Content. Save booth settings to publish the video placeholder in 3D.' });
+  }
+
   function updateSponsorAssetPack(patch: Partial<AdminSponsorAssetPackState>) {
     setCompany((current) => ({
       ...current,
@@ -796,6 +832,15 @@ export default function CompanyAdmin() {
     .map((issue) => issue.message)
     .filter(Boolean)
     .join(' ');
+  const firstSponsorAssetProductImageUrl = company.sponsorAssetPack.productImageUrls
+    .split(/\n+/)
+    .map((entry) => entry.trim())
+    .filter(Boolean)[0] || '';
+  const sponsorAssetPackScreenImageUrl =
+    company.sponsorAssetPack.heroImageUrl.trim()
+    || company.sponsorAssetPack.logoUrl.trim()
+    || firstSponsorAssetProductImageUrl;
+  const sponsorAssetPackScreenVideoUrl = company.sponsorAssetPack.demoVideoUrl.trim();
   const sampleScreenImageUrl = typeof window !== 'undefined' && window.location.protocol === 'https:'
     ? `${window.location.origin}${EXPO_SCREEN_TEST_IMAGE_PATH}`
     : '';
@@ -806,11 +851,16 @@ export default function CompanyAdmin() {
     && company.screenContent.mode === 'image'
     && hasScreenImageUrl
     && screenContentValidation.ok;
-  const screenVisibilityHint = isPublishedImageContent
-    ? 'VISIBLE READY: published image content is ready for the matched 3D booth screen.'
-    : hasScreenImageUrl
-      ? 'NOT VISIBLE YET: image URLs must be saved as PUBLISHED / IMAGE and matched to a visible 3D booth.'
-      : 'No image URL saved yet.';
+  const hasScreenVideoUrl = company.screenContent.videoUrl.trim().length > 0;
+  const isPublishedVideoContent = company.screenContent.status === 'published'
+    && company.screenContent.mode === 'video-placeholder'
+    && hasScreenVideoUrl
+    && screenContentValidation.ok;
+  const screenVisibilityHint = isPublishedImageContent || isPublishedVideoContent
+    ? 'VISIBLE READY: published screen media is ready for the matched 3D booth screen.'
+    : hasScreenImageUrl || hasScreenVideoUrl
+      ? 'NOT VISIBLE YET: media URLs must be saved as PUBLISHED and matched to a visible 3D booth.'
+      : 'No screen media URL saved yet.';
   const screenInventorySlots = getExpoScreenInventorySlots();
   const screenInventorySummary = getExpoScreenInventorySummary();
   const availableScreenSlots = getAvailableExpoScreenSlots();
@@ -1180,6 +1230,38 @@ export default function CompanyAdmin() {
                   Stored for sponsor readiness only. No external redirects, forms, or booking flows are enabled by this field.
                 </span>
               </label>
+
+              <div style={{ marginTop: '16px', padding: '12px 14px', borderRadius: '14px', background: 'rgba(15, 23, 42, 0.68)', border: '1px solid rgba(125, 211, 252, 0.18)' }}>
+                <div style={{ color: '#f8fafc', fontSize: '0.78rem', fontWeight: 900, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+                  Send asset pack to booth screen
+                </div>
+                <div style={{ marginTop: '6px', color: '#94a3b8', fontSize: '0.76rem', lineHeight: 1.45 }}>
+                  Copies sponsor pack media into Booth Screen Content and sets it to Published. Save booth settings to apply it in the 3D city.
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', marginTop: '10px' }}>
+                  <button
+                    type="button"
+                    className="btn-glass"
+                    disabled={!sponsorAssetPackScreenImageUrl}
+                    onClick={() => copySponsorAssetImageToBoothScreen(sponsorAssetPackScreenImageUrl)}
+                    style={{ padding: '7px 10px', fontSize: '0.72rem' }}
+                  >
+                    USE IMAGE ON BOOTH SCREEN
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-glass"
+                    disabled={!sponsorAssetPackScreenVideoUrl}
+                    onClick={() => copySponsorAssetVideoToBoothScreen(sponsorAssetPackScreenVideoUrl)}
+                    style={{ padding: '7px 10px', fontSize: '0.72rem' }}
+                  >
+                    USE VIDEO SLOT ON BOOTH SCREEN
+                  </button>
+                  <span style={{ color: '#64748b', fontSize: '0.72rem' }}>
+                    Image source priority: hero, logo, then first product image. Video is saved as a safe placeholder until playback review is enabled.
+                  </span>
+                </div>
+              </div>
 
               <div style={{ marginTop: '14px', padding: '12px 14px', borderRadius: '14px', background: sponsorAssetPackValidation.ok ? 'rgba(6, 78, 59, 0.26)' : 'rgba(127, 29, 29, 0.28)', border: `1px solid ${sponsorAssetPackValidation.ok ? 'rgba(52, 211, 153, 0.26)' : 'rgba(248, 113, 113, 0.32)'}`, color: sponsorAssetPackValidation.ok ? '#bbf7d0' : '#fecaca', fontSize: '0.78rem', lineHeight: 1.5 }}>
                 Asset pack: {sponsorAssetPackReadiness.clientFriendlyReady ? 'CLIENT PACKAGE READY' : 'MATERIALS READINESS IN PROGRESS'}
