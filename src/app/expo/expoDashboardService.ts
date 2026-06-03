@@ -103,6 +103,7 @@ export const expoDashboardService = {
     district,
     screenContent,
     sponsorAssetPack,
+    status,
     videoUrl,
   }: {
     boothId?: string;
@@ -111,6 +112,7 @@ export const expoDashboardService = {
     district: string;
     screenContent?: ExpoManagedBoothScreenContent;
     sponsorAssetPack?: ExpoManagedBoothSponsorAssetPack;
+    status?: string;
     videoUrl: string;
   }) {
     try {
@@ -141,7 +143,7 @@ export const expoDashboardService = {
         },
         district,
         industry_sector: district,
-        status: 'active',
+        status: status || 'active',
       };
 
       const booth = boothId

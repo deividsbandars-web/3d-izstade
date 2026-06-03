@@ -96,6 +96,7 @@ type AdminCompanyState = {
   name: string;
   screenContent: AdminScreenContentState;
   sponsorAssetPack: AdminSponsorAssetPackState;
+  status: string;
 };
 
 type AdminScreenContentMode = 'generated-card' | 'image' | 'video-placeholder';
@@ -228,6 +229,7 @@ const DEFAULT_COMPANY: AdminCompanyState = {
     videoUrl: '',
   },
   sponsorAssetPack: DEFAULT_SPONSOR_ASSET_PACK,
+  status: 'active',
 };
 
 function asRecord(value: unknown): Record<string, unknown> {
@@ -428,6 +430,7 @@ export default function CompanyAdmin() {
             district?: string;
             id?: string;
             logo_url?: string;
+            status?: string;
           };
           setCompany({
             booth: {
@@ -440,6 +443,7 @@ export default function CompanyAdmin() {
             name: String(first.company_name || 'Warpala'),
             screenContent: readAdminScreenContent(first.assets_3d),
             sponsorAssetPack: readAdminSponsorAssetPack(first.assets_3d),
+            status: String(first.status || 'active'),
           });
           if (first.id) {
             const [analyticsResult, reviewResult] = await Promise.all([
@@ -500,6 +504,7 @@ export default function CompanyAdmin() {
           district?: string;
           id?: string;
           logo_url?: string;
+          status?: string;
         };
       } | null)?.booth;
 
@@ -515,6 +520,7 @@ export default function CompanyAdmin() {
           name: String(booth.company_name || 'Warpala'),
           screenContent: readAdminScreenContent(booth.assets_3d),
           sponsorAssetPack: readAdminSponsorAssetPack(booth.assets_3d),
+          status: String(booth.status || 'active'),
         });
       }
 
@@ -547,6 +553,7 @@ export default function CompanyAdmin() {
         district: company.district,
         screenContent: company.screenContent,
         sponsorAssetPack: company.sponsorAssetPack,
+        status: company.status || 'active',
         videoUrl: company.booth.video_url,
       });
 
