@@ -268,6 +268,19 @@ function resolveVisibleSceneCompanyName(value: string) {
   return normalizeAdminLookupKey(value) === 'warpala' ? DEFAULT_VISIBLE_SCENE_COMPANY_NAME : value;
 }
 
+function buildManagedBoothPreviewRoute(boothId: string) {
+  const normalizedBoothId = boothId.trim();
+  const params = new URLSearchParams({
+    expoData: 'review',
+    focus: normalizedBoothId,
+    managedBoothPreview: normalizedBoothId,
+    operator: '1',
+    quality: 'high',
+  });
+
+  return `/expo-3d?${params.toString()}`;
+}
+
 function readAdminScreenContent(assets3d: unknown): AdminScreenContentState {
   const assets = asRecord(assets3d);
   const screenContent = asRecord(assets.screen_content);
@@ -1462,8 +1475,8 @@ export default function CompanyAdmin() {
               <button type="button" onClick={() => roomRouteId && nav(`/expo/booth/${roomRouteId}`)} className="btn-glass" disabled={!roomRouteId}>
                 OPEN BOOTH ROOM
               </button>
-              <button type="button" onClick={() => company.id && nav(`/expo-3d?operator=1&focus=${encodeURIComponent(company.id)}`)} className="btn-glass" disabled={!company.id}>
-                FOCUS IN 3D
+              <button type="button" onClick={() => company.id && nav(buildManagedBoothPreviewRoute(company.id))} className="btn-glass" disabled={!company.id}>
+                PREVIEW BOOTH SCREEN IN 3D
               </button>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: '12px', marginTop: '18px' }}>
