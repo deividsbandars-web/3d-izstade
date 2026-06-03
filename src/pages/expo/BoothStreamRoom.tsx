@@ -18,6 +18,7 @@ type StreamLaunchPhase = 'loading_record' | 'launching' | 'pending' | 'reserved'
 const SESSION_RETRY_DELAY_MS = 3500;
 const SESSION_MAX_ATTEMPTS = 4;
 const RESERVED_TRANSITION_MS = 1200;
+const EMPTY_PREFERRED_STREAMER_IDS: string[] = [];
 
 export default function BoothStreamRoom() {
   const { id } = useParams<{ id: string }>();
@@ -45,6 +46,12 @@ export default function BoothStreamRoom() {
     boothContext,
     shouldProbe: true,
   });
+  const preferredStreamerIds = boothRecord?.preferredStreamerIds ?? EMPTY_PREFERRED_STREAMER_IDS;
+  const reservedRuntimeStatus = sessionReservation?.runtimeStatus ?? runtimeStatus;
+  const boothRuntimeStatus = useMemo(
+    () => withPreferredBoothSession(reservedRuntimeStatus, preferredStreamerIds),
+    [preferredStreamerIds, reservedRuntimeStatus],
+  );
 
   useEffect(() => {
     let active = true;
@@ -141,9 +148,6 @@ export default function BoothStreamRoom() {
   }
 
   const { record } = state;
-  const preferredStreamerIds = record.preferredStreamerIds;
-  const reservedRuntimeStatus = sessionReservation?.runtimeStatus ?? runtimeStatus;
-  const boothRuntimeStatus = withPreferredBoothSession(reservedRuntimeStatus, preferredStreamerIds);
   const effectiveAvailability = sessionReservation?.status === 'ready' && availability === 'available' ? 'available' : 'degraded';
 
   if (!isPremiumStreamingTier(record.presentation.adTier)) {

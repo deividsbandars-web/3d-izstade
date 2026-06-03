@@ -2,13 +2,18 @@ param(
   [string]$EnvFile = '.env.docker',
   [string]$UnrealEngineDir = $env:WARPALA_UE_DIR,
   [string]$ProjectPath = 'C:\3d\WarpalaUE5\WarpalaUE5.uproject',
+  [string]$MapPath = '/Game/Warpala/Maps/Booth_Showroom_Main',
+  [ValidateSet('Game', 'EditorViewport')]
+  [string]$LaunchMode = 'Game',
   [string]$StreamerId = 'booth-sponsor-concierge',
   [string]$SignalingUrl = 'ws://127.0.0.1:8888',
+  [switch]$RenderOffscreen,
   [switch]$NoDockerBuild,
   [switch]$GenerateProjectFiles,
   [switch]$BuildUnreal,
   [switch]$SkipSmokeCheck,
   [switch]$SkipStreamerWait,
+  [int]$PostLaunchStabilitySeconds = 20,
   [switch]$Strict,
   [switch]$ValidateOnly,
   [switch]$OpenBrowser
@@ -83,9 +88,10 @@ function Wait-StreamerReady {
 
 $stackScript = Join-Path $PSScriptRoot 'start-expo-pixel-streaming-stack.ps1'
 $unrealScript = Join-Path $PSScriptRoot 'start-warpala-unreal-streamer.ps1'
+$healthScript = Join-Path $PSScriptRoot 'check-warpala-commercial-demo.ps1'
 $salesDemoUrl = 'http://127.0.0.1:8080/expo-3d?salesDemo=1'
 $boothStreamUrl = 'http://127.0.0.1:8080/expo/booth/sponsor-concierge/stream'
-$streamStatusUrl = 'http://127.0.0.1:3000/api/pixel-streaming/status?boothId=sponsor-concierge&slug=sponsor-concierge&streamingLevel=Level_Booth_sponsor-concierge'
+$streamStatusUrl = 'http://127.0.0.1:3000/api/pixel-streaming/status?boothId=booth-sponsor-concierge&slug=sponsor-concierge&streamingLevel=Level_Booth_booth-sponsor-concierge'
 
 if (-not (Test-Path -LiteralPath $stackScript)) {
   Stop-WithMessage "Missing stack script: $stackScript"
@@ -93,6 +99,10 @@ if (-not (Test-Path -LiteralPath $stackScript)) {
 
 if (-not (Test-Path -LiteralPath $unrealScript)) {
   Stop-WithMessage "Missing Unreal streamer script: $unrealScript"
+}
+
+if (-not (Test-Path -LiteralPath $healthScript)) {
+  Stop-WithMessage "Missing commercial health script: $healthScript"
 }
 
 Write-Step "validating launchers"
@@ -107,6 +117,10 @@ $unrealValidateArgs = @(
   $unrealScript,
   '-ProjectPath',
   $ProjectPath,
+  '-MapPath',
+  $MapPath,
+  '-LaunchMode',
+  $LaunchMode,
   '-StreamerId',
   $StreamerId,
   '-SignalingUrl',
@@ -115,6 +129,9 @@ $unrealValidateArgs = @(
 )
 if ($UnrealEngineDir) {
   $unrealValidateArgs += @('-UnrealEngineDir', $UnrealEngineDir)
+}
+if ($RenderOffscreen) {
+  $unrealValidateArgs += '-RenderOffscreen'
 }
 Invoke-CheckedScript $unrealValidateArgs
 
@@ -154,6 +171,10 @@ $unrealArgs = @(
   $unrealScript,
   '-ProjectPath',
   $ProjectPath,
+  '-MapPath',
+  $MapPath,
+  '-LaunchMode',
+  $LaunchMode,
   '-StreamerId',
   $StreamerId,
   '-SignalingUrl',
@@ -161,6 +182,9 @@ $unrealArgs = @(
 )
 if ($UnrealEngineDir) {
   $unrealArgs += @('-UnrealEngineDir', $UnrealEngineDir)
+}
+if ($RenderOffscreen) {
+  $unrealArgs += '-RenderOffscreen'
 }
 if ($GenerateProjectFiles) {
   $unrealArgs += '-GenerateProjectFiles'
@@ -178,6 +202,36 @@ if (-not $SkipStreamerWait) {
     Write-Host "[warpala-commercial] Gateway is running, but the Unreal streamer was not detected yet." -ForegroundColor Yellow
     Write-Host "[warpala-commercial] Check the Unreal window logs and keep it open. The stream page may show degraded until the streamer connects." -ForegroundColor Yellow
   }
+
+  if ($PostLaunchStabilitySeconds -gt 0) {
+    Write-Step "checking commercial stream stability"
+    Invoke-CheckedScript @(
+      'powershell',
+      '-NoProfile',
+      '-ExecutionPolicy',
+      'Bypass',
+      '-File',
+      $healthScript,
+      '-EnvFile',
+      $EnvFile,
+      '-ProjectPath',
+      $ProjectPath,
+      '-MapPath',
+      $MapPath,
+      '-LaunchMode',
+      $LaunchMode,
+      '-StreamerId',
+      $StreamerId,
+      '-StatusUrl',
+      $streamStatusUrl,
+      '-StreamUrl',
+      $boothStreamUrl,
+      '-SalesDemoUrl',
+      $salesDemoUrl,
+      '-StabilitySeconds',
+      ([string]$PostLaunchStabilitySeconds)
+    )
+  }
 }
 
 if ($OpenBrowser) {
@@ -192,6 +246,9 @@ Write-Host "Booth stream:  $boothStreamUrl"
 Write-Host "Status check:  $streamStatusUrl"
 Write-Host "Streamer id:   $StreamerId"
 Write-Host "Signaling URL: $SignalingUrl"
+Write-Host ""
+Write-Host "Health check:"
+Write-Host "  npm run check:expo:commercial"
 Write-Host ""
 Write-Host "Fast rerun after images/project are built:"
 Write-Host "  npm run start:expo:commercial -- -NoDockerBuild -SkipSmokeCheck -SkipStreamerWait -OpenBrowser"

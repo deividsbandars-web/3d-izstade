@@ -1,8 +1,12 @@
 param(
   [string]$UnrealEngineDir = $env:WARPALA_UE_DIR,
   [string]$ProjectPath = 'C:\3d\WarpalaUE5\WarpalaUE5.uproject',
+  [string]$MapPath = '/Game/Warpala/Maps/Booth_Showroom_Main',
+  [ValidateSet('Game', 'EditorViewport')]
+  [string]$LaunchMode = 'Game',
   [string]$StreamerId = 'booth-sponsor-concierge',
   [string]$SignalingUrl = 'ws://127.0.0.1:8888',
+  [switch]$RenderOffscreen,
   [switch]$GenerateProjectFiles,
   [switch]$Build,
   [switch]$ValidateOnly
@@ -60,10 +64,25 @@ $resolvedProjectPath = (Resolve-Path -LiteralPath $ProjectPath).Path
 $unrealEditor = Join-Path $resolvedEngineDir 'Engine\Binaries\Win64\UnrealEditor.exe'
 $unrealBuildTool = Join-Path $resolvedEngineDir 'Engine\Binaries\DotNET\UnrealBuildTool\UnrealBuildTool.exe'
 $buildBat = Join-Path $resolvedEngineDir 'Engine\Build\BatchFiles\Build.bat'
+$projectRoot = Split-Path -Parent $resolvedProjectPath
+
+if ($MapPath) {
+  if ($MapPath -notmatch '^/Game/') {
+    Stop-WithMessage "MapPath must be a /Game package path, for example /Game/Warpala/Maps/Booth_Showroom_Main."
+  }
+
+  $mapRelativePath = ($MapPath -replace '^/Game/', 'Content/') + '.umap'
+  $mapDiskPath = Join-Path $projectRoot ($mapRelativePath -replace '/', '\')
+  if (-not (Test-Path -LiteralPath $mapDiskPath)) {
+    Stop-WithMessage "Unreal map not found for MapPath $MapPath at $mapDiskPath"
+  }
+}
 
 Write-Step "resolved paths"
 Write-Host "Engine:  $resolvedEngineDir"
 Write-Host "Project: $resolvedProjectPath"
+Write-Host "Map:     $MapPath"
+Write-Host "Mode:    $LaunchMode"
 Write-Host "Streamer id: $StreamerId"
 Write-Host "Signaling:   $SignalingUrl"
 
@@ -91,15 +110,35 @@ if ($Build) {
 Write-Step "launching Unreal Editor streamer"
 Write-Host "Docker signaling gateway should already be running on $SignalingUrl."
 Write-Host "The web viewer expects streamer id: $StreamerId"
+Write-Host "Opening map: $MapPath"
 
-& $unrealEditor $resolvedProjectPath `
-  -log `
-  -PixelStreamingID="$StreamerId" `
-  -PixelStreamingConnectionURL="$SignalingUrl" `
-  -PixelStreamingAutoStartStream `
-  -PixelStreamingEditorUseRemoteSignallingServer `
-  -PixelStreamingEditorStartOnLaunch `
-  -PixelStreamingEditorSource=LevelEditorViewport
+if ($LaunchMode -eq 'Game') {
+  $unrealArgs = @(
+    $resolvedProjectPath,
+    $MapPath,
+    '-game',
+    '-log',
+    '-AudioMixer',
+    "-PixelStreamingID=$StreamerId",
+    "-PixelStreamingConnectionURL=$SignalingUrl",
+    '-PixelStreamingAutoStartStream'
+  )
+
+  if ($RenderOffscreen) {
+    $unrealArgs += '-RenderOffscreen'
+  }
+
+  & $unrealEditor @unrealArgs
+} else {
+  & $unrealEditor $resolvedProjectPath $MapPath `
+    -log `
+    -PixelStreamingID="$StreamerId" `
+    -PixelStreamingConnectionURL="$SignalingUrl" `
+    -PixelStreamingAutoStartStream `
+    -PixelStreamingEditorUseRemoteSignallingServer `
+    -PixelStreamingEditorStartOnLaunch `
+    -PixelStreamingEditorSource=LevelEditorViewport
+}
 
 if ($LASTEXITCODE -ne 0) {
   Stop-WithMessage "Unreal Editor exited with code $LASTEXITCODE."

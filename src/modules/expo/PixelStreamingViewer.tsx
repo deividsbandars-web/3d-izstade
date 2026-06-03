@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Config, PixelStreaming } from '@epicgames-ps/lib-pixelstreamingfrontend-ue5.7';
 import { reportExpoDevError } from './lib/devErrorReporter';
 import { EXPO_MODE_COPY } from './state/expoRuntime';
@@ -10,6 +10,10 @@ interface PixelStreamingViewerProps {
     preferredStreamerIds?: string[];
     runtimeStatus: PixelStreamingRuntimeStatus | null;
     onClose?: () => void;
+}
+
+function normalizeStreamerId(value: string) {
+    return String(value).trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 }
 
 export default function PixelStreamingViewer({ 
@@ -24,17 +28,19 @@ export default function PixelStreamingViewer({
     const [status, setStatus] = useState<string>(EXPO_MODE_COPY.premiumViewerConnecting);
     const [availableStreamers, setAvailableStreamers] = useState<string[]>([]);
     const psRef = useRef<PixelStreaming | null>(null);
+    const requestedStreamerIdRef = useRef<string | null>(null);
     const signalingUrl = config.signalingUrl ?? 'Not configured';
+    const activeStreamerId = runtimeStatus?.session.activeStreamerId ?? null;
+    const runtimeSignaling = runtimeStatus?.signaling ?? null;
 
-    function normalizeStreamerId(value: string) {
-        return String(value).trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-    }
-
-    function handleConnect(streamerId: string) {
+    const handleConnect = useCallback((streamerId: string) => {
         if (!psRef.current) return;
+        const normalizedStreamerId = normalizeStreamerId(streamerId);
+        if (!normalizedStreamerId || requestedStreamerIdRef.current === normalizedStreamerId) return;
+        requestedStreamerIdRef.current = normalizedStreamerId;
         setStatus(EXPO_MODE_COPY.premiumViewerConnectTo.replace('{streamerId}', streamerId));
         psRef.current.config.setOptionSettingValue('StreamerId', streamerId);
-    }
+    }, []);
 
     useEffect(() => {
         let isActive = true;
@@ -57,6 +63,8 @@ export default function PixelStreamingViewer({
             };
         }
 
+        requestedStreamerIdRef.current = activeStreamerId ? normalizeStreamerId(activeStreamerId) : null;
+
         const pixelStreamingConfig = new Config({
             initialSettings: {
                 ss: signalingUrl,
@@ -64,7 +72,7 @@ export default function PixelStreamingViewer({
                 AutoConnect: true,
                 StartVideoMuted: true,
                 IceServers: config.iceServers,
-                StreamerId: runtimeStatus?.session.activeStreamerId || undefined,
+                StreamerId: activeStreamerId || undefined,
             } as any
         });
 
@@ -101,12 +109,12 @@ export default function PixelStreamingViewer({
 
                 if (preferredId) {
                     handleConnect(preferredId);
-                } else if (runtimeStatus?.session.activeStreamerId && ids.includes(runtimeStatus.session.activeStreamerId)) {
-                    handleConnect(runtimeStatus.session.activeStreamerId);
+                } else if (activeStreamerId && ids.includes(activeStreamerId)) {
+                    handleConnect(activeStreamerId);
                 }
             } else {
                 setStatus(
-                    runtimeStatus?.signaling === 'signaling_up'
+                    runtimeSignaling === 'signaling_up'
                         ? EXPO_MODE_COPY.premiumViewerGatewayOnly
                         : EXPO_MODE_COPY.premiumViewerDiscovering
                 );
@@ -127,8 +135,9 @@ export default function PixelStreamingViewer({
             isActive = false;
             ps.disconnect();
             psRef.current = null;
+            requestedStreamerIdRef.current = null;
         };
-    }, [availability, signalingUrl, config.iceServers, preferredStreamerIds, runtimeStatus]);
+    }, [availability, signalingUrl, config.iceServers, preferredStreamerIds, activeStreamerId, runtimeSignaling, handleConnect]);
 
     return (
         <div style={{ width: '100%', height: '100%', position: 'relative', backgroundColor: '#000', overflow: 'hidden' }}>
@@ -140,16 +149,16 @@ export default function PixelStreamingViewer({
                     <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
                     <h2 style={{ margin: '0 0 10px 0' }}>{status}</h2>
                     <p style={{ color: '#94a3b8', fontSize: '0.9rem' }}>Serveris: {signalingUrl}</p>
-                    {runtimeStatus?.session.activeStreamerId && (
+                    {activeStreamerId && (
                         <p style={{ color: '#cbd5e1', fontSize: '0.9rem' }}>
-                            Active streamer: {runtimeStatus.session.activeStreamerId}
+                            Active streamer: {activeStreamerId}
                         </p>
                     )}
                     {(availability === 'unavailable' || availability === 'degraded') && (
                         <p style={{ color: '#fca5a5', fontSize: '0.95rem', maxWidth: '520px', textAlign: 'center' }}>
                             {availability === 'degraded'
                                 ? EXPO_MODE_COPY.premiumViewerDegraded
-                                : runtimeStatus?.signaling === 'signaling_up' && runtimeStatus?.streamer !== 'streamer_available'
+                                : runtimeSignaling === 'signaling_up' && runtimeStatus?.streamer !== 'streamer_available'
                                 ? EXPO_MODE_COPY.premiumViewerGatewayOnly
                                 : EXPO_MODE_COPY.premiumViewerFallback}
                         </p>

@@ -23,6 +23,7 @@
     "deploy:staging:preview": "node scripts/vercel-staging-preview-deploy.mjs",
     "promote:staging": "node scripts/vercel-staging-promote.mjs",
     "check:pixel-streaming": "node scripts/pixel-streaming-smoke-check.mjs",
+    "check:expo:commercial": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/check-warpala-commercial-demo.ps1",
     "start:expo:stack": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/start-expo-pixel-streaming-stack.ps1",
     "start:expo:unreal": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/start-warpala-unreal-streamer.ps1",
     "start:expo:commercial": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/start-warpala-commercial-demo.ps1",
