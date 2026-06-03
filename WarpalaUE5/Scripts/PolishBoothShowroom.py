@@ -138,12 +138,36 @@ def apply_showroom_polish():
 
     clear_previous_polish()
 
-    # Compact commercial set dressing: high-value product pedestal, light rails and sponsor signage.
+    # Commercial set dressing: high-value product focus, light architecture and sponsor signage.
     spawn_mesh(
         "WARPALA_Showroom_Back_Wall",
         cube,
         unreal.Vector(-304, 0, 178),
         unreal.Vector(0.18, 5.8, 1.95),
+        None,
+        mat_deep_blue,
+    )
+    spawn_mesh(
+        "WARPALA_Showroom_Left_Wall",
+        cube,
+        unreal.Vector(55, -352, 130),
+        unreal.Vector(4.6, 0.12, 1.22),
+        None,
+        mat_graphite,
+    )
+    spawn_mesh(
+        "WARPALA_Showroom_Right_Wall",
+        cube,
+        unreal.Vector(55, 352, 130),
+        unreal.Vector(4.6, 0.12, 1.22),
+        None,
+        mat_graphite,
+    )
+    spawn_mesh(
+        "WARPALA_Showroom_Ceiling_Crown",
+        cube,
+        unreal.Vector(30, 0, 284),
+        unreal.Vector(5.45, 4.85, 0.055),
         None,
         mat_deep_blue,
     )
@@ -164,6 +188,22 @@ def apply_showroom_polish():
         mat_cyan,
     )
     spawn_mesh(
+        "WARPALA_Showroom_Floor_Left_Edge_Light",
+        cube,
+        unreal.Vector(95, -84, 14),
+        unreal.Vector(5.45, 0.025, 0.025),
+        None,
+        mat_gold,
+    )
+    spawn_mesh(
+        "WARPALA_Showroom_Floor_Right_Edge_Light",
+        cube,
+        unreal.Vector(95, 84, 14),
+        unreal.Vector(5.45, 0.025, 0.025),
+        None,
+        mat_gold,
+    )
+    spawn_mesh(
         "WARPALA_Showroom_Left_Showcase_Column",
         cube,
         unreal.Vector(-110, -318, 136),
@@ -179,6 +219,15 @@ def apply_showroom_polish():
         None,
         mat_gold,
     )
+    for index, x in enumerate((-175, -55, 65, 185)):
+        spawn_mesh(
+            f"WARPALA_Showroom_Ceiling_Light_Bar_{index + 1}",
+            cube,
+            unreal.Vector(x, 0, 272),
+            unreal.Vector(0.045, 4.05, 0.035),
+            None,
+            mat_cyan if index % 2 == 0 else mat_gold,
+        )
     spawn_mesh(
         "WARPALA_Showroom_Product_Pedestal",
         cylinder,
@@ -186,6 +235,14 @@ def apply_showroom_polish():
         unreal.Vector(2.2, 2.2, 0.28),
         None,
         mat_graphite,
+    )
+    spawn_mesh(
+        "WARPALA_Showroom_Product_Base_Glow",
+        cylinder,
+        unreal.Vector(0, 0, 63),
+        unreal.Vector(2.45, 2.45, 0.035),
+        None,
+        mat_cyan,
     )
     spawn_mesh(
         "WARPALA_Showroom_Product_Core",
@@ -204,12 +261,44 @@ def apply_showroom_polish():
         mat_cyan,
     )
     spawn_mesh(
+        "WARPALA_Showroom_Product_Orbit_Left",
+        cube,
+        unreal.Vector(0, -98, 138),
+        unreal.Vector(1.35, 0.035, 0.035),
+        unreal.Rotator(0, 0, 18),
+        mat_gold,
+    )
+    spawn_mesh(
+        "WARPALA_Showroom_Product_Orbit_Right",
+        cube,
+        unreal.Vector(0, 98, 138),
+        unreal.Vector(1.35, 0.035, 0.035),
+        unreal.Rotator(0, 0, -18),
+        mat_gold,
+    )
+    spawn_mesh(
         "WARPALA_Showroom_Back_Sponsor_Rail",
         cube,
         unreal.Vector(-280, 0, 180),
         unreal.Vector(0.12, 5.2, 0.14),
         None,
         mat_gold,
+    )
+    spawn_mesh(
+        "WARPALA_Showroom_Value_Panel_Left",
+        cube,
+        unreal.Vector(-86, -338, 132),
+        unreal.Vector(1.4, 0.08, 0.58),
+        None,
+        mat_deep_blue,
+    )
+    spawn_mesh(
+        "WARPALA_Showroom_Value_Panel_Right",
+        cube,
+        unreal.Vector(-86, 338, 132),
+        unreal.Vector(1.4, 0.08, 0.58),
+        None,
+        mat_deep_blue,
     )
     spawn_mesh(
         "WARPALA_Showroom_Left_Light_Rail",
@@ -271,6 +360,24 @@ def apply_showroom_polish():
         unreal.Color(82, 132, 255, 255),
         650,
     )
+    spawn_light(
+        unreal.PointLight,
+        "WARPALA_Showroom_Cyan_Ceiling_Glow",
+        unreal.Vector(10, -110, 255),
+        unreal.Rotator(0, 0, 0),
+        280,
+        unreal.Color(96, 220, 255, 255),
+        480,
+    )
+    spawn_light(
+        unreal.PointLight,
+        "WARPALA_Showroom_Gold_Ceiling_Glow",
+        unreal.Vector(10, 110, 255),
+        unreal.Rotator(0, 0, 0),
+        260,
+        unreal.Color(255, 190, 90, 255),
+        480,
+    )
 
     spawn_text(
         "WARPALA_Showroom_Title",
@@ -299,6 +406,20 @@ def apply_showroom_polish():
         unreal.Vector(96, 240, 102),
         unreal.Rotator(0, 180, 0),
         13,
+    )
+    spawn_text(
+        "WARPALA_Showroom_Left_Value_Text",
+        "QUALIFY LEADS",
+        unreal.Vector(-86, -330, 142),
+        unreal.Rotator(0, 90, 0),
+        17,
+    )
+    spawn_text(
+        "WARPALA_Showroom_Right_Value_Text",
+        "BOOK MEETINGS",
+        unreal.Vector(-86, 330, 142),
+        unreal.Rotator(0, -90, 0),
+        17,
     )
 
     camera = spawn_actor(
