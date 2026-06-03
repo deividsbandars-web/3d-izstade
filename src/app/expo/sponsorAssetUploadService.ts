@@ -119,9 +119,20 @@ export async function uploadSponsorAssetPackFile({
     return { error: validation.reason, publicUrl: '', storagePath: '' };
   }
 
+  const { data: userData, error: userError } = await supabaseClient.auth.getUser();
+  const userId = userData.user?.id;
+  if (userError || !userId) {
+    return {
+      error: 'Sign in before uploading sponsor assets.',
+      publicUrl: '',
+      storagePath: '',
+    };
+  }
+
+  const safeUserId = sanitizePathSegment(userId);
   const safeBoothId = sanitizePathSegment(boothId || 'new-booth');
   const safeFileName = sanitizePathSegment(file.name);
-  const storagePath = `sponsor-assets/${safeBoothId}/${target}/${Date.now()}-${safeFileName}`;
+  const storagePath = `sponsor-assets/${safeUserId}/${safeBoothId}/${target}/${Date.now()}-${safeFileName}`;
 
   const { error } = await supabaseClient.storage
     .from(EXPO_SPONSOR_ASSET_UPLOAD_BUCKET)
