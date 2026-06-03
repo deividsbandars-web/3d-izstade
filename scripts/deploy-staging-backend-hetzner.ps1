@@ -3,6 +3,16 @@ param(
   [string]$SshUser = "root",
   [string]$SshKey = "$HOME\.ssh\Warpala_OS_hetzner",
   [string]$RemoteDir = "/root/3d-izstade-staging",
+  [string[]]$ReleasePaths = @(
+    "backend-server",
+    "src",
+    "package.json",
+    "package-lock.json",
+    "tsconfig.json",
+    "tsconfig.app.json",
+    "tsconfig.node.json",
+    "docker-compose.staging.yml"
+  ),
   [switch]$AllowDirty,
   [switch]$PrepareOnly,
   [switch]$SkipDockerBuild
@@ -50,13 +60,14 @@ if ($status -and !$AllowDirty) {
 $tmpRoot = Join-Path ".codex-tmp" "hetzner-backend-deploy"
 New-Item -ItemType Directory -Force -Path $tmpRoot | Out-Null
 
-$archiveName = "3d-staging-backend-$shortCommit.tar"
+$archiveName = "3d-staging-backend-src-$shortCommit.tar"
 $archivePath = Join-Path $tmpRoot $archiveName
 $remoteArchivePath = "/tmp/$archiveName"
 $remoteScriptPath = "/tmp/3d-staging-backend-deploy-$shortCommit.sh"
 $remoteBackupDir = "/root/3d-izstade-staging-backups/$shortCommit-$(Get-Date -Format 'yyyyMMdd-HHmmss')"
 
-Invoke-Checked "git" @("archive", "--format=tar", "-o", $archivePath, "HEAD")
+$archiveArgs = @("archive", "--format=tar", "-o", $archivePath, "HEAD", "--") + $ReleasePaths
+Invoke-Checked "git" $archiveArgs
 
 $dockerCommand = if ($SkipDockerBuild) {
   "docker compose -f docker-compose.staging.yml --env-file .env.docker up -d backend-staging"
@@ -73,7 +84,7 @@ test -f "$RemoteDir/.env.docker"
 mkdir -p "$remoteBackupDir"
 cd "$RemoteDir"
 echo "[staging-backend] creating lightweight source backup: $remoteBackupDir"
-for path in package.json package-lock.json docker-compose.staging.yml backend-server src/shared supabase; do
+for path in package.json package-lock.json docker-compose.staging.yml backend-server src/backend src/shared supabase; do
   if [ -e "`$path" ]; then
     mkdir -p "$remoteBackupDir/`$(dirname "`$path")"
     cp -a "`$path" "$remoteBackupDir/`$path"
