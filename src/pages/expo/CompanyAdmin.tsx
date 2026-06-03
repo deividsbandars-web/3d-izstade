@@ -151,6 +151,17 @@ type ManagedLeadOpsDraft = {
   opsNotes: string;
 };
 
+type AdminLaunchStepState = 'blocked' | 'ready' | 'review';
+
+type AdminLaunchStep = {
+  actionLabel?: string;
+  body: string;
+  label: string;
+  onAction?: () => void;
+  state: AdminLaunchStepState;
+  status: string;
+};
+
 type AdminAccessState =
   | 'checking-auth'
   | 'ready'
@@ -196,6 +207,27 @@ const SCREEN_MEDIA_SETUP_GUIDE = [
     value: 'Matched booth screens can show saved published media now. Paid city screen slots are stored as inventory metadata until the city-screen render integration is wired.',
   },
 ] as const;
+
+const ADMIN_LAUNCH_STEP_STYLE: Record<AdminLaunchStepState, { accent: string; background: string; border: string; label: string }> = {
+  blocked: {
+    accent: '#fca5a5',
+    background: 'rgba(127, 29, 29, 0.24)',
+    border: 'rgba(248, 113, 113, 0.32)',
+    label: 'Needs work',
+  },
+  ready: {
+    accent: '#86efac',
+    background: 'rgba(6, 78, 59, 0.24)',
+    border: 'rgba(52, 211, 153, 0.32)',
+    label: 'Ready',
+  },
+  review: {
+    accent: '#fde68a',
+    background: 'rgba(120, 53, 15, 0.24)',
+    border: 'rgba(251, 191, 36, 0.32)',
+    label: 'Review',
+  },
+};
 
 const DEFAULT_SPONSOR_ASSET_PACK: AdminSponsorAssetPackState = {
   brochureUrl: '',
@@ -874,6 +906,10 @@ export default function CompanyAdmin() {
     : hasScreenImageUrl || hasScreenVideoUrl
       ? 'NOT VISIBLE YET: media URLs must be saved as PUBLISHED and matched to a visible 3D booth.'
       : 'No screen media URL saved yet.';
+  const isPublishedGeneratedCard = company.screenContent.status === 'published'
+    && company.screenContent.mode === 'generated-card'
+    && screenContentValidation.ok;
+  const hasVisibleScreenContent = isPublishedImageContent || isPublishedVideoContent || isPublishedGeneratedCard;
   const screenInventorySlots = getExpoScreenInventorySlots();
   const screenInventorySummary = getExpoScreenInventorySummary();
   const availableScreenSlots = getAvailableExpoScreenSlots();
@@ -891,6 +927,63 @@ export default function CompanyAdmin() {
           ? 'ADMIN SERVICE OFFLINE'
           : 'SAVE BOOTH SETTINGS';
   const sponsorAssetUploadDisabled = adminAccessState !== 'ready' || Boolean(activeSponsorAssetUpload);
+  const normalizedBoothStatus = String(company.status || 'active').trim().toLowerCase();
+  const boothPublicationLabel = normalizedBoothStatus === 'active'
+    ? 'Active candidate'
+    : normalizedBoothStatus === 'draft'
+      ? 'Draft/admin preview'
+      : normalizedBoothStatus || 'active';
+  const hasSavedBoothId = company.id.trim().length > 0;
+  const canOpenManagedPreview = adminAccessState === 'ready' && hasSavedBoothId && hasVisibleScreenContent;
+  const launchSteps: AdminLaunchStep[] = [
+    {
+      body: sponsorAssetPackReadiness.clientFriendlyReady
+        ? `Tier ${sponsorAssetPackReadiness.packageTier.toUpperCase()} has enough sponsor material for a client preview.`
+        : 'Add a headline, pitch, logo/hero image, and optional brochure or demo video.',
+      label: 'Sponsor package',
+      state: sponsorAssetPackValidation.ok && sponsorAssetPackReadiness.clientFriendlyReady ? 'ready' : 'blocked',
+      status: sponsorAssetPackReadiness.clientFriendlyReady ? 'Client package ready' : 'Materials incomplete',
+    },
+    {
+      body: hasVisibleScreenContent
+        ? `${company.screenContent.mode.toUpperCase()} content is marked Published and can be used by the matched booth screen.`
+        : 'Choose image, video placeholder, or generated-card content and set Status to Published.',
+      label: 'Booth screen',
+      state: hasVisibleScreenContent ? 'ready' : 'blocked',
+      status: hasVisibleScreenContent ? 'Visible content ready' : 'Not visible yet',
+    },
+    {
+      actionLabel: adminAccessState === 'ready' ? saveButtonLabel : undefined,
+      body: adminAccessState === 'ready'
+        ? 'Save after media or copy changes. 3D preview uses the last saved backend version.'
+        : 'Sign in and restore Expo admin service before saving sponsor content.',
+      label: 'Save to backend',
+      onAction: adminAccessState === 'ready' ? () => void handleSave() : undefined,
+      state: adminAccessState === 'ready' ? 'review' : 'blocked',
+      status: adminAccessState === 'ready' ? 'Manual save required' : 'Save unavailable',
+    },
+    {
+      actionLabel: canOpenManagedPreview ? 'Open 3D preview' : undefined,
+      body: canOpenManagedPreview
+        ? 'Review this booth in the 3D city without publishing it into the default public scene.'
+        : hasSavedBoothId
+          ? 'Publish screen content and save before opening the managed 3D preview.'
+          : 'Save the booth once before opening the managed 3D preview.',
+      label: '3D preview',
+      onAction: canOpenManagedPreview ? () => nav(buildManagedBoothPreviewRoute(company.id)) : undefined,
+      state: canOpenManagedPreview ? 'ready' : 'blocked',
+      status: canOpenManagedPreview ? 'Preview available' : 'Preview blocked',
+    },
+    {
+      body: normalizedBoothStatus === 'active'
+        ? 'This booth can be treated as a public-release candidate. Final live-scene release still stays operator-controlled.'
+        : 'Keep draft booths in admin preview until sponsor material and placement are approved.',
+      label: 'Public release',
+      state: 'review',
+      status: boothPublicationLabel,
+    },
+  ];
+  const unblockedLaunchStepCount = launchSteps.filter((step) => step.state !== 'blocked').length;
   const renderSponsorAssetUploadInput = (target: ExpoSponsorAssetUploadTarget) => {
     const label = getSponsorAssetUploadLabel(target);
     const isActive = activeSponsorAssetUpload === target;
@@ -924,6 +1017,49 @@ export default function CompanyAdmin() {
           <span style={{ color: sponsorAssetUploadStatus[target]?.toLowerCase().includes('failed') ? '#fca5a5' : '#94a3b8', fontSize: '0.72rem', lineHeight: 1.4 }}>
             {sponsorAssetUploadStatus[target]}
           </span>
+        )}
+      </div>
+    );
+  };
+  const renderLaunchStep = (step: AdminLaunchStep, index: number) => {
+    const style = ADMIN_LAUNCH_STEP_STYLE[step.state];
+
+    return (
+      <div
+        key={step.label}
+        style={{
+          background: style.background,
+          border: `1px solid ${style.border}`,
+          borderRadius: '18px',
+          padding: '14px 15px',
+        }}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', alignItems: 'flex-start' }}>
+          <div>
+            <div style={{ color: style.accent, fontSize: '0.68rem', fontWeight: 950, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+              Step {index + 1} / {style.label}
+            </div>
+            <div style={{ color: '#f8fafc', fontSize: '0.96rem', fontWeight: 900, marginTop: '5px' }}>
+              {step.label}
+            </div>
+          </div>
+          <div style={{ color: style.accent, fontSize: '0.7rem', fontWeight: 900, textAlign: 'right', textTransform: 'uppercase' }}>
+            {step.status}
+          </div>
+        </div>
+        <p style={{ color: '#cbd5e1', fontSize: '0.78rem', lineHeight: 1.5, margin: '10px 0 0' }}>
+          {step.body}
+        </p>
+        {step.actionLabel && step.onAction && (
+          <button
+            type="button"
+            className="btn-glass"
+            onClick={step.onAction}
+            disabled={loading}
+            style={{ marginTop: '12px', padding: '7px 10px', fontSize: '0.72rem' }}
+          >
+            {loading && step.label === 'Save to backend' ? 'SAVING...' : step.actionLabel}
+          </button>
         )}
       </div>
     );
@@ -992,6 +1128,46 @@ export default function CompanyAdmin() {
           </button>
         </div>
       )}
+
+      <section
+        className="glass-card"
+        style={{
+          background: 'linear-gradient(135deg, rgba(8, 13, 30, 0.92), rgba(14, 45, 64, 0.72))',
+          border: '1px solid rgba(125, 211, 252, 0.2)',
+          borderRadius: '24px',
+          marginBottom: '30px',
+          padding: '22px',
+        }}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', gap: '18px', alignItems: 'flex-start', flexWrap: 'wrap' }}>
+          <div>
+            <div style={{ color: '#67e8f9', fontSize: '0.72rem', fontWeight: 950, letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+              Sponsor launch flow
+            </div>
+            <h2 style={{ color: '#f8fafc', margin: '8px 0 6px', fontSize: '1.55rem' }}>
+              From uploaded media to 3D booth preview
+            </h2>
+            <p style={{ color: '#94a3b8', fontSize: '0.88rem', lineHeight: 1.55, margin: 0, maxWidth: '720px' }}>
+              Use this checklist before sending a sponsor preview. It separates admin-managed preview from public scene release, so draft sponsor work does not leak into the default city.
+            </p>
+          </div>
+          <div style={{ minWidth: '190px', padding: '14px 16px', borderRadius: '18px', background: 'rgba(2, 6, 23, 0.62)', border: '1px solid rgba(148, 163, 184, 0.16)' }}>
+            <div style={{ color: '#94a3b8', fontSize: '0.68rem', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+              Unblocked
+            </div>
+            <div style={{ color: '#f8fafc', fontSize: '1.75rem', fontWeight: 950, marginTop: '4px' }}>
+              {unblockedLaunchStepCount}/{launchSteps.length}
+            </div>
+            <div style={{ color: '#cbd5e1', fontSize: '0.76rem', lineHeight: 1.45 }}>
+              Booth status: {boothPublicationLabel}
+            </div>
+          </div>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '12px', marginTop: '18px' }}>
+          {launchSteps.map(renderLaunchStep)}
+        </div>
+      </section>
 
       <div className="calc-grid" style={{ gridTemplateColumns: '1fr 1fr' }}>
         <div className="calc-form-column">
