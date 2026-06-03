@@ -245,6 +245,22 @@ def apply_showroom_polish():
         mat_cyan,
     )
     spawn_mesh(
+        "WARPALA_Showroom_Product_Stage_Step",
+        cylinder,
+        unreal.Vector(0, 0, 28),
+        unreal.Vector(2.95, 2.95, 0.12),
+        None,
+        mat_deep_blue,
+    )
+    spawn_mesh(
+        "WARPALA_Showroom_Product_Stage_Gold_Rim",
+        cylinder,
+        unreal.Vector(0, 0, 72),
+        unreal.Vector(2.62, 2.62, 0.028),
+        None,
+        mat_gold,
+    )
+    spawn_mesh(
         "WARPALA_Showroom_Product_Core",
         sphere,
         unreal.Vector(0, 0, 118),
@@ -261,6 +277,46 @@ def apply_showroom_polish():
         mat_cyan,
     )
     spawn_mesh(
+        "WARPALA_Showroom_Product_Top_Ring",
+        cylinder,
+        unreal.Vector(0, 0, 186),
+        unreal.Vector(1.72, 1.72, 0.026),
+        None,
+        mat_cyan,
+    )
+    spawn_mesh(
+        "WARPALA_Showroom_Product_Mid_Ring",
+        cylinder,
+        unreal.Vector(0, 0, 112),
+        unreal.Vector(1.82, 1.82, 0.018),
+        None,
+        mat_gold,
+    )
+    spawn_mesh(
+        "WARPALA_Showroom_Product_Left_Glass_Rib",
+        cube,
+        unreal.Vector(-34, -82, 133),
+        unreal.Vector(0.035, 0.035, 0.92),
+        None,
+        mat_glass,
+    )
+    spawn_mesh(
+        "WARPALA_Showroom_Product_Right_Glass_Rib",
+        cube,
+        unreal.Vector(-34, 82, 133),
+        unreal.Vector(0.035, 0.035, 0.92),
+        None,
+        mat_glass,
+    )
+    spawn_mesh(
+        "WARPALA_Showroom_Product_Back_Glass_Rib",
+        cube,
+        unreal.Vector(-94, 0, 133),
+        unreal.Vector(0.035, 0.035, 0.92),
+        None,
+        mat_glass,
+    )
+    spawn_mesh(
         "WARPALA_Showroom_Product_Orbit_Left",
         cube,
         unreal.Vector(0, -98, 138),
@@ -275,6 +331,54 @@ def apply_showroom_polish():
         unreal.Vector(1.35, 0.035, 0.035),
         unreal.Rotator(0, 0, -18),
         mat_gold,
+    )
+    spawn_mesh(
+        "WARPALA_Showroom_Demo_Plinth_Product",
+        cube,
+        unreal.Vector(138, -120, 58),
+        unreal.Vector(0.92, 0.32, 0.16),
+        None,
+        mat_deep_blue,
+    )
+    spawn_mesh(
+        "WARPALA_Showroom_Demo_Plinth_Meetings",
+        cube,
+        unreal.Vector(145, 0, 58),
+        unreal.Vector(1.05, 0.32, 0.16),
+        None,
+        mat_deep_blue,
+    )
+    spawn_mesh(
+        "WARPALA_Showroom_Demo_Plinth_Report",
+        cube,
+        unreal.Vector(138, 120, 58),
+        unreal.Vector(0.92, 0.32, 0.16),
+        None,
+        mat_deep_blue,
+    )
+    spawn_mesh(
+        "WARPALA_Showroom_Demo_Plinth_Product_Rail",
+        cube,
+        unreal.Vector(138, -120, 76),
+        unreal.Vector(0.92, 0.035, 0.035),
+        None,
+        mat_cyan,
+    )
+    spawn_mesh(
+        "WARPALA_Showroom_Demo_Plinth_Meetings_Rail",
+        cube,
+        unreal.Vector(145, 0, 76),
+        unreal.Vector(1.05, 0.035, 0.035),
+        None,
+        mat_gold,
+    )
+    spawn_mesh(
+        "WARPALA_Showroom_Demo_Plinth_Report_Rail",
+        cube,
+        unreal.Vector(138, 120, 76),
+        unreal.Vector(0.92, 0.035, 0.035),
+        None,
+        mat_cyan,
     )
     spawn_mesh(
         "WARPALA_Showroom_Back_Sponsor_Rail",
@@ -345,9 +449,9 @@ def apply_showroom_polish():
     spawn_light(
         unreal.SpotLight,
         "WARPALA_Showroom_Product_Spotlight",
-        unreal.Vector(260, -190, 320),
-        unreal.Rotator(-45, 145, 0),
-        2200,
+        unreal.Vector(240, -160, 330),
+        unreal.Rotator(-48, 145, 0),
+        2800,
         unreal.Color(255, 198, 122, 255),
         700,
     )
@@ -406,6 +510,34 @@ def apply_showroom_polish():
         unreal.Vector(96, 240, 102),
         unreal.Rotator(0, 180, 0),
         13,
+    )
+    spawn_text(
+        "WARPALA_Showroom_Product_Label",
+        "HIGH-DETAIL PRODUCT VIEW",
+        unreal.Vector(132, 0, 92),
+        unreal.Rotator(0, 180, 0),
+        16,
+    )
+    spawn_text(
+        "WARPALA_Showroom_Demo_Product_Text",
+        "PRODUCT",
+        unreal.Vector(145, -120, 82),
+        unreal.Rotator(0, 180, 0),
+        12,
+    )
+    spawn_text(
+        "WARPALA_Showroom_Demo_Meetings_Text",
+        "MEETINGS",
+        unreal.Vector(152, 0, 82),
+        unreal.Rotator(0, 180, 0),
+        12,
+    )
+    spawn_text(
+        "WARPALA_Showroom_Demo_Report_Text",
+        "REPORT",
+        unreal.Vector(145, 120, 82),
+        unreal.Rotator(0, 180, 0),
+        12,
     )
     spawn_text(
         "WARPALA_Showroom_Left_Value_Text",
