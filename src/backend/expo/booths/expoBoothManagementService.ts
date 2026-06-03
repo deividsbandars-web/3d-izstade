@@ -1,5 +1,9 @@
 import { getExpoBoothById, listExpoBooths, type ExpoBoothRecord } from '../data/expoBoothStore.js';
 import { sanitizeExpoManagedBoothAssets } from '../../../shared/expo/screenContentMedia.js';
+import {
+  normalizeExpoSponsorAssetPackForSave,
+  type ExpoSponsorAssetPackInput,
+} from '../../../shared/expo/sponsorAssetPack.js';
 
 export type ExpoBackendUserContext = {
   email?: string | null;
@@ -18,7 +22,18 @@ export function mergeOwnedBoothPayload(
 
   const nextPayload: Record<string, unknown> = { ...payload };
   if (Object.prototype.hasOwnProperty.call(payload, 'assets_3d')) {
-    nextPayload.assets_3d = sanitizeExpoManagedBoothAssets(payload.assets_3d);
+    const sanitizedAssets = sanitizeExpoManagedBoothAssets(payload.assets_3d);
+    const rawAssetPack = sanitizedAssets.sponsor_asset_pack || sanitizedAssets.sponsorAssetPack;
+    const sponsorAssetPackResult = normalizeExpoSponsorAssetPackForSave(rawAssetPack as ExpoSponsorAssetPackInput);
+
+    if (sponsorAssetPackResult.ok) {
+      sanitizedAssets.sponsor_asset_pack = sponsorAssetPackResult.assetPack;
+    } else {
+      delete sanitizedAssets.sponsor_asset_pack;
+      delete sanitizedAssets.sponsorAssetPack;
+    }
+
+    nextPayload.assets_3d = sanitizedAssets;
   }
 
   return {

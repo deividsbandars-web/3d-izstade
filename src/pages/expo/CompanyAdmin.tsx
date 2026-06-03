@@ -3,6 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import { Canvas } from '@react-three/fiber';
 import { Environment, OrbitControls, Text, useVideoTexture } from '@react-three/drei';
 import { expoDashboardService } from '../../app/expo/expoDashboardService';
+import {
+  getSponsorAssetUploadAccept,
+  getSponsorAssetUploadLabel,
+  uploadSponsorAssetPackFile,
+  type ExpoSponsorAssetUploadTarget,
+} from '../../app/expo/sponsorAssetUploadService';
 import { supabaseClient } from '../../lib/supabaseClient';
 import { EXPO_CANONICAL_DISTRICT_CATALOG } from '../../services/expoService';
 import {
@@ -384,6 +390,8 @@ export default function CompanyAdmin() {
   const [roomRouteId, setRoomRouteId] = useState('');
   const [company, setCompany] = useState<AdminCompanyState>(DEFAULT_COMPANY);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [activeSponsorAssetUpload, setActiveSponsorAssetUpload] = useState<ExpoSponsorAssetUploadTarget | null>(null);
+  const [sponsorAssetUploadStatus, setSponsorAssetUploadStatus] = useState<Partial<Record<ExpoSponsorAssetUploadTarget, string>>>({});
 
   useEffect(() => {
     async function init() {
@@ -569,7 +577,7 @@ export default function CompanyAdmin() {
           })));
         }
       }
-      setMessage({ type: 'success', text: 'Booth screen settings saved.' });
+      setMessage({ type: 'success', text: 'Booth sponsor settings saved.' });
     } catch (error) {
       const errorText = formatRequestError(error);
       const accessState = resolveAdminAccessStateFromError(errorText);
@@ -689,6 +697,58 @@ export default function CompanyAdmin() {
     }));
   }
 
+  async function handleSponsorAssetUpload(target: ExpoSponsorAssetUploadTarget, files: FileList | null) {
+    const file = files?.[0] ?? null;
+    if (!file) {
+      return;
+    }
+
+    if (adminAccessState !== 'ready') {
+      setMessage({ type: 'error', text: 'Sign in with a sponsor/admin account before uploading sponsor assets.' });
+      return;
+    }
+
+    const label = getSponsorAssetUploadLabel(target);
+    const uploadBoothKey = company.id || company.name || 'new-booth';
+    setActiveSponsorAssetUpload(target);
+    setSponsorAssetUploadStatus((current) => ({ ...current, [target]: `Uploading ${label}...` }));
+    setMessage(null);
+
+    try {
+      const result = await uploadSponsorAssetPackFile({
+        boothId: uploadBoothKey,
+        file,
+        target,
+      });
+
+      if (result.error) {
+        throw new Error(result.error);
+      }
+
+      if (target === 'productImageUrls') {
+        const currentUrls = company.sponsorAssetPack.productImageUrls
+          .split(/\n+/)
+          .map((entry) => entry.trim())
+          .filter(Boolean);
+        const nextUrls = currentUrls.includes(result.publicUrl)
+          ? currentUrls
+          : [...currentUrls, result.publicUrl].slice(0, EXPO_SPONSOR_ASSET_PACK_PRODUCT_IMAGE_LIMIT);
+        updateSponsorAssetPack({ productImageUrls: nextUrls.join('\n') });
+      } else {
+        updateSponsorAssetPack({ [target]: result.publicUrl } as Partial<AdminSponsorAssetPackState>);
+      }
+
+      setSponsorAssetUploadStatus((current) => ({ ...current, [target]: `${label} uploaded. Save booth settings to keep it.` }));
+      setMessage({ type: 'success', text: `${label} uploaded. Save booth settings to keep the asset pack.` });
+    } catch (error) {
+      const errorText = formatRequestError(error);
+      setSponsorAssetUploadStatus((current) => ({ ...current, [target]: errorText }));
+      setMessage({ type: 'error', text: errorText });
+    } finally {
+      setActiveSponsorAssetUpload(null);
+    }
+  }
+
   const selectedDistrictColor =
     EXPO_CANONICAL_DISTRICT_CATALOG.find((district) => district.id === company.district)?.color || '#3b82f6';
   const leadStatusCounts = leads.reduce<Record<string, number>>((acc, lead) => {
@@ -759,7 +819,45 @@ export default function CompanyAdmin() {
         ? 'NO BOOTH ACCESS'
         : adminAccessState === 'backend-unavailable'
           ? 'ADMIN SERVICE OFFLINE'
-          : 'SAVE BOOTH SCREEN';
+          : 'SAVE BOOTH SETTINGS';
+  const sponsorAssetUploadDisabled = adminAccessState !== 'ready' || Boolean(activeSponsorAssetUpload);
+  const renderSponsorAssetUploadInput = (target: ExpoSponsorAssetUploadTarget) => {
+    const label = getSponsorAssetUploadLabel(target);
+    const isActive = activeSponsorAssetUpload === target;
+
+    return (
+      <div style={{ marginTop: '9px', display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+        <label
+          style={{
+            alignItems: 'center',
+            cursor: sponsorAssetUploadDisabled ? 'not-allowed' : 'pointer',
+            display: 'inline-flex',
+            margin: 0,
+            opacity: sponsorAssetUploadDisabled && !isActive ? 0.58 : 1,
+          }}
+        >
+          <span className="btn-glass" style={{ padding: '7px 10px', fontSize: '0.72rem' }}>
+            {isActive ? 'UPLOADING...' : `UPLOAD ${label.toUpperCase()}`}
+          </span>
+          <input
+            type="file"
+            accept={getSponsorAssetUploadAccept(target)}
+            disabled={sponsorAssetUploadDisabled}
+            onChange={(event) => {
+              void handleSponsorAssetUpload(target, event.currentTarget.files);
+              event.currentTarget.value = '';
+            }}
+            style={{ display: 'none' }}
+          />
+        </label>
+        {sponsorAssetUploadStatus[target] && (
+          <span style={{ color: sponsorAssetUploadStatus[target]?.toLowerCase().includes('failed') ? '#fca5a5' : '#94a3b8', fontSize: '0.72rem', lineHeight: 1.4 }}>
+            {sponsorAssetUploadStatus[target]}
+          </span>
+        )}
+      </div>
+    );
+  };
 
   return (
     <div className="calculator-pro-wrapper" style={{ maxWidth: '1200px', margin: '0 auto', padding: '40px 20px', color: 'white' }}>
@@ -939,6 +1037,8 @@ export default function CompanyAdmin() {
               </p>
               <div style={{ marginBottom: '16px', padding: '10px 12px', borderRadius: '14px', background: 'rgba(30, 64, 175, 0.16)', border: '1px solid rgba(147, 197, 253, 0.22)', color: '#bfdbfe', fontSize: '0.76rem', lineHeight: 1.5 }}>
                 Asset safety: {EXPO_SPONSOR_ASSET_PACK_MEDIA_POLICY_TEXT}. Localhost, private IPs, non-HTTPS URLs, SVG and embedded credentials are blocked.
+                <br />
+                Uploads use the Supabase Storage bucket expo_assets. After upload, save booth settings to attach the asset pack to this booth.
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px' }}>
@@ -985,6 +1085,7 @@ export default function CompanyAdmin() {
                     value={company.sponsorAssetPack.logoUrl}
                     onChange={(event) => updateSponsorAssetPack({ logoUrl: event.target.value })}
                   />
+                  {renderSponsorAssetUploadInput('logoUrl')}
                 </label>
 
                 <label>
@@ -996,6 +1097,7 @@ export default function CompanyAdmin() {
                     value={company.sponsorAssetPack.heroImageUrl}
                     onChange={(event) => updateSponsorAssetPack({ heroImageUrl: event.target.value })}
                   />
+                  {renderSponsorAssetUploadInput('heroImageUrl')}
                 </label>
               </div>
 
@@ -1007,6 +1109,7 @@ export default function CompanyAdmin() {
                   onChange={(event) => updateSponsorAssetPack({ productImageUrls: event.target.value })}
                   style={{ height: '104px' }}
                 />
+                {renderSponsorAssetUploadInput('productImageUrls')}
               </label>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px', marginTop: '16px' }}>
@@ -1019,6 +1122,7 @@ export default function CompanyAdmin() {
                     value={company.sponsorAssetPack.demoVideoUrl}
                     onChange={(event) => updateSponsorAssetPack({ demoVideoUrl: event.target.value })}
                   />
+                  {renderSponsorAssetUploadInput('demoVideoUrl')}
                 </label>
 
                 <label>
@@ -1030,6 +1134,7 @@ export default function CompanyAdmin() {
                     value={company.sponsorAssetPack.brochureUrl}
                     onChange={(event) => updateSponsorAssetPack({ brochureUrl: event.target.value })}
                   />
+                  {renderSponsorAssetUploadInput('brochureUrl')}
                 </label>
               </div>
 
