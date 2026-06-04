@@ -2,12 +2,15 @@ import assert from 'node:assert/strict';
 import {
   buildSponsorPackageLeadPayload,
   getSponsorPackageInterestLabel,
+  getPendingSponsorPackageRequestQueue,
   INITIAL_SPONSOR_PACKAGE_REQUEST_FORM,
   normalizeSponsorPackageRequestForm,
   saveSponsorPackageRequest,
+  syncPendingSponsorPackageRequests,
   validateSponsorPackageRequestForm,
   type SponsorPackageRequestForm,
 } from './sponsorPackageRequest';
+import { ExpoDataAPI } from '../../services/expo';
 
 const validForm: SponsorPackageRequestForm = {
   ...INITIAL_SPONSOR_PACKAGE_REQUEST_FORM,
@@ -88,6 +91,26 @@ const syncedResult = saveSponsorPackageRequest(validForm, {
 assert.equal(syncedResult.queueCount, 2);
 assert.equal(syncedResult.record.persistence, 'backend');
 assert.equal(syncedResult.record.syncStatus, 'backend-synced');
+assert.equal(getPendingSponsorPackageRequestQueue().length, 1);
+
+const originalCreateExpoLead = ExpoDataAPI.createExpoLead;
+const capturedLeadPayloads: unknown[] = [];
+ExpoDataAPI.createExpoLead = async (leadPayload: unknown) => {
+  capturedLeadPayloads.push(leadPayload);
+  return { success: true };
+};
+
+const syncResult = await syncPendingSponsorPackageRequests();
+
+assert.equal(syncResult.syncedCount, 1);
+assert.equal(syncResult.failedCount, 0);
+assert.equal(syncResult.pendingCount, 0);
+assert.equal(syncResult.queueCount, 2);
+assert.equal(capturedLeadPayloads.length, 1);
+assert.match(JSON.stringify(capturedLeadPayloads[0]), /Sponsor package interest: Premium Booth/);
+assert.equal(getPendingSponsorPackageRequestQueue().length, 0);
+
+ExpoDataAPI.createExpoLead = originalCreateExpoLead;
 
 Object.defineProperty(globalThis, 'window', {
   configurable: true,

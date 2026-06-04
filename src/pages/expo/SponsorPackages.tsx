@@ -2,9 +2,11 @@ import { useState, type CSSProperties, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import {
   INITIAL_SPONSOR_PACKAGE_REQUEST_FORM,
+  getPendingSponsorPackageRequestQueue,
   readSponsorPackageRequestQueue,
   saveSponsorPackageRequest,
   submitSponsorPackageRequestToBackend,
+  syncPendingSponsorPackageRequests,
   validateSponsorPackageRequestForm,
   type SponsorPackageInterest,
   type SponsorPackageRequestForm,
@@ -170,6 +172,8 @@ export default function SponsorPackages() {
     tone: 'idle',
   });
   const [queuedRequestCount, setQueuedRequestCount] = useState(() => readSponsorPackageRequestQueue().length);
+  const [pendingRequestCount, setPendingRequestCount] = useState(() => getPendingSponsorPackageRequestQueue().length);
+  const [isSyncingBackups, setIsSyncingBackups] = useState(false);
 
   function updateRequestField<Field extends keyof SponsorPackageRequestForm>(
     field: Field,
@@ -216,6 +220,7 @@ export default function SponsorPackages() {
           syncStatus: 'backend-synced',
         });
         setQueuedRequestCount(result.queueCount);
+        setPendingRequestCount(getPendingSponsorPackageRequestQueue().length);
         backupText = `Lokālais backup #${result.queueCount} saglabāts.`;
       } catch (localError) {
         backupText = `Pieteikums saņemts, bet lokālais backup neizdevās: ${localError instanceof Error ? localError.message : String(localError)}`;
@@ -233,6 +238,7 @@ export default function SponsorPackages() {
       try {
         const result = saveSponsorPackageRequest(requestForm);
         setQueuedRequestCount(result.queueCount);
+        setPendingRequestCount(getPendingSponsorPackageRequestQueue().length);
         setRequestStatus({
           text: `Savienojums pārtrūka, tāpēc pieteikums saglabāts šajā pārlūkā kā backup #${result.queueCount}. To var sinhronizēt, kad backend ir pieejams.`,
           tone: 'error',
@@ -243,6 +249,43 @@ export default function SponsorPackages() {
           tone: 'error',
         });
       }
+    }
+  }
+
+  async function handleSyncPendingBackups() {
+    if (pendingRequestCount === 0 || isSyncingBackups) {
+      return;
+    }
+
+    setIsSyncingBackups(true);
+    setRequestStatus({ text: 'Sinhronizēju lokālos sponsor pieteikumu backupus...', tone: 'submitting' });
+
+    try {
+      const result = await syncPendingSponsorPackageRequests();
+      setQueuedRequestCount(result.queueCount);
+      setPendingRequestCount(result.pendingCount);
+
+      if (result.failedCount > 0) {
+        setRequestStatus({
+          text: `Sinhronizēti ${result.syncedCount} backupi, bet ${result.failedCount} vēl neizdevās nosūtīt. Pārbaudi savienojumu un mēģini vēlreiz.`,
+          tone: 'error',
+        });
+        return;
+      }
+
+      setRequestStatus({
+        text: result.syncedCount > 0
+          ? `Sinhronizēti ${result.syncedCount} lokālie sponsor pieteikumi. Tie tagad ir backend lead plūsmā.`
+          : 'Nav pending lokālo backupu, ko sinhronizēt.',
+        tone: 'success',
+      });
+    } catch (syncError) {
+      setRequestStatus({
+        text: `Lokālo backupu sinhronizācija neizdevās: ${syncError instanceof Error ? syncError.message : String(syncError)}`,
+        tone: 'error',
+      });
+    } finally {
+      setIsSyncingBackups(false);
     }
   }
 
@@ -563,7 +606,35 @@ export default function SponsorPackages() {
                   padding: '14px 15px',
                 }}
               >
-                Lokālais backup: {queuedRequestCount} pieteikum{queuedRequestCount === 1 ? 's' : 'i'} saglabāti šajā ierīcē.
+                <div>
+                  Lokālais backup: {queuedRequestCount} pieteikum{queuedRequestCount === 1 ? 's' : 'i'} saglabāti šajā ierīcē.
+                </div>
+                <div style={{ color: pendingRequestCount > 0 ? '#fde68a' : '#bbf7d0', marginTop: '8px' }}>
+                  Jānosūta uz backend: {pendingRequestCount}
+                </div>
+                {pendingRequestCount > 0 && (
+                  <button
+                    disabled={isSyncingBackups}
+                    onClick={handleSyncPendingBackups}
+                    style={{
+                      background: 'rgba(250, 204, 21, 0.14)',
+                      border: '1px solid rgba(250, 204, 21, 0.38)',
+                      borderRadius: '13px',
+                      color: '#fef3c7',
+                      cursor: isSyncingBackups ? 'wait' : 'pointer',
+                      font: 'inherit',
+                      fontSize: '0.76rem',
+                      fontWeight: 950,
+                      letterSpacing: '0.05em',
+                      marginTop: '12px',
+                      padding: '10px 12px',
+                      textTransform: 'uppercase',
+                    }}
+                    type="button"
+                  >
+                    {isSyncingBackups ? 'Sinhronizē...' : 'Sinhronizēt backupus'}
+                  </button>
+                )}
               </div>
             </div>
 

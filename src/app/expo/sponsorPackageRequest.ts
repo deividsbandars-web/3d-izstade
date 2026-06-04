@@ -130,6 +130,16 @@ export function readSponsorPackageRequestQueue(): SponsorPackageRequestRecord[] 
   }
 }
 
+function writeSponsorPackageRequestQueue(queue: SponsorPackageRequestRecord[]) {
+  if (typeof window !== 'undefined') {
+    window.localStorage.setItem(SPONSOR_PACKAGE_REQUEST_STORAGE_KEY, JSON.stringify(queue.slice(-50)));
+  }
+}
+
+export function getPendingSponsorPackageRequestQueue(queue = readSponsorPackageRequestQueue()) {
+  return queue.filter((record) => record.syncStatus === 'backend-pending');
+}
+
 export function buildSponsorPackageLeadPayload(
   form: SponsorPackageRequestForm,
   sourcePath = getSponsorPackageRequestSourcePath(),
@@ -160,6 +170,45 @@ export async function submitSponsorPackageRequestToBackend(form: SponsorPackageR
   return await ExpoDataAPI.createExpoLead(buildSponsorPackageLeadPayload(form));
 }
 
+export async function syncPendingSponsorPackageRequests() {
+  const queue = readSponsorPackageRequestQueue();
+  const pendingRecords = getPendingSponsorPackageRequestQueue(queue);
+  const syncedIds = new Set<string>();
+  const failures: Array<{ error: string; id: string }> = [];
+
+  for (const record of pendingRecords) {
+    try {
+      await ExpoDataAPI.createExpoLead(buildSponsorPackageLeadPayload(record, record.sourcePath));
+      syncedIds.add(record.id);
+    } catch (error) {
+      failures.push({
+        error: error instanceof Error ? error.message : String(error),
+        id: record.id,
+      });
+    }
+  }
+
+  const nextQueue = queue.map((record) =>
+    syncedIds.has(record.id)
+      ? {
+          ...record,
+          persistence: 'backend' as const,
+          syncStatus: 'backend-synced' as const,
+        }
+      : record,
+  );
+
+  writeSponsorPackageRequestQueue(nextQueue);
+
+  return {
+    failedCount: failures.length,
+    failures,
+    pendingCount: getPendingSponsorPackageRequestQueue(nextQueue).length,
+    queueCount: nextQueue.length,
+    syncedCount: syncedIds.size,
+  };
+}
+
 export function saveSponsorPackageRequest(
   form: SponsorPackageRequestForm,
   options: {
@@ -179,9 +228,7 @@ export function saveSponsorPackageRequest(
   };
   const nextQueue = [...readSponsorPackageRequestQueue(), record].slice(-50);
 
-  if (typeof window !== 'undefined') {
-    window.localStorage.setItem(SPONSOR_PACKAGE_REQUEST_STORAGE_KEY, JSON.stringify(nextQueue));
-  }
+  writeSponsorPackageRequestQueue(nextQueue);
 
   return {
     queueCount: nextQueue.length,
