@@ -134,6 +134,11 @@ function getPackageMixKey(packageInterest?: string | null): PackageMixKey {
   return 'other';
 }
 
+function getPackageTierColor(packageInterest?: string | null) {
+  const packageKey = getPackageMixKey(packageInterest);
+  return PACKAGE_MIX_LABELS.find((item) => item.key === packageKey)?.color ?? '#94a3b8';
+}
+
 function getSalesOpsRecommendation({
   followUpDueCount,
   hotLeadCount,
@@ -1029,6 +1034,16 @@ export default function SponsorLeadInbox() {
                   const replyDraft = buildSponsorLeadReplyDraft(lead);
                   const latestReplySentAt = getLatestSponsorLeadReplySentAt(lead);
                   const followUpState = getLeadFollowUpState(lead);
+                  const packageAccent = getPackageTierColor(packageDetails?.packageInterest);
+                  const actionAccent = followUpState === 'due'
+                    ? '#f97316'
+                    : packageQualification
+                      ? LEAD_PRIORITY_COLORS[packageQualification.priority]
+                      : '#94a3b8';
+                  const commercialNextAction = packageQualification?.nextAction
+                    ?? (followUpState === 'due'
+                      ? 'Complete the scheduled follow-up now.'
+                      : 'Review message and qualify sponsor intent.');
                   return (
                     <article key={leadId || `${lead.client_email}:${lead.created_at}`} style={{ padding: '18px', borderRadius: '18px', background: 'rgba(2, 6, 23, 0.72)', border: '1px solid rgba(148, 163, 184, 0.18)' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', gap: '14px', alignItems: 'flex-start', flexWrap: 'wrap' }}>
@@ -1115,6 +1130,67 @@ export default function SponsorLeadInbox() {
                           Email draft
                         </a>
                       ) : null}
+                    </div>
+                  </div>
+                  <div
+                    style={{
+                      background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.9), rgba(2, 6, 23, 0.7))',
+                      border: `1px solid ${actionAccent}55`,
+                      borderRadius: '17px',
+                      display: 'grid',
+                      gap: '12px',
+                      gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+                      marginTop: '14px',
+                      padding: '14px',
+                    }}
+                  >
+                    <div>
+                      <div style={{ color: actionAccent, fontSize: '0.68rem', fontWeight: 950, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+                        Commercial next step
+                      </div>
+                      <div style={{ color: '#f8fafc', fontSize: '1rem', fontWeight: 900, lineHeight: 1.35, marginTop: '6px' }}>
+                        {commercialNextAction}
+                      </div>
+                      <div style={{ color: '#94a3b8', fontSize: '0.8rem', lineHeight: 1.45, marginTop: '7px' }}>
+                        {packageDetails
+                          ? `${packageDetails.company || 'Unknown company'} - ${packageDetails.budgetSignal || 'budget unknown'} - ${packageDetails.timeline || 'timeline unknown'}`
+                          : lead.service_name || 'General expo lead'}
+                      </div>
+                    </div>
+                    <div style={{ alignContent: 'start', display: 'flex', flexWrap: 'wrap', gap: '8px', justifyContent: 'flex-start' }}>
+                      <span
+                        style={{
+                          background: `${packageAccent}1c`,
+                          border: `1px solid ${packageAccent}55`,
+                          borderRadius: '999px',
+                          color: packageAccent,
+                          fontSize: '0.68rem',
+                          fontWeight: 950,
+                          letterSpacing: '0.07em',
+                          padding: '7px 10px',
+                          textTransform: 'uppercase',
+                        }}
+                      >
+                        {packageDetails?.packageInterest || 'General inquiry'}
+                      </span>
+                      <span
+                        style={{
+                          background: `${actionAccent}1f`,
+                          border: `1px solid ${actionAccent}66`,
+                          borderRadius: '999px',
+                          color: actionAccent,
+                          fontSize: '0.68rem',
+                          fontWeight: 950,
+                          letterSpacing: '0.07em',
+                          padding: '7px 10px',
+                          textTransform: 'uppercase',
+                        }}
+                      >
+                        {packageQualification?.priorityLabel || (followUpState === 'due' ? 'Follow-up due' : 'Qualify')}
+                      </span>
+                      <span style={{ background: `${STATUS_COLORS[status]}1f`, border: `1px solid ${STATUS_COLORS[status]}66`, borderRadius: '999px', color: STATUS_COLORS[status], fontSize: '0.68rem', fontWeight: 950, letterSpacing: '0.07em', padding: '7px 10px', textTransform: 'uppercase' }}>
+                        {STATUS_LABELS[status as SponsorLeadStatus] ?? status}
+                      </span>
                     </div>
                   </div>
                   {packageDetails ? (
