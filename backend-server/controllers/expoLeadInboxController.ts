@@ -294,7 +294,8 @@ async function assertSponsorLeadInboxAccess(
     throw new Error('EXPO_LEAD_INBOX_ACCESS_CHECK_FAILED');
   }
 
-  const hasMatchingBooth = managedBooths.data.some((booth) => boothMatchesSponsor(
+  const managedBoothRecords = managedBooths.data as unknown as Record<string, unknown>[];
+  const hasMatchingBooth = managedBoothRecords.some((booth) => boothMatchesSponsor(
     booth as unknown as Record<string, unknown>,
     companyId,
     sponsorSlug,
