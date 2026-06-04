@@ -337,6 +337,10 @@ async function startChromeIfNeeded(options) {
   }
 
   const profileDir = path.resolve(options.profileDir);
+  const defaultProfileDir = path.resolve(DEFAULTS.profileDir);
+  if (!options.keepBrowser && profileDir === defaultProfileDir && fs.existsSync(profileDir)) {
+    fs.rmSync(profileDir, { force: true, recursive: true });
+  }
   fs.mkdirSync(profileDir, { recursive: true });
 
   const chromeArgs = [
