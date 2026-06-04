@@ -1,4 +1,4 @@
-﻿import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { LeadsAPI } from '../../services/leads';
 import {
@@ -134,7 +134,7 @@ function formatDate(value?: string | null) {
 function formatMoney(value: unknown, currency = 'EUR') {
   const numeric = Number(value);
   if (!Number.isFinite(numeric)) {
-    return 'Nav tÄmes';
+    return 'Nav tāmes';
   }
 
   return `${Math.round(numeric).toLocaleString('lv-LV')} ${currency}`;
@@ -166,7 +166,7 @@ function getBackendEstimate(lead: BackendCalculatorLead) {
 
 function getBackendLeadName(lead: BackendCalculatorLead) {
   const contactInfo = getContactInfo(lead);
-  return String(contactInfo.name || contactInfo.company_name || 'Bez vÄrda');
+  return String(contactInfo.name || contactInfo.company_name || 'Bez vārda');
 }
 
 function getBackendLeadEmail(lead: BackendCalculatorLead) {
@@ -176,7 +176,7 @@ function getBackendLeadEmail(lead: BackendCalculatorLead) {
 
 function getBackendLeadPhone(lead: BackendCalculatorLead) {
   const contactInfo = getContactInfo(lead);
-  return String(contactInfo.phone || 'Nav tÄlruÅ†a');
+  return String(contactInfo.phone || 'Nav tālruņa');
 }
 
 function getBackendLeadMessage(lead: BackendCalculatorLead) {
@@ -393,7 +393,7 @@ export default function CalculatorLeadInbox() {
   const [calculatorFilter, setCalculatorFilter] = useState(ALL_FILTER_VALUE);
   const [localQueue, setLocalQueue] = useState<CalculatorLeadRecord[]>(() => readCalculatorLeadQueue().reverse());
   const [backendState, setBackendState] = useState<BackendLoadState>({
-    message: 'Backend leadi vÄ“l nav ielÄdÄ“ti.',
+    message: 'Backend leadi vēl nav ielādēti.',
     rows: [],
     status: 'idle',
   });
@@ -407,7 +407,7 @@ export default function CalculatorLeadInbox() {
   const refreshLocalQueue = () => setLocalQueue(readCalculatorLeadQueue().reverse());
 
   const loadBackendLeads = useCallback(async () => {
-    setBackendState({ message: 'IelÄdÄ“ju backend calculator leadus...', rows: [], status: 'loading' });
+    setBackendState({ message: 'Ielādēju backend calculator leadus...', rows: [], status: 'loading' });
     try {
       const response = await LeadsAPI.getCalculatorLeads();
       const rows = normalizeBackendRows(response);
@@ -420,7 +420,7 @@ export default function CalculatorLeadInbox() {
         return drafts;
       }, {}));
       setBackendState({
-        message: rows.length > 0 ? `Atrasti ${rows.length} backend leadi.` : 'Backend atbildÄ“ja, bet calculator leadi nav atrasti.',
+        message: rows.length > 0 ? `Atrasti ${rows.length} backend leadi.` : 'Backend atbildēja, bet calculator leadi nav atrasti.',
         rows,
         status: 'success',
       });
@@ -468,7 +468,7 @@ export default function CalculatorLeadInbox() {
       return;
     }
 
-    const confirmed = window.confirm('NotÄ«rÄ«t lokÄlo calculator lead fallback rindu Å¡ajÄ pÄrlÅ«kÄ?');
+    const confirmed = window.confirm('Notīrīt lokālo calculator lead fallback rindu šajā pārlūkā?');
     if (!confirmed) {
       return;
     }
@@ -543,20 +543,20 @@ export default function CalculatorLeadInbox() {
           Calculator lead ops
         </div>
         <h1 style={{ fontSize: 'clamp(2rem, 5vw, 4.2rem)', letterSpacing: '-0.055em', lineHeight: 0.98, margin: '10px 0 14px' }}>
-          Kalkulatoru pieprasÄ«jumu pÄrskats
+          Kalkulatoru pieprasījumu pārskats
         </h1>
         <p style={{ color: '#cbd5e1', fontSize: '1rem', lineHeight: 1.6, margin: 0, maxWidth: '760px' }}>
           Seit redzami kalkulatoru pieprasijumi backend lead sistema un lokalie fallback pieprasijumi, kas saglabati saja parluka, ja API nebija sasniedzams.
         </p>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginTop: '20px' }}>
           <Link to="/calculators" style={{ border: '1px solid rgba(148, 163, 184, 0.28)', borderRadius: '999px', color: '#cbd5e1', fontWeight: 900, padding: '10px 14px', textDecoration: 'none' }}>
-            AtpakaÄ¼ uz kalkulatoriem
+            Atpakaļ uz kalkulatoriem
           </Link>
           <button onClick={refreshLocalQueue} style={{ background: 'rgba(15, 23, 42, 0.78)', border: '1px solid rgba(56, 189, 248, 0.32)', borderRadius: '999px', color: '#bae6fd', cursor: 'pointer', fontWeight: 900, padding: '10px 14px' }} type="button">
-            AtsvaidzinÄt lokÄlo rindu
+            Atsvaidzināt lokālo rindu
           </button>
           <button onClick={() => void loadBackendLeads()} style={{ background: 'rgba(15, 23, 42, 0.78)', border: '1px solid rgba(34, 197, 94, 0.32)', borderRadius: '999px', color: '#bbf7d0', cursor: 'pointer', fontWeight: 900, padding: '10px 14px' }} type="button">
-            AtsvaidzinÄt backend leadus
+            Atsvaidzināt backend leadus
           </button>
         </div>
       </section>
@@ -582,35 +582,35 @@ export default function CalculatorLeadInbox() {
       )}
 
       <section style={{ display: 'grid', gap: '14px', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', marginBottom: '24px' }}>
-        {statCard('LokÄlie fallback', localQueue.length, '#38bdf8')}
+        {statCard('Lokālie fallback', localQueue.length, '#38bdf8')}
         {statCard('Backend calculator leadi', backendState.rows.length, '#22c55e')}
         {statCard('Jauni backend leadi', newBackendLeadCount, '#f59e0b')}
-        {statCard('FiltrÄ“ti backend leadi', filteredBackendRows.length, '#7dd3fc')}
-        {statCard('LokÄlÄ tÄmes vÄ“rtÄ«ba', formatMoney(localTotal), '#f59e0b')}
-        {statCard('Backend tÄmes vÄ“rtÄ«ba', formatMoney(backendTotal), '#a78bfa')}
-        {statCard('FiltrÄ“tÄ backend vÄ“rtÄ«ba', formatMoney(filteredBackendTotal), '#c4b5fd')}
+        {statCard('Filtrēti backend leadi', filteredBackendRows.length, '#7dd3fc')}
+        {statCard('Lokālā tāmes vērtība', formatMoney(localTotal), '#f59e0b')}
+        {statCard('Backend tāmes vērtība', formatMoney(backendTotal), '#a78bfa')}
+        {statCard('Filtrētā backend vērtība', formatMoney(filteredBackendTotal), '#c4b5fd')}
       </section>
 
       <section style={{ display: 'grid', gap: '18px', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))' }}>
         <div style={{ background: 'rgba(15, 23, 42, 0.72)', border: '1px solid rgba(56, 189, 248, 0.2)', borderRadius: '24px', padding: '22px' }}>
           <div style={{ alignItems: 'center', display: 'flex', gap: '12px', justifyContent: 'space-between', marginBottom: '16px' }}>
             <div>
-              <h2 style={{ margin: 0 }}>LokÄlÄ fallback rinda</h2>
-              <p style={{ color: '#94a3b8', margin: '6px 0 0' }}>SaglabÄta Å¡ajÄ pÄrlÅ«kÄ, ja lead API nebija pieejams.</p>
+              <h2 style={{ margin: 0 }}>Lokālā fallback rinda</h2>
+              <p style={{ color: '#94a3b8', margin: '6px 0 0' }}>Saglabāta šajā pārlūkā, ja lead API nebija pieejams.</p>
             </div>
             <div style={{ display: 'flex', gap: '8px' }}>
               <button disabled={localQueue.length === 0} onClick={exportLocalQueue} style={{ background: 'rgba(56, 189, 248, 0.14)', border: '1px solid rgba(56, 189, 248, 0.28)', borderRadius: '12px', color: '#bae6fd', cursor: localQueue.length === 0 ? 'default' : 'pointer', fontWeight: 850, opacity: localQueue.length === 0 ? 0.5 : 1, padding: '9px 11px' }} type="button">
-                EksportÄ“t
+                Eksportēt
               </button>
               <button disabled={localQueue.length === 0} onClick={clearLocalQueue} style={{ background: 'rgba(248, 113, 113, 0.12)', border: '1px solid rgba(248, 113, 113, 0.26)', borderRadius: '12px', color: '#fecaca', cursor: localQueue.length === 0 ? 'default' : 'pointer', fontWeight: 850, opacity: localQueue.length === 0 ? 0.5 : 1, padding: '9px 11px' }} type="button">
-                NotÄ«rÄ«t
+                Notīrīt
               </button>
             </div>
           </div>
 
           {localQueue.length === 0 ? (
             <div style={{ border: '1px dashed rgba(148, 163, 184, 0.22)', borderRadius: '18px', color: '#94a3b8', padding: '30px', textAlign: 'center' }}>
-              Nav lokÄlu fallback pieprasÄ«jumu.
+              Nav lokālu fallback pieprasījumu.
             </div>
           ) : (
             <div style={{ display: 'grid', gap: '12px' }}>
@@ -625,7 +625,7 @@ export default function CalculatorLeadInbox() {
                     <strong style={{ color: '#f8fafc', whiteSpace: 'nowrap' }}>{formatMoney(lead.estimateTotal, lead.estimateCurrency ?? 'EUR')}</strong>
                   </div>
                   <div style={{ color: '#94a3b8', fontSize: '0.82rem', marginTop: '10px' }}>
-                    {lead.calculatorTitle} Â· {formatDate(lead.capturedAt)} Â· {lead.sourcePath}
+                    {lead.calculatorTitle} · {formatDate(lead.capturedAt)} · {lead.sourcePath}
                   </div>
                   {lead.notes && <p style={{ color: '#e2e8f0', lineHeight: 1.5, margin: '12px 0 0' }}>{lead.notes}</p>}
                   {summaryPills(lead.summaryItems ?? [])}

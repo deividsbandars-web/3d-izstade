@@ -305,17 +305,25 @@ async function inspectPage(send) {
     tag: node.tagName.toLowerCase(),
   }));
   const snapshot = window.__WARPALA_EXPO_REVIEW_OPERATOR__?.getSnapshot?.();
+  const bodyText = document.body.innerText;
+  const mojibakePattern = new RegExp('[\\u00c4\\u00c5\\u00c2\\ufffd]', 'g');
+  const mojibakeMatches = [...bodyText.matchAll(mojibakePattern)].slice(0, 8).map((match) => {
+    const start = Math.max(0, match.index - 24);
+    const end = Math.min(bodyText.length, match.index + 24);
+    return bodyText.slice(start, end);
+  });
   return {
     activeGuideStep: activeGuideStep?.getAttribute('data-sales-demo-guide-step') ?? null,
     activeLink: activeLink?.getAttribute('data-sales-demo-step-link') ?? null,
     activeStep: guide?.getAttribute('data-sales-demo-active-step') ?? null,
-    bodyTextPreview: document.body.innerText.slice(0, 700),
+    bodyTextPreview: bodyText.slice(0, 700),
     ctaLabels,
     ctaSectionVisible: Boolean(document.querySelector('[data-sales-demo-cta-section="true"]')),
     guideVisible: Boolean(guide),
     leadCaptureVisible: Boolean(document.querySelector('[data-booth-product-lead-capture-overlay="true"]')),
     leadSubmitMode: document.querySelector('[data-booth-product-lead-capture-overlay="true"]')?.getAttribute('data-booth-product-lead-submit-mode') ?? null,
     location: window.location.href,
+    mojibakeMatches,
     performanceOverlayVisible: Boolean(document.querySelector('[data-expo-performance-overlay="true"]')),
     stepLinkCount: document.querySelectorAll('[data-sales-demo-step-link]').length,
     title: document.title,
@@ -355,6 +363,7 @@ async function runCase({ events, name, pathAndSearch, send, timeoutMs, validate 
   assertCheck(checks, eventSummary.runtimeExceptions.length === 0, 'no runtime exceptions', eventSummary.runtimeExceptions);
   assertCheck(checks, eventSummary.browserErrors.length === 0, 'no browser error log entries', eventSummary.browserErrors);
   assertCheck(checks, eventSummary.leadApiRequests === 0, 'no automatic lead API request during page load', eventSummary.leadApiRequests);
+  assertCheck(checks, page.mojibakeMatches.length === 0, 'no visible mojibake/encoding fragments', page.mojibakeMatches);
 
   return {
     checks,
