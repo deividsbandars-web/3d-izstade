@@ -19,6 +19,7 @@ import {
   buildSponsorLeadReplyDraft,
   buildSponsorLeadReplySentNote,
   getLatestSponsorLeadReplySentAt,
+  type SponsorLeadReplyDraft,
 } from '../../app/expo/sponsorLeadReply';
 import {
   getSponsorLeadQualificationForMessage,
@@ -137,6 +138,72 @@ function getPackageMixKey(packageInterest?: string | null): PackageMixKey {
 function getPackageTierColor(packageInterest?: string | null) {
   const packageKey = getPackageMixKey(packageInterest);
   return PACKAGE_MIX_LABELS.find((item) => item.key === packageKey)?.color ?? '#94a3b8';
+}
+
+type LeadWorkflowStepState = 'active' | 'done' | 'next' | 'waiting';
+
+type LeadWorkflowStep = {
+  detail: string;
+  label: string;
+  state: LeadWorkflowStepState;
+};
+
+const WORKFLOW_STEP_COLORS: Record<LeadWorkflowStepState, string> = {
+  active: '#38bdf8',
+  done: '#34d399',
+  next: '#fbbf24',
+  waiting: '#64748b',
+};
+
+function getReplyPreviewLines(replyDraft: SponsorLeadReplyDraft) {
+  return replyDraft.body
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .slice(0, 3);
+}
+
+function buildLeadWorkflowSteps({
+  followUpState,
+  hasPackageDetails,
+  latestReplySentAt,
+  status,
+}: {
+  followUpState: string;
+  hasPackageDetails: boolean;
+  latestReplySentAt: string | null;
+  status: string;
+}): LeadWorkflowStep[] {
+  const isClosed = status === 'closed' || status === 'rejected';
+  const hasReply = Boolean(latestReplySentAt);
+  const hasFollowUp = followUpState !== 'none';
+
+  return [
+    {
+      detail: hasPackageDetails ? 'Package, budget and timeline parsed.' : 'Review message and classify intent.',
+      label: 'Qualify',
+      state: hasPackageDetails ? 'done' : isClosed ? 'waiting' : 'active',
+    },
+    {
+      detail: hasReply ? `Reply logged ${formatDate(latestReplySentAt)}.` : 'Copy or open the sponsor reply draft.',
+      label: 'Reply',
+      state: hasReply ? 'done' : isClosed ? 'waiting' : hasPackageDetails ? 'active' : 'next',
+    },
+    {
+      detail: followUpState === 'due'
+        ? 'Follow-up is due now.'
+        : hasFollowUp
+          ? 'Follow-up is scheduled.'
+          : 'Set tomorrow follow-up after reply.',
+      label: 'Follow-up',
+      state: followUpState === 'due' ? 'active' : hasFollowUp ? 'done' : hasReply || status === 'contacted' ? 'active' : 'next',
+    },
+    {
+      detail: isClosed ? `Outcome marked ${STATUS_LABELS[status as SponsorLeadStatus] ?? status}.` : 'Close or reject after sponsor outcome is clear.',
+      label: 'Outcome',
+      state: isClosed ? 'done' : status === 'contacted' && hasFollowUp ? 'active' : 'waiting',
+    },
+  ];
 }
 
 function getSalesOpsRecommendation({
@@ -1044,6 +1111,14 @@ export default function SponsorLeadInbox() {
                     ?? (followUpState === 'due'
                       ? 'Complete the scheduled follow-up now.'
                       : 'Review message and qualify sponsor intent.');
+                  const isLeadClosed = status === 'closed' || status === 'rejected';
+                  const replyPreviewLines = getReplyPreviewLines(replyDraft);
+                  const workflowSteps = buildLeadWorkflowSteps({
+                    followUpState,
+                    hasPackageDetails: Boolean(packageDetails),
+                    latestReplySentAt,
+                    status,
+                  });
                   return (
                     <article
                       key={leadId || `${lead.client_email}:${lead.created_at}`}
@@ -1199,6 +1274,135 @@ export default function SponsorLeadInbox() {
                       <span style={{ background: `${STATUS_COLORS[status]}1f`, border: `1px solid ${STATUS_COLORS[status]}66`, borderRadius: '999px', color: STATUS_COLORS[status], fontSize: '0.68rem', fontWeight: 950, letterSpacing: '0.07em', padding: '7px 10px', textTransform: 'uppercase' }}>
                         {STATUS_LABELS[status as SponsorLeadStatus] ?? status}
                       </span>
+                    </div>
+                  </div>
+                  <div
+                    data-sponsor-lead-workflow="true"
+                    style={{
+                      background: 'rgba(15, 23, 42, 0.58)',
+                      border: '1px solid rgba(148, 163, 184, 0.16)',
+                      borderRadius: '17px',
+                      display: 'grid',
+                      gap: '10px',
+                      gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+                      marginTop: '14px',
+                      padding: '14px',
+                    }}
+                  >
+                    {workflowSteps.map((step, index) => {
+                      const color = WORKFLOW_STEP_COLORS[step.state];
+                      return (
+                        <div
+                          key={step.label}
+                          data-sponsor-lead-workflow-step={step.label.toLowerCase()}
+                          data-sponsor-lead-workflow-state={step.state}
+                          style={{
+                            background: step.state === 'waiting' ? 'rgba(2, 6, 23, 0.28)' : `${color}14`,
+                            border: `1px solid ${color}44`,
+                            borderRadius: '14px',
+                            minHeight: '104px',
+                            padding: '12px',
+                          }}
+                        >
+                          <div style={{ alignItems: 'center', display: 'flex', gap: '8px', justifyContent: 'space-between' }}>
+                            <span style={{ color, fontSize: '0.67rem', fontWeight: 950, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                              {index + 1}. {step.label}
+                            </span>
+                            <span style={{ color, fontSize: '0.62rem', fontWeight: 950, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                              {step.state}
+                            </span>
+                          </div>
+                          <p style={{ color: step.state === 'waiting' ? '#64748b' : '#cbd5e1', fontSize: '0.78rem', lineHeight: 1.45, margin: '9px 0 0' }}>
+                            {step.detail}
+                          </p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div
+                    data-sponsor-lead-reply-toolkit="true"
+                    style={{
+                      background: 'linear-gradient(135deg, rgba(8, 47, 73, 0.48), rgba(15, 23, 42, 0.66))',
+                      border: '1px solid rgba(56, 189, 248, 0.24)',
+                      borderRadius: '17px',
+                      display: 'grid',
+                      gap: '14px',
+                      gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+                      marginTop: '14px',
+                      padding: '14px',
+                    }}
+                  >
+                    <div>
+                      <div style={{ color: '#38bdf8', fontSize: '0.68rem', fontWeight: 950, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+                        Reply toolkit
+                      </div>
+                      <div style={{ color: '#f8fafc', fontSize: '0.95rem', fontWeight: 900, marginTop: '7px' }}>
+                        {replyDraft.subject}
+                      </div>
+                      <div style={{ color: '#94a3b8', fontSize: '0.78rem', lineHeight: 1.45, marginTop: '8px' }}>
+                        {replyPreviewLines.map((line) => (
+                          <div key={line}>{line}</div>
+                        ))}
+                      </div>
+                    </div>
+                    <div style={{ alignContent: 'start', display: 'flex', flexWrap: 'wrap', gap: '8px', justifyContent: 'flex-start' }}>
+                      <button
+                        type="button"
+                        onClick={() => void handleCopyReplyDraft(lead)}
+                        style={{
+                          background: 'rgba(14, 116, 144, 0.34)',
+                          border: '1px solid rgba(56, 189, 248, 0.52)',
+                          borderRadius: '999px',
+                          color: '#bae6fd',
+                          cursor: 'pointer',
+                          fontSize: '0.68rem',
+                          fontWeight: 950,
+                          letterSpacing: '0.06em',
+                          padding: '8px 11px',
+                          textTransform: 'uppercase',
+                        }}
+                      >
+                        Copy reply
+                      </button>
+                      {replyDraft.hasRecipient ? (
+                        <a
+                          href={replyDraft.mailtoHref}
+                          style={{
+                            background: 'rgba(20, 83, 45, 0.42)',
+                            border: '1px solid rgba(52, 211, 153, 0.5)',
+                            borderRadius: '999px',
+                            color: '#bbf7d0',
+                            fontSize: '0.68rem',
+                            fontWeight: 950,
+                            letterSpacing: '0.06em',
+                            padding: '8px 11px',
+                            textDecoration: 'none',
+                            textTransform: 'uppercase',
+                          }}
+                        >
+                          Email draft
+                        </a>
+                      ) : null}
+                      <button
+                        type="button"
+                        disabled={!leadId || activeReplySentAction === leadId || isLeadClosed}
+                        onClick={() => void handleReplySentTomorrow(lead)}
+                        style={{
+                          background: 'rgba(79, 70, 229, 0.3)',
+                          border: '1px solid rgba(129, 140, 248, 0.48)',
+                          borderRadius: '999px',
+                          color: '#c7d2fe',
+                          cursor: !leadId || isLeadClosed ? 'default' : 'pointer',
+                          fontSize: '0.68rem',
+                          fontWeight: 950,
+                          letterSpacing: '0.06em',
+                          opacity: !leadId || activeReplySentAction === leadId || isLeadClosed ? 0.58 : 1,
+                          padding: '8px 11px',
+                          textTransform: 'uppercase',
+                        }}
+                      >
+                        {activeReplySentAction === leadId ? 'Marking...' : 'Reply sent + follow-up'}
+                      </button>
                     </div>
                   </div>
                   {packageDetails ? (

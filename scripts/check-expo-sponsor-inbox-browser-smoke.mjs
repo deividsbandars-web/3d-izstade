@@ -502,6 +502,13 @@ async function inspectInboxPage(send, smokeEmail) {
     || null;
   const nextAction = leadCard?.querySelector('[data-sponsor-lead-next-action="true"]');
   const packageBadge = leadCard?.querySelector('[data-sponsor-lead-package-badge="true"]');
+  const replyToolkit = leadCard?.querySelector('[data-sponsor-lead-reply-toolkit="true"]');
+  const workflow = leadCard?.querySelector('[data-sponsor-lead-workflow="true"]');
+  const workflowSteps = [...(leadCard?.querySelectorAll('[data-sponsor-lead-workflow-step]') || [])].map((node) => ({
+    label: node.getAttribute('data-sponsor-lead-workflow-step'),
+    state: node.getAttribute('data-sponsor-lead-workflow-state'),
+    text: node.textContent?.trim() || '',
+  }));
   const leadCardText = leadCard?.textContent?.trim() || '';
   return {
     accessDeniedVisible: document.body.innerText.includes('Access denied'),
@@ -514,8 +521,13 @@ async function inspectInboxPage(send, smokeEmail) {
     nextActionText: nextAction?.textContent?.trim() || (leadCardText.includes('Commercial next step') ? leadCardText : ''),
     packageBadgeText: packageBadge?.textContent?.trim() || (leadCardText.includes('Premium Booth') ? 'Premium Booth' : ''),
     packageRequestVisible: leadCardText.includes('Sponsor package request'),
+    replyToolkitText: replyToolkit?.textContent?.trim() || '',
+    replyToolkitVisible: Boolean(replyToolkit) || leadCardText.includes('Reply toolkit'),
     signInRequiredVisible: document.body.innerText.includes('Sign in required'),
     titleText: document.body.innerText.includes('Sponsor Lead Inbox'),
+    workflowStepCount: workflowSteps.length,
+    workflowSteps,
+    workflowVisible: Boolean(workflow) || leadCardText.includes('Qualify') && leadCardText.includes('Follow-up'),
   };
 })()
 `);
@@ -633,6 +645,8 @@ async function run(options) {
     addCheck(checks, 'access denied not visible for admin smoke user', !page.accessDeniedVisible, page.bodyTextPreview);
     addCheck(checks, 'temporary lead card visible in UI', page.leadCardVisible, page);
     addCheck(checks, 'commercial next-action panel visible', page.nextActionText.includes('Commercial next step'), page.nextActionText);
+    addCheck(checks, 'deal workflow visible', page.workflowVisible && page.workflowStepCount >= 4, page.workflowSteps);
+    addCheck(checks, 'reply toolkit visible', page.replyToolkitVisible && page.replyToolkitText.includes('Reply toolkit'), page.replyToolkitText);
     addCheck(checks, 'package badge visible on lead card', page.packageBadgeText.includes('Premium Booth'), page.packageBadgeText);
     addCheck(checks, 'package request detail visible', page.packageRequestVisible, page.bodyTextPreview);
     addCheck(checks, 'no runtime exceptions', eventSummary.runtimeExceptions.length === 0, eventSummary.runtimeExceptions);
