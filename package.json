@@ -25,6 +25,8 @@
     "deploy:staging:preview": "node scripts/vercel-staging-preview-deploy.mjs",
     "deploy:staging:backend": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/deploy-staging-backend-hetzner.ps1",
     "promote:staging": "node scripts/vercel-staging-promote.mjs",
+    "deploy:production:preview": "node scripts/vercel-production-preview-deploy.mjs",
+    "promote:production": "node scripts/vercel-production-promote.mjs",
     "check:pixel-streaming": "node scripts/pixel-streaming-smoke-check.mjs",
     "check:expo:commercial": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/check-warpala-commercial-demo.ps1",
     "import:unreal:sponsor-product": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/import-warpala-sponsor-product.ps1",
