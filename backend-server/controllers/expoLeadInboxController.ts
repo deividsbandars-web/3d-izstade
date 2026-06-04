@@ -1,5 +1,11 @@
-import { Request, Response } from 'express';
+import { Response } from 'express';
 import { getSupabase } from '../services/supabase.js';
+import {
+  getBoothCompanyId,
+  listManagedExpoBoothsForUser,
+  type ExpoBackendUserContext,
+} from '../../src/backend/expo/booths/expoBoothManagementService.js';
+import type { AuthRequest } from '../middleware/authMiddleware.js';
 
 type LeadInboxRecord = Record<string, unknown>;
 
@@ -236,9 +242,73 @@ async function resolveSponsorContext(companySlug: unknown) {
   return { company, companyId, sponsorSlug };
 }
 
-export async function getExpoSponsorLeadInbox(req: Request, res: Response) {
+function getBoothSponsorSlugs(booth: Record<string, unknown>) {
+  const contactInfo = booth.contact_info && typeof booth.contact_info === 'object'
+    ? booth.contact_info as Record<string, unknown>
+    : {};
+  const assets = booth.assets_3d && typeof booth.assets_3d === 'object'
+    ? booth.assets_3d as Record<string, unknown>
+    : {};
+
+  return [
+    booth.company_slug,
+    booth.companySlug,
+    booth.slug,
+    contactInfo.company_slug,
+    contactInfo.companySlug,
+    contactInfo.sponsor_slug,
+    contactInfo.sponsorSlug,
+    assets.company_slug,
+    assets.companySlug,
+    assets.sponsor_slug,
+    assets.sponsorSlug,
+  ]
+    .map((value) => (typeof value === 'string' ? value.trim().toLowerCase() : ''))
+    .filter(Boolean);
+}
+
+function boothMatchesSponsor(
+  booth: Record<string, unknown>,
+  companyId: string | null,
+  sponsorSlug: string,
+) {
+  const boothCompanyId = getBoothCompanyId(booth as Parameters<typeof getBoothCompanyId>[0]);
+  if (companyId && boothCompanyId && boothCompanyId === companyId) {
+    return true;
+  }
+
+  return getBoothSponsorSlugs(booth).includes(sponsorSlug);
+}
+
+async function assertSponsorLeadInboxAccess(
+  user: ExpoBackendUserContext,
+  companyId: string | null,
+  sponsorSlug: string,
+) {
+  if (user.role === 'admin') {
+    return;
+  }
+
+  const managedBooths = await listManagedExpoBoothsForUser(user);
+  if (managedBooths.error || !managedBooths.data) {
+    throw new Error('EXPO_LEAD_INBOX_ACCESS_CHECK_FAILED');
+  }
+
+  const hasMatchingBooth = managedBooths.data.some((booth) => boothMatchesSponsor(
+    booth as unknown as Record<string, unknown>,
+    companyId,
+    sponsorSlug,
+  ));
+
+  if (!hasMatchingBooth) {
+    throw new Error('EXPO_LEAD_INBOX_FORBIDDEN');
+  }
+}
+
+export async function getExpoSponsorLeadInbox(req: AuthRequest, res: Response) {
   try {
     const { company, companyId, sponsorSlug } = await resolveSponsorContext(req.params.companySlug);
+    await assertSponsorLeadInboxAccess(req.user ?? {}, companyId, sponsorSlug);
     const limit = normalizeLimit(req.query.limit);
     const rawLeads = await listSponsorLeadRows(sponsorSlug, companyId, limit);
     const opsRows = await listLeadOpsRows(rawLeads.map((lead) => String(lead.id || '')).filter(Boolean));
@@ -255,14 +325,19 @@ export async function getExpoSponsorLeadInbox(req: Request, res: Response) {
     });
   } catch (error: any) {
     const code = String(error?.message || 'EXPO_LEAD_INBOX_UNKNOWN');
-    const status = code.startsWith('EXPO_LEAD_INBOX_') ? 400 : 500;
+    const status = code === 'EXPO_LEAD_INBOX_FORBIDDEN'
+      ? 403
+      : code.startsWith('EXPO_LEAD_INBOX_')
+        ? 400
+        : 500;
     res.status(status).json({ error: code });
   }
 }
 
-export async function updateExpoSponsorLeadStatus(req: Request, res: Response) {
+export async function updateExpoSponsorLeadStatus(req: AuthRequest, res: Response) {
   try {
     const { companyId, sponsorSlug } = await resolveSponsorContext(req.params.companySlug);
+    await assertSponsorLeadInboxAccess(req.user ?? {}, companyId, sponsorSlug);
     const leadId = normalizeLeadId(req.params.leadId);
     const status = normalizeLeadStatus(req.body?.status);
     await resolveLeadForSponsor(leadId, sponsorSlug, companyId);
@@ -282,14 +357,21 @@ export async function updateExpoSponsorLeadStatus(req: Request, res: Response) {
     res.json({ lead: data, status });
   } catch (error: any) {
     const code = String(error?.message || 'EXPO_LEAD_INBOX_UNKNOWN');
-    const status = code === 'EXPO_LEAD_INBOX_LEAD_NOT_FOUND' ? 404 : code.startsWith('EXPO_LEAD_INBOX_') ? 400 : 500;
+    const status = code === 'EXPO_LEAD_INBOX_FORBIDDEN'
+      ? 403
+      : code === 'EXPO_LEAD_INBOX_LEAD_NOT_FOUND'
+        ? 404
+        : code.startsWith('EXPO_LEAD_INBOX_')
+          ? 400
+          : 500;
     res.status(status).json({ error: code });
   }
 }
 
-export async function updateExpoSponsorLeadOps(req: Request, res: Response) {
+export async function updateExpoSponsorLeadOps(req: AuthRequest, res: Response) {
   try {
     const { companyId, sponsorSlug } = await resolveSponsorContext(req.params.companySlug);
+    await assertSponsorLeadInboxAccess(req.user ?? {}, companyId, sponsorSlug);
     const leadId = normalizeLeadId(req.params.leadId);
     const opsNotes = normalizeOptionalText(req.body?.opsNotes);
     const followUpAt = normalizeFollowUpAt(req.body?.followUpAt);
@@ -322,7 +404,13 @@ export async function updateExpoSponsorLeadOps(req: Request, res: Response) {
     });
   } catch (error: any) {
     const code = String(error?.message || 'EXPO_LEAD_INBOX_UNKNOWN');
-    const status = code === 'EXPO_LEAD_INBOX_LEAD_NOT_FOUND' ? 404 : code.startsWith('EXPO_LEAD_INBOX_') ? 400 : 500;
+    const status = code === 'EXPO_LEAD_INBOX_FORBIDDEN'
+      ? 403
+      : code === 'EXPO_LEAD_INBOX_LEAD_NOT_FOUND'
+        ? 404
+        : code.startsWith('EXPO_LEAD_INBOX_')
+          ? 400
+          : 500;
     res.status(status).json({ error: code });
   }
 }

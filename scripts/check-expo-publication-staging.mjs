@@ -376,6 +376,32 @@ async function run(options) {
       status: adminReview.status,
     });
 
+    const adminApprove = await apiRequest({
+      backendUrl: options.backendUrl,
+      body: JSON.stringify({ status: 'approved' }),
+      method: 'PATCH',
+      path: `/api/expo/booths/${encodeURIComponent(smokeBoothId)}`,
+      timeoutMs: options.timeoutMs,
+      token: adminToken,
+    });
+    addCheck(checks, 'admin can approve smoke booth', adminApprove.status === 200 && adminApprove.body?.status === 'approved', {
+      boothStatus: adminApprove.body?.status || null,
+      status: adminApprove.status,
+    });
+
+    const adminActivate = await apiRequest({
+      backendUrl: options.backendUrl,
+      body: JSON.stringify({ status: 'active' }),
+      method: 'PATCH',
+      path: `/api/expo/booths/${encodeURIComponent(smokeBoothId)}`,
+      timeoutMs: options.timeoutMs,
+      token: adminToken,
+    });
+    addCheck(checks, 'admin can activate/publish smoke booth', adminActivate.status === 200 && adminActivate.body?.status === 'active', {
+      boothStatus: adminActivate.body?.status || null,
+      status: adminActivate.status,
+    });
+
     const adminArchive = await apiRequest({
       backendUrl: options.backendUrl,
       body: JSON.stringify({ status: 'archived' }),
