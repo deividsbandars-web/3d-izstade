@@ -1045,7 +1045,13 @@ export default function SponsorLeadInbox() {
                       ? 'Complete the scheduled follow-up now.'
                       : 'Review message and qualify sponsor intent.');
                   return (
-                    <article key={leadId || `${lead.client_email}:${lead.created_at}`} style={{ padding: '18px', borderRadius: '18px', background: 'rgba(2, 6, 23, 0.72)', border: '1px solid rgba(148, 163, 184, 0.18)' }}>
+                    <article
+                      key={leadId || `${lead.client_email}:${lead.created_at}`}
+                      data-sponsor-lead-card="true"
+                      data-sponsor-lead-email={lead.client_email || ''}
+                      data-sponsor-lead-id={leadId}
+                      style={{ padding: '18px', borderRadius: '18px', background: 'rgba(2, 6, 23, 0.72)', border: '1px solid rgba(148, 163, 184, 0.18)' }}
+                    >
                   <div style={{ display: 'flex', justifyContent: 'space-between', gap: '14px', alignItems: 'flex-start', flexWrap: 'wrap' }}>
                     <div>
                       <h3 style={{ margin: 0, color: '#f8fafc' }}>{lead.client_name || 'Unnamed lead'}</h3>
@@ -1133,6 +1139,7 @@ export default function SponsorLeadInbox() {
                     </div>
                   </div>
                   <div
+                    data-sponsor-lead-next-action="true"
                     style={{
                       background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.9), rgba(2, 6, 23, 0.7))',
                       border: `1px solid ${actionAccent}55`,
@@ -1159,6 +1166,7 @@ export default function SponsorLeadInbox() {
                     </div>
                     <div style={{ alignContent: 'start', display: 'flex', flexWrap: 'wrap', gap: '8px', justifyContent: 'flex-start' }}>
                       <span
+                        data-sponsor-lead-package-badge="true"
                         style={{
                           background: `${packageAccent}1c`,
                           border: `1px solid ${packageAccent}55`,
