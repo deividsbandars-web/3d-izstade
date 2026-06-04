@@ -32,7 +32,8 @@
     "start:expo:commercial": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/start-warpala-commercial-demo.ps1",
     "start:backend": "cd backend-server && npm install && npm start",
     "worker:start": "cd backend-server && npm run worker",
-    "check:expo-publication-staging": "node scripts/check-expo-publication-staging.mjs"
+    "check:expo-publication-staging": "node scripts/check-expo-publication-staging.mjs",
+    "check:staging-readiness": "node scripts/check-staging-readiness.mjs"
   },
   "dependencies": {
     "@epicgames-ps/lib-pixelstreamingfrontend-ue5.7": "^0.2.2",
