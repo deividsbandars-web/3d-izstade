@@ -17,6 +17,7 @@ import { WorldCitySkeleton } from '../WorldCitySkeleton';
 import { WorldGroundPlane } from '../WorldGroundPlane';
 import { WorldPromenade } from '../WorldPromenade';
 import { WorldWayfinding } from '../WorldWayfinding';
+import { ModularHomeModel, ModularHomeUploadedModelPreview } from '../../modularHome';
 
 export function ExpoWorldSceneLayers({
   activeZoneId,
@@ -138,6 +139,15 @@ export function ExpoWorldSceneLayers({
           />
         </ExpoZoneGroup>
       )}
+      <ExpoZoneGroup
+        alwaysVisible
+        groupId="modular-home-preview"
+        runtimeState={zoneRuntimeState}
+        zoneId="center"
+      >
+        <ModularHomeModel />
+        <ModularHomeUploadedModelPreview />
+      </ExpoZoneGroup>
       <ExpoEvidenceProbe
         activeZoneId={activeZoneId}
         mode={mode}

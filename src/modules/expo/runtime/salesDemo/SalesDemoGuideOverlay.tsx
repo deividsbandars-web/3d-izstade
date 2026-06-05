@@ -28,6 +28,11 @@ const GUIDE_ITEMS = [
     label: 'Demo Arena',
     step: 'arena',
   },
+  {
+    body: '3D walkthrough, configuration and quote preview',
+    label: 'Modular Homes',
+    step: 'homes',
+  },
 ] as const satisfies ReadonlyArray<{
   body: string;
   label: string;
@@ -59,6 +64,11 @@ const STEP_LINKS = [
     href: '/expo-3d?salesDemo=1&salesDemoStep=arena',
     label: 'Arena',
     step: 'arena',
+  },
+  {
+    href: '/expo-3d?salesDemo=1&salesDemoStep=homes',
+    label: 'Homes',
+    step: 'homes',
   },
 ] as const satisfies ReadonlyArray<{
   href: string;
@@ -392,7 +402,7 @@ export function SalesDemoGuideOverlay({ isTouchDevice = false, mode = 'walk', on
           paddingTop: isTouchDevice ? '8px' : '9px',
         }}
       >
-        Preview mode - no live payments or lead capture yet
+        {'Preview mode \u00b7 no live payments or backend persistence yet'}
       </div>
     </aside>
   );

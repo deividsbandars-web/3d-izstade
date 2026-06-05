@@ -1,5 +1,5 @@
 export type SalesDemoMode = 'off' | 'sales';
-export type SalesDemoStep = 'none' | 'landmark' | 'premium' | 'standard' | 'arena';
+export type SalesDemoStep = 'none' | 'landmark' | 'premium' | 'standard' | 'arena' | 'homes';
 
 export type SalesDemoSearchInput =
   | URLSearchParams
@@ -77,6 +77,7 @@ export function getSalesDemoStep(input?: SalesDemoSearchInput): SalesDemoStep {
     || requestedStep === 'premium'
     || requestedStep === 'standard'
     || requestedStep === 'arena'
+    || requestedStep === 'homes'
   ) {
     return requestedStep;
   }

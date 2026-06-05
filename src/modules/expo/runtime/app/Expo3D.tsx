@@ -16,6 +16,7 @@ import { useExpoRuntimeSession } from './useExpoRuntimeSession';
 import { WorldInspectionProvider } from '../world/inspection/worldInspectionState';
 import { SalesDemoGuideOverlay } from '../salesDemo';
 import { SponsorConciergeLeadCaptureOverlay } from '../boothProduct';
+import { ModularHomeDemoOverlay, ModularHomeUploadPreviewPanel } from '../modularHome';
 
 export default function Expo3D() {
   const runtimeSession = useExpoRuntimeSession();
@@ -47,7 +48,7 @@ function ExpoRuntimeExperience({
   const pixelStreamingStatus = usePixelStreamingStatus();
   const { guests, playerPos, isMicOn, isSpeaking, setIsMicOn, handlePlayerMove } = useExpoPresence(
     runtimeSession.mode,
-    { enabled: !runtimeSession.salesDemoEnabled && !runtimeSession.boothProductPreviewEnabled },
+    { enabled: !runtimeSession.salesDemoEnabled && !runtimeSession.boothProductPreviewEnabled && !runtimeSession.homeDemoEnabled && !runtimeSession.homeUploadPreviewRequested },
   );
   const { activeZone, zoneSystem } = useZoneSystem(playerPos as any);
   const operatorSceneLayer = useExpoOperatorLayer({
@@ -119,6 +120,8 @@ function ExpoRuntimeExperience({
             mode={runtimeSession.mode}
             onSetMode={runtimeSession.setMode}
           />
+          <ModularHomeDemoOverlay isTouchDevice={runtimeSession.isTouchDevice} />
+          <ModularHomeUploadPreviewPanel isTouchDevice={runtimeSession.isTouchDevice} />
           <SponsorConciergeLeadCaptureOverlay isTouchDevice={runtimeSession.isTouchDevice} />
         </>
       )}

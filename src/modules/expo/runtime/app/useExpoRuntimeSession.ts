@@ -3,6 +3,8 @@ import type { ExpoMode } from '../../state/expoRuntime';
 import { resolveExpoOperatorSession } from '../operator';
 import { isSalesDemoEnabled } from '../salesDemo/salesDemoFlags';
 import { isBoothProductPreviewEnabled } from '../boothProduct/boothProductPreviewFlags';
+import { isHomeDemoEnabled } from '../modularHome/homeDemoFlags';
+import { isHomeUploadPreviewEnabled, isHomeUploadPreviewRequested } from '../modularHome/homeUploadPreviewFlags';
 
 export type ExpoMobileMoveIntent = {
   b: boolean;
@@ -49,14 +51,17 @@ function detectTouchDevice() {
 export function useExpoRuntimeSession() {
   const operatorSession = useMemo(() => resolveExpoOperatorSession(), []);
   const salesDemoEnabled = useMemo(() => isSalesDemoEnabled(), []);
+  const homeDemoEnabled = useMemo(() => isHomeDemoEnabled(), []);
+  const homeUploadPreviewRequested = useMemo(() => isHomeUploadPreviewRequested(), []);
+  const homeUploadPreviewEnabled = useMemo(() => isHomeUploadPreviewEnabled(), []);
   const boothProductPreviewEnabled = useMemo(() => isBoothProductPreviewEnabled(), []);
-  const previewSessionEnabled = salesDemoEnabled || boothProductPreviewEnabled;
+  const previewSessionEnabled = salesDemoEnabled || boothProductPreviewEnabled || homeDemoEnabled || homeUploadPreviewRequested;
   const [mode, setModeState] = useState<ExpoMode>(() => {
     if (operatorSession.enabled) {
       return 'fly';
     }
 
-    if (salesDemoEnabled) {
+    if (salesDemoEnabled || homeDemoEnabled || homeUploadPreviewRequested) {
       return 'walk';
     }
 
@@ -94,6 +99,9 @@ export function useExpoRuntimeSession() {
   return {
     initialUrlFocus,
     boothProductPreviewEnabled,
+    homeDemoEnabled,
+    homeUploadPreviewEnabled,
+    homeUploadPreviewRequested,
     isTouchDevice,
     mobileMoveIntent,
     mode,
