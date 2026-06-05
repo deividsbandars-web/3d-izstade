@@ -50,6 +50,7 @@ const FacadeCalculator = lazy(() => import('./modules/calculators/FacadeCalc'));
 const FloorCalculator = lazy(() => import('./modules/calculators/FloorCalc'));
 const PlumbingCalculator = lazy(() => import('./modules/calculators/PlumbingCalc'));
 const CalculatorLeadInbox = lazy(() => import('./modules/calculators/CalculatorLeadInbox'));
+const ModularHomeQuoteReview = lazy(() => import('./pages/modularHome/ModularHomeQuoteReview'));
 
 // Expo
 const Expo3D = lazy(() => import('./modules/expo/Expo3D'));
@@ -107,6 +108,7 @@ export default function App() {
             <Route path="inventory" element={<Suspense fallback={null}><InventoryManager /></Suspense>} />
             <Route path="calculators" element={<Suspense fallback={null}><CalculatorsHub /></Suspense>} />
             <Route path="calculators/leads" element={<Suspense fallback={null}><CalculatorLeadInbox /></Suspense>} />
+            <Route path="modular-homes/quotes" element={<Suspense fallback={null}><ModularHomeQuoteReview /></Suspense>} />
             <Route path="marketplace" element={<Suspense fallback={null}><Marketplace /></Suspense>} />
             <Route path="urgent-services" element={<Suspense fallback={null}><UrgentServices /></Suspense>} />
             <Route path="events" element={<Suspense fallback={null}><EventsHub /></Suspense>} />

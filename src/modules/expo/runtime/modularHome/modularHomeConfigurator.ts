@@ -209,6 +209,11 @@ export function setModularHomeConfigOption<Key extends keyof ModularHomeConfigur
   emitModularHomeConfigChange();
 }
 
+export function setModularHomeConfig(config: ModularHomeConfiguratorState) {
+  currentModularHomeConfig = config;
+  emitModularHomeConfigChange();
+}
+
 export function resetModularHomeConfig() {
   currentModularHomeConfig = DEFAULT_MODULAR_HOME_CONFIG;
   emitModularHomeConfigChange();
@@ -224,11 +229,13 @@ export function useModularHomeConfigurator() {
     key: Key,
     value: ModularHomeConfiguratorState[Key],
   ) => setModularHomeConfigOption(key, value), []);
+  const setConfig = useCallback((nextConfig: ModularHomeConfiguratorState) => setModularHomeConfig(nextConfig), []);
   const reset = useCallback(() => resetModularHomeConfig(), []);
 
   return {
     config,
     reset,
+    setConfig,
     setOption,
     summary: getModularHomeConfigSummary(config),
   };

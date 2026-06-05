@@ -1,4 +1,5 @@
 import { isHomeUploadPreviewEnabled } from './homeUploadPreviewFlags';
+import { isHomeQuoteBackendEnabled } from './homeQuoteBackendFlags';
 
 export type HomeDemoMode = 'off' | 'homes';
 
@@ -14,7 +15,7 @@ export type HomeDemoSearchInput =
 export type HomeDemoSummary = {
   enabled: boolean;
   mode: HomeDemoMode;
-  hasBackend: false;
+  hasBackend: boolean;
   hasEstimatePreview: true;
   hasForms: true;
   hasLocalUploadPreview: boolean;
@@ -73,11 +74,12 @@ export function isHomeDemoEnabled(input?: HomeDemoSearchInput): boolean {
 export function getHomeDemoSummary(input?: HomeDemoSearchInput): HomeDemoSummary {
   const enabled = isHomeDemoEnabled(input);
   const hasLocalUploadPreview = isHomeUploadPreviewEnabled(input);
+  const hasBackend = isHomeQuoteBackendEnabled(input);
 
   return {
     enabled,
     mode: enabled ? 'homes' : 'off',
-    hasBackend: false,
+    hasBackend,
     hasEstimatePreview: true,
     hasForms: true,
     hasLocalUploadPreview,
