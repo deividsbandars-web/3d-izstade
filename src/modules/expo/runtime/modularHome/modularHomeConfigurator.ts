@@ -4,6 +4,12 @@ import {
   MODULAR_HOME_TEMPLATE_OPTIONS,
   type ModularHomeTemplateId,
 } from './modularHomeConfig';
+import {
+  getModularHomeFacadeMaterial,
+  getModularHomeFinishMaterials,
+  getModularHomeRoofMaterial,
+  type ModularHomeMaterialId,
+} from './modularHomeMaterials';
 
 export type ModularHomeTemplateOption = ModularHomeTemplateId;
 export type ModularHomeFacadeOption = 'naturalTimber' | 'darkThermoWood' | 'lightPainted';
@@ -32,6 +38,7 @@ export type ModularHomeConfiguratorGroup<Key extends keyof ModularHomeConfigurat
 
 export type ModularHomeFacadeVisual = {
   label: string;
+  materialId: ModularHomeMaterialId;
   wallColor: string;
   sideColor: string;
   trimColor: string;
@@ -39,9 +46,19 @@ export type ModularHomeFacadeVisual = {
 
 export type ModularHomeRoofVisual = {
   label: string;
+  materialId: ModularHomeMaterialId;
   roofColor: string;
   accentColor: string;
   isGreenRoof: boolean;
+};
+
+export type ModularHomeFinishLevelVisual = {
+  label: string;
+  materialIds: readonly ModularHomeMaterialId[];
+  interiorFloorColor: string;
+  interiorWallColor: string;
+  bathroomCoreColor: string;
+  note: string;
 };
 
 export type ModularHomeTerraceVisual = {
@@ -78,9 +95,9 @@ export const MODULAR_HOME_TERRACE_OPTIONS = [
 ] as const satisfies readonly ModularHomeConfiguratorOption<'terrace'>[];
 
 export const MODULAR_HOME_FINISH_LEVEL_OPTIONS = [
-  { key: 'shell', label: 'Shell' },
-  { key: 'standard', label: 'Standard' },
-  { key: 'premium', label: 'Premium' },
+  { key: 'shell', label: 'Empty shell' },
+  { key: 'standard', label: 'Standard furnished preview' },
+  { key: 'premium', label: 'Premium interior preview' },
 ] as const satisfies readonly ModularHomeConfiguratorOption<'finishLevel'>[];
 
 export const MODULAR_HOME_CONFIGURATOR_GROUPS = [
@@ -91,46 +108,64 @@ export const MODULAR_HOME_CONFIGURATOR_GROUPS = [
   { key: 'finishLevel', label: 'Finish level', options: MODULAR_HOME_FINISH_LEVEL_OPTIONS },
 ] as const satisfies readonly ModularHomeConfiguratorGroup[];
 
+function createFacadeVisual(option: ModularHomeFacadeOption): ModularHomeFacadeVisual {
+  const material = getModularHomeFacadeMaterial(option);
+
+  return {
+    label: material.label,
+    materialId: material.id,
+    sideColor: material.secondaryColor,
+    trimColor: material.accentColor,
+    wallColor: material.baseColor,
+  };
+}
+
+function createRoofVisual(option: ModularHomeRoofOption): ModularHomeRoofVisual {
+  const material = getModularHomeRoofMaterial(option);
+
+  return {
+    accentColor: material.accentColor,
+    isGreenRoof: option === 'greenRoofPlaceholder',
+    label: material.label,
+    materialId: material.id,
+    roofColor: option === 'flat' ? material.secondaryColor : material.baseColor,
+  };
+}
+
+function createFinishLevelVisual(
+  option: ModularHomeFinishLevelOption,
+  note: string,
+): ModularHomeFinishLevelVisual {
+  const materials = getModularHomeFinishMaterials(option);
+  const interiorMaterial = materials.find((material) => material.group === 'interior');
+  const wetCoreMaterial = materials.find((material) => material.group === 'wetCore');
+
+  return {
+    bathroomCoreColor: wetCoreMaterial?.baseColor ?? '#bae6fd',
+    interiorFloorColor: interiorMaterial?.baseColor ?? '#d6b98b',
+    interiorWallColor: interiorMaterial?.secondaryColor ?? '#f8e6c7',
+    label: getModularHomeConfigLabel('finishLevel', option),
+    materialIds: materials.map((material) => material.id),
+    note,
+  };
+}
+
 export const MODULAR_HOME_FACADE_VISUALS: Record<ModularHomeFacadeOption, ModularHomeFacadeVisual> = {
-  naturalTimber: {
-    label: 'Natural timber',
-    wallColor: '#b98245',
-    sideColor: '#9a6a3c',
-    trimColor: '#f6d7a7',
-  },
-  darkThermoWood: {
-    label: 'Dark thermo wood',
-    wallColor: '#3b2a1d',
-    sideColor: '#271a12',
-    trimColor: '#d8b17c',
-  },
-  lightPainted: {
-    label: 'Light painted',
-    wallColor: '#eadcc8',
-    sideColor: '#c9b79e',
-    trimColor: '#7c4f2d',
-  },
+  naturalTimber: createFacadeVisual('naturalTimber'),
+  darkThermoWood: createFacadeVisual('darkThermoWood'),
+  lightPainted: createFacadeVisual('lightPainted'),
 };
 
 export const MODULAR_HOME_ROOF_VISUALS: Record<ModularHomeRoofOption, ModularHomeRoofVisual> = {
-  pitched: {
-    label: 'Pitched',
-    roofColor: '#273449',
-    accentColor: '#1e293b',
-    isGreenRoof: false,
-  },
-  flat: {
-    label: 'Flat',
-    roofColor: '#243246',
-    accentColor: '#111827',
-    isGreenRoof: false,
-  },
-  greenRoofPlaceholder: {
-    label: 'Green roof placeholder',
-    roofColor: '#2f5137',
-    accentColor: '#7bbf58',
-    isGreenRoof: true,
-  },
+  pitched: createRoofVisual('pitched'),
+  flat: createRoofVisual('flat'),
+  greenRoofPlaceholder: createRoofVisual('greenRoofPlaceholder'),
+};
+
+export const MODULAR_HOME_FINISH_LEVEL_VISUALS: Record<ModularHomeFinishLevelOption, ModularHomeFinishLevelVisual> = {
+  shell: createFinishLevelVisual('shell', 'Shell-level plywood preview.'),
+  standard: createFinishLevelVisual('standard', 'Standard finish preview using plywood and wet-core material tokens.'),
+  premium: createFinishLevelVisual('premium', 'Premium finish preview keeps the same lightweight material tokens until texture maps are added.'),
 };
 
 export const MODULAR_HOME_TERRACE_VISUALS: Record<ModularHomeTerraceOption, ModularHomeTerraceVisual> = {

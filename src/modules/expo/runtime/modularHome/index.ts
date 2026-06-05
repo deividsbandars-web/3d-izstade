@@ -90,8 +90,10 @@ export {
 } from './modularHomeEstimate';
 export {
   getDefaultHomeConfig,
+  getBomModuleSummary,
   getCompatibleOptions,
   getInvalidConfigReasons,
+  getModularHomeConfigurationWarnings,
   getModularHomeDimensionSummary,
   getModularHomeOptionChoices,
   getModularHomeProduct,
@@ -99,8 +101,12 @@ export {
   getModularHomeProductForConfig,
   getModularHomeProductForTemplate,
   getModularHomeProducts,
+  getModuleInstancesForProduct,
+  getModuleQuantitySummary,
   getModulesForConfig,
   getModulesForProduct,
+  getSelectedModularHomeMaterialIds,
+  getSelectedModularHomeMaterials,
   getSelectedModularHomeOptions,
   MODULAR_HOME_MODULES,
   MODULAR_HOME_OPTIONS,
@@ -108,12 +114,25 @@ export {
   validateHomeConfiguration,
 } from './modularHomeProducts';
 export {
+  getModularHomeFacadeMaterial,
+  getModularHomeFinishMaterials,
+  getModularHomeMaterial,
+  getModularHomeMaterials,
+  getModularHomeMaterialsByGroup,
+  getModularHomeRoofMaterial,
+  MODULAR_HOME_FACADE_MATERIAL_BY_OPTION,
+  MODULAR_HOME_FINISH_MATERIALS_BY_OPTION,
+  MODULAR_HOME_MATERIALS,
+  MODULAR_HOME_ROOF_MATERIAL_BY_OPTION,
+} from './modularHomeMaterials';
+export {
   DEFAULT_MODULAR_HOME_CONFIG,
   getModularHomeConfigLabel,
   getModularHomeConfigSummary,
   MODULAR_HOME_CONFIGURATOR_GROUPS,
   MODULAR_HOME_FACADE_OPTIONS,
   MODULAR_HOME_FACADE_VISUALS,
+  MODULAR_HOME_FINISH_LEVEL_VISUALS,
   MODULAR_HOME_FINISH_LEVEL_OPTIONS,
   MODULAR_HOME_ROOF_OPTIONS,
   MODULAR_HOME_ROOF_VISUALS,
@@ -174,11 +193,16 @@ export type {
   ModularHomeScopeOfSupplySectionId,
 } from './modularHomeEstimate';
 export type {
+  ModularHomeBomModuleSummaryItem,
+  ModularHomeConfigurationWarning,
+  ModularHomeConstraintStatus,
   ModularHomeDimensions,
   ModularHomeDimensionSummary,
   ModularHomeFootprintDimensions,
   ModularHomeModule,
   ModularHomeModuleId,
+  ModularHomeModuleInstance,
+  ModularHomeModuleQuantitySummaryItem,
   ModularHomeModuleType,
   ModularHomeOption,
   ModularHomeOptionGroup,
@@ -187,13 +211,20 @@ export type {
   ModularHomeProductCategory,
   ModularHomeProductId,
   ModularHomeProductOptionChoice,
+  ModularHomeSelectedMaterialSummary,
 } from './modularHomeProducts';
+export type {
+  ModularHomeMaterial,
+  ModularHomeMaterialGroup,
+  ModularHomeMaterialId,
+} from './modularHomeMaterials';
 export type {
   ModularHomeConfiguratorGroup,
   ModularHomeConfiguratorOption,
   ModularHomeConfiguratorState,
   ModularHomeFacadeOption,
   ModularHomeFacadeVisual,
+  ModularHomeFinishLevelVisual,
   ModularHomeFinishLevelOption,
   ModularHomeRoofOption,
   ModularHomeRoofVisual,

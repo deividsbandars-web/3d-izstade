@@ -17,8 +17,9 @@ import * as platformController from '../controllers/platformController.js';
 import * as businessController from '../controllers/businessController.js';
 import * as growthController from '../controllers/growthController.js';
 import * as calculatorLeadController from '../controllers/calculatorLeadController.js';
+import * as modularHomeQuoteAdminController from '../controllers/modularHomeQuoteAdminController.js';
 import * as modularHomeQuoteController from '../controllers/modularHomeQuoteController.js';
-import { authMiddleware } from '../middleware/authMiddleware.js';
+import { adminOnly, authMiddleware } from '../middleware/authMiddleware.js';
 import { rateLimitMiddleware } from '../middleware/rateLimit.js';
 
 export const router = Router();
@@ -69,6 +70,11 @@ protectedRouter.patch('/expo/lead-inbox/:companySlug/leads/:leadId', expoLeadInb
 protectedRouter.patch('/expo/lead-inbox/:companySlug/leads/:leadId/ops', expoLeadInboxController.updateExpoSponsorLeadOps);
 protectedRouter.patch('/expo/review/booths/:boothId/leads/:leadId', expoDataController.updateExpoReviewLeadStatus);
 protectedRouter.patch('/expo/review/booths/:boothId/leads/:leadId/ops', expoDataController.updateExpoReviewLeadOps);
+
+// Modular Home quote admin access. These routes are intentionally not public.
+protectedRouter.get('/modular-home/quotes', adminOnly, modularHomeQuoteAdminController.listModularHomeQuoteRequests);
+protectedRouter.get('/modular-home/quotes/export', adminOnly, modularHomeQuoteAdminController.exportModularHomeQuoteRequests);
+protectedRouter.patch('/modular-home/quotes/:quoteId/status', adminOnly, modularHomeQuoteAdminController.updateModularHomeQuoteStatus);
 
 // Leads
 protectedRouter.get('/calculator/leads', calculatorLeadController.getCalculatorLeads);

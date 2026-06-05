@@ -7,6 +7,11 @@ import {
   type ModularHomeRoofOption,
   type ModularHomeTerraceOption,
 } from './modularHomeConfigurator';
+import {
+  getModularHomeMaterial,
+  type ModularHomeMaterial,
+  type ModularHomeMaterialId,
+} from './modularHomeMaterials';
 
 export type ModularHomeProductId = 'compact-timber-40' | 'family-timber-80' | 'sauna-cabin-25';
 
@@ -47,6 +52,11 @@ export type ModularHomeOptionGroup =
   | 'finish'
   | 'windowPackage';
 
+export type ModularHomeConstraintStatus =
+  | 'compatible'
+  | 'notAvailable'
+  | 'requiresReview';
+
 export type ModularHomeDimensions = {
   widthM: number;
   lengthM: number;
@@ -71,7 +81,8 @@ export type ModularHomeProduct = {
   bedrooms: number;
   bathrooms: number;
   defaultTemplateId: ModularHomeTemplateId;
-  // TODO: production BOM should move to moduleInstances so repeated modules can carry quantity and role explicitly.
+  moduleInstances: readonly ModularHomeModuleInstance[];
+  // Temporary backwards-compatible unique module list. Production BOM should read moduleInstances with quantity and role.
   baseModuleIds: readonly ModularHomeModuleId[];
   defaultConfig: ModularHomeConfiguratorState;
   basePrice: number;
@@ -81,9 +92,28 @@ export type ModularHomeProduct = {
 };
 
 export type ModularHomeModuleInstance = {
+  instanceId: string;
   moduleId: ModularHomeModuleId;
+  positionHint: string;
+  productionGroup: string;
   quantity: number;
   role: string;
+};
+
+export type ModularHomeModuleQuantitySummaryItem = {
+  moduleId: ModularHomeModuleId;
+  positionHints: readonly string[];
+  productionGroups: readonly string[];
+  quantity: number;
+  roles: readonly string[];
+};
+
+export type ModularHomeBomModuleSummaryItem = ModularHomeModuleQuantitySummaryItem & {
+  module: ModularHomeModule | null;
+  moduleType: ModularHomeModuleType | 'missing';
+  notes: string;
+  totalPrice: number;
+  unitPrice: number;
 };
 
 export type ModularHomeModule = {
@@ -100,6 +130,7 @@ export type ModularHomeOption = {
   id: string;
   group: ModularHomeOptionGroup;
   label: string;
+  materialIds: readonly ModularHomeMaterialId[];
   priceDelta: number;
   visualToken: string;
   compatibleProducts: readonly ModularHomeProductId[];
@@ -107,8 +138,17 @@ export type ModularHomeOption = {
 };
 
 export type ModularHomeProductOptionChoice = ModularHomeOption & {
+  constraintMessage: string;
+  constraintStatus: ModularHomeConstraintStatus;
   disabledReason: string;
   isCompatible: boolean;
+};
+
+export type ModularHomeConfigurationWarning = {
+  id: string;
+  message: string;
+  relatedGroups: readonly ModularHomeOptionGroup[];
+  status: ModularHomeConstraintStatus;
 };
 
 export type ModularHomeProductConfigSummary = {
@@ -118,6 +158,13 @@ export type ModularHomeProductConfigSummary = {
   roof: string;
   template: string;
   terrace: string;
+};
+
+export type ModularHomeSelectedMaterialSummary = {
+  material: ModularHomeMaterial | null;
+  materialId: ModularHomeMaterialId;
+  optionGroup: ModularHomeOptionGroup;
+  optionLabel: string;
 };
 
 export type ModularHomeDimensionSummary = {
@@ -155,6 +202,32 @@ export const MODULAR_HOME_PRODUCTS = [
     bedrooms: 1,
     bathrooms: 1,
     defaultTemplateId: 'compactTimber40',
+    moduleInstances: [
+      {
+        instanceId: 'compact-40-living-01',
+        moduleId: 'compact-living-module',
+        positionHint: 'front living/kitchen zone',
+        productionGroup: 'primary-shell',
+        quantity: 1,
+        role: 'Living and kitchen module',
+      },
+      {
+        instanceId: 'compact-40-bedroom-01',
+        moduleId: 'compact-bedroom-module',
+        positionHint: 'rear private zone',
+        productionGroup: 'primary-shell',
+        quantity: 1,
+        role: 'Bedroom module',
+      },
+      {
+        instanceId: 'compact-40-bathroom-core-01',
+        moduleId: 'bathroom-core-module',
+        positionHint: 'rear service corner',
+        productionGroup: 'service-core',
+        quantity: 1,
+        role: 'Bathroom core',
+      },
+    ],
     baseModuleIds: [
       'compact-living-module',
       'compact-bedroom-module',
@@ -189,6 +262,32 @@ export const MODULAR_HOME_PRODUCTS = [
     bedrooms: 2,
     bathrooms: 1,
     defaultTemplateId: 'familyTimber80',
+    moduleInstances: [
+      {
+        instanceId: 'family-80-living-01',
+        moduleId: 'family-living-module',
+        positionHint: 'front shared living/kitchen zone',
+        productionGroup: 'primary-shell',
+        quantity: 1,
+        role: 'Family living and kitchen module',
+      },
+      {
+        instanceId: 'family-80-bedroom-pair-01',
+        moduleId: 'family-bedroom-module',
+        positionHint: 'rear two-bedroom wing',
+        productionGroup: 'primary-shell',
+        quantity: 2,
+        role: 'Bedroom modules',
+      },
+      {
+        instanceId: 'family-80-bathroom-core-01',
+        moduleId: 'bathroom-core-module',
+        positionHint: 'central service core',
+        productionGroup: 'service-core',
+        quantity: 1,
+        role: 'Bathroom core',
+      },
+    ],
     baseModuleIds: [
       'family-living-module',
       'family-bedroom-module',
@@ -223,6 +322,24 @@ export const MODULAR_HOME_PRODUCTS = [
     bedrooms: 0,
     bathrooms: 1,
     defaultTemplateId: 'saunaCabin25',
+    moduleInstances: [
+      {
+        instanceId: 'sauna-25-core-01',
+        moduleId: 'sauna-core-module',
+        positionHint: 'main wellness/rest zone',
+        productionGroup: 'wellness-core',
+        quantity: 1,
+        role: 'Sauna and guest core',
+      },
+      {
+        instanceId: 'sauna-25-bathroom-core-01',
+        moduleId: 'bathroom-core-module',
+        positionHint: 'compact bathroom/service zone',
+        productionGroup: 'service-core',
+        quantity: 1,
+        role: 'Bathroom and service core',
+      },
+    ],
     baseModuleIds: [
       'sauna-core-module',
       'bathroom-core-module',
@@ -371,6 +488,7 @@ export const MODULAR_HOME_OPTIONS = [
     id: 'option-facade-natural-timber',
     group: 'facade',
     label: 'Natural timber',
+    materialIds: ['natural-timber-siding'],
     priceDelta: 0,
     visualToken: 'naturalTimber' satisfies ModularHomeFacadeOption,
     compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
@@ -380,6 +498,7 @@ export const MODULAR_HOME_OPTIONS = [
     id: 'option-facade-dark-thermo',
     group: 'facade',
     label: 'Dark thermo wood',
+    materialIds: ['dark-thermo-wood'],
     priceDelta: 3200,
     visualToken: 'darkThermoWood' satisfies ModularHomeFacadeOption,
     compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
@@ -389,6 +508,7 @@ export const MODULAR_HOME_OPTIONS = [
     id: 'option-facade-light-painted',
     group: 'facade',
     label: 'Light painted',
+    materialIds: ['light-painted-facade'],
     priceDelta: 2400,
     visualToken: 'lightPainted' satisfies ModularHomeFacadeOption,
     compatibleProducts: ['compact-timber-40', 'family-timber-80'],
@@ -398,6 +518,7 @@ export const MODULAR_HOME_OPTIONS = [
     id: 'option-roof-flat',
     group: 'roof',
     label: 'Flat roof',
+    materialIds: ['metal-roof'],
     priceDelta: 0,
     visualToken: 'flat' satisfies ModularHomeRoofOption,
     compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
@@ -407,6 +528,7 @@ export const MODULAR_HOME_OPTIONS = [
     id: 'option-roof-pitched',
     group: 'roof',
     label: 'Pitched roof',
+    materialIds: ['metal-roof'],
     priceDelta: 0,
     visualToken: 'pitched' satisfies ModularHomeRoofOption,
     compatibleProducts: ['compact-timber-40', 'family-timber-80'],
@@ -416,6 +538,7 @@ export const MODULAR_HOME_OPTIONS = [
     id: 'option-roof-green-placeholder',
     group: 'roof',
     label: 'Green roof placeholder',
+    materialIds: ['green-roof-placeholder'],
     priceDelta: 6500,
     visualToken: 'greenRoofPlaceholder' satisfies ModularHomeRoofOption,
     compatibleProducts: ['compact-timber-40', 'family-timber-80'],
@@ -425,6 +548,7 @@ export const MODULAR_HOME_OPTIONS = [
     id: 'option-terrace-none',
     group: 'terrace',
     label: 'No terrace',
+    materialIds: [],
     priceDelta: 0,
     visualToken: 'none' satisfies ModularHomeTerraceOption,
     compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
@@ -434,6 +558,7 @@ export const MODULAR_HOME_OPTIONS = [
     id: 'option-terrace-small',
     group: 'terrace',
     label: 'Small terrace',
+    materialIds: ['natural-timber-siding'],
     priceDelta: 4500,
     visualToken: 'smallTerrace' satisfies ModularHomeTerraceOption,
     compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
@@ -443,6 +568,7 @@ export const MODULAR_HOME_OPTIONS = [
     id: 'option-terrace-extended',
     group: 'terrace',
     label: 'Extended terrace',
+    materialIds: ['natural-timber-siding'],
     priceDelta: 8000,
     visualToken: 'extendedTerrace' satisfies ModularHomeTerraceOption,
     compatibleProducts: ['compact-timber-40', 'family-timber-80'],
@@ -451,7 +577,8 @@ export const MODULAR_HOME_OPTIONS = [
   {
     id: 'option-finish-shell',
     group: 'finish',
-    label: 'Shell',
+    label: 'Empty shell',
+    materialIds: ['interior-plywood'],
     priceDelta: 0,
     visualToken: 'shell' satisfies ModularHomeFinishLevelOption,
     compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
@@ -460,7 +587,8 @@ export const MODULAR_HOME_OPTIONS = [
   {
     id: 'option-finish-standard',
     group: 'finish',
-    label: 'Standard',
+    label: 'Standard furnished preview',
+    materialIds: ['interior-plywood', 'bathroom-wet-core'],
     priceDelta: 12000,
     visualToken: 'standard' satisfies ModularHomeFinishLevelOption,
     compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
@@ -469,7 +597,8 @@ export const MODULAR_HOME_OPTIONS = [
   {
     id: 'option-finish-premium',
     group: 'finish',
-    label: 'Premium',
+    label: 'Premium interior preview',
+    materialIds: ['interior-plywood', 'bathroom-wet-core'],
     priceDelta: 24000,
     visualToken: 'premium' satisfies ModularHomeFinishLevelOption,
     compatibleProducts: ['compact-timber-40', 'family-timber-80'],
@@ -479,6 +608,7 @@ export const MODULAR_HOME_OPTIONS = [
     id: 'option-window-package-standard',
     group: 'windowPackage',
     label: 'Standard glazing package',
+    materialIds: [],
     priceDelta: 0,
     visualToken: 'standardWindows',
     compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
@@ -488,6 +618,7 @@ export const MODULAR_HOME_OPTIONS = [
     id: 'option-window-package-panoramic',
     group: 'windowPackage',
     label: 'Panoramic glazing package',
+    materialIds: [],
     priceDelta: 7800,
     visualToken: 'panoramicWindows',
     compatibleProducts: ['compact-timber-40', 'family-timber-80'],
@@ -532,6 +663,69 @@ function getOptionForGroupAndToken(
   ));
 }
 
+function getConfigKeyForOptionGroup(
+  group: ModularHomeOptionGroup,
+): keyof ModularHomeConfiguratorState | null {
+  const keyByGroup = {
+    facade: 'facade',
+    finish: 'finishLevel',
+    roof: 'roof',
+    terrace: 'terrace',
+    windowPackage: null,
+  } as const satisfies Record<ModularHomeOptionGroup, keyof ModularHomeConfiguratorState | null>;
+
+  return keyByGroup[group];
+}
+
+function isOptionCompatibleWithProduct(
+  option: ModularHomeOption,
+  product: ModularHomeProduct,
+): boolean {
+  return (option.compatibleProducts as readonly ModularHomeProductId[]).includes(product.id);
+}
+
+function createConfigWithOption(
+  baseConfig: ModularHomeConfiguratorState,
+  option: ModularHomeOption,
+): ModularHomeConfiguratorState {
+  const key = getConfigKeyForOptionGroup(option.group);
+
+  if (!key) {
+    return baseConfig;
+  }
+
+  return {
+    ...baseConfig,
+    [key]: option.visualToken,
+  } as ModularHomeConfiguratorState;
+}
+
+function createNotAvailableWarning(
+  id: string,
+  message: string,
+  relatedGroups: readonly ModularHomeOptionGroup[],
+): ModularHomeConfigurationWarning {
+  return {
+    id,
+    message,
+    relatedGroups,
+    status: 'notAvailable',
+  };
+}
+
+function createRequiresReviewWarning(
+  id: string,
+  message: string,
+  relatedGroups: readonly ModularHomeOptionGroup[],
+): ModularHomeConfigurationWarning {
+  return {
+    id,
+    message,
+    relatedGroups,
+    status: 'requiresReview',
+  };
+}
+
 function getRequiredOptionModuleIds(config: ModularHomeConfiguratorState): readonly ModularHomeModuleId[] {
   const selectedOptions = [
     getSelectedOptionForGroup(config, 'facade'),
@@ -553,12 +747,85 @@ function getSelectedModuleIdsForConfig(config: ModularHomeConfiguratorState): re
   return [...new Set([...product.baseModuleIds, ...getRequiredOptionModuleIds(config)])];
 }
 
+function getReviewWarningsForCompatibleConfig(
+  config: ModularHomeConfiguratorState,
+  product: ModularHomeProduct,
+): readonly ModularHomeConfigurationWarning[] {
+  const warnings: ModularHomeConfigurationWarning[] = [];
+
+  if (config.finishLevel === 'premium') {
+    warnings.push(createRequiresReviewWarning(
+      'premium-finish-standard-base-review',
+      'Premium finish requires Standard-or-better base package confirmation before final quote.',
+      ['finish'],
+    ));
+  }
+
+  if (config.roof === 'greenRoofPlaceholder') {
+    warnings.push(createRequiresReviewWarning(
+      'green-roof-engineering-review',
+      'Green roof placeholder requires structural load, drainage and maintenance review.',
+      ['roof'],
+    ));
+  }
+
+  if (config.roof === 'greenRoofPlaceholder' && config.terrace === 'extendedTerrace') {
+    warnings.push(createRequiresReviewWarning(
+      'green-roof-extended-terrace-review',
+      'Green roof with extended terrace requires roof-edge, drainage and terrace connection review.',
+      ['roof', 'terrace'],
+    ));
+  }
+
+  if (config.roof === 'greenRoofPlaceholder' && config.facade === 'lightPainted') {
+    warnings.push(createRequiresReviewWarning(
+      'green-roof-light-facade-review',
+      'Light painted facade with green roof requires runoff and staining review.',
+      ['roof', 'facade'],
+    ));
+  }
+
+  if (config.roof === 'greenRoofPlaceholder' && config.facade === 'darkThermoWood') {
+    warnings.push(createRequiresReviewWarning(
+      'green-roof-dark-facade-review',
+      'Dark thermo wood facade with green roof requires ventilation and moisture-detail review.',
+      ['roof', 'facade'],
+    ));
+  }
+
+  if (config.roof === 'flat' && config.terrace === 'extendedTerrace') {
+    warnings.push(createRequiresReviewWarning(
+      'flat-roof-extended-terrace-review',
+      'Flat roof with extended terrace requires connection, snow-load and drainage review.',
+      ['roof', 'terrace'],
+    ));
+  }
+
+  if (product.id === 'sauna-cabin-25' && config.terrace === 'smallTerrace') {
+    warnings.push(createRequiresReviewWarning(
+      'sauna-small-terrace-review',
+      'Sauna Cabin terrace package requires wet-zone drainage and safety review.',
+      ['terrace'],
+    ));
+  }
+
+  return warnings;
+}
+
 function formatMetricLength(value: number): string {
   return `${value.toFixed(1)} m`;
 }
 
 function formatCountLabel(count: number, singular: string, plural: string): string {
   return `${count} ${count === 1 ? singular : plural}`;
+}
+
+function appendUnique(values: string[], nextValues: readonly string[]) {
+  for (const value of nextValues) {
+    if (!values.includes(value)) {
+      values.push(value);
+    }
+  }
 }
 
 export function getModularHomeProduct(id: string): ModularHomeProduct | undefined {
@@ -575,6 +842,54 @@ export function getModularHomeProductForConfig(config: ModularHomeConfiguratorSt
 
 export function getModularHomeProducts(): readonly ModularHomeProduct[] {
   return MODULAR_HOME_PRODUCTS;
+}
+
+export function getModuleInstancesForProduct(id: string): readonly ModularHomeModuleInstance[] {
+  return getModularHomeProduct(id)?.moduleInstances ?? [];
+}
+
+export function getModuleQuantitySummary(id: string): readonly ModularHomeModuleQuantitySummaryItem[] {
+  const summaryByModuleId = new Map<ModularHomeModuleId, {
+    moduleId: ModularHomeModuleId;
+    positionHints: string[];
+    productionGroups: string[];
+    quantity: number;
+    roles: string[];
+  }>();
+
+  for (const instance of getModuleInstancesForProduct(id)) {
+    const existing = summaryByModuleId.get(instance.moduleId) ?? {
+      moduleId: instance.moduleId,
+      positionHints: [],
+      productionGroups: [],
+      quantity: 0,
+      roles: [],
+    };
+
+    existing.quantity += instance.quantity;
+    appendUnique(existing.roles, [instance.role]);
+    appendUnique(existing.positionHints, [instance.positionHint]);
+    appendUnique(existing.productionGroups, [instance.productionGroup]);
+    summaryByModuleId.set(instance.moduleId, existing);
+  }
+
+  return [...summaryByModuleId.values()];
+}
+
+export function getBomModuleSummary(id: string): readonly ModularHomeBomModuleSummaryItem[] {
+  return getModuleQuantitySummary(id).map((item) => {
+    const module = getModuleById(item.moduleId);
+    const unitPrice = module?.price ?? 0;
+
+    return {
+      ...item,
+      module: module ?? null,
+      moduleType: module?.type ?? 'missing',
+      notes: module?.notes ?? 'Module is missing from the modular home library.',
+      totalPrice: unitPrice * item.quantity,
+      unitPrice,
+    };
+  });
 }
 
 export function getModulesForProduct(id: string): readonly ModularHomeModule[] {
@@ -616,6 +931,7 @@ export function getCompatibleOptions(
 export function getModularHomeOptionChoices(
   productId: string,
   optionGroup: ModularHomeOptionGroup,
+  config?: ModularHomeConfiguratorState,
 ): readonly ModularHomeProductOptionChoice[] {
   const product = getModularHomeProduct(productId);
 
@@ -625,19 +941,120 @@ export function getModularHomeOptionChoices(
       if (!product) {
         return {
           ...option,
+          constraintMessage: `Product ${productId} is not available.`,
+          constraintStatus: 'notAvailable',
           disabledReason: `Product ${productId} is not available.`,
           isCompatible: false,
-        };
+        } satisfies ModularHomeProductOptionChoice;
       }
 
-      const isCompatible = (option.compatibleProducts as readonly ModularHomeProductId[]).includes(product.id);
+      const isCompatible = isOptionCompatibleWithProduct(option, product);
+      const disabledReason = isCompatible ? '' : `${option.label} is not available for ${product.name}.`;
+      const nextConfig = config ? createConfigWithOption(config, option) : product.defaultConfig;
+      const reviewWarning = isCompatible
+        ? getReviewWarningsForCompatibleConfig(nextConfig, product).find((warning) => (
+          warning.relatedGroups.includes(option.group)
+        ))
+        : undefined;
+      const constraintStatus: ModularHomeConstraintStatus = isCompatible
+        ? reviewWarning ? 'requiresReview' : 'compatible'
+        : 'notAvailable';
 
       return {
         ...option,
-        disabledReason: isCompatible ? '' : `${option.label} is not available for ${product.name}.`,
+        constraintMessage: disabledReason || reviewWarning?.message || 'Compatible with selected product.',
+        constraintStatus,
+        disabledReason,
         isCompatible,
-      };
+      } satisfies ModularHomeProductOptionChoice;
     });
+}
+
+export function getModularHomeConfigurationWarnings(
+  config: ModularHomeConfiguratorState,
+): readonly ModularHomeConfigurationWarning[] {
+  const product = getProductForConfig(config);
+
+  if (!product) {
+    return [
+      createNotAvailableWarning(
+        'missing-product-template',
+        `No modular home product matches template "${config.template}".`,
+        [],
+      ),
+    ];
+  }
+
+  const warnings: ModularHomeConfigurationWarning[] = [];
+  const selectedGroups = [
+    'facade',
+    'roof',
+    'terrace',
+    'finish',
+  ] as const;
+
+  for (const group of selectedGroups) {
+    const option = getSelectedOptionForGroup(config, group);
+    if (!option) {
+      warnings.push(createNotAvailableWarning(
+        `missing-${group}-option`,
+        `No ${group} option matches selected value.`,
+        [group],
+      ));
+      continue;
+    }
+
+    if (!isOptionCompatibleWithProduct(option, product)) {
+      warnings.push(createNotAvailableWarning(
+        `${option.id}-not-available`,
+        `${option.label} is not compatible with ${product.name}.`,
+        [group],
+      ));
+    }
+  }
+
+  const selectedModuleIds = getSelectedModuleIdsForConfig(config);
+  const selectedModuleIdSet = new Set(selectedModuleIds);
+
+  for (const moduleId of selectedModuleIds) {
+    const module = getModuleById(moduleId);
+
+    if (!module) {
+      warnings.push(createNotAvailableWarning(
+        `${moduleId}-missing-module`,
+        `Module ${moduleId} is missing from the modular home library.`,
+        [],
+      ));
+      continue;
+    }
+
+    if (!(module.compatibleWith as readonly ModularHomeProductId[]).includes(product.id)) {
+      warnings.push(createNotAvailableWarning(
+        `${module.id}-not-compatible`,
+        `Module ${module.id} is not compatible with ${product.name}.`,
+        [],
+      ));
+    }
+
+    for (const dependencyId of module.requiredDependencies) {
+      if (!selectedModuleIdSet.has(dependencyId)) {
+        warnings.push(createNotAvailableWarning(
+          `${module.id}-missing-${dependencyId}`,
+          `Module ${module.id} requires ${dependencyId}.`,
+          [],
+        ));
+      }
+    }
+  }
+
+  if (warnings.some((warning) => warning.status === 'notAvailable')) {
+    return warnings;
+  }
+
+  return [
+    ...warnings,
+    ...getReviewWarningsForCompatibleConfig(config, product),
+  ];
 }
 
 export function getSelectedModularHomeOptions(config: ModularHomeConfiguratorState): readonly ModularHomeOption[] {
@@ -647,6 +1064,21 @@ export function getSelectedModularHomeOptions(config: ModularHomeConfiguratorSta
     getSelectedOptionForGroup(config, 'terrace'),
     getSelectedOptionForGroup(config, 'finish'),
   ].filter((option): option is ModularHomeOption => Boolean(option));
+}
+
+export function getSelectedModularHomeMaterialIds(config: ModularHomeConfiguratorState): readonly ModularHomeMaterialId[] {
+  return [...new Set(getSelectedModularHomeOptions(config).flatMap((option) => option.materialIds))];
+}
+
+export function getSelectedModularHomeMaterials(config: ModularHomeConfiguratorState): readonly ModularHomeSelectedMaterialSummary[] {
+  return getSelectedModularHomeOptions(config).flatMap((option) => (
+    option.materialIds.map((materialId) => ({
+      material: getModularHomeMaterial(materialId) ?? null,
+      materialId,
+      optionGroup: option.group,
+      optionLabel: option.label,
+    }))
+  ));
 }
 
 export function getModularHomeProductConfigSummary(config: ModularHomeConfiguratorState): ModularHomeProductConfigSummary {
@@ -683,55 +1115,9 @@ export function getModularHomeDimensionSummary(config: ModularHomeConfiguratorSt
 }
 
 export function getInvalidConfigReasons(config: ModularHomeConfiguratorState): readonly string[] {
-  const product = getProductForConfig(config);
-
-  if (!product) {
-    return [`No modular home product matches template "${config.template}".`];
-  }
-
-  const reasons: string[] = [];
-  const selectedGroups = [
-    'facade',
-    'roof',
-    'terrace',
-    'finish',
-  ] as const;
-
-  for (const group of selectedGroups) {
-    const option = getSelectedOptionForGroup(config, group);
-    if (!option) {
-      reasons.push(`No ${group} option matches selected value.`);
-      continue;
-    }
-
-    if (!(option.compatibleProducts as readonly ModularHomeProductId[]).includes(product.id)) {
-      reasons.push(`${option.label} is not compatible with ${product.name}.`);
-    }
-  }
-
-  const selectedModuleIds = getSelectedModuleIdsForConfig(config);
-  const selectedModuleIdSet = new Set(selectedModuleIds);
-
-  for (const moduleId of selectedModuleIds) {
-    const module = getModuleById(moduleId);
-
-    if (!module) {
-      reasons.push(`Module ${moduleId} is missing from the modular home library.`);
-      continue;
-    }
-
-    if (!(module.compatibleWith as readonly ModularHomeProductId[]).includes(product.id)) {
-      reasons.push(`Module ${module.id} is not compatible with ${product.name}.`);
-    }
-
-    for (const dependencyId of module.requiredDependencies) {
-      if (!selectedModuleIdSet.has(dependencyId)) {
-        reasons.push(`Module ${module.id} requires ${dependencyId}.`);
-      }
-    }
-  }
-
-  return reasons;
+  return getModularHomeConfigurationWarnings(config)
+    .filter((warning) => warning.status === 'notAvailable')
+    .map((warning) => warning.message);
 }
 
 export function validateHomeConfiguration(config: ModularHomeConfiguratorState): boolean {

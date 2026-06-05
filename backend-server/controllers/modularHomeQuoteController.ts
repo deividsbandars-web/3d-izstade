@@ -4,8 +4,36 @@ import { getSupabase } from '../services/supabase.js';
 export type ModularHomeQuoteSubmissionConfig = {
   enabled: boolean;
   emailHandoffEnabled: boolean;
+  hardeningPlan: ModularHomeQuoteBackendHardeningPlan;
+  productionReady: false;
   requiresExplicitRequestFlag: true;
   storageTable: 'modular_home_quote_requests';
+};
+
+export type ModularHomeQuoteBackendHardeningPlan = {
+  adminAccessRequirements: string[];
+  auditLogRequirements: string[];
+  consent: {
+    required: true;
+    consentVersion: typeof MODULAR_HOME_QUOTE_CONSENT_VERSION;
+    privacyVersion: typeof MODULAR_HOME_QUOTE_PRIVACY_VERSION;
+    text: typeof MODULAR_HOME_QUOTE_BACKEND_CONSENT_TEXT;
+  };
+  emailCrmHandoff: {
+    defaultEnabled: false;
+    plan: string[];
+  };
+  enablementGate: {
+    envFlag: 'MODULAR_HOME_QUOTE_SUBMISSION_ENABLED';
+    requestFlag: 'homeQuoteBackend=1';
+    defaultMode: 'disabled';
+  };
+  rateLimitingPlan: {
+    currentGlobalLimit: string;
+    productionRequirement: string[];
+  };
+  spamPreventionPlan: string[];
+  supabasePolicyNotes: string[];
 };
 
 type ModularHomeQuoteRequestBody = {
@@ -73,10 +101,72 @@ const ALLOWED_PRODUCTS = new Set(['compact-timber-40', 'family-timber-80', 'saun
 const ALLOWED_LAND_OWNED = new Set<ValidModularHomeQuoteRequest['requester']['landOwned']>(['yes', 'no', 'unknown']);
 const ALLOWED_BUDGET_RANGES = new Set(['under-50k', '50k-100k', '100k-150k', '150k-plus', 'not-sure'] as const);
 const ALLOWED_TARGET_BUILD_DATES = new Set(['0-3-months', '3-6-months', '6-12-months', '12-plus-months', 'research-phase'] as const);
+export const MODULAR_HOME_QUOTE_BACKEND_CONSENT_TEXT =
+  'I agree that Warpala/30sek24 may store this Modular Home quote request and contact me for manual follow-up. Estimate is not a final quote.';
+export const MODULAR_HOME_QUOTE_CONSENT_VERSION = 'modular-home-quote-consent-v1';
+export const MODULAR_HOME_QUOTE_PRIVACY_VERSION = 'privacy-v1';
+
 const MAX_MESSAGE_LENGTH = 4000;
 const MAX_TEXT_LENGTH = 600;
 const MAX_LINE_ITEMS = 24;
 const MAX_SCOPE_ITEMS = 16;
+
+export function getModularHomeQuoteBackendHardeningPlan(): ModularHomeQuoteBackendHardeningPlan {
+  return {
+    adminAccessRequirements: [
+      'Quote review must stay behind authenticated admin/sales access.',
+      'Public visitors must never be able to list, export or update quote requests.',
+      'Status changes require actor identity and audit log entry.',
+    ],
+    auditLogRequirements: [
+      'Record disabled-backend attempts without storing PII payloads.',
+      'Record validation failures with error code, request id and coarse source metadata only.',
+      'Record successful insert id, consent version, privacy version and source surface.',
+      'Record email/CRM handoff queue result separately from visitor response.',
+      'Record admin status/export actions with actor id.',
+    ],
+    consent: {
+      consentVersion: MODULAR_HOME_QUOTE_CONSENT_VERSION,
+      privacyVersion: MODULAR_HOME_QUOTE_PRIVACY_VERSION,
+      required: true,
+      text: MODULAR_HOME_QUOTE_BACKEND_CONSENT_TEXT,
+    },
+    emailCrmHandoff: {
+      defaultEnabled: false,
+      plan: [
+        'Keep email/CRM handoff disabled unless MODULAR_HOME_QUOTE_EMAIL_HANDOFF_ENABLED=true.',
+        'Queue email/CRM handoff after Supabase insert; do not block quote response on email provider.',
+        'Use idempotency by quote id before sending duplicate notifications.',
+      ],
+    },
+    enablementGate: {
+      defaultMode: 'disabled',
+      envFlag: 'MODULAR_HOME_QUOTE_SUBMISSION_ENABLED',
+      requestFlag: 'homeQuoteBackend=1',
+    },
+    rateLimitingPlan: {
+      currentGlobalLimit: 'Existing API middleware applies an in-memory 60 requests/minute per IP limit.',
+      productionRequirement: [
+        'Add route-specific distributed limit before enabling production: e.g. 5 quote submissions / 10 minutes / IP.',
+        'Add duplicate guard by normalized email + product/config hash.',
+        'Store counters in Redis or Supabase, not process memory, for multi-instance deployments.',
+      ],
+    },
+    spamPreventionPlan: [
+      'Keep strict server-side length limits and enum validation.',
+      'Add honeypot/timing field or Turnstile before public promotion.',
+      'Reject obvious automated submissions before Supabase insert.',
+      'Never trust frontend consent or estimate fields without server validation.',
+    ],
+    supabasePolicyNotes: [
+      'Storage table: modular_home_quote_requests.',
+      'Anon/client keys must not have SELECT/UPDATE/DELETE access.',
+      'Inserts should happen only from trusted backend service role while endpoint is gated.',
+      'Future admin viewer needs protected API, RLS policy review and export audit logging.',
+      'File uploads are out of scope; no storage bucket should be enabled for this route yet.',
+    ],
+  };
+}
 
 function asRecord(value: unknown): Record<string, unknown> | null {
   return value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : null;
@@ -137,6 +227,15 @@ function normalizeIsoDate(value: unknown, code: string): string {
   return date.toISOString();
 }
 
+function normalizeExpectedValue(value: unknown, expected: string, code: string, maxLength = MAX_TEXT_LENGTH): string {
+  const normalized = normalizeRequiredText(value, code, maxLength);
+  if (normalized !== expected) {
+    throw new Error(code);
+  }
+
+  return normalized;
+}
+
 function normalizeLineItems(value: unknown): Array<{ amount: number; label: string }> {
   if (!Array.isArray(value)) {
     return [];
@@ -185,6 +284,8 @@ export function getModularHomeQuoteSubmissionConfig(): ModularHomeQuoteSubmissio
   return {
     emailHandoffEnabled: process.env.MODULAR_HOME_QUOTE_EMAIL_HANDOFF_ENABLED === 'true',
     enabled: process.env.MODULAR_HOME_QUOTE_SUBMISSION_ENABLED === 'true',
+    hardeningPlan: getModularHomeQuoteBackendHardeningPlan(),
+    productionReady: false,
     requiresExplicitRequestFlag: true,
     storageTable: 'modular_home_quote_requests',
   };
@@ -249,9 +350,24 @@ export function validateModularHomeQuoteRequest(body: ModularHomeQuoteRequestBod
     consent: {
       accepted: true,
       acceptedAt: normalizeIsoDate(consent.acceptedAt, 'MODULAR_HOME_QUOTE_CONSENT_DATE_INVALID'),
-      consentText: normalizeRequiredText(consent.consentText, 'MODULAR_HOME_QUOTE_CONSENT_TEXT_REQUIRED', 1000),
-      consentVersion: normalizeRequiredText(consent.consentVersion, 'MODULAR_HOME_QUOTE_CONSENT_VERSION_REQUIRED', 80),
-      privacyVersion: normalizeRequiredText(consent.privacyVersion, 'MODULAR_HOME_QUOTE_PRIVACY_VERSION_REQUIRED', 80),
+      consentText: normalizeExpectedValue(
+        consent.consentText,
+        MODULAR_HOME_QUOTE_BACKEND_CONSENT_TEXT,
+        'MODULAR_HOME_QUOTE_CONSENT_TEXT_INVALID',
+        1000,
+      ),
+      consentVersion: normalizeExpectedValue(
+        consent.consentVersion,
+        MODULAR_HOME_QUOTE_CONSENT_VERSION,
+        'MODULAR_HOME_QUOTE_CONSENT_VERSION_INVALID',
+        80,
+      ),
+      privacyVersion: normalizeExpectedValue(
+        consent.privacyVersion,
+        MODULAR_HOME_QUOTE_PRIVACY_VERSION,
+        'MODULAR_HOME_QUOTE_PRIVACY_VERSION_INVALID',
+        80,
+      ),
     },
     estimate: {
       currency: 'EUR',

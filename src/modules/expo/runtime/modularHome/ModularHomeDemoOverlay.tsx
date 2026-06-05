@@ -8,12 +8,15 @@ import { getModularHomeTemplate, type ModularHomeTemplateId } from './modularHom
 import { calculateModularHomeEstimate, formatHomeEstimateEur } from './modularHomeEstimate';
 import {
   getDefaultHomeConfig,
+  getBomModuleSummary,
   getInvalidConfigReasons,
+  getModularHomeConfigurationWarnings,
   getModularHomeDimensionSummary,
   getModularHomeOptionChoices,
   getModularHomeProductConfigSummary,
   getModularHomeProductForTemplate,
   getModularHomeProducts,
+  type ModularHomeConstraintStatus,
   type ModularHomeOptionGroup,
   type ModularHomeProduct,
 } from './modularHomeProducts';
@@ -37,6 +40,8 @@ const HOME_DEMO_BULLETS = [
 
 // TODO: split this dense preview HUD into tabs: Overview, Configure, Estimate, Quote, Summary, Projects and Upload.
 type HomeConfigUiOption<Key extends keyof ModularHomeConfiguratorState = keyof ModularHomeConfiguratorState> = {
+  constraintMessage: string;
+  constraintStatus: ModularHomeConstraintStatus;
   disabledReason: string;
   isDisabled: boolean;
   key: ModularHomeConfiguratorState[Key];
@@ -49,6 +54,34 @@ type HomeConfigUiGroup<Key extends keyof ModularHomeConfiguratorState = keyof Mo
   label: string;
   options: readonly HomeConfigUiOption<Key>[];
 };
+
+const HOME_CONSTRAINT_STATUS_LABELS = {
+  compatible: 'Compatible',
+  notAvailable: 'Not available',
+  requiresReview: 'Requires review',
+} as const satisfies Record<ModularHomeConstraintStatus, string>;
+
+const HOME_CONSTRAINT_STATUS_STYLES = {
+  compatible: {
+    background: 'rgba(34, 197, 94, 0.12)',
+    border: '1px solid rgba(34, 197, 94, 0.24)',
+    color: '#bbf7d0',
+  },
+  notAvailable: {
+    background: 'rgba(100, 116, 139, 0.12)',
+    border: '1px solid rgba(148, 163, 184, 0.2)',
+    color: '#94a3b8',
+  },
+  requiresReview: {
+    background: 'rgba(251, 191, 36, 0.12)',
+    border: '1px solid rgba(251, 191, 36, 0.26)',
+    color: '#fde68a',
+  },
+} as const satisfies Record<ModularHomeConstraintStatus, {
+  background: string;
+  border: string;
+  color: string;
+}>;
 
 function setConfiguratorOption(
   setOption: ReturnType<typeof useModularHomeConfigurator>['setOption'],
@@ -68,6 +101,7 @@ function formatOptionPriceDelta(amount: number): string {
 
 function createOptionGroup<Key extends keyof ModularHomeConfiguratorState>(
   product: ModularHomeProduct,
+  config: ModularHomeConfiguratorState,
   key: Key,
   label: string,
   optionGroup: ModularHomeOptionGroup,
@@ -75,7 +109,9 @@ function createOptionGroup<Key extends keyof ModularHomeConfiguratorState>(
   return {
     key,
     label,
-    options: getModularHomeOptionChoices(product.id, optionGroup).map((option) => ({
+    options: getModularHomeOptionChoices(product.id, optionGroup, config).map((option) => ({
+      constraintMessage: option.constraintMessage,
+      constraintStatus: option.constraintStatus,
       disabledReason: option.disabledReason,
       isDisabled: !option.isCompatible,
       key: option.visualToken as ModularHomeConfiguratorState[Key],
@@ -85,8 +121,13 @@ function createOptionGroup<Key extends keyof ModularHomeConfiguratorState>(
   };
 }
 
-function createConfiguratorGroups(product: ModularHomeProduct): readonly HomeConfigUiGroup[] {
+function createConfiguratorGroups(
+  product: ModularHomeProduct,
+  config: ModularHomeConfiguratorState,
+): readonly HomeConfigUiGroup[] {
   const templateOptions = getModularHomeProducts().map((item) => ({
+    constraintMessage: 'Compatible with Modular Home preview.',
+    constraintStatus: 'compatible',
     disabledReason: '',
     isDisabled: false,
     key: item.defaultTemplateId,
@@ -96,10 +137,10 @@ function createConfiguratorGroups(product: ModularHomeProduct): readonly HomeCon
 
   return [
     { key: 'template', label: 'Home product', options: templateOptions },
-    createOptionGroup(product, 'facade', 'Facade', 'facade'),
-    createOptionGroup(product, 'roof', 'Roof', 'roof'),
-    createOptionGroup(product, 'terrace', 'Terrace', 'terrace'),
-    createOptionGroup(product, 'finishLevel', 'Finish level', 'finish'),
+    createOptionGroup(product, config, 'facade', 'Facade', 'facade'),
+    createOptionGroup(product, config, 'roof', 'Roof', 'roof'),
+    createOptionGroup(product, config, 'terrace', 'Terrace', 'terrace'),
+    createOptionGroup(product, config, 'finishLevel', 'Finish level', 'finish'),
   ];
 }
 
@@ -115,9 +156,13 @@ export function ModularHomeDemoOverlay({ isTouchDevice = false }: ModularHomeDem
   const template = getModularHomeTemplate(config.template);
   const configSummary = getModularHomeProductConfigSummary(config);
   const dimensionSummary = getModularHomeDimensionSummary(config);
-  const configuratorGroups = createConfiguratorGroups(product);
+  const configuratorGroups = createConfiguratorGroups(product, config);
   const estimate = calculateModularHomeEstimate(config);
+  const bomSummary = getBomModuleSummary(product.id);
+  const bomModuleCount = bomSummary.reduce((total, item) => total + item.quantity, 0);
   const invalidConfigReasons = getInvalidConfigReasons(config);
+  const reviewConfigWarnings = getModularHomeConfigurationWarnings(config)
+    .filter((warning) => warning.status === 'requiresReview');
   const dimensionRows = [
     ['floor-area', 'Floor area', dimensionSummary.floorAreaLabel],
     ['footprint', 'Footprint', dimensionSummary.footprintLabel],
@@ -125,6 +170,12 @@ export function ModularHomeDemoOverlay({ isTouchDevice = false }: ModularHomeDem
     ['module-count', 'Modules', dimensionSummary.moduleCountLabel],
     ['transport-modules', 'Transport', dimensionSummary.transportModuleCountLabel],
     ['build-category', 'Build note', dimensionSummary.buildCategoryNote],
+  ] as const;
+  const bomPackageRows = [
+    ['Facade package', estimate.selectedOptions.facade],
+    ['Roof package', estimate.selectedOptions.roof],
+    ['Terrace package', estimate.selectedOptions.terrace],
+    ['Finish package', estimate.selectedOptions.finishLevel],
   ] as const;
 
   useEffect(() => {
@@ -474,6 +525,8 @@ export function ModularHomeDemoOverlay({ isTouchDevice = false }: ModularHomeDem
                 {group.options.map((option) => {
                   const selected = config[group.key] === option.key;
                   const isDisabled = option.isDisabled;
+                  const statusStyle = HOME_CONSTRAINT_STATUS_STYLES[option.constraintStatus];
+                  const statusLabel = HOME_CONSTRAINT_STATUS_LABELS[option.constraintStatus];
 
                   return (
                     <button
@@ -482,11 +535,13 @@ export function ModularHomeDemoOverlay({ isTouchDevice = false }: ModularHomeDem
                       aria-disabled={isDisabled}
                       aria-pressed={selected}
                       data-home-config-option={`${group.key}:${option.key}`}
+                      data-home-config-constraint-message={option.constraintMessage}
+                      data-home-config-constraint-status={option.constraintStatus}
                       data-home-config-disabled={isDisabled ? 'true' : 'false'}
                       data-home-config-disabled-reason={option.disabledReason}
                       data-home-config-selected={selected ? 'true' : 'false'}
                       disabled={isDisabled}
-                      title={option.disabledReason || option.label}
+                      title={option.constraintMessage || option.label}
                       onClick={(event) => {
                         event.stopPropagation();
                         if (isDisabled) {
@@ -509,16 +564,34 @@ export function ModularHomeDemoOverlay({ isTouchDevice = false }: ModularHomeDem
                         borderRadius: '999px',
                         color: isDisabled ? '#64748b' : selected ? '#fff7ed' : '#cbd5e1',
                         cursor: isDisabled ? 'not-allowed' : 'pointer',
+                        display: 'inline-grid',
                         font: 'inherit',
                         fontSize: isTouchDevice ? '0.58rem' : '0.61rem',
                         fontWeight: selected ? 950 : 850,
-                        lineHeight: 1,
+                        gap: '4px',
+                        justifyItems: 'start',
+                        lineHeight: 1.05,
                         opacity: isDisabled ? 0.52 : 1,
                         padding: isTouchDevice ? '7px 8px' : '7px 9px',
-                        whiteSpace: 'nowrap',
+                        whiteSpace: 'normal',
                       }}
                     >
-                      {option.label}{formatOptionPriceDelta(option.priceDelta)}
+                      <span>{option.label}{formatOptionPriceDelta(option.priceDelta)}</span>
+                      <span
+                        data-home-config-constraint-label={`${group.key}:${option.key}:${option.constraintStatus}`}
+                        style={{
+                          ...statusStyle,
+                          borderRadius: '999px',
+                          fontSize: isTouchDevice ? '0.44rem' : '0.47rem',
+                          fontWeight: 950,
+                          letterSpacing: '0.08em',
+                          lineHeight: 1,
+                          padding: '3px 5px',
+                          textTransform: 'uppercase',
+                        }}
+                      >
+                        {statusLabel}
+                      </span>
                     </button>
                   );
                 })}
@@ -535,6 +608,20 @@ export function ModularHomeDemoOverlay({ isTouchDevice = false }: ModularHomeDem
                   }}
                 >
                   Muted options are unavailable for {product.name}.
+                </div>
+              ) : null}
+              {group.options.some((option) => option.constraintStatus === 'requiresReview') ? (
+                <div
+                  data-home-config-review-note={group.key}
+                  style={{
+                    color: '#fde68a',
+                    fontSize: isTouchDevice ? '0.54rem' : '0.58rem',
+                    fontWeight: 760,
+                    lineHeight: 1.3,
+                    marginTop: '5px',
+                  }}
+                >
+                  Review-marked options need production confirmation before final quote.
                 </div>
               ) : null}
             </div>
@@ -575,6 +662,31 @@ export function ModularHomeDemoOverlay({ isTouchDevice = false }: ModularHomeDem
           >
             {invalidConfigReasons.map((reason) => (
               <span key={reason}>{reason}</span>
+            ))}
+          </div>
+        ) : null}
+        {reviewConfigWarnings.length > 0 ? (
+          <div
+            data-home-config-validation="requires-review"
+            style={{
+              background: 'rgba(120, 53, 15, 0.24)',
+              border: '1px solid rgba(251, 191, 36, 0.28)',
+              borderRadius: '12px',
+              color: '#fde68a',
+              display: 'grid',
+              gap: '4px',
+              fontSize: isTouchDevice ? '0.56rem' : '0.6rem',
+              fontWeight: 800,
+              lineHeight: 1.3,
+              marginTop: isTouchDevice ? '8px' : '9px',
+              padding: isTouchDevice ? '7px 8px' : '8px 9px',
+            }}
+          >
+            <span style={{ color: '#fef3c7', fontWeight: 950 }}>Requires review before production quote:</span>
+            {reviewConfigWarnings.map((warning) => (
+              <span key={warning.id} data-home-config-review-warning={warning.id}>
+                {warning.message}
+              </span>
             ))}
           </div>
         ) : null}
@@ -661,6 +773,103 @@ export function ModularHomeDemoOverlay({ isTouchDevice = false }: ModularHomeDem
               <div style={{ color: '#e0f2fe', fontSize: isTouchDevice ? '0.58rem' : '0.62rem', fontWeight: 850, marginTop: '3px' }}>{value}</div>
             </div>
           ))}
+        </div>
+
+        <div
+          aria-label="Module package summary"
+          data-home-estimate-bom-summary="true"
+          data-home-estimate-bom-module-count={bomModuleCount}
+          style={{
+            background: 'rgba(15, 23, 42, 0.44)',
+            border: '1px solid rgba(125, 211, 252, 0.18)',
+            borderRadius: '13px',
+            display: 'grid',
+            gap: '7px',
+            marginTop: isTouchDevice ? '9px' : '10px',
+            padding: isTouchDevice ? '8px' : '10px',
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', gap: '8px', alignItems: 'start' }}>
+            <div style={{ color: '#7dd3fc', fontSize: '0.56rem', fontWeight: 950, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+              Module package summary
+            </div>
+            <div
+              data-home-estimate-bom-status="true"
+              style={{
+                background: 'rgba(251, 191, 36, 0.1)',
+                border: '1px solid rgba(251, 191, 36, 0.2)',
+                borderRadius: '999px',
+                color: '#fde68a',
+                fontSize: isTouchDevice ? '0.48rem' : '0.5rem',
+                fontWeight: 950,
+                lineHeight: 1,
+                padding: '5px 7px',
+                textTransform: 'uppercase',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {'Preview BOM \u00b7 verify'}
+            </div>
+          </div>
+
+          <div
+            data-home-estimate-bom-note="true"
+            style={{
+              color: '#bfdbfe',
+              fontSize: isTouchDevice ? '0.56rem' : '0.6rem',
+              fontWeight: 800,
+              lineHeight: 1.28,
+            }}
+          >
+            {'Preview BOM \u00b7 production verification required'}
+          </div>
+
+          <div style={{ display: 'grid', gap: '5px' }}>
+            {bomSummary.map((item) => (
+              <div
+                key={item.moduleId}
+                data-home-estimate-bom-item={`${item.moduleId}:${item.moduleType}:${item.quantity}:${item.totalPrice}`}
+                style={{
+                  alignItems: 'start',
+                  display: 'grid',
+                  gap: '8px',
+                  gridTemplateColumns: '1fr auto',
+                }}
+              >
+                <span style={{ color: '#dbeafe', fontSize: isTouchDevice ? '0.58rem' : '0.62rem', fontWeight: 820, lineHeight: 1.28 }}>
+                  {item.roles.join(', ')} <span style={{ color: '#93c5fd' }}>({item.moduleType})</span> x{item.quantity}
+                </span>
+                <span style={{ color: '#fef3c7', fontSize: isTouchDevice ? '0.58rem' : '0.62rem', fontWeight: 950 }}>
+                  {formatHomeEstimateEur(item.totalPrice)}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          <div
+            style={{
+              borderTop: '1px solid rgba(125, 211, 252, 0.14)',
+              display: 'grid',
+              gap: '5px',
+              paddingTop: '7px',
+            }}
+          >
+            {bomPackageRows.map(([label, value]) => (
+              <div
+                key={label}
+                data-home-estimate-bom-package={`${label}:${value}`}
+                style={{
+                  alignItems: 'center',
+                  display: 'grid',
+                  gap: '8px',
+                  gridTemplateColumns: '1fr auto',
+                }}
+              >
+                <span style={{ color: '#bfdbfe', fontSize: isTouchDevice ? '0.56rem' : '0.6rem', fontWeight: 820 }}>{label}</span>
+                <span style={{ color: '#e0f2fe', fontSize: isTouchDevice ? '0.56rem' : '0.6rem', fontWeight: 920 }}>{value}</span>
+              </div>
+            ))}
+          </div>
         </div>
 
         <div

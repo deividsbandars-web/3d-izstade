@@ -1,7 +1,13 @@
 import { useMemo, useState } from 'react';
 import type { ModularHomeConfiguratorState } from './modularHomeConfigurator';
 import { formatHomeEstimateEur, type ModularHomeEstimate, type ModularHomeEstimateLineItem } from './modularHomeEstimate';
-import { getModularHomeDimensionSummary, type ModularHomeDimensionSummary } from './modularHomeProducts';
+import {
+  getBomModuleSummary,
+  getModularHomeDimensionSummary,
+  getModularHomeProductForTemplate,
+  type ModularHomeBomModuleSummaryItem,
+  type ModularHomeDimensionSummary,
+} from './modularHomeProducts';
 import { MODULAR_HOME_QUOTE_PREVIEW_QUEUE_KEY } from './ModularHomeQuoteForm';
 
 type ModularHomeProjectSummaryProps = {
@@ -209,6 +215,8 @@ function createSummaryText(
   estimate: ModularHomeEstimate,
   dimensions: ModularHomeDimensionSummary,
   quoteQueue: QuoteQueueSummary,
+  bomSummary: readonly ModularHomeBomModuleSummaryItem[],
+  bomModuleCount: number,
 ) {
   const scopeLines = estimate.scopeOfSupply.flatMap((section) => [
     `${section.label}:`,
@@ -235,6 +243,16 @@ function createSummaryText(
     `Roof: ${estimate.selectedOptions.roof}`,
     `Terrace: ${estimate.selectedOptions.terrace}`,
     `Finish level: ${estimate.selectedOptions.finishLevel}`,
+    'Module package summary:',
+    `- Preview BOM ${MIDDLE_DOT} production verification required`,
+    `- Module count: ${bomModuleCount}`,
+    ...bomSummary.map((item) => (
+      `- ${item.roles.join(', ')} (${item.moduleType}) x${item.quantity}: ${formatHomeEstimateEur(item.totalPrice)}`
+    )),
+    `- Facade package: ${estimate.selectedOptions.facade}`,
+    `- Roof package: ${estimate.selectedOptions.roof}`,
+    `- Terrace package: ${estimate.selectedOptions.terrace}`,
+    `- Finish package: ${estimate.selectedOptions.finishLevel}`,
     'Line-item estimate:',
     ...lineItemLines,
     `Subtotal before site services: ${formatHomeEstimateEur(estimate.subtotal)}`,
@@ -259,10 +277,25 @@ export function ModularHomeProjectSummary({ config, estimate, isTouchDevice = fa
   const [copyStatus, setCopyStatus] = useState('');
   const [quoteQueue] = useState(readQuoteQueueSummary);
   const dimensions = useMemo(() => getModularHomeDimensionSummary(config), [config]);
-  const summaryText = useMemo(
-    () => createSummaryText(identity, estimate, dimensions, quoteQueue),
-    [estimate, identity, dimensions, quoteQueue],
+  const bomSummary = useMemo(() => {
+    const product = getModularHomeProductForTemplate(config.template);
+
+    return product ? getBomModuleSummary(product.id) : [];
+  }, [config.template]);
+  const bomModuleCount = useMemo(
+    () => bomSummary.reduce((total, item) => total + item.quantity, 0),
+    [bomSummary],
   );
+  const summaryText = useMemo(
+    () => createSummaryText(identity, estimate, dimensions, quoteQueue, bomSummary, bomModuleCount),
+    [estimate, identity, dimensions, quoteQueue, bomSummary, bomModuleCount],
+  );
+  const bomPackageRows = [
+    ['Facade package', estimate.selectedOptions.facade],
+    ['Roof package', estimate.selectedOptions.roof],
+    ['Terrace package', estimate.selectedOptions.terrace],
+    ['Finish package', estimate.selectedOptions.finishLevel],
+  ] as const;
   const summaryRows = [
     ['Model', estimate.baseModel],
     ['Floor area', dimensions.floorAreaLabel],
@@ -469,6 +502,104 @@ export function ModularHomeProjectSummary({ config, estimate, isTouchDevice = fa
             <div style={{ color: '#e0f2fe', fontSize: isTouchDevice ? '0.58rem' : '0.62rem', fontWeight: 860, marginTop: '3px' }}>{value}</div>
           </div>
         ))}
+      </div>
+
+      <div
+        aria-label="Project summary module package summary"
+        data-home-project-summary-bom="true"
+        data-home-project-summary-bom-module-count={bomModuleCount}
+        data-home-project-summary-print-card="true"
+        style={{
+          background: 'rgba(15, 23, 42, 0.44)',
+          border: '1px solid rgba(125, 211, 252, 0.18)',
+          borderRadius: '13px',
+          display: 'grid',
+          gap: '7px',
+          marginTop: isTouchDevice ? '9px' : '10px',
+          padding: isTouchDevice ? '8px' : '10px',
+        }}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', gap: '8px', alignItems: 'start' }}>
+          <div style={{ color: '#7dd3fc', fontSize: '0.56rem', fontWeight: 950, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+            Module package summary
+          </div>
+          <div
+            data-home-project-summary-bom-status="true"
+            style={{
+              background: 'rgba(251, 191, 36, 0.1)',
+              border: '1px solid rgba(251, 191, 36, 0.2)',
+              borderRadius: '999px',
+              color: '#fde68a',
+              fontSize: isTouchDevice ? '0.48rem' : '0.5rem',
+              fontWeight: 950,
+              lineHeight: 1,
+              padding: '5px 7px',
+              textTransform: 'uppercase',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {'Preview BOM \u00b7 verify'}
+          </div>
+        </div>
+
+        <div
+          data-home-project-summary-bom-note="true"
+          style={{
+            color: '#bae6fd',
+            fontSize: isTouchDevice ? '0.56rem' : '0.6rem',
+            fontWeight: 800,
+            lineHeight: 1.28,
+          }}
+        >
+          {'Preview BOM \u00b7 production verification required'}
+        </div>
+
+        <div style={{ display: 'grid', gap: '5px' }}>
+          {bomSummary.map((item) => (
+            <div
+              key={item.moduleId}
+              data-home-project-summary-bom-item={`${item.moduleId}:${item.moduleType}:${item.quantity}:${item.totalPrice}`}
+              style={{
+                alignItems: 'start',
+                display: 'grid',
+                gap: '8px',
+                gridTemplateColumns: '1fr auto',
+              }}
+            >
+              <span style={{ color: '#e0f2fe', fontSize: isTouchDevice ? '0.58rem' : '0.62rem', fontWeight: 820, lineHeight: 1.28 }}>
+                {item.roles.join(', ')} <span style={{ color: '#7dd3fc' }}>({item.moduleType})</span> x{item.quantity}
+              </span>
+              <span style={{ color: '#fef3c7', fontSize: isTouchDevice ? '0.58rem' : '0.62rem', fontWeight: 950 }}>
+                {formatHomeEstimateEur(item.totalPrice)}
+              </span>
+            </div>
+          ))}
+        </div>
+
+        <div
+          style={{
+            borderTop: '1px solid rgba(125, 211, 252, 0.14)',
+            display: 'grid',
+            gap: '5px',
+            paddingTop: '7px',
+          }}
+        >
+          {bomPackageRows.map(([label, value]) => (
+            <div
+              key={label}
+              data-home-project-summary-bom-package={`${label}:${value}`}
+              style={{
+                alignItems: 'center',
+                display: 'grid',
+                gap: '8px',
+                gridTemplateColumns: '1fr auto',
+              }}
+            >
+              <span style={{ color: '#bae6fd', fontSize: isTouchDevice ? '0.56rem' : '0.6rem', fontWeight: 820 }}>{label}</span>
+              <span style={{ color: '#e0f2fe', fontSize: isTouchDevice ? '0.56rem' : '0.6rem', fontWeight: 920 }}>{value}</span>
+            </div>
+          ))}
+        </div>
       </div>
 
       <div
