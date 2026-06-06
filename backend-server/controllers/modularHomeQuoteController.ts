@@ -563,7 +563,7 @@ export function validateModularHomeQuoteRequest(body: ModularHomeQuoteRequestBod
 export async function insertModularHomeQuoteRequest(
   payload: ValidModularHomeQuoteRequest,
   submissionConfig = getModularHomeQuoteSubmissionConfig(),
-  storage: ModularHomeQuoteStorageClient = getSupabase() as ModularHomeQuoteStorageClient,
+  storage: ModularHomeQuoteStorageClient = getSupabase() as unknown as ModularHomeQuoteStorageClient,
 ): Promise<string | null> {
   const { data, error } = await storage
     .from(submissionConfig.storageTable)
