@@ -1,4 +1,4 @@
-export type ModularHomeQuoteReviewSource = 'local-preview' | 'mock-review';
+export type ModularHomeQuoteReviewSource = 'backend-staging' | 'local-preview' | 'mock-review';
 export type ModularHomeQuoteReviewStatus = 'preview-local-only' | 'mock-review' | 'new' | 'contacted' | 'qualified' | 'closed';
 
 export type ModularHomeQuoteReviewRow = {
@@ -30,6 +30,7 @@ export type ModularHomeQuoteReviewRow = {
 };
 
 export type ModularHomeQuoteReviewSummary = {
+  backendCount: number;
   localCount: number;
   mockCount: number;
   totalCount: number;
@@ -72,7 +73,7 @@ const MOCK_QUOTE_ROWS = [
       facade: 'Dark thermo wood',
       finishLevel: 'Standard',
       roof: 'Flat',
-      terrace: 'Small terrace',
+      terrace: 'Front deck',
     },
     contact: {
       countryCity: 'Estonia / Parnu',
@@ -179,6 +180,47 @@ export function normalizeModularHomeQuoteReviewRow(
   };
 }
 
+export function normalizeModularHomeQuoteAdminRow(value: unknown): ModularHomeQuoteReviewRow | null {
+  const record = asRecord(value);
+  if (!record) {
+    return null;
+  }
+
+  const requester = asRecord(record.requester) ?? {};
+  const project = asRecord(record.project) ?? {};
+  const config = asRecord(record.config) ?? {};
+  const estimate = asRecord(record.estimate) ?? {};
+  const estimatedTotal = normalizeNumber(estimate.estimatedTotal);
+
+  return {
+    budgetRange: normalizeText(requester.budgetRange, 'not-sure'),
+    config: {
+      facade: normalizeText(config.facade, 'Unknown facade'),
+      finishLevel: normalizeText(config.finishLevel, 'Unknown finish'),
+      roof: normalizeText(config.roof, 'Unknown roof'),
+      terrace: normalizeText(config.terrace, 'Unknown terrace'),
+    },
+    contact: {
+      countryCity: normalizeText(requester.countryCity, 'Location not provided'),
+      email: normalizeText(requester.email, 'No email'),
+      name: normalizeText(requester.name, 'No name'),
+      phone: normalizeText(requester.phone, 'No phone'),
+    },
+    createdAt: normalizeText(record.created_at, new Date(0).toISOString()),
+    estimate: {
+      label: formatFallbackEstimate(estimatedTotal),
+      total: estimatedTotal,
+    },
+    id: normalizeText(record.id, `quote-backend-${Date.now()}`),
+    landOwned: normalizeText(requester.landOwned, 'unknown'),
+    message: normalizeText(requester.message, 'No message provided.'),
+    model: normalizeText(project.modelName, 'Modular Home'),
+    source: 'backend-staging',
+    status: normalizeStatus(record.status, 'new'),
+    targetBuildDate: normalizeText(requester.targetBuildDate, 'not-sure'),
+  };
+}
+
 export function getMockModularHomeQuoteReviewRows(): ModularHomeQuoteReviewRow[] {
   return [...MOCK_QUOTE_ROWS];
 }
@@ -204,6 +246,7 @@ export function readLocalModularHomeQuoteReviewRows(storage?: Storage): ModularH
 
 export function getModularHomeQuoteReviewSummary(rows: readonly ModularHomeQuoteReviewRow[]): ModularHomeQuoteReviewSummary {
   return {
+    backendCount: rows.filter((row) => row.source === 'backend-staging').length,
     localCount: rows.filter((row) => row.source === 'local-preview').length,
     mockCount: rows.filter((row) => row.source === 'mock-review').length,
     totalCount: rows.length,

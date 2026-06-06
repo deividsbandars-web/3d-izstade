@@ -1,11 +1,14 @@
 import { useMemo, useState } from 'react';
 import type { ModularHomeConfiguratorState } from './modularHomeConfigurator';
-import { formatHomeEstimateEur, type ModularHomeEstimate, type ModularHomeEstimateLineItem } from './modularHomeEstimate';
 import {
-  getBomModuleSummary,
+  calculateComponentBom,
+  type ModularHomeComponentBom,
+  type ModularHomeComponentCategory,
+  type ModularHomeComponentUnit,
+} from './modularHomeComponents';
+import { formatHomeEstimateEur, type ModularHomeEstimate } from './modularHomeEstimate';
+import {
   getModularHomeDimensionSummary,
-  getModularHomeProductForTemplate,
-  type ModularHomeBomModuleSummaryItem,
   type ModularHomeDimensionSummary,
 } from './modularHomeProducts';
 import { MODULAR_HOME_QUOTE_PREVIEW_QUEUE_KEY } from './ModularHomeQuoteForm';
@@ -133,6 +136,37 @@ const PRINT_STYLE = `
 const MIDDLE_DOT = String.fromCharCode(183);
 const SQUARED_TWO = String.fromCharCode(178);
 
+const COMPONENT_BOM_CATEGORY_LABELS = {
+  wallPanel: 'Wall panels',
+  floorCassette: 'Floor cassettes',
+  roofCassette: 'Roof cassettes',
+  facadeBoarding: 'Facade boarding',
+  windowUnit: 'Window units',
+  doorUnit: 'Door units',
+  bathroomCore: 'Bathroom cores',
+  kitchenLine: 'Kitchen lines',
+  terraceDeck: 'Terrace decks',
+  foundationPad: 'Foundation pads',
+  interiorFinish: 'Interior finishes',
+  furniturePackage: 'Furniture packages',
+} as const satisfies Record<ModularHomeComponentCategory, string>;
+
+function formatComponentBomUnit(unit: ModularHomeComponentUnit | 'mixed'): string {
+  if (unit === 'm2') {
+    return `m${SQUARED_TWO}`;
+  }
+
+  if (unit === 'linearM') {
+    return 'linear m';
+  }
+
+  return unit;
+}
+
+function formatQuantityM2(value: number): string {
+  return `${value.toLocaleString('en-IE', { maximumFractionDigits: 2 })} m${SQUARED_TWO}`;
+}
+
 function createProjectIdentity(): ProjectIdentity {
   const generatedAt = new Date();
 
@@ -171,8 +205,12 @@ function normalizeSizeLabel(sizeLabel: string) {
     .replace(/m.{1,2}$/u, `m${SQUARED_TWO}`);
 }
 
-function formatLineItemAmount(item: ModularHomeEstimateLineItem): string {
-  return item.amount === 0 ? 'Included' : formatHomeEstimateEur(item.amount);
+function formatEstimateAmount(amount: number | null): string {
+  if (amount === null) {
+    return 'Requires review';
+  }
+
+  return amount === 0 ? 'Included' : formatHomeEstimateEur(amount);
 }
 
 function normalizeEstimateDisclaimer(disclaimer: string): string {
@@ -215,23 +253,29 @@ function createSummaryText(
   estimate: ModularHomeEstimate,
   dimensions: ModularHomeDimensionSummary,
   quoteQueue: QuoteQueueSummary,
-  bomSummary: readonly ModularHomeBomModuleSummaryItem[],
-  bomModuleCount: number,
+  componentBom: ModularHomeComponentBom,
 ) {
   const scopeLines = estimate.scopeOfSupply.flatMap((section) => [
     `${section.label}:`,
     ...section.items.map((item) => `- ${item}`),
   ]);
-  const lineItemLines = [
-    ...estimate.lineItems.map((item) => `- ${item.label}: ${formatLineItemAmount(item)}`),
-    ...estimate.optionalServices.map((item) => `- ${item.label}: ${formatHomeEstimateEur(item.amount)}`),
-    `- ${estimate.vatEstimate.label}: ${formatHomeEstimateEur(estimate.vatEstimate.amount)}`,
-  ];
+  const estimateSectionLines = estimate.sections.flatMap((section) => [
+    `${section.label} (${section.confidence}, subtotal ${formatHomeEstimateEur(section.subtotal)}):`,
+    ...section.lineItems.map((item) => (
+      `- ${item.label}: quantity ${item.quantity}, unit ${item.unit}, unit cost ${formatEstimateAmount(item.unitCost)}, subtotal ${formatEstimateAmount(item.subtotal)}, confidence ${item.confidence}${item.note ? `; ${item.note}` : ''}`
+    )),
+  ]);
 
   return [
     'Modular Home Project Summary',
     `Project ID: ${identity.projectId}`,
     `Generated: ${formatGeneratedAt(identity.generatedAt)}`,
+    'Pricing database:',
+    `- Currency: ${estimate.pricing.currency}`,
+    `- Cost region: ${estimate.pricing.costRegionLabel}`,
+    `- Price date: ${estimate.pricing.priceDate}`,
+    `- Confidence: ${estimate.pricing.confidenceLabel}`,
+    `- ${estimate.pricing.disclaimer}`,
     `Model: ${estimate.baseModel}`,
     `Size: ${normalizeSizeLabel(estimate.sizeLabel)}`,
     `Footprint: ${dimensions.footprintLabel}`,
@@ -239,22 +283,46 @@ function createSummaryText(
     `Modules: ${dimensions.moduleCountLabel}`,
     `Transport modules: ${dimensions.transportModuleCountLabel}`,
     `Build category: ${dimensions.buildCategoryNote}`,
+    'Quantity takeoff:',
+    `- ${estimate.quantities.disclaimer.replace(' · ', ` ${MIDDLE_DOT} `)}`,
+    `- Gross floor area: ${formatQuantityM2(estimate.quantities.grossFloorAreaM2)}`,
+    `- Exterior wall area: ${formatQuantityM2(estimate.quantities.exteriorWallAreaM2)}`,
+    `- Interior partition estimate: ${formatQuantityM2(estimate.quantities.interiorPartitionEstimateM2)}`,
+    `- Roof area: ${formatQuantityM2(estimate.quantities.roofAreaM2)}`,
+    `- Facade area: ${formatQuantityM2(estimate.quantities.facadeAreaM2)}`,
+    `- Terrace area: ${formatQuantityM2(estimate.quantities.terraceAreaM2)}`,
+    `- Windows: ${estimate.quantities.windowCount}`,
+    `- Doors: ${estimate.quantities.doorCount}`,
+    `- Bathroom cores: ${estimate.quantities.bathroomCoreCount}`,
+    `- Furniture packages: ${estimate.quantities.furniturePackageItemCount}`,
     `Facade: ${estimate.selectedOptions.facade}`,
     `Roof: ${estimate.selectedOptions.roof}`,
     `Terrace: ${estimate.selectedOptions.terrace}`,
     `Finish level: ${estimate.selectedOptions.finishLevel}`,
-    'Module package summary:',
-    `- Preview BOM ${MIDDLE_DOT} production verification required`,
-    `- Module count: ${bomModuleCount}`,
-    ...bomSummary.map((item) => (
-      `- ${item.roles.join(', ')} (${item.moduleType}) x${item.quantity}: ${formatHomeEstimateEur(item.totalPrice)}`
+    `Window package: ${estimate.selectedOptions.windowPackage}`,
+    `Door package: ${estimate.selectedOptions.doorPackage}`,
+    'Component BOM v2:',
+    `- ${componentBom.disclaimer.replace(' · ', ` ${MIDDLE_DOT} `)}`,
+    `- Module count: ${componentBom.moduleCount}`,
+    `- Material estimate: ${formatHomeEstimateEur(componentBom.materialCostEstimate)}`,
+    `- Labor estimate: ${formatHomeEstimateEur(componentBom.laborCostEstimate)}`,
+    `- Waste estimate: ${formatHomeEstimateEur(componentBom.wasteCostEstimate)}`,
+    `- Component BOM subtotal: ${formatHomeEstimateEur(componentBom.subtotal)}`,
+    ...componentBom.groups.map((group) => (
+      `- ${COMPONENT_BOM_CATEGORY_LABELS[group.category]}: ${group.quantity} ${formatComponentBomUnit(group.unit)}, ${formatHomeEstimateEur(group.subtotal)}`
     )),
     `- Facade package: ${estimate.selectedOptions.facade}`,
     `- Roof package: ${estimate.selectedOptions.roof}`,
     `- Terrace package: ${estimate.selectedOptions.terrace}`,
     `- Finish package: ${estimate.selectedOptions.finishLevel}`,
-    'Line-item estimate:',
-    ...lineItemLines,
+    `- Window package: ${estimate.selectedOptions.windowPackage}`,
+    `- Door package: ${estimate.selectedOptions.doorPackage}`,
+    'Pricing category totals:',
+    ...estimate.pricing.categoryTotals.map((item) => (
+      `- ${item.label}: ${formatHomeEstimateEur(item.amount)}`
+    )),
+    'Structured pre-quote estimate:',
+    ...estimateSectionLines,
     `Subtotal before site services: ${formatHomeEstimateEur(estimate.subtotal)}`,
     `Transport and installation placeholders: ${formatHomeEstimateEur(estimate.optionalServicesTotal)}`,
     `Estimated total: ${formatHomeEstimateEur(estimate.estimatedTotal)}`,
@@ -277,24 +345,30 @@ export function ModularHomeProjectSummary({ config, estimate, isTouchDevice = fa
   const [copyStatus, setCopyStatus] = useState('');
   const [quoteQueue] = useState(readQuoteQueueSummary);
   const dimensions = useMemo(() => getModularHomeDimensionSummary(config), [config]);
-  const bomSummary = useMemo(() => {
-    const product = getModularHomeProductForTemplate(config.template);
-
-    return product ? getBomModuleSummary(product.id) : [];
-  }, [config.template]);
-  const bomModuleCount = useMemo(
-    () => bomSummary.reduce((total, item) => total + item.quantity, 0),
-    [bomSummary],
-  );
+  const componentBom = useMemo(() => calculateComponentBom(config), [config]);
   const summaryText = useMemo(
-    () => createSummaryText(identity, estimate, dimensions, quoteQueue, bomSummary, bomModuleCount),
-    [estimate, identity, dimensions, quoteQueue, bomSummary, bomModuleCount],
+    () => createSummaryText(identity, estimate, dimensions, quoteQueue, componentBom),
+    [estimate, identity, dimensions, quoteQueue, componentBom],
   );
   const bomPackageRows = [
     ['Facade package', estimate.selectedOptions.facade],
     ['Roof package', estimate.selectedOptions.roof],
     ['Terrace package', estimate.selectedOptions.terrace],
     ['Finish package', estimate.selectedOptions.finishLevel],
+    ['Window package', estimate.selectedOptions.windowPackage],
+    ['Door package', estimate.selectedOptions.doorPackage],
+  ] as const;
+  const quantityRows = [
+    ['gross-floor-area', 'Gross floor area', formatQuantityM2(estimate.quantities.grossFloorAreaM2)],
+    ['exterior-wall-area', 'Exterior wall area', formatQuantityM2(estimate.quantities.exteriorWallAreaM2)],
+    ['interior-partitions', 'Interior partitions', formatQuantityM2(estimate.quantities.interiorPartitionEstimateM2)],
+    ['roof-area', 'Roof area', formatQuantityM2(estimate.quantities.roofAreaM2)],
+    ['facade-area', 'Facade area', formatQuantityM2(estimate.quantities.facadeAreaM2)],
+    ['terrace-area', 'Terrace area', formatQuantityM2(estimate.quantities.terraceAreaM2)],
+    ['windows', 'Windows', `${estimate.quantities.windowCount}`],
+    ['doors', 'Doors', `${estimate.quantities.doorCount}`],
+    ['bathroom-cores', 'Bathroom cores', `${estimate.quantities.bathroomCoreCount}`],
+    ['furniture-packages', 'Furniture packages', `${estimate.quantities.furniturePackageItemCount}`],
   ] as const;
   const summaryRows = [
     ['Model', estimate.baseModel],
@@ -308,6 +382,8 @@ export function ModularHomeProjectSummary({ config, estimate, isTouchDevice = fa
     ['Roof', estimate.selectedOptions.roof],
     ['Terrace', estimate.selectedOptions.terrace],
     ['Finish', estimate.selectedOptions.finishLevel],
+    ['Window package', estimate.selectedOptions.windowPackage],
+    ['Door package', estimate.selectedOptions.doorPackage],
     ['Subtotal', formatHomeEstimateEur(estimate.subtotal)],
     ['Services', formatHomeEstimateEur(estimate.optionalServicesTotal)],
     ['VAT placeholder', formatHomeEstimateEur(estimate.vatEstimate.amount)],
@@ -505,9 +581,9 @@ export function ModularHomeProjectSummary({ config, estimate, isTouchDevice = fa
       </div>
 
       <div
-        aria-label="Project summary module package summary"
-        data-home-project-summary-bom="true"
-        data-home-project-summary-bom-module-count={bomModuleCount}
+        aria-label="Project summary quantity takeoff"
+        data-home-project-summary-quantity-takeoff="true"
+        data-home-project-summary-quantity-disclaimer={estimate.quantities.disclaimer}
         data-home-project-summary-print-card="true"
         style={{
           background: 'rgba(15, 23, 42, 0.44)',
@@ -521,10 +597,9 @@ export function ModularHomeProjectSummary({ config, estimate, isTouchDevice = fa
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', gap: '8px', alignItems: 'start' }}>
           <div style={{ color: '#7dd3fc', fontSize: '0.56rem', fontWeight: 950, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
-            Module package summary
+            Quantity takeoff
           </div>
           <div
-            data-home-project-summary-bom-status="true"
             style={{
               background: 'rgba(251, 191, 36, 0.1)',
               border: '1px solid rgba(251, 191, 36, 0.2)',
@@ -538,12 +613,11 @@ export function ModularHomeProjectSummary({ config, estimate, isTouchDevice = fa
               whiteSpace: 'nowrap',
             }}
           >
-            {'Preview BOM \u00b7 verify'}
+            Approximate
           </div>
         </div>
-
         <div
-          data-home-project-summary-bom-note="true"
+          data-home-project-summary-quantity-note="true"
           style={{
             color: '#bae6fd',
             fontSize: isTouchDevice ? '0.56rem' : '0.6rem',
@@ -551,27 +625,142 @@ export function ModularHomeProjectSummary({ config, estimate, isTouchDevice = fa
             lineHeight: 1.28,
           }}
         >
-          {'Preview BOM \u00b7 production verification required'}
+          {estimate.quantities.disclaimer}
         </div>
-
-        <div style={{ display: 'grid', gap: '5px' }}>
-          {bomSummary.map((item) => (
+        <div style={{ display: 'grid', gap: '5px', gridTemplateColumns: isTouchDevice ? '1fr' : 'repeat(2, minmax(0, 1fr))' }}>
+          {quantityRows.map(([id, label, value]) => (
             <div
-              key={item.moduleId}
-              data-home-project-summary-bom-item={`${item.moduleId}:${item.moduleType}:${item.quantity}:${item.totalPrice}`}
+              key={id}
+              data-home-project-summary-quantity={`${id}:${value}`}
+              data-home-project-summary-print-card="true"
               style={{
-                alignItems: 'start',
-                display: 'grid',
-                gap: '8px',
-                gridTemplateColumns: '1fr auto',
+                background: 'rgba(15, 23, 42, 0.46)',
+                border: '1px solid rgba(125, 211, 252, 0.12)',
+                borderRadius: '9px',
+                padding: '6px 7px',
               }}
             >
-              <span style={{ color: '#e0f2fe', fontSize: isTouchDevice ? '0.58rem' : '0.62rem', fontWeight: 820, lineHeight: 1.28 }}>
-                {item.roles.join(', ')} <span style={{ color: '#7dd3fc' }}>({item.moduleType})</span> x{item.quantity}
-              </span>
-              <span style={{ color: '#fef3c7', fontSize: isTouchDevice ? '0.58rem' : '0.62rem', fontWeight: 950 }}>
-                {formatHomeEstimateEur(item.totalPrice)}
-              </span>
+              <div style={{ color: '#7dd3fc', fontSize: '0.5rem', fontWeight: 950, letterSpacing: '0.08em', textTransform: 'uppercase' }}>{label}</div>
+              <div style={{ color: '#e0f2fe', fontSize: isTouchDevice ? '0.58rem' : '0.62rem', fontWeight: 920, marginTop: '3px' }}>{value}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div
+        aria-label="Project summary component BOM"
+        data-home-project-summary-bom="true"
+        data-home-project-summary-bom-module-count={componentBom.moduleCount}
+        data-home-project-summary-component-bom="true"
+        data-home-project-summary-component-bom-quantity-disclaimer={componentBom.quantities.disclaimer}
+        data-home-project-summary-component-bom-component-count={componentBom.componentCount}
+        data-home-project-summary-component-bom-subtotal={componentBom.subtotal}
+        data-home-project-summary-print-card="true"
+        style={{
+          background: 'rgba(15, 23, 42, 0.44)',
+          border: '1px solid rgba(125, 211, 252, 0.18)',
+          borderRadius: '13px',
+          display: 'grid',
+          gap: '7px',
+          marginTop: isTouchDevice ? '9px' : '10px',
+          padding: isTouchDevice ? '8px' : '10px',
+        }}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', gap: '8px', alignItems: 'start' }}>
+          <div style={{ color: '#7dd3fc', fontSize: '0.56rem', fontWeight: 950, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+            Component BOM v2
+          </div>
+          <div
+            data-home-project-summary-bom-status="true"
+            data-home-project-summary-component-bom-status="true"
+            style={{
+              background: 'rgba(251, 191, 36, 0.1)',
+              border: '1px solid rgba(251, 191, 36, 0.2)',
+              borderRadius: '999px',
+              color: '#fde68a',
+              fontSize: isTouchDevice ? '0.48rem' : '0.5rem',
+              fontWeight: 950,
+              lineHeight: 1,
+              padding: '5px 7px',
+              textTransform: 'uppercase',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            Preview component BOM
+          </div>
+        </div>
+
+        <div
+          data-home-project-summary-bom-note="true"
+          data-home-project-summary-component-bom-note="true"
+          style={{
+            color: '#bae6fd',
+            fontSize: isTouchDevice ? '0.56rem' : '0.6rem',
+            fontWeight: 800,
+            lineHeight: 1.28,
+          }}
+        >
+          {componentBom.disclaimer}
+        </div>
+
+        <div
+          style={{
+            display: 'grid',
+            gap: '5px',
+            gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+          }}
+        >
+          {([
+            ['Modules', componentBom.moduleCount.toString()],
+            ['Material', formatHomeEstimateEur(componentBom.materialCostEstimate)],
+            ['Labor', formatHomeEstimateEur(componentBom.laborCostEstimate)],
+            ['Waste', formatHomeEstimateEur(componentBom.wasteCostEstimate)],
+          ] as const).map(([label, value]) => (
+            <div
+              key={label}
+              data-home-project-summary-component-bom-total={`${label}:${value}`}
+              style={{
+                background: 'rgba(15, 23, 42, 0.46)',
+                border: '1px solid rgba(125, 211, 252, 0.12)',
+                borderRadius: '9px',
+                padding: '6px 7px',
+              }}
+            >
+              <div style={{ color: '#7dd3fc', fontSize: '0.5rem', fontWeight: 950, letterSpacing: '0.08em', textTransform: 'uppercase' }}>{label}</div>
+              <div style={{ color: '#fef3c7', fontSize: isTouchDevice ? '0.58rem' : '0.62rem', fontWeight: 950, marginTop: '3px' }}>{value}</div>
+            </div>
+          ))}
+        </div>
+
+        <div style={{ display: 'grid', gap: '6px' }}>
+          {componentBom.groups.map((group) => (
+            <div
+              key={group.category}
+              data-home-project-summary-component-bom-group={`${group.category}:${group.quantity}:${group.unit}:${group.materialCostEstimate}:${group.laborCostEstimate}:${group.wasteCostEstimate}:${group.subtotal}`}
+              data-home-project-summary-print-card="true"
+              style={{
+                background: 'rgba(2, 6, 23, 0.2)',
+                border: '1px solid rgba(148, 163, 184, 0.12)',
+                borderRadius: '10px',
+                display: 'grid',
+                gap: '5px',
+                padding: isTouchDevice ? '6px 7px' : '7px 8px',
+              }}
+            >
+              <div style={{ alignItems: 'start', display: 'grid', gap: '8px', gridTemplateColumns: '1fr auto' }}>
+                <span style={{ color: '#e0f2fe', fontSize: isTouchDevice ? '0.58rem' : '0.62rem', fontWeight: 880, lineHeight: 1.25 }}>
+                  {COMPONENT_BOM_CATEGORY_LABELS[group.category]} <span style={{ color: '#7dd3fc' }}>({group.quantity} {formatComponentBomUnit(group.unit)})</span>
+                </span>
+                <span style={{ color: '#fef3c7', fontSize: isTouchDevice ? '0.58rem' : '0.62rem', fontWeight: 950 }}>
+                  {formatHomeEstimateEur(group.subtotal)}
+                </span>
+              </div>
+              <div style={{ color: '#bae6fd', fontSize: isTouchDevice ? '0.52rem' : '0.56rem', fontWeight: 780, lineHeight: 1.25 }}>
+                Material {formatHomeEstimateEur(group.materialCostEstimate)} / labor {formatHomeEstimateEur(group.laborCostEstimate)} / waste {formatHomeEstimateEur(group.wasteCostEstimate)}
+              </div>
+              <div style={{ color: '#7dd3fc', fontSize: isTouchDevice ? '0.5rem' : '0.54rem', fontWeight: 760, lineHeight: 1.25 }}>
+                Modules: {group.moduleIds.join(', ')}
+              </div>
             </div>
           ))}
         </div>
@@ -600,14 +789,33 @@ export function ModularHomeProjectSummary({ config, estimate, isTouchDevice = fa
             </div>
           ))}
         </div>
+
+        <div
+          data-home-project-summary-component-bom-subtotal-label="true"
+          style={{
+            alignItems: 'center',
+            borderTop: '1px solid rgba(125, 211, 252, 0.14)',
+            display: 'grid',
+            gap: '8px',
+            gridTemplateColumns: '1fr auto',
+            paddingTop: '7px',
+          }}
+        >
+          <span style={{ color: '#bae6fd', fontSize: isTouchDevice ? '0.58rem' : '0.62rem', fontWeight: 900 }}>Component BOM subtotal</span>
+          <span style={{ color: '#fef3c7', fontSize: isTouchDevice ? '0.62rem' : '0.68rem', fontWeight: 980 }}>{formatHomeEstimateEur(componentBom.subtotal)}</span>
+        </div>
       </div>
 
       <div
-        aria-label="Project summary line-item estimate"
-        data-home-project-summary-line-items="true"
+        aria-label="Project summary pricing database"
+        data-home-project-summary-pricing-database="true"
+        data-home-project-summary-pricing-confidence={estimate.pricing.confidenceLevel}
+        data-home-project-summary-pricing-cost-region={estimate.pricing.costRegion}
+        data-home-project-summary-pricing-currency={estimate.pricing.currency}
+        data-home-project-summary-pricing-price-date={estimate.pricing.priceDate}
         data-home-project-summary-print-card="true"
         style={{
-          background: 'rgba(15, 23, 42, 0.44)',
+          background: 'rgba(14, 165, 233, 0.1)',
           border: '1px solid rgba(125, 211, 252, 0.18)',
           borderRadius: '13px',
           display: 'grid',
@@ -617,25 +825,144 @@ export function ModularHomeProjectSummary({ config, estimate, isTouchDevice = fa
         }}
       >
         <div style={{ color: '#7dd3fc', fontSize: '0.56rem', fontWeight: 950, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
-          Line-item estimate
+          Pricing DB v1
         </div>
-        {[...estimate.lineItems, ...estimate.optionalServices, estimate.vatEstimate].map((item) => (
+        <div style={{ color: '#e0f2fe', fontSize: isTouchDevice ? '0.58rem' : '0.62rem', fontWeight: 820, lineHeight: 1.28 }}>
+          {estimate.pricing.currency} / {estimate.pricing.costRegionLabel} / prices {estimate.pricing.priceDate} / {estimate.pricing.confidenceLabel}.
+        </div>
+        <div style={{ color: '#bae6fd', fontSize: isTouchDevice ? '0.54rem' : '0.58rem', fontWeight: 780, lineHeight: 1.28 }}>
+          {estimate.pricing.disclaimer}
+        </div>
+        <div style={{ display: 'grid', gap: '5px', gridTemplateColumns: isTouchDevice ? '1fr' : 'repeat(2, minmax(0, 1fr))' }}>
+          {estimate.pricing.categoryTotals.map((item) => (
+            <div
+              key={item.category}
+              data-home-project-summary-pricing-category={`${item.category}:${item.amount}`}
+              style={{
+                alignItems: 'center',
+                background: 'rgba(15, 23, 42, 0.34)',
+                border: '1px solid rgba(125, 211, 252, 0.12)',
+                borderRadius: '9px',
+                display: 'grid',
+                gap: '8px',
+                gridTemplateColumns: '1fr auto',
+                padding: '6px 7px',
+              }}
+            >
+              <span style={{ color: '#bae6fd', fontSize: isTouchDevice ? '0.56rem' : '0.6rem', fontWeight: 820 }}>{item.label}</span>
+              <span style={{ color: '#fef3c7', fontSize: isTouchDevice ? '0.56rem' : '0.6rem', fontWeight: 950 }}>{formatHomeEstimateEur(item.amount)}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div
+        aria-label="Project summary structured pre-quote estimate"
+        data-home-project-summary-estimate-sections="true"
+        data-home-project-summary-estimate-section-count={estimate.sections.length}
+        data-home-project-summary-print-card="true"
+        style={{
+          background: 'rgba(15, 23, 42, 0.44)',
+          border: '1px solid rgba(125, 211, 252, 0.18)',
+          borderRadius: '13px',
+          display: 'grid',
+          gap: '8px',
+          marginTop: isTouchDevice ? '9px' : '10px',
+          padding: isTouchDevice ? '8px' : '10px',
+        }}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', gap: '8px', alignItems: 'start' }}>
+          <div>
+            <div style={{ color: '#7dd3fc', fontSize: '0.56rem', fontWeight: 950, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+              Structured pre-quote estimate
+            </div>
+            <div style={{ color: '#bae6fd', fontSize: isTouchDevice ? '0.54rem' : '0.58rem', fontWeight: 760, lineHeight: 1.28, marginTop: '3px' }}>
+              Each section shows quantity, unit, unit cost, subtotal and confidence for buyer review.
+            </div>
+          </div>
           <div
-            key={item.id}
-            data-home-project-summary-line-item={`${item.id}:${item.amount}`}
             style={{
-              alignItems: 'start',
-              display: 'grid',
-              gap: '8px',
-              gridTemplateColumns: '1fr auto',
+              background: 'rgba(251, 191, 36, 0.1)',
+              border: '1px solid rgba(251, 191, 36, 0.2)',
+              borderRadius: '999px',
+              color: '#fde68a',
+              fontSize: isTouchDevice ? '0.48rem' : '0.5rem',
+              fontWeight: 950,
+              lineHeight: 1,
+              padding: '5px 7px',
+              textTransform: 'uppercase',
+              whiteSpace: 'nowrap',
             }}
           >
-            <span style={{ color: '#e0f2fe', fontSize: isTouchDevice ? '0.58rem' : '0.62rem', fontWeight: 820, lineHeight: 1.28 }}>
-              {item.label}{item.isPlaceholder ? ' (placeholder)' : ''}
-            </span>
-            <span style={{ color: item.amount === 0 ? '#93c5fd' : '#fef3c7', fontSize: isTouchDevice ? '0.58rem' : '0.62rem', fontWeight: 950 }}>
-              {formatLineItemAmount(item)}
-            </span>
+            Preview only
+          </div>
+        </div>
+
+        {estimate.sections.map((section) => (
+          <div
+            key={section.id}
+            data-home-project-summary-estimate-section={`${section.id}:${section.subtotal}:${section.confidence}`}
+            style={{
+              background: 'rgba(2, 6, 23, 0.22)',
+              border: '1px solid rgba(148, 163, 184, 0.13)',
+              borderRadius: '11px',
+              display: 'grid',
+              gap: '7px',
+              padding: isTouchDevice ? '7px 8px' : '8px 9px',
+            }}
+          >
+            <div style={{ alignItems: 'start', display: 'grid', gap: '8px', gridTemplateColumns: '1fr auto' }}>
+              <div>
+                <div style={{ color: '#e0f2fe', fontSize: isTouchDevice ? '0.6rem' : '0.64rem', fontWeight: 940, lineHeight: 1.2 }}>
+                  {section.label}
+                </div>
+                <div style={{ color: '#93c5fd', fontSize: isTouchDevice ? '0.52rem' : '0.56rem', fontWeight: 760, lineHeight: 1.25, marginTop: '2px' }}>
+                  {section.description}
+                </div>
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ color: section.subtotal === 0 ? '#93c5fd' : '#fef3c7', fontSize: isTouchDevice ? '0.6rem' : '0.64rem', fontWeight: 960 }}>
+                  {formatHomeEstimateEur(section.subtotal)}
+                </div>
+                <div style={{ color: '#bae6fd', fontSize: isTouchDevice ? '0.48rem' : '0.5rem', fontWeight: 850, marginTop: '2px', textTransform: 'uppercase' }}>
+                  {section.confidence}
+                </div>
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gap: '5px' }}>
+              {section.lineItems.map((item) => (
+                <div
+                  key={item.id}
+                  data-home-project-summary-estimate-section-line={`${section.id}:${item.id}:${item.quantity}:${item.unit}:${item.unitCost ?? 'review'}:${item.subtotal ?? 'review'}:${item.confidence}`}
+                  style={{
+                    background: item.isExcluded ? 'rgba(127, 29, 29, 0.14)' : item.isPlaceholder ? 'rgba(120, 53, 15, 0.14)' : 'rgba(15, 23, 42, 0.36)',
+                    border: item.isExcluded ? '1px solid rgba(252, 165, 165, 0.18)' : '1px solid rgba(125, 211, 252, 0.1)',
+                    borderRadius: '9px',
+                    display: 'grid',
+                    gap: '4px',
+                    padding: '6px 7px',
+                  }}
+                >
+                  <div style={{ alignItems: 'start', display: 'grid', gap: '8px', gridTemplateColumns: '1fr auto' }}>
+                    <span style={{ color: '#e0f2fe', fontSize: isTouchDevice ? '0.56rem' : '0.6rem', fontWeight: 850, lineHeight: 1.24 }}>
+                      {item.label}
+                    </span>
+                    <span style={{ color: item.subtotal === null ? '#fecaca' : item.subtotal === 0 ? '#93c5fd' : '#fef3c7', fontSize: isTouchDevice ? '0.56rem' : '0.6rem', fontWeight: 950, whiteSpace: 'nowrap' }}>
+                      {formatEstimateAmount(item.subtotal)}
+                    </span>
+                  </div>
+                  <div style={{ color: '#bae6fd', fontSize: isTouchDevice ? '0.5rem' : '0.54rem', fontWeight: 760, lineHeight: 1.28 }}>
+                    Qty {item.quantity} / unit {item.unit} / unit cost {formatEstimateAmount(item.unitCost)} / confidence {item.confidence}
+                  </div>
+                  {item.note ? (
+                    <div style={{ color: '#93c5fd', fontSize: isTouchDevice ? '0.48rem' : '0.52rem', fontWeight: 720, lineHeight: 1.25 }}>
+                      {item.note}
+                    </div>
+                  ) : null}
+                </div>
+              ))}
+            </div>
           </div>
         ))}
       </div>

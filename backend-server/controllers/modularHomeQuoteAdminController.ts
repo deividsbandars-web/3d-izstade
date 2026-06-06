@@ -83,6 +83,11 @@ export function getModularHomeQuoteAdminAccessPlan(): ModularHomeQuoteAdminAcces
         purpose: 'List Modular Home quote requests for authenticated admins.',
       },
       {
+        method: 'GET',
+        path: '/api/modular-home/quotes/:quoteId',
+        purpose: 'View one Modular Home quote request detail for authenticated admins.',
+      },
+      {
         method: 'PATCH',
         path: '/api/modular-home/quotes/:quoteId/status',
         purpose: 'Update sales review status for one quote request.',
@@ -195,6 +200,30 @@ export async function listModularHomeQuoteRequests(req: AuthRequest, res: Respon
     const code = String(error?.message || 'MODULAR_HOME_QUOTE_ADMIN_LIST_FAILED');
     const status = code.startsWith('MODULAR_HOME_QUOTE_ADMIN_') ? 400 : 500;
     return quoteAdminError(res, status, code, 'Could not list Modular Home quote requests.');
+  }
+}
+
+export async function getModularHomeQuoteRequest(req: AuthRequest, res: Response) {
+  try {
+    const quoteId = normalizeQuoteId(req.params.quoteId);
+    const { data, error } = await getSupabase()
+      .from(MODULAR_HOME_QUOTE_ADMIN_TABLE)
+      .select(MODULAR_HOME_QUOTE_ADMIN_SELECT)
+      .eq('id', quoteId)
+      .single();
+
+    if (error) {
+      throw error;
+    }
+
+    return res.json({
+      quote: data,
+      success: true,
+    });
+  } catch (error: any) {
+    const code = String(error?.message || 'MODULAR_HOME_QUOTE_ADMIN_DETAIL_FAILED');
+    const status = code.startsWith('MODULAR_HOME_QUOTE_ADMIN_') ? 400 : 500;
+    return quoteAdminError(res, status, code, 'Could not load Modular Home quote detail.');
   }
 }
 

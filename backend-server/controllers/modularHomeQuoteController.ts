@@ -7,6 +7,12 @@ export type ModularHomeQuoteSubmissionConfig = {
   hardeningPlan: ModularHomeQuoteBackendHardeningPlan;
   productionReady: false;
   requiresExplicitRequestFlag: true;
+  requiresStagingEnvironment: true;
+  staging: {
+    allowedHosts: string[];
+    environmentName: string | null;
+    enabledByEnvironment: boolean;
+  };
   storageTable: 'modular_home_quote_requests';
 };
 
@@ -27,6 +33,7 @@ export type ModularHomeQuoteBackendHardeningPlan = {
     envFlag: 'MODULAR_HOME_QUOTE_SUBMISSION_ENABLED';
     requestFlag: 'homeQuoteBackend=1';
     defaultMode: 'disabled';
+    stagingRequirement: 'staging host or staging/preview environment';
   };
   rateLimitingPlan: {
     currentGlobalLimit: string;
@@ -44,6 +51,31 @@ type ModularHomeQuoteRequestBody = {
   project?: unknown;
   requester?: unknown;
   source?: unknown;
+};
+
+export type ModularHomeQuoteFailureStage =
+  | 'disabled'
+  | 'flag'
+  | 'staging'
+  | 'validation'
+  | 'storage';
+
+export type ModularHomeQuoteSafeLogEvent = {
+  code: string;
+  hasConsent: boolean;
+  hasEstimate: boolean;
+  hasProject: boolean;
+  hasRequester: boolean;
+  host: string | null;
+  method: string | null;
+  path: string | null;
+  requestFlagEnabled: boolean;
+  sourceVertical: string | null;
+  stage: ModularHomeQuoteFailureStage;
+  stagingRequest: boolean;
+  status: number;
+  submissionEnabled: boolean;
+  timestamp: string;
 };
 
 export type ValidModularHomeQuoteRequest = {
@@ -97,6 +129,19 @@ export type ValidModularHomeQuoteRequest = {
   };
 };
 
+export type ModularHomeQuoteStorageClient = {
+  from: (table: string) => {
+    insert: (rows: unknown[]) => {
+      select: (columns: string) => {
+        single: () => Promise<{
+          data: { id?: string | null } | null;
+          error: { message?: string } | null;
+        }>;
+      };
+    };
+  };
+};
+
 const ALLOWED_PRODUCTS = new Set(['compact-timber-40', 'family-timber-80', 'sauna-cabin-25']);
 const ALLOWED_LAND_OWNED = new Set<ValidModularHomeQuoteRequest['requester']['landOwned']>(['yes', 'no', 'unknown']);
 const ALLOWED_BUDGET_RANGES = new Set(['under-50k', '50k-100k', '100k-150k', '150k-plus', 'not-sure'] as const);
@@ -110,6 +155,11 @@ const MAX_MESSAGE_LENGTH = 4000;
 const MAX_TEXT_LENGTH = 600;
 const MAX_LINE_ITEMS = 24;
 const MAX_SCOPE_ITEMS = 16;
+const DEFAULT_STAGING_HOSTS = [
+  'staging.30sek24.com',
+  'localhost',
+  '127.0.0.1',
+] as const;
 
 export function getModularHomeQuoteBackendHardeningPlan(): ModularHomeQuoteBackendHardeningPlan {
   return {
@@ -143,6 +193,7 @@ export function getModularHomeQuoteBackendHardeningPlan(): ModularHomeQuoteBacke
       defaultMode: 'disabled',
       envFlag: 'MODULAR_HOME_QUOTE_SUBMISSION_ENABLED',
       requestFlag: 'homeQuoteBackend=1',
+      stagingRequirement: 'staging host or staging/preview environment',
     },
     rateLimitingPlan: {
       currentGlobalLimit: 'Existing API middleware applies an in-memory 60 requests/minute per IP limit.',
@@ -166,6 +217,106 @@ export function getModularHomeQuoteBackendHardeningPlan(): ModularHomeQuoteBacke
       'File uploads are out of scope; no storage bucket should be enabled for this route yet.',
     ],
   };
+}
+
+function readFirstHeaderValue(req: Request, headerName: string): string | null {
+  const raw = req.headers[headerName.toLowerCase()];
+  if (Array.isArray(raw)) {
+    return raw[0] ?? null;
+  }
+
+  return typeof raw === 'string' ? raw : null;
+}
+
+function normalizeHost(value: unknown): string | null {
+  if (typeof value !== 'string') {
+    return null;
+  }
+
+  const firstValue = value.split(',')[0]?.trim();
+  if (!firstValue) {
+    return null;
+  }
+
+  if (firstValue.includes('://')) {
+    try {
+      return new URL(firstValue).hostname.toLowerCase();
+    } catch {
+      return null;
+    }
+  }
+
+  return firstValue
+    .split('/')[0]
+    .split(':')[0]
+    .trim()
+    .toLowerCase() || null;
+}
+
+function getModularHomeQuoteAllowedStagingHosts(): string[] {
+  const configured = process.env.MODULAR_HOME_QUOTE_STAGING_HOSTS;
+  const hosts = configured
+    ? configured.split(',').map((host) => normalizeHost(host)).filter((host): host is string => Boolean(host))
+    : [...DEFAULT_STAGING_HOSTS];
+
+  return Array.from(new Set(hosts));
+}
+
+function getModularHomeQuoteEnvironmentName(): string | null {
+  const value = process.env.APP_ENV || process.env.VERCEL_ENV || '';
+  const normalized = value.trim().toLowerCase();
+  return normalized || null;
+}
+
+function isModularHomeQuoteStagingEnvironmentName(environmentName: string | null): boolean {
+  return environmentName === 'staging' || environmentName === 'preview';
+}
+
+export function isModularHomeQuoteStagingRequest(req: Request): boolean {
+  const environmentName = getModularHomeQuoteEnvironmentName();
+  if (isModularHomeQuoteStagingEnvironmentName(environmentName)) {
+    return true;
+  }
+
+  const allowedHosts = getModularHomeQuoteAllowedStagingHosts();
+  const host = normalizeHost(readFirstHeaderValue(req, 'x-forwarded-host') ?? readFirstHeaderValue(req, 'host'));
+  const originHost = normalizeHost(readFirstHeaderValue(req, 'origin'));
+  const refererHost = normalizeHost(readFirstHeaderValue(req, 'referer'));
+
+  return [host, originHost, refererHost].some((candidate) => candidate ? allowedHosts.includes(candidate) : false);
+}
+
+export function createModularHomeQuoteSafeLogEvent(
+  req: Request,
+  code: string,
+  status: number,
+  stage: ModularHomeQuoteFailureStage,
+  submissionConfig = getModularHomeQuoteSubmissionConfig(),
+): ModularHomeQuoteSafeLogEvent {
+  const body = asRecord(req.body) ?? {};
+  const source = asRecord(body.source) ?? {};
+
+  return {
+    code,
+    hasConsent: Boolean(asRecord(body.consent)),
+    hasEstimate: Boolean(asRecord(body.estimate)),
+    hasProject: Boolean(asRecord(body.project)),
+    hasRequester: Boolean(asRecord(body.requester)),
+    host: normalizeHost(readFirstHeaderValue(req, 'x-forwarded-host') ?? readFirstHeaderValue(req, 'host')),
+    method: typeof req.method === 'string' ? req.method : null,
+    path: typeof req.path === 'string' ? req.path : null,
+    requestFlagEnabled: isModularHomeQuoteBackendRequestEnabled(req.query),
+    sourceVertical: normalizeOptionalText(source.vertical, 80),
+    stage,
+    stagingRequest: isModularHomeQuoteStagingRequest(req),
+    status,
+    submissionEnabled: submissionConfig.enabled,
+    timestamp: new Date().toISOString(),
+  };
+}
+
+function logModularHomeQuoteFailure(event: ModularHomeQuoteSafeLogEvent): void {
+  console.warn('[modular-home-quote]', event);
 }
 
 function asRecord(value: unknown): Record<string, unknown> | null {
@@ -281,12 +432,20 @@ function normalizeProductId(value: unknown): string {
 }
 
 export function getModularHomeQuoteSubmissionConfig(): ModularHomeQuoteSubmissionConfig {
+  const environmentName = getModularHomeQuoteEnvironmentName();
+
   return {
     emailHandoffEnabled: process.env.MODULAR_HOME_QUOTE_EMAIL_HANDOFF_ENABLED === 'true',
     enabled: process.env.MODULAR_HOME_QUOTE_SUBMISSION_ENABLED === 'true',
     hardeningPlan: getModularHomeQuoteBackendHardeningPlan(),
     productionReady: false,
     requiresExplicitRequestFlag: true,
+    requiresStagingEnvironment: true,
+    staging: {
+      allowedHosts: getModularHomeQuoteAllowedStagingHosts(),
+      enabledByEnvironment: isModularHomeQuoteStagingEnvironmentName(environmentName),
+      environmentName,
+    },
     storageTable: 'modular_home_quote_requests',
   };
 }
@@ -401,10 +560,45 @@ export function validateModularHomeQuoteRequest(body: ModularHomeQuoteRequestBod
   };
 }
 
+export async function insertModularHomeQuoteRequest(
+  payload: ValidModularHomeQuoteRequest,
+  submissionConfig = getModularHomeQuoteSubmissionConfig(),
+  storage: ModularHomeQuoteStorageClient = getSupabase() as ModularHomeQuoteStorageClient,
+): Promise<string | null> {
+  const { data, error } = await storage
+    .from(submissionConfig.storageTable)
+    .insert([{
+      attribution: payload.attribution,
+      config: payload.config,
+      consent: payload.consent,
+      estimate: payload.estimate,
+      project: payload.project,
+      requester: payload.requester,
+      source: payload.source,
+      status: 'new',
+    }])
+    .select('id')
+    .single();
+
+  if (error) {
+    throw new Error('MODULAR_HOME_QUOTE_STORAGE_FAILED');
+  }
+
+  return data?.id ?? null;
+}
+
 export async function submitModularHomeQuote(req: Request, res: Response) {
   const submissionConfig = getModularHomeQuoteSubmissionConfig();
 
   if (!submissionConfig.enabled) {
+    logModularHomeQuoteFailure(createModularHomeQuoteSafeLogEvent(
+      req,
+      'MODULAR_HOME_QUOTE_BACKEND_DISABLED',
+      503,
+      'disabled',
+      submissionConfig,
+    ));
+
     return res.status(503).json({
       error: 'MODULAR_HOME_QUOTE_BACKEND_DISABLED',
       message: 'Real Modular Home quote submission is disabled. Preview mode must remain local-only.',
@@ -414,6 +608,14 @@ export async function submitModularHomeQuote(req: Request, res: Response) {
   }
 
   if (!isModularHomeQuoteBackendRequestEnabled(req.query)) {
+    logModularHomeQuoteFailure(createModularHomeQuoteSafeLogEvent(
+      req,
+      'MODULAR_HOME_QUOTE_BACKEND_FLAG_REQUIRED',
+      403,
+      'flag',
+      submissionConfig,
+    ));
+
     return res.status(403).json({
       error: 'MODULAR_HOME_QUOTE_BACKEND_FLAG_REQUIRED',
       message: 'Real Modular Home quote submission requires ?homeQuoteBackend=1.',
@@ -421,36 +623,44 @@ export async function submitModularHomeQuote(req: Request, res: Response) {
     });
   }
 
+  if (!isModularHomeQuoteStagingRequest(req)) {
+    logModularHomeQuoteFailure(createModularHomeQuoteSafeLogEvent(
+      req,
+      'MODULAR_HOME_QUOTE_STAGING_ONLY',
+      403,
+      'staging',
+      submissionConfig,
+    ));
+
+    return res.status(403).json({
+      error: 'MODULAR_HOME_QUOTE_STAGING_ONLY',
+      message: 'Real Modular Home quote submission is currently allowed only on staging/review hosts.',
+      success: false,
+    });
+  }
+
   try {
     const payload = validateModularHomeQuoteRequest(req.body);
-    const supabase = getSupabase();
-    const { data, error } = await supabase
-      .from(submissionConfig.storageTable)
-      .insert([{
-        attribution: payload.attribution,
-        config: payload.config,
-        consent: payload.consent,
-        estimate: payload.estimate,
-        project: payload.project,
-        requester: payload.requester,
-        source: payload.source,
-        status: 'new',
-      }])
-      .select('id')
-      .single();
-
-    if (error) {
-      throw error;
-    }
+    const id = await insertModularHomeQuoteRequest(payload, submissionConfig);
 
     res.status(201).json({
       emailHandoffQueued: false,
-      id: data?.id ?? null,
+      id,
       success: true,
     });
   } catch (error: any) {
-    const code = String(error?.message || 'MODULAR_HOME_QUOTE_UNKNOWN');
+    const rawCode = String(error?.message || 'MODULAR_HOME_QUOTE_UNKNOWN');
+    const code = rawCode.startsWith('MODULAR_HOME_QUOTE_') ? rawCode : 'MODULAR_HOME_QUOTE_STORAGE_FAILED';
     const status = code.startsWith('MODULAR_HOME_QUOTE_') ? 400 : 500;
-    res.status(status).json({ error: code, success: false });
+    const failureStatus = code === 'MODULAR_HOME_QUOTE_STORAGE_FAILED' ? 500 : status;
+    logModularHomeQuoteFailure(createModularHomeQuoteSafeLogEvent(
+      req,
+      code,
+      failureStatus,
+      failureStatus === 500 ? 'storage' : 'validation',
+      submissionConfig,
+    ));
+
+    res.status(failureStatus).json({ error: code, success: false });
   }
 }

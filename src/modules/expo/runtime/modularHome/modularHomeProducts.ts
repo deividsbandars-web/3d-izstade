@@ -2,10 +2,12 @@ import type { ModularHomeTemplateId } from './modularHomeConfig';
 import {
   DEFAULT_MODULAR_HOME_CONFIG,
   type ModularHomeConfiguratorState,
+  type ModularHomeDoorPackageOption,
   type ModularHomeFacadeOption,
   type ModularHomeFinishLevelOption,
   type ModularHomeRoofOption,
   type ModularHomeTerraceOption,
+  type ModularHomeWindowPackageOption,
 } from './modularHomeConfigurator';
 import {
   getModularHomeMaterial,
@@ -25,7 +27,9 @@ export type ModularHomeModuleId =
   | 'compact-bedroom-module'
   | 'bathroom-core-module'
   | 'terrace-small-module'
+  | 'terrace-side-module'
   | 'terrace-extended-module'
+  | 'terrace-covered-placeholder-module'
   | 'family-living-module'
   | 'family-bedroom-module'
   | 'sauna-core-module'
@@ -50,7 +54,8 @@ export type ModularHomeOptionGroup =
   | 'roof'
   | 'terrace'
   | 'finish'
-  | 'windowPackage';
+  | 'windowPackage'
+  | 'doorPackage';
 
 export type ModularHomeConstraintStatus =
   | 'compatible'
@@ -152,12 +157,14 @@ export type ModularHomeConfigurationWarning = {
 };
 
 export type ModularHomeProductConfigSummary = {
+  doorPackage: string;
   facade: string;
   finishLevel: string;
   product: string;
   roof: string;
   template: string;
   terrace: string;
+  windowPackage: string;
 };
 
 export type ModularHomeSelectedMaterialSummary = {
@@ -234,11 +241,13 @@ export const MODULAR_HOME_PRODUCTS = [
       'bathroom-core-module',
     ],
     defaultConfig: {
+      doorPackage: 'standardEntry',
       facade: 'naturalTimber',
       finishLevel: 'standard',
       roof: 'pitched',
       template: 'compactTimber40',
-      terrace: 'smallTerrace',
+      terrace: 'frontDeck',
+      windowPackage: 'standardWindows',
     },
     basePrice: 38000,
     shortDescription: 'A compact one-bedroom timber module for fast deployment and flexible small-site use.',
@@ -246,7 +255,7 @@ export const MODULAR_HOME_PRODUCTS = [
     productionNotes: [
       'Designed around a transport-friendly timber module footprint.',
       'Preview estimate excludes site works, transport, utility connections and local engineering.',
-      'Default preview assumes standard finish and small terrace readiness.',
+      'Default preview assumes standard finish and front deck readiness.',
     ],
   },
   {
@@ -294,11 +303,13 @@ export const MODULAR_HOME_PRODUCTS = [
       'bathroom-core-module',
     ],
     defaultConfig: {
+      doorPackage: 'terraceSlider',
       facade: 'naturalTimber',
       finishLevel: 'standard',
       roof: 'pitched',
       template: 'familyTimber80',
       terrace: 'extendedTerrace',
+      windowPackage: 'panoramicWindows',
     },
     basePrice: 72000,
     shortDescription: 'A larger two-bedroom timber home with an open living zone and family-ready layout.',
@@ -345,11 +356,13 @@ export const MODULAR_HOME_PRODUCTS = [
       'bathroom-core-module',
     ],
     defaultConfig: {
+      doorPackage: 'standardEntry',
       facade: 'darkThermoWood',
       finishLevel: 'standard',
       roof: 'flat',
       template: 'saunaCabin25',
-      terrace: 'smallTerrace',
+      terrace: 'frontDeck',
+      windowPackage: 'compactPrivacy',
     },
     basePrice: 26000,
     shortDescription: 'A compact sauna and guest module for outdoor retreats and add-on hospitality use.',
@@ -397,7 +410,16 @@ export const MODULAR_HOME_MODULES = [
     price: 4500,
     compatibleWith: ALL_MODULAR_HOME_PRODUCT_IDS,
     requiredDependencies: [],
-    notes: 'Small terrace module for compact outdoor activation.',
+    notes: 'Front deck extension module for compact outdoor activation.',
+  },
+  {
+    id: 'terrace-side-module',
+    type: 'terrace',
+    dimensions: { widthM: 5.8, lengthM: 2.2, heightM: 0.25 },
+    price: 6200,
+    compatibleWith: ALL_MODULAR_HOME_PRODUCT_IDS,
+    requiredDependencies: [],
+    notes: 'Side terrace extension module for side-entry and service-side outdoor use.',
   },
   {
     id: 'terrace-extended-module',
@@ -407,6 +429,15 @@ export const MODULAR_HOME_MODULES = [
     compatibleWith: ['compact-timber-40', 'family-timber-80'],
     requiredDependencies: [],
     notes: 'Extended terrace module for larger outdoor living packages.',
+  },
+  {
+    id: 'terrace-covered-placeholder-module',
+    type: 'terrace',
+    dimensions: { widthM: 7.4, lengthM: 3, heightM: 2.7 },
+    price: 12000,
+    compatibleWith: ALL_MODULAR_HOME_PRODUCT_IDS,
+    requiredDependencies: [],
+    notes: 'Covered terrace placeholder with roof/post allowance; final structure requires review.',
   },
   {
     id: 'family-living-module',
@@ -555,14 +586,24 @@ export const MODULAR_HOME_OPTIONS = [
     requiredModuleIds: [],
   },
   {
-    id: 'option-terrace-small',
+    id: 'option-terrace-front-deck',
     group: 'terrace',
-    label: 'Small terrace',
+    label: 'Front deck',
     materialIds: ['natural-timber-siding'],
     priceDelta: 4500,
-    visualToken: 'smallTerrace' satisfies ModularHomeTerraceOption,
+    visualToken: 'frontDeck' satisfies ModularHomeTerraceOption,
     compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
     requiredModuleIds: ['terrace-small-module'],
+  },
+  {
+    id: 'option-terrace-side',
+    group: 'terrace',
+    label: 'Side terrace',
+    materialIds: ['natural-timber-siding'],
+    priceDelta: 6200,
+    visualToken: 'sideTerrace' satisfies ModularHomeTerraceOption,
+    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
+    requiredModuleIds: ['terrace-side-module'],
   },
   {
     id: 'option-terrace-extended',
@@ -573,6 +614,16 @@ export const MODULAR_HOME_OPTIONS = [
     visualToken: 'extendedTerrace' satisfies ModularHomeTerraceOption,
     compatibleProducts: ['compact-timber-40', 'family-timber-80'],
     requiredModuleIds: ['terrace-extended-module'],
+  },
+  {
+    id: 'option-terrace-covered-placeholder',
+    group: 'terrace',
+    label: 'Covered terrace placeholder',
+    materialIds: ['natural-timber-siding', 'metal-roof'],
+    priceDelta: 12000,
+    visualToken: 'coveredTerracePlaceholder' satisfies ModularHomeTerraceOption,
+    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
+    requiredModuleIds: ['terrace-covered-placeholder-module'],
   },
   {
     id: 'option-finish-shell',
@@ -607,20 +658,70 @@ export const MODULAR_HOME_OPTIONS = [
   {
     id: 'option-window-package-standard',
     group: 'windowPackage',
-    label: 'Standard glazing package',
+    label: 'Standard glazing',
     materialIds: [],
     priceDelta: 0,
-    visualToken: 'standardWindows',
+    visualToken: 'standardWindows' satisfies ModularHomeWindowPackageOption,
     compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
     requiredModuleIds: [],
   },
   {
     id: 'option-window-package-panoramic',
     group: 'windowPackage',
-    label: 'Panoramic glazing package',
+    label: 'Panoramic glazing',
     materialIds: [],
     priceDelta: 7800,
-    visualToken: 'panoramicWindows',
+    visualToken: 'panoramicWindows' satisfies ModularHomeWindowPackageOption,
+    compatibleProducts: ['compact-timber-40', 'family-timber-80'],
+    requiredModuleIds: [],
+  },
+  {
+    id: 'option-window-package-corner-glazing',
+    group: 'windowPackage',
+    label: 'Corner glazing',
+    materialIds: [],
+    priceDelta: 11500,
+    visualToken: 'cornerGlazing' satisfies ModularHomeWindowPackageOption,
+    compatibleProducts: ['compact-timber-40', 'family-timber-80'],
+    requiredModuleIds: [],
+  },
+  {
+    id: 'option-window-package-compact-privacy',
+    group: 'windowPackage',
+    label: 'Compact/privacy glazing',
+    materialIds: [],
+    priceDelta: 1800,
+    visualToken: 'compactPrivacy' satisfies ModularHomeWindowPackageOption,
+    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
+    requiredModuleIds: [],
+  },
+  {
+    id: 'option-door-package-standard-entry',
+    group: 'doorPackage',
+    label: 'Standard entry',
+    materialIds: [],
+    priceDelta: 0,
+    visualToken: 'standardEntry' satisfies ModularHomeDoorPackageOption,
+    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
+    requiredModuleIds: [],
+  },
+  {
+    id: 'option-door-package-terrace-slider',
+    group: 'doorPackage',
+    label: 'Terrace slider',
+    materialIds: [],
+    priceDelta: 4200,
+    visualToken: 'terraceSlider' satisfies ModularHomeDoorPackageOption,
+    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
+    requiredModuleIds: [],
+  },
+  {
+    id: 'option-door-package-premium-glazed-entry',
+    group: 'doorPackage',
+    label: 'Premium glazed entry',
+    materialIds: [],
+    priceDelta: 5200,
+    visualToken: 'premiumGlazedEntry' satisfies ModularHomeDoorPackageOption,
     compatibleProducts: ['compact-timber-40', 'family-timber-80'],
     requiredModuleIds: [],
   },
@@ -638,13 +739,15 @@ function getModuleById(id: ModularHomeModuleId): ModularHomeModule | undefined {
 
 function getSelectedOptionForGroup(
   config: ModularHomeConfiguratorState,
-  group: 'facade' | 'finish' | 'roof' | 'terrace',
+  group: ModularHomeOptionGroup,
 ): ModularHomeOption | undefined {
   const selectedTokenByGroup = {
+    doorPackage: config.doorPackage,
     facade: config.facade,
     finish: config.finishLevel,
     roof: config.roof,
     terrace: config.terrace,
+    windowPackage: config.windowPackage,
   } as const;
 
   return MODULAR_HOME_OPTIONS.find((option) => (
@@ -667,12 +770,13 @@ function getConfigKeyForOptionGroup(
   group: ModularHomeOptionGroup,
 ): keyof ModularHomeConfiguratorState | null {
   const keyByGroup = {
+    doorPackage: 'doorPackage',
     facade: 'facade',
     finish: 'finishLevel',
     roof: 'roof',
     terrace: 'terrace',
-    windowPackage: null,
-  } as const satisfies Record<ModularHomeOptionGroup, keyof ModularHomeConfiguratorState | null>;
+    windowPackage: 'windowPackage',
+  } as const satisfies Record<ModularHomeOptionGroup, keyof ModularHomeConfiguratorState>;
 
   return keyByGroup[group];
 }
@@ -732,6 +836,8 @@ function getRequiredOptionModuleIds(config: ModularHomeConfiguratorState): reado
     getSelectedOptionForGroup(config, 'roof'),
     getSelectedOptionForGroup(config, 'terrace'),
     getSelectedOptionForGroup(config, 'finish'),
+    getSelectedOptionForGroup(config, 'windowPackage'),
+    getSelectedOptionForGroup(config, 'doorPackage'),
   ].filter((option): option is ModularHomeOption => Boolean(option));
 
   return selectedOptions.flatMap((option) => option.requiredModuleIds);
@@ -801,11 +907,59 @@ function getReviewWarningsForCompatibleConfig(
     ));
   }
 
-  if (product.id === 'sauna-cabin-25' && config.terrace === 'smallTerrace') {
+  if (config.terrace === 'extendedTerrace') {
     warnings.push(createRequiresReviewWarning(
-      'sauna-small-terrace-review',
-      'Sauna Cabin terrace package requires wet-zone drainage and safety review.',
+      'extended-terrace-foundation-review',
+      'Extended terrace may require additional foundation pads, lateral stability and site connection review.',
       ['terrace'],
+    ));
+  }
+
+  if (config.terrace === 'coveredTerracePlaceholder') {
+    warnings.push(createRequiresReviewWarning(
+      'covered-terrace-structure-review',
+      'Covered terrace placeholder requires roof load, posts, drainage and permit review before final quote.',
+      ['terrace'],
+    ));
+  }
+
+  if (product.id === 'sauna-cabin-25' && config.terrace === 'frontDeck') {
+    warnings.push(createRequiresReviewWarning(
+      'sauna-front-deck-review',
+      'Sauna Cabin front deck package requires wet-zone drainage and safety review.',
+      ['terrace'],
+    ));
+  }
+
+  if (config.windowPackage === 'panoramicWindows') {
+    warnings.push(createRequiresReviewWarning(
+      'panoramic-glazing-review',
+      'Panoramic glazing requires structural opening, solar-gain and transport review.',
+      ['windowPackage'],
+    ));
+  }
+
+  if (config.windowPackage === 'cornerGlazing') {
+    warnings.push(createRequiresReviewWarning(
+      'corner-glazing-review',
+      'Corner glazing requires structural corner opening, thermal bridge and transport review.',
+      ['windowPackage'],
+    ));
+  }
+
+  if (config.doorPackage === 'terraceSlider') {
+    warnings.push(createRequiresReviewWarning(
+      'terrace-slider-threshold-review',
+      'Terrace slider requires threshold, drainage and weatherproofing detail review.',
+      ['doorPackage', 'terrace'],
+    ));
+  }
+
+  if (config.doorPackage === 'premiumGlazedEntry') {
+    warnings.push(createRequiresReviewWarning(
+      'premium-glazed-entry-review',
+      'Premium glazed entry requires thermal, security and hardware review.',
+      ['doorPackage'],
     ));
   }
 
@@ -991,6 +1145,8 @@ export function getModularHomeConfigurationWarnings(
     'roof',
     'terrace',
     'finish',
+    'windowPackage',
+    'doorPackage',
   ] as const;
 
   for (const group of selectedGroups) {
@@ -1063,6 +1219,8 @@ export function getSelectedModularHomeOptions(config: ModularHomeConfiguratorSta
     getSelectedOptionForGroup(config, 'roof'),
     getSelectedOptionForGroup(config, 'terrace'),
     getSelectedOptionForGroup(config, 'finish'),
+    getSelectedOptionForGroup(config, 'windowPackage'),
+    getSelectedOptionForGroup(config, 'doorPackage'),
   ].filter((option): option is ModularHomeOption => Boolean(option));
 }
 
@@ -1085,12 +1243,14 @@ export function getModularHomeProductConfigSummary(config: ModularHomeConfigurat
   const product = getProductForConfig(config);
 
   return {
+    doorPackage: getOptionForGroupAndToken('doorPackage', config.doorPackage)?.label ?? config.doorPackage,
     facade: getOptionForGroupAndToken('facade', config.facade)?.label ?? config.facade,
     finishLevel: getOptionForGroupAndToken('finish', config.finishLevel)?.label ?? config.finishLevel,
     product: product?.name ?? config.template,
     roof: getOptionForGroupAndToken('roof', config.roof)?.label ?? config.roof,
     template: product?.name ?? config.template,
     terrace: getOptionForGroupAndToken('terrace', config.terrace)?.label ?? config.terrace,
+    windowPackage: getOptionForGroupAndToken('windowPackage', config.windowPackage)?.label ?? config.windowPackage,
   };
 }
 

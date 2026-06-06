@@ -1,11 +1,12 @@
 import { useMemo, useState } from 'react';
-import type { ModularHomeConfiguratorState } from './modularHomeConfigurator';
+import type { ModularHomeConfiguratorState, ModularHomeViewModeOption } from './modularHomeConfigurator';
 import { createModularHomeShareUrl } from './modularHomeShareUrl';
 
 type ModularHomeShareLinkPanelProps = {
   config: ModularHomeConfiguratorState;
   invalidShareKeys?: readonly string[];
   isTouchDevice?: boolean;
+  viewMode: ModularHomeViewModeOption;
 };
 
 function stopShareLinkEvent(event: { stopPropagation: () => void }) {
@@ -16,9 +17,10 @@ export function ModularHomeShareLinkPanel({
   config,
   invalidShareKeys = [],
   isTouchDevice = false,
+  viewMode,
 }: ModularHomeShareLinkPanelProps) {
   const [copyStatus, setCopyStatus] = useState('');
-  const shareUrl = useMemo(() => createModularHomeShareUrl(config), [config]);
+  const shareUrl = useMemo(() => createModularHomeShareUrl(config, undefined, viewMode), [config, viewMode]);
   const hasInvalidShareKeys = invalidShareKeys.length > 0;
 
   const copyShareUrl = async () => {
@@ -40,6 +42,7 @@ export function ModularHomeShareLinkPanel({
       aria-label="Share Modular Home configuration"
       data-home-share-link-panel="true"
       data-home-share-link-invalid-keys={invalidShareKeys.join(',')}
+      data-home-share-link-view-mode={viewMode}
       onClick={stopShareLinkEvent}
       onMouseDown={stopShareLinkEvent}
       onPointerDown={stopShareLinkEvent}

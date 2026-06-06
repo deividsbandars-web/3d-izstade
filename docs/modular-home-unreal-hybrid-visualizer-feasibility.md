@@ -1,4 +1,4 @@
-﻿# Modular Home Unreal Hybrid Visualizer Feasibility Plan
+# Modular Home Unreal Hybrid Visualizer Feasibility Plan
 
 Status: feasibility and implementation plan only. Pixel Streaming is not implemented or enabled in this round.
 
@@ -238,3 +238,11 @@ Suggested stream id later:
 - No real quote submission coupling.
 - No payment flow.
 - No mobile default Unreal launch.
+
+## Round 95 actionable POC package
+Detailed execution package for the first Compact Timber 40 Unreal walkthrough POC:
+- `docs/modular-home-unreal-hybrid-poc-package.md`
+- `docs/modular-home-unreal-compact-timber-40-poc-payload.schema.json`
+- `docs/modular-home-unreal-compact-timber-40-poc-payload.example.json`
+
+This package is documentation/configuration only and does not enable production Pixel Streaming.

@@ -58,12 +58,15 @@ export {
   encodeModularHomeConfigToSearchParams,
 } from './modularHomeShareUrl';
 export {
+  compareModularHomeLocalProjects,
+  createModularHomeProjectComparison,
   createModularHomeLocalProject,
   deleteModularHomeLocalProject,
   duplicateModularHomeLocalProject,
   findModularHomeLocalProject,
   getModularHomeLocalProjects,
   MODULAR_HOME_PROJECT_WORKSPACE_KEY,
+  renameModularHomeLocalProject,
   saveModularHomeLocalProject,
   writeModularHomeLocalProjects,
 } from './modularHomeWorkspaceStorage';
@@ -88,6 +91,29 @@ export {
   getModularHomeScopeOfSupply,
   MODULAR_HOME_ESTIMATE_CONFIG,
 } from './modularHomeEstimate';
+export {
+  calculateModularHomeQuantities,
+  MODULAR_HOME_QUANTITY_TAKEOFF_DISCLAIMER,
+} from './modularHomeQuantities';
+export {
+  allocateModularHomePricingAmount,
+  createComponentPricingBreakdown,
+  createInstallationPricingBreakdown,
+  createModularHomePricingBreakdown,
+  createModulePricingBreakdown,
+  createOptionPricingBreakdown,
+  createTransportPricingBreakdown,
+  createVatPricingBreakdown,
+  getModularHomePricingCategoryTotals,
+  getPricingCategoriesForComponentCategory,
+  getPricingCategoriesForModuleType,
+  getPricingCategoriesForOptionGroup,
+  MODULAR_HOME_PRICING_CATEGORIES,
+  MODULAR_HOME_PRICING_CATEGORY_LABELS,
+  MODULAR_HOME_PRICING_CONTEXT,
+  summarizeModularHomePricing,
+  sumModularHomePricingBreakdowns,
+} from './modularHomePricing';
 export {
   getDefaultHomeConfig,
   getBomModuleSummary,
@@ -126,10 +152,25 @@ export {
   MODULAR_HOME_ROOF_MATERIAL_BY_OPTION,
 } from './modularHomeMaterials';
 export {
+  calculateComponentBom,
+  getComponentsForModule,
+  getComponentsForProduct,
+  getComponentSummaryForConfig,
+  MODULAR_HOME_COMPONENT_BOM_DISCLAIMER,
+  MODULAR_HOME_COMPONENTS,
+  MODULAR_HOME_MODULE_COMPONENT_IDS,
+  MODULAR_HOME_PRODUCT_COMPONENT_LIBRARY,
+} from './modularHomeComponents';
+export {
   DEFAULT_MODULAR_HOME_CONFIG,
+  DEFAULT_MODULAR_HOME_VIEW_MODE,
   getModularHomeConfigLabel,
   getModularHomeConfigSummary,
+  getModularHomeViewMode,
+  getModularHomeViewModeLabel,
   MODULAR_HOME_CONFIGURATOR_GROUPS,
+  MODULAR_HOME_DOOR_PACKAGE_OPTIONS,
+  MODULAR_HOME_DOOR_PACKAGE_VISUALS,
   MODULAR_HOME_FACADE_OPTIONS,
   MODULAR_HOME_FACADE_VISUALS,
   MODULAR_HOME_FINISH_LEVEL_VISUALS,
@@ -138,10 +179,17 @@ export {
   MODULAR_HOME_ROOF_VISUALS,
   MODULAR_HOME_TERRACE_OPTIONS,
   MODULAR_HOME_TERRACE_VISUALS,
+  MODULAR_HOME_VIEW_MODE_OPTIONS,
+  MODULAR_HOME_WINDOW_PACKAGE_OPTIONS,
+  MODULAR_HOME_WINDOW_PACKAGE_VISUALS,
+  normalizeModularHomeConfig,
   resetModularHomeConfig,
+  resetModularHomeViewMode,
   setModularHomeConfig,
   setModularHomeConfigOption,
+  setModularHomeViewMode,
   useModularHomeConfigurator,
+  useModularHomeViewMode,
 } from './modularHomeConfigurator';
 
 export type {
@@ -182,6 +230,8 @@ export type {
 export type {
   CreateModularHomeLocalProjectInput,
   ModularHomeLocalProject,
+  ModularHomeProjectComparison,
+  ModularHomeProjectComparisonOption,
   ModularHomeProjectQuoteStatus,
 } from './modularHomeWorkspaceStorage';
 export type {
@@ -189,9 +239,25 @@ export type {
   ModularHomeEstimateAdjustment,
   ModularHomeEstimateLineItem,
   ModularHomeEstimateLineItemCategory,
+  ModularHomeEstimateSection,
+  ModularHomeEstimateSectionId,
+  ModularHomeEstimateSectionLineItem,
   ModularHomeScopeOfSupplySection,
   ModularHomeScopeOfSupplySectionId,
 } from './modularHomeEstimate';
+export type {
+  ModularHomeQuantityTakeoff,
+} from './modularHomeQuantities';
+export type {
+  ModularHomeCostRegion,
+  ModularHomeCurrency,
+  ModularHomePricingConfidenceLevel,
+  ModularHomePricingBreakdown,
+  ModularHomePricingCategory,
+  ModularHomePricingCategoryTotal,
+  ModularHomePricingContext,
+  ModularHomePricingSummary,
+} from './modularHomePricing';
 export type {
   ModularHomeBomModuleSummaryItem,
   ModularHomeConfigurationWarning,
@@ -219,9 +285,20 @@ export type {
   ModularHomeMaterialId,
 } from './modularHomeMaterials';
 export type {
+  ModularHomeComponentBom,
+  ModularHomeComponentBomGroup,
+  ModularHomeComponent,
+  ModularHomeComponentCategory,
+  ModularHomeComponentId,
+  ModularHomeComponentSummaryItem,
+  ModularHomeComponentUnit,
+} from './modularHomeComponents';
+export type {
   ModularHomeConfiguratorGroup,
   ModularHomeConfiguratorOption,
   ModularHomeConfiguratorState,
+  ModularHomeDoorPackageOption,
+  ModularHomeDoorPackageVisual,
   ModularHomeFacadeOption,
   ModularHomeFacadeVisual,
   ModularHomeFinishLevelVisual,
@@ -231,4 +308,8 @@ export type {
   ModularHomeTemplateOption,
   ModularHomeTerraceOption,
   ModularHomeTerraceVisual,
+  ModularHomeWindowPackageOption,
+  ModularHomeWindowPackageVisual,
+  ModularHomeViewModeOption,
+  ModularHomeViewModeOptionDefinition,
 } from './modularHomeConfigurator';

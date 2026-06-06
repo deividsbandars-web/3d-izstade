@@ -12,6 +12,7 @@ assert.equal(accessPlan.roleCheck, 'adminOnly');
 assert.equal(accessPlan.publicExposure, false);
 assert.equal(accessPlan.storageTable, 'modular_home_quote_requests');
 assert.ok(accessPlan.adminRoutes.some((route) => route.path === '/api/modular-home/quotes'));
+assert.ok(accessPlan.adminRoutes.some((route) => route.path === '/api/modular-home/quotes/:quoteId'));
 assert.ok(accessPlan.adminRoutes.some((route) => route.path === '/api/modular-home/quotes/:quoteId/status'));
 assert.ok(accessPlan.adminRoutes.some((route) => route.path.includes('/export')));
 

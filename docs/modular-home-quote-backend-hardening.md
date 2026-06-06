@@ -1,10 +1,13 @@
-﻿# Modular Home Quote Backend Hardening Plan
+# Modular Home Quote Backend Hardening Plan
 
 Status: backend submission path exists but must remain disabled by default.
 
 ## Current gates
 - Server storage is disabled unless `MODULAR_HOME_QUOTE_SUBMISSION_ENABLED=true`.
 - Client can attempt backend submission only with explicit `?homeQuoteBackend=1`.
+- Round 93 staging gate: even with the server flag and query flag, real quote insert is accepted only from staging/review hosts or staging/preview deployment environment.
+- Production hosts such as `www.30sek24.com` must remain blocked until production hardening is complete.
+- Allowed staging hosts default to `staging.30sek24.com`, `localhost` and `127.0.0.1`; override with comma-separated `MODULAR_HOME_QUOTE_STAGING_HOSTS` if staging hostnames change.
 - Frontend default remains localStorage-only preview quote queue.
 - Route: `POST /api/modular-home/quote?homeQuoteBackend=1`.
 - Storage target: `modular_home_quote_requests`.
@@ -92,11 +95,17 @@ Create a separate audit target before production enablement, for example `modula
 Record:
 - disabled backend attempts without raw PII payload.
 - missing `homeQuoteBackend=1` attempts.
+- non-staging attempts by status/error code and coarse host metadata only.
 - validation failures by code, request id and coarse source metadata.
 - successful insert id and consent/privacy versions.
 - email/CRM queue result.
 - admin status changes.
 - exports.
+
+Current Round 93 route logging:
+- failure logs use a safe structured event with error code, status, stage, host, method, path and presence booleans only;
+- failure logs must not include requester name, email, phone, message or raw request body;
+- storage provider errors are returned as `MODULAR_HOME_QUOTE_STORAGE_FAILED` without leaking provider details to the public response.
 
 ## Production enablement decision
 Do not enable `MODULAR_HOME_QUOTE_SUBMISSION_ENABLED=true` until:

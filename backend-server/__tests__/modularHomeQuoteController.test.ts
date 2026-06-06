@@ -4,9 +4,13 @@ import {
   MODULAR_HOME_QUOTE_BACKEND_CONSENT_TEXT,
   MODULAR_HOME_QUOTE_CONSENT_VERSION,
   MODULAR_HOME_QUOTE_PRIVACY_VERSION,
+  type ModularHomeQuoteStorageClient,
+  createModularHomeQuoteSafeLogEvent,
   getModularHomeQuoteBackendHardeningPlan,
   getModularHomeQuoteSubmissionConfig,
+  insertModularHomeQuoteRequest,
   isModularHomeQuoteBackendRequestEnabled,
+  isModularHomeQuoteStagingRequest,
   submitModularHomeQuote,
   validateModularHomeQuoteRequest,
 } from '../controllers/modularHomeQuoteController.js';
@@ -86,6 +90,9 @@ function createMockResponse() {
 }
 
 const previousSubmissionFlag = process.env.MODULAR_HOME_QUOTE_SUBMISSION_ENABLED;
+const previousAppEnv = process.env.APP_ENV;
+const previousVercelEnv = process.env.VERCEL_ENV;
+const previousStagingHosts = process.env.MODULAR_HOME_QUOTE_STAGING_HOSTS;
 
 const valid = validateModularHomeQuoteRequest(createValidPayload());
 assert.equal(valid.requester.email, 'client@example.com');
@@ -133,13 +140,20 @@ assert.equal(isModularHomeQuoteBackendRequestEnabled({ homeQuoteBackend: '1' }),
 assert.equal(isModularHomeQuoteBackendRequestEnabled({ homeQuoteBackend: ['0', '1'] }), true);
 
 process.env.MODULAR_HOME_QUOTE_SUBMISSION_ENABLED = '';
+process.env.APP_ENV = '';
+process.env.VERCEL_ENV = '';
+process.env.MODULAR_HOME_QUOTE_STAGING_HOSTS = '';
 {
   const submissionConfig = getModularHomeQuoteSubmissionConfig();
   assert.equal(submissionConfig.enabled, false);
   assert.equal(submissionConfig.productionReady, false);
+  assert.equal(submissionConfig.requiresStagingEnvironment, true);
   assert.equal(submissionConfig.hardeningPlan.enablementGate.defaultMode, 'disabled');
   assert.equal(submissionConfig.hardeningPlan.enablementGate.envFlag, 'MODULAR_HOME_QUOTE_SUBMISSION_ENABLED');
   assert.equal(submissionConfig.hardeningPlan.enablementGate.requestFlag, 'homeQuoteBackend=1');
+  assert.equal(submissionConfig.hardeningPlan.enablementGate.stagingRequirement, 'staging host or staging/preview environment');
+  assert.ok(submissionConfig.staging.allowedHosts.includes('staging.30sek24.com'));
+  assert.equal(submissionConfig.staging.enabledByEnvironment, false);
 }
 
 {
@@ -151,10 +165,29 @@ process.env.MODULAR_HOME_QUOTE_SUBMISSION_ENABLED = '';
   assert.ok(hardeningPlan.auditLogRequirements.some((item) => item.includes('validation failures')));
 }
 
+assert.equal(isModularHomeQuoteStagingRequest({
+  headers: { host: 'staging.30sek24.com' },
+  query: {},
+} as unknown as Request), true);
+assert.equal(isModularHomeQuoteStagingRequest({
+  headers: { host: 'www.30sek24.com' },
+  query: {},
+} as unknown as Request), false);
+
+process.env.APP_ENV = 'staging';
+assert.equal(isModularHomeQuoteStagingRequest({
+  headers: { host: 'www.30sek24.com' },
+  query: {},
+} as unknown as Request), true);
+process.env.APP_ENV = '';
+
 {
   const { response, result } = createMockResponse();
   await submitModularHomeQuote({
     body: createValidPayload(),
+    headers: { host: 'staging.30sek24.com' },
+    method: 'POST',
+    path: '/api/modular-home/quote',
     query: { homeQuoteBackend: '1' },
   } as unknown as Request, response);
   assert.equal(result.statusCode, 503);
@@ -168,14 +201,90 @@ assert.equal(getModularHomeQuoteSubmissionConfig().enabled, true);
   const { response, result } = createMockResponse();
   await submitModularHomeQuote({
     body: createValidPayload(),
+    headers: { host: 'staging.30sek24.com' },
+    method: 'POST',
+    path: '/api/modular-home/quote',
     query: {},
   } as unknown as Request, response);
   assert.equal(result.statusCode, 403);
   assert.match(JSON.stringify(result.body), /MODULAR_HOME_QUOTE_BACKEND_FLAG_REQUIRED/);
 }
 
+{
+  const { response, result } = createMockResponse();
+  await submitModularHomeQuote({
+    body: createValidPayload(),
+    headers: { host: 'www.30sek24.com' },
+    method: 'POST',
+    path: '/api/modular-home/quote',
+    query: { homeQuoteBackend: '1' },
+  } as unknown as Request, response);
+  assert.equal(result.statusCode, 403);
+  assert.match(JSON.stringify(result.body), /MODULAR_HOME_QUOTE_STAGING_ONLY/);
+}
+
+{
+  const payload = validateModularHomeQuoteRequest(createValidPayload());
+  const fakeStorage: ModularHomeQuoteStorageClient = {
+    from(table: string) {
+      assert.equal(table, 'modular_home_quote_requests');
+      return {
+        insert(rows: unknown[]) {
+          assert.equal(rows.length, 1);
+          return {
+            select(columns: string) {
+              assert.equal(columns, 'id');
+              return {
+                async single() {
+                  return { data: { id: 'quote-test-id' }, error: null };
+                },
+              };
+            },
+          };
+        },
+      };
+    },
+  };
+
+  const insertedId = await insertModularHomeQuoteRequest(payload, getModularHomeQuoteSubmissionConfig(), fakeStorage);
+  assert.equal(insertedId, 'quote-test-id');
+}
+
+{
+  const event = createModularHomeQuoteSafeLogEvent({
+    body: createValidPayload(),
+    headers: { host: 'www.30sek24.com' },
+    method: 'POST',
+    path: '/api/modular-home/quote',
+    query: { homeQuoteBackend: '1' },
+  } as unknown as Request, 'MODULAR_HOME_QUOTE_EMAIL_INVALID', 400, 'validation');
+  const serialized = JSON.stringify(event);
+  assert.match(serialized, /MODULAR_HOME_QUOTE_EMAIL_INVALID/);
+  assert.doesNotMatch(serialized, /Client@Example\.com/i);
+  assert.doesNotMatch(serialized, /Client Name/);
+  assert.doesNotMatch(serialized, /\+371 20000000/);
+  assert.doesNotMatch(serialized, /Need a timber home quote/);
+  assert.equal(event.hasRequester, true);
+  assert.equal(event.hasConsent, true);
+}
+
 if (previousSubmissionFlag === undefined) {
   delete process.env.MODULAR_HOME_QUOTE_SUBMISSION_ENABLED;
 } else {
   process.env.MODULAR_HOME_QUOTE_SUBMISSION_ENABLED = previousSubmissionFlag;
+}
+if (previousAppEnv === undefined) {
+  delete process.env.APP_ENV;
+} else {
+  process.env.APP_ENV = previousAppEnv;
+}
+if (previousVercelEnv === undefined) {
+  delete process.env.VERCEL_ENV;
+} else {
+  process.env.VERCEL_ENV = previousVercelEnv;
+}
+if (previousStagingHosts === undefined) {
+  delete process.env.MODULAR_HOME_QUOTE_STAGING_HOSTS;
+} else {
+  process.env.MODULAR_HOME_QUOTE_STAGING_HOSTS = previousStagingHosts;
 }

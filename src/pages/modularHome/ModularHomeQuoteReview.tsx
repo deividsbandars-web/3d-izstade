@@ -1,5 +1,12 @@
-import { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
+import {
+  MODULAR_HOME_QUOTE_ADMIN_STATUSES,
+  getModularHomeQuoteAdminDetail,
+  getModularHomeQuoteAdminRows,
+  updateModularHomeQuoteAdminStatus,
+} from '../../app/modularHome/modularHomeQuoteAdminApi';
+import { supabaseClient } from '../../lib/supabaseClient';
 import {
   getMockModularHomeQuoteReviewRows,
   getModularHomeQuoteReviewSummary,
@@ -7,9 +14,18 @@ import {
   serializeModularHomeQuoteReviewCsv,
   serializeModularHomeQuoteReviewJson,
   type ModularHomeQuoteReviewRow,
+  type ModularHomeQuoteReviewStatus,
 } from '../../modules/expo/runtime/modularHome/modularHomeQuoteReview';
 
 const ALL_FILTER_VALUE = 'all';
+
+type QuoteReviewAccessState =
+  | 'checking-auth'
+  | 'ready'
+  | 'signed-out'
+  | 'access-denied'
+  | 'backend-unavailable'
+  | 'unavailable';
 
 function formatDate(value: string) {
   const date = new Date(value);
@@ -38,7 +54,19 @@ function downloadTextFile(filename: string, content: string, type: string) {
   URL.revokeObjectURL(url);
 }
 
+function isLocalReviewHost() {
+  if (typeof window === 'undefined') {
+    return false;
+  }
+
+  return ['localhost', '127.0.0.1', '[::1]'].includes(window.location.hostname);
+}
+
 function getSourceLabel(row: ModularHomeQuoteReviewRow) {
+  if (row.source === 'backend-staging') {
+    return 'Protected staging';
+  }
+
   return row.source === 'local-preview' ? 'Local preview' : 'Mock review';
 }
 
@@ -81,12 +109,80 @@ function matchesSearch(row: ModularHomeQuoteReviewRow, searchTerm: string) {
   ].some((value) => value.toLowerCase().includes(normalized));
 }
 
-function isModularHomeQuoteReviewAccessAllowed() {
-  if (typeof window === 'undefined') {
-    return false;
+function formatRequestError(error: unknown) {
+  return error instanceof Error ? error.message : String(error);
+}
+
+function resolveAccessStateFromError(errorText: string): Exclude<QuoteReviewAccessState, 'checking-auth' | 'ready'> {
+  if (errorText.includes('SERVER_API_HTTP_401')) {
+    return 'signed-out';
   }
 
-  return ['localhost', '127.0.0.1', '[::1]'].includes(window.location.hostname);
+  if (errorText.includes('SERVER_API_HTTP_403')) {
+    return 'access-denied';
+  }
+
+  if (
+    errorText.includes('SERVER_API_HTTP_500') ||
+    errorText.includes('SERVER_API_HTTP_502') ||
+    errorText.includes('SERVER_API_HTTP_503') ||
+    errorText.includes('SERVER_API_HTTP_504') ||
+    errorText.toLowerCase().includes('failed to fetch') ||
+    errorText.toLowerCase().includes('networkerror') ||
+    errorText.toLowerCase().includes('err_connection')
+  ) {
+    return 'backend-unavailable';
+  }
+
+  return 'unavailable';
+}
+
+function getAccessNotice(accessState: QuoteReviewAccessState, technicalError: string | null) {
+  if (accessState === 'signed-out') {
+    return {
+      accent: '#fbbf24',
+      actionHref: '/login?next=/modular-homes/quotes',
+      actionLabel: 'Sign in',
+      body: 'Modular Home quote review is protected. Sign in with an admin account to review staging quote requests.',
+      detail: 'No quote data is loaded for public visitors.',
+      title: 'Admin sign-in required',
+    };
+  }
+
+  if (accessState === 'access-denied') {
+    return {
+      accent: '#fb7185',
+      actionHref: '/expo-3d?homeDemo=1',
+      actionLabel: 'Open home demo',
+      body: 'Your session is valid, but this account does not have admin access to Modular Home quote review.',
+      detail: 'Use an admin account or update the Supabase app_metadata role to admin.',
+      title: 'Admin access required',
+    };
+  }
+
+  if (accessState === 'backend-unavailable') {
+    return {
+      accent: '#38bdf8',
+      actionHref: '/expo-3d?homeDemo=1',
+      actionLabel: 'Open home demo',
+      body: 'The protected quote review UI is ready, but the staging backend is not reachable right now.',
+      detail: technicalError ? `Technical detail: ${technicalError}` : 'Check staging backend health and API URL configuration.',
+      title: 'Backend unavailable',
+    };
+  }
+
+  if (accessState === 'unavailable') {
+    return {
+      accent: '#f87171',
+      actionHref: '/expo-3d?homeDemo=1',
+      actionLabel: 'Open home demo',
+      body: 'Modular Home quote review could not load.',
+      detail: technicalError ? `Technical detail: ${technicalError}` : 'Retry after checking backend and auth session.',
+      title: 'Review unavailable',
+    };
+  }
+
+  return null;
 }
 
 function statCard(label: string, value: string | number, tone: string) {
@@ -107,21 +203,67 @@ function statCard(label: string, value: string | number, tone: string) {
   );
 }
 
+function statusIsAdminStatus(status: ModularHomeQuoteReviewStatus): status is typeof MODULAR_HOME_QUOTE_ADMIN_STATUSES[number] {
+  return MODULAR_HOME_QUOTE_ADMIN_STATUSES.includes(status as typeof MODULAR_HOME_QUOTE_ADMIN_STATUSES[number]);
+}
+
 export default function ModularHomeQuoteReview() {
-  const reviewAccessAllowed = isModularHomeQuoteReviewAccessAllowed();
-  const [includeMockRows, setIncludeMockRows] = useState(true);
-  const [localRows, setLocalRows] = useState(() => (
-    reviewAccessAllowed ? readLocalModularHomeQuoteReviewRows() : []
-  ));
+  const [searchParams] = useSearchParams();
+  const useProtectedBackend = !isLocalReviewHost() || searchParams.get('adminBackend') === '1';
+  const [accessState, setAccessState] = useState<QuoteReviewAccessState>(useProtectedBackend ? 'checking-auth' : 'ready');
+  const [activeDetailLoad, setActiveDetailLoad] = useState<string | null>(null);
+  const [activeStatusAction, setActiveStatusAction] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [includeMockRows, setIncludeMockRows] = useState(!useProtectedBackend);
+  const [loading, setLoading] = useState(useProtectedBackend);
   const [modelFilter, setModelFilter] = useState(ALL_FILTER_VALUE);
+  const [rows, setRows] = useState<ModularHomeQuoteReviewRow[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedRow, setSelectedRow] = useState<ModularHomeQuoteReviewRow | null>(null);
   const [sourceFilter, setSourceFilter] = useState(ALL_FILTER_VALUE);
   const [statusFilter, setStatusFilter] = useState(ALL_FILTER_VALUE);
+  const [toast, setToast] = useState<{ type: 'error' | 'success'; text: string } | null>(null);
 
-  const rows = useMemo(() => {
-    const mockRows = reviewAccessAllowed && includeMockRows ? getMockModularHomeQuoteReviewRows() : [];
-    return [...localRows, ...mockRows].sort((left, right) => right.createdAt.localeCompare(left.createdAt));
-  }, [includeMockRows, localRows, reviewAccessAllowed]);
+  const loadRows = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    setToast(null);
+
+    try {
+      if (!useProtectedBackend) {
+        const localRows = readLocalModularHomeQuoteReviewRows();
+        const mockRows = includeMockRows ? getMockModularHomeQuoteReviewRows() : [];
+        setRows([...localRows, ...mockRows].sort((left, right) => right.createdAt.localeCompare(left.createdAt)));
+        setAccessState('ready');
+        return;
+      }
+
+      setAccessState('checking-auth');
+      const { data: sessionData } = await supabaseClient.auth.getSession();
+      if (!sessionData.session?.access_token) {
+        setRows([]);
+        setSelectedRow(null);
+        setAccessState('signed-out');
+        return;
+      }
+
+      const result = await getModularHomeQuoteAdminRows({ limit: 100 });
+      setRows(result.rows.sort((left, right) => right.createdAt.localeCompare(left.createdAt)));
+      setAccessState('ready');
+    } catch (requestError) {
+      const errorText = formatRequestError(requestError);
+      setError(errorText);
+      setRows([]);
+      setSelectedRow(null);
+      setAccessState(resolveAccessStateFromError(errorText));
+    } finally {
+      setLoading(false);
+    }
+  }, [includeMockRows, useProtectedBackend]);
+
+  useEffect(() => {
+    void loadRows();
+  }, [loadRows]);
 
   const modelOptions = useMemo(() => (
     Array.from(new Set(rows.map((row) => row.model))).sort((left, right) => left.localeCompare(right))
@@ -137,10 +279,7 @@ export default function ModularHomeQuoteReview() {
   )), [modelFilter, rows, searchTerm, sourceFilter, statusFilter]);
   const summary = useMemo(() => getModularHomeQuoteReviewSummary(rows), [rows]);
   const visibleSummary = useMemo(() => getModularHomeQuoteReviewSummary(visibleRows), [visibleRows]);
-
-  const refreshLocalRows = () => {
-    setLocalRows(reviewAccessAllowed ? readLocalModularHomeQuoteReviewRows() : []);
-  };
+  const accessNotice = getAccessNotice(accessState, error);
 
   const exportJson = () => {
     if (visibleRows.length === 0) {
@@ -166,27 +305,70 @@ export default function ModularHomeQuoteReview() {
     );
   };
 
-  if (!reviewAccessAllowed) {
+  async function viewQuoteDetail(row: ModularHomeQuoteReviewRow) {
+    setToast(null);
+
+    if (!useProtectedBackend || row.source !== 'backend-staging') {
+      setSelectedRow(row);
+      return;
+    }
+
+    setActiveDetailLoad(row.id);
+    try {
+      const detail = await getModularHomeQuoteAdminDetail(row.id);
+      setSelectedRow(detail ?? row);
+    } catch (detailError) {
+      setToast({ type: 'error', text: `Could not load quote detail: ${formatRequestError(detailError)}` });
+    } finally {
+      setActiveDetailLoad(null);
+    }
+  }
+
+  async function updateQuoteStatus(row: ModularHomeQuoteReviewRow, status: typeof MODULAR_HOME_QUOTE_ADMIN_STATUSES[number]) {
+    if (!useProtectedBackend || row.source !== 'backend-staging') {
+      return;
+    }
+
+    setActiveStatusAction(`${row.id}:${status}`);
+    setToast(null);
+
+    try {
+      const result = await updateModularHomeQuoteAdminStatus(row.id, status);
+      setRows((current) => current.map((entry) => (
+        entry.id === row.id ? { ...entry, status: result.status } : entry
+      )));
+      setSelectedRow((current) => current?.id === row.id ? { ...current, status: result.status } : current);
+      setToast({ type: 'success', text: `Quote marked ${result.status}.` });
+    } catch (updateError) {
+      setToast({ type: 'error', text: `Could not update status: ${formatRequestError(updateError)}` });
+    } finally {
+      setActiveStatusAction(null);
+    }
+  }
+
+  if (accessNotice && accessState !== 'ready') {
     return (
-      <main style={{ color: '#f8fafc', margin: '0 auto', maxWidth: '900px', padding: '72px 20px' }}>
+      <main style={{ color: '#f8fafc', margin: '0 auto', maxWidth: '920px', padding: '72px 20px' }}>
         <section style={{
           background: 'linear-gradient(135deg, rgba(21, 16, 8, 0.96), rgba(2, 6, 23, 0.94))',
-          border: '1px solid rgba(251, 191, 36, 0.26)',
+          border: `1px solid ${accessNotice.accent}55`,
           borderRadius: '30px',
           padding: '30px',
         }}>
-          <div style={{ color: '#fbbf24', fontSize: '0.72rem', fontWeight: 950, letterSpacing: '0.14em', textTransform: 'uppercase' }}>
-            Local review only
+          <div style={{ color: accessNotice.accent, fontSize: '0.72rem', fontWeight: 950, letterSpacing: '0.14em', textTransform: 'uppercase' }}>
+            Protected admin route
           </div>
           <h1 style={{ fontSize: 'clamp(2rem, 5vw, 3.5rem)', letterSpacing: '-0.055em', lineHeight: 0.98, margin: '10px 0 14px' }}>
-            Modular Home quote review is not public
+            {accessNotice.title}
           </h1>
           <p style={{ color: '#cbd5e1', fontSize: '1rem', lineHeight: 1.6, margin: 0 }}>
-            This local/mock lead viewer is available only on localhost until a protected admin backend is connected.
-            No quote data is loaded or exported on public hosts.
+            {accessNotice.body}
           </p>
-          <Link to="/expo-3d?homeDemo=1" style={{ ...actionButton('#a78bfa'), display: 'inline-block', marginTop: '20px', textDecoration: 'none' }}>
-            Open home demo
+          <p style={{ color: '#94a3b8', fontSize: '0.88rem', lineHeight: 1.5, margin: '12px 0 0' }}>
+            {accessNotice.detail}
+          </p>
+          <Link to={accessNotice.actionHref} style={{ ...actionButton(accessNotice.accent), display: 'inline-block', marginTop: '20px', textDecoration: 'none' }}>
+            {accessNotice.actionLabel}
           </Link>
         </section>
       </main>
@@ -203,18 +385,19 @@ export default function ModularHomeQuoteReview() {
         padding: '30px',
       }}>
         <div style={{ color: '#fbbf24', fontSize: '0.72rem', fontWeight: 950, letterSpacing: '0.14em', textTransform: 'uppercase' }}>
-          Internal review / local-first
+          {useProtectedBackend ? 'Protected admin / staging quotes' : 'Local dev review'}
         </div>
         <h1 style={{ fontSize: 'clamp(2rem, 5vw, 4.2rem)', letterSpacing: '-0.055em', lineHeight: 0.98, margin: '10px 0 14px' }}>
           Modular Home quote review
         </h1>
-        <p style={{ color: '#cbd5e1', fontSize: '1rem', lineHeight: 1.6, margin: 0, maxWidth: '900px' }}>
-          Review local preview quote requests and mock sales examples before a protected backend inbox is connected.
-          This page does not fetch public quote data and is not linked from the public navigation.
+        <p style={{ color: '#cbd5e1', fontSize: '1rem', lineHeight: 1.6, margin: 0, maxWidth: '920px' }}>
+          {useProtectedBackend
+            ? 'Review staging Modular Home quote submissions through the protected backend. Public visitors and non-admin accounts cannot load quote data.'
+            : 'Localhost fallback shows local preview requests and optional mock rows. Staging uses the protected admin backend instead.'}
         </p>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginTop: '20px' }}>
-          <button onClick={refreshLocalRows} style={actionButton('#38bdf8')} type="button">
-            Refresh local queue
+          <button onClick={() => void loadRows()} style={actionButton('#38bdf8')} type="button">
+            {loading ? 'Loading...' : 'Refresh quotes'}
           </button>
           <button disabled={visibleRows.length === 0} onClick={exportJson} style={actionButton('#fbbf24', visibleRows.length === 0)} type="button">
             Export JSON
@@ -226,14 +409,20 @@ export default function ModularHomeQuoteReview() {
             Open home demo
           </Link>
         </div>
+        {toast ? (
+          <div style={{ color: toast.type === 'success' ? '#bbf7d0' : '#fecaca', fontSize: '0.86rem', fontWeight: 900, marginTop: '14px' }}>
+            {toast.text}
+          </div>
+        ) : null}
       </section>
 
       <section style={{ display: 'grid', gap: '14px', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', marginBottom: '24px' }}>
         {statCard('All review rows', summary.totalCount, '#fbbf24')}
+        {statCard('Protected backend', summary.backendCount, '#34d399')}
         {statCard('Local queue', summary.localCount, '#38bdf8')}
         {statCard('Mock examples', summary.mockCount, '#a78bfa')}
-        {statCard('Visible rows', visibleSummary.totalCount, '#34d399')}
-        {statCard('Visible estimate', formatMoney(visibleSummary.totalEstimate), '#fde68a')}
+        {statCard('Visible rows', visibleSummary.totalCount, '#fde68a')}
+        {statCard('Visible estimate', formatMoney(visibleSummary.totalEstimate), '#fef3c7')}
       </section>
 
       <section style={{
@@ -277,44 +466,42 @@ export default function ModularHomeQuoteReview() {
           Source
           <select onChange={(event) => setSourceFilter(event.target.value)} style={filterInputStyle} value={sourceFilter}>
             <option value={ALL_FILTER_VALUE}>All sources</option>
-            <option value="local-preview">Local preview</option>
-            <option value="mock-review">Mock review</option>
+            <option value="backend-staging">Protected staging</option>
+            {!useProtectedBackend ? <option value="local-preview">Local preview</option> : null}
+            {!useProtectedBackend ? <option value="mock-review">Mock review</option> : null}
           </select>
         </label>
-        <label style={{
-          ...filterLabelStyle,
-          alignItems: 'center',
-          background: 'rgba(2, 6, 23, 0.38)',
-          border: '1px solid rgba(251, 191, 36, 0.18)',
-          borderRadius: '14px',
-          display: 'flex',
-          gap: '10px',
-          justifyContent: 'space-between',
-          padding: '10px 12px',
-        }}>
-          Include mock rows
-          <input
-            checked={includeMockRows}
-            onChange={(event) => setIncludeMockRows(event.target.checked)}
-            type="checkbox"
-          />
-        </label>
+        {!useProtectedBackend ? (
+          <label style={{
+            ...filterLabelStyle,
+            alignItems: 'center',
+            background: 'rgba(2, 6, 23, 0.38)',
+            border: '1px solid rgba(251, 191, 36, 0.18)',
+            borderRadius: '14px',
+            display: 'flex',
+            gap: '10px',
+            justifyContent: 'space-between',
+            padding: '10px 12px',
+          }}>
+            Include mock rows
+            <input
+              checked={includeMockRows}
+              onChange={(event) => setIncludeMockRows(event.target.checked)}
+              type="checkbox"
+            />
+          </label>
+        ) : null}
       </section>
 
-      {visibleRows.length === 0 ? (
-        <section style={{
-          border: '1px dashed rgba(148, 163, 184, 0.28)',
-          borderRadius: '24px',
-          color: '#94a3b8',
-          padding: '42px 20px',
-          textAlign: 'center',
-        }}>
-          No Modular Home quote rows match the current filters.
-        </section>
-      ) : (
+      <div style={{ alignItems: 'start', display: 'grid', gap: '20px', gridTemplateColumns: 'minmax(0, 1fr) minmax(320px, 0.42fr)' }}>
         <section style={{ display: 'grid', gap: '16px' }}>
-          {visibleRows.map((row) => {
+          {loading ? (
+            <section style={emptyStateStyle}>Loading protected Modular Home quotes...</section>
+          ) : visibleRows.length === 0 ? (
+            <section style={emptyStateStyle}>No Modular Home quote rows match the current filters.</section>
+          ) : visibleRows.map((row) => {
             const statusTone = getStatusTone(row.status);
+            const canUpdateStatus = useProtectedBackend && row.source === 'backend-staging' && statusIsAdminStatus(row.status);
 
             return (
               <article
@@ -322,7 +509,7 @@ export default function ModularHomeQuoteReview() {
                 data-modular-home-quote-row={row.id}
                 style={{
                   background: 'linear-gradient(180deg, rgba(15, 23, 42, 0.82), rgba(2, 6, 23, 0.72))',
-                  border: '1px solid rgba(148, 163, 184, 0.18)',
+                  border: selectedRow?.id === row.id ? '1px solid rgba(251, 191, 36, 0.66)' : '1px solid rgba(148, 163, 184, 0.18)',
                   borderRadius: '24px',
                   padding: '20px',
                 }}
@@ -357,53 +544,89 @@ export default function ModularHomeQuoteReview() {
                   </div>
                 </div>
 
-                <div style={{
-                  display: 'grid',
-                  gap: '10px',
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
-                  marginTop: '16px',
-                }}>
-                  {[
-                    ['Facade', row.config.facade],
-                    ['Roof', row.config.roof],
-                    ['Terrace', row.config.terrace],
-                    ['Finish', row.config.finishLevel],
-                    ['Land', row.landOwned],
-                    ['Target', row.targetBuildDate],
-                    ['Budget', row.budgetRange],
-                  ].map(([label, value]) => (
-                    <div key={label} style={{
-                      background: 'rgba(2, 6, 23, 0.46)',
-                      border: '1px solid rgba(148, 163, 184, 0.14)',
-                      borderRadius: '14px',
-                      padding: '12px',
-                    }}>
-                      <div style={{ color: '#94a3b8', fontSize: '0.68rem', fontWeight: 950, letterSpacing: '0.08em', textTransform: 'uppercase' }}>{label}</div>
-                      <div style={{ color: '#f8fafc', fontSize: '0.92rem', fontWeight: 850, marginTop: '5px' }}>{value}</div>
-                    </div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '16px' }}>
+                  <button type="button" onClick={() => void viewQuoteDetail(row)} style={actionButton('#fbbf24')}>
+                    {activeDetailLoad === row.id ? 'Loading detail...' : 'View details'}
+                  </button>
+                  {MODULAR_HOME_QUOTE_ADMIN_STATUSES.map((status) => (
+                    <button
+                      key={status}
+                      type="button"
+                      disabled={!canUpdateStatus || row.status === status || activeStatusAction === `${row.id}:${status}`}
+                      onClick={() => void updateQuoteStatus(row, status)}
+                      style={actionButton(getStatusTone(status), !canUpdateStatus || row.status === status || activeStatusAction === `${row.id}:${status}`)}
+                    >
+                      {activeStatusAction === `${row.id}:${status}` ? 'Saving...' : status}
+                    </button>
                   ))}
                 </div>
-
-                <p style={{
-                  background: 'rgba(15, 23, 42, 0.52)',
-                  border: '1px solid rgba(148, 163, 184, 0.14)',
-                  borderRadius: '16px',
-                  color: '#e2e8f0',
-                  lineHeight: 1.55,
-                  margin: '16px 0 0',
-                  padding: '14px',
-                  whiteSpace: 'pre-wrap',
-                }}>
-                  {row.message}
-                </p>
               </article>
             );
           })}
         </section>
-      )}
+
+        <aside style={{
+          background: 'linear-gradient(180deg, rgba(15, 23, 42, 0.86), rgba(2, 6, 23, 0.76))',
+          border: '1px solid rgba(148, 163, 184, 0.18)',
+          borderRadius: '24px',
+          padding: '18px',
+          position: 'sticky',
+          top: '18px',
+        }}>
+          <div style={{ color: '#fbbf24', fontSize: '0.7rem', fontWeight: 950, letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+            Quote detail
+          </div>
+          {selectedRow ? (
+            <div data-modular-home-quote-detail={selectedRow.id} style={{ display: 'grid', gap: '12px', marginTop: '12px' }}>
+              <h2 style={{ color: '#f8fafc', fontSize: '1.5rem', letterSpacing: '-0.04em', margin: 0 }}>{selectedRow.model}</h2>
+              <DetailBlock label="Contact" lines={[selectedRow.contact.name, selectedRow.contact.email, selectedRow.contact.phone, selectedRow.contact.countryCity]} />
+              <DetailBlock label="Project" lines={[
+                `Estimate: ${selectedRow.estimate.label}`,
+                `Status: ${selectedRow.status}`,
+                `Land owned: ${selectedRow.landOwned}`,
+                `Target build: ${selectedRow.targetBuildDate}`,
+                `Budget: ${selectedRow.budgetRange}`,
+              ]} />
+              <DetailBlock label="Configuration" lines={[
+                `Facade: ${selectedRow.config.facade}`,
+                `Roof: ${selectedRow.config.roof}`,
+                `Terrace: ${selectedRow.config.terrace}`,
+                `Finish: ${selectedRow.config.finishLevel}`,
+              ]} />
+              <div style={{ background: 'rgba(2, 6, 23, 0.42)', border: '1px solid rgba(148, 163, 184, 0.14)', borderRadius: '16px', padding: '13px' }}>
+                <div style={{ color: '#94a3b8', fontSize: '0.68rem', fontWeight: 950, letterSpacing: '0.08em', textTransform: 'uppercase' }}>Message</div>
+                <p style={{ color: '#e2e8f0', lineHeight: 1.55, margin: '8px 0 0', whiteSpace: 'pre-wrap' }}>{selectedRow.message}</p>
+              </div>
+            </div>
+          ) : (
+            <p style={{ color: '#94a3b8', lineHeight: 1.55, margin: '12px 0 0' }}>
+              Select a quote row to view full contact, configuration, estimate and message details.
+            </p>
+          )}
+        </aside>
+      </div>
     </main>
   );
 }
+
+function DetailBlock({ label, lines }: { label: string; lines: string[] }) {
+  return (
+    <div style={{ background: 'rgba(2, 6, 23, 0.42)', border: '1px solid rgba(148, 163, 184, 0.14)', borderRadius: '16px', padding: '13px' }}>
+      <div style={{ color: '#94a3b8', fontSize: '0.68rem', fontWeight: 950, letterSpacing: '0.08em', textTransform: 'uppercase' }}>{label}</div>
+      {lines.map((line) => (
+        <div key={line} style={{ color: '#f8fafc', fontSize: '0.86rem', fontWeight: 780, marginTop: '7px', overflowWrap: 'anywhere' }}>{line}</div>
+      ))}
+    </div>
+  );
+}
+
+const emptyStateStyle = {
+  border: '1px dashed rgba(148, 163, 184, 0.28)',
+  borderRadius: '24px',
+  color: '#94a3b8',
+  padding: '42px 20px',
+  textAlign: 'center',
+} as const;
 
 const filterLabelStyle = {
   color: '#cbd5e1',

@@ -2,10 +2,12 @@ import { useState } from 'react';
 import type { ModularHomeConfiguratorState } from './modularHomeConfigurator';
 import { formatHomeEstimateEur, type ModularHomeEstimate } from './modularHomeEstimate';
 import {
+  createModularHomeProjectComparison,
   createModularHomeLocalProject,
   deleteModularHomeLocalProject,
   duplicateModularHomeLocalProject,
   getModularHomeLocalProjects,
+  renameModularHomeLocalProject,
   saveModularHomeLocalProject,
   type ModularHomeLocalProject,
   type ModularHomeProjectQuoteStatus,
@@ -39,7 +41,7 @@ function formatDateTime(value: string): string {
 }
 
 function createProjectLabel(project: ModularHomeLocalProject): string {
-  return `${project.productId} / ${formatHomeEstimateEur(project.estimateTotal)}`;
+  return project.projectName;
 }
 
 function stopWorkspaceEvent(event: { stopPropagation: () => void }) {
@@ -54,9 +56,17 @@ export function ModularHomeProjectWorkspace({
   productId,
 }: ModularHomeProjectWorkspaceProps) {
   const [error, setError] = useState('');
+  const [compareProjectIds, setCompareProjectIds] = useState<[string, string]>(['', '']);
   const [projects, setProjects] = useState(() => getModularHomeLocalProjects());
+  const [renamingProjectId, setRenamingProjectId] = useState('');
+  const [renameValue, setRenameValue] = useState('');
   const [selectedProjectId, setSelectedProjectId] = useState('');
   const [success, setSuccess] = useState('');
+  const compareFirstProject = projects.find((project) => project.projectId === compareProjectIds[0]);
+  const compareSecondProject = projects.find((project) => project.projectId === compareProjectIds[1]);
+  const comparison = compareFirstProject && compareSecondProject
+    ? createModularHomeProjectComparison(compareFirstProject, compareSecondProject)
+    : null;
 
   const refreshProjects = () => {
     setProjects(getModularHomeLocalProjects());
@@ -67,6 +77,7 @@ export function ModularHomeProjectWorkspace({
       config,
       estimateTotal: estimate.estimatedTotal,
       productId,
+      projectName: `${estimate.baseModel} ${new Date().toLocaleDateString(undefined, { day: '2-digit', month: 'short' })}`,
       quoteStatus: 'notRequested',
     });
 
@@ -86,7 +97,7 @@ export function ModularHomeProjectWorkspace({
     onLoadProject(project.config);
     setSelectedProjectId(project.projectId);
     setError('');
-    setSuccess('Project loaded into the preview configurator.');
+    setSuccess('Project restored into the preview configurator.');
   };
 
   const duplicateProject = (projectId: string) => {
@@ -101,6 +112,36 @@ export function ModularHomeProjectWorkspace({
     setError('');
     setSelectedProjectId(duplicate.projectId);
     setSuccess('Project duplicated locally.');
+    refreshProjects();
+  };
+
+  const beginRenameProject = (project: ModularHomeLocalProject) => {
+    setRenamingProjectId(project.projectId);
+    setRenameValue(project.projectName);
+    setError('');
+    setSuccess('');
+  };
+
+  const saveProjectRename = (projectId: string) => {
+    if (renameValue.trim().length === 0) {
+      setSuccess('');
+      setError('Project name is required.');
+      return;
+    }
+
+    const renamed = renameModularHomeLocalProject(projectId, renameValue);
+
+    if (!renamed) {
+      setSuccess('');
+      setError('Could not rename this project locally.');
+      return;
+    }
+
+    setError('');
+    setRenamingProjectId('');
+    setRenameValue('');
+    setSelectedProjectId(renamed.projectId);
+    setSuccess('Project renamed locally.');
     refreshProjects();
   };
 
@@ -208,6 +249,122 @@ export function ModularHomeProjectWorkspace({
         Save current project
       </button>
 
+      <div
+        aria-label="Compare saved Modular Home projects"
+        data-home-project-workspace-compare="true"
+        data-home-project-workspace-compare-ready={comparison ? 'true' : 'false'}
+        style={{
+          background: 'rgba(15, 23, 42, 0.4)',
+          border: '1px solid rgba(125, 211, 252, 0.16)',
+          borderRadius: '12px',
+          display: 'grid',
+          gap: '8px',
+          marginTop: isTouchDevice ? '9px' : '10px',
+          padding: isTouchDevice ? '8px 9px' : '9px 10px',
+        }}
+      >
+        <div style={{ color: '#7dd3fc', fontSize: '0.56rem', fontWeight: 950, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+          Compare projects
+        </div>
+        <div style={{ color: '#bae6fd', fontSize: isTouchDevice ? '0.54rem' : '0.58rem', fontWeight: 780, lineHeight: 1.28 }}>
+          Select two saved local projects to compare configuration and estimate totals.
+        </div>
+        <div style={{ display: 'grid', gap: '6px', gridTemplateColumns: isTouchDevice ? '1fr' : 'repeat(2, minmax(0, 1fr))' }}>
+          {(['First project', 'Second project'] as const).map((label, index) => (
+            <label
+              key={label}
+              style={{
+                color: '#dcfce7',
+                display: 'grid',
+                fontSize: isTouchDevice ? '0.54rem' : '0.58rem',
+                fontWeight: 850,
+                gap: '4px',
+              }}
+            >
+              {label}
+              <select
+                data-home-project-workspace-compare-select={index === 0 ? 'first' : 'second'}
+                value={compareProjectIds[index]}
+                onChange={(event) => {
+                  const nextIds: [string, string] = [...compareProjectIds];
+                  nextIds[index] = event.currentTarget.value;
+                  setCompareProjectIds(nextIds);
+                }}
+                style={{
+                  background: 'rgba(15, 23, 42, 0.74)',
+                  border: '1px solid rgba(125, 211, 252, 0.18)',
+                  borderRadius: '9px',
+                  color: '#e0f2fe',
+                  font: 'inherit',
+                  fontSize: isTouchDevice ? '0.58rem' : '0.62rem',
+                  padding: '7px 8px',
+                }}
+              >
+                <option value="">Select project</option>
+                {projects.map((project) => (
+                  <option key={project.projectId} value={project.projectId}>
+                    {project.projectName} / {formatHomeEstimateEur(project.estimateTotal)}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ))}
+        </div>
+
+        {comparison ? (
+          <div
+            data-home-project-workspace-compare-result="true"
+            data-home-project-workspace-compare-delta={comparison.estimateDelta}
+            style={{
+              background: 'rgba(2, 6, 23, 0.22)',
+              border: '1px solid rgba(125, 211, 252, 0.14)',
+              borderRadius: '10px',
+              display: 'grid',
+              gap: '6px',
+              padding: isTouchDevice ? '7px 8px' : '8px 9px',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: '8px', alignItems: 'start' }}>
+              <span style={{ color: '#e0f2fe', fontSize: isTouchDevice ? '0.58rem' : '0.62rem', fontWeight: 920 }}>
+                {comparison.savedProject.projectName} vs {comparison.currentProject.projectName}
+              </span>
+              <span style={{ color: comparison.estimateDelta >= 0 ? '#fef3c7' : '#bbf7d0', fontSize: isTouchDevice ? '0.58rem' : '0.62rem', fontWeight: 950, whiteSpace: 'nowrap' }}>
+                {comparison.estimateDelta >= 0 ? '+' : ''}{formatHomeEstimateEur(comparison.estimateDelta)}
+              </span>
+            </div>
+            <div style={{ color: '#bae6fd', fontSize: isTouchDevice ? '0.52rem' : '0.56rem', fontWeight: 780, lineHeight: 1.28 }}>
+              {comparison.savedProject.projectName}: {formatHomeEstimateEur(comparison.savedProject.estimateTotal)} / {comparison.currentProject.projectName}: {formatHomeEstimateEur(comparison.currentProject.estimateTotal)}
+            </div>
+            <div style={{ display: 'grid', gap: '4px' }}>
+              {comparison.options.map((option) => (
+                <div
+                  key={option.key}
+                  data-home-project-workspace-compare-option={`${option.key}:${option.hasChanged ? 'changed' : 'same'}:${option.savedValue}:${option.currentValue}`}
+                  style={{
+                    background: option.hasChanged ? 'rgba(251, 191, 36, 0.1)' : 'rgba(15, 23, 42, 0.28)',
+                    border: option.hasChanged ? '1px solid rgba(251, 191, 36, 0.18)' : '1px solid rgba(148, 163, 184, 0.1)',
+                    borderRadius: '8px',
+                    color: option.hasChanged ? '#fde68a' : '#cbd5e1',
+                    display: 'grid',
+                    fontSize: isTouchDevice ? '0.5rem' : '0.54rem',
+                    fontWeight: 780,
+                    gap: '3px',
+                    padding: '5px 6px',
+                  }}
+                >
+                  <span style={{ color: '#e0f2fe', fontWeight: 900 }}>{option.label}</span>
+                  <span>{option.savedValue} {'->'} {option.currentValue}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div data-home-project-workspace-compare-empty="true" style={{ color: '#a7f3d0', fontSize: isTouchDevice ? '0.54rem' : '0.58rem', fontWeight: 800, lineHeight: 1.28 }}>
+            Save at least two projects, then select both to compare.
+          </div>
+        )}
+      </div>
+
       {error ? (
         <div data-home-project-workspace-error="true" style={{ color: '#fecaca', fontSize: '0.6rem', fontWeight: 900, marginTop: '8px' }}>
           {error}
@@ -263,6 +420,7 @@ export function ModularHomeProjectWorkspace({
                       {createProjectLabel(project)}
                     </div>
                     <div style={{ color: '#a7f3d0', fontSize: isTouchDevice ? '0.52rem' : '0.56rem', fontWeight: 820, lineHeight: 1.28, marginTop: '3px' }}>
+                      {project.productId} / {formatHomeEstimateEur(project.estimateTotal)}<br />
                       Updated {formatDateTime(project.updatedAt)}
                     </div>
                   </div>
@@ -270,6 +428,70 @@ export function ModularHomeProjectWorkspace({
                     {QUOTE_STATUS_LABEL[project.quoteStatus]}
                   </div>
                 </div>
+
+                {renamingProjectId === project.projectId ? (
+                  <div
+                    data-home-project-workspace-rename-panel={project.projectId}
+                    style={{
+                      display: 'grid',
+                      gap: '6px',
+                      gridTemplateColumns: isTouchDevice ? '1fr' : '1fr auto auto',
+                    }}
+                  >
+                    <input
+                      aria-label="Project name"
+                      data-home-project-workspace-rename-input={project.projectId}
+                      maxLength={80}
+                      onChange={(event) => {
+                        setRenameValue(event.currentTarget.value);
+                      }}
+                      value={renameValue}
+                      style={{
+                        background: 'rgba(15, 23, 42, 0.72)',
+                        border: '1px solid rgba(34, 197, 94, 0.24)',
+                        borderRadius: '9px',
+                        color: '#f0fdf4',
+                        font: 'inherit',
+                        fontSize: isTouchDevice ? '0.58rem' : '0.62rem',
+                        fontWeight: 820,
+                        padding: '7px 8px',
+                      }}
+                    />
+                    <button
+                      type="button"
+                      data-home-project-workspace-rename-save={project.projectId}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        saveProjectRename(project.projectId);
+                      }}
+                      style={{
+                        ...buttonStyle,
+                        background: 'rgba(34, 197, 94, 0.16)',
+                        border: '1px solid rgba(34, 197, 94, 0.34)',
+                        color: '#dcfce7',
+                      }}
+                    >
+                      Save name
+                    </button>
+                    <button
+                      type="button"
+                      data-home-project-workspace-rename-cancel={project.projectId}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        setRenamingProjectId('');
+                        setRenameValue('');
+                      }}
+                      style={{
+                        ...buttonStyle,
+                        background: 'rgba(15, 23, 42, 0.46)',
+                        border: '1px solid rgba(148, 163, 184, 0.18)',
+                        color: '#cbd5e1',
+                      }}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                ) : null}
 
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                   <button
@@ -286,7 +508,23 @@ export function ModularHomeProjectWorkspace({
                       color: '#dcfce7',
                     }}
                   >
-                    Load
+                    Restore
+                  </button>
+                  <button
+                    type="button"
+                    data-home-project-workspace-rename={project.projectId}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      beginRenameProject(project);
+                    }}
+                    style={{
+                      ...buttonStyle,
+                      background: 'rgba(251, 191, 36, 0.12)',
+                      border: '1px solid rgba(251, 191, 36, 0.28)',
+                      color: '#fef3c7',
+                    }}
+                  >
+                    Rename
                   </button>
                   <button
                     type="button"

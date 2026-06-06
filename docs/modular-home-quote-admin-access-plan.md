@@ -1,11 +1,13 @@
-﻿# Modular Home Quote Protected Admin Access Plan
+# Modular Home Quote Protected Admin Access Plan
 
-Status: protected backend admin route foundation exists. Public quote data exposure remains blocked.
+Status: protected backend admin route foundation is connected to the `/modular-homes/quotes` review UI. Public quote data exposure remains blocked.
 
 ## Current frontend state
-- `/modular-homes/quotes` remains localhost-only for local/mock review.
-- It does not fetch production quote data on public hosts.
-- It is not a production admin surface yet.
+- `/modular-homes/quotes` uses local/mock review only on localhost.
+- On staging/public hosts it checks the Supabase session, then fetches protected backend quote rows only for admin users.
+- Signed-out visitors see a sign-in required state and no quote data.
+- Signed-in non-admin users receive access denied and no quote data.
+- Status update and detail view actions call protected backend endpoints.
 
 ## Protected backend route foundation
 Routes are mounted only under `protectedRouter` in `backend-server/routes/api.ts`.
@@ -19,6 +21,8 @@ Routes:
 - `GET /api/modular-home/quotes`
   - Purpose: list quote rows for authenticated admins.
   - Query: optional `limit`, optional `status`.
+- `GET /api/modular-home/quotes/:quoteId`
+  - Purpose: view one quote detail for authenticated admins.
 - `PATCH /api/modular-home/quotes/:quoteId/status`
   - Purpose: update one quote status.
   - Body: `{ "status": "new" | "contacted" | "qualified" | "closed" }`.
@@ -91,14 +95,11 @@ Before using this with production data:
 - Backend service role can read/update only through protected admin endpoints.
 - Consider a dedicated view or RPC for admin list rows if row shape grows.
 
-## Admin UI next step
-Recommended next UI step:
-- Replace localhost-only `/modular-homes/quotes` with auth-aware behavior:
-  - local/mock viewer on localhost;
-  - protected API viewer on staging/production only when authenticated admin session exists;
-  - blocked state for anonymous/non-admin users.
-
-Do not make `/modular-homes/quotes` public data viewer.
+## Admin UI state
+- Localhost remains useful for local preview queue and mock rows.
+- Staging/public hosts use the protected API only.
+- The UI can list quotes, view one quote detail, update status and export visible rows to JSON/CSV.
+- Do not make `/modular-homes/quotes` a public data viewer.
 
 ## Remaining production blockers
 - Real quote submission remains disabled by default unless `MODULAR_HOME_QUOTE_SUBMISSION_ENABLED=true` and request has `?homeQuoteBackend=1`.
