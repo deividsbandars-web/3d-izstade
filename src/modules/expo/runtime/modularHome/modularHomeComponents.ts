@@ -138,7 +138,51 @@ export type ModularHomeComponentBom = {
   wasteCostEstimate: number;
 };
 
+export type ModularHomeManufacturingBomPanelGroup = {
+  areaM2: number;
+  approximatePanelDimensions: readonly string[];
+  id: string;
+  label: string;
+  moduleIds: readonly ModularHomeModuleId[];
+  notes: string;
+  panelCount: number;
+  wasteFactor: number;
+};
+
+export type ModularHomeManufacturingBomScheduleItem = {
+  areaM2: number | null;
+  dimensions: string;
+  id: string;
+  label: string;
+  linearM: number | null;
+  notes: string;
+  quantity: number;
+  unit: ModularHomeComponentUnit | 'set';
+  wasteFactor: number;
+};
+
+export type ModularHomeManufacturingBom = {
+  componentBomSubtotal: number;
+  config: ModularHomeConfiguratorState;
+  disclaimer: string;
+  doorSchedule: readonly ModularHomeManufacturingBomScheduleItem[];
+  facadeBoardAreaM2: number;
+  facadeBoardLinearM: number;
+  floorCassetteAreaM2: number;
+  interiorFinishAreas: readonly ModularHomeManufacturingBomScheduleItem[];
+  moduleCount: number;
+  panelGroups: readonly ModularHomeManufacturingBomPanelGroup[];
+  productionVerificationNotes: readonly string[];
+  productId: ModularHomeProductId | null;
+  productName: string;
+  roofCassetteAreaM2: number;
+  terraceDeckSchedule: readonly ModularHomeManufacturingBomScheduleItem[];
+  totalWasteFactor: number;
+  windowSchedule: readonly ModularHomeManufacturingBomScheduleItem[];
+};
+
 export const MODULAR_HOME_COMPONENT_BOM_DISCLAIMER = 'Preview component BOM · production verification required';
+export const MODULAR_HOME_MANUFACTURING_BOM_DISCLAIMER = 'Manufacturing BOM preview · not a production cut list';
 
 export const MODULAR_HOME_COMPONENTS = [
   {
@@ -674,12 +718,32 @@ function roundRatio(value: number): number {
   return Math.round(value * 1000) / 1000;
 }
 
+function roundOneDecimal(value: number): number {
+  return Math.round(value * 10) / 10;
+}
+
 function moduleFloorArea(module: ModularHomeModule): number {
   return module.dimensions.widthM * module.dimensions.lengthM;
 }
 
 function moduleWallArea(module: ModularHomeModule): number {
   return 2 * (module.dimensions.widthM + module.dimensions.lengthM) * module.dimensions.heightM;
+}
+
+function formatMeters(value: number): string {
+  return `${roundOneDecimal(value)} m`;
+}
+
+function getWallPanelDimensions(module: ModularHomeModule): readonly string[] {
+  return [
+    `2 x ${formatMeters(module.dimensions.lengthM)} x ${formatMeters(module.dimensions.heightM)} long wall panels`,
+    `2 x ${formatMeters(module.dimensions.widthM)} x ${formatMeters(module.dimensions.heightM)} end wall panels`,
+  ];
+}
+
+function getFacadeBoardLinearMeters(areaM2: number): number {
+  // Preview assumes 145 mm effective cladding board coverage before final supplier profile selection.
+  return roundQuantity(areaM2 / 0.145);
 }
 
 function moduleWindowCount(module: ModularHomeModule): number {
@@ -734,17 +798,41 @@ function getWindowQuantityForConfig(
   module: ModularHomeModule,
   config: ModularHomeConfiguratorState,
 ): number {
-  const baseCount = moduleWindowCount(module);
+  let baseCount = moduleWindowCount(module);
 
   if (config.windowPackage === 'compactPrivacy') {
-    return Math.max(1, baseCount - 1);
+    baseCount = Math.max(1, baseCount - 1);
   }
 
   if (config.windowPackage === 'cornerGlazing' && module.type === 'living') {
-    return baseCount + 1;
+    baseCount += 1;
+  }
+
+  if (config.windowPlacement === 'frontPanoramic' && module.type === 'living') {
+    baseCount += 1;
+  }
+
+  if (config.windowPlacement === 'sidePrivacy') {
+    baseCount = Math.max(1, baseCount - 1);
+  }
+
+  if (config.windowPlacement === 'cornerFeature' && (module.type === 'living' || module.type === 'bedroom')) {
+    baseCount += 1;
   }
 
   return baseCount;
+}
+
+function getDoorQuantityForConfig(
+  module: ModularHomeModule,
+  moduleQuantity: number,
+  config: ModularHomeConfiguratorState,
+): number {
+  if (config.doorPlacement === 'terraceFacing' && module.type === 'living') {
+    return moduleQuantity + 1;
+  }
+
+  return moduleQuantity;
 }
 
 function calculateComponentQuantity(
@@ -772,7 +860,7 @@ function calculateComponentQuantity(
         ? getWindowQuantityForConfig(module, config) * moduleQuantity
         : 0;
     case 'doorUnit':
-      return component.id === getSelectedDoorComponentId(config) ? moduleQuantity : 0;
+      return component.id === getSelectedDoorComponentId(config) ? getDoorQuantityForConfig(module, moduleQuantity, config) : 0;
     case 'bathroomCore':
       return moduleQuantity;
     case 'kitchenLine':
@@ -1011,5 +1099,95 @@ export function calculateComponentBom(config: ModularHomeConfiguratorState): Mod
     subtotal: items.reduce((total, item) => total + item.totalCost, 0),
     totalQuantity: roundQuantity(items.reduce((total, item) => total + item.quantity, 0)),
     wasteCostEstimate: items.reduce((total, item) => total + item.wasteCost, 0),
+  };
+}
+
+export function calculateManufacturingBom(config: ModularHomeConfiguratorState): ModularHomeManufacturingBom {
+  const product = getModularHomeProductForConfig(config);
+  const componentBom = calculateComponentBom(config);
+  const moduleQuantityById = new Map(
+    product ? getModuleQuantitySummary(product.id).map((item) => [item.moduleId, item.quantity]) : [],
+  );
+  const panelGroups: ModularHomeManufacturingBomPanelGroup[] = [];
+
+  for (const module of getModulesForConfig(config)) {
+    if (!['living', 'bedroom', 'bathroomCore', 'technical'].includes(module.type)) {
+      continue;
+    }
+
+    const moduleQuantity = moduleQuantityById.get(module.id) ?? 1;
+    const wallArea = roundQuantity(moduleWallArea(module) * moduleQuantity);
+
+    panelGroups.push({
+      areaM2: wallArea,
+      approximatePanelDimensions: getWallPanelDimensions(module),
+      id: `${module.id}-wall-panel-group`,
+      label: `${module.id} wall panel group`,
+      moduleIds: [module.id],
+      notes: 'Approximate elevation panelization only; final stud layout, openings and transport breaks require production verification.',
+      panelCount: 4 * moduleQuantity,
+      wasteFactor: 0.08,
+    });
+  }
+
+  const facadeGroup = componentBom.groups.find((group) => group.category === 'facadeBoarding');
+  const floorGroup = componentBom.groups.find((group) => group.category === 'floorCassette');
+  const roofGroup = componentBom.groups.find((group) => group.category === 'roofCassette');
+  const windowItems = componentBom.items.filter((item) => item.category === 'windowUnit');
+  const doorItems = componentBom.items.filter((item) => item.category === 'doorUnit');
+  const terraceItems = componentBom.items.filter((item) => item.category === 'terraceDeck');
+  const interiorItems = componentBom.items.filter((item) => item.category === 'interiorFinish');
+  const wasteBase = componentBom.materialCostEstimate + componentBom.laborCostEstimate;
+
+  const scheduleFromItems = (
+    items: readonly ModularHomeComponentSummaryItem[],
+    dimensions: (item: ModularHomeComponentSummaryItem) => string,
+  ): readonly ModularHomeManufacturingBomScheduleItem[] => items.map((item) => ({
+    areaM2: item.unit === 'm2' ? roundQuantity(item.quantity) : null,
+    dimensions: dimensions(item),
+    id: item.componentId,
+    label: item.label,
+    linearM: item.unit === 'linearM' ? roundQuantity(item.quantity) : null,
+    notes: item.notes,
+    quantity: roundQuantity(item.quantity),
+    unit: item.unit,
+    wasteFactor: item.component.wasteFactor,
+  }));
+
+  const windowSchedule = scheduleFromItems(windowItems, () => (
+    config.windowPlacement === 'cornerFeature'
+      ? `${config.windowPlacement} placement / includes corner feature review`
+      : `${config.windowPlacement} placement / controlled openings`
+  ));
+  const doorSchedule = scheduleFromItems(doorItems, () => (
+    config.doorPlacement === 'terraceFacing'
+      ? 'terrace-facing controlled door placement'
+      : `${config.doorPlacement} controlled door placement`
+  ));
+  const terraceDeckSchedule = scheduleFromItems(terraceItems, () => `${config.terrace} terrace deck package`);
+  const interiorFinishAreas = scheduleFromItems(interiorItems, () => `${config.finishLevel} interior finish surface allowance`);
+
+  return {
+    componentBomSubtotal: componentBom.subtotal,
+    config,
+    disclaimer: MODULAR_HOME_MANUFACTURING_BOM_DISCLAIMER,
+    doorSchedule,
+    facadeBoardAreaM2: roundQuantity(facadeGroup?.quantity ?? componentBom.quantities.facadeAreaM2),
+    facadeBoardLinearM: getFacadeBoardLinearMeters(facadeGroup?.quantity ?? componentBom.quantities.facadeAreaM2),
+    floorCassetteAreaM2: roundQuantity(floorGroup?.quantity ?? componentBom.quantities.grossFloorAreaM2),
+    interiorFinishAreas,
+    moduleCount: componentBom.moduleCount,
+    panelGroups,
+    productionVerificationNotes: [
+      'Preview manufacturing BOM is derived from configurable web product data, not a factory-approved cut list.',
+      'Openings, structural headers, transport splits, fasteners, CNC nesting and supplier-specific profiles require production verification.',
+      'Panoramic glazing, corner glazing and terrace-facing door variants require engineering and weatherproofing review before manufacturing.',
+    ],
+    productId: componentBom.productId,
+    productName: componentBom.productName,
+    roofCassetteAreaM2: roundQuantity(roofGroup?.quantity ?? componentBom.quantities.roofAreaM2),
+    terraceDeckSchedule,
+    totalWasteFactor: wasteBase > 0 ? roundRatio(componentBom.wasteCostEstimate / wasteBase) : 0,
+    windowSchedule,
   };
 }

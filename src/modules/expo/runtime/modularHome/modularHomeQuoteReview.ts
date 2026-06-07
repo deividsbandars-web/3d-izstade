@@ -4,10 +4,13 @@ export type ModularHomeQuoteReviewStatus = 'preview-local-only' | 'mock-review' 
 export type ModularHomeQuoteReviewRow = {
   budgetRange: string;
   config: {
+    doorPlacement: string;
     facade: string;
     finishLevel: string;
+    layoutVariant: string;
     roof: string;
     terrace: string;
+    windowPlacement: string;
   };
   contact: {
     countryCity: string;
@@ -45,8 +48,11 @@ const MOCK_QUOTE_ROWS = [
     config: {
       facade: 'Natural timber',
       finishLevel: 'Premium',
+      layoutVariant: 'Two bedroom',
       roof: 'Pitched',
       terrace: 'Extended terrace',
+      windowPlacement: 'Front panoramic placement',
+      doorPlacement: 'Terrace-facing placement',
     },
     contact: {
       countryCity: 'Latvia / Jurmala',
@@ -72,8 +78,11 @@ const MOCK_QUOTE_ROWS = [
     config: {
       facade: 'Dark thermo wood',
       finishLevel: 'Standard',
+      layoutVariant: 'Sauna + rest room',
       roof: 'Flat',
       terrace: 'Front deck',
+      windowPlacement: 'Side privacy placement',
+      doorPlacement: 'Front entry placement',
     },
     contact: {
       countryCity: 'Estonia / Parnu',
@@ -156,8 +165,11 @@ export function normalizeModularHomeQuoteReviewRow(
     config: {
       facade: normalizeText(selectedOptions.facade, normalizeText(config.facade, 'Unknown facade')),
       finishLevel: normalizeText(selectedOptions.finishLevel, normalizeText(config.finishLevel, 'Unknown finish')),
+      layoutVariant: normalizeText(selectedOptions.layoutVariant, normalizeText(config.layoutVariant, 'Unknown layout')),
       roof: normalizeText(selectedOptions.roof, normalizeText(config.roof, 'Unknown roof')),
       terrace: normalizeText(selectedOptions.terrace, normalizeText(config.terrace, 'Unknown terrace')),
+      windowPlacement: normalizeText(selectedOptions.windowPlacement, normalizeText(config.windowPlacement, 'Unknown window placement')),
+      doorPlacement: normalizeText(selectedOptions.doorPlacement, normalizeText(config.doorPlacement, 'Unknown door placement')),
     },
     contact: {
       countryCity: normalizeText(record.countryCity, 'Location not provided'),
@@ -197,8 +209,11 @@ export function normalizeModularHomeQuoteAdminRow(value: unknown): ModularHomeQu
     config: {
       facade: normalizeText(config.facade, 'Unknown facade'),
       finishLevel: normalizeText(config.finishLevel, 'Unknown finish'),
+      layoutVariant: normalizeText(config.layoutVariant, 'Unknown layout'),
       roof: normalizeText(config.roof, 'Unknown roof'),
       terrace: normalizeText(config.terrace, 'Unknown terrace'),
+      windowPlacement: normalizeText(config.windowPlacement, 'Unknown window placement'),
+      doorPlacement: normalizeText(config.doorPlacement, 'Unknown door placement'),
     },
     contact: {
       countryCity: normalizeText(requester.countryCity, 'Location not provided'),
@@ -277,6 +292,8 @@ export function serializeModularHomeQuoteReviewCsv(rows: readonly ModularHomeQuo
     'Roof',
     'Terrace',
     'Finish Level',
+    'Window Placement',
+    'Door Placement',
     'Message',
   ];
   const body = rows.map((row) => [
@@ -296,6 +313,8 @@ export function serializeModularHomeQuoteReviewCsv(rows: readonly ModularHomeQuo
     row.config.roof,
     row.config.terrace,
     row.config.finishLevel,
+    row.config.windowPlacement,
+    row.config.doorPlacement,
     row.message,
   ]);
 

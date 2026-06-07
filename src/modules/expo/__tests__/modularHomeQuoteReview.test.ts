@@ -30,8 +30,11 @@ const normalized = normalizeModularHomeQuoteReviewRow({
   selectedOptions: {
     facade: 'Natural timber',
     finishLevel: 'Standard',
+    layoutVariant: 'One bedroom',
     roof: 'Pitched',
     terrace: 'Small terrace',
+    windowPlacement: 'Balanced openings',
+    doorPlacement: 'Front entry placement',
   },
   status: 'preview-local-only',
   targetBuildDate: '6-12-months',
@@ -42,6 +45,9 @@ assert.equal(normalized.id, 'local-quote-1');
 assert.equal(normalized.source, 'local-preview');
 assert.equal(normalized.model, 'Compact Timber 40');
 assert.equal(normalized.config.facade, 'Natural timber');
+assert.equal(normalized.config.layoutVariant, 'One bedroom');
+assert.equal(normalized.config.windowPlacement, 'Balanced openings');
+assert.equal(normalized.config.doorPlacement, 'Front entry placement');
 assert.equal(normalized.estimate.total, 68000);
 
 const mockRows = getMockModularHomeQuoteReviewRows();
@@ -52,8 +58,11 @@ const backendRow = normalizeModularHomeQuoteAdminRow({
   config: {
     facade: 'darkThermoWood',
     finishLevel: 'premium',
+    layoutVariant: 'largeLiving',
     roof: 'flat',
     terrace: 'coveredTerrace',
+    windowPlacement: 'cornerFeature',
+    doorPlacement: 'terraceFacing',
   },
   created_at: '2026-06-06T08:30:00.000Z',
   estimate: { estimatedTotal: 94000 },
@@ -76,6 +85,8 @@ assert.ok(backendRow);
 assert.equal(backendRow.source, 'backend-staging');
 assert.equal(backendRow.status, 'new');
 assert.equal(backendRow.contact.email, 'backend@example.com');
+assert.equal(backendRow.config.windowPlacement, 'cornerFeature');
+assert.equal(backendRow.config.doorPlacement, 'terraceFacing');
 assert.equal(backendRow.estimate.total, 94000);
 
 const rows = [normalized, backendRow, ...mockRows];

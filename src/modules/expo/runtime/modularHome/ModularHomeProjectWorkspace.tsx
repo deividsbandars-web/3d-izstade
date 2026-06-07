@@ -10,6 +10,7 @@ import {
   renameModularHomeLocalProject,
   saveModularHomeLocalProject,
   type ModularHomeLocalProject,
+  type ModularHomeProjectComparisonDeltaStatus,
   type ModularHomeProjectQuoteStatus,
 } from './modularHomeWorkspaceStorage';
 import type { ModularHomeProductId } from './modularHomeProducts';
@@ -44,6 +45,68 @@ function createProjectLabel(project: ModularHomeLocalProject): string {
   return project.projectName;
 }
 
+function formatSignedEstimateDelta(value: number): string {
+  return `${value >= 0 ? '+' : ''}${formatHomeEstimateEur(value)}`;
+}
+
+function formatSignedNumber(value: number): string {
+  if (value === 0) {
+    return '0';
+  }
+
+  return `${value > 0 ? '+' : ''}${value.toLocaleString('en-IE', { maximumFractionDigits: 2 })}`;
+}
+
+function formatQuantity(value: number, unit?: string): string {
+  const formatted = value.toLocaleString('en-IE', { maximumFractionDigits: 2 });
+
+  return unit ? `${formatted} ${unit}` : formatted;
+}
+
+const DELTA_STATUS_LABELS = {
+  added: 'Added',
+  changed: 'Changed',
+  removed: 'Removed',
+  same: 'Same',
+} as const satisfies Record<ModularHomeProjectComparisonDeltaStatus, string>;
+
+const DELTA_STATUS_STYLES = {
+  added: {
+    background: 'rgba(34, 197, 94, 0.13)',
+    border: '1px solid rgba(74, 222, 128, 0.24)',
+    color: '#bbf7d0',
+  },
+  changed: {
+    background: 'rgba(251, 191, 36, 0.12)',
+    border: '1px solid rgba(251, 191, 36, 0.24)',
+    color: '#fde68a',
+  },
+  removed: {
+    background: 'rgba(248, 113, 113, 0.13)',
+    border: '1px solid rgba(252, 165, 165, 0.24)',
+    color: '#fecaca',
+  },
+  same: {
+    background: 'rgba(148, 163, 184, 0.1)',
+    border: '1px solid rgba(148, 163, 184, 0.18)',
+    color: '#cbd5e1',
+  },
+} as const satisfies Record<ModularHomeProjectComparisonDeltaStatus, { background: string; border: string; color: string }>;
+
+function createDeltaStatusStyle(status: ModularHomeProjectComparisonDeltaStatus, isTouchDevice: boolean) {
+  return {
+    ...DELTA_STATUS_STYLES[status],
+    borderRadius: '999px',
+    fontSize: isTouchDevice ? '0.46rem' : '0.5rem',
+    fontWeight: 950,
+    letterSpacing: '0.06em',
+    lineHeight: 1,
+    padding: '4px 6px',
+    textTransform: 'uppercase' as const,
+    whiteSpace: 'nowrap' as const,
+  };
+}
+
 function stopWorkspaceEvent(event: { stopPropagation: () => void }) {
   event.stopPropagation();
 }
@@ -67,6 +130,9 @@ export function ModularHomeProjectWorkspace({
   const comparison = compareFirstProject && compareSecondProject
     ? createModularHomeProjectComparison(compareFirstProject, compareSecondProject)
     : null;
+  const changedComparisonOptions = comparison?.options.filter((option) => option.hasChanged) ?? [];
+  const changedModuleDeltas = comparison?.moduleDeltas.filter((item) => item.status !== 'same') ?? [];
+  const changedComponentDeltas = comparison?.componentDeltas.filter((item) => item.status !== 'same') ?? [];
 
   const refreshProjects = () => {
     setProjects(getModularHomeLocalProjects());
@@ -315,12 +381,15 @@ export function ModularHomeProjectWorkspace({
           <div
             data-home-project-workspace-compare-result="true"
             data-home-project-workspace-compare-delta={comparison.estimateDelta}
+            data-home-project-workspace-compare-changed-options={comparison.changedOptionCount}
+            data-home-project-workspace-compare-component-delta={comparison.bomSummary.componentSubtotalDelta}
+            data-home-project-workspace-compare-module-delta={comparison.bomSummary.moduleCountDelta}
             style={{
               background: 'rgba(2, 6, 23, 0.22)',
               border: '1px solid rgba(125, 211, 252, 0.14)',
               borderRadius: '10px',
               display: 'grid',
-              gap: '6px',
+              gap: '8px',
               padding: isTouchDevice ? '7px 8px' : '8px 9px',
             }}
           >
@@ -329,22 +398,61 @@ export function ModularHomeProjectWorkspace({
                 {comparison.savedProject.projectName} vs {comparison.currentProject.projectName}
               </span>
               <span style={{ color: comparison.estimateDelta >= 0 ? '#fef3c7' : '#bbf7d0', fontSize: isTouchDevice ? '0.58rem' : '0.62rem', fontWeight: 950, whiteSpace: 'nowrap' }}>
-                {comparison.estimateDelta >= 0 ? '+' : ''}{formatHomeEstimateEur(comparison.estimateDelta)}
+                {formatSignedEstimateDelta(comparison.estimateDelta)}
               </span>
             </div>
             <div style={{ color: '#bae6fd', fontSize: isTouchDevice ? '0.52rem' : '0.56rem', fontWeight: 780, lineHeight: 1.28 }}>
               {comparison.savedProject.projectName}: {formatHomeEstimateEur(comparison.savedProject.estimateTotal)} / {comparison.currentProject.projectName}: {formatHomeEstimateEur(comparison.currentProject.estimateTotal)}
             </div>
-            <div style={{ display: 'grid', gap: '4px' }}>
-              {comparison.options.map((option) => (
+
+            <div
+              aria-label="Project comparison price and BOM summary"
+              data-home-project-workspace-compare-bom-summary="true"
+              style={{
+                display: 'grid',
+                gap: '6px',
+                gridTemplateColumns: isTouchDevice ? '1fr' : 'repeat(2, minmax(0, 1fr))',
+              }}
+            >
+              {[
+                ['Estimate delta', formatSignedEstimateDelta(comparison.estimateDelta)],
+                ['Component BOM delta', formatSignedEstimateDelta(comparison.bomSummary.componentSubtotalDelta)],
+                ['Module count delta', formatSignedNumber(comparison.bomSummary.moduleCountDelta)],
+                ['Component quantity delta', formatSignedNumber(comparison.bomSummary.totalQuantityDelta)],
+                ['Material delta', formatSignedEstimateDelta(comparison.bomSummary.materialCostDelta)],
+                ['Labor delta', formatSignedEstimateDelta(comparison.bomSummary.laborCostDelta)],
+              ].map(([label, value]) => (
+                <div
+                  key={label}
+                  data-home-project-workspace-compare-summary-item={`${label}:${value}`}
+                  style={{
+                    background: 'rgba(15, 23, 42, 0.34)',
+                    border: '1px solid rgba(125, 211, 252, 0.12)',
+                    borderRadius: '9px',
+                    display: 'grid',
+                    gap: '3px',
+                    padding: '6px 7px',
+                  }}
+                >
+                  <span style={{ color: '#93c5fd', fontSize: '0.48rem', fontWeight: 950, letterSpacing: '0.08em', textTransform: 'uppercase' }}>{label}</span>
+                  <span style={{ color: '#fef3c7', fontSize: isTouchDevice ? '0.58rem' : '0.62rem', fontWeight: 950 }}>{value}</span>
+                </div>
+              ))}
+            </div>
+
+            <div style={{ display: 'grid', gap: '5px' }}>
+              <div style={{ color: '#93c5fd', fontSize: '0.52rem', fontWeight: 950, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                Changed options ({comparison.changedOptionCount})
+              </div>
+              {changedComparisonOptions.length > 0 ? changedComparisonOptions.map((option) => (
                 <div
                   key={option.key}
-                  data-home-project-workspace-compare-option={`${option.key}:${option.hasChanged ? 'changed' : 'same'}:${option.savedValue}:${option.currentValue}`}
+                  data-home-project-workspace-compare-option={`${option.key}:changed:${option.savedValue}:${option.currentValue}`}
                   style={{
-                    background: option.hasChanged ? 'rgba(251, 191, 36, 0.1)' : 'rgba(15, 23, 42, 0.28)',
-                    border: option.hasChanged ? '1px solid rgba(251, 191, 36, 0.18)' : '1px solid rgba(148, 163, 184, 0.1)',
+                    background: 'rgba(251, 191, 36, 0.1)',
+                    border: '1px solid rgba(251, 191, 36, 0.18)',
                     borderRadius: '8px',
-                    color: option.hasChanged ? '#fde68a' : '#cbd5e1',
+                    color: '#fde68a',
                     display: 'grid',
                     fontSize: isTouchDevice ? '0.5rem' : '0.54rem',
                     fontWeight: 780,
@@ -355,7 +463,75 @@ export function ModularHomeProjectWorkspace({
                   <span style={{ color: '#e0f2fe', fontWeight: 900 }}>{option.label}</span>
                   <span>{option.savedValue} {'->'} {option.currentValue}</span>
                 </div>
-              ))}
+              )) : (
+                <div data-home-project-workspace-compare-options-unchanged="true" style={{ color: '#bbf7d0', fontSize: isTouchDevice ? '0.5rem' : '0.54rem', fontWeight: 780 }}>
+                  Product options match.
+                </div>
+              )}
+            </div>
+
+            <div style={{ display: 'grid', gap: '5px' }}>
+              <div style={{ color: '#93c5fd', fontSize: '0.52rem', fontWeight: 950, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                Added/removed modules
+              </div>
+              {changedModuleDeltas.length > 0 ? changedModuleDeltas.slice(0, 6).map((item) => (
+                <div
+                  key={item.id}
+                  data-home-project-workspace-compare-module={`${item.id}:${item.status}:${item.savedQuantity}:${item.currentQuantity}:${item.costDelta}`}
+                  style={{
+                    background: 'rgba(15, 23, 42, 0.32)',
+                    border: '1px solid rgba(125, 211, 252, 0.12)',
+                    borderRadius: '8px',
+                    display: 'grid',
+                    gap: '4px',
+                    padding: '5px 6px',
+                  }}
+                >
+                  <div style={{ alignItems: 'center', display: 'flex', gap: '6px', justifyContent: 'space-between' }}>
+                    <span style={{ color: '#e0f2fe', fontSize: isTouchDevice ? '0.5rem' : '0.54rem', fontWeight: 900 }}>{item.label}</span>
+                    <span style={createDeltaStatusStyle(item.status, isTouchDevice)}>{DELTA_STATUS_LABELS[item.status]}</span>
+                  </div>
+                  <div style={{ color: '#bae6fd', fontSize: isTouchDevice ? '0.48rem' : '0.52rem', fontWeight: 760 }}>
+                    Qty {formatQuantity(item.savedQuantity)} {'->'} {formatQuantity(item.currentQuantity)} / {item.moduleType} / {formatSignedEstimateDelta(item.costDelta)}
+                  </div>
+                </div>
+              )) : (
+                <div data-home-project-workspace-compare-modules-unchanged="true" style={{ color: '#bbf7d0', fontSize: isTouchDevice ? '0.5rem' : '0.54rem', fontWeight: 780 }}>
+                  Module package is unchanged.
+                </div>
+              )}
+            </div>
+
+            <div style={{ display: 'grid', gap: '5px' }}>
+              <div style={{ color: '#93c5fd', fontSize: '0.52rem', fontWeight: 950, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                Component BOM main differences
+              </div>
+              {changedComponentDeltas.length > 0 ? changedComponentDeltas.slice(0, 8).map((item) => (
+                <div
+                  key={item.id}
+                  data-home-project-workspace-compare-component={`${item.id}:${item.status}:${item.savedQuantity}:${item.currentQuantity}:${item.costDelta}`}
+                  style={{
+                    background: 'rgba(15, 23, 42, 0.32)',
+                    border: '1px solid rgba(125, 211, 252, 0.12)',
+                    borderRadius: '8px',
+                    display: 'grid',
+                    gap: '4px',
+                    padding: '5px 6px',
+                  }}
+                >
+                  <div style={{ alignItems: 'center', display: 'flex', gap: '6px', justifyContent: 'space-between' }}>
+                    <span style={{ color: '#e0f2fe', fontSize: isTouchDevice ? '0.5rem' : '0.54rem', fontWeight: 900 }}>{item.label}</span>
+                    <span style={createDeltaStatusStyle(item.status, isTouchDevice)}>{DELTA_STATUS_LABELS[item.status]}</span>
+                  </div>
+                  <div style={{ color: '#bae6fd', fontSize: isTouchDevice ? '0.48rem' : '0.52rem', fontWeight: 760 }}>
+                    {item.category} / Qty {formatQuantity(item.savedQuantity, item.unit)} {'->'} {formatQuantity(item.currentQuantity, item.unit)} / {formatSignedEstimateDelta(item.costDelta)}
+                  </div>
+                </div>
+              )) : (
+                <div data-home-project-workspace-compare-components-unchanged="true" style={{ color: '#bbf7d0', fontSize: isTouchDevice ? '0.5rem' : '0.54rem', fontWeight: 780 }}>
+                  Component BOM preview is unchanged.
+                </div>
+              )}
             </div>
           </div>
         ) : (

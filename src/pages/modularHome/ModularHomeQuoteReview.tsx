@@ -95,8 +95,11 @@ function matchesSearch(row: ModularHomeQuoteReviewRow, searchTerm: string) {
     row.budgetRange,
     row.config.facade,
     row.config.finishLevel,
+    row.config.layoutVariant,
     row.config.roof,
     row.config.terrace,
+    row.config.windowPlacement,
+    row.config.doorPlacement,
     row.contact.countryCity,
     row.contact.email,
     row.contact.name,
@@ -589,9 +592,12 @@ export default function ModularHomeQuoteReview() {
               ]} />
               <DetailBlock label="Configuration" lines={[
                 `Facade: ${selectedRow.config.facade}`,
+                `Layout: ${selectedRow.config.layoutVariant}`,
                 `Roof: ${selectedRow.config.roof}`,
                 `Terrace: ${selectedRow.config.terrace}`,
                 `Finish: ${selectedRow.config.finishLevel}`,
+                `Windows: ${selectedRow.config.windowPlacement}`,
+                `Doors: ${selectedRow.config.doorPlacement}`,
               ]} />
               <div style={{ background: 'rgba(2, 6, 23, 0.42)', border: '1px solid rgba(148, 163, 184, 0.14)', borderRadius: '16px', padding: '13px' }}>
                 <div style={{ color: '#94a3b8', fontSize: '0.68rem', fontWeight: 950, letterSpacing: '0.08em', textTransform: 'uppercase' }}>Message</div>

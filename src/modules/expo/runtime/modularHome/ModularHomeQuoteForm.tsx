@@ -331,7 +331,7 @@ export function ModularHomeQuoteForm({ config, estimate, isTouchDevice = false }
           marginTop: '8px',
         }}
       >
-        Attached: {estimate.baseModel} / {estimate.selectedOptions.facade} / {estimate.selectedOptions.roof} / {estimate.selectedOptions.terrace} / {estimate.selectedOptions.finishLevel} / {formatHomeEstimateEur(estimate.estimatedTotal)}
+        Attached: {estimate.baseModel} / {estimate.selectedOptions.layoutVariant} / {estimate.selectedOptions.facade} / {estimate.selectedOptions.roof} / {estimate.selectedOptions.terrace} / {estimate.selectedOptions.finishLevel} / {estimate.selectedOptions.windowPlacement} / {estimate.selectedOptions.doorPlacement} / {formatHomeEstimateEur(estimate.estimatedTotal)}
       </div>
 
       <form

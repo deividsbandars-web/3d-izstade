@@ -18,16 +18,31 @@ export type ModularHomeTerraceOption = 'none' | 'frontDeck' | 'sideTerrace' | 'e
 export type ModularHomeFinishLevelOption = 'standard' | 'shell' | 'premium';
 export type ModularHomeWindowPackageOption = 'standardWindows' | 'panoramicWindows' | 'cornerGlazing' | 'compactPrivacy';
 export type ModularHomeDoorPackageOption = 'standardEntry' | 'terraceSlider' | 'premiumGlazedEntry';
+export type ModularHomeWindowPlacementOption = 'balanced' | 'frontPanoramic' | 'sidePrivacy' | 'cornerFeature';
+export type ModularHomeDoorPlacementOption = 'frontEntry' | 'sideEntry' | 'terraceFacing';
+export type ModularHomeLayoutVariantOption =
+  | 'openStudio'
+  | 'oneBedroom'
+  | 'officeCabin'
+  | 'twoBedroom'
+  | 'threeBedroomCompact'
+  | 'largeLiving'
+  | 'saunaOnly'
+  | 'guestCabin'
+  | 'saunaRestRoom';
 export type ModularHomeViewModeOption = 'exterior' | 'cutaway' | 'floorplan';
 
 export type ModularHomeConfiguratorState = {
   template: ModularHomeTemplateOption;
+  layoutVariant: ModularHomeLayoutVariantOption;
   facade: ModularHomeFacadeOption;
   roof: ModularHomeRoofOption;
   terrace: ModularHomeTerraceOption;
   finishLevel: ModularHomeFinishLevelOption;
   windowPackage: ModularHomeWindowPackageOption;
   doorPackage: ModularHomeDoorPackageOption;
+  windowPlacement: ModularHomeWindowPlacementOption;
+  doorPlacement: ModularHomeDoorPlacementOption;
 };
 
 export type ModularHomeConfiguratorOption<Key extends keyof ModularHomeConfiguratorState = keyof ModularHomeConfiguratorState> = {
@@ -100,14 +115,33 @@ export type ModularHomeDoorPackageVisual = {
   reviewNote: string;
 };
 
+export type ModularHomeWindowPlacementVisual = {
+  label: string;
+  frontOffsetMultiplier: number;
+  frontWindowCount: 1 | 2;
+  hasCornerFeature: boolean;
+  sideWindowScaleMultiplier: number;
+  sideWindowXSign: -1 | 1;
+  reviewNote: string;
+};
+
+export type ModularHomeDoorPlacementVisual = {
+  label: string;
+  placement: 'front' | 'side' | 'terrace';
+  reviewNote: string;
+};
+
 export const DEFAULT_MODULAR_HOME_CONFIG: ModularHomeConfiguratorState = {
   template: DEFAULT_MODULAR_HOME_TEMPLATE_ID,
+  layoutVariant: 'oneBedroom',
   facade: 'naturalTimber',
   roof: 'pitched',
   terrace: 'frontDeck',
   finishLevel: 'standard',
   windowPackage: 'standardWindows',
   doorPackage: 'standardEntry',
+  windowPlacement: 'balanced',
+  doorPlacement: 'frontEntry',
 };
 
 export const MODULAR_HOME_FACADE_OPTIONS = [
@@ -149,6 +183,31 @@ export const MODULAR_HOME_DOOR_PACKAGE_OPTIONS = [
   { key: 'premiumGlazedEntry', label: 'Premium glazed entry' },
 ] as const satisfies readonly ModularHomeConfiguratorOption<'doorPackage'>[];
 
+export const MODULAR_HOME_WINDOW_PLACEMENT_OPTIONS = [
+  { key: 'balanced', label: 'Balanced openings' },
+  { key: 'frontPanoramic', label: 'Front panoramic' },
+  { key: 'sidePrivacy', label: 'Side privacy' },
+  { key: 'cornerFeature', label: 'Corner feature' },
+] as const satisfies readonly ModularHomeConfiguratorOption<'windowPlacement'>[];
+
+export const MODULAR_HOME_DOOR_PLACEMENT_OPTIONS = [
+  { key: 'frontEntry', label: 'Front entry' },
+  { key: 'sideEntry', label: 'Side entry' },
+  { key: 'terraceFacing', label: 'Terrace-facing' },
+] as const satisfies readonly ModularHomeConfiguratorOption<'doorPlacement'>[];
+
+export const MODULAR_HOME_LAYOUT_VARIANT_OPTIONS = [
+  { key: 'openStudio', label: 'Open studio' },
+  { key: 'oneBedroom', label: 'One bedroom' },
+  { key: 'officeCabin', label: 'Office cabin' },
+  { key: 'twoBedroom', label: 'Two bedroom' },
+  { key: 'threeBedroomCompact', label: 'Three-bedroom compact' },
+  { key: 'largeLiving', label: 'Large living' },
+  { key: 'saunaOnly', label: 'Sauna only' },
+  { key: 'guestCabin', label: 'Guest cabin' },
+  { key: 'saunaRestRoom', label: 'Sauna + rest room' },
+] as const satisfies readonly ModularHomeConfiguratorOption<'layoutVariant'>[];
+
 export const DEFAULT_MODULAR_HOME_VIEW_MODE: ModularHomeViewModeOption = 'exterior';
 
 export const MODULAR_HOME_VIEW_MODE_OPTIONS = [
@@ -177,6 +236,8 @@ export const MODULAR_HOME_CONFIGURATOR_GROUPS = [
   { key: 'finishLevel', label: 'Finish level', options: MODULAR_HOME_FINISH_LEVEL_OPTIONS },
   { key: 'windowPackage', label: 'Window package', options: MODULAR_HOME_WINDOW_PACKAGE_OPTIONS },
   { key: 'doorPackage', label: 'Door package', options: MODULAR_HOME_DOOR_PACKAGE_OPTIONS },
+  { key: 'windowPlacement', label: 'Window placement', options: MODULAR_HOME_WINDOW_PLACEMENT_OPTIONS },
+  { key: 'doorPlacement', label: 'Door placement', options: MODULAR_HOME_DOOR_PLACEMENT_OPTIONS },
 ] as const satisfies readonly ModularHomeConfiguratorGroup[];
 
 function createFacadeVisual(option: ModularHomeFacadeOption): ModularHomeFacadeVisual {
@@ -348,6 +409,63 @@ export const MODULAR_HOME_DOOR_PACKAGE_VISUALS: Record<ModularHomeDoorPackageOpt
   },
 };
 
+export const MODULAR_HOME_WINDOW_PLACEMENT_VISUALS: Record<ModularHomeWindowPlacementOption, ModularHomeWindowPlacementVisual> = {
+  balanced: {
+    label: 'Balanced openings',
+    frontOffsetMultiplier: -0.46,
+    frontWindowCount: 1,
+    hasCornerFeature: false,
+    sideWindowScaleMultiplier: 1,
+    sideWindowXSign: 1,
+    reviewNote: 'Balanced front and side openings for baseline preview planning.',
+  },
+  frontPanoramic: {
+    label: 'Front panoramic',
+    frontOffsetMultiplier: -0.34,
+    frontWindowCount: 2,
+    hasCornerFeature: false,
+    sideWindowScaleMultiplier: 0.8,
+    sideWindowXSign: 1,
+    reviewNote: 'Front panoramic placement requires structural opening and solar-gain review.',
+  },
+  sidePrivacy: {
+    label: 'Side privacy',
+    frontOffsetMultiplier: -0.56,
+    frontWindowCount: 1,
+    hasCornerFeature: false,
+    sideWindowScaleMultiplier: 0.62,
+    sideWindowXSign: -1,
+    reviewNote: 'Side privacy placement keeps public-facing openings smaller and requires site orientation review.',
+  },
+  cornerFeature: {
+    label: 'Corner feature',
+    frontOffsetMultiplier: -0.38,
+    frontWindowCount: 2,
+    hasCornerFeature: true,
+    sideWindowScaleMultiplier: 1.24,
+    sideWindowXSign: 1,
+    reviewNote: 'Corner feature placement requires structural corner opening and thermal bridge review.',
+  },
+};
+
+export const MODULAR_HOME_DOOR_PLACEMENT_VISUALS: Record<ModularHomeDoorPlacementOption, ModularHomeDoorPlacementVisual> = {
+  frontEntry: {
+    label: 'Front entry',
+    placement: 'front',
+    reviewNote: 'Baseline front entry placement.',
+  },
+  sideEntry: {
+    label: 'Side entry',
+    placement: 'side',
+    reviewNote: 'Side entry placement requires site approach and facade orientation review.',
+  },
+  terraceFacing: {
+    label: 'Terrace-facing',
+    placement: 'terrace',
+    reviewNote: 'Terrace-facing access requires threshold, drainage and terrace interface review.',
+  },
+};
+
 let currentModularHomeConfig: ModularHomeConfiguratorState = DEFAULT_MODULAR_HOME_CONFIG;
 const modularHomeConfigListeners = new Set<() => void>();
 let currentModularHomeViewMode: ModularHomeViewModeOption = DEFAULT_MODULAR_HOME_VIEW_MODE;
@@ -393,6 +511,11 @@ export function getModularHomeConfigLabel<Key extends keyof ModularHomeConfigura
   groupKey: Key,
   value: ModularHomeConfiguratorState[Key],
 ): string {
+  if (groupKey === 'layoutVariant') {
+    const option = MODULAR_HOME_LAYOUT_VARIANT_OPTIONS.find((item) => item.key === value);
+    return option?.label ?? String(value);
+  }
+
   const group = MODULAR_HOME_CONFIGURATOR_GROUPS.find((item) => item.key === groupKey);
   const option = group?.options.find((item) => item.key === value);
   return option?.label ?? String(value);
@@ -401,12 +524,15 @@ export function getModularHomeConfigLabel<Key extends keyof ModularHomeConfigura
 export function getModularHomeConfigSummary(config: ModularHomeConfiguratorState) {
   return {
     template: getModularHomeConfigLabel('template', config.template),
+    layoutVariant: getModularHomeConfigLabel('layoutVariant', config.layoutVariant),
     facade: getModularHomeConfigLabel('facade', config.facade),
     roof: getModularHomeConfigLabel('roof', config.roof),
     terrace: getModularHomeConfigLabel('terrace', config.terrace),
     finishLevel: getModularHomeConfigLabel('finishLevel', config.finishLevel),
     windowPackage: getModularHomeConfigLabel('windowPackage', config.windowPackage),
     doorPackage: getModularHomeConfigLabel('doorPackage', config.doorPackage),
+    windowPlacement: getModularHomeConfigLabel('windowPlacement', config.windowPlacement),
+    doorPlacement: getModularHomeConfigLabel('doorPlacement', config.doorPlacement),
   };
 }
 

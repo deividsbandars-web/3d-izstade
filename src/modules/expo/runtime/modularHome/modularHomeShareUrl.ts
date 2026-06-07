@@ -1,18 +1,23 @@
 import type {
   ModularHomeConfiguratorState,
   ModularHomeDoorPackageOption,
+  ModularHomeDoorPlacementOption,
   ModularHomeFacadeOption,
   ModularHomeFinishLevelOption,
+  ModularHomeLayoutVariantOption,
   ModularHomeRoofOption,
   ModularHomeTerraceOption,
   ModularHomeViewModeOption,
+  ModularHomeWindowPlacementOption,
   ModularHomeWindowPackageOption,
 } from './modularHomeConfigurator';
 import {
   getDefaultHomeConfig,
+  getDefaultLayoutVariantForProduct,
   getModularHomeOptionChoices,
   getModularHomeProduct,
   getModularHomeProductForConfig,
+  isModularHomeLayoutVariantCompatible,
   type ModularHomeOptionGroup,
   type ModularHomeProductId,
 } from './modularHomeProducts';
@@ -38,7 +43,7 @@ export type ModularHomeShareDecodeResult = {
 const FALLBACK_PRODUCT_ID = 'compact-timber-40' satisfies ModularHomeProductId;
 const FALLBACK_VIEW_MODE = 'exterior' satisfies ModularHomeViewModeOption;
 
-const SHARE_PARAM_KEYS = ['model', 'homeModel', 'facade', 'roof', 'terrace', 'finish', 'windows', 'door', 'view'] as const;
+const SHARE_PARAM_KEYS = ['model', 'homeModel', 'layout', 'layoutVariant', 'facade', 'roof', 'terrace', 'finish', 'windows', 'windowPlacement', 'windowPlace', 'door', 'doorPlacement', 'doorPlace', 'view'] as const;
 
 const PRODUCT_ALIAS_TO_ID: Record<string, ModularHomeProductId> = {
   compact: 'compact-timber-40',
@@ -116,6 +121,51 @@ const DOOR_ALIAS_TO_TOKEN: Record<string, ModularHomeDoorPackageOption> = {
   terraceSlider: 'terraceSlider',
 };
 
+const WINDOW_PLACEMENT_ALIAS_TO_TOKEN: Record<string, ModularHomeWindowPlacementOption> = {
+  balanced: 'balanced',
+  corner: 'cornerFeature',
+  cornerFeature: 'cornerFeature',
+  feature: 'cornerFeature',
+  front: 'frontPanoramic',
+  frontPanoramic: 'frontPanoramic',
+  panoramic: 'frontPanoramic',
+  privacy: 'sidePrivacy',
+  side: 'sidePrivacy',
+  sidePrivacy: 'sidePrivacy',
+};
+
+const DOOR_PLACEMENT_ALIAS_TO_TOKEN: Record<string, ModularHomeDoorPlacementOption> = {
+  front: 'frontEntry',
+  frontEntry: 'frontEntry',
+  side: 'sideEntry',
+  sideEntry: 'sideEntry',
+  terrace: 'terraceFacing',
+  terraceFacing: 'terraceFacing',
+};
+
+const LAYOUT_ALIAS_TO_TOKEN: Record<string, ModularHomeLayoutVariantOption> = {
+  guest: 'guestCabin',
+  guestCabin: 'guestCabin',
+  large: 'largeLiving',
+  largeLiving: 'largeLiving',
+  office: 'officeCabin',
+  officeCabin: 'officeCabin',
+  one: 'oneBedroom',
+  oneBedroom: 'oneBedroom',
+  open: 'openStudio',
+  openStudio: 'openStudio',
+  rest: 'saunaRestRoom',
+  sauna: 'saunaOnly',
+  saunaOnly: 'saunaOnly',
+  saunaRestRoom: 'saunaRestRoom',
+  studio: 'openStudio',
+  three: 'threeBedroomCompact',
+  threeBedroom: 'threeBedroomCompact',
+  threeBedroomCompact: 'threeBedroomCompact',
+  two: 'twoBedroom',
+  twoBedroom: 'twoBedroom',
+};
+
 const VIEW_ALIAS_TO_TOKEN: Record<string, ModularHomeViewModeOption> = {
   cutaway: 'cutaway',
   exterior: 'exterior',
@@ -161,6 +211,31 @@ const DOOR_TOKEN_TO_ALIAS: Record<ModularHomeDoorPackageOption, string> = {
   premiumGlazedEntry: 'glazed',
   standardEntry: 'standard',
   terraceSlider: 'slider',
+};
+
+const WINDOW_PLACEMENT_TOKEN_TO_ALIAS: Record<ModularHomeWindowPlacementOption, string> = {
+  balanced: 'balanced',
+  cornerFeature: 'corner',
+  frontPanoramic: 'front',
+  sidePrivacy: 'side',
+};
+
+const DOOR_PLACEMENT_TOKEN_TO_ALIAS: Record<ModularHomeDoorPlacementOption, string> = {
+  frontEntry: 'front',
+  sideEntry: 'side',
+  terraceFacing: 'terrace',
+};
+
+const LAYOUT_TOKEN_TO_ALIAS: Record<ModularHomeLayoutVariantOption, string> = {
+  guestCabin: 'guest',
+  largeLiving: 'large',
+  officeCabin: 'office',
+  oneBedroom: 'one',
+  openStudio: 'open',
+  saunaOnly: 'sauna',
+  saunaRestRoom: 'rest',
+  threeBedroomCompact: 'three',
+  twoBedroom: 'two',
 };
 
 function readSearchInput(input?: ModularHomeShareSearchInput): string {
@@ -277,6 +352,30 @@ function decodeOption<Token extends string>(
     : { invalid: true, token: null };
 }
 
+function decodeLayoutVariant(
+  params: URLSearchParams,
+  productId: ModularHomeProductId,
+): {
+  invalid: boolean;
+  paramKey: 'layout' | 'layoutVariant';
+  token: ModularHomeLayoutVariantOption | null;
+} {
+  const paramKey = params.has('layout') ? 'layout' : 'layoutVariant';
+  const rawValue = params.get(paramKey);
+
+  if (!rawValue) {
+    return { invalid: false, paramKey, token: null };
+  }
+
+  const token = getAliasValue(LAYOUT_ALIAS_TO_TOKEN, rawValue);
+
+  if (!token || !isModularHomeLayoutVariantCompatible(productId, token)) {
+    return { invalid: true, paramKey, token: null };
+  }
+
+  return { invalid: false, paramKey, token };
+}
+
 export function decodeModularHomeConfigFromUrl(
   input?: ModularHomeShareSearchInput,
 ): ModularHomeShareDecodeResult {
@@ -302,6 +401,19 @@ export function decodeModularHomeConfigFromUrl(
   const finish = decodeOption(params, 'finish', productResult.productId, 'finish', FINISH_ALIAS_TO_TOKEN);
   const windowPackage = decodeOption(params, 'windows', productResult.productId, 'windowPackage', WINDOW_ALIAS_TO_TOKEN);
   const doorPackage = decodeOption(params, 'door', productResult.productId, 'doorPackage', DOOR_ALIAS_TO_TOKEN);
+  const windowPlacementParamKey = params.has('windowPlacement') ? 'windowPlacement' : 'windowPlace';
+  const doorPlacementParamKey = params.has('doorPlacement') ? 'doorPlacement' : 'doorPlace';
+  const windowPlacement = decodeOption(params, windowPlacementParamKey, productResult.productId, 'windowPlacement', WINDOW_PLACEMENT_ALIAS_TO_TOKEN);
+  const doorPlacement = decodeOption(params, doorPlacementParamKey, productResult.productId, 'doorPlacement', DOOR_PLACEMENT_ALIAS_TO_TOKEN);
+  const layoutVariant = decodeLayoutVariant(params, productResult.productId);
+
+  config.layoutVariant = getDefaultLayoutVariantForProduct(productResult.productId);
+
+  if (layoutVariant.token) {
+    config.layoutVariant = layoutVariant.token;
+  } else if (layoutVariant.invalid) {
+    invalidKeys.push(layoutVariant.paramKey);
+  }
 
   if (facade.token) {
     config.facade = facade.token;
@@ -339,6 +451,18 @@ export function decodeModularHomeConfigFromUrl(
     invalidKeys.push('door');
   }
 
+  if (windowPlacement.token) {
+    config.windowPlacement = windowPlacement.token;
+  } else if (windowPlacement.invalid) {
+    invalidKeys.push(windowPlacementParamKey);
+  }
+
+  if (doorPlacement.token) {
+    config.doorPlacement = doorPlacement.token;
+  } else if (doorPlacement.invalid) {
+    invalidKeys.push(doorPlacementParamKey);
+  }
+
   return {
     config,
     invalidKeys,
@@ -359,12 +483,15 @@ export function encodeModularHomeConfigToSearchParams(
 
   params.set('homeDemo', '1');
   params.set('model', PRODUCT_ID_TO_ALIAS[productId] ?? productId);
+  params.set('layout', LAYOUT_TOKEN_TO_ALIAS[config.layoutVariant]);
   params.set('facade', FACADE_TOKEN_TO_ALIAS[config.facade]);
   params.set('roof', ROOF_TOKEN_TO_ALIAS[config.roof]);
   params.set('terrace', TERRACE_TOKEN_TO_ALIAS[config.terrace]);
   params.set('finish', FINISH_TOKEN_TO_ALIAS[config.finishLevel]);
   params.set('windows', WINDOW_TOKEN_TO_ALIAS[config.windowPackage]);
+  params.set('windowPlace', WINDOW_PLACEMENT_TOKEN_TO_ALIAS[config.windowPlacement]);
   params.set('door', DOOR_TOKEN_TO_ALIAS[config.doorPackage]);
+  params.set('doorPlace', DOOR_PLACEMENT_TOKEN_TO_ALIAS[config.doorPlacement]);
   params.set('view', viewMode);
 
   return params;

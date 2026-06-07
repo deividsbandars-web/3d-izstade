@@ -6,20 +6,26 @@ import {
   MODULAR_HOME_FACADE_VISUALS,
   MODULAR_HOME_FINISH_LEVEL_VISUALS,
   MODULAR_HOME_DOOR_PACKAGE_VISUALS,
+  MODULAR_HOME_DOOR_PLACEMENT_VISUALS,
   MODULAR_HOME_ROOF_VISUALS,
   MODULAR_HOME_TERRACE_VISUALS,
   MODULAR_HOME_WINDOW_PACKAGE_VISUALS,
+  MODULAR_HOME_WINDOW_PLACEMENT_VISUALS,
   type ModularHomeDoorPackageVisual,
+  type ModularHomeDoorPlacementVisual,
   type ModularHomeFinishLevelOption,
   type ModularHomeViewModeOption,
   type ModularHomeWindowPackageVisual,
+  type ModularHomeWindowPlacementVisual,
   useModularHomeConfigurator,
   useModularHomeViewMode,
 } from './modularHomeConfigurator';
 import { getModularHomeTemplate } from './modularHomeConfig';
 import {
   getModularHomeProductForConfig,
+  getModularHomeLayoutVariantForConfig,
   getModulesForConfig,
+  type ModularHomeLayoutVariant,
   type ModularHomeModule,
   type ModularHomeModuleId,
   type ModularHomeProduct,
@@ -27,6 +33,10 @@ import {
 
 const DECK_COLOR = '#8b5a2b';
 const FOUNDATION_COLOR = '#7c8591';
+const FLOORPLAN_BOUNDARY_COLOR = '#e0f2fe';
+const FLOORPLAN_DIMENSION_COLOR = '#fbbf24';
+const FLOORPLAN_DOOR_MARKER_COLOR = '#f59e0b';
+const FLOORPLAN_WINDOW_MARKER_COLOR = '#38bdf8';
 const PANEL_SEAM_COLOR = '#1f2937';
 const SEAM_COLOR = '#0f172a';
 const MODULE_UNIT_SCALE = 8;
@@ -94,6 +104,7 @@ type FootprintBounds = {
 };
 
 type InteriorPlanZone = {
+  areaM2: number;
   depth: number;
   label: string;
   tone: string;
@@ -116,6 +127,24 @@ type InteriorPlan = {
   walls: readonly InteriorWallSegment[];
   zones: readonly InteriorPlanZone[];
 };
+
+function roundOneDecimal(value: number): number {
+  return Math.round(value * 10) / 10;
+}
+
+function formatFloorplanArea(areaM2: number): string {
+  const rounded = roundOneDecimal(areaM2);
+  return `${Number.isInteger(rounded) ? rounded.toFixed(0) : rounded.toFixed(1)} m²`;
+}
+
+function formatFloorplanDimension(lengthM: number): string {
+  const rounded = roundOneDecimal(lengthM);
+  return `${Number.isInteger(rounded) ? rounded.toFixed(0) : rounded.toFixed(1)} m`;
+}
+
+function formatFloorplanDimensionPair(width: number, depth: number): string {
+  return `${formatFloorplanDimension(width / MODULE_UNIT_SCALE)} × ${formatFloorplanDimension(depth / MODULE_UNIT_SCALE)}`;
+}
 
 function getModuleSize(module: ModularHomeModule) {
   return {
@@ -198,11 +227,14 @@ function createZoneInBlock(
   widthScale: number,
   depthScale: number,
 ): InteriorPlanZone {
+  const width = block.width * widthScale;
+  const depth = block.depth * depthScale;
   return {
-    depth: block.depth * depthScale,
+    areaM2: roundOneDecimal((width / MODULE_UNIT_SCALE) * (depth / MODULE_UNIT_SCALE)),
+    depth,
     label,
     tone,
-    width: block.width * widthScale,
+    width,
     x: block.x + block.width * relativeX,
     z: block.z + block.depth * relativeZ,
     zoneId,
@@ -227,10 +259,69 @@ function createWall(
   };
 }
 
+function getInteriorZoneLabel(
+  layoutVariant: ModularHomeLayoutVariant | null,
+  zoneKey: string,
+  fallback: string,
+): string {
+  if (!layoutVariant) {
+    return fallback;
+  }
+
+  const labelsByVariant: Partial<Record<string, Record<string, string>>> = {
+    guestCabin: {
+      saunaPrimary: 'Guest rest area',
+      saunaSecondary: 'Compact kitchenette',
+      saunaService: 'Washroom / service',
+    },
+    largeLiving: {
+      familyBedroomA: 'Bedroom suite',
+      familyBedroomB: 'Guest room',
+      familyLiving: 'Large living / kitchen',
+      familyStorage: 'Utility storage',
+    },
+    officeCabin: {
+      compactBedroom: 'Office / guest room',
+      compactLiving: 'Living / work lounge',
+      compactStorage: 'Entry storage',
+    },
+    openStudio: {
+      compactBedroom: 'Sleeping nook',
+      compactLiving: 'Studio living / sleep',
+      compactStorage: 'Entry storage',
+    },
+    saunaOnly: {
+      saunaPrimary: 'Sauna room',
+      saunaSecondary: 'Changing zone',
+      saunaService: 'Shower / service core',
+    },
+    saunaRestRoom: {
+      saunaPrimary: 'Sauna / rest area',
+      saunaSecondary: 'Changing zone',
+      saunaService: 'Service core',
+    },
+    threeBedroomCompact: {
+      familyBedroomA: 'Bedroom 1',
+      familyBedroomB: 'Bedroom 2',
+      familyLiving: 'Compact living / kitchen',
+      familyStorage: 'Compact bedroom / office',
+    },
+    twoBedroom: {
+      familyBedroomA: 'Bedroom 1',
+      familyBedroomB: 'Bedroom 2',
+      familyLiving: 'Living / kitchen',
+      familyStorage: 'Technical / storage',
+    },
+  };
+
+  return labelsByVariant[layoutVariant.id]?.[zoneKey] ?? fallback;
+}
+
 function createInteriorPlan(
   product: ModularHomeProduct,
   blocks: readonly ModuleLayoutBlock[],
   bounds: FootprintBounds,
+  layoutVariant: ModularHomeLayoutVariant | null,
   terraceDepth: number,
   terraceEnabled: boolean,
 ): InteriorPlan {
@@ -244,18 +335,18 @@ function createInteriorPlan(
     const bathroom = getBlockByInstance(blocks, 'bathroom-core-module-family');
 
     if (living) {
-      zones.push(createZoneInBlock(living, 'family-living-kitchen', 'Living / kitchen', INTERIOR_ZONE_COLORS.living, -0.08, 0.03, 0.78, 0.66));
-      zones.push(createZoneInBlock(living, 'family-technical-storage', 'Technical / storage', INTERIOR_ZONE_COLORS.storage, 0.34, -0.32, 0.28, 0.24));
+      zones.push(createZoneInBlock(living, 'family-living-kitchen', getInteriorZoneLabel(layoutVariant, 'familyLiving', 'Living / kitchen'), INTERIOR_ZONE_COLORS.living, -0.08, 0.03, 0.78, 0.66));
+      zones.push(createZoneInBlock(living, 'family-technical-storage', getInteriorZoneLabel(layoutVariant, 'familyStorage', 'Technical / storage'), INTERIOR_ZONE_COLORS.storage, 0.34, -0.32, 0.28, 0.24));
       walls.push(createWall('family-storage-side-wall', living.x + living.width * 0.2, living.z - living.depth * 0.29, 0.64, living.depth * 0.33));
       walls.push(createWall('family-storage-front-wall', living.x + living.width * 0.34, living.z - living.depth * 0.15, living.width * 0.28, 0.64));
     }
 
     if (bedroomA) {
-      zones.push(createZoneInBlock(bedroomA, 'family-bedroom-1', 'Bedroom 1', INTERIOR_ZONE_COLORS.bedroom, 0, 0, 0.72, 0.68));
+      zones.push(createZoneInBlock(bedroomA, 'family-bedroom-1', getInteriorZoneLabel(layoutVariant, 'familyBedroomA', 'Bedroom 1'), INTERIOR_ZONE_COLORS.bedroom, 0, 0, 0.72, 0.68));
     }
 
     if (bedroomB) {
-      zones.push(createZoneInBlock(bedroomB, 'family-bedroom-2', 'Bedroom 2', INTERIOR_ZONE_COLORS.bedroom, 0, 0, 0.72, 0.68));
+      zones.push(createZoneInBlock(bedroomB, 'family-bedroom-2', getInteriorZoneLabel(layoutVariant, 'familyBedroomB', 'Bedroom 2'), INTERIOR_ZONE_COLORS.bedroom, 0, 0, 0.72, 0.68));
     }
 
     if (bathroom) {
@@ -270,22 +361,25 @@ function createInteriorPlan(
     const service = getBlockByInstance(blocks, 'bathroom-core-module-sauna');
 
     if (sauna) {
-      zones.push(createZoneInBlock(sauna, 'sauna-rest-area', 'Sauna / rest area', INTERIOR_ZONE_COLORS.sauna, -0.12, -0.1, 0.66, 0.56));
-      zones.push(createZoneInBlock(sauna, 'sauna-changing-zone', 'Changing zone', INTERIOR_ZONE_COLORS.changing, 0.22, 0.32, 0.36, 0.26));
+      zones.push(createZoneInBlock(sauna, 'sauna-rest-area', getInteriorZoneLabel(layoutVariant, 'saunaPrimary', 'Sauna / rest area'), INTERIOR_ZONE_COLORS.sauna, -0.12, -0.1, 0.66, 0.56));
+      zones.push(createZoneInBlock(sauna, 'sauna-changing-zone', getInteriorZoneLabel(layoutVariant, 'saunaSecondary', 'Changing zone'), INTERIOR_ZONE_COLORS.changing, 0.22, 0.32, 0.36, 0.26));
       walls.push(createWall('sauna-changing-divider', sauna.x + sauna.width * 0.08, sauna.z + sauna.depth * 0.18, 0.64, sauna.depth * 0.42));
       walls.push(createWall('sauna-rest-divider', sauna.x - sauna.width * 0.18, sauna.z + sauna.depth * 0.12, sauna.width * 0.28, 0.64));
     }
 
     if (service) {
-      zones.push(createZoneInBlock(service, 'sauna-service-core', 'Service core', INTERIOR_ZONE_COLORS.bathroom, 0, 0, 0.66, 0.64));
+      zones.push(createZoneInBlock(service, 'sauna-service-core', getInteriorZoneLabel(layoutVariant, 'saunaService', 'Service core'), INTERIOR_ZONE_COLORS.bathroom, 0, 0, 0.66, 0.64));
     }
 
     if (terraceEnabled) {
+      const width = Math.min(bounds.width, 44);
+      const depth = Math.max(10, terraceDepth * 0.55);
       zones.push({
-        depth: Math.max(10, terraceDepth * 0.55),
+        areaM2: roundOneDecimal((width / MODULE_UNIT_SCALE) * (depth / MODULE_UNIT_SCALE)),
+        depth,
         label: 'Terrace',
         tone: INTERIOR_ZONE_COLORS.terrace,
-        width: Math.min(bounds.width, 44),
+        width,
         x: bounds.centerX,
         z: bounds.maxZ + Math.max(10, terraceDepth * 0.35),
         zoneId: 'sauna-terrace',
@@ -300,14 +394,14 @@ function createInteriorPlan(
   const bathroom = getBlockByInstance(blocks, 'bathroom-core-module-compact');
 
   if (living) {
-    zones.push(createZoneInBlock(living, 'compact-living-kitchen', 'Living / kitchen', INTERIOR_ZONE_COLORS.living, -0.1, -0.06, 0.72, 0.62));
-    zones.push(createZoneInBlock(living, 'compact-entrance-storage', 'Entrance / storage', INTERIOR_ZONE_COLORS.entrance, 0.28, 0.32, 0.34, 0.26));
+    zones.push(createZoneInBlock(living, 'compact-living-kitchen', getInteriorZoneLabel(layoutVariant, 'compactLiving', 'Living / kitchen'), INTERIOR_ZONE_COLORS.living, -0.1, -0.06, 0.72, 0.62));
+    zones.push(createZoneInBlock(living, 'compact-entrance-storage', getInteriorZoneLabel(layoutVariant, 'compactStorage', 'Entrance / storage'), INTERIOR_ZONE_COLORS.entrance, 0.28, 0.32, 0.34, 0.26));
     walls.push(createWall('compact-entry-storage-wall', living.x + living.width * 0.1, living.z + living.depth * 0.23, 0.64, living.depth * 0.36));
     walls.push(createWall('compact-entry-back-wall', living.x + living.width * 0.28, living.z + living.depth * 0.18, living.width * 0.26, 0.64));
   }
 
   if (bedroom) {
-    zones.push(createZoneInBlock(bedroom, 'compact-bedroom', 'Bedroom', INTERIOR_ZONE_COLORS.bedroom, 0, 0, 0.7, 0.66));
+    zones.push(createZoneInBlock(bedroom, 'compact-bedroom', getInteriorZoneLabel(layoutVariant, 'compactBedroom', 'Bedroom'), INTERIOR_ZONE_COLORS.bedroom, 0, 0, 0.7, 0.66));
   }
 
   if (bathroom) {
@@ -385,11 +479,13 @@ function DoorModule({
   doorVisual,
   moduleId,
   position,
+  rotationY = 0,
   trimColor,
 }: {
   doorVisual: ModularHomeDoorPackageVisual;
   moduleId: string;
   position: Vector3Tuple;
+  rotationY?: number;
   trimColor: string;
 }) {
   const doorWidth = 3.8 * doorVisual.widthMultiplier;
@@ -399,6 +495,7 @@ function DoorModule({
     <group
       name={`door-module-${moduleId}`}
       position={position}
+      rotation={[0, rotationY, 0]}
       userData={{
         homeConstructionElement: 'door-module',
         moduleId,
@@ -438,7 +535,9 @@ function DoorModule({
   );
 }
 
-function InteriorZoneLabel({ label, position, tone, zoneId }: {
+function InteriorZoneLabel({ areaM2, isFloorplan, label, position, tone, zoneId }: {
+  areaM2: number;
+  isFloorplan: boolean;
   label: string;
   position: Vector3Tuple;
   tone: string;
@@ -448,22 +547,32 @@ function InteriorZoneLabel({ label, position, tone, zoneId }: {
     <Html position={position} center distanceFactor={46} occlude={false} pointerEvents="none">
       <div
         data-home-demo-interior-zone={zoneId}
+        data-home-demo-interior-zone-area={areaM2}
         data-home-demo-interior-zone-label={label}
+        data-home-demo-floorplan-room-label={isFloorplan ? label : undefined}
         style={{
-          background: 'rgba(2, 6, 23, 0.76)',
-          border: `1px solid ${tone}`,
-          borderRadius: '999px',
+          background: isFloorplan ? 'rgba(2, 6, 23, 0.88)' : 'rgba(2, 6, 23, 0.76)',
+          border: `1px solid ${isFloorplan ? FLOORPLAN_BOUNDARY_COLOR : tone}`,
+          borderRadius: isFloorplan ? '10px' : '999px',
           color: '#fff7ed',
           fontFamily: 'inherit',
-          fontSize: '0.56rem',
+          fontSize: isFloorplan ? '0.6rem' : '0.56rem',
           fontWeight: 920,
-          letterSpacing: '0.06em',
-          padding: '3px 6px',
+          letterSpacing: isFloorplan ? '0.04em' : '0.06em',
+          lineHeight: 1.08,
+          minWidth: isFloorplan ? '82px' : undefined,
+          padding: isFloorplan ? '5px 7px' : '3px 6px',
+          textAlign: 'center',
           textTransform: 'uppercase',
           whiteSpace: 'nowrap',
         }}
       >
-        {label}
+        <div>{label}</div>
+        {isFloorplan ? (
+          <div style={{ color: '#fde68a', fontSize: '0.52rem', fontWeight: 860, letterSpacing: '0.02em', marginTop: '2px', textTransform: 'none' }}>
+            est. {formatFloorplanArea(areaM2)}
+          </div>
+        ) : null}
       </div>
     </Html>
   );
@@ -502,7 +611,7 @@ function InteriorZoneSurface({ isFloorplan, zone }: { isFloorplan: boolean; zone
         <boxGeometry args={[1, 1, 1]} />
         <meshStandardMaterial color={SEAM_COLOR} roughness={0.9} />
       </mesh>
-      <InteriorZoneLabel label={zone.label} position={[0, labelY, 0]} tone={zone.tone} zoneId={zone.zoneId} />
+      <InteriorZoneLabel areaM2={zone.areaM2} isFloorplan={isFloorplan} label={zone.label} position={[0, labelY, 0]} tone={zone.tone} zoneId={zone.zoneId} />
     </group>
   );
 }
@@ -731,29 +840,129 @@ function InteriorFurniturePreview({ blocks, interiorPackage, product }: {
   );
 }
 
-function ModuleLabel({ label, moduleId, position, tone }: { label: string; moduleId: string; position: Vector3Tuple; tone: string }) {
+function FloorplanMarker({ color, detail, label, markerType, position }: {
+  color: string;
+  detail?: string;
+  label: string;
+  markerType: 'door' | 'dimension' | 'module' | 'terrace' | 'window';
+  position: Vector3Tuple;
+}) {
+  return (
+    <Html position={position} center distanceFactor={48} occlude={false} pointerEvents="none">
+      <div
+        data-home-demo-floorplan-marker={markerType}
+        data-home-demo-floorplan-marker-detail={detail}
+        data-home-demo-floorplan-marker-label={label}
+        style={{
+          alignItems: 'center',
+          background: 'rgba(2, 6, 23, 0.86)',
+          border: `1px solid ${color}`,
+          borderRadius: detail ? '9px' : '999px',
+          boxShadow: '0 8px 20px rgba(2, 6, 23, 0.28)',
+          color: '#fff7ed',
+          display: 'inline-flex',
+          flexDirection: detail ? 'column' : 'row',
+          fontFamily: 'inherit',
+          fontSize: detail ? '0.52rem' : '0.6rem',
+          fontWeight: 940,
+          gap: '2px',
+          justifyContent: 'center',
+          letterSpacing: '0.06em',
+          lineHeight: 1.05,
+          minHeight: detail ? '32px' : '22px',
+          minWidth: detail ? '72px' : '24px',
+          padding: detail ? '4px 6px' : '3px 6px',
+          textAlign: 'center',
+          textTransform: 'uppercase',
+          whiteSpace: 'nowrap',
+        }}
+      >
+        <span style={{ color }}>{label}</span>
+        {detail ? (
+          <span style={{ color: '#cbd5e1', fontSize: '0.46rem', fontWeight: 780, letterSpacing: '0.02em', textTransform: 'none' }}>
+            {detail}
+          </span>
+        ) : null}
+      </div>
+    </Html>
+  );
+}
+
+function ModuleLabel({ detail, label, moduleId, position, tone }: {
+  detail?: string;
+  label: string;
+  moduleId: string;
+  position: Vector3Tuple;
+  tone: string;
+}) {
   return (
     <Html position={position} center distanceFactor={52} occlude={false} pointerEvents="none">
       <div
+        data-home-demo-module-detail={detail}
         data-home-demo-module-label={label}
         data-home-demo-module-id={moduleId}
         style={{
           background: 'rgba(15, 23, 42, 0.78)',
           border: `1px solid ${tone}`,
-          borderRadius: '999px',
+          borderRadius: detail ? '10px' : '999px',
           color: '#fff7ed',
           fontFamily: 'inherit',
           fontSize: '0.52rem',
           fontWeight: 920,
+          lineHeight: 1.08,
           letterSpacing: '0.08em',
-          padding: '4px 7px',
+          padding: detail ? '5px 8px' : '4px 7px',
+          textAlign: 'center',
           textTransform: 'uppercase',
           whiteSpace: 'nowrap',
         }}
       >
-        {label}
+        <div>{label}</div>
+        {detail ? (
+          <div style={{ color: '#bae6fd', fontSize: '0.46rem', fontWeight: 820, letterSpacing: '0.02em', marginTop: '2px', textTransform: 'none' }}>
+            {detail}
+          </div>
+        ) : null}
       </div>
     </Html>
+  );
+}
+
+function FloorplanModuleBoundary({ block }: {
+  block: ModuleLayoutBlock;
+}) {
+  const halfDepth = block.depth / 2;
+  const halfWidth = block.width / 2;
+  const moduleAreaM2 = (block.module.dimensions.widthM * block.module.dimensions.lengthM);
+  const detail = `${formatFloorplanDimensionPair(block.width, block.depth)} · ${formatFloorplanArea(moduleAreaM2)}`;
+
+  return (
+    <group
+      name={`${block.moduleInstanceId}-floorplan-professional-boundary`}
+      userData={{
+        floorplanModuleBoundary: true,
+        moduleAreaM2,
+        moduleInstanceId: block.moduleInstanceId,
+      }}
+    >
+      <mesh position={[0, 1.72, -halfDepth - 0.85]} scale={[block.width + 1.8, 0.12, 0.22]}>
+        <boxGeometry args={[1, 1, 1]} />
+        <meshStandardMaterial color={FLOORPLAN_BOUNDARY_COLOR} emissive={FLOORPLAN_BOUNDARY_COLOR} emissiveIntensity={0.12} opacity={0.72} transparent roughness={0.76} />
+      </mesh>
+      <mesh position={[0, 1.72, halfDepth + 0.85]} scale={[block.width + 1.8, 0.12, 0.22]}>
+        <boxGeometry args={[1, 1, 1]} />
+        <meshStandardMaterial color={FLOORPLAN_BOUNDARY_COLOR} emissive={FLOORPLAN_BOUNDARY_COLOR} emissiveIntensity={0.12} opacity={0.72} transparent roughness={0.76} />
+      </mesh>
+      <mesh position={[-halfWidth - 0.85, 1.72, 0]} scale={[0.22, 0.12, block.depth + 1.8]}>
+        <boxGeometry args={[1, 1, 1]} />
+        <meshStandardMaterial color={FLOORPLAN_BOUNDARY_COLOR} emissive={FLOORPLAN_BOUNDARY_COLOR} emissiveIntensity={0.12} opacity={0.72} transparent roughness={0.76} />
+      </mesh>
+      <mesh position={[halfWidth + 0.85, 1.72, 0]} scale={[0.22, 0.12, block.depth + 1.8]}>
+        <boxGeometry args={[1, 1, 1]} />
+        <meshStandardMaterial color={FLOORPLAN_BOUNDARY_COLOR} emissive={FLOORPLAN_BOUNDARY_COLOR} emissiveIntensity={0.12} opacity={0.72} transparent roughness={0.76} />
+      </mesh>
+      <FloorplanMarker color={FLOORPLAN_BOUNDARY_COLOR} detail={detail} label="Module" markerType="module" position={[0, 2.62, -halfDepth - 3.2]} />
+    </group>
   );
 }
 
@@ -828,15 +1037,58 @@ function WallPanelSeams({ block, isFloorplan, wallHeight }: {
   );
 }
 
-function ModuleBlock({ bathroomCoreColor, block, doorVisual, facadeColor, interiorFloorColor, sideColor, trimColor, viewMode, windowVisual }: {
+function getFrontWindowOffsets(
+  halfWidth: number,
+  windowPlacementVisual: ModularHomeWindowPlacementVisual,
+): readonly number[] {
+  if (windowPlacementVisual.frontWindowCount === 2) {
+    return [-halfWidth * 0.42, halfWidth * 0.34];
+  }
+
+  return [halfWidth * windowPlacementVisual.frontOffsetMultiplier];
+}
+
+function getDoorOpeningTransform(input: {
+  doorPlacementVisual: ModularHomeDoorPlacementVisual;
+  halfDepth: number;
+  halfWidth: number;
+  terracePlacement: 'none' | 'front' | 'side';
+}): {
+  position: Vector3Tuple;
+  rotationY: number;
+} {
+  if (input.doorPlacementVisual.placement === 'side') {
+    return {
+      position: [input.halfWidth + 0.52, 2.32, 0],
+      rotationY: Math.PI / 2,
+    };
+  }
+
+  if (input.doorPlacementVisual.placement === 'terrace' && input.terracePlacement === 'side') {
+    return {
+      position: [input.halfWidth + 0.52, 2.32, input.halfDepth * 0.18],
+      rotationY: Math.PI / 2,
+    };
+  }
+
+  return {
+    position: [0, 2.32, input.halfDepth + 0.52],
+    rotationY: 0,
+  };
+}
+
+function ModuleBlock({ bathroomCoreColor, block, doorPlacementVisual, doorVisual, facadeColor, interiorFloorColor, sideColor, terracePlacement, trimColor, viewMode, windowPlacementVisual, windowVisual }: {
   bathroomCoreColor: string;
   block: ModuleLayoutBlock;
+  doorPlacementVisual: ModularHomeDoorPlacementVisual;
   doorVisual: ModularHomeDoorPackageVisual;
   facadeColor: string;
   interiorFloorColor: string;
   sideColor: string;
+  terracePlacement: 'none' | 'front' | 'side';
   trimColor: string;
   viewMode: ModularHomeViewModeOption;
+  windowPlacementVisual: ModularHomeWindowPlacementVisual;
   windowVisual: ModularHomeWindowPackageVisual;
 }) {
   const isFloorplan = viewMode === 'floorplan';
@@ -847,7 +1099,16 @@ function ModuleBlock({ bathroomCoreColor, block, doorVisual, facadeColor, interi
   const labelY = isFloorplan ? 2.42 : wallHeight + 1.35;
   const doorWidth = 3.8 * doorVisual.widthMultiplier;
   const windowWidth = Math.min(block.width * 0.48, Math.max(4.8, block.width * 0.19) * windowVisual.widthMultiplier);
-  const sideWindowDepth = Math.min(block.depth * 0.48, Math.max(5.2, block.depth * 0.28) * windowVisual.sideDepthMultiplier);
+  const sideWindowDepth = Math.min(block.depth * 0.48, Math.max(5.2, block.depth * 0.28) * windowVisual.sideDepthMultiplier * windowPlacementVisual.sideWindowScaleMultiplier);
+  const sideWindowX = halfWidth * windowPlacementVisual.sideWindowXSign;
+  const sideWindowOuterX = sideWindowX + 0.38 * windowPlacementVisual.sideWindowXSign;
+  const frontWindowOffsets = getFrontWindowOffsets(halfWidth, windowPlacementVisual);
+  const doorOpening = getDoorOpeningTransform({
+    doorPlacementVisual,
+    halfDepth,
+    halfWidth,
+    terracePlacement,
+  });
 
   return (
     <group
@@ -904,6 +1165,9 @@ function ModuleBlock({ bathroomCoreColor, block, doorVisual, facadeColor, interi
       ) : null}
 
       <WallPanelSeams block={block} isFloorplan={isFloorplan} wallHeight={wallHeight} />
+      {isFloorplan ? (
+        <FloorplanModuleBoundary block={block} />
+      ) : null}
 
       <mesh position={[0, 0.92, -halfDepth - 0.18]} scale={[block.width + 1.4, 0.16, 0.42]} name={`${block.moduleInstanceId}-rear-seam`}>
         <boxGeometry args={[1, 1, 1]} />
@@ -924,21 +1188,24 @@ function ModuleBlock({ bathroomCoreColor, block, doorVisual, facadeColor, interi
 
       {!isFloorplan ? (
         <>
-          <WindowModule
-            glassColor={windowVisual.glassColor}
-            moduleId={`${block.moduleInstanceId}-front-window`}
-            position={[-halfWidth * 0.46, 3.45, halfDepth + 0.38]}
-            scale={[
-              windowWidth,
-              1.9 * windowVisual.heightMultiplier,
-              0.08,
-            ]}
-            trimColor={windowVisual.trimColor || trimColor}
-          />
+          {frontWindowOffsets.map((offset, index) => (
+            <WindowModule
+              key={`${block.moduleInstanceId}-front-window-${index}`}
+              glassColor={windowVisual.glassColor}
+              moduleId={`${block.moduleInstanceId}-front-window-${index}`}
+              position={[offset, 3.45, halfDepth + 0.38]}
+              scale={[
+                windowWidth,
+                1.9 * windowVisual.heightMultiplier,
+                0.08,
+              ]}
+              trimColor={windowVisual.trimColor || trimColor}
+            />
+          ))}
           <WindowModule
             glassColor={windowVisual.glassColor}
             moduleId={`${block.moduleInstanceId}-side-window`}
-            position={[halfWidth + 0.38, 3.2, -halfDepth * 0.2]}
+            position={[sideWindowOuterX, 3.2, -halfDepth * 0.2]}
             scale={[
               0.08,
               1.85 * windowVisual.heightMultiplier,
@@ -946,26 +1213,76 @@ function ModuleBlock({ bathroomCoreColor, block, doorVisual, facadeColor, interi
             ]}
             trimColor={windowVisual.trimColor || trimColor}
           />
-          <DoorModule doorVisual={doorVisual} moduleId={`${block.moduleInstanceId}-entry`} position={[0, 2.32, halfDepth + 0.52]} trimColor={trimColor} />
+          {windowPlacementVisual.hasCornerFeature ? (
+            <mesh position={[halfWidth + 0.45, 3.42, halfDepth * 0.3]} scale={[0.36, 2.25 * windowVisual.heightMultiplier, Math.min(halfDepth * 0.56, sideWindowDepth * 0.82)]}>
+              <boxGeometry args={[1, 1, 1]} />
+              <meshStandardMaterial color={windowVisual.glassColor} emissive={windowVisual.glassColor} emissiveIntensity={0.2} roughness={0.26} metalness={0.05} />
+            </mesh>
+          ) : null}
+          <DoorModule doorVisual={doorVisual} moduleId={`${block.moduleInstanceId}-entry`} position={doorOpening.position} rotationY={doorOpening.rotationY} trimColor={trimColor} />
         </>
       ) : (
         <group name={`${block.moduleInstanceId}-floorplan-openings`} userData={{ floorplanOpenings: true, moduleInstanceId: block.moduleInstanceId }}>
-          <mesh position={[-halfWidth * 0.46, 1.18, halfDepth + 0.46]} scale={[windowWidth, 0.16, 0.5]}>
+          {frontWindowOffsets.map((offset, index) => (
+            <group key={`${block.moduleInstanceId}-floorplan-front-opening-${index}`}>
+              <mesh position={[offset, 1.18, halfDepth + 0.46]} scale={[windowWidth, 0.16, 0.5]}>
+                <boxGeometry args={[1, 1, 1]} />
+                <meshStandardMaterial color={windowVisual.glassColor} emissive={windowVisual.glassColor} emissiveIntensity={0.16} roughness={0.42} />
+              </mesh>
+              <FloorplanMarker
+                color={FLOORPLAN_WINDOW_MARKER_COLOR}
+                detail="front opening"
+                label="W"
+                markerType="window"
+                position={[offset, 2.28, halfDepth + 2.6]}
+              />
+            </group>
+          ))}
+          <mesh position={[sideWindowOuterX + 0.08 * windowPlacementVisual.sideWindowXSign, 1.18, -halfDepth * 0.2]} scale={[0.5, 0.16, sideWindowDepth]}>
             <boxGeometry args={[1, 1, 1]} />
             <meshStandardMaterial color={windowVisual.glassColor} emissive={windowVisual.glassColor} emissiveIntensity={0.16} roughness={0.42} />
           </mesh>
-          <mesh position={[halfWidth + 0.46, 1.18, -halfDepth * 0.2]} scale={[0.5, 0.16, sideWindowDepth]}>
-            <boxGeometry args={[1, 1, 1]} />
-            <meshStandardMaterial color={windowVisual.glassColor} emissive={windowVisual.glassColor} emissiveIntensity={0.16} roughness={0.42} />
-          </mesh>
-          <mesh position={[0, 1.2, halfDepth + 0.7]} scale={[doorWidth, 0.18, 1.08]}>
+          <FloorplanMarker
+            color={FLOORPLAN_WINDOW_MARKER_COLOR}
+            detail={windowPlacementVisual.label}
+            label="W"
+            markerType="window"
+            position={[sideWindowOuterX + 2.5 * windowPlacementVisual.sideWindowXSign, 2.28, -halfDepth * 0.2]}
+          />
+          {windowPlacementVisual.hasCornerFeature ? (
+            <FloorplanMarker
+              color={FLOORPLAN_WINDOW_MARKER_COLOR}
+              detail="corner glazing"
+              label="W"
+              markerType="window"
+              position={[halfWidth + 2.8, 2.28, halfDepth * 0.32]}
+            />
+          ) : null}
+          <mesh position={[doorOpening.position[0], 1.2, doorOpening.position[2] + (doorOpening.rotationY === 0 ? 0.18 : 0)]} rotation={[0, doorOpening.rotationY, 0]} scale={[doorWidth, 0.18, 1.08]}>
             <boxGeometry args={[1, 1, 1]} />
             <meshStandardMaterial color="#fbbf24" emissive="#f59e0b" emissiveIntensity={0.14} roughness={0.62} />
           </mesh>
+          <FloorplanMarker
+            color={FLOORPLAN_DOOR_MARKER_COLOR}
+            detail={doorPlacementVisual.label}
+            label="D"
+            markerType="door"
+            position={[
+              doorOpening.position[0] + (doorOpening.rotationY === 0 ? 0 : 2.6),
+              2.3,
+              doorOpening.position[2] + (doorOpening.rotationY === 0 ? 3.1 : 0),
+            ]}
+          />
         </group>
       )}
 
-      <ModuleLabel label={block.label} moduleId={block.moduleInstanceId} position={[0, labelY, 0]} tone={block.tone} />
+      <ModuleLabel
+        detail={isFloorplan ? formatFloorplanDimensionPair(block.width, block.depth) : undefined}
+        label={block.label}
+        moduleId={block.moduleInstanceId}
+        position={[0, labelY, 0]}
+        tone={block.tone}
+      />
     </group>
   );
 }
@@ -1057,6 +1374,7 @@ function TerraceModule({ bounds, depth, isCovered, placement, trimColor, viewMod
   const frontZ = bounds.maxZ + depth + 4;
   const sideX = bounds.maxX + depth + 4;
   const deckScale: Vector3Tuple = isSide ? [depth, 1.04, width] : [width, 1.04, depth];
+  const deckAreaM2 = roundOneDecimal((width / MODULE_UNIT_SCALE) * (depth / MODULE_UNIT_SCALE));
   const railCount = Math.max(4, Math.round(width / 12));
   const railXs = Array.from({ length: railCount }, (_, index) => (
     -width / 2 + 4 + index * ((width - 8) / Math.max(1, railCount - 1))
@@ -1114,7 +1432,34 @@ function TerraceModule({ bounds, depth, isCovered, placement, trimColor, viewMod
           ))}
         </group>
       ) : null}
-      <ModuleLabel label={isCovered ? 'Covered terrace' : placement === 'side' ? 'Side terrace' : 'Front deck'} moduleId="terrace-module" position={[x, viewMode === 'floorplan' ? 2.42 : 4.4, z]} tone="rgba(34, 197, 94, 0.86)" />
+      {viewMode === 'floorplan' ? (
+        <group name={`floorplan-terrace-outline-${placement}`} userData={{ floorplanTerraceOutline: true, terraceAreaM2: deckAreaM2 }}>
+          <mesh position={isSide ? [bounds.maxX + depth / 2 + 4, 1.5, bounds.centerZ - width / 2] : [bounds.centerX, 1.5, bounds.maxZ + 4]} scale={isSide ? [depth + 1.2, 0.12, 0.28] : [width + 1.2, 0.12, 0.28]}>
+            <boxGeometry args={[1, 1, 1]} />
+            <meshStandardMaterial color="#bbf7d0" emissive="#22c55e" emissiveIntensity={0.12} opacity={0.78} transparent roughness={0.72} />
+          </mesh>
+          <mesh position={isSide ? [bounds.maxX + depth / 2 + 4, 1.5, bounds.centerZ + width / 2] : [bounds.centerX, 1.5, bounds.maxZ + depth + 4]} scale={isSide ? [depth + 1.2, 0.12, 0.28] : [width + 1.2, 0.12, 0.28]}>
+            <boxGeometry args={[1, 1, 1]} />
+            <meshStandardMaterial color="#bbf7d0" emissive="#22c55e" emissiveIntensity={0.12} opacity={0.78} transparent roughness={0.72} />
+          </mesh>
+          <mesh position={isSide ? [bounds.maxX + 4, 1.5, bounds.centerZ] : [bounds.centerX - width / 2, 1.5, bounds.maxZ + depth / 2 + 4]} scale={isSide ? [0.28, 0.12, width + 1.2] : [0.28, 0.12, depth + 1.2]}>
+            <boxGeometry args={[1, 1, 1]} />
+            <meshStandardMaterial color="#bbf7d0" emissive="#22c55e" emissiveIntensity={0.12} opacity={0.78} transparent roughness={0.72} />
+          </mesh>
+          <mesh position={isSide ? [bounds.maxX + depth + 4, 1.5, bounds.centerZ] : [bounds.centerX + width / 2, 1.5, bounds.maxZ + depth / 2 + 4]} scale={isSide ? [0.28, 0.12, width + 1.2] : [0.28, 0.12, depth + 1.2]}>
+            <boxGeometry args={[1, 1, 1]} />
+            <meshStandardMaterial color="#bbf7d0" emissive="#22c55e" emissiveIntensity={0.12} opacity={0.78} transparent roughness={0.72} />
+          </mesh>
+          <FloorplanMarker color="#bbf7d0" detail={formatFloorplanArea(deckAreaM2)} label={isCovered ? 'Covered terrace' : placement === 'side' ? 'Side terrace' : 'Front deck'} markerType="terrace" position={[x, 3.0, z]} />
+        </group>
+      ) : null}
+      <ModuleLabel
+        detail={viewMode === 'floorplan' ? formatFloorplanArea(deckAreaM2) : undefined}
+        label={isCovered ? 'Covered terrace' : placement === 'side' ? 'Side terrace' : 'Front deck'}
+        moduleId="terrace-module"
+        position={[x, viewMode === 'floorplan' ? 2.42 : 4.4, z]}
+        tone="rgba(34, 197, 94, 0.86)"
+      />
     </group>
   );
 }
@@ -1181,19 +1526,66 @@ function FoundationPlaceholder({ bounds, terraceDepth, terracePlacement }: {
   );
 }
 
-function FloorplanViewGuide({ bounds, productName }: {
+function FloorplanMeasurementLine({ axis, bounds, label, offset }: {
+  axis: 'depth' | 'width';
   bounds: FootprintBounds;
-  productName: string;
+  label: string;
+  offset: number;
+}) {
+  const isWidth = axis === 'width';
+  const centerX = isWidth ? bounds.centerX : bounds.minX - offset;
+  const centerZ = isWidth ? bounds.minZ - offset : bounds.centerZ;
+  const length = isWidth ? bounds.width : bounds.depth;
+  const markerPosition: Vector3Tuple = isWidth
+    ? [bounds.centerX, 2.6, bounds.minZ - offset - 3.2]
+    : [bounds.minX - offset - 4.4, 2.6, bounds.centerZ];
+
+  return (
+    <group
+      name={`floorplan-measurement-${axis}`}
+      userData={{
+        floorplanMeasurement: axis,
+        label,
+      }}
+    >
+      <mesh position={[centerX, 1.04, centerZ]} scale={isWidth ? [length, 0.12, 0.18] : [0.18, 0.12, length]}>
+        <boxGeometry args={[1, 1, 1]} />
+        <meshStandardMaterial color={FLOORPLAN_DIMENSION_COLOR} emissive={FLOORPLAN_DIMENSION_COLOR} emissiveIntensity={0.16} roughness={0.7} />
+      </mesh>
+      <mesh position={isWidth ? [bounds.minX, 1.08, centerZ] : [centerX, 1.08, bounds.minZ]} scale={isWidth ? [0.22, 0.16, 3.6] : [3.6, 0.16, 0.22]}>
+        <boxGeometry args={[1, 1, 1]} />
+        <meshStandardMaterial color={FLOORPLAN_DIMENSION_COLOR} emissive={FLOORPLAN_DIMENSION_COLOR} emissiveIntensity={0.16} roughness={0.7} />
+      </mesh>
+      <mesh position={isWidth ? [bounds.maxX, 1.08, centerZ] : [centerX, 1.08, bounds.maxZ]} scale={isWidth ? [0.22, 0.16, 3.6] : [3.6, 0.16, 0.22]}>
+        <boxGeometry args={[1, 1, 1]} />
+        <meshStandardMaterial color={FLOORPLAN_DIMENSION_COLOR} emissive={FLOORPLAN_DIMENSION_COLOR} emissiveIntensity={0.16} roughness={0.7} />
+      </mesh>
+      <FloorplanMarker color={FLOORPLAN_DIMENSION_COLOR} detail={isWidth ? 'overall width' : 'overall depth'} label={label} markerType="dimension" position={markerPosition} />
+    </group>
+  );
+}
+
+function FloorplanViewGuide({ bounds, product }: {
+  bounds: FootprintBounds;
+  product: ModularHomeProduct;
 }) {
   const gridXs = getEvenlySpacedPanelOffsets(bounds.width + 18, 8);
   const gridZs = getEvenlySpacedPanelOffsets(bounds.depth + 18, 8);
+  const measuredWidth = formatFloorplanDimension(bounds.width / MODULE_UNIT_SCALE);
+  const measuredDepth = formatFloorplanDimension(bounds.depth / MODULE_UNIT_SCALE);
+  const catalogueWidth = formatFloorplanDimension(product.footprint.widthM);
+  const catalogueDepth = formatFloorplanDimension(product.footprint.lengthM);
+  const ceilingHeight = formatFloorplanDimension(product.ceilingHeightM);
+  const floorArea = formatFloorplanArea(product.floorAreaM2);
 
   return (
     <group
       name="modular-home-floorplan-view-guide"
       userData={{
         homeFloorplanView: true,
-        productName,
+        productFloorAreaM2: product.floorAreaM2,
+        productFootprint: `${product.footprint.widthM}x${product.footprint.lengthM}`,
+        productName: product.name,
       }}
     >
       <mesh position={[bounds.centerX, 0.08, bounds.centerZ]} scale={[bounds.width + 20, 0.08, bounds.depth + 20]}>
@@ -1212,24 +1604,37 @@ function FloorplanViewGuide({ bounds, productName }: {
           <meshStandardMaterial color="#38bdf8" opacity={0.18} roughness={0.8} transparent />
         </mesh>
       ))}
-      <Html position={[bounds.centerX, 3.05, bounds.minZ - 8]} center distanceFactor={54} occlude={false} pointerEvents="none">
+      <FloorplanMeasurementLine axis="width" bounds={bounds} label={measuredWidth} offset={12} />
+      <FloorplanMeasurementLine axis="depth" bounds={bounds} label={measuredDepth} offset={12} />
+      <Html position={[bounds.centerX, 4.1, bounds.minZ - 19]} center distanceFactor={58} occlude={false} pointerEvents="none">
         <div
           data-home-demo-floorplan-label="true"
+          data-home-demo-floorplan-overall-dimensions={`${measuredWidth} x ${measuredDepth}`}
+          data-home-demo-floorplan-product-footprint={`${catalogueWidth} x ${catalogueDepth}`}
+          data-home-demo-floorplan-room-count={product.moduleCount}
           style={{
-            background: 'rgba(2, 6, 23, 0.78)',
-            border: '1px solid rgba(147, 197, 253, 0.62)',
-            borderRadius: '999px',
-            color: '#e0f2fe',
+            background: 'rgba(2, 6, 23, 0.9)',
+            border: '1px solid rgba(251, 191, 36, 0.62)',
+            borderRadius: '14px',
+            boxShadow: '0 14px 34px rgba(2, 6, 23, 0.32)',
+            color: '#fff7ed',
             fontFamily: 'inherit',
-            fontSize: '0.55rem',
-            fontWeight: 920,
-            letterSpacing: '0.08em',
-            padding: '4px 8px',
-            textTransform: 'uppercase',
+            minWidth: '260px',
+            padding: '8px 10px',
+            textAlign: 'left',
             whiteSpace: 'nowrap',
           }}
         >
-          Floorplan mode · low-wall room layout
+          <div style={{ color: '#fbbf24', fontSize: '0.58rem', fontWeight: 950, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+            Professional floorplan preview
+          </div>
+          <div style={{ fontSize: '0.78rem', fontWeight: 950, marginTop: '4px' }}>{product.name}</div>
+          <div style={{ color: '#e0f2fe', fontSize: '0.52rem', fontWeight: 820, marginTop: '5px' }}>
+            {floorArea} · catalogue {catalogueWidth} × {catalogueDepth} · ceiling {ceilingHeight}
+          </div>
+          <div style={{ color: '#bbf7d0', fontSize: '0.5rem', fontWeight: 800, marginTop: '3px' }}>
+            Preview measured plan: {measuredWidth} × {measuredDepth} · module boundaries and openings shown.
+          </div>
         </div>
       </Html>
     </group>
@@ -1247,13 +1652,16 @@ export function ModularHomeModel() {
   const config = getModularHomeTemplate(homeConfig.template);
   const product = getModularHomeProductForConfig(homeConfig);
   const modules = getModulesForConfig(homeConfig);
+  const layoutVariant = getModularHomeLayoutVariantForConfig(homeConfig);
   const facadeVisual = MODULAR_HOME_FACADE_VISUALS[homeConfig.facade];
   const finishVisual = MODULAR_HOME_FINISH_LEVEL_VISUALS[homeConfig.finishLevel];
   const interiorPackage = INTERIOR_PACKAGE_BY_FINISH_LEVEL[homeConfig.finishLevel];
   const roofVisual = MODULAR_HOME_ROOF_VISUALS[homeConfig.roof];
   const terraceVisual = MODULAR_HOME_TERRACE_VISUALS[homeConfig.terrace];
   const windowVisual = MODULAR_HOME_WINDOW_PACKAGE_VISUALS[homeConfig.windowPackage] ?? MODULAR_HOME_WINDOW_PACKAGE_VISUALS.standardWindows;
+  const windowPlacementVisual = MODULAR_HOME_WINDOW_PLACEMENT_VISUALS[homeConfig.windowPlacement] ?? MODULAR_HOME_WINDOW_PLACEMENT_VISUALS.balanced;
   const doorVisual = MODULAR_HOME_DOOR_PACKAGE_VISUALS[homeConfig.doorPackage] ?? MODULAR_HOME_DOOR_PACKAGE_VISUALS.standardEntry;
+  const doorPlacementVisual = MODULAR_HOME_DOOR_PLACEMENT_VISUALS[homeConfig.doorPlacement] ?? MODULAR_HOME_DOOR_PLACEMENT_VISUALS.frontEntry;
   const configSummary = getModularHomeConfigSummary(homeConfig);
 
   if (!product) {
@@ -1266,7 +1674,7 @@ export function ModularHomeModel() {
   const terraceWidth = terraceModule ? terraceModule.dimensions.widthM * MODULE_UNIT_SCALE : terraceVisual.deckWidth;
   const terraceDepth = terraceModule ? terraceModule.dimensions.lengthM * MODULE_UNIT_SCALE : terraceVisual.deckDepth;
   const frontClearanceDepth = terraceVisual.enabled && terraceVisual.placement === 'front' ? terraceDepth : 0;
-  const interiorPlan = createInteriorPlan(product, moduleBlocks, bounds, terraceDepth, terraceVisual.enabled);
+  const interiorPlan = createInteriorPlan(product, moduleBlocks, bounds, layoutVariant, terraceDepth, terraceVisual.enabled);
   const isExteriorMode = viewMode === 'exterior';
   const isFloorplanMode = viewMode === 'floorplan';
 
@@ -1277,6 +1685,7 @@ export function ModularHomeModel() {
       rotation={[0, config.rotationY, 0]}
       userData={{
         homeDemoConfig: homeConfig,
+        homeDemoLayoutVariant: layoutVariant?.id ?? homeConfig.layoutVariant,
         homeDemoPreview: true,
         homeDemoViewMode: viewMode,
         modularHomeInteriorPackage: interiorPackage,
@@ -1296,7 +1705,7 @@ export function ModularHomeModel() {
         userData={{ moduleLayoutProductId: product.id }}
       >
         {isFloorplanMode ? (
-          <FloorplanViewGuide bounds={bounds} productName={product.name} />
+          <FloorplanViewGuide bounds={bounds} product={product} />
         ) : null}
 
         <FoundationPlaceholder bounds={bounds} terraceDepth={terraceVisual.enabled ? terraceDepth : 0} terracePlacement={terraceVisual.enabled ? terraceVisual.placement : 'none'} />
@@ -1306,12 +1715,15 @@ export function ModularHomeModel() {
             key={block.moduleInstanceId}
             bathroomCoreColor={finishVisual.bathroomCoreColor}
             block={block}
+            doorPlacementVisual={doorPlacementVisual}
             doorVisual={doorVisual}
             facadeColor={facadeVisual.wallColor}
             interiorFloorColor={finishVisual.interiorFloorColor}
             sideColor={facadeVisual.sideColor}
+            terracePlacement={terraceVisual.enabled ? terraceVisual.placement : 'none'}
             trimColor={facadeVisual.trimColor}
             viewMode={viewMode}
+            windowPlacementVisual={windowPlacementVisual}
             windowVisual={windowVisual}
           />
         ))}
@@ -1354,7 +1766,8 @@ export function ModularHomeModel() {
       <Html position={[0, 14, 0]} center distanceFactor={58} occlude={false} pointerEvents="none">
         <div
           data-home-demo-model-label="true"
-          data-home-config-model-summary={`${homeConfig.template}:${homeConfig.facade}:${homeConfig.roof}:${homeConfig.terrace}:${homeConfig.finishLevel}`}
+          data-home-config-model-summary={`${homeConfig.template}:${homeConfig.layoutVariant}:${homeConfig.facade}:${homeConfig.roof}:${homeConfig.terrace}:${homeConfig.finishLevel}:${homeConfig.windowPlacement}:${homeConfig.doorPlacement}`}
+          data-home-demo-layout-variant={layoutVariant?.id ?? homeConfig.layoutVariant}
           data-home-demo-interior-package={interiorPackage}
           data-home-demo-model-template={config.templateId}
           data-home-demo-module-count={moduleBlocks.length + (terraceVisual.enabled ? 1 : 0) + 1}
@@ -1378,7 +1791,7 @@ export function ModularHomeModel() {
           </div>
           <div style={{ fontSize: '0.82rem', fontWeight: 950, marginTop: '3px' }}>{product.name}</div>
           <div style={{ color: '#bbf7d0', fontSize: '0.54rem', fontWeight: 850, marginTop: '4px' }}>
-            {moduleBlocks.length} room modules / {configSummary.roof} / {configSummary.windowPackage} / {viewMode}
+            {moduleBlocks.length} room modules / {configSummary.layoutVariant} / {configSummary.roof} / {configSummary.windowPlacement} / {configSummary.doorPlacement} / {viewMode}
           </div>
         </div>
       </Html>

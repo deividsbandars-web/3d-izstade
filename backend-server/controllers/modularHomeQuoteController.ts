@@ -86,10 +86,13 @@ export type ValidModularHomeQuoteRequest = {
     sponsorSlug: string | null;
   };
   config: {
+    doorPlacement: string;
     facade: string;
     finishLevel: string;
+    layoutVariant: string;
     roof: string;
     terrace: string;
+    windowPlacement: string;
   };
   consent: {
     accepted: true;
@@ -501,10 +504,13 @@ export function validateModularHomeQuoteRequest(body: ModularHomeQuoteRequestBod
       sponsorSlug: normalizeOptionalText(attribution.sponsorSlug, 120),
     },
     config: {
+      doorPlacement: normalizeOptionalText(config.doorPlacement, 80) ?? 'Door placement not provided',
       facade: normalizeRequiredText(config.facade, 'MODULAR_HOME_QUOTE_FACADE_REQUIRED', 80),
       finishLevel: normalizeRequiredText(config.finishLevel, 'MODULAR_HOME_QUOTE_FINISH_REQUIRED', 80),
+      layoutVariant: normalizeOptionalText(config.layoutVariant, 80) ?? 'Layout not provided',
       roof: normalizeRequiredText(config.roof, 'MODULAR_HOME_QUOTE_ROOF_REQUIRED', 80),
       terrace: normalizeRequiredText(config.terrace, 'MODULAR_HOME_QUOTE_TERRACE_REQUIRED', 80),
+      windowPlacement: normalizeOptionalText(config.windowPlacement, 80) ?? 'Window placement not provided',
     },
     consent: {
       accepted: true,

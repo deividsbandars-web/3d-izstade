@@ -145,6 +145,14 @@ const OPTION_PRICING_DISTRIBUTION_BY_GROUP = {
     margin: 0.07,
     contingency: 0.03,
   },
+  doorPlacement: {
+    material: 0.38,
+    factoryLabor: 0.22,
+    installation: 0.18,
+    designEngineering: 0.08,
+    margin: 0.09,
+    contingency: 0.05,
+  },
   facade: {
     material: 0.64,
     factoryLabor: 0.18,
@@ -182,6 +190,14 @@ const OPTION_PRICING_DISTRIBUTION_BY_GROUP = {
     designEngineering: 0.05,
     margin: 0.06,
     contingency: 0.03,
+  },
+  windowPlacement: {
+    material: 0.46,
+    factoryLabor: 0.2,
+    installation: 0.1,
+    designEngineering: 0.1,
+    margin: 0.09,
+    contingency: 0.05,
   },
 } as const satisfies Record<ModularHomeOptionGroup, PricingDistribution>;
 

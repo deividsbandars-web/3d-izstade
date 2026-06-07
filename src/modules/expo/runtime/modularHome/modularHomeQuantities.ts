@@ -61,21 +61,42 @@ function moduleWindowCountForConfig(
   module: ModularHomeModule,
   config: ModularHomeConfiguratorState,
 ): number {
-  const baseCount = moduleWindowCount(module);
+  let baseCount = moduleWindowCount(module);
 
   if (config.windowPackage === 'compactPrivacy') {
-    return Math.max(1, baseCount - 1);
+    baseCount = Math.max(1, baseCount - 1);
   }
 
   if (config.windowPackage === 'cornerGlazing' && module.type === 'living') {
-    return baseCount + 1;
+    baseCount += 1;
+  }
+
+  if (config.windowPlacement === 'frontPanoramic' && module.type === 'living') {
+    baseCount += 1;
+  }
+
+  if (config.windowPlacement === 'sidePrivacy') {
+    baseCount = Math.max(1, baseCount - 1);
+  }
+
+  if (config.windowPlacement === 'cornerFeature' && (module.type === 'living' || module.type === 'bedroom')) {
+    baseCount += 1;
   }
 
   return baseCount;
 }
 
-function moduleDoorCount(module: ModularHomeModule): number {
-  return module.type === 'living' || module.type === 'technical' || module.id === 'sauna-core-module' ? 1 : 0;
+function moduleDoorCountForConfig(
+  module: ModularHomeModule,
+  config: ModularHomeConfiguratorState,
+): number {
+  const baseCount = module.type === 'living' || module.type === 'technical' || module.id === 'sauna-core-module' ? 1 : 0;
+
+  if (baseCount > 0 && config.doorPlacement === 'terraceFacing' && module.type === 'living') {
+    return baseCount + 1;
+  }
+
+  return baseCount;
 }
 
 function moduleInteriorPartitionFactor(module: ModularHomeModule): number {
@@ -162,7 +183,7 @@ export function calculateModularHomeQuantities(
     exteriorWallAreaM2 += moduleWallArea(module) * 0.86 * quantity;
     interiorPartitionEstimateM2 += moduleWallArea(module) * moduleInteriorPartitionFactor(module) * quantity;
     windowCount += moduleWindowCountForConfig(module, config) * quantity;
-    doorCount += moduleDoorCount(module) * quantity;
+    doorCount += moduleDoorCountForConfig(module, config) * quantity;
 
     if (module.type === 'bathroomCore') {
       bathroomCoreCount += quantity;

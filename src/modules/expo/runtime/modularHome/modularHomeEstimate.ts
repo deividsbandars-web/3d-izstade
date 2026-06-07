@@ -16,8 +16,8 @@ import {
   summarizeModularHomePricing,
   sumModularHomePricingBreakdowns,
   type ModularHomePricingBreakdown,
-  type ModularHomePricingConfidenceLevel,
   type ModularHomePricingSummary,
+  MODULAR_HOME_PRICING_CONTEXT,
 } from './modularHomePricing';
 import {
   getModularHomeProductConfigSummary,
@@ -37,6 +37,8 @@ export type ModularHomeEstimateLineItemCategory =
   | 'finish'
   | 'windowPackage'
   | 'doorPackage'
+  | 'windowPlacement'
+  | 'doorPlacement'
   | 'transport'
   | 'installation'
   | 'vat';
@@ -65,6 +67,24 @@ export type ModularHomeEstimateAdjustment = {
   label: string;
 };
 
+export type ModularHomeEstimateConfidence =
+  | 'packageFixed'
+  | 'estimated'
+  | 'siteDependent'
+  | 'requiresEngineering';
+
+export type ModularHomeEstimatePriceSource =
+  | 'internalPreview'
+  | 'supplierPlaceholder'
+  | 'manualReviewRequired';
+
+export type ModularHomeEstimateReliabilityMetadata = {
+  confidence: ModularHomeEstimateConfidence;
+  lastUpdated: string;
+  notes: readonly string[];
+  priceSource: ModularHomeEstimatePriceSource;
+};
+
 export type ModularHomeEstimateSectionId =
   | 'modulePackage'
   | 'materials'
@@ -77,8 +97,7 @@ export type ModularHomeEstimateSectionId =
   | 'vatMarginContingency'
   | 'excludedSiteDependent';
 
-export type ModularHomeEstimateSectionLineItem = {
-  confidence: ModularHomePricingConfidenceLevel;
+export type ModularHomeEstimateSectionLineItem = ModularHomeEstimateReliabilityMetadata & {
   id: string;
   isExcluded?: boolean;
   isPlaceholder?: boolean;
@@ -91,7 +110,7 @@ export type ModularHomeEstimateSectionLineItem = {
 };
 
 export type ModularHomeEstimateSection = {
-  confidence: ModularHomePricingConfidenceLevel;
+  confidence: ModularHomeEstimateConfidence;
   description: string;
   id: ModularHomeEstimateSectionId;
   label: string;
@@ -123,12 +142,48 @@ export type ModularHomeEstimate = {
 };
 
 export const MODULAR_HOME_ESTIMATE_CONFIG = {
-  disclaimer: 'Estimate only · final quote depends on site, transport, VAT, foundations, utilities and engineering.',
+  disclaimer: 'Estimate only - final quote depends on site, transport, VAT, foundations, utilities and engineering.',
   installationPerM2: 180,
   transportBase: 900,
   transportPerModule: 1800,
   vatRate: 0.21,
 } as const;
+
+type ModularHomeEstimateSectionLineItemDraft =
+  Omit<ModularHomeEstimateSectionLineItem, keyof ModularHomeEstimateReliabilityMetadata>
+  & Partial<ModularHomeEstimateReliabilityMetadata>
+  & {
+    sourceCategory?: ModularHomeEstimateLineItemCategory;
+  };
+
+type ModularHomeEstimateSectionDraft =
+  Omit<ModularHomeEstimateSection, 'lineItems' | 'subtotal'>
+  & {
+    lineItems: readonly ModularHomeEstimateSectionLineItemDraft[];
+  };
+
+const PRICE_METADATA_LAST_UPDATED = MODULAR_HOME_PRICING_CONTEXT.priceDate;
+
+const ESTIMATE_CONFIDENCE_LABELS = {
+  estimated: 'Estimated',
+  packageFixed: 'Package fixed',
+  requiresEngineering: 'Engineering review',
+  siteDependent: 'Site-dependent',
+} as const satisfies Record<ModularHomeEstimateConfidence, string>;
+
+const ESTIMATE_PRICE_SOURCE_LABELS = {
+  internalPreview: 'Internal preview',
+  manualReviewRequired: 'Manual review',
+  supplierPlaceholder: 'Supplier placeholder',
+} as const satisfies Record<ModularHomeEstimatePriceSource, string>;
+
+export function getModularHomeEstimateConfidenceLabel(confidence: ModularHomeEstimateConfidence): string {
+  return ESTIMATE_CONFIDENCE_LABELS[confidence];
+}
+
+export function getModularHomeEstimatePriceSourceLabel(priceSource: ModularHomeEstimatePriceSource): string {
+  return ESTIMATE_PRICE_SOURCE_LABELS[priceSource];
+}
 
 function sumLineItems(items: readonly ModularHomeEstimateLineItem[]): number {
   return items.reduce((total, item) => total + item.amount, 0);
@@ -189,6 +244,8 @@ function getOptionLineItemCategory(option: ModularHomeOption): ModularHomeEstima
     || option.group === 'terrace'
     || option.group === 'windowPackage'
     || option.group === 'doorPackage'
+    || option.group === 'windowPlacement'
+    || option.group === 'doorPlacement'
   ) {
     return option.group;
   }
@@ -199,11 +256,13 @@ function getOptionLineItemCategory(option: ModularHomeOption): ModularHomeEstima
 function getOptionLineItemLabel(option: ModularHomeOption): string {
   const labelByGroup = {
     doorPackage: 'Door package',
+    doorPlacement: 'Door placement',
     facade: 'Facade',
     finish: 'Finish level',
     roof: 'Roof',
     terrace: 'Terrace',
     windowPackage: 'Window package',
+    windowPlacement: 'Window placement',
   } as const;
 
   return `${labelByGroup[option.group]}: ${option.label}`;
@@ -332,10 +391,136 @@ function sumSectionLineItems(lineItems: readonly ModularHomeEstimateSectionLineI
   return lineItems.reduce((total, item) => total + (item.subtotal ?? 0), 0);
 }
 
-function createSection(input: Omit<ModularHomeEstimateSection, 'subtotal'>): ModularHomeEstimateSection {
+function hasReviewSignal(value: string | undefined): boolean {
+  return /\b(corner|covered|engineering|extended|final|foundation|glazed|green|panoramic|permit|review|site|slider|supplier|transport)\b/i.test(value ?? '');
+}
+
+function createEstimateMetadata(input: {
+  confidence?: ModularHomeEstimateConfidence;
+  isExcluded?: boolean;
+  isPlaceholder?: boolean;
+  label: string;
+  note?: string;
+  notes?: readonly string[];
+  priceSource?: ModularHomeEstimatePriceSource;
+  sectionId: ModularHomeEstimateSectionId;
+  sourceCategory?: ModularHomeEstimateLineItemCategory;
+}): ModularHomeEstimateReliabilityMetadata {
+  const category = input.sourceCategory;
+  const hasReviewNote = hasReviewSignal(input.note) || hasReviewSignal(input.label);
+  const confidence = input.confidence ?? (() => {
+    if (input.isExcluded || input.sectionId === 'excludedSiteDependent' || input.sectionId === 'designEngineeringPlaceholder') {
+      return 'requiresEngineering';
+    }
+
+    if (
+      category === 'transport'
+      || category === 'installation'
+      || category === 'vat'
+      || input.sectionId === 'transportPlaceholder'
+      || input.sectionId === 'installationPlaceholder'
+      || input.sectionId === 'vatMarginContingency'
+    ) {
+      return 'siteDependent';
+    }
+
+    if (hasReviewNote && (
+      category === 'roof'
+      || category === 'terrace'
+      || category === 'windowPackage'
+      || category === 'doorPackage'
+      || category === 'windowPlacement'
+      || category === 'doorPlacement'
+    )) {
+      return 'requiresEngineering';
+    }
+
+    if (category === 'baseProduct') {
+      return 'packageFixed';
+    }
+
+    return 'estimated';
+  })();
+  const priceSource = input.priceSource ?? (() => {
+    if (
+      confidence === 'requiresEngineering'
+      || confidence === 'siteDependent'
+      || input.isExcluded
+    ) {
+      return 'manualReviewRequired';
+    }
+
+    if (
+      category === 'bathroomCore'
+      || category === 'facade'
+      || category === 'roof'
+      || category === 'terrace'
+      || category === 'finish'
+      || category === 'windowPackage'
+      || category === 'doorPackage'
+      || category === 'windowPlacement'
+      || category === 'doorPlacement'
+    ) {
+      return 'supplierPlaceholder';
+    }
+
+    return 'internalPreview';
+  })();
+  const reliabilityNoteByConfidence: Record<ModularHomeEstimateConfidence, string> = {
+    estimated: 'Preview estimate based on current module and option assumptions.',
+    packageFixed: 'Preview package allowance from the internal modular product library.',
+    requiresEngineering: 'Requires manual production, engineering or permit review before a real quote.',
+    siteDependent: 'Site-dependent allowance; final cost depends on route, ground, utilities and local requirements.',
+  };
+  const sourceNoteByPriceSource: Record<ModularHomeEstimatePriceSource, string> = {
+    internalPreview: 'Price source: internal preview pricing database.',
+    manualReviewRequired: 'Price source: manual review required before production quote.',
+    supplierPlaceholder: 'Price source: supplier placeholder until live supplier pricing is connected.',
+  };
+  const notes = [
+    reliabilityNoteByConfidence[confidence],
+    sourceNoteByPriceSource[priceSource],
+    ...(input.note ? [input.note] : []),
+    ...(input.notes ?? []),
+  ];
+
+  return {
+    confidence,
+    lastUpdated: PRICE_METADATA_LAST_UPDATED,
+    notes: Array.from(new Set(notes)),
+    priceSource,
+  };
+}
+
+function normalizeSectionLineItem(
+  sectionId: ModularHomeEstimateSectionId,
+  item: ModularHomeEstimateSectionLineItemDraft,
+): ModularHomeEstimateSectionLineItem {
+  const { sourceCategory, ...lineItem } = item;
+
+  return {
+    ...lineItem,
+    ...createEstimateMetadata({
+      confidence: item.confidence,
+      isExcluded: item.isExcluded,
+      isPlaceholder: item.isPlaceholder,
+      label: item.label,
+      note: item.note,
+      notes: item.notes,
+      priceSource: item.priceSource,
+      sectionId,
+      sourceCategory,
+    }),
+  };
+}
+
+function createSection(input: ModularHomeEstimateSectionDraft): ModularHomeEstimateSection {
+  const lineItems = input.lineItems.map((item) => normalizeSectionLineItem(input.id, item));
+
   return {
     ...input,
-    subtotal: sumSectionLineItems(input.lineItems),
+    lineItems,
+    subtotal: sumSectionLineItems(lineItems),
   };
 }
 
@@ -379,7 +564,7 @@ function createModularHomeEstimateSections(input: {
 
   return [
     createSection({
-      confidence: 'medium',
+      confidence: 'estimated',
       description: 'Factory module shell, wet core and base package allowances.',
       id: 'modulePackage',
       label: 'Module package',
@@ -389,7 +574,7 @@ function createModularHomeEstimateSections(input: {
           : input.quantities.moduleCount;
 
         return {
-          confidence: 'medium',
+          confidence: item.category === 'baseProduct' ? 'packageFixed' : 'estimated',
           id: `section-${item.id}`,
           label: item.label,
           note: item.note,
@@ -397,19 +582,20 @@ function createModularHomeEstimateSections(input: {
             ? formatEstimateQuantity(input.quantities.bathroomCoreCount, ' core')
             : formatEstimateQuantity(input.quantities.moduleCount, ' modules'),
           subtotal: item.amount,
+          sourceCategory: item.category,
           unit: item.category === 'bathroomCore' ? 'core' : 'module package',
           unitCost: getUnitCost(item.amount, quantity),
         };
       }),
     }),
     createSection({
-      confidence: 'low',
+      confidence: 'estimated',
       description: 'Aggregated material allowance from component and option pricing categories.',
       id: 'materials',
       label: 'Materials',
       lineItems: [
         {
-          confidence: 'low',
+          confidence: 'estimated',
           id: 'section-materials-allowance',
           label: 'Materials allowance',
           note: 'Includes material-category allocations from modules, options and component BOM preview data.',
@@ -421,13 +607,13 @@ function createModularHomeEstimateSections(input: {
       ],
     }),
     createSection({
-      confidence: 'low',
+      confidence: 'estimated',
       description: 'Factory labor allowance from module and option pricing categories.',
       id: 'factoryLabor',
       label: 'Factory labor',
       lineItems: [
         {
-          confidence: 'low',
+          confidence: 'estimated',
           id: 'section-factory-labor-allowance',
           label: 'Factory labor allowance',
           note: 'Preview factory labor category allocation; supplier production timing still requires review.',
@@ -439,31 +625,32 @@ function createModularHomeEstimateSections(input: {
       ],
     }),
     createSection({
-      confidence: 'low',
+      confidence: 'estimated',
       description: 'Selected interior/finish package.',
       id: 'finishPackage',
       label: 'Finish package',
       lineItems: [
         {
-          confidence: 'low',
+          confidence: 'estimated',
           id: `section-${finishItem?.id ?? 'finish-package'}`,
           label: finishItem?.label ?? `Finish level: ${input.selectedOptions.finishLevel}`,
           note: finishItem?.note ?? 'Finish package estimate remains preview-only.',
           quantity: '1 package',
           subtotal: finishItem?.amount ?? 0,
+          sourceCategory: finishItem?.category ?? 'finish',
           unit: 'finish package',
           unitCost: finishItem?.amount ?? 0,
         },
       ],
     }),
     createSection({
-      confidence: 'low',
+      confidence: hasReviewSignal(input.selectedOptions.terrace) ? 'requiresEngineering' : 'estimated',
       description: 'Selected terrace or extension package.',
       id: 'terraceExtensions',
       label: 'Terrace/extensions',
       lineItems: [
         {
-          confidence: input.selectedOptions.terrace === 'No terrace' ? 'placeholder' : 'low',
+          ...(input.selectedOptions.terrace === 'No terrace' ? { confidence: 'packageFixed' as const } : {}),
           id: `section-${terraceItem?.id ?? 'terrace-extension'}`,
           isPlaceholder: input.selectedOptions.terrace === 'No terrace',
           label: terraceItem?.label ?? `Terrace: ${input.selectedOptions.terrace}`,
@@ -472,57 +659,60 @@ function createModularHomeEstimateSections(input: {
             ? formatEstimateQuantity(input.quantities.terraceAreaM2, ' m2')
             : '0 m2',
           subtotal: terraceItem?.amount ?? 0,
+          sourceCategory: terraceItem?.category ?? 'terrace',
           unit: 'terrace area',
           unitCost: getUnitCost(terraceItem?.amount ?? 0, input.quantities.terraceAreaM2),
         },
       ],
     }),
     createSection({
-      confidence: 'placeholder',
+      confidence: 'siteDependent',
       description: 'Transport allowance only; final logistics are route and site dependent.',
       id: 'transportPlaceholder',
       label: 'Transport placeholder',
       lineItems: [
         {
-          confidence: 'placeholder',
+          confidence: 'siteDependent',
           id: `section-${transportItem?.id ?? 'transport-placeholder'}`,
           isPlaceholder: true,
           label: transportItem?.label ?? 'Transport placeholder',
           note: transportItem?.note,
           quantity: formatEstimateQuantity(input.quantities.transportModuleCount, ' transport modules'),
           subtotal: transportItem?.amount ?? 0,
+          sourceCategory: transportItem?.category ?? 'transport',
           unit: 'transport module',
           unitCost: getUnitCost(transportItem?.amount ?? 0, input.quantities.transportModuleCount),
         },
       ],
     }),
     createSection({
-      confidence: 'placeholder',
+      confidence: 'siteDependent',
       description: 'Installation allowance only; final site readiness and foundation scope are not included.',
       id: 'installationPlaceholder',
       label: 'Installation placeholder',
       lineItems: [
         {
-          confidence: 'placeholder',
+          confidence: 'siteDependent',
           id: `section-${installationItem?.id ?? 'installation-placeholder'}`,
           isPlaceholder: true,
           label: installationItem?.label ?? 'Installation placeholder',
           note: installationItem?.note,
           quantity: formatEstimateQuantity(grossFloorArea, ' m2'),
           subtotal: installationItem?.amount ?? 0,
+          sourceCategory: installationItem?.category ?? 'installation',
           unit: 'gross floor m2',
           unitCost: getUnitCost(installationItem?.amount ?? 0, grossFloorArea),
         },
       ],
     }),
     createSection({
-      confidence: 'placeholder',
+      confidence: 'requiresEngineering',
       description: 'Design and engineering allocation from preview pricing categories.',
       id: 'designEngineeringPlaceholder',
       label: 'Design/engineering placeholder',
       lineItems: [
         {
-          confidence: 'placeholder',
+          confidence: 'requiresEngineering',
           id: 'section-design-engineering-placeholder',
           isPlaceholder: true,
           label: 'Design and engineering allowance',
@@ -535,13 +725,13 @@ function createModularHomeEstimateSections(input: {
       ],
     }),
     createSection({
-      confidence: 'placeholder',
+      confidence: 'siteDependent',
       description: 'Commercial and tax placeholders carried separately from production package costs.',
       id: 'vatMarginContingency',
       label: 'VAT/margin/contingency',
       lineItems: [
         {
-          confidence: 'placeholder',
+          confidence: 'siteDependent',
           id: 'section-margin-placeholder',
           isPlaceholder: true,
           label: 'Margin placeholder',
@@ -552,7 +742,7 @@ function createModularHomeEstimateSections(input: {
           unitCost: marginSubtotal,
         },
         {
-          confidence: 'placeholder',
+          confidence: 'siteDependent',
           id: 'section-contingency-placeholder',
           isPlaceholder: true,
           label: 'Contingency placeholder',
@@ -563,26 +753,27 @@ function createModularHomeEstimateSections(input: {
           unitCost: contingencySubtotal,
         },
         {
-          confidence: 'placeholder',
+          confidence: 'siteDependent',
           id: `section-${input.vatEstimate.id}`,
           isPlaceholder: true,
           label: input.vatEstimate.label,
           note: input.vatEstimate.note,
           quantity: '1 placeholder',
           subtotal: input.vatEstimate.amount,
+          sourceCategory: input.vatEstimate.category,
           unit: 'VAT placeholder',
           unitCost: input.vatEstimate.amount,
         },
       ],
     }),
     createSection({
-      confidence: 'placeholder',
+      confidence: 'requiresEngineering',
       description: 'Items not priced in the preview estimate and requiring project review.',
       id: 'excludedSiteDependent',
       label: 'Excluded/site-dependent',
       lineItems: [
         {
-          confidence: 'placeholder',
+          confidence: 'requiresEngineering',
           id: 'section-excluded-site-preparation',
           isExcluded: true,
           label: 'Site preparation and earthworks',
@@ -593,7 +784,7 @@ function createModularHomeEstimateSections(input: {
           unitCost: null,
         },
         {
-          confidence: 'placeholder',
+          confidence: 'requiresEngineering',
           id: 'section-excluded-foundation',
           isExcluded: true,
           label: 'Final foundation design and works',
@@ -604,7 +795,7 @@ function createModularHomeEstimateSections(input: {
           unitCost: null,
         },
         {
-          confidence: 'placeholder',
+          confidence: 'requiresEngineering',
           id: 'section-excluded-permits-utilities',
           isExcluded: true,
           label: 'Permits, utility connections and municipality fees',
@@ -630,8 +821,11 @@ export function getModularHomeScopeOfSupply(
         'Timber module shell',
         `${selectedOptions.windowPackage} window package`,
         `${selectedOptions.doorPackage} door package`,
+        `${selectedOptions.windowPlacement} controlled window placement`,
+        `${selectedOptions.doorPlacement} controlled door placement`,
         `${selectedOptions.facade} facade package`,
         `${selectedOptions.roof} package`,
+        `${selectedOptions.layoutVariant} layout planning preview`,
         selectedOptions.terrace === 'No terrace'
           ? 'No terrace extension selected'
           : `${selectedOptions.terrace} extension package`,
@@ -717,7 +911,7 @@ export function calculateModularHomeEstimate(config: ModularHomeConfiguratorStat
     quantities,
     selectedOptions,
     sections,
-    sizeLabel: product ? `${product.floorAreaM2} m²` : template.sizeLabel,
+    sizeLabel: product ? `${product.floorAreaM2} m2` : template.sizeLabel,
     scopeOfSupply: getModularHomeScopeOfSupply(selectedOptions),
     subtotal,
     templateId: product?.defaultTemplateId ?? template.templateId,

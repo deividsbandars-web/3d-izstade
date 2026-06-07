@@ -24,10 +24,13 @@ function createValidPayload() {
       sponsorSlug: null,
     },
     config: {
+      doorPlacement: 'frontEntry',
       facade: 'naturalTimber',
       finishLevel: 'standard',
+      layoutVariant: 'oneBedroom',
       roof: 'pitched',
       terrace: 'smallTerrace',
+      windowPlacement: 'balanced',
     },
     consent: {
       accepted: true,
@@ -97,6 +100,9 @@ const previousStagingHosts = process.env.MODULAR_HOME_QUOTE_STAGING_HOSTS;
 const valid = validateModularHomeQuoteRequest(createValidPayload());
 assert.equal(valid.requester.email, 'client@example.com');
 assert.equal(valid.project.productId, 'compact-timber-40');
+assert.equal(valid.config.layoutVariant, 'oneBedroom');
+assert.equal(valid.config.windowPlacement, 'balanced');
+assert.equal(valid.config.doorPlacement, 'frontEntry');
 assert.equal(valid.consent.accepted, true);
 assert.equal(valid.consent.consentVersion, MODULAR_HOME_QUOTE_CONSENT_VERSION);
 assert.equal(valid.consent.privacyVersion, MODULAR_HOME_QUOTE_PRIVACY_VERSION);

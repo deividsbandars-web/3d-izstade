@@ -23,10 +23,13 @@ export type ModularHomeQuoteBackendPayload = {
     sponsorSlug: null;
   };
   config: {
+    doorPlacement: string;
     facade: string;
     finishLevel: string;
+    layoutVariant: string;
     roof: string;
     terrace: string;
+    windowPlacement: string;
   };
   consent: {
     accepted: true;
@@ -148,10 +151,13 @@ export function buildModularHomeQuoteBackendPayload(
       sponsorSlug: null,
     },
     config: {
+      doorPlacement: config.doorPlacement,
       facade: config.facade,
       finishLevel: config.finishLevel,
+      layoutVariant: config.layoutVariant,
       roof: config.roof,
       terrace: config.terrace,
+      windowPlacement: config.windowPlacement,
     },
     consent: {
       accepted: true,

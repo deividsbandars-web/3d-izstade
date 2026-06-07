@@ -3,10 +3,13 @@ import {
   DEFAULT_MODULAR_HOME_CONFIG,
   type ModularHomeConfiguratorState,
   type ModularHomeDoorPackageOption,
+  type ModularHomeDoorPlacementOption,
   type ModularHomeFacadeOption,
   type ModularHomeFinishLevelOption,
+  type ModularHomeLayoutVariantOption,
   type ModularHomeRoofOption,
   type ModularHomeTerraceOption,
+  type ModularHomeWindowPlacementOption,
   type ModularHomeWindowPackageOption,
 } from './modularHomeConfigurator';
 import {
@@ -21,6 +24,19 @@ export type ModularHomeProductCategory =
   | 'compactHome'
   | 'familyHome'
   | 'saunaCabin';
+
+export type ModularHomeLayoutVariantId = ModularHomeLayoutVariantOption;
+
+export type ModularHomeLayoutVariant = {
+  id: ModularHomeLayoutVariantId;
+  productId: ModularHomeProductId;
+  label: string;
+  shortLabel: string;
+  roomLabels: readonly string[];
+  summaryNote: string;
+  estimateNote: string;
+  bomNote: string;
+};
 
 export type ModularHomeModuleId =
   | 'compact-living-module'
@@ -55,7 +71,9 @@ export type ModularHomeOptionGroup =
   | 'terrace'
   | 'finish'
   | 'windowPackage'
-  | 'doorPackage';
+  | 'doorPackage'
+  | 'windowPlacement'
+  | 'doorPlacement';
 
 export type ModularHomeConstraintStatus =
   | 'compatible'
@@ -158,13 +176,16 @@ export type ModularHomeConfigurationWarning = {
 
 export type ModularHomeProductConfigSummary = {
   doorPackage: string;
+  doorPlacement: string;
   facade: string;
   finishLevel: string;
+  layoutVariant: string;
   product: string;
   roof: string;
   template: string;
   terrace: string;
   windowPackage: string;
+  windowPlacement: string;
 };
 
 export type ModularHomeSelectedMaterialSummary = {
@@ -194,6 +215,99 @@ const ALL_MODULAR_HOME_PRODUCT_IDS = [
   'family-timber-80',
   'sauna-cabin-25',
 ] as const satisfies readonly ModularHomeProductId[];
+
+export const MODULAR_HOME_LAYOUT_VARIANTS = [
+  {
+    id: 'openStudio',
+    productId: 'compact-timber-40',
+    label: 'Open studio',
+    shortLabel: 'Studio',
+    roomLabels: ['Studio living/sleeping', 'Kitchen wall', 'Bathroom core', 'Entry storage'],
+    summaryNote: 'Open studio layout prioritizes one flexible living/sleeping room with minimal partitions.',
+    estimateNote: 'Open studio keeps interior partition scope light; furniture and privacy packages still require review.',
+    bomNote: 'Preview BOM assumes reduced partition allowance for one-room compact planning.',
+  },
+  {
+    id: 'oneBedroom',
+    productId: 'compact-timber-40',
+    label: 'One bedroom',
+    shortLabel: '1 bed',
+    roomLabels: ['Living / kitchen', 'Bedroom', 'Bathroom core', 'Entrance / storage'],
+    summaryNote: 'One-bedroom layout separates the sleeping zone from the living/kitchen area.',
+    estimateNote: 'One-bedroom estimate uses the standard compact partition and door allowance.',
+    bomNote: 'Preview BOM assumes one private bedroom partition package.',
+  },
+  {
+    id: 'officeCabin',
+    productId: 'compact-timber-40',
+    label: 'Office cabin',
+    shortLabel: 'Office',
+    roomLabels: ['Living / work lounge', 'Office / guest room', 'Bathroom core', 'Entry storage'],
+    summaryNote: 'Office cabin layout adapts the private module for work, guest stays or studio use.',
+    estimateNote: 'Office cabin estimate keeps the same module package but flags work/guest fit-out for review.',
+    bomNote: 'Preview BOM uses the compact bedroom module as an office/guest module placeholder.',
+  },
+  {
+    id: 'twoBedroom',
+    productId: 'family-timber-80',
+    label: 'Two bedroom',
+    shortLabel: '2 bed',
+    roomLabels: ['Living / kitchen', 'Bedroom 1', 'Bedroom 2', 'Bathroom core', 'Technical / storage'],
+    summaryNote: 'Two-bedroom layout is the baseline family plan with a larger shared living zone.',
+    estimateNote: 'Two-bedroom estimate uses the baseline family module and partition package.',
+    bomNote: 'Preview BOM assumes two bedroom modules and one shared service core.',
+  },
+  {
+    id: 'threeBedroomCompact',
+    productId: 'family-timber-80',
+    label: 'Three-bedroom compact',
+    shortLabel: '3 bed compact',
+    roomLabels: ['Compact living / kitchen', 'Bedroom 1', 'Bedroom 2', 'Compact bedroom / office', 'Bathroom core'],
+    summaryNote: 'Three-bedroom compact layout converts storage/flex area into a small third room concept.',
+    estimateNote: 'Three-bedroom compact requires partition and layout review before a production quote.',
+    bomNote: 'Preview BOM notes extra partition planning but does not claim engineering-grade room quantities.',
+  },
+  {
+    id: 'largeLiving',
+    productId: 'family-timber-80',
+    label: 'Large living',
+    shortLabel: 'Large living',
+    roomLabels: ['Large living / kitchen', 'Bedroom suite', 'Guest room', 'Bathroom core', 'Utility storage'],
+    summaryNote: 'Large living layout prioritizes the shared social zone and keeps bedrooms more flexible.',
+    estimateNote: 'Large living estimate keeps module pricing stable while layout detailing remains review-only.',
+    bomNote: 'Preview BOM assumes the same modules with altered internal zoning notes.',
+  },
+  {
+    id: 'saunaOnly',
+    productId: 'sauna-cabin-25',
+    label: 'Sauna only',
+    shortLabel: 'Sauna',
+    roomLabels: ['Sauna room', 'Changing zone', 'Shower/service core', 'Terrace option'],
+    summaryNote: 'Sauna-only layout focuses on wellness use with a compact changing and service zone.',
+    estimateNote: 'Sauna-only estimate requires sauna equipment and wet-zone engineering review.',
+    bomNote: 'Preview BOM carries sauna/wellness component notes for future production refinement.',
+  },
+  {
+    id: 'guestCabin',
+    productId: 'sauna-cabin-25',
+    label: 'Guest cabin',
+    shortLabel: 'Guest',
+    roomLabels: ['Guest rest area', 'Compact kitchenette wall', 'Washroom/service core', 'Terrace option'],
+    summaryNote: 'Guest cabin layout turns the sauna core into a small overnight/rest module concept.',
+    estimateNote: 'Guest cabin estimate keeps sauna-cabin module pricing but flags guest fit-out for review.',
+    bomNote: 'Preview BOM treats the wellness core as a guest/rest module placeholder.',
+  },
+  {
+    id: 'saunaRestRoom',
+    productId: 'sauna-cabin-25',
+    label: 'Sauna + rest room',
+    shortLabel: 'Sauna + rest',
+    roomLabels: ['Sauna / rest area', 'Changing zone', 'Service core', 'Terrace option'],
+    summaryNote: 'Sauna + rest room layout balances wellness use with a small lounge/rest zone.',
+    estimateNote: 'Sauna + rest room estimate remains preview-only pending sauna equipment specification.',
+    bomNote: 'Preview BOM assumes the current sauna/rest module with service core.',
+  },
+] as const satisfies readonly ModularHomeLayoutVariant[];
 
 export const MODULAR_HOME_PRODUCTS = [
   {
@@ -242,12 +356,15 @@ export const MODULAR_HOME_PRODUCTS = [
     ],
     defaultConfig: {
       doorPackage: 'standardEntry',
+      doorPlacement: 'frontEntry',
       facade: 'naturalTimber',
       finishLevel: 'standard',
+      layoutVariant: 'oneBedroom',
       roof: 'pitched',
       template: 'compactTimber40',
       terrace: 'frontDeck',
       windowPackage: 'standardWindows',
+      windowPlacement: 'balanced',
     },
     basePrice: 38000,
     shortDescription: 'A compact one-bedroom timber module for fast deployment and flexible small-site use.',
@@ -304,12 +421,15 @@ export const MODULAR_HOME_PRODUCTS = [
     ],
     defaultConfig: {
       doorPackage: 'terraceSlider',
+      doorPlacement: 'terraceFacing',
       facade: 'naturalTimber',
       finishLevel: 'standard',
+      layoutVariant: 'twoBedroom',
       roof: 'pitched',
       template: 'familyTimber80',
       terrace: 'extendedTerrace',
       windowPackage: 'panoramicWindows',
+      windowPlacement: 'frontPanoramic',
     },
     basePrice: 72000,
     shortDescription: 'A larger two-bedroom timber home with an open living zone and family-ready layout.',
@@ -357,12 +477,15 @@ export const MODULAR_HOME_PRODUCTS = [
     ],
     defaultConfig: {
       doorPackage: 'standardEntry',
+      doorPlacement: 'frontEntry',
       facade: 'darkThermoWood',
       finishLevel: 'standard',
+      layoutVariant: 'saunaRestRoom',
       roof: 'flat',
       template: 'saunaCabin25',
       terrace: 'frontDeck',
       windowPackage: 'compactPrivacy',
+      windowPlacement: 'sidePrivacy',
     },
     basePrice: 26000,
     shortDescription: 'A compact sauna and guest module for outdoor retreats and add-on hospitality use.',
@@ -725,6 +848,76 @@ export const MODULAR_HOME_OPTIONS = [
     compatibleProducts: ['compact-timber-40', 'family-timber-80'],
     requiredModuleIds: [],
   },
+  {
+    id: 'option-window-placement-balanced',
+    group: 'windowPlacement',
+    label: 'Balanced openings',
+    materialIds: [],
+    priceDelta: 0,
+    visualToken: 'balanced' satisfies ModularHomeWindowPlacementOption,
+    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
+    requiredModuleIds: [],
+  },
+  {
+    id: 'option-window-placement-front-panoramic',
+    group: 'windowPlacement',
+    label: 'Front panoramic placement',
+    materialIds: [],
+    priceDelta: 2400,
+    visualToken: 'frontPanoramic' satisfies ModularHomeWindowPlacementOption,
+    compatibleProducts: ['compact-timber-40', 'family-timber-80'],
+    requiredModuleIds: [],
+  },
+  {
+    id: 'option-window-placement-side-privacy',
+    group: 'windowPlacement',
+    label: 'Side privacy placement',
+    materialIds: [],
+    priceDelta: 900,
+    visualToken: 'sidePrivacy' satisfies ModularHomeWindowPlacementOption,
+    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
+    requiredModuleIds: [],
+  },
+  {
+    id: 'option-window-placement-corner-feature',
+    group: 'windowPlacement',
+    label: 'Corner feature placement',
+    materialIds: [],
+    priceDelta: 4800,
+    visualToken: 'cornerFeature' satisfies ModularHomeWindowPlacementOption,
+    compatibleProducts: ['compact-timber-40', 'family-timber-80'],
+    requiredModuleIds: [],
+  },
+  {
+    id: 'option-door-placement-front-entry',
+    group: 'doorPlacement',
+    label: 'Front entry placement',
+    materialIds: [],
+    priceDelta: 0,
+    visualToken: 'frontEntry' satisfies ModularHomeDoorPlacementOption,
+    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
+    requiredModuleIds: [],
+  },
+  {
+    id: 'option-door-placement-side-entry',
+    group: 'doorPlacement',
+    label: 'Side entry placement',
+    materialIds: [],
+    priceDelta: 1200,
+    visualToken: 'sideEntry' satisfies ModularHomeDoorPlacementOption,
+    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
+    requiredModuleIds: [],
+  },
+  {
+    id: 'option-door-placement-terrace-facing',
+    group: 'doorPlacement',
+    label: 'Terrace-facing placement',
+    materialIds: [],
+    priceDelta: 2800,
+    visualToken: 'terraceFacing' satisfies ModularHomeDoorPlacementOption,
+    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
+    requiredModuleIds: [],
+  },
 ] as const satisfies readonly ModularHomeOption[];
 
 const DEFAULT_MODULAR_HOME_PRODUCT_ID: ModularHomeProductId = 'compact-timber-40';
@@ -743,11 +936,13 @@ function getSelectedOptionForGroup(
 ): ModularHomeOption | undefined {
   const selectedTokenByGroup = {
     doorPackage: config.doorPackage,
+    doorPlacement: config.doorPlacement,
     facade: config.facade,
     finish: config.finishLevel,
     roof: config.roof,
     terrace: config.terrace,
     windowPackage: config.windowPackage,
+    windowPlacement: config.windowPlacement,
   } as const;
 
   return MODULAR_HOME_OPTIONS.find((option) => (
@@ -771,11 +966,13 @@ function getConfigKeyForOptionGroup(
 ): keyof ModularHomeConfiguratorState | null {
   const keyByGroup = {
     doorPackage: 'doorPackage',
+    doorPlacement: 'doorPlacement',
     facade: 'facade',
     finish: 'finishLevel',
     roof: 'roof',
     terrace: 'terrace',
     windowPackage: 'windowPackage',
+    windowPlacement: 'windowPlacement',
   } as const satisfies Record<ModularHomeOptionGroup, keyof ModularHomeConfiguratorState>;
 
   return keyByGroup[group];
@@ -838,6 +1035,8 @@ function getRequiredOptionModuleIds(config: ModularHomeConfiguratorState): reado
     getSelectedOptionForGroup(config, 'finish'),
     getSelectedOptionForGroup(config, 'windowPackage'),
     getSelectedOptionForGroup(config, 'doorPackage'),
+    getSelectedOptionForGroup(config, 'windowPlacement'),
+    getSelectedOptionForGroup(config, 'doorPlacement'),
   ].filter((option): option is ModularHomeOption => Boolean(option));
 
   return selectedOptions.flatMap((option) => option.requiredModuleIds);
@@ -963,6 +1162,46 @@ function getReviewWarningsForCompatibleConfig(
     ));
   }
 
+  if (config.windowPlacement === 'frontPanoramic') {
+    warnings.push(createRequiresReviewWarning(
+      'front-panoramic-placement-review',
+      'Front panoramic window placement requires structural opening, solar-gain and privacy review.',
+      ['windowPlacement'],
+    ));
+  }
+
+  if (config.windowPlacement === 'cornerFeature') {
+    warnings.push(createRequiresReviewWarning(
+      'corner-feature-placement-review',
+      'Corner feature window placement requires structural corner opening, thermal bridge and transport review.',
+      ['windowPlacement'],
+    ));
+  }
+
+  if (config.windowPlacement === 'sidePrivacy' && config.windowPackage === 'panoramicWindows') {
+    warnings.push(createRequiresReviewWarning(
+      'side-privacy-panoramic-package-review',
+      'Side privacy placement with panoramic glazing requires site orientation and privacy review.',
+      ['windowPlacement', 'windowPackage'],
+    ));
+  }
+
+  if (config.doorPlacement === 'sideEntry') {
+    warnings.push(createRequiresReviewWarning(
+      'side-entry-placement-review',
+      'Side entry placement requires site approach, facade orientation and weather protection review.',
+      ['doorPlacement'],
+    ));
+  }
+
+  if (config.doorPlacement === 'terraceFacing') {
+    warnings.push(createRequiresReviewWarning(
+      'terrace-facing-door-placement-review',
+      'Terrace-facing door placement requires threshold, drainage and terrace interface review.',
+      ['doorPlacement', 'terrace'],
+    ));
+  }
+
   return warnings;
 }
 
@@ -1072,6 +1311,50 @@ export function getDefaultHomeConfig(productId: string): ModularHomeConfigurator
   };
 }
 
+export function getModularHomeLayoutVariantsForProduct(productId: string): readonly ModularHomeLayoutVariant[] {
+  return MODULAR_HOME_LAYOUT_VARIANTS.filter((variant) => variant.productId === productId);
+}
+
+export function isModularHomeLayoutVariantCompatible(
+  productId: string,
+  layoutVariant: string,
+): layoutVariant is ModularHomeLayoutVariantId {
+  return getModularHomeLayoutVariantsForProduct(productId).some((variant) => variant.id === layoutVariant);
+}
+
+export function getDefaultLayoutVariantForProduct(productId: string): ModularHomeLayoutVariantId {
+  const product = getModularHomeProduct(productId) ?? getModularHomeProduct(DEFAULT_MODULAR_HOME_PRODUCT_ID);
+  const defaultVariant = product?.defaultConfig.layoutVariant;
+
+  if (product && defaultVariant && isModularHomeLayoutVariantCompatible(product.id, defaultVariant)) {
+    return defaultVariant;
+  }
+
+  return getModularHomeLayoutVariantsForProduct(product?.id ?? DEFAULT_MODULAR_HOME_PRODUCT_ID)[0]?.id ?? 'oneBedroom';
+}
+
+export function getModularHomeLayoutVariant(
+  productId: string,
+  layoutVariant?: string,
+): ModularHomeLayoutVariant | null {
+  const variants = getModularHomeLayoutVariantsForProduct(productId);
+  const selectedVariant = variants.find((variant) => variant.id === layoutVariant);
+
+  return selectedVariant ?? variants.find((variant) => variant.id === getDefaultLayoutVariantForProduct(productId)) ?? variants[0] ?? null;
+}
+
+export function getModularHomeLayoutVariantForConfig(
+  config: ModularHomeConfiguratorState,
+): ModularHomeLayoutVariant | null {
+  const product = getProductForConfig(config);
+
+  if (!product) {
+    return getModularHomeLayoutVariant(DEFAULT_MODULAR_HOME_PRODUCT_ID, DEFAULT_MODULAR_HOME_CONFIG.layoutVariant);
+  }
+
+  return getModularHomeLayoutVariant(product.id, config.layoutVariant);
+}
+
 export function getCompatibleOptions(
   productId: string,
   optionGroup: ModularHomeOptionGroup,
@@ -1140,6 +1423,14 @@ export function getModularHomeConfigurationWarnings(
   }
 
   const warnings: ModularHomeConfigurationWarning[] = [];
+  if (!isModularHomeLayoutVariantCompatible(product.id, config.layoutVariant)) {
+    warnings.push(createNotAvailableWarning(
+      `${config.layoutVariant}-layout-not-available`,
+      `Layout variant ${config.layoutVariant} is not available for ${product.name}.`,
+      [],
+    ));
+  }
+
   const selectedGroups = [
     'facade',
     'roof',
@@ -1147,6 +1438,8 @@ export function getModularHomeConfigurationWarnings(
     'finish',
     'windowPackage',
     'doorPackage',
+    'windowPlacement',
+    'doorPlacement',
   ] as const;
 
   for (const group of selectedGroups) {
@@ -1221,6 +1514,8 @@ export function getSelectedModularHomeOptions(config: ModularHomeConfiguratorSta
     getSelectedOptionForGroup(config, 'finish'),
     getSelectedOptionForGroup(config, 'windowPackage'),
     getSelectedOptionForGroup(config, 'doorPackage'),
+    getSelectedOptionForGroup(config, 'windowPlacement'),
+    getSelectedOptionForGroup(config, 'doorPlacement'),
   ].filter((option): option is ModularHomeOption => Boolean(option));
 }
 
@@ -1241,16 +1536,20 @@ export function getSelectedModularHomeMaterials(config: ModularHomeConfiguratorS
 
 export function getModularHomeProductConfigSummary(config: ModularHomeConfiguratorState): ModularHomeProductConfigSummary {
   const product = getProductForConfig(config);
+  const layoutVariant = product ? getModularHomeLayoutVariant(product.id, config.layoutVariant) : null;
 
   return {
     doorPackage: getOptionForGroupAndToken('doorPackage', config.doorPackage)?.label ?? config.doorPackage,
+    doorPlacement: getOptionForGroupAndToken('doorPlacement', config.doorPlacement)?.label ?? config.doorPlacement,
     facade: getOptionForGroupAndToken('facade', config.facade)?.label ?? config.facade,
     finishLevel: getOptionForGroupAndToken('finish', config.finishLevel)?.label ?? config.finishLevel,
+    layoutVariant: layoutVariant?.label ?? config.layoutVariant,
     product: product?.name ?? config.template,
     roof: getOptionForGroupAndToken('roof', config.roof)?.label ?? config.roof,
     template: product?.name ?? config.template,
     terrace: getOptionForGroupAndToken('terrace', config.terrace)?.label ?? config.terrace,
     windowPackage: getOptionForGroupAndToken('windowPackage', config.windowPackage)?.label ?? config.windowPackage,
+    windowPlacement: getOptionForGroupAndToken('windowPlacement', config.windowPlacement)?.label ?? config.windowPlacement,
   };
 }
 
