@@ -34,7 +34,6 @@ export function OpenBoothPavilion({
     isPremium,
     isScreenFirstBooth,
     lowerMediaShelfWidth,
-    mediaSurfaceCount,
     postHeight,
     screenFrameHeight,
     screenFrameWidth,
@@ -105,6 +104,7 @@ export function OpenBoothPavilion({
     const sideRailHeight = wallHeight + 0.24;
     const sideRailOffsetX = wallWidth * 0.5 + 0.14;
     const mediaPanelZ = wallZ + 0.28;
+    const rearMediaPanelZ = wallZ - 0.34;
     const screenFirstFrameColor = isElite ? '#0d2c43' : '#12324a';
     const screenFirstBackColor = isElite ? '#071827' : '#0a1d2c';
     const screenFirstEdgeColor = isElite ? '#9af3ff' : '#8ce8ff';
@@ -251,7 +251,7 @@ export function OpenBoothPavilion({
             <meshStandardMaterial color={mediaFallbackColor} emissive={accentColor} emissiveIntensity={mediaEmissiveIntensity} />
           )}
         </mesh>
-        <mesh position={[0, wallY, wallZ - 0.34]} scale={[-1, 1, 1]}>
+        <mesh position={[0, wallY, rearMediaPanelZ]} scale={[-1, 1, 1]}>
           <planeGeometry args={[screenSurfaceWidth, screenSurfaceHeight]} />
           {screenUrl ? (
             <Suspense fallback={<meshStandardMaterial color={mediaFallbackColor} emissive={accentColor} emissiveIntensity={mediaEmissiveIntensity} />}>
@@ -268,22 +268,38 @@ export function OpenBoothPavilion({
           )}
         </mesh>
         {!screenUrl && (
-          <Text
-            position={[0, wallY - 0.04, mediaPanelZ + 0.16]}
-            fontSize={isElite ? 0.82 : 0.76}
-            color={accentColor}
-            anchorX="center"
-            anchorY="middle"
-            maxWidth={screenSurfaceWidth * 0.46}
-          >
-            {fallbackText}
-          </Text>
+          <>
+            <Text
+              position={[0, wallY - 0.04, mediaPanelZ + 0.16]}
+              fontSize={isElite ? 0.82 : 0.76}
+              color={accentColor}
+              anchorX="center"
+              anchorY="middle"
+              maxWidth={screenSurfaceWidth * 0.46}
+            >
+              {fallbackText}
+            </Text>
+            <Text
+              position={[0, wallY - 0.04, rearMediaPanelZ - 0.16]}
+              rotation={[0, Math.PI, 0]}
+              fontSize={isElite ? 0.82 : 0.76}
+              color={accentColor}
+              anchorX="center"
+              anchorY="middle"
+              maxWidth={screenSurfaceWidth * 0.46}
+            >
+              {fallbackText}
+            </Text>
+          </>
         )}
       </group>
     );
   }
 
-  const mediaSurfaceZs = mediaSurfaceCount === 2 ? [mediaFaceZ, -mediaFaceZ] : [mediaFaceZ];
+  const mediaSurfaceSides = [
+    { key: 'front', rotationY: 0, z: mediaFaceZ },
+    { key: 'rear', rotationY: Math.PI, z: -mediaFaceZ },
+  ];
   const pavilionPostPositions = isScreenFirstBooth
     ? [
         [-(screenFrameWidth * 0.54), postHeight * 0.5, rearScreenZ + 0.08],
@@ -517,8 +533,12 @@ export function OpenBoothPavilion({
           <boxGeometry args={[screenFrameWidth, screenFrameHeight, 0.24]} />
           <meshStandardMaterial color={mediaFrameColor} emissive={accentColor} emissiveIntensity={0.045} metalness={0.1} roughness={0.5} />
         </mesh>
-        {mediaSurfaceZs.map((mediaSurfaceZ) => (
-          <mesh key={`booth-media-surface-${mediaSurfaceZ}`} position={[0, 0, mediaSurfaceZ]}>
+        {mediaSurfaceSides.map((mediaSurfaceSide) => (
+          <mesh
+            key={`booth-media-surface-${mediaSurfaceSide.key}`}
+            position={[0, 0, mediaSurfaceSide.z]}
+            rotation={[0, mediaSurfaceSide.rotationY, 0]}
+          >
             <planeGeometry args={[screenSurfaceWidth, screenSurfaceHeight]} />
             {screenUrl ? (
               <Suspense fallback={<meshStandardMaterial color={mediaFallbackColor} emissive={accentColor} emissiveIntensity={mediaEmissiveIntensity} />}>
@@ -556,16 +576,29 @@ export function OpenBoothPavilion({
           </mesh>
         )}
         {!screenUrl && (
-          <Text
-            position={[0, -0.04, 0.48]}
-            fontSize={isHero ? 0.84 : isElite ? 0.76 : isPremium ? 0.7 : 0.62}
-            color={accentColor}
-            anchorX="center"
-            anchorY="middle"
-            maxWidth={isHero ? 4.2 : isElite ? 3.8 : isPremium ? 3.2 : 2.6}
-          >
-            {fallbackText}
-          </Text>
+          <>
+            <Text
+              position={[0, -0.04, 0.48]}
+              fontSize={isHero ? 0.84 : isElite ? 0.76 : isPremium ? 0.7 : 0.62}
+              color={accentColor}
+              anchorX="center"
+              anchorY="middle"
+              maxWidth={isHero ? 4.2 : isElite ? 3.8 : isPremium ? 3.2 : 2.6}
+            >
+              {fallbackText}
+            </Text>
+            <Text
+              position={[0, -0.04, -0.48]}
+              rotation={[0, Math.PI, 0]}
+              fontSize={isHero ? 0.84 : isElite ? 0.76 : isPremium ? 0.7 : 0.62}
+              color={accentColor}
+              anchorX="center"
+              anchorY="middle"
+              maxWidth={isHero ? 4.2 : isElite ? 3.8 : isPremium ? 3.2 : 2.6}
+            >
+              {fallbackText}
+            </Text>
+          </>
         )}
       </group>
       {showFrontThreshold && (

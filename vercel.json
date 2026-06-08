@@ -5,7 +5,7 @@
   "outputDirectory": "dist",
   "rewrites": [
     {
-      "source": "/((?!assets/|textures/|models/|audio/|videos/|icons/|manifest.webmanifest|registerSW.js|sw.js|workbox-.*|favicon.ico|vite.svg).*)",
+      "source": "/((?!assets/|textures/|expo/media/|models/|audio/|videos/|icons/|manifest.webmanifest|registerSW.js|sw.js|workbox-.*|favicon.ico|vite.svg).*)",
       "destination": "/index.html"
     }
   ]

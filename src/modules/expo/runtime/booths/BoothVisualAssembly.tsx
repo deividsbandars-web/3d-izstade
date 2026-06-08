@@ -304,7 +304,7 @@ export function BoothVisualAssembly({
   const managedCameraPreviewImage = isManagedCameraPreviewImage(managedScreenImageUrl);
   const useCameraFeedLoop = !boothProductPreviewCard && !managedScreenImageUrl;
   const effectiveManagedScreenUrl = managedScreenVideoUrl ?? (managedCameraPreviewImage ? null : managedScreenImageUrl);
-  const boothPresentationScreenUrl = buildGeneratedBillboardTextureUrl({
+  const fallbackGeneratedScreenUrl = buildGeneratedBillboardTextureUrl({
     accentColor,
     aspect: pavilionLayout.screenSurfaceWidth / Math.max(1, pavilionLayout.screenSurfaceHeight),
     ...(boothProductPreviewCard
@@ -337,6 +337,7 @@ export function BoothVisualAssembly({
         }),
     tierAccent: tierState.districtVisual.shellAccent,
   });
+  const boothPresentationScreenUrl = presentation.posterUrl ?? fallbackGeneratedScreenUrl;
 
   return (
     <>
