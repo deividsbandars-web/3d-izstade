@@ -59,6 +59,7 @@ export {
 } from './modularHomeShareUrl';
 export {
   compareModularHomeLocalProjects,
+  compareModularHomeProjects,
   createModularHomeProjectComparison,
   createModularHomeLocalProject,
   deleteModularHomeLocalProject,
@@ -128,11 +129,14 @@ export {
   getModularHomeLayoutVariantForConfig,
   getModularHomeLayoutVariantsForProduct,
   getModularHomeOptionChoices,
+  getModularHomeProductionConstraints,
   getModularHomeProduct,
   getModularHomeProductConfigSummary,
   getModularHomeProductForConfig,
   getModularHomeProductForTemplate,
   getModularHomeProducts,
+  getModularHomeRoomMeasurementSummary,
+  getModularHomeRoomMeasurements,
   getModuleInstancesForProduct,
   getModuleQuantitySummary,
   getModulesForConfig,
@@ -145,6 +149,8 @@ export {
   MODULAR_HOME_MODULES,
   MODULAR_HOME_OPTIONS,
   MODULAR_HOME_PRODUCTS,
+  MODULAR_HOME_ROOM_MEASUREMENT_DISCLAIMER,
+  MODULAR_HOME_ROOM_MEASUREMENTS,
   validateHomeConfiguration,
 } from './modularHomeProducts';
 export {
@@ -161,6 +167,7 @@ export {
 } from './modularHomeMaterials';
 export {
   calculateManufacturingBom,
+  calculateManufacturingBomPreview,
   calculateComponentBom,
   getComponentsForModule,
   getComponentsForProduct,
@@ -247,11 +254,14 @@ export type {
   ModularHomeLocalProject,
   ModularHomeProjectComparison,
   ModularHomeProjectComparisonBomSummary,
+  ModularHomeProjectComparisonBomCategoryDelta,
   ModularHomeProjectComparisonComponentDelta,
+  ModularHomeProjectComparisonConfidenceSummary,
   ModularHomeProjectComparisonDeltaStatus,
   ModularHomeProjectComparisonModuleDelta,
   ModularHomeProjectComparisonOption,
   ModularHomeProjectComparisonOptionKey,
+  ModularHomeProjectComparisonSideSummary,
   ModularHomeProjectQuoteStatus,
 } from './modularHomeWorkspaceStorage';
 export type {
@@ -302,6 +312,8 @@ export type {
   ModularHomeProductCategory,
   ModularHomeProductId,
   ModularHomeProductOptionChoice,
+  ModularHomeProductionConstraint,
+  ModularHomeProductionConstraintSeverity,
   ModularHomeSelectedMaterialSummary,
 } from './modularHomeProducts';
 export type {

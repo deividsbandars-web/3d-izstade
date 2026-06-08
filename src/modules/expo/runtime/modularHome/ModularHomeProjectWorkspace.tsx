@@ -131,6 +131,7 @@ export function ModularHomeProjectWorkspace({
     ? createModularHomeProjectComparison(compareFirstProject, compareSecondProject)
     : null;
   const changedComparisonOptions = comparison?.options.filter((option) => option.hasChanged) ?? [];
+  const changedMajorBomCategoryDeltas = comparison?.majorBomCategoryDeltas.filter((item) => item.status !== 'same') ?? [];
   const changedModuleDeltas = comparison?.moduleDeltas.filter((item) => item.status !== 'same') ?? [];
   const changedComponentDeltas = comparison?.componentDeltas.filter((item) => item.status !== 'same') ?? [];
 
@@ -406,6 +407,69 @@ export function ModularHomeProjectWorkspace({
             </div>
 
             <div
+              aria-label="Project comparison side-by-side summary"
+              data-home-project-workspace-compare-side-by-side="true"
+              style={{
+                display: 'grid',
+                gap: '7px',
+                gridTemplateColumns: isTouchDevice ? '1fr' : 'repeat(2, minmax(0, 1fr))',
+              }}
+            >
+              {[
+                { label: 'Saved baseline', summary: comparison.savedSummary },
+                { label: 'Comparison project', summary: comparison.currentSummary },
+              ].map(({ label, summary }) => (
+                <div
+                  key={summary.projectId}
+                  data-home-project-workspace-compare-side={`${label}:${summary.projectId}:${summary.moduleCount}:${summary.estimateTotal}`}
+                  style={{
+                    background: 'rgba(15, 23, 42, 0.38)',
+                    border: '1px solid rgba(125, 211, 252, 0.13)',
+                    borderRadius: '10px',
+                    display: 'grid',
+                    gap: '6px',
+                    padding: '7px 8px',
+                  }}
+                >
+                  <div style={{ color: '#93c5fd', fontSize: '0.5rem', fontWeight: 950, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                    {label}
+                  </div>
+                  <div style={{ color: '#f0f9ff', fontSize: isTouchDevice ? '0.6rem' : '0.64rem', fontWeight: 950, lineHeight: 1.2 }}>
+                    {summary.projectName}
+                  </div>
+                  <div style={{ color: '#bae6fd', fontSize: isTouchDevice ? '0.5rem' : '0.54rem', fontWeight: 780, lineHeight: 1.35 }}>
+                    {summary.product}<br />
+                    Layout: {summary.layoutVariant}<br />
+                    Facade/roof: {summary.facade} / {summary.roof}<br />
+                    Terrace/finish: {summary.terrace} / {summary.finishLevel}<br />
+                    Windows/doors: {summary.windowPackage} / {summary.doorPackage}<br />
+                    Placement: {summary.windowPlacement} / {summary.doorPlacement}
+                  </div>
+                  <div
+                    data-home-project-workspace-compare-confidence-summary={`${summary.projectId}:${summary.confidenceSummary.reviewLineCount}:${summary.confidenceSummary.siteDependentLineCount}`}
+                    style={{
+                      background: 'rgba(2, 6, 23, 0.28)',
+                      border: '1px solid rgba(125, 211, 252, 0.1)',
+                      borderRadius: '8px',
+                      color: '#dbeafe',
+                      display: 'grid',
+                      fontSize: isTouchDevice ? '0.48rem' : '0.52rem',
+                      fontWeight: 780,
+                      gap: '3px',
+                      lineHeight: 1.25,
+                      padding: '6px 7px',
+                    }}
+                  >
+                    <span>Modules: {summary.moduleCount} / Component BOM: {formatHomeEstimateEur(summary.componentSubtotal)}</span>
+                    <span>Estimate: {formatHomeEstimateEur(summary.estimateTotal)}</span>
+                    <span>Confidence: {summary.confidenceSummary.confidenceLabels.join(', ')}</span>
+                    <span>Review lines: {summary.confidenceSummary.reviewLineCount} engineering / {summary.confidenceSummary.siteDependentLineCount} site-dependent</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div
               aria-label="Project comparison price and BOM summary"
               data-home-project-workspace-compare-bom-summary="true"
               style={{
@@ -421,6 +485,8 @@ export function ModularHomeProjectWorkspace({
                 ['Component quantity delta', formatSignedNumber(comparison.bomSummary.totalQuantityDelta)],
                 ['Material delta', formatSignedEstimateDelta(comparison.bomSummary.materialCostDelta)],
                 ['Labor delta', formatSignedEstimateDelta(comparison.bomSummary.laborCostDelta)],
+                ['Engineering-review delta', formatSignedNumber(comparison.currentSummary.confidenceSummary.reviewLineCount - comparison.savedSummary.confidenceSummary.reviewLineCount)],
+                ['Site-dependent delta', formatSignedNumber(comparison.currentSummary.confidenceSummary.siteDependentLineCount - comparison.savedSummary.confidenceSummary.siteDependentLineCount)],
               ].map(([label, value]) => (
                 <div
                   key={label}
@@ -468,6 +534,66 @@ export function ModularHomeProjectWorkspace({
                   Product options match.
                 </div>
               )}
+            </div>
+
+            <div style={{ display: 'grid', gap: '5px' }}>
+              <div style={{ color: '#93c5fd', fontSize: '0.52rem', fontWeight: 950, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                Major BOM categories
+              </div>
+              {changedMajorBomCategoryDeltas.length > 0 ? changedMajorBomCategoryDeltas.slice(0, 8).map((item) => (
+                <div
+                  key={item.category}
+                  data-home-project-workspace-compare-bom-category={`${item.category}:${item.status}:${item.savedQuantity}:${item.currentQuantity}:${item.costDelta}`}
+                  style={{
+                    background: 'rgba(15, 23, 42, 0.32)',
+                    border: '1px solid rgba(125, 211, 252, 0.12)',
+                    borderRadius: '8px',
+                    display: 'grid',
+                    gap: '4px',
+                    padding: '5px 6px',
+                  }}
+                >
+                  <div style={{ alignItems: 'center', display: 'flex', gap: '6px', justifyContent: 'space-between' }}>
+                    <span style={{ color: '#e0f2fe', fontSize: isTouchDevice ? '0.5rem' : '0.54rem', fontWeight: 900 }}>{item.label}</span>
+                    <span style={createDeltaStatusStyle(item.status, isTouchDevice)}>{DELTA_STATUS_LABELS[item.status]}</span>
+                  </div>
+                  <div style={{ color: '#bae6fd', fontSize: isTouchDevice ? '0.48rem' : '0.52rem', fontWeight: 760 }}>
+                    Qty {formatQuantity(item.savedQuantity, item.unit)} {'->'} {formatQuantity(item.currentQuantity, item.unit)} / {formatSignedEstimateDelta(item.costDelta)}
+                  </div>
+                </div>
+              )) : (
+                <div data-home-project-workspace-compare-bom-categories-unchanged="true" style={{ color: '#bbf7d0', fontSize: isTouchDevice ? '0.5rem' : '0.54rem', fontWeight: 780 }}>
+                  Major BOM categories are unchanged.
+                </div>
+              )}
+            </div>
+
+            <div
+              data-home-project-workspace-compare-confidence-notes="true"
+              style={{
+                background: 'rgba(30, 41, 59, 0.34)',
+                border: '1px solid rgba(125, 211, 252, 0.13)',
+                borderRadius: '9px',
+                color: '#dbeafe',
+                display: 'grid',
+                fontSize: isTouchDevice ? '0.5rem' : '0.54rem',
+                fontWeight: 780,
+                gap: '4px',
+                lineHeight: 1.3,
+                padding: '6px 7px',
+              }}
+            >
+              <div style={{ color: '#93c5fd', fontSize: '0.5rem', fontWeight: 950, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                Estimate confidence notes
+              </div>
+              {comparison.confidenceNotes.map((note) => (
+                <div key={note} data-home-project-workspace-compare-confidence-note={note}>
+                  {note}
+                </div>
+              ))}
+              <div data-home-project-workspace-compare-recommendation="true" style={{ color: '#fef3c7', fontWeight: 900 }}>
+                {comparison.recommendationNote}
+              </div>
             </div>
 
             <div style={{ display: 'grid', gap: '5px' }}>

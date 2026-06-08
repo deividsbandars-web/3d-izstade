@@ -5,12 +5,14 @@ import {
   MODULAR_HOME_QUOTE_CONSENT_VERSION,
   MODULAR_HOME_QUOTE_PRIVACY_VERSION,
   type ModularHomeQuoteStorageClient,
+  checkModularHomeQuoteRateLimit,
   createModularHomeQuoteSafeLogEvent,
   getModularHomeQuoteBackendHardeningPlan,
   getModularHomeQuoteSubmissionConfig,
   insertModularHomeQuoteRequest,
   isModularHomeQuoteBackendRequestEnabled,
   isModularHomeQuoteStagingRequest,
+  resetModularHomeQuoteRateLimitForTests,
   submitModularHomeQuote,
   validateModularHomeQuoteRequest,
 } from '../controllers/modularHomeQuoteController.js';
@@ -153,12 +155,15 @@ process.env.MODULAR_HOME_QUOTE_STAGING_HOSTS = '';
   const submissionConfig = getModularHomeQuoteSubmissionConfig();
   assert.equal(submissionConfig.enabled, false);
   assert.equal(submissionConfig.productionReady, false);
+  assert.equal(submissionConfig.rateLimit.maxRequests, 5);
+  assert.equal(submissionConfig.rateLimit.windowMs, 10 * 60 * 1000);
   assert.equal(submissionConfig.requiresStagingEnvironment, true);
   assert.equal(submissionConfig.hardeningPlan.enablementGate.defaultMode, 'disabled');
   assert.equal(submissionConfig.hardeningPlan.enablementGate.envFlag, 'MODULAR_HOME_QUOTE_SUBMISSION_ENABLED');
   assert.equal(submissionConfig.hardeningPlan.enablementGate.requestFlag, 'homeQuoteBackend=1');
   assert.equal(submissionConfig.hardeningPlan.enablementGate.stagingRequirement, 'staging host or staging/preview environment');
   assert.ok(submissionConfig.staging.allowedHosts.includes('staging.30sek24.com'));
+  assert.match(submissionConfig.staging.allowedPreviewHostPattern, /app-staging/);
   assert.equal(submissionConfig.staging.enabledByEnvironment, false);
 }
 
@@ -176,6 +181,14 @@ assert.equal(isModularHomeQuoteStagingRequest({
   query: {},
 } as unknown as Request), true);
 assert.equal(isModularHomeQuoteStagingRequest({
+  headers: { host: 'app-staging-h0m300eh1-esaukans-6934s-projects.vercel.app' },
+  query: {},
+} as unknown as Request), true);
+assert.equal(isModularHomeQuoteStagingRequest({
+  headers: { host: 'random-preview.vercel.app' },
+  query: {},
+} as unknown as Request), false);
+assert.equal(isModularHomeQuoteStagingRequest({
   headers: { host: 'www.30sek24.com' },
   query: {},
 } as unknown as Request), false);
@@ -183,6 +196,10 @@ assert.equal(isModularHomeQuoteStagingRequest({
 process.env.APP_ENV = 'staging';
 assert.equal(isModularHomeQuoteStagingRequest({
   headers: { host: 'www.30sek24.com' },
+  query: {},
+} as unknown as Request), false);
+assert.equal(isModularHomeQuoteStagingRequest({
+  headers: {},
   query: {},
 } as unknown as Request), true);
 process.env.APP_ENV = '';
@@ -202,6 +219,27 @@ process.env.APP_ENV = '';
 
 process.env.MODULAR_HOME_QUOTE_SUBMISSION_ENABLED = 'true';
 assert.equal(getModularHomeQuoteSubmissionConfig().enabled, true);
+
+resetModularHomeQuoteRateLimitForTests();
+{
+  const rateLimitedRequest = {
+    headers: { 'x-forwarded-for': '203.0.113.10' },
+    query: { homeQuoteBackend: '1' },
+  } as unknown as Request;
+  const now = Date.parse('2026-06-05T12:00:00.000Z');
+
+  for (let index = 0; index < 5; index += 1) {
+    const result = checkModularHomeQuoteRateLimit(rateLimitedRequest, now + index);
+    assert.equal(result.allowed, true);
+    assert.equal(result.remaining, 4 - index);
+  }
+
+  const blocked = checkModularHomeQuoteRateLimit(rateLimitedRequest, now + 5);
+  assert.equal(blocked.allowed, false);
+  assert.equal(blocked.remaining, 0);
+  assert.equal(blocked.retryAfterSeconds > 0, true);
+}
+resetModularHomeQuoteRateLimitForTests();
 
 {
   const { response, result } = createMockResponse();

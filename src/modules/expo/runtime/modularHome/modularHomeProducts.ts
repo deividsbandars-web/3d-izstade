@@ -38,6 +38,37 @@ export type ModularHomeLayoutVariant = {
   bomNote: string;
 };
 
+export type ModularHomeRoomMeasurementType =
+  | 'bathroom'
+  | 'bedroom'
+  | 'circulation'
+  | 'kitchen'
+  | 'living'
+  | 'sauna'
+  | 'storage'
+  | 'technical'
+  | 'terrace';
+
+export type ModularHomeRoomMeasurement = {
+  areaM2: number;
+  id: string;
+  label: string;
+  layoutVariantId: ModularHomeLayoutVariantId;
+  note: string;
+  productId: ModularHomeProductId;
+  type: ModularHomeRoomMeasurementType;
+};
+
+export type ModularHomeRoomMeasurementSummary = {
+  ceilingHeightM: number;
+  disclaimer: string;
+  floorAreaM2: number;
+  layoutVariant: ModularHomeLayoutVariant | null;
+  product: ModularHomeProduct | null;
+  roomAreaTotalM2: number;
+  rooms: readonly ModularHomeRoomMeasurement[];
+};
+
 export type ModularHomeModuleId =
   | 'compact-living-module'
   | 'compact-bedroom-module'
@@ -79,6 +110,12 @@ export type ModularHomeConstraintStatus =
   | 'compatible'
   | 'notAvailable'
   | 'requiresReview';
+
+export type ModularHomeProductionConstraintSeverity =
+  | 'info'
+  | 'warning'
+  | 'requiresReview'
+  | 'blocked';
 
 export type ModularHomeDimensions = {
   widthM: number;
@@ -165,14 +202,21 @@ export type ModularHomeProductOptionChoice = ModularHomeOption & {
   constraintStatus: ModularHomeConstraintStatus;
   disabledReason: string;
   isCompatible: boolean;
+  productionConstraintSeverity: ModularHomeProductionConstraintSeverity;
+  productionNextStep: string;
 };
 
 export type ModularHomeConfigurationWarning = {
+  affectedOptions: readonly string[];
   id: string;
   message: string;
+  nextStep: string;
   relatedGroups: readonly ModularHomeOptionGroup[];
+  severity: ModularHomeProductionConstraintSeverity;
   status: ModularHomeConstraintStatus;
 };
+
+export type ModularHomeProductionConstraint = ModularHomeConfigurationWarning;
 
 export type ModularHomeProductConfigSummary = {
   doorPackage: string;
@@ -308,6 +352,443 @@ export const MODULAR_HOME_LAYOUT_VARIANTS = [
     bomNote: 'Preview BOM assumes the current sauna/rest module with service core.',
   },
 ] as const satisfies readonly ModularHomeLayoutVariant[];
+
+export const MODULAR_HOME_ROOM_MEASUREMENT_DISCLAIMER = 'Dimensions are preview estimates; final room schedule requires production verification.';
+
+export const MODULAR_HOME_ROOM_MEASUREMENTS = [
+  {
+    id: 'compact-open-studio-living-sleeping',
+    productId: 'compact-timber-40',
+    layoutVariantId: 'openStudio',
+    label: 'Studio living / sleeping',
+    areaM2: 23.2,
+    type: 'living',
+    note: 'Main flexible room for compact living, sleeping and lounge use.',
+  },
+  {
+    id: 'compact-open-studio-kitchen-wall',
+    productId: 'compact-timber-40',
+    layoutVariantId: 'openStudio',
+    label: 'Kitchen wall',
+    areaM2: 4.8,
+    type: 'kitchen',
+    note: 'Linear kitchen allowance inside the studio module.',
+  },
+  {
+    id: 'compact-open-studio-bathroom-core',
+    productId: 'compact-timber-40',
+    layoutVariantId: 'openStudio',
+    label: 'Bathroom core',
+    areaM2: 4.8,
+    type: 'bathroom',
+    note: 'Wet-room core placeholder.',
+  },
+  {
+    id: 'compact-open-studio-entry-storage',
+    productId: 'compact-timber-40',
+    layoutVariantId: 'openStudio',
+    label: 'Entry storage',
+    areaM2: 3.2,
+    type: 'storage',
+    note: 'Entrance/storage allowance.',
+  },
+  {
+    id: 'compact-open-studio-circulation',
+    productId: 'compact-timber-40',
+    layoutVariantId: 'openStudio',
+    label: 'Circulation / service allowance',
+    areaM2: 4,
+    type: 'circulation',
+    note: 'Preview allowance for wall thickness, circulation and service routing.',
+  },
+  {
+    id: 'compact-one-bedroom-living-kitchen',
+    productId: 'compact-timber-40',
+    layoutVariantId: 'oneBedroom',
+    label: 'Living / kitchen',
+    areaM2: 16.8,
+    type: 'living',
+    note: 'Shared living and kitchen zone.',
+  },
+  {
+    id: 'compact-one-bedroom-bedroom',
+    productId: 'compact-timber-40',
+    layoutVariantId: 'oneBedroom',
+    label: 'Bedroom',
+    areaM2: 10.4,
+    type: 'bedroom',
+    note: 'Private sleeping module.',
+  },
+  {
+    id: 'compact-one-bedroom-bathroom-core',
+    productId: 'compact-timber-40',
+    layoutVariantId: 'oneBedroom',
+    label: 'Bathroom core',
+    areaM2: 4.8,
+    type: 'bathroom',
+    note: 'Wet-room core placeholder.',
+  },
+  {
+    id: 'compact-one-bedroom-entry-storage',
+    productId: 'compact-timber-40',
+    layoutVariantId: 'oneBedroom',
+    label: 'Entrance / storage',
+    areaM2: 3.2,
+    type: 'storage',
+    note: 'Entry and storage allowance.',
+  },
+  {
+    id: 'compact-one-bedroom-circulation',
+    productId: 'compact-timber-40',
+    layoutVariantId: 'oneBedroom',
+    label: 'Circulation / service allowance',
+    areaM2: 4.8,
+    type: 'circulation',
+    note: 'Preview allowance for circulation, walls and service routing.',
+  },
+  {
+    id: 'compact-office-living-work-lounge',
+    productId: 'compact-timber-40',
+    layoutVariantId: 'officeCabin',
+    label: 'Living / work lounge',
+    areaM2: 15.8,
+    type: 'living',
+    note: 'Flexible lounge/work zone.',
+  },
+  {
+    id: 'compact-office-guest-room',
+    productId: 'compact-timber-40',
+    layoutVariantId: 'officeCabin',
+    label: 'Office / guest room',
+    areaM2: 10.8,
+    type: 'bedroom',
+    note: 'Private work or guest module.',
+  },
+  {
+    id: 'compact-office-bathroom-core',
+    productId: 'compact-timber-40',
+    layoutVariantId: 'officeCabin',
+    label: 'Bathroom core',
+    areaM2: 4.8,
+    type: 'bathroom',
+    note: 'Wet-room core placeholder.',
+  },
+  {
+    id: 'compact-office-entry-storage',
+    productId: 'compact-timber-40',
+    layoutVariantId: 'officeCabin',
+    label: 'Entry storage',
+    areaM2: 3.4,
+    type: 'storage',
+    note: 'Entry and storage allowance.',
+  },
+  {
+    id: 'compact-office-circulation',
+    productId: 'compact-timber-40',
+    layoutVariantId: 'officeCabin',
+    label: 'Circulation / service allowance',
+    areaM2: 5.2,
+    type: 'circulation',
+    note: 'Preview allowance for circulation, walls and service routing.',
+  },
+  {
+    id: 'family-two-bedroom-living-kitchen',
+    productId: 'family-timber-80',
+    layoutVariantId: 'twoBedroom',
+    label: 'Living / kitchen',
+    areaM2: 30,
+    type: 'living',
+    note: 'Baseline family living and kitchen zone.',
+  },
+  {
+    id: 'family-two-bedroom-bedroom-1',
+    productId: 'family-timber-80',
+    layoutVariantId: 'twoBedroom',
+    label: 'Bedroom 1',
+    areaM2: 12,
+    type: 'bedroom',
+    note: 'Primary bedroom preview area.',
+  },
+  {
+    id: 'family-two-bedroom-bedroom-2',
+    productId: 'family-timber-80',
+    layoutVariantId: 'twoBedroom',
+    label: 'Bedroom 2',
+    areaM2: 12,
+    type: 'bedroom',
+    note: 'Secondary bedroom preview area.',
+  },
+  {
+    id: 'family-two-bedroom-bathroom-core',
+    productId: 'family-timber-80',
+    layoutVariantId: 'twoBedroom',
+    label: 'Bathroom core',
+    areaM2: 5.6,
+    type: 'bathroom',
+    note: 'Shared wet-room core placeholder.',
+  },
+  {
+    id: 'family-two-bedroom-technical-storage',
+    productId: 'family-timber-80',
+    layoutVariantId: 'twoBedroom',
+    label: 'Technical / storage',
+    areaM2: 5,
+    type: 'technical',
+    note: 'Technical and storage allowance.',
+  },
+  {
+    id: 'family-two-bedroom-circulation',
+    productId: 'family-timber-80',
+    layoutVariantId: 'twoBedroom',
+    label: 'Hall / circulation allowance',
+    areaM2: 15.4,
+    type: 'circulation',
+    note: 'Preview allowance for circulation, partitions and service routing.',
+  },
+  {
+    id: 'family-three-bedroom-living',
+    productId: 'family-timber-80',
+    layoutVariantId: 'threeBedroomCompact',
+    label: 'Compact living / kitchen',
+    areaM2: 24,
+    type: 'living',
+    note: 'Reduced living area to allow a third room concept.',
+  },
+  {
+    id: 'family-three-bedroom-bedroom-1',
+    productId: 'family-timber-80',
+    layoutVariantId: 'threeBedroomCompact',
+    label: 'Bedroom 1',
+    areaM2: 11,
+    type: 'bedroom',
+    note: 'Primary compact bedroom preview.',
+  },
+  {
+    id: 'family-three-bedroom-bedroom-2',
+    productId: 'family-timber-80',
+    layoutVariantId: 'threeBedroomCompact',
+    label: 'Bedroom 2',
+    areaM2: 11,
+    type: 'bedroom',
+    note: 'Secondary compact bedroom preview.',
+  },
+  {
+    id: 'family-three-bedroom-office',
+    productId: 'family-timber-80',
+    layoutVariantId: 'threeBedroomCompact',
+    label: 'Compact bedroom / office',
+    areaM2: 8.5,
+    type: 'bedroom',
+    note: 'Small third room or office allowance.',
+  },
+  {
+    id: 'family-three-bedroom-bathroom-core',
+    productId: 'family-timber-80',
+    layoutVariantId: 'threeBedroomCompact',
+    label: 'Bathroom core',
+    areaM2: 5.6,
+    type: 'bathroom',
+    note: 'Shared wet-room core placeholder.',
+  },
+  {
+    id: 'family-three-bedroom-hall-storage',
+    productId: 'family-timber-80',
+    layoutVariantId: 'threeBedroomCompact',
+    label: 'Hall / storage allowance',
+    areaM2: 19.9,
+    type: 'circulation',
+    note: 'Preview allowance for hall, partitions and storage.',
+  },
+  {
+    id: 'family-large-living-kitchen',
+    productId: 'family-timber-80',
+    layoutVariantId: 'largeLiving',
+    label: 'Large living / kitchen',
+    areaM2: 38,
+    type: 'living',
+    note: 'Expanded social and kitchen zone.',
+  },
+  {
+    id: 'family-large-bedroom-suite',
+    productId: 'family-timber-80',
+    layoutVariantId: 'largeLiving',
+    label: 'Bedroom suite',
+    areaM2: 12.5,
+    type: 'bedroom',
+    note: 'Primary bedroom suite preview area.',
+  },
+  {
+    id: 'family-large-guest-room',
+    productId: 'family-timber-80',
+    layoutVariantId: 'largeLiving',
+    label: 'Guest room',
+    areaM2: 11,
+    type: 'bedroom',
+    note: 'Guest room preview area.',
+  },
+  {
+    id: 'family-large-bathroom-core',
+    productId: 'family-timber-80',
+    layoutVariantId: 'largeLiving',
+    label: 'Bathroom core',
+    areaM2: 5.6,
+    type: 'bathroom',
+    note: 'Shared wet-room core placeholder.',
+  },
+  {
+    id: 'family-large-utility-storage',
+    productId: 'family-timber-80',
+    layoutVariantId: 'largeLiving',
+    label: 'Utility storage',
+    areaM2: 5,
+    type: 'storage',
+    note: 'Utility/storage allowance.',
+  },
+  {
+    id: 'family-large-circulation',
+    productId: 'family-timber-80',
+    layoutVariantId: 'largeLiving',
+    label: 'Hall / circulation allowance',
+    areaM2: 7.9,
+    type: 'circulation',
+    note: 'Preview allowance for circulation and partitions.',
+  },
+  {
+    id: 'sauna-only-sauna-room',
+    productId: 'sauna-cabin-25',
+    layoutVariantId: 'saunaOnly',
+    label: 'Sauna room',
+    areaM2: 10,
+    type: 'sauna',
+    note: 'Primary sauna/wellness room.',
+  },
+  {
+    id: 'sauna-only-changing-zone',
+    productId: 'sauna-cabin-25',
+    layoutVariantId: 'saunaOnly',
+    label: 'Changing zone',
+    areaM2: 4,
+    type: 'storage',
+    note: 'Changing and towel/storage allowance.',
+  },
+  {
+    id: 'sauna-only-service-core',
+    productId: 'sauna-cabin-25',
+    layoutVariantId: 'saunaOnly',
+    label: 'Shower / service core',
+    areaM2: 5,
+    type: 'bathroom',
+    note: 'Wet/service core placeholder.',
+  },
+  {
+    id: 'sauna-only-terrace-transition',
+    productId: 'sauna-cabin-25',
+    layoutVariantId: 'saunaOnly',
+    label: 'Terrace transition',
+    areaM2: 2.5,
+    type: 'terrace',
+    note: 'Internal transition allowance near terrace access.',
+  },
+  {
+    id: 'sauna-only-circulation',
+    productId: 'sauna-cabin-25',
+    layoutVariantId: 'saunaOnly',
+    label: 'Circulation / utility allowance',
+    areaM2: 3.5,
+    type: 'circulation',
+    note: 'Preview allowance for circulation and service routing.',
+  },
+  {
+    id: 'sauna-guest-rest-area',
+    productId: 'sauna-cabin-25',
+    layoutVariantId: 'guestCabin',
+    label: 'Guest rest area',
+    areaM2: 10.5,
+    type: 'living',
+    note: 'Compact overnight/rest room preview.',
+  },
+  {
+    id: 'sauna-guest-kitchenette-wall',
+    productId: 'sauna-cabin-25',
+    layoutVariantId: 'guestCabin',
+    label: 'Compact kitchenette wall',
+    areaM2: 3.5,
+    type: 'kitchen',
+    note: 'Linear kitchenette allowance.',
+  },
+  {
+    id: 'sauna-guest-washroom',
+    productId: 'sauna-cabin-25',
+    layoutVariantId: 'guestCabin',
+    label: 'Washroom / service core',
+    areaM2: 4.8,
+    type: 'bathroom',
+    note: 'Wet/service core placeholder.',
+  },
+  {
+    id: 'sauna-guest-terrace-transition',
+    productId: 'sauna-cabin-25',
+    layoutVariantId: 'guestCabin',
+    label: 'Terrace transition',
+    areaM2: 2.2,
+    type: 'terrace',
+    note: 'Internal transition allowance near terrace access.',
+  },
+  {
+    id: 'sauna-guest-circulation',
+    productId: 'sauna-cabin-25',
+    layoutVariantId: 'guestCabin',
+    label: 'Storage / circulation allowance',
+    areaM2: 4,
+    type: 'circulation',
+    note: 'Preview allowance for circulation and storage.',
+  },
+  {
+    id: 'sauna-rest-room-main',
+    productId: 'sauna-cabin-25',
+    layoutVariantId: 'saunaRestRoom',
+    label: 'Sauna / rest area',
+    areaM2: 11.5,
+    type: 'sauna',
+    note: 'Combined sauna/rest preview area.',
+  },
+  {
+    id: 'sauna-rest-room-changing',
+    productId: 'sauna-cabin-25',
+    layoutVariantId: 'saunaRestRoom',
+    label: 'Changing zone',
+    areaM2: 4,
+    type: 'storage',
+    note: 'Changing and towel/storage allowance.',
+  },
+  {
+    id: 'sauna-rest-room-service',
+    productId: 'sauna-cabin-25',
+    layoutVariantId: 'saunaRestRoom',
+    label: 'Service core',
+    areaM2: 4.8,
+    type: 'bathroom',
+    note: 'Wet/service core placeholder.',
+  },
+  {
+    id: 'sauna-rest-room-terrace-transition',
+    productId: 'sauna-cabin-25',
+    layoutVariantId: 'saunaRestRoom',
+    label: 'Terrace transition',
+    areaM2: 2.2,
+    type: 'terrace',
+    note: 'Internal transition allowance near terrace access.',
+  },
+  {
+    id: 'sauna-rest-room-circulation',
+    productId: 'sauna-cabin-25',
+    layoutVariantId: 'saunaRestRoom',
+    label: 'Circulation / utility allowance',
+    areaM2: 2.5,
+    type: 'circulation',
+    note: 'Preview allowance for circulation and service routing.',
+  },
+] as const satisfies readonly ModularHomeRoomMeasurement[];
 
 export const MODULAR_HOME_PRODUCTS = [
   {
@@ -1005,11 +1486,15 @@ function createNotAvailableWarning(
   id: string,
   message: string,
   relatedGroups: readonly ModularHomeOptionGroup[],
+  nextStep = 'Choose a compatible option for this product before using the preview as a client discussion.',
 ): ModularHomeConfigurationWarning {
   return {
+    affectedOptions: relatedGroups,
     id,
     message,
+    nextStep,
     relatedGroups,
+    severity: 'blocked',
     status: 'notAvailable',
   };
 }
@@ -1018,12 +1503,50 @@ function createRequiresReviewWarning(
   id: string,
   message: string,
   relatedGroups: readonly ModularHomeOptionGroup[],
+  nextStep = 'Keep this option only as a preview assumption and confirm it during production/engineering review.',
 ): ModularHomeConfigurationWarning {
   return {
+    affectedOptions: relatedGroups,
     id,
     message,
+    nextStep,
     relatedGroups,
+    severity: 'requiresReview',
     status: 'requiresReview',
+  };
+}
+
+function createWarningConstraint(
+  id: string,
+  message: string,
+  relatedGroups: readonly ModularHomeOptionGroup[],
+  nextStep: string,
+): ModularHomeConfigurationWarning {
+  return {
+    affectedOptions: relatedGroups,
+    id,
+    message,
+    nextStep,
+    relatedGroups,
+    severity: 'warning',
+    status: 'compatible',
+  };
+}
+
+function createInfoConstraint(
+  id: string,
+  message: string,
+  relatedGroups: readonly ModularHomeOptionGroup[],
+  nextStep: string,
+): ModularHomeConfigurationWarning {
+  return {
+    affectedOptions: relatedGroups,
+    id,
+    message,
+    nextStep,
+    relatedGroups,
+    severity: 'info',
+    status: 'compatible',
   };
 }
 
@@ -1063,6 +1586,12 @@ function getReviewWarningsForCompatibleConfig(
       'premium-finish-standard-base-review',
       'Premium finish requires Standard-or-better base package confirmation before final quote.',
       ['finish'],
+    ));
+    warnings.push(createWarningConstraint(
+      'premium-interior-lead-time-warning',
+      'Premium interior may increase production lead time and supplier coordination.',
+      ['finish'],
+      'Confirm finish package lead time before promising delivery dates.',
     ));
   }
 
@@ -1146,6 +1675,15 @@ function getReviewWarningsForCompatibleConfig(
     ));
   }
 
+  if (config.layoutVariant === 'officeCabin' && config.windowPackage === 'cornerGlazing') {
+    warnings.push(createNotAvailableWarning(
+      'office-cabin-corner-glazing-blocked',
+      'Office cabin layout cannot use corner glazing in the controlled preview because the work wall needs a safer solid corner.',
+      ['windowPackage'],
+      'Use balanced or panoramic glazing for office cabin, then request manual review for custom corner openings.',
+    ));
+  }
+
   if (config.doorPackage === 'terraceSlider') {
     warnings.push(createRequiresReviewWarning(
       'terrace-slider-threshold-review',
@@ -1178,6 +1716,24 @@ function getReviewWarningsForCompatibleConfig(
     ));
   }
 
+  if (config.layoutVariant === 'officeCabin' && config.windowPlacement === 'cornerFeature') {
+    warnings.push(createNotAvailableWarning(
+      'office-cabin-corner-feature-blocked',
+      'Office cabin layout cannot use corner feature placement in this controlled preview.',
+      ['windowPlacement'],
+      'Use balanced or front panoramic placement, then request manual review for custom corner openings.',
+    ));
+  }
+
+  if (config.layoutVariant === 'threeBedroomCompact' && config.windowPlacement === 'cornerFeature') {
+    warnings.push(createNotAvailableWarning(
+      'three-bedroom-corner-feature-blocked',
+      'Three-bedroom compact layout cannot use corner feature placement because the compact bedroom partition plan needs fixed corner structure.',
+      ['windowPlacement'],
+      'Use balanced or front panoramic placement for this layout, or switch to Large living for corner glazing review.',
+    ));
+  }
+
   if (config.windowPlacement === 'sidePrivacy' && config.windowPackage === 'panoramicWindows') {
     warnings.push(createRequiresReviewWarning(
       'side-privacy-panoramic-package-review',
@@ -1199,6 +1755,24 @@ function getReviewWarningsForCompatibleConfig(
       'terrace-facing-door-placement-review',
       'Terrace-facing door placement requires threshold, drainage and terrace interface review.',
       ['doorPlacement', 'terrace'],
+    ));
+  }
+
+  if (config.terrace === 'none' && config.doorPlacement === 'terraceFacing') {
+    warnings.push(createWarningConstraint(
+      'terrace-facing-door-without-terrace-warning',
+      'Terrace-facing door is allowed as a preview, but the actual terrace/interface package is not selected.',
+      ['doorPlacement', 'terrace'],
+      'Add a terrace package or confirm this door placement during manual review.',
+    ));
+  }
+
+  if (warnings.length === 0) {
+    warnings.push(createInfoConstraint(
+      'controlled-preview-compatible',
+      'Selected controlled configuration has no production blockers in the preview rules.',
+      [],
+      'Continue with estimate review; final production quote still requires site and engineering checks.',
     ));
   }
 
@@ -1355,6 +1929,48 @@ export function getModularHomeLayoutVariantForConfig(
   return getModularHomeLayoutVariant(product.id, config.layoutVariant);
 }
 
+export function getModularHomeRoomMeasurements(
+  productId: string,
+  layoutVariant?: string,
+): readonly ModularHomeRoomMeasurement[] {
+  const product = getModularHomeProduct(productId);
+
+  if (!product) {
+    return [];
+  }
+
+  const variant = getModularHomeLayoutVariant(product.id, layoutVariant);
+
+  if (!variant) {
+    return [];
+  }
+
+  return MODULAR_HOME_ROOM_MEASUREMENTS.filter((room) => (
+    room.productId === product.id
+    && room.layoutVariantId === variant.id
+  ));
+}
+
+export function getModularHomeRoomMeasurementSummary(
+  config: ModularHomeConfiguratorState,
+): ModularHomeRoomMeasurementSummary {
+  const product = getProductForConfig(config) ?? getModularHomeProduct(DEFAULT_MODULAR_HOME_PRODUCT_ID) ?? null;
+  const layoutVariant = product ? getModularHomeLayoutVariant(product.id, config.layoutVariant) : null;
+  const rooms = product && layoutVariant
+    ? getModularHomeRoomMeasurements(product.id, layoutVariant.id)
+    : [];
+
+  return {
+    ceilingHeightM: product?.ceilingHeightM ?? 0,
+    disclaimer: MODULAR_HOME_ROOM_MEASUREMENT_DISCLAIMER,
+    floorAreaM2: product?.floorAreaM2 ?? 0,
+    layoutVariant,
+    product,
+    roomAreaTotalM2: Math.round(rooms.reduce((total, room) => total + room.areaM2, 0) * 10) / 10,
+    rooms,
+  };
+}
+
 export function getCompatibleOptions(
   productId: string,
   optionGroup: ModularHomeOptionGroup,
@@ -1376,35 +1992,53 @@ export function getModularHomeOptionChoices(
     .filter((option) => option.group === optionGroup)
     .map((option) => {
       if (!product) {
+        const message = `Product ${productId} is not available.`;
         return {
           ...option,
-          constraintMessage: `Product ${productId} is not available.`,
+          constraintMessage: message,
           constraintStatus: 'notAvailable',
-          disabledReason: `Product ${productId} is not available.`,
+          disabledReason: message,
           isCompatible: false,
+          productionConstraintSeverity: 'blocked',
+          productionNextStep: 'Choose an available Modular Home product.',
         } satisfies ModularHomeProductOptionChoice;
       }
 
       const isCompatible = isOptionCompatibleWithProduct(option, product);
       const disabledReason = isCompatible ? '' : `${option.label} is not available for ${product.name}.`;
       const nextConfig = config ? createConfigWithOption(config, option) : product.defaultConfig;
-      const reviewWarning = isCompatible
-        ? getReviewWarningsForCompatibleConfig(nextConfig, product).find((warning) => (
+      const optionConstraints = isCompatible
+        ? getReviewWarningsForCompatibleConfig(nextConfig, product).filter((warning) => (
           warning.relatedGroups.includes(option.group)
         ))
-        : undefined;
+        : [];
+      const blockedWarning = optionConstraints.find((warning) => warning.severity === 'blocked');
+      const reviewWarning = optionConstraints.find((warning) => warning.severity === 'requiresReview');
+      const softWarning = optionConstraints.find((warning) => warning.severity === 'warning' || warning.severity === 'info');
+      const activeConstraint = blockedWarning ?? reviewWarning ?? softWarning;
       const constraintStatus: ModularHomeConstraintStatus = isCompatible
-        ? reviewWarning ? 'requiresReview' : 'compatible'
+        ? blockedWarning ? 'notAvailable' : reviewWarning ? 'requiresReview' : 'compatible'
         : 'notAvailable';
+      const activeDisabledReason = disabledReason || blockedWarning?.message || '';
 
       return {
         ...option,
-        constraintMessage: disabledReason || reviewWarning?.message || 'Compatible with selected product.',
+        constraintMessage: activeDisabledReason || activeConstraint?.message || 'Compatible with selected product.',
         constraintStatus,
-        disabledReason,
-        isCompatible,
+        disabledReason: activeDisabledReason,
+        isCompatible: isCompatible && !blockedWarning,
+        productionConstraintSeverity: activeConstraint?.severity ?? (isCompatible ? 'info' : 'blocked'),
+        productionNextStep: activeConstraint?.nextStep ?? (isCompatible
+          ? 'Continue with preview estimate; final quote still requires review.'
+          : `Choose an option compatible with ${product.name}.`),
       } satisfies ModularHomeProductOptionChoice;
     });
+}
+
+export function getModularHomeProductionConstraints(
+  config: ModularHomeConfiguratorState,
+): readonly ModularHomeProductionConstraint[] {
+  return getModularHomeConfigurationWarnings(config);
 }
 
 export function getModularHomeConfigurationWarnings(

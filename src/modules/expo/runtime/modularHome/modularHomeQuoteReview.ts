@@ -1,5 +1,12 @@
 export type ModularHomeQuoteReviewSource = 'backend-staging' | 'local-preview' | 'mock-review';
-export type ModularHomeQuoteReviewStatus = 'preview-local-only' | 'mock-review' | 'new' | 'contacted' | 'qualified' | 'closed';
+export type ModularHomeQuoteReviewStatus =
+  | 'preview-local-only'
+  | 'mock-review'
+  | 'new'
+  | 'contacted'
+  | 'quoted'
+  | 'won'
+  | 'lost';
 
 export type ModularHomeQuoteReviewRow = {
   budgetRange: string;
@@ -24,6 +31,7 @@ export type ModularHomeQuoteReviewRow = {
     total: number;
   };
   id: string;
+  internalNote: string;
   landOwned: string;
   message: string;
   model: string;
@@ -66,6 +74,7 @@ const MOCK_QUOTE_ROWS = [
       total: 142000,
     },
     id: 'mock-family-timber-80-review',
+    internalNote: '',
     landOwned: 'yes',
     message: 'Looking for a family house concept with extended terrace and premium interior discussion.',
     model: 'Family Timber 80',
@@ -96,6 +105,7 @@ const MOCK_QUOTE_ROWS = [
       total: 58500,
     },
     id: 'mock-sauna-cabin-25-review',
+    internalNote: '',
     landOwned: 'no',
     message: 'Need a sauna/guest cabin package for a rental property concept.',
     model: 'Sauna Cabin 25',
@@ -120,13 +130,22 @@ function normalizeNumber(value: unknown): number {
 
 function normalizeStatus(value: unknown, fallback: ModularHomeQuoteReviewStatus): ModularHomeQuoteReviewStatus {
   const normalized = normalizeText(value).toLowerCase();
+  if (normalized === 'qualified') {
+    return 'quoted';
+  }
+
+  if (normalized === 'closed') {
+    return 'won';
+  }
+
   const allowed = new Set<ModularHomeQuoteReviewStatus>([
-    'closed',
     'contacted',
+    'lost',
     'mock-review',
     'new',
     'preview-local-only',
-    'qualified',
+    'quoted',
+    'won',
   ]);
 
   return allowed.has(normalized as ModularHomeQuoteReviewStatus)
@@ -183,6 +202,7 @@ export function normalizeModularHomeQuoteReviewRow(
       total: estimatedTotal,
     },
     id: normalizeText(record.id, `quote-${source}-${Date.now()}`),
+    internalNote: normalizeText(record.internalNote, ''),
     landOwned: normalizeText(record.landOwned, 'unknown'),
     message: normalizeText(record.message, 'No message provided.'),
     model: normalizeText(record.model, 'Modular Home'),
@@ -227,6 +247,7 @@ export function normalizeModularHomeQuoteAdminRow(value: unknown): ModularHomeQu
       total: estimatedTotal,
     },
     id: normalizeText(record.id, `quote-backend-${Date.now()}`),
+    internalNote: normalizeText(record.internal_note, ''),
     landOwned: normalizeText(requester.landOwned, 'unknown'),
     message: normalizeText(requester.message, 'No message provided.'),
     model: normalizeText(project.modelName, 'Modular Home'),
@@ -295,6 +316,7 @@ export function serializeModularHomeQuoteReviewCsv(rows: readonly ModularHomeQuo
     'Window Placement',
     'Door Placement',
     'Message',
+    'Internal Note',
   ];
   const body = rows.map((row) => [
     row.createdAt,
@@ -316,6 +338,7 @@ export function serializeModularHomeQuoteReviewCsv(rows: readonly ModularHomeQuo
     row.config.windowPlacement,
     row.config.doorPlacement,
     row.message,
+    row.internalNote,
   ]);
 
   return [header, ...body].map((row) => row.map(escapeCsvCell).join(',')).join('\n');

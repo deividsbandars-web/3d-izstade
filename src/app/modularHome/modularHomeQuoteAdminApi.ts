@@ -29,6 +29,7 @@ type ModularHomeQuoteAdminDetailResponse = {
 type ModularHomeQuoteAdminStatusResponse = {
   quote?: {
     id?: string | null;
+    internal_note?: string | null;
     status?: string | null;
   } | null;
   success?: boolean;
@@ -38,8 +39,9 @@ type ModularHomeQuoteAdminStatusResponse = {
 export const MODULAR_HOME_QUOTE_ADMIN_STATUSES = [
   'new',
   'contacted',
-  'qualified',
-  'closed',
+  'quoted',
+  'won',
+  'lost',
 ] as const satisfies readonly ModularHomeQuoteReviewStatus[];
 
 export type ModularHomeQuoteAdminStatus = typeof MODULAR_HOME_QUOTE_ADMIN_STATUSES[number];
@@ -90,19 +92,26 @@ export async function getModularHomeQuoteAdminDetail(quoteId: string): Promise<M
 export async function updateModularHomeQuoteAdminStatus(
   quoteId: string,
   status: ModularHomeQuoteAdminStatus,
-): Promise<{ id: string | null; status: ModularHomeQuoteAdminStatus; updatedBy: string | null }> {
+  internalNote?: string,
+): Promise<{
+  id: string | null;
+  internalNote: string;
+  status: ModularHomeQuoteAdminStatus;
+  updatedBy: string | null;
+}> {
   if (!MODULAR_HOME_QUOTE_ADMIN_STATUSES.includes(status)) {
     throw new Error('MODULAR_HOME_QUOTE_ADMIN_STATUS_UNSUPPORTED');
   }
 
   const response = await serverApiPatch<ModularHomeQuoteAdminStatusResponse>(
     `/api/modular-home/quotes/${encodeURIComponent(quoteId)}/status`,
-    { status },
+    { internalNote, status },
   );
   const normalizedStatus = String(response.quote?.status || status).toLowerCase() as ModularHomeQuoteAdminStatus;
 
   return {
     id: response.quote?.id ?? null,
+    internalNote: response.quote?.internal_note ?? internalNote ?? '',
     status: normalizedStatus,
     updatedBy: response.updatedBy ?? null,
   };

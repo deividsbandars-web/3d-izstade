@@ -43,7 +43,25 @@ export type ModularHomeEstimateLineItemCategory =
   | 'installation'
   | 'vat';
 
-export type ModularHomeEstimateLineItem = {
+export type ModularHomeEstimateConfidence =
+  | 'packageFixed'
+  | 'estimated'
+  | 'siteDependent'
+  | 'requiresEngineering';
+
+export type ModularHomeEstimatePriceSource =
+  | 'internalPreview'
+  | 'supplierPlaceholder'
+  | 'manualReviewRequired';
+
+export type ModularHomeEstimateReliabilityMetadata = {
+  confidence: ModularHomeEstimateConfidence;
+  lastUpdated: string;
+  notes: readonly string[];
+  priceSource: ModularHomeEstimatePriceSource;
+};
+
+export type ModularHomeEstimateLineItem = ModularHomeEstimateReliabilityMetadata & {
   amount: number;
   category: ModularHomeEstimateLineItemCategory;
   id: string;
@@ -65,24 +83,6 @@ export type ModularHomeEstimateAdjustment = {
   amount: number;
   id: string;
   label: string;
-};
-
-export type ModularHomeEstimateConfidence =
-  | 'packageFixed'
-  | 'estimated'
-  | 'siteDependent'
-  | 'requiresEngineering';
-
-export type ModularHomeEstimatePriceSource =
-  | 'internalPreview'
-  | 'supplierPlaceholder'
-  | 'manualReviewRequired';
-
-export type ModularHomeEstimateReliabilityMetadata = {
-  confidence: ModularHomeEstimateConfidence;
-  lastUpdated: string;
-  notes: readonly string[];
-  priceSource: ModularHomeEstimatePriceSource;
 };
 
 export type ModularHomeEstimateSectionId =
@@ -165,8 +165,8 @@ type ModularHomeEstimateSectionDraft =
 const PRICE_METADATA_LAST_UPDATED = MODULAR_HOME_PRICING_CONTEXT.priceDate;
 
 const ESTIMATE_CONFIDENCE_LABELS = {
-  estimated: 'Estimated',
-  packageFixed: 'Package fixed',
+  estimated: 'Estimate',
+  packageFixed: 'Fixed package',
   requiresEngineering: 'Engineering review',
   siteDependent: 'Site-dependent',
 } as const satisfies Record<ModularHomeEstimateConfidence, string>;
@@ -273,13 +273,22 @@ function createBaseLineItems(
   productId: string | undefined,
 ): readonly ModularHomeEstimateLineItem[] {
   if (!productId) {
+    const label = 'Base product module package';
+
     return [
       {
         amount: basePrice,
         category: 'baseProduct',
         id: 'base-product',
-        label: 'Base product module package',
+        label,
         pricingBreakdown: createModulePricingBreakdown(basePrice, 'living'),
+        ...createEstimateMetadata({
+          confidence: 'packageFixed',
+          label,
+          priceSource: 'internalPreview',
+          sectionId: 'modulePackage',
+          sourceCategory: 'baseProduct',
+        }),
       },
     ];
   }
@@ -294,36 +303,69 @@ function createBaseLineItems(
     .map((module) => module.notes)
     .join(' ');
   const nonBathroomModules = baseModules.filter((module) => module.type !== 'bathroomCore');
+  const baseLabel = 'Base product module package';
+  const bathroomLabel = 'Bathroom core allowance';
+  const bathroomNote = bathroomCoreTotal > 0 ? 'Wet-room/service core placeholder included in the structured preview.' : undefined;
 
   return [
     {
       amount: baseModuleTotal,
       category: 'baseProduct',
       id: `${productId}-base-modules`,
-      label: 'Base product module package',
+      label: baseLabel,
       note: moduleNote || undefined,
       pricingBreakdown: createModulePackagePricingBreakdown(baseModuleTotal, nonBathroomModules),
+      ...createEstimateMetadata({
+        confidence: 'packageFixed',
+        label: baseLabel,
+        note: moduleNote || undefined,
+        priceSource: 'internalPreview',
+        sectionId: 'modulePackage',
+        sourceCategory: 'baseProduct',
+      }),
     },
     {
       amount: bathroomCoreTotal,
       category: 'bathroomCore',
       id: `${productId}-bathroom-core`,
-      label: 'Bathroom core allowance',
-      note: bathroomCoreTotal > 0 ? 'Wet-room/service core placeholder included in the structured preview.' : undefined,
+      label: bathroomLabel,
+      note: bathroomNote,
       pricingBreakdown: createModulePricingBreakdown(bathroomCoreTotal, 'bathroomCore'),
+      ...createEstimateMetadata({
+        label: bathroomLabel,
+        note: bathroomNote,
+        sectionId: 'modulePackage',
+        sourceCategory: 'bathroomCore',
+      }),
     },
   ];
 }
 
 function createOptionLineItems(config: ModularHomeConfiguratorState): readonly ModularHomeEstimateLineItem[] {
-  return getSelectedModularHomeOptions(config).map((option) => ({
-    amount: option.priceDelta,
-    category: getOptionLineItemCategory(option),
-    id: option.id,
-    label: getOptionLineItemLabel(option),
-    note: option.priceDelta === 0 ? 'Included in selected package.' : undefined,
-    pricingBreakdown: createOptionPricingBreakdown(option.priceDelta, option.group),
-  }));
+  return getSelectedModularHomeOptions(config).map((option) => {
+    const category = getOptionLineItemCategory(option);
+    const label = getOptionLineItemLabel(option);
+    const note = option.priceDelta === 0 ? 'Included in selected package.' : undefined;
+
+    return {
+      amount: option.priceDelta,
+      category,
+      id: option.id,
+      label,
+      note,
+      pricingBreakdown: createOptionPricingBreakdown(option.priceDelta, option.group),
+      ...createEstimateMetadata({
+        label,
+        note,
+        sectionId: category === 'terrace'
+          ? 'terraceExtensions'
+          : category === 'finish'
+            ? 'finishPackage'
+            : 'materials',
+        sourceCategory: category,
+      }),
+    };
+  });
 }
 
 function createOptionalServices(
@@ -347,6 +389,14 @@ function createOptionalServices(
       label: 'Transport placeholder',
       note: 'Preview allowance only. Final transport depends on route, crane access and delivery count.',
       pricingBreakdown: createTransportPricingBreakdown(transportAmount),
+      ...createEstimateMetadata({
+        confidence: 'siteDependent',
+        isPlaceholder: true,
+        label: 'Transport placeholder',
+        note: 'Preview allowance only. Final transport depends on route, crane access and delivery count.',
+        sectionId: 'transportPlaceholder',
+        sourceCategory: 'transport',
+      }),
     },
     {
       amount: installationAmount,
@@ -356,19 +406,40 @@ function createOptionalServices(
       label: 'Installation placeholder',
       note: 'Preview allowance only. Final installation depends on foundation, utilities and site readiness.',
       pricingBreakdown: createInstallationPricingBreakdown(installationAmount),
+      ...createEstimateMetadata({
+        confidence: 'siteDependent',
+        isPlaceholder: true,
+        label: 'Installation placeholder',
+        note: 'Preview allowance only. Final installation depends on foundation, utilities and site readiness.',
+        sectionId: 'installationPlaceholder',
+        sourceCategory: 'installation',
+      }),
     },
   ];
 }
 
 function createVatEstimate(taxableAmount: number): ModularHomeEstimateLineItem {
+  const amount = roundToNearestFifty(taxableAmount * MODULAR_HOME_ESTIMATE_CONFIG.vatRate);
+  const label = 'VAT placeholder';
+  const note = `${Math.round(MODULAR_HOME_ESTIMATE_CONFIG.vatRate * 100)}% placeholder for review estimates only.`;
+
   return {
-    amount: roundToNearestFifty(taxableAmount * MODULAR_HOME_ESTIMATE_CONFIG.vatRate),
+    amount,
     category: 'vat',
     id: 'vat-placeholder',
     isPlaceholder: true,
-    label: 'VAT placeholder',
-    note: `${Math.round(MODULAR_HOME_ESTIMATE_CONFIG.vatRate * 100)}% placeholder for review estimates only.`,
-    pricingBreakdown: createVatPricingBreakdown(roundToNearestFifty(taxableAmount * MODULAR_HOME_ESTIMATE_CONFIG.vatRate)),
+    label,
+    note,
+    pricingBreakdown: createVatPricingBreakdown(amount),
+    ...createEstimateMetadata({
+      confidence: 'estimated',
+      isPlaceholder: true,
+      label,
+      note,
+      priceSource: 'internalPreview',
+      sectionId: 'vatMarginContingency',
+      sourceCategory: 'vat',
+    }),
   };
 }
 
@@ -753,11 +824,12 @@ function createModularHomeEstimateSections(input: {
           unitCost: contingencySubtotal,
         },
         {
-          confidence: 'siteDependent',
+          confidence: 'estimated',
           id: `section-${input.vatEstimate.id}`,
           isPlaceholder: true,
           label: input.vatEstimate.label,
           note: input.vatEstimate.note,
+          priceSource: 'internalPreview',
           quantity: '1 placeholder',
           subtotal: input.vatEstimate.amount,
           sourceCategory: input.vatEstimate.category,

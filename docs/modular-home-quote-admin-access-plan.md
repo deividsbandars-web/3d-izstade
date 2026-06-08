@@ -24,8 +24,8 @@ Routes:
 - `GET /api/modular-home/quotes/:quoteId`
   - Purpose: view one quote detail for authenticated admins.
 - `PATCH /api/modular-home/quotes/:quoteId/status`
-  - Purpose: update one quote status.
-  - Body: `{ "status": "new" | "contacted" | "qualified" | "closed" }`.
+  - Purpose: update one quote status and optional admin-only internal note.
+  - Body: `{ "status": "new" | "contacted" | "quoted" | "won" | "lost", "internalNote": "..." }`.
 - `GET /api/modular-home/quotes/export?format=json|csv`
   - Purpose: export filtered quote rows for authenticated admins.
   - Query: optional `limit`, optional `status`, optional `format`.
@@ -68,8 +68,18 @@ Limit policy:
 Allowed statuses:
 - `new`
 - `contacted`
-- `qualified`
-- `closed`
+- `quoted`
+- `won`
+- `lost`
+
+Legacy status compatibility:
+- Existing `qualified` rows are normalized to `quoted` in the admin UI.
+- Existing `closed` rows are normalized to `won` in the admin UI.
+
+Internal notes:
+- `internal_note` is an admin-only field.
+- It can be saved with status updates.
+- It must not appear in public Modular Home preview/demo surfaces.
 
 Future statuses may be added only after updating:
 - controller status validator;
@@ -98,7 +108,7 @@ Before using this with production data:
 ## Admin UI state
 - Localhost remains useful for local preview queue and mock rows.
 - Staging/public hosts use the protected API only.
-- The UI can list quotes, view one quote detail, update status and export visible rows to JSON/CSV.
+- The UI can list quotes, view one quote detail, update status, attach an internal note and export visible rows to JSON/CSV.
 - Do not make `/modular-homes/quotes` a public data viewer.
 
 ## Remaining production blockers

@@ -182,7 +182,7 @@ export type ModularHomeManufacturingBom = {
 };
 
 export const MODULAR_HOME_COMPONENT_BOM_DISCLAIMER = 'Preview component BOM · production verification required';
-export const MODULAR_HOME_MANUFACTURING_BOM_DISCLAIMER = 'Manufacturing BOM preview · not a production cut list';
+export const MODULAR_HOME_MANUFACTURING_BOM_DISCLAIMER = 'Manufacturing BOM preview · production verification required';
 
 export const MODULAR_HOME_COMPONENTS = [
   {
@@ -1102,7 +1102,7 @@ export function calculateComponentBom(config: ModularHomeConfiguratorState): Mod
   };
 }
 
-export function calculateManufacturingBom(config: ModularHomeConfiguratorState): ModularHomeManufacturingBom {
+export function calculateManufacturingBomPreview(config: ModularHomeConfiguratorState): ModularHomeManufacturingBom {
   const product = getModularHomeProductForConfig(config);
   const componentBom = calculateComponentBom(config);
   const moduleQuantityById = new Map(
@@ -1190,4 +1190,8 @@ export function calculateManufacturingBom(config: ModularHomeConfiguratorState):
     totalWasteFactor: wasteBase > 0 ? roundRatio(componentBom.wasteCostEstimate / wasteBase) : 0,
     windowSchedule,
   };
+}
+
+export function calculateManufacturingBom(config: ModularHomeConfiguratorState): ModularHomeManufacturingBom {
+  return calculateManufacturingBomPreview(config);
 }

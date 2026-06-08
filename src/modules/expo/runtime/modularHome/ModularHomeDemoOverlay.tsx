@@ -18,24 +18,27 @@ import {
 } from './modularHomeEstimate';
 import {
   calculateComponentBom,
-  calculateManufacturingBom,
+  calculateManufacturingBomPreview,
   type ModularHomeComponentCategory,
   type ModularHomeComponentUnit,
 } from './modularHomeComponents';
 import {
   getDefaultHomeConfig,
   getInvalidConfigReasons,
-  getModularHomeConfigurationWarnings,
   getModularHomeDimensionSummary,
   getModularHomeLayoutVariantForConfig,
   getModularHomeLayoutVariantsForProduct,
   getModularHomeOptionChoices,
+  getModularHomeProductionConstraints,
   getModularHomeProductConfigSummary,
   getModularHomeProductForTemplate,
   getModularHomeProducts,
+  getModularHomeRoomMeasurementSummary,
   type ModularHomeConstraintStatus,
   type ModularHomeOptionGroup,
   type ModularHomeProduct,
+  type ModularHomeProductionConstraint,
+  type ModularHomeProductionConstraintSeverity,
 } from './modularHomeProducts';
 import { ModularHomeProjectWorkspace } from './ModularHomeProjectWorkspace';
 import { ModularHomeProjectSummary } from './ModularHomeProjectSummary';
@@ -64,6 +67,8 @@ type HomeConfigUiOption<Key extends keyof ModularHomeConfiguratorState = keyof M
   key: ModularHomeConfiguratorState[Key];
   label: string;
   priceDelta: number;
+  productionConstraintSeverity: ModularHomeProductionConstraintSeverity;
+  productionNextStep: string;
 };
 
 type HomeConfigUiGroup<Key extends keyof ModularHomeConfiguratorState = keyof ModularHomeConfiguratorState> = {
@@ -95,6 +100,40 @@ const HOME_CONSTRAINT_STATUS_STYLES = {
     color: '#fde68a',
   },
 } as const satisfies Record<ModularHomeConstraintStatus, {
+  background: string;
+  border: string;
+  color: string;
+}>;
+
+const HOME_PRODUCTION_CONSTRAINT_SEVERITY_LABELS = {
+  blocked: 'Blocked',
+  info: 'Info',
+  requiresReview: 'Requires review',
+  warning: 'Warning',
+} as const satisfies Record<ModularHomeProductionConstraintSeverity, string>;
+
+const HOME_PRODUCTION_CONSTRAINT_SEVERITY_STYLES = {
+  blocked: {
+    background: 'rgba(127, 29, 29, 0.28)',
+    border: '1px solid rgba(248, 113, 113, 0.32)',
+    color: '#fecaca',
+  },
+  info: {
+    background: 'rgba(14, 165, 233, 0.12)',
+    border: '1px solid rgba(125, 211, 252, 0.2)',
+    color: '#bae6fd',
+  },
+  requiresReview: {
+    background: 'rgba(251, 191, 36, 0.14)',
+    border: '1px solid rgba(251, 191, 36, 0.28)',
+    color: '#fde68a',
+  },
+  warning: {
+    background: 'rgba(251, 146, 60, 0.14)',
+    border: '1px solid rgba(253, 186, 116, 0.26)',
+    color: '#fed7aa',
+  },
+} as const satisfies Record<ModularHomeProductionConstraintSeverity, {
   background: string;
   border: string;
   color: string;
@@ -255,6 +294,57 @@ function renderEstimateReliabilityBadges(
   );
 }
 
+function renderProductionConstraintCard(
+  constraint: ModularHomeProductionConstraint,
+  isTouchDevice: boolean,
+) {
+  const style = HOME_PRODUCTION_CONSTRAINT_SEVERITY_STYLES[constraint.severity];
+
+  return (
+    <div
+      key={constraint.id}
+      data-home-production-constraint={constraint.id}
+      data-home-production-constraint-affected={constraint.affectedOptions.join(',')}
+      data-home-production-constraint-next-step={constraint.nextStep}
+      data-home-production-constraint-severity={constraint.severity}
+      style={{
+        ...style,
+        borderRadius: '11px',
+        display: 'grid',
+        gap: '4px',
+        padding: isTouchDevice ? '7px 8px' : '8px 9px',
+      }}
+    >
+      <div style={{ alignItems: 'center', display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+        <span
+          style={{
+            background: 'rgba(2, 6, 23, 0.26)',
+            border: '1px solid rgba(255, 255, 255, 0.12)',
+            borderRadius: '999px',
+            fontSize: isTouchDevice ? '0.47rem' : '0.5rem',
+            fontWeight: 950,
+            letterSpacing: '0.08em',
+            lineHeight: 1,
+            padding: '4px 6px',
+            textTransform: 'uppercase',
+          }}
+        >
+          {HOME_PRODUCTION_CONSTRAINT_SEVERITY_LABELS[constraint.severity]}
+        </span>
+        <span style={{ fontSize: isTouchDevice ? '0.56rem' : '0.6rem', fontWeight: 920, lineHeight: 1.2 }}>
+          {constraint.message}
+        </span>
+      </div>
+      <div style={{ color: 'inherit', fontSize: isTouchDevice ? '0.52rem' : '0.56rem', fontWeight: 760, lineHeight: 1.28, opacity: 0.92 }}>
+        Affects: {constraint.affectedOptions.length > 0 ? constraint.affectedOptions.join(', ') : 'current configuration'}
+      </div>
+      <div style={{ color: 'inherit', fontSize: isTouchDevice ? '0.52rem' : '0.56rem', fontWeight: 820, lineHeight: 1.28 }}>
+        Next step: {constraint.nextStep}
+      </div>
+    </div>
+  );
+}
+
 function createOptionGroup<Key extends keyof ModularHomeConfiguratorState>(
   product: ModularHomeProduct,
   config: ModularHomeConfiguratorState,
@@ -273,6 +363,8 @@ function createOptionGroup<Key extends keyof ModularHomeConfiguratorState>(
       key: option.visualToken as ModularHomeConfiguratorState[Key],
       label: option.label,
       priceDelta: option.priceDelta,
+      productionConstraintSeverity: option.productionConstraintSeverity,
+      productionNextStep: option.productionNextStep,
     })),
   };
 }
@@ -289,6 +381,8 @@ function createConfiguratorGroups(
     key: item.defaultTemplateId,
     label: item.name,
     priceDelta: 0,
+    productionConstraintSeverity: 'info',
+    productionNextStep: 'Continue with the selected product preview; final production package still requires review.',
   })) satisfies readonly HomeConfigUiOption<'template'>[];
   const layoutOptions = getModularHomeLayoutVariantsForProduct(product.id).map((variant) => ({
     constraintMessage: variant.summaryNote,
@@ -298,6 +392,8 @@ function createConfiguratorGroups(
     key: variant.id,
     label: variant.label,
     priceDelta: 0,
+    productionConstraintSeverity: 'info',
+    productionNextStep: 'Use this controlled layout variant for preview only; production drawings require review.',
   })) satisfies readonly HomeConfigUiOption<'layoutVariant'>[];
 
   return [
@@ -328,13 +424,19 @@ export function ModularHomeDemoOverlay({ isTouchDevice = false }: ModularHomeDem
   const configSummary = getModularHomeProductConfigSummary(config);
   const layoutVariant = getModularHomeLayoutVariantForConfig(config);
   const dimensionSummary = getModularHomeDimensionSummary(config);
+  const roomMeasurementSummary = getModularHomeRoomMeasurementSummary(config);
   const configuratorGroups = createConfiguratorGroups(product, config);
   const estimate = calculateModularHomeEstimate(config);
   const componentBom = calculateComponentBom(config);
-  const manufacturingBom = calculateManufacturingBom(config);
+  const manufacturingBom = calculateManufacturingBomPreview(config);
   const invalidConfigReasons = getInvalidConfigReasons(config);
-  const reviewConfigWarnings = getModularHomeConfigurationWarnings(config)
-    .filter((warning) => warning.status === 'requiresReview');
+  const productionConstraints = getModularHomeProductionConstraints(config);
+  const blockedProductionConstraints = productionConstraints.filter((constraint) => constraint.severity === 'blocked');
+  const reviewConfigWarnings = productionConstraints.filter((constraint) => constraint.severity === 'requiresReview');
+  const visibleProductionConstraints = productionConstraints.filter((constraint) => (
+    constraint.severity !== 'info' || productionConstraints.length === 1
+  ));
+  const productionConstraintIds = productionConstraints.map((constraint) => constraint.id).join('|');
   const dimensionRows = [
     ['floor-area', 'Floor area', dimensionSummary.floorAreaLabel],
     ['footprint', 'Footprint', dimensionSummary.footprintLabel],
@@ -376,6 +478,14 @@ export function ModularHomeDemoOverlay({ isTouchDevice = false }: ModularHomeDem
     setViewMode(sharedConfigFromUrl.viewMode);
   }, [setConfig, setViewMode, sharedConfigFromUrl]);
 
+  useEffect(() => {
+    if (blockedProductionConstraints.length === 0) {
+      return;
+    }
+
+    setConfig(getDefaultHomeConfig(product.id));
+  }, [blockedProductionConstraints.length, product.id, productionConstraintIds, setConfig]);
+
   if (!isHomeDemoEnabled()) {
     return null;
   }
@@ -384,6 +494,9 @@ export function ModularHomeDemoOverlay({ isTouchDevice = false }: ModularHomeDem
     <aside
       aria-label="Modular Home District preview"
       data-home-demo-overlay="true"
+      data-home-production-blocked-count={blockedProductionConstraints.length}
+      data-home-production-constraint-count={productionConstraints.length}
+      data-home-production-requires-review-count={reviewConfigWarnings.length}
       onClick={stopHomeDemoHudEvent}
       onMouseDown={stopHomeDemoHudEvent}
       onPointerDown={stopHomeDemoHudEvent}
@@ -743,6 +856,134 @@ export function ModularHomeDemoOverlay({ isTouchDevice = false }: ModularHomeDem
         </div>
       </section>
 
+      {viewMode === 'floorplan' ? (
+        <section
+          aria-label={`${product.name} floorplan measurements`}
+          data-home-floorplan-measurement-panel="true"
+          data-home-floorplan-measurement-product={roomMeasurementSummary.product?.id ?? product.id}
+          data-home-floorplan-measurement-layout={roomMeasurementSummary.layoutVariant?.id ?? config.layoutVariant}
+          data-home-floorplan-measurement-room-count={roomMeasurementSummary.rooms.length}
+          data-home-floorplan-measurement-room-total={roomMeasurementSummary.roomAreaTotalM2}
+          data-home-floorplan-measurement-floor-area={roomMeasurementSummary.floorAreaM2}
+          data-home-floorplan-measurement-ceiling={roomMeasurementSummary.ceilingHeightM}
+          style={{
+            background: 'linear-gradient(180deg, rgba(8, 47, 73, 0.64), rgba(15, 23, 42, 0.72))',
+            border: '1px solid rgba(56, 189, 248, 0.28)',
+            borderRadius: isTouchDevice ? '15px' : '17px',
+            marginTop: isTouchDevice ? '10px' : '12px',
+            padding: isTouchDevice ? '10px' : '12px',
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', alignItems: 'start' }}>
+            <div>
+              <div
+                style={{
+                  color: '#7dd3fc',
+                  fontSize: '0.58rem',
+                  fontWeight: 950,
+                  letterSpacing: '0.14em',
+                  textTransform: 'uppercase',
+                }}
+              >
+                Floorplan measurements
+              </div>
+              <div style={{ color: '#e0f2fe', fontSize: isTouchDevice ? '0.68rem' : '0.72rem', fontWeight: 850, lineHeight: 1.28, marginTop: '5px' }}>
+                {roomMeasurementSummary.layoutVariant?.label ?? configSummary.layoutVariant} room schedule for client discussion.
+              </div>
+            </div>
+            <div style={{ color: '#fef9c3', fontSize: isTouchDevice ? '0.78rem' : '0.88rem', fontWeight: 980, textAlign: 'right', whiteSpace: 'nowrap' }}>
+              {formatQuantityM2(roomMeasurementSummary.roomAreaTotalM2)}
+            </div>
+          </div>
+
+          <div
+            style={{
+              display: 'grid',
+              gap: '6px',
+              gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+              marginTop: isTouchDevice ? '8px' : '9px',
+            }}
+          >
+            {[
+              ['Total m²', formatQuantityM2(roomMeasurementSummary.floorAreaM2)],
+              ['Room sum', formatQuantityM2(roomMeasurementSummary.roomAreaTotalM2)],
+              ['Ceiling', `${roomMeasurementSummary.ceilingHeightM} m`],
+            ].map(([label, value]) => (
+              <div
+                key={label}
+                style={{
+                  background: 'rgba(15, 23, 42, 0.44)',
+                  border: '1px solid rgba(125, 211, 252, 0.16)',
+                  borderRadius: '10px',
+                  padding: isTouchDevice ? '6px 7px' : '7px 8px',
+                }}
+              >
+                <div style={{ color: '#7dd3fc', fontSize: '0.5rem', fontWeight: 950, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                  {label}
+                </div>
+                <div style={{ color: '#fff7ed', fontSize: isTouchDevice ? '0.58rem' : '0.62rem', fontWeight: 900, marginTop: '3px' }}>
+                  {value}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div
+            style={{
+              display: 'grid',
+              gap: '6px',
+              marginTop: isTouchDevice ? '9px' : '10px',
+            }}
+          >
+            {roomMeasurementSummary.rooms.map((room) => (
+              <div
+                key={room.id}
+                data-home-floorplan-room-measurement={room.id}
+                data-home-floorplan-room-area={room.areaM2}
+                data-home-floorplan-room-type={room.type}
+                style={{
+                  alignItems: 'center',
+                  background: 'rgba(2, 6, 23, 0.38)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  borderRadius: '11px',
+                  display: 'grid',
+                  gap: '8px',
+                  gridTemplateColumns: '1fr auto',
+                  padding: isTouchDevice ? '7px 8px' : '8px 9px',
+                }}
+              >
+                <div>
+                  <div style={{ color: '#f8fafc', fontSize: isTouchDevice ? '0.62rem' : '0.66rem', fontWeight: 920, lineHeight: 1.12 }}>
+                    {room.label}
+                  </div>
+                  <div style={{ color: '#bae6fd', fontSize: isTouchDevice ? '0.5rem' : '0.54rem', fontWeight: 760, lineHeight: 1.25, marginTop: '3px' }}>
+                    {room.note}
+                  </div>
+                </div>
+                <div style={{ color: '#fde68a', fontSize: isTouchDevice ? '0.62rem' : '0.68rem', fontWeight: 980, whiteSpace: 'nowrap' }}>
+                  {formatQuantityM2(room.areaM2)}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div
+            data-home-floorplan-measurement-disclaimer={roomMeasurementSummary.disclaimer}
+            style={{
+              borderTop: '1px solid rgba(125, 211, 252, 0.14)',
+              color: '#bae6fd',
+              fontSize: isTouchDevice ? '0.52rem' : '0.56rem',
+              fontWeight: 800,
+              lineHeight: 1.28,
+              marginTop: isTouchDevice ? '9px' : '10px',
+              paddingTop: isTouchDevice ? '8px' : '9px',
+            }}
+          >
+            {roomMeasurementSummary.disclaimer}
+          </div>
+        </section>
+      ) : null}
+
       <ModularHomeProjectUploadPlaceholder isTouchDevice={isTouchDevice} />
 
       <section
@@ -824,9 +1065,11 @@ export function ModularHomeDemoOverlay({ isTouchDevice = false }: ModularHomeDem
                       data-home-config-constraint-status={option.constraintStatus}
                       data-home-config-disabled={isDisabled ? 'true' : 'false'}
                       data-home-config-disabled-reason={option.disabledReason}
+                      data-home-config-production-next-step={option.productionNextStep}
+                      data-home-config-production-severity={option.productionConstraintSeverity}
                       data-home-config-selected={selected ? 'true' : 'false'}
                       disabled={isDisabled}
-                      title={option.constraintMessage || option.label}
+                      title={`${option.constraintMessage || option.label} Next step: ${option.productionNextStep}`}
                       onClick={(event) => {
                         event.stopPropagation();
                         if (isDisabled) {
@@ -877,6 +1120,23 @@ export function ModularHomeDemoOverlay({ isTouchDevice = false }: ModularHomeDem
                       >
                         {statusLabel}
                       </span>
+                      {option.productionConstraintSeverity !== 'info' ? (
+                        <span
+                          data-home-config-production-label={`${group.key}:${option.key}:${option.productionConstraintSeverity}`}
+                          style={{
+                            ...HOME_PRODUCTION_CONSTRAINT_SEVERITY_STYLES[option.productionConstraintSeverity],
+                            borderRadius: '999px',
+                            fontSize: isTouchDevice ? '0.44rem' : '0.47rem',
+                            fontWeight: 950,
+                            letterSpacing: '0.08em',
+                            lineHeight: 1,
+                            padding: '3px 5px',
+                            textTransform: 'uppercase',
+                          }}
+                        >
+                          {HOME_PRODUCTION_CONSTRAINT_SEVERITY_LABELS[option.productionConstraintSeverity]}
+                        </span>
+                      ) : null}
                     </button>
                   );
                 })}
@@ -927,6 +1187,28 @@ export function ModularHomeDemoOverlay({ isTouchDevice = false }: ModularHomeDem
         >
           Selected: {configSummary.product} / {configSummary.layoutVariant} / {configSummary.facade} / {configSummary.roof} / {configSummary.terrace} / {configSummary.finishLevel} / {configSummary.windowPlacement} / {configSummary.doorPlacement}
         </div>
+
+        {visibleProductionConstraints.length > 0 ? (
+          <div
+            aria-label="Modular home production readiness constraints"
+            data-home-config-production-constraints="true"
+            data-home-config-production-constraint-count={visibleProductionConstraints.length}
+            style={{
+              background: 'rgba(2, 6, 23, 0.32)',
+              border: '1px solid rgba(251, 191, 36, 0.2)',
+              borderRadius: '13px',
+              display: 'grid',
+              gap: '6px',
+              marginTop: isTouchDevice ? '8px' : '9px',
+              padding: isTouchDevice ? '7px 8px' : '8px 9px',
+            }}
+          >
+            <div style={{ color: '#fef3c7', fontSize: isTouchDevice ? '0.56rem' : '0.6rem', fontWeight: 950, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+              Production readiness
+            </div>
+            {visibleProductionConstraints.map((constraint) => renderProductionConstraintCard(constraint, isTouchDevice))}
+          </div>
+        ) : null}
 
         {invalidConfigReasons.length > 0 ? (
           <div
@@ -1070,6 +1352,28 @@ export function ModularHomeDemoOverlay({ isTouchDevice = false }: ModularHomeDem
         >
           Pricing DB v1 / {estimate.pricing.currency} / {estimate.pricing.costRegionLabel} / prices {estimate.pricing.priceDate} / {estimate.pricing.confidenceLabel}
         </div>
+
+        {visibleProductionConstraints.length > 0 ? (
+          <div
+            aria-label="Estimate production readiness constraints"
+            data-home-estimate-production-constraints="true"
+            data-home-estimate-production-constraint-count={visibleProductionConstraints.length}
+            style={{
+              background: 'rgba(15, 23, 42, 0.44)',
+              border: '1px solid rgba(251, 191, 36, 0.18)',
+              borderRadius: '13px',
+              display: 'grid',
+              gap: '6px',
+              marginTop: isTouchDevice ? '8px' : '9px',
+              padding: isTouchDevice ? '8px' : '10px',
+            }}
+          >
+            <div style={{ color: '#fef3c7', fontSize: '0.56rem', fontWeight: 950, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+              Estimate readiness
+            </div>
+            {visibleProductionConstraints.map((constraint) => renderProductionConstraintCard(constraint, isTouchDevice))}
+          </div>
+        ) : null}
 
         <div
           aria-label="Selected estimate options"

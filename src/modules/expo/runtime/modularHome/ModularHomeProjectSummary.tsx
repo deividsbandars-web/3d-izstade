@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import type { ModularHomeConfiguratorState } from './modularHomeConfigurator';
 import {
   calculateComponentBom,
-  calculateManufacturingBom,
+  calculateManufacturingBomPreview,
   type ModularHomeComponentBom,
   type ModularHomeComponentCategory,
   type ModularHomeComponentUnit,
@@ -19,7 +19,10 @@ import {
 } from './modularHomeEstimate';
 import {
   getModularHomeDimensionSummary,
+  getModularHomeProductionConstraints,
   type ModularHomeDimensionSummary,
+  type ModularHomeProductionConstraint,
+  type ModularHomeProductionConstraintSeverity,
 } from './modularHomeProducts';
 import { MODULAR_HOME_QUOTE_PREVIEW_QUEUE_KEY } from './ModularHomeQuoteForm';
 
@@ -274,6 +277,40 @@ const ESTIMATE_PRICE_SOURCE_BADGE_STYLES = {
   },
 } as const satisfies Record<ModularHomeEstimatePriceSource, { background: string; border: string; color: string }>;
 
+const PRODUCTION_CONSTRAINT_SEVERITY_LABELS = {
+  blocked: 'Blocked',
+  info: 'Info',
+  requiresReview: 'Requires review',
+  warning: 'Warning',
+} as const satisfies Record<ModularHomeProductionConstraintSeverity, string>;
+
+const PRODUCTION_CONSTRAINT_SEVERITY_STYLES = {
+  blocked: {
+    background: 'rgba(127, 29, 29, 0.26)',
+    border: '1px solid rgba(248, 113, 113, 0.3)',
+    color: '#fecaca',
+  },
+  info: {
+    background: 'rgba(14, 165, 233, 0.12)',
+    border: '1px solid rgba(125, 211, 252, 0.2)',
+    color: '#bae6fd',
+  },
+  requiresReview: {
+    background: 'rgba(251, 191, 36, 0.14)',
+    border: '1px solid rgba(251, 191, 36, 0.28)',
+    color: '#fde68a',
+  },
+  warning: {
+    background: 'rgba(251, 146, 60, 0.14)',
+    border: '1px solid rgba(253, 186, 116, 0.24)',
+    color: '#fed7aa',
+  },
+} as const satisfies Record<ModularHomeProductionConstraintSeverity, {
+  background: string;
+  border: string;
+  color: string;
+}>;
+
 function createEstimateBadgeStyle(
   style: { background: string; border: string; color: string },
   isTouchDevice: boolean,
@@ -329,6 +366,57 @@ function renderEstimateReliabilityBadges(
   );
 }
 
+function renderProductionConstraintSummary(
+  constraint: ModularHomeProductionConstraint,
+  isTouchDevice: boolean,
+) {
+  const style = PRODUCTION_CONSTRAINT_SEVERITY_STYLES[constraint.severity];
+
+  return (
+    <div
+      key={constraint.id}
+      data-home-project-summary-production-constraint={constraint.id}
+      data-home-project-summary-production-constraint-affected={constraint.affectedOptions.join(',')}
+      data-home-project-summary-production-constraint-next-step={constraint.nextStep}
+      data-home-project-summary-production-constraint-severity={constraint.severity}
+      style={{
+        ...style,
+        borderRadius: '10px',
+        display: 'grid',
+        gap: '4px',
+        padding: isTouchDevice ? '7px 8px' : '8px 9px',
+      }}
+    >
+      <div style={{ alignItems: 'center', display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+        <span
+          style={{
+            background: 'rgba(2, 6, 23, 0.24)',
+            border: '1px solid rgba(255, 255, 255, 0.12)',
+            borderRadius: '999px',
+            fontSize: isTouchDevice ? '0.47rem' : '0.5rem',
+            fontWeight: 950,
+            letterSpacing: '0.08em',
+            lineHeight: 1,
+            padding: '4px 6px',
+            textTransform: 'uppercase',
+          }}
+        >
+          {PRODUCTION_CONSTRAINT_SEVERITY_LABELS[constraint.severity]}
+        </span>
+        <span style={{ fontSize: isTouchDevice ? '0.56rem' : '0.6rem', fontWeight: 900, lineHeight: 1.22 }}>
+          {constraint.message}
+        </span>
+      </div>
+      <div style={{ fontSize: isTouchDevice ? '0.52rem' : '0.56rem', fontWeight: 760, lineHeight: 1.28, opacity: 0.92 }}>
+        Affects: {constraint.affectedOptions.length > 0 ? constraint.affectedOptions.join(', ') : 'current configuration'}
+      </div>
+      <div style={{ fontSize: isTouchDevice ? '0.52rem' : '0.56rem', fontWeight: 820, lineHeight: 1.28 }}>
+        Next step: {constraint.nextStep}
+      </div>
+    </div>
+  );
+}
+
 function normalizeMiddleDotText(value: string): string {
   return value
     .replace(new RegExp(DOUBLE_BROKEN_MIDDLE_DOT, 'g'), MIDDLE_DOT)
@@ -374,6 +462,7 @@ function createSummaryText(
   quoteQueue: QuoteQueueSummary,
   componentBom: ModularHomeComponentBom,
   manufacturingBom: ModularHomeManufacturingBom,
+  productionConstraints: readonly ModularHomeProductionConstraint[],
 ) {
   const scopeLines = estimate.scopeOfSupply.flatMap((section) => [
     `${section.label}:`,
@@ -384,6 +473,11 @@ function createSummaryText(
     ...section.lineItems.map((item) => (
       `- ${item.label}: quantity ${item.quantity}, unit ${item.unit}, unit cost ${formatEstimateAmount(item.unitCost)}, subtotal ${formatEstimateAmount(item.subtotal)}, confidence ${getModularHomeEstimateConfidenceLabel(item.confidence)}, source ${getModularHomeEstimatePriceSourceLabel(item.priceSource)}, updated ${item.lastUpdated}${item.note ? `; ${item.note}` : ''}${item.notes.length > 0 ? `; ${item.notes.join(' ')}` : ''}`
     )),
+  ]);
+  const productionConstraintLines = productionConstraints.flatMap((constraint) => [
+    `- ${PRODUCTION_CONSTRAINT_SEVERITY_LABELS[constraint.severity]}: ${constraint.message}`,
+    `  Affects: ${constraint.affectedOptions.length > 0 ? constraint.affectedOptions.join(', ') : 'current configuration'}`,
+    `  Next step: ${constraint.nextStep}`,
   ]);
 
   return [
@@ -462,6 +556,8 @@ function createSummaryText(
     `- Window placement: ${estimate.selectedOptions.windowPlacement}`,
     `- Door package: ${estimate.selectedOptions.doorPackage}`,
     `- Door placement: ${estimate.selectedOptions.doorPlacement}`,
+    'Production readiness:',
+    ...productionConstraintLines,
     'Pricing category totals:',
     ...estimate.pricing.categoryTotals.map((item) => (
       `- ${item.label}: ${formatHomeEstimateEur(item.amount)}`
@@ -491,10 +587,25 @@ export function ModularHomeProjectSummary({ config, estimate, isTouchDevice = fa
   const [quoteQueue] = useState(readQuoteQueueSummary);
   const dimensions = useMemo(() => getModularHomeDimensionSummary(config), [config]);
   const componentBom = useMemo(() => calculateComponentBom(config), [config]);
-  const manufacturingBom = useMemo(() => calculateManufacturingBom(config), [config]);
+  const manufacturingBom = useMemo(() => calculateManufacturingBomPreview(config), [config]);
+  const productionConstraints = useMemo(() => getModularHomeProductionConstraints(config), [config]);
+  const visibleProductionConstraints = useMemo(
+    () => productionConstraints.filter((constraint) => (
+      constraint.severity !== 'info' || productionConstraints.length === 1
+    )),
+    [productionConstraints],
+  );
   const summaryText = useMemo(
-    () => createSummaryText(identity, estimate, dimensions, quoteQueue, componentBom, manufacturingBom),
-    [estimate, identity, dimensions, quoteQueue, componentBom, manufacturingBom],
+    () => createSummaryText(
+      identity,
+      estimate,
+      dimensions,
+      quoteQueue,
+      componentBom,
+      manufacturingBom,
+      visibleProductionConstraints,
+    ),
+    [estimate, identity, dimensions, quoteQueue, componentBom, manufacturingBom, visibleProductionConstraints],
   );
   const bomPackageRows = [
     ['Layout variant', estimate.selectedOptions.layoutVariant],
@@ -731,6 +842,29 @@ export function ModularHomeProjectSummary({ config, estimate, isTouchDevice = fa
           </div>
         ))}
       </div>
+
+      {visibleProductionConstraints.length > 0 ? (
+        <div
+          aria-label="Project summary production readiness"
+          data-home-project-summary-production-constraints="true"
+          data-home-project-summary-production-constraint-count={visibleProductionConstraints.length}
+          data-home-project-summary-print-card="true"
+          style={{
+            background: 'rgba(15, 23, 42, 0.44)',
+            border: '1px solid rgba(251, 191, 36, 0.18)',
+            borderRadius: '13px',
+            display: 'grid',
+            gap: '7px',
+            marginTop: isTouchDevice ? '9px' : '10px',
+            padding: isTouchDevice ? '8px' : '10px',
+          }}
+        >
+          <div style={{ color: '#fef3c7', fontSize: '0.56rem', fontWeight: 950, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+            Production readiness
+          </div>
+          {visibleProductionConstraints.map((constraint) => renderProductionConstraintSummary(constraint, isTouchDevice))}
+        </div>
+      ) : null}
 
       <div
         aria-label="Project summary quantity takeoff"

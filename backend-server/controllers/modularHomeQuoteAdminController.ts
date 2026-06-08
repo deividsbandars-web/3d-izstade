@@ -2,7 +2,7 @@ import type { Response } from 'express';
 import type { AuthRequest } from '../middleware/authMiddleware.js';
 import { getSupabase } from '../services/supabase.js';
 
-export type ModularHomeQuoteAdminStatus = 'closed' | 'contacted' | 'new' | 'qualified';
+export type ModularHomeQuoteAdminStatus = 'contacted' | 'lost' | 'new' | 'quoted' | 'won';
 
 export type ModularHomeQuoteAdminAccessPlan = {
   adminRoutes: Array<{
@@ -25,6 +25,7 @@ type SupabaseQuoteRow = {
   created_at?: string;
   estimate?: unknown;
   id?: string;
+  internal_note?: string;
   project?: unknown;
   requester?: unknown;
   source?: unknown;
@@ -36,6 +37,7 @@ const MODULAR_HOME_QUOTE_ADMIN_SELECT = [
   'id',
   'created_at',
   'status',
+  'internal_note',
   'requester',
   'project',
   'config',
@@ -45,9 +47,10 @@ const MODULAR_HOME_QUOTE_ADMIN_SELECT = [
   'source',
 ].join(', ');
 
-const ADMIN_STATUSES = new Set<ModularHomeQuoteAdminStatus>(['closed', 'contacted', 'new', 'qualified']);
+const ADMIN_STATUSES = new Set<ModularHomeQuoteAdminStatus>(['contacted', 'lost', 'new', 'quoted', 'won']);
 const DEFAULT_ADMIN_LIST_LIMIT = 50;
 const MAX_ADMIN_LIST_LIMIT = 200;
+const MAX_INTERNAL_NOTE_LENGTH = 2000;
 
 function normalizeText(value: unknown, fallback = ''): string {
   return typeof value === 'string' && value.trim() ? value.trim() : fallback;
@@ -74,6 +77,32 @@ function quoteAdminError(res: Response, status: number, error: string, message: 
   return res.status(status).json({ error, message, success: false });
 }
 
+function normalizeInternalNote(value: unknown): string | null | undefined {
+  if (typeof value !== 'string') {
+    return undefined;
+  }
+
+  const normalized = value.trim();
+  return normalized ? normalized.slice(0, MAX_INTERNAL_NOTE_LENGTH) : null;
+}
+
+export function buildModularHomeQuoteAdminStatusUpdatePayload(
+  status: ModularHomeQuoteAdminStatus,
+  internalNote: unknown,
+) {
+  const payload: {
+    internal_note?: string | null;
+    status: ModularHomeQuoteAdminStatus;
+  } = { status };
+  const normalizedNote = normalizeInternalNote(internalNote);
+
+  if (normalizedNote !== undefined) {
+    payload.internal_note = normalizedNote;
+  }
+
+  return payload;
+}
+
 export function getModularHomeQuoteAdminAccessPlan(): ModularHomeQuoteAdminAccessPlan {
   return {
     adminRoutes: [
@@ -90,7 +119,7 @@ export function getModularHomeQuoteAdminAccessPlan(): ModularHomeQuoteAdminAcces
       {
         method: 'PATCH',
         path: '/api/modular-home/quotes/:quoteId/status',
-        purpose: 'Update sales review status for one quote request.',
+        purpose: 'Update sales review status and optional internal note for one quote request.',
       },
       {
         method: 'GET',
@@ -102,17 +131,26 @@ export function getModularHomeQuoteAdminAccessPlan(): ModularHomeQuoteAdminAcces
     exportRules: [
       'Exports require admin JWT role.',
       'Export endpoint is mounted under protectedRouter only.',
+      'Internal notes are admin-only fields and must never be shown in public Modular Home demo views.',
       'Future production export must write an audit log row with actor id and row count.',
     ],
     publicExposure: false,
     roleCheck: 'adminOnly',
-    statusWorkflow: ['new', 'contacted', 'qualified', 'closed'],
+    statusWorkflow: ['new', 'contacted', 'quoted', 'won', 'lost'],
     storageTable: MODULAR_HOME_QUOTE_ADMIN_TABLE,
   };
 }
 
 export function normalizeModularHomeQuoteAdminStatus(value: unknown): ModularHomeQuoteAdminStatus {
   const normalized = normalizeText(value).toLowerCase();
+  if (normalized === 'qualified') {
+    return 'quoted';
+  }
+
+  if (normalized === 'closed') {
+    return 'won';
+  }
+
   if (!ADMIN_STATUSES.has(normalized as ModularHomeQuoteAdminStatus)) {
     throw new Error('MODULAR_HOME_QUOTE_ADMIN_STATUS_INVALID');
   }
@@ -134,6 +172,7 @@ export function serializeModularHomeQuoteAdminCsv(rows: readonly SupabaseQuoteRo
     'id',
     'created_at',
     'status',
+    'internal_note',
     'model',
     'estimated_total',
     'name',
@@ -145,6 +184,7 @@ export function serializeModularHomeQuoteAdminCsv(rows: readonly SupabaseQuoteRo
     row.id ?? '',
     row.created_at ?? '',
     row.status ?? '',
+    row.internal_note ?? '',
     getNestedText(row.project, 'modelName'),
     getNestedNumber(row.estimate, 'estimatedTotal'),
     getNestedText(row.requester, 'name'),
@@ -257,11 +297,15 @@ export async function updateModularHomeQuoteStatus(req: AuthRequest, res: Respon
   try {
     const quoteId = normalizeQuoteId(req.params.quoteId);
     const status = normalizeModularHomeQuoteAdminStatus(req.body?.status);
+    const updatePayload = buildModularHomeQuoteAdminStatusUpdatePayload(
+      status,
+      req.body?.internalNote ?? req.body?.internal_note,
+    );
     const { data, error } = await getSupabase()
       .from(MODULAR_HOME_QUOTE_ADMIN_TABLE)
-      .update({ status })
+      .update(updatePayload)
       .eq('id', quoteId)
-      .select('id, status')
+      .select('id, status, internal_note')
       .single();
 
     if (error) {

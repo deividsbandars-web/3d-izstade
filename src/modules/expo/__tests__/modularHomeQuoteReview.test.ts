@@ -67,6 +67,7 @@ const backendRow = normalizeModularHomeQuoteAdminRow({
   created_at: '2026-06-06T08:30:00.000Z',
   estimate: { estimatedTotal: 94000 },
   id: 'backend-quote-1',
+  internal_note: 'Needs admin follow-up.',
   project: { modelName: 'Family Timber 80' },
   requester: {
     budgetRange: '100k-150k',
@@ -78,12 +79,13 @@ const backendRow = normalizeModularHomeQuoteAdminRow({
     phone: '+371 21111111',
     targetBuildDate: '6-12-months',
   },
-  status: 'new',
+  status: 'qualified',
 });
 
 assert.ok(backendRow);
 assert.equal(backendRow.source, 'backend-staging');
-assert.equal(backendRow.status, 'new');
+assert.equal(backendRow.status, 'quoted');
+assert.equal(backendRow.internalNote, 'Needs admin follow-up.');
 assert.equal(backendRow.contact.email, 'backend@example.com');
 assert.equal(backendRow.config.windowPlacement, 'cornerFeature');
 assert.equal(backendRow.config.doorPlacement, 'terraceFacing');
@@ -101,6 +103,7 @@ const csv = serializeModularHomeQuoteReviewCsv(rows);
 assert.match(csv, /Model/);
 assert.match(csv, /Compact Timber 40/);
 assert.match(csv, /client@example.com/);
+assert.match(csv, /Needs admin follow-up/);
 
 const json = JSON.parse(serializeModularHomeQuoteReviewJson(rows)) as {
   rows: unknown[];

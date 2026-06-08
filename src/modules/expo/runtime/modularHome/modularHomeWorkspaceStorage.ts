@@ -4,6 +4,13 @@ import {
   type ModularHomeComponentSummaryItem,
 } from './modularHomeComponents';
 import {
+  calculateModularHomeEstimate,
+  getModularHomeEstimateConfidenceLabel,
+  getModularHomeEstimatePriceSourceLabel,
+  type ModularHomeEstimateConfidence,
+  type ModularHomeEstimatePriceSource,
+} from './modularHomeEstimate';
+import {
   getBomModuleSummary,
   getModulesForConfig,
   getModularHomeProduct,
@@ -89,15 +96,61 @@ export type ModularHomeProjectComparisonBomSummary = {
   wasteCostDelta: number;
 };
 
+export type ModularHomeProjectComparisonConfidenceSummary = {
+  confidenceCounts: Record<ModularHomeEstimateConfidence, number>;
+  confidenceLabels: readonly string[];
+  priceSourceCounts: Record<ModularHomeEstimatePriceSource, number>;
+  priceSourceLabels: readonly string[];
+  reviewLineCount: number;
+  siteDependentLineCount: number;
+};
+
+export type ModularHomeProjectComparisonSideSummary = {
+  componentSubtotal: number;
+  confidenceSummary: ModularHomeProjectComparisonConfidenceSummary;
+  doorPackage: string;
+  doorPlacement: string;
+  estimateTotal: number;
+  facade: string;
+  finishLevel: string;
+  layoutVariant: string;
+  moduleCount: number;
+  product: string;
+  projectId: string;
+  projectName: string;
+  roof: string;
+  terrace: string;
+  windowPackage: string;
+  windowPlacement: string;
+};
+
+export type ModularHomeProjectComparisonBomCategoryDelta = {
+  category: string;
+  costDelta: number;
+  currentCost: number;
+  currentQuantity: number;
+  label: string;
+  quantityDelta: number;
+  savedCost: number;
+  savedQuantity: number;
+  status: ModularHomeProjectComparisonDeltaStatus;
+  unit: string;
+};
+
 export type ModularHomeProjectComparison = {
   bomSummary: ModularHomeProjectComparisonBomSummary;
+  confidenceNotes: readonly string[];
   componentDeltas: readonly ModularHomeProjectComparisonComponentDelta[];
   currentProject: ModularHomeLocalProject;
+  currentSummary: ModularHomeProjectComparisonSideSummary;
   changedOptionCount: number;
   estimateDelta: number;
+  majorBomCategoryDeltas: readonly ModularHomeProjectComparisonBomCategoryDelta[];
   moduleDeltas: readonly ModularHomeProjectComparisonModuleDelta[];
   options: readonly ModularHomeProjectComparisonOption[];
+  recommendationNote: string;
   savedProject: ModularHomeLocalProject;
+  savedSummary: ModularHomeProjectComparisonSideSummary;
 };
 
 function isBrowserStorageAvailable(): boolean {
@@ -485,12 +538,189 @@ function createComponentDeltas(
   }).sort((a, b) => Math.abs(b.costDelta) - Math.abs(a.costDelta));
 }
 
+const ESTIMATE_CONFIDENCE_KEYS = [
+  'packageFixed',
+  'estimated',
+  'siteDependent',
+  'requiresEngineering',
+] as const satisfies readonly ModularHomeEstimateConfidence[];
+
+const ESTIMATE_PRICE_SOURCE_KEYS = [
+  'internalPreview',
+  'supplierPlaceholder',
+  'manualReviewRequired',
+] as const satisfies readonly ModularHomeEstimatePriceSource[];
+
+const COMPONENT_CATEGORY_LABELS: Record<string, string> = {
+  bathroomCore: 'Bathroom core',
+  doorUnit: 'Door schedule',
+  facadeBoarding: 'Facade boarding',
+  floorCassette: 'Floor cassettes',
+  foundationPad: 'Foundation pads',
+  furniturePackage: 'Furniture package',
+  interiorFinish: 'Interior finishes',
+  kitchenLine: 'Kitchen line',
+  roofCassette: 'Roof cassettes',
+  terraceDeck: 'Terrace deck',
+  wallPanel: 'Wall panels',
+  windowUnit: 'Window schedule',
+};
+
+function createConfidenceCountRecord(): Record<ModularHomeEstimateConfidence, number> {
+  return {
+    estimated: 0,
+    packageFixed: 0,
+    requiresEngineering: 0,
+    siteDependent: 0,
+  };
+}
+
+function createPriceSourceCountRecord(): Record<ModularHomeEstimatePriceSource, number> {
+  return {
+    internalPreview: 0,
+    manualReviewRequired: 0,
+    supplierPlaceholder: 0,
+  };
+}
+
+function summarizeEstimateConfidence(project: ModularHomeLocalProject): ModularHomeProjectComparisonConfidenceSummary {
+  const estimate = calculateModularHomeEstimate(project.config);
+  const confidenceCounts = createConfidenceCountRecord();
+  const priceSourceCounts = createPriceSourceCountRecord();
+  const displayedLines = estimate.sections.flatMap((section) => section.lineItems);
+
+  for (const lineItem of displayedLines) {
+    confidenceCounts[lineItem.confidence] += 1;
+    priceSourceCounts[lineItem.priceSource] += 1;
+  }
+
+  return {
+    confidenceCounts,
+    confidenceLabels: ESTIMATE_CONFIDENCE_KEYS
+      .filter((key) => confidenceCounts[key] > 0)
+      .map(getModularHomeEstimateConfidenceLabel),
+    priceSourceCounts,
+    priceSourceLabels: ESTIMATE_PRICE_SOURCE_KEYS
+      .filter((key) => priceSourceCounts[key] > 0)
+      .map(getModularHomeEstimatePriceSourceLabel),
+    reviewLineCount: confidenceCounts.requiresEngineering,
+    siteDependentLineCount: confidenceCounts.siteDependent,
+  };
+}
+
+function createSideSummary(
+  project: ModularHomeLocalProject,
+  componentSubtotal: number,
+  moduleCount: number,
+): ModularHomeProjectComparisonSideSummary {
+  const configSummary = getModularHomeProductConfigSummary(project.config);
+
+  return {
+    componentSubtotal,
+    confidenceSummary: summarizeEstimateConfidence(project),
+    doorPackage: configSummary.doorPackage,
+    doorPlacement: configSummary.doorPlacement,
+    estimateTotal: project.estimateTotal,
+    facade: configSummary.facade,
+    finishLevel: configSummary.finishLevel,
+    layoutVariant: configSummary.layoutVariant,
+    moduleCount,
+    product: getProductLabel(project),
+    projectId: project.projectId,
+    projectName: project.projectName,
+    roof: configSummary.roof,
+    terrace: configSummary.terrace,
+    windowPackage: configSummary.windowPackage,
+    windowPlacement: configSummary.windowPlacement,
+  };
+}
+
+function summarizeComponentCategories(items: readonly ModularHomeComponentSummaryItem[]) {
+  const summary = new Map<string, {
+    cost: number;
+    quantity: number;
+    unit: string;
+  }>();
+
+  for (const item of items) {
+    const existing = summary.get(item.category) ?? {
+      cost: 0,
+      quantity: 0,
+      unit: item.unit,
+    };
+
+    existing.cost += item.totalCost;
+    existing.quantity = roundComparisonNumber(existing.quantity + item.quantity);
+    existing.unit = existing.unit === item.unit ? existing.unit : 'mixed';
+    summary.set(item.category, existing);
+  }
+
+  return summary;
+}
+
+function createMajorBomCategoryDeltas(
+  savedItems: readonly ModularHomeComponentSummaryItem[],
+  currentItems: readonly ModularHomeComponentSummaryItem[],
+): readonly ModularHomeProjectComparisonBomCategoryDelta[] {
+  const saved = summarizeComponentCategories(savedItems);
+  const current = summarizeComponentCategories(currentItems);
+  const categories = [...new Set([...saved.keys(), ...current.keys()])];
+
+  return categories.map((category) => {
+    const savedItem = saved.get(category);
+    const currentItem = current.get(category);
+    const savedQuantity = savedItem?.quantity ?? 0;
+    const currentQuantity = currentItem?.quantity ?? 0;
+    const savedCost = savedItem?.cost ?? 0;
+    const currentCost = currentItem?.cost ?? 0;
+
+    return {
+      category,
+      costDelta: currentCost - savedCost,
+      currentCost,
+      currentQuantity,
+      label: COMPONENT_CATEGORY_LABELS[category] ?? category,
+      quantityDelta: roundComparisonNumber(currentQuantity - savedQuantity),
+      savedCost,
+      savedQuantity,
+      status: createDeltaStatus(savedQuantity, currentQuantity, savedCost, currentCost),
+      unit: currentItem?.unit ?? savedItem?.unit ?? 'unit',
+    };
+  }).sort((a, b) => Math.abs(b.costDelta) - Math.abs(a.costDelta));
+}
+
+function createConfidenceNotes(
+  savedSummary: ModularHomeProjectComparisonConfidenceSummary,
+  currentSummary: ModularHomeProjectComparisonConfidenceSummary,
+): readonly string[] {
+  const notes = [
+    `Saved project: ${savedSummary.reviewLineCount} engineering-review lines and ${savedSummary.siteDependentLineCount} site-dependent lines.`,
+    `Comparison project: ${currentSummary.reviewLineCount} engineering-review lines and ${currentSummary.siteDependentLineCount} site-dependent lines.`,
+  ];
+
+  if (currentSummary.reviewLineCount > savedSummary.reviewLineCount) {
+    notes.push('The comparison project has more engineering-review items; treat its price delta as less firm.');
+  } else if (currentSummary.reviewLineCount < savedSummary.reviewLineCount) {
+    notes.push('The comparison project has fewer engineering-review items than the saved baseline.');
+  }
+
+  if (currentSummary.siteDependentLineCount > 0 || savedSummary.siteDependentLineCount > 0) {
+    notes.push('Transport, installation, site work and permit-related items remain site-dependent.');
+  }
+
+  notes.push('This comparison is preview-only and requires final review.');
+
+  return notes;
+}
+
 export function createModularHomeProjectComparison(
   savedProject: ModularHomeLocalProject,
   currentProject: ModularHomeLocalProject,
 ): ModularHomeProjectComparison {
   const savedBom = calculateComponentBom(savedProject.config);
   const currentBom = calculateComponentBom(currentProject.config);
+  const savedSummary = createSideSummary(savedProject, savedBom.subtotal, savedBom.moduleCount);
+  const currentSummary = createSideSummary(currentProject, currentBom.subtotal, currentBom.moduleCount);
   const options = COMPARE_ALL_OPTION_KEYS.map((key) => {
     const savedValue = getConfigCompareValue(savedProject, key);
     const currentValue = getConfigCompareValue(currentProject, key);
@@ -520,13 +750,25 @@ export function createModularHomeProjectComparison(
       wasteCostDelta: currentBom.wasteCostEstimate - savedBom.wasteCostEstimate,
     },
     changedOptionCount: options.filter((option) => option.hasChanged).length,
+    confidenceNotes: createConfidenceNotes(savedSummary.confidenceSummary, currentSummary.confidenceSummary),
     componentDeltas: createComponentDeltas(savedBom.items, currentBom.items),
     currentProject,
+    currentSummary,
     estimateDelta: currentProject.estimateTotal - savedProject.estimateTotal,
+    majorBomCategoryDeltas: createMajorBomCategoryDeltas(savedBom.items, currentBom.items),
     moduleDeltas: createModuleDeltas(savedProject, currentProject),
     options,
+    recommendationNote: 'This comparison is preview-only and requires final review.',
     savedProject,
+    savedSummary,
   };
+}
+
+export function compareModularHomeProjects(
+  savedProject: ModularHomeLocalProject,
+  currentProject: ModularHomeLocalProject,
+): ModularHomeProjectComparison {
+  return createModularHomeProjectComparison(savedProject, currentProject);
 }
 
 export function compareModularHomeLocalProjects(

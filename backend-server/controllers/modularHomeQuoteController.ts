@@ -6,10 +6,15 @@ export type ModularHomeQuoteSubmissionConfig = {
   emailHandoffEnabled: boolean;
   hardeningPlan: ModularHomeQuoteBackendHardeningPlan;
   productionReady: false;
+  rateLimit: {
+    maxRequests: number;
+    windowMs: number;
+  };
   requiresExplicitRequestFlag: true;
   requiresStagingEnvironment: true;
   staging: {
     allowedHosts: string[];
+    allowedPreviewHostPattern: string;
     environmentName: string | null;
     enabledByEnvironment: boolean;
   };
@@ -56,6 +61,7 @@ type ModularHomeQuoteRequestBody = {
 export type ModularHomeQuoteFailureStage =
   | 'disabled'
   | 'flag'
+  | 'rateLimit'
   | 'staging'
   | 'validation'
   | 'storage';
@@ -163,6 +169,14 @@ const DEFAULT_STAGING_HOSTS = [
   'localhost',
   '127.0.0.1',
 ] as const;
+const STAGING_PREVIEW_HOST_PATTERN = /^app-staging-[a-z0-9-]+\.vercel\.app$/;
+const MODULAR_HOME_QUOTE_RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000;
+const MODULAR_HOME_QUOTE_RATE_LIMIT_MAX_REQUESTS = 5;
+
+const modularHomeQuoteRateLimitBuckets = new Map<string, {
+  count: number;
+  resetAt: number;
+}>();
 
 export function getModularHomeQuoteBackendHardeningPlan(): ModularHomeQuoteBackendHardeningPlan {
   return {
@@ -199,7 +213,7 @@ export function getModularHomeQuoteBackendHardeningPlan(): ModularHomeQuoteBacke
       stagingRequirement: 'staging host or staging/preview environment',
     },
     rateLimitingPlan: {
-      currentGlobalLimit: 'Existing API middleware applies an in-memory 60 requests/minute per IP limit.',
+      currentGlobalLimit: 'Route-specific staging guard applies 5 Modular Home quote backend attempts / 10 minutes / IP before Supabase insert. Existing global API middleware may also apply.',
       productionRequirement: [
         'Add route-specific distributed limit before enabling production: e.g. 5 quote submissions / 10 minutes / IP.',
         'Add duplicate guard by normalized email + product/config hash.',
@@ -256,6 +270,17 @@ function normalizeHost(value: unknown): string | null {
     .toLowerCase() || null;
 }
 
+function getModularHomeQuoteRequestHostCandidates(req: Request): string[] {
+  return [
+    readFirstHeaderValue(req, 'x-forwarded-host'),
+    readFirstHeaderValue(req, 'host'),
+    readFirstHeaderValue(req, 'origin'),
+    readFirstHeaderValue(req, 'referer'),
+  ]
+    .map((value) => normalizeHost(value))
+    .filter((value): value is string => Boolean(value));
+}
+
 function getModularHomeQuoteAllowedStagingHosts(): string[] {
   const configured = process.env.MODULAR_HOME_QUOTE_STAGING_HOSTS;
   const hosts = configured
@@ -263,6 +288,14 @@ function getModularHomeQuoteAllowedStagingHosts(): string[] {
     : [...DEFAULT_STAGING_HOSTS];
 
   return Array.from(new Set(hosts));
+}
+
+function isModularHomeQuoteAllowedPreviewHost(host: string): boolean {
+  return STAGING_PREVIEW_HOST_PATTERN.test(host);
+}
+
+function isModularHomeQuoteAllowedStagingHost(host: string, allowedHosts = getModularHomeQuoteAllowedStagingHosts()): boolean {
+  return allowedHosts.includes(host) || isModularHomeQuoteAllowedPreviewHost(host);
 }
 
 function getModularHomeQuoteEnvironmentName(): string | null {
@@ -277,16 +310,18 @@ function isModularHomeQuoteStagingEnvironmentName(environmentName: string | null
 
 export function isModularHomeQuoteStagingRequest(req: Request): boolean {
   const environmentName = getModularHomeQuoteEnvironmentName();
-  if (isModularHomeQuoteStagingEnvironmentName(environmentName)) {
+  const allowedHosts = getModularHomeQuoteAllowedStagingHosts();
+  const hostCandidates = getModularHomeQuoteRequestHostCandidates(req);
+  const allowedHostSeen = hostCandidates.some((candidate) => (
+    isModularHomeQuoteAllowedStagingHost(candidate, allowedHosts)
+  ));
+
+  if (allowedHostSeen) {
     return true;
   }
 
-  const allowedHosts = getModularHomeQuoteAllowedStagingHosts();
-  const host = normalizeHost(readFirstHeaderValue(req, 'x-forwarded-host') ?? readFirstHeaderValue(req, 'host'));
-  const originHost = normalizeHost(readFirstHeaderValue(req, 'origin'));
-  const refererHost = normalizeHost(readFirstHeaderValue(req, 'referer'));
-
-  return [host, originHost, refererHost].some((candidate) => candidate ? allowedHosts.includes(candidate) : false);
+  // Environment alone is not enough for a live submission if request headers identify production.
+  return isModularHomeQuoteStagingEnvironmentName(environmentName) && hostCandidates.length === 0;
 }
 
 export function createModularHomeQuoteSafeLogEvent(
@@ -442,10 +477,15 @@ export function getModularHomeQuoteSubmissionConfig(): ModularHomeQuoteSubmissio
     enabled: process.env.MODULAR_HOME_QUOTE_SUBMISSION_ENABLED === 'true',
     hardeningPlan: getModularHomeQuoteBackendHardeningPlan(),
     productionReady: false,
+    rateLimit: {
+      maxRequests: MODULAR_HOME_QUOTE_RATE_LIMIT_MAX_REQUESTS,
+      windowMs: MODULAR_HOME_QUOTE_RATE_LIMIT_WINDOW_MS,
+    },
     requiresExplicitRequestFlag: true,
     requiresStagingEnvironment: true,
     staging: {
       allowedHosts: getModularHomeQuoteAllowedStagingHosts(),
+      allowedPreviewHostPattern: STAGING_PREVIEW_HOST_PATTERN.source,
       enabledByEnvironment: isModularHomeQuoteStagingEnvironmentName(environmentName),
       environmentName,
     },
@@ -461,6 +501,66 @@ export function isModularHomeQuoteBackendRequestEnabled(query: Request['query'])
   }
 
   return value === '1';
+}
+
+export type ModularHomeQuoteRateLimitResult = {
+  allowed: boolean;
+  remaining: number;
+  resetAt: string;
+  retryAfterSeconds: number;
+};
+
+function getModularHomeQuoteRateLimitKey(req: Request): string {
+  const forwardedFor = readFirstHeaderValue(req, 'x-forwarded-for')?.split(',')[0]?.trim();
+  const realIp = readFirstHeaderValue(req, 'x-real-ip');
+  const directIp = typeof req.ip === 'string' ? req.ip : '';
+  const socketIp = typeof req.socket?.remoteAddress === 'string' ? req.socket.remoteAddress : '';
+  const candidate = forwardedFor || realIp || directIp || socketIp || 'unknown';
+
+  return candidate.slice(0, 96);
+}
+
+export function resetModularHomeQuoteRateLimitForTests(): void {
+  modularHomeQuoteRateLimitBuckets.clear();
+}
+
+export function checkModularHomeQuoteRateLimit(
+  req: Request,
+  nowMs = Date.now(),
+  submissionConfig = getModularHomeQuoteSubmissionConfig(),
+): ModularHomeQuoteRateLimitResult {
+  const key = getModularHomeQuoteRateLimitKey(req);
+  const current = modularHomeQuoteRateLimitBuckets.get(key);
+
+  if (!current || current.resetAt <= nowMs) {
+    const resetAt = nowMs + submissionConfig.rateLimit.windowMs;
+    modularHomeQuoteRateLimitBuckets.set(key, { count: 1, resetAt });
+
+    return {
+      allowed: true,
+      remaining: Math.max(0, submissionConfig.rateLimit.maxRequests - 1),
+      resetAt: new Date(resetAt).toISOString(),
+      retryAfterSeconds: 0,
+    };
+  }
+
+  if (current.count >= submissionConfig.rateLimit.maxRequests) {
+    return {
+      allowed: false,
+      remaining: 0,
+      resetAt: new Date(current.resetAt).toISOString(),
+      retryAfterSeconds: Math.max(1, Math.ceil((current.resetAt - nowMs) / 1000)),
+    };
+  }
+
+  current.count += 1;
+
+  return {
+    allowed: true,
+    remaining: Math.max(0, submissionConfig.rateLimit.maxRequests - current.count),
+    resetAt: new Date(current.resetAt).toISOString(),
+    retryAfterSeconds: 0,
+  };
 }
 
 export function validateModularHomeQuoteRequest(body: ModularHomeQuoteRequestBody): ValidModularHomeQuoteRequest {
@@ -641,6 +741,28 @@ export async function submitModularHomeQuote(req: Request, res: Response) {
     return res.status(403).json({
       error: 'MODULAR_HOME_QUOTE_STAGING_ONLY',
       message: 'Real Modular Home quote submission is currently allowed only on staging/review hosts.',
+      success: false,
+    });
+  }
+
+  const rateLimit = checkModularHomeQuoteRateLimit(req, Date.now(), submissionConfig);
+  if (!rateLimit.allowed) {
+    logModularHomeQuoteFailure(createModularHomeQuoteSafeLogEvent(
+      req,
+      'MODULAR_HOME_QUOTE_RATE_LIMITED',
+      429,
+      'rateLimit',
+      submissionConfig,
+    ));
+
+    if (typeof res.setHeader === 'function') {
+      res.setHeader('Retry-After', String(rateLimit.retryAfterSeconds));
+    }
+
+    return res.status(429).json({
+      error: 'MODULAR_HOME_QUOTE_RATE_LIMITED',
+      message: 'Too many Modular Home quote attempts. Wait before retrying staging backend submission.',
+      retryAfterSeconds: rateLimit.retryAfterSeconds,
       success: false,
     });
   }

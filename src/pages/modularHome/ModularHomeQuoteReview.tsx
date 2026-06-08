@@ -72,12 +72,14 @@ function getSourceLabel(row: ModularHomeQuoteReviewRow) {
 
 function getStatusTone(status: string) {
   switch (status) {
-    case 'closed':
+    case 'won':
       return '#34d399';
     case 'contacted':
       return '#38bdf8';
-    case 'qualified':
+    case 'quoted':
       return '#a78bfa';
+    case 'lost':
+      return '#fb7185';
     case 'mock-review':
       return '#fbbf24';
     default:
@@ -104,6 +106,7 @@ function matchesSearch(row: ModularHomeQuoteReviewRow, searchTerm: string) {
     row.contact.email,
     row.contact.name,
     row.contact.phone,
+    row.internalNote,
     row.landOwned,
     row.message,
     row.model,
@@ -218,6 +221,7 @@ export default function ModularHomeQuoteReview() {
   const [activeStatusAction, setActiveStatusAction] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [includeMockRows, setIncludeMockRows] = useState(!useProtectedBackend);
+  const [internalNoteDraft, setInternalNoteDraft] = useState('');
   const [loading, setLoading] = useState(useProtectedBackend);
   const [modelFilter, setModelFilter] = useState(ALL_FILTER_VALUE);
   const [rows, setRows] = useState<ModularHomeQuoteReviewRow[]>([]);
@@ -267,6 +271,10 @@ export default function ModularHomeQuoteReview() {
   useEffect(() => {
     void loadRows();
   }, [loadRows]);
+
+  useEffect(() => {
+    setInternalNoteDraft(selectedRow?.internalNote ?? '');
+  }, [selectedRow]);
 
   const modelOptions = useMemo(() => (
     Array.from(new Set(rows.map((row) => row.model))).sort((left, right) => left.localeCompare(right))
@@ -336,11 +344,16 @@ export default function ModularHomeQuoteReview() {
     setToast(null);
 
     try {
-      const result = await updateModularHomeQuoteAdminStatus(row.id, status);
+      const noteToSave = selectedRow?.id === row.id ? internalNoteDraft : row.internalNote;
+      const result = await updateModularHomeQuoteAdminStatus(row.id, status, noteToSave);
       setRows((current) => current.map((entry) => (
-        entry.id === row.id ? { ...entry, status: result.status } : entry
+        entry.id === row.id ? { ...entry, internalNote: result.internalNote, status: result.status } : entry
       )));
-      setSelectedRow((current) => current?.id === row.id ? { ...current, status: result.status } : current);
+      setSelectedRow((current) => current?.id === row.id ? {
+        ...current,
+        internalNote: result.internalNote,
+        status: result.status,
+      } : current);
       setToast({ type: 'success', text: `Quote marked ${result.status}.` });
     } catch (updateError) {
       setToast({ type: 'error', text: `Could not update status: ${formatRequestError(updateError)}` });
@@ -602,6 +615,32 @@ export default function ModularHomeQuoteReview() {
               <div style={{ background: 'rgba(2, 6, 23, 0.42)', border: '1px solid rgba(148, 163, 184, 0.14)', borderRadius: '16px', padding: '13px' }}>
                 <div style={{ color: '#94a3b8', fontSize: '0.68rem', fontWeight: 950, letterSpacing: '0.08em', textTransform: 'uppercase' }}>Message</div>
                 <p style={{ color: '#e2e8f0', lineHeight: 1.55, margin: '8px 0 0', whiteSpace: 'pre-wrap' }}>{selectedRow.message}</p>
+              </div>
+              <div style={{ background: 'rgba(2, 6, 23, 0.42)', border: '1px solid rgba(148, 163, 184, 0.14)', borderRadius: '16px', padding: '13px' }}>
+                <div style={{ color: '#94a3b8', fontSize: '0.68rem', fontWeight: 950, letterSpacing: '0.08em', textTransform: 'uppercase' }}>Internal note</div>
+                {useProtectedBackend && selectedRow.source === 'backend-staging' ? (
+                  <>
+                    <textarea
+                      maxLength={2000}
+                      onChange={(event) => setInternalNoteDraft(event.target.value)}
+                      placeholder="Add admin-only sales note before changing status..."
+                      style={{
+                        ...filterInputStyle,
+                        minHeight: '92px',
+                        resize: 'vertical',
+                        width: '100%',
+                      }}
+                      value={internalNoteDraft}
+                    />
+                    <p style={{ color: '#94a3b8', fontSize: '0.76rem', lineHeight: 1.45, margin: '8px 0 0' }}>
+                      Saved with the next status update. This note is shown only in protected admin review.
+                    </p>
+                  </>
+                ) : (
+                  <p style={{ color: '#e2e8f0', lineHeight: 1.55, margin: '8px 0 0', whiteSpace: 'pre-wrap' }}>
+                    {selectedRow.internalNote || 'No internal note.'}
+                  </p>
+                )}
               </div>
             </div>
           ) : (
