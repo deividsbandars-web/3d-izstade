@@ -41,6 +41,28 @@ export async function serverApiGet<T>(path: string): Promise<T> {
   return await response.json() as T;
 }
 
+export async function serverApiGetText(path: string): Promise<{
+  content: string;
+  contentType: string;
+}> {
+  const headers = await buildServerApiHeaders(false);
+  headers.Accept = 'text/csv, application/json;q=0.9, text/plain;q=0.8, */*;q=0.7';
+
+  const response = await fetch(buildServerApiUrl(path), {
+    headers,
+    method: 'GET',
+  });
+
+  if (!response.ok) {
+    throw new Error(`SERVER_API_HTTP_${response.status}`);
+  }
+
+  return {
+    content: await response.text(),
+    contentType: response.headers.get('content-type') || 'text/plain;charset=utf-8',
+  };
+}
+
 export async function serverApiPost<T>(path: string, body: unknown): Promise<T> {
   const response = await fetch(buildServerApiUrl(path), {
     method: 'POST',

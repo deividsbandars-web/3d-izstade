@@ -331,7 +331,7 @@ export function ModularHomeQuoteForm({ config, estimate, isTouchDevice = false }
           marginTop: '8px',
         }}
       >
-        Attached: {estimate.baseModel} / {estimate.selectedOptions.layoutVariant} / {estimate.selectedOptions.facade} / {estimate.selectedOptions.roof} / {estimate.selectedOptions.terrace} / {estimate.selectedOptions.finishLevel} / {estimate.selectedOptions.windowPlacement} / {estimate.selectedOptions.doorPlacement} / {formatHomeEstimateEur(estimate.estimatedTotal)}
+        Attached: {estimate.baseModel} / {estimate.selectedOptions.layoutVariant} / {estimate.selectedOptions.facade} / {estimate.selectedOptions.roof} / {estimate.selectedOptions.terrace} / {estimate.selectedOptions.finishLevel} / {estimate.selectedOptions.furniturePackage} / sofa {estimate.selectedOptions.sofa} / table {estimate.selectedOptions.table} / bed {estimate.selectedOptions.bed} / kitchen {estimate.selectedOptions.kitchenLine} / wardrobe {estimate.selectedOptions.wardrobePlaceholder} / {estimate.selectedOptions.windowPlacement} / {estimate.selectedOptions.doorPlacement} / {estimate.selectedOptions.facadeBoardOrientation} / {estimate.selectedOptions.facadeBoardWidth} / {estimate.selectedOptions.roofEdgeColor} / {estimate.selectedOptions.windowFrameColor} / {estimate.selectedOptions.interiorWallFinish} / {estimate.selectedOptions.floorFinish} / {formatHomeEstimateEur(estimate.estimatedTotal)}
       </div>
 
       <form

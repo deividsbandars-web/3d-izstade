@@ -193,10 +193,17 @@ export function calculateModularHomeQuantities(
       saunaCoreCount += quantity;
     }
 
-    if (config.finishLevel === 'standard' || config.finishLevel === 'premium' || module.id === 'sauna-core-module') {
-      if (module.type === 'living' || module.type === 'bedroom' || module.id === 'sauna-core-module') {
+    if (config.furniturePackage === 'standardFurniture' || config.furniturePackage === 'premiumFurniture') {
+      if ((module.type === 'living' && (config.sofa === 'enabled' || config.table === 'enabled' || config.kitchenLine === 'enabled'))
+        || (module.type === 'bedroom' && (config.bed === 'enabled' || config.wardrobePlaceholder === 'enabled'))) {
         furniturePackageItemCount += quantity;
       }
+    } else if (config.furniturePackage === 'kitchenPackage' && module.type === 'living' && (config.table === 'enabled' || config.kitchenLine === 'enabled')) {
+      furniturePackageItemCount += quantity;
+    } else if (config.furniturePackage === 'bathroomPackage' && module.type === 'bathroomCore') {
+      furniturePackageItemCount += quantity;
+    } else if (config.furniturePackage === 'saunaPackage' && module.id === 'sauna-core-module') {
+      furniturePackageItemCount += quantity;
     }
   }
 

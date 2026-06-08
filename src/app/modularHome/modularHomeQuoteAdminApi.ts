@@ -1,4 +1,4 @@
-import { serverApiGet, serverApiPatch } from '../../services/serverApi';
+import { serverApiGet, serverApiGetText, serverApiPatch } from '../../services/serverApi';
 import {
   normalizeModularHomeQuoteAdminRow,
   type ModularHomeQuoteReviewRow,
@@ -6,6 +6,7 @@ import {
 } from '../../modules/expo/runtime/modularHome/modularHomeQuoteReview';
 
 export type ModularHomeQuoteAdminListOptions = {
+  format?: string;
   limit?: number;
   status?: string;
 };
@@ -13,6 +14,15 @@ export type ModularHomeQuoteAdminListOptions = {
 export type ModularHomeQuoteAdminListResult = {
   rows: ModularHomeQuoteReviewRow[];
   totalCount: number;
+};
+
+export type ModularHomeQuoteAdminExportFormat = 'csv' | 'json';
+
+export type ModularHomeQuoteAdminExportResult = {
+  content: string;
+  contentType: string;
+  filename: string;
+  format: ModularHomeQuoteAdminExportFormat;
 };
 
 type ModularHomeQuoteAdminListResponse = {
@@ -55,6 +65,10 @@ function buildQuoteAdminQuery(options: ModularHomeQuoteAdminListOptions = {}) {
 
   if (options.status && options.status !== 'all') {
     params.set('status', options.status);
+  }
+
+  if (options.format) {
+    params.set('format', options.format);
   }
 
   const query = params.toString();
@@ -114,6 +128,23 @@ export async function updateModularHomeQuoteAdminStatus(
     internalNote: response.quote?.internal_note ?? internalNote ?? '',
     status: normalizedStatus,
     updatedBy: response.updatedBy ?? null,
+  };
+}
+
+export async function exportModularHomeQuoteAdminRows(
+  format: ModularHomeQuoteAdminExportFormat,
+  options: ModularHomeQuoteAdminListOptions = {},
+): Promise<ModularHomeQuoteAdminExportResult> {
+  const response = await serverApiGetText(
+    `/api/modular-home/quotes/export${buildQuoteAdminQuery({ ...options, format })}`,
+  );
+  const today = new Date().toISOString().slice(0, 10);
+
+  return {
+    content: response.content,
+    contentType: response.contentType,
+    filename: `modular-home-quotes-${today}.${format}`,
+    format,
   };
 }
 

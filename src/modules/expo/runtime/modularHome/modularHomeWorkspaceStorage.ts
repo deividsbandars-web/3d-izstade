@@ -112,14 +112,26 @@ export type ModularHomeProjectComparisonSideSummary = {
   doorPlacement: string;
   estimateTotal: number;
   facade: string;
+  facadeBoardOrientation: string;
+  facadeBoardWidth: string;
   finishLevel: string;
+  floorFinish: string;
+  furniturePackage: string;
+  sofa: string;
+  table: string;
+  bed: string;
+  kitchenLine: string;
+  wardrobePlaceholder: string;
+  interiorWallFinish: string;
   layoutVariant: string;
   moduleCount: number;
   product: string;
   projectId: string;
   projectName: string;
   roof: string;
+  roofEdgeColor: string;
   terrace: string;
+  windowFrameColor: string;
   windowPackage: string;
   windowPlacement: string;
 };
@@ -313,11 +325,23 @@ const COMPARE_OPTION_LABELS = {
   doorPackage: 'Door package',
   doorPlacement: 'Door placement',
   facade: 'Facade',
+  facadeBoardOrientation: 'Facade board orientation',
+  facadeBoardWidth: 'Facade board width',
   finishLevel: 'Finish level',
+  floorFinish: 'Floor finish',
+  furniturePackage: 'Furniture package',
+  sofa: 'Sofa',
+  table: 'Table',
+  bed: 'Bed',
+  kitchenLine: 'Kitchen line',
+  wardrobePlaceholder: 'Wardrobe placeholder',
+  interiorWallFinish: 'Interior wall finish',
   layoutVariant: 'Layout variant',
   roof: 'Roof',
+  roofEdgeColor: 'Roof edge color',
   template: 'Template',
   terrace: 'Terrace',
+  windowFrameColor: 'Window frame color',
   windowPackage: 'Window package',
   windowPlacement: 'Window placement',
 } as const satisfies Partial<Record<keyof ModularHomeConfiguratorState, string>>;
@@ -622,14 +646,26 @@ function createSideSummary(
     doorPlacement: configSummary.doorPlacement,
     estimateTotal: project.estimateTotal,
     facade: configSummary.facade,
+    facadeBoardOrientation: configSummary.facadeBoardOrientation,
+    facadeBoardWidth: configSummary.facadeBoardWidth,
     finishLevel: configSummary.finishLevel,
+    floorFinish: configSummary.floorFinish,
+    furniturePackage: configSummary.furniturePackage,
+    sofa: configSummary.sofa,
+    table: configSummary.table,
+    bed: configSummary.bed,
+    kitchenLine: configSummary.kitchenLine,
+    wardrobePlaceholder: configSummary.wardrobePlaceholder,
+    interiorWallFinish: configSummary.interiorWallFinish,
     layoutVariant: configSummary.layoutVariant,
     moduleCount,
     product: getProductLabel(project),
     projectId: project.projectId,
     projectName: project.projectName,
     roof: configSummary.roof,
+    roofEdgeColor: configSummary.roofEdgeColor,
     terrace: configSummary.terrace,
+    windowFrameColor: configSummary.windowFrameColor,
     windowPackage: configSummary.windowPackage,
     windowPlacement: configSummary.windowPlacement,
   };

@@ -13,10 +13,22 @@ export type ModularHomeQuoteReviewRow = {
   config: {
     doorPlacement: string;
     facade: string;
+    facadeBoardOrientation: string;
+    facadeBoardWidth: string;
     finishLevel: string;
+    floorFinish: string;
+    furniturePackage: string;
+    sofa: string;
+    table: string;
+    bed: string;
+    kitchenLine: string;
+    wardrobePlaceholder: string;
+    interiorWallFinish: string;
     layoutVariant: string;
     roof: string;
+    roofEdgeColor: string;
     terrace: string;
+    windowFrameColor: string;
     windowPlacement: string;
   };
   contact: {
@@ -55,10 +67,22 @@ const MOCK_QUOTE_ROWS = [
     budgetRange: '100k-150k',
     config: {
       facade: 'Natural timber',
+      facadeBoardOrientation: 'Horizontal boards',
+      facadeBoardWidth: 'Standard boards',
       finishLevel: 'Premium',
+      floorFinish: 'Oak laminate floor',
+      furniturePackage: 'Premium furniture',
+      sofa: 'Sofa on',
+      table: 'Table on',
+      bed: 'Bed on',
+      kitchenLine: 'Kitchen line on',
+      wardrobePlaceholder: 'Wardrobe on',
+      interiorWallFinish: 'Warm panel walls',
       layoutVariant: 'Two bedroom',
       roof: 'Pitched',
+      roofEdgeColor: 'Graphite roof edge',
       terrace: 'Extended terrace',
+      windowFrameColor: 'Graphite frames',
       windowPlacement: 'Front panoramic placement',
       doorPlacement: 'Terrace-facing placement',
     },
@@ -86,10 +110,22 @@ const MOCK_QUOTE_ROWS = [
     budgetRange: '50k-100k',
     config: {
       facade: 'Dark thermo wood',
+      facadeBoardOrientation: 'Vertical boards',
+      facadeBoardWidth: 'Narrow boards',
       finishLevel: 'Standard',
+      floorFinish: 'Plywood floor',
+      furniturePackage: 'Sauna package',
+      sofa: 'Sofa off',
+      table: 'Table on',
+      bed: 'Bed off',
+      kitchenLine: 'Kitchen line off',
+      wardrobePlaceholder: 'Wardrobe off',
+      interiorWallFinish: 'Plywood walls',
       layoutVariant: 'Sauna + rest room',
       roof: 'Flat',
+      roofEdgeColor: 'Graphite roof edge',
       terrace: 'Front deck',
+      windowFrameColor: 'Timber frames',
       windowPlacement: 'Side privacy placement',
       doorPlacement: 'Front entry placement',
     },
@@ -183,10 +219,22 @@ export function normalizeModularHomeQuoteReviewRow(
     budgetRange: normalizeText(record.budgetRange, 'not-sure'),
     config: {
       facade: normalizeText(selectedOptions.facade, normalizeText(config.facade, 'Unknown facade')),
+      facadeBoardOrientation: normalizeText(selectedOptions.facadeBoardOrientation, normalizeText(config.facadeBoardOrientation, 'Unknown board orientation')),
+      facadeBoardWidth: normalizeText(selectedOptions.facadeBoardWidth, normalizeText(config.facadeBoardWidth, 'Unknown board width')),
       finishLevel: normalizeText(selectedOptions.finishLevel, normalizeText(config.finishLevel, 'Unknown finish')),
+      floorFinish: normalizeText(selectedOptions.floorFinish, normalizeText(config.floorFinish, 'Unknown floor finish')),
+      furniturePackage: normalizeText(selectedOptions.furniturePackage, normalizeText(config.furniturePackage, 'Unknown furniture package')),
+      sofa: normalizeText(selectedOptions.sofa, normalizeText(config.sofa, 'Unknown sofa toggle')),
+      table: normalizeText(selectedOptions.table, normalizeText(config.table, 'Unknown table toggle')),
+      bed: normalizeText(selectedOptions.bed, normalizeText(config.bed, 'Unknown bed toggle')),
+      kitchenLine: normalizeText(selectedOptions.kitchenLine, normalizeText(config.kitchenLine, 'Unknown kitchen line toggle')),
+      wardrobePlaceholder: normalizeText(selectedOptions.wardrobePlaceholder, normalizeText(config.wardrobePlaceholder, 'Unknown wardrobe toggle')),
+      interiorWallFinish: normalizeText(selectedOptions.interiorWallFinish, normalizeText(config.interiorWallFinish, 'Unknown wall finish')),
       layoutVariant: normalizeText(selectedOptions.layoutVariant, normalizeText(config.layoutVariant, 'Unknown layout')),
       roof: normalizeText(selectedOptions.roof, normalizeText(config.roof, 'Unknown roof')),
+      roofEdgeColor: normalizeText(selectedOptions.roofEdgeColor, normalizeText(config.roofEdgeColor, 'Unknown roof edge')),
       terrace: normalizeText(selectedOptions.terrace, normalizeText(config.terrace, 'Unknown terrace')),
+      windowFrameColor: normalizeText(selectedOptions.windowFrameColor, normalizeText(config.windowFrameColor, 'Unknown window frame')),
       windowPlacement: normalizeText(selectedOptions.windowPlacement, normalizeText(config.windowPlacement, 'Unknown window placement')),
       doorPlacement: normalizeText(selectedOptions.doorPlacement, normalizeText(config.doorPlacement, 'Unknown door placement')),
     },
@@ -228,10 +276,22 @@ export function normalizeModularHomeQuoteAdminRow(value: unknown): ModularHomeQu
     budgetRange: normalizeText(requester.budgetRange, 'not-sure'),
     config: {
       facade: normalizeText(config.facade, 'Unknown facade'),
+      facadeBoardOrientation: normalizeText(config.facadeBoardOrientation, 'Unknown board orientation'),
+      facadeBoardWidth: normalizeText(config.facadeBoardWidth, 'Unknown board width'),
       finishLevel: normalizeText(config.finishLevel, 'Unknown finish'),
+      floorFinish: normalizeText(config.floorFinish, 'Unknown floor finish'),
+      furniturePackage: normalizeText(config.furniturePackage, 'Unknown furniture package'),
+      sofa: normalizeText(config.sofa, 'Unknown sofa toggle'),
+      table: normalizeText(config.table, 'Unknown table toggle'),
+      bed: normalizeText(config.bed, 'Unknown bed toggle'),
+      kitchenLine: normalizeText(config.kitchenLine, 'Unknown kitchen line toggle'),
+      wardrobePlaceholder: normalizeText(config.wardrobePlaceholder, 'Unknown wardrobe toggle'),
+      interiorWallFinish: normalizeText(config.interiorWallFinish, 'Unknown wall finish'),
       layoutVariant: normalizeText(config.layoutVariant, 'Unknown layout'),
       roof: normalizeText(config.roof, 'Unknown roof'),
+      roofEdgeColor: normalizeText(config.roofEdgeColor, 'Unknown roof edge'),
       terrace: normalizeText(config.terrace, 'Unknown terrace'),
+      windowFrameColor: normalizeText(config.windowFrameColor, 'Unknown window frame'),
       windowPlacement: normalizeText(config.windowPlacement, 'Unknown window placement'),
       doorPlacement: normalizeText(config.doorPlacement, 'Unknown door placement'),
     },
@@ -310,10 +370,22 @@ export function serializeModularHomeQuoteReviewCsv(rows: readonly ModularHomeQuo
     'Target Build Date',
     'Budget Range',
     'Facade',
+    'Facade Board Orientation',
+    'Facade Board Width',
     'Roof',
+    'Roof Edge Color',
     'Terrace',
     'Finish Level',
+    'Interior Wall Finish',
+    'Floor Finish',
+    'Furniture Package',
+    'Sofa',
+    'Table',
+    'Bed',
+    'Kitchen Line',
+    'Wardrobe Placeholder',
     'Window Placement',
+    'Window Frame Color',
     'Door Placement',
     'Message',
     'Internal Note',
@@ -332,10 +404,22 @@ export function serializeModularHomeQuoteReviewCsv(rows: readonly ModularHomeQuo
     row.targetBuildDate,
     row.budgetRange,
     row.config.facade,
+    row.config.facadeBoardOrientation,
+    row.config.facadeBoardWidth,
     row.config.roof,
+    row.config.roofEdgeColor,
     row.config.terrace,
     row.config.finishLevel,
+    row.config.interiorWallFinish,
+    row.config.floorFinish,
+    row.config.furniturePackage,
+    row.config.sofa,
+    row.config.table,
+    row.config.bed,
+    row.config.kitchenLine,
+    row.config.wardrobePlaceholder,
     row.config.windowPlacement,
+    row.config.windowFrameColor,
     row.config.doorPlacement,
     row.message,
     row.internalNote,

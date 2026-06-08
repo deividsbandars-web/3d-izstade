@@ -12,6 +12,7 @@ assert.equal(accessPlan.authGuard, 'authMiddleware');
 assert.equal(accessPlan.roleCheck, 'adminOnly');
 assert.equal(accessPlan.publicExposure, false);
 assert.equal(accessPlan.storageTable, 'modular_home_quote_requests');
+assert.deepEqual(accessPlan.statusWorkflow, ['new', 'contacted', 'quoted', 'won', 'lost']);
 assert.ok(accessPlan.adminRoutes.some((route) => route.path === '/api/modular-home/quotes'));
 assert.ok(accessPlan.adminRoutes.some((route) => route.path === '/api/modular-home/quotes/:quoteId'));
 assert.ok(accessPlan.adminRoutes.some((route) => route.path === '/api/modular-home/quotes/:quoteId/status'));
@@ -49,6 +50,27 @@ assert.equal(
 
 const csv = serializeModularHomeQuoteAdminCsv([
   {
+    config: {
+      doorPlacement: 'terraceFacing',
+      facade: 'darkThermoWood',
+      facadeBoardOrientation: 'vertical',
+      facadeBoardWidth: 'narrow',
+      finishLevel: 'premium',
+      floorFinish: 'oakLaminate',
+      furniturePackage: 'premiumFurniture',
+      sofa: 'enabled',
+      table: 'enabled',
+      bed: 'enabled',
+      kitchenLine: 'enabled',
+      wardrobePlaceholder: 'enabled',
+      interiorWallFinish: 'warmPanel',
+      layoutVariant: 'oneBedroom',
+      roof: 'pitched',
+      roofEdgeColor: 'graphite',
+      terrace: 'extendedTerrace',
+      windowFrameColor: 'graphite',
+      windowPlacement: 'frontPanoramic',
+    },
     created_at: '2026-06-05T12:00:00.000Z',
     estimate: { estimatedTotal: 68000 },
     id: 'quote-1',
@@ -57,8 +79,15 @@ const csv = serializeModularHomeQuoteAdminCsv([
     requester: {
       countryCity: 'Latvia / Riga',
       email: 'client@example.com',
+      landOwned: 'yes',
+      message: 'Needs premium walkthrough.',
       name: 'Client Name',
       phone: '+371 20000000',
+      budgetRange: '50k-100k',
+      targetBuildDate: '6-12-months',
+    },
+    source: {
+      path: '/expo-3d?homeDemo=1&homeQuoteBackend=1',
     },
     status: 'new',
   },
@@ -68,3 +97,6 @@ assert.match(csv, /Compact Timber 40/);
 assert.match(csv, /client@example.com/);
 assert.match(csv, /Ask about foundation scope/);
 assert.match(csv, /68000/);
+assert.match(csv, /frontPanoramic/);
+assert.match(csv, /premiumFurniture/);
+assert.match(csv, /Needs premium walkthrough/);

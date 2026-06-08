@@ -512,11 +512,19 @@ function createSummaryText(
     `- Furniture packages: ${estimate.quantities.furniturePackageItemCount}`,
     `Layout variant: ${estimate.selectedOptions.layoutVariant}`,
     `Facade: ${estimate.selectedOptions.facade}`,
+    `Facade board orientation: ${estimate.selectedOptions.facadeBoardOrientation}`,
+    `Facade board width: ${estimate.selectedOptions.facadeBoardWidth}`,
     `Roof: ${estimate.selectedOptions.roof}`,
+    `Roof edge color: ${estimate.selectedOptions.roofEdgeColor}`,
     `Terrace: ${estimate.selectedOptions.terrace}`,
     `Finish level: ${estimate.selectedOptions.finishLevel}`,
+    `Furniture package: ${estimate.selectedOptions.furniturePackage}`,
+    `Furniture toggles: sofa ${estimate.selectedOptions.sofa}, table ${estimate.selectedOptions.table}, bed ${estimate.selectedOptions.bed}, kitchen ${estimate.selectedOptions.kitchenLine}, wardrobe ${estimate.selectedOptions.wardrobePlaceholder}`,
+    `Interior wall finish: ${estimate.selectedOptions.interiorWallFinish}`,
+    `Floor finish: ${estimate.selectedOptions.floorFinish}`,
     `Window package: ${estimate.selectedOptions.windowPackage}`,
     `Window placement: ${estimate.selectedOptions.windowPlacement}`,
+    `Window frame color: ${estimate.selectedOptions.windowFrameColor}`,
     `Door package: ${estimate.selectedOptions.doorPackage}`,
     `Door placement: ${estimate.selectedOptions.doorPlacement}`,
     'Component BOM v2:',
@@ -536,24 +544,50 @@ function createSummaryText(
     `- Facade boarding: ${formatQuantityM2(manufacturingBom.facadeBoardAreaM2)} / ${formatQuantityLinearM(manufacturingBom.facadeBoardLinearM)}`,
     `- Roof cassette area: ${formatQuantityM2(manufacturingBom.roofCassetteAreaM2)}`,
     `- Floor cassette area: ${formatQuantityM2(manufacturingBom.floorCassetteAreaM2)}`,
+    `- Panel size groups: ${manufacturingBom.panelSizeGroups.length}`,
+    `- Board length groups: ${manufacturingBom.boardLengthGroups.length}`,
+    `- Hardware placeholders: ${manufacturingBom.fastenerHardwarePlaceholders.length}`,
     `- Waste factor: ${formatWasteFactor(manufacturingBom.totalWasteFactor)}`,
     'Panel groups:',
     ...manufacturingBom.panelGroups.map((group) => (
       `- ${group.label}: ${group.panelCount} panels, ${formatQuantityM2(group.areaM2)}, ${group.approximatePanelDimensions.join(' / ')}`
+    )),
+    'Cut-list readiness groups:',
+    ...manufacturingBom.panelSizeGroups.map((group) => (
+      `- Panel size: ${group.label}, ${group.panelCount} pcs, ${group.dimensions}, ${formatQuantityM2(group.areaM2)}`
+    )),
+    ...manufacturingBom.boardLengthGroups.map((group) => (
+      `- Board length: ${group.label}, ${group.quantity} pcs x ${group.lengthM}m, ${formatQuantityLinearM(group.linearM)}`
+    )),
+    ...manufacturingBom.fastenerHardwarePlaceholders.map((item) => (
+      `- Hardware placeholder: ${item.label}, ${item.quantity} ${item.unit}, applies to ${item.appliesTo}`
+    )),
+    ...manufacturingBom.wasteFactorsByMaterial.map((item) => (
+      `- Waste factor: ${item.label}, ${formatWasteFactor(item.wasteFactor)}, ${item.material}`
     )),
     'Window/door/terrace/interior schedules:',
     ...manufacturingBom.windowSchedule.map((item) => `- Window: ${item.label}, quantity ${item.quantity}, ${item.dimensions}`),
     ...manufacturingBom.doorSchedule.map((item) => `- Door: ${item.label}, quantity ${item.quantity}, ${item.dimensions}`),
     ...manufacturingBom.terraceDeckSchedule.map((item) => `- Terrace: ${item.label}, ${formatQuantityM2(item.areaM2 ?? item.quantity)}`),
     ...manufacturingBom.interiorFinishAreas.map((item) => `- Interior: ${item.label}, ${formatQuantityM2(item.areaM2 ?? item.quantity)}`),
+    ...manufacturingBom.productionBatchNotes.map((note) => `- Production batch note: ${note}`),
+    ...manufacturingBom.transportPackageNotes.map((note) => `- Transport package note: ${note}`),
     ...manufacturingBom.productionVerificationNotes.map((note) => `- Verification note: ${note}`),
     `- Layout variant: ${estimate.selectedOptions.layoutVariant}`,
     `- Facade package: ${estimate.selectedOptions.facade}`,
+    `- Facade board orientation: ${estimate.selectedOptions.facadeBoardOrientation}`,
+    `- Facade board width: ${estimate.selectedOptions.facadeBoardWidth}`,
     `- Roof package: ${estimate.selectedOptions.roof}`,
+    `- Roof edge color: ${estimate.selectedOptions.roofEdgeColor}`,
     `- Terrace package: ${estimate.selectedOptions.terrace}`,
     `- Finish package: ${estimate.selectedOptions.finishLevel}`,
+    `- Furniture package: ${estimate.selectedOptions.furniturePackage}`,
+    `- Furniture toggles: sofa ${estimate.selectedOptions.sofa}, table ${estimate.selectedOptions.table}, bed ${estimate.selectedOptions.bed}, kitchen ${estimate.selectedOptions.kitchenLine}, wardrobe ${estimate.selectedOptions.wardrobePlaceholder}`,
+    `- Interior wall finish: ${estimate.selectedOptions.interiorWallFinish}`,
+    `- Floor finish: ${estimate.selectedOptions.floorFinish}`,
     `- Window package: ${estimate.selectedOptions.windowPackage}`,
     `- Window placement: ${estimate.selectedOptions.windowPlacement}`,
+    `- Window frame color: ${estimate.selectedOptions.windowFrameColor}`,
     `- Door package: ${estimate.selectedOptions.doorPackage}`,
     `- Door placement: ${estimate.selectedOptions.doorPlacement}`,
     'Production readiness:',
@@ -610,11 +644,23 @@ export function ModularHomeProjectSummary({ config, estimate, isTouchDevice = fa
   const bomPackageRows = [
     ['Layout variant', estimate.selectedOptions.layoutVariant],
     ['Facade package', estimate.selectedOptions.facade],
+    ['Facade board orientation', estimate.selectedOptions.facadeBoardOrientation],
+    ['Facade board width', estimate.selectedOptions.facadeBoardWidth],
     ['Roof package', estimate.selectedOptions.roof],
+    ['Roof edge color', estimate.selectedOptions.roofEdgeColor],
     ['Terrace package', estimate.selectedOptions.terrace],
     ['Finish package', estimate.selectedOptions.finishLevel],
+    ['Furniture package', estimate.selectedOptions.furniturePackage],
+    ['Sofa', estimate.selectedOptions.sofa],
+    ['Table', estimate.selectedOptions.table],
+    ['Bed', estimate.selectedOptions.bed],
+    ['Kitchen line', estimate.selectedOptions.kitchenLine],
+    ['Wardrobe placeholder', estimate.selectedOptions.wardrobePlaceholder],
+    ['Interior wall finish', estimate.selectedOptions.interiorWallFinish],
+    ['Floor finish', estimate.selectedOptions.floorFinish],
     ['Window package', estimate.selectedOptions.windowPackage],
     ['Window placement', estimate.selectedOptions.windowPlacement],
+    ['Window frame color', estimate.selectedOptions.windowFrameColor],
     ['Door package', estimate.selectedOptions.doorPackage],
     ['Door placement', estimate.selectedOptions.doorPlacement],
   ] as const;
@@ -640,11 +686,18 @@ export function ModularHomeProjectSummary({ config, estimate, isTouchDevice = fa
     ['Build note', dimensions.buildCategoryNote],
     ['Layout', estimate.selectedOptions.layoutVariant],
     ['Facade', estimate.selectedOptions.facade],
+    ['Facade boards', `${estimate.selectedOptions.facadeBoardOrientation}, ${estimate.selectedOptions.facadeBoardWidth}`],
     ['Roof', estimate.selectedOptions.roof],
+    ['Roof edge', estimate.selectedOptions.roofEdgeColor],
     ['Terrace', estimate.selectedOptions.terrace],
     ['Finish', estimate.selectedOptions.finishLevel],
+    ['Furniture package', estimate.selectedOptions.furniturePackage],
+    ['Furniture toggles', `Sofa ${estimate.selectedOptions.sofa}, table ${estimate.selectedOptions.table}, bed ${estimate.selectedOptions.bed}, kitchen ${estimate.selectedOptions.kitchenLine}, wardrobe ${estimate.selectedOptions.wardrobePlaceholder}`],
+    ['Interior walls', estimate.selectedOptions.interiorWallFinish],
+    ['Floor finish', estimate.selectedOptions.floorFinish],
     ['Window package', estimate.selectedOptions.windowPackage],
     ['Window placement', estimate.selectedOptions.windowPlacement],
+    ['Window frames', estimate.selectedOptions.windowFrameColor],
     ['Door package', estimate.selectedOptions.doorPackage],
     ['Door placement', estimate.selectedOptions.doorPlacement],
     ['Subtotal', formatHomeEstimateEur(estimate.subtotal)],
@@ -678,7 +731,7 @@ export function ModularHomeProjectSummary({ config, estimate, isTouchDevice = fa
     <section
       aria-label={`${estimate.baseModel} printable project summary`}
       data-home-project-summary="true"
-      data-home-project-summary-config={`${config.template}:${config.layoutVariant}:${config.facade}:${config.roof}:${config.terrace}:${config.finishLevel}:${config.windowPlacement}:${config.doorPlacement}`}
+      data-home-project-summary-config={`${config.template}:${config.layoutVariant}:${config.facade}:${config.roof}:${config.terrace}:${config.finishLevel}:${config.windowPlacement}:${config.doorPlacement}:${config.facadeBoardOrientation}:${config.facadeBoardWidth}:${config.roofEdgeColor}:${config.windowFrameColor}:${config.interiorWallFinish}:${config.floorFinish}:${config.furniturePackage}:${config.sofa}:${config.table}:${config.bed}:${config.kitchenLine}:${config.wardrobePlaceholder}`}
       data-home-project-summary-id={identity.projectId}
       data-home-project-summary-print-ready="true"
       onClick={stopSummaryEvent}
@@ -1099,6 +1152,8 @@ export function ModularHomeProjectSummary({ config, estimate, isTouchDevice = fa
         data-home-project-summary-manufacturing-bom-panel-count={manufacturingBom.panelGroups.reduce((total, group) => total + group.panelCount, 0)}
         data-home-project-summary-manufacturing-bom-window-count={manufacturingBom.windowSchedule.reduce((total, item) => total + item.quantity, 0)}
         data-home-project-summary-manufacturing-bom-door-count={manufacturingBom.doorSchedule.reduce((total, item) => total + item.quantity, 0)}
+        data-home-project-summary-manufacturing-bom-board-count={manufacturingBom.boardLengthGroups.reduce((total, group) => total + group.quantity, 0)}
+        data-home-project-summary-manufacturing-bom-hardware-count={manufacturingBom.fastenerHardwarePlaceholders.reduce((total, item) => total + item.quantity, 0)}
         data-home-project-summary-print-card="true"
         style={{
           background: 'rgba(20, 83, 45, 0.18)',
@@ -1150,6 +1205,9 @@ export function ModularHomeProjectSummary({ config, estimate, isTouchDevice = fa
             ['Facade boards', formatQuantityLinearM(manufacturingBom.facadeBoardLinearM)],
             ['Roof cassettes', formatQuantityM2(manufacturingBom.roofCassetteAreaM2)],
             ['Floor cassettes', formatQuantityM2(manufacturingBom.floorCassetteAreaM2)],
+            ['Panel size groups', manufacturingBom.panelSizeGroups.length.toString()],
+            ['Board groups', manufacturingBom.boardLengthGroups.length.toString()],
+            ['Hardware sets', manufacturingBom.fastenerHardwarePlaceholders.length.toString()],
             ['Waste factor', formatWasteFactor(manufacturingBom.totalWasteFactor)],
           ] as const).map(([label, value]) => (
             <div
@@ -1200,6 +1258,12 @@ export function ModularHomeProjectSummary({ config, estimate, isTouchDevice = fa
             ['Door schedule', manufacturingBom.doorSchedule.map((item) => `${item.label}: ${item.quantity}`).join(' / ') || 'No doors'],
             ['Terrace deck schedule', manufacturingBom.terraceDeckSchedule.map((item) => `${item.label}: ${formatQuantityM2(item.areaM2 ?? item.quantity)}`).join(' / ') || 'No terrace deck'],
             ['Interior finish areas', manufacturingBom.interiorFinishAreas.map((item) => `${item.label}: ${formatQuantityM2(item.areaM2 ?? item.quantity)}`).join(' / ') || 'No interior finish'],
+            ['Panel size groups', manufacturingBom.panelSizeGroups.slice(0, 4).map((group) => `${group.label}: ${group.panelCount} pcs ${group.dimensions}`).join(' / ')],
+            ['Board length groups', manufacturingBom.boardLengthGroups.map((group) => `${group.label}: ${group.quantity} pcs x ${group.lengthM}m`).join(' / ')],
+            ['Hardware placeholders', manufacturingBom.fastenerHardwarePlaceholders.map((item) => `${item.label}: ${item.quantity} ${item.unit}`).join(' / ')],
+            ['Waste by material', manufacturingBom.wasteFactorsByMaterial.map((item) => `${item.label}: ${formatWasteFactor(item.wasteFactor)}`).join(' / ')],
+            ['Production batch notes', manufacturingBom.productionBatchNotes.slice(0, 2).join(' / ')],
+            ['Transport package notes', manufacturingBom.transportPackageNotes.slice(0, 2).join(' / ')],
           ] as const).map(([label, value]) => (
             <div
               key={label}

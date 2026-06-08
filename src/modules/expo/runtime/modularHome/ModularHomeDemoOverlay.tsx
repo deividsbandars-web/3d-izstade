@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { isHomeDemoEnabled } from './homeDemoFlags';
 import {
   MODULAR_HOME_VIEW_MODE_OPTIONS,
@@ -58,7 +58,22 @@ const HOME_DEMO_BULLETS = [
   'Request a build quote',
 ] as const;
 
-// TODO: split this dense preview HUD into tabs: Overview, Configure, Estimate, Quote, Summary, Projects and Upload.
+type ModularHomeDemoTabId = 'overview' | 'design' | 'estimate' | 'bom' | 'quote' | 'projects' | 'upload';
+
+const HOME_DEMO_TABS = [
+  { id: 'overview', label: 'Overview', helper: 'Model, scale and view mode' },
+  { id: 'design', label: 'Design', helper: 'Template and option controls' },
+  { id: 'estimate', label: 'Estimate', helper: 'Pre-quote pricing' },
+  { id: 'bom', label: 'BOM', helper: 'Module and manufacturing summary' },
+  { id: 'quote', label: 'Quote', helper: 'Local quote and print summary' },
+  { id: 'projects', label: 'Projects', helper: 'Saved local configurations' },
+  { id: 'upload', label: 'Upload', helper: 'Manual conversion workflow' },
+] as const satisfies readonly {
+  helper: string;
+  id: ModularHomeDemoTabId;
+  label: string;
+}[];
+
 type HomeConfigUiOption<Key extends keyof ModularHomeConfiguratorState = keyof ModularHomeConfiguratorState> = {
   constraintMessage: string;
   constraintStatus: ModularHomeConstraintStatus;
@@ -403,10 +418,22 @@ function createConfiguratorGroups(
     createOptionGroup(product, config, 'roof', 'Roof', 'roof'),
     createOptionGroup(product, config, 'terrace', 'Terrace', 'terrace'),
     createOptionGroup(product, config, 'finishLevel', 'Finish level', 'finish'),
+    createOptionGroup(product, config, 'furniturePackage', 'Furniture package', 'furniturePackage'),
+    createOptionGroup(product, config, 'sofa', 'Sofa', 'sofa'),
+    createOptionGroup(product, config, 'table', 'Table', 'table'),
+    createOptionGroup(product, config, 'bed', 'Bed', 'bed'),
+    createOptionGroup(product, config, 'kitchenLine', 'Kitchen line', 'kitchenLine'),
+    createOptionGroup(product, config, 'wardrobePlaceholder', 'Wardrobe placeholder', 'wardrobePlaceholder'),
+    createOptionGroup(product, config, 'interiorWallFinish', 'Interior wall finish', 'interiorWallFinish'),
+    createOptionGroup(product, config, 'floorFinish', 'Floor finish', 'floorFinish'),
     createOptionGroup(product, config, 'windowPackage', 'Window package', 'windowPackage'),
     createOptionGroup(product, config, 'windowPlacement', 'Window placement', 'windowPlacement'),
     createOptionGroup(product, config, 'doorPackage', 'Door package', 'doorPackage'),
     createOptionGroup(product, config, 'doorPlacement', 'Door placement', 'doorPlacement'),
+    createOptionGroup(product, config, 'facadeBoardOrientation', 'Facade board orientation', 'facadeBoardOrientation'),
+    createOptionGroup(product, config, 'facadeBoardWidth', 'Facade board width', 'facadeBoardWidth'),
+    createOptionGroup(product, config, 'roofEdgeColor', 'Roof edge color', 'roofEdgeColor'),
+    createOptionGroup(product, config, 'windowFrameColor', 'Window frame color', 'windowFrameColor'),
   ];
 }
 
@@ -417,6 +444,7 @@ function stopHomeDemoHudEvent(event: { stopPropagation: () => void }) {
 export function ModularHomeDemoOverlay({ isTouchDevice = false }: ModularHomeDemoOverlayProps) {
   const { config, reset, setConfig, setOption } = useModularHomeConfigurator();
   const { setViewMode, viewMode } = useModularHomeViewMode();
+  const [activeHomeDemoTab, setActiveHomeDemoTab] = useState<ModularHomeDemoTabId>('overview');
   const sharedConfigFromUrl = useMemo(() => decodeModularHomeConfigFromUrl(), []);
   const products = getModularHomeProducts();
   const product = getModularHomeProductForTemplate(config.template) ?? products[0];
@@ -449,12 +477,24 @@ export function ModularHomeDemoOverlay({ isTouchDevice = false }: ModularHomeDem
     ['Facade package', estimate.selectedOptions.facade],
     ['Layout variant', estimate.selectedOptions.layoutVariant],
     ['Roof package', estimate.selectedOptions.roof],
+    ['Roof edge color', estimate.selectedOptions.roofEdgeColor],
     ['Terrace package', estimate.selectedOptions.terrace],
     ['Finish package', estimate.selectedOptions.finishLevel],
+    ['Furniture package', estimate.selectedOptions.furniturePackage],
+    ['Sofa', estimate.selectedOptions.sofa],
+    ['Table', estimate.selectedOptions.table],
+    ['Bed', estimate.selectedOptions.bed],
+    ['Kitchen line', estimate.selectedOptions.kitchenLine],
+    ['Wardrobe placeholder', estimate.selectedOptions.wardrobePlaceholder],
+    ['Interior wall finish', estimate.selectedOptions.interiorWallFinish],
+    ['Floor finish', estimate.selectedOptions.floorFinish],
     ['Window package', estimate.selectedOptions.windowPackage],
     ['Window placement', estimate.selectedOptions.windowPlacement],
+    ['Window frame color', estimate.selectedOptions.windowFrameColor],
     ['Door package', estimate.selectedOptions.doorPackage],
     ['Door placement', estimate.selectedOptions.doorPlacement],
+    ['Facade board orientation', estimate.selectedOptions.facadeBoardOrientation],
+    ['Facade board width', estimate.selectedOptions.facadeBoardWidth],
   ] as const;
   const quantityRows = [
     ['gross-floor-area', 'Gross floor area', formatQuantityM2(estimate.quantities.grossFloorAreaM2)],
@@ -560,6 +600,58 @@ export function ModularHomeDemoOverlay({ isTouchDevice = false }: ModularHomeDem
         </div>
       </div>
 
+      <nav
+        aria-label="Modular Home Studio sections"
+        data-home-demo-tabs="true"
+        data-home-demo-active-tab={activeHomeDemoTab}
+        style={{
+          background: 'rgba(2, 6, 23, 0.28)',
+          border: '1px solid rgba(251, 191, 36, 0.18)',
+          borderRadius: isTouchDevice ? '14px' : '16px',
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: '6px',
+          marginTop: isTouchDevice ? '10px' : '12px',
+          padding: isTouchDevice ? '7px' : '8px',
+        }}
+      >
+        {HOME_DEMO_TABS.map((tab) => {
+          const selected = activeHomeDemoTab === tab.id;
+
+          return (
+            <button
+              key={tab.id}
+              type="button"
+              aria-selected={selected}
+              data-home-demo-tab={tab.id}
+              data-home-demo-tab-active={selected ? 'true' : 'false'}
+              title={tab.helper}
+              onClick={(event) => {
+                event.stopPropagation();
+                setActiveHomeDemoTab(tab.id);
+              }}
+              style={{
+                background: selected ? 'linear-gradient(135deg, rgba(251, 191, 36, 0.3), rgba(34, 197, 94, 0.17))' : 'rgba(15, 23, 42, 0.56)',
+                border: selected ? '1px solid rgba(251, 191, 36, 0.52)' : '1px solid rgba(255, 255, 255, 0.12)',
+                borderRadius: '999px',
+                color: selected ? '#fff7ed' : '#cbd5e1',
+                cursor: 'pointer',
+                font: 'inherit',
+                fontSize: isTouchDevice ? '0.56rem' : '0.6rem',
+                fontWeight: selected ? 950 : 850,
+                lineHeight: 1,
+                padding: isTouchDevice ? '7px 8px' : '8px 10px',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {tab.label}
+            </button>
+          );
+        })}
+      </nav>
+
+      {activeHomeDemoTab === 'overview' ? (
+        <>
       <section
         aria-label={`${product.name} home preview`}
         data-home-demo-info-card="true"
@@ -812,7 +904,7 @@ export function ModularHomeDemoOverlay({ isTouchDevice = false }: ModularHomeDem
             marginTop: '5px',
           }}
         >
-          Switch between exterior, cutaway and floorplan views to inspect the layout.
+          Switch between exterior, cutaway, interior and floorplan views to inspect the layout.
         </div>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: isTouchDevice ? '9px' : '10px' }}>
           {MODULAR_HOME_VIEW_MODE_OPTIONS.map((option) => {
@@ -984,8 +1076,49 @@ export function ModularHomeDemoOverlay({ isTouchDevice = false }: ModularHomeDem
         </section>
       ) : null}
 
-      <ModularHomeProjectUploadPlaceholder isTouchDevice={isTouchDevice} />
+      <div style={{ display: 'grid', gap: '7px', marginTop: isTouchDevice ? '10px' : '12px' }}>
+        {HOME_DEMO_BULLETS.map((bullet) => (
+          <div
+            key={bullet}
+            data-home-demo-bullet={bullet}
+            style={{
+              alignItems: 'center',
+              background: 'rgba(15, 23, 42, 0.54)',
+              border: '1px solid rgba(251, 191, 36, 0.18)',
+              borderRadius: '12px',
+              color: '#ffedd5',
+              display: 'grid',
+              fontSize: isTouchDevice ? '0.64rem' : '0.69rem',
+              fontWeight: 850,
+              gap: '9px',
+              gridTemplateColumns: '8px 1fr',
+              lineHeight: 1.2,
+              padding: isTouchDevice ? '7px 9px' : '8px 10px',
+            }}
+          >
+            <span
+              aria-hidden="true"
+              style={{
+                background: 'linear-gradient(135deg, #fbbf24, #22c55e)',
+                borderRadius: '999px',
+                display: 'block',
+                height: '8px',
+                width: '8px',
+              }}
+            />
+            <span>{bullet}</span>
+          </div>
+        ))}
+      </div>
+        </>
+      ) : null}
 
+      {activeHomeDemoTab === 'upload' ? (
+        <ModularHomeProjectUploadPlaceholder isTouchDevice={isTouchDevice} />
+      ) : null}
+
+      {activeHomeDemoTab === 'design' ? (
+        <>
       <section
         aria-label={`${product.name} configurator`}
         data-home-configurator-panel="true"
@@ -1185,7 +1318,11 @@ export function ModularHomeDemoOverlay({ isTouchDevice = false }: ModularHomeDem
             paddingTop: isTouchDevice ? '9px' : '10px',
           }}
         >
-          Selected: {configSummary.product} / {configSummary.layoutVariant} / {configSummary.facade} / {configSummary.roof} / {configSummary.terrace} / {configSummary.finishLevel} / {configSummary.windowPlacement} / {configSummary.doorPlacement}
+          Selected: {configSummary.product} / {configSummary.layoutVariant} / {configSummary.facade} / {configSummary.roof} / {configSummary.terrace} / {configSummary.finishLevel}
+          <br />
+          Details: {configSummary.facadeBoardOrientation} / {configSummary.facadeBoardWidth} / {configSummary.roofEdgeColor} / {configSummary.windowFrameColor} / {configSummary.interiorWallFinish} / {configSummary.floorFinish}
+          <br />
+          Interior: {configSummary.furniturePackage} / sofa {configSummary.sofa} / table {configSummary.table} / bed {configSummary.bed} / kitchen {configSummary.kitchenLine} / wardrobe {configSummary.wardrobePlaceholder}
         </div>
 
         {visibleProductionConstraints.length > 0 ? (
@@ -1265,15 +1402,179 @@ export function ModularHomeDemoOverlay({ isTouchDevice = false }: ModularHomeDem
         isTouchDevice={isTouchDevice}
         viewMode={viewMode}
       />
+        </>
+      ) : null}
 
-      <ModularHomeProjectWorkspace
-        config={config}
-        estimate={estimate}
-        isTouchDevice={isTouchDevice}
-        onLoadProject={setConfig}
-        productId={product.id}
-      />
+      {activeHomeDemoTab === 'projects' ? (
+        <ModularHomeProjectWorkspace
+          config={config}
+          estimate={estimate}
+          isTouchDevice={isTouchDevice}
+          onLoadProject={setConfig}
+          productId={product.id}
+        />
+      ) : null}
 
+      {activeHomeDemoTab === 'bom' ? (
+        <section
+          aria-label={`${template.name} module and manufacturing BOM`}
+          data-home-bom-tab-panel="true"
+          data-home-bom-tab-component-count={componentBom.componentCount}
+          data-home-bom-tab-module-count={componentBom.moduleCount}
+          data-home-bom-tab-manufacturing-panel-count={manufacturingBom.panelGroups.reduce((total, group) => total + group.panelCount, 0)}
+          data-home-bom-tab-manufacturing-board-length-count={manufacturingBom.boardLengthGroups.reduce((total, group) => total + group.quantity, 0)}
+          data-home-bom-tab-manufacturing-hardware-count={manufacturingBom.fastenerHardwarePlaceholders.reduce((total, item) => total + item.quantity, 0)}
+          style={{
+            background: 'linear-gradient(180deg, rgba(20, 83, 45, 0.42), rgba(2, 6, 23, 0.62))',
+            border: '1px solid rgba(134, 239, 172, 0.24)',
+            borderRadius: isTouchDevice ? '15px' : '17px',
+            display: 'grid',
+            gap: isTouchDevice ? '9px' : '10px',
+            marginTop: isTouchDevice ? '10px' : '12px',
+            padding: isTouchDevice ? '10px' : '12px',
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', alignItems: 'start' }}>
+            <div>
+              <div style={{ color: '#86efac', fontSize: '0.58rem', fontWeight: 950, letterSpacing: '0.14em', textTransform: 'uppercase' }}>
+                BOM workspace
+              </div>
+              <div style={{ color: '#ecfdf5', fontSize: isTouchDevice ? '0.8rem' : '0.88rem', fontWeight: 950, lineHeight: 1.08, marginTop: '4px' }}>
+                Module package and manufacturing preview
+              </div>
+            </div>
+            <div style={{ color: '#fef3c7', fontSize: isTouchDevice ? '0.72rem' : '0.78rem', fontWeight: 950, textAlign: 'right', whiteSpace: 'nowrap' }}>
+              {formatHomeEstimateEur(componentBom.subtotal)}
+            </div>
+          </div>
+
+          <div style={{ color: '#bbf7d0', fontSize: isTouchDevice ? '0.56rem' : '0.6rem', fontWeight: 800, lineHeight: 1.28 }}>
+            {manufacturingBom.disclaimer}
+          </div>
+
+          <div style={{ display: 'grid', gap: '6px', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))' }}>
+            {([
+              ['Modules', componentBom.moduleCount.toString()],
+              ['Components', componentBom.componentCount.toString()],
+              ['Facade boards', formatQuantityLinearM(manufacturingBom.facadeBoardLinearM)],
+              ['Roof cassettes', formatQuantityM2(manufacturingBom.roofCassetteAreaM2)],
+              ['Floor cassettes', formatQuantityM2(manufacturingBom.floorCassetteAreaM2)],
+              ['Waste factor', formatWasteFactor(manufacturingBom.totalWasteFactor)],
+            ] as const).map(([label, value]) => (
+              <div
+                key={label}
+                data-home-bom-tab-total={`${label}:${value}`}
+                style={{
+                  background: 'rgba(2, 6, 23, 0.26)',
+                  border: '1px solid rgba(134, 239, 172, 0.14)',
+                  borderRadius: '10px',
+                  padding: isTouchDevice ? '6px 7px' : '7px 8px',
+                }}
+              >
+                <div style={{ color: '#86efac', fontSize: '0.5rem', fontWeight: 950, letterSpacing: '0.08em', textTransform: 'uppercase' }}>{label}</div>
+                <div style={{ color: '#dcfce7', fontSize: isTouchDevice ? '0.58rem' : '0.62rem', fontWeight: 920, marginTop: '3px' }}>{value}</div>
+              </div>
+            ))}
+          </div>
+
+          <div style={{ display: 'grid', gap: '6px' }}>
+            {componentBom.groups.map((group) => (
+              <div
+                key={group.category}
+                data-home-bom-tab-component-group={`${group.category}:${group.quantity}:${group.subtotal}`}
+                style={{
+                  background: 'rgba(15, 23, 42, 0.42)',
+                  border: '1px solid rgba(148, 163, 184, 0.12)',
+                  borderRadius: '10px',
+                  display: 'grid',
+                  gap: '4px',
+                  padding: isTouchDevice ? '6px 7px' : '7px 8px',
+                }}
+              >
+                <div style={{ alignItems: 'start', display: 'grid', gap: '8px', gridTemplateColumns: '1fr auto' }}>
+                  <span style={{ color: '#dbeafe', fontSize: isTouchDevice ? '0.58rem' : '0.62rem', fontWeight: 880, lineHeight: 1.25 }}>
+                    {COMPONENT_BOM_CATEGORY_LABELS[group.category]} <span style={{ color: '#93c5fd' }}>({group.quantity} {formatComponentBomUnit(group.unit)})</span>
+                  </span>
+                  <span style={{ color: '#fef3c7', fontSize: isTouchDevice ? '0.58rem' : '0.62rem', fontWeight: 950 }}>
+                    {formatHomeEstimateEur(group.subtotal)}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div style={{ display: 'grid', gap: '6px' }}>
+            {manufacturingBom.panelGroups.slice(0, 5).map((group) => (
+              <div
+                key={group.id}
+                data-home-bom-tab-panel-group={`${group.id}:${group.panelCount}:${group.areaM2}`}
+                style={{
+                  background: 'rgba(2, 6, 23, 0.24)',
+                  border: '1px solid rgba(134, 239, 172, 0.12)',
+                  borderRadius: '10px',
+                  padding: isTouchDevice ? '6px 7px' : '7px 8px',
+                }}
+              >
+                <div style={{ color: '#d1fae5', fontSize: isTouchDevice ? '0.58rem' : '0.62rem', fontWeight: 900 }}>
+                  {group.label} · {group.panelCount} panels · {formatQuantityM2(group.areaM2)}
+                </div>
+                <div style={{ color: '#bbf7d0', fontSize: isTouchDevice ? '0.5rem' : '0.54rem', fontWeight: 760, lineHeight: 1.25, marginTop: '3px' }}>
+                  {group.approximatePanelDimensions.join(' / ')}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div style={{ display: 'grid', gap: '6px' }}>
+            {manufacturingBom.panelSizeGroups.slice(0, 4).map((group) => (
+              <div
+                key={group.id}
+                data-home-bom-tab-panel-size-group={`${group.id}:${group.panelCount}:${group.dimensions}:${group.areaM2}`}
+                style={{
+                  background: 'rgba(6, 78, 59, 0.22)',
+                  border: '1px solid rgba(110, 231, 183, 0.13)',
+                  borderRadius: '10px',
+                  padding: isTouchDevice ? '6px 7px' : '7px 8px',
+                }}
+              >
+                <div style={{ color: '#a7f3d0', fontSize: isTouchDevice ? '0.56rem' : '0.6rem', fontWeight: 900 }}>
+                  {group.label} - {group.panelCount} pcs - {group.dimensions}
+                </div>
+                <div style={{ color: '#bbf7d0', fontSize: isTouchDevice ? '0.5rem' : '0.54rem', fontWeight: 760, lineHeight: 1.25, marginTop: '3px' }}>
+                  {formatQuantityM2(group.areaM2)}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div style={{ display: 'grid', gap: '5px' }}>
+            {([
+              ['Board length groups', manufacturingBom.boardLengthGroups.map((group) => `${group.label}: ${group.quantity} pcs x ${group.lengthM}m`).join(' / ')],
+              ['Hardware placeholders', manufacturingBom.fastenerHardwarePlaceholders.map((item) => `${item.label}: ${item.quantity} ${item.unit}`).join(' / ')],
+              ['Waste by material', manufacturingBom.wasteFactorsByMaterial.map((item) => `${item.label}: ${formatWasteFactor(item.wasteFactor)}`).join(' / ')],
+              ['Production batch notes', manufacturingBom.productionBatchNotes.slice(0, 2).join(' / ')],
+              ['Transport package notes', manufacturingBom.transportPackageNotes.slice(0, 2).join(' / ')],
+            ] as const).map(([label, value]) => (
+              <div
+                key={label}
+                data-home-bom-tab-cutlist-readiness={`${label}:${value}`}
+                style={{
+                  borderTop: '1px solid rgba(134, 239, 172, 0.12)',
+                  color: '#bbf7d0',
+                  fontSize: isTouchDevice ? '0.52rem' : '0.56rem',
+                  fontWeight: 780,
+                  lineHeight: 1.25,
+                  paddingTop: '5px',
+                }}
+              >
+                <strong style={{ color: '#dcfce7' }}>{label}:</strong> {value}
+              </div>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      {activeHomeDemoTab === 'estimate' ? (
       <section
         aria-label={`${template.name} preview estimate`}
         data-home-estimate-panel="true"
@@ -1654,6 +1955,8 @@ export function ModularHomeDemoOverlay({ isTouchDevice = false }: ModularHomeDem
           data-home-estimate-manufacturing-bom-panel-count={manufacturingBom.panelGroups.reduce((total, group) => total + group.panelCount, 0)}
           data-home-estimate-manufacturing-bom-window-count={manufacturingBom.windowSchedule.reduce((total, item) => total + item.quantity, 0)}
           data-home-estimate-manufacturing-bom-door-count={manufacturingBom.doorSchedule.reduce((total, item) => total + item.quantity, 0)}
+          data-home-estimate-manufacturing-bom-board-count={manufacturingBom.boardLengthGroups.reduce((total, group) => total + group.quantity, 0)}
+          data-home-estimate-manufacturing-bom-hardware-count={manufacturingBom.fastenerHardwarePlaceholders.reduce((total, item) => total + item.quantity, 0)}
           style={{
             background: 'rgba(20, 83, 45, 0.18)',
             border: '1px solid rgba(134, 239, 172, 0.18)',
@@ -1704,6 +2007,8 @@ export function ModularHomeDemoOverlay({ isTouchDevice = false }: ModularHomeDem
               ['Facade boards', formatQuantityLinearM(manufacturingBom.facadeBoardLinearM)],
               ['Roof cassettes', formatQuantityM2(manufacturingBom.roofCassetteAreaM2)],
               ['Floor cassettes', formatQuantityM2(manufacturingBom.floorCassetteAreaM2)],
+              ['Board groups', manufacturingBom.boardLengthGroups.length.toString()],
+              ['Hardware sets', manufacturingBom.fastenerHardwarePlaceholders.length.toString()],
               ['Waste factor', formatWasteFactor(manufacturingBom.totalWasteFactor)],
             ] as const).map(([label, value]) => (
               <div
@@ -1752,6 +2057,12 @@ export function ModularHomeDemoOverlay({ isTouchDevice = false }: ModularHomeDem
               ['Door schedule', manufacturingBom.doorSchedule.map((item) => `${item.label}: ${item.quantity}`).join(' / ') || 'No doors'],
               ['Terrace deck schedule', manufacturingBom.terraceDeckSchedule.map((item) => `${item.label}: ${formatQuantityM2(item.areaM2 ?? item.quantity)}`).join(' / ') || 'No terrace deck'],
               ['Interior finish areas', manufacturingBom.interiorFinishAreas.map((item) => `${item.label}: ${formatQuantityM2(item.areaM2 ?? item.quantity)}`).join(' / ') || 'No interior finish'],
+              ['Panel size groups', manufacturingBom.panelSizeGroups.slice(0, 4).map((group) => `${group.label}: ${group.panelCount} pcs ${group.dimensions}`).join(' / ')],
+              ['Board length groups', manufacturingBom.boardLengthGroups.map((group) => `${group.label}: ${group.quantity} pcs x ${group.lengthM}m`).join(' / ')],
+              ['Hardware placeholders', manufacturingBom.fastenerHardwarePlaceholders.map((item) => `${item.label}: ${item.quantity} ${item.unit}`).join(' / ')],
+              ['Waste by material', manufacturingBom.wasteFactorsByMaterial.map((item) => `${item.label}: ${formatWasteFactor(item.wasteFactor)}`).join(' / ')],
+              ['Production batch notes', manufacturingBom.productionBatchNotes.slice(0, 2).join(' / ')],
+              ['Transport package notes', manufacturingBom.transportPackageNotes.slice(0, 2).join(' / ')],
             ] as const).map(([label, value]) => (
               <div
                 key={label}
@@ -2038,45 +2349,15 @@ export function ModularHomeDemoOverlay({ isTouchDevice = false }: ModularHomeDem
           {estimate.disclaimer}
         </div>
       </section>
+      ) : null}
 
-      <ModularHomeQuoteForm config={config} estimate={estimate} isTouchDevice={isTouchDevice} />
+      {activeHomeDemoTab === 'quote' ? (
+        <>
+          <ModularHomeQuoteForm config={config} estimate={estimate} isTouchDevice={isTouchDevice} />
 
-      <ModularHomeProjectSummary config={config} estimate={estimate} isTouchDevice={isTouchDevice} />
-
-      <div style={{ display: 'grid', gap: '7px', marginTop: isTouchDevice ? '10px' : '12px' }}>
-        {HOME_DEMO_BULLETS.map((bullet) => (
-          <div
-            key={bullet}
-            data-home-demo-bullet={bullet}
-            style={{
-              alignItems: 'center',
-              background: 'rgba(15, 23, 42, 0.54)',
-              border: '1px solid rgba(251, 191, 36, 0.18)',
-              borderRadius: '12px',
-              color: '#ffedd5',
-              display: 'grid',
-              fontSize: isTouchDevice ? '0.64rem' : '0.69rem',
-              fontWeight: 850,
-              gap: '9px',
-              gridTemplateColumns: '8px 1fr',
-              lineHeight: 1.2,
-              padding: isTouchDevice ? '7px 9px' : '8px 10px',
-            }}
-          >
-            <span
-              aria-hidden="true"
-              style={{
-                background: 'linear-gradient(135deg, #fbbf24, #22c55e)',
-                borderRadius: '999px',
-                display: 'block',
-                height: '8px',
-                width: '8px',
-              }}
-            />
-            <span>{bullet}</span>
-          </div>
-        ))}
-      </div>
+          <ModularHomeProjectSummary config={config} estimate={estimate} isTouchDevice={isTouchDevice} />
+        </>
+      ) : null}
 
       <div
         style={{

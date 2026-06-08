@@ -39,6 +39,18 @@ export type ModularHomeEstimateLineItemCategory =
   | 'doorPackage'
   | 'windowPlacement'
   | 'doorPlacement'
+  | 'facadeBoardOrientation'
+  | 'facadeBoardWidth'
+  | 'roofEdgeColor'
+  | 'windowFrameColor'
+  | 'interiorWallFinish'
+  | 'floorFinish'
+  | 'furniturePackage'
+  | 'sofa'
+  | 'table'
+  | 'bed'
+  | 'kitchenLine'
+  | 'wardrobePlaceholder'
   | 'transport'
   | 'installation'
   | 'vat';
@@ -246,6 +258,18 @@ function getOptionLineItemCategory(option: ModularHomeOption): ModularHomeEstima
     || option.group === 'doorPackage'
     || option.group === 'windowPlacement'
     || option.group === 'doorPlacement'
+    || option.group === 'facadeBoardOrientation'
+    || option.group === 'facadeBoardWidth'
+    || option.group === 'roofEdgeColor'
+    || option.group === 'windowFrameColor'
+    || option.group === 'interiorWallFinish'
+    || option.group === 'floorFinish'
+    || option.group === 'furniturePackage'
+    || option.group === 'sofa'
+    || option.group === 'table'
+    || option.group === 'bed'
+    || option.group === 'kitchenLine'
+    || option.group === 'wardrobePlaceholder'
   ) {
     return option.group;
   }
@@ -258,12 +282,24 @@ function getOptionLineItemLabel(option: ModularHomeOption): string {
     doorPackage: 'Door package',
     doorPlacement: 'Door placement',
     facade: 'Facade',
+    facadeBoardOrientation: 'Facade board orientation',
+    facadeBoardWidth: 'Facade board width',
     finish: 'Finish level',
+    floorFinish: 'Floor finish',
+    furniturePackage: 'Furniture package',
+    sofa: 'Sofa',
+    table: 'Table',
+    bed: 'Bed',
+    kitchenLine: 'Kitchen line',
+    wardrobePlaceholder: 'Wardrobe placeholder',
+    interiorWallFinish: 'Interior wall finish',
     roof: 'Roof',
+    roofEdgeColor: 'Roof edge color',
     terrace: 'Terrace',
+    windowFrameColor: 'Window frame color',
     windowPackage: 'Window package',
     windowPlacement: 'Window placement',
-  } as const;
+  } as const satisfies Record<ModularHomeOption['group'], string>;
 
   return `${labelByGroup[option.group]}: ${option.label}`;
 }
@@ -502,6 +538,18 @@ function createEstimateMetadata(input: {
       || category === 'doorPackage'
       || category === 'windowPlacement'
       || category === 'doorPlacement'
+      || category === 'facadeBoardOrientation'
+      || category === 'facadeBoardWidth'
+      || category === 'roofEdgeColor'
+      || category === 'windowFrameColor'
+      || category === 'interiorWallFinish'
+      || category === 'floorFinish'
+      || category === 'furniturePackage'
+      || category === 'sofa'
+      || category === 'table'
+      || category === 'bed'
+      || category === 'kitchenLine'
+      || category === 'wardrobePlaceholder'
     )) {
       return 'requiresEngineering';
     }
@@ -531,6 +579,18 @@ function createEstimateMetadata(input: {
       || category === 'doorPackage'
       || category === 'windowPlacement'
       || category === 'doorPlacement'
+      || category === 'facadeBoardOrientation'
+      || category === 'facadeBoardWidth'
+      || category === 'roofEdgeColor'
+      || category === 'windowFrameColor'
+      || category === 'interiorWallFinish'
+      || category === 'floorFinish'
+      || category === 'furniturePackage'
+      || category === 'sofa'
+      || category === 'table'
+      || category === 'bed'
+      || category === 'kitchenLine'
+      || category === 'wardrobePlaceholder'
     ) {
       return 'supplierPlaceholder';
     }
@@ -896,8 +956,16 @@ export function getModularHomeScopeOfSupply(
         `${selectedOptions.windowPlacement} controlled window placement`,
         `${selectedOptions.doorPlacement} controlled door placement`,
         `${selectedOptions.facade} facade package`,
+        `${selectedOptions.facadeBoardOrientation} facade board orientation`,
+        `${selectedOptions.facadeBoardWidth} facade board width`,
         `${selectedOptions.roof} package`,
+        `${selectedOptions.roofEdgeColor} roof edge color`,
         `${selectedOptions.layoutVariant} layout planning preview`,
+        `${selectedOptions.windowFrameColor} window frame color`,
+        `${selectedOptions.interiorWallFinish} interior wall finish`,
+        `${selectedOptions.floorFinish} floor finish`,
+        `${selectedOptions.furniturePackage} interior furniture package`,
+        `Furniture toggles: sofa ${selectedOptions.sofa}, table ${selectedOptions.table}, bed ${selectedOptions.bed}, kitchen ${selectedOptions.kitchenLine}, wardrobe ${selectedOptions.wardrobePlaceholder}`,
         selectedOptions.terrace === 'No terrace'
           ? 'No terrace extension selected'
           : `${selectedOptions.terrace} extension package`,

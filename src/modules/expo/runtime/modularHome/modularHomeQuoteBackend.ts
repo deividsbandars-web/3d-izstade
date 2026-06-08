@@ -25,7 +25,19 @@ export type ModularHomeQuoteBackendPayload = {
   config: {
     doorPlacement: string;
     facade: string;
+    facadeBoardOrientation: string;
+    facadeBoardWidth: string;
     finishLevel: string;
+    floorFinish: string;
+    furniturePackage: string;
+    sofa: string;
+    table: string;
+    bed: string;
+    kitchenLine: string;
+    wardrobePlaceholder: string;
+    interiorWallFinish: string;
+    roofEdgeColor: string;
+    windowFrameColor: string;
     layoutVariant: string;
     roof: string;
     terrace: string;
@@ -153,7 +165,19 @@ export function buildModularHomeQuoteBackendPayload(
     config: {
       doorPlacement: config.doorPlacement,
       facade: config.facade,
+      facadeBoardOrientation: config.facadeBoardOrientation,
+      facadeBoardWidth: config.facadeBoardWidth,
       finishLevel: config.finishLevel,
+      floorFinish: config.floorFinish,
+      furniturePackage: config.furniturePackage,
+      sofa: config.sofa,
+      table: config.table,
+      bed: config.bed,
+      kitchenLine: config.kitchenLine,
+      wardrobePlaceholder: config.wardrobePlaceholder,
+      interiorWallFinish: config.interiorWallFinish,
+      roofEdgeColor: config.roofEdgeColor,
+      windowFrameColor: config.windowFrameColor,
       layoutVariant: config.layoutVariant,
       roof: config.roof,
       terrace: config.terrace,
