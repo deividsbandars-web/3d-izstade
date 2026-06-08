@@ -46,6 +46,14 @@ const CITY_SCREEN_ROW_MIN_Z_SPACING = 96;
 const CITY_SMALL_BLOCK_MAX_HEIGHT = 8;
 const CITY_SMALL_BLOCK_MAX_FOOTPRINT_AREA = 900;
 const CITY_SMALL_BLOCK_MAX_ASPECT_RATIO = 3;
+const LEFT_CIVILIZATION_MONUMENT_SOURCE_KIND = 'left-civilization-monument-mass';
+const RIGHT_ORBITAL_BROADCAST_FOUNDRY_SOURCE_KIND = 'right-orbital-broadcast-foundry-mass';
+const PREVIOUS_CIVILIZATION_MONUMENT_SCREEN_HOST_IDS = new Set([
+  'screen-array-left-upper-3-host',
+]);
+const ORBITAL_BROADCAST_FOUNDRY_SCREEN_HOST_IDS = new Set([
+  'screen-array-right-upper-3-host',
+]);
 const CITY_NON_RENDERABLE_DECORATIVE_MASS_PATTERNS = [
   'boulevard-edge-',
   'media-wall-flank-',
@@ -436,8 +444,62 @@ function isIntentionalCityStadiumPerimeterJoint(left, right) {
   ));
 }
 
+function isIntentionalCivilizationMonumentScreenHostJoint(left, right) {
+  const pairs = [
+    [left, right],
+    [right, left],
+  ];
+
+  return pairs.some(([host, monument]) => (
+    PREVIOUS_CIVILIZATION_MONUMENT_SCREEN_HOST_IDS.has(host?.id)
+    && monument?.sourceKind === LEFT_CIVILIZATION_MONUMENT_SOURCE_KIND
+    && Number(host?.baseY ?? host?.vertical?.baseY ?? 0) >= 96
+  ));
+}
+
+function isIntentionalOrbitalBroadcastFoundryScreenHostJoint(left, right) {
+  const pairs = [
+    [left, right],
+    [right, left],
+  ];
+
+  return pairs.some(([host, foundry]) => (
+    ORBITAL_BROADCAST_FOUNDRY_SCREEN_HOST_IDS.has(host?.id)
+    && foundry?.sourceKind === RIGHT_ORBITAL_BROADCAST_FOUNDRY_SOURCE_KIND
+    && Number(host?.baseY ?? host?.vertical?.baseY ?? 0) >= 96
+  ));
+}
+
+function resolveIntentionalCitySolidCompositionKey(entry) {
+  const id = String(entry?.id ?? '');
+  const sourceKind = String(entry?.sourceKind ?? '');
+
+  if (
+    sourceKind === 'tower-cluster-television-tower-mass'
+    && id.startsWith('tower-cluster-television-tower-')
+  ) {
+    return 'tower-cluster-television-tower';
+  }
+
+  return null;
+}
+
+function isSameIntentionalCitySolidComposition(left, right) {
+  const leftKey = resolveIntentionalCitySolidCompositionKey(left);
+  const rightKey = resolveIntentionalCitySolidCompositionKey(right);
+  return leftKey !== null && leftKey === rightKey;
+}
+
 function isIntentionalCitySolidOverlap(left, right) {
   if (isAllowedScreenHostFacadeOverlap(left, right)) {
+    return true;
+  }
+
+  if (isIntentionalCivilizationMonumentScreenHostJoint(left, right)) {
+    return true;
+  }
+
+  if (isIntentionalOrbitalBroadcastFoundryScreenHostJoint(left, right)) {
     return true;
   }
 
@@ -454,11 +516,7 @@ function isIntentionalCitySolidOverlap(left, right) {
     return true;
   }
 
-  if (
-    typeof left.id === 'string'
-    && typeof right.id === 'string'
-    && (left.id.includes('-tower-cluster-') || right.id.includes('-tower-cluster-'))
-  ) {
+  if (isSameIntentionalCitySolidComposition(left, right)) {
     return true;
   }
 
@@ -482,6 +540,8 @@ function isIntentionalVerticalCityAssembly(left, right) {
   }
 
   const verticalAssemblySourceKinds = new Set([
+    LEFT_CIVILIZATION_MONUMENT_SOURCE_KIND,
+    RIGHT_ORBITAL_BROADCAST_FOUNDRY_SOURCE_KIND,
     'tower-cluster-vertical-pilot-mass',
     'tower-cluster-mega-highrise-mass',
   ]);
@@ -508,6 +568,8 @@ function isPhysicsPerimeterStructure(entry) {
 function isPhysicsNonWalkableSupportStructure(entry) {
   return (
     isPhysicsPerimeterStructure(entry)
+    || entry.sourceKind === LEFT_CIVILIZATION_MONUMENT_SOURCE_KIND
+    || entry.sourceKind === RIGHT_ORBITAL_BROADCAST_FOUNDRY_SOURCE_KIND
     || entry.sourceKind === 'tower-cluster-plinth-mass'
     || String(entry?.id ?? '').endsWith('-tower-cluster-plinth')
     || (entry.sourceKind === 'tower-cluster-vertical-pilot-mass' && String(entry?.id ?? '').includes('-core-'))
@@ -530,7 +592,7 @@ function shouldExposePhysicsWalkableTop(entry, bounds) {
 }
 
 function resolvePhysicsBoxes(entry) {
-  if (Array.isArray(entry.physicsParts) && entry.physicsParts.length > 0) {
+  if (Array.isArray(entry.physicsParts)) {
     return entry.physicsParts.flatMap((part) => {
       const partId = String(part?.id ?? '').trim();
       const position = tuple3(part?.position);
@@ -1296,8 +1358,10 @@ function auditSideArrayScreenHostScale(entries) {
     }
 
     const minHostWidth = surface.size[0] * 1.25;
-    const minHostHeight = surface.position[1] + (surface.size[1] * 0.5) + 38;
-    if (hostSize[0] < minHostWidth || hostSize[1] < minHostHeight) {
+    const minHostTopY = surface.position[1] + (surface.size[1] * 0.5) + 38;
+    const hostBaseY = Number(host?.baseY ?? host?.vertical?.baseY ?? 0);
+    const hostTopY = hostBaseY + hostSize[1];
+    if (hostSize[0] < minHostWidth || hostTopY < minHostTopY) {
       pushIssue(
         issues,
         'medium',
@@ -1305,9 +1369,11 @@ function auditSideArrayScreenHostScale(entries) {
         `${host.id} is not large enough for ${surface.entry.id}; side/far screen host plates must read as enlarged support slabs.`,
         [host.id, surface.entry.id],
         {
+          hostBaseY: Math.round(hostBaseY),
           hostHeight: Math.round(hostSize[1]),
+          hostTopY: Math.round(hostTopY),
           hostWidth: Math.round(hostSize[0]),
-          minHostHeight: Math.round(minHostHeight),
+          minHostTopY: Math.round(minHostTopY),
           minHostWidth: Math.round(minHostWidth),
           sourceA: host.sourceFile ?? null,
           sourceB: surface.entry.sourceFile ?? null,
@@ -1613,6 +1679,10 @@ function auditSolidBoundsCoverage(entries) {
 }
 
 function requiresCompoundPhysicsParts(entry) {
+  if (entry.nodeType === 'decorative-render-rig') {
+    return false;
+  }
+
   if (entry.sourceKind === 'recovered-rear-campus-structure') {
     return true;
   }
@@ -1683,6 +1753,9 @@ function auditCitySmallBlockClutter(entries) {
   for (const entry of entries) {
     const size = positiveTuple3(entry.size);
     if (entry.layer !== 'city-mass' || !size) {
+      continue;
+    }
+    if (entry.nodeType === 'decorative-render-rig') {
       continue;
     }
 

@@ -84,12 +84,42 @@ function slotMatchesToken(slotValue: string | null | undefined, requestValue: st
   return Boolean(normalizedSlotValue && normalizedRequestValue && normalizedSlotValue === normalizedRequestValue);
 }
 
+function buildPreferredStreamerIds(context?: PixelStreamingStatusRequestContext) {
+  if (!context) {
+    return [];
+  }
+
+  const boothId = normalizeToken(context.boothId);
+  const slug = normalizeToken(context.slug);
+  const streamingLevel = normalizeToken(context.streamingLevel);
+
+  return Array.from(new Set([
+    boothId ? `booth-${boothId}` : null,
+    boothId,
+    slug ? `booth-${slug}` : null,
+    slug ? `stream-${slug}` : null,
+    streamingLevel,
+  ].filter((value): value is string => Boolean(value))));
+}
+
+function slotMatchesPreferredStreamerId(slot: SignalingStreamerPayload, context?: PixelStreamingStatusRequestContext) {
+  const streamerId = normalizeToken(slot.streamerId);
+  if (!streamerId) {
+    return false;
+  }
+
+  return buildPreferredStreamerIds(context).includes(streamerId);
+}
+
 function scoreStreamerSlot(slot: SignalingStreamerPayload, context?: PixelStreamingStatusRequestContext) {
   if (!context) {
     return slot.streaming ? 100 : 0;
   }
   if (slotMatchesToken(slot.streamingLevel, context.streamingLevel)) {
-    return 400;
+    return 600;
+  }
+  if (slotMatchesPreferredStreamerId(slot, context)) {
+    return 500;
   }
   if (slotMatchesToken(slot.boothId, context.boothId)) {
     return 300;

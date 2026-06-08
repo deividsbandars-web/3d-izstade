@@ -7,6 +7,7 @@ import * as outreachController from '../controllers/outreachController.js';
 import * as expoController from '../controllers/expoController.js';
 import * as expoDataController from '../controllers/expoDataController.js';
 import * as expoLeadController from '../controllers/expoLeadController.js';
+import * as expoLeadInboxController from '../controllers/expoLeadInboxController.js';
 import * as analyticsController from '../controllers/analyticsController.js';
 import * as aiController from '../controllers/aiController.js';
 import * as automationController from '../controllers/automationController.js';
@@ -15,7 +16,10 @@ import * as billingController from '../controllers/billingController.js';
 import * as platformController from '../controllers/platformController.js';
 import * as businessController from '../controllers/businessController.js';
 import * as growthController from '../controllers/growthController.js';
-import { authMiddleware } from '../middleware/authMiddleware.js';
+import * as calculatorLeadController from '../controllers/calculatorLeadController.js';
+import * as modularHomeQuoteAdminController from '../controllers/modularHomeQuoteAdminController.js';
+import * as modularHomeQuoteController from '../controllers/modularHomeQuoteController.js';
+import { adminOnly, authMiddleware } from '../middleware/authMiddleware.js';
 import { rateLimitMiddleware } from '../middleware/rateLimit.js';
 
 export const router = Router();
@@ -30,6 +34,8 @@ router.post('/analytics/track', analyticsController.trackAnalytics);
 router.get('/pixel-streaming/status', expoController.getPixelStreamingRuntimeStatus);
 router.post('/pixel-streaming/session', expoController.createPixelStreamingSession);
 router.post('/expo/lead', expoLeadController.captureExpoLead);
+router.post('/calculator/lead', calculatorLeadController.captureCalculatorLead);
+router.post('/modular-home/quote', modularHomeQuoteController.submitModularHomeQuote);
 router.post('/ai-estimate', aiController.estimateWithAi);
 
 // Public read-only scene contract used by the Web3D client. Keep auth policy here only.
@@ -59,10 +65,21 @@ protectedRouter.get('/expo/scenes/booth/:boothId', expoDataController.getBoothSc
 protectedRouter.get('/expo/scenes/city', expoDataController.getCityScene);
 protectedRouter.get('/expo/review/snapshot', expoDataController.getExpoReviewSnapshot);
 protectedRouter.get('/expo/review/booths/:boothId', expoDataController.getExpoReviewBooth);
+protectedRouter.get('/expo/lead-inbox/:companySlug', expoLeadInboxController.getExpoSponsorLeadInbox);
+protectedRouter.patch('/expo/lead-inbox/:companySlug/leads/:leadId', expoLeadInboxController.updateExpoSponsorLeadStatus);
+protectedRouter.patch('/expo/lead-inbox/:companySlug/leads/:leadId/ops', expoLeadInboxController.updateExpoSponsorLeadOps);
 protectedRouter.patch('/expo/review/booths/:boothId/leads/:leadId', expoDataController.updateExpoReviewLeadStatus);
 protectedRouter.patch('/expo/review/booths/:boothId/leads/:leadId/ops', expoDataController.updateExpoReviewLeadOps);
 
+// Modular Home quote admin access. These routes are intentionally not public.
+protectedRouter.get('/modular-home/quotes', adminOnly, modularHomeQuoteAdminController.listModularHomeQuoteRequests);
+protectedRouter.get('/modular-home/quotes/export', adminOnly, modularHomeQuoteAdminController.exportModularHomeQuoteRequests);
+protectedRouter.get('/modular-home/quotes/:quoteId', adminOnly, modularHomeQuoteAdminController.getModularHomeQuoteRequest);
+protectedRouter.patch('/modular-home/quotes/:quoteId/status', adminOnly, modularHomeQuoteAdminController.updateModularHomeQuoteStatus);
+
 // Leads
+protectedRouter.get('/calculator/leads', calculatorLeadController.getCalculatorLeads);
+protectedRouter.patch('/calculator/leads/:leadId', calculatorLeadController.updateCalculatorLeadStatus);
 protectedRouter.get('/leads', leadsController.getLeads);
 protectedRouter.post('/leads', leadsController.createLead);
 protectedRouter.patch('/leads/:leadId', leadsController.updateLead);

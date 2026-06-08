@@ -21,3 +21,7 @@ export function buildExpoBoothRoute(args: {
     ? `/expo/booth/${token}/stream`
     : `/expo/booth/${token}`;
 }
+
+export function buildExpoBoothWeb3DRoomRoute(route: string) {
+  return route.replace(/\/stream$/, '');
+}

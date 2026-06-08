@@ -53,16 +53,43 @@ export function validateExpoLeadRequest(body: ExpoLeadRequestBody): ValidExpoLea
   };
 }
 
+function isUuid(value: string) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+}
+
+async function resolveCompanyIdForLead(
+  supabase: ReturnType<typeof getSupabase>,
+  payload: ValidExpoLeadRequest,
+) {
+  if (isUuid(payload.companyId)) {
+    return payload.companyId;
+  }
+
+  const slug = payload.companySlug || payload.companyId;
+  const { data, error } = await supabase
+    .from('companies')
+    .select('id')
+    .eq('slug', slug)
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  return typeof data?.id === 'string' ? data.id : null;
+}
+
 export async function captureExpoLead(req: Request, res: Response) {
   try {
     const payload = validateExpoLeadRequest(req.body);
     const supabase = getSupabase();
+    const resolvedCompanyId = await resolveCompanyIdForLead(supabase, payload);
     const { error } = await supabase
       .from('service_requests')
       .insert([{
         client_email: payload.clientEmail,
         client_name: payload.clientName,
-        company_id: payload.companyId,
+        company_id: resolvedCompanyId,
         message: payload.message,
         service_name: payload.companySlug ? `expo_sponsor_lead:${payload.companySlug}` : 'expo_sponsor_lead',
       }]);
@@ -72,6 +99,8 @@ export async function captureExpoLead(req: Request, res: Response) {
     }
 
     res.status(201).json({
+      companyId: resolvedCompanyId,
+      companySlug: payload.companySlug,
       sourcePath: payload.sourcePath,
       success: true,
     });

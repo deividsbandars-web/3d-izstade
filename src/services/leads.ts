@@ -1,8 +1,11 @@
 import { supabaseClient } from '../lib/supabaseClient';
-import { serverApiPatch, serverApiPost } from './serverApi';
+import { serverApiGet, serverApiPatch, serverApiPost } from './serverApi';
 
 export const LeadsAPI = {
+  createCalculatorLead: async (payload: unknown) => serverApiPost('/api/calculator/lead', payload),
   createLead: async (payload: unknown) => serverApiPost('/api/leads', payload),
+  getCalculatorLeads: async () => serverApiGet('/api/calculator/leads'),
+  updateCalculatorLead: async (leadId: string, payload: unknown) => serverApiPatch(`/api/calculator/leads/${leadId}`, payload),
   updateLead: async (leadId: string, payload: unknown) => serverApiPatch(`/api/leads/${leadId}`, payload),
   getLeadsBySource: async (source: string) => serverApiPost('/api/leads/by-source', { source }),
 

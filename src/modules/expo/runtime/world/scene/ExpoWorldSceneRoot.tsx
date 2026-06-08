@@ -12,6 +12,7 @@ export function ExpoWorldSceneRoot({
   activeZone,
   debug,
   inspectionEnabled,
+  isTouchDevice,
   mobileMoveIntent,
   mode,
   onMove,
@@ -29,7 +30,8 @@ export function ExpoWorldSceneRoot({
   activeZone: { id?: string | null } | null | undefined;
   debug: boolean;
   inspectionEnabled: boolean;
-  mobileMoveIntent?: { f: boolean; b: boolean; l: boolean; r: boolean; s?: boolean };
+  isTouchDevice: boolean;
+  mobileMoveIntent?: { f: boolean; b: boolean; l: boolean; r: boolean; s?: boolean; turnL?: boolean; turnR?: boolean; jump?: boolean; lift?: boolean; lookX?: number; lookY?: number };
   mode: ExpoMode;
   onMove: (position: number[]) => void;
   runtimeCaptureSafe: boolean;
@@ -61,6 +63,7 @@ export function ExpoWorldSceneRoot({
         activeZone={activeZone}
         debug={debug}
         inspectionEnabled={inspectionEnabled}
+        isTouchDevice={isTouchDevice}
         mobileMoveIntent={mobileMoveIntent}
         mode={mode}
         onMove={onMove}
@@ -83,6 +86,7 @@ function ExpoWorldSceneRootView({
   activeZone,
   debug,
   inspectionEnabled,
+  isTouchDevice,
   mobileMoveIntent,
   mode,
   onMove,
@@ -100,7 +104,8 @@ function ExpoWorldSceneRootView({
   activeZone: { id?: string | null } | null | undefined;
   debug: boolean;
   inspectionEnabled: boolean;
-  mobileMoveIntent?: { f: boolean; b: boolean; l: boolean; r: boolean; s?: boolean };
+  isTouchDevice: boolean;
+  mobileMoveIntent?: { f: boolean; b: boolean; l: boolean; r: boolean; s?: boolean; turnL?: boolean; turnR?: boolean; jump?: boolean; lift?: boolean; lookX?: number; lookY?: number };
   mode: ExpoMode;
   onMove: (position: number[]) => void;
   runtimeCaptureSafe: boolean;
@@ -162,6 +167,7 @@ function ExpoWorldSceneRootView({
           effectiveStartView={runtime.effectiveStartView}
           highlightedTargets={runtimeHighlightedTargets}
           inspectionEnabled={inspectionEnabled}
+          isTouchDevice={isTouchDevice}
           layerToggles={runtime.layerToggles}
           mobileMoveIntent={mobileMoveIntent}
           mode={mode}

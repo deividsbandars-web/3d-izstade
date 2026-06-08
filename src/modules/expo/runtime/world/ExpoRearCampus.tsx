@@ -1,16 +1,24 @@
-import { useMemo, useRef } from 'react';
+import { useLayoutEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import type { ExpoBoothPlacement } from '../../layout-engine';
 import type { ExpoWorldVisualProfile } from '../../world-contract';
 import { buildRearCampusZonePlan, EXPO_CANONICAL_DISTRICT_STRIDE } from '../planning';
+import type { ExpoQualitySettings } from './quality/expoQualitySettings';
 import { useWorldInspectionRegistry } from './inspection/worldInspectionState';
 import { buildStadiumWorldObjectRegistry } from './inspection/worldObjectRegistry';
 import { WorldCityScreenAssignments } from './WorldCityScreenAssignments';
+import { WorldCityMasses } from './WorldCityMasses';
 import { WorldCityScreenSockets } from './WorldCityScreenSockets';
 import { WorldCityScreenSurfaces } from './WorldCityScreenSurfaces';
 import { ExpoRearCampusRecoveredStructures } from './ExpoRearCampusRecoveredStructures';
 import { ExpoRearCampusStructures } from './ExpoRearCampusStructures';
 import { buildRearCampusScreenHostShells } from './rearCampusScreenHosts';
+import type { RearCampusScreenHostShell } from './rearCampusScreenHosts';
+import {
+  buildInstancedTransformMatrix,
+  clearExpoInstancingTargetStats,
+  publishExpoInstancingTargetStats,
+} from './performance/expoInstancingUtils';
 import {
   buildRenderedRearCampusRegistryPlan,
   filterRenderedRearCampusSidePavilions,
@@ -19,6 +27,11 @@ import {
   ColliderMaterial,
   usePlayerColliderRegistration,
 } from './WorldSceneSupport';
+import { ExpoZoneGroup } from './zones/ExpoZoneGroup';
+import {
+  resolveExpoZoneRuntimeState,
+  type ExpoZoneRuntimeState,
+} from './zones/expoZoneRuntimeState';
 
 const EMPTY_PLANNING_GEOMETRY = {
   arrivalPlanes: [],
@@ -65,14 +78,85 @@ function resolvePerimeterMaterial(connector: { accent: string; id: string }) {
   }
 }
 
+function RearCampusScreenHostShellInstances({
+  accent,
+  shells,
+}: {
+  accent: string;
+  shells: RearCampusScreenHostShell[];
+}) {
+  const meshRef = useRef<THREE.InstancedMesh>(null);
+  const matrix = useMemo(() => new THREE.Matrix4(), []);
+
+  useLayoutEffect(() => {
+    const mesh = meshRef.current;
+    if (!mesh) {
+      return undefined;
+    }
+
+    shells.forEach((shell, index) => {
+      mesh.setMatrixAt(index, buildInstancedTransformMatrix({
+        position: shell.position,
+        rotation: shell.rotation,
+        scale: shell.size,
+      }, matrix));
+    });
+    mesh.instanceMatrix.needsUpdate = true;
+    mesh.computeBoundingSphere();
+
+    publishExpoInstancingTargetStats({
+      estimatedDrawCallReduction: Math.max(0, shells.length - 1),
+      instanceCount: shells.length,
+      label: 'rear campus screen host shells',
+      replacedMeshCount: shells.length,
+      targetId: 'rear-campus-screen-host-shells',
+    });
+
+    return () => {
+      clearExpoInstancingTargetStats('rear-campus-screen-host-shells');
+    };
+  }, [matrix, shells]);
+
+  if (shells.length === 0) {
+    return null;
+  }
+
+  return (
+    <instancedMesh
+      ref={meshRef}
+      args={[undefined, undefined, shells.length]}
+      name="rear-campus-screen-host-shells:instanced"
+      receiveShadow
+      userData={{
+        expoInstancingTarget: 'rear-campus-screen-host-shells',
+        expoInstancingInstanceCount: shells.length,
+        expoInstancingReplacedMeshCount: shells.length,
+      }}
+    >
+      <boxGeometry args={[1, 1, 1]} />
+      <meshStandardMaterial
+        color="#73828c"
+        emissive={accent}
+        emissiveIntensity={0.025}
+        roughness={0.78}
+        metalness={0.05}
+      />
+    </instancedMesh>
+  );
+}
+
 export function ExpoRearCampus({
   boothPlacements,
   playerPosition,
+  qualitySettings,
   visualProfile,
+  zoneRuntimeState,
 }: {
   boothPlacements: ExpoBoothPlacement[];
   playerPosition: [number, number, number];
+  qualitySettings: ExpoQualitySettings;
   visualProfile: ExpoWorldVisualProfile;
+  zoneRuntimeState?: ExpoZoneRuntimeState;
 }) {
   const campusColliderRef = useRef<THREE.Group>(null);
   const rearCampusPlan = useMemo(
@@ -94,10 +178,25 @@ export function ExpoRearCampus({
   usePlayerColliderRegistration(campusColliderRef, 'rear-campus-collider');
   const filteredStadiumSidePavilions = filterRenderedRearCampusSidePavilions(rearCampus?.sidePavilions ?? []);
   const filteredStadiumLandmarkTowers = (rearCampus?.landmarkTowers ?? []).filter(() => false);
-  const perimeterConnectors = rearCampus?.perimeterConnectors ?? [];
+  const perimeterConnectors = useMemo(
+    () => rearCampus?.perimeterConnectors ?? [],
+    [rearCampus],
+  );
+  const renderedRearCampusMasses = useMemo(() => {
+    const perimeterConnectorIds = new Set(perimeterConnectors.map((connector) => connector.id));
+    return rearCampusPlan.masses.filter((mass) => !perimeterConnectorIds.has(mass.id));
+  }, [perimeterConnectors, rearCampusPlan.masses]);
   const screenHostShells = useMemo(
     () => buildRearCampusScreenHostShells(rearCampusPlan.screenSurfaces),
     [rearCampusPlan.screenSurfaces]
+  );
+  const effectiveZoneRuntimeState = useMemo(
+    () => zoneRuntimeState ?? resolveExpoZoneRuntimeState({
+      playerPosition,
+      qualitySettings,
+      runtimeCaptureSafe: false,
+    }),
+    [playerPosition, qualitySettings, zoneRuntimeState],
   );
 
   const stadiumInspectionEntries = useMemo(() => buildStadiumWorldObjectRegistry({
@@ -107,8 +206,19 @@ export function ExpoRearCampus({
   useWorldInspectionRegistry('stadium', stadiumInspectionEntries);
 
   return (
-    <group name="expo-rear-campus">
-      <group name="rear-campus-perimeter-shell">
+    <ExpoZoneGroup
+      groupId="rear-campus-root"
+      name="expo-rear-campus"
+      runtimeState={effectiveZoneRuntimeState}
+      zoneId="rearCampus"
+    >
+      <ExpoZoneGroup
+        canHideInLowQuality
+        groupId="rear-campus-perimeter"
+        name="rear-campus-perimeter-shell"
+        runtimeState={effectiveZoneRuntimeState}
+        zoneId="perimeter"
+      >
         {perimeterConnectors.map((connector) => {
           const material = resolvePerimeterMaterial(connector);
           return (
@@ -129,69 +239,80 @@ export function ExpoRearCampus({
             </mesh>
           );
         })}
-      </group>
+      </ExpoZoneGroup>
 
-      <ExpoRearCampusRecoveredStructures
-        accent={accent}
-        campusCenterZ={campusCenterZ}
-        enableHeavyShadows={false}
-      />
-      <ExpoRearCampusStructures
-        accent={accent}
-        campusCenterZ={campusCenterZ}
-        enableHeavyShadows={false}
-        screenFeeds={[]}
-        sidePavilions={filteredStadiumSidePavilions}
-        towers={filteredStadiumLandmarkTowers}
-      />
+      <ExpoZoneGroup
+        groupId="rear-campus-structures"
+        runtimeState={effectiveZoneRuntimeState}
+        zoneId="rearCampus"
+      >
+        <ExpoRearCampusRecoveredStructures
+          accent={accent}
+          campusCenterZ={campusCenterZ}
+          enableHeavyShadows={false}
+        />
+        <WorldCityMasses
+          masses={renderedRearCampusMasses}
+          meshNamePrefix="stadium-structure"
+          stadiumReserve={EMPTY_PLANNING_GEOMETRY.stadiumReserve}
+          visualProfile={visualProfile}
+        />
+        <ExpoRearCampusStructures
+          accent={accent}
+          campusCenterZ={campusCenterZ}
+          enableHeavyShadows={false}
+          screenFeeds={[]}
+          sidePavilions={filteredStadiumSidePavilions}
+          towers={filteredStadiumLandmarkTowers}
+        />
+      </ExpoZoneGroup>
 
-      <group name="rear-campus-screen-host-shells">
-        {screenHostShells.map((shell) => (
-          <mesh
-            key={shell.id}
-            name={`stadium-structure:${shell.id}`}
-            position={shell.position}
-            rotation={shell.rotation}
-            receiveShadow
-          >
-            <boxGeometry args={shell.size} />
-            <meshStandardMaterial
-              color="#73828c"
-              emissive={accent}
-              emissiveIntensity={0.025}
-              roughness={0.78}
-              metalness={0.05}
-            />
-          </mesh>
-        ))}
-      </group>
-      <WorldCityScreenSurfaces
-        playerPosition={playerPosition}
-        stadiumReserve={EMPTY_PLANNING_GEOMETRY.stadiumReserve}
-        surfaces={rearCampusPlan.screenSurfaces}
-      />
-      <WorldCityScreenSockets
-        playerPosition={playerPosition}
-        sockets={rearCampusPlan.screenSockets}
-        stadiumReserve={EMPTY_PLANNING_GEOMETRY.stadiumReserve}
-      />
-      <WorldCityScreenAssignments
-        assignments={rearCampusPlan.assignments}
-        playerPosition={playerPosition}
-        sockets={rearCampusPlan.screenSockets}
-      />
-      <group ref={campusColliderRef} name="rear-campus-collider">
-        {[-1, 1].map((side) => (
-          <mesh key={`rear-campus-gateway-collider-${side}`} position={[side * 1260, 168, campusCenterZ + 980]} rotation={[0, 0, 0]}>
-            <boxGeometry args={[126, 336, 126]} />
+      <ExpoZoneGroup
+        groupId="rear-campus-screens"
+        runtimeState={effectiveZoneRuntimeState}
+        zoneId="demoArena"
+      >
+        <group name="rear-campus-screen-host-shells">
+          <RearCampusScreenHostShellInstances accent={accent} shells={screenHostShells} />
+        </group>
+        <WorldCityScreenSurfaces
+          playerPosition={playerPosition}
+          stadiumReserve={EMPTY_PLANNING_GEOMETRY.stadiumReserve}
+          surfaces={rearCampusPlan.screenSurfaces}
+        />
+        <WorldCityScreenSockets
+          playerPosition={playerPosition}
+          sockets={rearCampusPlan.screenSockets}
+          stadiumReserve={EMPTY_PLANNING_GEOMETRY.stadiumReserve}
+        />
+        <WorldCityScreenAssignments
+          assignments={rearCampusPlan.assignments}
+          boothPlacements={boothPlacements}
+          playerPosition={playerPosition}
+          qualitySettings={qualitySettings}
+          surfaces={rearCampusPlan.screenSurfaces}
+          sockets={rearCampusPlan.screenSockets}
+        />
+      </ExpoZoneGroup>
+      <ExpoZoneGroup
+        groupId="rear-campus-colliders"
+        name="rear-campus-collider"
+        runtimeState={effectiveZoneRuntimeState}
+        zoneId="rearCampus"
+      >
+        <group ref={campusColliderRef}>
+          {[-1, 1].map((side) => (
+            <mesh key={`rear-campus-gateway-collider-${side}`} position={[side * 1260, 168, campusCenterZ + 980]} rotation={[0, 0, 0]}>
+              <boxGeometry args={[126, 336, 126]} />
+              <ColliderMaterial color="#f97316" />
+            </mesh>
+          ))}
+          <mesh position={[0, 208, stadiumBackWallZ]} rotation={[-0.08, 0, 0]}>
+            <boxGeometry args={[2860, 416, 860]} />
             <ColliderMaterial color="#f97316" />
           </mesh>
-        ))}
-        <mesh position={[0, 208, stadiumBackWallZ]} rotation={[-0.08, 0, 0]}>
-          <boxGeometry args={[2860, 416, 860]} />
-          <ColliderMaterial color="#f97316" />
-        </mesh>
-      </group>
-    </group>
+        </group>
+      </ExpoZoneGroup>
+    </ExpoZoneGroup>
   );
 }

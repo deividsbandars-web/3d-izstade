@@ -1,10 +1,22 @@
 import { Text } from '@react-three/drei';
-import { Fragment } from 'react';
+import { Fragment, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { trackExpoScreenRouteClicked } from '../../lib/expoAnalytics';
 import { SponsorTextureSurface } from '../booths';
+import {
+  buildDemoArenaPreviewAssignment,
+  buildDemoArenaPreviewRuntimeSummary,
+  isDemoArenaPreviewEnabled,
+  publishDemoArenaPreviewRuntimeSummary,
+} from '../demoArena';
 import { resolveSponsorScreenInteraction } from '../../lib/sponsorScreenInteractionResolver';
-import type { CanonicalPrimitive, CityScreenAssignment, CityScreenSocket } from '../planning/types';
+import type { ExpoBoothPlacement } from '../../layout-engine';
+import { buildManagedScreenAssignmentOverrides } from './managedScreenContentAssignments';
+import { getCityScreenRearContentPolicy } from './cityScreenRearContentPolicy';
+import { getExpoActiveVideoScreensCount } from './quality/expoActiveVideoScreenRegistry';
+import { resolveExpoScreenRuntimePolicy, type ExpoScreenTextureQualityHint } from './quality/expoScreenRuntimePolicy';
+import type { ExpoQualitySettings } from './quality/expoQualitySettings';
+import type { CanonicalPrimitive, CityScreenAssignment, CityScreenSocket, CityScreenSurface } from '../planning/types';
 
 function isOpaquePrimitive(opacity: number | undefined) {
   return (opacity ?? 1) >= 0.999;
@@ -18,7 +30,12 @@ function shouldCullDistantScreens() {
   return new URLSearchParams(window.location.search).get('screenDistanceCulling') === '1';
 }
 
-function renderPrimitive(primitive: CanonicalPrimitive, key: string) {
+function renderPrimitive(
+  primitive: CanonicalPrimitive,
+  key: string,
+  textureQualityHint?: ExpoScreenTextureQualityHint,
+  doubleSidedTexture = true,
+) {
   if (primitive.kind === 'plane') {
     const isOpaque = isOpaquePrimitive(primitive.opacity);
     const rearRotation: [number, number, number] = [
@@ -94,26 +111,17 @@ function renderPrimitive(primitive: CanonicalPrimitive, key: string) {
     }
 
     return (
-      <Fragment key={key}>
-        <mesh key={`${key}:front`} position={primitive.position} renderOrder={9}>
-          <planeGeometry args={primitive.size} />
-          <SponsorTextureSurface
-            depthWrite={false}
-            fallbackColor={primitive.fallbackColor}
-            opacity={primitive.opacity ?? 0.92}
-            url={primitive.url}
-          />
-        </mesh>
-        <mesh key={`${key}:rear`} position={primitive.position} rotation={[0, Math.PI, 0]} renderOrder={9}>
-          <planeGeometry args={primitive.size} />
-          <SponsorTextureSurface
-            depthWrite={false}
-            fallbackColor={primitive.fallbackColor}
-            opacity={primitive.opacity ?? 0.92}
-            url={primitive.url}
-          />
-        </mesh>
-      </Fragment>
+      <mesh key={key} position={primitive.position} renderOrder={9}>
+        <planeGeometry args={primitive.size} />
+        <SponsorTextureSurface
+          depthWrite={false}
+          doubleSided={doubleSidedTexture}
+          fallbackColor={primitive.fallbackColor}
+          opacity={primitive.opacity ?? 0.92}
+          textureQualityHint={textureQualityHint}
+          url={primitive.url}
+        />
+      </mesh>
     );
   }
 
@@ -158,18 +166,69 @@ function renderPrimitive(primitive: CanonicalPrimitive, key: string) {
   return null;
 }
 
+function renderRearTexturePrimitive(
+  primitive: CanonicalPrimitive,
+  key: string,
+  textureQualityHint: ExpoScreenTextureQualityHint | undefined,
+  rearZ: number,
+) {
+  if (primitive.kind !== 'texture-plane' || !primitive.url) {
+    return null;
+  }
+
+  return (
+    <mesh
+      key={key}
+      name={key}
+      position={[primitive.position[0], primitive.position[1], rearZ]}
+      rotation={[0, Math.PI, 0]}
+      renderOrder={9}
+    >
+      <planeGeometry args={primitive.size} />
+      <SponsorTextureSurface
+        depthWrite={false}
+        doubleSided
+        fallbackColor={primitive.fallbackColor}
+        opacity={primitive.opacity ?? 0.92}
+        textureQualityHint={textureQualityHint}
+        url={primitive.url}
+      />
+    </mesh>
+  );
+}
+
 export function WorldCityScreenAssignments({
   assignments,
+  boothPlacements,
   playerPosition,
+  qualitySettings,
+  surfaces,
   sockets,
 }: {
   assignments: CityScreenAssignment[];
+  boothPlacements: ExpoBoothPlacement[];
   playerPosition: [number, number, number];
+  qualitySettings: ExpoQualitySettings;
+  surfaces: CityScreenSurface[];
   sockets: CityScreenSocket[];
 }) {
   const navigate = useNavigate();
-  const socketById = new Map(sockets.map((socket) => [socket.id, socket]));
+  const socketById = useMemo(() => new Map(sockets.map((socket) => [socket.id, socket])), [sockets]);
+  const surfaceById = useMemo(() => new Map(surfaces.map((surface) => [surface.id, surface])), [surfaces]);
   const cullDistantScreens = shouldCullDistantScreens();
+  const demoArenaPreviewEnabled = isDemoArenaPreviewEnabled();
+  const demoArenaPreviewSummary = useMemo(
+    () => buildDemoArenaPreviewRuntimeSummary(assignments, sockets, demoArenaPreviewEnabled),
+    [assignments, demoArenaPreviewEnabled, sockets],
+  );
+  const managedScreenOverrides = useMemo(
+    () => buildManagedScreenAssignmentOverrides({ assignments, boothPlacements, sockets }),
+    [assignments, boothPlacements, sockets],
+  );
+
+  useEffect(() => {
+    publishDemoArenaPreviewRuntimeSummary(demoArenaPreviewSummary);
+  }, [demoArenaPreviewSummary]);
 
   return (
     <group name="world-city-screen-assignments">
@@ -178,20 +237,25 @@ export function WorldCityScreenAssignments({
         if (!socket) {
           return null;
         }
-
-        const resolvedAction = resolveSponsorScreenInteraction({
-          companyId: assignment.companyId,
-          id: assignment.id,
-          label: assignment.subtitle,
-          title: assignment.label,
-        });
-        const isRouteAction = resolvedAction.kind === 'route';
+        const surface = surfaceById.get(socket.surfaceId);
 
         const dx = socket.position[0] - playerPosition[0];
         const dz = socket.position[2] - playerPosition[2];
         const distanceSq = (dx * dx) + (dz * dz);
         const distance = Math.sqrt(distanceSq);
-        const intent = assignment.renderIntent;
+        const previewAssignment = demoArenaPreviewEnabled
+          ? buildDemoArenaPreviewAssignment(assignment, socket)
+          : null;
+        const managedScreenOverride = managedScreenOverrides.overridesByAssignmentId.get(assignment.id) ?? null;
+        const effectiveAssignment = previewAssignment?.assignment ?? managedScreenOverride?.assignment ?? assignment;
+        const resolvedAction = resolveSponsorScreenInteraction({
+          companyId: effectiveAssignment.companyId,
+          id: effectiveAssignment.id,
+          label: effectiveAssignment.subtitle,
+          title: effectiveAssignment.label,
+        });
+        const isRouteAction = resolvedAction.kind === 'route';
+        const intent = effectiveAssignment.renderIntent;
         const maxDistance = intent?.maxDistance ?? 980;
         if (cullDistantScreens && distanceSq > maxDistance * maxDistance) {
           return null;
@@ -205,20 +269,29 @@ export function WorldCityScreenAssignments({
             return true;
           }
 
-          if (primitive.text === assignment.subtitle) {
+          if (primitive.text === effectiveAssignment.subtitle) {
             return detailMode === 'near';
           }
 
-          if (primitive.text === assignment.label) {
+          if (primitive.text === effectiveAssignment.label) {
             return distance <= (intent?.showCenterTitleDistance ?? detailDistance);
           }
 
-          if (primitive.text === assignment.tier.toUpperCase()) {
+          if (primitive.text === effectiveAssignment.tier.toUpperCase()) {
             return distance <= detailDistance;
           }
 
           return true;
         });
+        const screenRuntimePolicy = resolveExpoScreenRuntimePolicy({
+          currentActiveVideoCount: getExpoActiveVideoScreensCount(),
+          distanceToCamera: distance,
+          isHeroScreen: effectiveAssignment.tier === 'hero' || socket.kind === 'hero_wall',
+          isInActiveSection: true,
+          qualitySettings,
+        });
+        const rearScreenContentPolicy = getCityScreenRearContentPolicy(socket, surface);
+        const rearScreenContentZ = rearScreenContentPolicy.enabled ? rearScreenContentPolicy.rearZ : null;
 
         return (
           <group
@@ -226,6 +299,27 @@ export function WorldCityScreenAssignments({
             name={`world-city-screen:${intent?.semanticMode ?? 'wayfinding'}:${assignment.id}`}
             position={socket.position}
             rotation={socket.rotation}
+            userData={{
+              expoScreenRuntimePolicy: screenRuntimePolicy.status,
+              expoScreenTextureQualityHint: screenRuntimePolicy.textureQualityHint,
+              expoVideoPlaybackAllowed: screenRuntimePolicy.allowVideoPlayback,
+              ...(previewAssignment
+                ? {
+                    expoDemoArenaPreview: true,
+                    expoDemoArenaPreviewEventId: previewAssignment.content.activeEventId,
+                    expoDemoArenaPreviewPurpose: previewAssignment.content.purpose,
+                    expoDemoArenaPreviewTargetId: previewAssignment.target.id,
+                  }
+                : {}),
+              ...(managedScreenOverride && !previewAssignment
+                ? {
+                    expoManagedScreenCompanyId: managedScreenOverride.source.companyId,
+                    expoManagedScreenMode: managedScreenOverride.source.mode,
+                    expoManagedScreenSlotId: managedScreenOverride.source.screenSlotId,
+                    expoManagedScreenSlotLabel: managedScreenOverride.source.slotLabel,
+                  }
+                : {}),
+            }}
             onClick={isRouteAction
               ? (event) => {
                   event.stopPropagation();
@@ -244,7 +338,20 @@ export function WorldCityScreenAssignments({
               : undefined}
           >
             {primitives.map((primitive, index) =>
-              renderPrimitive(primitive, `${assignment.id}:${primitive.kind}:${index}`),
+              renderPrimitive(
+                primitive,
+                `${assignment.id}:${primitive.kind}:${index}`,
+                screenRuntimePolicy.textureQualityHint,
+                rearScreenContentZ === null,
+              ),
+            )}
+            {rearScreenContentZ !== null && primitives.map((primitive, index) =>
+              renderRearTexturePrimitive(
+                primitive,
+                `${assignment.id}:rear:${primitive.kind}:${index}`,
+                screenRuntimePolicy.textureQualityHint,
+                rearScreenContentZ,
+              ),
             )}
           </group>
         );

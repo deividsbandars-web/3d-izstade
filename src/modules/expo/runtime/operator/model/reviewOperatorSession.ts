@@ -191,13 +191,13 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       intent: 'arrival-gateway-hierarchy',
       label: 'Arrival Gate',
       camera: {
-        lookAtOffset: [0, 144, 0],
-        positionOffset: [0, 260, 700],
+        lookAtOffset: [0, 40, 0],
+        positionOffset: [360, 260, 860],
         targetIds: ['mega-landmark-arrival'],
       },
       startView: {
-        lookAt: [0, 170, 220],
-        position: [0, 420, 1460],
+        lookAt: [0, 170, 256],
+        position: [360, 390, 1116],
         source: 'arrival-main',
       },
       watchItems: [
@@ -306,18 +306,45 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       intent: 'city-left-front-perimeter-corner-review',
       label: 'City Left Front Corner',
       camera: {
-        lookAtOffset: [0, 0, 0],
-        positionOffset: [-60, 25, 65],
+        lookAtOffset: [60, 110, -120],
+        positionOffset: [260, 150, 360],
         targetIds: ['city-perimeter-left-front-corner'],
       },
       startView: {
-        lookAt: [-1710, 35, 770],
-        position: [-1770, 60, 835],
+        lookAt: [-1650, 145, 650],
+        position: [-1450, 185, 1130],
         source: 'arrival-main',
       },
       watchItems: [
         'city front-left perimeter cap coverage',
         'front wall to side wall gap closure',
+      ],
+    },
+    {
+      expectedKeyObjectIds: [
+        'screen-array-left-upper-3',
+        'screen-array-left-upper-3-host',
+      ],
+      expectedVisibleLayers: ['city-screen-surface', 'city-mass'],
+      id: 'left-civilization-monument',
+      intent: 'left-civilization-monument-review',
+      label: 'Left Civilization Monument',
+      camera: {
+        lookAtOffset: [0, 80, 0],
+        positionOffset: [3300, -480, -5200],
+        targetIds: [
+          'screen-array-left-upper-3',
+        ],
+      },
+      startView: {
+        lookAt: [-900, 1400, 268.2],
+        position: [2400, 840, -4931.8],
+        source: 'arrival-main',
+      },
+      watchItems: [
+        'giant high screen readability',
+        'previous civilization portal silhouette',
+        'screen host embedded in upper relic frame',
       ],
     },
     {
@@ -389,6 +416,183 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
     },
     {
       expectedKeyObjectIds: [
+        'sky-market-spine-primitive-rig',
+      ],
+      expectedVisibleLayers: ['city-mass'],
+      id: 'sky-market-spine',
+      intent: 'sky-market-spine-review',
+      label: 'Sky Market Spine',
+      camera: {
+        lookAtOffset: [0, 700, 0],
+        positionOffset: [1400, 980, 260],
+        targetIds: ['sky-market-spine-primitive-rig'],
+      },
+      startView: {
+        lookAt: [0, 700, -520],
+        position: [1400, 980, -260],
+        source: 'arrival-main',
+      },
+      watchItems: [
+        'multi-storey market bridge over center axis',
+        'clear stall pod rhythm, not random block clutter',
+        'continuous central light spine readable from distance',
+        'clear separation from tower-cluster mega structures',
+      ],
+    },
+    {
+      expectedKeyObjectIds: [
+        'sky-market-spine-lift-ground-to-lower',
+        'sky-market-spine-lift-lower-to-upper',
+        'sky-market-spine-animated-market-lift',
+      ],
+      expectedVisibleLayers: ['vertical-access-node', 'vertical-elevator-route'],
+      id: 'sky-market-spine-access',
+      intent: 'sky-market-spine-access-review',
+      label: 'Sky Market Access',
+      camera: {
+        lookAtOffset: [0, 260, 0],
+        positionOffset: [-1500, 760, 1260],
+        targetIds: [
+          'sky-market-spine-lift-ground-to-lower',
+          'sky-market-spine-lift-lower-to-upper',
+          'sky-market-spine-animated-market-lift',
+        ],
+      },
+      startView: {
+        lookAt: [-173.33333333333334, 606.6666666666667, -520],
+        position: [-1673.3333333333333, 1106.6666666666667, 740],
+        source: 'arrival-main',
+      },
+      watchItems: [
+        'ground lift pad visible and selectable',
+        'upper lift pad aligned with deck',
+        'moving lift route visible as real access geometry',
+      ],
+    },
+    {
+      expectedKeyObjectIds: [
+        'genesis-portal-gate-primitive-rig',
+      ],
+      expectedVisibleLayers: ['stadium-structure'],
+      id: 'genesis-portal-gate',
+      intent: 'genesis-portal-gate-review',
+      label: 'Genesis Portal Gate',
+      camera: {
+        lookAtOffset: [0, 260, 0],
+        positionOffset: [1180, 620, 1260],
+        targetIds: ['genesis-portal-gate-primitive-rig'],
+      },
+      startView: {
+        lookAt: [-2080, 1410, -4560],
+        position: [-900, 1770, -3300],
+        source: 'arrival-main',
+      },
+      watchItems: [
+        'portal ring is inside the stadium-left campus, not outside the arrival perimeter',
+        'portal reads as a gateway, not another tower block',
+        'data veil and ring are visible without covering the rear scoregate',
+        'left-side spacing remains clean around neighboring recovered structures',
+      ],
+    },
+    {
+      expectedKeyObjectIds: [
+        'ai-reactor-core-primitive-rig',
+      ],
+      expectedVisibleLayers: ['stadium-structure'],
+      id: 'ai-reactor-core',
+      intent: 'ai-reactor-core-review',
+      label: 'Rear-Campus AI Reactor Core',
+      camera: {
+        lookAtOffset: [0, 300, 0],
+        positionOffset: [1040, 1100, 1720],
+        targetIds: ['ai-reactor-core-primitive-rig'],
+      },
+      startView: {
+        lookAt: [-2260, 1200, -2424],
+        position: [-1220, 2000, -704],
+        source: 'arrival-main',
+      },
+      watchItems: [
+        'large reactor vessel sits inside the rear-campus perimeter, not outside the wall',
+        'visible containment shell, glowing core, and cooling towers',
+        'high energy feed beams use stadium airspace without blocking screens',
+        'no collapsed debris silhouette or layer conflict',
+      ],
+    },
+    {
+      expectedKeyObjectIds: [
+        'energy-grid-network-primitive-rig',
+      ],
+      expectedVisibleLayers: ['stadium-structure'],
+      id: 'energy-grid-network',
+      intent: 'energy-grid-network-review',
+      label: 'Rear-Campus Energy Grid Network',
+      camera: {
+        lookAtOffset: [0, 250, 0],
+        positionOffset: [-1700, 1200, 2300],
+        targetIds: ['energy-grid-network-primitive-rig'],
+      },
+      startView: {
+        lookAt: [0, 1350, -3424],
+        position: [-1700, 2300, -1124],
+        source: 'arrival-main',
+      },
+      watchItems: [
+        'reactor energy lines connect reactor, oracle, compass, and stadium axis',
+        'grid beams stay high enough to avoid booth, walking, and perimeter clutter',
+        'node rhythm reads as city infrastructure, not random floating debris',
+      ],
+    },
+    {
+      expectedKeyObjectIds: [
+        'ai-oracle-chamber-primitive-rig',
+      ],
+      expectedVisibleLayers: ['stadium-structure'],
+      id: 'ai-oracle-chamber',
+      intent: 'ai-oracle-chamber-review',
+      label: 'Rear-Campus AI Oracle Chamber',
+      camera: {
+        lookAtOffset: [0, 360, 0],
+        positionOffset: [-1250, 1000, 1550],
+        targetIds: ['ai-oracle-chamber-primitive-rig'],
+      },
+      startView: {
+        lookAt: [2150, 1310, -2964],
+        position: [900, 1950, -1414],
+        source: 'arrival-main',
+      },
+      watchItems: [
+        'large oracle chamber reads as a different structure from towers',
+        'holographic AI orb visible inside the chamber',
+        'right rear-campus placement stays separate from screen hosts and perimeter',
+      ],
+    },
+    {
+      expectedKeyObjectIds: [
+        'center-sky-compass-primitive-rig',
+      ],
+      expectedVisibleLayers: ['stadium-structure'],
+      id: 'center-sky-compass',
+      intent: 'center-sky-compass-review',
+      label: 'Rear-Campus Sky Compass',
+      camera: {
+        lookAtOffset: [0, 1200, 0],
+        positionOffset: [-2000, 3400, 2600],
+        targetIds: ['center-sky-compass-primitive-rig'],
+      },
+      startView: {
+        lookAt: [1760, 3800, -4480],
+        position: [-240, 6000, -1880],
+        source: 'arrival-main',
+      },
+      watchItems: [
+        'giant sky compass ring is inside rear-campus, not outside the perimeter',
+        'clean vertical compass crown, not collapsed debris',
+        'clear separation from scoregate, recovered structures, and previous monument',
+      ],
+    },
+    {
+      expectedKeyObjectIds: [
         'screen-marquee-right-0',
       ],
       expectedVisibleLayers: ['city-screen-surface'],
@@ -412,24 +616,24 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
     },
     {
       expectedKeyObjectIds: [
-        'mega-landmark-right-skybridge-beacon',
+        'mega-landmark-right-skyfold-citadel',
       ],
       expectedVisibleLayers: ['mega-landmark'],
       id: 'right-skybridge-landmark',
       intent: 'right-skybridge-landmark-review',
       label: 'Right Skybridge Landmark',
       camera: {
-        lookAtOffset: [0, 86, 0],
-        positionOffset: [0, 136, 300],
-        targetIds: ['mega-landmark-right-skybridge-beacon'],
+        lookAtOffset: [0, 90, 0],
+        positionOffset: [-1100, 520, 1280],
+        targetIds: ['mega-landmark-right-skyfold-citadel'],
       },
       startView: {
-        lookAt: [580, 220, 30],
-        position: [580, 270, 330],
+        lookAt: [844, 236, -164],
+        position: [-256, 666, 1116],
         source: 'arrival-main',
       },
       watchItems: [
-        'right skybridge direct evidence',
+        'right landmark direct evidence',
         'right-district landmark spacing',
       ],
     },
@@ -481,7 +685,59 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
     },
     {
       expectedKeyObjectIds: [
-        'arrival-core-hero-tower-right-tower-ribbon',
+        'screen-array-right-upper-3',
+        'screen-array-right-upper-3-host',
+      ],
+      expectedVisibleLayers: ['city-mass', 'city-screen-surface'],
+      id: 'right-orbital-broadcast-foundry',
+      intent: 'right-orbital-broadcast-foundry-review',
+      label: 'Right Orbital Broadcast Foundry',
+      camera: {
+        lookAtOffset: [0, 120, 0],
+        positionOffset: [-760, 420, -900],
+        targetIds: ['screen-array-right-upper-3'],
+      },
+      startView: {
+        lookAt: [890, 2650, 300],
+        position: [130, 2950, -600],
+        source: 'arrival-main',
+      },
+      watchItems: [
+        'separate asymmetric broadcast foundry silhouette',
+        'large high screen facing the city',
+        'screen host embedded in foundry frame',
+      ],
+    },
+    {
+      expectedKeyObjectIds: [
+        'orbital-broadcast-foundry-primitive-rig',
+      ],
+      expectedVisibleLayers: ['city-mass'],
+      id: 'right-orbital-broadcast-foundry-skyline',
+      intent: 'right-orbital-broadcast-foundry-skyline-review',
+      label: 'Right Orbital Broadcast Foundry Skyline',
+      camera: {
+        lookAtOffset: [0, -1220, 0],
+        positionOffset: [-1880, 900, -2180],
+        targetIds: [
+          'orbital-broadcast-foundry-upper-broadcast-core',
+          'orbital-broadcast-foundry-signal-spire',
+        ],
+      },
+      startView: {
+        lookAt: [1060, 3240, 528],
+        position: [-820, 5360, -1652],
+        source: 'arrival-main',
+      },
+      watchItems: [
+        'full foundry silhouette visible above right district',
+        'primitive rig reads as one intentional landmark',
+        'large screen frame does not mutate into tower clutter',
+      ],
+    },
+    {
+      expectedKeyObjectIds: [
+        'screen-marquee-right-2',
       ],
       expectedVisibleLayers: ['city-screen-surface'],
       id: 'tower-cluster',
@@ -489,12 +745,12 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       label: 'Tower Cluster',
       camera: {
         lookAtOffset: [0, 18, 0],
-        positionOffset: [-260, 112, 360],
-        targetIds: ['arrival-core-hero-tower-right-tower-ribbon'],
+        positionOffset: [-680, 260, 860],
+        targetIds: ['screen-marquee-right-2'],
       },
       startView: {
-        lookAt: [518.8230613285318, 155.04, -518.881157475684],
-        position: [766.8230613285318, 239.04, -190.88115747568395],
+        lookAt: [1312, 162, -1476],
+        position: [632, 404, -616],
         source: 'arrival-main',
       },
       watchItems: [
@@ -511,8 +767,8 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       intent: 'tower-cluster-vertical-system-review',
       label: 'Tower Cluster Vertical Pilot',
       camera: {
-        lookAtOffset: [0, 32, 0],
-        positionOffset: [420, 228, -300],
+        lookAtOffset: [0, 100, 0],
+        positionOffset: [760, 420, 620],
         targetIds: [
           'tower-cluster-vertical-pilot-core-left',
           'tower-cluster-vertical-pilot-core-right',
@@ -523,8 +779,8 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
         ],
       },
       startView: {
-        lookAt: [900, 166, -675],
-        position: [1320, 362, -975],
+        lookAt: [900, 234, -675],
+        position: [1660, 554, -55],
         source: 'arrival-main',
       },
       watchItems: [
@@ -538,80 +794,243 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       expectedKeyObjectIds: [
         'tower-cluster-mega-highrise-crown-skydeck',
       ],
-      expectedVisibleLayers: ['city-mass', 'vertical-access-node'],
+      expectedVisibleLayers: ['city-mass'],
       id: 'tower-cluster-mega-highrise',
       intent: 'tower-cluster-mega-highrise-review',
       label: 'Tower Cluster Mega Highrise',
       camera: {
-        lookAtOffset: [0, 64, 0],
-        positionOffset: [420, 260, -360],
+        lookAtOffset: [0, 45, 0],
+        positionOffset: [420, 360, -520],
         targetIds: [
-          'tower-cluster-mega-highrise-core',
-          'tower-cluster-mega-highrise-skybridge-deck',
           'tower-cluster-mega-highrise-crown-skydeck',
         ],
       },
       startView: {
-        lookAt: [1340, 360, -1018],
-        position: [1760, 556, -1378],
+        lookAt: [-450, 1597, -1250],
+        position: [-30, 1912, -1770],
         source: 'arrival-main',
       },
       watchItems: [
-        'mega highrise skyline read',
+        '2.5x mega highrise skyline read',
         'skybridge and crown deck separation',
         'skydeck lift node accessibility',
       ],
     },
     {
       expectedKeyObjectIds: [
+        'tower-cluster-mega-highrise-animated-panoramic-lift',
+      ],
+      expectedVisibleLayers: ['vertical-elevator-route'],
+      id: 'tower-cluster-mega-highrise-lift-side',
+      intent: 'tower-cluster-mega-highrise-lift-side-review',
+      label: 'Mega Highrise Lift Side',
+      camera: {
+        lookAtOffset: [0, 120, 0],
+        positionOffset: [540, 360, 620],
+        targetIds: [
+          'tower-cluster-mega-highrise-animated-panoramic-lift',
+        ],
+      },
+      startView: {
+        lookAt: [-220, 945, -1130],
+        position: [320, 1185, -510],
+        source: 'arrival-main',
+      },
+      watchItems: [
+        'yellow lift rail is outside the highrise shell',
+        'moving cabin does not cut through deck/facade geometry',
+        'lift shaft clears the lower sky-market deck footprint',
+        'ground-to-skydeck route remains readable from the side',
+      ],
+    },
+    {
+      expectedKeyObjectIds: [
+        'tower-cluster-mega-highrise-core',
+      ],
+      expectedVisibleLayers: ['city-mass'],
+      id: 'tower-cluster-mega-skyline',
+      intent: 'tower-cluster-mega-skyline-review',
+      label: 'Tower Cluster Mega Skyline',
+      camera: {
+        lookAtOffset: [0, 300, 0],
+        positionOffset: [-2400, 1000, 2600],
+        targetIds: [
+          'tower-cluster-mega-highrise-core',
+          'tower-cluster-mega-highrise-east-needle',
+          'tower-cluster-mega-highrise-rear-needle',
+          'tower-cluster-mega-highrise-crown-skydeck',
+        ],
+      },
+      startView: {
+        lookAt: [-452.5, 1339, -1335],
+        position: [-2852.5, 2039, 1265],
+        source: 'arrival-main',
+      },
+      watchItems: [
+        'full mega tower height read',
+        'needle/core/crown hierarchy',
+        'distant skyline silhouette',
+      ],
+    },
+    {
+      expectedKeyObjectIds: [],
+      expectedVisibleLayers: ['city-mass'],
+      id: 'tower-cluster-television-tower',
+      intent: 'tower-cluster-television-tower-review',
+      label: 'Tower Cluster Television Tower',
+      startView: {
+        lookAt: [360, 3566.6666666666665, -1240],
+        position: [-3440, 4316.666666666666, 4360],
+        source: 'arrival-main',
+      },
+      watchItems: [
+        '5x television tower full-height read',
+        'observation deck and signal-ring silhouette',
+        'mega-highrise separation from broadcast tower',
+      ],
+    },
+    {
+      expectedKeyObjectIds: [
+        'tower-cluster-television-tower-top-beacon',
+      ],
+      expectedVisibleLayers: ['city-mass'],
+      id: 'tower-cluster-television-tower-crown',
+      intent: 'tower-cluster-television-tower-crown-review',
+      label: 'Tower Cluster Television Tower Crown',
+      camera: {
+        lookAtOffset: [0, 450, 0],
+        positionOffset: [-1600, 900, 2600],
+        targetIds: [
+          'tower-cluster-television-tower-top-beacon',
+          'tower-cluster-television-tower-needle-spire',
+          'tower-cluster-television-tower-broadcast-collar-west',
+          'tower-cluster-television-tower-broadcast-collar-east',
+          'tower-cluster-television-tower-broadcast-collar-front',
+          'tower-cluster-television-tower-broadcast-collar-rear',
+        ],
+      },
+      startView: {
+        lookAt: [360, 4203, -1240],
+        position: [-1240, 4653, 1360],
+        source: 'arrival-main',
+      },
+      watchItems: [
+        'top beacon visibility',
+        'broadcast collar separation',
+        'upper needle silhouette',
+      ],
+    },
+    {
+      expectedKeyObjectIds: [
+        'tower-cluster-television-tower-animated-city-lift',
+      ],
+      expectedVisibleLayers: ['vertical-elevator-route'],
+      id: 'tower-cluster-television-tower-lift-side',
+      intent: 'tower-cluster-television-tower-lift-side-review',
+      label: 'Television Tower Lift Side',
+      camera: {
+        lookAtOffset: [0, 320, 0],
+        positionOffset: [760, 700, 920],
+        targetIds: [
+          'tower-cluster-television-tower-animated-city-lift',
+        ],
+      },
+      startView: {
+        lookAt: [620, 2990, -900],
+        position: [1380, 3370, 20],
+        source: 'arrival-main',
+      },
+      watchItems: [
+        'blue lift shaft sits outside the lower sky-market deck footprint',
+        'blue lift rail clears the front signal ring',
+        'moving cabin does not pass through collar or deck masses',
+        'full 5x tower lift route is visible as exterior access',
+      ],
+    },
+    {
+      expectedKeyObjectIds: [
+        'tower-cluster-mega-highrise-animated-panoramic-lift',
+        'tower-cluster-television-tower-animated-city-lift',
+      ],
+      expectedVisibleLayers: ['vertical-elevator-route'],
+      id: 'tower-cluster-lift-deck-clearance',
+      intent: 'tower-cluster-lift-deck-clearance-review',
+      label: 'Tower Lift Deck Clearance',
+      camera: {
+        lookAtOffset: [0, -980, 0],
+        positionOffset: [760, 260, 780],
+        targetIds: [
+          'tower-cluster-mega-highrise-animated-panoramic-lift',
+          'tower-cluster-television-tower-animated-city-lift',
+        ],
+      },
+      startView: {
+        lookAt: [200, 767, -1015],
+        position: [960, 2007, -235],
+        source: 'arrival-main',
+      },
+      watchItems: [
+        'both tower lift shafts are outside the sky-market lower deck footprint',
+        'yellow and blue lift lines do not pass through second-level road/deck geometry',
+        'clear side separation remains visible without relying only on registry math',
+      ],
+    },
+    {
+      expectedKeyObjectIds: [
         'tower-cluster-mega-highrise-east-needle',
+        'tower-cluster-mega-highrise-east-needle-landing',
       ],
       expectedVisibleLayers: ['city-mass'],
       id: 'tower-cluster-east-needle',
       intent: 'tower-cluster-east-needle-review',
       label: 'Tower Cluster East Needle',
       camera: {
-        lookAtOffset: [0, 82, 0],
-        positionOffset: [230, 308, 330],
-        targetIds: ['tower-cluster-mega-highrise-east-needle'],
+        lookAtOffset: [0, 110, 0],
+        positionOffset: [-380, 220, 460],
+        targetIds: [
+          'tower-cluster-mega-highrise-east-needle-landing',
+        ],
       },
       startView: {
-        lookAt: [1530, 334, -1110],
-        position: [1760, 560, -780],
+        lookAt: [-360, 961, -1292],
+        position: [-740, 1071, -832],
         source: 'arrival-main',
       },
       watchItems: [
         'east needle front read',
+        'east needle landing access',
         'right perimeter setback',
       ],
     },
     {
       expectedKeyObjectIds: [
         'tower-cluster-mega-highrise-rear-needle',
+        'tower-cluster-mega-highrise-rear-needle-landing',
       ],
       expectedVisibleLayers: ['city-mass'],
       id: 'tower-cluster-rear-needle',
       intent: 'tower-cluster-rear-needle-review',
       label: 'Tower Cluster Rear Needle',
       camera: {
-        lookAtOffset: [0, 82, 0],
-        positionOffset: [400, 302, 410],
-        targetIds: ['tower-cluster-mega-highrise-rear-needle'],
+        lookAtOffset: [0, 130, 0],
+        positionOffset: [-480, 300, 520],
+        targetIds: [
+          'tower-cluster-mega-highrise-rear-needle-landing',
+        ],
       },
       startView: {
-        lookAt: [1120, 280, -1450],
-        position: [1520, 500, -1040],
+        lookAt: [-550, 790, -1474],
+        position: [-1030, 960, -954],
         source: 'arrival-main',
       },
       watchItems: [
         'rear needle skyline depth',
+        'rear needle landing access',
         'rear screen-host clearance',
       ],
     },
     {
-      expectedKeyObjectIds: [
-        'arrival-core-hero-tower-right-tower-ribbon',
-      ],
+      expectedKeyObjectIds: [],
       expectedVisibleLayers: ['city-screen-surface'],
       id: 'tower-cluster-reverse-wide',
       intent: 'tower-cluster-reverse-wide-review',
@@ -619,7 +1038,7 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       camera: {
         lookAtOffset: [0, 28, 0],
         positionOffset: [-460, 190, 560],
-        targetIds: ['arrival-core-hero-tower-right-tower-ribbon'],
+        targetIds: ['screen-marquee-right-2'],
       },
       startView: {
         lookAt: [708, 200, -700],
@@ -659,13 +1078,13 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       intent: 'array-band-south-review',
       label: 'Array Band South',
       camera: {
-        lookAtOffset: [0, 44, 0],
-        positionOffset: [0, 310, 1240],
+        lookAtOffset: [0, 110, 0],
+        positionOffset: [780, 420, 1320],
         targetIds: ['screen-array-left-upper-1', 'screen-array-right-upper-1'],
       },
       startView: {
-        lookAt: [0, 102, -548],
-        position: [0, 244, 28],
+        lookAt: [0, 343, -858],
+        position: [780, 653, 462],
         source: 'arrival-main',
       },
       watchItems: [
@@ -830,16 +1249,16 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       intent: 'left-sponsor-boulevard-close-review',
       label: 'Sponsor Boulevard Left Close',
       camera: {
-        lookAtOffset: [0, 24, 0],
-        positionOffset: [46, 24, 18],
+        lookAtOffset: [0, 70, 0],
+        positionOffset: [-260, 80, 300],
         targetDepth: 'rearmost',
         targetIds: [],
         targetLayer: 'booth',
         targetSide: 'left',
       },
       startView: {
-        lookAt: [-526, 38, -1356],
-        position: [-486, 64, -1308],
+        lookAt: [-526, 84, -1356],
+        position: [-786, 120, -1056],
         source: 'arrival-main',
       },
       watchItems: [
@@ -923,6 +1342,30 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
     },
     {
       expectedKeyObjectIds: [
+        'rear-campus-entry-pulse-arches',
+      ],
+      expectedVisibleLayers: ['stadium-structure'],
+      forbiddenVisibleLayers: STADIUM_REVIEW_FORBIDDEN_LAYERS,
+      id: 'rear-campus-entry-pulse-arches',
+      intent: 'rear-campus-entry-pulse-arches-review',
+      label: 'Rear Campus Entry Pulse Arches',
+      camera: {
+        lookAtOffset: [0, 120, 0],
+        positionOffset: [780, 160, 720],
+        targetIds: ['rear-campus-entry-pulse-arches'],
+      },
+      startView: {
+        lookAt: [1700, 400, -2224],
+        position: [2480, 440, -1504],
+        source: 'arrival-main',
+      },
+      watchItems: [
+        'stadium entry landmark reads as gateway',
+        'central walking route remains visually open',
+      ],
+    },
+    {
+      expectedKeyObjectIds: [
         'rear-campus-event-pavilion-left-feed-surface',
       ],
       expectedVisibleLayers: ['stadium-screen-surface'],
@@ -957,13 +1400,13 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       intent: 'rear-campus-center-review',
       label: 'Rear Campus Center',
       camera: {
-        lookAtOffset: [0, 86, 0],
-        positionOffset: [0, 170, 540],
+        lookAtOffset: [0, 210, 0],
+        positionOffset: [420, 180, 620],
         targetIds: ['rear-campus-stage-monolith-canopy-host-surface'],
       },
       startView: {
-        lookAt: [47, 212, -3250],
-        position: [47, 296, -2710],
+        lookAt: [47, 336, -3250],
+        position: [467, 306, -2630],
         source: 'arrival-main',
       },
       watchItems: [
@@ -998,12 +1441,37 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
     },
     {
       expectedKeyObjectIds: [
+        'rear-campus-orbital-scoregate-host-surface',
+      ],
+      expectedVisibleLayers: ['stadium-screen-surface'],
+      forbiddenKeyObjectIds: STADIUM_TRANSITION_FORBIDDEN_OBJECT_IDS,
+      forbiddenVisibleLayers: [...STADIUM_REVIEW_FORBIDDEN_LAYERS, 'stadium-screen-feed'],
+      id: 'rear-campus-orbital-scoregate',
+      intent: 'rear-campus-orbital-scoregate-review',
+      label: 'Rear Campus Orbital Scoregate',
+      camera: {
+        lookAtOffset: [0, 180, 0],
+        positionOffset: [900, 360, 1040],
+        targetIds: ['rear-campus-orbital-scoregate-host-surface'],
+      },
+      startView: {
+        lookAt: [0, 692, -4970.1],
+        position: [900, 872, -3930.1],
+        source: 'arrival-main',
+      },
+      watchItems: [
+        'large scoregate screen faces city side',
+        'rear stadium landmark silhouette reads from distance',
+      ],
+    },
+    {
+      expectedKeyObjectIds: [
         'rear-campus-event-pavilion-right-feed-surface',
       ],
       expectedVisibleLayers: ['stadium-screen-surface'],
       camera: {
-        lookAtOffset: [0, 62, -8],
-        positionOffset: [250, 150, -380],
+        lookAtOffset: [-20, 125, -20],
+        positionOffset: [520, 190, -520],
         targetIds: ['rear-campus-event-pavilion-right-feed-surface'],
       },
       forbiddenKeyObjectIds: STADIUM_TRANSITION_FORBIDDEN_OBJECT_IDS,
@@ -1012,8 +1480,8 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       intent: 'stadium-right-flank-review',
       label: 'Stadium Right Flank',
       startView: {
-        lookAt: [720, 116, -1939],
-        position: [1040, 276, -2459],
+        lookAt: [700, 211, -1943],
+        position: [1240, 276, -2443],
         source: 'arrival-main',
       },
       watchItems: [
@@ -1179,13 +1647,13 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       intent: 'rear-campus-left-front-perimeter-corner-review',
       label: 'Rear Campus Left Front Corner',
       camera: {
-        lookAtOffset: [0, 20, 0],
-        positionOffset: [420, 154, -500],
+        lookAtOffset: [0, 70, 0],
+        positionOffset: [260, 70, -260],
         targetIds: ['rear-campus-perimeter-left-front-corner'],
       },
       startView: {
-        lookAt: [-3050, 62, -1074],
-        position: [-2630, 196, -1574],
+        lookAt: [-3050, 112, -1074],
+        position: [-2790, 112, -1334],
         source: 'arrival-main',
       },
       watchItems: [
@@ -1226,13 +1694,13 @@ export function buildReviewOperatorZones(): ReviewOperatorZone[] {
       intent: 'rear-campus-mega-hall-review',
       label: 'Rear Campus Mega Hall',
       camera: {
-        lookAtOffset: [80, 98, 0],
-        positionOffset: [780, 340, 980],
+        lookAtOffset: [40, 210, 0],
+        positionOffset: [430, 170, 500],
         targetIds: ['rear-campus-mega-civic-hall-host-surface'],
       },
       startView: {
-        lookAt: [-2410, 266, -3828],
-        position: [-1710, 508, -2848],
+        lookAt: [-2450, 378, -3838.1],
+        position: [-2060, 338, -3338.1],
         source: 'arrival-main',
       },
       watchItems: [

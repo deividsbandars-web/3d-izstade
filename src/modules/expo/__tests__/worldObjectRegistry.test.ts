@@ -5,6 +5,7 @@ import {
   buildGroundWorldObjectRegistry,
   buildStadiumWorldObjectRegistry,
 } from '../runtime/world/inspection/worldObjectRegistry.js';
+import type { WorldObjectRegistryEntry } from '../runtime/world/inspection/worldObjectRegistry.js';
 import { EXPO_VERTICAL_CITY_SYSTEM } from '../runtime/planning/vertical/verticalCitySystem.js';
 import { resolveRearCampusScreenHostId } from '../runtime/world/rearCampusScreenHosts.js';
 import type {
@@ -33,8 +34,11 @@ const cityMass: CityMass = {
     emissive: '#000000',
     emissiveIntensity: 0,
     showFrontWing: false,
+    showCrownBeacon: false,
     showHorizontalCap: true,
+    showMegaVerticalSpines: false,
     showRearSpine: false,
+    showSideFloorBands: false,
     showSideInset: false,
     showSignatureBand: false,
     skipBase: false,
@@ -50,8 +54,11 @@ const skippedCityMass: CityMass = {
     emissive: '#000000',
     emissiveIntensity: 0,
     showFrontWing: false,
+    showCrownBeacon: false,
     showHorizontalCap: false,
+    showMegaVerticalSpines: false,
     showRearSpine: false,
+    showSideFloorBands: false,
     showSideInset: false,
     showSignatureBand: false,
     skipBase: true,
@@ -315,6 +322,15 @@ const cityRegistry = buildCityWorldObjectRegistry({
   plan: cityPlan,
 });
 assert.equal(JSON.stringify(cityPlan), cityBefore);
+assert.deepEqual(
+  EXPO_VERTICAL_CITY_SYSTEM.walkableRegions
+    .filter((region) => region.id.startsWith('sky-market-spine-'))
+    .map((region) => [region.id, region.playerY, region.zoneId]),
+  [
+    ['sky-market-spine-lower-market-deck-walkable', 541, 'center-spine'],
+    ['sky-market-spine-upper-market-deck-walkable', 919, 'center-spine'],
+  ],
+);
 assert.ok(cityRegistry.some((entry) => entry.id === citySurface.id && entry.layer === 'city-screen-surface'));
 assert.ok(cityRegistry.some((entry) => entry.id === citySocket.id && entry.layer === 'city-screen-socket'));
 assert.ok(cityRegistry.some((entry) => entry.id === cityAssignment.id && entry.layer === 'city-screen-assignment'));
@@ -324,6 +340,11 @@ assert.ok(cityRegistry.some((entry) => entry.id === verticalCityMass.id && entry
 assert.ok(cityRegistry.some((entry) => entry.id === cityTower.id && entry.layer === 'city-tower'));
 assert.ok(cityRegistry.some((entry) => entry.id === 'tower-cluster-vertical-pilot-lift-ground' && entry.layer === 'vertical-access-node'));
 assert.ok(cityRegistry.some((entry) => entry.id === 'tower-cluster-vertical-pilot-lift-level-1-to-level-2' && entry.layer === 'vertical-access-node'));
+assert.ok(cityRegistry.some((entry) => entry.id === 'sky-market-spine-lift-ground-to-lower' && entry.layer === 'vertical-access-node'));
+assert.ok(cityRegistry.some((entry) => entry.id === 'sky-market-spine-lift-lower-to-upper' && entry.layer === 'vertical-access-node'));
+assert.ok(cityRegistry.some((entry) => entry.id === 'sky-market-spine-animated-market-lift' && entry.layer === 'vertical-elevator-route'));
+assert.ok(cityRegistry.some((entry) => entry.id === 'tower-cluster-mega-highrise-animated-panoramic-lift' && entry.layer === 'vertical-elevator-route'));
+assert.ok(cityRegistry.some((entry) => entry.id === 'tower-cluster-television-tower-animated-city-lift' && entry.layer === 'vertical-elevator-route'));
 assert.equal(cityRegistry.some((entry) => entry.id === cityPlane.id), false);
 assert.deepEqual(cityRegistry.find((entry) => entry.id === cityMass.id)?.position, [10, 90, -40]);
 assert.ok(cityRegistry.find((entry) => entry.id === cityMass.id)?.physicsParts?.some((part) => part.id === 'base'));
@@ -337,6 +358,79 @@ assert.deepEqual(cityRegistry.find((entry) => entry.id === 'tower-cluster-vertic
 assert.equal(cityRegistry.find((entry) => entry.id === 'tower-cluster-vertical-pilot-lift-ground')?.interactionOwner, 'src/modules/expo/runtime/world/scene/ExpoWorldPlayerLayer.tsx');
 assert.deepEqual(cityRegistry.find((entry) => entry.id === 'tower-cluster-vertical-pilot-lift-level-1-to-level-2')?.position, [980, 67, -650]);
 assert.deepEqual(cityRegistry.find((entry) => entry.id === 'tower-cluster-vertical-pilot-lift-level-1-to-level-2')?.size, [56, 10, 56]);
+assert.deepEqual(cityRegistry.find((entry) => entry.id === 'sky-market-spine-lift-ground-to-lower')?.position, [-650, 5, -520]);
+assert.deepEqual(cityRegistry.find((entry) => entry.id === 'sky-market-spine-lift-ground-to-lower')?.size, [76, 10, 76]);
+assert.deepEqual(cityRegistry.find((entry) => entry.id === 'sky-market-spine-lift-lower-to-upper')?.position, [-650, 537, -520]);
+assert.deepEqual(cityRegistry.find((entry) => entry.id === 'sky-market-spine-animated-market-lift')?.position, [-650, 498, -520]);
+assert.deepEqual(cityRegistry.find((entry) => entry.id === 'sky-market-spine-animated-market-lift')?.size, [150, 1010, 92]);
+assert.deepEqual(cityRegistry.find((entry) => entry.id === 'tower-cluster-mega-highrise-animated-panoramic-lift')?.position, [-220, 825, -1130]);
+assert.deepEqual(cityRegistry.find((entry) => entry.id === 'tower-cluster-mega-highrise-animated-panoramic-lift')?.size, [144, 1662, 78]);
+assert.deepEqual(cityRegistry.find((entry) => entry.id === 'tower-cluster-television-tower-animated-city-lift')?.position, [620, 2670.5, -900]);
+assert.deepEqual(cityRegistry.find((entry) => entry.id === 'tower-cluster-television-tower-animated-city-lift')?.size, [128, 5351, 76]);
+
+type SizedWorldObjectRegistryEntry = WorldObjectRegistryEntry & { size: [number, number, number] };
+const hasRegistrySize = (entry: WorldObjectRegistryEntry): entry is SizedWorldObjectRegistryEntry => (
+  Array.isArray(entry.size) && entry.size.length === 3 && entry.size.every(Number.isFinite)
+);
+const buildObjectBounds = (entry: SizedWorldObjectRegistryEntry) => ({
+  maxX: entry.position[0] + (entry.size[0] * 0.5),
+  maxY: entry.position[1] + (entry.size[1] * 0.5),
+  maxZ: entry.position[2] + (entry.size[2] * 0.5),
+  minX: entry.position[0] - (entry.size[0] * 0.5),
+  minY: entry.position[1] - (entry.size[1] * 0.5),
+  minZ: entry.position[2] - (entry.size[2] * 0.5),
+});
+const objectBoundsOverlap = (left: SizedWorldObjectRegistryEntry, right: SizedWorldObjectRegistryEntry) => {
+  const leftBounds = buildObjectBounds(left);
+  const rightBounds = buildObjectBounds(right);
+
+  return boundsOverlap(leftBounds, rightBounds);
+};
+const boundsOverlap = (
+  leftBounds: ReturnType<typeof buildObjectBounds>,
+  rightBounds: ReturnType<typeof buildObjectBounds>,
+) => {
+  return (
+    Math.min(leftBounds.maxX, rightBounds.maxX) > Math.max(leftBounds.minX, rightBounds.minX)
+    && Math.min(leftBounds.maxY, rightBounds.maxY) > Math.max(leftBounds.minY, rightBounds.minY)
+    && Math.min(leftBounds.maxZ, rightBounds.maxZ) > Math.max(leftBounds.minZ, rightBounds.minZ)
+  );
+};
+const isTowerClusterElevatorRoute = (entry: WorldObjectRegistryEntry): entry is SizedWorldObjectRegistryEntry => (
+  entry.layer === 'vertical-elevator-route'
+  && entry.planningZone === 'tower-cluster'
+  && hasRegistrySize(entry)
+);
+const isTowerClusterMass = (entry: WorldObjectRegistryEntry): entry is SizedWorldObjectRegistryEntry => (
+  entry.layer === 'city-mass'
+  && String(entry.sourceKind).startsWith('tower-cluster-')
+  && hasRegistrySize(entry)
+);
+const towerElevatorMassIntersections = cityRegistry
+  .filter(isTowerClusterElevatorRoute)
+  .flatMap((route) => cityRegistry
+    .filter(isTowerClusterMass)
+    .filter((mass) => objectBoundsOverlap(route, mass))
+    .map((mass) => `${route.id}->${mass.id}`));
+assert.deepEqual(towerElevatorMassIntersections, []);
+
+const towerElevatorWalkableRegionIntersections = cityRegistry
+  .filter(isTowerClusterElevatorRoute)
+  .flatMap((route) => EXPO_VERTICAL_CITY_SYSTEM.walkableRegions
+    .map((region) => ({
+      bounds: {
+        maxX: region.position[0] + (region.size[0] * 0.5),
+        maxY: region.playerY + 12,
+        maxZ: region.position[2] + (region.size[1] * 0.5),
+        minX: region.position[0] - (region.size[0] * 0.5),
+        minY: region.playerY - 12,
+        minZ: region.position[2] - (region.size[1] * 0.5),
+      },
+      region,
+    }))
+    .filter(({ bounds }) => boundsOverlap(buildObjectBounds(route), bounds))
+    .map(({ region }) => `${route.id}->${region.id}`));
+assert.deepEqual(towerElevatorWalkableRegionIntersections, []);
 assert.deepEqual(cityRegistry.find((entry) => entry.id === cityTower.id)?.position, [120, 151, -160]);
 assert.deepEqual(
   cityRegistry.find((entry) => entry.id === semanticTower.id)?.aliases,
@@ -380,6 +474,7 @@ assert.equal(stadiumRegistry.find((entry) => entry.id === 'rear-campus-bowl-cent
 assert.equal(resolveRearCampusScreenHostId('rear-campus-bowl-feed-surface'), 'rear-campus-bowl-center-deck-screen-host-shell');
 assert.equal(resolveRearCampusScreenHostId('rear-campus-stage-monolith-canopy-host-surface'), 'rear-campus-stage-monolith-canopy');
 assert.equal(resolveRearCampusScreenHostId('rear-campus-mega-civic-hall-host-surface'), 'rear-campus-mega-civic-hall');
+assert.equal(resolveRearCampusScreenHostId('rear-campus-orbital-scoregate-host-surface'), 'rear-campus-orbital-scoregate');
 assert.ok(stadiumRegistry.some((entry) => entry.id === 'rear-forecourt-1' && entry.layer === 'stadium-plane'));
 assert.equal(stadiumRegistry.find((entry) => entry.id === 'rear-forecourt-1')?.groundOwner, 'stadium');
 assert.equal(stadiumRegistry.find((entry) => entry.id === 'rear-forecourt-1')?.groundRole, 'structural');
@@ -399,6 +494,14 @@ assert.ok(stadiumRegistry.some((entry) => entry.id === 'rear-campus-mega-civic-h
 assert.deepEqual(stadiumRegistry.find((entry) => entry.id === 'rear-campus-mega-civic-hall')?.position, [-2490, 176, -3670]);
 assert.equal(stadiumRegistry.find((entry) => entry.id === 'rear-campus-mega-civic-hall')?.planningRole, 'recovered-large-landmark');
 assert.equal(stadiumRegistry.some((entry) => entry.id === 'rear-campus-mega-civic-hall-screen-host-shell'), false);
+assert.ok(stadiumRegistry.some((entry) => entry.id === 'rear-campus-orbital-scoregate' && entry.layer === 'stadium-structure'));
+assert.deepEqual(stadiumRegistry.find((entry) => entry.id === 'rear-campus-orbital-scoregate')?.position, [0, 515, -4800]);
+assert.ok(stadiumRegistry.find((entry) => entry.id === 'rear-campus-orbital-scoregate')?.physicsParts?.some((part) => part.id === 'scoreboard-backplate'));
+assert.equal(stadiumRegistry.find((entry) => entry.id === 'rear-campus-orbital-scoregate')?.planningRole, 'recovered-large-landmark');
+assert.ok(stadiumRegistry.some((entry) => entry.id === 'rear-campus-entry-pulse-arches' && entry.layer === 'stadium-structure'));
+assert.deepEqual(stadiumRegistry.find((entry) => entry.id === 'rear-campus-entry-pulse-arches')?.position, [1700, 280, -1900]);
+assert.ok(stadiumRegistry.find((entry) => entry.id === 'rear-campus-entry-pulse-arches')?.physicsParts?.some((part) => part.id === 'left-upper-arch-beam'));
+assert.ok(stadiumRegistry.find((entry) => entry.id === 'rear-campus-entry-pulse-arches')?.physicsParts?.some((part) => part.id === 'right-upper-arch-beam'));
 assert.ok(stadiumRegistry.some((entry) => entry.id === 'rear-campus-test-perimeter' && entry.layer === 'stadium-structure'));
 assert.equal(stadiumRegistry.some((entry) => entry.id === 'stadium-axis-center-1180'), false);
 

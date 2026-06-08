@@ -29,6 +29,34 @@ function getZoneSections(zoneId: ExpoPlanningZoneId): ExpoPlanningSectionId[] {
   }
 }
 
+function buildPreviousCivilizationMonumentScreenSurface(): CityScreenSurface {
+  return {
+    color: '#091320',
+    glowColor: '#67e8f9',
+    id: 'screen-array-left-upper-3',
+    position: [-900, 1320, 268.2],
+    role: 'support-wall',
+    rotation: [0, Math.PI, 0],
+    sections: ['left'],
+    size: [820, 600, 4.2],
+    type: 'wall',
+  };
+}
+
+function buildOrbitalBroadcastFoundryScreenSurface(): CityScreenSurface {
+  return {
+    color: '#07111f',
+    glowColor: '#a5f3fc',
+    id: 'screen-array-right-upper-3',
+    position: [890, 2530, 300],
+    role: 'support-wall',
+    rotation: [0, -3.08, 0],
+    sections: ['right'],
+    size: [960, 540, 4.2],
+    type: 'wall',
+  };
+}
+
 function isMarqueeOrSpineHeroSurface(surface: CityScreenSurface) {
   return surface.role === 'hero-wall' && (
     surface.id.startsWith('screen-marquee-left-') ||
@@ -551,7 +579,7 @@ function buildRearCampusScreenSurfaces(
 
   const bowlSurface: CityScreenSurface = {
     id: 'rear-campus-bowl-feed-surface',
-    position: [0, 292, resolvePositiveZFaceMountedZ(campusCenterZ - 972, 228, 4.2)],
+    position: [760, 292, resolvePositiveZFaceMountedZ(campusCenterZ - 972, 228, 4.2)],
     rotation: [0, 0, 0],
     size: [560, 168, 4.2],
     color: '#08111c',
@@ -733,7 +761,7 @@ function buildRearCampusScreenSurfaces(
   const megaHostSurfaces: CityScreenSurface[] = [
     buildMegaHostSurface({
       id: 'rear-campus-stage-monolith-canopy-host-surface',
-      position: [47, 126, rearCampusZ(-2926)],
+      position: [-620, 126, rearCampusZ(-2926)],
       width: 308,
       height: 136,
       depth: 4.2,
@@ -755,6 +783,15 @@ function buildRearCampusScreenSurfaces(
       height: 194,
       depth: 4.2,
       glowColor: '#7dd3fc',
+      role: 'hero-wall',
+    }),
+    buildMegaHostSurface({
+      id: 'rear-campus-orbital-scoregate-host-surface',
+      position: [0, 512, resolvePositiveZFaceMountedZ(rearCampusZ(-4800), 320, 4.2)],
+      width: 920,
+      height: 360,
+      depth: 4.2,
+      glowColor: '#38bdf8',
       role: 'hero-wall',
     }),
     buildMegaHostSurface({
@@ -792,17 +829,23 @@ export function buildZoneScreenSurfacePlan(args: {
     case 'arrival':
       return [] as CityScreenSurface[];
     case 'left-district':
-      return cityScreenSurfaces.filter((surface) =>
-        surface.id.startsWith('screen-marquee-left-') || surface.id.startsWith('screen-array-left-')
-      ).map((surface) => enrichSurfaceIntent(zoneId, surface));
+      return [
+        ...cityScreenSurfaces.filter((surface) =>
+          surface.id.startsWith('screen-marquee-left-') || surface.id.startsWith('screen-array-left-')
+        ),
+        buildPreviousCivilizationMonumentScreenSurface(),
+      ].map((surface) => enrichSurfaceIntent(zoneId, surface));
     case 'center-spine':
       return cityScreenSurfaces
         .filter((surface) => surface.id.startsWith('screen-spine-primary-'))
         .map((surface) => enrichSurfaceIntent(zoneId, surface));
     case 'right-district':
-      return cityScreenSurfaces.filter((surface) =>
-        surface.id.startsWith('screen-marquee-right-') || surface.id.startsWith('screen-array-right-')
-      ).map((surface) => enrichSurfaceIntent(zoneId, surface));
+      return [
+        ...cityScreenSurfaces.filter((surface) =>
+          surface.id.startsWith('screen-marquee-right-') || surface.id.startsWith('screen-array-right-')
+        ),
+        buildOrbitalBroadcastFoundryScreenSurface(),
+      ].map((surface) => enrichSurfaceIntent(zoneId, surface));
     case 'tower-cluster':
       return buildTowerScreenSurfaces(towers).map((surface) => enrichSurfaceIntent(zoneId, surface));
     case 'rear-campus':

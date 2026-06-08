@@ -2,86 +2,100 @@ import { useState } from 'react';
 import '../../components/calculator/styles/CalculatorPro.css';
 import { COUNTRIES, renderCountryOptions } from '../../core/constants';
 import { generateAiResponse } from '../../services/aiService';
-
-// ------------------------------------------------------------------
-// DATUBĀZE: Cenas un materiāli (Bāzes likmes EUR Rīgai/Standartam)
-// ------------------------------------------------------------------
+import { CalculatorLeadCta } from './CalculatorLeadCta';
 
 const PRICES = {
   demolition: {
     none: { name: 'Bez demontāžas', mat: 0, work: 0 },
-    light: { name: 'Viegla (tapetes, grīdlīstes, segums)', mat: 0, work: 6.00 },
-    heavy: { name: 'Smaga (flīzes, starpsienas, grīdas laušana)', mat: 0, work: 25.00 },
+    light: { name: 'Viegla demontāža', mat: 0, work: 6 },
+    heavy: { name: 'Smaga demontāža', mat: 0, work: 25 },
   },
   container: {
-    none: { name: 'Nevajag (savs transports)', price: 0 },
-    small: { name: '5m³ Konteiners', price: 350 },
-    medium: { name: '7m³ Konteiners', price: 450 },
-    large: { name: '10m³ Konteiners', price: 600 },
+    none: { name: 'Nevajag', price: 0 },
+    small: { name: '5m³ konteiners', price: 350 },
+    medium: { name: '7m³ konteiners', price: 450 },
+    large: { name: '10m³ konteiners', price: 600 },
   },
   floor_prep: {
     none: { name: 'Bez sagatavošanas', mat: 0, work: 0 },
-    osb: { name: 'OSB plātņu ieklāšana', mat: 9.50, work: 8.00 },
-    betons: { name: 'Betona izlīdzināšana (Pašizlīdzinošais)', mat: 8.00, work: 10.00 },
+    osb: { name: 'OSB plātņu ieklāšana', mat: 9.5, work: 8 },
+    betons: { name: 'Pašizlīdzinošais betons', mat: 8, work: 10 },
   },
   floor_cover: {
     none: { name: 'Bez seguma', mat: 0, work: 0 },
-    laminats: { name: 'Lamināts + apakšklājs', mat: 15.00, work: 9.00 },
-    vinils: { name: 'Līmējamais Vinils (LVT)', mat: 25.00, work: 12.00 },
-    parkets: { name: 'Koka parkets', mat: 55.00, work: 20.00 },
-    flizes: { name: 'Akmens masas flīzes', mat: 30.00, work: 35.00 },
+    laminats: { name: 'Lamināts ar apakšklāju', mat: 15, work: 9 },
+    vinils: { name: 'Līmējamais vinils (LVT)', mat: 25, work: 12 },
+    parkets: { name: 'Koka parkets', mat: 55, work: 20 },
+    flizes: { name: 'Akmens masas flīzes', mat: 30, work: 35 },
   },
   floor_skirting: {
-    none: { name: 'Bez kājlīstēm', mat: 0, work: 0 }, 
-    mdf: { name: 'MDF krāsotas kājlīstes', mat: 5.50, work: 5.00 }, 
-    plastmasas: { name: 'Plastmasas (PVC)', mat: 2.50, work: 3.00 }, 
+    none: { name: 'Bez kājlīstēm', mat: 0, work: 0 },
+    mdf: { name: 'MDF krāsotas kājlīstes', mat: 5.5, work: 5 },
+    plastmasas: { name: 'PVC kājlīstes', mat: 2.5, work: 3 },
   },
   wall_prep: {
     none: { name: 'Bez sagatavošanas', mat: 0, work: 0 },
-    regipsis_profils: { name: 'Reģipša montāža (uz profiliem)', mat: 8.50, work: 15.00 },
-    apmesana: { name: 'Sienu apmešana (MP75)', mat: 5.00, work: 16.00 },
+    regipsis_profils: { name: 'Reģipša montāža uz profiliem', mat: 8.5, work: 15 },
+    apmesana: { name: 'Sienu apmešana', mat: 5, work: 16 },
   },
   wall_finish: {
     none: { name: 'Bez apdares', mat: 0, work: 0 },
-    krasa_standard: { name: 'Špaktelēšana + Standarta Krāsošana', mat: 5.50, work: 18.00 },
-    krasa_premium: { name: 'Špaktelēšana + Premium Krāsošana', mat: 10.00, work: 25.00 },
-    tapetes: { name: 'Tapešu līmēšana', mat: 18.00, work: 12.00 },
-    dekors: { name: 'Dekoratīvais apmetums', mat: 22.00, work: 35.00 },
+    krasa_standard: { name: 'Špaktelēšana un standarta krāsošana', mat: 5.5, work: 18 },
+    krasa_premium: { name: 'Špaktelēšana un premium krāsošana', mat: 10, work: 25 },
+    tapetes: { name: 'Tapešu līmēšana', mat: 18, work: 12 },
+    dekors: { name: 'Dekoratīvais apmetums', mat: 22, work: 35 },
   },
   ceiling_type: {
     none: { name: 'Bez griestiem', mat: 0, work: 0 },
-    regipsis: { name: 'Reģipša griesti (špaktelēti, krāsoti)', mat: 12.00, work: 35.00 },
-    iestieptie: { name: 'Iestieptie PVC griesti', mat: 25.00, work: 15.00 },
-    armstrong: { name: 'Iekārtie "Armstrong" griesti', mat: 15.00, work: 12.00 },
+    regipsis: { name: 'Reģipša griesti', mat: 12, work: 35 },
+    iestieptie: { name: 'Iestieptie PVC griesti', mat: 25, work: 15 },
+    armstrong: { name: 'Iekārtie Armstrong griesti', mat: 15, work: 12 },
   },
-  electrical_points: { name: 'Elektrības punkti (Rozetes, slēdži)', mat: 15.00, work: 20.00 },
-  doors: { name: 'Iekšdurvju bloka montāža', mat: 180.00, work: 85.00 }
-};
+  electrical_points: { name: 'Elektrības punkti', mat: 15, work: 20 },
+  doors: { name: 'Iekšdurvju bloka montāža', mat: 180, work: 85 },
+} as const;
 
 const ROOM_TYPES = {
-  living_room: 'Viesistaba',
-  bedroom: 'Guļamistaba',
-  kitchen: 'Virtuve',
   bathroom: 'Vannas istaba',
-  toilet: 'Tualete',
+  bedroom: 'Guļamistaba',
   corridor: 'Koridors',
-};
+  kitchen: 'Virtuve',
+  living_room: 'Viesistaba',
+  toilet: 'Tualete',
+} as const;
+
+function formatEuro(value: number) {
+  return `${Math.round(value).toLocaleString('lv-LV')} €`;
+}
 
 export default function InteriorCalc() {
   const [params, setParams] = useState({
-    country: 'lv', roomType: 'living_room', area: 20, height: 2.7, windowArea: 2.5, doorCount: 1,
-    demolitionType: 'none', containerSize: 'none', floorPrep: 'betons', floorCover: 'laminats',
-    floorSkirting: 'mdf', wallPrep: 'none', wallFinish: 'krasa_standard', ceilingType: 'regipsis',
-    elecPoints: 4, imageUrl: '', videoUrl: '',
+    area: 20,
+    ceilingType: 'regipsis',
+    containerSize: 'none',
+    country: 'lv',
+    demolitionType: 'none',
+    doorCount: 1,
+    elecPoints: 4,
+    floorCover: 'laminats',
+    floorPrep: 'betons',
+    floorSkirting: 'mdf',
+    height: 2.7,
+    imageUrl: '',
+    roomType: 'living_room',
+    videoUrl: '',
+    wallFinish: 'krasa_standard',
+    wallPrep: 'none',
+    windowArea: 2.5,
   });
 
   const [results, setResults] = useState<any>(null);
   const [aiAdvice, setAiAnalysis] = useState<string | null>(null);
   const [isAiLoading, setIsAiLoading] = useState(false);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value, type } = e.target;
-    setParams(prev => ({ ...prev, [name]: type === 'number' ? parseFloat(value) || 0 : value }));
+  const handleChange = (event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value, type } = event.target;
+    setParams((current) => ({ ...current, [name]: type === 'number' ? parseFloat(value) || 0 : value }));
   };
 
   const getAiAdvice = async () => {
@@ -89,30 +103,31 @@ export default function InteriorCalc() {
     setIsAiLoading(true);
     try {
       const prompt = `Analizē šo iekšējās apdares tāmi:
-      Telpa: ${results.roomType}
-      Platība: ${params.area} m2
-      Kopējā summa: ${results.grandTotal} EUR
-      Materiāli: ${results.totalMat} EUR, Darbs: ${results.totalWork} EUR
-      
-      Sniedz 3 profesionālus padomus:
-      1. Kā optimizēt izmaksas šai telpai.
-      2. Materiālu saderības ieteikums.
-      3. Kas jāņem vērā pirms darbu uzsākšanas.
-      Atbildi latviski, profesionāli.`;
+Telpa: ${results.roomType}
+Platība: ${params.area} m2
+Kopējā summa: ${results.grandTotal} EUR
+Materiāli: ${results.totalMat} EUR, Darbs: ${results.totalWork} EUR
+
+Sniedz 3 profesionālus padomus:
+1. Kā optimizēt izmaksas šai telpai.
+2. Materiālu saderības ieteikums.
+3. Kas jāņem vērā pirms darbu uzsākšanas.
+Atbildi latviski, profesionāli.`;
 
       const responseText = await generateAiResponse(prompt);
       setAiAnalysis(responseText);
     } catch {
-      setAiAnalysis("AI mezgls pašlaik nav sasniedzams.");
+      setAiAnalysis('AI mezgls pašlaik nav sasniedzams. Tāmi var nosūtīt pārbaudei caur pieprasījuma formu.');
     } finally {
       setIsAiLoading(false);
     }
   };
 
   const handleCalculate = () => {
-    const workMult = COUNTRIES[params.country as keyof typeof COUNTRIES].workMult;
-    const matMult = COUNTRIES[params.country as keyof typeof COUNTRIES].matMult;
-    const perimeter = Math.sqrt(params.area) * 4; 
+    const country = COUNTRIES[params.country as keyof typeof COUNTRIES] ?? COUNTRIES.lv;
+    const workMult = country.workMult;
+    const matMult = country.matMult;
+    const perimeter = Math.sqrt(params.area) * 4;
     const netWallArea = Math.max(0, (perimeter * params.height) - params.windowArea - (params.doorCount * 1.6));
 
     const demoRate = PRICES.demolition[params.demolitionType as keyof typeof PRICES.demolition];
@@ -139,28 +154,42 @@ export default function InteriorCalc() {
 
     const extrasCost = {
       mat: (params.elecPoints * PRICES.electrical_points.mat + params.doorCount * PRICES.doors.mat) * matMult,
-      work: (params.elecPoints * PRICES.electrical_points.work + params.doorCount * PRICES.doors.work) * workMult
+      work: (params.elecPoints * PRICES.electrical_points.work + params.doorCount * PRICES.doors.work) * workMult,
     };
 
     const totalMat = demolitionCost.mat + floorCost.mat + wallCost.mat + ceilingCost.mat + extrasCost.mat;
     const totalWork = demolitionCost.work + floorCost.work + wallCost.work + ceilingCost.work + extrasCost.work;
     const grandTotal = totalMat + totalWork;
 
-    setResults({ netWallArea, perimeter, demolitionCost, floorCost, wallCost, ceilingCost, extrasCost, totalMat, totalWork, grandTotal, roomType: ROOM_TYPES[params.roomType as keyof typeof ROOM_TYPES], imageUrl: params.imageUrl, videoUrl: params.videoUrl });
+    setResults({
+      ceilingCost,
+      demolitionCost,
+      extrasCost,
+      floorCost,
+      grandTotal,
+      imageUrl: params.imageUrl,
+      netWallArea,
+      perimeter,
+      roomType: ROOM_TYPES[params.roomType as keyof typeof ROOM_TYPES],
+      totalMat,
+      totalWork,
+      videoUrl: params.videoUrl,
+      wallCost,
+    });
     setAiAnalysis(null);
   };
 
   return (
     <div className="calculator-pro-wrapper">
       <div className="calc-header">
-        <h1>PRO Iekšējās Apdares Tāme</h1>
-        <p>Precīzs un starptautisks remonta kalkulators ar AI Projektu vadītāju.</p>
+        <h1>PRO iekšējās apdares tāme</h1>
+        <p>Remonta kalkulators telpas apdarei, grīdām, sienām, griestiem, elektrībai un durvīm.</p>
       </div>
 
       <div className="calc-grid">
         <div className="calc-form-column">
           <section className="calc-section">
-            <h2>🌍 Lokācijas un Telpas Parametri</h2>
+            <h2>Lokācija un telpas parametri</h2>
             <div className="input-group">
               <label>Reģions
                 <select name="country" value={params.country} onChange={handleChange}>{renderCountryOptions()}</select>
@@ -168,7 +197,7 @@ export default function InteriorCalc() {
               <div className="input-group-2" style={{ marginTop: '20px' }}>
                 <label>Telpas veids
                   <select name="roomType" value={params.roomType} onChange={handleChange}>
-                    {Object.entries(ROOM_TYPES).map(([k, v]) => (<option key={k} value={k}>{v}</option>))}
+                    {Object.entries(ROOM_TYPES).map(([key, value]) => (<option key={key} value={key}>{value}</option>))}
                   </select>
                 </label>
                 <label>Platība (m²)
@@ -179,7 +208,7 @@ export default function InteriorCalc() {
           </section>
 
           <section className="calc-section">
-            <h2>📐 Telpas Ģeometrija</h2>
+            <h2>Telpas ģeometrija</h2>
             <div className="input-group-2">
               <label>Griestu augstums (m)
                 <input type="number" name="height" value={params.height} onChange={handleChange} step="0.1" />
@@ -197,67 +226,67 @@ export default function InteriorCalc() {
           </section>
 
           <section className="calc-section">
-            <h2>🧹 Demontāža un Atkritumi</h2>
+            <h2>Demontāža un atkritumi</h2>
             <div className="input-group">
               <label>Demontāžas apjoms
                 <select name="demolitionType" value={params.demolitionType} onChange={handleChange}>
-                  {Object.entries(PRICES.demolition).map(([k, v]) => (<option key={k} value={k}>{v.name}</option>))}
+                  {Object.entries(PRICES.demolition).map(([key, value]) => (<option key={key} value={key}>{value.name}</option>))}
                 </select>
               </label>
               <label style={{ marginTop: '20px' }}>Būvgružu konteiners
                 <select name="containerSize" value={params.containerSize} onChange={handleChange}>
-                  {Object.entries(PRICES.container).map(([k, v]) => (<option key={k} value={k}>{v.name}</option>))}
+                  {Object.entries(PRICES.container).map(([key, value]) => (<option key={key} value={key}>{value.name}</option>))}
                 </select>
               </label>
             </div>
           </section>
 
           <section className="calc-section">
-            <h2>🪵 Grīdu un Sienu Apdare</h2>
+            <h2>Grīdu un sienu apdare</h2>
             <div className="input-group">
               <label>Grīdas sagatavošana
                 <select name="floorPrep" value={params.floorPrep} onChange={handleChange}>
-                  {Object.entries(PRICES.floor_prep).map(([k, v]) => (<option key={k} value={k}>{v.name}</option>))}
+                  {Object.entries(PRICES.floor_prep).map(([key, value]) => (<option key={key} value={key}>{value.name}</option>))}
                 </select>
               </label>
               <label style={{ marginTop: '20px' }}>Grīdas segums
                 <select name="floorCover" value={params.floorCover} onChange={handleChange}>
-                  {Object.entries(PRICES.floor_cover).map(([k, v]) => (<option key={k} value={k}>{v.name}</option>))}
+                  {Object.entries(PRICES.floor_cover).map(([key, value]) => (<option key={key} value={key}>{value.name}</option>))}
                 </select>
               </label>
               <label style={{ marginTop: '20px' }}>Sienu apdare
                 <select name="wallFinish" value={params.wallFinish} onChange={handleChange}>
-                  {Object.entries(PRICES.wall_finish).map(([k, v]) => (<option key={k} value={k}>{v.name}</option>))}
+                  {Object.entries(PRICES.wall_finish).map(([key, value]) => (<option key={key} value={key}>{value.name}</option>))}
                 </select>
               </label>
             </div>
           </section>
 
           <button onClick={handleCalculate} className="btn-primary" style={{ width: '100%', padding: '24px', fontSize: '1.2rem' }}>
-            Sastādīt Remonta Tāmi
+            Sastādīt remonta tāmi
           </button>
         </div>
 
         <div className="calc-results-column">
           <div className="sticky-results">
-            <h3 className="results-title">Remonta Specifikācija</h3>
-            
+            <h3 className="results-title">Remonta specifikācija</h3>
+
             {!results ? (
               <div className="empty-state">
-                <div className="empty-state-icon">🛋️</div>
-                <p>Norādiet telpas izmērus un vēlmes</p>
+                <div className="empty-state-icon">▣</div>
+                <p>Norādi telpas izmērus un vēlamo apdares līmeni.</p>
               </div>
             ) : (
               <>
                 <div className="grand-total-box">
                   <span className="gt-label">{results.roomType} ({params.area} m²)</span>
-                  <span className="gt-value">{results.grandTotal.toFixed(0)} €</span>
-                  <span className="gt-subtext">Aprēķinā iekļauti materiāli un darbs.</span>
+                  <span className="gt-value">{formatEuro(results.grandTotal)}</span>
+                  <span className="gt-subtext">Aprēķinā iekļauti materiāli un darbs. Gala cena jāprecizē pēc objekta apskates.</span>
                 </div>
 
                 <div style={{ gridTemplateColumns: '1fr 1fr', gap: '15px', marginTop: '25px', display: 'grid' }}>
                   <button onClick={getAiAdvice} disabled={isAiLoading} className="btn-glass" style={{ borderColor: 'var(--accent-blue)', color: 'var(--accent-blue)' }}>
-                    {isAiLoading ? '🤖 ANALIZĒ...' : '✨ AI PADOMS'}
+                    {isAiLoading ? 'Analizē...' : 'AI padoms'}
                   </button>
                   <button className="btn-glass">Eksportēt PDF</button>
                 </div>
@@ -265,7 +294,7 @@ export default function InteriorCalc() {
                 {aiAdvice && (
                   <div className="glass-card" style={{ marginTop: '25px', padding: '25px', background: 'rgba(15, 23, 42, 0.9)', borderColor: 'var(--accent-blue)' }}>
                     <div style={{ color: 'var(--accent-blue)', fontWeight: 900, marginBottom: '15px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <span style={{ fontSize: '1.2rem' }}>🤖</span> AI PROJEKTU VADĪTĀJS
+                      AI projektu vadītājs
                     </div>
                     <div style={{ color: '#cbd5e1', fontSize: '0.9rem', lineHeight: '1.6', whiteSpace: 'pre-wrap' }}>{aiAdvice}</div>
                   </div>
@@ -280,13 +309,25 @@ export default function InteriorCalc() {
                     </tr>
                   </thead>
                   <tbody>
-                    <tr><td>Demontāža / Gruži</td><td>{results.demolitionCost.mat.toFixed(0)} €</td><td>{results.demolitionCost.work.toFixed(0)} €</td></tr>
-                    <tr><td>Grīdas darbi</td><td>{results.floorCost.mat.toFixed(0)} €</td><td>{results.floorCost.work.toFixed(0)} €</td></tr>
-                    <tr><td>Sienu apdare</td><td>{results.wallCost.mat.toFixed(0)} €</td><td>{results.wallCost.work.toFixed(0)} €</td></tr>
-                    <tr><td>Griestu darbi</td><td>{results.ceilingCost.mat.toFixed(0)} €</td><td>{results.ceilingCost.work.toFixed(0)} €</td></tr>
-                    <tr><td>Elektrība / Durvis</td><td>{results.extrasCost.mat.toFixed(0)} €</td><td>{results.extrasCost.work.toFixed(0)} €</td></tr>
+                    <tr><td>Demontāža / gružu izvešana</td><td>{formatEuro(results.demolitionCost.mat)}</td><td>{formatEuro(results.demolitionCost.work)}</td></tr>
+                    <tr><td>Grīdas darbi</td><td>{formatEuro(results.floorCost.mat)}</td><td>{formatEuro(results.floorCost.work)}</td></tr>
+                    <tr><td>Sienu apdare</td><td>{formatEuro(results.wallCost.mat)}</td><td>{formatEuro(results.wallCost.work)}</td></tr>
+                    <tr><td>Griestu darbi</td><td>{formatEuro(results.ceilingCost.mat)}</td><td>{formatEuro(results.ceilingCost.work)}</td></tr>
+                    <tr><td>Elektrība / durvis</td><td>{formatEuro(results.extrasCost.mat)}</td><td>{formatEuro(results.extrasCost.work)}</td></tr>
                   </tbody>
                 </table>
+
+                <CalculatorLeadCta
+                  calculatorId="interior"
+                  calculatorTitle="Iekšējās apdares tāme"
+                  estimateTotal={results.grandTotal}
+                  summaryItems={[
+                    { label: 'Telpa', value: results.roomType },
+                    { label: 'Platība', value: `${params.area} m²` },
+                    { label: 'Grīda', value: PRICES.floor_cover[params.floorCover as keyof typeof PRICES.floor_cover].name },
+                    { label: 'Sienas', value: PRICES.wall_finish[params.wallFinish as keyof typeof PRICES.wall_finish].name },
+                  ]}
+                />
               </>
             )}
           </div>

@@ -1,0 +1,198 @@
+import { BOOTH_PRODUCT_PROFILES } from './boothProductConfig';
+import type {
+  BoothProductDebugSummary,
+  BoothProductMappingStatus,
+  BoothProductMappingSummary,
+  BoothProductPlacementMapping,
+  BoothProductPreviewSummary,
+  BoothProductProfile,
+} from './boothProductTypes';
+import { getBoothProductPreviewMode } from './boothProductPreviewFlags';
+
+const MAPPED_STATUSES: readonly BoothProductMappingStatus[] = ['exact', 'approximate'];
+const RUNTIME_RENDERING_ENABLED = false;
+const BOOTH_PRODUCT_HAS_BACKEND = true;
+const BOOTH_PRODUCT_HAS_LEAD_CAPTURE_UI = true;
+const BOOTH_PRODUCT_HAS_AI_AGENT_UI = false;
+const BOOTH_PRODUCT_HAS_BOOKING_UI = false;
+const EXACT_PREVIEW_SAFE_PROFILE_IDS = new Set([
+  'sponsor-concierge-premium-profile',
+  'immersive-fabric-labs-standard-profile',
+  'automation-arena-landmark-profile',
+]);
+
+const EXACT_PREVIEW_SAFE_MAPPINGS = [
+  {
+    boothId: 'sponsor-concierge',
+    mappingStatus: 'exact',
+    notes: 'Verified production-safe runtime booth/company id and booth alias; preview-safe metadata only, with default rendering still disabled.',
+    operatorZoneId: 'sponsor-boulevard-right',
+    packageTier: 'premium',
+    productProfileId: 'sponsor-concierge-premium-profile',
+    runtimeBoothId: 'booth-sponsor-concierge',
+    runtimeSponsorId: 'sponsor-concierge',
+    safeForDefault: false,
+    safeForPreview: true,
+    sponsorId: 'sponsor-concierge',
+    zoneId: 'meetings',
+  },
+  {
+    boothId: 'immersive-fabric-labs',
+    mappingStatus: 'exact',
+    notes: 'Verified production-safe runtime booth/company id and booth alias; preview-safe Standard Booth product card only, with default rendering still disabled.',
+    operatorZoneId: 'right-marquee',
+    packageTier: 'standard',
+    productProfileId: 'immersive-fabric-labs-standard-profile',
+    runtimeBoothId: 'booth-immersive-fabric-labs',
+    runtimeSponsorId: 'immersive-fabric-labs',
+    safeForDefault: false,
+    safeForPreview: true,
+    sponsorId: 'immersive-fabric-labs',
+    zoneId: 'showcase-row',
+  },
+  {
+    boothId: 'warpala-platform',
+    mappingStatus: 'exact',
+    notes: 'Verified production-safe hero/platform booth/company id; preview-safe Landmark Zone Sponsor card only, with default rendering still disabled.',
+    operatorZoneId: 'arrival-gate',
+    packageTier: 'landmarkZone',
+    productProfileId: 'automation-arena-landmark-profile',
+    runtimeBoothId: 'booth-warpala-platform',
+    runtimeSponsorId: 'warpala-platform',
+    safeForDefault: false,
+    safeForPreview: true,
+    sponsorId: 'warpala-platform',
+    zoneId: 'arrival-core',
+  },
+] as const satisfies readonly BoothProductPlacementMapping[];
+
+const DEFERRED_MOCK_PROFILE_MAPPINGS = BOOTH_PRODUCT_PROFILES
+  .filter((profile) => !EXACT_PREVIEW_SAFE_PROFILE_IDS.has(profile.id))
+  .map((profile) => ({
+    boothId: profile.boothId,
+    mappingStatus: 'deferred',
+    notes: 'Mock boothProduct profile does not match a verified production-safe runtime booth or sponsor id yet.',
+    packageTier: profile.packageTier,
+    productProfileId: profile.id,
+    safeForDefault: false,
+    safeForPreview: false,
+    ...(profile.sponsorId ? { sponsorId: profile.sponsorId } : {}),
+  })) as readonly BoothProductPlacementMapping[];
+
+// Exact mappings are rendered only by the explicit review preview flag; the
+// remaining mock profiles stay deferred and are never forced onto runtime booths.
+export const BOOTH_PRODUCT_PLACEMENT_MAPPINGS = [
+  ...EXACT_PREVIEW_SAFE_MAPPINGS,
+  ...DEFERRED_MOCK_PROFILE_MAPPINGS,
+] as const satisfies readonly BoothProductPlacementMapping[];
+
+function normalizeLookupId(value: string) {
+  return value.trim();
+}
+
+function isMappedStatus(status: BoothProductMappingStatus) {
+  return MAPPED_STATUSES.includes(status);
+}
+
+export function getBoothProductPlacementMappings() {
+  return BOOTH_PRODUCT_PLACEMENT_MAPPINGS;
+}
+
+export function getBoothProductMappingForBooth(boothId: string) {
+  const normalizedBoothId = normalizeLookupId(boothId);
+  return BOOTH_PRODUCT_PLACEMENT_MAPPINGS.find((mapping) => (
+    mapping.boothId === normalizedBoothId
+    || mapping.runtimeBoothId === normalizedBoothId
+    || mapping.runtimeSponsorId === normalizedBoothId
+  )) ?? null;
+}
+
+export function getBoothProductMappingForProfile(profileId: string) {
+  const normalizedProfileId = normalizeLookupId(profileId);
+  return BOOTH_PRODUCT_PLACEMENT_MAPPINGS.find((mapping) => (
+    mapping.productProfileId === normalizedProfileId
+  )) ?? null;
+}
+
+export function getMappedBoothProductProfiles(): BoothProductProfile[] {
+  return BOOTH_PRODUCT_PROFILES.filter((profile) => {
+    const mapping = getBoothProductMappingForProfile(profile.id);
+    return mapping ? isMappedStatus(mapping.mappingStatus) : false;
+  });
+}
+
+export function getUnmappedBoothProductProfiles(): BoothProductProfile[] {
+  return BOOTH_PRODUCT_PROFILES.filter((profile) => {
+    const mapping = getBoothProductMappingForProfile(profile.id);
+    return !mapping || !isMappedStatus(mapping.mappingStatus);
+  });
+}
+
+export function getPreviewSafeBoothProductMappings() {
+  return BOOTH_PRODUCT_PLACEMENT_MAPPINGS.filter((mapping) => mapping.safeForPreview);
+}
+
+export function getDefaultSafeBoothProductMappings() {
+  return BOOTH_PRODUCT_PLACEMENT_MAPPINGS.filter((mapping) => mapping.safeForDefault);
+}
+
+export function getBoothProductMappingSummary(): BoothProductMappingSummary {
+  const mappings = BOOTH_PRODUCT_PLACEMENT_MAPPINGS;
+
+  return {
+    approximateCount: mappings.filter((mapping) => mapping.mappingStatus === 'approximate').length,
+    defaultSafeCount: mappings.filter((mapping) => mapping.safeForDefault).length,
+    deferredCount: mappings.filter((mapping) => mapping.mappingStatus === 'deferred').length,
+    exactCount: mappings.filter((mapping) => mapping.mappingStatus === 'exact').length,
+    mappedCount: mappings.filter((mapping) => isMappedStatus(mapping.mappingStatus)).length,
+    missingCount: mappings.filter((mapping) => mapping.mappingStatus === 'missing').length,
+    previewSafeCount: mappings.filter((mapping) => mapping.safeForPreview).length,
+    profileCount: BOOTH_PRODUCT_PROFILES.length,
+    rendered: RUNTIME_RENDERING_ENABLED,
+  };
+}
+
+export function getBoothProductDebugSummary(): BoothProductDebugSummary {
+  const mappings = BOOTH_PRODUCT_PLACEMENT_MAPPINGS;
+  const firstPreviewSafeMapping = getPreviewSafeBoothProductMappings()[0] ?? null;
+
+  return {
+    defaultSafeCount: mappings.filter((mapping) => mapping.safeForDefault).length,
+    deferredMappingCount: mappings.filter((mapping) => mapping.mappingStatus === 'deferred').length,
+    exactMappingCount: mappings.filter((mapping) => mapping.mappingStatus === 'exact').length,
+    firstPreviewSafeBoothId: firstPreviewSafeMapping?.boothId ?? null,
+    firstPreviewSafeProfileId: firstPreviewSafeMapping?.productProfileId ?? null,
+    firstPreviewSafeTier: firstPreviewSafeMapping?.packageTier ?? null,
+    hasAiAgentUi: BOOTH_PRODUCT_HAS_AI_AGENT_UI,
+    hasBackend: BOOTH_PRODUCT_HAS_BACKEND,
+    hasBookingUi: BOOTH_PRODUCT_HAS_BOOKING_UI,
+    hasLeadCaptureUi: BOOTH_PRODUCT_HAS_LEAD_CAPTURE_UI,
+    mappingCount: mappings.length,
+    previewSafeCount: mappings.filter((mapping) => mapping.safeForPreview).length,
+    profileCount: BOOTH_PRODUCT_PROFILES.length,
+    rendered: RUNTIME_RENDERING_ENABLED,
+  };
+}
+
+export function getBoothProductPreviewReadinessSummary() {
+  return getBoothProductDebugSummary();
+}
+
+export function getBoothProductPreviewSummary(input?: Parameters<typeof getBoothProductPreviewMode>[0]): BoothProductPreviewSummary {
+  const debugSummary = getBoothProductDebugSummary();
+  const mode = getBoothProductPreviewMode(input);
+
+  return {
+    defaultSafeCount: debugSummary.defaultSafeCount,
+    enabled: mode === 'preview',
+    exactMappingCount: debugSummary.exactMappingCount,
+    firstPreviewSafeBoothId: debugSummary.firstPreviewSafeBoothId,
+    firstPreviewSafeProfileId: debugSummary.firstPreviewSafeProfileId,
+    firstPreviewSafeTier: debugSummary.firstPreviewSafeTier,
+    mode,
+    previewSafeCount: debugSummary.previewSafeCount,
+    profileCount: debugSummary.profileCount,
+    rendered: debugSummary.rendered,
+    visiblePreviewCardCount: mode === 'preview' ? debugSummary.previewSafeCount : 0,
+  };
+}

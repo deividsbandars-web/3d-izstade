@@ -36,10 +36,6 @@ function isReviewSceneHost(hostname: string | null | undefined) {
   );
 }
 
-function hasOperatorFlag(search: string | null | undefined) {
-  return new URLSearchParams(search || '').get('operator') === '1';
-}
-
 export function shouldUseReviewExpoSceneSource({
   hostname,
   isDev,
@@ -51,9 +47,13 @@ export function shouldUseReviewExpoSceneSource({
     return mode !== 'live';
   }
 
-  if (mode !== 'review' && mode !== 'seeded') {
+  if (!isReviewSceneHost(hostname) || mode === 'live') {
     return false;
   }
 
-  return hasOperatorFlag(search) && isReviewSceneHost(hostname);
+  if (mode === 'review' || mode === 'seeded') {
+    return true;
+  }
+
+  return true;
 }

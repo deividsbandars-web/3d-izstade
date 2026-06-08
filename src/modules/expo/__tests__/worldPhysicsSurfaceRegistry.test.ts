@@ -292,6 +292,7 @@ assert.equal(productionPhysics.walkableSurfaces.some((surface) => surface.ownerI
 assert.equal(productionPhysics.walkableSurfaces.some((surface) => surface.sourceKind === 'city-screen-host-mass'), false);
 assert.equal(productionPhysics.walkableSurfaces.some((surface) => surface.sourceKind === 'rear-campus-screen-host-shell'), false);
 assert.equal(productionPhysics.walkableSurfaces.some((surface) => surface.sourceKind === 'tower-cluster-plinth-mass'), false);
+assert.equal(productionPhysics.walkableSurfaces.some((surface) => surface.sourceKind === 'tower-cluster-television-tower-mass'), false);
 assert.equal(productionPhysics.walkableSurfaces.some((surface) => surface.ownerId.includes('tower-cluster-vertical-pilot-core-')), false);
 assert.equal(productionTraversalGraph.summary.surfaceCount, productionPhysics.walkableSurfaces.length);
 assert.ok(productionTraversalGraph.summary.reachableSurfaces > 0);

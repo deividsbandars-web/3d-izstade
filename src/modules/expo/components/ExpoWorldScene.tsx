@@ -13,7 +13,8 @@ interface ExpoWorldSceneProps {
   debug: boolean;
   guests: any[];
   inspectionEnabled: boolean;
-  mobileMoveIntent?: { f: boolean; b: boolean; l: boolean; r: boolean; s?: boolean };
+  isTouchDevice: boolean;
+  mobileMoveIntent?: { f: boolean; b: boolean; l: boolean; r: boolean; s?: boolean; turnL?: boolean; turnR?: boolean; jump?: boolean; lift?: boolean; lookX?: number; lookY?: number };
   mode: ExpoMode;
   onMove: (pos: number[]) => void;
   runtimeFocusIsolation?: boolean;
@@ -44,6 +45,7 @@ export function ExpoWorldScene({
   debug,
   guests: _guests,
   inspectionEnabled,
+  isTouchDevice,
   mobileMoveIntent,
   mode,
   onMove,
@@ -62,6 +64,7 @@ export function ExpoWorldScene({
       activeZone={activeZone}
       debug={debug}
       inspectionEnabled={inspectionEnabled}
+      isTouchDevice={isTouchDevice}
       mobileMoveIntent={mobileMoveIntent}
       mode={mode}
       onMove={onMove}

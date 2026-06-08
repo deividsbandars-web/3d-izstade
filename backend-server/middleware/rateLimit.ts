@@ -3,11 +3,21 @@ import { logger } from '../../src/backend/logging/logger.js';
 
 const rateLimits = new Map<string, { count: number, resetAt: number }>();
 
+const STREAMING_BOOTSTRAP_PATHS = new Set([
+  '/pixel-streaming/status',
+  '/pixel-streaming/session',
+]);
+
 /**
  * Enhanced Rate Limiter Middleware for Production.
  * Prevents API abuse and dDoS attacks.
  */
 export const rateLimitMiddleware = (req: Request, res: Response, next: NextFunction) => {
+  if (STREAMING_BOOTSTRAP_PATHS.has(req.path)) {
+    next();
+    return;
+  }
+
   const ip = (req.headers['x-forwarded-for'] as string) || req.ip || 'unknown';
   const now = Date.now();
   

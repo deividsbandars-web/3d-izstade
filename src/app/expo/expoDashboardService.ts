@@ -1,4 +1,16 @@
 import { CityMapAPI, ExpoDataAPI } from '../../services/expo';
+import {
+  normalizeExpoScreenContentForSave,
+  validateExpoScreenMediaUrl,
+} from '../../shared/expo/screenContentMedia';
+import {
+  normalizeExpoSponsorAssetPackForSave,
+  type ExpoSponsorAssetPackInput,
+} from '../../shared/expo/sponsorAssetPack';
+import {
+  normalizeExpoBoothPublicationStatus,
+  type ExpoBoothPublicationStatus,
+} from '../../shared/expo/boothPublicationStatus';
 
 export type ExpoManagedBooth = {
   assets_3d?: Record<string, unknown> | null;
@@ -7,8 +19,21 @@ export type ExpoManagedBooth = {
   district?: string | null;
   id?: string;
   industry_sector?: string | null;
-  status?: string | null;
+  status?: ExpoBoothPublicationStatus | string | null;
 };
+
+export type ExpoManagedBoothScreenContent = {
+  ctaLabel?: string;
+  imageUrl?: string;
+  mode?: 'generated-card' | 'image' | 'video-placeholder';
+  screenSlotId?: string;
+  status?: 'draft' | 'published';
+  subtitle?: string;
+  title?: string;
+  videoUrl?: string;
+};
+
+export type ExpoManagedBoothSponsorAssetPack = ExpoSponsorAssetPackInput;
 
 export const expoDashboardService = {
   /**
@@ -80,18 +105,41 @@ export const expoDashboardService = {
     companyName,
     description,
     district,
+    screenContent,
+    sponsorAssetPack,
+    status,
     videoUrl,
   }: {
     boothId?: string;
     companyName: string;
     description: string;
     district: string;
+    screenContent?: ExpoManagedBoothScreenContent;
+    sponsorAssetPack?: ExpoManagedBoothSponsorAssetPack;
+    status?: ExpoBoothPublicationStatus | string;
     videoUrl: string;
   }) {
     try {
+      const screenContentResult = normalizeExpoScreenContentForSave(screenContent);
+      if (!screenContentResult.ok) {
+        throw new Error(screenContentResult.issues.map((issue) => issue.message).join(' '));
+      }
+
+      const sponsorAssetPackResult = normalizeExpoSponsorAssetPackForSave(sponsorAssetPack);
+      if (!sponsorAssetPackResult.ok) {
+        throw new Error(sponsorAssetPackResult.issues.map((issue) => issue.message).join(' '));
+      }
+
+      const boothVideoResult = validateExpoScreenMediaUrl(videoUrl, 'video');
+      if (!boothVideoResult.ok) {
+        throw new Error(boothVideoResult.reason);
+      }
+
       const payload = {
         assets_3d: {
-          video_url: videoUrl,
+          screen_content: screenContentResult.screenContent,
+          sponsor_asset_pack: sponsorAssetPackResult.assetPack,
+          video_url: boothVideoResult.url,
         },
         company_name: companyName,
         contact_info: {
@@ -99,7 +147,7 @@ export const expoDashboardService = {
         },
         district,
         industry_sector: district,
-        status: 'active',
+        status: normalizeExpoBoothPublicationStatus(status),
       };
 
       const booth = boothId

@@ -30,6 +30,7 @@ globalThis.fetch = (async (input: string | URL) => {
           { streamerId: 'shared-stream-1', streaming: true, shared: true, ready: true },
           { streamerId: 'booth-hero-one', boothId: 'booth-1', slug: 'hero-one', streaming: true, ready: true },
           { streamerId: 'level-room-1', streamingLevel: 'Level_Booth_booth-1', streaming: true, ready: true },
+          { streamerId: 'booth-sponsor-concierge', streaming: true, ready: true },
         ];
       },
     } as Response;
@@ -60,6 +61,17 @@ const preferred = await getPixelStreamingStatus({
 assert.equal(preferred.session.activeStreamerId, 'level-room-1');
 assert.equal(preferred.session.selectionPolicy, 'booth_preferred');
 assert.equal(preferred.readiness, 'session_ready');
+
+const preferredByStreamerId = await getPixelStreamingStatus({
+  boothId: 'sponsor-concierge',
+  slug: 'sponsor-concierge',
+  streamingLevel: 'Level_Booth_sponsor-concierge',
+});
+
+assert.equal(preferredByStreamerId.session.activeStreamerId, 'booth-sponsor-concierge');
+assert.equal(preferredByStreamerId.session.selectionPolicy, 'booth_preferred');
+assert.equal(preferredByStreamerId.readiness, 'session_ready');
+assert.equal(preferredByStreamerId.warnings.includes('FALLBACK_SHARED_STREAM'), false);
 
 const fallback = await getPixelStreamingStatus({
   boothId: 'missing-booth',

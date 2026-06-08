@@ -1,0 +1,69 @@
+{
+  "schemaVersion": "modular-home-unreal-visualizer-v2",
+  "experience": "modular-home-premium-visualizer",
+  "projectId": "local-preview-family-terrace-001",
+  "productId": "family-timber-80",
+  "layoutVariant": "largeLiving",
+  "moduleInstances": [
+    {
+      "instanceId": "family-80-living-01",
+      "moduleId": "family-living-module",
+      "quantity": 1,
+      "role": "Family living and kitchen module",
+      "positionHint": "front shared living/kitchen zone",
+      "productionGroup": "primary-shell"
+    },
+    {
+      "instanceId": "family-80-bedroom-pair-01",
+      "moduleId": "family-bedroom-module",
+      "quantity": 2,
+      "role": "Bedroom modules",
+      "positionHint": "rear two-bedroom wing",
+      "productionGroup": "primary-shell"
+    },
+    {
+      "instanceId": "family-80-bathroom-core-01",
+      "moduleId": "bathroom-core-module",
+      "quantity": 1,
+      "role": "Bathroom core",
+      "positionHint": "central service core",
+      "productionGroup": "service-core"
+    }
+  ],
+  "facade": "naturalTimber",
+  "roof": "pitched",
+  "terrace": "extendedTerrace",
+  "windowPlacement": "frontPanoramic",
+  "doorPlacement": "terraceFacing",
+  "finish": "standard",
+  "interiorPackage": "standardInterior",
+  "furniturePackage": "standardFurniture",
+  "materialTokens": {
+    "facadeMaterialId": "natural-timber-siding",
+    "roofMaterialId": "metal-roof",
+    "interiorMaterialIds": ["interior-plywood", "bathroom-wet-core"],
+    "terraceMaterialId": "timber-terrace-deck",
+    "glassMaterialId": "panoramic-glass",
+    "doorMaterialId": "terrace-slider-door",
+    "trimMaterialId": "timber-trim"
+  },
+  "estimateSummary": {
+    "currency": "EUR",
+    "estimatedTotal": 148600,
+    "confidence": "siteDependent",
+    "lineItemCount": 26,
+    "finalQuote": false,
+    "disclaimer": "Preview estimate only; extended terrace, transport and foundation scope are site-dependent."
+  },
+  "notes": [
+    "Family Timber 80 is supported by the data contract but may be deferred in first Unreal POC assets.",
+    "Extended terrace should fall back to front deck if Family terrace assets are unavailable."
+  ],
+  "safety": {
+    "piiIncluded": false,
+    "uploadedUserAssetsIncluded": false,
+    "externalAssetUrlsIncluded": false,
+    "finalQuote": false,
+    "pixelStreamingEnabledByThisPayload": false
+  }
+}

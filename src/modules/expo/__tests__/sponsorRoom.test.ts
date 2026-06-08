@@ -48,7 +48,8 @@ assert.ok(recordBySlug);
 assert.equal(recordBySlug?.company.id, 'company-1');
 assert.equal(recordBySlug?.sectorName, 'Platform Partners');
 assert.equal(recordBySlug?.streamingLevel, 'Level_Booth_booth-1');
-assert.ok(recordBySlug?.preferredStreamerIds.includes('booth-booth-1'));
+assert.equal(recordBySlug?.preferredStreamerIds[0], 'booth-1');
+assert.equal(recordBySlug?.preferredStreamerIds.includes('booth-booth-1'), false);
 assert.ok(recordBySlug?.preferredStreamerIds.includes('booth-hero-one'));
 assert.ok(recordBySlug?.preferredStreamerIds.includes('Level_Booth_booth-1'));
 
@@ -57,7 +58,10 @@ assert.ok(recordByBoothId);
 assert.equal(recordByBoothId?.slugOrId, 'hero-one');
 
 const actions = buildSponsorRoomActions(recordBySlug!);
-assert.equal(actions.primaryActions.length, 3);
+assert.deepEqual(
+  actions.primaryActions.map((entry) => entry.action.kind),
+  ['website', 'booking', 'ai_chat', 'calculators', 'demo_room']
+);
 assert.equal(actions.brochureAction?.label, 'Open Brochure');
 assert.equal(actions.brochureAction?.intent.target, 'https://cdn.example.com/brochure.png');
 

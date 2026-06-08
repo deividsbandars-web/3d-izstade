@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { getBoothColliderSegments } from '../components/BoothArchitectureKit.js';
 import { getBoothArchitectureMetrics } from '../components/BoothArchitectureKit.js';
-import { resolveOpenBoothPavilionLayout } from '../runtime/booths/OpenBoothPavilion.js';
+import { resolveOpenBoothPavilionLayout } from '../runtime/booths/OpenBoothPavilionLayout.js';
 
 const templates = [
   'hero_forum',

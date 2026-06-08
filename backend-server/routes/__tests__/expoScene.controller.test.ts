@@ -112,7 +112,14 @@ function createMockSupabase() {
                 {
                   activity_score: 0.8,
                   booking_url: 'https://alpha.example.com/book',
-                  booths: [{ cta_label: 'Demo', id: 'booth-alpha', model_url: '', video_url: 'https://cdn.example.com/demo.mp4' }],
+                  booths: [{
+                    cta_label: 'Demo',
+                    hero_screen_image_url: 'https://cdn.example.com/raw-alpha-screen.webp',
+                    hero_screen_title: 'Raw Alpha Screen',
+                    id: 'booth-alpha',
+                    model_url: '',
+                    video_url: 'https://cdn.example.com/demo.mp4',
+                  }],
                   cta_label: 'Demo',
                   current_revenue: 20,
                   employee_count: 8,
@@ -155,6 +162,45 @@ function createMockSupabase() {
         };
       }
 
+      if (table === 'expo_booths') {
+        return {
+          select() {
+            return Promise.resolve({
+              data: [
+                {
+                  assets_3d: {
+                    screen_content: {
+                      imageUrl: 'https://cdn.example.com/managed-alpha-screen.webp',
+                      mode: 'image',
+                      status: 'published',
+                      subtitle: 'Managed alpha screen content',
+                      title: 'Managed Alpha Screen',
+                    },
+                  },
+                  company_name: 'Ä€lfa Group',
+                  company_id: 'company-alpha',
+                  id: 'managed-alpha-row',
+                },
+                {
+                  assets_3d: {
+                    screen_content: {
+                      ctaLabel: 'Book Screen',
+                      mode: 'generated-card',
+                      status: 'published',
+                      subtitle: 'Managed booth screen content',
+                      title: 'Managed Gamma Screen',
+                    },
+                  },
+                  company_name: 'Gamma Group',
+                  id: 'managed-gamma-row',
+                },
+              ],
+              error: null,
+            });
+          },
+        };
+      }
+
       throw new Error(`Unexpected table ${table}`);
     },
   };
@@ -175,6 +221,12 @@ assert.equal(state.body.companies[0].slug, 'alfa-group');
 assert.equal(state.body.booths[0].model_url, null);
 assert.equal(state.body.booths[1].model_url, null);
 assert.equal(state.body.booths[2].model_url, null);
+const gammaBooth = state.body.booths.find((booth: any) => booth.companyId === 'company-gamma');
+assert.equal(gammaBooth.heroScreenTitle, 'Managed Gamma Screen');
+assert.equal(gammaBooth.heroScreenText, 'Managed booth screen content');
+const alphaBooth = state.body.booths.find((booth: any) => booth.companyId === 'company-alpha');
+assert.equal(alphaBooth.heroScreenTitle, 'Managed Alpha Screen');
+assert.equal(alphaBooth.heroScreenImageUrl, 'https://cdn.example.com/managed-alpha-screen.webp');
 assert.equal(
   state.body.booths.some((booth: any) => booth.model_url === 'L_Booth_Default'),
   false,

@@ -1,134 +1,249 @@
 import { Link } from 'react-router-dom';
 import WarpalaLogo from '../shared/Logo';
 
-const topCalculations = [
-  { title: "Vannas istabas remonts", range: "no ~5 800 EUR", href: "/renovation-cost-calculator", icon: "🚿" },
-  { title: "Privātmājas siltināšana", range: "no ~12 400 EUR", href: "/heating-cost-calculator", icon: "🏠" },
-  { title: "Virtuves mēbeļu izgatavošana", range: "no ~3 200 EUR", href: "/renovation-cost-calculator", icon: "🍳" },
+const sponsorRoutes = [
+  {
+    body: 'A concise sponsor package page with Standard Booth, Premium Booth, Landmark Zone Sponsor and Demo Arena inventory.',
+    href: '/expo/sponsor-packages',
+    label: 'Start here',
+    title: 'Sponsor packages',
+  },
+  {
+    body: 'A client-friendly Web3D walkthrough that shows the monetization story without operator/debug parameters.',
+    href: '/expo-3d?salesDemo=1',
+    label: 'Open demo',
+    title: 'Sales demo',
+  },
+  {
+    body: 'Construction, creative and service calculators that can turn estimate traffic into qualified lead requests.',
+    href: '/calculators',
+    label: 'View funnels',
+    title: 'Lead calculators',
+  },
 ];
+
+const packageSignals = [
+  ['Landmark Zone Sponsor', 'Zone ownership, hero placement and Demo Arena sponsor inventory.'],
+  ['Premium Booth', 'Meeting-ready booth, lead capture and future qualification workflow.'],
+  ['Standard Booth', 'Product profile, demo story and sponsor interest path.'],
+  ['Demo Arena', 'Monthly event programming for demo battles, investor days and recaps.'],
+];
+
+const calculatorFunnels = [
+  { href: '/roof-cost-calculator', metric: 'Detailed estimate', title: 'Roofing lead funnel' },
+  { href: '/heating-cost-calculator', metric: 'High-intent request', title: 'Heating lead funnel' },
+  { href: '/foundation-cost-calculator', metric: 'Project-start signal', title: 'Foundation lead funnel' },
+];
+
+const primaryButtonStyle = {
+  background: 'linear-gradient(135deg, #0f172a, #0369a1)',
+  borderRadius: '999px',
+  boxShadow: '0 18px 45px rgba(14, 165, 233, 0.28)',
+  color: '#fff',
+  fontWeight: 950,
+  padding: '15px 24px',
+  textDecoration: 'none',
+} as const;
+
+const secondaryButtonStyle = {
+  background: '#ecfeff',
+  border: '1px solid #67e8f9',
+  borderRadius: '999px',
+  color: '#0e7490',
+  fontWeight: 950,
+  padding: '15px 24px',
+  textDecoration: 'none',
+} as const;
 
 export default function Home() {
   return (
-    <div style={{ 
-      padding: '60px 20px', 
-      maxWidth: '1200px', 
-      margin: '0 auto', 
-      minHeight: '100vh',
-      background: '#f8fafc',
-      color: '#0f172a'
-    }}>
-      
-      <div style={{ marginBottom: '80px', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
-        <WarpalaLogo size={180} />
-        <h2 style={{ marginTop: '20px', fontSize: '1.5rem', color: '#64748b', fontWeight: 400 }}>
-          Nākamās paaudzes B2B izstāžu ekosistēma
-        </h2>
-        <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', justifyContent: 'center', marginTop: '30px' }}>
-          <Link to="/economy-simulator" style={{ padding: '15px 40px', background: 'linear-gradient(135deg, #8b5cf6, #3b82f6)', color: '#fff', borderRadius: '50px', textDecoration: 'none', fontWeight: 950, fontSize: '1.2rem', boxShadow: '0 10px 30px rgba(139, 92, 246, 0.4)' }}>
-            📊 ECONOMY SIMULATOR
-          </Link>
-          <Link to="/business-fleet" style={{ padding: '15px 40px', background: 'linear-gradient(135deg, #10b981, #3b82f6)', color: '#fff', borderRadius: '50px', textDecoration: 'none', fontWeight: 950, fontSize: '1.2rem', boxShadow: '0 10px 30px rgba(16, 185, 129, 0.4)' }}>
-            🚢 AUTONOMOUS FLEET
-          </Link>
-          <Link to="/business-economy" style={{ padding: '15px 40px', background: 'linear-gradient(135deg, #fbbf24, #f59e0b)', color: '#000', borderRadius: '50px', textDecoration: 'none', fontWeight: 950, fontSize: '1.2rem', boxShadow: '0 10px 30px rgba(245, 158, 11, 0.4)' }}>
-            💎 AI ECONOMY ENGINE
-          </Link>
-          <Link to="/prototype" style={{ padding: '15px 40px', background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)', color: '#fff', borderRadius: '50px', textDecoration: 'none', fontWeight: 900, fontSize: '1.2rem', boxShadow: '0 10px 30px rgba(59, 130, 246, 0.4)' }}>
-            🚀 AI PROTOTYPE
-          </Link>
-          <Link to="/autonomous-engine" style={{ padding: '15px 40px', background: 'linear-gradient(135deg, #10b981, #3b82f6)', color: '#fff', borderRadius: '50px', textDecoration: 'none', fontWeight: 900, fontSize: '1.2rem', boxShadow: '0 10px 30px rgba(16, 185, 129, 0.4)' }}>
-            ⚙️ AUTONOMOUS ENGINE
-          </Link>
-        </div>
-      </div>
-
-      <div style={{ display: 'flex', justifyContent: 'center', gap: '20px', marginBottom: '60px', flexWrap: 'wrap' }}>
-        <Link to="/expo-3d" style={{ 
-          padding: '15px 40px', 
-          background: '#0f172a', 
-          color: '#fff', 
-          borderRadius: '12px', 
-          textDecoration: 'none', 
-          fontWeight: 'bold',
-          boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '10px'
-        }}>
-          🏙️ IEEJ 3D PILSĒTĀ
-        </Link>
-        <Link to="/expo/admin" style={{ 
-          padding: '15px 40px', 
-          background: '#fff', 
-          color: '#0f172a', 
-          border: '2px solid #0f172a',
-          borderRadius: '12px', 
-          textDecoration: 'none', 
-          fontWeight: 'bold',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '10px'
-        }}>
-          🏢 UZŅĒMUMIEM
-        </Link>
-      </div>
-
-      <div style={{ margin: '-20px auto 60px', maxWidth: '880px', display: 'grid', gap: '12px', textAlign: 'left' }}>
-        <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '16px', padding: '18px 20px', color: '#334155' }}>
-          <strong style={{ color: '#0f172a' }}>Publiskais ceļš:</strong> ieeja caur <span style={{ fontWeight: 800 }}>/expo-3d</span> atver lightweight Web3D pilsētu ar drošu pārlūka navigāciju.
-        </div>
-        <div style={{ background: '#ecfdf5', border: '1px solid #a7f3d0', borderRadius: '16px', padding: '18px 20px', color: '#065f46' }}>
-          <strong style={{ color: '#064e3b' }}>Premium ceļš:</strong> Unreal Pixel Streaming tiek palaists tikai no Expo lobby iekšējās premium pogas, nevis no nejaušiem triggeriem.
-        </div>
-        <div style={{ background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '16px', padding: '18px 20px', color: '#475569' }}>
-          <strong style={{ color: '#0f172a' }}>Fallback:</strong> ja premium straume nav pieejama, Web3D apskate un booth room paliek lietojami kā pilnvērtīgs expo maršruts.
-        </div>
-      </div>
-
-      <div style={{ 
-        display: 'grid', 
-        gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', 
-        gap: '20px',
-        marginTop: '40px'
-      }}>
-        {topCalculations.map((c, i) => (
-          <Link to={c.href} key={i} style={{ 
-            padding: '30px', 
-            background: '#fff', 
-            borderRadius: '20px', 
-            textDecoration: 'none', 
-            color: 'inherit',
-            border: '1px solid #e2e8f0',
-            transition: 'all 0.2s ease',
-            cursor: 'pointer'
+    <main
+      style={{
+        background:
+          'radial-gradient(circle at 18% 6%, rgba(14, 165, 233, 0.16), transparent 28%), linear-gradient(180deg, #f8fafc 0%, #eef6fb 48%, #f8fafc 100%)',
+        color: '#0f172a',
+        minHeight: '100vh',
+        padding: '52px 20px 72px',
+      }}
+    >
+      <div style={{ margin: '0 auto', maxWidth: '1180px' }}>
+        <section
+          style={{
+            alignItems: 'center',
+            display: 'grid',
+            gap: '34px',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+            marginBottom: '34px',
           }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.transform = 'translateY(-5px)';
-            e.currentTarget.style.boxShadow = '0 10px 30px rgba(0,0,0,0.05)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.transform = 'none';
-            e.currentTarget.style.boxShadow = 'none';
-          }}
+        >
+          <div>
+            <WarpalaLogo size={112} />
+            <div
+              style={{
+                color: '#0369a1',
+                fontSize: '0.78rem',
+                fontWeight: 950,
+                letterSpacing: '0.16em',
+                marginTop: '20px',
+                textTransform: 'uppercase',
+              }}
+            >
+              Web3D B2B Expo City
+            </div>
+            <h1
+              style={{
+                fontSize: 'clamp(2.7rem, 7vw, 6rem)',
+                letterSpacing: '-0.065em',
+                lineHeight: 0.92,
+                margin: '12px 0 18px',
+                maxWidth: '760px',
+              }}
+            >
+              A sponsor-ready expo platform for Web3D demos, booths and lead generation.
+            </h1>
+            <p style={{ color: '#475569', fontSize: '1.12rem', lineHeight: 1.65, margin: 0, maxWidth: '720px' }}>
+              The project combines a Web3D sales demo, sellable sponsor packages, lead capture paths and calculator-based
+              acquisition funnels. The next commercial step is simple: send sponsors to the package page, let them review
+              the sales demo, and capture their sponsorship request.
+            </p>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', marginTop: '28px' }}>
+              <Link to="/expo/sponsor-packages" style={primaryButtonStyle}>
+                View sponsor packages
+              </Link>
+              <Link to="/expo-3d?salesDemo=1" style={secondaryButtonStyle}>
+                Open Web3D sales demo
+              </Link>
+            </div>
+          </div>
+
+          <aside
+            style={{
+              background: 'linear-gradient(145deg, rgba(15, 23, 42, 0.96), rgba(3, 7, 18, 0.92))',
+              border: '1px solid rgba(14, 165, 233, 0.18)',
+              borderRadius: '30px',
+              boxShadow: '0 30px 85px rgba(15, 23, 42, 0.2)',
+              color: '#f8fafc',
+              padding: '28px',
+            }}
           >
-            <div style={{ fontSize: '2.5rem', marginBottom: '15px' }}>{c.icon}</div>
-            <div style={{ fontWeight: '900', fontSize: '1.2rem' }}>{c.title}</div>
-            <div style={{ color: '#F97316', marginTop: '10px', fontWeight: 800, fontSize: '1.1rem' }}>{c.range}</div>
-            <div style={{ marginTop: '20px', fontSize: '0.85rem', color: '#3b82f6', fontWeight: 'bold' }}>SĀKT APRĒĶINU →</div>
-          </Link>
-        ))}
-      </div>
+            <div style={{ color: '#7dd3fc', fontSize: '0.75rem', fontWeight: 950, letterSpacing: '0.14em', textTransform: 'uppercase' }}>
+              Commercial proof points
+            </div>
+            <div style={{ display: 'grid', gap: '14px', marginTop: '20px' }}>
+              {packageSignals.map(([title, body]) => (
+                <div
+                  key={title}
+                  style={{
+                    background: 'rgba(15, 23, 42, 0.78)',
+                    border: '1px solid rgba(148, 163, 184, 0.18)',
+                    borderRadius: '18px',
+                    padding: '15px',
+                  }}
+                >
+                  <strong style={{ display: 'block', fontSize: '1rem' }}>{title}</strong>
+                  <span style={{ color: '#cbd5e1', display: 'block', lineHeight: 1.45, marginTop: '5px' }}>{body}</span>
+                </div>
+              ))}
+            </div>
+          </aside>
+        </section>
 
-      {/* Papildus navigācija ātrai piekļuvei */}
-      <div style={{ marginTop: '100px', textAlign: 'center', borderTop: '1px solid #e2e8f0', paddingTop: '40px' }}>
-        <p style={{ color: '#94a3b8', fontSize: '0.9rem', marginBottom: '20px' }}>Ātrā piekļuve platformas moduļiem</p>
-        <div style={{ display: 'flex', justifyContent: 'center', gap: '30px', flexWrap: 'wrap' }}>
-          <Link to="/city-map" style={{ color: '#64748b', textDecoration: 'none', fontWeight: 'bold' }}>2D Karte</Link>
-          <Link to="/marketplace" style={{ color: '#64748b', textDecoration: 'none', fontWeight: 'bold' }}>Marketplace</Link>
-          <Link to="/urgent-services" style={{ color: '#64748b', textDecoration: 'none', fontWeight: 'bold' }}>SOS Pakalpojumi</Link>
-          <Link to="/dashboard" style={{ color: '#64748b', textDecoration: 'none', fontWeight: 'bold' }}>Lietotāja Panelis</Link>
-        </div>
+        <section
+          style={{
+            display: 'grid',
+            gap: '18px',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+            marginBottom: '32px',
+          }}
+        >
+          {sponsorRoutes.map((route) => (
+            <Link
+              key={route.href}
+              to={route.href}
+              style={{
+                background: '#ffffff',
+                border: '1px solid #dbeafe',
+                borderRadius: '24px',
+                boxShadow: '0 18px 42px rgba(15, 23, 42, 0.06)',
+                color: 'inherit',
+                display: 'grid',
+                gap: '12px',
+                minHeight: '220px',
+                padding: '24px',
+                textDecoration: 'none',
+              }}
+            >
+              <div style={{ color: '#0284c7', fontSize: '0.72rem', fontWeight: 950, letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+                {route.label}
+              </div>
+              <h2 style={{ fontSize: '1.7rem', letterSpacing: '-0.045em', lineHeight: 1.05, margin: 0 }}>{route.title}</h2>
+              <p style={{ color: '#475569', lineHeight: 1.5, margin: 0 }}>{route.body}</p>
+              <span style={{ color: '#0369a1', fontSize: '0.86rem', fontWeight: 950, marginTop: 'auto' }}>
+                Continue
+              </span>
+            </Link>
+          ))}
+        </section>
+
+        <section
+          style={{
+            background: '#0f172a',
+            borderRadius: '28px',
+            color: '#f8fafc',
+            display: 'grid',
+            gap: '22px',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+            padding: '28px',
+          }}
+        >
+          <div>
+            <div style={{ color: '#93c5fd', fontSize: '0.75rem', fontWeight: 950, letterSpacing: '0.14em', textTransform: 'uppercase' }}>
+              Lead funnels
+            </div>
+            <h2 style={{ fontSize: 'clamp(2rem, 5vw, 3.4rem)', letterSpacing: '-0.055em', lineHeight: 1, margin: '10px 0 12px' }}>
+              Calculators convert practical search traffic into qualified requests.
+            </h2>
+            <p style={{ color: '#cbd5e1', lineHeight: 1.58, margin: 0 }}>
+              Use calculators as a second acquisition layer next to sponsor outreach: each estimate can become a lead
+              request for construction, creative or service partners.
+            </p>
+          </div>
+          <div style={{ display: 'grid', gap: '12px' }}>
+            {calculatorFunnels.map((entry) => (
+              <Link
+                key={entry.href}
+                to={entry.href}
+                style={{
+                  alignItems: 'center',
+                  background: 'rgba(15, 23, 42, 0.84)',
+                  border: '1px solid rgba(148, 163, 184, 0.2)',
+                  borderRadius: '18px',
+                  color: '#f8fafc',
+                  display: 'flex',
+                  gap: '14px',
+                  justifyContent: 'space-between',
+                  padding: '16px',
+                  textDecoration: 'none',
+                }}
+              >
+                <strong>{entry.title}</strong>
+                <span style={{ color: '#bae6fd', fontSize: '0.78rem', fontWeight: 950, textTransform: 'uppercase' }}>{entry.metric}</span>
+              </Link>
+            ))}
+            <Link
+              to="/calculators"
+              style={{
+                color: '#7dd3fc',
+                fontSize: '0.9rem',
+                fontWeight: 950,
+                textDecoration: 'none',
+              }}
+            >
+              View all calculators
+            </Link>
+          </div>
+        </section>
       </div>
-    </div>
+    </main>
   );
 }

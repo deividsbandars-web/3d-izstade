@@ -1,3 +1,9 @@
+import {
+  FLOOR_MATERIAL_INTENTS,
+  FLOOR_SURFACE_TOKENS,
+} from './floor/FloorVisualLanguage';
+import type { FloorSurfaceToken } from './floor/FloorVisualLanguage';
+
 export type GroundOwner = 'city' | 'stadium' | 'transition';
 
 export type GroundDetailRibbon = {
@@ -5,6 +11,13 @@ export type GroundDetailRibbon = {
   groundOwner: GroundOwner;
   id: string;
   opacity?: number;
+  position: [number, number, number];
+  size: [number, number];
+};
+
+export type GroundPolishSurface = FloorSurfaceToken & {
+  color: string;
+  id: string;
   position: [number, number, number];
   size: [number, number];
 };
@@ -21,6 +34,38 @@ export const GROUND_DETAIL_MAX_RENDER_OPACITY = 0.08;
 export const CITY_STRUCTURAL_GROUND_OPACITY = 0.095;
 export const CITY_STRUCTURAL_GROUND_ARRIVAL_OPACITY = 0.085;
 export const STADIUM_FORECOURT_GROUND_OPACITY = 0.085;
+
+export const GROUND_SEAM_TRANSITION_PLATE: GroundPolishSurface = {
+  ...FLOOR_SURFACE_TOKENS.cityStadiumSeamTransition,
+  color: FLOOR_MATERIAL_INTENTS.seamTransition.color,
+  id: 'city-stadium-seam-transition-plate',
+  position: [0, GROUND_DETAIL_Y, -1210] as [number, number, number],
+  size: [1760, 760] as [number, number],
+};
+
+export const SPONSOR_BOULEVARD_RIGHT_FLOOR_ANCHOR: GroundPolishSurface = {
+  ...FLOOR_SURFACE_TOKENS.sponsorBoulevardRightAnchor,
+  color: FLOOR_MATERIAL_INTENTS.sponsorZoneAnchor.color,
+  id: 'sponsor-boulevard-right-floor-anchor',
+  position: [270, GROUND_ACCENT_Y, -900] as [number, number, number],
+  size: [680, 320] as [number, number],
+};
+
+export const ARRIVAL_GATE_FLOOR_ANCHOR: GroundPolishSurface = {
+  ...FLOOR_SURFACE_TOKENS.arrivalGateAnchor,
+  color: FLOOR_MATERIAL_INTENTS.arrivalAnchor.color,
+  id: 'arrival-gate-floor-anchor',
+  position: [0, GROUND_ACCENT_Y, 250] as [number, number, number],
+  size: [1280, 360] as [number, number],
+};
+
+export const CENTER_SPINE_FLOOR_GUIDE: GroundPolishSurface = {
+  ...FLOOR_SURFACE_TOKENS.centerSpineGuide,
+  color: FLOOR_MATERIAL_INTENTS.centerSpineGuide.color,
+  id: 'center-spine-floor-guide',
+  position: [0, GROUND_ACCENT_Y, -350] as [number, number, number],
+  size: [180, 760] as [number, number],
+};
 
 export function resolveGroundDetailOpacity(ribbon: Pick<GroundDetailRibbon, 'opacity' | 'position'>) {
   const opacity = ribbon.opacity ?? (ribbon.position[1] === GROUND_ACCENT_Y

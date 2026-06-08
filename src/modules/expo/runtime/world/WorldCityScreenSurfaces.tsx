@@ -1,27 +1,10 @@
 import type { CanonicalPrimitive, CityScreenSurface } from '../planning/types';
+import { WorldCityScreenHousingInstances } from './WorldCityScreenHousingInstances';
 import type { StadiumReserve } from './WorldCitySkeletonLayout';
 
 function renderPrimitive(primitive: CanonicalPrimitive, key: string) {
   if (primitive.kind === 'box') {
-    return (
-      <mesh key={key} name={key} position={primitive.position} rotation={primitive.rotation} renderOrder={1}>
-        <boxGeometry args={primitive.size} />
-        <meshStandardMaterial
-          color={primitive.color}
-          depthWrite={primitive.transparent ? false : true}
-          emissive={primitive.emissive}
-          emissiveIntensity={primitive.emissiveIntensity ?? 0}
-          metalness={primitive.metalness ?? 0.38}
-          polygonOffset
-          polygonOffsetFactor={primitive.transparent ? -2 : 0}
-          polygonOffsetUnits={primitive.transparent ? -2 : 0}
-          roughness={primitive.roughness ?? 0.42}
-          transparent={primitive.transparent}
-          opacity={primitive.opacity}
-          toneMapped={false}
-        />
-      </mesh>
-    );
+    return null;
   }
 
   if (primitive.kind === 'plane') {
@@ -74,26 +57,26 @@ export function WorldCityScreenSurfaces({
 }) {
   void _stadiumReserve;
   const cullDistantScreens = shouldCullDistantScreens();
+  const visibleSurfaces = surfaces.filter((surface) => {
+    if (surface.renderIntent?.visible === false) {
+      return false;
+    }
+
+    if (!cullDistantScreens) {
+      return true;
+    }
+
+    const dx = surface.position[0] - playerPosition[0];
+    const dz = surface.position[2] - playerPosition[2];
+    const distanceSq = (dx * dx) + (dz * dz);
+    const maxDistance = surface.renderIntent?.maxDistance ?? 1240;
+    return distanceSq <= maxDistance * maxDistance;
+  });
 
   return (
     <>
-      {surfaces
-        .filter((surface) => {
-          if (surface.renderIntent?.visible === false) {
-            return false;
-          }
-
-          if (!cullDistantScreens) {
-            return true;
-          }
-
-          const dx = surface.position[0] - playerPosition[0];
-          const dz = surface.position[2] - playerPosition[2];
-          const distanceSq = (dx * dx) + (dz * dz);
-          const maxDistance = surface.renderIntent?.maxDistance ?? 1240;
-          return distanceSq <= maxDistance * maxDistance;
-        })
-        .map((surface) => {
+      <WorldCityScreenHousingInstances surfaces={visibleSurfaces} />
+      {visibleSurfaces.map((surface) => {
           const primitives = surface.renderIntent?.primitives ?? [];
           const hitPlaneOffset = getSurfaceHitPlaneOffset(surface);
 

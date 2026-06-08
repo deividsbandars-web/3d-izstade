@@ -2,11 +2,21 @@ import { serverApiGet, serverApiPatch, serverApiPost } from './serverApi';
 
 export const ExpoDataAPI = {
   createBooth: async (payload: unknown) => serverApiPost('/api/expo/booths', payload),
+  createExpoLead: async (payload: unknown) => serverApiPost('/api/expo/lead', payload),
   updateBooth: async (boothId: string, payload: unknown) => serverApiPatch(`/api/expo/booths/${boothId}`, payload),
   getManagedBooths: async () => serverApiGet('/api/expo/booths/managed'),
   getBooth: async (boothId: string) => serverApiGet(`/api/expo/booths/${boothId}`),
   getBooths: async () => serverApiGet('/api/expo/booths'),
   getReviewBooth: async (boothId: string) => serverApiGet(`/api/expo/review/booths/${boothId}`),
+  getSponsorLeadInbox: async (companySlug: string, limit = 50) =>
+    serverApiGet(`/api/expo/lead-inbox/${encodeURIComponent(companySlug)}?limit=${encodeURIComponent(String(limit))}`),
+  updateSponsorLeadInboxStatus: async (companySlug: string, leadId: string, status: string) =>
+    serverApiPatch(`/api/expo/lead-inbox/${encodeURIComponent(companySlug)}/leads/${encodeURIComponent(leadId)}`, { status }),
+  updateSponsorLeadInboxOps: async (
+    companySlug: string,
+    leadId: string,
+    payload: { followUpAt?: string | null; opsNotes?: string | null },
+  ) => serverApiPatch(`/api/expo/lead-inbox/${encodeURIComponent(companySlug)}/leads/${encodeURIComponent(leadId)}/ops`, payload),
   updateReviewLeadStatus: async (boothId: string, leadId: string, status: string) =>
     serverApiPatch(`/api/expo/review/booths/${boothId}/leads/${leadId}`, { status }),
   updateReviewLeadOps: async (

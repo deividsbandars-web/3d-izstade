@@ -65,9 +65,29 @@ export type ExpoVerticalWalkableRegion = {
   zoneId: string;
 };
 
+export type ExpoVerticalElevatorRoute = {
+  accentColor: string;
+  cabinSize: [number, number, number];
+  cycleSeconds: number;
+  id: string;
+  label: string;
+  phase: number;
+  railSpacing: number;
+  rideable?: {
+    floorPlayerOffsetY: number;
+    footprintSize: [number, number];
+    pickupToleranceY: number;
+  };
+  stationDwellSeconds?: number;
+  stationSize: [number, number, number];
+  waypoints: [number, number, number][];
+  zoneId: string;
+};
+
 export type ExpoVerticalCitySystemPlan = {
   accessNodes: ExpoVerticalAccessNode[];
   defaultFloorHeight: number;
+  elevatorRoutes: ExpoVerticalElevatorRoute[];
   levels: ExpoVerticalLevelDefinition[];
   pilotZoneId: 'tower-cluster';
   walkableRegions: ExpoVerticalWalkableRegion[];
@@ -75,6 +95,7 @@ export type ExpoVerticalCitySystemPlan = {
 
 export type ExpoVerticalMegaStructureDeckLayout = {
   baseY: number;
+  color: string;
   floorCount: number;
   floorHeight: number;
   heightBand: ExpoVerticalHeightBand;
@@ -120,71 +141,193 @@ export const EXPO_TOWER_CLUSTER_MEGA_STRUCTURE_LAYOUT: ExpoVerticalMegaStructure
     {
       baseY: 0,
       color: '#7d8f9c',
-      floorCount: 14,
-      floorHeight: 36,
+      floorCount: 36,
+      floorHeight: 54,
       heightBand: 'tower',
       id: 'tower-cluster-mega-highrise-east-needle',
       level: 'ground',
-      position: [1530, 0, -1110],
-      size: [44, 504, 44],
+      position: [-360, 0, -1340],
+      size: [96, 1944, 96],
     },
     {
       baseY: 0,
       color: '#8799a6',
-      floorCount: 11,
-      floorHeight: 36,
+      floorCount: 32,
+      floorHeight: 54,
       heightBand: 'tower',
       id: 'tower-cluster-mega-highrise-rear-needle',
       level: 'ground',
-      position: [1120, 0, -1450],
-      size: [52, 396, 52],
+      position: [-550, 0, -1500],
+      size: [100, 1728, 100],
     },
   ],
   core: {
     baseY: 0,
-    floorCount: 12,
-    floorHeight: 36,
+    floorCount: 32,
+    floorHeight: 48,
     heightBand: 'tower',
     id: 'tower-cluster-mega-highrise-core',
     level: 'ground',
-    position: [1380, 0, -1020],
-    size: [92, 432, 92],
+    position: [-450, 0, -1250],
+    size: [240, 1536, 180],
   },
   decks: [
     {
-      baseY: 216,
+      baseY: 520,
+      color: '#9fb0bc',
       floorCount: 1,
-      floorHeight: 36,
+      floorHeight: 48,
       heightBand: 'tower',
       id: 'tower-cluster-mega-highrise-skybridge-deck',
       level: 'tower',
-      playerY: 242,
-      position: [1260, 0, -1015],
-      size: [180, 22, 48],
-      walkableSize: [180, 48],
+      playerY: 552,
+      position: [-570, 0, -1245],
+      size: [260, 30, 74],
+      walkableSize: [260, 74],
     },
     {
-      baseY: 432,
+      baseY: 840,
+      color: '#a9bac6',
       floorCount: 1,
-      floorHeight: 72,
+      floorHeight: 48,
+      heightBand: 'tower',
+      id: 'tower-cluster-mega-highrise-east-needle-landing',
+      level: 'tower',
+      playerY: 868,
+      position: [-360, 0, -1292],
+      size: [132, 22, 72],
+      walkableSize: [132, 72],
+    },
+    {
+      baseY: 650,
+      color: '#9eb0bd',
+      floorCount: 1,
+      floorHeight: 48,
+      heightBand: 'tower',
+      id: 'tower-cluster-mega-highrise-rear-needle-landing',
+      level: 'tower',
+      playerY: 676,
+      position: [-550, 0, -1474],
+      size: [148, 20, 66],
+      walkableSize: [148, 66],
+    },
+    {
+      baseY: 1536,
+      color: '#b8c8d2',
+      floorCount: 1,
+      floorHeight: 96,
       heightBand: 'tower',
       id: 'tower-cluster-mega-highrise-crown-skydeck',
       level: 'skydeck',
-      playerY: 456,
-      position: [1380, 0, -1020],
-      size: [148, 20, 82],
-      walkableSize: [148, 82],
+      playerY: 1572,
+      position: [-450, 0, -1250],
+      size: [300, 32, 180],
+      walkableSize: [300, 180],
     },
   ],
   id: 'tower-cluster-mega-highrise',
   zoneId: 'tower-cluster',
 };
 
-const TOWER_CLUSTER_MEGA_SKYBRIDGE_DECK = EXPO_TOWER_CLUSTER_MEGA_STRUCTURE_LAYOUT.decks[0];
-const TOWER_CLUSTER_MEGA_CROWN_SKYDECK = EXPO_TOWER_CLUSTER_MEGA_STRUCTURE_LAYOUT.decks[1];
+const TOWER_CLUSTER_MEGA_EAST_NEEDLE_LANDING = EXPO_TOWER_CLUSTER_MEGA_STRUCTURE_LAYOUT.decks.find((deck) => (
+  deck.id === 'tower-cluster-mega-highrise-east-needle-landing'
+));
+const TOWER_CLUSTER_MEGA_REAR_NEEDLE_LANDING = EXPO_TOWER_CLUSTER_MEGA_STRUCTURE_LAYOUT.decks.find((deck) => (
+  deck.id === 'tower-cluster-mega-highrise-rear-needle-landing'
+));
+const TOWER_CLUSTER_MEGA_CROWN_SKYDECK = EXPO_TOWER_CLUSTER_MEGA_STRUCTURE_LAYOUT.decks.find((deck) => (
+  deck.id === 'tower-cluster-mega-highrise-crown-skydeck'
+));
+
+const TOWER_CLUSTER_MEGA_EXTERNAL_LIFT = {
+  groundPosition: [-220, 0.25, -1130] as [number, number, number],
+  shaftX: -220,
+  shaftZ: -1130,
+  skybridgeCabinY: 588,
+  skybridgePlayerY: 552,
+  skydeckCabinY: 1608,
+  skydeckPlayerY: 1572,
+} as const;
+
+const TOWER_CLUSTER_TELEVISION_TOWER = {
+  broadcastEastPosition: [447, 3246, -1240] as [number, number, number],
+  broadcastFrontPosition: [360, 3246, -1153] as [number, number, number],
+  broadcastPlayerY: 3246,
+  elevatorShaftX: 620,
+  elevatorShaftZ: -900,
+  groundLiftPosition: [620, 0.25, -900] as [number, number, number],
+  observationEastPosition: [496, 1932, -1240] as [number, number, number],
+  observationFrontPosition: [360, 1932, -1104] as [number, number, number],
+  observationPlayerY: 1932,
+  topBeaconPosition: [360, 5252, -1240] as [number, number, number],
+  topPlayerY: 5252,
+} as const;
+
+const SKY_MARKET_SPINE_Z = -520;
+const SKY_MARKET_SPINE_LIFT_X = -650;
+
+const SKY_MARKET_SPINE_VERTICAL = {
+  center: [0, 0, SKY_MARKET_SPINE_Z] as [number, number, number],
+  groundLiftPosition: [SKY_MARKET_SPINE_LIFT_X, 0.25, SKY_MARKET_SPINE_Z] as [number, number, number],
+  lowerDeckPlayerY: 541,
+  lowerDeckPosition: [0, 541, SKY_MARKET_SPINE_Z] as [number, number, number],
+  lowerLiftPosition: [SKY_MARKET_SPINE_LIFT_X, 537, SKY_MARKET_SPINE_Z] as [number, number, number],
+  lowerToUpperLiftPosition: [SKY_MARKET_SPINE_LIFT_X, 537, SKY_MARKET_SPINE_Z] as [number, number, number],
+  upperDeckPlayerY: 919,
+  upperDeckPosition: [0, 919, SKY_MARKET_SPINE_Z] as [number, number, number],
+  upperLiftPosition: [SKY_MARKET_SPINE_LIFT_X, 915, SKY_MARKET_SPINE_Z] as [number, number, number],
+} as const;
 
 export const EXPO_VERTICAL_CITY_SYSTEM: ExpoVerticalCitySystemPlan = {
   accessNodes: [
+    {
+      autoActivate: false,
+      id: 'sky-market-spine-lift-ground-to-lower',
+      label: 'Sky Market Lower Deck Lift',
+      level: 'ground',
+      mode: 'lift',
+      position: SKY_MARKET_SPINE_VERTICAL.groundLiftPosition,
+      radius: 38,
+      targetLevel: 'tower',
+      targetPosition: [SKY_MARKET_SPINE_LIFT_X, SKY_MARKET_SPINE_VERTICAL.lowerDeckPlayerY, SKY_MARKET_SPINE_Z],
+      zoneId: 'center-spine',
+    },
+    {
+      autoActivate: false,
+      id: 'sky-market-spine-lift-lower-to-ground',
+      label: 'Sky Market Ground Return',
+      level: 'tower',
+      mode: 'lift',
+      position: SKY_MARKET_SPINE_VERTICAL.lowerLiftPosition,
+      radius: 30,
+      targetLevel: 'ground',
+      targetPosition: [SKY_MARKET_SPINE_LIFT_X, 5, SKY_MARKET_SPINE_Z],
+      zoneId: 'center-spine',
+    },
+    {
+      autoActivate: false,
+      id: 'sky-market-spine-lift-lower-to-upper',
+      label: 'Sky Market Upper Deck Lift',
+      level: 'tower',
+      mode: 'lift',
+      position: SKY_MARKET_SPINE_VERTICAL.lowerToUpperLiftPosition,
+      radius: 30,
+      targetLevel: 'skydeck',
+      targetPosition: [SKY_MARKET_SPINE_LIFT_X, SKY_MARKET_SPINE_VERTICAL.upperDeckPlayerY, SKY_MARKET_SPINE_Z],
+      zoneId: 'center-spine',
+    },
+    {
+      autoActivate: false,
+      id: 'sky-market-spine-lift-upper-to-lower',
+      label: 'Sky Market Lower Deck Return',
+      level: 'skydeck',
+      mode: 'lift',
+      position: SKY_MARKET_SPINE_VERTICAL.upperLiftPosition,
+      radius: 28,
+      targetLevel: 'tower',
+      targetPosition: [SKY_MARKET_SPINE_LIFT_X, SKY_MARKET_SPINE_VERTICAL.lowerDeckPlayerY, SKY_MARKET_SPINE_Z],
+      zoneId: 'center-spine',
+    },
     {
       id: 'tower-cluster-vertical-pilot-lift-ground',
       label: 'Vertical Pilot Ground Lift',
@@ -296,73 +439,368 @@ export const EXPO_VERTICAL_CITY_SYSTEM: ExpoVerticalCitySystemPlan = {
       zoneId: 'tower-cluster',
     },
     {
+      autoActivate: false,
       id: 'tower-cluster-mega-highrise-lift-ground-to-skybridge',
       label: 'Mega Highrise Skybridge Lift',
       level: 'ground',
       mode: 'lift',
-      position: [1260, 0.25, -955],
+      position: TOWER_CLUSTER_MEGA_EXTERNAL_LIFT.groundPosition,
       radius: 36,
       targetLevel: 'tower',
-      targetPosition: TOWER_CLUSTER_MEGA_SKYBRIDGE_DECK
-        ? [TOWER_CLUSTER_MEGA_SKYBRIDGE_DECK.position[0], TOWER_CLUSTER_MEGA_SKYBRIDGE_DECK.playerY, TOWER_CLUSTER_MEGA_SKYBRIDGE_DECK.position[2]]
-        : [1260, 242, -1015],
+      targetPosition: [
+        TOWER_CLUSTER_MEGA_EXTERNAL_LIFT.shaftX,
+        TOWER_CLUSTER_MEGA_EXTERNAL_LIFT.skybridgePlayerY,
+        TOWER_CLUSTER_MEGA_EXTERNAL_LIFT.shaftZ,
+      ],
       zoneId: 'tower-cluster',
     },
     {
+      autoActivate: false,
       id: 'tower-cluster-mega-highrise-lift-skybridge-to-ground',
       label: 'Mega Highrise Ground Return',
       level: 'tower',
       mode: 'lift',
-      position: TOWER_CLUSTER_MEGA_SKYBRIDGE_DECK
-        ? [TOWER_CLUSTER_MEGA_SKYBRIDGE_DECK.position[0], TOWER_CLUSTER_MEGA_SKYBRIDGE_DECK.playerY - 4, TOWER_CLUSTER_MEGA_SKYBRIDGE_DECK.position[2]]
-        : [1060, 238, -780],
+      position: [
+        TOWER_CLUSTER_MEGA_EXTERNAL_LIFT.shaftX,
+        TOWER_CLUSTER_MEGA_EXTERNAL_LIFT.skybridgePlayerY - 4,
+        TOWER_CLUSTER_MEGA_EXTERNAL_LIFT.shaftZ,
+      ],
       radius: 28,
       targetLevel: 'ground',
-      targetPosition: [1260, 5, -955],
+      targetPosition: [TOWER_CLUSTER_MEGA_EXTERNAL_LIFT.shaftX, 5, TOWER_CLUSTER_MEGA_EXTERNAL_LIFT.shaftZ],
       zoneId: 'tower-cluster',
     },
     {
+      autoActivate: false,
       id: 'tower-cluster-mega-highrise-lift-skybridge-to-skydeck',
       label: 'Mega Highrise Crown Skydeck Lift',
       level: 'tower',
       mode: 'lift',
-      position: TOWER_CLUSTER_MEGA_SKYBRIDGE_DECK
-        ? [TOWER_CLUSTER_MEGA_SKYBRIDGE_DECK.position[0] + 74, TOWER_CLUSTER_MEGA_SKYBRIDGE_DECK.playerY - 4, TOWER_CLUSTER_MEGA_SKYBRIDGE_DECK.position[2]]
-        : [1334, 238, -1015],
+      position: [
+        TOWER_CLUSTER_MEGA_EXTERNAL_LIFT.shaftX,
+        TOWER_CLUSTER_MEGA_EXTERNAL_LIFT.skybridgePlayerY - 4,
+        TOWER_CLUSTER_MEGA_EXTERNAL_LIFT.shaftZ,
+      ],
       radius: 30,
       targetLevel: 'skydeck',
-      targetPosition: TOWER_CLUSTER_MEGA_CROWN_SKYDECK
-        ? [TOWER_CLUSTER_MEGA_CROWN_SKYDECK.position[0], TOWER_CLUSTER_MEGA_CROWN_SKYDECK.playerY, TOWER_CLUSTER_MEGA_CROWN_SKYDECK.position[2]]
-        : [1380, 456, -1020],
+      targetPosition: [
+        TOWER_CLUSTER_MEGA_EXTERNAL_LIFT.shaftX,
+        TOWER_CLUSTER_MEGA_EXTERNAL_LIFT.skydeckPlayerY,
+        TOWER_CLUSTER_MEGA_EXTERNAL_LIFT.shaftZ,
+      ],
       zoneId: 'tower-cluster',
     },
     {
+      autoActivate: false,
       id: 'tower-cluster-mega-highrise-lift-skydeck-to-skybridge',
       label: 'Mega Highrise Skybridge Return',
       level: 'skydeck',
       mode: 'lift',
-      position: TOWER_CLUSTER_MEGA_CROWN_SKYDECK
-        ? [TOWER_CLUSTER_MEGA_CROWN_SKYDECK.position[0], TOWER_CLUSTER_MEGA_CROWN_SKYDECK.playerY - 4, TOWER_CLUSTER_MEGA_CROWN_SKYDECK.position[2]]
-        : [1380, 452, -1020],
+      position: [
+        TOWER_CLUSTER_MEGA_EXTERNAL_LIFT.shaftX,
+        TOWER_CLUSTER_MEGA_EXTERNAL_LIFT.skydeckPlayerY - 4,
+        TOWER_CLUSTER_MEGA_EXTERNAL_LIFT.shaftZ,
+      ],
       radius: 30,
       targetLevel: 'tower',
-      targetPosition: TOWER_CLUSTER_MEGA_SKYBRIDGE_DECK
-        ? [TOWER_CLUSTER_MEGA_SKYBRIDGE_DECK.position[0], TOWER_CLUSTER_MEGA_SKYBRIDGE_DECK.playerY, TOWER_CLUSTER_MEGA_SKYBRIDGE_DECK.position[2]]
-        : [1260, 242, -1015],
+      targetPosition: [
+        TOWER_CLUSTER_MEGA_EXTERNAL_LIFT.shaftX,
+        TOWER_CLUSTER_MEGA_EXTERNAL_LIFT.skybridgePlayerY,
+        TOWER_CLUSTER_MEGA_EXTERNAL_LIFT.shaftZ,
+      ],
+      zoneId: 'tower-cluster',
+    },
+    {
+      id: 'tower-cluster-east-needle-jump-ground-to-landing',
+      label: 'East Needle Landing Jump',
+      level: 'ground',
+      mode: 'jump-pad',
+      position: [-360, 0.25, -1245],
+      radius: 28,
+      targetLevel: 'tower',
+      targetPosition: TOWER_CLUSTER_MEGA_EAST_NEEDLE_LANDING
+        ? [TOWER_CLUSTER_MEGA_EAST_NEEDLE_LANDING.position[0], TOWER_CLUSTER_MEGA_EAST_NEEDLE_LANDING.playerY, TOWER_CLUSTER_MEGA_EAST_NEEDLE_LANDING.position[2]]
+        : [-360, 868, -1292],
+      zoneId: 'tower-cluster',
+    },
+    {
+      id: 'tower-cluster-east-needle-jump-landing-to-ground',
+      label: 'East Needle Ground Return',
+      level: 'tower',
+      mode: 'jump-pad',
+      position: TOWER_CLUSTER_MEGA_EAST_NEEDLE_LANDING
+        ? [TOWER_CLUSTER_MEGA_EAST_NEEDLE_LANDING.position[0], TOWER_CLUSTER_MEGA_EAST_NEEDLE_LANDING.playerY - 4, TOWER_CLUSTER_MEGA_EAST_NEEDLE_LANDING.position[2]]
+        : [-360, 864, -1292],
+      radius: 24,
+      targetLevel: 'ground',
+      targetPosition: [-360, 5, -1245],
+      zoneId: 'tower-cluster',
+    },
+    {
+      id: 'tower-cluster-east-needle-lift-landing-to-skydeck',
+      label: 'East Needle Skydeck Lift',
+      level: 'tower',
+      mode: 'lift',
+      position: TOWER_CLUSTER_MEGA_EAST_NEEDLE_LANDING
+        ? [TOWER_CLUSTER_MEGA_EAST_NEEDLE_LANDING.position[0] - 34, TOWER_CLUSTER_MEGA_EAST_NEEDLE_LANDING.playerY - 4, TOWER_CLUSTER_MEGA_EAST_NEEDLE_LANDING.position[2]]
+        : [-394, 864, -1292],
+      radius: 24,
+      targetLevel: 'skydeck',
+      targetPosition: TOWER_CLUSTER_MEGA_CROWN_SKYDECK
+        ? [TOWER_CLUSTER_MEGA_CROWN_SKYDECK.position[0], TOWER_CLUSTER_MEGA_CROWN_SKYDECK.playerY, TOWER_CLUSTER_MEGA_CROWN_SKYDECK.position[2]]
+        : [-450, 1572, -1250],
+      zoneId: 'tower-cluster',
+    },
+    {
+      id: 'tower-cluster-east-needle-lift-skydeck-to-landing',
+      label: 'East Needle Landing Return',
+      level: 'skydeck',
+      mode: 'lift',
+      position: TOWER_CLUSTER_MEGA_CROWN_SKYDECK
+        ? [TOWER_CLUSTER_MEGA_CROWN_SKYDECK.position[0] - 42, TOWER_CLUSTER_MEGA_CROWN_SKYDECK.playerY - 4, TOWER_CLUSTER_MEGA_CROWN_SKYDECK.position[2]]
+        : [-492, 1568, -1250],
+      radius: 24,
+      targetLevel: 'tower',
+      targetPosition: TOWER_CLUSTER_MEGA_EAST_NEEDLE_LANDING
+        ? [TOWER_CLUSTER_MEGA_EAST_NEEDLE_LANDING.position[0], TOWER_CLUSTER_MEGA_EAST_NEEDLE_LANDING.playerY, TOWER_CLUSTER_MEGA_EAST_NEEDLE_LANDING.position[2]]
+        : [-360, 868, -1292],
+      zoneId: 'tower-cluster',
+    },
+    {
+      id: 'tower-cluster-rear-needle-jump-ground-to-landing',
+      label: 'Rear Needle Landing Jump',
+      level: 'ground',
+      mode: 'jump-pad',
+      position: [-605, 0.25, -1418],
+      radius: 28,
+      targetLevel: 'tower',
+      targetPosition: TOWER_CLUSTER_MEGA_REAR_NEEDLE_LANDING
+        ? [TOWER_CLUSTER_MEGA_REAR_NEEDLE_LANDING.position[0], TOWER_CLUSTER_MEGA_REAR_NEEDLE_LANDING.playerY, TOWER_CLUSTER_MEGA_REAR_NEEDLE_LANDING.position[2]]
+        : [-550, 676, -1474],
+      zoneId: 'tower-cluster',
+    },
+    {
+      id: 'tower-cluster-rear-needle-jump-landing-to-ground',
+      label: 'Rear Needle Ground Return',
+      level: 'tower',
+      mode: 'jump-pad',
+      position: TOWER_CLUSTER_MEGA_REAR_NEEDLE_LANDING
+        ? [TOWER_CLUSTER_MEGA_REAR_NEEDLE_LANDING.position[0], TOWER_CLUSTER_MEGA_REAR_NEEDLE_LANDING.playerY - 4, TOWER_CLUSTER_MEGA_REAR_NEEDLE_LANDING.position[2]]
+        : [-550, 672, -1474],
+      radius: 24,
+      targetLevel: 'ground',
+      targetPosition: [-605, 5, -1418],
+      zoneId: 'tower-cluster',
+    },
+    {
+      autoActivate: false,
+      id: 'tower-cluster-television-tower-lift-ground-to-observation',
+      label: 'Television Tower Observation Lift',
+      level: 'ground',
+      mode: 'lift',
+      position: TOWER_CLUSTER_TELEVISION_TOWER.groundLiftPosition,
+      radius: 34,
+      targetLevel: 'tower',
+      targetPosition: [
+        TOWER_CLUSTER_TELEVISION_TOWER.elevatorShaftX,
+        TOWER_CLUSTER_TELEVISION_TOWER.observationPlayerY,
+        TOWER_CLUSTER_TELEVISION_TOWER.elevatorShaftZ,
+      ],
+      zoneId: 'tower-cluster',
+    },
+    {
+      autoActivate: false,
+      id: 'tower-cluster-television-tower-lift-observation-to-ground',
+      label: 'Television Tower Ground Return',
+      level: 'tower',
+      mode: 'lift',
+      position: [
+        TOWER_CLUSTER_TELEVISION_TOWER.elevatorShaftX,
+        TOWER_CLUSTER_TELEVISION_TOWER.observationPlayerY - 4,
+        TOWER_CLUSTER_TELEVISION_TOWER.elevatorShaftZ,
+      ],
+      radius: 28,
+      targetLevel: 'ground',
+      targetPosition: [TOWER_CLUSTER_TELEVISION_TOWER.elevatorShaftX, 5, TOWER_CLUSTER_TELEVISION_TOWER.elevatorShaftZ],
+      zoneId: 'tower-cluster',
+    },
+    {
+      autoActivate: false,
+      id: 'tower-cluster-television-tower-lift-observation-to-broadcast',
+      label: 'Television Tower Broadcast Lift',
+      level: 'tower',
+      mode: 'lift',
+      position: [
+        TOWER_CLUSTER_TELEVISION_TOWER.elevatorShaftX,
+        TOWER_CLUSTER_TELEVISION_TOWER.observationPlayerY - 4,
+        TOWER_CLUSTER_TELEVISION_TOWER.elevatorShaftZ,
+      ],
+      radius: 28,
+      targetLevel: 'tower',
+      targetPosition: [
+        TOWER_CLUSTER_TELEVISION_TOWER.elevatorShaftX,
+        TOWER_CLUSTER_TELEVISION_TOWER.broadcastPlayerY,
+        TOWER_CLUSTER_TELEVISION_TOWER.elevatorShaftZ,
+      ],
+      zoneId: 'tower-cluster',
+    },
+    {
+      autoActivate: false,
+      id: 'tower-cluster-television-tower-lift-broadcast-to-observation',
+      label: 'Television Tower Observation Return',
+      level: 'tower',
+      mode: 'lift',
+      position: [
+        TOWER_CLUSTER_TELEVISION_TOWER.elevatorShaftX,
+        TOWER_CLUSTER_TELEVISION_TOWER.broadcastPlayerY - 4,
+        TOWER_CLUSTER_TELEVISION_TOWER.elevatorShaftZ,
+      ],
+      radius: 26,
+      targetLevel: 'tower',
+      targetPosition: [
+        TOWER_CLUSTER_TELEVISION_TOWER.elevatorShaftX,
+        TOWER_CLUSTER_TELEVISION_TOWER.observationPlayerY,
+        TOWER_CLUSTER_TELEVISION_TOWER.elevatorShaftZ,
+      ],
+      zoneId: 'tower-cluster',
+    },
+    {
+      autoActivate: false,
+      id: 'tower-cluster-television-tower-lift-broadcast-to-top',
+      label: 'Television Tower Top Lift',
+      level: 'tower',
+      mode: 'lift',
+      position: [
+        TOWER_CLUSTER_TELEVISION_TOWER.elevatorShaftX,
+        TOWER_CLUSTER_TELEVISION_TOWER.broadcastPlayerY - 4,
+        TOWER_CLUSTER_TELEVISION_TOWER.elevatorShaftZ,
+      ],
+      radius: 24,
+      targetLevel: 'skydeck',
+      targetPosition: [
+        TOWER_CLUSTER_TELEVISION_TOWER.elevatorShaftX,
+        TOWER_CLUSTER_TELEVISION_TOWER.topPlayerY,
+        TOWER_CLUSTER_TELEVISION_TOWER.elevatorShaftZ,
+      ],
+      zoneId: 'tower-cluster',
+    },
+    {
+      autoActivate: false,
+      id: 'tower-cluster-television-tower-lift-top-to-broadcast',
+      label: 'Television Tower Broadcast Return',
+      level: 'skydeck',
+      mode: 'lift',
+      position: [
+        TOWER_CLUSTER_TELEVISION_TOWER.elevatorShaftX,
+        TOWER_CLUSTER_TELEVISION_TOWER.topPlayerY - 4,
+        TOWER_CLUSTER_TELEVISION_TOWER.elevatorShaftZ,
+      ],
+      radius: 22,
+      targetLevel: 'tower',
+      targetPosition: [
+        TOWER_CLUSTER_TELEVISION_TOWER.elevatorShaftX,
+        TOWER_CLUSTER_TELEVISION_TOWER.broadcastPlayerY,
+        TOWER_CLUSTER_TELEVISION_TOWER.elevatorShaftZ,
+      ],
       zoneId: 'tower-cluster',
     },
   ],
   defaultFloorHeight: 36,
+  elevatorRoutes: [
+    {
+      accentColor: '#ffe08a',
+      cabinSize: [86, 96, 70],
+      cycleSeconds: 30,
+      id: 'sky-market-spine-animated-market-lift',
+      label: 'Sky Market Moving Lift',
+      phase: 0.08,
+      railSpacing: 64,
+      rideable: {
+        floorPlayerOffsetY: -36,
+        footprintSize: [98, 78],
+        pickupToleranceY: 18,
+      },
+      stationDwellSeconds: 0,
+      stationSize: [158, 14, 92],
+      waypoints: [
+        [SKY_MARKET_SPINE_LIFT_X, 41, SKY_MARKET_SPINE_Z],
+        [SKY_MARKET_SPINE_LIFT_X, SKY_MARKET_SPINE_VERTICAL.lowerDeckPlayerY + 36, SKY_MARKET_SPINE_Z],
+        [SKY_MARKET_SPINE_LIFT_X, SKY_MARKET_SPINE_VERTICAL.upperDeckPlayerY + 36, SKY_MARKET_SPINE_Z],
+      ],
+      zoneId: 'center-spine',
+    },
+    {
+      accentColor: '#fbbf24',
+      cabinSize: [82, 96, 60],
+      cycleSeconds: 32,
+      id: 'tower-cluster-mega-highrise-animated-panoramic-lift',
+      label: 'Mega Highrise Panoramic Lift',
+      phase: 0.32,
+      railSpacing: 62,
+      rideable: {
+        floorPlayerOffsetY: -36,
+        footprintSize: [98, 68],
+        pickupToleranceY: 18,
+      },
+      stationDwellSeconds: 0,
+      stationSize: [154, 14, 78],
+      waypoints: [
+        [TOWER_CLUSTER_MEGA_EXTERNAL_LIFT.shaftX, 42, TOWER_CLUSTER_MEGA_EXTERNAL_LIFT.shaftZ],
+        [TOWER_CLUSTER_MEGA_EXTERNAL_LIFT.shaftX, TOWER_CLUSTER_MEGA_EXTERNAL_LIFT.skybridgeCabinY, TOWER_CLUSTER_MEGA_EXTERNAL_LIFT.shaftZ],
+        [TOWER_CLUSTER_MEGA_EXTERNAL_LIFT.shaftX, TOWER_CLUSTER_MEGA_EXTERNAL_LIFT.skydeckCabinY, TOWER_CLUSTER_MEGA_EXTERNAL_LIFT.shaftZ],
+      ],
+      zoneId: 'tower-cluster',
+    },
+    {
+      accentColor: '#22d3ee',
+      cabinSize: [72, 106, 58],
+      cycleSeconds: 62,
+      id: 'tower-cluster-television-tower-animated-city-lift',
+      label: 'Television Tower Moving Lift',
+      phase: 0,
+      railSpacing: 56,
+      rideable: {
+        floorPlayerOffsetY: -41,
+        footprintSize: [88, 68],
+        pickupToleranceY: 18,
+      },
+      stationDwellSeconds: 0,
+      stationSize: [148, 14, 76],
+      waypoints: [
+        [TOWER_CLUSTER_TELEVISION_TOWER.elevatorShaftX, 48, TOWER_CLUSTER_TELEVISION_TOWER.elevatorShaftZ],
+        [TOWER_CLUSTER_TELEVISION_TOWER.elevatorShaftX, TOWER_CLUSTER_TELEVISION_TOWER.observationPlayerY + 41, TOWER_CLUSTER_TELEVISION_TOWER.elevatorShaftZ],
+        [TOWER_CLUSTER_TELEVISION_TOWER.elevatorShaftX, TOWER_CLUSTER_TELEVISION_TOWER.broadcastPlayerY + 41, TOWER_CLUSTER_TELEVISION_TOWER.elevatorShaftZ],
+        [TOWER_CLUSTER_TELEVISION_TOWER.elevatorShaftX, TOWER_CLUSTER_TELEVISION_TOWER.topPlayerY + 41, TOWER_CLUSTER_TELEVISION_TOWER.elevatorShaftZ],
+      ],
+      zoneId: 'tower-cluster',
+    },
+  ],
   levels: [
     { baseY: 0, floorHeight: 36, id: 'ground', label: 'Ground' },
     { baseY: 48, floorHeight: 36, id: 'level-1', label: 'Level 1' },
     { baseY: 96, floorHeight: 36, id: 'level-2', label: 'Level 2' },
     { baseY: 144, floorHeight: 36, id: 'roof', label: 'Roof' },
-    { baseY: 216, floorHeight: 48, id: 'tower', label: 'Tower' },
-    { baseY: 432, floorHeight: 72, id: 'skydeck', label: 'Skydeck' },
+    { baseY: 216, floorHeight: 72, id: 'tower', label: 'Tower' },
+    { baseY: 1536, floorHeight: 96, id: 'skydeck', label: 'Skydeck' },
   ],
   pilotZoneId: 'tower-cluster',
   walkableRegions: [
+    {
+      id: 'sky-market-spine-lower-market-deck-walkable',
+      level: 'tower',
+      playerY: SKY_MARKET_SPINE_VERTICAL.lowerDeckPlayerY,
+      position: SKY_MARKET_SPINE_VERTICAL.lowerDeckPosition,
+      size: [780, 1040],
+      zoneId: 'center-spine',
+    },
+    {
+      id: 'sky-market-spine-upper-market-deck-walkable',
+      level: 'skydeck',
+      playerY: SKY_MARKET_SPINE_VERTICAL.upperDeckPlayerY,
+      position: SKY_MARKET_SPINE_VERTICAL.upperDeckPosition,
+      size: [580, 900],
+      zoneId: 'center-spine',
+    },
     {
       id: 'tower-cluster-vertical-pilot-level-1-walkable-deck',
       level: 'level-1',
@@ -403,6 +841,78 @@ export const EXPO_VERTICAL_CITY_SYSTEM: ExpoVerticalCitySystemPlan = {
       size: deck.walkableSize,
       zoneId: EXPO_TOWER_CLUSTER_MEGA_STRUCTURE_LAYOUT.zoneId,
     })),
+    {
+      id: 'tower-cluster-television-tower-observation-ring-west-walkable',
+      level: 'tower',
+      playerY: TOWER_CLUSTER_TELEVISION_TOWER.observationPlayerY,
+      position: [224, TOWER_CLUSTER_TELEVISION_TOWER.observationPlayerY, -1240],
+      size: [170, 440],
+      zoneId: 'tower-cluster',
+    },
+    {
+      id: 'tower-cluster-television-tower-observation-ring-east-walkable',
+      level: 'tower',
+      playerY: TOWER_CLUSTER_TELEVISION_TOWER.observationPlayerY,
+      position: [496, TOWER_CLUSTER_TELEVISION_TOWER.observationPlayerY, -1240],
+      size: [170, 440],
+      zoneId: 'tower-cluster',
+    },
+    {
+      id: 'tower-cluster-television-tower-observation-ring-front-walkable',
+      level: 'tower',
+      playerY: TOWER_CLUSTER_TELEVISION_TOWER.observationPlayerY,
+      position: TOWER_CLUSTER_TELEVISION_TOWER.observationFrontPosition,
+      size: [70, 170],
+      zoneId: 'tower-cluster',
+    },
+    {
+      id: 'tower-cluster-television-tower-observation-ring-rear-walkable',
+      level: 'tower',
+      playerY: TOWER_CLUSTER_TELEVISION_TOWER.observationPlayerY,
+      position: [360, TOWER_CLUSTER_TELEVISION_TOWER.observationPlayerY, -1376],
+      size: [70, 170],
+      zoneId: 'tower-cluster',
+    },
+    {
+      id: 'tower-cluster-television-tower-broadcast-collar-west-walkable',
+      level: 'tower',
+      playerY: TOWER_CLUSTER_TELEVISION_TOWER.broadcastPlayerY,
+      position: [273, TOWER_CLUSTER_TELEVISION_TOWER.broadcastPlayerY, -1240],
+      size: [100, 280],
+      zoneId: 'tower-cluster',
+    },
+    {
+      id: 'tower-cluster-television-tower-broadcast-collar-east-walkable',
+      level: 'tower',
+      playerY: TOWER_CLUSTER_TELEVISION_TOWER.broadcastPlayerY,
+      position: TOWER_CLUSTER_TELEVISION_TOWER.broadcastEastPosition,
+      size: [100, 280],
+      zoneId: 'tower-cluster',
+    },
+    {
+      id: 'tower-cluster-television-tower-broadcast-collar-front-walkable',
+      level: 'tower',
+      playerY: TOWER_CLUSTER_TELEVISION_TOWER.broadcastPlayerY,
+      position: TOWER_CLUSTER_TELEVISION_TOWER.broadcastFrontPosition,
+      size: [70, 100],
+      zoneId: 'tower-cluster',
+    },
+    {
+      id: 'tower-cluster-television-tower-broadcast-collar-rear-walkable',
+      level: 'tower',
+      playerY: TOWER_CLUSTER_TELEVISION_TOWER.broadcastPlayerY,
+      position: [360, TOWER_CLUSTER_TELEVISION_TOWER.broadcastPlayerY, -1327],
+      size: [70, 100],
+      zoneId: 'tower-cluster',
+    },
+    {
+      id: 'tower-cluster-television-tower-top-beacon-walkable',
+      level: 'skydeck',
+      playerY: TOWER_CLUSTER_TELEVISION_TOWER.topPlayerY,
+      position: TOWER_CLUSTER_TELEVISION_TOWER.topBeaconPosition,
+      size: [96, 96],
+      zoneId: 'tower-cluster',
+    },
   ],
 };
 

@@ -13,13 +13,13 @@ const DISABLE_PLAYER_COLLISION_FLAG = 'disablePlayerCollision';
 const PLAYER_COLLISION_TARGETS_CACHE_KEY = 'playerCollisionTargetsCache';
 const PLAYER_COLLISION_TARGETS_CACHE_VERSION_KEY = 'playerCollisionTargetsCacheVersion';
 const PLAYER_COLLISION_TARGETS_CACHE_RESOLVED_VERSION_KEY = 'playerCollisionTargetsCacheResolvedVersion';
-const UNIFIED_WORLD_TONE = '#6f7c85';
+const UNIFIED_WORLD_TONE = '#30475f';
 export const EXPO_START_VIEW_KEY = 'expoStartView';
 
 const SURFACE_TONES = {
-  concrete: '#85939d',
-  grass: '#6f8b74',
-  paver: '#9ba7ae',
+  concrete: '#3b536e',
+  grass: '#2f674f',
+  paver: '#4b4f76',
 } as const;
 
 function getPlayerCollisionTargetsVersion(scene: THREE.Scene) {
@@ -157,13 +157,15 @@ export function ExpoRuntimeSurfaceMaterial({
   polygonOffsetUnits?: number;
 }) {
   const color = fallbackColor === UNIFIED_WORLD_TONE ? SURFACE_TONES[surface] : fallbackColor;
-  const roughness = 0.95;
+  const roughness = 0.88;
 
   return (
     <meshStandardMaterial
       color={color}
       roughness={roughness}
-      metalness={0.01}
+      metalness={0.018}
+      emissive={surface === 'grass' ? '#2dd4bf' : '#22e7ff'}
+      emissiveIntensity={surface === 'grass' ? 0.014 : 0.012}
       polygonOffset
       polygonOffsetFactor={polygonOffsetFactor}
       polygonOffsetUnits={polygonOffsetUnits}
@@ -185,14 +187,16 @@ export function ExpoArchitecturalMassMaterial({
   emissiveIntensity?: number;
 }) {
   const color = UNIFIED_WORLD_TONE;
+  const materialEmissive = emissiveIntensity > 0 ? emissive : '#22e7ff';
+  const materialEmissiveIntensity = emissiveIntensity > 0 ? emissiveIntensity : 0.012;
 
   return (
     <meshStandardMaterial
       color={color}
-      roughness={0.9}
-      metalness={0.01}
-      emissive={emissive}
-      emissiveIntensity={emissiveIntensity}
+      roughness={0.84}
+      metalness={0.02}
+      emissive={materialEmissive}
+      emissiveIntensity={materialEmissiveIntensity}
     />
   );
 }

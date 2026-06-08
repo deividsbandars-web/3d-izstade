@@ -1,203 +1,440 @@
-import React, { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 
-const categories = [
-  { id: 'all', label: 'Visi' },
-  { id: 'construction', label: 'Būvniecība' },
-  { id: 'creative', label: 'Radošums' },
-  { id: 'services', label: 'Pakalpojumi' }
+type CalculatorCategoryId = 'all' | 'construction' | 'creative' | 'services';
+type CalculatorDepth = 'Quick estimate' | 'Detailed estimate' | 'Specialist quote';
+
+type CalculatorEntry = {
+  accent: string;
+  category: Exclude<CalculatorCategoryId, 'all'>;
+  depth: CalculatorDepth;
+  desc: string;
+  featured?: boolean;
+  id: string;
+  path: string;
+  primaryUse: string;
+  status: string;
+  title: string;
+};
+
+const categories: Array<{ id: CalculatorCategoryId; label: string; summary: string }> = [
+  { id: 'all', label: 'Visi', summary: 'Pilns kalkulatoru katalogs' },
+  { id: 'construction', label: 'Būvniecība', summary: 'Tāmes mājai, remontam un inženiertīkliem' },
+  { id: 'creative', label: '3D / Dizains', summary: 'Vizualizācijas, dizains un digitālie darbi' },
+  { id: 'services', label: 'Pakalpojumi', summary: 'Ātrie pakalpojumi un servisa izmaksas' },
 ];
 
-const calculators = [
-  { 
-    id: 'roof', 
-    title: 'Jumta segums', 
-    desc: 'Precīzs materiālu un darba izmaksu aprēķins jumta izbūvei.', 
-    icon: '🏠', 
+const calculators: CalculatorEntry[] = [
+  {
+    accent: '#38bdf8',
+    category: 'construction',
+    depth: 'Detailed estimate',
+    desc: 'Materiāli, darbs, jumta ģeometrija, noteksistēma un koka konstrukcijas vienā aprēķinā.',
+    featured: true,
+    id: 'roof',
     path: '/roof-cost-calculator',
-    category: 'construction'
+    primaryUse: 'Jumta segums, pārbūve vai jauns jumts',
+    status: 'Vispilnīgākais kalkulators',
+    title: 'Jumta tāme',
   },
-  { 
-    id: 'heating', 
-    title: 'Apkures sistēmas', 
-    desc: 'Siltumsūkņu, radiatoru un silto grīdu aprēķins.', 
-    icon: '🔥', 
+  {
+    accent: '#f97316',
+    category: 'construction',
+    depth: 'Detailed estimate',
+    desc: 'Siltumsūkņi, radiatori, siltās grīdas, automatizācija un papildaprīkojums.',
+    featured: true,
+    id: 'heating',
     path: '/heating-cost-calculator',
-    category: 'construction'
+    primaryUse: 'Apkures sistēmas izvēle un budžets',
+    status: 'Labs lead kvalifikācijai',
+    title: 'Apkures sistēmas',
   },
-  { 
-    id: 'foundation', 
-    title: 'Pamatu izbūve', 
-    desc: 'Betona, armatūras un zemes darbu tāme.', 
-    icon: '🏗️', 
+  {
+    accent: '#22c55e',
+    category: 'construction',
+    depth: 'Detailed estimate',
+    desc: 'Betons, armatūra, zemes darbi un pamatu konstrukcijas sākotnējai izmaksu kontrolei.',
+    featured: true,
+    id: 'foundation',
     path: '/foundation-cost-calculator',
-    category: 'construction'
+    primaryUse: 'Mājas pamati un betona darbi',
+    status: 'Būvniecības sākuma posms',
+    title: 'Pamatu izbūve',
   },
-  { 
-    id: 'interior', 
-    title: 'Iekšdarbi', 
-    desc: 'Pilns telpu remonta un apdares materiālu aprēķins.', 
-    icon: '🎨', 
+  {
+    accent: '#a78bfa',
+    category: 'construction',
+    depth: 'Detailed estimate',
+    desc: 'Telpas remonts ar demontāžu, grīdu, sienām, griestiem, durvīm un elektrības punktiem.',
+    featured: true,
+    id: 'interior',
     path: '/renovation-cost-calculator',
-    category: 'construction'
+    primaryUse: 'Dzīvokļa vai telpas remonta tāme',
+    status: 'Augsta pieprasījuma kalkulators',
+    title: 'Iekšdarbi un remonts',
   },
-  { 
-    id: 'timber', 
-    title: 'Koka karkass', 
-    desc: 'Materiālu aprēķins koka karkasa mājām un nojumēm.', 
-    icon: '🌲', 
+  {
+    accent: '#84cc16',
+    category: 'construction',
+    depth: 'Detailed estimate',
+    desc: 'Karkass, pamati, jumts, siltinājums, fasāde, iekšdarbi, terase/nojume un objekta piekļuve vienā tāmē.',
+    id: 'timber',
     path: '/timber-house-calculator',
-    category: 'construction'
+    primaryUse: 'Koka karkasa māja, pirts, dārza ēka, terase vai nojume',
+    status: 'Koka būves un nojumes leads',
+    title: 'Koka karkass un nojumes',
   },
-  { 
-    id: 'windows', 
-    title: 'Logi un durvis', 
-    desc: 'PVC un koka konstrukciju izmaksu tāme.', 
-    icon: '🪟', 
+  {
+    accent: '#0ea5e9',
+    category: 'construction',
+    depth: 'Detailed estimate',
+    desc: 'Profils, stiklojums, logu izmērs, balkona durvis, siltais montāžas mezgls, palodzes, ailes un demontāža.',
+    id: 'windows',
     path: '/windows-calculator',
-    category: 'construction'
+    primaryUse: 'Logu, balkona durvju vai vitrīnu nomaiņa',
+    status: 'Praktisks energoefektivitātes leads',
+    title: 'Logi un durvis',
   },
-  { 
-    id: 'visuals', 
-    title: '3D Vizuāļi', 
-    desc: 'Arhitektūras un produktu vizualizāciju aprēķins.', 
-    icon: '📸', 
-    path: '/visuals-calculator',
-    category: 'creative'
-  },
-  { 
-    id: 'digital-art', 
-    title: 'Digitālais Art', 
-    desc: 'Grafiskā dizaina un ilustrāciju pakalpojumu tāme.', 
-    icon: '🖼️', 
-    path: '/digital-art-calculator',
-    category: 'creative'
-  },
-  { 
-    id: 'autoservice', 
-    title: 'Auto serviss', 
-    desc: 'Remonta darbu un rezerves daļu aprēķins.', 
-    icon: '🚗', 
-    path: '/autoservice-calculator',
-    category: 'services'
-  },
-  { 
-    id: 'cleaning', 
-    title: 'Uzkopšana', 
-    desc: 'Telpu un teritoriju profesionālās uzkopšanas tāme.', 
-    icon: '🧹', 
-    path: '/cleaning-calculator',
-    category: 'services'
-  },
-  { 
-    id: 'quick-fix', 
-    title: 'Saimnieka palīgs', 
-    desc: 'Sīkie remontdarbi un steidzamie izsaukumi.', 
-    icon: '🛠️', 
-    path: '/quick-fix-calculator',
-    category: 'services'
-  },
-  { 
-    id: 'plumbing', 
-    title: 'Santehnika', 
-    desc: 'Cauruļvadu, mezglu un ierīču montāžas aprēķins.', 
-    icon: '🚰', 
+  {
+    accent: '#06b6d4',
+    category: 'construction',
+    depth: 'Detailed estimate',
+    desc: 'Sanitārie punkti, virtuves un ierīču pieslēgumi, boileris, ūdensvada un kanalizācijas metri, demontāža.',
+    id: 'plumbing',
     path: '/plumbing-calculator',
-    category: 'services'
-  }
+    primaryUse: 'Vannas istabas, virtuves vai privātmājas santehnika',
+    status: 'Renovācijas un inženiertīklu leads',
+    title: 'Santehnika',
+  },
+  {
+    accent: '#6366f1',
+    category: 'creative',
+    depth: 'Detailed estimate',
+    desc: '3D renderi, animācija, Web3D prototips, expo stends, interaktīvie skati, revīzijas un komerciāla piegāde vienā tāmē.',
+    id: 'visuals',
+    path: '/visuals-calculator',
+    primaryUse: '3D vizualizācijas, Web3D demo, produkta prezentācija vai expo stends',
+    status: 'Web3D pārdošanas leads',
+    title: '3D un Web3D demo',
+  },
+  {
+    accent: '#64748b',
+    category: 'construction',
+    depth: 'Specialist quote',
+    desc: 'Žoga garums, materiāls, stabi, pamati, vārti, reljefs un demontāža vienā praktiskā tāmē.',
+    id: 'fence',
+    path: '/fence-calculator',
+    primaryUse: 'Privātmājas, noliktavas vai teritorijas žoga izbūve',
+    status: 'Praktisks teritorijas darbu leads',
+    title: 'Žogs un vārti',
+  },
+  {
+    accent: '#f59e0b',
+    category: 'construction',
+    depth: 'Specialist quote',
+    desc: 'Bruģis, pamatnes sagatavošana, apmales, drenāža, raksts un objekta piekļuve vienā tāmē.',
+    id: 'paving',
+    path: '/paving-calculator',
+    primaryUse: 'Pagalma, iebrauktuves vai komercteritorijas bruģēšana',
+    status: 'Praktisks pagalma darbu leads',
+    title: 'Bruģis un pagalms',
+  },
+  {
+    accent: '#14b8a6',
+    category: 'construction',
+    depth: 'Detailed estimate',
+    desc: 'Siltinājums, sienas sagatavošana, dekoratīvā apdare, sastatnes, ailes un cokola zona.',
+    id: 'facade',
+    path: '/facade-calculator',
+    primaryUse: 'Mājas fasādes atjaunošana vai siltināšana',
+    status: 'Augstas vērtības renovācijas leads',
+    title: 'Fasāde un siltināšana',
+  },
+  {
+    accent: '#b45309',
+    category: 'construction',
+    depth: 'Detailed estimate',
+    desc: 'Lamināts, vinils, parkets, flīzes, pamatnes līdzināšana, līstes, pārejas un demontāža vienā tāmē.',
+    id: 'floor',
+    path: '/floor-calculator',
+    primaryUse: 'Dzīvokļa, mājas vai biroja grīdas seguma nomaiņa',
+    status: 'Augsta pieprasījuma remonta leads',
+    title: 'Grīdas segumi',
+  },
 ];
 
-const CalculatorsHub: React.FC = () => {
-  const [activeCat, setActiveCat] = useState('all');
+function normalizeSearch(value: string) {
+  return value.trim().toLocaleLowerCase('lv-LV');
+}
+
+export default function CalculatorsHub() {
+  const [activeCategory, setActiveCategory] = useState<CalculatorCategoryId>('all');
   const [search, setSearch] = useState('');
 
-  const filtered = calculators.filter(c => 
-    (activeCat === 'all' || c.category === activeCat) &&
-    (c.title.toLowerCase().includes(search.toLowerCase()) || c.desc.toLowerCase().includes(search.toLowerCase()))
-  );
+  const filtered = useMemo(() => {
+    const query = normalizeSearch(search);
+
+    return calculators.filter((calculator) => {
+      const matchesCategory = activeCategory === 'all' || calculator.category === activeCategory;
+      const searchable = [
+        calculator.title,
+        calculator.desc,
+        calculator.primaryUse,
+        calculator.status,
+        calculator.depth,
+      ].join(' ').toLocaleLowerCase('lv-LV');
+
+      return matchesCategory && (!query || searchable.includes(query));
+    });
+  }, [activeCategory, search]);
+
+  const featuredCalculators = calculators.filter((calculator) => calculator.featured);
+  const activeCategorySummary = categories.find((category) => category.id === activeCategory)?.summary ?? 'Pilns kalkulatoru katalogs';
 
   return (
-    <div style={{ maxWidth: '1400px', margin: '40px auto', padding: '0 20px' }}>
-      {/* HEADER */}
-      <div style={{ marginBottom: '60px', textAlign: 'center' }}>
-        <h1 className="text-gradient" style={{ fontSize: '3.5rem', fontWeight: 900, marginBottom: '15px', letterSpacing: '-2px' }}>
-          PRO CALCULATORS
-        </h1>
-        <p style={{ color: '#64748b', fontSize: '1.2rem', maxWidth: '600px', margin: '0 auto' }}>
-          Precīzi aprēķini, materiālu tāmes un darba izmaksas vienuviet. Izvēlies nozari un sāc plānot.
-        </p>
-      </div>
+    <main style={{ color: '#f8fafc', margin: '0 auto', maxWidth: '1380px', padding: '42px 20px 80px' }}>
+      <section
+        style={{
+          background:
+            'radial-gradient(circle at 12% 10%, rgba(56, 189, 248, 0.24), transparent 30%), linear-gradient(135deg, rgba(15, 23, 42, 0.96), rgba(2, 6, 23, 0.94))',
+          border: '1px solid rgba(125, 211, 252, 0.18)',
+          borderRadius: '32px',
+          boxShadow: '0 28px 80px rgba(2, 6, 23, 0.34)',
+          marginBottom: '26px',
+          overflow: 'hidden',
+          padding: '34px',
+          position: 'relative',
+        }}
+      >
+        <div style={{ display: 'grid', gap: '26px', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))' }}>
+          <div>
+            <div style={{ color: '#7dd3fc', fontSize: '0.74rem', fontWeight: 950, letterSpacing: '0.16em', textTransform: 'uppercase' }}>
+              Pro calculator suite
+            </div>
+            <h1 style={{ fontSize: 'clamp(2.4rem, 6vw, 5.1rem)', letterSpacing: '-0.06em', lineHeight: 0.95, margin: '12px 0 16px' }}>
+              Tāmes, kas pārvērš interesi par konkrētu pieprasījumu.
+            </h1>
+            <p style={{ color: '#cbd5e1', fontSize: '1.06rem', lineHeight: 1.62, margin: 0, maxWidth: '760px' }}>
+              Sakārtots kalkulatoru katalogs būvniecībai, servisam un 3D/dizaina darbiem. Lietotājs ātri izvēlas vajadzīgo tāmi,
+              saprot aprēķina dziļumu un var turpināt uz piedāvājuma vai Expo sponsor/lead plūsmu.
+            </p>
+          </div>
 
-      {/* FILTERS & SEARCH */}
-      <div style={{ 
-        display: 'flex', justifyContent: 'space-between', alignItems: 'center', 
-        marginBottom: '40px', gap: '20px', flexWrap: 'wrap' 
-      }}>
-        <div style={{ display: 'flex', gap: '10px', background: 'rgba(255,255,255,0.03)', padding: '5px', borderRadius: '14px', border: '1px solid rgba(255,255,255,0.05)' }}>
-          {categories.map(cat => (
-            <button
-              key={cat.id}
-              onClick={() => setActiveCat(cat.id)}
+          <aside
+            style={{
+              alignSelf: 'stretch',
+              background: 'rgba(2, 6, 23, 0.55)',
+              border: '1px solid rgba(148, 163, 184, 0.18)',
+              borderRadius: '24px',
+              display: 'grid',
+              gap: '12px',
+              padding: '20px',
+            }}
+          >
+            {[
+              ['Kalkulatori', calculators.length],
+              ['Detalizētas tāmes', calculators.filter((entry) => entry.depth === 'Detailed estimate').length],
+              ['Ātrie aprēķini', calculators.filter((entry) => entry.depth === 'Quick estimate').length],
+            ].map(([label, value]) => (
+              <div key={String(label)} style={{ alignItems: 'center', display: 'flex', justifyContent: 'space-between', gap: '16px' }}>
+                <span style={{ color: '#94a3b8', fontSize: '0.78rem', fontWeight: 850, letterSpacing: '0.08em', textTransform: 'uppercase' }}>{label}</span>
+                <strong style={{ color: '#f8fafc', fontSize: '1.55rem' }}>{value}</strong>
+              </div>
+            ))}
+            <Link
+              to="/expo/sponsor-packages"
               style={{
-                padding: '10px 20px', borderRadius: '10px', border: 'none', cursor: 'pointer',
-                fontWeight: 700, fontSize: '0.85rem', transition: 'all 0.2s',
-                background: activeCat === cat.id ? '#3b82f6' : 'transparent',
-                color: activeCat === cat.id ? '#fff' : '#64748b'
+                background: 'linear-gradient(135deg, #0ea5e9, #22c55e)',
+                borderRadius: '16px',
+                color: '#02131a',
+                fontSize: '0.84rem',
+                fontWeight: 950,
+                letterSpacing: '0.05em',
+                marginTop: '8px',
+                padding: '13px 14px',
+                textAlign: 'center',
+                textDecoration: 'none',
+                textTransform: 'uppercase',
               }}
             >
-              {cat.label}
+              Savienot ar sponsor/lead plūsmu
+            </Link>
+            <Link
+              to="/calculators/leads"
+              style={{
+                background: 'rgba(15, 23, 42, 0.72)',
+                border: '1px solid rgba(125, 211, 252, 0.22)',
+                borderRadius: '16px',
+                color: '#bae6fd',
+                fontSize: '0.78rem',
+                fontWeight: 950,
+                letterSpacing: '0.05em',
+                padding: '12px 14px',
+                textAlign: 'center',
+                textDecoration: 'none',
+                textTransform: 'uppercase',
+              }}
+            >
+              Atvērt kalkulatoru lead rindu
+            </Link>
+          </aside>
+        </div>
+      </section>
+
+      <section style={{ display: 'grid', gap: '16px', gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))', marginBottom: '28px' }}>
+        {featuredCalculators.map((calculator) => (
+          <Link
+            key={calculator.id}
+            to={calculator.path}
+            style={{
+              background: `linear-gradient(145deg, ${calculator.accent}26, rgba(15, 23, 42, 0.92))`,
+              border: `1px solid ${calculator.accent}55`,
+              borderRadius: '22px',
+              color: '#f8fafc',
+              minHeight: '150px',
+              padding: '20px',
+              textDecoration: 'none',
+            }}
+          >
+            <div style={{ color: calculator.accent, fontSize: '0.68rem', fontWeight: 950, letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+              Ieteicamais sākums
+            </div>
+            <h2 style={{ fontSize: '1.3rem', letterSpacing: '-0.03em', margin: '10px 0 8px' }}>{calculator.title}</h2>
+            <p style={{ color: '#cbd5e1', fontSize: '0.88rem', lineHeight: 1.45, margin: 0 }}>{calculator.primaryUse}</p>
+          </Link>
+        ))}
+      </section>
+
+      <section
+        style={{
+          alignItems: 'center',
+          background: 'rgba(15, 23, 42, 0.72)',
+          border: '1px solid rgba(148, 163, 184, 0.16)',
+          borderRadius: '24px',
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: '16px',
+          justifyContent: 'space-between',
+          marginBottom: '26px',
+          padding: '16px',
+        }}
+      >
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+          {categories.map((category) => (
+            <button
+              key={category.id}
+              onClick={() => setActiveCategory(category.id)}
+              type="button"
+              style={{
+                background: activeCategory === category.id ? '#38bdf8' : 'rgba(2, 6, 23, 0.62)',
+                border: `1px solid ${activeCategory === category.id ? '#7dd3fc' : 'rgba(148, 163, 184, 0.18)'}`,
+                borderRadius: '999px',
+                color: activeCategory === category.id ? '#03131a' : '#cbd5e1',
+                cursor: 'pointer',
+                fontSize: '0.8rem',
+                fontWeight: 950,
+                padding: '10px 14px',
+              }}
+            >
+              {category.label}
             </button>
           ))}
         </div>
 
-        <div style={{ position: 'relative', flex: '1', maxWidth: '400px' }}>
-          <input 
-            type="text" 
-            placeholder="Meklēt rīku..." 
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
+        <label style={{ color: '#94a3b8', display: 'grid', flex: '1 1 280px', fontSize: '0.72rem', fontWeight: 850, gap: '6px', maxWidth: '430px', textTransform: 'uppercase' }}>
+          Meklēt kalkulatoru
+          <input
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="piem. jumts, apkure, dizains..."
             style={{
-              width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)',
-              padding: '15px 20px', borderRadius: '14px', color: '#fff', fontSize: '1rem', outline: 'none'
+              background: 'rgba(2, 6, 23, 0.8)',
+              border: '1px solid rgba(148, 163, 184, 0.24)',
+              borderRadius: '14px',
+              color: '#f8fafc',
+              font: 'inherit',
+              padding: '13px 14px',
+              textTransform: 'none',
+              width: '100%',
             }}
+            type="search"
+            value={search}
           />
+        </label>
+      </section>
+
+      <div style={{ alignItems: 'baseline', display: 'flex', flexWrap: 'wrap', gap: '12px', justifyContent: 'space-between', marginBottom: '18px' }}>
+        <div>
+          <h2 style={{ fontSize: '1.65rem', letterSpacing: '-0.035em', margin: 0 }}>{filtered.length} kalkulatori</h2>
+          <p style={{ color: '#94a3b8', margin: '6px 0 0' }}>{activeCategorySummary}</p>
         </div>
+        <span style={{ color: '#64748b', fontSize: '0.78rem', fontWeight: 850 }}>
+          Aprēķini ir sākotnējai tāmei; gala piedāvājumam vajag pārbaudi.
+        </span>
       </div>
 
-      {/* GRID */}
-      <div style={{ 
-        display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', 
-        gap: '25px' 
-      }}>
-        {filtered.map(calc => (
-          <Link key={calc.id} to={calc.path} style={{ textDecoration: 'none', color: 'inherit' }}>
-            <div className="glass-card" style={{ padding: '30px', height: '100%', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-              <div style={{ fontSize: '2.5rem', background: 'rgba(59, 130, 246, 0.1)', width: '70px', height: '70px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '18px' }}>
-                {calc.icon}
-              </div>
-              <div>
-                <h3 style={{ fontSize: '1.4rem', fontWeight: 800, marginBottom: '10px', color: '#fff' }}>{calc.title}</h3>
-                <p style={{ color: '#94a3b8', fontSize: '0.95rem', lineHeight: '1.6', marginBottom: '20px' }}>{calc.desc}</p>
-              </div>
-              <div style={{ marginTop: 'auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '0.7rem', fontWeight: 900, color: '#3b82f6', background: 'rgba(59, 130, 246, 0.1)', padding: '5px 12px', borderRadius: '20px', textTransform: 'uppercase' }}>
-                  {calc.category}
+      <section style={{ display: 'grid', gap: '18px', gridTemplateColumns: 'repeat(auto-fill, minmax(290px, 1fr))' }}>
+        {filtered.map((calculator) => (
+          <Link key={calculator.id} to={calculator.path} style={{ color: 'inherit', textDecoration: 'none' }}>
+            <article
+              className="glass-card"
+              style={{
+                borderColor: `${calculator.accent}3f`,
+                borderRadius: '24px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '16px',
+                minHeight: '330px',
+                padding: '24px',
+              }}
+            >
+              <div style={{ alignItems: 'center', display: 'flex', justifyContent: 'space-between', gap: '12px' }}>
+                <span
+                  style={{
+                    background: `${calculator.accent}20`,
+                    border: `1px solid ${calculator.accent}55`,
+                    borderRadius: '999px',
+                    color: calculator.accent,
+                    fontSize: '0.68rem',
+                    fontWeight: 950,
+                    letterSpacing: '0.08em',
+                    padding: '7px 10px',
+                    textTransform: 'uppercase',
+                  }}
+                >
+                  {calculator.depth}
                 </span>
-                <span style={{ color: '#3b82f6', fontWeight: 900 }}>ATVĒRT →</span>
+                <span style={{ color: '#64748b', fontSize: '0.74rem', fontWeight: 850, textTransform: 'uppercase' }}>{calculator.category}</span>
               </div>
-            </div>
+
+              <div>
+                <h3 style={{ color: '#f8fafc', fontSize: '1.45rem', letterSpacing: '-0.035em', lineHeight: 1.05, margin: '0 0 10px' }}>
+                  {calculator.title}
+                </h3>
+                <p style={{ color: '#cbd5e1', fontSize: '0.95rem', lineHeight: 1.55, margin: 0 }}>{calculator.desc}</p>
+              </div>
+
+              <div style={{ background: 'rgba(2, 6, 23, 0.42)', border: '1px solid rgba(148, 163, 184, 0.14)', borderRadius: '16px', padding: '13px' }}>
+                <div style={{ color: '#94a3b8', fontSize: '0.68rem', fontWeight: 950, letterSpacing: '0.08em', marginBottom: '6px', textTransform: 'uppercase' }}>
+                  Pielietojums
+                </div>
+                <div style={{ color: '#f8fafc', fontSize: '0.9rem', fontWeight: 800 }}>{calculator.primaryUse}</div>
+              </div>
+
+              <div style={{ alignItems: 'center', display: 'flex', gap: '12px', justifyContent: 'space-between', marginTop: 'auto' }}>
+                <span style={{ color: '#94a3b8', fontSize: '0.82rem', lineHeight: 1.35 }}>{calculator.status}</span>
+                <span style={{ color: calculator.accent, fontSize: '0.82rem', fontWeight: 950, whiteSpace: 'nowrap' }}>Atvērt →</span>
+              </div>
+            </article>
           </Link>
         ))}
-      </div>
+      </section>
 
       {filtered.length === 0 && (
-        <div style={{ textAlign: 'center', padding: '100px', color: '#64748b' }}>
-          <h2>Nekas netika atrasts...</h2>
-          <p>Mēģiniet citu meklēšanas vārdu.</p>
-        </div>
+        <section style={{ border: '1px solid rgba(148, 163, 184, 0.18)', borderRadius: '24px', color: '#94a3b8', marginTop: '18px', padding: '54px', textAlign: 'center' }}>
+          <h2 style={{ color: '#f8fafc', marginTop: 0 }}>Nekas netika atrasts</h2>
+          <p>Pamēģini citu atslēgvārdu vai izvēlies kategoriju “Visi”.</p>
+        </section>
       )}
-    </div>
+    </main>
   );
-};
-
-export default CalculatorsHub;
+}

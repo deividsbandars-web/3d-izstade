@@ -24,6 +24,7 @@ type ExpoSceneResponse = {
         featuredAssetUrl?: string | null;
         heroAssetUrl: string | null;
         heroScreenImageUrl?: string | null;
+        heroScreenStatus?: string | null;
         heroScreenText?: string | null;
         heroScreenTitle?: string | null;
         heroScreenType?: string | null;
@@ -126,6 +127,12 @@ const normalizeReleaseMediaUrl = (value: unknown) => {
     return normalized;
 };
 
+const normalizeRecord = (value: unknown): Record<string, unknown> => {
+    return value && typeof value === 'object' && !Array.isArray(value)
+        ? value as Record<string, unknown>
+        : {};
+};
+
 const normalizePriority = (value: unknown) => {
     const parsed = Number(value);
     return Number.isFinite(parsed) ? parsed : 0;
@@ -223,6 +230,115 @@ const compareCompanies = (left: any, right: any) => {
     }
 
     return String(left?.name || '').localeCompare(String(right?.name || ''));
+};
+
+const normalizeLookupKey = (value: unknown) => String(value || '')
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .toLowerCase();
+
+const getRecord = (value: unknown): Record<string, unknown> => {
+    return value && typeof value === 'object' && !Array.isArray(value)
+        ? value as Record<string, unknown>
+        : {};
+};
+
+const getManagedBoothLookupKeys = (booth: Record<string, unknown>) => {
+    const contactInfo = getRecord(booth.contact_info);
+    return [
+        booth.id,
+        booth.company_name,
+        booth.title,
+        booth.company_id,
+        booth.companyId,
+        booth.booth_id,
+        booth.boothId,
+        booth.runtime_booth_id,
+        booth.runtimeBoothId,
+        contactInfo.company_id,
+        contactInfo.companyId,
+        contactInfo.booth_id,
+        contactInfo.boothId,
+        contactInfo.slug,
+    ]
+        .map(normalizeLookupKey)
+        .filter(Boolean);
+};
+
+const getSceneBoothLookupKeys = (booth: Record<string, unknown> | null, company: Record<string, unknown>) => [
+    booth?.id,
+    booth?.company_id,
+    booth?.companyId,
+    booth?.booth_id,
+    booth?.boothId,
+    booth?.slug,
+    company.id,
+    company.name,
+    company.slug,
+]
+    .map(normalizeLookupKey)
+    .filter(Boolean);
+
+const buildManagedBoothScreenContentIndex = (managedBooths: Array<Record<string, unknown>>) => {
+    const index = new Map<string, Record<string, unknown>>();
+
+    managedBooths.forEach((booth) => {
+        const assets3d = normalizeRecord(booth.assets_3d);
+        const screenContent = normalizeRecord(assets3d.screen_content);
+        if (Object.keys(screenContent).length === 0) {
+            return;
+        }
+        if (String(screenContent.status || '').trim().toLowerCase() !== 'published') {
+            return;
+        }
+
+        getManagedBoothLookupKeys(booth).forEach((key) => {
+            if (!index.has(key)) {
+                index.set(key, screenContent);
+            }
+        });
+    });
+
+    return index;
+};
+
+const fetchManagedBoothsForScreenContent = async (supabase: ReturnType<typeof getSupabase>) => {
+    if (!supabase) {
+        return [];
+    }
+
+    const pluralResult = await supabase.from('expo_booths').select('*');
+    if (!pluralResult.error) {
+        return (pluralResult.data || []) as Array<Record<string, unknown>>;
+    }
+
+    const errorCode = (pluralResult.error as { code?: string }).code;
+    if (errorCode !== 'PGRST205') {
+        return [];
+    }
+
+    const legacyResult = await supabase.from('expo_booth').select('*');
+    if (legacyResult.error) {
+        return [];
+    }
+
+    return (legacyResult.data || []) as Array<Record<string, unknown>>;
+};
+
+const getManagedScreenContentForSceneBooth = (
+    screenContentIndex: Map<string, Record<string, unknown>>,
+    booth: Record<string, unknown> | null,
+    company: Record<string, unknown>,
+) => {
+    for (const key of getSceneBoothLookupKeys(booth, company)) {
+        const screenContent = screenContentIndex.get(key);
+        if (screenContent) {
+            return screenContent;
+        }
+    }
+
+    return {};
 };
 
 export const validateExpoSceneQuery = (query: Request['query']) => {
@@ -353,6 +469,8 @@ export const createGetExpoScene = (getSupabaseClient: typeof getSupabase) => asy
         const { data: companies, error: companyError } = await companyQuery;
 
         if (companyError) throw companyError;
+        const managedBooths = await fetchManagedBoothsForScreenContent(supabase);
+        const managedScreenContentIndex = buildManagedBoothScreenContentIndex(managedBooths);
         const sortedCompanies = [...(companies || [])].sort(compareCompanies);
         const uniqueSlugMap = buildUniqueSlugMap(sortedCompanies);
 
@@ -396,6 +514,8 @@ export const createGetExpoScene = (getSupabaseClient: typeof getSupabase) => asy
             booths: sortedCompanies.map((c: any) => {
                 const sponsorTier = normalizeSponsorTier(c.sponsor_tier);
                 const booth = normalizeBoothRelation(c.booths);
+                const slug = uniqueSlugMap.get(String(c.id)) || normalizeCompanySlug(c);
+                const managedScreenContent = getManagedScreenContentForSceneBooth(managedScreenContentIndex, booth, { ...c, slug });
                 return {
                 id: booth?.id || `booth_${c.id}`,
                 companyId: c.id,
@@ -405,17 +525,18 @@ export const createGetExpoScene = (getSupabaseClient: typeof getSupabase) => asy
                 posterUrl: normalizeReleaseMediaUrl(c.poster_url ?? booth?.poster_url),
                 heroAssetUrl: normalizeReleaseMediaUrl(c.hero_asset_url ?? booth?.hero_asset_url),
                 showroomEnabled: booth?.showroom_enabled === true,
-                heroScreenType: normalizeNullableString(booth?.hero_screen_type),
-                heroScreenImageUrl: normalizeReleaseMediaUrl(booth?.hero_screen_image_url),
-                heroScreenVideoUrl: normalizeReleaseMediaUrl(booth?.hero_screen_video_url),
-                heroScreenTitle: normalizeNullableString(booth?.hero_screen_title),
-                heroScreenText: normalizeNullableString(booth?.hero_screen_text),
+                heroScreenType: normalizeNullableString(managedScreenContent.mode ?? managedScreenContent.mediaType ?? managedScreenContent.media_type ?? booth?.hero_screen_type),
+                heroScreenImageUrl: normalizeReleaseMediaUrl(managedScreenContent.imageUrl ?? managedScreenContent.image_url ?? managedScreenContent.assetUrl ?? managedScreenContent.asset_url ?? booth?.hero_screen_image_url),
+                heroScreenStatus: normalizeNullableString(managedScreenContent.status ?? booth?.hero_screen_status),
+                heroScreenVideoUrl: normalizeReleaseMediaUrl(managedScreenContent.videoUrl ?? managedScreenContent.video_url ?? booth?.hero_screen_video_url),
+                heroScreenTitle: normalizeNullableString(managedScreenContent.title ?? booth?.hero_screen_title),
+                heroScreenText: normalizeNullableString(managedScreenContent.subtitle ?? managedScreenContent.text ?? booth?.hero_screen_text),
                 featuredAssetType: normalizeNullableString(booth?.featured_asset_type),
                 featuredAssetUrl: normalizeReleaseMediaUrl(booth?.featured_asset_url),
                 featuredAssetTitle: normalizeNullableString(booth?.featured_asset_title),
                 featuredAssetDescription: normalizeNullableString(booth?.featured_asset_description),
                 ctaLabel: normalizeNullableString(c.cta_label ?? booth?.cta_label),
-                slug: uniqueSlugMap.get(String(c.id)) || normalizeCompanySlug(c)
+                slug
                 };
             })
         });

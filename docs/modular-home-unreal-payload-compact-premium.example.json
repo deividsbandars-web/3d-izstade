@@ -1,0 +1,69 @@
+{
+  "schemaVersion": "modular-home-unreal-visualizer-v2",
+  "experience": "modular-home-premium-visualizer",
+  "projectId": "local-preview-compact-premium-001",
+  "productId": "compact-timber-40",
+  "layoutVariant": "oneBedroom",
+  "moduleInstances": [
+    {
+      "instanceId": "compact-40-living-01",
+      "moduleId": "compact-living-module",
+      "quantity": 1,
+      "role": "Living and kitchen module",
+      "positionHint": "front living/kitchen zone",
+      "productionGroup": "primary-shell"
+    },
+    {
+      "instanceId": "compact-40-bedroom-01",
+      "moduleId": "compact-bedroom-module",
+      "quantity": 1,
+      "role": "Bedroom module",
+      "positionHint": "rear private zone",
+      "productionGroup": "primary-shell"
+    },
+    {
+      "instanceId": "compact-40-bathroom-core-01",
+      "moduleId": "bathroom-core-module",
+      "quantity": 1,
+      "role": "Bathroom core",
+      "positionHint": "rear service corner",
+      "productionGroup": "service-core"
+    }
+  ],
+  "facade": "darkThermoWood",
+  "roof": "pitched",
+  "terrace": "frontDeck",
+  "windowPlacement": "frontPanoramic",
+  "doorPlacement": "terraceFacing",
+  "finish": "premium",
+  "interiorPackage": "premiumInterior",
+  "furniturePackage": "premiumFurniture",
+  "materialTokens": {
+    "facadeMaterialId": "dark-thermo-wood",
+    "roofMaterialId": "metal-roof",
+    "interiorMaterialIds": ["interior-plywood", "bathroom-wet-core"],
+    "terraceMaterialId": "timber-terrace-deck",
+    "glassMaterialId": "panoramic-glass",
+    "doorMaterialId": "terrace-slider-door",
+    "trimMaterialId": "dark-metal-trim"
+  },
+  "estimateSummary": {
+    "currency": "EUR",
+    "estimatedTotal": 101900,
+    "confidence": "requiresEngineering",
+    "lineItemCount": 22,
+    "finalQuote": false,
+    "disclaimer": "Preview estimate only; panoramic glazing and terrace-facing doors require engineering review."
+  },
+  "notes": [
+    "First premium visualizer POC target.",
+    "Front panoramic glazing is review-required and should show a warning badge in Unreal."
+  ],
+  "safety": {
+    "piiIncluded": false,
+    "uploadedUserAssetsIncluded": false,
+    "externalAssetUrlsIncluded": false,
+    "finalQuote": false,
+    "pixelStreamingEnabledByThisPayload": false
+  }
+}

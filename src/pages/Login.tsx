@@ -1,7 +1,16 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../core/supabase';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import '../components/calculator/styles/CalculatorPro.css';
+
+function getSafeNextPath(search: string) {
+  const nextPath = new URLSearchParams(search).get('next')?.trim();
+  if (!nextPath || !nextPath.startsWith('/') || nextPath.startsWith('//')) {
+    return '/dashboard';
+  }
+
+  return nextPath;
+}
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -10,14 +19,16 @@ export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [isSignUp, setIsSignUp] = useState(false);
+  const location = useLocation();
   const navigate = useNavigate();
+  const nextPath = getSafeNextPath(location.search);
 
   // Pārbauda esošo sesiju
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) navigate('/dashboard');
+      if (session) navigate(nextPath);
     });
-  }, [navigate]);
+  }, [navigate, nextPath]);
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -65,7 +76,7 @@ export default function Login() {
         // Ielogošanās
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        navigate('/dashboard');
+        navigate(nextPath);
       }
     } catch (error: any) {
       setErrorMsg(error.message || "Autentifikācijas kļūda.");

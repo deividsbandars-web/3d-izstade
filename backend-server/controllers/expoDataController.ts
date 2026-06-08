@@ -15,16 +15,48 @@ import {
   updateExpoReviewLeadOps as updateExpoReviewLeadOpsUseCase,
   updateExpoReviewLeadStatus as updateExpoReviewLeadStatusUseCase,
 } from '../../src/backend/expo/review/expoReviewService.js';
+import { normalizeExpoBoothPublicationStatus } from '../../src/shared/expo/boothPublicationStatus.js';
 import type { AuthRequest } from '../middleware/authMiddleware.js';
 
 function getIdParam(value: unknown) {
   return typeof value === 'string' && value.trim().length > 0 ? value.trim() : '';
 }
 
+function getRequestedPublicationStatus(payload: Record<string, unknown>) {
+  return Object.prototype.hasOwnProperty.call(payload, 'status')
+    ? normalizeExpoBoothPublicationStatus(payload.status)
+    : null;
+}
+
+function canUserSetPublicationStatus(
+  status: ReturnType<typeof normalizeExpoBoothPublicationStatus> | null,
+  role: string | null | undefined,
+  currentStatus?: unknown,
+) {
+  if (!status) {
+    return true;
+  }
+
+  if (role === 'admin') {
+    return true;
+  }
+
+  if (currentStatus && status === normalizeExpoBoothPublicationStatus(currentStatus)) {
+    return true;
+  }
+
+  return status === 'draft' || status === 'review';
+}
+
 export const createBooth = async (req: AuthRequest, res: Response) => {
   const payload = req.body && typeof req.body === 'object' ? req.body : null;
   if (!payload) {
     return res.status(400).json({ error: 'booth payload is required' });
+  }
+
+  const requestedStatus = getRequestedPublicationStatus(payload as Record<string, unknown>);
+  if (!canUserSetPublicationStatus(requestedStatus, req.user?.role)) {
+    return res.status(403).json({ error: 'Only an admin can approve, activate, reject, archive, or publish an expo booth.' });
   }
 
   const result = await expoService.createBooth(
@@ -55,6 +87,15 @@ export const updateBooth = async (req: AuthRequest, res: Response) => {
 
   if (req.user?.role !== 'admin' && !boothBelongsToUser(existingBooth.data, req.user ?? {})) {
     return res.status(403).json({ error: 'Booth ownership mismatch' });
+  }
+
+  const requestedStatus = getRequestedPublicationStatus(payload as Record<string, unknown>);
+  if (!canUserSetPublicationStatus(
+    requestedStatus,
+    req.user?.role,
+    (existingBooth.data as { status?: unknown }).status,
+  )) {
+    return res.status(403).json({ error: 'Only an admin can approve, activate, reject, archive, or publish an expo booth.' });
   }
 
   const result = await expoService.updateBooth(

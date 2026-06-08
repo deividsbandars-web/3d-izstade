@@ -1,0 +1,284 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://30sek24.com/schemas/modular-home-unreal-premium-visualizer-payload.schema.json",
+  "title": "Modular Home Unreal Premium Visualizer Payload",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "experience",
+    "projectId",
+    "productId",
+    "layoutVariant",
+    "moduleInstances",
+    "facade",
+    "roof",
+    "terrace",
+    "windowPlacement",
+    "doorPlacement",
+    "finish",
+    "interiorPackage",
+    "furniturePackage",
+    "materialTokens",
+    "safety"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "modular-home-unreal-visualizer-v2"
+    },
+    "experience": {
+      "const": "modular-home-premium-visualizer"
+    },
+    "projectId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 160,
+      "pattern": "^[a-zA-Z0-9._:-]+$"
+    },
+    "productId": {
+      "enum": ["compact-timber-40", "family-timber-80", "sauna-cabin-25"]
+    },
+    "layoutVariant": {
+      "enum": [
+        "openStudio",
+        "oneBedroom",
+        "officeCabin",
+        "twoBedroom",
+        "threeBedroomCompact",
+        "largeLiving",
+        "saunaOnly",
+        "guestCabin",
+        "saunaRestRoom"
+      ]
+    },
+    "moduleInstances": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "instanceId",
+          "moduleId",
+          "quantity",
+          "role",
+          "positionHint",
+          "productionGroup"
+        ],
+        "properties": {
+          "instanceId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "moduleId": {
+            "enum": [
+              "compact-living-module",
+              "compact-bedroom-module",
+              "bathroom-core-module",
+              "terrace-small-module",
+              "terrace-extended-module",
+              "family-living-module",
+              "family-bedroom-module",
+              "sauna-core-module",
+              "roof-flat-module",
+              "roof-pitched-module",
+              "facade-natural-timber",
+              "facade-dark-thermo",
+              "facade-light-painted"
+            ]
+          },
+          "quantity": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 12
+          },
+          "role": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 180
+          },
+          "positionHint": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 220
+          },
+          "productionGroup": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          }
+        }
+      }
+    },
+    "facade": {
+      "enum": ["naturalTimber", "darkThermoWood", "lightPainted"]
+    },
+    "roof": {
+      "enum": ["flat", "pitched", "greenRoofPlaceholder"]
+    },
+    "terrace": {
+      "enum": ["none", "frontDeck", "sideTerrace", "extendedTerrace", "coveredTerracePlaceholder"]
+    },
+    "windowPlacement": {
+      "enum": ["balanced", "frontPanoramic", "sidePrivacy", "cornerFeature"]
+    },
+    "doorPlacement": {
+      "enum": ["frontEntry", "sideEntry", "terraceFacing"]
+    },
+    "finish": {
+      "enum": ["shell", "standard", "premium"]
+    },
+    "interiorPackage": {
+      "enum": ["emptyShell", "standardInterior", "premiumInterior", "saunaWellnessInterior"]
+    },
+    "furniturePackage": {
+      "enum": ["none", "standardFurniture", "premiumFurniture", "saunaWellnessFurniture"]
+    },
+    "materialTokens": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "facadeMaterialId",
+        "roofMaterialId",
+        "interiorMaterialIds",
+        "terraceMaterialId",
+        "glassMaterialId",
+        "doorMaterialId",
+        "trimMaterialId"
+      ],
+      "properties": {
+        "facadeMaterialId": {
+          "enum": ["natural-timber-siding", "dark-thermo-wood", "light-painted-facade"]
+        },
+        "roofMaterialId": {
+          "enum": ["metal-roof", "green-roof-placeholder"]
+        },
+        "interiorMaterialIds": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "enum": ["interior-plywood", "bathroom-wet-core"]
+          }
+        },
+        "terraceMaterialId": {
+          "enum": ["timber-terrace-deck", "none"]
+        },
+        "glassMaterialId": {
+          "enum": ["clear-low-iron-glass", "privacy-glass", "panoramic-glass"]
+        },
+        "doorMaterialId": {
+          "enum": ["timber-entry-door", "glazed-entry-door", "terrace-slider-door"]
+        },
+        "trimMaterialId": {
+          "enum": ["dark-metal-trim", "timber-trim", "light-painted-trim"]
+        }
+      }
+    },
+    "estimateSummary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["currency", "estimatedTotal", "confidence", "finalQuote", "disclaimer"],
+      "properties": {
+        "currency": {
+          "const": "EUR"
+        },
+        "estimatedTotal": {
+          "type": "number",
+          "minimum": 0
+        },
+        "confidence": {
+          "enum": ["packageFixed", "estimated", "siteDependent", "requiresEngineering"]
+        },
+        "lineItemCount": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "finalQuote": {
+          "const": false
+        },
+        "disclaimer": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 400
+        }
+      }
+    },
+    "notes": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 240
+      },
+      "maxItems": 12
+    },
+    "safety": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "piiIncluded",
+        "uploadedUserAssetsIncluded",
+        "externalAssetUrlsIncluded",
+        "finalQuote",
+        "pixelStreamingEnabledByThisPayload"
+      ],
+      "properties": {
+        "piiIncluded": {
+          "const": false
+        },
+        "uploadedUserAssetsIncluded": {
+          "const": false
+        },
+        "externalAssetUrlsIncluded": {
+          "const": false
+        },
+        "finalQuote": {
+          "const": false
+        },
+        "pixelStreamingEnabledByThisPayload": {
+          "const": false
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "productId": { "const": "compact-timber-40" }
+        }
+      },
+      "then": {
+        "properties": {
+          "layoutVariant": { "enum": ["openStudio", "oneBedroom", "officeCabin"] }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "productId": { "const": "family-timber-80" }
+        }
+      },
+      "then": {
+        "properties": {
+          "layoutVariant": { "enum": ["twoBedroom", "threeBedroomCompact", "largeLiving"] }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "productId": { "const": "sauna-cabin-25" }
+        }
+      },
+      "then": {
+        "properties": {
+          "layoutVariant": { "enum": ["saunaOnly", "guestCabin", "saunaRestRoom"] }
+        }
+      }
+    }
+  ]
+}

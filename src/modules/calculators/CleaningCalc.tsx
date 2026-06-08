@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { CalculatorLeadCta } from './CalculatorLeadCta';
 import '../../components/calculator/styles/CalculatorPro.css';
 
 const RATES = {
@@ -38,6 +39,12 @@ export default function CleaningCalc() {
               <label style={{ marginTop: '20px' }}>Platība (m²)
                 <input type="number" value={params.area} onChange={(e) => setParams({...params, area: parseInt(e.target.value)})} min="10" />
               </label>
+              <label style={{ marginTop: '20px' }}>Biežums
+                <select value={params.frequency} onChange={(e) => setParams({...params, frequency: e.target.value})}>
+                  <option value="once">Vienreizēja uzkopšana</option>
+                  <option value="weekly">Regulāri katru nedēļu (-20%)</option>
+                </select>
+              </label>
             </div>
           </section>
           <button onClick={handleCalculate} className="btn-primary" style={{ width: '100%', padding: '18px' }}>ĢENERĒT TĀMI</button>
@@ -46,10 +53,22 @@ export default function CleaningCalc() {
           <div className="sticky-results">
             <h3 className="results-title">Uzkopšanas Specifikācija</h3>
             {!results ? <div className="empty-state">🧹 Norādiet platību</div> : (
-              <div className="grand-total-box">
-                <span className="gt-label">KOPĒJĀS IZMAKSAS</span>
-                <span className="gt-value">{results.grandTotal.toFixed(0)} €</span>
-              </div>
+              <>
+                <div className="grand-total-box">
+                  <span className="gt-label">KOPĒJĀS IZMAKSAS</span>
+                  <span className="gt-value">{results.grandTotal.toFixed(0)} €</span>
+                </div>
+                <CalculatorLeadCta
+                  calculatorId="cleaning"
+                  calculatorTitle="Uzkopšanas tāme"
+                  estimateTotal={results.grandTotal}
+                  summaryItems={[
+                    { label: 'Veids', value: RATES[params.type as keyof typeof RATES].name },
+                    { label: 'Platība', value: String(params.area) + ' m²' },
+                    { label: 'Biežums', value: params.frequency === 'weekly' ? 'Katru nedēļu' : 'Vienreiz' },
+                  ]}
+                />
+              </>
             )}
           </div>
         </div>

@@ -21,6 +21,7 @@ import type {
   CanonicalWorldPlan,
   CityGeometryPlanningSource,
   CityMass,
+  CityMassRenderIntent,
   CityPlane,
   CityScreenAssignment,
   CityScreenSocket,
@@ -303,18 +304,25 @@ function withMassIntent(mass: CityMass, stadiumReserve: CanonicalWorldPlan['stad
     isSlenderVertical ||
     decorPolicy === 'none';
   const isLowPlinth = mass.size[1] <= 24;
+  const computedRenderIntent: CityMassRenderIntent = {
+    emissive: isSignature ? '#8fd6ff' : isLowPlinth ? '#d9eef8' : '#000000',
+    emissiveIntensity: isSignature ? 0.014 : isLowPlinth ? 0.012 : 0,
+    showCrownBeacon: isSignature && mass.size[1] >= 360,
+    showFrontWing: !suppressDecorativeStack && decorPolicy === 'signature' && mass.size[0] >= 28 && mass.size[1] > 24,
+    showHorizontalCap: !suppressDecorativeStack && mass.size[1] > 18 && mass.size[0] > 20 && mass.size[2] > 20,
+    showMegaVerticalSpines: isSignature && mass.size[1] >= 900,
+    showRearSpine: !suppressDecorativeStack && mass.size[1] > 40 && mass.size[0] >= 18 && mass.size[2] >= 14,
+    showSideInset: !suppressDecorativeStack && mass.size[1] > 28 && mass.size[0] >= 42 && mass.size[2] >= 18,
+    showSideFloorBands: Boolean(mass.vertical && mass.vertical.floorCount >= 8 && mass.size[1] >= 300),
+    showSignatureBand: isSignature && !suppressDecorativeStack && mass.size[1] > 24,
+    skipBase: isGroundLikePlinth || overlapsStadiumReserve(mass.position, stadiumReserve, mass.size),
+  };
 
   return withSections({
     ...mass,
     renderIntent: {
-      emissive: isSignature ? '#8fd6ff' : isLowPlinth ? '#d9eef8' : '#000000',
-      emissiveIntensity: isSignature ? 0.014 : isLowPlinth ? 0.012 : 0,
-      showFrontWing: !suppressDecorativeStack && decorPolicy === 'signature' && mass.size[0] >= 28 && mass.size[1] > 24,
-      showHorizontalCap: !suppressDecorativeStack && mass.size[1] > 18 && mass.size[0] > 20 && mass.size[2] > 20,
-      showRearSpine: !suppressDecorativeStack && mass.size[1] > 40 && mass.size[0] >= 18 && mass.size[2] >= 14,
-      showSideInset: !suppressDecorativeStack && mass.size[1] > 28 && mass.size[0] >= 42 && mass.size[2] >= 18,
-      showSignatureBand: isSignature && !suppressDecorativeStack && mass.size[1] > 24,
-      skipBase: isGroundLikePlinth || overlapsStadiumReserve(mass.position, stadiumReserve, mass.size),
+      ...computedRenderIntent,
+      ...(mass.renderIntent ?? {}),
     },
   });
 }

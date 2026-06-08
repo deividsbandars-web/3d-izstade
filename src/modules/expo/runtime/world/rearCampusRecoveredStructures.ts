@@ -72,6 +72,18 @@ export const RECOVERED_REAR_CAMPUS_STRUCTURES: RecoveredRearCampusStructure[] = 
     positionX: 1340,
     size: [276, 670, 168],
   },
+  {
+    authoredZ: -4800,
+    id: 'rear-campus-orbital-scoregate',
+    positionX: 0,
+    size: [1540, 1030, 320],
+  },
+  {
+    authoredZ: -1900,
+    id: 'rear-campus-entry-pulse-arches',
+    positionX: 1700,
+    size: [2340, 560, 260],
+  },
 ];
 
 export const RECOVERED_REAR_CAMPUS_PHYSICS_PARTS_BY_ID: Readonly<Record<string, RecoveredRearCampusPhysicsPart[]>> = {
@@ -153,6 +165,30 @@ export const RECOVERED_REAR_CAMPUS_PHYSICS_PARTS_BY_ID: Readonly<Record<string, 
     { id: 'low-bridge', localPosition: [0, 92, 0], size: [92, 18, 30], walkableTop: false },
     { id: 'top-bridge', localPosition: [0, 494, 0], size: [118, 14, 24], walkableTop: false },
     { id: 'signal-stem', localPosition: [0, 586, 0], size: [22, 168, 22], walkableTop: false },
+  ],
+  'rear-campus-orbital-scoregate': [
+    { id: 'base-deck', localPosition: [0, 16, 0], size: [1520, 32, 260], walkableTop: false },
+    { id: 'left-pylon', localPosition: [-620, 360, 0], size: [160, 720, 180] },
+    { id: 'right-pylon', localPosition: [620, 360, 0], size: [160, 720, 180] },
+    { id: 'crown-beam', localPosition: [0, 738, 0], size: [1320, 88, 150], walkableTop: false },
+    { id: 'scoreboard-backplate', localPosition: [0, 500, 118], size: [920, 380, 44], walkableTop: false },
+    { id: 'lower-service-deck', localPosition: [0, 92, 88], size: [780, 52, 112], walkableTop: false },
+    { id: 'left-diagonal-brace', localPosition: [-370, 620, 70], rotation: [0, 0, -0.32], size: [420, 28, 42], walkableTop: false },
+    { id: 'right-diagonal-brace', localPosition: [370, 620, 70], rotation: [0, 0, 0.32], size: [420, 28, 42], walkableTop: false },
+  ],
+  'rear-campus-entry-pulse-arches': [
+    { id: 'left-base', localPosition: [-950, 14, 0], size: [360, 28, 220], walkableTop: false },
+    { id: 'right-base', localPosition: [950, 14, 0], size: [360, 28, 220], walkableTop: false },
+    { id: 'left-outer-pylon', localPosition: [-1120, 190, 0], size: [78, 380, 96] },
+    { id: 'right-outer-pylon', localPosition: [1120, 190, 0], size: [78, 380, 96] },
+    { id: 'left-inner-pylon', localPosition: [-760, 220, 0], size: [92, 440, 108] },
+    { id: 'right-inner-pylon', localPosition: [760, 220, 0], size: [92, 440, 108] },
+    { id: 'left-upper-arch-beam', localPosition: [-940, 476, 0], size: [520, 42, 82], walkableTop: false },
+    { id: 'right-upper-arch-beam', localPosition: [940, 476, 0], size: [520, 42, 82], walkableTop: false },
+    { id: 'rear-left-lightline', localPosition: [-940, 424, -96], size: [520, 14, 28], walkableTop: false },
+    { id: 'rear-right-lightline', localPosition: [940, 424, -96], size: [520, 14, 28], walkableTop: false },
+    { id: 'front-left-lightline', localPosition: [-940, 424, 96], size: [520, 14, 28], walkableTop: false },
+    { id: 'front-right-lightline', localPosition: [940, 424, 96], size: [520, 14, 28], walkableTop: false },
   ],
 };
 
