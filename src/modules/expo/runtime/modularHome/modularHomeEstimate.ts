@@ -39,6 +39,25 @@ export type ModularHomeEstimateLineItemCategory =
   | 'doorPackage'
   | 'windowPlacement'
   | 'doorPlacement'
+  | 'facadeBoardOrientation'
+  | 'facadeBoardWidth'
+  | 'facadeBoardProfile'
+  | 'facadeBoardSpacing'
+  | 'trimColor'
+  | 'roofEdgeColor'
+  | 'roofGutterStyle'
+  | 'windowFrameColor'
+  | 'windowFrameType'
+  | 'interiorWallFinish'
+  | 'floorFinish'
+  | 'interiorFloorStyle'
+  | 'wallPanelStyle'
+  | 'furniturePackage'
+  | 'sofa'
+  | 'table'
+  | 'bed'
+  | 'kitchenLine'
+  | 'wardrobePlaceholder'
   | 'transport'
   | 'installation'
   | 'vat';
@@ -53,6 +72,12 @@ export type ModularHomeEstimatePriceSource =
   | 'internalPreview'
   | 'supplierPlaceholder'
   | 'manualReviewRequired';
+
+export type ModularHomeEstimateScenarioId =
+  | 'base'
+  | 'expected'
+  | 'premium'
+  | 'siteDependentExtras';
 
 export type ModularHomeEstimateReliabilityMetadata = {
   confidence: ModularHomeEstimateConfidence;
@@ -83,6 +108,18 @@ export type ModularHomeEstimateAdjustment = {
   amount: number;
   id: string;
   label: string;
+};
+
+export type ModularHomeEstimateScenario = ModularHomeEstimateReliabilityMetadata & {
+  amount: number;
+  description: string;
+  exclusions: readonly string[];
+  finalQuoteRequirement: string;
+  id: ModularHomeEstimateScenarioId;
+  included: readonly string[];
+  isAdditiveAllowance?: boolean;
+  label: string;
+  vatMarginNote: string;
 };
 
 export type ModularHomeEstimateSectionId =
@@ -129,7 +166,9 @@ export type ModularHomeEstimate = {
   optionalServices: readonly ModularHomeEstimateLineItem[];
   optionalServicesTotal: number;
   pricing: ModularHomePricingSummary;
+  priceConfidenceVersion: 'v5';
   quantities: ModularHomeQuantityTakeoff;
+  scenarios: readonly ModularHomeEstimateScenario[];
   selectedOptions: ReturnType<typeof getModularHomeProductConfigSummary>;
   sections: readonly ModularHomeEstimateSection[];
   sizeLabel: string;
@@ -143,6 +182,7 @@ export type ModularHomeEstimate = {
 
 export const MODULAR_HOME_ESTIMATE_CONFIG = {
   disclaimer: 'Estimate only - final quote depends on site, transport, VAT, foundations, utilities and engineering.',
+  premiumScenarioContingencyRate: 0.12,
   installationPerM2: 180,
   transportBase: 900,
   transportPerModule: 1800,
@@ -246,6 +286,25 @@ function getOptionLineItemCategory(option: ModularHomeOption): ModularHomeEstima
     || option.group === 'doorPackage'
     || option.group === 'windowPlacement'
     || option.group === 'doorPlacement'
+    || option.group === 'facadeBoardOrientation'
+    || option.group === 'facadeBoardWidth'
+    || option.group === 'facadeBoardProfile'
+    || option.group === 'facadeBoardSpacing'
+    || option.group === 'trimColor'
+    || option.group === 'roofEdgeColor'
+    || option.group === 'roofGutterStyle'
+    || option.group === 'windowFrameColor'
+    || option.group === 'windowFrameType'
+    || option.group === 'interiorWallFinish'
+    || option.group === 'floorFinish'
+    || option.group === 'interiorFloorStyle'
+    || option.group === 'wallPanelStyle'
+    || option.group === 'furniturePackage'
+    || option.group === 'sofa'
+    || option.group === 'table'
+    || option.group === 'bed'
+    || option.group === 'kitchenLine'
+    || option.group === 'wardrobePlaceholder'
   ) {
     return option.group;
   }
@@ -258,12 +317,31 @@ function getOptionLineItemLabel(option: ModularHomeOption): string {
     doorPackage: 'Door package',
     doorPlacement: 'Door placement',
     facade: 'Facade',
+    facadeBoardOrientation: 'Facade board orientation',
+    facadeBoardProfile: 'Facade board profile',
+    facadeBoardSpacing: 'Facade board spacing',
+    facadeBoardWidth: 'Facade board width',
     finish: 'Finish level',
+    floorFinish: 'Floor finish',
+    furniturePackage: 'Furniture package',
+    sofa: 'Sofa',
+    table: 'Table',
+    bed: 'Bed',
+    kitchenLine: 'Kitchen line',
+    wardrobePlaceholder: 'Wardrobe placeholder',
+    interiorFloorStyle: 'Interior floor style',
+    interiorWallFinish: 'Interior wall finish',
     roof: 'Roof',
+    roofEdgeColor: 'Roof edge color',
+    roofGutterStyle: 'Roof edge/gutter style',
     terrace: 'Terrace',
+    trimColor: 'Trim color',
+    windowFrameColor: 'Window frame color',
+    windowFrameType: 'Window frame type',
     windowPackage: 'Window package',
     windowPlacement: 'Window placement',
-  } as const;
+    wallPanelStyle: 'Wall panel style',
+  } as const satisfies Record<ModularHomeOption['group'], string>;
 
   return `${labelByGroup[option.group]}: ${option.label}`;
 }
@@ -502,6 +580,18 @@ function createEstimateMetadata(input: {
       || category === 'doorPackage'
       || category === 'windowPlacement'
       || category === 'doorPlacement'
+      || category === 'facadeBoardOrientation'
+      || category === 'facadeBoardWidth'
+      || category === 'roofEdgeColor'
+      || category === 'windowFrameColor'
+      || category === 'interiorWallFinish'
+      || category === 'floorFinish'
+      || category === 'furniturePackage'
+      || category === 'sofa'
+      || category === 'table'
+      || category === 'bed'
+      || category === 'kitchenLine'
+      || category === 'wardrobePlaceholder'
     )) {
       return 'requiresEngineering';
     }
@@ -531,6 +621,18 @@ function createEstimateMetadata(input: {
       || category === 'doorPackage'
       || category === 'windowPlacement'
       || category === 'doorPlacement'
+      || category === 'facadeBoardOrientation'
+      || category === 'facadeBoardWidth'
+      || category === 'roofEdgeColor'
+      || category === 'windowFrameColor'
+      || category === 'interiorWallFinish'
+      || category === 'floorFinish'
+      || category === 'furniturePackage'
+      || category === 'sofa'
+      || category === 'table'
+      || category === 'bed'
+      || category === 'kitchenLine'
+      || category === 'wardrobePlaceholder'
     ) {
       return 'supplierPlaceholder';
     }
@@ -593,6 +695,166 @@ function createSection(input: ModularHomeEstimateSectionDraft): ModularHomeEstim
     lineItems,
     subtotal: sumSectionLineItems(lineItems),
   };
+}
+
+function createEstimateScenario(input: {
+  amount: number;
+  confidence: ModularHomeEstimateConfidence;
+  description: string;
+  exclusions: readonly string[];
+  finalQuoteRequirement: string;
+  id: ModularHomeEstimateScenarioId;
+  included: readonly string[];
+  isAdditiveAllowance?: boolean;
+  label: string;
+  notes: readonly string[];
+  priceSource: ModularHomeEstimatePriceSource;
+  vatMarginNote: string;
+}): ModularHomeEstimateScenario {
+  return {
+    amount: input.amount,
+    description: input.description,
+    exclusions: input.exclusions,
+    finalQuoteRequirement: input.finalQuoteRequirement,
+    id: input.id,
+    included: input.included,
+    isAdditiveAllowance: input.isAdditiveAllowance,
+    label: input.label,
+    vatMarginNote: input.vatMarginNote,
+    ...createEstimateMetadata({
+      confidence: input.confidence,
+      label: input.label,
+      notes: input.notes,
+      priceSource: input.priceSource,
+      sectionId: input.id === 'siteDependentExtras' ? 'excludedSiteDependent' : 'vatMarginContingency',
+      sourceCategory: input.id === 'siteDependentExtras' ? 'installation' : 'baseProduct',
+    }),
+  };
+}
+
+function createEstimateScenarios(input: {
+  estimatedTotal: number;
+  optionalServicesTotal: number;
+  productName: string;
+  subtotal: number;
+}): readonly ModularHomeEstimateScenario[] {
+  const baseVatAmount = roundToNearestFifty(input.subtotal * MODULAR_HOME_ESTIMATE_CONFIG.vatRate);
+  const baseScenarioAmount = input.subtotal + baseVatAmount;
+  const premiumScenarioAmount = roundToNearestFifty(
+    Math.max(
+      input.estimatedTotal + input.estimatedTotal * MODULAR_HOME_ESTIMATE_CONFIG.premiumScenarioContingencyRate,
+      input.estimatedTotal + 7500,
+    ),
+  );
+
+  return [
+    createEstimateScenario({
+      amount: baseScenarioAmount,
+      confidence: 'estimated',
+      description: 'Base production package scenario for initial buyer discussion.',
+      exclusions: [
+        'transport and crane access',
+        'installation and foundation works',
+        'utility connections',
+        'permits and municipality fees',
+        'site preparation',
+      ],
+      finalQuoteRequirement: 'Requires final model confirmation, supplier check and site review before quote.',
+      id: 'base',
+      included: [
+        input.productName,
+        'selected module and option package',
+        'preview production package allowance',
+        'VAT placeholder on the production package',
+      ],
+      label: 'Base package',
+      notes: [
+        'Useful for package comparison before site-dependent extras are added.',
+        'Base scenario is not a complete installed project price.',
+      ],
+      priceSource: 'internalPreview',
+      vatMarginNote: 'Includes preview VAT placeholder on production package only; margin/contingency are internal preview allocations.',
+    }),
+    createEstimateScenario({
+      amount: input.estimatedTotal,
+      confidence: 'siteDependent',
+      description: 'Expected discussion scenario using current selected configuration and placeholders.',
+      exclusions: [
+        'final foundation design',
+        'utility connection pricing',
+        'permit and municipality-specific fees',
+        'route-specific transport permits',
+        'engineering release for production',
+      ],
+      finalQuoteRequirement: 'Requires manual quote review with site address, delivery route, foundation and engineering assumptions.',
+      id: 'expected',
+      included: [
+        'selected production package',
+        'transport placeholder',
+        'installation placeholder',
+        'VAT placeholder',
+        'current option and detail selections',
+      ],
+      label: 'Expected discussion total',
+      notes: [
+        'This is the main client-facing preview scenario.',
+        'Site-dependent placeholders are included but still require review.',
+      ],
+      priceSource: 'manualReviewRequired',
+      vatMarginNote: 'VAT, margin and contingency are preview placeholders; final quote may separate tax and commercial terms.',
+    }),
+    createEstimateScenario({
+      amount: premiumScenarioAmount,
+      confidence: 'requiresEngineering',
+      description: 'Premium scenario for higher specification, supplier review and contingency discussion.',
+      exclusions: [
+        'engineering-grade premium interior specification',
+        'supplier-confirmed premium materials',
+        'final glazing/weatherproofing details',
+        'site-specific foundation and utilities',
+      ],
+      finalQuoteRequirement: 'Requires supplier confirmation, engineering review and final quote scope sign-off.',
+      id: 'premium',
+      included: [
+        'expected scenario baseline',
+        `${Math.round(MODULAR_HOME_ESTIMATE_CONFIG.premiumScenarioContingencyRate * 100)}% premium/contingency allowance`,
+        'higher-specification review buffer',
+      ],
+      label: 'Premium scenario',
+      notes: [
+        'Use for investor/client conversations where premium finishes or risk buffer are expected.',
+        'Not a guaranteed cap.',
+      ],
+      priceSource: 'manualReviewRequired',
+      vatMarginNote: 'Premium scenario carries preview margin/contingency; VAT treatment must be confirmed in final quote.',
+    }),
+    createEstimateScenario({
+      amount: input.optionalServicesTotal,
+      confidence: 'siteDependent',
+      description: 'Separated site-dependent extras allowance, shown as an additive planning block.',
+      exclusions: [
+        'soil report',
+        'foundation contractor quote',
+        'utility provider fees',
+        'municipality fees',
+        'transport permit/crane specifics',
+      ],
+      finalQuoteRequirement: 'Requires site survey, route check and local contractor/supplier quotes.',
+      id: 'siteDependentExtras',
+      included: [
+        'transport placeholder',
+        'installation placeholder',
+      ],
+      isAdditiveAllowance: true,
+      label: 'Site-dependent extras',
+      notes: [
+        'This is not a standalone project total.',
+        'Use it to explain what can change after site review.',
+      ],
+      priceSource: 'manualReviewRequired',
+      vatMarginNote: 'VAT and margin treatment for extras depends on final delivery, installation and local contractor scope.',
+    }),
+  ];
 }
 
 function getLineItemByCategory(
@@ -896,8 +1158,23 @@ export function getModularHomeScopeOfSupply(
         `${selectedOptions.windowPlacement} controlled window placement`,
         `${selectedOptions.doorPlacement} controlled door placement`,
         `${selectedOptions.facade} facade package`,
+        `${selectedOptions.facadeBoardOrientation} facade board orientation`,
+        `${selectedOptions.facadeBoardWidth} facade board width`,
+        `${selectedOptions.facadeBoardProfile} facade board profile`,
+        `${selectedOptions.facadeBoardSpacing} facade board spacing`,
+        `${selectedOptions.trimColor} trim color`,
         `${selectedOptions.roof} package`,
+        `${selectedOptions.roofEdgeColor} roof edge color`,
+        `${selectedOptions.roofGutterStyle} roof edge/gutter style`,
         `${selectedOptions.layoutVariant} layout planning preview`,
+        `${selectedOptions.windowFrameColor} window frame color`,
+        `${selectedOptions.windowFrameType} window frame type`,
+        `${selectedOptions.interiorWallFinish} interior wall finish`,
+        `${selectedOptions.floorFinish} floor finish`,
+        `${selectedOptions.interiorFloorStyle} interior floor style`,
+        `${selectedOptions.wallPanelStyle} wall panel style`,
+        `${selectedOptions.furniturePackage} interior furniture package`,
+        `Furniture toggles: sofa ${selectedOptions.sofa}, table ${selectedOptions.table}, bed ${selectedOptions.bed}, kitchen ${selectedOptions.kitchenLine}, wardrobe ${selectedOptions.wardrobePlaceholder}`,
         selectedOptions.terrace === 'No terrace'
           ? 'No terrace extension selected'
           : `${selectedOptions.terrace} extension package`,
@@ -948,6 +1225,13 @@ export function calculateModularHomeEstimate(config: ModularHomeConfiguratorStat
   const optionalServicesTotal = sumLineItems(optionalServices);
   const vatEstimate = createVatEstimate(subtotal + optionalServicesTotal);
   const estimatedTotal = subtotal + optionalServicesTotal + vatEstimate.amount;
+  const baseModel = product?.name ?? template.name;
+  const scenarios = createEstimateScenarios({
+    estimatedTotal,
+    optionalServicesTotal,
+    productName: baseModel,
+    subtotal,
+  });
   const pricing = summarizeModularHomePricing([
     ...lineItems.map((item) => item.pricingBreakdown),
     ...optionalServices.map((item) => item.pricingBreakdown),
@@ -971,7 +1255,7 @@ export function calculateModularHomeEstimate(config: ModularHomeConfiguratorStat
 
   return {
     adjustments,
-    baseModel: product?.name ?? template.name,
+    baseModel,
     basePrice,
     basePriceLabel: 'Base modules + bathroom core',
     disclaimer: MODULAR_HOME_ESTIMATE_CONFIG.disclaimer,
@@ -980,7 +1264,9 @@ export function calculateModularHomeEstimate(config: ModularHomeConfiguratorStat
     optionalServices,
     optionalServicesTotal,
     pricing,
+    priceConfidenceVersion: 'v5',
     quantities,
+    scenarios,
     selectedOptions,
     sections,
     sizeLabel: product ? `${product.floorAreaM2} m2` : template.sizeLabel,

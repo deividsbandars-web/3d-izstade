@@ -56,13 +56,25 @@ assert.equal(mockRows.every((row) => row.source === 'mock-review'), true);
 
 const backendRow = normalizeModularHomeQuoteAdminRow({
   config: {
+    bed: 'enabled',
+    doorPlacement: 'terraceFacing',
     facade: 'darkThermoWood',
+    facadeBoardOrientation: 'vertical',
+    facadeBoardWidth: 'narrow',
     finishLevel: 'premium',
+    floorFinish: 'oakLaminate',
+    furniturePackage: 'premiumFurniture',
+    interiorWallFinish: 'warmPanel',
+    kitchenLine: 'enabled',
     layoutVariant: 'largeLiving',
     roof: 'flat',
+    roofEdgeColor: 'graphite',
+    sofa: 'enabled',
+    table: 'enabled',
     terrace: 'coveredTerrace',
+    wardrobePlaceholder: 'enabled',
+    windowFrameColor: 'graphite',
     windowPlacement: 'cornerFeature',
-    doorPlacement: 'terraceFacing',
   },
   created_at: '2026-06-06T08:30:00.000Z',
   estimate: { estimatedTotal: 94000 },
@@ -87,6 +99,10 @@ assert.equal(backendRow.source, 'backend-staging');
 assert.equal(backendRow.status, 'quoted');
 assert.equal(backendRow.internalNote, 'Needs admin follow-up.');
 assert.equal(backendRow.contact.email, 'backend@example.com');
+assert.equal(backendRow.config.facadeBoardOrientation, 'vertical');
+assert.equal(backendRow.config.furniturePackage, 'premiumFurniture');
+assert.equal(backendRow.config.kitchenLine, 'enabled');
+assert.equal(backendRow.config.windowFrameColor, 'graphite');
 assert.equal(backendRow.config.windowPlacement, 'cornerFeature');
 assert.equal(backendRow.config.doorPlacement, 'terraceFacing');
 assert.equal(backendRow.estimate.total, 94000);
@@ -104,6 +120,8 @@ assert.match(csv, /Model/);
 assert.match(csv, /Compact Timber 40/);
 assert.match(csv, /client@example.com/);
 assert.match(csv, /Needs admin follow-up/);
+assert.match(csv, /premiumFurniture/);
+assert.match(csv, /graphite/);
 
 const json = JSON.parse(serializeModularHomeQuoteReviewJson(rows)) as {
   rows: unknown[];

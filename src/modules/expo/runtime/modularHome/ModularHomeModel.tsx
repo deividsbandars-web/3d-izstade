@@ -3,18 +3,42 @@ import type { Vector3Tuple } from 'three';
 import { isHomeDemoEnabled } from './homeDemoFlags';
 import {
   getModularHomeConfigSummary,
+  MODULAR_HOME_FACADE_BOARD_ORIENTATION_VISUALS,
+  MODULAR_HOME_FACADE_BOARD_PROFILE_VISUALS,
+  MODULAR_HOME_FACADE_BOARD_SPACING_VISUALS,
+  MODULAR_HOME_FACADE_BOARD_WIDTH_VISUALS,
   MODULAR_HOME_FACADE_VISUALS,
   MODULAR_HOME_FINISH_LEVEL_VISUALS,
+  MODULAR_HOME_FLOOR_FINISH_VISUALS,
+  MODULAR_HOME_FURNITURE_PACKAGE_VISUALS,
+  MODULAR_HOME_INTERIOR_WALL_FINISH_VISUALS,
+  MODULAR_HOME_INTERIOR_FLOOR_STYLE_VISUALS,
   MODULAR_HOME_DOOR_PACKAGE_VISUALS,
   MODULAR_HOME_DOOR_PLACEMENT_VISUALS,
+  MODULAR_HOME_ROOF_GUTTER_STYLE_VISUALS,
+  MODULAR_HOME_ROOF_EDGE_COLOR_VISUALS,
   MODULAR_HOME_ROOF_VISUALS,
   MODULAR_HOME_TERRACE_VISUALS,
+  MODULAR_HOME_TRIM_COLOR_VISUALS,
+  MODULAR_HOME_WINDOW_FRAME_COLOR_VISUALS,
+  MODULAR_HOME_WINDOW_FRAME_TYPE_VISUALS,
   MODULAR_HOME_WINDOW_PACKAGE_VISUALS,
   MODULAR_HOME_WINDOW_PLACEMENT_VISUALS,
+  MODULAR_HOME_WALL_PANEL_STYLE_VISUALS,
   type ModularHomeDoorPackageVisual,
   type ModularHomeDoorPlacementVisual,
+  type ModularHomeConfiguratorState,
+  type ModularHomeFacadeBoardOrientationVisual,
+  type ModularHomeFacadeBoardProfileVisual,
+  type ModularHomeFacadeBoardSpacingVisual,
+  type ModularHomeFacadeBoardWidthVisual,
   type ModularHomeFinishLevelOption,
+  type ModularHomeFurnitureToggleKey,
+  type ModularHomeInteriorFloorStyleVisual,
+  type ModularHomeRoofGutterStyleVisual,
   type ModularHomeViewModeOption,
+  type ModularHomeWallPanelStyleVisual,
+  type ModularHomeWindowFrameTypeVisual,
   type ModularHomeWindowPackageVisual,
   type ModularHomeWindowPlacementVisual,
   useModularHomeConfigurator,
@@ -34,12 +58,10 @@ import {
 const DECK_COLOR = '#8b5a2b';
 const FOUNDATION_COLOR = '#7c8591';
 const BATHROOM_CORE_MARKER_COLOR = '#38bdf8';
-const FACADE_BOARD_LINE_COLOR = '#2a1d14';
 const FLOORPLAN_BOUNDARY_COLOR = '#e0f2fe';
 const FLOORPLAN_DIMENSION_COLOR = '#fbbf24';
 const FLOORPLAN_DOOR_MARKER_COLOR = '#f59e0b';
 const FLOORPLAN_WINDOW_MARKER_COLOR = '#38bdf8';
-const GUTTER_COLOR = '#334155';
 const INTERIOR_FINISH_LINE_COLOR = '#8a5f33';
 const KITCHEN_MARKER_COLOR = '#fbbf24';
 const PANEL_SEAM_COLOR = '#1f2937';
@@ -436,12 +458,14 @@ function getFootprintBounds(blocks: readonly ModuleLayoutBlock[]): FootprintBoun
 }
 
 function WindowModule({
+  frameTypeVisual,
   glassColor,
   moduleId,
   position,
   scale,
   trimColor,
 }: {
+  frameTypeVisual: ModularHomeWindowFrameTypeVisual;
   glassColor: string;
   moduleId: string;
   position: Vector3Tuple;
@@ -449,6 +473,9 @@ function WindowModule({
   trimColor: string;
 }) {
   const isSideWindow = scale[2] > scale[0] * 2;
+  const frameThickness = 0.045 * frameTypeVisual.frameScale;
+  const mullionThickness = 0.04 * frameTypeVisual.mullionScale;
+  const revealDepth = frameTypeVisual.revealDepth;
 
   return (
     <group
@@ -463,31 +490,31 @@ function WindowModule({
         <boxGeometry args={[1, 1, 1]} />
         <meshStandardMaterial color={glassColor} emissive={glassColor} emissiveIntensity={0.14} roughness={0.25} metalness={0.05} />
       </mesh>
-      <mesh name={`${moduleId}-top-bottom-frame`} position={[0, 0, 0.045]} scale={[scale[0] + 0.08, 0.045, 0.02]}>
+      <mesh name={`${moduleId}-top-bottom-frame`} position={[0, 0, 0.045 + revealDepth * 0.12]} scale={[scale[0] + 0.08, frameThickness, 0.02 + revealDepth * 0.18]}>
         <boxGeometry args={[1, 1, 1]} />
         <meshStandardMaterial color={trimColor} roughness={0.68} />
       </mesh>
-      <mesh name={`${moduleId}-top-drip-cap`} position={[0, scale[1] / 2 + 0.11, 0.075]} scale={[scale[0] + 0.52, 0.12, 0.16]}>
+      <mesh name={`${moduleId}-top-drip-cap`} position={[0, scale[1] / 2 + 0.11, 0.075 + revealDepth * 0.24]} scale={[scale[0] + 0.52, 0.12 * frameTypeVisual.frameScale, 0.16 + revealDepth]}>
         <boxGeometry args={[1, 1, 1]} />
         <meshStandardMaterial color={trimColor} roughness={0.64} />
       </mesh>
-      <mesh name={`${moduleId}-bottom-sill`} position={[0, -scale[1] / 2 - 0.12, 0.105]} scale={[scale[0] + 0.72, 0.14, 0.24]}>
+      <mesh name={`${moduleId}-bottom-sill`} position={[0, -scale[1] / 2 - 0.12, 0.105 + revealDepth * 0.18]} scale={[scale[0] + 0.72, 0.14 * frameTypeVisual.frameScale, 0.24 + revealDepth]}>
         <boxGeometry args={[1, 1, 1]} />
         <meshStandardMaterial color="#5a371d" roughness={0.82} />
       </mesh>
-      <mesh name={`${moduleId}-vertical-mullion`} position={[0, 0, 0.05]} scale={[0.04, scale[1] + 0.09, 0.02]}>
+      <mesh name={`${moduleId}-vertical-mullion`} position={[0, 0, 0.05 + revealDepth * 0.1]} scale={[mullionThickness, scale[1] + 0.09, 0.02 + revealDepth * 0.12]}>
         <boxGeometry args={[1, 1, 1]} />
         <meshStandardMaterial color={trimColor} roughness={0.68} />
       </mesh>
-      <mesh name={`${moduleId}-horizontal-mullion`} position={[0, 0.02, 0.052]} scale={[scale[0] + 0.08, 0.035, 0.02]}>
+      <mesh name={`${moduleId}-horizontal-mullion`} position={[0, 0.02, 0.052 + revealDepth * 0.1]} scale={[scale[0] + 0.08, 0.035 * frameTypeVisual.mullionScale, 0.02 + revealDepth * 0.12]}>
         <boxGeometry args={[1, 1, 1]} />
         <meshStandardMaterial color={trimColor} roughness={0.68} />
       </mesh>
-      <mesh name={`${moduleId}-left-frame`} position={[-scale[0] / 2, 0, 0.055]} scale={[0.045, scale[1] + 0.12, 0.02]}>
+      <mesh name={`${moduleId}-left-frame`} position={[-scale[0] / 2, 0, 0.055 + revealDepth * 0.14]} scale={[frameThickness, scale[1] + 0.12, 0.02 + revealDepth * 0.16]}>
         <boxGeometry args={[1, 1, 1]} />
         <meshStandardMaterial color={trimColor} roughness={0.68} />
       </mesh>
-      <mesh name={`${moduleId}-right-frame`} position={[scale[0] / 2, 0, 0.055]} scale={[0.045, scale[1] + 0.12, 0.02]}>
+      <mesh name={`${moduleId}-right-frame`} position={[scale[0] / 2, 0, 0.055 + revealDepth * 0.14]} scale={[frameThickness, scale[1] + 0.12, 0.02 + revealDepth * 0.16]}>
         <boxGeometry args={[1, 1, 1]} />
         <meshStandardMaterial color={trimColor} roughness={0.68} />
       </mesh>
@@ -821,6 +848,22 @@ function BedPlaceholder({ block, bedIndex, isPremium }: {
   );
 }
 
+function WardrobePlaceholder({ block, isPremium }: {
+  block: ModuleLayoutBlock;
+  isPremium: boolean;
+}) {
+  const x = block.x - block.width * 0.28;
+  const z = block.z - block.depth * 0.22;
+
+  return (
+    <group name={`${block.moduleInstanceId}-wardrobe-placeholder`} userData={{ homeFurniturePlaceholder: true, packageItem: 'wardrobe-placeholder' }}>
+      <FurnitureBox color={isPremium ? '#78350f' : '#92400e'} furnitureType="wardrobe-placeholder" name={`${block.moduleInstanceId}-wardrobe-carcass`} position={[x, 2.0, z]} scale={[2.6, 3.2, 1.05]} />
+      <FurnitureBox color={isPremium ? '#fbbf24' : '#d6b98b'} furnitureType="wardrobe-placeholder" name={`${block.moduleInstanceId}-wardrobe-door-a`} position={[x - 0.66, 2.04, z + 0.56]} scale={[1.18, 2.72, 0.14]} />
+      <FurnitureBox color={isPremium ? '#fbbf24' : '#d6b98b'} furnitureType="wardrobe-placeholder" name={`${block.moduleInstanceId}-wardrobe-door-b`} position={[x + 0.66, 2.04, z + 0.56]} scale={[1.18, 2.72, 0.14]} />
+    </group>
+  );
+}
+
 function BathroomBlockPlaceholder({ block, isPremium }: {
   block: ModuleLayoutBlock;
   isPremium: boolean;
@@ -856,16 +899,27 @@ function SaunaBenchPlaceholder({ block, isPremium }: {
   );
 }
 
-function InteriorFurniturePreview({ blocks, interiorPackage, product }: {
+function InteriorFurniturePreview({ blocks, config, product }: {
   blocks: readonly ModuleLayoutBlock[];
-  interiorPackage: ModularHomeInteriorPackage;
+  config: ModularHomeConfiguratorState;
   product: ModularHomeProduct;
 }) {
-  if (interiorPackage === 'emptyShell') {
+  const packageVisual = MODULAR_HOME_FURNITURE_PACKAGE_VISUALS[config.furniturePackage];
+  const packageItems = new Set<ModularHomeFurnitureToggleKey>(packageVisual.includedItems);
+  const isItemEnabled = (item: ModularHomeFurnitureToggleKey) => (
+    packageItems.has(item) && config[item] === 'enabled'
+  );
+  const hasBathroomPackage = config.furniturePackage === 'standardFurniture'
+    || config.furniturePackage === 'premiumFurniture'
+    || config.furniturePackage === 'bathroomPackage'
+    || config.furniturePackage === 'saunaPackage';
+  const hasSaunaPackage = config.furniturePackage === 'saunaPackage';
+
+  if (config.furniturePackage === 'emptyShell') {
     return null;
   }
 
-  const isPremium = interiorPackage === 'premiumInteriorPreview';
+  const isPremium = packageVisual.isPremium;
   const isSauna = product.id === 'sauna-cabin-25';
   const livingBlocks = blocks.filter((block) => block.module.type === 'living' && block.module.id !== 'sauna-core-module');
   const bedroomBlocks = blocks.filter((block) => block.module.type === 'bedroom');
@@ -874,29 +928,37 @@ function InteriorFurniturePreview({ blocks, interiorPackage, product }: {
 
   return (
     <group
-      name={`modular-home-interior-package-${interiorPackage}`}
+      name={`modular-home-furniture-package-${config.furniturePackage}`}
       userData={{
-        homeInteriorPackage: interiorPackage,
+        homeFurniturePackage: config.furniturePackage,
         homeInteriorPlaceholder: true,
+        kitchenLineEnabled: isItemEnabled('kitchenLine'),
+        sofaEnabled: isItemEnabled('sofa'),
+        tableEnabled: isItemEnabled('table'),
+        bedEnabled: isItemEnabled('bed'),
+        wardrobePlaceholderEnabled: isItemEnabled('wardrobePlaceholder'),
       }}
     >
       {livingBlocks.map((block) => (
         <group key={block.moduleInstanceId}>
-          <SofaPlaceholder block={block} isPremium={isPremium} />
-          <TablePlaceholder block={block} isPremium={isPremium} />
-          <KitchenLinePlaceholder block={block} isPremium={isPremium} />
+          {isItemEnabled('sofa') ? <SofaPlaceholder block={block} isPremium={isPremium} /> : null}
+          {isItemEnabled('table') ? <TablePlaceholder block={block} isPremium={isPremium} /> : null}
+          {isItemEnabled('kitchenLine') ? <KitchenLinePlaceholder block={block} isPremium={isPremium} /> : null}
           {isPremium ? (
             <FurnitureBox color={FURNITURE_COLORS.premiumAccent} furnitureType="premium-accent" name={`${block.moduleInstanceId}-premium-accent-console`} position={[block.x - block.width * 0.02, 2.05, block.z - block.depth * 0.12]} scale={[5.4, 0.32, 0.42]} />
           ) : null}
         </group>
       ))}
       {bedroomBlocks.map((block, index) => (
-        <BedPlaceholder key={block.moduleInstanceId} bedIndex={index} block={block} isPremium={isPremium} />
+        <group key={block.moduleInstanceId}>
+          {isItemEnabled('bed') ? <BedPlaceholder bedIndex={index} block={block} isPremium={isPremium} /> : null}
+          {isItemEnabled('wardrobePlaceholder') ? <WardrobePlaceholder block={block} isPremium={isPremium} /> : null}
+        </group>
       ))}
-      {bathroomBlocks.map((block) => (
+      {hasBathroomPackage ? bathroomBlocks.map((block) => (
         <BathroomBlockPlaceholder key={block.moduleInstanceId} block={block} isPremium={isPremium} />
-      ))}
-      {isSauna ? (
+      )) : null}
+      {isSauna && hasSaunaPackage ? (
         saunaBlocks.map((block) => (
           <SaunaBenchPlaceholder key={block.moduleInstanceId} block={block} isPremium={isPremium} />
         ))
@@ -1038,8 +1100,12 @@ function getEvenlySpacedPanelOffsets(span: number, maxPanelWidth = 10) {
   return Array.from({ length: panelCount - 1 }, (_, index) => -span / 2 + step * (index + 1));
 }
 
-function FacadeBoardingDetail({ block, isFloorplan, wallHeight }: {
+function FacadeBoardingDetail({ block, boardOrientationVisual, boardProfileVisual, boardSpacingVisual, boardWidthVisual, isFloorplan, wallHeight }: {
   block: ModuleLayoutBlock;
+  boardOrientationVisual: ModularHomeFacadeBoardOrientationVisual;
+  boardProfileVisual: ModularHomeFacadeBoardProfileVisual;
+  boardSpacingVisual: ModularHomeFacadeBoardSpacingVisual;
+  boardWidthVisual: ModularHomeFacadeBoardWidthVisual;
   isFloorplan: boolean;
   wallHeight: number;
 }) {
@@ -1049,48 +1115,82 @@ function FacadeBoardingDetail({ block, isFloorplan, wallHeight }: {
 
   const halfDepth = block.depth / 2;
   const halfWidth = block.width / 2;
-  const verticalBoardXs = getEvenlySpacedPanelOffsets(block.width - 2.4, 3.8);
-  const sideBoardZs = getEvenlySpacedPanelOffsets(block.depth - 2.4, 5.2);
-  const boardYs = getEvenlySpacedPanelOffsets(Math.max(2.4, wallHeight - 1.1), 0.95);
+  const effectiveSpacing = Math.max(1.8, boardWidthVisual.maxPanelSpacing * boardSpacingVisual.spacingFactor);
+  const verticalBoardXs = getEvenlySpacedPanelOffsets(block.width - 2.4, effectiveSpacing);
+  const verticalBoardZs = getEvenlySpacedPanelOffsets(block.depth - 2.4, effectiveSpacing);
+  const boardYs = getEvenlySpacedPanelOffsets(
+    Math.max(2.4, wallHeight - 1.1),
+    Math.max(0.42, effectiveSpacing / 4.2),
+  );
+  const lineDepth = Math.max(0.08, boardProfileVisual.revealDepth);
   const lineHeight = Math.max(2.8, wallHeight - 1.0);
+  const isVertical = boardOrientationVisual.orientation === 'vertical';
 
   return (
     <group
       name={`${block.moduleInstanceId}-facade-boarding-detail`}
       userData={{
-        facadeBoardDirection: 'front-back-vertical-side-horizontal',
+        facadeBoardDirection: boardOrientationVisual.orientation,
+        facadeBoardProfile: boardProfileVisual.label,
+        facadeBoardSpacing: boardSpacingVisual.label,
+        facadeBoardWidth: boardWidthVisual.label,
         homeConstructionElement: 'facade-boarding-detail',
         moduleInstanceId: block.moduleInstanceId,
       }}
     >
-      {verticalBoardXs.map((x) => (
+      {isVertical ? verticalBoardXs.map((x) => (
         <group key={`facade-vertical-board-${x}`}>
-          <mesh position={[x, 3.0, halfDepth + 0.72]} scale={[0.08, lineHeight, 0.12]}>
+          <mesh position={[x, 3.0, halfDepth + 0.72]} scale={[0.08, lineHeight, lineDepth]}>
             <boxGeometry args={[1, 1, 1]} />
-            <meshStandardMaterial color={FACADE_BOARD_LINE_COLOR} opacity={0.58} roughness={0.92} transparent />
+            <meshStandardMaterial color={boardProfileVisual.revealColor} opacity={boardSpacingVisual.lineOpacity} roughness={0.92} transparent />
           </mesh>
-          <mesh position={[x, 3.0, -halfDepth - 0.72]} scale={[0.08, lineHeight, 0.12]}>
+          <mesh position={[x, 3.0, -halfDepth - 0.72]} scale={[0.08, lineHeight, lineDepth]}>
             <boxGeometry args={[1, 1, 1]} />
-            <meshStandardMaterial color={FACADE_BOARD_LINE_COLOR} opacity={0.46} roughness={0.92} transparent />
+            <meshStandardMaterial color={boardProfileVisual.revealColor} opacity={boardSpacingVisual.lineOpacity * 0.86} roughness={0.92} transparent />
           </mesh>
         </group>
-      ))}
-      {boardYs.map((yOffset) => {
+      )) : boardYs.map((yOffset) => {
         const y = 1.35 + yOffset;
         return (
-          <group key={`facade-horizontal-board-${yOffset}`}>
-            <mesh position={[-halfWidth - 0.72, y, 0]} scale={[0.12, 0.055, block.depth - 1.2]}>
+          <group key={`facade-horizontal-front-board-${yOffset}`}>
+            <mesh position={[0, y, halfDepth + 0.72]} scale={[block.width - 1.2, 0.055, lineDepth]}>
               <boxGeometry args={[1, 1, 1]} />
-              <meshStandardMaterial color={FACADE_BOARD_LINE_COLOR} opacity={0.44} roughness={0.92} transparent />
+              <meshStandardMaterial color={boardProfileVisual.revealColor} opacity={boardSpacingVisual.lineOpacity * 0.92} roughness={0.92} transparent />
             </mesh>
-            <mesh position={[halfWidth + 0.72, y, 0]} scale={[0.12, 0.055, block.depth - 1.2]}>
+            <mesh position={[0, y, -halfDepth - 0.72]} scale={[block.width - 1.2, 0.055, lineDepth]}>
               <boxGeometry args={[1, 1, 1]} />
-              <meshStandardMaterial color={FACADE_BOARD_LINE_COLOR} opacity={0.44} roughness={0.92} transparent />
+              <meshStandardMaterial color={boardProfileVisual.revealColor} opacity={boardSpacingVisual.lineOpacity * 0.82} roughness={0.92} transparent />
             </mesh>
           </group>
         );
       })}
-      {sideBoardZs.map((z) => (
+      {isVertical ? verticalBoardZs.map((z) => (
+        <group key={`side-vertical-board-${z}`}>
+          <mesh position={[-halfWidth - 0.72, 3.0, z]} scale={[lineDepth, lineHeight * 0.9, 0.08]}>
+            <boxGeometry args={[1, 1, 1]} />
+            <meshStandardMaterial color={boardProfileVisual.revealColor} opacity={boardSpacingVisual.lineOpacity * 0.8} roughness={0.92} transparent />
+          </mesh>
+          <mesh position={[halfWidth + 0.72, 3.0, z]} scale={[lineDepth, lineHeight * 0.9, 0.08]}>
+            <boxGeometry args={[1, 1, 1]} />
+            <meshStandardMaterial color={boardProfileVisual.revealColor} opacity={boardSpacingVisual.lineOpacity * 0.8} roughness={0.92} transparent />
+          </mesh>
+        </group>
+      )) : boardYs.map((yOffset) => {
+        const y = 1.35 + yOffset;
+        return (
+          <group key={`facade-horizontal-side-board-${yOffset}`}>
+            <mesh position={[-halfWidth - 0.72, y, 0]} scale={[lineDepth, 0.055, block.depth - 1.2]}>
+              <boxGeometry args={[1, 1, 1]} />
+              <meshStandardMaterial color={boardProfileVisual.revealColor} opacity={boardSpacingVisual.lineOpacity * 0.84} roughness={0.92} transparent />
+            </mesh>
+            <mesh position={[halfWidth + 0.72, y, 0]} scale={[lineDepth, 0.055, block.depth - 1.2]}>
+              <boxGeometry args={[1, 1, 1]} />
+              <meshStandardMaterial color={boardProfileVisual.revealColor} opacity={boardSpacingVisual.lineOpacity * 0.84} roughness={0.92} transparent />
+            </mesh>
+          </group>
+        );
+      })}
+      {verticalBoardZs.map((z) => (
         <group key={`side-panel-joint-${z}`}>
           <mesh position={[-halfWidth - 0.78, 3.0, z]} scale={[0.13, lineHeight * 0.86, 0.08]}>
             <boxGeometry args={[1, 1, 1]} />
@@ -1210,26 +1310,39 @@ function getDoorOpeningTransform(input: {
   };
 }
 
-function ModuleBlock({ bathroomCoreColor, block, doorPlacementVisual, doorVisual, facadeColor, interiorFloorColor, sideColor, terracePlacement, trimColor, viewMode, windowPlacementVisual, windowVisual }: {
+function ModuleBlock({ bathroomCoreColor, block, boardOrientationVisual, boardProfileVisual, boardSpacingVisual, boardWidthVisual, doorPlacementVisual, doorVisual, facadeColor, interiorFloorColor, interiorFloorStyleVisual, sideColor, terracePlacement, trimColor, viewMode, wallPanelStyleVisual, windowFrameColor, windowFrameTypeVisual, windowPlacementVisual, windowVisual }: {
   bathroomCoreColor: string;
   block: ModuleLayoutBlock;
+  boardOrientationVisual: ModularHomeFacadeBoardOrientationVisual;
+  boardProfileVisual: ModularHomeFacadeBoardProfileVisual;
+  boardSpacingVisual: ModularHomeFacadeBoardSpacingVisual;
+  boardWidthVisual: ModularHomeFacadeBoardWidthVisual;
   doorPlacementVisual: ModularHomeDoorPlacementVisual;
   doorVisual: ModularHomeDoorPackageVisual;
   facadeColor: string;
   interiorFloorColor: string;
+  interiorFloorStyleVisual: ModularHomeInteriorFloorStyleVisual;
   sideColor: string;
   terracePlacement: 'none' | 'front' | 'side';
   trimColor: string;
   viewMode: ModularHomeViewModeOption;
+  wallPanelStyleVisual: ModularHomeWallPanelStyleVisual;
+  windowFrameColor: string;
+  windowFrameTypeVisual: ModularHomeWindowFrameTypeVisual;
   windowPlacementVisual: ModularHomeWindowPlacementVisual;
   windowVisual: ModularHomeWindowPackageVisual;
 }) {
   const isFloorplan = viewMode === 'floorplan';
-  const wallHeight = isFloorplan ? 1.1 : block.module.type === 'bathroomCore' ? 4.4 : 4.8;
-  const wallCenterY = isFloorplan ? 1.34 : 2.92;
+  const isInterior = viewMode === 'interior';
+  const wallHeight = isFloorplan ? 1.1 : isInterior ? block.module.type === 'bathroomCore' ? 3.25 : 3.45 : block.module.type === 'bathroomCore' ? 4.4 : 4.8;
+  const wallCenterY = isFloorplan ? 1.34 : isInterior ? 2.16 : 2.92;
   const halfWidth = block.width / 2;
   const halfDepth = block.depth / 2;
-  const labelY = isFloorplan ? 2.42 : wallHeight + 1.35;
+  const labelY = isFloorplan ? 2.42 : wallHeight + (isInterior ? 0.98 : 1.35);
+  const sideShellOpacity = isInterior ? 0.36 : 1;
+  const backShellOpacity = isInterior ? 0.42 : 1;
+  const frontShellOpacity = isInterior ? 0.2 : 1;
+  const shellTransparent = isInterior;
   const doorWidth = 3.8 * doorVisual.widthMultiplier;
   const windowWidth = Math.min(block.width * 0.48, Math.max(4.8, block.width * 0.19) * windowVisual.widthMultiplier);
   const sideWindowDepth = Math.min(block.depth * 0.48, Math.max(5.2, block.depth * 0.28) * windowVisual.sideDepthMultiplier * windowPlacementVisual.sideWindowScaleMultiplier);
@@ -1242,6 +1355,8 @@ function ModuleBlock({ bathroomCoreColor, block, doorPlacementVisual, doorVisual
     halfWidth,
     terracePlacement,
   });
+  const floorStyleOffsets = getEvenlySpacedPanelOffsets(block.width - 2.4, interiorFloorStyleVisual.lineSpacing);
+  const wallStyleOffsets = getEvenlySpacedPanelOffsets(Math.max(2.4, wallHeight - 0.8), wallPanelStyleVisual.seamSpacing / 2.6);
 
   return (
     <group
@@ -1257,34 +1372,56 @@ function ModuleBlock({ bathroomCoreColor, block, doorPlacementVisual, doorVisual
     >
       <mesh position={[0, 0.46, 0]} scale={[block.width, 0.42, block.depth]} name={`${block.moduleInstanceId}-floor`}>
         <boxGeometry args={[1, 1, 1]} />
-        <meshStandardMaterial color={interiorFloorColor} roughness={0.82} metalness={0.02} />
+        <meshStandardMaterial color={interiorFloorStyleVisual.color || interiorFloorColor} roughness={0.82} metalness={0.02} />
       </mesh>
       <mesh position={[0, 0.74, 0]} scale={[block.width - 1.6, 0.08, block.depth - 1.6]} name={`${block.moduleInstanceId}-zone-fill`}>
         <boxGeometry args={[1, 1, 1]} />
         <meshStandardMaterial color={block.module.type === 'bathroomCore' ? bathroomCoreColor : block.tone} emissive={block.tone} emissiveIntensity={0.035} roughness={0.78} />
       </mesh>
+      {floorStyleOffsets.map((x) => (
+        <mesh key={`${block.moduleInstanceId}-floor-style-${x}`} position={[x, 0.72, 0]} scale={[0.08, 0.08, block.depth - 1.5]} name={`${block.moduleInstanceId}-floor-style-line`}>
+          <boxGeometry args={[1, 1, 1]} />
+          <meshStandardMaterial color={interiorFloorStyleVisual.lineColor} opacity={isFloorplan ? 0.28 : 0.44} roughness={0.86} transparent />
+        </mesh>
+      ))}
 
       <mesh position={[0, wallCenterY, -halfDepth]} scale={[block.width, wallHeight, 0.7]} name={`${block.moduleInstanceId}-back-wall`}>
         <boxGeometry args={[1, 1, 1]} />
-        <meshStandardMaterial color={facadeColor} roughness={0.84} metalness={0.02} />
+        <meshStandardMaterial color={isInterior ? wallPanelStyleVisual.color : facadeColor} opacity={backShellOpacity} roughness={0.84} metalness={0.02} transparent={shellTransparent} />
       </mesh>
       <mesh position={[-halfWidth, wallCenterY, 0]} scale={[0.7, wallHeight, block.depth]} name={`${block.moduleInstanceId}-left-wall`}>
         <boxGeometry args={[1, 1, 1]} />
-        <meshStandardMaterial color={sideColor} roughness={0.86} metalness={0.02} />
+        <meshStandardMaterial color={sideColor} opacity={sideShellOpacity} roughness={0.86} metalness={0.02} transparent={shellTransparent} />
       </mesh>
       <mesh position={[halfWidth, wallCenterY, 0]} scale={[0.7, wallHeight, block.depth]} name={`${block.moduleInstanceId}-right-wall`}>
         <boxGeometry args={[1, 1, 1]} />
-        <meshStandardMaterial color={sideColor} roughness={0.86} metalness={0.02} />
+        <meshStandardMaterial color={sideColor} opacity={sideShellOpacity} roughness={0.86} metalness={0.02} transparent={shellTransparent} />
       </mesh>
       <mesh position={[-halfWidth * 0.58, wallCenterY, halfDepth]} scale={[block.width * 0.34, wallHeight, 0.7]} name={`${block.moduleInstanceId}-front-left-wall`}>
         <boxGeometry args={[1, 1, 1]} />
-        <meshStandardMaterial color={facadeColor} roughness={0.84} metalness={0.02} />
+        <meshStandardMaterial color={facadeColor} opacity={frontShellOpacity} roughness={0.84} metalness={0.02} transparent={shellTransparent} />
       </mesh>
       <mesh position={[halfWidth * 0.58, wallCenterY, halfDepth]} scale={[block.width * 0.34, wallHeight, 0.7]} name={`${block.moduleInstanceId}-front-right-wall`}>
         <boxGeometry args={[1, 1, 1]} />
-        <meshStandardMaterial color={facadeColor} roughness={0.84} metalness={0.02} />
+        <meshStandardMaterial color={facadeColor} opacity={frontShellOpacity} roughness={0.84} metalness={0.02} transparent={shellTransparent} />
       </mesh>
-      {!isFloorplan ? (
+      {isInterior || isFloorplan ? wallStyleOffsets.map((yOffset) => {
+        const y = 1.35 + yOffset;
+
+        return (
+          <group key={`${block.moduleInstanceId}-wall-style-${yOffset}`}>
+            <mesh position={[0, y, -halfDepth - 0.42]} scale={[block.width - 1.2, 0.055, 0.12]} name={`${block.moduleInstanceId}-wall-panel-style-line`}>
+              <boxGeometry args={[1, 1, 1]} />
+              <meshStandardMaterial color={wallPanelStyleVisual.seamColor} opacity={isFloorplan ? 0.34 : 0.52} roughness={0.9} transparent />
+            </mesh>
+            <mesh position={[-halfWidth - 0.42, y, 0]} scale={[0.12, 0.055, block.depth - 1.2]} name={`${block.moduleInstanceId}-wall-panel-style-side-line`}>
+              <boxGeometry args={[1, 1, 1]} />
+              <meshStandardMaterial color={wallPanelStyleVisual.seamColor} opacity={isFloorplan ? 0.28 : 0.42} roughness={0.9} transparent />
+            </mesh>
+          </group>
+        );
+      }) : null}
+      {!isFloorplan && !isInterior ? (
         <>
           <mesh position={[0, wallHeight + 0.62, halfDepth]} scale={[block.width * 0.24, 0.54, 0.7]} name={`${block.moduleInstanceId}-front-header`}>
             <boxGeometry args={[1, 1, 1]} />
@@ -1298,7 +1435,15 @@ function ModuleBlock({ bathroomCoreColor, block, doorPlacementVisual, doorVisual
       ) : null}
 
       <WallPanelSeams block={block} isFloorplan={isFloorplan} wallHeight={wallHeight} />
-      <FacadeBoardingDetail block={block} isFloorplan={isFloorplan} wallHeight={wallHeight} />
+      <FacadeBoardingDetail
+        block={block}
+        boardOrientationVisual={boardOrientationVisual}
+        boardProfileVisual={boardProfileVisual}
+        boardSpacingVisual={boardSpacingVisual}
+        boardWidthVisual={boardWidthVisual}
+        isFloorplan={isFloorplan}
+        wallHeight={wallHeight}
+      />
       {isFloorplan ? (
         <FloorplanModuleBoundary block={block} />
       ) : null}
@@ -1325,6 +1470,7 @@ function ModuleBlock({ bathroomCoreColor, block, doorPlacementVisual, doorVisual
           {frontWindowOffsets.map((offset, index) => (
             <WindowModule
               key={`${block.moduleInstanceId}-front-window-${index}`}
+              frameTypeVisual={windowFrameTypeVisual}
               glassColor={windowVisual.glassColor}
               moduleId={`${block.moduleInstanceId}-front-window-${index}`}
               position={[offset, 3.45, halfDepth + 0.38]}
@@ -1333,10 +1479,11 @@ function ModuleBlock({ bathroomCoreColor, block, doorPlacementVisual, doorVisual
                 1.9 * windowVisual.heightMultiplier,
                 0.08,
               ]}
-              trimColor={windowVisual.trimColor || trimColor}
+              trimColor={windowFrameColor || windowVisual.trimColor || trimColor}
             />
           ))}
           <WindowModule
+            frameTypeVisual={windowFrameTypeVisual}
             glassColor={windowVisual.glassColor}
             moduleId={`${block.moduleInstanceId}-side-window`}
             position={[sideWindowOuterX, 3.2, -halfDepth * 0.2]}
@@ -1345,7 +1492,7 @@ function ModuleBlock({ bathroomCoreColor, block, doorPlacementVisual, doorVisual
               1.85 * windowVisual.heightMultiplier,
               sideWindowDepth,
             ]}
-            trimColor={windowVisual.trimColor || trimColor}
+            trimColor={windowFrameColor || windowVisual.trimColor || trimColor}
           />
           {windowPlacementVisual.hasCornerFeature ? (
             <mesh position={[halfWidth + 0.45, 3.42, halfDepth * 0.3]} scale={[0.36, 2.25 * windowVisual.heightMultiplier, Math.min(halfDepth * 0.56, sideWindowDepth * 0.82)]}>
@@ -1421,8 +1568,10 @@ function ModuleBlock({ bathroomCoreColor, block, doorPlacementVisual, doorVisual
   );
 }
 
-function RoofGutterDetail({ bounds, y }: {
+function RoofGutterDetail({ bounds, edgeColor, gutterStyleVisual, y }: {
   bounds: FootprintBounds;
+  edgeColor: string;
+  gutterStyleVisual: ModularHomeRoofGutterStyleVisual;
   y: number;
 }) {
   const downspoutX = bounds.maxX + 3.4;
@@ -1433,29 +1582,32 @@ function RoofGutterDetail({ bounds, y }: {
       name="modular-home-roof-edge-gutter-placeholder"
       userData={{
         homeConstructionElement: 'roof-gutter-placeholder',
+        roofGutterStyle: gutterStyleVisual.label,
       }}
     >
-      <mesh position={[bounds.centerX, y, bounds.minZ - 3.0]} scale={[bounds.width + 6.8, 0.22, 0.34]}>
+      <mesh position={[bounds.centerX, y, bounds.minZ - 3.0]} scale={[bounds.width + 6.8, gutterStyleVisual.profileHeight, gutterStyleVisual.profileDepth]}>
         <boxGeometry args={[1, 1, 1]} />
-        <meshStandardMaterial color={GUTTER_COLOR} roughness={0.62} metalness={0.16} />
+        <meshStandardMaterial color={edgeColor} roughness={0.62} metalness={0.16} />
       </mesh>
-      <mesh position={[bounds.centerX, y, bounds.maxZ + 3.0]} scale={[bounds.width + 6.8, 0.22, 0.34]}>
+      <mesh position={[bounds.centerX, y, bounds.maxZ + 3.0]} scale={[bounds.width + 6.8, gutterStyleVisual.profileHeight, gutterStyleVisual.profileDepth]}>
         <boxGeometry args={[1, 1, 1]} />
-        <meshStandardMaterial color={GUTTER_COLOR} roughness={0.62} metalness={0.16} />
+        <meshStandardMaterial color={edgeColor} roughness={0.62} metalness={0.16} />
       </mesh>
       {downspoutZs.map((z) => (
-        <mesh key={`downspout-${z}`} position={[downspoutX, y - 2.2, z]} scale={[0.34, 4.1, 0.34]}>
+        <mesh key={`downspout-${z}`} position={[downspoutX, y - 2.2, z]} scale={[0.34 * gutterStyleVisual.downspoutScale, 4.1, 0.34 * gutterStyleVisual.downspoutScale]}>
           <boxGeometry args={[1, 1, 1]} />
-          <meshStandardMaterial color={GUTTER_COLOR} roughness={0.64} metalness={0.12} />
+          <meshStandardMaterial color={edgeColor} roughness={0.64} metalness={0.12} />
         </mesh>
       ))}
     </group>
   );
 }
 
-function RoofAssembly({ bounds, roofColor, accentColor, roofType }: {
+function RoofAssembly({ bounds, roofColor, accentColor, edgeColor, gutterStyleVisual, roofType }: {
   accentColor: string;
   bounds: FootprintBounds;
+  edgeColor: string;
+  gutterStyleVisual: ModularHomeRoofGutterStyleVisual;
   roofColor: string;
   roofType: string;
 }) {
@@ -1490,7 +1642,7 @@ function RoofAssembly({ bounds, roofColor, accentColor, roofType }: {
           <boxGeometry args={[1, 1, 1]} />
           <meshStandardMaterial color={accentColor} roughness={0.72} />
         </mesh>
-        <RoofGutterDetail bounds={bounds} y={6.72} />
+        <RoofGutterDetail bounds={bounds} edgeColor={edgeColor} gutterStyleVisual={gutterStyleVisual} y={6.72} />
       </group>
     );
   }
@@ -1521,7 +1673,7 @@ function RoofAssembly({ bounds, roofColor, accentColor, roofType }: {
           </mesh>
         </group>
       ))}
-      <RoofGutterDetail bounds={bounds} y={6.18} />
+      <RoofGutterDetail bounds={bounds} edgeColor={edgeColor} gutterStyleVisual={gutterStyleVisual} y={6.18} />
     </group>
   );
 }
@@ -1847,10 +1999,23 @@ export function ModularHomeModel() {
   const modules = getModulesForConfig(homeConfig);
   const layoutVariant = getModularHomeLayoutVariantForConfig(homeConfig);
   const facadeVisual = MODULAR_HOME_FACADE_VISUALS[homeConfig.facade];
+  const facadeBoardOrientationVisual = MODULAR_HOME_FACADE_BOARD_ORIENTATION_VISUALS[homeConfig.facadeBoardOrientation];
+  const facadeBoardProfileVisual = MODULAR_HOME_FACADE_BOARD_PROFILE_VISUALS[homeConfig.facadeBoardProfile];
+  const facadeBoardSpacingVisual = MODULAR_HOME_FACADE_BOARD_SPACING_VISUALS[homeConfig.facadeBoardSpacing];
+  const facadeBoardWidthVisual = MODULAR_HOME_FACADE_BOARD_WIDTH_VISUALS[homeConfig.facadeBoardWidth];
   const finishVisual = MODULAR_HOME_FINISH_LEVEL_VISUALS[homeConfig.finishLevel];
+  const floorFinishVisual = MODULAR_HOME_FLOOR_FINISH_VISUALS[homeConfig.floorFinish];
+  const interiorFloorStyleVisual = MODULAR_HOME_INTERIOR_FLOOR_STYLE_VISUALS[homeConfig.interiorFloorStyle];
+  const interiorWallFinishVisual = MODULAR_HOME_INTERIOR_WALL_FINISH_VISUALS[homeConfig.interiorWallFinish];
+  const wallPanelStyleVisual = MODULAR_HOME_WALL_PANEL_STYLE_VISUALS[homeConfig.wallPanelStyle];
   const interiorPackage = INTERIOR_PACKAGE_BY_FINISH_LEVEL[homeConfig.finishLevel];
   const roofVisual = MODULAR_HOME_ROOF_VISUALS[homeConfig.roof];
+  const roofEdgeColorVisual = MODULAR_HOME_ROOF_EDGE_COLOR_VISUALS[homeConfig.roofEdgeColor];
+  const roofGutterStyleVisual = MODULAR_HOME_ROOF_GUTTER_STYLE_VISUALS[homeConfig.roofGutterStyle];
   const terraceVisual = MODULAR_HOME_TERRACE_VISUALS[homeConfig.terrace];
+  const trimColorVisual = MODULAR_HOME_TRIM_COLOR_VISUALS[homeConfig.trimColor];
+  const windowFrameColorVisual = MODULAR_HOME_WINDOW_FRAME_COLOR_VISUALS[homeConfig.windowFrameColor];
+  const windowFrameTypeVisual = MODULAR_HOME_WINDOW_FRAME_TYPE_VISUALS[homeConfig.windowFrameType];
   const windowVisual = MODULAR_HOME_WINDOW_PACKAGE_VISUALS[homeConfig.windowPackage] ?? MODULAR_HOME_WINDOW_PACKAGE_VISUALS.standardWindows;
   const windowPlacementVisual = MODULAR_HOME_WINDOW_PLACEMENT_VISUALS[homeConfig.windowPlacement] ?? MODULAR_HOME_WINDOW_PLACEMENT_VISUALS.balanced;
   const doorVisual = MODULAR_HOME_DOOR_PACKAGE_VISUALS[homeConfig.doorPackage] ?? MODULAR_HOME_DOOR_PACKAGE_VISUALS.standardEntry;
@@ -1881,13 +2046,28 @@ export function ModularHomeModel() {
         homeDemoLayoutVariant: layoutVariant?.id ?? homeConfig.layoutVariant,
         homeDemoPreview: true,
         homeDemoViewMode: viewMode,
+        modularHomeFurniturePackage: homeConfig.furniturePackage,
         modularHomeInteriorPackage: interiorPackage,
+        modularHomeFurnitureToggles: `${homeConfig.sofa}:${homeConfig.table}:${homeConfig.bed}:${homeConfig.kitchenLine}:${homeConfig.wardrobePlaceholder}`,
         modularHomeFacadeMaterialId: facadeVisual.materialId,
+        modularHomeFacadeBoardOrientation: homeConfig.facadeBoardOrientation,
+        modularHomeFacadeBoardProfile: homeConfig.facadeBoardProfile,
+        modularHomeFacadeBoardSpacing: homeConfig.facadeBoardSpacing,
+        modularHomeFacadeBoardWidth: homeConfig.facadeBoardWidth,
         modularHomeFinishMaterialIds: finishVisual.materialIds,
+        modularHomeFloorFinish: homeConfig.floorFinish,
+        modularHomeInteriorFloorStyle: homeConfig.interiorFloorStyle,
+        modularHomeInteriorWallFinish: homeConfig.interiorWallFinish,
+        modularHomeWallPanelStyle: homeConfig.wallPanelStyle,
         modularHomeId: product.id,
         modularHomeModuleIds: modules.map((module) => module.id),
         modularHomeName: product.name,
+        modularHomeRoofEdgeColor: homeConfig.roofEdgeColor,
+        modularHomeRoofGutterStyle: homeConfig.roofGutterStyle,
         modularHomeRoofMaterialId: roofVisual.materialId,
+        modularHomeTrimColor: homeConfig.trimColor,
+        modularHomeWindowFrameColor: homeConfig.windowFrameColor,
+        modularHomeWindowFrameType: homeConfig.windowFrameType,
         moduleBasedGeometry: true,
         source: 'src/modules/expo/runtime/modularHome/ModularHomeModel.tsx',
       }}
@@ -1908,27 +2088,37 @@ export function ModularHomeModel() {
             key={block.moduleInstanceId}
             bathroomCoreColor={finishVisual.bathroomCoreColor}
             block={block}
+            boardOrientationVisual={facadeBoardOrientationVisual}
+            boardProfileVisual={facadeBoardProfileVisual}
+            boardSpacingVisual={facadeBoardSpacingVisual}
+            boardWidthVisual={facadeBoardWidthVisual}
             doorPlacementVisual={doorPlacementVisual}
             doorVisual={doorVisual}
             facadeColor={facadeVisual.wallColor}
-            interiorFloorColor={finishVisual.interiorFloorColor}
+            interiorFloorColor={floorFinishVisual.color || finishVisual.interiorFloorColor}
+            interiorFloorStyleVisual={interiorFloorStyleVisual}
             sideColor={facadeVisual.sideColor}
             terracePlacement={terraceVisual.enabled ? terraceVisual.placement : 'none'}
-            trimColor={facadeVisual.trimColor}
+            trimColor={trimColorVisual.color || facadeVisual.trimColor}
             viewMode={viewMode}
+            wallPanelStyleVisual={wallPanelStyleVisual}
+            windowFrameColor={windowFrameColorVisual.color}
+            windowFrameTypeVisual={windowFrameTypeVisual}
             windowPlacementVisual={windowPlacementVisual}
             windowVisual={windowVisual}
           />
         ))}
 
-        <InteriorPlanOverlay interiorWallColor={finishVisual.interiorWallColor} plan={interiorPlan} viewMode={viewMode} />
+        <InteriorPlanOverlay interiorWallColor={wallPanelStyleVisual.color || interiorWallFinishVisual.color || finishVisual.interiorWallColor} plan={interiorPlan} viewMode={viewMode} />
 
-        <InteriorFurniturePreview blocks={moduleBlocks} interiorPackage={interiorPackage} product={product} />
+        <InteriorFurniturePreview blocks={moduleBlocks} config={homeConfig} product={product} />
 
         {isExteriorMode ? (
           <RoofAssembly
             accentColor={roofVisual.accentColor}
             bounds={bounds}
+            edgeColor={roofEdgeColorVisual.color}
+            gutterStyleVisual={roofGutterStyleVisual}
             roofColor={roofVisual.roofColor}
             roofType={homeConfig.roof}
           />
@@ -1940,7 +2130,7 @@ export function ModularHomeModel() {
             depth={terraceDepth}
             isCovered={terraceVisual.isCovered}
             placement={terraceVisual.placement === 'side' ? 'side' : 'front'}
-            trimColor={facadeVisual.trimColor}
+            trimColor={trimColorVisual.color || facadeVisual.trimColor}
             viewMode={viewMode}
             width={terraceWidth}
           />
@@ -1959,12 +2149,31 @@ export function ModularHomeModel() {
       <Html position={[0, 14, 0]} center distanceFactor={58} occlude={false} pointerEvents="none">
         <div
           data-home-demo-model-label="true"
-          data-home-config-model-summary={`${homeConfig.template}:${homeConfig.layoutVariant}:${homeConfig.facade}:${homeConfig.roof}:${homeConfig.terrace}:${homeConfig.finishLevel}:${homeConfig.windowPlacement}:${homeConfig.doorPlacement}`}
+          data-home-config-model-summary={`${homeConfig.template}:${homeConfig.layoutVariant}:${homeConfig.facade}:${homeConfig.roof}:${homeConfig.terrace}:${homeConfig.finishLevel}:${homeConfig.windowPlacement}:${homeConfig.doorPlacement}:${homeConfig.facadeBoardOrientation}:${homeConfig.facadeBoardWidth}:${homeConfig.facadeBoardProfile}:${homeConfig.facadeBoardSpacing}:${homeConfig.trimColor}:${homeConfig.roofEdgeColor}:${homeConfig.roofGutterStyle}:${homeConfig.windowFrameColor}:${homeConfig.windowFrameType}:${homeConfig.interiorWallFinish}:${homeConfig.floorFinish}:${homeConfig.interiorFloorStyle}:${homeConfig.wallPanelStyle}:${homeConfig.furniturePackage}:${homeConfig.sofa}:${homeConfig.table}:${homeConfig.bed}:${homeConfig.kitchenLine}:${homeConfig.wardrobePlaceholder}`}
+          data-home-demo-facade-board-orientation={homeConfig.facadeBoardOrientation}
+          data-home-demo-facade-board-profile={homeConfig.facadeBoardProfile}
+          data-home-demo-facade-board-spacing={homeConfig.facadeBoardSpacing}
+          data-home-demo-facade-board-width={homeConfig.facadeBoardWidth}
+          data-home-demo-floor-finish={homeConfig.floorFinish}
+          data-home-demo-interior-floor-style={homeConfig.interiorFloorStyle}
+          data-home-demo-interior-wall-finish={homeConfig.interiorWallFinish}
           data-home-demo-layout-variant={layoutVariant?.id ?? homeConfig.layoutVariant}
           data-home-demo-interior-package={interiorPackage}
+          data-home-demo-furniture-package={homeConfig.furniturePackage}
+          data-home-demo-sofa={homeConfig.sofa}
+          data-home-demo-table={homeConfig.table}
+          data-home-demo-bed={homeConfig.bed}
+          data-home-demo-kitchen-line={homeConfig.kitchenLine}
+          data-home-demo-wardrobe-placeholder={homeConfig.wardrobePlaceholder}
           data-home-demo-model-template={config.templateId}
           data-home-demo-module-count={moduleBlocks.length + (terraceVisual.enabled ? 1 : 0) + 1}
+          data-home-demo-roof-edge-color={homeConfig.roofEdgeColor}
+          data-home-demo-roof-gutter-style={homeConfig.roofGutterStyle}
+          data-home-demo-trim-color={homeConfig.trimColor}
           data-home-demo-view-mode={viewMode}
+          data-home-demo-window-frame-color={homeConfig.windowFrameColor}
+          data-home-demo-window-frame-type={homeConfig.windowFrameType}
+          data-home-demo-wall-panel-style={homeConfig.wallPanelStyle}
           style={{
             background: 'rgba(15, 23, 42, 0.84)',
             border: '1px solid rgba(251, 191, 36, 0.38)',

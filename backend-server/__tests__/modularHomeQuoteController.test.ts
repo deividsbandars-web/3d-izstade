@@ -28,10 +28,22 @@ function createValidPayload() {
     config: {
       doorPlacement: 'frontEntry',
       facade: 'naturalTimber',
+      facadeBoardOrientation: 'horizontal',
+      facadeBoardWidth: 'standard',
       finishLevel: 'standard',
+      floorFinish: 'oakLaminate',
+      furniturePackage: 'standardFurniture',
+      sofa: 'enabled',
+      table: 'enabled',
+      bed: 'enabled',
+      kitchenLine: 'enabled',
+      wardrobePlaceholder: 'enabled',
+      interiorWallFinish: 'plywood',
       layoutVariant: 'oneBedroom',
       roof: 'pitched',
+      roofEdgeColor: 'graphite',
       terrace: 'smallTerrace',
+      windowFrameColor: 'timber',
       windowPlacement: 'balanced',
     },
     consent: {
@@ -105,6 +117,15 @@ assert.equal(valid.project.productId, 'compact-timber-40');
 assert.equal(valid.config.layoutVariant, 'oneBedroom');
 assert.equal(valid.config.windowPlacement, 'balanced');
 assert.equal(valid.config.doorPlacement, 'frontEntry');
+assert.equal(valid.config.facadeBoardOrientation, 'horizontal');
+assert.equal(valid.config.facadeBoardWidth, 'standard');
+assert.equal(valid.config.floorFinish, 'oakLaminate');
+assert.equal(valid.config.furniturePackage, 'standardFurniture');
+assert.equal(valid.config.kitchenLine, 'enabled');
+assert.equal(valid.config.wardrobePlaceholder, 'enabled');
+assert.equal(valid.config.interiorWallFinish, 'plywood');
+assert.equal(valid.config.roofEdgeColor, 'graphite');
+assert.equal(valid.config.windowFrameColor, 'timber');
 assert.equal(valid.consent.accepted, true);
 assert.equal(valid.consent.consentVersion, MODULAR_HOME_QUOTE_CONSENT_VERSION);
 assert.equal(valid.consent.privacyVersion, MODULAR_HOME_QUOTE_PRIVACY_VERSION);
@@ -275,6 +296,22 @@ resetModularHomeQuoteRateLimitForTests();
       return {
         insert(rows: unknown[]) {
           assert.equal(rows.length, 1);
+          const row = rows[0] as {
+            config?: {
+              facadeBoardOrientation?: string;
+              furniturePackage?: string;
+              kitchenLine?: string;
+              roofEdgeColor?: string;
+              windowFrameColor?: string;
+            };
+            status?: string;
+          };
+          assert.equal(row.status, 'new');
+          assert.equal(row.config?.facadeBoardOrientation, 'horizontal');
+          assert.equal(row.config?.furniturePackage, 'standardFurniture');
+          assert.equal(row.config?.kitchenLine, 'enabled');
+          assert.equal(row.config?.roofEdgeColor, 'graphite');
+          assert.equal(row.config?.windowFrameColor, 'timber');
           return {
             select(columns: string) {
               assert.equal(columns, 'id');

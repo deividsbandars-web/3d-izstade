@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import {
   MODULAR_HOME_QUOTE_ADMIN_STATUSES,
+  exportModularHomeQuoteAdminRows,
   getModularHomeQuoteAdminDetail,
   getModularHomeQuoteAdminRows,
   updateModularHomeQuoteAdminStatus,
@@ -96,10 +97,22 @@ function matchesSearch(row: ModularHomeQuoteReviewRow, searchTerm: string) {
   return [
     row.budgetRange,
     row.config.facade,
+    row.config.facadeBoardOrientation,
+    row.config.facadeBoardWidth,
     row.config.finishLevel,
+    row.config.floorFinish,
+    row.config.furniturePackage,
+    row.config.sofa,
+    row.config.table,
+    row.config.bed,
+    row.config.kitchenLine,
+    row.config.wardrobePlaceholder,
+    row.config.interiorWallFinish,
     row.config.layoutVariant,
     row.config.roof,
+    row.config.roofEdgeColor,
     row.config.terrace,
+    row.config.windowFrameColor,
     row.config.windowPlacement,
     row.config.doorPlacement,
     row.contact.countryCity,
@@ -292,28 +305,56 @@ export default function ModularHomeQuoteReview() {
   const visibleSummary = useMemo(() => getModularHomeQuoteReviewSummary(visibleRows), [visibleRows]);
   const accessNotice = getAccessNotice(accessState, error);
 
-  const exportJson = () => {
+  const exportJson = async () => {
     if (visibleRows.length === 0) {
       return;
     }
 
-    downloadTextFile(
-      `modular-home-quotes-${new Date().toISOString().slice(0, 10)}.json`,
-      serializeModularHomeQuoteReviewJson(visibleRows),
-      'application/json;charset=utf-8',
-    );
+    try {
+      if (useProtectedBackend) {
+        const exported = await exportModularHomeQuoteAdminRows('json', {
+          limit: 200,
+          status: statusFilter,
+        });
+        downloadTextFile(exported.filename, exported.content, exported.contentType);
+        setToast({ type: 'success', text: 'Protected JSON export downloaded.' });
+        return;
+      }
+
+      downloadTextFile(
+        `modular-home-quotes-${new Date().toISOString().slice(0, 10)}.json`,
+        serializeModularHomeQuoteReviewJson(visibleRows),
+        'application/json;charset=utf-8',
+      );
+    } catch (exportError) {
+      setToast({ type: 'error', text: `Could not export JSON: ${formatRequestError(exportError)}` });
+    }
   };
 
-  const exportCsv = () => {
+  const exportCsv = async () => {
     if (visibleRows.length === 0) {
       return;
     }
 
-    downloadTextFile(
-      `modular-home-quotes-${new Date().toISOString().slice(0, 10)}.csv`,
-      serializeModularHomeQuoteReviewCsv(visibleRows),
-      'text/csv;charset=utf-8',
-    );
+    try {
+      if (useProtectedBackend) {
+        const exported = await exportModularHomeQuoteAdminRows('csv', {
+          limit: 200,
+          status: statusFilter,
+        });
+        downloadTextFile(exported.filename, exported.content, exported.contentType);
+        setToast({ type: 'success', text: 'Protected CSV export downloaded.' });
+        return;
+      }
+
+      downloadTextFile(
+        `modular-home-quotes-${new Date().toISOString().slice(0, 10)}.csv`,
+        serializeModularHomeQuoteReviewCsv(visibleRows),
+        'text/csv;charset=utf-8',
+      );
+    } catch (exportError) {
+      setToast({ type: 'error', text: `Could not export CSV: ${formatRequestError(exportError)}` });
+    }
   };
 
   async function viewQuoteDetail(row: ModularHomeQuoteReviewRow) {
@@ -415,10 +456,10 @@ export default function ModularHomeQuoteReview() {
           <button onClick={() => void loadRows()} style={actionButton('#38bdf8')} type="button">
             {loading ? 'Loading...' : 'Refresh quotes'}
           </button>
-          <button disabled={visibleRows.length === 0} onClick={exportJson} style={actionButton('#fbbf24', visibleRows.length === 0)} type="button">
+          <button disabled={visibleRows.length === 0} onClick={() => void exportJson()} style={actionButton('#fbbf24', visibleRows.length === 0)} type="button">
             Export JSON
           </button>
-          <button disabled={visibleRows.length === 0} onClick={exportCsv} style={actionButton('#34d399', visibleRows.length === 0)} type="button">
+          <button disabled={visibleRows.length === 0} onClick={() => void exportCsv()} style={actionButton('#34d399', visibleRows.length === 0)} type="button">
             Export CSV
           </button>
           <Link to="/expo-3d?homeDemo=1" style={{ ...actionButton('#a78bfa'), textDecoration: 'none' }}>
@@ -605,11 +646,18 @@ export default function ModularHomeQuoteReview() {
               ]} />
               <DetailBlock label="Configuration" lines={[
                 `Facade: ${selectedRow.config.facade}`,
+                `Facade boards: ${selectedRow.config.facadeBoardOrientation}, ${selectedRow.config.facadeBoardWidth}`,
                 `Layout: ${selectedRow.config.layoutVariant}`,
                 `Roof: ${selectedRow.config.roof}`,
+                `Roof edge: ${selectedRow.config.roofEdgeColor}`,
                 `Terrace: ${selectedRow.config.terrace}`,
                 `Finish: ${selectedRow.config.finishLevel}`,
+                `Furniture package: ${selectedRow.config.furniturePackage}`,
+                `Furniture toggles: sofa ${selectedRow.config.sofa}, table ${selectedRow.config.table}, bed ${selectedRow.config.bed}, kitchen ${selectedRow.config.kitchenLine}, wardrobe ${selectedRow.config.wardrobePlaceholder}`,
+                `Interior walls: ${selectedRow.config.interiorWallFinish}`,
+                `Floor finish: ${selectedRow.config.floorFinish}`,
                 `Windows: ${selectedRow.config.windowPlacement}`,
+                `Window frames: ${selectedRow.config.windowFrameColor}`,
                 `Doors: ${selectedRow.config.doorPlacement}`,
               ]} />
               <div style={{ background: 'rgba(2, 6, 23, 0.42)', border: '1px solid rgba(148, 163, 184, 0.14)', borderRadius: '16px', padding: '13px' }}>

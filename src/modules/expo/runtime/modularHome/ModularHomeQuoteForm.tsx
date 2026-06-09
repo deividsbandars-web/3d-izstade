@@ -266,22 +266,43 @@ export function ModularHomeQuoteForm({ config, estimate, isTouchDevice = false }
     borderRadius: '10px',
     color: '#eff6ff',
     font: 'inherit',
-    fontSize: isTouchDevice ? '0.66rem' : '0.7rem',
+    fontSize: isTouchDevice ? '0.72rem' : '0.74rem',
     fontWeight: 780,
     minWidth: 0,
     outline: 'none',
-    padding: isTouchDevice ? '8px 9px' : '9px 10px',
+    padding: isTouchDevice ? '10px 11px' : '10px 11px',
   } as const;
 
   const labelStyle = {
     color: '#bfdbfe',
     display: 'grid',
-    fontSize: isTouchDevice ? '0.56rem' : '0.6rem',
+    fontSize: isTouchDevice ? '0.6rem' : '0.63rem',
     fontWeight: 900,
-    gap: '5px',
+    gap: '6px',
     letterSpacing: '0.06em',
     textTransform: 'uppercase',
   } as const;
+
+  const attachedSummaryHighlights = [
+    ['Model', estimate.baseModel],
+    ['Layout', estimate.selectedOptions.layoutVariant],
+    ['Facade', estimate.selectedOptions.facade],
+    ['Roof', estimate.selectedOptions.roof],
+    ['Terrace', estimate.selectedOptions.terrace],
+    ['Finish', estimate.selectedOptions.finishLevel],
+    ['Total', formatHomeEstimateEur(estimate.estimatedTotal)],
+  ] as const;
+
+  const attachedSummaryDetails = [
+    ['Furniture', estimate.selectedOptions.furniturePackage],
+    ['Windows', estimate.selectedOptions.windowPlacement],
+    ['Doors', estimate.selectedOptions.doorPlacement],
+    ['Boards', `${estimate.selectedOptions.facadeBoardProfile} / ${estimate.selectedOptions.facadeBoardSpacing}`],
+    ['Trim', estimate.selectedOptions.trimColor],
+    ['Gutter', estimate.selectedOptions.roofGutterStyle],
+    ['Frames', `${estimate.selectedOptions.windowFrameColor} / ${estimate.selectedOptions.windowFrameType}`],
+    ['Interior', `${estimate.selectedOptions.wallPanelStyle} / ${estimate.selectedOptions.interiorFloorStyle}`],
+  ] as const;
 
   return (
     <section
@@ -292,7 +313,7 @@ export function ModularHomeQuoteForm({ config, estimate, isTouchDevice = false }
         border: '1px solid rgba(45, 212, 191, 0.28)',
         borderRadius: isTouchDevice ? '15px' : '17px',
         marginTop: isTouchDevice ? '10px' : '12px',
-        padding: isTouchDevice ? '10px' : '12px',
+        padding: isTouchDevice ? '12px' : '14px',
       }}
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', alignItems: 'start' }}>
@@ -324,14 +345,66 @@ export function ModularHomeQuoteForm({ config, estimate, isTouchDevice = false }
       <div
         data-home-quote-attached-summary="true"
         style={{
+          background: 'rgba(15, 23, 42, 0.42)',
+          border: '1px solid rgba(45, 212, 191, 0.16)',
+          borderRadius: '13px',
           color: '#cffafe',
-          fontSize: isTouchDevice ? '0.58rem' : '0.62rem',
+          display: 'grid',
+          gap: isTouchDevice ? '8px' : '9px',
+          fontSize: isTouchDevice ? '0.62rem' : '0.65rem',
           fontWeight: 820,
-          lineHeight: 1.35,
-          marginTop: '8px',
+          lineHeight: 1.38,
+          marginTop: isTouchDevice ? '10px' : '11px',
+          padding: isTouchDevice ? '9px 10px' : '10px 11px',
         }}
       >
-        Attached: {estimate.baseModel} / {estimate.selectedOptions.layoutVariant} / {estimate.selectedOptions.facade} / {estimate.selectedOptions.roof} / {estimate.selectedOptions.terrace} / {estimate.selectedOptions.finishLevel} / {estimate.selectedOptions.windowPlacement} / {estimate.selectedOptions.doorPlacement} / {formatHomeEstimateEur(estimate.estimatedTotal)}
+        <div style={{ color: '#67e8f9', fontSize: '0.54rem', fontWeight: 950, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+          Attached project snapshot
+        </div>
+        <div style={{ display: 'grid', gap: '6px', gridTemplateColumns: isTouchDevice ? '1fr' : 'repeat(2, minmax(0, 1fr))' }}>
+          {attachedSummaryHighlights.map(([label, value]) => (
+            <div
+              key={label}
+              data-home-quote-attached-highlight={`${label}:${value}`}
+              style={{
+                background: label === 'Total' ? 'rgba(251, 191, 36, 0.1)' : 'rgba(8, 47, 73, 0.32)',
+                border: label === 'Total' ? '1px solid rgba(251, 191, 36, 0.22)' : '1px solid rgba(125, 211, 252, 0.12)',
+                borderRadius: '10px',
+                padding: '7px 8px',
+              }}
+            >
+              <div style={{ color: '#67e8f9', fontSize: '0.48rem', fontWeight: 950, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                {label}
+              </div>
+              <div style={{ color: label === 'Total' ? '#fef3c7' : '#ecfeff', fontSize: isTouchDevice ? '0.6rem' : '0.64rem', fontWeight: 920, marginTop: '3px' }}>
+                {value}
+              </div>
+            </div>
+          ))}
+        </div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+          {attachedSummaryDetails.map(([label, value]) => (
+            <span
+              key={label}
+              data-home-quote-attached-detail={`${label}:${value}`}
+              style={{
+                background: 'rgba(45, 212, 191, 0.08)',
+                border: '1px solid rgba(45, 212, 191, 0.16)',
+                borderRadius: '999px',
+                color: '#a5f3fc',
+                fontSize: isTouchDevice ? '0.52rem' : '0.55rem',
+                fontWeight: 850,
+                lineHeight: 1.2,
+                padding: '5px 7px',
+              }}
+            >
+              {label}: {value}
+            </span>
+          ))}
+        </div>
+        <div style={{ color: '#99f6e4', fontSize: isTouchDevice ? '0.54rem' : '0.57rem', fontWeight: 780, lineHeight: 1.35 }}>
+          Interior toggles: sofa {estimate.selectedOptions.sofa}, table {estimate.selectedOptions.table}, bed {estimate.selectedOptions.bed}, kitchen {estimate.selectedOptions.kitchenLine}, wardrobe {estimate.selectedOptions.wardrobePlaceholder}.
+        </div>
       </div>
 
       <form
@@ -341,9 +414,9 @@ export function ModularHomeQuoteForm({ config, estimate, isTouchDevice = false }
         onMouseDown={stopFormEvent}
         onPointerDown={stopFormEvent}
         onSubmit={submitQuote}
-        style={{ display: 'grid', gap: '8px', marginTop: isTouchDevice ? '9px' : '10px' }}
+        style={{ display: 'grid', gap: isTouchDevice ? '10px' : '11px', marginTop: isTouchDevice ? '11px' : '12px' }}
       >
-        <div style={{ display: 'grid', gap: '8px', gridTemplateColumns: isTouchDevice ? '1fr' : '1fr 1fr' }}>
+        <div style={{ display: 'grid', gap: isTouchDevice ? '10px' : '11px', gridTemplateColumns: isTouchDevice ? '1fr' : '1fr 1fr' }}>
           <label style={labelStyle}>
             Name
             <input
@@ -368,7 +441,7 @@ export function ModularHomeQuoteForm({ config, estimate, isTouchDevice = false }
           </label>
         </div>
 
-        <div style={{ display: 'grid', gap: '8px', gridTemplateColumns: isTouchDevice ? '1fr' : '1fr 1fr' }}>
+        <div style={{ display: 'grid', gap: isTouchDevice ? '10px' : '11px', gridTemplateColumns: isTouchDevice ? '1fr' : '1fr 1fr' }}>
           <label style={labelStyle}>
             Phone
             <input
@@ -393,7 +466,7 @@ export function ModularHomeQuoteForm({ config, estimate, isTouchDevice = false }
           </label>
         </div>
 
-        <div style={{ display: 'grid', gap: '8px', gridTemplateColumns: isTouchDevice ? '1fr' : '1fr 1fr' }}>
+        <div style={{ display: 'grid', gap: isTouchDevice ? '10px' : '11px', gridTemplateColumns: isTouchDevice ? '1fr' : '1fr 1fr' }}>
           <label style={labelStyle}>
             Land owned
             <select
@@ -463,12 +536,12 @@ export function ModularHomeQuoteForm({ config, estimate, isTouchDevice = false }
             borderRadius: '12px',
             color: '#cffafe',
             display: 'grid',
-            fontSize: isTouchDevice ? '0.58rem' : '0.62rem',
+            fontSize: isTouchDevice ? '0.62rem' : '0.65rem',
             fontWeight: 820,
-            gap: '8px',
+            gap: '9px',
             gridTemplateColumns: '16px 1fr',
             lineHeight: 1.3,
-            padding: isTouchDevice ? '8px 9px' : '9px 10px',
+            padding: isTouchDevice ? '10px 11px' : '10px 11px',
           }}
         >
           <input
@@ -506,11 +579,11 @@ export function ModularHomeQuoteForm({ config, estimate, isTouchDevice = false }
             color: '#082f49',
             cursor: isSubmitting ? 'wait' : 'pointer',
             font: 'inherit',
-            fontSize: isTouchDevice ? '0.68rem' : '0.72rem',
+            fontSize: isTouchDevice ? '0.72rem' : '0.76rem',
             fontWeight: 950,
             letterSpacing: '0.04em',
             opacity: isSubmitting ? 0.74 : 1,
-            padding: isTouchDevice ? '9px 10px' : '10px 12px',
+            padding: isTouchDevice ? '11px 12px' : '11px 13px',
             textTransform: 'uppercase',
           }}
         >

@@ -20,6 +20,27 @@ export type ModularHomeWindowPackageOption = 'standardWindows' | 'panoramicWindo
 export type ModularHomeDoorPackageOption = 'standardEntry' | 'terraceSlider' | 'premiumGlazedEntry';
 export type ModularHomeWindowPlacementOption = 'balanced' | 'frontPanoramic' | 'sidePrivacy' | 'cornerFeature';
 export type ModularHomeDoorPlacementOption = 'frontEntry' | 'sideEntry' | 'terraceFacing';
+export type ModularHomeFacadeBoardOrientationOption = 'horizontal' | 'vertical';
+export type ModularHomeFacadeBoardWidthOption = 'narrow' | 'standard' | 'wide';
+export type ModularHomeFacadeBoardProfileOption = 'squareEdge' | 'shadowGap' | 'tongueGroove';
+export type ModularHomeFacadeBoardSpacingOption = 'tight' | 'standard' | 'expressive';
+export type ModularHomeTrimColorOption = 'timber' | 'graphite' | 'bronze' | 'white';
+export type ModularHomeRoofGutterStyleOption = 'minimalEdge' | 'boxGutter' | 'roundGutter';
+export type ModularHomeWindowFrameTypeOption = 'standardFrame' | 'slimline' | 'deepReveal';
+export type ModularHomeInteriorFloorStyleOption = 'utilityPlywood' | 'warmPlank' | 'polishedSlab';
+export type ModularHomeWallPanelStyleOption = 'plainPanel' | 'ribbedPanel' | 'paintReadyBoard';
+export type ModularHomeRoofEdgeColorOption = 'graphite' | 'bronze' | 'lightMetal';
+export type ModularHomeWindowFrameColorOption = 'timber' | 'graphite' | 'white';
+export type ModularHomeInteriorWallFinishOption = 'plywood' | 'paintedWhite' | 'warmPanel';
+export type ModularHomeFloorFinishOption = 'plywood' | 'oakLaminate' | 'polishedConcrete';
+export type ModularHomeFurniturePackageOption =
+  | 'emptyShell'
+  | 'standardFurniture'
+  | 'premiumFurniture'
+  | 'kitchenPackage'
+  | 'bathroomPackage'
+  | 'saunaPackage';
+export type ModularHomeFurnitureToggleOption = 'disabled' | 'enabled';
 export type ModularHomeLayoutVariantOption =
   | 'openStudio'
   | 'oneBedroom'
@@ -30,7 +51,7 @@ export type ModularHomeLayoutVariantOption =
   | 'saunaOnly'
   | 'guestCabin'
   | 'saunaRestRoom';
-export type ModularHomeViewModeOption = 'exterior' | 'cutaway' | 'floorplan';
+export type ModularHomeViewModeOption = 'exterior' | 'cutaway' | 'interior' | 'floorplan';
 
 export type ModularHomeConfiguratorState = {
   template: ModularHomeTemplateOption;
@@ -43,6 +64,25 @@ export type ModularHomeConfiguratorState = {
   doorPackage: ModularHomeDoorPackageOption;
   windowPlacement: ModularHomeWindowPlacementOption;
   doorPlacement: ModularHomeDoorPlacementOption;
+  facadeBoardOrientation: ModularHomeFacadeBoardOrientationOption;
+  facadeBoardWidth: ModularHomeFacadeBoardWidthOption;
+  facadeBoardProfile: ModularHomeFacadeBoardProfileOption;
+  facadeBoardSpacing: ModularHomeFacadeBoardSpacingOption;
+  trimColor: ModularHomeTrimColorOption;
+  roofGutterStyle: ModularHomeRoofGutterStyleOption;
+  windowFrameType: ModularHomeWindowFrameTypeOption;
+  interiorFloorStyle: ModularHomeInteriorFloorStyleOption;
+  wallPanelStyle: ModularHomeWallPanelStyleOption;
+  roofEdgeColor: ModularHomeRoofEdgeColorOption;
+  windowFrameColor: ModularHomeWindowFrameColorOption;
+  interiorWallFinish: ModularHomeInteriorWallFinishOption;
+  floorFinish: ModularHomeFloorFinishOption;
+  furniturePackage: ModularHomeFurniturePackageOption;
+  sofa: ModularHomeFurnitureToggleOption;
+  table: ModularHomeFurnitureToggleOption;
+  bed: ModularHomeFurnitureToggleOption;
+  kitchenLine: ModularHomeFurnitureToggleOption;
+  wardrobePlaceholder: ModularHomeFurnitureToggleOption;
 };
 
 export type ModularHomeConfiguratorOption<Key extends keyof ModularHomeConfiguratorState = keyof ModularHomeConfiguratorState> = {
@@ -131,6 +171,107 @@ export type ModularHomeDoorPlacementVisual = {
   reviewNote: string;
 };
 
+export type ModularHomeFacadeBoardOrientationVisual = {
+  label: string;
+  orientation: ModularHomeFacadeBoardOrientationOption;
+  quantityFactor: number;
+  reviewNote: string;
+};
+
+export type ModularHomeFacadeBoardWidthVisual = {
+  label: string;
+  maxPanelSpacing: number;
+  quantityFactor: number;
+  reviewNote: string;
+};
+
+export type ModularHomeFacadeBoardProfileVisual = {
+  label: string;
+  quantityFactor: number;
+  revealColor: string;
+  revealDepth: number;
+  reviewNote: string;
+};
+
+export type ModularHomeFacadeBoardSpacingVisual = {
+  label: string;
+  lineOpacity: number;
+  spacingFactor: number;
+  reviewNote: string;
+};
+
+export type ModularHomeTrimColorVisual = {
+  color: string;
+  label: string;
+  reviewNote: string;
+};
+
+export type ModularHomeRoofGutterStyleVisual = {
+  downspoutScale: number;
+  label: string;
+  profileDepth: number;
+  profileHeight: number;
+  reviewNote: string;
+};
+
+export type ModularHomeWindowFrameTypeVisual = {
+  frameScale: number;
+  label: string;
+  mullionScale: number;
+  revealDepth: number;
+  reviewNote: string;
+};
+
+export type ModularHomeInteriorFloorStyleVisual = {
+  color: string;
+  label: string;
+  lineColor: string;
+  lineSpacing: number;
+  quantityFactor: number;
+  reviewNote: string;
+};
+
+export type ModularHomeWallPanelStyleVisual = {
+  color: string;
+  label: string;
+  seamColor: string;
+  seamSpacing: number;
+  reviewNote: string;
+};
+
+export type ModularHomeRoofEdgeColorVisual = {
+  color: string;
+  label: string;
+  reviewNote: string;
+};
+
+export type ModularHomeWindowFrameColorVisual = {
+  color: string;
+  label: string;
+  reviewNote: string;
+};
+
+export type ModularHomeInteriorWallFinishVisual = {
+  color: string;
+  label: string;
+  reviewNote: string;
+};
+
+export type ModularHomeFloorFinishVisual = {
+  color: string;
+  label: string;
+  reviewNote: string;
+};
+
+export type ModularHomeFurniturePackageVisual = {
+  includedItems: readonly ModularHomeFurnitureToggleKey[];
+  isPremium: boolean;
+  label: string;
+  reviewNote: string;
+};
+
+export type ModularHomeFurnitureToggleKey = 'sofa' | 'table' | 'bed' | 'kitchenLine' | 'wardrobePlaceholder';
+
 export const DEFAULT_MODULAR_HOME_CONFIG: ModularHomeConfiguratorState = {
   template: DEFAULT_MODULAR_HOME_TEMPLATE_ID,
   layoutVariant: 'oneBedroom',
@@ -142,6 +283,25 @@ export const DEFAULT_MODULAR_HOME_CONFIG: ModularHomeConfiguratorState = {
   doorPackage: 'standardEntry',
   windowPlacement: 'balanced',
   doorPlacement: 'frontEntry',
+  facadeBoardOrientation: 'horizontal',
+  facadeBoardWidth: 'standard',
+  facadeBoardProfile: 'squareEdge',
+  facadeBoardSpacing: 'standard',
+  trimColor: 'timber',
+  roofGutterStyle: 'minimalEdge',
+  windowFrameType: 'standardFrame',
+  interiorFloorStyle: 'utilityPlywood',
+  wallPanelStyle: 'plainPanel',
+  roofEdgeColor: 'graphite',
+  windowFrameColor: 'timber',
+  interiorWallFinish: 'plywood',
+  floorFinish: 'plywood',
+  furniturePackage: 'standardFurniture',
+  sofa: 'enabled',
+  table: 'enabled',
+  bed: 'enabled',
+  kitchenLine: 'enabled',
+  wardrobePlaceholder: 'enabled',
 };
 
 export const MODULAR_HOME_FACADE_OPTIONS = [
@@ -196,6 +356,98 @@ export const MODULAR_HOME_DOOR_PLACEMENT_OPTIONS = [
   { key: 'terraceFacing', label: 'Terrace-facing' },
 ] as const satisfies readonly ModularHomeConfiguratorOption<'doorPlacement'>[];
 
+export const MODULAR_HOME_FACADE_BOARD_ORIENTATION_OPTIONS = [
+  { key: 'horizontal', label: 'Horizontal boards' },
+  { key: 'vertical', label: 'Vertical boards' },
+] as const satisfies readonly ModularHomeConfiguratorOption<'facadeBoardOrientation'>[];
+
+export const MODULAR_HOME_FACADE_BOARD_WIDTH_OPTIONS = [
+  { key: 'narrow', label: 'Narrow boards' },
+  { key: 'standard', label: 'Standard boards' },
+  { key: 'wide', label: 'Wide boards' },
+] as const satisfies readonly ModularHomeConfiguratorOption<'facadeBoardWidth'>[];
+
+export const MODULAR_HOME_FACADE_BOARD_PROFILE_OPTIONS = [
+  { key: 'squareEdge', label: 'Square-edge boards' },
+  { key: 'shadowGap', label: 'Shadow-gap boards' },
+  { key: 'tongueGroove', label: 'Tongue-and-groove boards' },
+] as const satisfies readonly ModularHomeConfiguratorOption<'facadeBoardProfile'>[];
+
+export const MODULAR_HOME_FACADE_BOARD_SPACING_OPTIONS = [
+  { key: 'tight', label: 'Tight spacing' },
+  { key: 'standard', label: 'Standard spacing' },
+  { key: 'expressive', label: 'Expressive spacing' },
+] as const satisfies readonly ModularHomeConfiguratorOption<'facadeBoardSpacing'>[];
+
+export const MODULAR_HOME_TRIM_COLOR_OPTIONS = [
+  { key: 'timber', label: 'Timber trim' },
+  { key: 'graphite', label: 'Graphite trim' },
+  { key: 'bronze', label: 'Bronze trim' },
+  { key: 'white', label: 'White trim' },
+] as const satisfies readonly ModularHomeConfiguratorOption<'trimColor'>[];
+
+export const MODULAR_HOME_ROOF_GUTTER_STYLE_OPTIONS = [
+  { key: 'minimalEdge', label: 'Minimal edge gutter' },
+  { key: 'boxGutter', label: 'Box gutter' },
+  { key: 'roundGutter', label: 'Round gutter placeholder' },
+] as const satisfies readonly ModularHomeConfiguratorOption<'roofGutterStyle'>[];
+
+export const MODULAR_HOME_WINDOW_FRAME_TYPE_OPTIONS = [
+  { key: 'standardFrame', label: 'Standard frame' },
+  { key: 'slimline', label: 'Slimline frame' },
+  { key: 'deepReveal', label: 'Deep reveal frame' },
+] as const satisfies readonly ModularHomeConfiguratorOption<'windowFrameType'>[];
+
+export const MODULAR_HOME_INTERIOR_FLOOR_STYLE_OPTIONS = [
+  { key: 'utilityPlywood', label: 'Utility plywood boards' },
+  { key: 'warmPlank', label: 'Warm plank lines' },
+  { key: 'polishedSlab', label: 'Polished slab grid' },
+] as const satisfies readonly ModularHomeConfiguratorOption<'interiorFloorStyle'>[];
+
+export const MODULAR_HOME_WALL_PANEL_STYLE_OPTIONS = [
+  { key: 'plainPanel', label: 'Plain wall panels' },
+  { key: 'ribbedPanel', label: 'Ribbed wall panels' },
+  { key: 'paintReadyBoard', label: 'Paint-ready boards' },
+] as const satisfies readonly ModularHomeConfiguratorOption<'wallPanelStyle'>[];
+
+export const MODULAR_HOME_ROOF_EDGE_COLOR_OPTIONS = [
+  { key: 'graphite', label: 'Graphite roof edge' },
+  { key: 'bronze', label: 'Bronze roof edge' },
+  { key: 'lightMetal', label: 'Light metal roof edge' },
+] as const satisfies readonly ModularHomeConfiguratorOption<'roofEdgeColor'>[];
+
+export const MODULAR_HOME_WINDOW_FRAME_COLOR_OPTIONS = [
+  { key: 'timber', label: 'Timber frames' },
+  { key: 'graphite', label: 'Graphite frames' },
+  { key: 'white', label: 'White frames' },
+] as const satisfies readonly ModularHomeConfiguratorOption<'windowFrameColor'>[];
+
+export const MODULAR_HOME_INTERIOR_WALL_FINISH_OPTIONS = [
+  { key: 'plywood', label: 'Plywood walls' },
+  { key: 'paintedWhite', label: 'Painted white walls' },
+  { key: 'warmPanel', label: 'Warm panel walls' },
+] as const satisfies readonly ModularHomeConfiguratorOption<'interiorWallFinish'>[];
+
+export const MODULAR_HOME_FLOOR_FINISH_OPTIONS = [
+  { key: 'plywood', label: 'Plywood floor' },
+  { key: 'oakLaminate', label: 'Oak laminate floor' },
+  { key: 'polishedConcrete', label: 'Polished concrete floor' },
+] as const satisfies readonly ModularHomeConfiguratorOption<'floorFinish'>[];
+
+export const MODULAR_HOME_FURNITURE_PACKAGE_OPTIONS = [
+  { key: 'emptyShell', label: 'Empty shell' },
+  { key: 'standardFurniture', label: 'Standard furniture' },
+  { key: 'premiumFurniture', label: 'Premium furniture' },
+  { key: 'kitchenPackage', label: 'Kitchen package' },
+  { key: 'bathroomPackage', label: 'Bathroom package' },
+  { key: 'saunaPackage', label: 'Sauna package' },
+] as const satisfies readonly ModularHomeConfiguratorOption<'furniturePackage'>[];
+
+export const MODULAR_HOME_FURNITURE_TOGGLE_OPTIONS = [
+  { key: 'disabled', label: 'Off' },
+  { key: 'enabled', label: 'On' },
+] as const satisfies readonly ModularHomeConfiguratorOption<'sofa'>[];
+
 export const MODULAR_HOME_LAYOUT_VARIANT_OPTIONS = [
   { key: 'openStudio', label: 'Open studio' },
   { key: 'oneBedroom', label: 'One bedroom' },
@@ -222,6 +474,11 @@ export const MODULAR_HOME_VIEW_MODE_OPTIONS = [
     note: 'Roof hidden so the interior can be inspected.',
   },
   {
+    key: 'interior',
+    label: 'Interior',
+    note: 'Roof hidden and exterior shell softened for room inspection.',
+  },
+  {
     key: 'floorplan',
     label: 'Floorplan',
     note: 'Low-wall layout view for room planning.',
@@ -234,10 +491,29 @@ export const MODULAR_HOME_CONFIGURATOR_GROUPS = [
   { key: 'roof', label: 'Roof', options: MODULAR_HOME_ROOF_OPTIONS },
   { key: 'terrace', label: 'Terrace', options: MODULAR_HOME_TERRACE_OPTIONS },
   { key: 'finishLevel', label: 'Finish level', options: MODULAR_HOME_FINISH_LEVEL_OPTIONS },
+  { key: 'furniturePackage', label: 'Furniture package', options: MODULAR_HOME_FURNITURE_PACKAGE_OPTIONS },
+  { key: 'sofa', label: 'Sofa', options: MODULAR_HOME_FURNITURE_TOGGLE_OPTIONS },
+  { key: 'table', label: 'Table', options: MODULAR_HOME_FURNITURE_TOGGLE_OPTIONS },
+  { key: 'bed', label: 'Bed', options: MODULAR_HOME_FURNITURE_TOGGLE_OPTIONS },
+  { key: 'kitchenLine', label: 'Kitchen line', options: MODULAR_HOME_FURNITURE_TOGGLE_OPTIONS },
+  { key: 'wardrobePlaceholder', label: 'Wardrobe placeholder', options: MODULAR_HOME_FURNITURE_TOGGLE_OPTIONS },
+  { key: 'interiorWallFinish', label: 'Interior wall finish', options: MODULAR_HOME_INTERIOR_WALL_FINISH_OPTIONS },
+  { key: 'floorFinish', label: 'Floor finish', options: MODULAR_HOME_FLOOR_FINISH_OPTIONS },
   { key: 'windowPackage', label: 'Window package', options: MODULAR_HOME_WINDOW_PACKAGE_OPTIONS },
   { key: 'doorPackage', label: 'Door package', options: MODULAR_HOME_DOOR_PACKAGE_OPTIONS },
   { key: 'windowPlacement', label: 'Window placement', options: MODULAR_HOME_WINDOW_PLACEMENT_OPTIONS },
   { key: 'doorPlacement', label: 'Door placement', options: MODULAR_HOME_DOOR_PLACEMENT_OPTIONS },
+  { key: 'facadeBoardOrientation', label: 'Facade board orientation', options: MODULAR_HOME_FACADE_BOARD_ORIENTATION_OPTIONS },
+  { key: 'facadeBoardWidth', label: 'Facade board width', options: MODULAR_HOME_FACADE_BOARD_WIDTH_OPTIONS },
+  { key: 'facadeBoardProfile', label: 'Facade board profile', options: MODULAR_HOME_FACADE_BOARD_PROFILE_OPTIONS },
+  { key: 'facadeBoardSpacing', label: 'Facade board spacing', options: MODULAR_HOME_FACADE_BOARD_SPACING_OPTIONS },
+  { key: 'trimColor', label: 'Trim color', options: MODULAR_HOME_TRIM_COLOR_OPTIONS },
+  { key: 'roofGutterStyle', label: 'Roof edge/gutter style', options: MODULAR_HOME_ROOF_GUTTER_STYLE_OPTIONS },
+  { key: 'windowFrameType', label: 'Window frame type', options: MODULAR_HOME_WINDOW_FRAME_TYPE_OPTIONS },
+  { key: 'interiorFloorStyle', label: 'Interior floor style', options: MODULAR_HOME_INTERIOR_FLOOR_STYLE_OPTIONS },
+  { key: 'wallPanelStyle', label: 'Wall panel style', options: MODULAR_HOME_WALL_PANEL_STYLE_OPTIONS },
+  { key: 'roofEdgeColor', label: 'Roof edge color', options: MODULAR_HOME_ROOF_EDGE_COLOR_OPTIONS },
+  { key: 'windowFrameColor', label: 'Window frame color', options: MODULAR_HOME_WINDOW_FRAME_COLOR_OPTIONS },
 ] as const satisfies readonly ModularHomeConfiguratorGroup[];
 
 function createFacadeVisual(option: ModularHomeFacadeOption): ModularHomeFacadeVisual {
@@ -466,6 +742,332 @@ export const MODULAR_HOME_DOOR_PLACEMENT_VISUALS: Record<ModularHomeDoorPlacemen
   },
 };
 
+export const MODULAR_HOME_FACADE_BOARD_ORIENTATION_VISUALS: Record<ModularHomeFacadeBoardOrientationOption, ModularHomeFacadeBoardOrientationVisual> = {
+  horizontal: {
+    label: 'Horizontal boards',
+    orientation: 'horizontal',
+    quantityFactor: 1,
+    reviewNote: 'Horizontal board orientation is the baseline preview cladding detail.',
+  },
+  vertical: {
+    label: 'Vertical boards',
+    orientation: 'vertical',
+    quantityFactor: 1.04,
+    reviewNote: 'Vertical board orientation changes batten/detail assumptions and requires production review.',
+  },
+};
+
+export const MODULAR_HOME_FACADE_BOARD_WIDTH_VISUALS: Record<ModularHomeFacadeBoardWidthOption, ModularHomeFacadeBoardWidthVisual> = {
+  narrow: {
+    label: 'Narrow boards',
+    maxPanelSpacing: 2.8,
+    quantityFactor: 1.16,
+    reviewNote: 'Narrow boards increase preview board count and labor allowance.',
+  },
+  standard: {
+    label: 'Standard boards',
+    maxPanelSpacing: 4.2,
+    quantityFactor: 1,
+    reviewNote: 'Standard board width is the baseline cladding detail.',
+  },
+  wide: {
+    label: 'Wide boards',
+    maxPanelSpacing: 6.2,
+    quantityFactor: 0.9,
+    reviewNote: 'Wide boards reduce preview board count but require profile availability review.',
+  },
+};
+
+export const MODULAR_HOME_FACADE_BOARD_PROFILE_VISUALS: Record<ModularHomeFacadeBoardProfileOption, ModularHomeFacadeBoardProfileVisual> = {
+  shadowGap: {
+    label: 'Shadow-gap boards',
+    quantityFactor: 1.08,
+    revealColor: '#020617',
+    revealDepth: 0.18,
+    reviewNote: 'Shadow-gap boards add reveal labor and supplier profile review.',
+  },
+  squareEdge: {
+    label: 'Square-edge boards',
+    quantityFactor: 1,
+    revealColor: '#2a1d14',
+    revealDepth: 0.08,
+    reviewNote: 'Square-edge boards are the baseline controlled facade profile.',
+  },
+  tongueGroove: {
+    label: 'Tongue-and-groove boards',
+    quantityFactor: 1.05,
+    revealColor: '#4a2f1b',
+    revealDepth: 0.12,
+    reviewNote: 'Tongue-and-groove boards require supplier profile and movement detailing review.',
+  },
+};
+
+export const MODULAR_HOME_FACADE_BOARD_SPACING_VISUALS: Record<ModularHomeFacadeBoardSpacingOption, ModularHomeFacadeBoardSpacingVisual> = {
+  expressive: {
+    label: 'Expressive spacing',
+    lineOpacity: 0.72,
+    spacingFactor: 1.22,
+    reviewNote: 'Expressive spacing is visually stronger and requires weather detailing review.',
+  },
+  standard: {
+    label: 'Standard spacing',
+    lineOpacity: 0.52,
+    spacingFactor: 1,
+    reviewNote: 'Standard spacing is the baseline controlled cladding spacing.',
+  },
+  tight: {
+    label: 'Tight spacing',
+    lineOpacity: 0.42,
+    spacingFactor: 0.82,
+    reviewNote: 'Tight spacing increases board count and factory labor allowance.',
+  },
+};
+
+export const MODULAR_HOME_TRIM_COLOR_VISUALS: Record<ModularHomeTrimColorOption, ModularHomeTrimColorVisual> = {
+  bronze: {
+    color: '#b7791f',
+    label: 'Bronze trim',
+    reviewNote: 'Bronze trim is a premium color detail requiring supplier finish confirmation.',
+  },
+  graphite: {
+    color: '#1f2937',
+    label: 'Graphite trim',
+    reviewNote: 'Graphite trim creates a stronger exterior contrast in preview mode.',
+  },
+  timber: {
+    color: '#d7b074',
+    label: 'Timber trim',
+    reviewNote: 'Timber trim is the baseline controlled exterior detail.',
+  },
+  white: {
+    color: '#f8fafc',
+    label: 'White trim',
+    reviewNote: 'White trim requires final coating and maintenance review.',
+  },
+};
+
+export const MODULAR_HOME_ROOF_GUTTER_STYLE_VISUALS: Record<ModularHomeRoofGutterStyleOption, ModularHomeRoofGutterStyleVisual> = {
+  boxGutter: {
+    downspoutScale: 1.14,
+    label: 'Box gutter',
+    profileDepth: 0.56,
+    profileHeight: 0.34,
+    reviewNote: 'Box gutter style requires drainage capacity and roof edge detailing review.',
+  },
+  minimalEdge: {
+    downspoutScale: 1,
+    label: 'Minimal edge gutter',
+    profileDepth: 0.34,
+    profileHeight: 0.22,
+    reviewNote: 'Minimal edge gutter is the baseline preview roof edge style.',
+  },
+  roundGutter: {
+    downspoutScale: 0.92,
+    label: 'Round gutter placeholder',
+    profileDepth: 0.46,
+    profileHeight: 0.28,
+    reviewNote: 'Round gutter placeholder requires supplier profile confirmation.',
+  },
+};
+
+export const MODULAR_HOME_WINDOW_FRAME_TYPE_VISUALS: Record<ModularHomeWindowFrameTypeOption, ModularHomeWindowFrameTypeVisual> = {
+  deepReveal: {
+    frameScale: 1.36,
+    label: 'Deep reveal frame',
+    mullionScale: 1.12,
+    revealDepth: 0.18,
+    reviewNote: 'Deep reveal frames require opening depth and weatherproofing review.',
+  },
+  slimline: {
+    frameScale: 0.72,
+    label: 'Slimline frame',
+    mullionScale: 0.72,
+    revealDepth: 0.08,
+    reviewNote: 'Slimline frames require supplier profile confirmation.',
+  },
+  standardFrame: {
+    frameScale: 1,
+    label: 'Standard frame',
+    mullionScale: 1,
+    revealDepth: 0.12,
+    reviewNote: 'Standard frame type is the baseline controlled opening detail.',
+  },
+};
+
+export const MODULAR_HOME_INTERIOR_FLOOR_STYLE_VISUALS: Record<ModularHomeInteriorFloorStyleOption, ModularHomeInteriorFloorStyleVisual> = {
+  polishedSlab: {
+    color: '#9ca3af',
+    label: 'Polished slab grid',
+    lineColor: '#e5e7eb',
+    lineSpacing: 7.8,
+    quantityFactor: 1.08,
+    reviewNote: 'Polished slab grid is a preview token requiring floor system review.',
+  },
+  utilityPlywood: {
+    color: '#d6b98b',
+    label: 'Utility plywood boards',
+    lineColor: '#8a5f33',
+    lineSpacing: 5.5,
+    quantityFactor: 1,
+    reviewNote: 'Utility plywood boards are the baseline interior floor detail.',
+  },
+  warmPlank: {
+    color: '#c79554',
+    label: 'Warm plank lines',
+    lineColor: '#5a371d',
+    lineSpacing: 4.2,
+    quantityFactor: 1.05,
+    reviewNote: 'Warm plank lines add finish allowance and require supplier review.',
+  },
+};
+
+export const MODULAR_HOME_WALL_PANEL_STYLE_VISUALS: Record<ModularHomeWallPanelStyleOption, ModularHomeWallPanelStyleVisual> = {
+  paintReadyBoard: {
+    color: '#f8fafc',
+    label: 'Paint-ready boards',
+    seamColor: '#cbd5e1',
+    seamSpacing: 5.2,
+    reviewNote: 'Paint-ready boards require final coating specification review.',
+  },
+  plainPanel: {
+    color: '#f8e6c7',
+    label: 'Plain wall panels',
+    seamColor: '#8a5f33',
+    seamSpacing: 7.2,
+    reviewNote: 'Plain wall panels are the baseline interior wall panel detail.',
+  },
+  ribbedPanel: {
+    color: '#e7c892',
+    label: 'Ribbed wall panels',
+    seamColor: '#5a371d',
+    seamSpacing: 3.4,
+    reviewNote: 'Ribbed panels add visible interior detail and supplier profile review.',
+  },
+};
+
+export const MODULAR_HOME_ROOF_EDGE_COLOR_VISUALS: Record<ModularHomeRoofEdgeColorOption, ModularHomeRoofEdgeColorVisual> = {
+  bronze: {
+    color: '#b7791f',
+    label: 'Bronze roof edge',
+    reviewNote: 'Bronze edge trim is a premium color detail in preview pricing.',
+  },
+  graphite: {
+    color: '#334155',
+    label: 'Graphite roof edge',
+    reviewNote: 'Graphite roof edge is the baseline trim color.',
+  },
+  lightMetal: {
+    color: '#cbd5e1',
+    label: 'Light metal roof edge',
+    reviewNote: 'Light metal edge trim requires final supplier color confirmation.',
+  },
+};
+
+export const MODULAR_HOME_WINDOW_FRAME_COLOR_VISUALS: Record<ModularHomeWindowFrameColorOption, ModularHomeWindowFrameColorVisual> = {
+  graphite: {
+    color: '#1f2937',
+    label: 'Graphite frames',
+    reviewNote: 'Graphite frames are a controlled premium color preview.',
+  },
+  timber: {
+    color: '#d7b074',
+    label: 'Timber frames',
+    reviewNote: 'Timber frame color is the baseline preview trim.',
+  },
+  white: {
+    color: '#f8fafc',
+    label: 'White frames',
+    reviewNote: 'White frames require final supplier finish confirmation.',
+  },
+};
+
+export const MODULAR_HOME_INTERIOR_WALL_FINISH_VISUALS: Record<ModularHomeInteriorWallFinishOption, ModularHomeInteriorWallFinishVisual> = {
+  paintedWhite: {
+    color: '#f8fafc',
+    label: 'Painted white walls',
+    reviewNote: 'Painted walls add finish labor and require production spec review.',
+  },
+  plywood: {
+    color: '#f8e6c7',
+    label: 'Plywood walls',
+    reviewNote: 'Plywood walls are the baseline interior preview material.',
+  },
+  warmPanel: {
+    color: '#e7c892',
+    label: 'Warm panel walls',
+    reviewNote: 'Warm panel walls are a premium interior finish placeholder.',
+  },
+};
+
+export const MODULAR_HOME_FLOOR_FINISH_VISUALS: Record<ModularHomeFloorFinishOption, ModularHomeFloorFinishVisual> = {
+  oakLaminate: {
+    color: '#c79554',
+    label: 'Oak laminate floor',
+    reviewNote: 'Oak laminate adds a preview finish allowance.',
+  },
+  plywood: {
+    color: '#d6b98b',
+    label: 'Plywood floor',
+    reviewNote: 'Plywood floor is the baseline preview material.',
+  },
+  polishedConcrete: {
+    color: '#94a3b8',
+    label: 'Polished concrete floor',
+    reviewNote: 'Polished concrete effect is a preview token and requires slab/system review.',
+  },
+};
+
+export const MODULAR_HOME_FURNITURE_PACKAGE_VISUALS: Record<ModularHomeFurniturePackageOption, ModularHomeFurniturePackageVisual> = {
+  bathroomPackage: {
+    includedItems: [],
+    isPremium: false,
+    label: 'Bathroom package',
+    reviewNote: 'Bathroom core fixtures remain visible while loose furniture is optional.',
+  },
+  emptyShell: {
+    includedItems: [],
+    isPremium: false,
+    label: 'Empty shell',
+    reviewNote: 'No loose furniture placeholders are included.',
+  },
+  kitchenPackage: {
+    includedItems: ['kitchenLine', 'table'],
+    isPremium: false,
+    label: 'Kitchen package',
+    reviewNote: 'Kitchen-focused package keeps the kitchen line and table placeholders.',
+  },
+  premiumFurniture: {
+    includedItems: ['sofa', 'table', 'bed', 'kitchenLine', 'wardrobePlaceholder'],
+    isPremium: true,
+    label: 'Premium furniture',
+    reviewNote: 'Premium furniture is a visual and estimate placeholder, not a final furniture quote.',
+  },
+  saunaPackage: {
+    includedItems: ['table'],
+    isPremium: false,
+    label: 'Sauna package',
+    reviewNote: 'Sauna package keeps sauna bench/service placeholders and optional rest-area table.',
+  },
+  standardFurniture: {
+    includedItems: ['sofa', 'table', 'bed', 'kitchenLine', 'wardrobePlaceholder'],
+    isPremium: false,
+    label: 'Standard furniture',
+    reviewNote: 'Standard preview furniture uses low-poly placeholders.',
+  },
+};
+
+export const MODULAR_HOME_FURNITURE_TOGGLE_KEYS = [
+  'sofa',
+  'table',
+  'bed',
+  'kitchenLine',
+  'wardrobePlaceholder',
+] as const satisfies readonly ModularHomeFurnitureToggleKey[];
+
+export function getModularHomeFurnitureToggleLabel(value: ModularHomeFurnitureToggleOption): string {
+  return value === 'enabled' ? 'On' : 'Off';
+}
+
 let currentModularHomeConfig: ModularHomeConfiguratorState = DEFAULT_MODULAR_HOME_CONFIG;
 const modularHomeConfigListeners = new Set<() => void>();
 let currentModularHomeViewMode: ModularHomeViewModeOption = DEFAULT_MODULAR_HOME_VIEW_MODE;
@@ -533,6 +1135,25 @@ export function getModularHomeConfigSummary(config: ModularHomeConfiguratorState
     doorPackage: getModularHomeConfigLabel('doorPackage', config.doorPackage),
     windowPlacement: getModularHomeConfigLabel('windowPlacement', config.windowPlacement),
     doorPlacement: getModularHomeConfigLabel('doorPlacement', config.doorPlacement),
+    facadeBoardOrientation: getModularHomeConfigLabel('facadeBoardOrientation', config.facadeBoardOrientation),
+    facadeBoardWidth: getModularHomeConfigLabel('facadeBoardWidth', config.facadeBoardWidth),
+    facadeBoardProfile: getModularHomeConfigLabel('facadeBoardProfile', config.facadeBoardProfile),
+    facadeBoardSpacing: getModularHomeConfigLabel('facadeBoardSpacing', config.facadeBoardSpacing),
+    trimColor: getModularHomeConfigLabel('trimColor', config.trimColor),
+    roofGutterStyle: getModularHomeConfigLabel('roofGutterStyle', config.roofGutterStyle),
+    windowFrameType: getModularHomeConfigLabel('windowFrameType', config.windowFrameType),
+    interiorFloorStyle: getModularHomeConfigLabel('interiorFloorStyle', config.interiorFloorStyle),
+    wallPanelStyle: getModularHomeConfigLabel('wallPanelStyle', config.wallPanelStyle),
+    roofEdgeColor: getModularHomeConfigLabel('roofEdgeColor', config.roofEdgeColor),
+    windowFrameColor: getModularHomeConfigLabel('windowFrameColor', config.windowFrameColor),
+    interiorWallFinish: getModularHomeConfigLabel('interiorWallFinish', config.interiorWallFinish),
+    floorFinish: getModularHomeConfigLabel('floorFinish', config.floorFinish),
+    furniturePackage: getModularHomeConfigLabel('furniturePackage', config.furniturePackage),
+    sofa: getModularHomeFurnitureToggleLabel(config.sofa),
+    table: getModularHomeFurnitureToggleLabel(config.table),
+    bed: getModularHomeFurnitureToggleLabel(config.bed),
+    kitchenLine: getModularHomeFurnitureToggleLabel(config.kitchenLine),
+    wardrobePlaceholder: getModularHomeFurnitureToggleLabel(config.wardrobePlaceholder),
   };
 }
 

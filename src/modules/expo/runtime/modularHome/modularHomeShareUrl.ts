@@ -2,14 +2,29 @@ import type {
   ModularHomeConfiguratorState,
   ModularHomeDoorPackageOption,
   ModularHomeDoorPlacementOption,
+  ModularHomeFacadeBoardOrientationOption,
+  ModularHomeFacadeBoardProfileOption,
+  ModularHomeFacadeBoardSpacingOption,
+  ModularHomeFacadeBoardWidthOption,
   ModularHomeFacadeOption,
   ModularHomeFinishLevelOption,
+  ModularHomeFloorFinishOption,
+  ModularHomeFurniturePackageOption,
+  ModularHomeFurnitureToggleOption,
+  ModularHomeInteriorFloorStyleOption,
+  ModularHomeInteriorWallFinishOption,
   ModularHomeLayoutVariantOption,
+  ModularHomeRoofGutterStyleOption,
+  ModularHomeRoofEdgeColorOption,
   ModularHomeRoofOption,
   ModularHomeTerraceOption,
+  ModularHomeTrimColorOption,
   ModularHomeViewModeOption,
+  ModularHomeWindowFrameColorOption,
+  ModularHomeWindowFrameTypeOption,
   ModularHomeWindowPlacementOption,
   ModularHomeWindowPackageOption,
+  ModularHomeWallPanelStyleOption,
 } from './modularHomeConfigurator';
 import {
   getDefaultHomeConfig,
@@ -43,7 +58,7 @@ export type ModularHomeShareDecodeResult = {
 const FALLBACK_PRODUCT_ID = 'compact-timber-40' satisfies ModularHomeProductId;
 const FALLBACK_VIEW_MODE = 'exterior' satisfies ModularHomeViewModeOption;
 
-const SHARE_PARAM_KEYS = ['model', 'homeModel', 'layout', 'layoutVariant', 'facade', 'roof', 'terrace', 'finish', 'windows', 'windowPlacement', 'windowPlace', 'door', 'doorPlacement', 'doorPlace', 'view'] as const;
+const SHARE_PARAM_KEYS = ['model', 'homeModel', 'layout', 'layoutVariant', 'facade', 'roof', 'terrace', 'finish', 'furniture', 'furniturePackage', 'sofa', 'table', 'bed', 'kitchen', 'kitchenLine', 'wardrobe', 'wardrobePlaceholder', 'windows', 'windowPlacement', 'windowPlace', 'door', 'doorPlacement', 'doorPlace', 'boardDir', 'boardOrientation', 'boardWidth', 'boardProfile', 'boardSpacing', 'trim', 'trimColor', 'roofEdge', 'gutter', 'roofGutter', 'windowFrame', 'frame', 'frameType', 'windowFrameType', 'wallFinish', 'wall', 'floorFinish', 'floor', 'floorStyle', 'wallPanel', 'wallPanelStyle', 'view'] as const;
 
 const PRODUCT_ALIAS_TO_ID: Record<string, ModularHomeProductId> = {
   compact: 'compact-timber-40',
@@ -143,6 +158,143 @@ const DOOR_PLACEMENT_ALIAS_TO_TOKEN: Record<string, ModularHomeDoorPlacementOpti
   terraceFacing: 'terraceFacing',
 };
 
+const FACADE_BOARD_ORIENTATION_ALIAS_TO_TOKEN: Record<string, ModularHomeFacadeBoardOrientationOption> = {
+  horizontal: 'horizontal',
+  h: 'horizontal',
+  vertical: 'vertical',
+  v: 'vertical',
+};
+
+const FACADE_BOARD_WIDTH_ALIAS_TO_TOKEN: Record<string, ModularHomeFacadeBoardWidthOption> = {
+  narrow: 'narrow',
+  n: 'narrow',
+  standard: 'standard',
+  std: 'standard',
+  wide: 'wide',
+  w: 'wide',
+};
+
+const FACADE_BOARD_PROFILE_ALIAS_TO_TOKEN: Record<string, ModularHomeFacadeBoardProfileOption> = {
+  square: 'squareEdge',
+  squareEdge: 'squareEdge',
+  shadow: 'shadowGap',
+  shadowGap: 'shadowGap',
+  tongue: 'tongueGroove',
+  tongueGroove: 'tongueGroove',
+  tg: 'tongueGroove',
+};
+
+const FACADE_BOARD_SPACING_ALIAS_TO_TOKEN: Record<string, ModularHomeFacadeBoardSpacingOption> = {
+  expressive: 'expressive',
+  loose: 'expressive',
+  standard: 'standard',
+  std: 'standard',
+  tight: 'tight',
+};
+
+const TRIM_COLOR_ALIAS_TO_TOKEN: Record<string, ModularHomeTrimColorOption> = {
+  bronze: 'bronze',
+  graphite: 'graphite',
+  timber: 'timber',
+  white: 'white',
+};
+
+const ROOF_EDGE_COLOR_ALIAS_TO_TOKEN: Record<string, ModularHomeRoofEdgeColorOption> = {
+  bronze: 'bronze',
+  graphite: 'graphite',
+  light: 'lightMetal',
+  lightMetal: 'lightMetal',
+};
+
+const ROOF_GUTTER_STYLE_ALIAS_TO_TOKEN: Record<string, ModularHomeRoofGutterStyleOption> = {
+  box: 'boxGutter',
+  boxGutter: 'boxGutter',
+  minimal: 'minimalEdge',
+  minimalEdge: 'minimalEdge',
+  round: 'roundGutter',
+  roundGutter: 'roundGutter',
+};
+
+const WINDOW_FRAME_COLOR_ALIAS_TO_TOKEN: Record<string, ModularHomeWindowFrameColorOption> = {
+  graphite: 'graphite',
+  timber: 'timber',
+  white: 'white',
+};
+
+const WINDOW_FRAME_TYPE_ALIAS_TO_TOKEN: Record<string, ModularHomeWindowFrameTypeOption> = {
+  deep: 'deepReveal',
+  deepReveal: 'deepReveal',
+  slim: 'slimline',
+  slimline: 'slimline',
+  standard: 'standardFrame',
+  standardFrame: 'standardFrame',
+};
+
+const INTERIOR_WALL_FINISH_ALIAS_TO_TOKEN: Record<string, ModularHomeInteriorWallFinishOption> = {
+  painted: 'paintedWhite',
+  paintedWhite: 'paintedWhite',
+  panel: 'warmPanel',
+  plywood: 'plywood',
+  warm: 'warmPanel',
+  warmPanel: 'warmPanel',
+};
+
+const FLOOR_FINISH_ALIAS_TO_TOKEN: Record<string, ModularHomeFloorFinishOption> = {
+  concrete: 'polishedConcrete',
+  oak: 'oakLaminate',
+  oakLaminate: 'oakLaminate',
+  polishedConcrete: 'polishedConcrete',
+  plywood: 'plywood',
+};
+
+const INTERIOR_FLOOR_STYLE_ALIAS_TO_TOKEN: Record<string, ModularHomeInteriorFloorStyleOption> = {
+  polished: 'polishedSlab',
+  polishedSlab: 'polishedSlab',
+  slab: 'polishedSlab',
+  utility: 'utilityPlywood',
+  utilityPlywood: 'utilityPlywood',
+  warm: 'warmPlank',
+  warmPlank: 'warmPlank',
+};
+
+const WALL_PANEL_STYLE_ALIAS_TO_TOKEN: Record<string, ModularHomeWallPanelStyleOption> = {
+  paint: 'paintReadyBoard',
+  paintReady: 'paintReadyBoard',
+  paintReadyBoard: 'paintReadyBoard',
+  plain: 'plainPanel',
+  plainPanel: 'plainPanel',
+  ribbed: 'ribbedPanel',
+  ribbedPanel: 'ribbedPanel',
+};
+
+const FURNITURE_PACKAGE_ALIAS_TO_TOKEN: Record<string, ModularHomeFurniturePackageOption> = {
+  bathroom: 'bathroomPackage',
+  bathroomPackage: 'bathroomPackage',
+  empty: 'emptyShell',
+  emptyShell: 'emptyShell',
+  kitchen: 'kitchenPackage',
+  kitchenPackage: 'kitchenPackage',
+  premium: 'premiumFurniture',
+  premiumFurniture: 'premiumFurniture',
+  sauna: 'saunaPackage',
+  saunaPackage: 'saunaPackage',
+  standard: 'standardFurniture',
+  standardFurniture: 'standardFurniture',
+};
+
+const FURNITURE_TOGGLE_ALIAS_TO_TOKEN: Record<string, ModularHomeFurnitureToggleOption> = {
+  disabled: 'disabled',
+  enabled: 'enabled',
+  false: 'disabled',
+  no: 'disabled',
+  off: 'disabled',
+  on: 'enabled',
+  true: 'enabled',
+  yes: 'enabled',
+  '0': 'disabled',
+  '1': 'enabled',
+};
+
 const LAYOUT_ALIAS_TO_TOKEN: Record<string, ModularHomeLayoutVariantOption> = {
   guest: 'guestCabin',
   guestCabin: 'guestCabin',
@@ -171,6 +323,8 @@ const VIEW_ALIAS_TO_TOKEN: Record<string, ModularHomeViewModeOption> = {
   exterior: 'exterior',
   floor: 'floorplan',
   floorplan: 'floorplan',
+  inside: 'interior',
+  interior: 'interior',
   plan: 'floorplan',
 };
 
@@ -224,6 +378,98 @@ const DOOR_PLACEMENT_TOKEN_TO_ALIAS: Record<ModularHomeDoorPlacementOption, stri
   frontEntry: 'front',
   sideEntry: 'side',
   terraceFacing: 'terrace',
+};
+
+const FACADE_BOARD_ORIENTATION_TOKEN_TO_ALIAS: Record<ModularHomeFacadeBoardOrientationOption, string> = {
+  horizontal: 'h',
+  vertical: 'v',
+};
+
+const FACADE_BOARD_WIDTH_TOKEN_TO_ALIAS: Record<ModularHomeFacadeBoardWidthOption, string> = {
+  narrow: 'narrow',
+  standard: 'standard',
+  wide: 'wide',
+};
+
+const FACADE_BOARD_PROFILE_TOKEN_TO_ALIAS: Record<ModularHomeFacadeBoardProfileOption, string> = {
+  shadowGap: 'shadow',
+  squareEdge: 'square',
+  tongueGroove: 'tg',
+};
+
+const FACADE_BOARD_SPACING_TOKEN_TO_ALIAS: Record<ModularHomeFacadeBoardSpacingOption, string> = {
+  expressive: 'expressive',
+  standard: 'standard',
+  tight: 'tight',
+};
+
+const TRIM_COLOR_TOKEN_TO_ALIAS: Record<ModularHomeTrimColorOption, string> = {
+  bronze: 'bronze',
+  graphite: 'graphite',
+  timber: 'timber',
+  white: 'white',
+};
+
+const ROOF_EDGE_COLOR_TOKEN_TO_ALIAS: Record<ModularHomeRoofEdgeColorOption, string> = {
+  bronze: 'bronze',
+  graphite: 'graphite',
+  lightMetal: 'light',
+};
+
+const ROOF_GUTTER_STYLE_TOKEN_TO_ALIAS: Record<ModularHomeRoofGutterStyleOption, string> = {
+  boxGutter: 'box',
+  minimalEdge: 'minimal',
+  roundGutter: 'round',
+};
+
+const WINDOW_FRAME_COLOR_TOKEN_TO_ALIAS: Record<ModularHomeWindowFrameColorOption, string> = {
+  graphite: 'graphite',
+  timber: 'timber',
+  white: 'white',
+};
+
+const WINDOW_FRAME_TYPE_TOKEN_TO_ALIAS: Record<ModularHomeWindowFrameTypeOption, string> = {
+  deepReveal: 'deep',
+  slimline: 'slim',
+  standardFrame: 'standard',
+};
+
+const INTERIOR_WALL_FINISH_TOKEN_TO_ALIAS: Record<ModularHomeInteriorWallFinishOption, string> = {
+  paintedWhite: 'painted',
+  plywood: 'plywood',
+  warmPanel: 'warm',
+};
+
+const FLOOR_FINISH_TOKEN_TO_ALIAS: Record<ModularHomeFloorFinishOption, string> = {
+  oakLaminate: 'oak',
+  polishedConcrete: 'concrete',
+  plywood: 'plywood',
+};
+
+const INTERIOR_FLOOR_STYLE_TOKEN_TO_ALIAS: Record<ModularHomeInteriorFloorStyleOption, string> = {
+  polishedSlab: 'slab',
+  utilityPlywood: 'utility',
+  warmPlank: 'warm',
+};
+
+const WALL_PANEL_STYLE_TOKEN_TO_ALIAS: Record<ModularHomeWallPanelStyleOption, string> = {
+  paintReadyBoard: 'paintReady',
+  plainPanel: 'plain',
+  ribbedPanel: 'ribbed',
+};
+
+const FURNITURE_PACKAGE_TOKEN_TO_ALIAS: Record<ModularHomeFurniturePackageOption, string> = {
+  bathroomPackage: 'bathroom',
+  emptyShell: 'empty',
+  kitchenPackage: 'kitchen',
+  premiumFurniture: 'premium',
+  saunaPackage: 'sauna',
+  standardFurniture: 'standard',
+};
+
+const FURNITURE_TOGGLE_TOKEN_TO_ALIAS: Record<ModularHomeFurnitureToggleOption, string> = {
+  disabled: '0',
+  enabled: '1',
 };
 
 const LAYOUT_TOKEN_TO_ALIAS: Record<ModularHomeLayoutVariantOption, string> = {
@@ -405,6 +651,36 @@ export function decodeModularHomeConfigFromUrl(
   const doorPlacementParamKey = params.has('doorPlacement') ? 'doorPlacement' : 'doorPlace';
   const windowPlacement = decodeOption(params, windowPlacementParamKey, productResult.productId, 'windowPlacement', WINDOW_PLACEMENT_ALIAS_TO_TOKEN);
   const doorPlacement = decodeOption(params, doorPlacementParamKey, productResult.productId, 'doorPlacement', DOOR_PLACEMENT_ALIAS_TO_TOKEN);
+  const facadeBoardOrientationParamKey = params.has('boardOrientation') ? 'boardOrientation' : 'boardDir';
+  const trimParamKey = params.has('trimColor') ? 'trimColor' : 'trim';
+  const roofGutterParamKey = params.has('roofGutter') ? 'roofGutter' : 'gutter';
+  const windowFrameParamKey = params.has('windowFrame') ? 'windowFrame' : 'frame';
+  const windowFrameTypeParamKey = params.has('windowFrameType') ? 'windowFrameType' : 'frameType';
+  const interiorWallFinishParamKey = params.has('wallFinish') ? 'wallFinish' : 'wall';
+  const floorFinishParamKey = params.has('floorFinish') ? 'floorFinish' : 'floor';
+  const wallPanelStyleParamKey = params.has('wallPanelStyle') ? 'wallPanelStyle' : 'wallPanel';
+  const furniturePackageParamKey = params.has('furniturePackage') ? 'furniturePackage' : 'furniture';
+  const kitchenLineParamKey = params.has('kitchenLine') ? 'kitchenLine' : 'kitchen';
+  const wardrobeParamKey = params.has('wardrobePlaceholder') ? 'wardrobePlaceholder' : 'wardrobe';
+  const facadeBoardOrientation = decodeOption(params, facadeBoardOrientationParamKey, productResult.productId, 'facadeBoardOrientation', FACADE_BOARD_ORIENTATION_ALIAS_TO_TOKEN);
+  const facadeBoardWidth = decodeOption(params, 'boardWidth', productResult.productId, 'facadeBoardWidth', FACADE_BOARD_WIDTH_ALIAS_TO_TOKEN);
+  const facadeBoardProfile = decodeOption(params, 'boardProfile', productResult.productId, 'facadeBoardProfile', FACADE_BOARD_PROFILE_ALIAS_TO_TOKEN);
+  const facadeBoardSpacing = decodeOption(params, 'boardSpacing', productResult.productId, 'facadeBoardSpacing', FACADE_BOARD_SPACING_ALIAS_TO_TOKEN);
+  const trimColor = decodeOption(params, trimParamKey, productResult.productId, 'trimColor', TRIM_COLOR_ALIAS_TO_TOKEN);
+  const roofEdgeColor = decodeOption(params, 'roofEdge', productResult.productId, 'roofEdgeColor', ROOF_EDGE_COLOR_ALIAS_TO_TOKEN);
+  const roofGutterStyle = decodeOption(params, roofGutterParamKey, productResult.productId, 'roofGutterStyle', ROOF_GUTTER_STYLE_ALIAS_TO_TOKEN);
+  const windowFrameColor = decodeOption(params, windowFrameParamKey, productResult.productId, 'windowFrameColor', WINDOW_FRAME_COLOR_ALIAS_TO_TOKEN);
+  const windowFrameType = decodeOption(params, windowFrameTypeParamKey, productResult.productId, 'windowFrameType', WINDOW_FRAME_TYPE_ALIAS_TO_TOKEN);
+  const interiorWallFinish = decodeOption(params, interiorWallFinishParamKey, productResult.productId, 'interiorWallFinish', INTERIOR_WALL_FINISH_ALIAS_TO_TOKEN);
+  const floorFinish = decodeOption(params, floorFinishParamKey, productResult.productId, 'floorFinish', FLOOR_FINISH_ALIAS_TO_TOKEN);
+  const interiorFloorStyle = decodeOption(params, 'floorStyle', productResult.productId, 'interiorFloorStyle', INTERIOR_FLOOR_STYLE_ALIAS_TO_TOKEN);
+  const wallPanelStyle = decodeOption(params, wallPanelStyleParamKey, productResult.productId, 'wallPanelStyle', WALL_PANEL_STYLE_ALIAS_TO_TOKEN);
+  const furniturePackage = decodeOption(params, furniturePackageParamKey, productResult.productId, 'furniturePackage', FURNITURE_PACKAGE_ALIAS_TO_TOKEN);
+  const sofa = decodeOption(params, 'sofa', productResult.productId, 'sofa', FURNITURE_TOGGLE_ALIAS_TO_TOKEN);
+  const table = decodeOption(params, 'table', productResult.productId, 'table', FURNITURE_TOGGLE_ALIAS_TO_TOKEN);
+  const bed = decodeOption(params, 'bed', productResult.productId, 'bed', FURNITURE_TOGGLE_ALIAS_TO_TOKEN);
+  const kitchenLine = decodeOption(params, kitchenLineParamKey, productResult.productId, 'kitchenLine', FURNITURE_TOGGLE_ALIAS_TO_TOKEN);
+  const wardrobePlaceholder = decodeOption(params, wardrobeParamKey, productResult.productId, 'wardrobePlaceholder', FURNITURE_TOGGLE_ALIAS_TO_TOKEN);
   const layoutVariant = decodeLayoutVariant(params, productResult.productId);
 
   config.layoutVariant = getDefaultLayoutVariantForProduct(productResult.productId);
@@ -463,6 +739,120 @@ export function decodeModularHomeConfigFromUrl(
     invalidKeys.push(doorPlacementParamKey);
   }
 
+  if (facadeBoardOrientation.token) {
+    config.facadeBoardOrientation = facadeBoardOrientation.token;
+  } else if (facadeBoardOrientation.invalid) {
+    invalidKeys.push(facadeBoardOrientationParamKey);
+  }
+
+  if (facadeBoardWidth.token) {
+    config.facadeBoardWidth = facadeBoardWidth.token;
+  } else if (facadeBoardWidth.invalid) {
+    invalidKeys.push('boardWidth');
+  }
+
+  if (facadeBoardProfile.token) {
+    config.facadeBoardProfile = facadeBoardProfile.token;
+  } else if (facadeBoardProfile.invalid) {
+    invalidKeys.push('boardProfile');
+  }
+
+  if (facadeBoardSpacing.token) {
+    config.facadeBoardSpacing = facadeBoardSpacing.token;
+  } else if (facadeBoardSpacing.invalid) {
+    invalidKeys.push('boardSpacing');
+  }
+
+  if (trimColor.token) {
+    config.trimColor = trimColor.token;
+  } else if (trimColor.invalid) {
+    invalidKeys.push(trimParamKey);
+  }
+
+  if (roofEdgeColor.token) {
+    config.roofEdgeColor = roofEdgeColor.token;
+  } else if (roofEdgeColor.invalid) {
+    invalidKeys.push('roofEdge');
+  }
+
+  if (roofGutterStyle.token) {
+    config.roofGutterStyle = roofGutterStyle.token;
+  } else if (roofGutterStyle.invalid) {
+    invalidKeys.push(roofGutterParamKey);
+  }
+
+  if (windowFrameColor.token) {
+    config.windowFrameColor = windowFrameColor.token;
+  } else if (windowFrameColor.invalid) {
+    invalidKeys.push(windowFrameParamKey);
+  }
+
+  if (windowFrameType.token) {
+    config.windowFrameType = windowFrameType.token;
+  } else if (windowFrameType.invalid) {
+    invalidKeys.push(windowFrameTypeParamKey);
+  }
+
+  if (interiorWallFinish.token) {
+    config.interiorWallFinish = interiorWallFinish.token;
+  } else if (interiorWallFinish.invalid) {
+    invalidKeys.push(interiorWallFinishParamKey);
+  }
+
+  if (floorFinish.token) {
+    config.floorFinish = floorFinish.token;
+  } else if (floorFinish.invalid) {
+    invalidKeys.push(floorFinishParamKey);
+  }
+
+  if (interiorFloorStyle.token) {
+    config.interiorFloorStyle = interiorFloorStyle.token;
+  } else if (interiorFloorStyle.invalid) {
+    invalidKeys.push('floorStyle');
+  }
+
+  if (wallPanelStyle.token) {
+    config.wallPanelStyle = wallPanelStyle.token;
+  } else if (wallPanelStyle.invalid) {
+    invalidKeys.push(wallPanelStyleParamKey);
+  }
+
+  if (furniturePackage.token) {
+    config.furniturePackage = furniturePackage.token;
+  } else if (furniturePackage.invalid) {
+    invalidKeys.push(furniturePackageParamKey);
+  }
+
+  if (sofa.token) {
+    config.sofa = sofa.token;
+  } else if (sofa.invalid) {
+    invalidKeys.push('sofa');
+  }
+
+  if (table.token) {
+    config.table = table.token;
+  } else if (table.invalid) {
+    invalidKeys.push('table');
+  }
+
+  if (bed.token) {
+    config.bed = bed.token;
+  } else if (bed.invalid) {
+    invalidKeys.push('bed');
+  }
+
+  if (kitchenLine.token) {
+    config.kitchenLine = kitchenLine.token;
+  } else if (kitchenLine.invalid) {
+    invalidKeys.push(kitchenLineParamKey);
+  }
+
+  if (wardrobePlaceholder.token) {
+    config.wardrobePlaceholder = wardrobePlaceholder.token;
+  } else if (wardrobePlaceholder.invalid) {
+    invalidKeys.push(wardrobeParamKey);
+  }
+
   return {
     config,
     invalidKeys,
@@ -492,6 +882,25 @@ export function encodeModularHomeConfigToSearchParams(
   params.set('windowPlace', WINDOW_PLACEMENT_TOKEN_TO_ALIAS[config.windowPlacement]);
   params.set('door', DOOR_TOKEN_TO_ALIAS[config.doorPackage]);
   params.set('doorPlace', DOOR_PLACEMENT_TOKEN_TO_ALIAS[config.doorPlacement]);
+  params.set('boardDir', FACADE_BOARD_ORIENTATION_TOKEN_TO_ALIAS[config.facadeBoardOrientation]);
+  params.set('boardWidth', FACADE_BOARD_WIDTH_TOKEN_TO_ALIAS[config.facadeBoardWidth]);
+  params.set('boardProfile', FACADE_BOARD_PROFILE_TOKEN_TO_ALIAS[config.facadeBoardProfile]);
+  params.set('boardSpacing', FACADE_BOARD_SPACING_TOKEN_TO_ALIAS[config.facadeBoardSpacing]);
+  params.set('trim', TRIM_COLOR_TOKEN_TO_ALIAS[config.trimColor]);
+  params.set('roofEdge', ROOF_EDGE_COLOR_TOKEN_TO_ALIAS[config.roofEdgeColor]);
+  params.set('gutter', ROOF_GUTTER_STYLE_TOKEN_TO_ALIAS[config.roofGutterStyle]);
+  params.set('frame', WINDOW_FRAME_COLOR_TOKEN_TO_ALIAS[config.windowFrameColor]);
+  params.set('frameType', WINDOW_FRAME_TYPE_TOKEN_TO_ALIAS[config.windowFrameType]);
+  params.set('wall', INTERIOR_WALL_FINISH_TOKEN_TO_ALIAS[config.interiorWallFinish]);
+  params.set('floor', FLOOR_FINISH_TOKEN_TO_ALIAS[config.floorFinish]);
+  params.set('floorStyle', INTERIOR_FLOOR_STYLE_TOKEN_TO_ALIAS[config.interiorFloorStyle]);
+  params.set('wallPanel', WALL_PANEL_STYLE_TOKEN_TO_ALIAS[config.wallPanelStyle]);
+  params.set('furniture', FURNITURE_PACKAGE_TOKEN_TO_ALIAS[config.furniturePackage]);
+  params.set('sofa', FURNITURE_TOGGLE_TOKEN_TO_ALIAS[config.sofa]);
+  params.set('table', FURNITURE_TOGGLE_TOKEN_TO_ALIAS[config.table]);
+  params.set('bed', FURNITURE_TOGGLE_TOKEN_TO_ALIAS[config.bed]);
+  params.set('kitchen', FURNITURE_TOGGLE_TOKEN_TO_ALIAS[config.kitchenLine]);
+  params.set('wardrobe', FURNITURE_TOGGLE_TOKEN_TO_ALIAS[config.wardrobePlaceholder]);
   params.set('view', viewMode);
 
   return params;

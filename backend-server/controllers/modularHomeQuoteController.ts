@@ -94,10 +94,22 @@ export type ValidModularHomeQuoteRequest = {
   config: {
     doorPlacement: string;
     facade: string;
+    facadeBoardOrientation: string;
+    facadeBoardWidth: string;
     finishLevel: string;
+    floorFinish: string;
+    furniturePackage: string;
+    sofa: string;
+    table: string;
+    bed: string;
+    kitchenLine: string;
+    wardrobePlaceholder: string;
+    interiorWallFinish: string;
     layoutVariant: string;
     roof: string;
+    roofEdgeColor: string;
     terrace: string;
+    windowFrameColor: string;
     windowPlacement: string;
   };
   consent: {
@@ -606,10 +618,22 @@ export function validateModularHomeQuoteRequest(body: ModularHomeQuoteRequestBod
     config: {
       doorPlacement: normalizeOptionalText(config.doorPlacement, 80) ?? 'Door placement not provided',
       facade: normalizeRequiredText(config.facade, 'MODULAR_HOME_QUOTE_FACADE_REQUIRED', 80),
+      facadeBoardOrientation: normalizeOptionalText(config.facadeBoardOrientation, 80) ?? 'Facade board orientation not provided',
+      facadeBoardWidth: normalizeOptionalText(config.facadeBoardWidth, 80) ?? 'Facade board width not provided',
       finishLevel: normalizeRequiredText(config.finishLevel, 'MODULAR_HOME_QUOTE_FINISH_REQUIRED', 80),
+      floorFinish: normalizeOptionalText(config.floorFinish, 80) ?? 'Floor finish not provided',
+      furniturePackage: normalizeOptionalText(config.furniturePackage, 80) ?? 'Furniture package not provided',
+      sofa: normalizeOptionalText(config.sofa, 40) ?? 'Sofa toggle not provided',
+      table: normalizeOptionalText(config.table, 40) ?? 'Table toggle not provided',
+      bed: normalizeOptionalText(config.bed, 40) ?? 'Bed toggle not provided',
+      kitchenLine: normalizeOptionalText(config.kitchenLine, 40) ?? 'Kitchen line toggle not provided',
+      wardrobePlaceholder: normalizeOptionalText(config.wardrobePlaceholder, 40) ?? 'Wardrobe toggle not provided',
+      interiorWallFinish: normalizeOptionalText(config.interiorWallFinish, 80) ?? 'Interior wall finish not provided',
       layoutVariant: normalizeOptionalText(config.layoutVariant, 80) ?? 'Layout not provided',
       roof: normalizeRequiredText(config.roof, 'MODULAR_HOME_QUOTE_ROOF_REQUIRED', 80),
+      roofEdgeColor: normalizeOptionalText(config.roofEdgeColor, 80) ?? 'Roof edge color not provided',
       terrace: normalizeRequiredText(config.terrace, 'MODULAR_HOME_QUOTE_TERRACE_REQUIRED', 80),
+      windowFrameColor: normalizeOptionalText(config.windowFrameColor, 80) ?? 'Window frame color not provided',
       windowPlacement: normalizeOptionalText(config.windowPlacement, 80) ?? 'Window placement not provided',
     },
     consent: {

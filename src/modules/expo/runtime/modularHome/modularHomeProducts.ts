@@ -4,13 +4,28 @@ import {
   type ModularHomeConfiguratorState,
   type ModularHomeDoorPackageOption,
   type ModularHomeDoorPlacementOption,
+  type ModularHomeFacadeBoardOrientationOption,
+  type ModularHomeFacadeBoardProfileOption,
+  type ModularHomeFacadeBoardSpacingOption,
+  type ModularHomeFacadeBoardWidthOption,
   type ModularHomeFacadeOption,
   type ModularHomeFinishLevelOption,
+  type ModularHomeFloorFinishOption,
+  type ModularHomeFurniturePackageOption,
+  type ModularHomeFurnitureToggleOption,
+  type ModularHomeInteriorFloorStyleOption,
+  type ModularHomeInteriorWallFinishOption,
   type ModularHomeLayoutVariantOption,
+  type ModularHomeRoofGutterStyleOption,
+  type ModularHomeRoofEdgeColorOption,
   type ModularHomeRoofOption,
   type ModularHomeTerraceOption,
+  type ModularHomeTrimColorOption,
+  type ModularHomeWindowFrameColorOption,
+  type ModularHomeWindowFrameTypeOption,
   type ModularHomeWindowPlacementOption,
   type ModularHomeWindowPackageOption,
+  type ModularHomeWallPanelStyleOption,
 } from './modularHomeConfigurator';
 import {
   getModularHomeMaterial,
@@ -104,7 +119,26 @@ export type ModularHomeOptionGroup =
   | 'windowPackage'
   | 'doorPackage'
   | 'windowPlacement'
-  | 'doorPlacement';
+  | 'doorPlacement'
+  | 'facadeBoardOrientation'
+  | 'facadeBoardWidth'
+  | 'facadeBoardProfile'
+  | 'facadeBoardSpacing'
+  | 'trimColor'
+  | 'roofGutterStyle'
+  | 'windowFrameType'
+  | 'interiorFloorStyle'
+  | 'wallPanelStyle'
+  | 'roofEdgeColor'
+  | 'windowFrameColor'
+  | 'interiorWallFinish'
+  | 'floorFinish'
+  | 'furniturePackage'
+  | 'sofa'
+  | 'table'
+  | 'bed'
+  | 'kitchenLine'
+  | 'wardrobePlaceholder';
 
 export type ModularHomeConstraintStatus =
   | 'compatible'
@@ -222,14 +256,33 @@ export type ModularHomeProductConfigSummary = {
   doorPackage: string;
   doorPlacement: string;
   facade: string;
+  facadeBoardOrientation: string;
+  facadeBoardProfile: string;
+  facadeBoardSpacing: string;
+  facadeBoardWidth: string;
   finishLevel: string;
+  floorFinish: string;
+  furniturePackage: string;
+  sofa: string;
+  table: string;
+  bed: string;
+  kitchenLine: string;
+  wardrobePlaceholder: string;
+  interiorWallFinish: string;
+  interiorFloorStyle: string;
   layoutVariant: string;
   product: string;
   roof: string;
+  roofEdgeColor: string;
+  roofGutterStyle: string;
   template: string;
   terrace: string;
+  trimColor: string;
+  windowFrameColor: string;
+  windowFrameType: string;
   windowPackage: string;
   windowPlacement: string;
+  wallPanelStyle: string;
 };
 
 export type ModularHomeSelectedMaterialSummary = {
@@ -839,13 +892,32 @@ export const MODULAR_HOME_PRODUCTS = [
       doorPackage: 'standardEntry',
       doorPlacement: 'frontEntry',
       facade: 'naturalTimber',
+      facadeBoardOrientation: 'horizontal',
+      facadeBoardProfile: 'squareEdge',
+      facadeBoardSpacing: 'standard',
+      facadeBoardWidth: 'standard',
       finishLevel: 'standard',
+      floorFinish: 'plywood',
+      furniturePackage: 'standardFurniture',
+      interiorFloorStyle: 'utilityPlywood',
+      interiorWallFinish: 'plywood',
       layoutVariant: 'oneBedroom',
       roof: 'pitched',
+      roofEdgeColor: 'graphite',
+      roofGutterStyle: 'minimalEdge',
       template: 'compactTimber40',
       terrace: 'frontDeck',
+      trimColor: 'timber',
+      windowFrameColor: 'timber',
+      windowFrameType: 'standardFrame',
       windowPackage: 'standardWindows',
       windowPlacement: 'balanced',
+      wallPanelStyle: 'plainPanel',
+      sofa: 'enabled',
+      table: 'enabled',
+      bed: 'enabled',
+      kitchenLine: 'enabled',
+      wardrobePlaceholder: 'enabled',
     },
     basePrice: 38000,
     shortDescription: 'A compact one-bedroom timber module for fast deployment and flexible small-site use.',
@@ -904,13 +976,32 @@ export const MODULAR_HOME_PRODUCTS = [
       doorPackage: 'terraceSlider',
       doorPlacement: 'terraceFacing',
       facade: 'naturalTimber',
+      facadeBoardOrientation: 'horizontal',
+      facadeBoardProfile: 'squareEdge',
+      facadeBoardSpacing: 'standard',
+      facadeBoardWidth: 'standard',
       finishLevel: 'standard',
+      floorFinish: 'plywood',
+      furniturePackage: 'standardFurniture',
+      interiorFloorStyle: 'utilityPlywood',
+      interiorWallFinish: 'plywood',
       layoutVariant: 'twoBedroom',
       roof: 'pitched',
+      roofEdgeColor: 'graphite',
+      roofGutterStyle: 'minimalEdge',
       template: 'familyTimber80',
       terrace: 'extendedTerrace',
+      trimColor: 'timber',
+      windowFrameColor: 'timber',
+      windowFrameType: 'standardFrame',
       windowPackage: 'panoramicWindows',
       windowPlacement: 'frontPanoramic',
+      wallPanelStyle: 'plainPanel',
+      sofa: 'enabled',
+      table: 'enabled',
+      bed: 'enabled',
+      kitchenLine: 'enabled',
+      wardrobePlaceholder: 'enabled',
     },
     basePrice: 72000,
     shortDescription: 'A larger two-bedroom timber home with an open living zone and family-ready layout.',
@@ -960,13 +1051,32 @@ export const MODULAR_HOME_PRODUCTS = [
       doorPackage: 'standardEntry',
       doorPlacement: 'frontEntry',
       facade: 'darkThermoWood',
+      facadeBoardOrientation: 'horizontal',
+      facadeBoardProfile: 'squareEdge',
+      facadeBoardSpacing: 'standard',
+      facadeBoardWidth: 'standard',
       finishLevel: 'standard',
+      floorFinish: 'plywood',
+      furniturePackage: 'saunaPackage',
+      interiorFloorStyle: 'utilityPlywood',
+      interiorWallFinish: 'plywood',
       layoutVariant: 'saunaRestRoom',
       roof: 'flat',
+      roofEdgeColor: 'graphite',
+      roofGutterStyle: 'minimalEdge',
       template: 'saunaCabin25',
       terrace: 'frontDeck',
+      trimColor: 'timber',
+      windowFrameColor: 'timber',
+      windowFrameType: 'standardFrame',
       windowPackage: 'compactPrivacy',
       windowPlacement: 'sidePrivacy',
+      wallPanelStyle: 'plainPanel',
+      sofa: 'disabled',
+      table: 'enabled',
+      bed: 'disabled',
+      kitchenLine: 'disabled',
+      wardrobePlaceholder: 'disabled',
     },
     basePrice: 26000,
     shortDescription: 'A compact sauna and guest module for outdoor retreats and add-on hospitality use.',
@@ -1399,6 +1509,556 @@ export const MODULAR_HOME_OPTIONS = [
     compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
     requiredModuleIds: [],
   },
+  {
+    id: 'option-facade-board-orientation-horizontal',
+    group: 'facadeBoardOrientation',
+    label: 'Horizontal boards',
+    materialIds: [],
+    priceDelta: 0,
+    visualToken: 'horizontal' satisfies ModularHomeFacadeBoardOrientationOption,
+    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
+    requiredModuleIds: [],
+  },
+  {
+    id: 'option-facade-board-orientation-vertical',
+    group: 'facadeBoardOrientation',
+    label: 'Vertical boards',
+    materialIds: [],
+    priceDelta: 650,
+    visualToken: 'vertical' satisfies ModularHomeFacadeBoardOrientationOption,
+    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
+    requiredModuleIds: [],
+  },
+  {
+    id: 'option-facade-board-width-narrow',
+    group: 'facadeBoardWidth',
+    label: 'Narrow boards',
+    materialIds: [],
+    priceDelta: 950,
+    visualToken: 'narrow' satisfies ModularHomeFacadeBoardWidthOption,
+    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
+    requiredModuleIds: [],
+  },
+  {
+    id: 'option-facade-board-width-standard',
+    group: 'facadeBoardWidth',
+    label: 'Standard boards',
+    materialIds: [],
+    priceDelta: 0,
+    visualToken: 'standard' satisfies ModularHomeFacadeBoardWidthOption,
+    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
+    requiredModuleIds: [],
+  },
+  {
+    id: 'option-facade-board-width-wide',
+    group: 'facadeBoardWidth',
+    label: 'Wide boards',
+    materialIds: [],
+    priceDelta: 450,
+    visualToken: 'wide' satisfies ModularHomeFacadeBoardWidthOption,
+    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
+    requiredModuleIds: [],
+  },
+  {
+    id: 'option-facade-board-profile-square-edge',
+    group: 'facadeBoardProfile',
+    label: 'Square-edge boards',
+    materialIds: [],
+    priceDelta: 0,
+    visualToken: 'squareEdge' satisfies ModularHomeFacadeBoardProfileOption,
+    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
+    requiredModuleIds: [],
+  },
+  {
+    id: 'option-facade-board-profile-shadow-gap',
+    group: 'facadeBoardProfile',
+    label: 'Shadow-gap boards',
+    materialIds: [],
+    priceDelta: 1250,
+    visualToken: 'shadowGap' satisfies ModularHomeFacadeBoardProfileOption,
+    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
+    requiredModuleIds: [],
+  },
+  {
+    id: 'option-facade-board-profile-tongue-groove',
+    group: 'facadeBoardProfile',
+    label: 'Tongue-and-groove boards',
+    materialIds: [],
+    priceDelta: 980,
+    visualToken: 'tongueGroove' satisfies ModularHomeFacadeBoardProfileOption,
+    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
+    requiredModuleIds: [],
+  },
+  {
+    id: 'option-facade-board-spacing-tight',
+    group: 'facadeBoardSpacing',
+    label: 'Tight spacing',
+    materialIds: [],
+    priceDelta: 650,
+    visualToken: 'tight' satisfies ModularHomeFacadeBoardSpacingOption,
+    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
+    requiredModuleIds: [],
+  },
+  {
+    id: 'option-facade-board-spacing-standard',
+    group: 'facadeBoardSpacing',
+    label: 'Standard spacing',
+    materialIds: [],
+    priceDelta: 0,
+    visualToken: 'standard' satisfies ModularHomeFacadeBoardSpacingOption,
+    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
+    requiredModuleIds: [],
+  },
+  {
+    id: 'option-facade-board-spacing-expressive',
+    group: 'facadeBoardSpacing',
+    label: 'Expressive spacing',
+    materialIds: [],
+    priceDelta: 450,
+    visualToken: 'expressive' satisfies ModularHomeFacadeBoardSpacingOption,
+    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
+    requiredModuleIds: [],
+  },
+  {
+    id: 'option-trim-color-timber',
+    group: 'trimColor',
+    label: 'Timber trim',
+    materialIds: [],
+    priceDelta: 0,
+    visualToken: 'timber' satisfies ModularHomeTrimColorOption,
+    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
+    requiredModuleIds: [],
+  },
+  {
+    id: 'option-trim-color-graphite',
+    group: 'trimColor',
+    label: 'Graphite trim',
+    materialIds: [],
+    priceDelta: 520,
+    visualToken: 'graphite' satisfies ModularHomeTrimColorOption,
+    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
+    requiredModuleIds: [],
+  },
+  {
+    id: 'option-trim-color-bronze',
+    group: 'trimColor',
+    label: 'Bronze trim',
+    materialIds: ['metal-roof'],
+    priceDelta: 820,
+    visualToken: 'bronze' satisfies ModularHomeTrimColorOption,
+    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
+    requiredModuleIds: [],
+  },
+  {
+    id: 'option-trim-color-white',
+    group: 'trimColor',
+    label: 'White trim',
+    materialIds: [],
+    priceDelta: 380,
+    visualToken: 'white' satisfies ModularHomeTrimColorOption,
+    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
+    requiredModuleIds: [],
+  },
+  {
+    id: 'option-roof-edge-graphite',
+    group: 'roofEdgeColor',
+    label: 'Graphite roof edge',
+    materialIds: ['metal-roof'],
+    priceDelta: 0,
+    visualToken: 'graphite' satisfies ModularHomeRoofEdgeColorOption,
+    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
+    requiredModuleIds: [],
+  },
+  {
+    id: 'option-roof-edge-bronze',
+    group: 'roofEdgeColor',
+    label: 'Bronze roof edge',
+    materialIds: ['metal-roof'],
+    priceDelta: 650,
+    visualToken: 'bronze' satisfies ModularHomeRoofEdgeColorOption,
+    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
+    requiredModuleIds: [],
+  },
+  {
+    id: 'option-roof-edge-light-metal',
+    group: 'roofEdgeColor',
+    label: 'Light metal roof edge',
+    materialIds: ['metal-roof'],
+    priceDelta: 450,
+    visualToken: 'lightMetal' satisfies ModularHomeRoofEdgeColorOption,
+    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
+    requiredModuleIds: [],
+  },
+  {
+    id: 'option-roof-gutter-minimal-edge',
+    group: 'roofGutterStyle',
+    label: 'Minimal edge gutter',
+    materialIds: ['metal-roof'],
+    priceDelta: 0,
+    visualToken: 'minimalEdge' satisfies ModularHomeRoofGutterStyleOption,
+    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
+    requiredModuleIds: [],
+  },
+  {
+    id: 'option-roof-gutter-box',
+    group: 'roofGutterStyle',
+    label: 'Box gutter',
+    materialIds: ['metal-roof'],
+    priceDelta: 1050,
+    visualToken: 'boxGutter' satisfies ModularHomeRoofGutterStyleOption,
+    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
+    requiredModuleIds: [],
+  },
+  {
+    id: 'option-roof-gutter-round',
+    group: 'roofGutterStyle',
+    label: 'Round gutter placeholder',
+    materialIds: ['metal-roof'],
+    priceDelta: 760,
+    visualToken: 'roundGutter' satisfies ModularHomeRoofGutterStyleOption,
+    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
+    requiredModuleIds: [],
+  },
+  {
+    id: 'option-window-frame-timber',
+    group: 'windowFrameColor',
+    label: 'Timber frames',
+    materialIds: [],
+    priceDelta: 0,
+    visualToken: 'timber' satisfies ModularHomeWindowFrameColorOption,
+    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
+    requiredModuleIds: [],
+  },
+  {
+    id: 'option-window-frame-graphite',
+    group: 'windowFrameColor',
+    label: 'Graphite frames',
+    materialIds: [],
+    priceDelta: 850,
+    visualToken: 'graphite' satisfies ModularHomeWindowFrameColorOption,
+    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
+    requiredModuleIds: [],
+  },
+  {
+    id: 'option-window-frame-white',
+    group: 'windowFrameColor',
+    label: 'White frames',
+    materialIds: [],
+    priceDelta: 450,
+    visualToken: 'white' satisfies ModularHomeWindowFrameColorOption,
+    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
+    requiredModuleIds: [],
+  },
+  {
+    id: 'option-window-frame-type-standard',
+    group: 'windowFrameType',
+    label: 'Standard frame',
+    materialIds: [],
+    priceDelta: 0,
+    visualToken: 'standardFrame' satisfies ModularHomeWindowFrameTypeOption,
+    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
+    requiredModuleIds: [],
+  },
+  {
+    id: 'option-window-frame-type-slimline',
+    group: 'windowFrameType',
+    label: 'Slimline frame',
+    materialIds: [],
+    priceDelta: 1100,
+    visualToken: 'slimline' satisfies ModularHomeWindowFrameTypeOption,
+    compatibleProducts: ['compact-timber-40', 'family-timber-80'],
+    requiredModuleIds: [],
+  },
+  {
+    id: 'option-window-frame-type-deep-reveal',
+    group: 'windowFrameType',
+    label: 'Deep reveal frame',
+    materialIds: [],
+    priceDelta: 1450,
+    visualToken: 'deepReveal' satisfies ModularHomeWindowFrameTypeOption,
+    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
+    requiredModuleIds: [],
+  },
+  {
+    id: 'option-interior-wall-plywood',
+    group: 'interiorWallFinish',
+    label: 'Plywood walls',
+    materialIds: ['interior-plywood'],
+    priceDelta: 0,
+    visualToken: 'plywood' satisfies ModularHomeInteriorWallFinishOption,
+    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
+    requiredModuleIds: [],
+  },
+  {
+    id: 'option-interior-wall-painted-white',
+    group: 'interiorWallFinish',
+    label: 'Painted white walls',
+    materialIds: ['interior-plywood'],
+    priceDelta: 1600,
+    visualToken: 'paintedWhite' satisfies ModularHomeInteriorWallFinishOption,
+    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
+    requiredModuleIds: [],
+  },
+  {
+    id: 'option-interior-wall-warm-panel',
+    group: 'interiorWallFinish',
+    label: 'Warm panel walls',
+    materialIds: ['interior-plywood'],
+    priceDelta: 2200,
+    visualToken: 'warmPanel' satisfies ModularHomeInteriorWallFinishOption,
+    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
+    requiredModuleIds: [],
+  },
+  {
+    id: 'option-floor-finish-plywood',
+    group: 'floorFinish',
+    label: 'Plywood floor',
+    materialIds: ['interior-plywood'],
+    priceDelta: 0,
+    visualToken: 'plywood' satisfies ModularHomeFloorFinishOption,
+    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
+    requiredModuleIds: [],
+  },
+  {
+    id: 'option-floor-finish-oak-laminate',
+    group: 'floorFinish',
+    label: 'Oak laminate floor',
+    materialIds: ['interior-plywood'],
+    priceDelta: 2800,
+    visualToken: 'oakLaminate' satisfies ModularHomeFloorFinishOption,
+    compatibleProducts: ['compact-timber-40', 'family-timber-80'],
+    requiredModuleIds: [],
+  },
+  {
+    id: 'option-floor-finish-polished-concrete',
+    group: 'floorFinish',
+    label: 'Polished concrete floor',
+    materialIds: ['interior-plywood'],
+    priceDelta: 2400,
+    visualToken: 'polishedConcrete' satisfies ModularHomeFloorFinishOption,
+    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
+    requiredModuleIds: [],
+  },
+  {
+    id: 'option-interior-floor-style-utility-plywood',
+    group: 'interiorFloorStyle',
+    label: 'Utility plywood boards',
+    materialIds: ['interior-plywood'],
+    priceDelta: 0,
+    visualToken: 'utilityPlywood' satisfies ModularHomeInteriorFloorStyleOption,
+    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
+    requiredModuleIds: [],
+  },
+  {
+    id: 'option-interior-floor-style-warm-plank',
+    group: 'interiorFloorStyle',
+    label: 'Warm plank lines',
+    materialIds: ['interior-plywood'],
+    priceDelta: 1350,
+    visualToken: 'warmPlank' satisfies ModularHomeInteriorFloorStyleOption,
+    compatibleProducts: ['compact-timber-40', 'family-timber-80'],
+    requiredModuleIds: [],
+  },
+  {
+    id: 'option-interior-floor-style-polished-slab',
+    group: 'interiorFloorStyle',
+    label: 'Polished slab grid',
+    materialIds: ['interior-plywood'],
+    priceDelta: 1700,
+    visualToken: 'polishedSlab' satisfies ModularHomeInteriorFloorStyleOption,
+    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
+    requiredModuleIds: [],
+  },
+  {
+    id: 'option-wall-panel-style-plain',
+    group: 'wallPanelStyle',
+    label: 'Plain wall panels',
+    materialIds: ['interior-plywood'],
+    priceDelta: 0,
+    visualToken: 'plainPanel' satisfies ModularHomeWallPanelStyleOption,
+    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
+    requiredModuleIds: [],
+  },
+  {
+    id: 'option-wall-panel-style-ribbed',
+    group: 'wallPanelStyle',
+    label: 'Ribbed wall panels',
+    materialIds: ['interior-plywood'],
+    priceDelta: 1250,
+    visualToken: 'ribbedPanel' satisfies ModularHomeWallPanelStyleOption,
+    compatibleProducts: ['compact-timber-40', 'family-timber-80'],
+    requiredModuleIds: [],
+  },
+  {
+    id: 'option-wall-panel-style-paint-ready',
+    group: 'wallPanelStyle',
+    label: 'Paint-ready boards',
+    materialIds: ['interior-plywood'],
+    priceDelta: 950,
+    visualToken: 'paintReadyBoard' satisfies ModularHomeWallPanelStyleOption,
+    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
+    requiredModuleIds: [],
+  },
+  {
+    id: 'option-furniture-package-empty-shell',
+    group: 'furniturePackage',
+    label: 'Empty shell',
+    materialIds: [],
+    priceDelta: 0,
+    visualToken: 'emptyShell' satisfies ModularHomeFurniturePackageOption,
+    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
+    requiredModuleIds: [],
+  },
+  {
+    id: 'option-furniture-package-standard',
+    group: 'furniturePackage',
+    label: 'Standard furniture',
+    materialIds: ['interior-plywood'],
+    priceDelta: 4200,
+    visualToken: 'standardFurniture' satisfies ModularHomeFurniturePackageOption,
+    compatibleProducts: ['compact-timber-40', 'family-timber-80'],
+    requiredModuleIds: [],
+  },
+  {
+    id: 'option-furniture-package-premium',
+    group: 'furniturePackage',
+    label: 'Premium furniture',
+    materialIds: ['interior-plywood'],
+    priceDelta: 9800,
+    visualToken: 'premiumFurniture' satisfies ModularHomeFurniturePackageOption,
+    compatibleProducts: ['compact-timber-40', 'family-timber-80'],
+    requiredModuleIds: [],
+  },
+  {
+    id: 'option-furniture-package-kitchen',
+    group: 'furniturePackage',
+    label: 'Kitchen package',
+    materialIds: ['interior-plywood'],
+    priceDelta: 3600,
+    visualToken: 'kitchenPackage' satisfies ModularHomeFurniturePackageOption,
+    compatibleProducts: ['compact-timber-40', 'family-timber-80'],
+    requiredModuleIds: [],
+  },
+  {
+    id: 'option-furniture-package-bathroom',
+    group: 'furniturePackage',
+    label: 'Bathroom package',
+    materialIds: ['bathroom-wet-core'],
+    priceDelta: 2900,
+    visualToken: 'bathroomPackage' satisfies ModularHomeFurniturePackageOption,
+    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
+    requiredModuleIds: [],
+  },
+  {
+    id: 'option-furniture-package-sauna',
+    group: 'furniturePackage',
+    label: 'Sauna package',
+    materialIds: ['interior-plywood'],
+    priceDelta: 3800,
+    visualToken: 'saunaPackage' satisfies ModularHomeFurniturePackageOption,
+    compatibleProducts: ['sauna-cabin-25'],
+    requiredModuleIds: [],
+  },
+  {
+    id: 'option-furniture-sofa-disabled',
+    group: 'sofa',
+    label: 'Sofa off',
+    materialIds: [],
+    priceDelta: 0,
+    visualToken: 'disabled' satisfies ModularHomeFurnitureToggleOption,
+    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
+    requiredModuleIds: [],
+  },
+  {
+    id: 'option-furniture-sofa-enabled',
+    group: 'sofa',
+    label: 'Sofa on',
+    materialIds: [],
+    priceDelta: 850,
+    visualToken: 'enabled' satisfies ModularHomeFurnitureToggleOption,
+    compatibleProducts: ['compact-timber-40', 'family-timber-80'],
+    requiredModuleIds: [],
+  },
+  {
+    id: 'option-furniture-table-disabled',
+    group: 'table',
+    label: 'Table off',
+    materialIds: [],
+    priceDelta: 0,
+    visualToken: 'disabled' satisfies ModularHomeFurnitureToggleOption,
+    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
+    requiredModuleIds: [],
+  },
+  {
+    id: 'option-furniture-table-enabled',
+    group: 'table',
+    label: 'Table on',
+    materialIds: [],
+    priceDelta: 450,
+    visualToken: 'enabled' satisfies ModularHomeFurnitureToggleOption,
+    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
+    requiredModuleIds: [],
+  },
+  {
+    id: 'option-furniture-bed-disabled',
+    group: 'bed',
+    label: 'Bed off',
+    materialIds: [],
+    priceDelta: 0,
+    visualToken: 'disabled' satisfies ModularHomeFurnitureToggleOption,
+    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
+    requiredModuleIds: [],
+  },
+  {
+    id: 'option-furniture-bed-enabled',
+    group: 'bed',
+    label: 'Bed on',
+    materialIds: [],
+    priceDelta: 950,
+    visualToken: 'enabled' satisfies ModularHomeFurnitureToggleOption,
+    compatibleProducts: ['compact-timber-40', 'family-timber-80'],
+    requiredModuleIds: [],
+  },
+  {
+    id: 'option-furniture-kitchen-line-disabled',
+    group: 'kitchenLine',
+    label: 'Kitchen line off',
+    materialIds: [],
+    priceDelta: 0,
+    visualToken: 'disabled' satisfies ModularHomeFurnitureToggleOption,
+    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
+    requiredModuleIds: [],
+  },
+  {
+    id: 'option-furniture-kitchen-line-enabled',
+    group: 'kitchenLine',
+    label: 'Kitchen line on',
+    materialIds: [],
+    priceDelta: 2400,
+    visualToken: 'enabled' satisfies ModularHomeFurnitureToggleOption,
+    compatibleProducts: ['compact-timber-40', 'family-timber-80'],
+    requiredModuleIds: [],
+  },
+  {
+    id: 'option-furniture-wardrobe-disabled',
+    group: 'wardrobePlaceholder',
+    label: 'Wardrobe off',
+    materialIds: [],
+    priceDelta: 0,
+    visualToken: 'disabled' satisfies ModularHomeFurnitureToggleOption,
+    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
+    requiredModuleIds: [],
+  },
+  {
+    id: 'option-furniture-wardrobe-enabled',
+    group: 'wardrobePlaceholder',
+    label: 'Wardrobe on',
+    materialIds: [],
+    priceDelta: 700,
+    visualToken: 'enabled' satisfies ModularHomeFurnitureToggleOption,
+    compatibleProducts: ['compact-timber-40', 'family-timber-80'],
+    requiredModuleIds: [],
+  },
 ] as const satisfies readonly ModularHomeOption[];
 
 const DEFAULT_MODULAR_HOME_PRODUCT_ID: ModularHomeProductId = 'compact-timber-40';
@@ -1419,12 +2079,31 @@ function getSelectedOptionForGroup(
     doorPackage: config.doorPackage,
     doorPlacement: config.doorPlacement,
     facade: config.facade,
+    facadeBoardOrientation: config.facadeBoardOrientation,
+    facadeBoardProfile: config.facadeBoardProfile,
+    facadeBoardSpacing: config.facadeBoardSpacing,
+    facadeBoardWidth: config.facadeBoardWidth,
     finish: config.finishLevel,
+    floorFinish: config.floorFinish,
+    furniturePackage: config.furniturePackage,
+    interiorFloorStyle: config.interiorFloorStyle,
+    interiorWallFinish: config.interiorWallFinish,
+    trimColor: config.trimColor,
+    sofa: config.sofa,
+    table: config.table,
+    bed: config.bed,
+    kitchenLine: config.kitchenLine,
+    wardrobePlaceholder: config.wardrobePlaceholder,
     roof: config.roof,
+    roofEdgeColor: config.roofEdgeColor,
+    roofGutterStyle: config.roofGutterStyle,
     terrace: config.terrace,
+    windowFrameColor: config.windowFrameColor,
+    windowFrameType: config.windowFrameType,
     windowPackage: config.windowPackage,
     windowPlacement: config.windowPlacement,
-  } as const;
+    wallPanelStyle: config.wallPanelStyle,
+  } as const satisfies Record<ModularHomeOptionGroup, string>;
 
   return MODULAR_HOME_OPTIONS.find((option) => (
     option.group === group
@@ -1449,11 +2128,30 @@ function getConfigKeyForOptionGroup(
     doorPackage: 'doorPackage',
     doorPlacement: 'doorPlacement',
     facade: 'facade',
+    facadeBoardOrientation: 'facadeBoardOrientation',
+    facadeBoardProfile: 'facadeBoardProfile',
+    facadeBoardSpacing: 'facadeBoardSpacing',
+    facadeBoardWidth: 'facadeBoardWidth',
     finish: 'finishLevel',
+    floorFinish: 'floorFinish',
+    furniturePackage: 'furniturePackage',
+    interiorFloorStyle: 'interiorFloorStyle',
+    interiorWallFinish: 'interiorWallFinish',
+    trimColor: 'trimColor',
+    sofa: 'sofa',
+    table: 'table',
+    bed: 'bed',
+    kitchenLine: 'kitchenLine',
+    wardrobePlaceholder: 'wardrobePlaceholder',
     roof: 'roof',
+    roofEdgeColor: 'roofEdgeColor',
+    roofGutterStyle: 'roofGutterStyle',
     terrace: 'terrace',
+    windowFrameColor: 'windowFrameColor',
+    windowFrameType: 'windowFrameType',
     windowPackage: 'windowPackage',
     windowPlacement: 'windowPlacement',
+    wallPanelStyle: 'wallPanelStyle',
   } as const satisfies Record<ModularHomeOptionGroup, keyof ModularHomeConfiguratorState>;
 
   return keyByGroup[group];
@@ -1560,6 +2258,25 @@ function getRequiredOptionModuleIds(config: ModularHomeConfiguratorState): reado
     getSelectedOptionForGroup(config, 'doorPackage'),
     getSelectedOptionForGroup(config, 'windowPlacement'),
     getSelectedOptionForGroup(config, 'doorPlacement'),
+    getSelectedOptionForGroup(config, 'facadeBoardOrientation'),
+    getSelectedOptionForGroup(config, 'facadeBoardWidth'),
+    getSelectedOptionForGroup(config, 'facadeBoardProfile'),
+    getSelectedOptionForGroup(config, 'facadeBoardSpacing'),
+    getSelectedOptionForGroup(config, 'trimColor'),
+    getSelectedOptionForGroup(config, 'roofEdgeColor'),
+    getSelectedOptionForGroup(config, 'roofGutterStyle'),
+    getSelectedOptionForGroup(config, 'windowFrameColor'),
+    getSelectedOptionForGroup(config, 'windowFrameType'),
+    getSelectedOptionForGroup(config, 'interiorWallFinish'),
+    getSelectedOptionForGroup(config, 'floorFinish'),
+    getSelectedOptionForGroup(config, 'interiorFloorStyle'),
+    getSelectedOptionForGroup(config, 'wallPanelStyle'),
+    getSelectedOptionForGroup(config, 'furniturePackage'),
+    getSelectedOptionForGroup(config, 'sofa'),
+    getSelectedOptionForGroup(config, 'table'),
+    getSelectedOptionForGroup(config, 'bed'),
+    getSelectedOptionForGroup(config, 'kitchenLine'),
+    getSelectedOptionForGroup(config, 'wardrobePlaceholder'),
   ].filter((option): option is ModularHomeOption => Boolean(option));
 
   return selectedOptions.flatMap((option) => option.requiredModuleIds);
@@ -1592,6 +2309,31 @@ function getReviewWarningsForCompatibleConfig(
       'Premium interior may increase production lead time and supplier coordination.',
       ['finish'],
       'Confirm finish package lead time before promising delivery dates.',
+    ));
+  }
+
+  if (config.furniturePackage === 'premiumFurniture') {
+    warnings.push(createRequiresReviewWarning(
+      'premium-furniture-final-supplier-review',
+      'Premium furniture package is a sales preview allowance and requires supplier confirmation.',
+      ['furniturePackage'],
+    ));
+  }
+
+  if (config.finishLevel === 'shell' && config.furniturePackage !== 'emptyShell') {
+    warnings.push(createWarningConstraint(
+      'shell-with-furniture-preview-warning',
+      'Shell finish with furniture enabled is allowed only as a visual preview mix.',
+      ['finish', 'furniturePackage'],
+      'Use this combination for concept discussion only; final quote should separate shell and furniture scope.',
+    ));
+  }
+
+  if (product.id !== 'sauna-cabin-25' && config.furniturePackage === 'saunaPackage') {
+    warnings.push(createNotAvailableWarning(
+      'sauna-furniture-package-not-available',
+      'Sauna package is only available for Sauna Cabin 25.',
+      ['furniturePackage'],
     ));
   }
 
@@ -1764,6 +2506,152 @@ function getReviewWarningsForCompatibleConfig(
       'Terrace-facing door is allowed as a preview, but the actual terrace/interface package is not selected.',
       ['doorPlacement', 'terrace'],
       'Add a terrace package or confirm this door placement during manual review.',
+    ));
+  }
+
+  if (config.facadeBoardOrientation === 'vertical') {
+    warnings.push(createWarningConstraint(
+      'vertical-facade-board-detail-review',
+      'Vertical facade boards change batten, drainage and supplier profile assumptions.',
+      ['facadeBoardOrientation'],
+      'Confirm vertical cladding detail during production review before quoting it as fixed.',
+    ));
+  }
+
+  if (config.facadeBoardWidth === 'wide') {
+    warnings.push(createWarningConstraint(
+      'wide-facade-board-profile-review',
+      'Wide facade boards depend on supplier profile availability and movement detailing.',
+      ['facadeBoardWidth'],
+      'Confirm board profile availability before production pricing.',
+    ));
+  }
+
+  if (config.facadeBoardProfile === 'shadowGap') {
+    warnings.push(createRequiresReviewWarning(
+      'shadow-gap-facade-profile-review',
+      'Shadow-gap facade boards require supplier profile, reveal depth and moisture-detail review.',
+      ['facadeBoardProfile'],
+    ));
+  }
+
+  if (config.facadeBoardProfile === 'tongueGroove') {
+    warnings.push(createWarningConstraint(
+      'tongue-groove-facade-profile-review',
+      'Tongue-and-groove facade boards require movement gap and supplier stock review.',
+      ['facadeBoardProfile'],
+      'Confirm supplier board profile before using it as fixed package pricing.',
+    ));
+  }
+
+  if (config.facadeBoardSpacing === 'tight') {
+    warnings.push(createWarningConstraint(
+      'tight-facade-board-spacing-warning',
+      'Tight board spacing increases board count, finishing time and moisture-detail sensitivity.',
+      ['facadeBoardSpacing'],
+      'Use the preview estimate as a comparison only and confirm exact spacing with production.',
+    ));
+  }
+
+  if (config.facadeBoardSpacing === 'expressive') {
+    warnings.push(createRequiresReviewWarning(
+      'expressive-facade-board-spacing-review',
+      'Expressive board spacing requires weatherproofing and facade shadow-detail review.',
+      ['facadeBoardSpacing'],
+    ));
+  }
+
+  if (config.trimColor === 'bronze') {
+    warnings.push(createWarningConstraint(
+      'bronze-trim-finish-review',
+      'Bronze trim is a premium color assumption and requires supplier finish confirmation.',
+      ['trimColor'],
+      'Confirm trim finish availability before presenting it as a fixed delivery color.',
+    ));
+  }
+
+  if (config.trimColor === 'white' && config.facade === 'darkThermoWood') {
+    warnings.push(createWarningConstraint(
+      'white-trim-dark-facade-maintenance-review',
+      'White trim on dark thermo wood is a high-contrast detail and may require maintenance/coating review.',
+      ['trimColor', 'facade'],
+      'Confirm coating system and maintenance expectations before final quote.',
+    ));
+  }
+
+  if (config.roofGutterStyle === 'boxGutter') {
+    warnings.push(createRequiresReviewWarning(
+      'box-gutter-drainage-review',
+      'Box gutter style requires roof drainage, snow-load and maintenance access review.',
+      ['roofGutterStyle', 'roof'],
+    ));
+  }
+
+  if (config.roofGutterStyle === 'roundGutter') {
+    warnings.push(createWarningConstraint(
+      'round-gutter-profile-review',
+      'Round gutter placeholder requires supplier profile and downspout coordination review.',
+      ['roofGutterStyle'],
+      'Confirm gutter supplier profile before production pricing.',
+    ));
+  }
+
+  if (config.windowFrameType === 'slimline') {
+    warnings.push(createRequiresReviewWarning(
+      'slimline-window-frame-review',
+      'Slimline window frames require supplier profile, thermal bridge and opening tolerance review.',
+      ['windowFrameType', 'windowPackage'],
+    ));
+  }
+
+  if (config.windowFrameType === 'deepReveal') {
+    warnings.push(createRequiresReviewWarning(
+      'deep-reveal-window-frame-review',
+      'Deep reveal window frames require wall build-up, flashing and weatherproofing review.',
+      ['windowFrameType'],
+    ));
+  }
+
+  if (config.floorFinish === 'polishedConcrete') {
+    warnings.push(createRequiresReviewWarning(
+      'polished-concrete-floor-system-review',
+      'Polished concrete floor finish is a visual preview token and requires slab/system review.',
+      ['floorFinish'],
+    ));
+  }
+
+  if (config.interiorFloorStyle === 'polishedSlab') {
+    warnings.push(createRequiresReviewWarning(
+      'polished-slab-floor-style-review',
+      'Polished slab grid is a visual style token and requires floor cassette/slab system review.',
+      ['interiorFloorStyle', 'floorFinish'],
+    ));
+  }
+
+  if (config.interiorFloorStyle === 'warmPlank') {
+    warnings.push(createWarningConstraint(
+      'warm-plank-floor-style-review',
+      'Warm plank floor style adds a supplier finish allowance and needs final board specification review.',
+      ['interiorFloorStyle'],
+      'Confirm interior floor product before quoting as a fixed finish.',
+    ));
+  }
+
+  if (config.wallPanelStyle === 'ribbedPanel') {
+    warnings.push(createWarningConstraint(
+      'ribbed-wall-panel-style-review',
+      'Ribbed wall panel style depends on supplier panel profile and interior acoustic detailing.',
+      ['wallPanelStyle'],
+      'Confirm panel profile before final production quote.',
+    ));
+  }
+
+  if (config.wallPanelStyle === 'paintReadyBoard') {
+    warnings.push(createWarningConstraint(
+      'paint-ready-wall-panel-style-review',
+      'Paint-ready boards require final coating, joint treatment and site maintenance review.',
+      ['wallPanelStyle'],
+      'Confirm coating scope and whether painting is factory or site work.',
     ));
   }
 
@@ -2074,6 +2962,25 @@ export function getModularHomeConfigurationWarnings(
     'doorPackage',
     'windowPlacement',
     'doorPlacement',
+    'facadeBoardOrientation',
+    'facadeBoardWidth',
+    'facadeBoardProfile',
+    'facadeBoardSpacing',
+    'trimColor',
+    'roofEdgeColor',
+    'roofGutterStyle',
+    'windowFrameColor',
+    'windowFrameType',
+    'interiorWallFinish',
+    'floorFinish',
+    'interiorFloorStyle',
+    'wallPanelStyle',
+    'furniturePackage',
+    'sofa',
+    'table',
+    'bed',
+    'kitchenLine',
+    'wardrobePlaceholder',
   ] as const;
 
   for (const group of selectedGroups) {
@@ -2150,6 +3057,25 @@ export function getSelectedModularHomeOptions(config: ModularHomeConfiguratorSta
     getSelectedOptionForGroup(config, 'doorPackage'),
     getSelectedOptionForGroup(config, 'windowPlacement'),
     getSelectedOptionForGroup(config, 'doorPlacement'),
+    getSelectedOptionForGroup(config, 'facadeBoardOrientation'),
+    getSelectedOptionForGroup(config, 'facadeBoardWidth'),
+    getSelectedOptionForGroup(config, 'facadeBoardProfile'),
+    getSelectedOptionForGroup(config, 'facadeBoardSpacing'),
+    getSelectedOptionForGroup(config, 'trimColor'),
+    getSelectedOptionForGroup(config, 'roofEdgeColor'),
+    getSelectedOptionForGroup(config, 'roofGutterStyle'),
+    getSelectedOptionForGroup(config, 'windowFrameColor'),
+    getSelectedOptionForGroup(config, 'windowFrameType'),
+    getSelectedOptionForGroup(config, 'interiorWallFinish'),
+    getSelectedOptionForGroup(config, 'floorFinish'),
+    getSelectedOptionForGroup(config, 'interiorFloorStyle'),
+    getSelectedOptionForGroup(config, 'wallPanelStyle'),
+    getSelectedOptionForGroup(config, 'furniturePackage'),
+    getSelectedOptionForGroup(config, 'sofa'),
+    getSelectedOptionForGroup(config, 'table'),
+    getSelectedOptionForGroup(config, 'bed'),
+    getSelectedOptionForGroup(config, 'kitchenLine'),
+    getSelectedOptionForGroup(config, 'wardrobePlaceholder'),
   ].filter((option): option is ModularHomeOption => Boolean(option));
 }
 
@@ -2176,14 +3102,33 @@ export function getModularHomeProductConfigSummary(config: ModularHomeConfigurat
     doorPackage: getOptionForGroupAndToken('doorPackage', config.doorPackage)?.label ?? config.doorPackage,
     doorPlacement: getOptionForGroupAndToken('doorPlacement', config.doorPlacement)?.label ?? config.doorPlacement,
     facade: getOptionForGroupAndToken('facade', config.facade)?.label ?? config.facade,
+    facadeBoardOrientation: getOptionForGroupAndToken('facadeBoardOrientation', config.facadeBoardOrientation)?.label ?? config.facadeBoardOrientation,
+    facadeBoardProfile: getOptionForGroupAndToken('facadeBoardProfile', config.facadeBoardProfile)?.label ?? config.facadeBoardProfile,
+    facadeBoardSpacing: getOptionForGroupAndToken('facadeBoardSpacing', config.facadeBoardSpacing)?.label ?? config.facadeBoardSpacing,
+    facadeBoardWidth: getOptionForGroupAndToken('facadeBoardWidth', config.facadeBoardWidth)?.label ?? config.facadeBoardWidth,
     finishLevel: getOptionForGroupAndToken('finish', config.finishLevel)?.label ?? config.finishLevel,
+    floorFinish: getOptionForGroupAndToken('floorFinish', config.floorFinish)?.label ?? config.floorFinish,
+    furniturePackage: getOptionForGroupAndToken('furniturePackage', config.furniturePackage)?.label ?? config.furniturePackage,
+    sofa: getOptionForGroupAndToken('sofa', config.sofa)?.label ?? config.sofa,
+    table: getOptionForGroupAndToken('table', config.table)?.label ?? config.table,
+    bed: getOptionForGroupAndToken('bed', config.bed)?.label ?? config.bed,
+    kitchenLine: getOptionForGroupAndToken('kitchenLine', config.kitchenLine)?.label ?? config.kitchenLine,
+    wardrobePlaceholder: getOptionForGroupAndToken('wardrobePlaceholder', config.wardrobePlaceholder)?.label ?? config.wardrobePlaceholder,
+    interiorFloorStyle: getOptionForGroupAndToken('interiorFloorStyle', config.interiorFloorStyle)?.label ?? config.interiorFloorStyle,
+    interiorWallFinish: getOptionForGroupAndToken('interiorWallFinish', config.interiorWallFinish)?.label ?? config.interiorWallFinish,
     layoutVariant: layoutVariant?.label ?? config.layoutVariant,
     product: product?.name ?? config.template,
     roof: getOptionForGroupAndToken('roof', config.roof)?.label ?? config.roof,
+    roofEdgeColor: getOptionForGroupAndToken('roofEdgeColor', config.roofEdgeColor)?.label ?? config.roofEdgeColor,
+    roofGutterStyle: getOptionForGroupAndToken('roofGutterStyle', config.roofGutterStyle)?.label ?? config.roofGutterStyle,
     template: product?.name ?? config.template,
     terrace: getOptionForGroupAndToken('terrace', config.terrace)?.label ?? config.terrace,
+    trimColor: getOptionForGroupAndToken('trimColor', config.trimColor)?.label ?? config.trimColor,
+    windowFrameColor: getOptionForGroupAndToken('windowFrameColor', config.windowFrameColor)?.label ?? config.windowFrameColor,
+    windowFrameType: getOptionForGroupAndToken('windowFrameType', config.windowFrameType)?.label ?? config.windowFrameType,
     windowPackage: getOptionForGroupAndToken('windowPackage', config.windowPackage)?.label ?? config.windowPackage,
     windowPlacement: getOptionForGroupAndToken('windowPlacement', config.windowPlacement)?.label ?? config.windowPlacement,
+    wallPanelStyle: getOptionForGroupAndToken('wallPanelStyle', config.wallPanelStyle)?.label ?? config.wallPanelStyle,
   };
 }
 

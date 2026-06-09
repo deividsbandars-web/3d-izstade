@@ -25,11 +25,30 @@ export type ModularHomeQuoteBackendPayload = {
   config: {
     doorPlacement: string;
     facade: string;
+    facadeBoardOrientation: string;
+    facadeBoardProfile: string;
+    facadeBoardSpacing: string;
+    facadeBoardWidth: string;
     finishLevel: string;
+    floorFinish: string;
+    furniturePackage: string;
+    sofa: string;
+    table: string;
+    bed: string;
+    kitchenLine: string;
+    wardrobePlaceholder: string;
+    interiorFloorStyle: string;
+    interiorWallFinish: string;
+    roofEdgeColor: string;
+    roofGutterStyle: string;
+    windowFrameColor: string;
+    windowFrameType: string;
     layoutVariant: string;
     roof: string;
     terrace: string;
+    trimColor: string;
     windowPlacement: string;
+    wallPanelStyle: string;
   };
   consent: {
     accepted: true;
@@ -153,11 +172,30 @@ export function buildModularHomeQuoteBackendPayload(
     config: {
       doorPlacement: config.doorPlacement,
       facade: config.facade,
+      facadeBoardOrientation: config.facadeBoardOrientation,
+      facadeBoardProfile: config.facadeBoardProfile,
+      facadeBoardSpacing: config.facadeBoardSpacing,
+      facadeBoardWidth: config.facadeBoardWidth,
       finishLevel: config.finishLevel,
+      floorFinish: config.floorFinish,
+      furniturePackage: config.furniturePackage,
+      sofa: config.sofa,
+      table: config.table,
+      bed: config.bed,
+      kitchenLine: config.kitchenLine,
+      wardrobePlaceholder: config.wardrobePlaceholder,
+      interiorFloorStyle: config.interiorFloorStyle,
+      interiorWallFinish: config.interiorWallFinish,
+      roofEdgeColor: config.roofEdgeColor,
+      roofGutterStyle: config.roofGutterStyle,
+      windowFrameColor: config.windowFrameColor,
+      windowFrameType: config.windowFrameType,
       layoutVariant: config.layoutVariant,
       roof: config.roof,
       terrace: config.terrace,
+      trimColor: config.trimColor,
       windowPlacement: config.windowPlacement,
+      wallPanelStyle: config.wallPanelStyle,
     },
     consent: {
       accepted: true,
