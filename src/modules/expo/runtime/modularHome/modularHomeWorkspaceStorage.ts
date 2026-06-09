@@ -113,6 +113,8 @@ export type ModularHomeProjectComparisonSideSummary = {
   estimateTotal: number;
   facade: string;
   facadeBoardOrientation: string;
+  facadeBoardProfile: string;
+  facadeBoardSpacing: string;
   facadeBoardWidth: string;
   finishLevel: string;
   floorFinish: string;
@@ -122,6 +124,7 @@ export type ModularHomeProjectComparisonSideSummary = {
   bed: string;
   kitchenLine: string;
   wardrobePlaceholder: string;
+  interiorFloorStyle: string;
   interiorWallFinish: string;
   layoutVariant: string;
   moduleCount: number;
@@ -130,10 +133,14 @@ export type ModularHomeProjectComparisonSideSummary = {
   projectName: string;
   roof: string;
   roofEdgeColor: string;
+  roofGutterStyle: string;
   terrace: string;
+  trimColor: string;
   windowFrameColor: string;
+  windowFrameType: string;
   windowPackage: string;
   windowPlacement: string;
+  wallPanelStyle: string;
 };
 
 export type ModularHomeProjectComparisonBomCategoryDelta = {
@@ -326,6 +333,8 @@ const COMPARE_OPTION_LABELS = {
   doorPlacement: 'Door placement',
   facade: 'Facade',
   facadeBoardOrientation: 'Facade board orientation',
+  facadeBoardProfile: 'Facade board profile',
+  facadeBoardSpacing: 'Facade board spacing',
   facadeBoardWidth: 'Facade board width',
   finishLevel: 'Finish level',
   floorFinish: 'Floor finish',
@@ -335,15 +344,20 @@ const COMPARE_OPTION_LABELS = {
   bed: 'Bed',
   kitchenLine: 'Kitchen line',
   wardrobePlaceholder: 'Wardrobe placeholder',
+  interiorFloorStyle: 'Interior floor style',
   interiorWallFinish: 'Interior wall finish',
   layoutVariant: 'Layout variant',
   roof: 'Roof',
   roofEdgeColor: 'Roof edge color',
+  roofGutterStyle: 'Roof edge/gutter style',
   template: 'Template',
   terrace: 'Terrace',
+  trimColor: 'Trim color',
   windowFrameColor: 'Window frame color',
+  windowFrameType: 'Window frame type',
   windowPackage: 'Window package',
   windowPlacement: 'Window placement',
+  wallPanelStyle: 'Wall panel style',
 } as const satisfies Partial<Record<keyof ModularHomeConfiguratorState, string>>;
 
 const COMPARE_PRODUCT_OPTION_LABEL = {
@@ -647,6 +661,8 @@ function createSideSummary(
     estimateTotal: project.estimateTotal,
     facade: configSummary.facade,
     facadeBoardOrientation: configSummary.facadeBoardOrientation,
+    facadeBoardProfile: configSummary.facadeBoardProfile,
+    facadeBoardSpacing: configSummary.facadeBoardSpacing,
     facadeBoardWidth: configSummary.facadeBoardWidth,
     finishLevel: configSummary.finishLevel,
     floorFinish: configSummary.floorFinish,
@@ -656,6 +672,7 @@ function createSideSummary(
     bed: configSummary.bed,
     kitchenLine: configSummary.kitchenLine,
     wardrobePlaceholder: configSummary.wardrobePlaceholder,
+    interiorFloorStyle: configSummary.interiorFloorStyle,
     interiorWallFinish: configSummary.interiorWallFinish,
     layoutVariant: configSummary.layoutVariant,
     moduleCount,
@@ -664,10 +681,14 @@ function createSideSummary(
     projectName: project.projectName,
     roof: configSummary.roof,
     roofEdgeColor: configSummary.roofEdgeColor,
+    roofGutterStyle: configSummary.roofGutterStyle,
     terrace: configSummary.terrace,
+    trimColor: configSummary.trimColor,
     windowFrameColor: configSummary.windowFrameColor,
+    windowFrameType: configSummary.windowFrameType,
     windowPackage: configSummary.windowPackage,
     windowPlacement: configSummary.windowPlacement,
+    wallPanelStyle: configSummary.wallPanelStyle,
   };
 }
 

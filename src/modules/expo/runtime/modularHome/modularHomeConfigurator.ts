@@ -22,6 +22,13 @@ export type ModularHomeWindowPlacementOption = 'balanced' | 'frontPanoramic' | '
 export type ModularHomeDoorPlacementOption = 'frontEntry' | 'sideEntry' | 'terraceFacing';
 export type ModularHomeFacadeBoardOrientationOption = 'horizontal' | 'vertical';
 export type ModularHomeFacadeBoardWidthOption = 'narrow' | 'standard' | 'wide';
+export type ModularHomeFacadeBoardProfileOption = 'squareEdge' | 'shadowGap' | 'tongueGroove';
+export type ModularHomeFacadeBoardSpacingOption = 'tight' | 'standard' | 'expressive';
+export type ModularHomeTrimColorOption = 'timber' | 'graphite' | 'bronze' | 'white';
+export type ModularHomeRoofGutterStyleOption = 'minimalEdge' | 'boxGutter' | 'roundGutter';
+export type ModularHomeWindowFrameTypeOption = 'standardFrame' | 'slimline' | 'deepReveal';
+export type ModularHomeInteriorFloorStyleOption = 'utilityPlywood' | 'warmPlank' | 'polishedSlab';
+export type ModularHomeWallPanelStyleOption = 'plainPanel' | 'ribbedPanel' | 'paintReadyBoard';
 export type ModularHomeRoofEdgeColorOption = 'graphite' | 'bronze' | 'lightMetal';
 export type ModularHomeWindowFrameColorOption = 'timber' | 'graphite' | 'white';
 export type ModularHomeInteriorWallFinishOption = 'plywood' | 'paintedWhite' | 'warmPanel';
@@ -59,6 +66,13 @@ export type ModularHomeConfiguratorState = {
   doorPlacement: ModularHomeDoorPlacementOption;
   facadeBoardOrientation: ModularHomeFacadeBoardOrientationOption;
   facadeBoardWidth: ModularHomeFacadeBoardWidthOption;
+  facadeBoardProfile: ModularHomeFacadeBoardProfileOption;
+  facadeBoardSpacing: ModularHomeFacadeBoardSpacingOption;
+  trimColor: ModularHomeTrimColorOption;
+  roofGutterStyle: ModularHomeRoofGutterStyleOption;
+  windowFrameType: ModularHomeWindowFrameTypeOption;
+  interiorFloorStyle: ModularHomeInteriorFloorStyleOption;
+  wallPanelStyle: ModularHomeWallPanelStyleOption;
   roofEdgeColor: ModularHomeRoofEdgeColorOption;
   windowFrameColor: ModularHomeWindowFrameColorOption;
   interiorWallFinish: ModularHomeInteriorWallFinishOption;
@@ -171,6 +185,60 @@ export type ModularHomeFacadeBoardWidthVisual = {
   reviewNote: string;
 };
 
+export type ModularHomeFacadeBoardProfileVisual = {
+  label: string;
+  quantityFactor: number;
+  revealColor: string;
+  revealDepth: number;
+  reviewNote: string;
+};
+
+export type ModularHomeFacadeBoardSpacingVisual = {
+  label: string;
+  lineOpacity: number;
+  spacingFactor: number;
+  reviewNote: string;
+};
+
+export type ModularHomeTrimColorVisual = {
+  color: string;
+  label: string;
+  reviewNote: string;
+};
+
+export type ModularHomeRoofGutterStyleVisual = {
+  downspoutScale: number;
+  label: string;
+  profileDepth: number;
+  profileHeight: number;
+  reviewNote: string;
+};
+
+export type ModularHomeWindowFrameTypeVisual = {
+  frameScale: number;
+  label: string;
+  mullionScale: number;
+  revealDepth: number;
+  reviewNote: string;
+};
+
+export type ModularHomeInteriorFloorStyleVisual = {
+  color: string;
+  label: string;
+  lineColor: string;
+  lineSpacing: number;
+  quantityFactor: number;
+  reviewNote: string;
+};
+
+export type ModularHomeWallPanelStyleVisual = {
+  color: string;
+  label: string;
+  seamColor: string;
+  seamSpacing: number;
+  reviewNote: string;
+};
+
 export type ModularHomeRoofEdgeColorVisual = {
   color: string;
   label: string;
@@ -217,6 +285,13 @@ export const DEFAULT_MODULAR_HOME_CONFIG: ModularHomeConfiguratorState = {
   doorPlacement: 'frontEntry',
   facadeBoardOrientation: 'horizontal',
   facadeBoardWidth: 'standard',
+  facadeBoardProfile: 'squareEdge',
+  facadeBoardSpacing: 'standard',
+  trimColor: 'timber',
+  roofGutterStyle: 'minimalEdge',
+  windowFrameType: 'standardFrame',
+  interiorFloorStyle: 'utilityPlywood',
+  wallPanelStyle: 'plainPanel',
   roofEdgeColor: 'graphite',
   windowFrameColor: 'timber',
   interiorWallFinish: 'plywood',
@@ -291,6 +366,49 @@ export const MODULAR_HOME_FACADE_BOARD_WIDTH_OPTIONS = [
   { key: 'standard', label: 'Standard boards' },
   { key: 'wide', label: 'Wide boards' },
 ] as const satisfies readonly ModularHomeConfiguratorOption<'facadeBoardWidth'>[];
+
+export const MODULAR_HOME_FACADE_BOARD_PROFILE_OPTIONS = [
+  { key: 'squareEdge', label: 'Square-edge boards' },
+  { key: 'shadowGap', label: 'Shadow-gap boards' },
+  { key: 'tongueGroove', label: 'Tongue-and-groove boards' },
+] as const satisfies readonly ModularHomeConfiguratorOption<'facadeBoardProfile'>[];
+
+export const MODULAR_HOME_FACADE_BOARD_SPACING_OPTIONS = [
+  { key: 'tight', label: 'Tight spacing' },
+  { key: 'standard', label: 'Standard spacing' },
+  { key: 'expressive', label: 'Expressive spacing' },
+] as const satisfies readonly ModularHomeConfiguratorOption<'facadeBoardSpacing'>[];
+
+export const MODULAR_HOME_TRIM_COLOR_OPTIONS = [
+  { key: 'timber', label: 'Timber trim' },
+  { key: 'graphite', label: 'Graphite trim' },
+  { key: 'bronze', label: 'Bronze trim' },
+  { key: 'white', label: 'White trim' },
+] as const satisfies readonly ModularHomeConfiguratorOption<'trimColor'>[];
+
+export const MODULAR_HOME_ROOF_GUTTER_STYLE_OPTIONS = [
+  { key: 'minimalEdge', label: 'Minimal edge gutter' },
+  { key: 'boxGutter', label: 'Box gutter' },
+  { key: 'roundGutter', label: 'Round gutter placeholder' },
+] as const satisfies readonly ModularHomeConfiguratorOption<'roofGutterStyle'>[];
+
+export const MODULAR_HOME_WINDOW_FRAME_TYPE_OPTIONS = [
+  { key: 'standardFrame', label: 'Standard frame' },
+  { key: 'slimline', label: 'Slimline frame' },
+  { key: 'deepReveal', label: 'Deep reveal frame' },
+] as const satisfies readonly ModularHomeConfiguratorOption<'windowFrameType'>[];
+
+export const MODULAR_HOME_INTERIOR_FLOOR_STYLE_OPTIONS = [
+  { key: 'utilityPlywood', label: 'Utility plywood boards' },
+  { key: 'warmPlank', label: 'Warm plank lines' },
+  { key: 'polishedSlab', label: 'Polished slab grid' },
+] as const satisfies readonly ModularHomeConfiguratorOption<'interiorFloorStyle'>[];
+
+export const MODULAR_HOME_WALL_PANEL_STYLE_OPTIONS = [
+  { key: 'plainPanel', label: 'Plain wall panels' },
+  { key: 'ribbedPanel', label: 'Ribbed wall panels' },
+  { key: 'paintReadyBoard', label: 'Paint-ready boards' },
+] as const satisfies readonly ModularHomeConfiguratorOption<'wallPanelStyle'>[];
 
 export const MODULAR_HOME_ROOF_EDGE_COLOR_OPTIONS = [
   { key: 'graphite', label: 'Graphite roof edge' },
@@ -387,6 +505,13 @@ export const MODULAR_HOME_CONFIGURATOR_GROUPS = [
   { key: 'doorPlacement', label: 'Door placement', options: MODULAR_HOME_DOOR_PLACEMENT_OPTIONS },
   { key: 'facadeBoardOrientation', label: 'Facade board orientation', options: MODULAR_HOME_FACADE_BOARD_ORIENTATION_OPTIONS },
   { key: 'facadeBoardWidth', label: 'Facade board width', options: MODULAR_HOME_FACADE_BOARD_WIDTH_OPTIONS },
+  { key: 'facadeBoardProfile', label: 'Facade board profile', options: MODULAR_HOME_FACADE_BOARD_PROFILE_OPTIONS },
+  { key: 'facadeBoardSpacing', label: 'Facade board spacing', options: MODULAR_HOME_FACADE_BOARD_SPACING_OPTIONS },
+  { key: 'trimColor', label: 'Trim color', options: MODULAR_HOME_TRIM_COLOR_OPTIONS },
+  { key: 'roofGutterStyle', label: 'Roof edge/gutter style', options: MODULAR_HOME_ROOF_GUTTER_STYLE_OPTIONS },
+  { key: 'windowFrameType', label: 'Window frame type', options: MODULAR_HOME_WINDOW_FRAME_TYPE_OPTIONS },
+  { key: 'interiorFloorStyle', label: 'Interior floor style', options: MODULAR_HOME_INTERIOR_FLOOR_STYLE_OPTIONS },
+  { key: 'wallPanelStyle', label: 'Wall panel style', options: MODULAR_HOME_WALL_PANEL_STYLE_OPTIONS },
   { key: 'roofEdgeColor', label: 'Roof edge color', options: MODULAR_HOME_ROOF_EDGE_COLOR_OPTIONS },
   { key: 'windowFrameColor', label: 'Window frame color', options: MODULAR_HOME_WINDOW_FRAME_COLOR_OPTIONS },
 ] as const satisfies readonly ModularHomeConfiguratorGroup[];
@@ -653,6 +778,173 @@ export const MODULAR_HOME_FACADE_BOARD_WIDTH_VISUALS: Record<ModularHomeFacadeBo
   },
 };
 
+export const MODULAR_HOME_FACADE_BOARD_PROFILE_VISUALS: Record<ModularHomeFacadeBoardProfileOption, ModularHomeFacadeBoardProfileVisual> = {
+  shadowGap: {
+    label: 'Shadow-gap boards',
+    quantityFactor: 1.08,
+    revealColor: '#020617',
+    revealDepth: 0.18,
+    reviewNote: 'Shadow-gap boards add reveal labor and supplier profile review.',
+  },
+  squareEdge: {
+    label: 'Square-edge boards',
+    quantityFactor: 1,
+    revealColor: '#2a1d14',
+    revealDepth: 0.08,
+    reviewNote: 'Square-edge boards are the baseline controlled facade profile.',
+  },
+  tongueGroove: {
+    label: 'Tongue-and-groove boards',
+    quantityFactor: 1.05,
+    revealColor: '#4a2f1b',
+    revealDepth: 0.12,
+    reviewNote: 'Tongue-and-groove boards require supplier profile and movement detailing review.',
+  },
+};
+
+export const MODULAR_HOME_FACADE_BOARD_SPACING_VISUALS: Record<ModularHomeFacadeBoardSpacingOption, ModularHomeFacadeBoardSpacingVisual> = {
+  expressive: {
+    label: 'Expressive spacing',
+    lineOpacity: 0.72,
+    spacingFactor: 1.22,
+    reviewNote: 'Expressive spacing is visually stronger and requires weather detailing review.',
+  },
+  standard: {
+    label: 'Standard spacing',
+    lineOpacity: 0.52,
+    spacingFactor: 1,
+    reviewNote: 'Standard spacing is the baseline controlled cladding spacing.',
+  },
+  tight: {
+    label: 'Tight spacing',
+    lineOpacity: 0.42,
+    spacingFactor: 0.82,
+    reviewNote: 'Tight spacing increases board count and factory labor allowance.',
+  },
+};
+
+export const MODULAR_HOME_TRIM_COLOR_VISUALS: Record<ModularHomeTrimColorOption, ModularHomeTrimColorVisual> = {
+  bronze: {
+    color: '#b7791f',
+    label: 'Bronze trim',
+    reviewNote: 'Bronze trim is a premium color detail requiring supplier finish confirmation.',
+  },
+  graphite: {
+    color: '#1f2937',
+    label: 'Graphite trim',
+    reviewNote: 'Graphite trim creates a stronger exterior contrast in preview mode.',
+  },
+  timber: {
+    color: '#d7b074',
+    label: 'Timber trim',
+    reviewNote: 'Timber trim is the baseline controlled exterior detail.',
+  },
+  white: {
+    color: '#f8fafc',
+    label: 'White trim',
+    reviewNote: 'White trim requires final coating and maintenance review.',
+  },
+};
+
+export const MODULAR_HOME_ROOF_GUTTER_STYLE_VISUALS: Record<ModularHomeRoofGutterStyleOption, ModularHomeRoofGutterStyleVisual> = {
+  boxGutter: {
+    downspoutScale: 1.14,
+    label: 'Box gutter',
+    profileDepth: 0.56,
+    profileHeight: 0.34,
+    reviewNote: 'Box gutter style requires drainage capacity and roof edge detailing review.',
+  },
+  minimalEdge: {
+    downspoutScale: 1,
+    label: 'Minimal edge gutter',
+    profileDepth: 0.34,
+    profileHeight: 0.22,
+    reviewNote: 'Minimal edge gutter is the baseline preview roof edge style.',
+  },
+  roundGutter: {
+    downspoutScale: 0.92,
+    label: 'Round gutter placeholder',
+    profileDepth: 0.46,
+    profileHeight: 0.28,
+    reviewNote: 'Round gutter placeholder requires supplier profile confirmation.',
+  },
+};
+
+export const MODULAR_HOME_WINDOW_FRAME_TYPE_VISUALS: Record<ModularHomeWindowFrameTypeOption, ModularHomeWindowFrameTypeVisual> = {
+  deepReveal: {
+    frameScale: 1.36,
+    label: 'Deep reveal frame',
+    mullionScale: 1.12,
+    revealDepth: 0.18,
+    reviewNote: 'Deep reveal frames require opening depth and weatherproofing review.',
+  },
+  slimline: {
+    frameScale: 0.72,
+    label: 'Slimline frame',
+    mullionScale: 0.72,
+    revealDepth: 0.08,
+    reviewNote: 'Slimline frames require supplier profile confirmation.',
+  },
+  standardFrame: {
+    frameScale: 1,
+    label: 'Standard frame',
+    mullionScale: 1,
+    revealDepth: 0.12,
+    reviewNote: 'Standard frame type is the baseline controlled opening detail.',
+  },
+};
+
+export const MODULAR_HOME_INTERIOR_FLOOR_STYLE_VISUALS: Record<ModularHomeInteriorFloorStyleOption, ModularHomeInteriorFloorStyleVisual> = {
+  polishedSlab: {
+    color: '#9ca3af',
+    label: 'Polished slab grid',
+    lineColor: '#e5e7eb',
+    lineSpacing: 7.8,
+    quantityFactor: 1.08,
+    reviewNote: 'Polished slab grid is a preview token requiring floor system review.',
+  },
+  utilityPlywood: {
+    color: '#d6b98b',
+    label: 'Utility plywood boards',
+    lineColor: '#8a5f33',
+    lineSpacing: 5.5,
+    quantityFactor: 1,
+    reviewNote: 'Utility plywood boards are the baseline interior floor detail.',
+  },
+  warmPlank: {
+    color: '#c79554',
+    label: 'Warm plank lines',
+    lineColor: '#5a371d',
+    lineSpacing: 4.2,
+    quantityFactor: 1.05,
+    reviewNote: 'Warm plank lines add finish allowance and require supplier review.',
+  },
+};
+
+export const MODULAR_HOME_WALL_PANEL_STYLE_VISUALS: Record<ModularHomeWallPanelStyleOption, ModularHomeWallPanelStyleVisual> = {
+  paintReadyBoard: {
+    color: '#f8fafc',
+    label: 'Paint-ready boards',
+    seamColor: '#cbd5e1',
+    seamSpacing: 5.2,
+    reviewNote: 'Paint-ready boards require final coating specification review.',
+  },
+  plainPanel: {
+    color: '#f8e6c7',
+    label: 'Plain wall panels',
+    seamColor: '#8a5f33',
+    seamSpacing: 7.2,
+    reviewNote: 'Plain wall panels are the baseline interior wall panel detail.',
+  },
+  ribbedPanel: {
+    color: '#e7c892',
+    label: 'Ribbed wall panels',
+    seamColor: '#5a371d',
+    seamSpacing: 3.4,
+    reviewNote: 'Ribbed panels add visible interior detail and supplier profile review.',
+  },
+};
+
 export const MODULAR_HOME_ROOF_EDGE_COLOR_VISUALS: Record<ModularHomeRoofEdgeColorOption, ModularHomeRoofEdgeColorVisual> = {
   bronze: {
     color: '#b7791f',
@@ -845,6 +1137,13 @@ export function getModularHomeConfigSummary(config: ModularHomeConfiguratorState
     doorPlacement: getModularHomeConfigLabel('doorPlacement', config.doorPlacement),
     facadeBoardOrientation: getModularHomeConfigLabel('facadeBoardOrientation', config.facadeBoardOrientation),
     facadeBoardWidth: getModularHomeConfigLabel('facadeBoardWidth', config.facadeBoardWidth),
+    facadeBoardProfile: getModularHomeConfigLabel('facadeBoardProfile', config.facadeBoardProfile),
+    facadeBoardSpacing: getModularHomeConfigLabel('facadeBoardSpacing', config.facadeBoardSpacing),
+    trimColor: getModularHomeConfigLabel('trimColor', config.trimColor),
+    roofGutterStyle: getModularHomeConfigLabel('roofGutterStyle', config.roofGutterStyle),
+    windowFrameType: getModularHomeConfigLabel('windowFrameType', config.windowFrameType),
+    interiorFloorStyle: getModularHomeConfigLabel('interiorFloorStyle', config.interiorFloorStyle),
+    wallPanelStyle: getModularHomeConfigLabel('wallPanelStyle', config.wallPanelStyle),
     roofEdgeColor: getModularHomeConfigLabel('roofEdgeColor', config.roofEdgeColor),
     windowFrameColor: getModularHomeConfigLabel('windowFrameColor', config.windowFrameColor),
     interiorWallFinish: getModularHomeConfigLabel('interiorWallFinish', config.interiorWallFinish),

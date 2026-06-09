@@ -168,6 +168,20 @@ const OPTION_PRICING_DISTRIBUTION_BY_GROUP = {
     margin: 0.09,
     contingency: 0.05,
   },
+  facadeBoardProfile: {
+    material: 0.54,
+    factoryLabor: 0.28,
+    designEngineering: 0.05,
+    margin: 0.09,
+    contingency: 0.04,
+  },
+  facadeBoardSpacing: {
+    material: 0.42,
+    factoryLabor: 0.36,
+    designEngineering: 0.06,
+    margin: 0.1,
+    contingency: 0.06,
+  },
   facadeBoardWidth: {
     material: 0.58,
     factoryLabor: 0.24,
@@ -187,6 +201,13 @@ const OPTION_PRICING_DISTRIBUTION_BY_GROUP = {
     factoryLabor: 0.28,
     designEngineering: 0.03,
     margin: 0.09,
+    contingency: 0.04,
+  },
+  interiorFloorStyle: {
+    material: 0.52,
+    factoryLabor: 0.3,
+    designEngineering: 0.04,
+    margin: 0.1,
     contingency: 0.04,
   },
   furniturePackage: {
@@ -251,6 +272,14 @@ const OPTION_PRICING_DISTRIBUTION_BY_GROUP = {
     margin: 0.09,
     contingency: 0.05,
   },
+  roofGutterStyle: {
+    material: 0.58,
+    factoryLabor: 0.2,
+    installation: 0.08,
+    designEngineering: 0.06,
+    margin: 0.05,
+    contingency: 0.03,
+  },
   terrace: {
     material: 0.5,
     factoryLabor: 0.13,
@@ -274,6 +303,13 @@ const OPTION_PRICING_DISTRIBUTION_BY_GROUP = {
     margin: 0.09,
     contingency: 0.05,
   },
+  trimColor: {
+    material: 0.6,
+    factoryLabor: 0.18,
+    installation: 0.06,
+    margin: 0.1,
+    contingency: 0.06,
+  },
   windowPlacement: {
     material: 0.46,
     factoryLabor: 0.2,
@@ -281,6 +317,21 @@ const OPTION_PRICING_DISTRIBUTION_BY_GROUP = {
     designEngineering: 0.1,
     margin: 0.09,
     contingency: 0.05,
+  },
+  windowFrameType: {
+    material: 0.62,
+    factoryLabor: 0.18,
+    installation: 0.06,
+    designEngineering: 0.05,
+    margin: 0.06,
+    contingency: 0.03,
+  },
+  wallPanelStyle: {
+    material: 0.48,
+    factoryLabor: 0.34,
+    designEngineering: 0.04,
+    margin: 0.1,
+    contingency: 0.04,
   },
 } as const satisfies Record<ModularHomeOptionGroup, PricingDistribution>;
 

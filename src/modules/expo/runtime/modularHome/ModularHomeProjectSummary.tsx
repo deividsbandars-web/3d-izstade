@@ -329,7 +329,7 @@ function createEstimateBadgeStyle(
 }
 
 function renderEstimateReliabilityBadges(
-  item: ModularHomeEstimateSectionLineItem,
+  item: Pick<ModularHomeEstimateSectionLineItem, 'confidence' | 'lastUpdated' | 'priceSource'>,
   isTouchDevice: boolean,
 ) {
   return (
@@ -490,6 +490,14 @@ function createSummaryText(
     `- Price date: ${estimate.pricing.priceDate}`,
     `- Confidence: ${estimate.pricing.confidenceLabel}`,
     `- ${estimate.pricing.disclaimer}`,
+    `Estimate scenarios (${estimate.priceConfidenceVersion}):`,
+    ...estimate.scenarios.flatMap((scenario) => [
+      `- ${scenario.label}: ${scenario.isAdditiveAllowance ? '+' : ''}${formatHomeEstimateEur(scenario.amount)}; confidence ${getModularHomeEstimateConfidenceLabel(scenario.confidence)}; source ${getModularHomeEstimatePriceSourceLabel(scenario.priceSource)}`,
+      `  Includes: ${scenario.included.join(', ')}`,
+      `  Excludes: ${scenario.exclusions.join(', ')}`,
+      `  VAT/margin: ${scenario.vatMarginNote}`,
+      `  Final quote: ${scenario.finalQuoteRequirement}`,
+    ]),
     `Model: ${estimate.baseModel}`,
     `Size: ${normalizeSizeLabel(estimate.sizeLabel)}`,
     `Footprint: ${dimensions.footprintLabel}`,
@@ -514,17 +522,24 @@ function createSummaryText(
     `Facade: ${estimate.selectedOptions.facade}`,
     `Facade board orientation: ${estimate.selectedOptions.facadeBoardOrientation}`,
     `Facade board width: ${estimate.selectedOptions.facadeBoardWidth}`,
+    `Facade board profile: ${estimate.selectedOptions.facadeBoardProfile}`,
+    `Facade board spacing: ${estimate.selectedOptions.facadeBoardSpacing}`,
+    `Trim color: ${estimate.selectedOptions.trimColor}`,
     `Roof: ${estimate.selectedOptions.roof}`,
     `Roof edge color: ${estimate.selectedOptions.roofEdgeColor}`,
+    `Roof edge/gutter style: ${estimate.selectedOptions.roofGutterStyle}`,
     `Terrace: ${estimate.selectedOptions.terrace}`,
     `Finish level: ${estimate.selectedOptions.finishLevel}`,
     `Furniture package: ${estimate.selectedOptions.furniturePackage}`,
     `Furniture toggles: sofa ${estimate.selectedOptions.sofa}, table ${estimate.selectedOptions.table}, bed ${estimate.selectedOptions.bed}, kitchen ${estimate.selectedOptions.kitchenLine}, wardrobe ${estimate.selectedOptions.wardrobePlaceholder}`,
     `Interior wall finish: ${estimate.selectedOptions.interiorWallFinish}`,
     `Floor finish: ${estimate.selectedOptions.floorFinish}`,
+    `Interior floor style: ${estimate.selectedOptions.interiorFloorStyle}`,
+    `Wall panel style: ${estimate.selectedOptions.wallPanelStyle}`,
     `Window package: ${estimate.selectedOptions.windowPackage}`,
     `Window placement: ${estimate.selectedOptions.windowPlacement}`,
     `Window frame color: ${estimate.selectedOptions.windowFrameColor}`,
+    `Window frame type: ${estimate.selectedOptions.windowFrameType}`,
     `Door package: ${estimate.selectedOptions.doorPackage}`,
     `Door placement: ${estimate.selectedOptions.doorPlacement}`,
     'Component BOM v2:',
@@ -539,6 +554,8 @@ function createSummaryText(
     )),
     'Manufacturing BOM preview:',
     `- ${normalizeMiddleDotText(manufacturingBom.disclaimer)}`,
+    `- Component codes: ${manufacturingBom.componentCodes.join(', ')}`,
+    `- Assembly groups: ${manufacturingBom.assemblyGroups.map((group) => `${group.assemblyGroupId} (${group.quantity} ${group.unit})`).join(', ')}`,
     `- Panel groups: ${manufacturingBom.panelGroups.length}`,
     `- Approximate wall panels: ${manufacturingBom.panelGroups.reduce((total, group) => total + group.panelCount, 0)}`,
     `- Facade boarding: ${formatQuantityM2(manufacturingBom.facadeBoardAreaM2)} / ${formatQuantityLinearM(manufacturingBom.facadeBoardLinearM)}`,
@@ -550,20 +567,20 @@ function createSummaryText(
     `- Waste factor: ${formatWasteFactor(manufacturingBom.totalWasteFactor)}`,
     'Panel groups:',
     ...manufacturingBom.panelGroups.map((group) => (
-      `- ${group.label}: ${group.panelCount} panels, ${formatQuantityM2(group.areaM2)}, ${group.approximatePanelDimensions.join(' / ')}`
+      `- ${group.panelGroupId} / ${group.componentCode}: ${group.label}, ${group.panelCount} panels, ${formatQuantityM2(group.areaM2)}, ${group.approximatePanelDimensions.join(' / ')}`
     )),
     'Cut-list readiness groups:',
     ...manufacturingBom.panelSizeGroups.map((group) => (
-      `- Panel size: ${group.label}, ${group.panelCount} pcs, ${group.dimensions}, ${formatQuantityM2(group.areaM2)}`
+      `- Panel size: ${group.panelSizeGroupId}, ${group.label}, ${group.panelCount} pcs, ${group.dimensions}, ${formatQuantityM2(group.areaM2)}`
     )),
     ...manufacturingBom.boardLengthGroups.map((group) => (
-      `- Board length: ${group.label}, ${group.quantity} pcs x ${group.lengthM}m, ${formatQuantityLinearM(group.linearM)}`
+      `- Board length: ${group.boardLengthCategory}, ${group.label}, ${group.quantity} pcs x ${group.lengthM}m, ${formatQuantityLinearM(group.linearM)}`
     )),
     ...manufacturingBom.fastenerHardwarePlaceholders.map((item) => (
-      `- Hardware placeholder: ${item.label}, ${item.quantity} ${item.unit}, applies to ${item.appliesTo}`
+      `- Hardware group: ${item.hardwareGroupId}, ${item.label}, ${item.quantity} ${item.unit}, applies to ${item.appliesTo}`
     )),
     ...manufacturingBom.wasteFactorsByMaterial.map((item) => (
-      `- Waste factor: ${item.label}, ${formatWasteFactor(item.wasteFactor)}, ${item.material}`
+      `- Waste category: ${item.materialCategory}, ${item.label}, ${formatWasteFactor(item.wasteFactor)}, ${item.material}`
     )),
     'Window/door/terrace/interior schedules:',
     ...manufacturingBom.windowSchedule.map((item) => `- Window: ${item.label}, quantity ${item.quantity}, ${item.dimensions}`),
@@ -577,17 +594,24 @@ function createSummaryText(
     `- Facade package: ${estimate.selectedOptions.facade}`,
     `- Facade board orientation: ${estimate.selectedOptions.facadeBoardOrientation}`,
     `- Facade board width: ${estimate.selectedOptions.facadeBoardWidth}`,
+    `- Facade board profile: ${estimate.selectedOptions.facadeBoardProfile}`,
+    `- Facade board spacing: ${estimate.selectedOptions.facadeBoardSpacing}`,
+    `- Trim color: ${estimate.selectedOptions.trimColor}`,
     `- Roof package: ${estimate.selectedOptions.roof}`,
     `- Roof edge color: ${estimate.selectedOptions.roofEdgeColor}`,
+    `- Roof edge/gutter style: ${estimate.selectedOptions.roofGutterStyle}`,
     `- Terrace package: ${estimate.selectedOptions.terrace}`,
     `- Finish package: ${estimate.selectedOptions.finishLevel}`,
     `- Furniture package: ${estimate.selectedOptions.furniturePackage}`,
     `- Furniture toggles: sofa ${estimate.selectedOptions.sofa}, table ${estimate.selectedOptions.table}, bed ${estimate.selectedOptions.bed}, kitchen ${estimate.selectedOptions.kitchenLine}, wardrobe ${estimate.selectedOptions.wardrobePlaceholder}`,
     `- Interior wall finish: ${estimate.selectedOptions.interiorWallFinish}`,
     `- Floor finish: ${estimate.selectedOptions.floorFinish}`,
+    `- Interior floor style: ${estimate.selectedOptions.interiorFloorStyle}`,
+    `- Wall panel style: ${estimate.selectedOptions.wallPanelStyle}`,
     `- Window package: ${estimate.selectedOptions.windowPackage}`,
     `- Window placement: ${estimate.selectedOptions.windowPlacement}`,
     `- Window frame color: ${estimate.selectedOptions.windowFrameColor}`,
+    `- Window frame type: ${estimate.selectedOptions.windowFrameType}`,
     `- Door package: ${estimate.selectedOptions.doorPackage}`,
     `- Door placement: ${estimate.selectedOptions.doorPlacement}`,
     'Production readiness:',
@@ -646,8 +670,12 @@ export function ModularHomeProjectSummary({ config, estimate, isTouchDevice = fa
     ['Facade package', estimate.selectedOptions.facade],
     ['Facade board orientation', estimate.selectedOptions.facadeBoardOrientation],
     ['Facade board width', estimate.selectedOptions.facadeBoardWidth],
+    ['Facade board profile', estimate.selectedOptions.facadeBoardProfile],
+    ['Facade board spacing', estimate.selectedOptions.facadeBoardSpacing],
+    ['Trim color', estimate.selectedOptions.trimColor],
     ['Roof package', estimate.selectedOptions.roof],
     ['Roof edge color', estimate.selectedOptions.roofEdgeColor],
+    ['Roof edge/gutter style', estimate.selectedOptions.roofGutterStyle],
     ['Terrace package', estimate.selectedOptions.terrace],
     ['Finish package', estimate.selectedOptions.finishLevel],
     ['Furniture package', estimate.selectedOptions.furniturePackage],
@@ -658,9 +686,12 @@ export function ModularHomeProjectSummary({ config, estimate, isTouchDevice = fa
     ['Wardrobe placeholder', estimate.selectedOptions.wardrobePlaceholder],
     ['Interior wall finish', estimate.selectedOptions.interiorWallFinish],
     ['Floor finish', estimate.selectedOptions.floorFinish],
+    ['Interior floor style', estimate.selectedOptions.interiorFloorStyle],
+    ['Wall panel style', estimate.selectedOptions.wallPanelStyle],
     ['Window package', estimate.selectedOptions.windowPackage],
     ['Window placement', estimate.selectedOptions.windowPlacement],
     ['Window frame color', estimate.selectedOptions.windowFrameColor],
+    ['Window frame type', estimate.selectedOptions.windowFrameType],
     ['Door package', estimate.selectedOptions.doorPackage],
     ['Door placement', estimate.selectedOptions.doorPlacement],
   ] as const;
@@ -686,18 +717,20 @@ export function ModularHomeProjectSummary({ config, estimate, isTouchDevice = fa
     ['Build note', dimensions.buildCategoryNote],
     ['Layout', estimate.selectedOptions.layoutVariant],
     ['Facade', estimate.selectedOptions.facade],
-    ['Facade boards', `${estimate.selectedOptions.facadeBoardOrientation}, ${estimate.selectedOptions.facadeBoardWidth}`],
+    ['Facade boards', `${estimate.selectedOptions.facadeBoardProfile}, ${estimate.selectedOptions.facadeBoardSpacing}, ${estimate.selectedOptions.facadeBoardOrientation}, ${estimate.selectedOptions.facadeBoardWidth}`],
+    ['Trim color', estimate.selectedOptions.trimColor],
     ['Roof', estimate.selectedOptions.roof],
-    ['Roof edge', estimate.selectedOptions.roofEdgeColor],
+    ['Roof edge', `${estimate.selectedOptions.roofEdgeColor}, ${estimate.selectedOptions.roofGutterStyle}`],
     ['Terrace', estimate.selectedOptions.terrace],
     ['Finish', estimate.selectedOptions.finishLevel],
     ['Furniture package', estimate.selectedOptions.furniturePackage],
     ['Furniture toggles', `Sofa ${estimate.selectedOptions.sofa}, table ${estimate.selectedOptions.table}, bed ${estimate.selectedOptions.bed}, kitchen ${estimate.selectedOptions.kitchenLine}, wardrobe ${estimate.selectedOptions.wardrobePlaceholder}`],
     ['Interior walls', estimate.selectedOptions.interiorWallFinish],
-    ['Floor finish', estimate.selectedOptions.floorFinish],
+    ['Floor finish', `${estimate.selectedOptions.floorFinish}, ${estimate.selectedOptions.interiorFloorStyle}`],
+    ['Wall panel style', estimate.selectedOptions.wallPanelStyle],
     ['Window package', estimate.selectedOptions.windowPackage],
     ['Window placement', estimate.selectedOptions.windowPlacement],
-    ['Window frames', estimate.selectedOptions.windowFrameColor],
+    ['Window frames', `${estimate.selectedOptions.windowFrameColor}, ${estimate.selectedOptions.windowFrameType}`],
     ['Door package', estimate.selectedOptions.doorPackage],
     ['Door placement', estimate.selectedOptions.doorPlacement],
     ['Subtotal', formatHomeEstimateEur(estimate.subtotal)],
@@ -731,7 +764,7 @@ export function ModularHomeProjectSummary({ config, estimate, isTouchDevice = fa
     <section
       aria-label={`${estimate.baseModel} printable project summary`}
       data-home-project-summary="true"
-      data-home-project-summary-config={`${config.template}:${config.layoutVariant}:${config.facade}:${config.roof}:${config.terrace}:${config.finishLevel}:${config.windowPlacement}:${config.doorPlacement}:${config.facadeBoardOrientation}:${config.facadeBoardWidth}:${config.roofEdgeColor}:${config.windowFrameColor}:${config.interiorWallFinish}:${config.floorFinish}:${config.furniturePackage}:${config.sofa}:${config.table}:${config.bed}:${config.kitchenLine}:${config.wardrobePlaceholder}`}
+      data-home-project-summary-config={`${config.template}:${config.layoutVariant}:${config.facade}:${config.roof}:${config.terrace}:${config.finishLevel}:${config.windowPlacement}:${config.doorPlacement}:${config.facadeBoardOrientation}:${config.facadeBoardWidth}:${config.facadeBoardProfile}:${config.facadeBoardSpacing}:${config.trimColor}:${config.roofEdgeColor}:${config.roofGutterStyle}:${config.windowFrameColor}:${config.windowFrameType}:${config.interiorWallFinish}:${config.floorFinish}:${config.interiorFloorStyle}:${config.wallPanelStyle}:${config.furniturePackage}:${config.sofa}:${config.table}:${config.bed}:${config.kitchenLine}:${config.wardrobePlaceholder}`}
       data-home-project-summary-id={identity.projectId}
       data-home-project-summary-print-ready="true"
       onClick={stopSummaryEvent}
@@ -1149,6 +1182,8 @@ export function ModularHomeProjectSummary({ config, estimate, isTouchDevice = fa
         aria-label="Project summary manufacturing BOM preview"
         data-home-project-summary-manufacturing-bom="true"
         data-home-project-summary-manufacturing-bom-disclaimer={manufacturingBom.disclaimer}
+        data-home-project-summary-manufacturing-bom-assembly-count={manufacturingBom.assemblyGroups.length}
+        data-home-project-summary-manufacturing-bom-component-code-count={manufacturingBom.componentCodes.length}
         data-home-project-summary-manufacturing-bom-panel-count={manufacturingBom.panelGroups.reduce((total, group) => total + group.panelCount, 0)}
         data-home-project-summary-manufacturing-bom-window-count={manufacturingBom.windowSchedule.reduce((total, item) => total + item.quantity, 0)}
         data-home-project-summary-manufacturing-bom-door-count={manufacturingBom.doorSchedule.reduce((total, item) => total + item.quantity, 0)}
@@ -1202,6 +1237,8 @@ export function ModularHomeProjectSummary({ config, estimate, isTouchDevice = fa
         <div style={{ display: 'grid', gap: '5px', gridTemplateColumns: isTouchDevice ? '1fr' : 'repeat(2, minmax(0, 1fr))' }}>
           {([
             ['Panel groups', manufacturingBom.panelGroups.length.toString()],
+            ['Assembly groups', manufacturingBom.assemblyGroups.length.toString()],
+            ['Component codes', manufacturingBom.componentCodes.length.toString()],
             ['Facade boards', formatQuantityLinearM(manufacturingBom.facadeBoardLinearM)],
             ['Roof cassettes', formatQuantityM2(manufacturingBom.roofCassetteAreaM2)],
             ['Floor cassettes', formatQuantityM2(manufacturingBom.floorCassetteAreaM2)],
@@ -1231,7 +1268,7 @@ export function ModularHomeProjectSummary({ config, estimate, isTouchDevice = fa
           {manufacturingBom.panelGroups.slice(0, 5).map((group) => (
             <div
               key={group.id}
-              data-home-project-summary-manufacturing-panel-group={`${group.id}:${group.panelCount}:${group.areaM2}:${group.wasteFactor}`}
+              data-home-project-summary-manufacturing-panel-group={`${group.id}:${group.panelGroupId}:${group.componentCode}:${group.panelCount}:${group.areaM2}:${group.wasteFactor}`}
               data-home-project-summary-print-card="true"
               style={{
                 background: 'rgba(2, 6, 23, 0.2)',
@@ -1246,7 +1283,7 @@ export function ModularHomeProjectSummary({ config, estimate, isTouchDevice = fa
                 {group.label} · {group.panelCount} panels · {formatQuantityM2(group.areaM2)}
               </div>
               <div style={{ color: '#bbf7d0', fontSize: isTouchDevice ? '0.5rem' : '0.54rem', fontWeight: 760, lineHeight: 1.25 }}>
-                {group.approximatePanelDimensions.join(' / ')}
+                {group.panelGroupId} / {group.componentCode} / {group.approximatePanelDimensions.join(' / ')}
               </div>
             </div>
           ))}
@@ -1260,8 +1297,12 @@ export function ModularHomeProjectSummary({ config, estimate, isTouchDevice = fa
             ['Interior finish areas', manufacturingBom.interiorFinishAreas.map((item) => `${item.label}: ${formatQuantityM2(item.areaM2 ?? item.quantity)}`).join(' / ') || 'No interior finish'],
             ['Panel size groups', manufacturingBom.panelSizeGroups.slice(0, 4).map((group) => `${group.label}: ${group.panelCount} pcs ${group.dimensions}`).join(' / ')],
             ['Board length groups', manufacturingBom.boardLengthGroups.map((group) => `${group.label}: ${group.quantity} pcs x ${group.lengthM}m`).join(' / ')],
-            ['Hardware placeholders', manufacturingBom.fastenerHardwarePlaceholders.map((item) => `${item.label}: ${item.quantity} ${item.unit}`).join(' / ')],
-            ['Waste by material', manufacturingBom.wasteFactorsByMaterial.map((item) => `${item.label}: ${formatWasteFactor(item.wasteFactor)}`).join(' / ')],
+            ['Assembly groups', manufacturingBom.assemblyGroups.map((group) => `${group.assemblyGroupId}: ${group.quantity} ${group.unit}`).join(' / ')],
+            ['Component codes', manufacturingBom.componentCodes.slice(0, 10).join(' / ')],
+            ['Panel group IDs', manufacturingBom.panelGroups.map((group) => group.panelGroupId).join(' / ')],
+            ['Board categories', manufacturingBom.boardLengthGroups.map((group) => `${group.boardLengthCategory}: ${group.quantity}`).join(' / ')],
+            ['Hardware groups', manufacturingBom.fastenerHardwarePlaceholders.map((item) => `${item.hardwareGroupId}: ${item.quantity} ${item.unit}`).join(' / ')],
+            ['Waste categories', manufacturingBom.wasteFactorsByMaterial.map((item) => `${item.materialCategory}: ${formatWasteFactor(item.wasteFactor)}`).join(' / ')],
             ['Production batch notes', manufacturingBom.productionBatchNotes.slice(0, 2).join(' / ')],
             ['Transport package notes', manufacturingBom.transportPackageNotes.slice(0, 2).join(' / ')],
           ] as const).map(([label, value]) => (
@@ -1328,6 +1369,103 @@ export function ModularHomeProjectSummary({ config, estimate, isTouchDevice = fa
             >
               <span style={{ color: '#bae6fd', fontSize: isTouchDevice ? '0.56rem' : '0.6rem', fontWeight: 820 }}>{item.label}</span>
               <span style={{ color: '#fef3c7', fontSize: isTouchDevice ? '0.56rem' : '0.6rem', fontWeight: 950 }}>{formatHomeEstimateEur(item.amount)}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div
+        aria-label="Project summary estimate scenarios and price confidence v5"
+        data-home-project-summary-estimate-scenarios="true"
+        data-home-project-summary-estimate-scenario-count={estimate.scenarios.length}
+        data-home-project-summary-price-confidence-version={estimate.priceConfidenceVersion}
+        data-home-project-summary-print-card="true"
+        style={{
+          background: 'rgba(15, 23, 42, 0.44)',
+          border: '1px solid rgba(125, 211, 252, 0.18)',
+          borderRadius: '13px',
+          display: 'grid',
+          gap: '8px',
+          marginTop: isTouchDevice ? '9px' : '10px',
+          padding: isTouchDevice ? '8px' : '10px',
+        }}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', gap: '8px', alignItems: 'start' }}>
+          <div>
+            <div style={{ color: '#7dd3fc', fontSize: '0.56rem', fontWeight: 950, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+              Estimate scenarios
+            </div>
+            <div style={{ color: '#bae6fd', fontSize: isTouchDevice ? '0.54rem' : '0.58rem', fontWeight: 760, lineHeight: 1.28, marginTop: '3px' }}>
+              Price confidence {estimate.priceConfidenceVersion}: commercial scenarios for buyer discussion, not a final quote.
+            </div>
+          </div>
+          <div
+            style={{
+              background: 'rgba(251, 191, 36, 0.1)',
+              border: '1px solid rgba(251, 191, 36, 0.2)',
+              borderRadius: '999px',
+              color: '#fde68a',
+              fontSize: isTouchDevice ? '0.48rem' : '0.5rem',
+              fontWeight: 950,
+              lineHeight: 1,
+              padding: '5px 7px',
+              textTransform: 'uppercase',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            Final quote required
+          </div>
+        </div>
+
+        <div style={{ display: 'grid', gap: '6px', gridTemplateColumns: isTouchDevice ? '1fr' : 'repeat(2, minmax(0, 1fr))' }}>
+          {estimate.scenarios.map((scenario) => (
+            <div
+              key={scenario.id}
+              data-home-project-summary-estimate-scenario={`${scenario.id}:${scenario.amount}:${scenario.confidence}:${scenario.priceSource}`}
+              data-home-project-summary-print-card="true"
+              style={{
+                background: scenario.id === 'expected'
+                  ? 'rgba(34, 197, 94, 0.08)'
+                  : scenario.id === 'premium'
+                    ? 'rgba(251, 191, 36, 0.07)'
+                    : 'rgba(2, 6, 23, 0.2)',
+                border: scenario.id === 'expected'
+                  ? '1px solid rgba(34, 197, 94, 0.18)'
+                  : scenario.id === 'premium'
+                    ? '1px solid rgba(251, 191, 36, 0.16)'
+                    : '1px solid rgba(148, 163, 184, 0.12)',
+                borderRadius: '10px',
+                display: 'grid',
+                gap: '5px',
+                padding: isTouchDevice ? '7px 8px' : '8px 9px',
+              }}
+            >
+              <div style={{ alignItems: 'start', display: 'grid', gap: '8px', gridTemplateColumns: '1fr auto' }}>
+                <div>
+                  <div style={{ color: '#e0f2fe', fontSize: isTouchDevice ? '0.6rem' : '0.64rem', fontWeight: 940, lineHeight: 1.2 }}>
+                    {scenario.label}
+                  </div>
+                  <div style={{ color: '#93c5fd', fontSize: isTouchDevice ? '0.5rem' : '0.54rem', fontWeight: 760, lineHeight: 1.25, marginTop: '2px' }}>
+                    {scenario.description}
+                  </div>
+                </div>
+                <div style={{ color: '#fef3c7', fontSize: isTouchDevice ? '0.62rem' : '0.68rem', fontWeight: 980, textAlign: 'right', whiteSpace: 'nowrap' }}>
+                  {scenario.isAdditiveAllowance ? '+' : ''}{formatHomeEstimateEur(scenario.amount)}
+                </div>
+              </div>
+              {renderEstimateReliabilityBadges(scenario, isTouchDevice)}
+              <div style={{ color: '#dbeafe', fontSize: isTouchDevice ? '0.5rem' : '0.54rem', fontWeight: 760, lineHeight: 1.28 }}>
+                <strong style={{ color: '#bae6fd' }}>Includes:</strong> {scenario.included.slice(0, 3).join(' / ')}
+              </div>
+              <div style={{ color: '#fde68a', fontSize: isTouchDevice ? '0.5rem' : '0.54rem', fontWeight: 760, lineHeight: 1.28 }}>
+                <strong>Excludes:</strong> {scenario.exclusions.slice(0, 3).join(' / ')}
+              </div>
+              <div style={{ color: '#bae6fd', fontSize: isTouchDevice ? '0.48rem' : '0.52rem', fontWeight: 720, lineHeight: 1.28 }}>
+                {scenario.vatMarginNote}
+              </div>
+              <div style={{ color: '#fecaca', fontSize: isTouchDevice ? '0.48rem' : '0.52rem', fontWeight: 820, lineHeight: 1.28 }}>
+                {scenario.finalQuoteRequirement}
+              </div>
             </div>
           ))}
         </div>

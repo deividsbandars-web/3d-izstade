@@ -37,6 +37,7 @@
     "start:backend": "cd backend-server && npm install && npm start",
     "worker:start": "cd backend-server && npm run worker",
     "check:expo-publication-staging": "node scripts/check-expo-publication-staging.mjs",
+    "check:modular-home-quote-staging": "node scripts/check-modular-home-quote-staging.mjs",
     "check:expo-staging-browser-smoke": "node scripts/check-expo-staging-browser-smoke.mjs",
     "check:staging-readiness": "node scripts/check-staging-readiness.mjs"
   },

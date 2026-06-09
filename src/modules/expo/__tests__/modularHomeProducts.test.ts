@@ -505,18 +505,30 @@ const compactEmptyFurnitureComponentBom = calculateComponentBom({
 assert.equal(compactEmptyFurnitureComponentBom.groups.some((group) => group.category === 'furniturePackage'), false);
 
 const compactManufacturingBom = calculateManufacturingBomPreview(getDefaultHomeConfig('compact-timber-40'));
-assert.equal(compactManufacturingBom.disclaimer, 'Manufacturing BOM preview · production verification required');
+assert.equal(compactManufacturingBom.disclaimer, 'Manufacturing BOM preview · production cut list requires engineering verification.');
+assert.equal(compactManufacturingBom.componentCodes.length > 0, true);
+assert.equal(compactManufacturingBom.componentCodes.some((code) => code.startsWith('MHC-')), true);
+assert.equal(compactManufacturingBom.assemblyGroups.length >= 5, true);
+assert.equal(compactManufacturingBom.assemblyGroups.some((group) => group.assemblyGroupId === 'assembly-module-shells'), true);
+assert.equal(compactManufacturingBom.assemblyGroups.some((group) => group.assemblyGroupId === 'assembly-facade-boards'), true);
+assert.equal(compactManufacturingBom.assemblyGroups.every((group) => group.componentCodes.length > 0 || group.quantity === 0), true);
 assert.equal(compactManufacturingBom.panelGroups.length >= 3, true);
 assert.equal(compactManufacturingBom.panelGroups.every((group) => group.panelCount > 0), true);
 assert.equal(compactManufacturingBom.panelGroups.every((group) => group.approximatePanelDimensions.length === 2), true);
+assert.equal(compactManufacturingBom.panelGroups.every((group) => group.panelGroupId.startsWith('PG-') && group.componentCode.startsWith('MHC-')), true);
 assert.equal(compactManufacturingBom.panelSizeGroups.length >= compactManufacturingBom.panelGroups.length * 2, true);
 assert.equal(compactManufacturingBom.panelSizeGroups.every((group) => group.panelCount > 0 && group.dimensions.includes('m')), true);
+assert.equal(compactManufacturingBom.panelSizeGroups.every((group) => group.panelSizeGroupId.startsWith('PSG-') && group.panelGroupId.startsWith('PG-')), true);
 assert.equal(compactManufacturingBom.boardLengthGroups.length >= 2, true);
 assert.equal(compactManufacturingBom.boardLengthGroups.every((group) => group.quantity > 0 && group.lengthM > 0), true);
+assert.equal(compactManufacturingBom.boardLengthGroups.some((group) => group.boardLengthCategory === 'primary-elevation-boards'), true);
+assert.equal(compactManufacturingBom.boardLengthGroups.every((group) => group.assemblyGroupId === 'assembly-facade-boards' && group.componentCode.startsWith('MHC-')), true);
 assert.equal(compactManufacturingBom.fastenerHardwarePlaceholders.length >= 3, true);
 assert.equal(compactManufacturingBom.fastenerHardwarePlaceholders.every((item) => item.quantity > 0 && item.notes.length > 0), true);
+assert.equal(compactManufacturingBom.fastenerHardwarePlaceholders.every((item) => item.hardwareGroupId.startsWith('hardware-') && item.componentCode.length > 0), true);
 assert.equal(compactManufacturingBom.wasteFactorsByMaterial.some((item) => item.id === 'waste-facade-boarding'), true);
 assert.equal(compactManufacturingBom.wasteFactorsByMaterial.every((item) => item.wasteFactor >= 0), true);
+assert.equal(compactManufacturingBom.wasteFactorsByMaterial.every((item) => item.materialCategory.length > 0 && item.componentCode.length > 0), true);
 assert.equal(compactManufacturingBom.productionBatchNotes.some((note) => note.includes('Batch preview')), true);
 assert.equal(compactManufacturingBom.transportPackageNotes.some((note) => note.includes('Transport package preview')), true);
 assert.ok(compactManufacturingBom.facadeBoardLinearM > compactManufacturingBom.facadeBoardAreaM2);
@@ -525,6 +537,7 @@ assert.ok(compactManufacturingBom.floorCassetteAreaM2 > 0);
 assert.ok(compactManufacturingBom.windowSchedule.reduce((total, item) => total + item.quantity, 0) > 0);
 assert.ok(compactManufacturingBom.doorSchedule.reduce((total, item) => total + item.quantity, 0) > 0);
 assert.equal(compactManufacturingBom.productionVerificationNotes.some((note) => note.includes('not a factory-approved cut list')), true);
+assert.equal(compactManufacturingBom.productionVerificationNotes.some((note) => note.includes('Manufacturing BOM v2 adds component codes')), true);
 assert.equal(compactManufacturingBom.productionVerificationNotes.some((note) => note.includes('cut-list readiness aids only')), true);
 assert.equal(calculateManufacturingBomPreview({
   ...getDefaultHomeConfig('compact-timber-40'),
@@ -542,7 +555,7 @@ const compactDetailManufacturingBom = calculateManufacturingBomPreview({
 assert.ok(compactDetailManufacturingBom.facadeBoardLinearM > compactManufacturingBom.facadeBoardLinearM);
 assert.ok(compactDetailManufacturingBom.boardLengthGroups.reduce((total, group) => total + group.quantity, 0) > compactManufacturingBom.boardLengthGroups.reduce((total, group) => total + group.quantity, 0));
 assert.equal(compactDetailManufacturingBom.productionVerificationNotes.some((note) => note.includes('vertical orientation / narrow width')), true);
-assert.equal(compactDetailManufacturingBom.productionVerificationNotes.some((note) => note.includes('paintedWhite interior walls / oakLaminate floor finish')), true);
+assert.equal(compactDetailManufacturingBom.productionVerificationNotes.some((note) => note.includes('paintedWhite interior walls / plainPanel wall panel style / oakLaminate floor finish / utilityPlywood floor style')), true);
 
 const compactStandardWindowEstimate = calculateModularHomeEstimate({
   ...getDefaultHomeConfig('compact-timber-40'),
@@ -578,6 +591,37 @@ assert.equal(
 assert.equal(compactStandardWindowEstimate.vatEstimate.confidence, 'estimated');
 assert.equal(compactStandardWindowEstimate.vatEstimate.priceSource, 'internalPreview');
 assert.equal(compactStandardWindowEstimate.vatEstimate.lastUpdated, '2026-06-06');
+assert.equal(compactStandardWindowEstimate.priceConfidenceVersion, 'v5');
+assert.deepEqual(
+  compactStandardWindowEstimate.scenarios.map((scenario) => scenario.id),
+  ['base', 'expected', 'premium', 'siteDependentExtras'],
+);
+const compactBaseScenario = compactStandardWindowEstimate.scenarios.find((scenario) => scenario.id === 'base');
+const compactExpectedScenario = compactStandardWindowEstimate.scenarios.find((scenario) => scenario.id === 'expected');
+const compactPremiumScenario = compactStandardWindowEstimate.scenarios.find((scenario) => scenario.id === 'premium');
+const compactSiteExtrasScenario = compactStandardWindowEstimate.scenarios.find((scenario) => scenario.id === 'siteDependentExtras');
+assert.ok(compactBaseScenario);
+assert.ok(compactExpectedScenario);
+assert.ok(compactPremiumScenario);
+assert.ok(compactSiteExtrasScenario);
+assert.equal(compactBaseScenario.confidence, 'estimated');
+assert.equal(compactExpectedScenario.confidence, 'siteDependent');
+assert.equal(compactPremiumScenario.confidence, 'requiresEngineering');
+assert.equal(compactSiteExtrasScenario.confidence, 'siteDependent');
+assert.equal(compactExpectedScenario.amount, compactStandardWindowEstimate.estimatedTotal);
+assert.ok(compactBaseScenario.amount < compactExpectedScenario.amount);
+assert.ok(compactPremiumScenario.amount > compactExpectedScenario.amount);
+assert.equal(compactSiteExtrasScenario.amount, compactStandardWindowEstimate.optionalServicesTotal);
+assert.equal(compactSiteExtrasScenario.isAdditiveAllowance, true);
+assert.equal(compactStandardWindowEstimate.scenarios.every((scenario) => (
+  scenario.exclusions.length > 0
+  && scenario.finalQuoteRequirement.toLowerCase().includes('quote')
+  && scenario.included.length > 0
+  && scenario.notes.length > 0
+  && scenario.vatMarginNote.toLowerCase().includes('vat')
+  && scenario.lastUpdated === '2026-06-06'
+)), true);
+assert.equal(compactStandardWindowEstimate.scenarios.some((scenario) => scenario.priceSource === 'manualReviewRequired'), true);
 assert.deepEqual(
   compactStandardWindowEstimate.sections.map((section) => section.id),
   [
@@ -707,20 +751,40 @@ assert.equal(compactTerraceDoorPlacementEstimate.selectedOptions.doorPlacement, 
 const compactDetailEstimate = calculateModularHomeEstimate({
   ...getDefaultHomeConfig('compact-timber-40'),
   facadeBoardOrientation: 'vertical',
+  facadeBoardProfile: 'shadowGap',
+  facadeBoardSpacing: 'tight',
   facadeBoardWidth: 'narrow',
   floorFinish: 'oakLaminate',
+  interiorFloorStyle: 'warmPlank',
   interiorWallFinish: 'warmPanel',
   roofEdgeColor: 'bronze',
+  roofGutterStyle: 'boxGutter',
+  trimColor: 'bronze',
   windowFrameColor: 'graphite',
+  windowFrameType: 'deepReveal',
+  wallPanelStyle: 'ribbedPanel',
 });
 assert.ok(compactDetailEstimate.estimatedTotal > compactStandardWindowEstimate.estimatedTotal);
 assert.equal(compactDetailEstimate.selectedOptions.facadeBoardOrientation, 'Vertical boards');
 assert.equal(compactDetailEstimate.selectedOptions.facadeBoardWidth, 'Narrow boards');
+assert.equal(compactDetailEstimate.selectedOptions.facadeBoardProfile, 'Shadow-gap boards');
+assert.equal(compactDetailEstimate.selectedOptions.facadeBoardSpacing, 'Tight spacing');
+assert.equal(compactDetailEstimate.selectedOptions.trimColor, 'Bronze trim');
 assert.equal(compactDetailEstimate.selectedOptions.roofEdgeColor, 'Bronze roof edge');
+assert.equal(compactDetailEstimate.selectedOptions.roofGutterStyle, 'Box gutter');
 assert.equal(compactDetailEstimate.selectedOptions.windowFrameColor, 'Graphite frames');
+assert.equal(compactDetailEstimate.selectedOptions.windowFrameType, 'Deep reveal frame');
 assert.equal(compactDetailEstimate.selectedOptions.interiorWallFinish, 'Warm panel walls');
 assert.equal(compactDetailEstimate.selectedOptions.floorFinish, 'Oak laminate floor');
+assert.equal(compactDetailEstimate.selectedOptions.interiorFloorStyle, 'Warm plank lines');
+assert.equal(compactDetailEstimate.selectedOptions.wallPanelStyle, 'Ribbed wall panels');
 assert.equal(compactDetailEstimate.lineItems.some((item) => item.category === 'floorFinish' && item.amount > 0), true);
+assert.equal(compactDetailEstimate.lineItems.some((item) => item.category === 'facadeBoardProfile' && item.amount > 0), true);
+assert.equal(compactDetailEstimate.lineItems.some((item) => item.category === 'facadeBoardSpacing' && item.amount > 0), true);
+assert.equal(compactDetailEstimate.lineItems.some((item) => item.category === 'roofGutterStyle' && item.amount > 0), true);
+assert.equal(compactDetailEstimate.lineItems.some((item) => item.category === 'windowFrameType' && item.amount > 0), true);
+assert.equal(compactDetailEstimate.lineItems.some((item) => item.category === 'interiorFloorStyle' && item.amount > 0), true);
+assert.equal(compactDetailEstimate.lineItems.some((item) => item.category === 'wallPanelStyle' && item.amount > 0), true);
 
 const compactEmptyFurnitureEstimate = calculateModularHomeEstimate({
   ...getDefaultHomeConfig('compact-timber-40'),
@@ -1132,13 +1196,20 @@ assert.equal(decodedInvalidSaunaConfig.invalidKeys.includes('windowPlace'), true
 assert.equal(decodedInvalidSaunaConfig.invalidKeys.includes('door'), true);
 assert.equal(decodedInvalidSaunaConfig.invalidKeys.includes('doorPlace'), true);
 
-const decodedDetailConfig = decodeModularHomeConfigFromUrl('?homeDemo=1&model=compact&boardDir=v&boardWidth=narrow&roofEdge=bronze&frame=graphite&wall=warm&floor=oak&furniture=premium&sofa=1&table=0&bed=1&kitchen=1&wardrobe=0');
+const decodedDetailConfig = decodeModularHomeConfigFromUrl('?homeDemo=1&model=compact&boardDir=v&boardWidth=narrow&boardProfile=shadow&boardSpacing=tight&trim=bronze&roofEdge=bronze&gutter=box&frame=graphite&frameType=deep&wall=warm&floor=oak&floorStyle=warm&wallPanel=ribbed&furniture=premium&sofa=1&table=0&bed=1&kitchen=1&wardrobe=0');
 assert.equal(decodedDetailConfig.config.facadeBoardOrientation, 'vertical');
 assert.equal(decodedDetailConfig.config.facadeBoardWidth, 'narrow');
+assert.equal(decodedDetailConfig.config.facadeBoardProfile, 'shadowGap');
+assert.equal(decodedDetailConfig.config.facadeBoardSpacing, 'tight');
+assert.equal(decodedDetailConfig.config.trimColor, 'bronze');
 assert.equal(decodedDetailConfig.config.roofEdgeColor, 'bronze');
+assert.equal(decodedDetailConfig.config.roofGutterStyle, 'boxGutter');
 assert.equal(decodedDetailConfig.config.windowFrameColor, 'graphite');
+assert.equal(decodedDetailConfig.config.windowFrameType, 'deepReveal');
 assert.equal(decodedDetailConfig.config.interiorWallFinish, 'warmPanel');
 assert.equal(decodedDetailConfig.config.floorFinish, 'oakLaminate');
+assert.equal(decodedDetailConfig.config.interiorFloorStyle, 'warmPlank');
+assert.equal(decodedDetailConfig.config.wallPanelStyle, 'ribbedPanel');
 assert.equal(decodedDetailConfig.config.furniturePackage, 'premiumFurniture');
 assert.equal(decodedDetailConfig.config.sofa, 'enabled');
 assert.equal(decodedDetailConfig.config.table, 'disabled');
@@ -1147,7 +1218,7 @@ assert.equal(decodedDetailConfig.config.kitchenLine, 'enabled');
 assert.equal(decodedDetailConfig.config.wardrobePlaceholder, 'disabled');
 assert.equal(decodedDetailConfig.usedFallback, false);
 
-const decodedInvalidShareConfig = decodeModularHomeConfigFromUrl('?homeDemo=1&model=missing&layout=bad&facade=unknown&roof=bad&terrace=bad&finish=bad&furniture=bad&sofa=bad&table=bad&bed=bad&kitchen=bad&wardrobe=bad&windows=bad&windowPlace=bad&door=bad&doorPlace=bad&boardDir=bad&boardWidth=bad&roofEdge=bad&frame=bad&wall=bad&floor=bad&view=bad');
+const decodedInvalidShareConfig = decodeModularHomeConfigFromUrl('?homeDemo=1&model=missing&layout=bad&facade=unknown&roof=bad&terrace=bad&finish=bad&furniture=bad&sofa=bad&table=bad&bed=bad&kitchen=bad&wardrobe=bad&windows=bad&windowPlace=bad&door=bad&doorPlace=bad&boardDir=bad&boardWidth=bad&boardProfile=bad&boardSpacing=bad&trim=bad&roofEdge=bad&gutter=bad&frame=bad&frameType=bad&wall=bad&floor=bad&floorStyle=bad&wallPanel=bad&view=bad');
 assert.equal(decodedInvalidShareConfig.config.template, 'compactTimber40');
 assert.equal(decodedInvalidShareConfig.config.layoutVariant, 'oneBedroom');
 assert.equal(decodedInvalidShareConfig.productId, 'compact-timber-40');
@@ -1155,7 +1226,7 @@ assert.equal(decodedInvalidShareConfig.viewMode, 'exterior');
 assert.equal(decodedInvalidShareConfig.usedFallback, true);
 assert.deepEqual(
   [...decodedInvalidShareConfig.invalidKeys].sort(),
-  ['bed', 'boardDir', 'boardWidth', 'door', 'doorPlace', 'facade', 'finish', 'floor', 'frame', 'furniture', 'kitchen', 'layout', 'model', 'roof', 'roofEdge', 'sofa', 'table', 'terrace', 'view', 'wall', 'wardrobe', 'windowPlace', 'windows'].sort(),
+  ['bed', 'boardDir', 'boardProfile', 'boardSpacing', 'boardWidth', 'door', 'doorPlace', 'facade', 'finish', 'floor', 'floorStyle', 'frame', 'frameType', 'furniture', 'gutter', 'kitchen', 'layout', 'model', 'roof', 'roofEdge', 'sofa', 'table', 'terrace', 'trim', 'view', 'wall', 'wallPanel', 'wardrobe', 'windowPlace', 'windows'].sort(),
 );
 
 const shareUrl = createModularHomeShareUrl(
@@ -1170,7 +1241,7 @@ const shareUrl = createModularHomeShareUrl(
   'cutaway',
 );
 const shareUrlSearch = new URL(shareUrl).searchParams;
-assert.equal(shareUrl, 'https://example.test/expo-3d?homeDemo=1&model=family&layout=two&facade=dark&roof=flat&terrace=side&finish=standard&windows=panoramic&windowPlace=front&door=slider&doorPlace=terrace&boardDir=h&boardWidth=standard&roofEdge=graphite&frame=timber&wall=plywood&floor=plywood&furniture=standard&sofa=1&table=1&bed=1&kitchen=1&wardrobe=1&view=cutaway');
+assert.equal(shareUrl, 'https://example.test/expo-3d?homeDemo=1&model=family&layout=two&facade=dark&roof=flat&terrace=side&finish=standard&windows=panoramic&windowPlace=front&door=slider&doorPlace=terrace&boardDir=h&boardWidth=standard&boardProfile=square&boardSpacing=standard&trim=timber&roofEdge=graphite&gutter=minimal&frame=timber&frameType=standard&wall=plywood&floor=plywood&floorStyle=utility&wallPanel=plain&furniture=standard&sofa=1&table=1&bed=1&kitchen=1&wardrobe=1&view=cutaway');
 assert.equal(shareUrlSearch.get('old'), null);
 assert.equal(shareUrlSearch.get('model'), 'family');
 assert.equal(shareUrlSearch.get('layout'), 'two');
@@ -1178,10 +1249,17 @@ assert.equal(shareUrlSearch.get('windowPlace'), 'front');
 assert.equal(shareUrlSearch.get('doorPlace'), 'terrace');
 assert.equal(shareUrlSearch.get('boardDir'), 'h');
 assert.equal(shareUrlSearch.get('boardWidth'), 'standard');
+assert.equal(shareUrlSearch.get('boardProfile'), 'square');
+assert.equal(shareUrlSearch.get('boardSpacing'), 'standard');
+assert.equal(shareUrlSearch.get('trim'), 'timber');
 assert.equal(shareUrlSearch.get('roofEdge'), 'graphite');
+assert.equal(shareUrlSearch.get('gutter'), 'minimal');
 assert.equal(shareUrlSearch.get('frame'), 'timber');
+assert.equal(shareUrlSearch.get('frameType'), 'standard');
 assert.equal(shareUrlSearch.get('wall'), 'plywood');
 assert.equal(shareUrlSearch.get('floor'), 'plywood');
+assert.equal(shareUrlSearch.get('floorStyle'), 'utility');
+assert.equal(shareUrlSearch.get('wallPanel'), 'plain');
 assert.equal(shareUrlSearch.get('furniture'), 'standard');
 assert.equal(shareUrlSearch.get('sofa'), '1');
 assert.equal(shareUrlSearch.get('table'), '1');
