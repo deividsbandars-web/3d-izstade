@@ -4,6 +4,7 @@ import {
   type ModularHomeConfiguratorState,
   type ModularHomeDoorPackageOption,
   type ModularHomeDoorPlacementOption,
+  type ModularHomeDimensionPresetOption,
   type ModularHomeFacadeBoardOrientationOption,
   type ModularHomeFacadeBoardProfileOption,
   type ModularHomeFacadeBoardSpacingOption,
@@ -19,6 +20,7 @@ import {
   type ModularHomeRoofGutterStyleOption,
   type ModularHomeRoofEdgeColorOption,
   type ModularHomeRoofOption,
+  type ModularHomeRoomUseProfileOption,
   type ModularHomeTerraceOption,
   type ModularHomeTrimColorOption,
   type ModularHomeWindowFrameColorOption,
@@ -41,6 +43,7 @@ export type ModularHomeProductCategory =
   | 'saunaCabin';
 
 export type ModularHomeLayoutVariantId = ModularHomeLayoutVariantOption;
+export type ModularHomeDimensionPresetId = ModularHomeDimensionPresetOption;
 
 export type ModularHomeLayoutVariant = {
   id: ModularHomeLayoutVariantId;
@@ -185,6 +188,25 @@ export type ModularHomeProduct = {
   productionNotes: readonly string[];
 };
 
+export type ModularHomeDimensionPreset = {
+  id: ModularHomeDimensionPresetId;
+  productId: ModularHomeProductId;
+  label: string;
+  shortLabel: string;
+  floorAreaM2: number;
+  footprint: ModularHomeFootprintDimensions;
+  moduleCount: number;
+  transportModuleCount: number;
+  summaryNote: string;
+  estimateNote: string;
+  bomNote: string;
+  floorplanNote: string;
+  moduleDimensionNote: string;
+  windowCountDelta?: number;
+  doorCountDelta?: number;
+  terraceAreaMultiplier?: number;
+};
+
 export type ModularHomeModuleInstance = {
   instanceId: string;
   moduleId: ModularHomeModuleId;
@@ -253,6 +275,7 @@ export type ModularHomeConfigurationWarning = {
 export type ModularHomeProductionConstraint = ModularHomeConfigurationWarning;
 
 export type ModularHomeProductConfigSummary = {
+  dimensionPreset: string;
   doorPackage: string;
   doorPlacement: string;
   facade: string;
@@ -272,6 +295,7 @@ export type ModularHomeProductConfigSummary = {
   interiorFloorStyle: string;
   layoutVariant: string;
   product: string;
+  roomUseProfile: string;
   roof: string;
   roofEdgeColor: string;
   roofGutterStyle: string;
@@ -296,6 +320,9 @@ export type ModularHomeDimensionSummary = {
   buildCategoryNote: string;
   ceilingHeightLabel: string;
   ceilingHeightM: number;
+  dimensionPresetId: ModularHomeDimensionPresetId;
+  dimensionPresetLabel: string;
+  dimensionPresetNote: string;
   floorAreaLabel: string;
   floorAreaM2: number;
   footprintLabel: string;
@@ -307,11 +334,246 @@ export type ModularHomeDimensionSummary = {
   transportModuleCountLabel: string;
 };
 
+export type ModularHomeRoomUseProfile = {
+  id: ModularHomeRoomUseProfileOption;
+  label: string;
+  shortLabel: string;
+  summaryNote: string;
+  estimateNote: string;
+  bomNote: string;
+  interiorPackageNote: string;
+};
+
 const ALL_MODULAR_HOME_PRODUCT_IDS = [
   'compact-timber-40',
   'family-timber-80',
   'sauna-cabin-25',
 ] as const satisfies readonly ModularHomeProductId[];
+
+export const MODULAR_HOME_DIMENSION_PRESETS = [
+  {
+    id: 'compactStandard',
+    productId: 'compact-timber-40',
+    label: 'Compact standard',
+    shortLabel: 'Standard',
+    floorAreaM2: 40,
+    footprint: { widthM: 8, lengthM: 5 },
+    moduleCount: 2,
+    transportModuleCount: 2,
+    summaryNote: 'Baseline Compact Timber 40 footprint for balanced living and bedroom proportions.',
+    estimateNote: 'Compact standard keeps the baseline shell footprint, quantity takeoff and module allowance.',
+    bomNote: 'Preview BOM follows the baseline compact module panel and opening schedule.',
+    floorplanNote: 'Floorplan uses the standard compact shell width and bedroom depth.',
+    moduleDimensionNote: 'Two transport-ready compact modules in the baseline footprint.',
+  },
+  {
+    id: 'compactWideLiving',
+    productId: 'compact-timber-40',
+    label: 'Compact wide living',
+    shortLabel: 'Wide living',
+    floorAreaM2: 44,
+    footprint: { widthM: 8.8, lengthM: 5 },
+    moduleCount: 2,
+    transportModuleCount: 2,
+    summaryNote: 'Expands the living width for a more generous lounge and kitchen frontage.',
+    estimateNote: 'Wide living preset increases measured shell width but keeps the same two-module concept pending production engineering.',
+    bomNote: 'Preview BOM notes wider floor, roof and facade spans for living-zone review.',
+    floorplanNote: 'Floorplan widens the social zone while preserving the one-bedroom concept.',
+    moduleDimensionNote: 'Two compact modules with wider living-side shell assumptions.',
+    windowCountDelta: 1,
+  },
+  {
+    id: 'compactLongBedroom',
+    productId: 'compact-timber-40',
+    label: 'Compact long bedroom',
+    shortLabel: 'Long bedroom',
+    floorAreaM2: 42,
+    footprint: { widthM: 8, lengthM: 5.3 },
+    moduleCount: 2,
+    transportModuleCount: 2,
+    summaryNote: 'Stretches the private end of the compact plan to improve bedroom and storage depth.',
+    estimateNote: 'Long bedroom preset slightly increases shell length and private-room planning allowance.',
+    bomNote: 'Preview BOM notes longer floor, roof and interior partition runs for the bedroom-side module.',
+    floorplanNote: 'Floorplan lengthens the private zone and circulation allowance.',
+    moduleDimensionNote: 'Two compact modules with elongated bedroom-side shell assumptions.',
+  },
+  {
+    id: 'familyStandard',
+    productId: 'family-timber-80',
+    label: 'Family standard',
+    shortLabel: 'Standard',
+    floorAreaM2: 80,
+    footprint: { widthM: 11.2, lengthM: 7.2 },
+    moduleCount: 4,
+    transportModuleCount: 3,
+    summaryNote: 'Baseline family footprint with shared living zone and two-bedroom planning.',
+    estimateNote: 'Family standard keeps the baseline four-module planning and quantity takeoff.',
+    bomNote: 'Preview BOM follows the baseline family module schedule.',
+    floorplanNote: 'Floorplan uses the standard family shell depth and living width.',
+    moduleDimensionNote: 'Four baseline family modules with one shared service core.',
+  },
+  {
+    id: 'familyWideLiving',
+    productId: 'family-timber-80',
+    label: 'Family wide living',
+    shortLabel: 'Wide living',
+    floorAreaM2: 84,
+    footprint: { widthM: 11.8, lengthM: 7.2 },
+    moduleCount: 4,
+    transportModuleCount: 3,
+    summaryNote: 'Adds width to the family social zone for a broader living/kitchen frontage.',
+    estimateNote: 'Family wide living increases living-side shell width while staying within the same baseline module count.',
+    bomNote: 'Preview BOM notes broader living-shell panel sizes and roof spans for review.',
+    floorplanNote: 'Floorplan allocates more width to the shared living and dining zone.',
+    moduleDimensionNote: 'Four family modules with wider shared-living shell assumptions.',
+    windowCountDelta: 1,
+  },
+  {
+    id: 'familyExtraBedroomModule',
+    productId: 'family-timber-80',
+    label: 'Family extra bedroom module',
+    shortLabel: 'Extra module',
+    floorAreaM2: 96,
+    footprint: { widthM: 13.8, lengthM: 7.2 },
+    moduleCount: 5,
+    transportModuleCount: 4,
+    summaryNote: 'Extends the family plan with an extra module for a larger bedroom wing or flex room.',
+    estimateNote: 'Extra bedroom module preset raises measured area and module logistics assumptions for pre-quote discussion.',
+    bomNote: 'Preview BOM notes an extra module shell, broader opening schedule and longer service runs.',
+    floorplanNote: 'Floorplan grows into a five-module concept with more bedroom/flex area.',
+    moduleDimensionNote: 'Five-module concept; final module split and transport logic require engineering confirmation.',
+    windowCountDelta: 2,
+    doorCountDelta: 1,
+  },
+  {
+    id: 'saunaStandard',
+    productId: 'sauna-cabin-25',
+    label: 'Sauna standard',
+    shortLabel: 'Standard',
+    floorAreaM2: 25,
+    footprint: { widthM: 6.4, lengthM: 4.2 },
+    moduleCount: 2,
+    transportModuleCount: 1,
+    summaryNote: 'Baseline sauna cabin footprint for compact wellness and guest use.',
+    estimateNote: 'Sauna standard keeps the baseline shell and service-core planning allowance.',
+    bomNote: 'Preview BOM follows the baseline sauna shell and wellness-core schedule.',
+    floorplanNote: 'Floorplan uses the standard sauna shell depth and terrace-ready frontage.',
+    moduleDimensionNote: 'Single-transport two-module sauna/guest concept.',
+  },
+  {
+    id: 'saunaDeepTerrace',
+    productId: 'sauna-cabin-25',
+    label: 'Sauna deep terrace',
+    shortLabel: 'Deep terrace',
+    floorAreaM2: 27,
+    footprint: { widthM: 6.4, lengthM: 4.6 },
+    moduleCount: 2,
+    transportModuleCount: 1,
+    summaryNote: 'Adds depth to the wellness frontage for a deeper deck and rest transition zone.',
+    estimateNote: 'Deep terrace preset increases measured frontage depth and terrace review allowance without changing the core transport concept.',
+    bomNote: 'Preview BOM notes longer terrace interface, roof edge and deck support assumptions.',
+    floorplanNote: 'Floorplan deepens the front threshold and terrace connection.',
+    moduleDimensionNote: 'Two-module sauna concept with deeper terrace-facing frontage assumptions.',
+    terraceAreaMultiplier: 1.45,
+  },
+  {
+    id: 'saunaGuestWide',
+    productId: 'sauna-cabin-25',
+    label: 'Sauna guest wide',
+    shortLabel: 'Guest wide',
+    floorAreaM2: 29,
+    footprint: { widthM: 7, lengthM: 4.2 },
+    moduleCount: 2,
+    transportModuleCount: 1,
+    summaryNote: 'Widens the guest/rest side of the sauna cabin for a more comfortable overnight concept.',
+    estimateNote: 'Guest wide preset increases shell width and guest-room allowance while keeping the same two-module concept.',
+    bomNote: 'Preview BOM notes wider facade, floor and roof elements for guest-side review.',
+    floorplanNote: 'Floorplan widens the rest/guest zone while preserving the compact wellness core.',
+    moduleDimensionNote: 'Two-module sauna/guest concept with widened guest-side shell assumptions.',
+    windowCountDelta: 1,
+  },
+] as const satisfies readonly ModularHomeDimensionPreset[];
+
+export const MODULAR_HOME_ROOM_USE_PROFILES = [
+  {
+    id: 'bedroom',
+    label: 'Bedroom',
+    shortLabel: 'Bedroom',
+    summaryNote: 'Keeps the flexible room as a standard sleeping zone.',
+    estimateNote: 'Bedroom profile keeps the baseline partition and private room allowance.',
+    bomNote: 'Preview BOM keeps the flexible room under standard sleeping-room planning.',
+    interiorPackageNote: 'Interior package assumes bedroom-ready furnishing and wardrobe allowance.',
+  },
+  {
+    id: 'office',
+    label: 'Office',
+    shortLabel: 'Office',
+    summaryNote: 'Converts the flexible room into a focused work or study zone.',
+    estimateNote: 'Office profile keeps module pricing stable but flags desk/storage fit-out for review.',
+    bomNote: 'Preview BOM treats the flexible room as a work/study fit-out placeholder.',
+    interiorPackageNote: 'Interior package prioritizes desk, storage and lower sleeping emphasis.',
+  },
+  {
+    id: 'guestRoom',
+    label: 'Guest room',
+    shortLabel: 'Guest',
+    summaryNote: 'Uses the flexible room as an overnight guest or rental-ready room.',
+    estimateNote: 'Guest room profile keeps structure stable while guest fit-out remains preview-only.',
+    bomNote: 'Preview BOM notes guest-ready furnishing and partition planning only.',
+    interiorPackageNote: 'Interior package prioritizes bed, wardrobe and guest-ready circulation.',
+  },
+  {
+    id: 'storage',
+    label: 'Storage',
+    shortLabel: 'Storage',
+    summaryNote: 'Reduces the flexible room to storage, utility or support use.',
+    estimateNote: 'Storage profile softens finished-room assumptions and keeps fit-out light.',
+    bomNote: 'Preview BOM shifts the flexible room toward utility/storage placeholder scope.',
+    interiorPackageNote: 'Interior package softens loose furniture and increases utility/storage emphasis.',
+  },
+  {
+    id: 'largerLiving',
+    label: 'Larger living',
+    shortLabel: 'Living+',
+    summaryNote: 'Moves more floor area into the social zone for lounge, dining and open-plan use.',
+    estimateNote: 'Larger living profile flags partition reduction and open-plan fit-out review.',
+    bomNote: 'Preview BOM notes lighter partition scope and larger open living allowance.',
+    interiorPackageNote: 'Interior package prioritizes lounge/dining pieces over enclosed-room furniture.',
+  },
+  {
+    id: 'saunaRestRoom',
+    label: 'Sauna rest room',
+    shortLabel: 'Sauna rest',
+    summaryNote: 'Balances wellness use with a rest/lounge zone next to the sauna core.',
+    estimateNote: 'Sauna rest room profile keeps wellness pricing preview-only pending equipment review.',
+    bomNote: 'Preview BOM keeps wellness/rest-room notes and service-core assumptions.',
+    interiorPackageNote: 'Interior package prioritizes bench, lounge and wellness support placeholders.',
+  },
+] as const satisfies readonly ModularHomeRoomUseProfile[];
+
+const MODULAR_HOME_ROOM_USE_CHOICES_BY_LAYOUT = {
+  guestCabin: ['guestRoom', 'saunaRestRoom', 'storage'],
+  largeLiving: ['largerLiving', 'guestRoom', 'office', 'bedroom', 'storage'],
+  officeCabin: ['office', 'guestRoom', 'bedroom', 'storage'],
+  openStudio: ['largerLiving', 'office', 'guestRoom', 'bedroom'],
+  oneBedroom: ['bedroom', 'office', 'guestRoom', 'storage'],
+  saunaOnly: ['saunaRestRoom', 'storage', 'guestRoom'],
+  saunaRestRoom: ['saunaRestRoom', 'guestRoom', 'storage'],
+  threeBedroomCompact: ['bedroom', 'office', 'guestRoom', 'storage'],
+  twoBedroom: ['bedroom', 'office', 'guestRoom', 'storage', 'largerLiving'],
+} as const satisfies Record<ModularHomeLayoutVariantId, readonly ModularHomeRoomUseProfileOption[]>;
+
+const MODULAR_HOME_DEFAULT_ROOM_USE_PROFILE_BY_LAYOUT = {
+  guestCabin: 'guestRoom',
+  largeLiving: 'largerLiving',
+  officeCabin: 'office',
+  openStudio: 'largerLiving',
+  oneBedroom: 'bedroom',
+  saunaOnly: 'saunaRestRoom',
+  saunaRestRoom: 'saunaRestRoom',
+  threeBedroomCompact: 'bedroom',
+  twoBedroom: 'bedroom',
+} as const satisfies Record<ModularHomeLayoutVariantId, ModularHomeRoomUseProfileOption>;
 
 export const MODULAR_HOME_LAYOUT_VARIANTS = [
   {
@@ -902,6 +1164,8 @@ export const MODULAR_HOME_PRODUCTS = [
       interiorFloorStyle: 'utilityPlywood',
       interiorWallFinish: 'plywood',
       layoutVariant: 'oneBedroom',
+      dimensionPreset: 'compactStandard',
+      roomUseProfile: 'bedroom',
       roof: 'pitched',
       roofEdgeColor: 'graphite',
       roofGutterStyle: 'minimalEdge',
@@ -986,6 +1250,8 @@ export const MODULAR_HOME_PRODUCTS = [
       interiorFloorStyle: 'utilityPlywood',
       interiorWallFinish: 'plywood',
       layoutVariant: 'twoBedroom',
+      dimensionPreset: 'familyStandard',
+      roomUseProfile: 'bedroom',
       roof: 'pitched',
       roofEdgeColor: 'graphite',
       roofGutterStyle: 'minimalEdge',
@@ -1061,6 +1327,8 @@ export const MODULAR_HOME_PRODUCTS = [
       interiorFloorStyle: 'utilityPlywood',
       interiorWallFinish: 'plywood',
       layoutVariant: 'saunaRestRoom',
+      dimensionPreset: 'saunaStandard',
+      roomUseProfile: 'saunaRestRoom',
       roof: 'flat',
       roofEdgeColor: 'graphite',
       roofGutterStyle: 'minimalEdge',
@@ -2765,6 +3033,53 @@ export function getModulesForConfig(config: ModularHomeConfiguratorState): reado
     .filter((module): module is ModularHomeModule => Boolean(module));
 }
 
+export function getModularHomeDimensionPresetsForProduct(productId: string): readonly ModularHomeDimensionPreset[] {
+  return MODULAR_HOME_DIMENSION_PRESETS.filter((preset) => preset.productId === productId);
+}
+
+export function isModularHomeDimensionPresetCompatible(
+  productId: string,
+  dimensionPreset: string,
+): dimensionPreset is ModularHomeDimensionPresetId {
+  return getModularHomeDimensionPresetsForProduct(productId).some((preset) => preset.id === dimensionPreset);
+}
+
+export function getDefaultDimensionPresetForProduct(productId: string): ModularHomeDimensionPresetId {
+  const product = getModularHomeProduct(productId) ?? getModularHomeProduct(DEFAULT_MODULAR_HOME_PRODUCT_ID);
+  const defaultPreset = product?.defaultConfig.dimensionPreset;
+
+  if (product && defaultPreset && isModularHomeDimensionPresetCompatible(product.id, defaultPreset)) {
+    return defaultPreset;
+  }
+
+  return getModularHomeDimensionPresetsForProduct(product?.id ?? DEFAULT_MODULAR_HOME_PRODUCT_ID)[0]?.id ?? 'compactStandard';
+}
+
+export function getModularHomeDimensionPreset(
+  productId: string,
+  dimensionPreset?: string,
+): ModularHomeDimensionPreset | null {
+  const presets = getModularHomeDimensionPresetsForProduct(productId);
+  const selectedPreset = presets.find((preset) => preset.id === dimensionPreset);
+
+  return selectedPreset
+    ?? presets.find((preset) => preset.id === getDefaultDimensionPresetForProduct(productId))
+    ?? presets[0]
+    ?? null;
+}
+
+export function getModularHomeDimensionPresetForConfig(
+  config: ModularHomeConfiguratorState,
+): ModularHomeDimensionPreset | null {
+  const product = getProductForConfig(config);
+
+  if (!product) {
+    return getModularHomeDimensionPreset(DEFAULT_MODULAR_HOME_PRODUCT_ID, DEFAULT_MODULAR_HOME_CONFIG.dimensionPreset);
+  }
+
+  return getModularHomeDimensionPreset(product.id, config.dimensionPreset);
+}
+
 export function getDefaultHomeConfig(productId: string): ModularHomeConfiguratorState {
   const product = getModularHomeProduct(productId) ?? getModularHomeProduct(DEFAULT_MODULAR_HOME_PRODUCT_ID);
 
@@ -2817,6 +3132,73 @@ export function getModularHomeLayoutVariantForConfig(
   return getModularHomeLayoutVariant(product.id, config.layoutVariant);
 }
 
+export function getDefaultRoomUseProfileForLayout(
+  layoutVariantId: ModularHomeLayoutVariantId,
+): ModularHomeRoomUseProfileOption {
+  return MODULAR_HOME_DEFAULT_ROOM_USE_PROFILE_BY_LAYOUT[layoutVariantId];
+}
+
+export function getModularHomeRoomUseChoices(
+  productId: string,
+  layoutVariantId?: string,
+): readonly ModularHomeRoomUseProfile[] {
+  const product = getModularHomeProduct(productId);
+  const resolvedLayoutVariant = product
+    ? getModularHomeLayoutVariant(product.id, layoutVariantId)?.id
+    : null;
+
+  if (!resolvedLayoutVariant) {
+    return [];
+  }
+
+  const allowed = MODULAR_HOME_ROOM_USE_CHOICES_BY_LAYOUT[resolvedLayoutVariant] ?? [];
+  const profiles: ModularHomeRoomUseProfile[] = [];
+
+  for (const id of allowed) {
+    const profile = MODULAR_HOME_ROOM_USE_PROFILES.find((item) => item.id === id);
+    if (profile) {
+      profiles.push(profile);
+    }
+  }
+
+  return profiles;
+}
+
+export function getModularHomeRoomUseProfile(
+  productId: string,
+  layoutVariantId: string | undefined,
+  roomUseProfileId?: string,
+): ModularHomeRoomUseProfile | null {
+  const choices = getModularHomeRoomUseChoices(productId, layoutVariantId);
+  const selected = choices.find((profile) => profile.id === roomUseProfileId);
+
+  if (selected) {
+    return selected;
+  }
+
+  const fallbackId = layoutVariantId && layoutVariantId in MODULAR_HOME_DEFAULT_ROOM_USE_PROFILE_BY_LAYOUT
+    ? MODULAR_HOME_DEFAULT_ROOM_USE_PROFILE_BY_LAYOUT[layoutVariantId as ModularHomeLayoutVariantId]
+    : null;
+
+  return (
+    choices.find((profile) => profile.id === fallbackId)
+    ?? choices[0]
+    ?? null
+  );
+}
+
+export function getModularHomeRoomUseProfileForConfig(
+  config: ModularHomeConfiguratorState,
+): ModularHomeRoomUseProfile | null {
+  const product = getProductForConfig(config);
+
+  if (!product) {
+    return getModularHomeRoomUseProfile(DEFAULT_MODULAR_HOME_PRODUCT_ID, DEFAULT_MODULAR_HOME_CONFIG.layoutVariant, DEFAULT_MODULAR_HOME_CONFIG.roomUseProfile);
+  }
+
+  return getModularHomeRoomUseProfile(product.id, config.layoutVariant, config.roomUseProfile);
+}
+
 export function getModularHomeRoomMeasurements(
   productId: string,
   layoutVariant?: string,
@@ -2839,19 +3221,111 @@ export function getModularHomeRoomMeasurements(
   ));
 }
 
+function getAdjustedRoomMeasurementLabel(
+  room: ModularHomeRoomMeasurement,
+  roomUseProfileId: ModularHomeRoomUseProfileOption,
+): string {
+  if (room.productId === 'compact-timber-40') {
+    if (room.id === 'compact-open-studio-living-sleeping') {
+      const labelByProfile: Partial<Record<ModularHomeRoomUseProfileOption, string>> = {
+        bedroom: 'Studio sleeping / living',
+        guestRoom: 'Guest studio / lounge',
+        largerLiving: 'Larger living / lounge',
+        office: 'Studio office / lounge',
+      };
+      return labelByProfile[roomUseProfileId] ?? room.label;
+    }
+
+    if (room.id === 'compact-one-bedroom-bedroom' || room.id === 'compact-office-guest-room') {
+      const labelByProfile: Partial<Record<ModularHomeRoomUseProfileOption, string>> = {
+        bedroom: 'Bedroom',
+        guestRoom: 'Guest room',
+        office: 'Office',
+        storage: 'Storage room',
+      };
+      return labelByProfile[roomUseProfileId] ?? room.label;
+    }
+  }
+
+  if (room.productId === 'family-timber-80') {
+    if (room.id === 'family-two-bedroom-bedroom-2' || room.id === 'family-large-guest-room' || room.id === 'family-three-bedroom-office') {
+      const labelByProfile: Partial<Record<ModularHomeRoomUseProfileOption, string>> = {
+        bedroom: 'Bedroom',
+        guestRoom: 'Guest room',
+        office: 'Office',
+        storage: 'Storage / utility room',
+      };
+      return labelByProfile[roomUseProfileId] ?? room.label;
+    }
+
+    if ((room.id === 'family-two-bedroom-living-kitchen' || room.id === 'family-large-living-kitchen') && roomUseProfileId === 'largerLiving') {
+      return 'Larger living / kitchen';
+    }
+
+    if (room.id === 'family-two-bedroom-technical-storage' && roomUseProfileId === 'largerLiving') {
+      return 'Service / storage wall';
+    }
+  }
+
+  if (room.productId === 'sauna-cabin-25') {
+    if (room.id === 'sauna-only-sauna-room' || room.id === 'sauna-guest-rest-area' || room.id === 'sauna-rest-room-main') {
+      const labelByProfile: Partial<Record<ModularHomeRoomUseProfileOption, string>> = {
+        guestRoom: 'Guest room / rest area',
+        saunaRestRoom: 'Sauna rest room',
+        storage: 'Storage / support room',
+      };
+      return labelByProfile[roomUseProfileId] ?? room.label;
+    }
+  }
+
+  return room.label;
+}
+
+function getAdjustedRoomMeasurementNote(
+  room: ModularHomeRoomMeasurement,
+  roomUseProfile: ModularHomeRoomUseProfile | null,
+): string {
+  if (!roomUseProfile) {
+    return room.note;
+  }
+
+  if (
+    room.type === 'bedroom'
+    || room.type === 'living'
+    || room.type === 'storage'
+    || room.type === 'sauna'
+  ) {
+    return `${room.note} ${roomUseProfile.summaryNote}`;
+  }
+
+  return room.note;
+}
+
 export function getModularHomeRoomMeasurementSummary(
   config: ModularHomeConfiguratorState,
 ): ModularHomeRoomMeasurementSummary {
   const product = getProductForConfig(config) ?? getModularHomeProduct(DEFAULT_MODULAR_HOME_PRODUCT_ID) ?? null;
   const layoutVariant = product ? getModularHomeLayoutVariant(product.id, config.layoutVariant) : null;
+  const dimensionPreset = product ? getModularHomeDimensionPreset(product.id, config.dimensionPreset) : null;
+  const roomUseProfile = product && layoutVariant
+    ? getModularHomeRoomUseProfile(product.id, layoutVariant.id, config.roomUseProfile)
+    : null;
+  const baseFloorArea = product?.floorAreaM2 ?? 0;
+  const targetFloorArea = dimensionPreset?.floorAreaM2 ?? baseFloorArea;
+  const roomAreaScale = baseFloorArea > 0 ? targetFloorArea / baseFloorArea : 1;
   const rooms = product && layoutVariant
-    ? getModularHomeRoomMeasurements(product.id, layoutVariant.id)
+    ? getModularHomeRoomMeasurements(product.id, layoutVariant.id).map((room) => ({
+      ...room,
+      areaM2: Math.round(room.areaM2 * roomAreaScale * 10) / 10,
+      label: getAdjustedRoomMeasurementLabel(room, roomUseProfile?.id ?? getDefaultRoomUseProfileForLayout(layoutVariant.id)),
+      note: getAdjustedRoomMeasurementNote(room, roomUseProfile),
+    }))
     : [];
 
   return {
     ceilingHeightM: product?.ceilingHeightM ?? 0,
     disclaimer: MODULAR_HOME_ROOM_MEASUREMENT_DISCLAIMER,
-    floorAreaM2: product?.floorAreaM2 ?? 0,
+    floorAreaM2: targetFloorArea,
     layoutVariant,
     product,
     roomAreaTotalM2: Math.round(rooms.reduce((total, room) => total + room.areaM2, 0) * 10) / 10,
@@ -2949,6 +3423,14 @@ export function getModularHomeConfigurationWarnings(
     warnings.push(createNotAvailableWarning(
       `${config.layoutVariant}-layout-not-available`,
       `Layout variant ${config.layoutVariant} is not available for ${product.name}.`,
+      [],
+    ));
+  }
+
+  if (!isModularHomeDimensionPresetCompatible(product.id, config.dimensionPreset)) {
+    warnings.push(createNotAvailableWarning(
+      `${config.dimensionPreset}-dimension-preset-not-available`,
+      `Dimension preset ${config.dimensionPreset} is not available for ${product.name}.`,
       [],
     ));
   }
@@ -3097,8 +3579,11 @@ export function getSelectedModularHomeMaterials(config: ModularHomeConfiguratorS
 export function getModularHomeProductConfigSummary(config: ModularHomeConfiguratorState): ModularHomeProductConfigSummary {
   const product = getProductForConfig(config);
   const layoutVariant = product ? getModularHomeLayoutVariant(product.id, config.layoutVariant) : null;
+  const dimensionPreset = product ? getModularHomeDimensionPreset(product.id, config.dimensionPreset) : null;
 
   return {
+    dimensionPreset: dimensionPreset?.label ?? config.dimensionPreset,
+    roomUseProfile: getModularHomeRoomUseProfileForConfig(config)?.label ?? config.roomUseProfile,
     doorPackage: getOptionForGroupAndToken('doorPackage', config.doorPackage)?.label ?? config.doorPackage,
     doorPlacement: getOptionForGroupAndToken('doorPlacement', config.doorPlacement)?.label ?? config.doorPlacement,
     facade: getOptionForGroupAndToken('facade', config.facade)?.label ?? config.facade,
@@ -3135,20 +3620,27 @@ export function getModularHomeProductConfigSummary(config: ModularHomeConfigurat
 export function getModularHomeDimensionSummary(config: ModularHomeConfiguratorState): ModularHomeDimensionSummary {
   const product = getProductForConfig(config) ?? getModularHomeProduct(DEFAULT_MODULAR_HOME_PRODUCT_ID);
   const fallbackProduct = product ?? MODULAR_HOME_PRODUCTS[0];
+  const dimensionPreset = getModularHomeDimensionPreset(
+    fallbackProduct.id,
+    config.dimensionPreset,
+  ) ?? getModularHomeDimensionPresetsForProduct(fallbackProduct.id)[0] ?? MODULAR_HOME_DIMENSION_PRESETS[0];
 
   return {
     buildCategoryNote: fallbackProduct.buildCategoryNote,
     ceilingHeightLabel: `${formatMetricLength(fallbackProduct.ceilingHeightM)} ceiling height`,
     ceilingHeightM: fallbackProduct.ceilingHeightM,
-    floorAreaLabel: `${fallbackProduct.floorAreaM2} m\u00b2`,
-    floorAreaM2: fallbackProduct.floorAreaM2,
-    footprintLabel: `${formatMetricLength(fallbackProduct.footprint.widthM)} x ${formatMetricLength(fallbackProduct.footprint.lengthM)} footprint`,
-    footprintLengthM: fallbackProduct.footprint.lengthM,
-    footprintWidthM: fallbackProduct.footprint.widthM,
-    moduleCount: fallbackProduct.moduleCount,
-    moduleCountLabel: formatCountLabel(fallbackProduct.moduleCount, 'module', 'modules'),
-    transportModuleCount: fallbackProduct.transportModuleCount,
-    transportModuleCountLabel: formatCountLabel(fallbackProduct.transportModuleCount, 'transport module', 'transport modules'),
+    dimensionPresetId: dimensionPreset.id,
+    dimensionPresetLabel: dimensionPreset.label,
+    dimensionPresetNote: `${dimensionPreset.summaryNote} ${dimensionPreset.moduleDimensionNote}`,
+    floorAreaLabel: `${dimensionPreset.floorAreaM2} m\u00b2`,
+    floorAreaM2: dimensionPreset.floorAreaM2,
+    footprintLabel: `${formatMetricLength(dimensionPreset.footprint.widthM)} x ${formatMetricLength(dimensionPreset.footprint.lengthM)} footprint`,
+    footprintLengthM: dimensionPreset.footprint.lengthM,
+    footprintWidthM: dimensionPreset.footprint.widthM,
+    moduleCount: dimensionPreset.moduleCount,
+    moduleCountLabel: formatCountLabel(dimensionPreset.moduleCount, 'module', 'modules'),
+    transportModuleCount: dimensionPreset.transportModuleCount,
+    transportModuleCountLabel: formatCountLabel(dimensionPreset.transportModuleCount, 'transport module', 'transport modules'),
   };
 }
 

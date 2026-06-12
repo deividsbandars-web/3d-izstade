@@ -51,6 +51,7 @@ const FloorCalculator = lazy(() => import('./modules/calculators/FloorCalc'));
 const PlumbingCalculator = lazy(() => import('./modules/calculators/PlumbingCalc'));
 const CalculatorLeadInbox = lazy(() => import('./modules/calculators/CalculatorLeadInbox'));
 const ModularHomeQuoteReview = lazy(() => import('./pages/modularHome/ModularHomeQuoteReview'));
+const ModularHomeStudioPage = lazy(() => import('./pages/modularHome/ModularHomeStudioPage'));
 
 // Expo
 const Expo3D = lazy(() => import('./modules/expo/Expo3D'));
@@ -152,6 +153,7 @@ export default function App() {
           </Route>
           
           <Route path="/expo-3d" element={<Suspense fallback={null}><Expo3D /></Suspense>} />
+          <Route path="/modular-homes/studio" element={<Suspense fallback={null}><ModularHomeStudioPage /></Suspense>} />
           <Route path="/expo3d" element={<Navigate to="/expo-3d" replace />} />
           <Route path="/expo/booth/:id" element={<Suspense fallback={null}><BoothRoom /></Suspense>} />
           <Route path="/expo/booth/:id/stream" element={<Suspense fallback={null}><BoothStreamRoom /></Suspense>} />

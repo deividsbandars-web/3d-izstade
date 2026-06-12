@@ -41,6 +41,13 @@ export type ModularHomeFurniturePackageOption =
   | 'bathroomPackage'
   | 'saunaPackage';
 export type ModularHomeFurnitureToggleOption = 'disabled' | 'enabled';
+export type ModularHomeRoomUseProfileOption =
+  | 'bedroom'
+  | 'office'
+  | 'guestRoom'
+  | 'storage'
+  | 'largerLiving'
+  | 'saunaRestRoom';
 export type ModularHomeLayoutVariantOption =
   | 'openStudio'
   | 'oneBedroom'
@@ -51,11 +58,22 @@ export type ModularHomeLayoutVariantOption =
   | 'saunaOnly'
   | 'guestCabin'
   | 'saunaRestRoom';
+export type ModularHomeDimensionPresetOption =
+  | 'compactStandard'
+  | 'compactWideLiving'
+  | 'compactLongBedroom'
+  | 'familyStandard'
+  | 'familyWideLiving'
+  | 'familyExtraBedroomModule'
+  | 'saunaStandard'
+  | 'saunaDeepTerrace'
+  | 'saunaGuestWide';
 export type ModularHomeViewModeOption = 'exterior' | 'cutaway' | 'interior' | 'floorplan';
 
 export type ModularHomeConfiguratorState = {
   template: ModularHomeTemplateOption;
   layoutVariant: ModularHomeLayoutVariantOption;
+  dimensionPreset: ModularHomeDimensionPresetOption;
   facade: ModularHomeFacadeOption;
   roof: ModularHomeRoofOption;
   terrace: ModularHomeTerraceOption;
@@ -78,6 +96,7 @@ export type ModularHomeConfiguratorState = {
   interiorWallFinish: ModularHomeInteriorWallFinishOption;
   floorFinish: ModularHomeFloorFinishOption;
   furniturePackage: ModularHomeFurniturePackageOption;
+  roomUseProfile: ModularHomeRoomUseProfileOption;
   sofa: ModularHomeFurnitureToggleOption;
   table: ModularHomeFurnitureToggleOption;
   bed: ModularHomeFurnitureToggleOption;
@@ -275,6 +294,7 @@ export type ModularHomeFurnitureToggleKey = 'sofa' | 'table' | 'bed' | 'kitchenL
 export const DEFAULT_MODULAR_HOME_CONFIG: ModularHomeConfiguratorState = {
   template: DEFAULT_MODULAR_HOME_TEMPLATE_ID,
   layoutVariant: 'oneBedroom',
+  dimensionPreset: 'compactStandard',
   facade: 'naturalTimber',
   roof: 'pitched',
   terrace: 'frontDeck',
@@ -297,6 +317,7 @@ export const DEFAULT_MODULAR_HOME_CONFIG: ModularHomeConfiguratorState = {
   interiorWallFinish: 'plywood',
   floorFinish: 'plywood',
   furniturePackage: 'standardFurniture',
+  roomUseProfile: 'bedroom',
   sofa: 'enabled',
   table: 'enabled',
   bed: 'enabled',
@@ -443,6 +464,15 @@ export const MODULAR_HOME_FURNITURE_PACKAGE_OPTIONS = [
   { key: 'saunaPackage', label: 'Sauna package' },
 ] as const satisfies readonly ModularHomeConfiguratorOption<'furniturePackage'>[];
 
+export const MODULAR_HOME_ROOM_USE_PROFILE_OPTIONS = [
+  { key: 'bedroom', label: 'Bedroom' },
+  { key: 'office', label: 'Office' },
+  { key: 'guestRoom', label: 'Guest room' },
+  { key: 'storage', label: 'Storage' },
+  { key: 'largerLiving', label: 'Larger living' },
+  { key: 'saunaRestRoom', label: 'Sauna rest room' },
+] as const satisfies readonly ModularHomeConfiguratorOption<'roomUseProfile'>[];
+
 export const MODULAR_HOME_FURNITURE_TOGGLE_OPTIONS = [
   { key: 'disabled', label: 'Off' },
   { key: 'enabled', label: 'On' },
@@ -459,6 +489,18 @@ export const MODULAR_HOME_LAYOUT_VARIANT_OPTIONS = [
   { key: 'guestCabin', label: 'Guest cabin' },
   { key: 'saunaRestRoom', label: 'Sauna + rest room' },
 ] as const satisfies readonly ModularHomeConfiguratorOption<'layoutVariant'>[];
+
+export const MODULAR_HOME_DIMENSION_PRESET_OPTIONS = [
+  { key: 'compactStandard', label: 'Compact standard' },
+  { key: 'compactWideLiving', label: 'Compact wide living' },
+  { key: 'compactLongBedroom', label: 'Compact long bedroom' },
+  { key: 'familyStandard', label: 'Family standard' },
+  { key: 'familyWideLiving', label: 'Family wide living' },
+  { key: 'familyExtraBedroomModule', label: 'Family extra bedroom module' },
+  { key: 'saunaStandard', label: 'Sauna standard' },
+  { key: 'saunaDeepTerrace', label: 'Sauna deep terrace' },
+  { key: 'saunaGuestWide', label: 'Sauna guest wide' },
+] as const satisfies readonly ModularHomeConfiguratorOption<'dimensionPreset'>[];
 
 export const DEFAULT_MODULAR_HOME_VIEW_MODE: ModularHomeViewModeOption = 'exterior';
 
@@ -487,6 +529,8 @@ export const MODULAR_HOME_VIEW_MODE_OPTIONS = [
 
 export const MODULAR_HOME_CONFIGURATOR_GROUPS = [
   { key: 'template', label: 'Home template', options: MODULAR_HOME_TEMPLATE_OPTIONS },
+  { key: 'dimensionPreset', label: 'Dimension preset', options: MODULAR_HOME_DIMENSION_PRESET_OPTIONS },
+  { key: 'roomUseProfile', label: 'Room use profile', options: MODULAR_HOME_ROOM_USE_PROFILE_OPTIONS },
   { key: 'facade', label: 'Facade', options: MODULAR_HOME_FACADE_OPTIONS },
   { key: 'roof', label: 'Roof', options: MODULAR_HOME_ROOF_OPTIONS },
   { key: 'terrace', label: 'Terrace', options: MODULAR_HOME_TERRACE_OPTIONS },
@@ -1127,6 +1171,8 @@ export function getModularHomeConfigSummary(config: ModularHomeConfiguratorState
   return {
     template: getModularHomeConfigLabel('template', config.template),
     layoutVariant: getModularHomeConfigLabel('layoutVariant', config.layoutVariant),
+    dimensionPreset: getModularHomeConfigLabel('dimensionPreset', config.dimensionPreset),
+    roomUseProfile: getModularHomeConfigLabel('roomUseProfile', config.roomUseProfile),
     facade: getModularHomeConfigLabel('facade', config.facade),
     roof: getModularHomeConfigLabel('roof', config.roof),
     terrace: getModularHomeConfigLabel('terrace', config.terrace),

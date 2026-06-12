@@ -1,5 +1,6 @@
 import type {
   ModularHomeConfiguratorState,
+  ModularHomeDimensionPresetOption,
   ModularHomeDoorPackageOption,
   ModularHomeDoorPlacementOption,
   ModularHomeFacadeBoardOrientationOption,
@@ -27,11 +28,14 @@ import type {
   ModularHomeWallPanelStyleOption,
 } from './modularHomeConfigurator';
 import {
+  getDefaultDimensionPresetForProduct,
   getDefaultHomeConfig,
   getDefaultLayoutVariantForProduct,
+  getModularHomeDimensionPreset,
   getModularHomeOptionChoices,
   getModularHomeProduct,
   getModularHomeProductForConfig,
+  isModularHomeDimensionPresetCompatible,
   isModularHomeLayoutVariantCompatible,
   type ModularHomeOptionGroup,
   type ModularHomeProductId,
@@ -58,7 +62,7 @@ export type ModularHomeShareDecodeResult = {
 const FALLBACK_PRODUCT_ID = 'compact-timber-40' satisfies ModularHomeProductId;
 const FALLBACK_VIEW_MODE = 'exterior' satisfies ModularHomeViewModeOption;
 
-const SHARE_PARAM_KEYS = ['model', 'homeModel', 'layout', 'layoutVariant', 'facade', 'roof', 'terrace', 'finish', 'furniture', 'furniturePackage', 'sofa', 'table', 'bed', 'kitchen', 'kitchenLine', 'wardrobe', 'wardrobePlaceholder', 'windows', 'windowPlacement', 'windowPlace', 'door', 'doorPlacement', 'doorPlace', 'boardDir', 'boardOrientation', 'boardWidth', 'boardProfile', 'boardSpacing', 'trim', 'trimColor', 'roofEdge', 'gutter', 'roofGutter', 'windowFrame', 'frame', 'frameType', 'windowFrameType', 'wallFinish', 'wall', 'floorFinish', 'floor', 'floorStyle', 'wallPanel', 'wallPanelStyle', 'view'] as const;
+const SHARE_PARAM_KEYS = ['model', 'homeModel', 'layout', 'layoutVariant', 'dims', 'dimensionPreset', 'facade', 'roof', 'terrace', 'finish', 'furniture', 'furniturePackage', 'sofa', 'table', 'bed', 'kitchen', 'kitchenLine', 'wardrobe', 'wardrobePlaceholder', 'windows', 'windowPlacement', 'windowPlace', 'door', 'doorPlacement', 'doorPlace', 'boardDir', 'boardOrientation', 'boardWidth', 'boardProfile', 'boardSpacing', 'trim', 'trimColor', 'roofEdge', 'gutter', 'roofGutter', 'windowFrame', 'frame', 'frameType', 'windowFrameType', 'wallFinish', 'wall', 'floorFinish', 'floor', 'floorStyle', 'wallPanel', 'wallPanelStyle', 'view'] as const;
 
 const PRODUCT_ALIAS_TO_ID: Record<string, ModularHomeProductId> = {
   compact: 'compact-timber-40',
@@ -318,6 +322,26 @@ const LAYOUT_ALIAS_TO_TOKEN: Record<string, ModularHomeLayoutVariantOption> = {
   twoBedroom: 'twoBedroom',
 };
 
+const DIMENSION_PRESET_ALIAS_TO_TOKEN: Record<string, ModularHomeDimensionPresetOption> = {
+  compactLong: 'compactLongBedroom',
+  compactLongBedroom: 'compactLongBedroom',
+  compactStandard: 'compactStandard',
+  compactWide: 'compactWideLiving',
+  compactWideLiving: 'compactWideLiving',
+  deep: 'saunaDeepTerrace',
+  extra: 'familyExtraBedroomModule',
+  familyExtra: 'familyExtraBedroomModule',
+  familyExtraBedroomModule: 'familyExtraBedroomModule',
+  familyStandard: 'familyStandard',
+  familyWide: 'familyWideLiving',
+  familyWideLiving: 'familyWideLiving',
+  guestWide: 'saunaGuestWide',
+  long: 'compactLongBedroom',
+  saunaDeepTerrace: 'saunaDeepTerrace',
+  saunaGuestWide: 'saunaGuestWide',
+  saunaStandard: 'saunaStandard',
+};
+
 const VIEW_ALIAS_TO_TOKEN: Record<string, ModularHomeViewModeOption> = {
   cutaway: 'cutaway',
   exterior: 'exterior',
@@ -484,6 +508,18 @@ const LAYOUT_TOKEN_TO_ALIAS: Record<ModularHomeLayoutVariantOption, string> = {
   twoBedroom: 'two',
 };
 
+const DIMENSION_PRESET_TOKEN_TO_ALIAS: Record<ModularHomeDimensionPresetOption, string> = {
+  compactLongBedroom: 'long',
+  compactStandard: 'standard',
+  compactWideLiving: 'wide',
+  familyExtraBedroomModule: 'extra',
+  familyStandard: 'standard',
+  familyWideLiving: 'wide',
+  saunaDeepTerrace: 'deep',
+  saunaGuestWide: 'guestwide',
+  saunaStandard: 'standard',
+};
+
 function readSearchInput(input?: ModularHomeShareSearchInput): string {
   if (input instanceof URLSearchParams) {
     return input.toString();
@@ -622,6 +658,44 @@ function decodeLayoutVariant(
   return { invalid: false, paramKey, token };
 }
 
+function decodeDimensionPreset(
+  params: URLSearchParams,
+  productId: ModularHomeProductId,
+): {
+  invalid: boolean;
+  paramKey: 'dims' | 'dimensionPreset';
+  token?: ModularHomeDimensionPresetOption;
+} {
+  const paramKey = params.has('dimensionPreset') ? 'dimensionPreset' : 'dims';
+  const rawValue = params.get(paramKey);
+
+  if (!rawValue) {
+    return { invalid: false, paramKey };
+  }
+
+  let token = getAliasValue(DIMENSION_PRESET_ALIAS_TO_TOKEN, rawValue);
+
+  if (!token) {
+    const normalized = rawValue.trim().toLowerCase();
+
+    if (normalized === 'standard' || normalized === 'std') {
+      token = getDefaultDimensionPresetForProduct(productId);
+    } else if (normalized === 'wide') {
+      token = productId === 'family-timber-80'
+        ? 'familyWideLiving'
+        : productId === 'sauna-cabin-25'
+          ? 'saunaGuestWide'
+          : 'compactWideLiving';
+    }
+  }
+
+  if (!token || !isModularHomeDimensionPresetCompatible(productId, token)) {
+    return { invalid: true, paramKey };
+  }
+
+  return { invalid: false, paramKey, token };
+}
+
 export function decodeModularHomeConfigFromUrl(
   input?: ModularHomeShareSearchInput,
 ): ModularHomeShareDecodeResult {
@@ -682,13 +756,21 @@ export function decodeModularHomeConfigFromUrl(
   const kitchenLine = decodeOption(params, kitchenLineParamKey, productResult.productId, 'kitchenLine', FURNITURE_TOGGLE_ALIAS_TO_TOKEN);
   const wardrobePlaceholder = decodeOption(params, wardrobeParamKey, productResult.productId, 'wardrobePlaceholder', FURNITURE_TOGGLE_ALIAS_TO_TOKEN);
   const layoutVariant = decodeLayoutVariant(params, productResult.productId);
+  const dimensionPreset = decodeDimensionPreset(params, productResult.productId);
 
   config.layoutVariant = getDefaultLayoutVariantForProduct(productResult.productId);
+  config.dimensionPreset = getDefaultDimensionPresetForProduct(productResult.productId);
 
   if (layoutVariant.token) {
     config.layoutVariant = layoutVariant.token;
   } else if (layoutVariant.invalid) {
     invalidKeys.push(layoutVariant.paramKey);
+  }
+
+  if (dimensionPreset.token) {
+    config.dimensionPreset = dimensionPreset.token;
+  } else if (dimensionPreset.invalid) {
+    invalidKeys.push(dimensionPreset.paramKey);
   }
 
   if (facade.token) {
@@ -874,6 +956,8 @@ export function encodeModularHomeConfigToSearchParams(
   params.set('homeDemo', '1');
   params.set('model', PRODUCT_ID_TO_ALIAS[productId] ?? productId);
   params.set('layout', LAYOUT_TOKEN_TO_ALIAS[config.layoutVariant]);
+  const resolvedDimensionPreset = getModularHomeDimensionPreset(productId, config.dimensionPreset);
+  params.set('dims', DIMENSION_PRESET_TOKEN_TO_ALIAS[resolvedDimensionPreset?.id ?? getDefaultDimensionPresetForProduct(productId)]);
   params.set('facade', FACADE_TOKEN_TO_ALIAS[config.facade]);
   params.set('roof', ROOF_TOKEN_TO_ALIAS[config.roof]);
   params.set('terrace', TERRACE_TOKEN_TO_ALIAS[config.terrace]);

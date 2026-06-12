@@ -46,6 +46,7 @@ import {
 } from './modularHomeConfigurator';
 import { getModularHomeTemplate } from './modularHomeConfig';
 import {
+  getModularHomeRoomUseProfileForConfig,
   getModularHomeProductForConfig,
   getModularHomeLayoutVariantForConfig,
   getModulesForConfig,
@@ -289,6 +290,7 @@ function createWall(
 
 function getInteriorZoneLabel(
   layoutVariant: ModularHomeLayoutVariant | null,
+  roomUseProfileId: string | undefined,
   zoneKey: string,
   fallback: string,
 ): string {
@@ -342,7 +344,44 @@ function getInteriorZoneLabel(
     },
   };
 
-  return labelsByVariant[layoutVariant.id]?.[zoneKey] ?? fallback;
+  const label = labelsByVariant[layoutVariant.id]?.[zoneKey] ?? fallback;
+
+  if (zoneKey === 'compactBedroom') {
+    if (roomUseProfileId === 'office') return 'Office';
+    if (roomUseProfileId === 'guestRoom') return 'Guest room';
+    if (roomUseProfileId === 'storage') return 'Storage room';
+    if (roomUseProfileId === 'bedroom') return 'Bedroom';
+  }
+
+  if (zoneKey === 'compactLiving' && roomUseProfileId === 'largerLiving') {
+    return 'Larger living / lounge';
+  }
+
+  if (zoneKey === 'familyBedroomB') {
+    if (roomUseProfileId === 'office') return 'Office';
+    if (roomUseProfileId === 'guestRoom') return 'Guest room';
+    if (roomUseProfileId === 'storage') return 'Storage / utility room';
+    if (roomUseProfileId === 'bedroom') return 'Bedroom 2';
+  }
+
+  if (zoneKey === 'familyStorage') {
+    if (roomUseProfileId === 'office') return 'Office / utility';
+    if (roomUseProfileId === 'guestRoom') return 'Guest room / storage';
+    if (roomUseProfileId === 'storage') return 'Utility storage';
+    if (roomUseProfileId === 'largerLiving') return 'Service / storage wall';
+  }
+
+  if (zoneKey === 'familyLiving' && roomUseProfileId === 'largerLiving') {
+    return 'Larger living / kitchen';
+  }
+
+  if (zoneKey === 'saunaPrimary') {
+    if (roomUseProfileId === 'guestRoom') return 'Guest room / rest area';
+    if (roomUseProfileId === 'storage') return 'Storage / support room';
+    if (roomUseProfileId === 'saunaRestRoom') return 'Sauna rest room';
+  }
+
+  return label;
 }
 
 function createInteriorPlan(
@@ -350,6 +389,7 @@ function createInteriorPlan(
   blocks: readonly ModuleLayoutBlock[],
   bounds: FootprintBounds,
   layoutVariant: ModularHomeLayoutVariant | null,
+  roomUseProfileId: string | undefined,
   terraceDepth: number,
   terraceEnabled: boolean,
 ): InteriorPlan {
@@ -363,18 +403,18 @@ function createInteriorPlan(
     const bathroom = getBlockByInstance(blocks, 'bathroom-core-module-family');
 
     if (living) {
-      zones.push(createZoneInBlock(living, 'family-living-kitchen', getInteriorZoneLabel(layoutVariant, 'familyLiving', 'Living / kitchen'), INTERIOR_ZONE_COLORS.living, -0.08, 0.03, 0.78, 0.66));
-      zones.push(createZoneInBlock(living, 'family-technical-storage', getInteriorZoneLabel(layoutVariant, 'familyStorage', 'Technical / storage'), INTERIOR_ZONE_COLORS.storage, 0.34, -0.32, 0.28, 0.24));
+      zones.push(createZoneInBlock(living, 'family-living-kitchen', getInteriorZoneLabel(layoutVariant, roomUseProfileId, 'familyLiving', 'Living / kitchen'), INTERIOR_ZONE_COLORS.living, -0.08, 0.03, 0.78, 0.66));
+      zones.push(createZoneInBlock(living, 'family-technical-storage', getInteriorZoneLabel(layoutVariant, roomUseProfileId, 'familyStorage', 'Technical / storage'), INTERIOR_ZONE_COLORS.storage, 0.34, -0.32, 0.28, 0.24));
       walls.push(createWall('family-storage-side-wall', living.x + living.width * 0.2, living.z - living.depth * 0.29, 0.64, living.depth * 0.33));
       walls.push(createWall('family-storage-front-wall', living.x + living.width * 0.34, living.z - living.depth * 0.15, living.width * 0.28, 0.64));
     }
 
     if (bedroomA) {
-      zones.push(createZoneInBlock(bedroomA, 'family-bedroom-1', getInteriorZoneLabel(layoutVariant, 'familyBedroomA', 'Bedroom 1'), INTERIOR_ZONE_COLORS.bedroom, 0, 0, 0.72, 0.68));
+      zones.push(createZoneInBlock(bedroomA, 'family-bedroom-1', getInteriorZoneLabel(layoutVariant, roomUseProfileId, 'familyBedroomA', 'Bedroom 1'), INTERIOR_ZONE_COLORS.bedroom, 0, 0, 0.72, 0.68));
     }
 
     if (bedroomB) {
-      zones.push(createZoneInBlock(bedroomB, 'family-bedroom-2', getInteriorZoneLabel(layoutVariant, 'familyBedroomB', 'Bedroom 2'), INTERIOR_ZONE_COLORS.bedroom, 0, 0, 0.72, 0.68));
+      zones.push(createZoneInBlock(bedroomB, 'family-bedroom-2', getInteriorZoneLabel(layoutVariant, roomUseProfileId, 'familyBedroomB', 'Bedroom 2'), INTERIOR_ZONE_COLORS.bedroom, 0, 0, 0.72, 0.68));
     }
 
     if (bathroom) {
@@ -389,14 +429,14 @@ function createInteriorPlan(
     const service = getBlockByInstance(blocks, 'bathroom-core-module-sauna');
 
     if (sauna) {
-      zones.push(createZoneInBlock(sauna, 'sauna-rest-area', getInteriorZoneLabel(layoutVariant, 'saunaPrimary', 'Sauna / rest area'), INTERIOR_ZONE_COLORS.sauna, -0.12, -0.1, 0.66, 0.56));
-      zones.push(createZoneInBlock(sauna, 'sauna-changing-zone', getInteriorZoneLabel(layoutVariant, 'saunaSecondary', 'Changing zone'), INTERIOR_ZONE_COLORS.changing, 0.22, 0.32, 0.36, 0.26));
+      zones.push(createZoneInBlock(sauna, 'sauna-rest-area', getInteriorZoneLabel(layoutVariant, roomUseProfileId, 'saunaPrimary', 'Sauna / rest area'), INTERIOR_ZONE_COLORS.sauna, -0.12, -0.1, 0.66, 0.56));
+      zones.push(createZoneInBlock(sauna, 'sauna-changing-zone', getInteriorZoneLabel(layoutVariant, roomUseProfileId, 'saunaSecondary', 'Changing zone'), INTERIOR_ZONE_COLORS.changing, 0.22, 0.32, 0.36, 0.26));
       walls.push(createWall('sauna-changing-divider', sauna.x + sauna.width * 0.08, sauna.z + sauna.depth * 0.18, 0.64, sauna.depth * 0.42));
       walls.push(createWall('sauna-rest-divider', sauna.x - sauna.width * 0.18, sauna.z + sauna.depth * 0.12, sauna.width * 0.28, 0.64));
     }
 
     if (service) {
-      zones.push(createZoneInBlock(service, 'sauna-service-core', getInteriorZoneLabel(layoutVariant, 'saunaService', 'Service core'), INTERIOR_ZONE_COLORS.bathroom, 0, 0, 0.66, 0.64));
+      zones.push(createZoneInBlock(service, 'sauna-service-core', getInteriorZoneLabel(layoutVariant, roomUseProfileId, 'saunaService', 'Service core'), INTERIOR_ZONE_COLORS.bathroom, 0, 0, 0.66, 0.64));
     }
 
     if (terraceEnabled) {
@@ -422,14 +462,14 @@ function createInteriorPlan(
   const bathroom = getBlockByInstance(blocks, 'bathroom-core-module-compact');
 
   if (living) {
-    zones.push(createZoneInBlock(living, 'compact-living-kitchen', getInteriorZoneLabel(layoutVariant, 'compactLiving', 'Living / kitchen'), INTERIOR_ZONE_COLORS.living, -0.1, -0.06, 0.72, 0.62));
-    zones.push(createZoneInBlock(living, 'compact-entrance-storage', getInteriorZoneLabel(layoutVariant, 'compactStorage', 'Entrance / storage'), INTERIOR_ZONE_COLORS.entrance, 0.28, 0.32, 0.34, 0.26));
+    zones.push(createZoneInBlock(living, 'compact-living-kitchen', getInteriorZoneLabel(layoutVariant, roomUseProfileId, 'compactLiving', 'Living / kitchen'), INTERIOR_ZONE_COLORS.living, -0.1, -0.06, 0.72, 0.62));
+    zones.push(createZoneInBlock(living, 'compact-entrance-storage', getInteriorZoneLabel(layoutVariant, roomUseProfileId, 'compactStorage', 'Entrance / storage'), INTERIOR_ZONE_COLORS.entrance, 0.28, 0.32, 0.34, 0.26));
     walls.push(createWall('compact-entry-storage-wall', living.x + living.width * 0.1, living.z + living.depth * 0.23, 0.64, living.depth * 0.36));
     walls.push(createWall('compact-entry-back-wall', living.x + living.width * 0.28, living.z + living.depth * 0.18, living.width * 0.26, 0.64));
   }
 
   if (bedroom) {
-    zones.push(createZoneInBlock(bedroom, 'compact-bedroom', getInteriorZoneLabel(layoutVariant, 'compactBedroom', 'Bedroom'), INTERIOR_ZONE_COLORS.bedroom, 0, 0, 0.7, 0.66));
+    zones.push(createZoneInBlock(bedroom, 'compact-bedroom', getInteriorZoneLabel(layoutVariant, roomUseProfileId, 'compactBedroom', 'Bedroom'), INTERIOR_ZONE_COLORS.bedroom, 0, 0, 0.7, 0.66));
   }
 
   if (bathroom) {
@@ -482,6 +522,7 @@ function WindowModule({
       name={`window-module-${moduleId}`}
       position={position}
       userData={{
+        componentCategory: 'windowUnit',
         homeConstructionElement: 'window-module',
         moduleId,
       }}
@@ -515,6 +556,18 @@ function WindowModule({
         <meshStandardMaterial color={trimColor} roughness={0.68} />
       </mesh>
       <mesh name={`${moduleId}-right-frame`} position={[scale[0] / 2, 0, 0.055 + revealDepth * 0.14]} scale={[frameThickness, scale[1] + 0.12, 0.02 + revealDepth * 0.16]}>
+        <boxGeometry args={[1, 1, 1]} />
+        <meshStandardMaterial color={trimColor} roughness={0.68} />
+      </mesh>
+      <mesh name={`${moduleId}-outer-head-trim`} position={[0, scale[1] / 2 + 0.22, 0.12 + revealDepth * 0.24]} scale={[scale[0] + 0.84, 0.14 * frameTypeVisual.frameScale, 0.22 + revealDepth]}>
+        <boxGeometry args={[1, 1, 1]} />
+        <meshStandardMaterial color={trimColor} roughness={0.66} />
+      </mesh>
+      <mesh name={`${moduleId}-outer-left-trim`} position={[-scale[0] / 2 - 0.18, 0, 0.11 + revealDepth * 0.16]} scale={[0.14 * frameTypeVisual.frameScale, scale[1] + 0.54, 0.18 + revealDepth * 0.24]}>
+        <boxGeometry args={[1, 1, 1]} />
+        <meshStandardMaterial color={trimColor} roughness={0.68} />
+      </mesh>
+      <mesh name={`${moduleId}-outer-right-trim`} position={[scale[0] / 2 + 0.18, 0, 0.11 + revealDepth * 0.16]} scale={[0.14 * frameTypeVisual.frameScale, scale[1] + 0.54, 0.18 + revealDepth * 0.24]}>
         <boxGeometry args={[1, 1, 1]} />
         <meshStandardMaterial color={trimColor} roughness={0.68} />
       </mesh>
@@ -711,20 +764,40 @@ function InteriorWall({ interiorWallColor, isFloorplan, segment }: {
 }) {
   const wallHeight = isFloorplan ? 0.68 : segment.height;
   const wallY = isFloorplan ? 1.28 : 1.72;
+  const isLongRun = segment.width >= segment.depth;
+  const seamOffsets = getEvenlySpacedPanelOffsets(isLongRun ? Math.max(2, segment.width - 1) : Math.max(2, segment.depth - 1), 8.5);
 
   return (
-    <mesh
+    <group
       name={`interior-wall-${segment.wallId}`}
       position={[segment.x, wallY, segment.z]}
-      scale={[segment.width, wallHeight, segment.depth]}
       userData={{
+        componentCategory: 'interiorFinish',
         homeInteriorWall: true,
         wallId: segment.wallId,
       }}
     >
-      <boxGeometry args={[1, 1, 1]} />
-      <meshStandardMaterial color={interiorWallColor} roughness={0.82} metalness={0.02} />
-    </mesh>
+      <mesh scale={[segment.width, wallHeight, segment.depth]}>
+        <boxGeometry args={[1, 1, 1]} />
+        <meshStandardMaterial color={interiorWallColor} roughness={0.82} metalness={0.02} />
+      </mesh>
+      {seamOffsets.map((offset) => (
+        <mesh
+          key={`${segment.wallId}-panel-seam-${offset}`}
+          position={isLongRun ? [offset, 0, segment.depth / 2 + 0.04] : [segment.width / 2 + 0.04, 0, offset]}
+          scale={isLongRun ? [0.08, wallHeight + 0.04, 0.04] : [0.04, wallHeight + 0.04, 0.08]}
+        >
+          <boxGeometry args={[1, 1, 1]} />
+          <meshStandardMaterial color={INTERIOR_FINISH_LINE_COLOR} opacity={isFloorplan ? 0.56 : 0.42} roughness={0.9} transparent />
+        </mesh>
+      ))}
+      {!isFloorplan ? (
+        <mesh position={[0, wallHeight / 2 - 0.18, 0]} scale={[segment.width + 0.04, 0.05, segment.depth + 0.04]}>
+          <boxGeometry args={[1, 1, 1]} />
+          <meshStandardMaterial color={INTERIOR_FINISH_LINE_COLOR} opacity={0.26} roughness={0.92} transparent />
+        </mesh>
+      ) : null}
+    </group>
   );
 }
 
@@ -1130,6 +1203,7 @@ function FacadeBoardingDetail({ block, boardOrientationVisual, boardProfileVisua
     <group
       name={`${block.moduleInstanceId}-facade-boarding-detail`}
       userData={{
+        componentCategory: 'facadeBoarding',
         facadeBoardDirection: boardOrientationVisual.orientation,
         facadeBoardProfile: boardProfileVisual.label,
         facadeBoardSpacing: boardSpacingVisual.label,
@@ -1222,6 +1296,7 @@ function WallPanelSeams({ block, isFloorplan, wallHeight }: {
     <group
       name={`${block.moduleInstanceId}-wall-panel-seams`}
       userData={{
+        componentCategory: 'wallPanel',
         homeConstructionElement: 'wall-panel-seams',
         moduleInstanceId: block.moduleInstanceId,
       }}
@@ -1617,7 +1692,7 @@ function RoofAssembly({ bounds, roofColor, accentColor, edgeColor, gutterStyleVi
 
   if (!isPitched) {
     return (
-      <group name={`modular-home-roof-${roofType}`} userData={{ moduleInstanceId: `roof:${roofType}` }}>
+      <group name={`modular-home-roof-${roofType}`} userData={{ componentCategory: 'roofCassette', moduleInstanceId: `roof:${roofType}` }}>
         <mesh position={[bounds.centerX, 6.45, bounds.centerZ]} scale={[bounds.width + 5.6, 0.82, bounds.depth + 5.6]}>
           <boxGeometry args={[1, 1, 1]} />
           <meshStandardMaterial color={roofColor} opacity={0.55} roughness={0.74} metalness={0.04} transparent />
@@ -1628,15 +1703,23 @@ function RoofAssembly({ bounds, roofColor, accentColor, edgeColor, gutterStyleVi
             <meshStandardMaterial color={accentColor} emissive="#3f6212" emissiveIntensity={0.05} opacity={0.55} roughness={0.86} transparent />
           </mesh>
         ) : null}
-        {roofPanelXs.map((x) => (
-          <mesh key={x} position={[bounds.centerX + x, 6.95, bounds.centerZ]} scale={[0.22, 0.18, bounds.depth + 6.2]}>
-            <boxGeometry args={[1, 1, 1]} />
-            <meshStandardMaterial color={accentColor} opacity={0.58} roughness={0.78} transparent />
-          </mesh>
-        ))}
-        <mesh position={[bounds.centerX, 6.98, bounds.centerZ - bounds.depth / 2 - 2.8]} scale={[bounds.width + 6.4, 0.26, 0.5]}>
+      {roofPanelXs.map((x) => (
+        <mesh key={x} position={[bounds.centerX + x, 6.95, bounds.centerZ]} scale={[0.22, 0.18, bounds.depth + 6.2]}>
           <boxGeometry args={[1, 1, 1]} />
-          <meshStandardMaterial color={accentColor} roughness={0.72} />
+          <meshStandardMaterial color={accentColor} opacity={0.58} roughness={0.78} transparent />
+        </mesh>
+      ))}
+      <mesh position={[bounds.minX - 2.7, 6.92, bounds.centerZ]} scale={[0.22, 0.22, bounds.depth + 5.8]}>
+        <boxGeometry args={[1, 1, 1]} />
+        <meshStandardMaterial color={accentColor} opacity={0.7} roughness={0.76} transparent />
+      </mesh>
+      <mesh position={[bounds.maxX + 2.7, 6.92, bounds.centerZ]} scale={[0.22, 0.22, bounds.depth + 5.8]}>
+        <boxGeometry args={[1, 1, 1]} />
+        <meshStandardMaterial color={accentColor} opacity={0.7} roughness={0.76} transparent />
+      </mesh>
+      <mesh position={[bounds.centerX, 6.98, bounds.centerZ - bounds.depth / 2 - 2.8]} scale={[bounds.width + 6.4, 0.26, 0.5]}>
+        <boxGeometry args={[1, 1, 1]} />
+        <meshStandardMaterial color={accentColor} roughness={0.72} />
         </mesh>
         <mesh position={[bounds.centerX, 6.98, bounds.centerZ + bounds.depth / 2 + 2.8]} scale={[bounds.width + 6.4, 0.26, 0.5]}>
           <boxGeometry args={[1, 1, 1]} />
@@ -1648,7 +1731,7 @@ function RoofAssembly({ bounds, roofColor, accentColor, edgeColor, gutterStyleVi
   }
 
   return (
-    <group name="modular-home-roof-pitched" userData={{ moduleInstanceId: 'roof:pitched' }}>
+    <group name="modular-home-roof-pitched" userData={{ componentCategory: 'roofCassette', moduleInstanceId: 'roof:pitched' }}>
       <mesh position={[bounds.centerX, 6.7, bounds.centerZ - bounds.depth * 0.16]} rotation={[0.34, 0, 0]} scale={[bounds.width + 7, 0.92, bounds.depth * 0.62]}>
         <boxGeometry args={[1, 1, 1]} />
         <meshStandardMaterial color={roofColor} opacity={0.55} roughness={0.74} metalness={0.04} transparent />
@@ -1673,6 +1756,14 @@ function RoofAssembly({ bounds, roofColor, accentColor, edgeColor, gutterStyleVi
           </mesh>
         </group>
       ))}
+      <mesh position={[bounds.centerX, 5.94, bounds.centerZ - bounds.depth * 0.5 - 0.78]} scale={[bounds.width + 6.4, 0.18, 0.34]}>
+        <boxGeometry args={[1, 1, 1]} />
+        <meshStandardMaterial color={accentColor} opacity={0.72} roughness={0.74} transparent />
+      </mesh>
+      <mesh position={[bounds.centerX, 5.94, bounds.centerZ + bounds.depth * 0.5 + 0.78]} scale={[bounds.width + 6.4, 0.18, 0.34]}>
+        <boxGeometry args={[1, 1, 1]} />
+        <meshStandardMaterial color={accentColor} opacity={0.72} roughness={0.74} transparent />
+      </mesh>
       <RoofGutterDetail bounds={bounds} edgeColor={edgeColor} gutterStyleVisual={gutterStyleVisual} y={6.18} />
     </group>
   );
@@ -1703,7 +1794,13 @@ function TerraceModule({ bounds, depth, isCovered, placement, trimColor, viewMod
   const plankCrossOffsets = getEvenlySpacedPanelOffsets(depth, 6.5);
 
   return (
-    <group name={`modular-home-terrace-module-${placement}${isCovered ? '-covered' : ''}`} userData={{ moduleInstanceId: `terrace-module:${placement}${isCovered ? ':covered' : ''}` }}>
+    <group
+      name={`modular-home-terrace-module-${placement}${isCovered ? '-covered' : ''}`}
+      userData={{
+        componentCategory: 'terraceDeck',
+        moduleInstanceId: `terrace-module:${placement}${isCovered ? ':covered' : ''}`,
+      }}
+    >
       <mesh position={[x, 0.72, z]} scale={deckScale}>
         <boxGeometry args={[1, 1, 1]} />
         <meshStandardMaterial color={DECK_COLOR} roughness={0.84} metalness={0.01} />
@@ -1749,6 +1846,28 @@ function TerraceModule({ bounds, depth, isCovered, placement, trimColor, viewMod
         <boxGeometry args={[1, 1, 1]} />
         <meshStandardMaterial color={SEAM_COLOR} roughness={0.9} />
       </mesh>
+      {[-0.32, 0, 0.32].map((offset) => (
+        <mesh
+          key={`terrace-beam-${offset}`}
+          position={isSide ? [x, 0.1, z + width * offset] : [x + width * offset, 0.1, z]}
+          scale={isSide ? [depth - 1.6, 0.42, 0.62] : [0.62, 0.42, depth - 1.6]}
+        >
+          <boxGeometry args={[1, 1, 1]} />
+          <meshStandardMaterial color="#4a2f1b" roughness={0.84} />
+        </mesh>
+      ))}
+      {[-0.42, 0.42].map((crossA) => (
+        [-0.32, 0.32].map((crossB) => (
+          <mesh
+            key={`terrace-post-${crossA}-${crossB}`}
+            position={isSide ? [x + depth * crossB, -0.56, z + width * crossA] : [x + width * crossA, -0.56, z + depth * crossB]}
+            scale={[0.42, 1.24, 0.42]}
+          >
+            <boxGeometry args={[1, 1, 1]} />
+            <meshStandardMaterial color="#3f2a1d" roughness={0.86} />
+          </mesh>
+        ))
+      ))}
       {railXs.map((x) => (
         <mesh key={x} position={isSide ? [sideX, 1.55, bounds.centerZ + x] : [bounds.centerX + x, 1.55, frontZ]} scale={[1.4, 2.1, 1.4]}>
           <boxGeometry args={[1, 1, 1]} />
@@ -1998,6 +2117,7 @@ export function ModularHomeModel() {
   const product = getModularHomeProductForConfig(homeConfig);
   const modules = getModulesForConfig(homeConfig);
   const layoutVariant = getModularHomeLayoutVariantForConfig(homeConfig);
+  const roomUseProfile = getModularHomeRoomUseProfileForConfig(homeConfig);
   const facadeVisual = MODULAR_HOME_FACADE_VISUALS[homeConfig.facade];
   const facadeBoardOrientationVisual = MODULAR_HOME_FACADE_BOARD_ORIENTATION_VISUALS[homeConfig.facadeBoardOrientation];
   const facadeBoardProfileVisual = MODULAR_HOME_FACADE_BOARD_PROFILE_VISUALS[homeConfig.facadeBoardProfile];
@@ -2032,7 +2152,7 @@ export function ModularHomeModel() {
   const terraceWidth = terraceModule ? terraceModule.dimensions.widthM * MODULE_UNIT_SCALE : terraceVisual.deckWidth;
   const terraceDepth = terraceModule ? terraceModule.dimensions.lengthM * MODULE_UNIT_SCALE : terraceVisual.deckDepth;
   const frontClearanceDepth = terraceVisual.enabled && terraceVisual.placement === 'front' ? terraceDepth : 0;
-  const interiorPlan = createInteriorPlan(product, moduleBlocks, bounds, layoutVariant, terraceDepth, terraceVisual.enabled);
+  const interiorPlan = createInteriorPlan(product, moduleBlocks, bounds, layoutVariant, roomUseProfile?.id, terraceDepth, terraceVisual.enabled);
   const isExteriorMode = viewMode === 'exterior';
   const isFloorplanMode = viewMode === 'floorplan';
 
@@ -2044,6 +2164,7 @@ export function ModularHomeModel() {
       userData={{
         homeDemoConfig: homeConfig,
         homeDemoLayoutVariant: layoutVariant?.id ?? homeConfig.layoutVariant,
+        homeDemoRoomUseProfile: roomUseProfile?.id ?? homeConfig.roomUseProfile,
         homeDemoPreview: true,
         homeDemoViewMode: viewMode,
         modularHomeFurniturePackage: homeConfig.furniturePackage,
@@ -2149,7 +2270,7 @@ export function ModularHomeModel() {
       <Html position={[0, 14, 0]} center distanceFactor={58} occlude={false} pointerEvents="none">
         <div
           data-home-demo-model-label="true"
-          data-home-config-model-summary={`${homeConfig.template}:${homeConfig.layoutVariant}:${homeConfig.facade}:${homeConfig.roof}:${homeConfig.terrace}:${homeConfig.finishLevel}:${homeConfig.windowPlacement}:${homeConfig.doorPlacement}:${homeConfig.facadeBoardOrientation}:${homeConfig.facadeBoardWidth}:${homeConfig.facadeBoardProfile}:${homeConfig.facadeBoardSpacing}:${homeConfig.trimColor}:${homeConfig.roofEdgeColor}:${homeConfig.roofGutterStyle}:${homeConfig.windowFrameColor}:${homeConfig.windowFrameType}:${homeConfig.interiorWallFinish}:${homeConfig.floorFinish}:${homeConfig.interiorFloorStyle}:${homeConfig.wallPanelStyle}:${homeConfig.furniturePackage}:${homeConfig.sofa}:${homeConfig.table}:${homeConfig.bed}:${homeConfig.kitchenLine}:${homeConfig.wardrobePlaceholder}`}
+          data-home-config-model-summary={`${homeConfig.template}:${homeConfig.layoutVariant}:${homeConfig.roomUseProfile}:${homeConfig.facade}:${homeConfig.roof}:${homeConfig.terrace}:${homeConfig.finishLevel}:${homeConfig.windowPlacement}:${homeConfig.doorPlacement}:${homeConfig.facadeBoardOrientation}:${homeConfig.facadeBoardWidth}:${homeConfig.facadeBoardProfile}:${homeConfig.facadeBoardSpacing}:${homeConfig.trimColor}:${homeConfig.roofEdgeColor}:${homeConfig.roofGutterStyle}:${homeConfig.windowFrameColor}:${homeConfig.windowFrameType}:${homeConfig.interiorWallFinish}:${homeConfig.floorFinish}:${homeConfig.interiorFloorStyle}:${homeConfig.wallPanelStyle}:${homeConfig.furniturePackage}:${homeConfig.sofa}:${homeConfig.table}:${homeConfig.bed}:${homeConfig.kitchenLine}:${homeConfig.wardrobePlaceholder}`}
           data-home-demo-facade-board-orientation={homeConfig.facadeBoardOrientation}
           data-home-demo-facade-board-profile={homeConfig.facadeBoardProfile}
           data-home-demo-facade-board-spacing={homeConfig.facadeBoardSpacing}
@@ -2158,6 +2279,7 @@ export function ModularHomeModel() {
           data-home-demo-interior-floor-style={homeConfig.interiorFloorStyle}
           data-home-demo-interior-wall-finish={homeConfig.interiorWallFinish}
           data-home-demo-layout-variant={layoutVariant?.id ?? homeConfig.layoutVariant}
+          data-home-demo-room-use-profile={roomUseProfile?.id ?? homeConfig.roomUseProfile}
           data-home-demo-interior-package={interiorPackage}
           data-home-demo-furniture-package={homeConfig.furniturePackage}
           data-home-demo-sofa={homeConfig.sofa}
@@ -2193,7 +2315,7 @@ export function ModularHomeModel() {
           </div>
           <div style={{ fontSize: '0.82rem', fontWeight: 950, marginTop: '3px' }}>{product.name}</div>
           <div style={{ color: '#bbf7d0', fontSize: '0.54rem', fontWeight: 850, marginTop: '4px' }}>
-            {moduleBlocks.length} room modules / {configSummary.layoutVariant} / {configSummary.roof} / {configSummary.windowPlacement} / {configSummary.doorPlacement} / {viewMode}
+            {moduleBlocks.length} room modules / {configSummary.layoutVariant} / {configSummary.roomUseProfile} / {configSummary.roof} / {configSummary.windowPlacement} / {configSummary.doorPlacement} / {viewMode}
           </div>
         </div>
       </Html>

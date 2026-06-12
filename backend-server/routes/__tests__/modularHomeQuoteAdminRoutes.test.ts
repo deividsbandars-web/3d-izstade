@@ -32,6 +32,7 @@ async function fetchApi(path: string, init?: Parameters<typeof fetch>[1]) {
   protectedRouter.get('/modular-home/quotes', adminOnly, (_req, res) => res.json({ success: true }));
   protectedRouter.get('/modular-home/quotes/export', adminOnly, (_req, res) => res.json({ success: true }));
   protectedRouter.get('/modular-home/quotes/:quoteId', adminOnly, (_req, res) => res.json({ success: true }));
+  protectedRouter.patch('/modular-home/quotes/:quoteId/ops', adminOnly, (_req, res) => res.json({ success: true }));
   protectedRouter.patch('/modular-home/quotes/:quoteId/status', adminOnly, (_req, res) => res.json({ success: true }));
   app.use('/api', protectedRouter);
 
@@ -67,6 +68,13 @@ const unauthenticatedStatusUpdate = await fetchApi('/api/modular-home/quotes/quo
   method: 'PATCH',
 });
 assert.equal(unauthenticatedStatusUpdate.status, 401);
+
+const unauthenticatedOpsUpdate = await fetchApi('/api/modular-home/quotes/quote_123456/ops', {
+  body: JSON.stringify({ consultantAssignment: 'Ops Desk', followUpRequired: true }),
+  headers: { 'content-type': 'application/json' },
+  method: 'PATCH',
+});
+assert.equal(unauthenticatedOpsUpdate.status, 401);
 
 const unauthenticatedExport = await fetchApi('/api/modular-home/quotes/export?format=csv');
 assert.equal(unauthenticatedExport.status, 401);

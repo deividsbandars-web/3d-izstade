@@ -16,7 +16,7 @@ import { useExpoRuntimeSession } from './useExpoRuntimeSession';
 import { WorldInspectionProvider } from '../world/inspection/worldInspectionState';
 import { SalesDemoGuideOverlay } from '../salesDemo';
 import { SponsorConciergeLeadCaptureOverlay } from '../boothProduct';
-import { ModularHomeDemoOverlay, ModularHomeUploadPreviewPanel } from '../modularHome';
+import { isHomeStudioEnabled, ModularHomeDemoOverlay, ModularHomeUploadPreviewPanel } from '../modularHome';
 
 export default function Expo3D() {
   const runtimeSession = useExpoRuntimeSession();
@@ -43,6 +43,7 @@ function ExpoRuntimeExperience({
   runtimeSession: ReturnType<typeof useExpoRuntimeSession>;
 }) {
   const nav = useNavigate();
+  const homeStudioEnabled = useMemo(() => isHomeStudioEnabled(), []);
   const worldContract = useMemo(() => buildExpoWorldContract(data), [data]);
   const inspectionEnabled = import.meta.env.DEV || runtimeSession.operatorSession.enabled;
   const pixelStreamingStatus = usePixelStreamingStatus();
@@ -98,23 +99,25 @@ function ExpoRuntimeExperience({
     <ExpoRuntimeShell
       hudLayer={(
         <>
-          <ExpoWorldHud
-            guests={guests}
-            isMicOn={isMicOn}
-            isSpeaking={isSpeaking}
-            isTouchDevice={runtimeSession.isTouchDevice}
-            mode={runtimeSession.mode}
-            onMoveTouch={runtimeSession.setMobileMoveIntent}
-            playerPos={playerPos}
-            sectorMarkers={worldContract.sectorMarkers}
-            visualProfile={worldContract.visualProfile}
-            onToggleMic={() => setIsMicOn((value) => !value)}
-            operatorBuildStamp={runtimeSession.operatorSession.enabled ? EXPO_REVIEW_BUILD_STAMP : null}
-            onExit={() => {
-              document.exitPointerLock();
-              runtimeSession.setMode('menu');
-            }}
-          />
+          {!homeStudioEnabled ? (
+            <ExpoWorldHud
+              guests={guests}
+              isMicOn={isMicOn}
+              isSpeaking={isSpeaking}
+              isTouchDevice={runtimeSession.isTouchDevice}
+              mode={runtimeSession.mode}
+              onMoveTouch={runtimeSession.setMobileMoveIntent}
+              playerPos={playerPos}
+              sectorMarkers={worldContract.sectorMarkers}
+              visualProfile={worldContract.visualProfile}
+              onToggleMic={() => setIsMicOn((value) => !value)}
+              operatorBuildStamp={runtimeSession.operatorSession.enabled ? EXPO_REVIEW_BUILD_STAMP : null}
+              onExit={() => {
+                document.exitPointerLock();
+                runtimeSession.setMode('menu');
+              }}
+            />
+          ) : null}
           <SalesDemoGuideOverlay
             isTouchDevice={runtimeSession.isTouchDevice}
             mode={runtimeSession.mode}

@@ -1,6 +1,9 @@
 import assert from 'node:assert/strict';
 import {
+  buildModularHomeProfessionalQuoteExportData,
+  calculateOpeningSchedule,
   calculateComponentBom,
+  calculateMaterialTakeoff,
   calculateManufacturingBomPreview,
   calculateModularHomeEstimate,
   calculateModularHomeQuantities,
@@ -11,17 +14,24 @@ import {
   decodeModularHomeConfigFromUrl,
   DEFAULT_MODULAR_HOME_VIEW_MODE,
   encodeModularHomeConfigToSearchParams,
+  getCostItemForComponent,
+  getCostItemsByCategory,
   getBomModuleSummary,
   getComponentSummaryForConfig,
   getComponentsForModule,
   getComponentsForProduct,
   getDefaultHomeConfig,
+  getDefaultDimensionPresetForProduct,
   getDefaultLayoutVariantForProduct,
   getInvalidConfigReasons,
+  formatHomeEstimateEur,
+  getHomeDemoMode,
   getModularHomeEstimateConfidenceLabel,
   getModularHomeEstimatePriceSourceLabel,
   getModularHomeMaterials,
   getModularHomeConfigurationWarnings,
+  getModularHomeDimensionPresetForConfig,
+  getModularHomeDimensionSummary,
   getModularHomeLayoutVariant,
   getModularHomeLayoutVariantForConfig,
   getModularHomeLayoutVariantsForProduct,
@@ -31,9 +41,13 @@ import {
   getModularHomeProducts,
   getModularHomeRoomMeasurementSummary,
   getModularHomeRoomMeasurements,
+  getModularHomeRoomUseChoices,
+  getModularHomeRoomUseProfileForConfig,
   getModularHomeViewMode,
   getModularHomeViewModeLabel,
   getSelectedModularHomeMaterialIds,
+  isHomeDemoEnabled,
+  isHomeStudioEnabled,
   getModuleInstancesForProduct,
   getModuleQuantitySummary,
   getModulesForProduct,
@@ -41,6 +55,7 @@ import {
   getPricingCategoriesForModuleType,
   getPricingCategoriesForOptionGroup,
   MODULAR_HOME_COMPONENTS,
+  MODULAR_HOME_DEFAULT_SUPPLIER_COST_MAP,
   MODULAR_HOME_FACADE_BOARD_ORIENTATION_OPTIONS,
   MODULAR_HOME_FACADE_BOARD_WIDTH_OPTIONS,
   MODULAR_HOME_FLOOR_FINISH_OPTIONS,
@@ -52,6 +67,7 @@ import {
   MODULAR_HOME_PRICING_CATEGORIES,
   MODULAR_HOME_PRICING_CONTEXT,
   MODULAR_HOME_PRODUCT_COMPONENT_LIBRARY,
+  MODULAR_HOME_SUPPLIER_COST_ITEMS,
   MODULAR_HOME_ROOF_EDGE_COLOR_OPTIONS,
   MODULAR_HOME_ROOM_MEASUREMENT_DISCLAIMER,
   MODULAR_HOME_ROOM_MEASUREMENTS,
@@ -59,6 +75,7 @@ import {
   MODULAR_HOME_VIEW_MODE_OPTIONS,
   resetModularHomeViewMode,
   setModularHomeViewMode,
+  validateSupplierCostItems,
   validateHomeConfiguration,
 } from '../runtime/modularHome/index.js';
 
@@ -78,6 +95,34 @@ const familyBom = getBomModuleSummary('family-timber-80');
 const familyBedroomBom = familyBom.find((item) => item.moduleId === 'family-bedroom-module');
 assert.ok(familyBedroomBom);
 assert.equal(familyBedroomBom.unitPrice, 8800);
+
+assert.equal(getHomeDemoMode('?homeDemo=1'), 'homes');
+assert.equal(getHomeDemoMode('?homeStudio=1'), 'homes');
+assert.equal(isHomeDemoEnabled('?homeStudio=1'), true);
+assert.equal(isHomeStudioEnabled('?homeStudio=1'), true);
+assert.equal(isHomeStudioEnabled('?homeDemo=1'), false);
+
+const compactRoomUseChoices = getModularHomeRoomUseChoices('compact-timber-40', 'oneBedroom').map((item) => item.id);
+assert.deepEqual(compactRoomUseChoices, ['bedroom', 'office', 'guestRoom', 'storage']);
+const compactOfficeRoomUseProfile = getModularHomeRoomUseProfileForConfig({
+  ...getDefaultHomeConfig('compact-timber-40'),
+  roomUseProfile: 'office',
+});
+assert.ok(compactOfficeRoomUseProfile);
+assert.equal(compactOfficeRoomUseProfile.label, 'Office');
+assert.equal(getModularHomeProductConfigSummary({
+  ...getDefaultHomeConfig('family-timber-80'),
+  layoutVariant: 'largeLiving',
+  roomUseProfile: 'largerLiving',
+}).roomUseProfile, 'Larger living');
+const saunaGuestSummary = getModularHomeRoomMeasurementSummary({
+  ...getDefaultHomeConfig('sauna-cabin-25'),
+  layoutVariant: 'guestCabin',
+  roomUseProfile: 'guestRoom',
+});
+const saunaGuestMainRoom = saunaGuestSummary.rooms.find((room) => room.id === 'sauna-guest-rest-area');
+assert.ok(saunaGuestMainRoom);
+assert.equal(saunaGuestMainRoom.label, 'Guest room / rest area');
 assert.equal(familyBedroomBom.totalPrice, 17600);
 
 const saunaQuantitySummary = getModuleQuantitySummary('sauna-cabin-25');
@@ -103,6 +148,12 @@ assert.deepEqual(
 assert.equal(getDefaultHomeConfig('compact-timber-40').layoutVariant, 'oneBedroom');
 assert.equal(getDefaultHomeConfig('family-timber-80').layoutVariant, 'twoBedroom');
 assert.equal(getDefaultHomeConfig('sauna-cabin-25').layoutVariant, 'saunaRestRoom');
+assert.equal(getDefaultHomeConfig('compact-timber-40').dimensionPreset, 'compactStandard');
+assert.equal(getDefaultHomeConfig('family-timber-80').dimensionPreset, 'familyStandard');
+assert.equal(getDefaultHomeConfig('sauna-cabin-25').dimensionPreset, 'saunaStandard');
+assert.equal(getDefaultDimensionPresetForProduct('compact-timber-40'), 'compactStandard');
+assert.equal(getDefaultDimensionPresetForProduct('family-timber-80'), 'familyStandard');
+assert.equal(getDefaultDimensionPresetForProduct('sauna-cabin-25'), 'saunaStandard');
 assert.equal(getDefaultHomeConfig('compact-timber-40').windowPlacement, 'balanced');
 assert.equal(getDefaultHomeConfig('family-timber-80').windowPlacement, 'frontPanoramic');
 assert.equal(getDefaultHomeConfig('sauna-cabin-25').windowPlacement, 'sidePrivacy');
@@ -506,6 +557,9 @@ assert.equal(compactEmptyFurnitureComponentBom.groups.some((group) => group.cate
 
 const compactManufacturingBom = calculateManufacturingBomPreview(getDefaultHomeConfig('compact-timber-40'));
 assert.equal(compactManufacturingBom.disclaimer, 'Manufacturing BOM preview · production cut list requires engineering verification.');
+assert.equal(compactManufacturingBom.openingSchedule.length > 0, true);
+assert.equal(compactManufacturingBom.openingScheduleSummary.windowCount > 0, true);
+assert.equal(compactManufacturingBom.openingScheduleSummary.doorCount > 0, true);
 assert.equal(compactManufacturingBom.componentCodes.length > 0, true);
 assert.equal(compactManufacturingBom.componentCodes.some((code) => code.startsWith('MHC-')), true);
 assert.equal(compactManufacturingBom.assemblyGroups.length >= 5, true);
@@ -536,6 +590,7 @@ assert.ok(compactManufacturingBom.roofCassetteAreaM2 > 0);
 assert.ok(compactManufacturingBom.floorCassetteAreaM2 > 0);
 assert.ok(compactManufacturingBom.windowSchedule.reduce((total, item) => total + item.quantity, 0) > 0);
 assert.ok(compactManufacturingBom.doorSchedule.reduce((total, item) => total + item.quantity, 0) > 0);
+assert.equal(compactManufacturingBom.openingSchedule.some((item) => item.type === 'interiorDoorPlaceholder'), true);
 assert.equal(compactManufacturingBom.productionVerificationNotes.some((note) => note.includes('not a factory-approved cut list')), true);
 assert.equal(compactManufacturingBom.productionVerificationNotes.some((note) => note.includes('Manufacturing BOM v2 adds component codes')), true);
 assert.equal(compactManufacturingBom.productionVerificationNotes.some((note) => note.includes('cut-list readiness aids only')), true);
@@ -555,7 +610,47 @@ const compactDetailManufacturingBom = calculateManufacturingBomPreview({
 assert.ok(compactDetailManufacturingBom.facadeBoardLinearM > compactManufacturingBom.facadeBoardLinearM);
 assert.ok(compactDetailManufacturingBom.boardLengthGroups.reduce((total, group) => total + group.quantity, 0) > compactManufacturingBom.boardLengthGroups.reduce((total, group) => total + group.quantity, 0));
 assert.equal(compactDetailManufacturingBom.productionVerificationNotes.some((note) => note.includes('vertical orientation / narrow width')), true);
-assert.equal(compactDetailManufacturingBom.productionVerificationNotes.some((note) => note.includes('paintedWhite interior walls / plainPanel wall panel style / oakLaminate floor finish / utilityPlywood floor style')), true);
+assert.equal(compactDetailManufacturingBom.productionVerificationNotes.some((note) => note.includes('paintedWhite interior walls / plainPanel wall panel style / oakLaminate floor finish / utilityPlywood floor style')), true);const compactStandardOpeningSchedule = calculateOpeningSchedule(getDefaultHomeConfig('compact-timber-40'));
+assert.equal(compactStandardOpeningSchedule.some((item) => item.type === 'window' && item.wallSide === 'front'), true);
+assert.equal(compactStandardOpeningSchedule.some((item) => item.type === 'exteriorDoor' && item.wallSide === 'front'), true);
+
+const compactPanoramicOpeningSchedule = calculateOpeningSchedule({
+  ...getDefaultHomeConfig('compact-timber-40'),
+  windowPackage: 'panoramicWindows',
+  windowPlacement: 'frontPanoramic',
+});
+assert.equal(compactPanoramicOpeningSchedule.some((item) => item.reviewRequirement?.includes('engineering') ?? false), true);
+assert.ok(
+  compactPanoramicOpeningSchedule
+    .filter((item) => item.type === 'window' && item.wallSide === 'front')
+    .some((item) => item.widthMm >= 1800),
+);
+
+const familyStandardOpeningSchedule = calculateOpeningSchedule(getDefaultHomeConfig('family-timber-80'));
+const familyExtraOpeningSchedule = calculateOpeningSchedule({
+  ...getDefaultHomeConfig('family-timber-80'),
+  dimensionPreset: 'familyExtraBedroomModule',
+});
+assert.ok(
+  familyExtraOpeningSchedule.reduce((total, item) => total + item.quantity, 0)
+  > familyStandardOpeningSchedule.reduce((total, item) => total + item.quantity, 0),
+);
+
+const saunaStandardOpeningSchedule = calculateOpeningSchedule(getDefaultHomeConfig('sauna-cabin-25'));
+const saunaDeepOpeningSchedule = calculateOpeningSchedule({
+  ...getDefaultHomeConfig('sauna-cabin-25'),
+  dimensionPreset: 'saunaDeepTerrace',
+  doorPackage: 'terraceSlider',
+  doorPlacement: 'terraceFacing',
+  terrace: 'frontDeck',
+});
+assert.ok(
+  saunaDeepOpeningSchedule.some((item) => item.type === 'terraceDoor' && item.widthMm > 2400),
+);
+assert.ok(
+  saunaDeepOpeningSchedule.reduce((total, item) => total + item.estimateImpact, 0)
+  >= saunaStandardOpeningSchedule.reduce((total, item) => total + item.estimateImpact, 0),
+);
 
 const compactStandardWindowEstimate = calculateModularHomeEstimate({
   ...getDefaultHomeConfig('compact-timber-40'),
@@ -574,7 +669,14 @@ assert.equal(
   compactStandardWindowEstimate.lineItems.every((item) => (
     ['packageFixed', 'estimated', 'siteDependent', 'requiresEngineering'].includes(item.confidence)
     && ['internalPreview', 'supplierPlaceholder', 'manualReviewRequired'].includes(item.priceSource)
+    && ['internalDatabase', 'supplierBudgetPlaceholder', 'manualReview'].includes(item.sourceType)
     && item.lastUpdated === '2026-06-06'
+    && item.currency === 'EUR'
+    && item.region === 'eu-preview'
+    && item.supplierPlaceholder.length > 0
+    && item.pricingAssumptions.marginAssumption.length > 0
+    && item.pricingAssumptions.wasteAssumption.length > 0
+    && item.pricingAssumptions.notes.length >= 2
     && item.notes.length > 0
   )),
   true,
@@ -646,12 +748,26 @@ assert.equal(
       && item.unit.length > 0
       && ['packageFixed', 'estimated', 'siteDependent', 'requiresEngineering'].includes(item.confidence)
       && ['internalPreview', 'supplierPlaceholder', 'manualReviewRequired'].includes(item.priceSource)
+      && ['internalDatabase', 'supplierBudgetPlaceholder', 'manualReview'].includes(item.sourceType)
       && item.lastUpdated === '2026-06-06'
+      && item.currency === 'EUR'
+      && item.region === 'eu-preview'
+      && item.supplierPlaceholder.length > 0
+      && item.pricingAssumptions.marginAssumption.length > 0
+      && item.pricingAssumptions.wasteAssumption.length > 0
       && item.notes.length > 0
       && Object.hasOwn(item, 'unitCost')
       && Object.hasOwn(item, 'subtotal')
     ))
   )),
+  true,
+);
+assert.equal(
+  compactStandardWindowEstimate.sections.some((section) => section.lineItems.some((item) => item.sourceType === 'supplierBudgetPlaceholder')),
+  true,
+);
+assert.equal(
+  compactStandardWindowEstimate.sections.some((section) => section.lineItems.some((item) => item.sourceType === 'manualReview')),
   true,
 );
 assert.equal(compactStandardWindowEstimate.sections.find((section) => section.id === 'modulePackage')?.confidence, 'estimated');
@@ -725,6 +841,44 @@ const compactFrontPlacementEstimate = calculateModularHomeEstimate({
 });
 assert.ok(compactFrontPlacementEstimate.estimatedTotal > compactBalancedPlacementEstimate.estimatedTotal);
 assert.equal(compactFrontPlacementEstimate.selectedOptions.windowPlacement, 'Front panoramic placement');
+
+const compactWideDimensionSummary = getModularHomeDimensionSummary({
+  ...getDefaultHomeConfig('compact-timber-40'),
+  dimensionPreset: 'compactWideLiving',
+});
+assert.equal(compactWideDimensionSummary.dimensionPresetLabel, 'Compact wide living');
+assert.equal(compactWideDimensionSummary.floorAreaM2, 44);
+assert.equal(compactWideDimensionSummary.footprintWidthM, 8.8);
+
+const compactWideRoomSummary = getModularHomeRoomMeasurementSummary({
+  ...getDefaultHomeConfig('compact-timber-40'),
+  dimensionPreset: 'compactWideLiving',
+});
+assert.equal(compactWideRoomSummary.floorAreaM2, 44);
+assert.ok(compactWideRoomSummary.roomAreaTotalM2 > 40);
+
+const familyExtraPreset = getModularHomeDimensionPresetForConfig({
+  ...getDefaultHomeConfig('family-timber-80'),
+  dimensionPreset: 'familyExtraBedroomModule',
+});
+assert.ok(familyExtraPreset);
+assert.equal(familyExtraPreset.id, 'familyExtraBedroomModule');
+
+const familyStandardQuantities = calculateModularHomeQuantities(getDefaultHomeConfig('family-timber-80'));
+const familyExtraQuantities = calculateModularHomeQuantities({
+  ...getDefaultHomeConfig('family-timber-80'),
+  dimensionPreset: 'familyExtraBedroomModule',
+});
+assert.ok(familyExtraQuantities.grossFloorAreaM2 > familyStandardQuantities.grossFloorAreaM2);
+assert.ok(familyExtraQuantities.moduleCount > familyStandardQuantities.moduleCount);
+assert.ok(familyExtraQuantities.transportModuleCount > familyStandardQuantities.transportModuleCount);
+
+const saunaStandardQuantities = calculateModularHomeQuantities(getDefaultHomeConfig('sauna-cabin-25'));
+const saunaDeepTerraceQuantities = calculateModularHomeQuantities({
+  ...getDefaultHomeConfig('sauna-cabin-25'),
+  dimensionPreset: 'saunaDeepTerrace',
+});
+assert.ok(saunaDeepTerraceQuantities.terraceAreaM2 > saunaStandardQuantities.terraceAreaM2);
 
 const compactStandardDoorEstimate = calculateModularHomeEstimate({
   ...getDefaultHomeConfig('compact-timber-40'),
@@ -841,8 +995,8 @@ assert.equal(workspaceComparison.changedOptionCount, 2);
 assert.equal(workspaceComparison.recommendationNote, 'This comparison is preview-only and requires final review.');
 assert.equal(workspaceComparison.savedSummary.product, 'Compact Timber 40');
 assert.equal(workspaceComparison.currentSummary.product, 'Compact Timber 40');
-assert.equal(workspaceComparison.savedSummary.moduleCount, 3);
-assert.equal(workspaceComparison.currentSummary.moduleCount, 3);
+assert.equal(workspaceComparison.savedSummary.moduleCount, 2);
+assert.equal(workspaceComparison.currentSummary.moduleCount, 2);
 assert.equal(workspaceComparison.currentSummary.confidenceSummary.reviewLineCount >= workspaceComparison.savedSummary.confidenceSummary.reviewLineCount, true);
 assert.equal(workspaceComparison.savedSummary.confidenceSummary.confidenceLabels.includes('Estimate'), true);
 assert.equal(workspaceComparison.currentSummary.confidenceSummary.priceSourceLabels.includes('Manual review'), true);
@@ -1117,8 +1271,78 @@ const compactTerraceFacingDoorQuantities = calculateModularHomeQuantities({
 });
 assert.ok(compactTerraceFacingDoorQuantities.doorCount > compactQuantities.doorCount);
 
+const compactMaterialTakeoff = calculateMaterialTakeoff(getDefaultHomeConfig('compact-timber-40'));
+const familyMaterialTakeoff = calculateMaterialTakeoff(getDefaultHomeConfig('family-timber-80'));
+assert.ok(familyMaterialTakeoff.grossFloorAreaM2 > compactMaterialTakeoff.grossFloorAreaM2);
+assert.ok(familyMaterialTakeoff.facadeAreaM2 > compactMaterialTakeoff.facadeAreaM2);
+assert.ok(familyMaterialTakeoff.roofAreaM2 > compactMaterialTakeoff.roofAreaM2);
+
+const compactNoTerraceMaterialTakeoff = calculateMaterialTakeoff({
+  ...getDefaultHomeConfig('compact-timber-40'),
+  terrace: 'none',
+});
+const compactCoveredTerraceMaterialTakeoff = calculateMaterialTakeoff({
+  ...getDefaultHomeConfig('compact-timber-40'),
+  terrace: 'coveredTerracePlaceholder',
+});
+assert.ok(compactCoveredTerraceMaterialTakeoff.terraceDeckingAreaM2 > compactNoTerraceMaterialTakeoff.terraceDeckingAreaM2);
+
+const compactBalancedWindowTakeoff = calculateMaterialTakeoff(getDefaultHomeConfig('compact-timber-40'));
+const compactPanoramicWindowTakeoff = calculateMaterialTakeoff({
+  ...getDefaultHomeConfig('compact-timber-40'),
+  windowPackage: 'panoramicWindows',
+  windowPlacement: 'frontPanoramic',
+});
+assert.ok(compactPanoramicWindowTakeoff.totalWindowAreaM2 > compactBalancedWindowTakeoff.totalWindowAreaM2);
+
+const compactStandardDimensionTakeoff = calculateMaterialTakeoff({
+  ...getDefaultHomeConfig('compact-timber-40'),
+  dimensionPreset: 'compactStandard',
+});
+const compactWideDimensionTakeoff = calculateMaterialTakeoff({
+  ...getDefaultHomeConfig('compact-timber-40'),
+  dimensionPreset: 'compactWideLiving',
+});
+assert.ok(compactWideDimensionTakeoff.grossFloorAreaM2 > compactStandardDimensionTakeoff.grossFloorAreaM2);
+assert.ok(compactWideDimensionTakeoff.facadeBoardLinearM > compactStandardDimensionTakeoff.facadeBoardLinearM);
+
+const validSupplierCostValidation = validateSupplierCostItems(MODULAR_HOME_SUPPLIER_COST_ITEMS);
+assert.equal(validSupplierCostValidation.valid, true);
+assert.equal(validSupplierCostValidation.errors.length, 0);
+
+const missingUnitCostValidation = validateSupplierCostItems([
+  {
+    ...MODULAR_HOME_SUPPLIER_COST_ITEMS[0],
+    itemCode: 'TEST-MISSING-UNITCOST',
+    unitCost: 0,
+  },
+]);
+assert.equal(missingUnitCostValidation.valid, false);
+assert.equal(missingUnitCostValidation.errors.some((issue) => issue.field === 'unitCost'), true);
+
+const wrongCurrencyValidation = validateSupplierCostItems([
+  {
+    ...MODULAR_HOME_SUPPLIER_COST_ITEMS[0],
+    currency: 'USD',
+    itemCode: 'TEST-WRONG-CURRENCY',
+  } as typeof MODULAR_HOME_SUPPLIER_COST_ITEMS[number] & { currency: 'USD' },
+]);
+assert.equal(wrongCurrencyValidation.valid, false);
+assert.equal(wrongCurrencyValidation.errors.some((issue) => issue.field === 'currency'), true);
+
+const facadeBoardSupplierItems = getCostItemsByCategory('facadeBoarding');
+assert.equal(facadeBoardSupplierItems.length > 0, true);
+assert.equal(MODULAR_HOME_DEFAULT_SUPPLIER_COST_MAP.pricingCategoryMap.material.length > 0, true);
+
+const windowSupplierItem = getCostItemForComponent('WIN-PANO');
+assert.equal(windowSupplierItem?.category, 'windowUnit');
+
+const fallbackEstimate = calculateModularHomeEstimate(getDefaultHomeConfig('compact-timber-40'));
+assert.equal(fallbackEstimate.totalPrice > 0, true);
+
 const encodedConfig = encodeModularHomeConfigToSearchParams({
   ...getDefaultHomeConfig('compact-timber-40'),
+  dimensionPreset: 'compactWideLiving',
   doorPackage: 'premiumGlazedEntry',
   doorPlacement: 'sideEntry',
   terrace: 'sideTerrace',
@@ -1128,6 +1352,7 @@ const encodedConfig = encodeModularHomeConfigToSearchParams({
 assert.equal(encodedConfig.get('model'), 'compact');
 assert.equal(encodedConfig.get('homeModel'), null);
 assert.equal(encodedConfig.get('layout'), 'one');
+assert.equal(encodedConfig.get('dims'), 'wide');
 assert.equal(encodedConfig.get('windows'), 'corner');
 assert.equal(encodedConfig.get('windowPlace'), 'corner');
 assert.equal(encodedConfig.get('door'), 'glazed');
@@ -1135,8 +1360,9 @@ assert.equal(encodedConfig.get('doorPlace'), 'side');
 assert.equal(encodedConfig.get('terrace'), 'side');
 assert.equal(encodedConfig.get('view'), 'floorplan');
 
-const decodedConfig = decodeModularHomeConfigFromUrl('?homeDemo=1&homeModel=compact&windows=panoramic&windowPlace=front&door=slider&doorPlace=terrace&terrace=covered');
+const decodedConfig = decodeModularHomeConfigFromUrl('?homeDemo=1&homeModel=compact&dims=long&windows=panoramic&windowPlace=front&door=slider&doorPlace=terrace&terrace=covered');
 assert.equal(decodedConfig.config.windowPackage, 'panoramicWindows');
+assert.equal(decodedConfig.config.dimensionPreset, 'compactLongBedroom');
 assert.equal(decodedConfig.config.windowPlacement, 'frontPanoramic');
 assert.equal(decodedConfig.config.doorPackage, 'terraceSlider');
 assert.equal(decodedConfig.config.doorPlacement, 'terraceFacing');
@@ -1145,10 +1371,11 @@ assert.equal(decodedConfig.config.layoutVariant, 'oneBedroom');
 assert.equal(decodedConfig.usedFallback, false);
 assert.equal(decodedConfig.viewMode, 'exterior');
 
-const decodedShortConfig = decodeModularHomeConfigFromUrl('?homeDemo=1&model=family&layout=three&facade=dark&roof=flat&terrace=side&finish=premium&windows=panoramic&windowPlace=corner&door=slider&doorPlace=side&view=cutaway');
+const decodedShortConfig = decodeModularHomeConfigFromUrl('?homeDemo=1&model=family&layout=three&dims=extra&facade=dark&roof=flat&terrace=side&finish=premium&windows=panoramic&windowPlace=corner&door=slider&doorPlace=side&view=cutaway');
 assert.equal(decodedShortConfig.config.template, 'familyTimber80');
 assert.equal(decodedShortConfig.productId, 'family-timber-80');
 assert.equal(decodedShortConfig.config.layoutVariant, 'threeBedroomCompact');
+assert.equal(decodedShortConfig.config.dimensionPreset, 'familyExtraBedroomModule');
 assert.equal(decodedShortConfig.config.facade, 'darkThermoWood');
 assert.equal(decodedShortConfig.config.roof, 'flat');
 assert.equal(decodedShortConfig.config.terrace, 'sideTerrace');
@@ -1160,10 +1387,11 @@ assert.equal(decodedShortConfig.config.doorPlacement, 'sideEntry');
 assert.equal(decodedShortConfig.viewMode, 'cutaway');
 assert.equal(decodedShortConfig.usedFallback, false);
 
-const decodedCaseInsensitiveConfig = decodeModularHomeConfigFromUrl('?homeDemo=1&model=FAMILY&layout=Large&facade=Dark&roof=FLAT&terrace=SIDE&finish=Premium&windows=Panoramic&windowPlacement=Front&door=Slider&doorPlacement=Terrace&view=PLAN');
+const decodedCaseInsensitiveConfig = decodeModularHomeConfigFromUrl('?homeDemo=1&model=FAMILY&layout=Large&dimensionPreset=Wide&facade=Dark&roof=FLAT&terrace=SIDE&finish=Premium&windows=Panoramic&windowPlacement=Front&door=Slider&doorPlacement=Terrace&view=PLAN');
 assert.equal(decodedCaseInsensitiveConfig.config.template, 'familyTimber80');
 assert.equal(decodedCaseInsensitiveConfig.productId, 'family-timber-80');
 assert.equal(decodedCaseInsensitiveConfig.config.layoutVariant, 'largeLiving');
+assert.equal(decodedCaseInsensitiveConfig.config.dimensionPreset, 'familyWideLiving');
 assert.equal(decodedCaseInsensitiveConfig.config.facade, 'darkThermoWood');
 assert.equal(decodedCaseInsensitiveConfig.config.windowPackage, 'panoramicWindows');
 assert.equal(decodedCaseInsensitiveConfig.config.windowPlacement, 'frontPanoramic');
@@ -1218,20 +1446,22 @@ assert.equal(decodedDetailConfig.config.kitchenLine, 'enabled');
 assert.equal(decodedDetailConfig.config.wardrobePlaceholder, 'disabled');
 assert.equal(decodedDetailConfig.usedFallback, false);
 
-const decodedInvalidShareConfig = decodeModularHomeConfigFromUrl('?homeDemo=1&model=missing&layout=bad&facade=unknown&roof=bad&terrace=bad&finish=bad&furniture=bad&sofa=bad&table=bad&bed=bad&kitchen=bad&wardrobe=bad&windows=bad&windowPlace=bad&door=bad&doorPlace=bad&boardDir=bad&boardWidth=bad&boardProfile=bad&boardSpacing=bad&trim=bad&roofEdge=bad&gutter=bad&frame=bad&frameType=bad&wall=bad&floor=bad&floorStyle=bad&wallPanel=bad&view=bad');
+const decodedInvalidShareConfig = decodeModularHomeConfigFromUrl('?homeDemo=1&model=missing&layout=bad&dims=bad&facade=unknown&roof=bad&terrace=bad&finish=bad&furniture=bad&sofa=bad&table=bad&bed=bad&kitchen=bad&wardrobe=bad&windows=bad&windowPlace=bad&door=bad&doorPlace=bad&boardDir=bad&boardWidth=bad&boardProfile=bad&boardSpacing=bad&trim=bad&roofEdge=bad&gutter=bad&frame=bad&frameType=bad&wall=bad&floor=bad&floorStyle=bad&wallPanel=bad&view=bad');
 assert.equal(decodedInvalidShareConfig.config.template, 'compactTimber40');
 assert.equal(decodedInvalidShareConfig.config.layoutVariant, 'oneBedroom');
+assert.equal(decodedInvalidShareConfig.config.dimensionPreset, 'compactStandard');
 assert.equal(decodedInvalidShareConfig.productId, 'compact-timber-40');
 assert.equal(decodedInvalidShareConfig.viewMode, 'exterior');
 assert.equal(decodedInvalidShareConfig.usedFallback, true);
 assert.deepEqual(
   [...decodedInvalidShareConfig.invalidKeys].sort(),
-  ['bed', 'boardDir', 'boardProfile', 'boardSpacing', 'boardWidth', 'door', 'doorPlace', 'facade', 'finish', 'floor', 'floorStyle', 'frame', 'frameType', 'furniture', 'gutter', 'kitchen', 'layout', 'model', 'roof', 'roofEdge', 'sofa', 'table', 'terrace', 'trim', 'view', 'wall', 'wallPanel', 'wardrobe', 'windowPlace', 'windows'].sort(),
+  ['bed', 'boardDir', 'boardProfile', 'boardSpacing', 'boardWidth', 'dims', 'door', 'doorPlace', 'facade', 'finish', 'floor', 'floorStyle', 'frame', 'frameType', 'furniture', 'gutter', 'kitchen', 'layout', 'model', 'roof', 'roofEdge', 'sofa', 'table', 'terrace', 'trim', 'view', 'wall', 'wallPanel', 'wardrobe', 'windowPlace', 'windows'].sort(),
 );
 
 const shareUrl = createModularHomeShareUrl(
   {
     ...getDefaultHomeConfig('family-timber-80'),
+    dimensionPreset: 'familyWideLiving',
     facade: 'darkThermoWood',
     roof: 'flat',
     terrace: 'sideTerrace',
@@ -1241,10 +1471,11 @@ const shareUrl = createModularHomeShareUrl(
   'cutaway',
 );
 const shareUrlSearch = new URL(shareUrl).searchParams;
-assert.equal(shareUrl, 'https://example.test/expo-3d?homeDemo=1&model=family&layout=two&facade=dark&roof=flat&terrace=side&finish=standard&windows=panoramic&windowPlace=front&door=slider&doorPlace=terrace&boardDir=h&boardWidth=standard&boardProfile=square&boardSpacing=standard&trim=timber&roofEdge=graphite&gutter=minimal&frame=timber&frameType=standard&wall=plywood&floor=plywood&floorStyle=utility&wallPanel=plain&furniture=standard&sofa=1&table=1&bed=1&kitchen=1&wardrobe=1&view=cutaway');
+assert.equal(shareUrl, 'https://example.test/expo-3d?homeDemo=1&model=family&layout=two&dims=wide&facade=dark&roof=flat&terrace=side&finish=standard&windows=panoramic&windowPlace=front&door=slider&doorPlace=terrace&boardDir=h&boardWidth=standard&boardProfile=square&boardSpacing=standard&trim=timber&roofEdge=graphite&gutter=minimal&frame=timber&frameType=standard&wall=plywood&floor=plywood&floorStyle=utility&wallPanel=plain&furniture=standard&sofa=1&table=1&bed=1&kitchen=1&wardrobe=1&view=cutaway');
 assert.equal(shareUrlSearch.get('old'), null);
 assert.equal(shareUrlSearch.get('model'), 'family');
 assert.equal(shareUrlSearch.get('layout'), 'two');
+assert.equal(shareUrlSearch.get('dims'), 'wide');
 assert.equal(shareUrlSearch.get('windowPlace'), 'front');
 assert.equal(shareUrlSearch.get('doorPlace'), 'terrace');
 assert.equal(shareUrlSearch.get('boardDir'), 'h');
@@ -1277,3 +1508,53 @@ assert.equal(getModularHomeViewMode(), 'interior');
 resetModularHomeViewMode();
 assert.equal(getModularHomeViewMode(), 'exterior');
 assert.equal(getModularHomeViewModeLabel(DEFAULT_MODULAR_HOME_VIEW_MODE), 'Exterior');
+
+const professionalExportConfig = {
+  ...getDefaultHomeConfig('compact-timber-40'),
+  layoutVariant: 'officeCabin',
+  dimensionPreset: 'compactWideLiving',
+  roomUseProfile: 'office',
+  windowPlacement: 'frontPanoramic',
+  doorPlacement: 'terraceFacing',
+} as const;
+const professionalExportEstimate = calculateModularHomeEstimate(professionalExportConfig);
+const professionalQuoteExport = buildModularHomeProfessionalQuoteExportData({
+  componentBom: calculateComponentBom(professionalExportConfig),
+  dimensions: getModularHomeDimensionSummary(professionalExportConfig),
+  estimate: professionalExportEstimate,
+  generatedAt: new Date('2026-06-10T10:30:00.000Z'),
+  latestQuoteRequest: {
+    budgetRange: '100k-150k',
+    config: professionalExportConfig,
+    consentGiven: true,
+    consentText: 'Preview only',
+    countryCity: 'Riga, Latvia',
+    createdAt: '2026-06-10T10:20:00.000Z',
+    disclaimer: professionalExportEstimate.disclaimer,
+    email: 'client@example.com',
+    estimatedTotal: professionalExportEstimate.estimatedTotal,
+    estimatedTotalLabel: formatHomeEstimateEur(professionalExportEstimate.estimatedTotal),
+    id: 'preview-1',
+    landOwned: 'yes',
+    message: 'Need compact office cabin.',
+    model: professionalExportEstimate.baseModel,
+    name: 'Client Example',
+    phone: '+37120000000',
+    selectedOptions: professionalExportEstimate.selectedOptions,
+    source: 'homeDemoPreview',
+    status: 'preview-local-only',
+    targetBuildDate: '6-12-months',
+  },
+  manufacturingBom: calculateManufacturingBomPreview(professionalExportConfig),
+  materialTakeoff: calculateMaterialTakeoff(professionalExportConfig),
+  productionConstraints: getModularHomeProductionConstraints(professionalExportConfig),
+  projectId: 'home-preview-round143',
+});
+assert.equal(professionalQuoteExport.headerRows.some((row) => row.label === 'Project ID' && row.value === 'home-preview-round143'), true);
+assert.equal(professionalQuoteExport.clientRows.some((row) => row.label === 'Client' && row.value === 'Client Example'), true);
+assert.equal(professionalQuoteExport.configRows.some((row) => row.label === 'Dimension preset' && row.value === 'Compact wide living'), true);
+assert.deepEqual(professionalQuoteExport.estimateScenarioRows.map((row) => row.id), ['base', 'expected', 'premium', 'siteDependentExtras']);
+assert.equal(professionalQuoteExport.nextSteps.length, 4);
+assert.equal(professionalQuoteExport.exportText.includes('Professional Quote Export'), true);
+assert.equal(professionalQuoteExport.exportText.includes('Opening schedule summary'), true);
+assert.equal(professionalQuoteExport.exportText.includes('Manufacturing BOM preview summary'), true);

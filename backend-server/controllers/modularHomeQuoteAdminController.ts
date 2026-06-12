@@ -4,6 +4,16 @@ import { getSupabase } from '../services/supabase.js';
 
 export type ModularHomeQuoteAdminStatus = 'contacted' | 'lost' | 'new' | 'quoted' | 'won';
 
+export type ModularHomeQuoteAdminStatusHistoryEntry = {
+  changedAt: string;
+  changedBy: string | null;
+  consultantAssignment: string | null;
+  followUpRequired: boolean;
+  fromStatus: ModularHomeQuoteAdminStatus;
+  internalNote: string | null;
+  toStatus: ModularHomeQuoteAdminStatus;
+};
+
 export type ModularHomeQuoteAdminAccessPlan = {
   adminRoutes: Array<{
     method: 'GET' | 'PATCH';
@@ -22,14 +32,17 @@ type SupabaseQuoteRow = {
   attribution?: unknown;
   config?: unknown;
   consent?: unknown;
+  consultant_assignment?: string | null;
   created_at?: string;
   estimate?: unknown;
+  follow_up_required?: boolean | null;
   id?: string;
   internal_note?: string;
   project?: unknown;
   requester?: unknown;
   source?: unknown;
   status?: string;
+  status_history?: unknown;
 };
 
 const MODULAR_HOME_QUOTE_ADMIN_TABLE = 'modular_home_quote_requests';
@@ -38,6 +51,9 @@ const MODULAR_HOME_QUOTE_ADMIN_SELECT = [
   'created_at',
   'status',
   'internal_note',
+  'consultant_assignment',
+  'follow_up_required',
+  'status_history',
   'requester',
   'project',
   'config',
@@ -50,6 +66,7 @@ const MODULAR_HOME_QUOTE_ADMIN_SELECT = [
 const ADMIN_STATUSES = new Set<ModularHomeQuoteAdminStatus>(['contacted', 'lost', 'new', 'quoted', 'won']);
 const DEFAULT_ADMIN_LIST_LIMIT = 50;
 const MAX_ADMIN_LIST_LIMIT = 200;
+const MAX_CONSULTANT_ASSIGNMENT_LENGTH = 180;
 const MAX_INTERNAL_NOTE_LENGTH = 2000;
 
 function normalizeText(value: unknown, fallback = ''): string {
@@ -86,18 +103,163 @@ function normalizeInternalNote(value: unknown): string | null | undefined {
   return normalized ? normalized.slice(0, MAX_INTERNAL_NOTE_LENGTH) : null;
 }
 
+function normalizeConsultantAssignment(value: unknown): string | null | undefined {
+  if (typeof value !== 'string') {
+    return undefined;
+  }
+
+  const normalized = value.trim();
+  return normalized ? normalized.slice(0, MAX_CONSULTANT_ASSIGNMENT_LENGTH) : null;
+}
+
+function normalizeFollowUpRequired(value: unknown): boolean | undefined {
+  if (typeof value === 'boolean') {
+    return value;
+  }
+
+  if (typeof value === 'string') {
+    if (value === 'true') {
+      return true;
+    }
+
+    if (value === 'false') {
+      return false;
+    }
+  }
+
+  return undefined;
+}
+
+export function normalizeModularHomeQuoteAdminStatus(value: unknown): ModularHomeQuoteAdminStatus {
+  const normalized = normalizeText(value).toLowerCase();
+  if (normalized === 'qualified') {
+    return 'quoted';
+  }
+
+  if (normalized === 'closed') {
+    return 'won';
+  }
+
+  if (!ADMIN_STATUSES.has(normalized as ModularHomeQuoteAdminStatus)) {
+    throw new Error('MODULAR_HOME_QUOTE_ADMIN_STATUS_INVALID');
+  }
+
+  return normalized as ModularHomeQuoteAdminStatus;
+}
+
+function normalizeStatusHistoryEntry(value: unknown): ModularHomeQuoteAdminStatusHistoryEntry | null {
+  const record = asRecord(value);
+  if (Object.keys(record).length === 0) {
+    return null;
+  }
+
+  try {
+    return {
+      changedAt: normalizeText(record.changedAt, new Date(0).toISOString()),
+      changedBy: normalizeText(record.changedBy) || null,
+      consultantAssignment: normalizeText(record.consultantAssignment) || null,
+      followUpRequired: Boolean(record.followUpRequired),
+      fromStatus: normalizeModularHomeQuoteAdminStatus(record.fromStatus),
+      internalNote: normalizeText(record.internalNote) || null,
+      toStatus: normalizeModularHomeQuoteAdminStatus(record.toStatus),
+    };
+  } catch {
+    return null;
+  }
+}
+
+function normalizeStatusHistory(value: unknown): ModularHomeQuoteAdminStatusHistoryEntry[] {
+  return Array.isArray(value)
+    ? value
+      .map((entry) => normalizeStatusHistoryEntry(entry))
+      .filter((entry): entry is ModularHomeQuoteAdminStatusHistoryEntry => entry !== null)
+    : [];
+}
+
+function appendStatusHistoryEntry(input: {
+  changedBy: string | null;
+  consultantAssignment: string | null;
+  currentStatus: ModularHomeQuoteAdminStatus;
+  followUpRequired: boolean;
+  history: readonly ModularHomeQuoteAdminStatusHistoryEntry[];
+  internalNote: string | null;
+  nextStatus: ModularHomeQuoteAdminStatus;
+}): ModularHomeQuoteAdminStatusHistoryEntry[] {
+  return [
+    ...input.history,
+    {
+      changedAt: new Date().toISOString(),
+      changedBy: input.changedBy,
+      consultantAssignment: input.consultantAssignment,
+      followUpRequired: input.followUpRequired,
+      fromStatus: input.currentStatus,
+      internalNote: input.internalNote,
+      toStatus: input.nextStatus,
+    },
+  ];
+}
+
 export function buildModularHomeQuoteAdminStatusUpdatePayload(
   status: ModularHomeQuoteAdminStatus,
   internalNote: unknown,
+  consultantAssignment?: unknown,
+  followUpRequired?: unknown,
+  statusHistory?: readonly ModularHomeQuoteAdminStatusHistoryEntry[],
 ) {
   const payload: {
+    consultant_assignment?: string | null;
+    follow_up_required?: boolean;
     internal_note?: string | null;
     status: ModularHomeQuoteAdminStatus;
+    status_history?: readonly ModularHomeQuoteAdminStatusHistoryEntry[];
   } = { status };
   const normalizedNote = normalizeInternalNote(internalNote);
+  const normalizedConsultantAssignment = normalizeConsultantAssignment(consultantAssignment);
+  const normalizedFollowUpRequired = normalizeFollowUpRequired(followUpRequired);
 
   if (normalizedNote !== undefined) {
     payload.internal_note = normalizedNote;
+  }
+
+  if (normalizedConsultantAssignment !== undefined) {
+    payload.consultant_assignment = normalizedConsultantAssignment;
+  }
+
+  if (normalizedFollowUpRequired !== undefined) {
+    payload.follow_up_required = normalizedFollowUpRequired;
+  }
+
+  if (statusHistory) {
+    payload.status_history = statusHistory;
+  }
+
+  return payload;
+}
+
+export function buildModularHomeQuoteAdminOpsUpdatePayload(
+  internalNote: unknown,
+  consultantAssignment: unknown,
+  followUpRequired: unknown,
+) {
+  const payload: {
+    consultant_assignment?: string | null;
+    follow_up_required?: boolean;
+    internal_note?: string | null;
+  } = {};
+  const normalizedNote = normalizeInternalNote(internalNote);
+  const normalizedConsultantAssignment = normalizeConsultantAssignment(consultantAssignment);
+  const normalizedFollowUpRequired = normalizeFollowUpRequired(followUpRequired);
+
+  if (normalizedNote !== undefined) {
+    payload.internal_note = normalizedNote;
+  }
+
+  if (normalizedConsultantAssignment !== undefined) {
+    payload.consultant_assignment = normalizedConsultantAssignment;
+  }
+
+  if (normalizedFollowUpRequired !== undefined) {
+    payload.follow_up_required = normalizedFollowUpRequired;
   }
 
   return payload;
@@ -119,7 +281,12 @@ export function getModularHomeQuoteAdminAccessPlan(): ModularHomeQuoteAdminAcces
       {
         method: 'PATCH',
         path: '/api/modular-home/quotes/:quoteId/status',
-        purpose: 'Update sales review status and optional internal note for one quote request.',
+        purpose: 'Update sales review status and append status history for one quote request.',
+      },
+      {
+        method: 'PATCH',
+        path: '/api/modular-home/quotes/:quoteId/ops',
+        purpose: 'Save consultant assignment, follow-up requirement and internal note for one quote request.',
       },
       {
         method: 'GET',
@@ -132,6 +299,7 @@ export function getModularHomeQuoteAdminAccessPlan(): ModularHomeQuoteAdminAcces
       'Exports require admin JWT role.',
       'Export endpoint is mounted under protectedRouter only.',
       'Internal notes are admin-only fields and must never be shown in public Modular Home demo views.',
+      'Consultant assignment and follow-up flags are admin-only sales operations fields.',
       'Future production export must write an audit log row with actor id and row count.',
     ],
     publicExposure: false,
@@ -139,23 +307,6 @@ export function getModularHomeQuoteAdminAccessPlan(): ModularHomeQuoteAdminAcces
     statusWorkflow: ['new', 'contacted', 'quoted', 'won', 'lost'],
     storageTable: MODULAR_HOME_QUOTE_ADMIN_TABLE,
   };
-}
-
-export function normalizeModularHomeQuoteAdminStatus(value: unknown): ModularHomeQuoteAdminStatus {
-  const normalized = normalizeText(value).toLowerCase();
-  if (normalized === 'qualified') {
-    return 'quoted';
-  }
-
-  if (normalized === 'closed') {
-    return 'won';
-  }
-
-  if (!ADMIN_STATUSES.has(normalized as ModularHomeQuoteAdminStatus)) {
-    throw new Error('MODULAR_HOME_QUOTE_ADMIN_STATUS_INVALID');
-  }
-
-  return normalized as ModularHomeQuoteAdminStatus;
 }
 
 export function normalizeModularHomeQuoteAdminLimit(value: unknown): number {
@@ -172,6 +323,9 @@ export function serializeModularHomeQuoteAdminCsv(rows: readonly SupabaseQuoteRo
     'id',
     'created_at',
     'status',
+    'consultant_assignment',
+    'follow_up_required',
+    'status_history_count',
     'internal_note',
     'model',
     'estimated_total',
@@ -207,6 +361,9 @@ export function serializeModularHomeQuoteAdminCsv(rows: readonly SupabaseQuoteRo
     row.id ?? '',
     row.created_at ?? '',
     row.status ?? '',
+    row.consultant_assignment ?? '',
+    row.follow_up_required ? 'true' : 'false',
+    normalizeStatusHistory(row.status_history).length,
     row.internal_note ?? '',
     getNestedText(row.project, 'modelName'),
     getNestedNumber(row.estimate, 'estimatedTotal'),
@@ -343,15 +500,45 @@ export async function updateModularHomeQuoteStatus(req: AuthRequest, res: Respon
   try {
     const quoteId = normalizeQuoteId(req.params.quoteId);
     const status = normalizeModularHomeQuoteAdminStatus(req.body?.status);
+    const { data: existingRow, error: existingError } = await getSupabase()
+      .from(MODULAR_HOME_QUOTE_ADMIN_TABLE)
+      .select('status, status_history, internal_note, consultant_assignment, follow_up_required')
+      .eq('id', quoteId)
+      .single();
+
+    if (existingError) {
+      throw existingError;
+    }
+
+    const currentStatus = normalizeModularHomeQuoteAdminStatus(existingRow?.status ?? 'new');
+    const internalNote = req.body?.internalNote ?? req.body?.internal_note;
+    const consultantAssignment = req.body?.consultantAssignment ?? req.body?.consultant_assignment;
+    const followUpRequired = req.body?.followUpRequired ?? req.body?.follow_up_required;
+    const nextInternalNote = normalizeInternalNote(internalNote) ?? (normalizeText(existingRow?.internal_note) || null);
+    const nextConsultantAssignment = normalizeConsultantAssignment(consultantAssignment) ?? (normalizeText(existingRow?.consultant_assignment) || null);
+    const nextFollowUpRequired = normalizeFollowUpRequired(followUpRequired) ?? Boolean(existingRow?.follow_up_required);
+    const statusHistory = appendStatusHistoryEntry({
+      changedBy: req.user?.id ?? null,
+      consultantAssignment: nextConsultantAssignment,
+      currentStatus,
+      followUpRequired: nextFollowUpRequired,
+      history: normalizeStatusHistory(existingRow?.status_history),
+      internalNote: nextInternalNote,
+      nextStatus: status,
+    });
+
     const updatePayload = buildModularHomeQuoteAdminStatusUpdatePayload(
       status,
-      req.body?.internalNote ?? req.body?.internal_note,
+      internalNote,
+      consultantAssignment,
+      followUpRequired,
+      statusHistory,
     );
     const { data, error } = await getSupabase()
       .from(MODULAR_HOME_QUOTE_ADMIN_TABLE)
       .update(updatePayload)
       .eq('id', quoteId)
-      .select('id, status, internal_note')
+      .select('id, status, internal_note, consultant_assignment, follow_up_required, status_history')
       .single();
 
     if (error) {
@@ -367,5 +554,41 @@ export async function updateModularHomeQuoteStatus(req: AuthRequest, res: Respon
     const code = String(error?.message || 'MODULAR_HOME_QUOTE_ADMIN_STATUS_UPDATE_FAILED');
     const status = code.startsWith('MODULAR_HOME_QUOTE_ADMIN_') ? 400 : 500;
     return quoteAdminError(res, status, code, 'Could not update Modular Home quote status.');
+  }
+}
+
+export async function updateModularHomeQuoteOps(req: AuthRequest, res: Response) {
+  try {
+    const quoteId = normalizeQuoteId(req.params.quoteId);
+    const updatePayload = buildModularHomeQuoteAdminOpsUpdatePayload(
+      req.body?.internalNote ?? req.body?.internal_note,
+      req.body?.consultantAssignment ?? req.body?.consultant_assignment,
+      req.body?.followUpRequired ?? req.body?.follow_up_required,
+    );
+
+    if (Object.keys(updatePayload).length === 0) {
+      return quoteAdminError(res, 400, 'MODULAR_HOME_QUOTE_ADMIN_OPS_EMPTY', 'No sales operations fields were provided.');
+    }
+
+    const { data, error } = await getSupabase()
+      .from(MODULAR_HOME_QUOTE_ADMIN_TABLE)
+      .update(updatePayload)
+      .eq('id', quoteId)
+      .select('id, status, internal_note, consultant_assignment, follow_up_required, status_history')
+      .single();
+
+    if (error) {
+      throw error;
+    }
+
+    return res.json({
+      quote: data,
+      success: true,
+      updatedBy: req.user?.id ?? null,
+    });
+  } catch (error: any) {
+    const code = String(error?.message || 'MODULAR_HOME_QUOTE_ADMIN_OPS_UPDATE_FAILED');
+    const status = code.startsWith('MODULAR_HOME_QUOTE_ADMIN_') ? 400 : 500;
+    return quoteAdminError(res, status, code, 'Could not update Modular Home quote sales operations fields.');
   }
 }

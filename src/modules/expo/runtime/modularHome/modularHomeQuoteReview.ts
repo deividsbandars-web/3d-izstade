@@ -8,6 +8,16 @@ export type ModularHomeQuoteReviewStatus =
   | 'won'
   | 'lost';
 
+export type ModularHomeQuoteStatusHistoryEntry = {
+  changedAt: string;
+  changedBy: string | null;
+  consultantAssignment: string;
+  followUpRequired: boolean;
+  fromStatus: ModularHomeQuoteReviewStatus;
+  internalNote: string;
+  toStatus: ModularHomeQuoteReviewStatus;
+};
+
 export type ModularHomeQuoteReviewRow = {
   budgetRange: string;
   config: {
@@ -49,6 +59,8 @@ export type ModularHomeQuoteReviewRow = {
     label: string;
     total: number;
   };
+  consultantAssignment: string;
+  followUpRequired: boolean;
   id: string;
   internalNote: string;
   landOwned: string;
@@ -56,6 +68,7 @@ export type ModularHomeQuoteReviewRow = {
   model: string;
   source: ModularHomeQuoteReviewSource;
   status: ModularHomeQuoteReviewStatus;
+  statusHistory: readonly ModularHomeQuoteStatusHistoryEntry[];
   targetBuildDate: string;
 };
 
@@ -111,6 +124,8 @@ const MOCK_QUOTE_ROWS = [
       label: 'EUR 142,000',
       total: 142000,
     },
+    consultantAssignment: '',
+    followUpRequired: false,
     id: 'mock-family-timber-80-review',
     internalNote: '',
     landOwned: 'yes',
@@ -118,6 +133,7 @@ const MOCK_QUOTE_ROWS = [
     model: 'Family Timber 80',
     source: 'mock-review',
     status: 'mock-review',
+    statusHistory: [],
     targetBuildDate: '6-12-months',
   },
   {
@@ -161,6 +177,8 @@ const MOCK_QUOTE_ROWS = [
       label: 'EUR 58,500',
       total: 58500,
     },
+    consultantAssignment: '',
+    followUpRequired: false,
     id: 'mock-sauna-cabin-25-review',
     internalNote: '',
     landOwned: 'no',
@@ -168,6 +186,7 @@ const MOCK_QUOTE_ROWS = [
     model: 'Sauna Cabin 25',
     source: 'mock-review',
     status: 'mock-review',
+    statusHistory: [],
     targetBuildDate: 'research-phase',
   },
 ] as const satisfies readonly ModularHomeQuoteReviewRow[];
@@ -208,6 +227,31 @@ function normalizeStatus(value: unknown, fallback: ModularHomeQuoteReviewStatus)
   return allowed.has(normalized as ModularHomeQuoteReviewStatus)
     ? normalized as ModularHomeQuoteReviewStatus
     : fallback;
+}
+
+function normalizeStatusHistoryEntry(value: unknown, fallbackStatus: ModularHomeQuoteReviewStatus): ModularHomeQuoteStatusHistoryEntry | null {
+  const record = asRecord(value);
+  if (!record) {
+    return null;
+  }
+
+  return {
+    changedAt: normalizeText(record.changedAt, new Date(0).toISOString()),
+    changedBy: normalizeText(record.changedBy) || null,
+    consultantAssignment: normalizeText(record.consultantAssignment, ''),
+    followUpRequired: Boolean(record.followUpRequired),
+    fromStatus: normalizeStatus(record.fromStatus, fallbackStatus),
+    internalNote: normalizeText(record.internalNote, ''),
+    toStatus: normalizeStatus(record.toStatus, fallbackStatus),
+  };
+}
+
+function normalizeStatusHistory(value: unknown, fallbackStatus: ModularHomeQuoteReviewStatus): ModularHomeQuoteStatusHistoryEntry[] {
+  return Array.isArray(value)
+    ? value
+      .map((entry) => normalizeStatusHistoryEntry(entry, fallbackStatus))
+      .filter((entry): entry is ModularHomeQuoteStatusHistoryEntry => entry !== null)
+    : [];
 }
 
 function formatFallbackEstimate(total: number) {
@@ -277,6 +321,8 @@ export function normalizeModularHomeQuoteReviewRow(
       label: normalizeText(record.estimatedTotalLabel, formatFallbackEstimate(estimatedTotal)),
       total: estimatedTotal,
     },
+    consultantAssignment: normalizeText(record.consultantAssignment, ''),
+    followUpRequired: Boolean(record.followUpRequired),
     id: normalizeText(record.id, `quote-${source}-${Date.now()}`),
     internalNote: normalizeText(record.internalNote, ''),
     landOwned: normalizeText(record.landOwned, 'unknown'),
@@ -284,6 +330,7 @@ export function normalizeModularHomeQuoteReviewRow(
     model: normalizeText(record.model, 'Modular Home'),
     source,
     status: normalizeStatus(record.status, fallbackStatus),
+    statusHistory: normalizeStatusHistory(record.statusHistory, fallbackStatus),
     targetBuildDate: normalizeText(record.targetBuildDate, 'not-sure'),
   };
 }
@@ -341,6 +388,8 @@ export function normalizeModularHomeQuoteAdminRow(value: unknown): ModularHomeQu
       label: formatFallbackEstimate(estimatedTotal),
       total: estimatedTotal,
     },
+    consultantAssignment: normalizeText(record.consultant_assignment, ''),
+    followUpRequired: Boolean(record.follow_up_required),
     id: normalizeText(record.id, `quote-backend-${Date.now()}`),
     internalNote: normalizeText(record.internal_note, ''),
     landOwned: normalizeText(requester.landOwned, 'unknown'),
@@ -348,6 +397,7 @@ export function normalizeModularHomeQuoteAdminRow(value: unknown): ModularHomeQu
     model: normalizeText(project.modelName, 'Modular Home'),
     source: 'backend-staging',
     status: normalizeStatus(record.status, 'new'),
+    statusHistory: normalizeStatusHistory(record.status_history, 'new'),
     targetBuildDate: normalizeText(requester.targetBuildDate, 'not-sure'),
   };
 }
@@ -429,6 +479,9 @@ export function serializeModularHomeQuoteReviewCsv(rows: readonly ModularHomeQuo
     'Window Frame Color',
     'Window Frame Type',
     'Door Placement',
+    'Consultant Assignment',
+    'Follow-up Required',
+    'Status History Count',
     'Message',
     'Internal Note',
   ];
@@ -470,6 +523,9 @@ export function serializeModularHomeQuoteReviewCsv(rows: readonly ModularHomeQuo
     row.config.windowFrameColor,
     row.config.windowFrameType,
     row.config.doorPlacement,
+    row.consultantAssignment,
+    row.followUpRequired ? 'yes' : 'no',
+    row.statusHistory.length,
     row.message,
     row.internalNote,
   ]);

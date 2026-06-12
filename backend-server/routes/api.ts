@@ -75,6 +75,7 @@ protectedRouter.patch('/expo/review/booths/:boothId/leads/:leadId/ops', expoData
 protectedRouter.get('/modular-home/quotes', adminOnly, modularHomeQuoteAdminController.listModularHomeQuoteRequests);
 protectedRouter.get('/modular-home/quotes/export', adminOnly, modularHomeQuoteAdminController.exportModularHomeQuoteRequests);
 protectedRouter.get('/modular-home/quotes/:quoteId', adminOnly, modularHomeQuoteAdminController.getModularHomeQuoteRequest);
+protectedRouter.patch('/modular-home/quotes/:quoteId/ops', adminOnly, modularHomeQuoteAdminController.updateModularHomeQuoteOps);
 protectedRouter.patch('/modular-home/quotes/:quoteId/status', adminOnly, modularHomeQuoteAdminController.updateModularHomeQuoteStatus);
 
 // Leads

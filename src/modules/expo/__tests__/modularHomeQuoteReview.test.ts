@@ -49,6 +49,9 @@ assert.equal(normalized.config.layoutVariant, 'One bedroom');
 assert.equal(normalized.config.windowPlacement, 'Balanced openings');
 assert.equal(normalized.config.doorPlacement, 'Front entry placement');
 assert.equal(normalized.estimate.total, 68000);
+assert.equal(normalized.consultantAssignment, '');
+assert.equal(normalized.followUpRequired, false);
+assert.deepEqual(normalized.statusHistory, []);
 
 const mockRows = getMockModularHomeQuoteReviewRows();
 assert.equal(mockRows.length, 2);
@@ -78,6 +81,8 @@ const backendRow = normalizeModularHomeQuoteAdminRow({
   },
   created_at: '2026-06-06T08:30:00.000Z',
   estimate: { estimatedTotal: 94000 },
+  consultant_assignment: 'Consultant D',
+  follow_up_required: true,
   id: 'backend-quote-1',
   internal_note: 'Needs admin follow-up.',
   project: { modelName: 'Family Timber 80' },
@@ -92,6 +97,15 @@ const backendRow = normalizeModularHomeQuoteAdminRow({
     targetBuildDate: '6-12-months',
   },
   status: 'qualified',
+  status_history: [{
+    changedAt: '2026-06-06T09:00:00.000Z',
+    changedBy: 'admin-1',
+    consultantAssignment: 'Consultant D',
+    followUpRequired: true,
+    fromStatus: 'new',
+    internalNote: 'Needs admin follow-up.',
+    toStatus: 'quoted',
+  }],
 });
 
 assert.ok(backendRow);
@@ -106,6 +120,10 @@ assert.equal(backendRow.config.windowFrameColor, 'graphite');
 assert.equal(backendRow.config.windowPlacement, 'cornerFeature');
 assert.equal(backendRow.config.doorPlacement, 'terraceFacing');
 assert.equal(backendRow.estimate.total, 94000);
+assert.equal(backendRow.consultantAssignment, 'Consultant D');
+assert.equal(backendRow.followUpRequired, true);
+assert.equal(backendRow.statusHistory.length, 1);
+assert.equal(backendRow.statusHistory[0]?.toStatus, 'quoted');
 
 const rows = [normalized, backendRow, ...mockRows];
 const summary = getModularHomeQuoteReviewSummary(rows);
@@ -120,6 +138,8 @@ assert.match(csv, /Model/);
 assert.match(csv, /Compact Timber 40/);
 assert.match(csv, /client@example.com/);
 assert.match(csv, /Needs admin follow-up/);
+assert.match(csv, /Consultant D/);
+assert.match(csv, /yes/);
 assert.match(csv, /premiumFurniture/);
 assert.match(csv, /graphite/);
 

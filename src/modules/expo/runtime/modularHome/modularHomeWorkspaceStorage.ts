@@ -1,4 +1,7 @@
-import type { ModularHomeConfiguratorState } from './modularHomeConfigurator';
+import {
+  normalizeModularHomeConfig,
+  type ModularHomeConfiguratorState,
+} from './modularHomeConfigurator';
 import {
   calculateComponentBom,
   type ModularHomeComponentSummaryItem,
@@ -108,6 +111,7 @@ export type ModularHomeProjectComparisonConfidenceSummary = {
 export type ModularHomeProjectComparisonSideSummary = {
   componentSubtotal: number;
   confidenceSummary: ModularHomeProjectComparisonConfidenceSummary;
+  dimensionPreset: string;
   doorPackage: string;
   doorPlacement: string;
   estimateTotal: number;
@@ -223,6 +227,7 @@ function normalizeProjects(value: unknown): ModularHomeLocalProject[] {
 
     return [{
       ...project,
+      config: normalizeModularHomeConfig(project.config),
       projectName: normalizeProjectName(
         (item as Partial<ModularHomeLocalProject>).projectName,
         project.productId,
@@ -336,6 +341,7 @@ const COMPARE_OPTION_LABELS = {
   facadeBoardProfile: 'Facade board profile',
   facadeBoardSpacing: 'Facade board spacing',
   facadeBoardWidth: 'Facade board width',
+  dimensionPreset: 'Dimension preset',
   finishLevel: 'Finish level',
   floorFinish: 'Floor finish',
   furniturePackage: 'Furniture package',
@@ -347,6 +353,7 @@ const COMPARE_OPTION_LABELS = {
   interiorFloorStyle: 'Interior floor style',
   interiorWallFinish: 'Interior wall finish',
   layoutVariant: 'Layout variant',
+  roomUseProfile: 'Room use profile',
   roof: 'Roof',
   roofEdgeColor: 'Roof edge color',
   roofGutterStyle: 'Roof edge/gutter style',
@@ -656,6 +663,7 @@ function createSideSummary(
   return {
     componentSubtotal,
     confidenceSummary: summarizeEstimateConfidence(project),
+    dimensionPreset: configSummary.dimensionPreset,
     doorPackage: configSummary.doorPackage,
     doorPlacement: configSummary.doorPlacement,
     estimateTotal: project.estimateTotal,
