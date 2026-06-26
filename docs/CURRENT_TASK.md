@@ -1,28 +1,28 @@
 # Current Task
 
 - Last updated: `2026-06-27`
-- Active objective: Phase 0 emergency cleanup, legacy modular-home cleanup verification, and `@types/three` dependency classification.
+- Active objective: Phase 1 stabilization behavior-preserving refactors.
 - Latest status:
-  - Stashed optional Unreal asset work and the previous Pixel Streaming viewer deletion state before cleanup:
-    - `stash@{0}`: `phase0 supabase temp metadata before cleanup`
-    - `stash@{1}`: `phase0 optional unreal assets before cleanup`
-  - Stashed tracked Supabase `.temp` metadata instead of committing local environment state.
-  - Added `.codex/` and `GALA_PresentationUE5_Clean/` to `.gitignore` as local/generated evidence and presentation artifacts.
-  - Preserved `src/modules/expo/PixelStreamingViewer.tsx` as a dependency-free legacy placeholder so cleanup does not leave a source deletion or reintroduce removed Pixel Streaming packages.
-  - Confirmed `src/modules/expo/runtime/modularHome/ModularHomeModel.tsx` is 550 lines, has no `renderLegacyModulePreview`, and no longer contains the named dead legacy module-block internals.
-  - Confirmed `InteriorWalkthroughScene` import remains and `GalaHouseShell` remains the active exterior render path.
-  - Moved `@types/three` from production dependencies to devDependencies and refreshed `package-lock.json` with `npm.cmd install`.
+  - Confirmed Phase 1.1 through 1.4 were already present in the clean baseline:
+    - `InteriorWalkthroughScene.tsx` extracted.
+    - `useGalaShowroomMovement.ts` extracted.
+    - Gala showroom debug update is consolidated in the movement hook.
+    - `check:backend-shared-boundaries` exists and is included in `check:all`.
+  - Added config-identity `useMemo` in `GalaHouseShell` for the construction model and passed that model into `GalaConstructionRenderer`.
+  - Added backend server-only dependency audit at `docs/BACKEND_SERVER_ONLY_DEPENDENCY_AUDIT.md`.
+  - Added backend-server ESLint flat config and `backend-server` lint script.
 - Latest validation:
   - `npm.cmd run build` passed.
   - `npm.cmd run lint` passed.
   - `npm.cmd run check:all` passed.
-  - Browser smoke against local Vite preview passed for `/modular-homes/studio?view=exterior&homeStudio=1`; the modular-home exterior rendered with a 1280x900 canvas.
+  - `npm.cmd run lint` in `backend-server` passed.
+  - Browser smoke against local Vite preview passed for exterior studio, interior studio, expo city route, movement keys, and `E` key.
 - Latest touched files:
-  - `.gitignore`
-  - `package.json`
-  - `package-lock.json`
-  - `src/modules/expo/PixelStreamingViewer.tsx`
-  - `src/modules/expo/runtime/modularHome/ModularHomeModel.tsx`
+  - `src/modules/expo/runtime/modularHome/GalaHouseShell.tsx`
+  - `src/modules/expo/runtime/modularHome/construction/GalaConstructionRenderer.tsx`
+  - `docs/BACKEND_SERVER_ONLY_DEPENDENCY_AUDIT.md`
+  - `backend-server/eslint.config.js`
+  - `backend-server/package.json`
   - `docs/CURRENT_TASK.md`
 - Session note: the Windows/WSL agent-environment audit, legacy module cleanup, Gala movement extraction, and GALA remediation state below are historical context from previous tasks and are not the active objective for this turn.
 - Audit status:

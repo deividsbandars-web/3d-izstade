@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import {
   GALA_PREVIEW_POSITION,
   GALA_PREVIEW_SCALE,
@@ -6,6 +7,7 @@ import {
   DEFAULT_GALA_HOUSE_VISUAL_CONFIG,
   type GalaHouseVisualConfig,
 } from './GalaHouseConfig';
+import { GALA_CONSTRUCTION_MODEL } from './construction/GalaConstructionModel';
 import { GalaConstructionRenderer } from './construction/GalaConstructionRenderer';
 import type { ModularHomeViewModeOption } from './modularHomeConfigurator';
 
@@ -15,8 +17,16 @@ type GalaHouseShellProps = {
   viewMode: ModularHomeViewModeOption;
 };
 
+function resolveGalaConstructionModelForVisualConfig(_: GalaHouseVisualConfig) {
+  return GALA_CONSTRUCTION_MODEL;
+}
+
 export function GalaHouseShell({ onEnterInterior, visualConfig, viewMode }: GalaHouseShellProps) {
   const resolvedVisualConfig = visualConfig ?? DEFAULT_GALA_HOUSE_VISUAL_CONFIG;
+  const constructionModel = useMemo(
+    () => resolveGalaConstructionModelForVisualConfig(resolvedVisualConfig),
+    [resolvedVisualConfig],
+  );
   const transparentCutaway = viewMode === 'cutaway' || viewMode === 'floorplan';
 
   return (
@@ -46,6 +56,7 @@ export function GalaHouseShell({ onEnterInterior, visualConfig, viewMode }: Gala
         </>
       ) : null}
       <GalaConstructionRenderer
+        constructionModel={constructionModel}
         onEntryDoorOpen={onEnterInterior}
         transparentCutaway={transparentCutaway}
         visualConfig={resolvedVisualConfig}

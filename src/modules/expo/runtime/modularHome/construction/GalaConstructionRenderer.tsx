@@ -9,7 +9,6 @@ import { GalaRoof } from '../GalaRoof';
 import {
   GALA_CONSTRUCTION_LEVELS,
   GALA_CONSTRUCTION_MODEL,
-  GALA_CONSTRUCTION_WALLS,
 } from './GalaConstructionModel';
 import {
   GalaConstructionBox,
@@ -25,6 +24,7 @@ import {
 } from './GalaWallSkinModel';
 
 type GalaConstructionRendererProps = {
+  constructionModel?: typeof GALA_CONSTRUCTION_MODEL;
   onEntryDoorOpen?: () => void;
   transparentCutaway?: boolean;
   visualConfig?: GalaHouseVisualConfig;
@@ -110,9 +110,15 @@ function CornerBoards({ visualConfig }: { visualConfig?: GalaHouseVisualConfig }
   );
 }
 
-function ResidentialTerrace({ visualConfig }: { visualConfig?: GalaHouseVisualConfig }) {
+function ResidentialTerrace({
+  constructionModel,
+  visualConfig,
+}: {
+  constructionModel: typeof GALA_CONSTRUCTION_MODEL;
+  visualConfig?: GalaHouseVisualConfig;
+}) {
   const terraceVisual = resolveGalaTerraceVisual(visualConfig);
-  const terraceDoor = GALA_CONSTRUCTION_MODEL.openings.find((opening) => opening.id === 'D-TERRACE');
+  const terraceDoor = constructionModel.openings.find((opening) => opening.id === 'D-TERRACE');
   const terraceCenterX = terraceDoor
     ? terraceDoor.axisStartM + terraceDoor.widthM * 0.5
     : -0.7;
@@ -289,6 +295,7 @@ function GableBoardCladding({
 }
 
 export function GalaConstructionRenderer({
+  constructionModel = GALA_CONSTRUCTION_MODEL,
   onEntryDoorOpen,
   transparentCutaway = false,
   visualConfig,
@@ -297,7 +304,7 @@ export function GalaConstructionRenderer({
     <group
       name="gala-construction-renderer-ownership-contracted-assembly"
       userData={{
-        constructionModel: GALA_CONSTRUCTION_MODEL,
+        constructionModel,
         constructionModelIsAdapter: true,
         fragmentedPrimitivePatchLoopStopped: true,
         productVisualAccepted: false,
@@ -328,7 +335,7 @@ export function GalaConstructionRenderer({
       >
         <FoundationAndBaseTrim visualConfig={visualConfig} />
         <GalaFloorCeilingAssembly visualConfig={visualConfig} />
-        {GALA_CONSTRUCTION_WALLS.map((wall) => (
+        {constructionModel.walls.map((wall) => (
           <GalaWallAssembly
             key={wall.id}
             onEntryDoorOpen={onEntryDoorOpen}
@@ -339,7 +346,7 @@ export function GalaConstructionRenderer({
         <GableBoardCladding side="west" transparentCutaway={transparentCutaway} visualConfig={visualConfig} />
         <GableBoardCladding side="east" transparentCutaway={transparentCutaway} visualConfig={visualConfig} />
         <CornerBoards visualConfig={visualConfig} />
-        <ResidentialTerrace visualConfig={visualConfig} />
+        <ResidentialTerrace constructionModel={constructionModel} visualConfig={visualConfig} />
         <GalaRoomAssembly visualConfig={visualConfig} />
       </group>
     </group>
