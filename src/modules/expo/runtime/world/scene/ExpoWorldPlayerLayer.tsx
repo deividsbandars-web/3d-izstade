@@ -7,9 +7,8 @@ import type { ExpoStartView } from '../../../world-contract';
 import type { ExpoVerticalAccessNode, ExpoVerticalWalkableRegion } from '../../planning/types';
 import { EXPO_VERTICAL_CITY_SYSTEM } from '../../planning/vertical/verticalCitySystem';
 import {
-  GALA_DOOR_STATE_EVENT,
   getGalaDoorStatesSnapshot,
-  installGalaDoorRuntime,
+  subscribeGalaDoorStates,
   toggleGalaDoorState,
 } from '../../modularHome/GalaDoorState';
 import { isHomeStudioEnabled } from '../../modularHome/homeDemoFlags';
@@ -195,16 +194,12 @@ export function ExpoWorldPlayerLayer({
     if (!homeStudioEnabled) {
       return undefined;
     }
-    galaDoorStates.current = installGalaDoorRuntime();
+    galaDoorStates.current = getGalaDoorStatesSnapshot();
     galaCollisionSegmentsRef.current = buildGalaCollisionSegments(galaDoorStates.current);
-    const handleDoorStateChange = () => {
-      galaDoorStates.current = getGalaDoorStatesSnapshot();
+    return subscribeGalaDoorStates((states) => {
+      galaDoorStates.current = states;
       galaCollisionSegmentsRef.current = buildGalaCollisionSegments(galaDoorStates.current);
-    };
-    window.addEventListener(GALA_DOOR_STATE_EVENT, handleDoorStateChange);
-    return () => {
-      window.removeEventListener(GALA_DOOR_STATE_EVENT, handleDoorStateChange);
-    };
+    });
   }, [homeStudioEnabled]);
   const applyStartView = useCallback((
     nextStartView: ExpoStartView,

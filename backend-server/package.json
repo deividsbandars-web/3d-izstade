@@ -1,7 +1,7 @@
 {
   "name": "backend-server",
   "version": "1.0.0",
-  "main": "dist/server.js",
+  "main": "dist/backend-server/server.js",
   "type": "module",
   "scripts": {
     "dev": "tsx watch server.ts",
@@ -9,7 +9,7 @@
     "build": "tsc",
     "build:docker": "tsc -p tsconfig.docker.json",
     "lint": "node ../node_modules/eslint/bin/eslint.js . --config eslint.config.js",
-    "start": "node dist/server.js",
+    "start": "node dist/backend-server/server.js",
     "start:docker": "node dist/server.docker.js"
   },
   "dependencies": {

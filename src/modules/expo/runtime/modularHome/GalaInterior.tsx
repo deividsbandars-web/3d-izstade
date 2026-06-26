@@ -1,15 +1,10 @@
 import { GALA_HOUSE_DIMENSIONS, GALA_ROOM_SCHEDULE } from './GalaHouseDimensions';
-import { useEffect, useState } from 'react';
 import {
-  DEFAULT_GALA_DOOR_STATES,
-  GALA_DOOR_STATE_EVENT,
-  getGalaDoorStatesSnapshot,
-  installGalaDoorRuntime,
   toggleGalaDoorState,
   type GalaDoorId,
   type GalaDoorState,
-  type GalaDoorStateMap,
 } from './GalaDoorState';
+import { useGalaDoorStates } from './GalaHouseState';
 import {
   GALA_FLOORPLAN,
   GALA_GEOMETRY_LEVELS,
@@ -32,25 +27,6 @@ import {
   GalaKitchenFurniture,
   GalaLivingFurniture,
 } from './GalaInteriorFurniture';
-
-function useGalaDoorStates(): GalaDoorStateMap {
-  const [doorStates, setDoorStates] = useState<GalaDoorStateMap>(() => (
-    typeof window === 'undefined' ? { ...DEFAULT_GALA_DOOR_STATES } : installGalaDoorRuntime()
-  ));
-
-  useEffect(() => {
-    installGalaDoorRuntime();
-
-    const handleDoorStateChange = () => {
-      setDoorStates(getGalaDoorStatesSnapshot());
-    };
-
-    window.addEventListener(GALA_DOOR_STATE_EVENT, handleDoorStateChange);
-    return () => window.removeEventListener(GALA_DOOR_STATE_EVENT, handleDoorStateChange);
-  }, []);
-
-  return doorStates;
-}
 
 function doorIdForInteriorFrame(frameId: GalaInteriorDoor['frameId']): GalaDoorId {
   if (frameId === 'bathroomDoor') {

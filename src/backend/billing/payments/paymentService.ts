@@ -1,6 +1,6 @@
-import { logger } from '../../logging/logger';
-import { supabaseClient } from '../../../lib/supabaseClient';
-import { creditService } from '../credits/creditService';
+import { logger } from '../../logging/logger.js';
+import { supabaseClient } from '../../../lib/supabaseClient.js';
+import { creditService } from '../credits/creditService.js';
 import { eventPublisher } from '../../events/eventPublisher.js';
 import { PlatformEvent } from '../../events/eventTypes.js';
 

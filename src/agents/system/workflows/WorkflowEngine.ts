@@ -1,6 +1,6 @@
-import { agentBrain } from '../brain/agentBrain';
-import { agentScheduler } from '../scheduler/agentScheduler';
-import { agentMemory } from '../memory/agentMemory';
+import { agentBrain } from '../brain/agentBrain.js';
+import { agentScheduler } from '../scheduler/agentScheduler.js';
+import { agentMemory } from '../memory/agentMemory.js';
 
 export type WorkflowStatus = 'idle' | 'running' | 'completed' | 'failed';
 

@@ -1,4 +1,4 @@
-import { supabase } from './supabase';
+import { supabase } from './supabase.js';
 
 // A simple debounce mechanism to avoid spamming the database 
 // with impressions if the user quickly looks back and forth.

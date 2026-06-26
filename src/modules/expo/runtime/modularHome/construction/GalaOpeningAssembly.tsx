@@ -1,14 +1,9 @@
-import { useEffect, useState } from 'react';
 import type { ThreeEvent } from '@react-three/fiber';
 import {
-  DEFAULT_GALA_DOOR_STATES,
-  GALA_DOOR_STATE_EVENT,
-  getGalaDoorStatesSnapshot,
-  installGalaDoorRuntime,
   toggleGalaDoorState,
   type GalaDoorState,
-  type GalaDoorStateMap,
 } from '../GalaDoorState';
+import { useGalaDoorStates } from '../GalaHouseState';
 import { resolveGalaOpeningVisual, type GalaHouseVisualConfig } from '../GalaHouseConfig';
 import {
   GALA_CONSTRUCTION_LEVELS,
@@ -35,25 +30,6 @@ const CASING_OVERLAP = 0.13;
 const CASING_DEPTH = 0.075;
 const GLASS_DEPTH = 0.055;
 const DOOR_LEAF_DEPTH = 0.07;
-
-function useGalaDoorStates(): GalaDoorStateMap {
-  const [doorStates, setDoorStates] = useState<GalaDoorStateMap>(() => (
-    typeof window === 'undefined' ? { ...DEFAULT_GALA_DOOR_STATES } : installGalaDoorRuntime()
-  ));
-
-  useEffect(() => {
-    installGalaDoorRuntime();
-
-    const handleDoorStateChange = () => {
-      setDoorStates(getGalaDoorStatesSnapshot());
-    };
-
-    window.addEventListener(GALA_DOOR_STATE_EVENT, handleDoorStateChange);
-    return () => window.removeEventListener(GALA_DOOR_STATE_EVENT, handleDoorStateChange);
-  }, []);
-
-  return doorStates;
-}
 
 function wallPosition(wall: GalaConstructionWallSegment, axis: number, y: number, faceOffset = 0): [number, number, number] {
   const offsetX = wall.normal[0] * faceOffset;

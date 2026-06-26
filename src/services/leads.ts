@@ -1,5 +1,5 @@
-import { supabaseClient } from '../lib/supabaseClient';
-import { serverApiGet, serverApiPatch, serverApiPost } from './serverApi';
+import { supabaseClient } from '../lib/supabaseClient.js';
+import { serverApiGet, serverApiPatch, serverApiPost } from './serverApi.js';
 
 export const LeadsAPI = {
   createCalculatorLead: async (payload: unknown) => serverApiPost('/api/calculator/lead', payload),

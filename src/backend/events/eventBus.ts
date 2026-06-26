@@ -1,4 +1,4 @@
-import Redis from 'ioredis';
+import { Redis } from 'ioredis';
 import { logger } from '../logging/logger.js';
 
 // Get Redis URL from environment, or use default local instance

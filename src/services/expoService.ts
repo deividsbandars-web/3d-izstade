@@ -1,13 +1,13 @@
-import { supabase } from '../core/supabase';
+import { supabase } from '../core/supabase.js';
 import {
   CALCULATOR_CATEGORY_DEFINITIONS,
   type CalculatorCategoryId,
-} from '../core/calculator';
+} from '../core/calculator.js';
 import {
   EXPO_SCENE_CANONICAL_DISTRICTS,
   EXPO_SCENE_CONTRACT_VERSION,
   EXPO_SCENE_RELEASE_MODE,
-} from '../modules/expo/types/scene';
+} from '../modules/expo/types/scene.js';
 
 export interface Sector {
   id: string;

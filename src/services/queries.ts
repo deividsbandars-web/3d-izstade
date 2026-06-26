@@ -1,4 +1,4 @@
-import { supabase } from '../core/supabase';
+import { supabase } from '../core/supabase.js';
 
 // ==========================================
 // CRM & PROJECTS (warpala_os_schema)

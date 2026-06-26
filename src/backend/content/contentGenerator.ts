@@ -1,5 +1,5 @@
-import { llmService } from '../ai/llmService';
-import { logger } from '../logging/logger';
+import { llmService } from '../ai/llmService.js';
+import { logger } from '../logging/logger.js';
 
 export const contentGenerator = {
   /**

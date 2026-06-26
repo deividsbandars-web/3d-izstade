@@ -1,5 +1,5 @@
-import { runAgent } from './baseAgent';
-import { supabase } from '../core/supabase';
+import { runAgent } from './baseAgent.js';
+import { supabase } from '../core/supabase.js';
 
 export async function generateArticle(keyword: string) {
   const prompt = `
@@ -36,7 +36,7 @@ export async function publish(page: any) {
 
 export async function runSeoMachine() {
   console.log("Starting SEO Machine...");
-  const keywords = await import('./keywordAgent').then(m => m.generateKeywords());
+  const keywords = await import('./keywordAgent.js').then(m => m.generateKeywords());
   
   for (const keyword of keywords) {
     console.log(`Generating article for: ${keyword}`);

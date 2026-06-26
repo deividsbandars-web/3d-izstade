@@ -25,7 +25,7 @@ import {
   type ModularHomeProduct,
 } from './modularHomeProducts';
 import { GalaHouseShell } from './GalaHouseShell';
-import { resolveGalaHouseVisualConfigFromModularHomeConfig } from './GalaHouseConfig';
+import { resolveGalaHouseVisualConfigFromModularHomeConfig } from './GalaHouseState';
 
 const MODULE_UNIT_SCALE = 8;
 

@@ -1,4 +1,4 @@
-import { supabase } from '../core/supabase';
+import { supabase } from '../core/supabase.js';
 
 export const stripeService = {
   // Izveidot apmaksas sesiju

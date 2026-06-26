@@ -1,4 +1,4 @@
-import { supabaseClient, handleSupabaseError } from '../../../lib/supabaseClient';
+import { supabaseClient, handleSupabaseError } from '../../../lib/supabaseClient.js';
 
 export interface AgentTask {
   id?: string;

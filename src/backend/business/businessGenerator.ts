@@ -1,7 +1,7 @@
-import { logger } from '../logging/logger';
-import { llmService } from '../ai/llmService';
-import { supabaseClient } from '../../lib/supabaseClient';
-import { workflowEngine } from '../automation/workflowEngine';
+import { logger } from '../logging/logger.js';
+import { llmService } from '../ai/llmService.js';
+import { supabaseClient } from '../../lib/supabaseClient.js';
+import { workflowEngine } from '../automation/workflowEngine.js';
 
 export const businessGenerator = {
   /**

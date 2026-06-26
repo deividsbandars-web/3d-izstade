@@ -4,17 +4,14 @@ import {
   type GalaFacade,
   type GalaOpeningScheduleItem,
 } from './GalaHouseDimensions';
-import { useEffect, useState } from 'react';
 import * as THREE from 'three';
 import {
-  DEFAULT_GALA_DOOR_STATES,
-  GALA_DOOR_STATE_EVENT,
   getGalaDoorStatesSnapshot,
-  installGalaDoorRuntime,
   toggleGalaDoorState,
   type GalaDoorId,
   type GalaDoorStateMap,
 } from './GalaDoorState';
+import { useGalaDoorStates } from './GalaHouseState';
 import {
   resolveGalaFacadeVisual,
   resolveGalaOpeningVisual,
@@ -53,25 +50,6 @@ function isGalaDoorId(value: string): value is GalaDoorId {
     || value === 'D-TERRACE'
     || value === 'D-BEDROOM'
     || value === 'D-BATHROOM';
-}
-
-function useGalaDoorStates(): GalaDoorStateMap {
-  const [doorStates, setDoorStates] = useState<GalaDoorStateMap>(() => (
-    typeof window === 'undefined' ? { ...DEFAULT_GALA_DOOR_STATES } : installGalaDoorRuntime()
-  ));
-
-  useEffect(() => {
-    installGalaDoorRuntime();
-
-    const handleDoorStateChange = () => {
-      setDoorStates(getGalaDoorStatesSnapshot());
-    };
-
-    window.addEventListener(GALA_DOOR_STATE_EVENT, handleDoorStateChange);
-    return () => window.removeEventListener(GALA_DOOR_STATE_EVENT, handleDoorStateChange);
-  }, []);
-
-  return doorStates;
 }
 
 function facadeOpenings(facade: GalaFacade): GalaOpeningScheduleItem[] {

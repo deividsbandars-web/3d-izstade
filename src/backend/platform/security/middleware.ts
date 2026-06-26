@@ -1,4 +1,4 @@
-import { prodLogger } from '../../logging/prodLogger';
+import { prodLogger } from '../../logging/prodLogger.js';
 
 interface RateLimitBucket {
   count: number;

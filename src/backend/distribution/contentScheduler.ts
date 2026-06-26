@@ -1,4 +1,4 @@
-import Redis from 'ioredis';
+import { Redis } from 'ioredis';
 import { logger } from '../logging/logger.js';
 import { supabaseClient } from '../../lib/supabaseClient.js';
 import { socialPublisher } from './socialPublisher.js';

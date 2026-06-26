@@ -1,5 +1,5 @@
-import { logger } from '../../logging/logger';
-import { supabaseClient } from '../../../lib/supabaseClient';
+import { logger } from '../../logging/logger.js';
+import { supabaseClient } from '../../../lib/supabaseClient.js';
 
 export const workflowMarketplace = {
   /**

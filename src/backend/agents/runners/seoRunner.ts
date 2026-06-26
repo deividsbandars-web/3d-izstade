@@ -1,6 +1,6 @@
-import { llmService } from '../../ai/llmService';
-import { logger } from '../../logging/logger';
-import { agentScheduler } from '../../../agents/system/scheduler/agentScheduler';
+import { llmService } from '../../ai/llmService.js';
+import { logger } from '../../logging/logger.js';
+import { agentScheduler } from '../../../agents/system/scheduler/agentScheduler.js';
 
 export const seoRunner = {
   async execute(taskId: string, agentId: string, taskData: any) {

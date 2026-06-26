@@ -1,5 +1,5 @@
-import { getFrontendRuntimeEnv } from '../config/runtimeEnv';
-import { supabaseClient } from '../lib/supabaseClient';
+import { getFrontendRuntimeEnv } from '../config/runtimeEnv.js';
+import { supabaseClient } from '../lib/supabaseClient.js';
 
 function buildServerApiUrl(path: string) {
   const normalizedPath = path.startsWith('/') ? path : `/${path}`;

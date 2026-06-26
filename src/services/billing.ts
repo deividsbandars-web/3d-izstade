@@ -1,4 +1,4 @@
-import { serverApiGet, serverApiPost } from './serverApi';
+import { serverApiGet, serverApiPost } from './serverApi.js';
 
 export const BillingAPI = {
   getPlanLimits: async (planId: string) => serverApiGet(`/api/billing/plans/${planId}/limits`),

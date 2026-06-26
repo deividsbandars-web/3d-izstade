@@ -2,8 +2,8 @@ import type {
   ExpoMediaReviewUploadAdminAction,
   ExpoMediaReviewUploadKind,
   ExpoMediaReviewUploadPromoteTarget,
-} from '../shared/expo/mediaReviewUpload';
-import { serverApiGet, serverApiPatch, serverApiPost, serverApiUploadBinary } from './serverApi';
+} from '../shared/expo/mediaReviewUpload.js';
+import { serverApiGet, serverApiPatch, serverApiPost, serverApiUploadBinary } from './serverApi.js';
 
 export const ExpoDataAPI = {
   createBooth: async (payload: unknown) => serverApiPost('/api/expo/booths', payload),

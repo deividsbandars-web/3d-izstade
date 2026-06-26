@@ -1,4 +1,4 @@
-import { runAgent } from './baseAgent';
+import { runAgent } from './baseAgent.js';
 
 export async function runSeoTask() {
   const topics = [

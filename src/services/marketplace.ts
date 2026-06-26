@@ -1,4 +1,4 @@
-import { serverApiGet, serverApiPost } from './serverApi';
+import { serverApiGet, serverApiPost } from './serverApi.js';
 
 export const MarketplaceAPI = {
   getAgents: async (): Promise<{ data: any[]; error: null }> => ({ data: await serverApiGet<any[]>('/api/marketplace/agents'), error: null }),

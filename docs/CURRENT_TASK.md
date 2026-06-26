@@ -1,28 +1,44 @@
 # Current Task
 
 - Last updated: `2026-06-27`
-- Active objective: Phase 1 stabilization behavior-preserving refactors.
+- Active objective: Phase 2 bounded architecture refactors.
 - Latest status:
-  - Confirmed Phase 1.1 through 1.4 were already present in the clean baseline:
-    - `InteriorWalkthroughScene.tsx` extracted.
-    - `useGalaShowroomMovement.ts` extracted.
-    - Gala showroom debug update is consolidated in the movement hook.
-    - `check:backend-shared-boundaries` exists and is included in `check:all`.
-  - Added config-identity `useMemo` in `GalaHouseShell` for the construction model and passed that model into `GalaConstructionRenderer`.
-  - Added backend server-only dependency audit at `docs/BACKEND_SERVER_ONLY_DEPENDENCY_AUDIT.md`.
-  - Added backend-server ESLint flat config and `backend-server` lint script.
+  - Added `GalaHouseState.ts` zustand facade for Gala visual config, door state, and floorplan layout.
+  - Replaced Gala door `window.__WARPALA_GALA_DOOR_STATES__` / custom DOM event synchronization with zustand store selectors/subscriptions.
+  - Migrated `ModularHomeModel.tsx` to consume the Gala visual resolver through `GalaHouseState`.
+  - Verified `ModularHomeDemoOverlay.tsx` subcomponent extraction was already present and under target size.
+  - Extracted modular home catalogue data from `modularHomeProducts.ts` into `modularHomeProducts.json` while preserving the TypeScript API surface.
+  - Extracted Modular Home quote validation into `backend-server/schemas/quoteValidation.ts` and re-exported the existing controller API.
+  - Switched backend tsconfigs to Node16 module resolution, added required `.js` extensions in backend/shared TS import paths, and adjusted full backend build output/start path.
 - Latest validation:
   - `npm.cmd run build` passed.
   - `npm.cmd run lint` passed.
   - `npm.cmd run check:all` passed.
+  - `npx.cmd tsc --noEmit --pretty false -p tsconfig.json` in `backend-server` passed.
+  - `npx.cmd tsc --noEmit --pretty false -p tsconfig.docker.json` in `backend-server` passed.
+  - `npm.cmd run build` in `backend-server` passed outside sandbox because the sandbox blocks writes to `backend-server/dist`.
+  - `npm.cmd run build:docker` in `backend-server` passed outside sandbox.
   - `npm.cmd run lint` in `backend-server` passed.
-  - Browser smoke against local Vite preview passed for exterior studio, interior studio, expo city route, movement keys, and `E` key.
+  - `npm.cmd start` in `backend-server` reached a listening server with required local env values; without env it correctly fails on missing `SUPABASE_URL`.
+  - Browser smoke against local Vite preview passed for `/modular-homes/studio?view=interior&homeStudio=1`: overlay tabs switched, quote form mounted, canvas rendered, `E` key path ran, and the old Gala door window global was absent.
 - Latest touched files:
-  - `src/modules/expo/runtime/modularHome/GalaHouseShell.tsx`
-  - `src/modules/expo/runtime/modularHome/construction/GalaConstructionRenderer.tsx`
-  - `docs/BACKEND_SERVER_ONLY_DEPENDENCY_AUDIT.md`
-  - `backend-server/eslint.config.js`
+  - `src/modules/expo/runtime/modularHome/GalaHouseState.ts`
+  - `src/modules/expo/runtime/modularHome/GalaDoorState.ts`
+  - `src/modules/expo/runtime/modularHome/GalaInterior.tsx`
+  - `src/modules/expo/runtime/modularHome/GalaOpenings.tsx`
+  - `src/modules/expo/runtime/modularHome/ModularHomeModel.tsx`
+  - `src/modules/expo/runtime/modularHome/construction/GalaOpeningAssembly.tsx`
+  - `src/modules/expo/runtime/world/scene/ExpoWorldPlayerLayer.tsx`
+  - `src/modules/expo/runtime/modularHome/modularHomeProducts.ts`
+  - `src/modules/expo/runtime/modularHome/modularHomeProducts.json`
+  - `backend-server/controllers/modularHomeQuoteController.ts`
+  - `backend-server/schemas/quoteValidation.ts`
+  - `backend-server/tsconfig.json`
+  - `backend-server/tsconfig.docker.json`
   - `backend-server/package.json`
+  - `package.json`
+  - `package-lock.json`
+  - Backend-shared root TS files touched mechanically for Node16 `.js` import extensions under `src/agents`, `src/backend`, `src/core`, `src/lib`, and `src/services`.
   - `docs/CURRENT_TASK.md`
 - Session note: the Windows/WSL agent-environment audit, legacy module cleanup, Gala movement extraction, and GALA remediation state below are historical context from previous tasks and are not the active objective for this turn.
 - Audit status:

@@ -1,5 +1,5 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
-import { getFrontendRuntimeEnv } from '../config/runtimeEnv';
+import { getFrontendRuntimeEnv } from '../config/runtimeEnv.js';
 
 type SupabaseEnv = {
   supabaseUrl: string;

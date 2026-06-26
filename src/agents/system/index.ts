@@ -1,7 +1,7 @@
-import { agentBrain as AgentBrain } from './brain/agentBrain';
-import { agentMemory as AgentMemory } from './memory/agentMemory';
-import { agentScheduler as TaskScheduler } from './scheduler/agentScheduler';
-import { WorkflowEngine } from './workflows/WorkflowEngine';
+import { agentBrain as AgentBrain } from './brain/agentBrain.js';
+import { agentMemory as AgentMemory } from './memory/agentMemory.js';
+import { agentScheduler as TaskScheduler } from './scheduler/agentScheduler.js';
+import { WorkflowEngine } from './workflows/WorkflowEngine.js';
 
 export const WarpalaCore = {
   AgentBrain,
