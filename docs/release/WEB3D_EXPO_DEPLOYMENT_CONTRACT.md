@@ -12,7 +12,7 @@ Frontend:
 
 Backend:
 - `backend-server`
-- exposes sponsor scene, health, and Pixel Streaming readiness endpoints
+- exposes sponsor scene, health, and legacy optional runtime readiness endpoints
 
 ## Canonical public origins
 
@@ -29,44 +29,48 @@ Production:
 Staging:
 - `https://api-staging.30sek24.com/health`
 - `https://api-staging.30sek24.com/api/expo/scene`
-- `https://api-staging.30sek24.com/api/pixel-streaming/status`
+- `https://api-staging.30sek24.com/api/pixel-streaming/status` (legacy optional runtime)
 
 Production:
 - `https://api.30sek24.com/health`
 - `https://api.30sek24.com/api/expo/scene`
-- `https://api.30sek24.com/api/pixel-streaming/status`
+- `https://api.30sek24.com/api/pixel-streaming/status` (legacy optional runtime)
 
 ## Frontend runtime contract
 
-Required release env:
+Required release env for the core release path:
 
 - `VITE_PUBLIC_API_BASE_URL`
+
+Production example:
+```env
+VITE_PUBLIC_API_BASE_URL="https://api.30sek24.com"
+```
+
+Staging example:
+```env
+VITE_PUBLIC_API_BASE_URL="https://api-staging.30sek24.com"
+```
+
+Optional legacy runtime stack:
+
 - `VITE_SIGNALING_SERVER_URL`
 - `VITE_STUN_SERVER_URLS`
 - `VITE_TURN_SERVER_URLS`
 - `VITE_TURN_USERNAME`
 - `VITE_TURN_PASSWORD`
 
-Production example:
-```env
-VITE_PUBLIC_API_BASE_URL="https://api.30sek24.com"
-VITE_SIGNALING_SERVER_URL="wss://api.30sek24.com/ws/"
-```
-
-Staging example:
-```env
-VITE_PUBLIC_API_BASE_URL="https://api-staging.30sek24.com"
-VITE_SIGNALING_SERVER_URL="wss://api-staging.30sek24.com/ws/"
-```
-
 ## Backend runtime contract
 
-Required release env:
+Required release env for the core release path:
 
 - `NODE_ENV=production`
 - `PORT=3000`
 - `SUPABASE_URL`
 - `SUPABASE_SERVICE_KEY`
+
+Optional legacy runtime stack:
+
 - `SIGNALING_STATUS_BASE_URL`
 - `PIXEL_STREAMING_STATUS_TIMEOUT_MS`
 - `UE5_SECRET_KEY`
@@ -74,7 +78,7 @@ Required release env:
 ## Release rules
 
 - `/api/expo/scene` is the canonical sponsor scene source of truth.
-- The sponsor boulevard must remain usable even if Pixel Streaming is unavailable.
+- The sponsor boulevard must remain usable even if the optional legacy runtime is unavailable.
 - Temporary tunnels must not appear in release configuration or release runbooks.
 - `apps/frontend` must not be treated as the sponsor release frontend.
 

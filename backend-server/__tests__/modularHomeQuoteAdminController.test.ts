@@ -90,6 +90,8 @@ const csv = serializeModularHomeQuoteAdminCsv([
       doorPlacement: 'terraceFacing',
       facade: 'darkThermoWood',
       facadeBoardOrientation: 'vertical',
+      facadeBoardProfile: 'shadowGap',
+      facadeBoardSpacing: 'tight',
       facadeBoardWidth: 'narrow',
       finishLevel: 'premium',
       floorFinish: 'oakLaminate',
@@ -99,13 +101,19 @@ const csv = serializeModularHomeQuoteAdminCsv([
       bed: 'enabled',
       kitchenLine: 'enabled',
       wardrobePlaceholder: 'enabled',
+      interiorFloorStyle: 'warmPlank',
       interiorWallFinish: 'warmPanel',
       layoutVariant: 'oneBedroom',
+      presetId: 'compactStandard',
       roof: 'pitched',
       roofEdgeColor: 'graphite',
+      roofGutterStyle: 'boxGutter',
       terrace: 'extendedTerrace',
+      trimColor: 'timber',
       windowFrameColor: 'graphite',
+      windowFrameType: 'deepReveal',
       windowPlacement: 'frontPanoramic',
+      wallPanelStyle: 'ribbedPanel',
     },
     created_at: '2026-06-05T12:00:00.000Z',
     estimate: { estimatedTotal: 68000 },
@@ -147,6 +155,13 @@ assert.match(csv, /Ask about foundation scope/);
 assert.match(csv, /Consultant C/);
 assert.match(csv, /true/);
 assert.match(csv, /68000/);
+assert.match(csv, /shadowGap/);
+assert.match(csv, /tight/);
 assert.match(csv, /frontPanoramic/);
 assert.match(csv, /premiumFurniture/);
+assert.match(csv, /compactStandard/);
+assert.match(csv, /boxGutter/);
+assert.match(csv, /timber/);
+assert.match(csv, /deepReveal/);
+assert.match(csv, /ribbedPanel/);
 assert.match(csv, /Needs premium walkthrough/);

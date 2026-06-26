@@ -11,6 +11,7 @@ interface ExpoWorldHudProps {
   isSpeaking: boolean;
   isTouchDevice?: boolean;
   mode: ExpoMode;
+  onOpenModularHomes: () => void;
   onMoveTouch?: (intent: ExpoMobileMoveIntent) => void;
   operatorBuildStamp?: string | null;
   playerPos: number[];
@@ -26,6 +27,7 @@ export function ExpoWorldHud({
   isSpeaking,
   isTouchDevice = false,
   mode,
+  onOpenModularHomes,
   onMoveTouch,
   operatorBuildStamp = null,
   playerPos,
@@ -343,6 +345,22 @@ export function ExpoWorldHud({
               <div style={{ padding: '7px 11px', borderRadius: '999px', background: `${visualProfile.global.hudAccent}22`, color: visualProfile.global.hudAccent, fontWeight: 700, fontSize: '0.75rem' }}>
                 QUALITY {EXPO_CITY_QUALITY_TIER.toUpperCase()}
               </div>
+              <button
+                type="button"
+                onClick={onOpenModularHomes}
+                style={{
+                  padding: '7px 11px',
+                  borderRadius: '999px',
+                  background: 'rgba(14, 165, 233, 0.16)',
+                  border: '1px solid rgba(125, 211, 252, 0.22)',
+                  color: '#7dd3fc',
+                  fontWeight: 850,
+                  fontSize: '0.75rem',
+                  cursor: 'pointer',
+                }}
+              >
+                Modular homes
+              </button>
               <div style={{ padding: '7px 11px', borderRadius: '999px', background: isSpeaking ? 'rgba(16, 185, 129, 0.16)' : 'rgba(148, 163, 184, 0.12)', color: isSpeaking ? '#86efac' : '#cbd5e1', fontWeight: 700, fontSize: '0.75rem' }}>
                 {isSpeaking ? 'VOICE LIVE' : 'VOICE READY'}
               </div>

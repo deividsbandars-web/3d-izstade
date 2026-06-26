@@ -4,6 +4,10 @@ import {
   validateExpoScreenMediaUrl,
 } from '../../shared/expo/screenContentMedia';
 import {
+  normalizeExpoMediaReviewReferencesForSave,
+  type ExpoMediaReviewReferencesInput,
+} from '../../shared/expo/mediaReviewReferences';
+import {
   normalizeExpoSponsorAssetPackForSave,
   type ExpoSponsorAssetPackInput,
 } from '../../shared/expo/sponsorAssetPack';
@@ -34,6 +38,7 @@ export type ExpoManagedBoothScreenContent = {
 };
 
 export type ExpoManagedBoothSponsorAssetPack = ExpoSponsorAssetPackInput;
+export type ExpoManagedBoothMediaReview = ExpoMediaReviewReferencesInput;
 
 export const expoDashboardService = {
   /**
@@ -105,6 +110,7 @@ export const expoDashboardService = {
     companyName,
     description,
     district,
+    mediaReview,
     screenContent,
     sponsorAssetPack,
     status,
@@ -114,6 +120,7 @@ export const expoDashboardService = {
     companyName: string;
     description: string;
     district: string;
+    mediaReview?: ExpoManagedBoothMediaReview;
     screenContent?: ExpoManagedBoothScreenContent;
     sponsorAssetPack?: ExpoManagedBoothSponsorAssetPack;
     status?: ExpoBoothPublicationStatus | string;
@@ -130,6 +137,11 @@ export const expoDashboardService = {
         throw new Error(sponsorAssetPackResult.issues.map((issue) => issue.message).join(' '));
       }
 
+      const mediaReviewResult = normalizeExpoMediaReviewReferencesForSave(mediaReview);
+      if (!mediaReviewResult.ok) {
+        throw new Error(mediaReviewResult.issues.map((issue) => issue.message).join(' '));
+      }
+
       const boothVideoResult = validateExpoScreenMediaUrl(videoUrl, 'video');
       if (!boothVideoResult.ok) {
         throw new Error(boothVideoResult.reason);
@@ -137,6 +149,7 @@ export const expoDashboardService = {
 
       const payload = {
         assets_3d: {
+          media_review: mediaReviewResult.mediaReview,
           screen_content: screenContentResult.screenContent,
           sponsor_asset_pack: sponsorAssetPackResult.assetPack,
           video_url: boothVideoResult.url,

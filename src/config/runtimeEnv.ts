@@ -1,5 +1,6 @@
 export type FrontendRuntimeEnv = {
   apiBaseUrl: string;
+  publicAppUrl: string | null;
   signalingUrl: string | null;
   supabaseUrl: string;
   supabaseAnonKey: string;
@@ -10,11 +11,17 @@ export type FrontendRuntimeEnv = {
   pixelStreamingProbeTimeoutMs: number;
 };
 
+export type FrontendSupabaseAuthEnv = {
+  supabaseUrl: string;
+  supabaseAnonKey: string;
+};
+
 type RawFrontendEnv = {
   DEV?: boolean;
   PROD?: boolean;
   MODE?: string;
   VITE_PUBLIC_API_BASE_URL?: string;
+  VITE_PUBLIC_APP_URL?: string;
   VITE_SIGNALING_SERVER_URL?: string;
   VITE_SUPABASE_URL?: string;
   VITE_SUPABASE_ANON_KEY?: string;
@@ -26,10 +33,6 @@ type RawFrontendEnv = {
 };
 
 const DEFAULT_PROBE_TIMEOUT_MS = 2500;
-const DUMMY_SUPABASE_URL = 'https://dummy-fallback.supabase.co';
-const DUMMY_SUPABASE_ANON_KEY = 'dummy-key';
-const HOSTED_SUPABASE_URL = 'https://gbmxrposlrhctyaaznmj.supabase.co';
-const HOSTED_SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdibXhycG9zbHJoY3R5YWF6bm1qIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIzMjc2ODksImV4cCI6MjA4NzkwMzY4OX0.lnyEDbyF3Gw2JtAMN8LvwFWIB527_ryIiPZwFohIBaw';
 
 function normalizeRequiredString(value: string | undefined, key: string) {
   const normalized = value?.trim();
@@ -42,6 +45,14 @@ function normalizeRequiredString(value: string | undefined, key: string) {
 function normalizeOptionalString(value: string | undefined) {
   const normalized = value?.trim();
   return normalized ? normalized : null;
+}
+
+function normalizeRequiredSupabaseString(value: string | undefined, key: 'VITE_SUPABASE_URL' | 'VITE_SUPABASE_ANON_KEY') {
+  const normalized = value?.trim();
+  if (!normalized) {
+    throw new Error(`FRONTEND_SUPABASE_ENV_MISSING:${key}`);
+  }
+  return normalized;
 }
 
 function normalizeUrl(value: string, key: string, allowedProtocols: string[]) {
@@ -58,6 +69,11 @@ function normalizeUrl(value: string, key: string, allowedProtocols: string[]) {
   }
 
   return parsed.toString().replace(/\/+$/, '');
+}
+
+function normalizeOrigin(value: string, key: string) {
+  const normalized = normalizeUrl(value, key, ['http:', 'https:']);
+  return new URL(normalized).origin;
 }
 
 function parseUrlList(rawValue: string | undefined) {
@@ -124,69 +140,6 @@ function resolveWindowHostname() {
   return null;
 }
 
-function deriveHostedApiBaseUrl() {
-  if (typeof window === 'undefined') {
-    return null;
-  }
-
-  const resolvedHostname = resolveWindowHostname();
-  if (!resolvedHostname) {
-    return null;
-  }
-
-  const hostname = resolvedHostname.toLowerCase();
-  if (hostname === 'staging.30sek24.com' || hostname.endsWith('.vercel.app')) {
-    return 'https://api-staging.30sek24.com';
-  }
-  if (hostname === 'www.30sek24.com' || hostname === '30sek24.com') {
-    return 'https://api.30sek24.com';
-  }
-
-  return null;
-}
-
-function deriveHostedSupabaseUrl() {
-  if (typeof window === 'undefined') {
-    return null;
-  }
-
-  const resolvedHostname = resolveWindowHostname();
-  if (!resolvedHostname) {
-    return null;
-  }
-
-  const hostname = resolvedHostname.toLowerCase();
-  if (hostname === 'staging.30sek24.com' || hostname.endsWith('.vercel.app')) {
-    return HOSTED_SUPABASE_URL;
-  }
-  if (hostname === 'www.30sek24.com' || hostname === '30sek24.com') {
-    return HOSTED_SUPABASE_URL;
-  }
-
-  return null;
-}
-
-function deriveHostedSupabaseAnonKey() {
-  if (typeof window === 'undefined') {
-    return null;
-  }
-
-  const resolvedHostname = resolveWindowHostname();
-  if (!resolvedHostname) {
-    return null;
-  }
-
-  const hostname = resolvedHostname.toLowerCase();
-  if (hostname === 'staging.30sek24.com' || hostname.endsWith('.vercel.app')) {
-    return HOSTED_SUPABASE_ANON_KEY;
-  }
-  if (hostname === 'www.30sek24.com' || hostname === '30sek24.com') {
-    return HOSTED_SUPABASE_ANON_KEY;
-  }
-
-  return null;
-}
-
 function isLocalDevWindow() {
   const hostname = resolveWindowHostname();
   if (!hostname) {
@@ -205,14 +158,34 @@ function deriveDevSignalingUrl() {
   return `${protocol}//${window.location.host}/ws/`;
 }
 
+function derivePublicAppUrlFromApiBaseUrl(apiBaseUrl: string) {
+  const parsed = new URL(apiBaseUrl);
+  const { hostname } = parsed;
+  let derivedHostname = hostname;
+
+  if (hostname.startsWith('api-')) {
+    derivedHostname = hostname.slice(4);
+  } else if (hostname.startsWith('api.')) {
+    derivedHostname = hostname.slice(4);
+  }
+
+  if (derivedHostname === hostname) {
+    return null;
+  }
+
+  const derived = new URL(parsed.toString());
+  derived.hostname = derivedHostname;
+  return derived.origin;
+}
+
 export function resolveFrontendRuntimeEnv(rawEnv: RawFrontendEnv): FrontendRuntimeEnv {
   const useLocalDevOverrides = Boolean(rawEnv.DEV && isLocalDevWindow());
-  const hostedApiBaseUrl = !rawEnv.DEV ? deriveHostedApiBaseUrl() ?? undefined : undefined;
-  const hostedSupabaseUrl = !rawEnv.DEV ? deriveHostedSupabaseUrl() ?? undefined : undefined;
-  const hostedSupabaseAnonKey = !rawEnv.DEV ? deriveHostedSupabaseAnonKey() ?? undefined : undefined;
   const apiBaseUrlRaw = useLocalDevOverrides
     ? deriveDevApiBaseUrl() ?? undefined
-    : rawEnv.VITE_PUBLIC_API_BASE_URL || hostedApiBaseUrl || (rawEnv.DEV ? deriveDevApiBaseUrl() ?? undefined : undefined);
+    : rawEnv.VITE_PUBLIC_API_BASE_URL || (rawEnv.DEV ? deriveDevApiBaseUrl() ?? undefined : undefined);
+  const publicAppUrlRaw = rawEnv.VITE_PUBLIC_APP_URL?.trim()
+    || (apiBaseUrlRaw ? derivePublicAppUrlFromApiBaseUrl(apiBaseUrlRaw) ?? undefined : undefined)
+    || (rawEnv.DEV ? (typeof window !== 'undefined' ? window.location.origin : undefined) : undefined);
   const signalingUrlRaw = useLocalDevOverrides
     ? deriveDevSignalingUrl() ?? undefined
     : rawEnv.VITE_SIGNALING_SERVER_URL || (rawEnv.DEV ? deriveDevSignalingUrl() ?? undefined : undefined);
@@ -221,6 +194,9 @@ export function resolveFrontendRuntimeEnv(rawEnv: RawFrontendEnv): FrontendRunti
     'VITE_PUBLIC_API_BASE_URL',
     ['http:', 'https:']
   );
+  const publicAppUrl = publicAppUrlRaw
+    ? normalizeOrigin(publicAppUrlRaw, 'VITE_PUBLIC_APP_URL')
+    : null;
   const signalingUrl = signalingUrlRaw
     ? normalizeUrl(
       signalingUrlRaw,
@@ -228,10 +204,12 @@ export function resolveFrontendRuntimeEnv(rawEnv: RawFrontendEnv): FrontendRunti
       ['ws:', 'wss:']
     )
     : null;
-  const supabaseUrlRaw = rawEnv.VITE_SUPABASE_URL || hostedSupabaseUrl || DUMMY_SUPABASE_URL;
-  const supabaseAnonKeyRaw = rawEnv.VITE_SUPABASE_ANON_KEY || hostedSupabaseAnonKey || DUMMY_SUPABASE_ANON_KEY;
-  const supabaseUrl = normalizeUrl(supabaseUrlRaw, 'VITE_SUPABASE_URL', ['http:', 'https:']);
-  const supabaseAnonKey = supabaseAnonKeyRaw.trim();
+  const supabaseUrl = normalizeUrl(
+    normalizeRequiredString(rawEnv.VITE_SUPABASE_URL, 'VITE_SUPABASE_URL'),
+    'VITE_SUPABASE_URL',
+    ['http:', 'https:']
+  );
+  const supabaseAnonKey = normalizeRequiredString(rawEnv.VITE_SUPABASE_ANON_KEY, 'VITE_SUPABASE_ANON_KEY');
   const stunServerUrls = parseUrlList(rawEnv.VITE_STUN_SERVER_URLS);
   const turnServerUrls = parseUrlList(rawEnv.VITE_TURN_SERVER_URLS);
   const turnUsername = normalizeOptionalString(rawEnv.VITE_TURN_USERNAME);
@@ -243,6 +221,7 @@ export function resolveFrontendRuntimeEnv(rawEnv: RawFrontendEnv): FrontendRunti
 
   return {
     apiBaseUrl,
+    publicAppUrl,
     signalingUrl,
     supabaseUrl,
     supabaseAnonKey,
@@ -251,6 +230,20 @@ export function resolveFrontendRuntimeEnv(rawEnv: RawFrontendEnv): FrontendRunti
     turnUsername,
     turnPassword,
     pixelStreamingProbeTimeoutMs: normalizeProbeTimeout(rawEnv.VITE_PIXEL_STREAMING_PROBE_TIMEOUT_MS),
+  };
+}
+
+export function resolveFrontendSupabaseAuthEnv(rawEnv: RawFrontendEnv): FrontendSupabaseAuthEnv {
+  const supabaseUrl = normalizeUrl(
+    normalizeRequiredSupabaseString(rawEnv.VITE_SUPABASE_URL, 'VITE_SUPABASE_URL'),
+    'VITE_SUPABASE_URL',
+    ['http:', 'https:']
+  );
+  const supabaseAnonKey = normalizeRequiredSupabaseString(rawEnv.VITE_SUPABASE_ANON_KEY, 'VITE_SUPABASE_ANON_KEY');
+
+  return {
+    supabaseUrl,
+    supabaseAnonKey,
   };
 }
 

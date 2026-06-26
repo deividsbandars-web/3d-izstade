@@ -29,6 +29,14 @@ type QuoteReviewAccessState =
   | 'backend-unavailable'
   | 'unavailable';
 
+type ModularHomeQuoteFollowUpCategory =
+  | 'Closed'
+  | 'Needs assignment'
+  | 'Needs first contact'
+  | 'Needs quote preparation'
+  | 'Waiting on customer'
+  | 'Ready to close';
+
 function formatDate(value: string) {
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? value : date.toLocaleString('lv-LV');
@@ -114,6 +122,68 @@ function getStatusTone(status: string) {
   }
 }
 
+function getFollowUpCategoryTone(category: ModularHomeQuoteFollowUpCategory) {
+  switch (category) {
+    case 'Closed':
+      return '#34d399';
+    case 'Needs assignment':
+      return '#f97316';
+    case 'Needs first contact':
+      return '#38bdf8';
+    case 'Needs quote preparation':
+      return '#fbbf24';
+    case 'Waiting on customer':
+      return '#a78bfa';
+    case 'Ready to close':
+      return '#22c55e';
+    default:
+      return '#94a3b8';
+  }
+}
+
+function getQuoteFollowUpSummary(row: ModularHomeQuoteReviewRow) {
+  const hasConsultant = row.consultantAssignment.trim().length > 0;
+  const hasInternalNote = row.internalNote.trim().length > 0;
+
+  let category: ModularHomeQuoteFollowUpCategory;
+  if (row.status === 'won' || row.status === 'lost') {
+    category = 'Closed';
+  } else if (!hasConsultant) {
+    category = 'Needs assignment';
+  } else if (row.status === 'new') {
+    category = 'Needs first contact';
+  } else if (row.status === 'contacted') {
+    category = 'Needs quote preparation';
+  } else if (row.status === 'quoted' && row.followUpRequired) {
+    category = 'Waiting on customer';
+  } else if (row.status === 'quoted') {
+    category = 'Ready to close';
+  } else {
+    category = 'Needs first contact';
+  }
+
+  const nextAction = category === 'Closed'
+    ? 'Keep the record for audit/export and avoid reopening unless the customer returns.'
+    : category === 'Needs assignment'
+      ? 'Assign a consultant before manual follow-up is missed.'
+      : category === 'Needs first contact'
+        ? 'Contact the customer and capture the first manual review note.'
+        : category === 'Needs quote preparation'
+          ? 'Review the selected model/config, confirm scope assumptions and prepare the next quote step.'
+          : category === 'Waiting on customer'
+            ? 'Keep the quote active with explicit follow-up ownership until customer feedback arrives.'
+            : 'Use the protected admin surface to confirm outcome, negotiation state, and close readiness.';
+
+  const detail = [
+    `Status: ${row.status}`,
+    `Consultant: ${hasConsultant ? row.consultantAssignment : 'Unassigned'}`,
+    `Follow-up flag: ${row.followUpRequired ? 'Required' : 'Not flagged'}`,
+    `Internal note: ${hasInternalNote ? 'Present' : 'Missing'}`,
+  ];
+
+  return { category, detail, nextAction, tone: getFollowUpCategoryTone(category) };
+}
+
 function matchesSearch(row: ModularHomeQuoteReviewRow, searchTerm: string) {
   const normalized = searchTerm.trim().toLowerCase();
   if (!normalized) {
@@ -135,6 +205,9 @@ function matchesSearch(row: ModularHomeQuoteReviewRow, searchTerm: string) {
     row.config.wardrobePlaceholder,
     row.config.interiorWallFinish,
     row.config.layoutVariant,
+    row.config.kitchenFinish,
+    row.config.furnitureMood,
+    row.config.interiorZoneFocus,
     row.config.roof,
     row.config.roofEdgeColor,
     row.config.terrace,
@@ -199,8 +272,8 @@ function getAccessNotice(accessState: QuoteReviewAccessState, technicalError: st
   if (accessState === 'access-denied') {
     return {
       accent: '#fb7185',
-      actionHref: '/expo-3d?homeDemo=1',
-      actionLabel: 'Open home demo',
+      actionHref: '/modular-homes/studio?view=exterior',
+      actionLabel: 'Open modular-home studio',
       body: 'Your session is valid, but this account does not have admin access to Modular Home quote review.',
       detail: 'Use an admin account or update the Supabase app_metadata role to admin.',
       title: 'Admin access required',
@@ -210,8 +283,8 @@ function getAccessNotice(accessState: QuoteReviewAccessState, technicalError: st
   if (accessState === 'backend-unavailable') {
     return {
       accent: '#38bdf8',
-      actionHref: '/expo-3d?homeDemo=1',
-      actionLabel: 'Open home demo',
+      actionHref: '/modular-homes/studio?view=exterior',
+      actionLabel: 'Open modular-home studio',
       body: 'The protected quote review UI is ready, but the staging backend is not reachable right now.',
       detail: technicalError ? `Technical detail: ${technicalError}` : 'Check staging backend health and API URL configuration.',
       title: 'Backend unavailable',
@@ -221,8 +294,8 @@ function getAccessNotice(accessState: QuoteReviewAccessState, technicalError: st
   if (accessState === 'unavailable') {
     return {
       accent: '#f87171',
-      actionHref: '/expo-3d?homeDemo=1',
-      actionLabel: 'Open home demo',
+      actionHref: '/modular-homes/studio?view=exterior',
+      actionLabel: 'Open modular-home studio',
       body: 'Modular Home quote review could not load.',
       detail: technicalError ? `Technical detail: ${technicalError}` : 'Retry after checking backend and auth session.',
       title: 'Review unavailable',
@@ -336,6 +409,8 @@ export default function ModularHomeQuoteReview() {
   )), [modelFilter, rows, searchTerm, sourceFilter, statusFilter]);
   const summary = useMemo(() => getModularHomeQuoteReviewSummary(rows), [rows]);
   const visibleSummary = useMemo(() => getModularHomeQuoteReviewSummary(visibleRows), [visibleRows]);
+  const followUpRequiredCount = useMemo(() => rows.filter((row) => row.followUpRequired).length, [rows]);
+  const unassignedCount = useMemo(() => rows.filter((row) => row.consultantAssignment.trim().length === 0).length, [rows]);
   const accessNotice = getAccessNotice(accessState, error);
 
   const exportJson = async () => {
@@ -553,8 +628,8 @@ export default function ModularHomeQuoteReview() {
           <button disabled={visibleRows.length === 0} onClick={() => void exportCsv()} style={actionButton('#34d399', visibleRows.length === 0)} type="button">
             Export CSV
           </button>
-          <Link to="/expo-3d?homeDemo=1" style={{ ...actionButton('#a78bfa'), textDecoration: 'none' }}>
-            Open home demo
+          <Link to="/modular-homes/studio?view=exterior" style={{ ...actionButton('#a78bfa'), textDecoration: 'none' }}>
+            Open modular-home studio
           </Link>
         </div>
         {toast ? (
@@ -571,6 +646,8 @@ export default function ModularHomeQuoteReview() {
         {statCard('Mock examples', summary.mockCount, '#a78bfa')}
         {statCard('Visible rows', visibleSummary.totalCount, '#fde68a')}
         {statCard('Visible estimate', formatMoney(visibleSummary.totalEstimate), '#fef3c7')}
+        {statCard('Follow-up flagged', followUpRequiredCount, '#f97316')}
+        {statCard('Unassigned', unassignedCount, '#93c5fd')}
       </section>
 
       <section style={{
@@ -733,6 +810,58 @@ export default function ModularHomeQuoteReview() {
           {selectedRow ? (
             <div data-modular-home-quote-detail={selectedRow.id} style={{ display: 'grid', gap: '12px', marginTop: '12px' }}>
               <h2 style={{ color: '#f8fafc', fontSize: '1.5rem', letterSpacing: '-0.04em', margin: 0 }}>{selectedRow.model}</h2>
+              {(() => {
+                const followUpSummary = getQuoteFollowUpSummary(selectedRow);
+
+                return (
+                  <div
+                    data-modular-home-quote-follow-up={followUpSummary.category}
+                    style={{
+                      background: 'linear-gradient(180deg, rgba(8, 47, 73, 0.42), rgba(2, 6, 23, 0.48))',
+                      border: `1px solid ${followUpSummary.tone}44`,
+                      borderRadius: '16px',
+                      padding: '13px',
+                    }}
+                  >
+                    <div style={{ color: '#94a3b8', fontSize: '0.68rem', fontWeight: 950, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                      Quote follow-up
+                    </div>
+                    <div style={{ alignItems: 'center', display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '8px' }}>
+                      <span
+                        style={{
+                          background: `${followUpSummary.tone}22`,
+                          border: `1px solid ${followUpSummary.tone}66`,
+                          borderRadius: '999px',
+                          color: followUpSummary.tone,
+                          display: 'inline-block',
+                          fontSize: '0.68rem',
+                          fontWeight: 950,
+                          padding: '6px 10px',
+                          textTransform: 'uppercase',
+                        }}
+                      >
+                        {followUpSummary.category}
+                      </span>
+                      <Link to="/modular-homes/studio?view=exterior" style={{ ...actionButton('#38bdf8'), textDecoration: 'none' }}>
+                        Open studio
+                      </Link>
+                    </div>
+                    <div style={{ color: '#e2e8f0', fontSize: '0.84rem', fontWeight: 820, lineHeight: 1.5, marginTop: '10px' }}>
+                      {followUpSummary.nextAction}
+                    </div>
+                    <div style={{ display: 'grid', gap: '6px', marginTop: '10px' }}>
+                      {followUpSummary.detail.map((line) => (
+                        <div key={line} style={{ color: '#cbd5e1', fontSize: '0.78rem', lineHeight: 1.45 }}>
+                          {line}
+                        </div>
+                      ))}
+                    </div>
+                    <div style={{ color: '#94a3b8', fontSize: '0.76rem', lineHeight: 1.45, marginTop: '10px' }}>
+                      Browser-first quote/admin flow only. No GLB uploads, storage handoff, or panorama intake is required for this review step.
+                    </div>
+                  </div>
+                );
+              })()}
               <DetailBlock label="Contact" lines={[selectedRow.contact.name, selectedRow.contact.email, selectedRow.contact.phone, selectedRow.contact.countryCity]} />
               <DetailBlock label="Project" lines={[
                 `Estimate: ${selectedRow.estimate.label}`,
@@ -758,6 +887,11 @@ export default function ModularHomeQuoteReview() {
                 `Windows: ${selectedRow.config.windowPlacement}`,
                 `Window frames: ${selectedRow.config.windowFrameColor}`,
                 `Doors: ${selectedRow.config.doorPlacement}`,
+                `Interior floor style: ${selectedRow.config.interiorFloorStyle}`,
+                `Wall panel style: ${selectedRow.config.wallPanelStyle}`,
+                `Kitchen finish: ${selectedRow.config.kitchenFinish}`,
+                `Furniture mood: ${selectedRow.config.furnitureMood}`,
+                `Interior focus: ${selectedRow.config.interiorZoneFocus}`,
               ]} />
               <div style={{ background: 'rgba(2, 6, 23, 0.42)', border: '1px solid rgba(148, 163, 184, 0.14)', borderRadius: '16px', padding: '13px' }}>
                 <div style={{ color: '#94a3b8', fontSize: '0.68rem', fontWeight: 950, letterSpacing: '0.08em', textTransform: 'uppercase' }}>Message</div>

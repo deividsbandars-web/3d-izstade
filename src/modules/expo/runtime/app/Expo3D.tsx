@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useZoneSystem } from '../../../../hooks/useZoneSystem';
+import type { ExpoStartView } from '../../../../shared/expo/worldContract';
 import { ExpoWorldHud } from './ExpoWorldHud';
 import { useExpoPresence } from '../../hooks/useExpoPresence';
 import { useExpoSceneData } from '../../hooks/useExpoSceneData';
-import { usePixelStreamingStatus } from '../../hooks/usePixelStreamingStatus';
 import { buildExpoWorldContract } from '../../world-contract';
 import { useExpoOperatorLayer } from '../operator';
 import { ExpoRuntimeShell } from './ExpoRuntimeShell';
@@ -17,6 +17,38 @@ import { WorldInspectionProvider } from '../world/inspection/worldInspectionStat
 import { SalesDemoGuideOverlay } from '../salesDemo';
 import { SponsorConciergeLeadCaptureOverlay } from '../boothProduct';
 import { isHomeStudioEnabled, ModularHomeDemoOverlay, ModularHomeUploadPreviewPanel } from '../modularHome';
+import { createCanonicalModularHomeStudioPath } from '../modularHome/modularHomeShareUrl';
+import { GALA_PREVIEW_POSITION, GALA_PREVIEW_SCALE } from '../modularHome/GalaHouseDimensions';
+import { GALA_GEOMETRY_LEVELS, planXToLocalX } from '../modularHome/GalaFloorplan';
+import { MODULAR_HOME_PREVIEW_CONFIG } from '../modularHome/modularHomeConfig';
+
+const HOME_STUDIO_EYE_HEIGHT_Y = GALA_PREVIEW_POSITION.y + (GALA_GEOMETRY_LEVELS.eyeHeight * GALA_PREVIEW_SCALE);
+
+function galaPlanToWorld(planX: number, planZ: number): [number, number, number] {
+  const unrotatedX = GALA_PREVIEW_POSITION.x + (planXToLocalX(planX) * GALA_PREVIEW_SCALE);
+  const unrotatedZ = GALA_PREVIEW_POSITION.z + (planZ * GALA_PREVIEW_SCALE);
+  const cos = Math.cos(MODULAR_HOME_PREVIEW_CONFIG.rotationY);
+  const sin = Math.sin(MODULAR_HOME_PREVIEW_CONFIG.rotationY);
+
+  return [
+    (unrotatedX * cos) + (unrotatedZ * sin),
+    HOME_STUDIO_EYE_HEIGHT_Y,
+    (-unrotatedX * sin) + (unrotatedZ * cos),
+  ];
+}
+
+const HOME_STUDIO_EXTERIOR_START_VIEW: ExpoStartView = {
+  // Home studio walk mode starts at human eye height; QA shot presets remain separate and unchanged.
+  lookAt: galaPlanToWorld(4.64, -1.2),
+  position: galaPlanToWorld(4.64, -9.2),
+  source: 'arrival-main',
+};
+
+const HOME_STUDIO_INTERIOR_START_VIEW: ExpoStartView = {
+  lookAt: galaPlanToWorld(4.6, -0.75),
+  position: galaPlanToWorld(2.1, 1.55),
+  source: 'arrival-main',
+};
 
 export default function Expo3D() {
   const runtimeSession = useExpoRuntimeSession();
@@ -43,13 +75,17 @@ function ExpoRuntimeExperience({
   runtimeSession: ReturnType<typeof useExpoRuntimeSession>;
 }) {
   const nav = useNavigate();
+  const location = useLocation();
   const homeStudioEnabled = useMemo(() => isHomeStudioEnabled(), []);
+  const homeStudioViewMode = useMemo(() => {
+    const params = new URLSearchParams(location.search);
+    return params.get('view') === 'interior' ? 'interior' : 'exterior';
+  }, [location.search]);
   const worldContract = useMemo(() => buildExpoWorldContract(data), [data]);
   const inspectionEnabled = import.meta.env.DEV || runtimeSession.operatorSession.enabled;
-  const pixelStreamingStatus = usePixelStreamingStatus();
   const { guests, playerPos, isMicOn, isSpeaking, setIsMicOn, handlePlayerMove } = useExpoPresence(
     runtimeSession.mode,
-    { enabled: !runtimeSession.salesDemoEnabled && !runtimeSession.boothProductPreviewEnabled && !runtimeSession.homeDemoEnabled && !runtimeSession.homeUploadPreviewRequested },
+    { enabled: !homeStudioEnabled && !runtimeSession.salesDemoEnabled && !runtimeSession.boothProductPreviewEnabled && !runtimeSession.homeDemoEnabled && !runtimeSession.homeUploadPreviewRequested },
   );
   const { activeZone, zoneSystem } = useZoneSystem(playerPos as any);
   const operatorSceneLayer = useExpoOperatorLayer({
@@ -61,6 +97,9 @@ function ExpoRuntimeExperience({
     setMode: runtimeSession.setMode,
     worldContract,
   });
+  const sceneStartViewOverride = homeStudioEnabled
+    ? (homeStudioViewMode === 'interior' ? HOME_STUDIO_INTERIOR_START_VIEW : HOME_STUDIO_EXTERIOR_START_VIEW)
+    : operatorSceneLayer.effectiveStartViewOverride;
   const lastOperatorStartViewSignature = useRef<string | null>(null);
 
   useEffect(() => {
@@ -78,7 +117,7 @@ function ExpoRuntimeExperience({
   }, [runtimeSession.operatorSession]);
 
   useEffect(() => {
-    const startView = operatorSceneLayer.effectiveStartViewOverride;
+    const startView = sceneStartViewOverride;
     if (!operatorSceneLayer.session.enabled || !startView) {
       return;
     }
@@ -90,7 +129,7 @@ function ExpoRuntimeExperience({
 
     lastOperatorStartViewSignature.current = signature;
     handlePlayerMove(startView.position);
-  }, [handlePlayerMove, operatorSceneLayer.effectiveStartViewOverride, operatorSceneLayer.session.enabled]);
+  }, [handlePlayerMove, operatorSceneLayer.session.enabled, sceneStartViewOverride]);
 
   // Web3D failures in production should not silently degrade into a black canvas.
   useExpoRuntimeErrorBridge(true);
@@ -106,6 +145,7 @@ function ExpoRuntimeExperience({
               isSpeaking={isSpeaking}
               isTouchDevice={runtimeSession.isTouchDevice}
               mode={runtimeSession.mode}
+              onOpenModularHomes={() => nav(createCanonicalModularHomeStudioPath('exterior'))}
               onMoveTouch={runtimeSession.setMobileMoveIntent}
               playerPos={playerPos}
               sectorMarkers={worldContract.sectorMarkers}
@@ -118,23 +158,25 @@ function ExpoRuntimeExperience({
               }}
             />
           ) : null}
-          <SalesDemoGuideOverlay
-            isTouchDevice={runtimeSession.isTouchDevice}
-            mode={runtimeSession.mode}
-            onSetMode={runtimeSession.setMode}
-          />
+          {!homeStudioEnabled ? (
+            <SalesDemoGuideOverlay
+              isTouchDevice={runtimeSession.isTouchDevice}
+              mode={runtimeSession.mode}
+              onSetMode={runtimeSession.setMode}
+            />
+          ) : null}
           <ModularHomeDemoOverlay isTouchDevice={runtimeSession.isTouchDevice} />
-          <ModularHomeUploadPreviewPanel isTouchDevice={runtimeSession.isTouchDevice} />
-          <SponsorConciergeLeadCaptureOverlay isTouchDevice={runtimeSession.isTouchDevice} />
+          {!homeStudioEnabled ? <ModularHomeUploadPreviewPanel isTouchDevice={runtimeSession.isTouchDevice} /> : null}
+          {!homeStudioEnabled ? <SponsorConciergeLeadCaptureOverlay isTouchDevice={runtimeSession.isTouchDevice} /> : null}
         </>
       )}
       isTouchDevice={runtimeSession.isTouchDevice}
       isLoading={isLoading}
       mode={runtimeSession.mode}
       onBack={() => nav('/')}
+      onOpenModularHomes={() => nav(createCanonicalModularHomeStudioPath('exterior'))}
       onSetMode={runtimeSession.setMode}
       operatorLayer={operatorSceneLayer.layer}
-      pixelStreamingStatus={pixelStreamingStatus}
       sceneLayer={(
         <ExpoSceneShell
           activeZone={activeZone}
@@ -150,7 +192,7 @@ function ExpoRuntimeExperience({
           runtimeLayerToggles={(import.meta.env.DEV || operatorSceneLayer.session.enabled) ? operatorSceneLayer.runtimeLayerToggles : undefined}
           runtimeSectionToggles={(import.meta.env.DEV || operatorSceneLayer.session.enabled) ? operatorSceneLayer.runtimeSectionToggles : undefined}
           sceneVersion={data?.sceneVersion ? String(data.sceneVersion) : null}
-          startViewOverride={operatorSceneLayer.effectiveStartViewOverride}
+          startViewOverride={sceneStartViewOverride}
           worldContract={worldContract}
           zoneSystem={zoneSystem}
         />

@@ -120,7 +120,7 @@ export function buildSponsorConciergeLeadPayload(
     message: [
       `Company: ${normalized.company}`,
       `Interest: ${normalized.interest}`,
-      'Package: Sponsor Concierge Premium Booth',
+      'Package: Sponsor Concierge Booth Profile',
       'Source: Web3D BoothProduct lead capture',
     ].join('\n'),
     sourcePath,

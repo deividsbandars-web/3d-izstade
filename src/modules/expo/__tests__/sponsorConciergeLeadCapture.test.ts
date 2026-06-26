@@ -36,7 +36,7 @@ assert.equal(payload.companySlug, 'sponsor-concierge');
 assert.equal(payload.sourcePath, '/expo-3d?salesDemo=1');
 assert.match(payload.message, /Company: Acme Sponsors/);
 assert.match(payload.message, /Interest: Demo Arena package/);
-assert.match(payload.message, /Package: Sponsor Concierge Premium Booth/);
+assert.match(payload.message, /Package: Sponsor Concierge Booth Profile/);
 
 const originalWindow = globalThis.window;
 const capturedRequests: Array<{ body: string; url: string }> = [];

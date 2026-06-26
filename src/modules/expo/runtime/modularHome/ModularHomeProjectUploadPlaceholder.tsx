@@ -33,23 +33,25 @@ const PROJECT_UPLOAD_FLOW_STEPS = [
     detail: 'Select whether the plan is for visualization, modular adaptation, quote review or design advice.',
   },
   {
-    label: 'Prepare plan package',
-    detail: 'Future manual review can accept drawings, BIM files or existing 3D models.',
+    label: 'Prepare reference package',
+    detail: 'Collect PDF plans, floorplan images, reference photos and room or panorama references for manual review.',
   },
   {
     label: 'Manual conversion review',
-    detail: 'A human review defines scope, missing details and the safest conversion path.',
+    detail: 'A human review defines scope, missing details, quote preparation notes and the safest next step.',
   },
   {
-    label: '3D preview or quote path',
-    detail: 'A Web3D preview, modular adaptation note or quote discussion can be prepared after review.',
+    label: 'Quote preparation path',
+    detail: 'After review, the team can prepare modular adaptation notes, manual quote guidance and browser-safe follow-up materials.',
   },
 ] as const;
 
-const FUTURE_PROJECT_UPLOAD_FORMATS = ['PDF', 'DWG', 'IFC', 'GLB/GLTF'] as const;
+const FUTURE_PROJECT_UPLOAD_FORMATS = ['PDF', 'Floorplan image', 'Reference photos', 'Panorama set'] as const;
 
 const PROJECT_UPLOAD_PREPARE_ITEMS = [
-  'Plan files or 3D model if available',
+  'PDF plans and floorplan images',
+  'Reference photos for exterior and interior context',
+  'Room snapshots or panorama references',
   'Site/country and target build timeline',
   'Preferred service and expected output',
   'Known constraints: budget, transport, permits or utilities',
@@ -128,7 +130,7 @@ export function ModularHomeProjectUploadPlaceholder({ isTouchDevice = false }: M
           marginTop: '7px',
         }}
       >
-        Supported future review formats: PDF, DWG, IFC and GLB/GLTF. This preview explains the manual workflow only;
+        Supported reference package inputs: PDF plans, floorplan images, reference photos and panorama sets. This preview explains the manual workflow only;
         no file is uploaded, stored, converted or processed by AI.
       </div>
 
@@ -180,7 +182,7 @@ export function ModularHomeProjectUploadPlaceholder({ isTouchDevice = false }: M
             textTransform: 'uppercase',
           }}
         >
-          Choose service
+          Choose manual review service
         </div>
         <div style={{ display: 'grid', gap: '6px', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))' }}>
           {MANUAL_CONVERSION_SERVICES.map((service) => {
@@ -369,8 +371,8 @@ export function ModularHomeProjectUploadPlaceholder({ isTouchDevice = false }: M
           padding: '8px 9px',
         }}
       >
-        Manual conversion workflow placeholder only. Real upload, storage, conversion review and quote handoff are not
-        enabled until the backend and privacy flow are approved.
+        Manual review workflow placeholder only. Real upload, storage, conversion review and quote handoff are not
+        enabled until the backend and privacy flow are approved. The MVP path is plan-, image-, reference- and panorama-based, not model-upload-first.
       </div>
     </section>
   );

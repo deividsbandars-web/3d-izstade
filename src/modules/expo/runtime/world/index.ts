@@ -12,6 +12,7 @@ export { WorldCityTowers } from './WorldCityTowers';
 export { WorldCityWaterCourt } from './WorldCityWaterCourt';
 export { WorldDistrictGatewayNode } from './WorldDistrictGatewayNode';
 export { WorldGroundPlane } from './WorldGroundPlane';
+export { ModularHomeEntrancePortal } from './ModularHomeEntrancePortal';
 export { WorldPromenade } from './WorldPromenade';
 export { WorldVerticalAccessNodes } from './WorldVerticalAccessNodes';
 export { WorldWayfinding } from './WorldWayfinding';

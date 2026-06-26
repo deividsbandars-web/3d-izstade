@@ -1,38 +1,78 @@
 import { createClient } from '@supabase/supabase-js';
-// Helper to get environment variables in both Vite and Node.js environments
-const getEnv = (name) => {
-    if (typeof process !== 'undefined' && process.env && process.env[name]) {
-        return process.env[name];
+import { getFrontendRuntimeEnv } from '../config/runtimeEnv';
+function resolveNodeSupabaseEnv() {
+    if (typeof process === 'undefined' || !process.env) {
+        return null;
     }
-    if (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env[`VITE_${name}`]) {
-        return import.meta.env[`VITE_${name}`];
+    const supabaseUrl = process.env.SUPABASE_URL?.trim();
+    const supabaseAnonKey = process.env.SUPABASE_ANON_KEY?.trim();
+    if (!supabaseUrl || !supabaseAnonKey) {
+        return null;
     }
-    return '';
-};
-const supabaseUrl = getEnv('SUPABASE_URL');
-const supabaseAnonKey = getEnv('SUPABASE_ANON_KEY');
-// Create a safe, reusable client instance
-const createSafeClient = () => {
+    return {
+        supabaseUrl,
+        supabaseAnonKey,
+    };
+}
+function getBrowserSupabaseEnv() {
+    if (typeof window === 'undefined') {
+        return null;
+    }
     try {
-        if (!supabaseUrl || !supabaseAnonKey) {
-            // ignore in dev
-            // console.warn('⚠️ SUPABASE CLIENT WARNING: Missing SUPABASE_URL or SUPABASE_ANON_KEY.');
-            // Fallback for development/UI work without throwing fatal application errors
-            return createClient('https://dummy-fallback.supabase.co', 'dummy-key');
-        }
-        return createClient(supabaseUrl, supabaseAnonKey, {
-            auth: {
-                persistSession: true,
-                autoRefreshToken: true,
-            }
-        });
+        const runtimeEnv = getFrontendRuntimeEnv();
+        return {
+            supabaseUrl: runtimeEnv.supabaseUrl,
+            supabaseAnonKey: runtimeEnv.supabaseAnonKey,
+        };
     }
     catch (error) {
-        console.error('❌ FATAL: Failed to initialize Supabase client:', error);
-        return createClient('https://dummy-fallback.supabase.co', 'dummy-key');
+        const message = String((error === null || error === void 0 ? void 0 : error.message) || error || '');
+        if (message.startsWith('FRONTEND_SUPABASE_ENV_MISSING:')) {
+            return { error: 'Supabase auth is not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY for this environment.' };
+        }
+        throw error;
     }
-};
-export const supabaseClient = createSafeClient();
+}
+function createMissingSupabaseClient(errorMessage) {
+    return new Proxy({}, {
+        get() {
+            throw new Error(errorMessage);
+        },
+    });
+}
+let supabaseAuthConfigError = null;
+let supabaseClient;
+const browserSupabaseEnv = getBrowserSupabaseEnv();
+if (browserSupabaseEnv) {
+    if ('error' in browserSupabaseEnv) {
+        supabaseAuthConfigError = browserSupabaseEnv.error;
+        supabaseClient = createMissingSupabaseClient(supabaseAuthConfigError);
+    }
+    else {
+        supabaseClient = createClient(browserSupabaseEnv.supabaseUrl, browserSupabaseEnv.supabaseAnonKey, {
+            auth: {
+                autoRefreshToken: true,
+                persistSession: true,
+            },
+        });
+    }
+}
+else {
+    const nodeSupabaseEnv = resolveNodeSupabaseEnv();
+    if (!nodeSupabaseEnv) {
+        supabaseAuthConfigError = 'Supabase auth is not configured. Set SUPABASE_URL and SUPABASE_ANON_KEY for this environment.';
+        supabaseClient = createMissingSupabaseClient(supabaseAuthConfigError);
+    }
+    else {
+        supabaseClient = createClient(nodeSupabaseEnv.supabaseUrl, nodeSupabaseEnv.supabaseAnonKey, {
+            auth: {
+                autoRefreshToken: true,
+                persistSession: true,
+            },
+        });
+    }
+}
+export { supabaseAuthConfigError, supabaseClient };
 export const handleSupabaseError = (error, context) => {
     console.error(`[Supabase Error - ${context}]:`, error?.message || error);
     return { data: null, error: error?.message || 'Unknown database error' };

@@ -32,6 +32,8 @@ import {
 } from '../quality/expoScreenTextureRuntimeStats';
 import { useExpoZoneRuntimeState } from '../zones/expoZoneRuntimeState';
 import { reportExpoDevError } from '../../../lib/devErrorReporter';
+import { Expo3DQAHook } from './Expo3DQAHook';
+import { isExpo3dQaEnabled, isGalaConstructionAuditEnabled } from '../../app/expo3dQa';
 
 type WebglAvailability = {
   available: boolean;
@@ -299,6 +301,7 @@ export function ExpoWorldCanvasShell({
         startView={effectiveStartView}
         startViewKey={EXPO_START_VIEW_KEY}
       />
+      {isExpo3dQaEnabled() || isGalaConstructionAuditEnabled() ? <Expo3DQAHook runtimeMode={mode} /> : null}
       {performanceOverlayEnabled && (
         <ExpoPerformanceSampler enabled={performanceOverlayEnabled} onSample={handlePerformanceSample} />
       )}

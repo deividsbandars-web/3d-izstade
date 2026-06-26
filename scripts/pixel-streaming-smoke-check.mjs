@@ -60,7 +60,7 @@ function formatWarn(label, details) {
 }
 
 function printHelp() {
-  console.log(`Warpala Pixel Streaming smoke check
+  console.log(`Warpala legacy runtime smoke check
 
 Environment overrides:
   PIXEL_STREAMING_STATUS_URL
@@ -72,7 +72,7 @@ Environment overrides:
 Modes:
   --mode baseline   Release-safe default. Requires backend status, signaling gateway, and TURN to be healthy.
                     Missing active streamer is reported as WARN and does not fail the script.
-  --mode strict     Premium readiness gate. Requires active streamer and session_ready.
+  --mode strict     Optional operator gate. Requires active streamer and session_ready.
 
 Default mode checks only the gateway status endpoint.
 Direct signaling REST checks run only when explicit signaling override URLs are provided.

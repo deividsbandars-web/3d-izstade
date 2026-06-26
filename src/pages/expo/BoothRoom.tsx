@@ -1,10 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { Text } from '@react-three/drei';
-import { Link, Navigate, useParams } from 'react-router-dom';
+import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
 import { loadExpoSceneForRelease } from '../../modules/expo/lib/sceneDataSource';
-import { resolveSponsorRoomRecord, type SponsorRoomRecord } from '../../modules/expo/lib/sponsorRoom';
-import { isPremiumStreamingTier } from '../../modules/expo/lib/sponsorBoothPresentation';
+import { buildSponsorRoomActions, resolveSponsorRoomRecord, type SponsorRoomRecord } from '../../modules/expo/lib/sponsorRoom';
 import type { ExpoSceneData } from '../../modules/expo/types/scene';
 
 type RoomState =
@@ -12,43 +11,31 @@ type RoomState =
   | { status: 'ready'; record: SponsorRoomRecord; scene: ExpoSceneData }
   | { status: 'missing' };
 
-type ShowroomTier = 'elite' | 'premium' | 'standard' | 'support';
+type BoothProfileTier = 'elite' | 'premium' | 'standard' | 'support';
 
-const TIER_LABELS: Record<ShowroomTier, string> = {
-  elite: 'LANDMARK SPONSOR ROOM',
-  premium: 'PREMIUM BOOTH SHOWROOM',
-  standard: 'STANDARD BOOTH SHOWROOM',
-  support: 'SPONSOR SHOWROOM',
+const TIER_LABELS: Record<BoothProfileTier, string> = {
+  elite: 'FEATURED BOOTH PROFILE',
+  premium: 'BOOTH PROFILE',
+  standard: 'BOOTH PROFILE',
+  support: 'SPONSOR PROFILE',
 };
 
-const TIER_COPY: Record<ShowroomTier, { summary: string; values: string[] }> = {
-  elite: {
-    summary: 'High-visibility sponsor room for landmark packages, event inventory and sponsor reporting.',
-    values: ['Hero sponsor presence', 'Demo Arena inventory', 'Monthly sponsor report'],
-  },
-  premium: {
-    summary: 'Premium sponsor room focused on meetings, qualified leads and future AI-assisted diagnostics.',
-    values: ['Meeting-ready package', 'Qualification preview', 'Lead report package'],
-  },
-  standard: {
-    summary: 'Standard booth room for product profile, short pitch and sponsor interest collection.',
-    values: ['Product story', 'Demo-ready screen', 'Package request'],
-  },
-  support: {
-    summary: 'Compact sponsor room for product context and next-step package discovery.',
-    values: ['Sponsor profile', 'Content screen', 'Contact-ready package'],
-  },
+const TIER_COLOR: Record<BoothProfileTier, string> = {
+  elite: '#f59e0b',
+  premium: '#38bdf8',
+  standard: '#22c55e',
+  support: '#94a3b8',
 };
 
-function normalizeTier(value: SponsorRoomRecord['presentation']['adTier']): ShowroomTier {
+const TIER_POINTS: Record<BoothProfileTier, string[]> = {
+  elite: ['High-visibility sponsor presence', 'Public booth profile', 'Sponsor contact path'],
+  premium: ['Booth profile', 'Contact sponsor', 'Admin booth tools'],
+  standard: ['Sponsor profile', 'Open booth', 'Request info'],
+  support: ['Public profile', 'Contact team', 'Return to expo'],
+};
+
+function normalizeTier(value: SponsorRoomRecord['presentation']['adTier']): BoothProfileTier {
   return value === 'elite' || value === 'premium' || value === 'standard' ? value : 'support';
-}
-
-function resolveAccent(tier: ShowroomTier) {
-  if (tier === 'elite') return '#f59e0b';
-  if (tier === 'premium') return '#38bdf8';
-  if (tier === 'standard') return '#22c55e';
-  return '#94a3b8';
 }
 
 function useSponsorRoomState(id: string | undefined) {
@@ -77,10 +64,9 @@ function useSponsorRoomState(id: string | undefined) {
   return state;
 }
 
-function ShowroomScene({ accent, record, tier }: { accent: string; record: SponsorRoomRecord; tier: ShowroomTier }) {
-  const tierLabel = TIER_LABELS[tier];
+function BoothScene({ accent, record, tier }: { accent: string; record: SponsorRoomRecord; tier: BoothProfileTier }) {
   const displayTitle = record.company.name || record.presentation.displayName || 'Sponsor Booth';
-  const subtitle = record.presentation.tagline || TIER_COPY[tier].summary;
+  const subtitle = record.presentation.tagline || 'Open the booth profile to view sponsor information and the current public-facing materials.';
 
   return (
     <Canvas
@@ -92,7 +78,7 @@ function ShowroomScene({ accent, record, tier }: { accent: string; record: Spons
       <color attach="background" args={['#050b14']} />
       <ambientLight intensity={0.72} />
       <directionalLight intensity={1.2} position={[6, 9, 8]} />
-      <pointLight color={accent} intensity={26} position={[0, 4, 4]} />
+      <pointLight color={accent} intensity={24} position={[0, 4, 4]} />
 
       <group position={[0, -0.8, 0]}>
         <mesh position={[0, 0, 0]} receiveShadow>
@@ -112,7 +98,7 @@ function ShowroomScene({ accent, record, tier }: { accent: string; record: Spons
           <meshBasicMaterial color="#07111f" />
         </mesh>
         <Text position={[0, 5.62, -1.62]} fontSize={0.54} color={accent} anchorX="center" anchorY="middle" maxWidth={8.6}>
-          {tierLabel}
+          {TIER_LABELS[tier]}
         </Text>
         <Text position={[0, 4.56, -1.6]} fontSize={0.82} color="#f8fafc" anchorX="center" anchorY="middle" maxWidth={8.8}>
           {displayTitle.toUpperCase()}
@@ -121,20 +107,8 @@ function ShowroomScene({ accent, record, tier }: { accent: string; record: Spons
           {subtitle}
         </Text>
         <Text position={[0, 2.36, -1.56]} fontSize={0.28} color="#94a3b8" anchorX="center" anchorY="middle" maxWidth={8.2} lineHeight={1.36}>
-          {TIER_COPY[tier].values.map((value) => `* ${value}`).join('\n')}
+          {TIER_POINTS[tier].map((value) => `* ${value}`).join('\n')}
         </Text>
-        {[-1, 1].map((side) => (
-          <group key={`showroom-side-${side}`} position={[side * 6.6, 2.7, -0.7]}>
-            <mesh castShadow>
-              <boxGeometry args={[0.42, 5.2, 1.1]} />
-              <meshStandardMaterial color="#102338" emissive={accent} emissiveIntensity={0.1} metalness={0.2} roughness={0.36} />
-            </mesh>
-            <mesh position={[0, 0, 0.6]}>
-              <boxGeometry args={[0.14, 3.6, 0.08]} />
-              <meshBasicMaterial color={accent} toneMapped={false} />
-            </mesh>
-          </group>
-        ))}
       </group>
     </Canvas>
   );
@@ -148,37 +122,97 @@ function StaticPill({ children }: { children: string }) {
   );
 }
 
-function HighResUnrealViewerPanel({ accent, streamPath }: { accent: string; streamPath: string }) {
+function BoothActionLinks({ record }: { record: SponsorRoomRecord }) {
+  const { brochureAction, primaryActions } = buildSponsorRoomActions(record);
+  const navigate = useNavigate();
+
   return (
-    <div style={{ background: 'linear-gradient(135deg, rgba(56, 189, 248, 0.13), rgba(15, 23, 42, 0.76))', border: `1px solid ${accent}66`, borderRadius: 22, boxShadow: `0 18px 48px ${accent}22`, padding: 18 }}>
-      <div style={{ color: accent, fontSize: '0.74rem', fontWeight: 950, letterSpacing: '0.14em', marginBottom: 10, textTransform: 'uppercase' }}>
-        Unreal product viewer
-      </div>
-      <h2 style={{ color: '#f8fafc', fontSize: '1.28rem', letterSpacing: '-0.03em', lineHeight: 1.05, margin: 0 }}>
-        High-res product statue mode
-      </h2>
-      <p style={{ color: '#cbd5e1', fontSize: '0.92rem', lineHeight: 1.5, margin: '10px 0 14px' }}>
-        Launch a premium Unreal stream for a detailed product pedestal view when a dedicated slot is available.
-      </p>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 14 }}>
-        <StaticPill>Pixel stream</StaticPill>
-        <StaticPill>Product statue</StaticPill>
-        <StaticPill>Premium slot</StaticPill>
-      </div>
-      <Link to={streamPath} style={{ background: accent, borderRadius: 999, color: '#06111d', display: 'inline-flex', fontSize: '0.88rem', fontWeight: 950, letterSpacing: '0.04em', padding: '12px 15px', textDecoration: 'none', textTransform: 'uppercase' }}>
-        Open Unreal Viewer
+    <div style={{ display: 'grid', gap: 10 }}>
+      {brochureAction ? (
+        <a
+          href={brochureAction.intent?.type === 'external' ? brochureAction.intent.target : '#'}
+          target={brochureAction.intent?.type === 'external' ? '_blank' : undefined}
+          rel={brochureAction.intent?.type === 'external' ? 'noreferrer' : undefined}
+          style={{ ...buttonStyle('#38bdf8'), textDecoration: 'none' }}
+        >
+          Open booth profile
+        </a>
+      ) : null}
+
+      {primaryActions.map(({ action, intent }) => {
+        if (intent?.type === 'external') {
+          return (
+            <a
+              key={`${action.kind}-${action.label}`}
+              href={intent.target}
+              target="_blank"
+              rel="noreferrer"
+              style={{ ...buttonStyle('#0ea5e9'), textDecoration: 'none' }}
+            >
+              {action.label}
+            </a>
+          );
+        }
+
+        if (intent?.type === 'navigate') {
+          return (
+            <Link
+              key={`${action.kind}-${action.label}`}
+              to={intent.target}
+              style={{ ...buttonStyle('#0f172a'), textDecoration: 'none', color: '#e2e8f0' }}
+            >
+              {action.label}
+            </Link>
+          );
+        }
+
+        if (intent?.type === 'local' && intent.target === 'global_chat') {
+          return (
+            <button key={`${action.kind}-${action.label}`} type="button" onClick={() => navigate('/expo-3d?salesDemo=1')} style={buttonStyle('#0f172a')}>
+              {action.label}
+            </button>
+          );
+        }
+
+        return null;
+      })}
+
+      <Link to="/expo/admin" style={{ ...buttonStyle('#111827'), textDecoration: 'none', color: '#e2e8f0' }}>
+        Manage booth
       </Link>
-      <p style={{ color: '#94a3b8', fontSize: '0.78rem', lineHeight: 1.45, margin: '12px 0 0' }}>
-        If the stream is unavailable, this Web3D showroom remains the safe fallback.
-      </p>
+      <Link to="/expo/sponsor-packages" style={{ ...buttonStyle('#111827'), textDecoration: 'none', color: '#e2e8f0' }}>
+        View sponsor packages
+      </Link>
+      <Link to="/expo-3d" style={{ ...buttonStyle('#111827'), textDecoration: 'none', color: '#e2e8f0' }}>
+        Return to expo
+      </Link>
     </div>
   );
+}
+
+function buttonStyle(background: string) {
+  return {
+    alignItems: 'center',
+    background,
+    border: '1px solid rgba(148, 163, 184, 0.2)',
+    borderRadius: 14,
+    color: '#f8fafc',
+    cursor: 'pointer',
+    display: 'inline-flex',
+    fontSize: '0.92rem',
+    fontWeight: 900,
+    justifyContent: 'center',
+    letterSpacing: '0.02em',
+    minHeight: 46,
+    padding: '12px 16px',
+    textTransform: 'uppercase' as const,
+  };
 }
 
 function LoadingRoom() {
   return (
     <div style={{ alignItems: 'center', background: '#050b14', color: '#f8fafc', display: 'flex', justifyContent: 'center', minHeight: '100vh' }}>
-      Loading sponsor showroom...
+      Loading booth profile...
     </div>
   );
 }
@@ -194,10 +228,8 @@ export default function BoothRoom() {
 
     const tier = normalizeTier(state.record.presentation.adTier);
     return {
-      accent: resolveAccent(tier),
-      copy: TIER_COPY[tier],
+      accent: TIER_COLOR[tier],
       tier,
-      tierLabel: TIER_LABELS[tier],
     };
   }, [state]);
 
@@ -211,25 +243,22 @@ export default function BoothRoom() {
 
   const { record } = state;
   const displayTitle = record.company.name || record.presentation.displayName || 'Sponsor Booth';
-  const roomSummary = record.presentation.tagline || roomModel.copy.summary;
-  const canOpenHighResViewer = isPremiumStreamingTier(record.presentation.adTier);
-  const highResViewerPath = record.presentation.demoRoomPath.endsWith('/stream')
-    ? record.presentation.demoRoomPath
-    : `${record.presentation.demoRoomPath.replace(/\/$/, '')}/stream`;
-  const packageStatus = record.presentation.managedScreenContent?.status === 'published'
-    ? 'Owner-managed screen content is published.'
-    : 'Preview showroom - owner-managed content can be attached later.';
+  const roomSummary = record.presentation.tagline || 'Open the booth profile to view the sponsor summary and current public details.';
+  const hasInteractiveRoom = Boolean(record.presentation.managedScreenContent || record.presentation.videoUrl || record.presentation.customInsertUrl);
+  const roomStatus = hasInteractiveRoom
+    ? 'This booth has public profile content and managed screen content attached.'
+    : 'This booth does not yet have a configured interactive room.';
 
   return (
     <main style={{ background: 'radial-gradient(circle at 20% 8%, rgba(56, 189, 248, 0.16), transparent 32%), linear-gradient(135deg, #050b14 0%, #07111f 50%, #020617 100%)', color: '#f8fafc', minHeight: '100vh' }}>
       <section style={{ display: 'grid', gap: 0, gridTemplateColumns: 'minmax(0, 1.25fr) minmax(320px, 0.75fr)', minHeight: '100vh' }}>
         <div style={{ borderRight: '1px solid rgba(148, 163, 184, 0.12)', minHeight: 520 }}>
-          <ShowroomScene accent={roomModel.accent} record={record} tier={roomModel.tier} />
+          <BoothScene accent={roomModel.accent} record={record} tier={roomModel.tier} />
         </div>
         <aside style={{ display: 'flex', flexDirection: 'column', gap: 20, justifyContent: 'center', padding: 'clamp(22px, 4vw, 46px)' }}>
           <div>
             <div style={{ color: roomModel.accent, fontSize: '0.75rem', fontWeight: 950, letterSpacing: '0.16em', marginBottom: 10, textTransform: 'uppercase' }}>
-              {roomModel.tierLabel}
+              {TIER_LABELS[roomModel.tier]}
             </div>
             <h1 style={{ fontSize: 'clamp(2.1rem, 5vw, 4.6rem)', letterSpacing: '-0.06em', lineHeight: 0.92, margin: 0 }}>
               {displayTitle}
@@ -241,41 +270,35 @@ export default function BoothRoom() {
 
           <div style={{ display: 'grid', gap: 10 }}>
             <div style={{ color: roomModel.accent, fontSize: '0.74rem', fontWeight: 900, letterSpacing: '0.14em', textTransform: 'uppercase' }}>
-              Sponsor value
+              Booth actions
             </div>
-            {roomModel.copy.values.map((value) => (
-              <div key={value} style={{ alignItems: 'center', background: 'rgba(15, 23, 42, 0.68)', border: '1px solid rgba(148, 163, 184, 0.14)', borderRadius: 16, display: 'flex', gap: 12, padding: '13px 14px' }}>
-                <span style={{ background: roomModel.accent, borderRadius: 999, boxShadow: `0 0 18px ${roomModel.accent}55`, height: 9, width: 9 }} />
-                <span style={{ color: '#e2e8f0', fontWeight: 800 }}>{value}</span>
-              </div>
-            ))}
+            <BoothActionLinks record={record} />
           </div>
-
-          {canOpenHighResViewer ? (
-            <HighResUnrealViewerPanel accent={roomModel.accent} streamPath={highResViewerPath} />
-          ) : null}
 
           <div style={{ background: 'rgba(2, 6, 23, 0.6)', border: '1px solid rgba(148, 163, 184, 0.14)', borderRadius: 22, padding: 18 }}>
             <div style={{ color: '#94a3b8', fontSize: '0.78rem', fontWeight: 900, letterSpacing: '0.12em', marginBottom: 12, textTransform: 'uppercase' }}>
-              Next-step labels
+              Booth status
             </div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
-              <StaticPill>Request demo</StaticPill>
-              <StaticPill>View package</StaticPill>
-              <StaticPill>Meet sponsor</StaticPill>
-            </div>
-            <p style={{ color: '#94a3b8', fontSize: '0.86rem', lineHeight: 1.5, margin: '14px 0 0' }}>
-              {packageStatus} No live forms, booking flow, AI agent or backend lead capture is active here.
+            <p style={{ color: '#e2e8f0', fontSize: '0.95rem', lineHeight: 1.55, margin: 0 }}>
+              {roomStatus}
             </p>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 14 }}>
+              <StaticPill>Open booth profile</StaticPill>
+              <StaticPill>Contact sponsor</StaticPill>
+              <StaticPill>Manage booth</StaticPill>
+            </div>
           </div>
 
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
-            <Link to="/expo-3d" style={{ background: roomModel.accent, borderRadius: 999, color: '#06111d', fontWeight: 950, padding: '13px 17px', textDecoration: 'none' }}>
-              Back to Expo City
-            </Link>
-            <Link to="/expo-3d?salesDemo=1" style={{ border: '1px solid rgba(148, 163, 184, 0.28)', borderRadius: 999, color: '#f8fafc', fontWeight: 850, padding: '13px 17px', textDecoration: 'none' }}>
-              Open Sales Demo
-            </Link>
+          <div style={{ display: 'grid', gap: 10 }}>
+            <div style={{ color: roomModel.accent, fontSize: '0.74rem', fontWeight: 900, letterSpacing: '0.14em', textTransform: 'uppercase' }}>
+              Available surfaces
+            </div>
+            {record.presentation.actions.map((action) => (
+              <div key={`${action.kind}-${action.label}`} style={{ alignItems: 'center', background: 'rgba(15, 23, 42, 0.68)', border: '1px solid rgba(148, 163, 184, 0.14)', borderRadius: 16, display: 'flex', gap: 12, padding: '13px 14px' }}>
+                <span style={{ background: roomModel.accent, borderRadius: 999, boxShadow: `0 0 18px ${roomModel.accent}55`, height: 9, width: 9 }} />
+                <span style={{ color: '#e2e8f0', fontWeight: 800 }}>{action.label}</span>
+              </div>
+            ))}
           </div>
         </aside>
       </section>

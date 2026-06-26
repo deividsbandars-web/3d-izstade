@@ -1,0 +1,29 @@
+# Default ripgrep ignore list for this repo.
+# These paths are large secondary trees and should not be searched by default.
+# Search them explicitly by path when the task actually targets them.
+
+node_modules/
+dist/
+dist-ssr/
+build/
+coverage/
+.vercel/
+review_artifacts/
+public/videos/
+public/assets/heavy/
+public/uploads/
+supabase/.temp/
+tmp/
+tmp-*/
+.tmp*/
+*.zip
+*.7z
+*.rar
+
+apps/frontend/
+assets-intake/
+diagnostics/
+docs/recovery/
+GALA_PresentationUE5_Clean/
+handoff/
+WarpalaUE5/

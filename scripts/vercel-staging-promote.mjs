@@ -30,6 +30,10 @@ const result = spawnSync(
   npx,
   ['vercel', 'alias', 'set', `https://${hostname}`, stagingAlias, '--scope', scope],
   {
+    env: {
+      ...process.env,
+      NO_UPDATE_NOTIFIER: '1',
+    },
     stdio: 'inherit',
     shell: process.platform === 'win32',
   },

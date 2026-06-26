@@ -9,12 +9,12 @@ const getEnv = (name: string): string => {
   return '';
 };
 
-const isServerRuntime = typeof window === 'undefined';
+const isServerRuntime = typeof process !== 'undefined' && Boolean(process.versions?.node);
 
 let openaiClient: OpenAI | null = null;
 try {
   const apiKey = getEnv('OPENAI_API_KEY');
-  if (isServerRuntime && apiKey) {
+  if (apiKey) {
     openaiClient = new OpenAI({ apiKey });
   }
 } catch (e) {

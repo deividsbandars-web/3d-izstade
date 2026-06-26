@@ -2,6 +2,13 @@
 
 -- 1. Ensure sponsor-ready columns exist on the public expo tables used by /api/expo/scene.
 ALTER TABLE public.companies
+  ADD COLUMN IF NOT EXISTS sector_id UUID REFERENCES public.sectors(id) ON DELETE SET NULL,
+  ADD COLUMN IF NOT EXISTS description TEXT,
+  ADD COLUMN IF NOT EXISTS logo_url TEXT,
+  ADD COLUMN IF NOT EXISTS website TEXT,
+  ADD COLUMN IF NOT EXISTS location TEXT,
+  ADD COLUMN IF NOT EXISTS contact_email TEXT,
+  ADD COLUMN IF NOT EXISTS tier TEXT DEFAULT 'free',
   ADD COLUMN IF NOT EXISTS sponsor_tier TEXT DEFAULT 'standard',
   ADD COLUMN IF NOT EXISTS priority INTEGER DEFAULT 0,
   ADD COLUMN IF NOT EXISTS booth_type TEXT DEFAULT 'standard',
@@ -13,6 +20,7 @@ ALTER TABLE public.companies
   ADD COLUMN IF NOT EXISTS slug TEXT;
 
 ALTER TABLE public.booths
+  ADD COLUMN IF NOT EXISTS model_url TEXT,
   ADD COLUMN IF NOT EXISTS booth_type TEXT DEFAULT 'standard',
   ADD COLUMN IF NOT EXISTS poster_url TEXT,
   ADD COLUMN IF NOT EXISTS hero_asset_url TEXT,

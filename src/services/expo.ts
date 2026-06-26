@@ -1,9 +1,30 @@
-import { serverApiGet, serverApiPatch, serverApiPost } from './serverApi';
+import type {
+  ExpoMediaReviewUploadAdminAction,
+  ExpoMediaReviewUploadKind,
+  ExpoMediaReviewUploadPromoteTarget,
+} from '../shared/expo/mediaReviewUpload';
+import { serverApiGet, serverApiPatch, serverApiPost, serverApiUploadBinary } from './serverApi';
 
 export const ExpoDataAPI = {
   createBooth: async (payload: unknown) => serverApiPost('/api/expo/booths', payload),
   createExpoLead: async (payload: unknown) => serverApiPost('/api/expo/lead', payload),
   updateBooth: async (boothId: string, payload: unknown) => serverApiPatch(`/api/expo/booths/${boothId}`, payload),
+  uploadBoothMediaReviewAsset: async (boothId: string, kind: ExpoMediaReviewUploadKind, file: File) =>
+    serverApiUploadBinary(`/api/expo/booths/${boothId}/media-review-upload`, file, {
+      contentType: file.type || 'application/octet-stream',
+      headers: {
+        'X-Media-Kind': kind,
+        'X-Upload-Filename': file.name,
+      },
+    }),
+  reviewBoothMediaReviewAsset: async (
+    boothId: string,
+    payload: {
+      action: ExpoMediaReviewUploadAdminAction;
+      path: string;
+      promoteTarget?: ExpoMediaReviewUploadPromoteTarget;
+    },
+  ) => serverApiPatch(`/api/expo/booths/${boothId}/media-review-uploads`, payload),
   getManagedBooths: async () => serverApiGet('/api/expo/booths/managed'),
   getBooth: async (boothId: string) => serverApiGet(`/api/expo/booths/${boothId}`),
   getBooths: async () => serverApiGet('/api/expo/booths'),

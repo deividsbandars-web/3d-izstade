@@ -4,7 +4,8 @@ Smoke check:
 
 1. set `RELEASE_BASE_URL`
 2. run `node scripts/release-smoke-check.mjs`
-3. verify `/health`, `/api/expo/scene`, and `/api/pixel-streaming/status`
+3. verify `/health` and `/api/expo/scene`
+4. if you are operating the optional legacy runtime stack, verify `/api/pixel-streaming/status` separately
 
 Rollback procedure:
 

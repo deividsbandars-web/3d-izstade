@@ -31,6 +31,9 @@ public static class Win32Capture {
 
     [DllImport("user32.dll")]
     public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+
+    [DllImport("user32.dll")]
+    public static extern bool PrintWindow(IntPtr hwnd, IntPtr hdcBlt, int nFlags);
 }
 "@
 
@@ -59,7 +62,16 @@ $height = [Math]::Max(1, $rect.Bottom - $rect.Top)
 
 $bitmap = New-Object System.Drawing.Bitmap $width, $height
 $graphics = [System.Drawing.Graphics]::FromImage($bitmap)
-$graphics.CopyFromScreen($rect.Left, $rect.Top, 0, 0, $bitmap.Size)
+$hdc = $graphics.GetHdc()
+$printed = $false
+try {
+  $printed = [Win32Capture]::PrintWindow($proc.MainWindowHandle, $hdc, 0)
+} finally {
+  $graphics.ReleaseHdc($hdc)
+}
+if (-not $printed) {
+  $graphics.CopyFromScreen($rect.Left, $rect.Top, 0, 0, $bitmap.Size)
+}
 
 $parent = Split-Path -Parent $OutputPath
 if (-not (Test-Path $parent)) {

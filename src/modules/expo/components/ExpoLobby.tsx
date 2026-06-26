@@ -1,55 +1,16 @@
+import { useNavigate } from 'react-router-dom';
 import { EXPO_MODE_COPY, type ExpoMode } from '../state/expoRuntime';
-import type { PixelStreamingAvailability, PixelStreamingRuntimeStatus } from '../services/pixelStreamingConfig';
+import { createCanonicalModularHomeStudioPath } from '../runtime/modularHome/modularHomeShareUrl';
 
 interface ExpoLobbyProps {
   isTouchDevice?: boolean;
+  onOpenModularHomes?: () => void;
   onSelectMode: (mode: ExpoMode) => void;
   onBack: () => void;
-  premiumAvailability: PixelStreamingAvailability;
-  premiumSignalingUrl: string | null;
-  premiumRuntimeStatus: PixelStreamingRuntimeStatus | null;
 }
 
-export function ExpoLobby({ isTouchDevice = false, onSelectMode, onBack, premiumAvailability, premiumSignalingUrl, premiumRuntimeStatus }: ExpoLobbyProps) {
-  const premiumStatusCopy = premiumAvailability === 'available'
-    ? EXPO_MODE_COPY.premiumAvailable
-    : premiumAvailability === 'degraded'
-      ? EXPO_MODE_COPY.premiumDegraded
-    : premiumAvailability === 'connecting'
-      ? EXPO_MODE_COPY.premiumConnecting
-      : EXPO_MODE_COPY.premiumUnavailable;
-
-  const premiumButtonLabel = premiumAvailability === 'available'
-    ? EXPO_MODE_COPY.premiumCta
-    : premiumAvailability === 'degraded'
-      ? EXPO_MODE_COPY.premiumDegradedCta
-    : premiumAvailability === 'connecting'
-      ? EXPO_MODE_COPY.premiumConnectingCta
-      : EXPO_MODE_COPY.premiumUnavailableCta;
-
-  const gatewayStatusCopy = premiumRuntimeStatus?.signaling === 'signaling_up'
-    ? EXPO_MODE_COPY.premiumGatewayUp
-    : premiumRuntimeStatus?.signaling === 'signaling_down'
-      ? EXPO_MODE_COPY.premiumGatewayDown
-      : EXPO_MODE_COPY.premiumConnecting;
-
-  const streamerStatusCopy = premiumRuntimeStatus?.streamer === 'streamer_available'
-    ? EXPO_MODE_COPY.premiumStreamerReady
-    : premiumRuntimeStatus?.streamer === 'streamer_unavailable'
-      ? EXPO_MODE_COPY.premiumStreamerWaiting
-      : EXPO_MODE_COPY.premiumConnecting;
-
-  const turnStatusCopy = premiumRuntimeStatus?.turn_ice === 'turn_configured'
-    ? EXPO_MODE_COPY.premiumTurnConfigured
-    : premiumRuntimeStatus?.turn_ice === 'turn_not_configured'
-      ? EXPO_MODE_COPY.premiumTurnNotConfigured
-      : EXPO_MODE_COPY.premiumTurnUnknown;
-
-  const sessionStatusCopy = premiumRuntimeStatus?.readiness === 'session_ready'
-    ? EXPO_MODE_COPY.premiumSessionReady
-    : premiumRuntimeStatus?.readiness === 'session_not_ready'
-      ? EXPO_MODE_COPY.premiumSessionNotReady
-      : EXPO_MODE_COPY.premiumSessionUnknown;
+export function ExpoLobby({ isTouchDevice = false, onOpenModularHomes, onSelectMode, onBack }: ExpoLobbyProps) {
+  const navigate = useNavigate();
 
   const cardPadding = isTouchDevice ? '12px 14px' : '14px 18px';
   const modeButtonStyle = isTouchDevice
@@ -94,33 +55,14 @@ export function ExpoLobby({ isTouchDevice = false, onSelectMode, onBack, premium
               </div>
             )}
           </div>
-          <div style={{ padding: cardPadding, borderRadius: '12px', background: 'rgba(6, 78, 59, 0.45)', border: '1px solid rgba(16, 185, 129, 0.35)', color: '#d1fae5', fontSize: isTouchDevice ? '0.82rem' : undefined, lineHeight: 1.45 }}>
-            <strong style={{ color: '#fff' }}>{EXPO_MODE_COPY.premiumLabel}</strong> {EXPO_MODE_COPY.premiumDescription}
-            <div style={{ marginTop: '10px', fontSize: '0.95rem', color: premiumAvailability === 'unavailable' ? '#fecaca' : premiumAvailability === 'degraded' ? '#fde68a' : '#d1fae5' }}>
-              <strong>{EXPO_MODE_COPY.premiumStatusLabel}</strong> {premiumStatusCopy}
+          <div style={{ padding: cardPadding, borderRadius: '12px', background: 'rgba(6, 78, 59, 0.3)', border: '1px solid rgba(16, 185, 129, 0.25)', color: '#d1fae5', fontSize: isTouchDevice ? '0.82rem' : undefined, lineHeight: 1.45 }}>
+            <strong style={{ color: '#fff' }}>{EXPO_MODE_COPY.boothLabel}</strong> {EXPO_MODE_COPY.boothDescription}
+            <div style={{ marginTop: '8px', color: '#c7f9cc', fontSize: '0.9rem', fontWeight: 800 }}>
+              {EXPO_MODE_COPY.cityFallbackDescription}
             </div>
-            {!isTouchDevice && (
-            <div style={{ marginTop: '10px', display: 'grid', gap: '4px', fontSize: '0.85rem', color: '#d1fae5' }}>
-              <div><strong>{EXPO_MODE_COPY.premiumGatewayLabel}</strong> {gatewayStatusCopy}</div>
-              <div><strong>{EXPO_MODE_COPY.premiumStreamerLabel}</strong> {streamerStatusCopy}</div>
-              <div><strong>{EXPO_MODE_COPY.premiumTurnLabel}</strong> {turnStatusCopy}</div>
-              <div><strong>{EXPO_MODE_COPY.premiumSessionLabel}</strong> {sessionStatusCopy}</div>
-              {premiumRuntimeStatus?.checkedAt && (
-                <div><strong>{EXPO_MODE_COPY.premiumStatusCheckedAt}</strong> {premiumRuntimeStatus.checkedAt}</div>
-              )}
-              {premiumRuntimeStatus?.warnings?.length ? (
-                <div><strong>{EXPO_MODE_COPY.premiumStatusWarningsLabel}</strong> {premiumRuntimeStatus.warnings.join(', ')}</div>
-              ) : null}
-            </div>
-            )}
-            {!isTouchDevice && (
-              <div style={{ marginTop: '6px', fontSize: '0.8rem', color: '#a7f3d0', wordBreak: 'break-all' }}>
-                {EXPO_MODE_COPY.premiumServerLabel} {premiumSignalingUrl ?? 'Not configured'}
-              </div>
-            )}
           </div>
           <div style={{ padding: cardPadding, borderRadius: '12px', background: 'rgba(30, 41, 59, 0.7)', border: '1px solid rgba(148, 163, 184, 0.2)', color: '#cbd5e1', fontSize: isTouchDevice ? '0.82rem' : undefined, lineHeight: 1.45 }}>
-            <strong style={{ color: '#fff' }}>{EXPO_MODE_COPY.fallbackLabel}</strong> {EXPO_MODE_COPY.fallbackDescription}
+            <strong style={{ color: '#fff' }}>{EXPO_MODE_COPY.fallbackLabel}</strong> {EXPO_MODE_COPY.cityFallbackDescription}
           </div>
         </div>
         <div style={{ display: 'flex', gap: isTouchDevice ? '10px' : '20px', flexDirection: 'column' }}>
@@ -128,29 +70,42 @@ export function ExpoLobby({ isTouchDevice = false, onSelectMode, onBack, premium
             <button onClick={() => onSelectMode('walk')} className="btn-primary" style={modeButtonStyle}>{EXPO_MODE_COPY.walkCta}</button>
             <button onClick={() => onSelectMode('fly')} className="btn-glass" style={modeButtonStyle}>{EXPO_MODE_COPY.flyCta}</button>
           </div>
-          <button
-            onClick={() => onSelectMode('unreal')}
-            disabled={premiumAvailability !== 'available'}
-            style={{
-              padding: isTouchDevice ? '14px 16px' : '15px 30px',
-              background: premiumAvailability === 'available'
-                ? 'linear-gradient(90deg, #10b981, #059669)'
-                : premiumAvailability === 'degraded'
-                  ? 'linear-gradient(90deg, #a16207, #92400e)'
-                : 'linear-gradient(90deg, #475569, #334155)',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              fontSize: isTouchDevice ? '0.95rem' : '1.2rem',
-              fontWeight: 'bold',
-              cursor: premiumAvailability === 'available' ? 'pointer' : 'not-allowed',
-              boxShadow: premiumAvailability === 'available' ? '0 0 20px rgba(16, 185, 129, 0.4)' : 'none',
-              opacity: premiumAvailability === 'available' ? 1 : 0.8,
-              minHeight: isTouchDevice ? '52px' : undefined,
-            }}
-          >
-            {premiumButtonLabel}
-          </button>
+          <div style={{ display: 'grid', gap: '10px', gridTemplateColumns: isTouchDevice ? '1fr' : 'repeat(2, minmax(0, 1fr))' }}>
+            <button
+              type="button"
+              onClick={onOpenModularHomes || (() => navigate(createCanonicalModularHomeStudioPath('exterior')))}
+              style={{
+                padding: isTouchDevice ? '14px 16px' : '15px 20px',
+                background: 'linear-gradient(90deg, #0ea5e9, #2563eb)',
+                color: 'white',
+                border: 'none',
+                borderRadius: '8px',
+                fontSize: isTouchDevice ? '0.95rem' : '1rem',
+                fontWeight: 'bold',
+                cursor: 'pointer',
+                minHeight: isTouchDevice ? '52px' : undefined,
+              }}
+            >
+              {EXPO_MODE_COPY.modularHomesCta}
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate('/expo/sponsor-packages')}
+              style={{
+                padding: isTouchDevice ? '14px 16px' : '15px 20px',
+                background: 'rgba(15, 23, 42, 0.72)',
+                color: '#e2e8f0',
+                border: '1px solid rgba(148, 163, 184, 0.24)',
+                borderRadius: '8px',
+                fontSize: isTouchDevice ? '0.95rem' : '1rem',
+                fontWeight: 'bold',
+                cursor: 'pointer',
+                minHeight: isTouchDevice ? '52px' : undefined,
+              }}
+            >
+              View sponsor packages
+            </button>
+          </div>
         </div>
         <button onClick={onBack} style={{ marginTop: isTouchDevice ? '18px' : '40px', background: 'transparent', color: '#94a3b8', border: 'none', cursor: 'pointer', fontWeight: 'bold' }}>
           {EXPO_MODE_COPY.backToDashboard}

@@ -211,12 +211,12 @@ if ($Stack -eq 'local') {
 }
 
 if (-not $SkipSmokeCheck) {
-  Write-Step "running Pixel Streaming smoke check"
+  Write-Step "running legacy runtime smoke check"
   $previousStatusUrl = $env:PIXEL_STREAMING_STATUS_URL
   $env:PIXEL_STREAMING_STATUS_URL = $statusUrl
   try {
     $mode = if ($Strict) { 'strict' } else { 'baseline' }
-    Invoke-Checked @('npm.cmd', 'run', 'check:pixel-streaming', '--', '--mode', $mode)
+    Invoke-Checked @('npm.cmd', 'run', 'check:expo:legacy-runtime', '--', '--mode', $mode)
   } finally {
     $env:PIXEL_STREAMING_STATUS_URL = $previousStatusUrl
   }
@@ -224,16 +224,16 @@ if (-not $SkipSmokeCheck) {
 
 Write-Step "stack ready"
 Write-Host "Backend health: $backendHealthUrl"
-Write-Host "Pixel status:   $statusUrl"
+Write-Host "Legacy status:  $statusUrl"
 if ($Stack -eq 'local') {
   Write-Host "Web3D sales:    $frontendUrl"
   Write-Host "Booth stream:   $streamUrl"
 }
 Write-Host ""
-Write-Host "Unreal streamer is not launched by Docker."
+Write-Host "Legacy streamer is not launched by Docker."
 Write-Host "Expected booth streamer id: booth-sponsor-concierge"
 Write-Host "Expected signaling streamer port: ws://127.0.0.1:8888"
-Write-Host "If no Unreal streamer is connected, /stream will correctly show degraded / streamer unknown."
+Write-Host "If no legacy streamer is connected, /stream will correctly show the legacy fallback state."
 
 if ($ShowLogs) {
   Write-Step "following logs"

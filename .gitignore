@@ -52,6 +52,11 @@ supabase/.temp/
 .aider*
 pazudusie faili/
 .gemini/
+.codex/
+GALA_PresentationUE5_Clean/
+artifacts/root-archive/
+server/node_modules/
+server/dist/
 *.png
 *.jpg
 !public/textures/expo/**/*.png

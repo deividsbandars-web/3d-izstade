@@ -3,7 +3,7 @@ import WarpalaLogo from '../shared/Logo';
 
 const sponsorRoutes = [
   {
-    body: 'A concise sponsor package page with Standard Booth, Premium Booth, Landmark Zone Sponsor and Demo Arena inventory.',
+    body: 'A concise sponsor package page with Standard Booth, Booth Profile, Landmark Zone Sponsor and Demo Arena inventory.',
     href: '/expo/sponsor-packages',
     label: 'Start here',
     title: 'Sponsor packages',
@@ -24,7 +24,7 @@ const sponsorRoutes = [
 
 const packageSignals = [
   ['Landmark Zone Sponsor', 'Zone ownership, hero placement and Demo Arena sponsor inventory.'],
-  ['Premium Booth', 'Meeting-ready booth, lead capture and future qualification workflow.'],
+  ['Booth Profile', 'Meeting-ready booth profile, lead capture and future qualification workflow.'],
   ['Standard Booth', 'Product profile, demo story and sponsor interest path.'],
   ['Demo Arena', 'Monthly event programming for demo battles, investor days and recaps.'],
 ];

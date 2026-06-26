@@ -80,13 +80,13 @@ export function ModularHomeUploadPreviewPanel({ isTouchDevice = false }: Modular
               textTransform: 'uppercase',
             }}
           >
-            Local GLB preview
+            Developer-only local preview
           </div>
           <div style={{ fontSize: isTouchDevice ? '0.96rem' : '1.06rem', fontWeight: 950, letterSpacing: '-0.02em', lineHeight: 1.05, marginTop: '5px' }}>
-            Uploaded house model viewer
+            Legacy local model preview
           </div>
           <div style={{ marginTop: '6px', color: '#bae6fd', fontSize: isTouchDevice ? '0.64rem' : '0.7rem', fontWeight: 800, lineHeight: 1.28 }}>
-            Local browser preview only. No upload, storage, conversion or AI processing.
+            Developer-only browser preview. This is not the modular home MVP path and does not enable upload, storage, conversion or AI processing.
           </div>
         </div>
         <div
@@ -165,7 +165,7 @@ export function ModularHomeUploadPreviewPanel({ isTouchDevice = false }: Modular
               marginTop: '8px',
             }}
           >
-            Max {Math.round(HOME_UPLOAD_PREVIEW_MAX_FILE_BYTES / 1024 / 1024)} MB. IFC, CAD and drawing conversion are intentionally not enabled in this round.
+            Max {Math.round(HOME_UPLOAD_PREVIEW_MAX_FILE_BYTES / 1024 / 1024)} MB. Plan PDFs, floorplan images, reference photos, panoramas and manual review remain the visible modular home workflow in this round.
           </div>
 
           <div

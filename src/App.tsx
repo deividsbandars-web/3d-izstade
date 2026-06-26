@@ -5,6 +5,7 @@ import Layout from './components/Layout';
 // Core un pamata lapas
 import Home from './pages/Home';
 import Login from './pages/Login';
+import ResetPassword from './pages/ResetPassword';
 const Privacy = lazy(() => import('./pages/Privacy'));
 
 // ==========================================
@@ -86,6 +87,7 @@ export default function App() {
           <Route path="/" element={<Layout />}>
             <Route index element={<Home />} />
             <Route path="login" element={<Login />} />
+            <Route path="reset-password" element={<ResetPassword />} />
             <Route path="privacy" element={<Suspense fallback={null}><Privacy /></Suspense>} />
             
             {/* Jaunie AI Platformas Maršruti (Phase 15) */}

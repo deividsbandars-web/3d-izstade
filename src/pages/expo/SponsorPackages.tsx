@@ -62,13 +62,13 @@ const SPONSOR_PACKAGES: PackageCard[] = [
     deliverables: ['Premium stends', 'Meeting CTA plūsma', 'AI kvalifikācijas preview', 'Lead report pakete'],
     features: ['Meeting-ready sponsor pakete', 'AI kvalifikācijas preview', 'Lead report pakete'],
     id: 'premium',
-    label: 'Premium Booth',
+    label: 'Booth Profile',
     outcome: 'Pārvērst expo uzmanību konkrētās sarunās un pieteikumos.',
     priceRange: 'Sākot no 5k-15k / kampaņa',
     priceSignal: 'Lead-gen pakete',
     proof: 'Skatāms sales demo kā Sponsor Concierge piemērs.',
     salesMetric: 'Pieteiktas sarunas, kvalifikācijas signāli un follow-up statuss',
-    title: 'Premium Booth',
+    title: 'Booth Profile',
   },
   {
     accent: '#34d399',
@@ -112,7 +112,7 @@ const FUNNEL_STEPS = [
 ];
 
 const PACKAGE_INTEREST_OPTIONS: Array<{ label: string; value: SponsorPackageInterest }> = [
-  { label: 'Premium Booth', value: 'premium' },
+  { label: 'Booth Profile', value: 'premium' },
   { label: 'Standard Booth', value: 'standard' },
   { label: 'Landmark Zone Sponsor', value: 'landmark' },
   { label: 'Demo Arena Sponsor', value: 'arena' },
@@ -344,7 +344,7 @@ export default function SponsorPackages() {
           <div style={{ display: 'grid', gap: '24px', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))' }}>
             <div>
               <p style={{ color: '#dbeafe', fontSize: '1.14rem', fontWeight: 850, lineHeight: 1.48, margin: '0 0 14px', maxWidth: '800px' }}>
-                Trīs pārdodamas sponsor paketes: Standard Booth, Premium Booth un Landmark Zone Sponsor.
+                Trīs pārdodamas sponsor paketes: Standard Booth, Booth Profile un Landmark Zone Sponsor.
               </p>
               <p style={{ color: '#cbd5e1', fontSize: '1.02rem', lineHeight: 1.62, margin: 0, maxWidth: '820px' }}>
                 Lapa ir domāta klientam: sponsors var apskatīt sales demo, saprast paketes atšķirību un nosūtīt pieteikumu,

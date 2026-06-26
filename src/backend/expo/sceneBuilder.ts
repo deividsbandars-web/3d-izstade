@@ -197,7 +197,7 @@ export const sceneBuilder = {
         return mergeManagedBoothScreenContent(booth, managedBooth);
       });
       const companies = (companiesResult.data || []).map((company: any, index: number) => {
-        const companyBooth = booths.find(b => b.company_id === company.id);
+        const companyBooth = booths.find((b: any) => b.company_id === company.id);
         const sectorId = resolveCanonicalSectorId(company.sector_id, index);
         return {
           ...company,

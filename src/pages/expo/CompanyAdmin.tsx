@@ -4,6 +4,13 @@ import { Canvas } from '@react-three/fiber';
 import { Environment, OrbitControls, Text, useVideoTexture } from '@react-three/drei';
 import { expoDashboardService } from '../../app/expo/expoDashboardService';
 import {
+  applyMediaReviewAdminAction,
+  getMediaReviewUploadAccept,
+  getMediaReviewUploadLabel,
+  getMediaReviewPromoteTargets,
+  uploadMediaReviewFile,
+} from '../../app/expo/mediaReviewUploadService';
+import {
   getSponsorAssetUploadAccept,
   getSponsorAssetUploadLabel,
   uploadSponsorAssetPackFile,
@@ -17,6 +24,17 @@ import {
   normalizeExpoScreenContentForSave,
   validateExpoScreenMediaUrl,
 } from '../../shared/expo/screenContentMedia';
+import {
+  EXPO_MEDIA_REVIEW_REFERENCE_POLICY_TEXT,
+  normalizeExpoMediaReviewReferencesForSave,
+  readExpoMediaReviewReferencesFromAssets,
+} from '../../shared/expo/mediaReviewReferences';
+import {
+  getExpoMediaReviewUploadStatusLabel,
+  type ExpoMediaReviewUploadKind,
+  type ExpoMediaReviewUploadPromoteTarget,
+  type ExpoMediaReviewUploadRecord,
+} from '../../shared/expo/mediaReviewUpload';
 import {
   EXPO_SPONSOR_ASSET_PACK_MEDIA_POLICY_TEXT,
   EXPO_SPONSOR_ASSET_PACK_PRODUCT_IMAGE_LIMIT,
@@ -33,7 +51,9 @@ import {
   getExpoScreenSlotsForBooth,
 } from '../../shared/expo/screenInventory';
 import {
+  canTransitionExpoBoothPublicationStatus,
   EXPO_BOOTH_PUBLICATION_STATUSES,
+  getExpoBoothAllowedNextStatuses,
   getExpoBoothPublicationStatusLabel,
   isExpoBoothPublicSceneStatus,
   normalizeExpoBoothPublicationStatus,
@@ -100,6 +120,7 @@ type AdminCompanyState = {
   district: string;
   id: string;
   logo_url: string;
+  mediaReview: AdminMediaReviewState;
   name: string;
   screenContent: AdminScreenContentState;
   sponsorAssetPack: AdminSponsorAssetPackState;
@@ -131,6 +152,19 @@ type AdminSponsorAssetPackState = {
   packageTier: ExpoSponsorPackageTier;
   productImageUrls: string;
   shortPitch: string;
+  websiteUrl: string;
+};
+
+type AdminMediaReviewState = {
+  bookingUrl: string;
+  ctaLabel: string;
+  heroImageUrl: string;
+  heroVideoUrl: string;
+  logoUrl: string;
+  mediaNotes: string;
+  posterUrl: string;
+  tagline: string;
+  uploads: ExpoMediaReviewUploadRecord[];
   websiteUrl: string;
 };
 
@@ -168,6 +202,14 @@ type AdminLaunchStep = {
   state: AdminLaunchStepState;
   status: string;
 };
+
+type SponsorReadinessCategory =
+  | 'Ready for demo'
+  | 'Needs media review'
+  | 'Needs CTA/contact info'
+  | 'Waiting for approval'
+  | 'Published'
+  | 'Archived';
 
 type AdminAccessState =
   | 'checking-auth'
@@ -236,6 +278,39 @@ const ADMIN_LAUNCH_STEP_STYLE: Record<AdminLaunchStepState, { accent: string; ba
   },
 };
 
+const SPONSOR_READINESS_STYLE: Record<SponsorReadinessCategory, { accent: string; background: string; border: string }> = {
+  'Archived': {
+    accent: '#94a3b8',
+    background: 'rgba(51, 65, 85, 0.28)',
+    border: 'rgba(148, 163, 184, 0.24)',
+  },
+  'Needs CTA/contact info': {
+    accent: '#fbbf24',
+    background: 'rgba(120, 53, 15, 0.28)',
+    border: 'rgba(251, 191, 36, 0.24)',
+  },
+  'Needs media review': {
+    accent: '#f97316',
+    background: 'rgba(124, 45, 18, 0.28)',
+    border: 'rgba(249, 115, 22, 0.24)',
+  },
+  'Published': {
+    accent: '#34d399',
+    background: 'rgba(6, 78, 59, 0.28)',
+    border: 'rgba(52, 211, 153, 0.24)',
+  },
+  'Ready for demo': {
+    accent: '#38bdf8',
+    background: 'rgba(8, 47, 73, 0.28)',
+    border: 'rgba(56, 189, 248, 0.24)',
+  },
+  'Waiting for approval': {
+    accent: '#c084fc',
+    background: 'rgba(88, 28, 135, 0.24)',
+    border: 'rgba(192, 132, 252, 0.24)',
+  },
+};
+
 const DEFAULT_SPONSOR_ASSET_PACK: AdminSponsorAssetPackState = {
   brochureUrl: '',
   ctaPrimary: 'Request Demo',
@@ -250,12 +325,26 @@ const DEFAULT_SPONSOR_ASSET_PACK: AdminSponsorAssetPackState = {
   websiteUrl: '',
 };
 
+const DEFAULT_MEDIA_REVIEW: AdminMediaReviewState = {
+  bookingUrl: '',
+  ctaLabel: 'Request Demo',
+  heroImageUrl: '',
+  heroVideoUrl: '',
+  logoUrl: '',
+  mediaNotes: '',
+  posterUrl: '',
+  tagline: '',
+  uploads: [],
+  websiteUrl: '',
+};
+
 const DEFAULT_COMPANY: AdminCompanyState = {
   booth: { video_url: '' },
   description: '',
   district: EXPO_CANONICAL_DISTRICT_CATALOG[0]?.id ?? '',
   id: '',
   logo_url: '',
+  mediaReview: DEFAULT_MEDIA_REVIEW,
   name: DEFAULT_VISIBLE_SCENE_COMPANY_NAME,
   screenContent: {
     ctaLabel: '',
@@ -307,6 +396,10 @@ function resolveVisibleSceneCompanyName(value: string) {
   return normalizeAdminLookupKey(value) === 'warpala' ? DEFAULT_VISIBLE_SCENE_COMPANY_NAME : value;
 }
 
+function countTruthy(values: boolean[]) {
+  return values.filter(Boolean).length;
+}
+
 function buildManagedBoothPreviewRoute(boothId: string) {
   const normalizedBoothId = boothId.trim();
   const params = new URLSearchParams({
@@ -351,6 +444,27 @@ function readAdminSponsorAssetPack(assets3d: unknown): AdminSponsorAssetPackStat
     productImageUrls: assetPack.productImageUrls.join('\n'),
     shortPitch: assetPack.shortPitch,
     websiteUrl: assetPack.websiteUrl,
+  };
+}
+
+function readAdminMediaReview(
+  assets3d: unknown,
+  sponsorAssetPack: AdminSponsorAssetPackState,
+  screenContent: AdminScreenContentState,
+): AdminMediaReviewState {
+  const mediaReview = readExpoMediaReviewReferencesFromAssets(assets3d);
+
+  return {
+    bookingUrl: mediaReview.bookingUrl,
+    ctaLabel: mediaReview.ctaLabel || sponsorAssetPack.ctaPrimary || DEFAULT_MEDIA_REVIEW.ctaLabel,
+    heroImageUrl: mediaReview.heroImageUrl || sponsorAssetPack.heroImageUrl,
+    heroVideoUrl: mediaReview.heroVideoUrl || sponsorAssetPack.demoVideoUrl,
+    logoUrl: mediaReview.logoUrl || sponsorAssetPack.logoUrl,
+    mediaNotes: mediaReview.mediaNotes,
+    posterUrl: mediaReview.posterUrl || screenContent.imageUrl,
+    tagline: mediaReview.tagline || sponsorAssetPack.shortPitch,
+    uploads: mediaReview.uploads,
+    websiteUrl: mediaReview.websiteUrl || sponsorAssetPack.websiteUrl,
   };
 }
 
@@ -447,6 +561,9 @@ export default function CompanyAdmin() {
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [activeSponsorAssetUpload, setActiveSponsorAssetUpload] = useState<ExpoSponsorAssetUploadTarget | null>(null);
   const [sponsorAssetUploadStatus, setSponsorAssetUploadStatus] = useState<Partial<Record<ExpoSponsorAssetUploadTarget, string>>>({});
+  const [activeMediaReviewUpload, setActiveMediaReviewUpload] = useState<ExpoMediaReviewUploadKind | null>(null);
+  const [mediaReviewUploadStatus, setMediaReviewUploadStatus] = useState<Partial<Record<ExpoMediaReviewUploadKind, string>>>({});
+  const [activeMediaReviewAction, setActiveMediaReviewAction] = useState<string | null>(null);
 
   useEffect(() => {
     async function init() {
@@ -487,6 +604,8 @@ export default function CompanyAdmin() {
             logo_url?: string;
             status?: string;
           };
+          const firstScreenContent = readAdminScreenContent(first.assets_3d);
+          const firstSponsorAssetPack = readAdminSponsorAssetPack(first.assets_3d);
           setCompany({
             booth: {
               video_url: String(first.assets_3d?.video_url || ''),
@@ -495,9 +614,10 @@ export default function CompanyAdmin() {
             district: String(first.district || EXPO_CANONICAL_DISTRICT_CATALOG[0]?.id || ''),
             id: String(first.id || ''),
             logo_url: String(first.logo_url || ''),
+            mediaReview: readAdminMediaReview(first.assets_3d, firstSponsorAssetPack, firstScreenContent),
             name: String(first.company_name || 'Warpala'),
-            screenContent: readAdminScreenContent(first.assets_3d),
-            sponsorAssetPack: readAdminSponsorAssetPack(first.assets_3d),
+            screenContent: firstScreenContent,
+            sponsorAssetPack: firstSponsorAssetPack,
             status: normalizeExpoBoothPublicationStatus(first.status),
           });
           if (first.id) {
@@ -564,6 +684,8 @@ export default function CompanyAdmin() {
       } | null)?.booth;
 
       if (booth) {
+        const screenContent = readAdminScreenContent(booth.assets_3d);
+        const sponsorAssetPack = readAdminSponsorAssetPack(booth.assets_3d);
         setCompany({
           booth: {
             video_url: String(booth.assets_3d?.video_url || ''),
@@ -572,9 +694,10 @@ export default function CompanyAdmin() {
           district: String(booth.district || EXPO_CANONICAL_DISTRICT_CATALOG[0]?.id || ''),
           id: String(booth.id || boothId),
           logo_url: String(booth.logo_url || ''),
+          mediaReview: readAdminMediaReview(booth.assets_3d, sponsorAssetPack, screenContent),
           name: String(booth.company_name || 'Warpala'),
-          screenContent: readAdminScreenContent(booth.assets_3d),
-          sponsorAssetPack: readAdminSponsorAssetPack(booth.assets_3d),
+          screenContent,
+          sponsorAssetPack,
           status: normalizeExpoBoothPublicationStatus(booth.status),
         });
       }
@@ -590,6 +713,14 @@ export default function CompanyAdmin() {
   async function handleSave(nextStatus?: ExpoBoothPublicationStatus) {
     if (adminAccessState !== 'ready') {
       setMessage({ type: 'error', text: 'Sign in with a sponsor/admin account before saving booth screen content.' });
+      return;
+    }
+
+    if (nextStatus && !canTransitionExpoBoothPublicationStatus(company.status, nextStatus)) {
+      setMessage({
+        type: 'error',
+        text: `Invalid booth status transition from ${getExpoBoothPublicationStatusLabel(company.status).toLowerCase()} to ${getExpoBoothPublicationStatusLabel(nextStatus).toLowerCase()}.`,
+      });
       return;
     }
 
@@ -611,6 +742,7 @@ export default function CompanyAdmin() {
         companyName: companyNameForSave,
         description: companyForSave.description,
         district: companyForSave.district,
+        mediaReview: companyForSave.mediaReview,
         screenContent: companyForSave.screenContent,
         sponsorAssetPack: companyForSave.sponsorAssetPack,
         status: companyForSave.status,
@@ -806,6 +938,16 @@ export default function CompanyAdmin() {
     }));
   }
 
+  function updateMediaReview(patch: Partial<AdminMediaReviewState>) {
+    setCompany((current) => ({
+      ...current,
+      mediaReview: {
+        ...current.mediaReview,
+        ...patch,
+      },
+    }));
+  }
+
   async function handleSponsorAssetUpload(target: ExpoSponsorAssetUploadTarget, files: FileList | null) {
     const file = files?.[0] ?? null;
     if (!file) {
@@ -858,6 +1000,91 @@ export default function CompanyAdmin() {
     }
   }
 
+  async function handleMediaReviewUpload(kind: ExpoMediaReviewUploadKind, files: FileList | null) {
+    const file = files?.[0] ?? null;
+    if (!file) {
+      return;
+    }
+
+    if (adminAccessState !== 'ready' || !company.id) {
+      setMessage({ type: 'error', text: 'Load a saved sponsor/admin booth before uploading review media.' });
+      return;
+    }
+
+    const label = getMediaReviewUploadLabel(kind);
+    setActiveMediaReviewUpload(kind);
+    setMediaReviewUploadStatus((current) => ({ ...current, [kind]: `Uploading ${label} for review...` }));
+    setMessage(null);
+
+    try {
+      const result = await uploadMediaReviewFile({
+        boothId: company.id,
+        file,
+        kind,
+      });
+
+      if (result.error || !result.mediaReview) {
+        throw new Error(result.error || 'Review upload failed.');
+      }
+
+      updateMediaReview({ uploads: result.mediaReview.uploads } as Partial<AdminMediaReviewState>);
+      setMediaReviewUploadStatus((current) => ({ ...current, [kind]: `${label} uploaded for review. It is not public until approved.` }));
+      setMessage({ type: 'success', text: `${label} uploaded for review. Uploaded media stays private until approved.` });
+    } catch (error) {
+      const errorText = formatRequestError(error);
+      setMediaReviewUploadStatus((current) => ({ ...current, [kind]: errorText }));
+      setMessage({ type: 'error', text: errorText });
+    } finally {
+      setActiveMediaReviewUpload(null);
+    }
+  }
+
+  async function handleMediaReviewAdminAction(
+    upload: ExpoMediaReviewUploadRecord,
+    action: 'approve' | 'promote' | 'reject',
+    promoteTarget?: ExpoMediaReviewUploadPromoteTarget,
+  ) {
+    if (!company.id) {
+      setMessage({ type: 'error', text: 'Load a saved booth before changing review upload status.' });
+      return;
+    }
+
+    if (!isOperatorAdmin) {
+      setMessage({ type: 'error', text: 'Only admin reviewers can approve, reject, or promote sponsor review uploads.' });
+      return;
+    }
+
+    const actionKey = `${upload.bucket}:${upload.path}:${action}:${promoteTarget || 'none'}`;
+    setActiveMediaReviewAction(actionKey);
+    setMessage(null);
+
+    try {
+      const result = await applyMediaReviewAdminAction({
+        action,
+        boothId: company.id,
+        ...(promoteTarget ? { promoteTarget } : {}),
+        upload,
+      });
+
+      if (result.error || !result.mediaReview) {
+        throw new Error(result.error || 'Media review action failed.');
+      }
+
+      updateMediaReview({ uploads: result.mediaReview.uploads } as Partial<AdminMediaReviewState>);
+      if (action === 'approve') {
+        setMessage({ type: 'success', text: 'Review upload approved. It remains private until an admin promotes it to public media.' });
+      } else if (action === 'reject') {
+        setMessage({ type: 'success', text: 'Review upload rejected. It remains private and will not be used in public media.' });
+      } else {
+        setMessage({ type: 'success', text: `Approved review upload promoted to public ${promoteTarget || 'media'}. Public scene fields were updated explicitly.` });
+      }
+    } catch (error) {
+      setMessage({ type: 'error', text: formatRequestError(error) });
+    } finally {
+      setActiveMediaReviewAction(null);
+    }
+  }
+
   const selectedDistrictColor =
     EXPO_CANONICAL_DISTRICT_CATALOG.find((district) => district.id === company.district)?.color || '#3b82f6';
   const leadStatusCounts = leads.reduce<Record<string, number>>((acc, lead) => {
@@ -889,12 +1116,17 @@ export default function CompanyAdmin() {
   const boothVideoValidation = validateExpoScreenMediaUrl(company.booth.video_url, 'video');
   const sponsorAssetPackValidation = normalizeExpoSponsorAssetPackForSave(company.sponsorAssetPack);
   const sponsorAssetPackReadiness = getExpoSponsorAssetPackReadiness(company.sponsorAssetPack);
+  const mediaReviewValidation = normalizeExpoMediaReviewReferencesForSave(company.mediaReview);
   const mediaPolicyText = `Images: ${EXPO_SCREEN_CONTENT_IMAGE_EXTENSIONS.join(', ')}. Videos: ${EXPO_SCREEN_CONTENT_VIDEO_EXTENSIONS.join(', ')}. Direct public HTTPS files only.`;
   const screenContentIssueText = [
     ...screenContentValidation.issues.map((issue) => issue.message),
     ...(boothVideoValidation.ok ? [] : [boothVideoValidation.reason]),
   ].filter(Boolean).join(' ');
   const sponsorAssetPackIssueText = sponsorAssetPackValidation.issues
+    .map((issue) => issue.message)
+    .filter(Boolean)
+    .join(' ');
+  const mediaReviewIssueText = mediaReviewValidation.issues
     .map((issue) => issue.message)
     .filter(Boolean)
     .join(' ');
@@ -947,15 +1179,26 @@ export default function CompanyAdmin() {
         : adminAccessState === 'backend-unavailable'
           ? 'ADMIN SERVICE OFFLINE'
           : 'SAVE BOOTH SETTINGS';
-  const sponsorAssetUploadDisabled = adminAccessState !== 'ready' || Boolean(activeSponsorAssetUpload);
+  const sponsorAssetUploadDisabled = adminAccessState !== 'ready' || !isOperatorAdmin || Boolean(activeSponsorAssetUpload);
+  const mediaReviewUploadDisabled = adminAccessState !== 'ready' || !company.id || Boolean(activeMediaReviewUpload);
+  const sponsorPublicReleaseControlsDisabled = adminAccessState !== 'ready' || !isOperatorAdmin;
   const normalizedBoothStatus = normalizeExpoBoothPublicationStatus(company.status);
   const boothPublicationLabel = getExpoBoothPublicationStatusLabel(normalizedBoothStatus);
-  const selectablePublicationStatuses = EXPO_BOOTH_PUBLICATION_STATUSES.filter(
-    (status) => isOperatorAdmin || status === 'draft' || status === 'review' || status === normalizedBoothStatus,
-  );
+  const selectablePublicationStatuses = EXPO_BOOTH_PUBLICATION_STATUSES.filter((status) => {
+    if (!canTransitionExpoBoothPublicationStatus(normalizedBoothStatus, status)) {
+      return false;
+    }
+
+    if (isOperatorAdmin) {
+      return true;
+    }
+
+    return status === 'draft' || status === 'review' || status === normalizedBoothStatus;
+  });
+  const allowedNextStatuses = getExpoBoothAllowedNextStatuses(normalizedBoothStatus);
   const publicationStatusHelp = isOperatorAdmin
-    ? 'Admin controls approval, activation, rejection and archive states. Only Active booths can merge into the public 3D scene.'
-    : 'Sponsor edits stay in Draft or Submitted for review. Admin approval is required before public 3D scene activation.';
+    ? `Admin controls the next booth transition from ${boothPublicationLabel.toLowerCase()}. Allowed next statuses: ${allowedNextStatuses.map((status) => getExpoBoothPublicationStatusLabel(status)).join(', ')}. Only Published booths merge into the public 3D scene.`
+    : 'Sponsor edits stay in Draft or Submitted status. Admin approval is required before public scene publishing.';
   const hasSavedBoothId = company.id.trim().length > 0;
   const canOpenManagedPreview = adminAccessState === 'ready' && hasSavedBoothId && hasVisibleScreenContent;
   const canSubmitForReview = adminAccessState === 'ready'
@@ -963,37 +1206,203 @@ export default function CompanyAdmin() {
     && hasVisibleScreenContent
     && sponsorAssetPackValidation.ok
     && screenContentValidation.ok;
-  const publicationAction =
-    (normalizedBoothStatus === 'draft' || normalizedBoothStatus === 'rejected')
-      ? {
-          label: 'Submit for review',
-          nextStatus: 'review' as const,
-        }
-      : normalizedBoothStatus === 'review' && isOperatorAdmin
-        ? {
-            label: 'Approve for release',
-            nextStatus: 'approved' as const,
-          }
-        : normalizedBoothStatus === 'approved' && isOperatorAdmin
-          ? {
-              label: 'Activate public scene',
-              nextStatus: 'active' as const,
-            }
-          : null;
+  const publicationAction = (() => {
+    if (normalizedBoothStatus === 'draft') {
+      return {
+        label: 'Submit for review',
+        nextStatus: 'review' as const,
+      };
+    }
+
+    if (normalizedBoothStatus === 'rejected') {
+      return {
+        label: 'Return to draft',
+        nextStatus: 'draft' as const,
+      };
+    }
+
+    if (normalizedBoothStatus === 'review' && isOperatorAdmin) {
+      return {
+        label: 'Approve',
+        nextStatus: 'approved' as const,
+      };
+    }
+
+    if (normalizedBoothStatus === 'approved' && isOperatorAdmin) {
+      return {
+        label: 'Publish to public scene',
+        nextStatus: 'active' as const,
+      };
+    }
+
+    if (normalizedBoothStatus === 'active' && isOperatorAdmin) {
+      return {
+        label: 'Archive booth',
+        nextStatus: 'archived' as const,
+      };
+    }
+
+    return null;
+  })();
   const publicationBody = isExpoBoothPublicSceneStatus(normalizedBoothStatus)
-    ? 'This booth is live-eligible for public scene screen merge. Keep future sponsor edits in draft/review before reactivating.'
+    ? 'This booth is published in the public scene. Future sponsor edits should go back through draft, review, approval and publish control.'
     : normalizedBoothStatus === 'approved'
-      ? 'Approved booths are ready for operator activation into the public scene.'
+      ? 'Approved booths are ready for admin publishing into the public scene.'
       : normalizedBoothStatus === 'review'
-        ? 'Submitted booths stay out of the public scene until an admin approves and activates them.'
+        ? 'Submitted booths stay out of the public scene until an admin approves or rejects them.'
         : normalizedBoothStatus === 'rejected'
-          ? 'Changes were requested. Update sponsor media, save, then submit for review again.'
+          ? 'Rejected booths must return to draft before the sponsor can resubmit them for review.'
           : 'Draft booths are admin-preview only. Submit for review when the sponsor package and booth screen are ready.';
   const publicationStepState: AdminLaunchStepState = isExpoBoothPublicSceneStatus(normalizedBoothStatus)
     ? 'ready'
     : canSubmitForReview || normalizedBoothStatus === 'review' || normalizedBoothStatus === 'approved'
       ? 'review'
       : 'blocked';
+  const pendingReviewUploads = company.mediaReview.uploads.filter((upload) => upload.reviewStatus === 'pending_review');
+  const approvedReviewUploads = company.mediaReview.uploads.filter((upload) => upload.reviewStatus === 'approved');
+  const promotedReviewUploads = company.mediaReview.uploads.filter((upload) => upload.reviewStatus === 'promoted');
+  const rejectedReviewUploads = company.mediaReview.uploads.filter((upload) => upload.reviewStatus === 'rejected');
+  const hasPendingLogoUpload = pendingReviewUploads.some((upload) => upload.kind === 'logo');
+  const hasPendingPosterUpload = pendingReviewUploads.some((upload) => upload.kind === 'poster');
+  const hasPendingHeroUpload = pendingReviewUploads.some((upload) => upload.kind === 'hero' || upload.kind === 'reference');
+  const hasApprovedLogoUpload = approvedReviewUploads.some((upload) => upload.kind === 'logo');
+  const hasApprovedPosterUpload = approvedReviewUploads.some((upload) => upload.kind === 'poster');
+  const hasApprovedHeroUpload = approvedReviewUploads.some((upload) => upload.kind === 'hero' || upload.kind === 'reference');
+  const hasPromotedLogoUpload = promotedReviewUploads.some((upload) => upload.promotedTarget === 'logo');
+  const hasPromotedPosterUpload = promotedReviewUploads.some((upload) => upload.promotedTarget === 'poster');
+  const hasPromotedHeroUpload = promotedReviewUploads.some((upload) => upload.promotedTarget === 'hero');
+  const hasReviewedLogo = company.mediaReview.logoUrl.trim().length > 0 || hasPendingLogoUpload || hasApprovedLogoUpload || hasPromotedLogoUpload;
+  const hasReviewedPoster = company.mediaReview.posterUrl.trim().length > 0 || hasPendingPosterUpload || hasApprovedPosterUpload || hasPromotedPosterUpload;
+  const hasReviewedHeroMedia = company.mediaReview.heroImageUrl.trim().length > 0 || company.mediaReview.heroVideoUrl.trim().length > 0 || hasPendingHeroUpload || hasApprovedHeroUpload || hasPromotedHeroUpload;
+  const hasReviewedMediaNotes = company.mediaReview.mediaNotes.trim().length > 0;
+  const hasReviewTagline = company.mediaReview.tagline.trim().length > 0 || company.description.trim().length > 0;
+  const hasReviewCta = company.mediaReview.ctaLabel.trim().length > 0 || company.sponsorAssetPack.ctaPrimary.trim().length > 0;
+  const hasReviewContactLink = company.mediaReview.websiteUrl.trim().length > 0 || company.mediaReview.bookingUrl.trim().length > 0;
+  const mediaReviewComplete = mediaReviewValidation.ok
+    && hasReviewedLogo
+    && (hasReviewedPoster || hasReviewedHeroMedia)
+    && hasReviewTagline;
+  const publicMediaReady = Boolean(company.logo_url.trim())
+    || hasPromotedLogoUpload
+    || hasPromotedPosterUpload
+    || hasPromotedHeroUpload;
+  const ctaContactComplete = hasReviewCta && hasReviewContactLink;
+  const readinessChecklistCount = countTruthy([
+    sponsorAssetPackReadiness.clientFriendlyReady,
+    hasVisibleScreenContent,
+    mediaReviewComplete,
+    ctaContactComplete,
+    hasSavedBoothId,
+  ]);
+  const analyticsTracked = analytics !== null;
+  const publicationSceneReadinessText = isExpoBoothPublicSceneStatus(normalizedBoothStatus)
+    ? 'Published booth is currently eligible for the public 3D scene.'
+    : normalizedBoothStatus === 'approved'
+      ? 'Approved booth is ready for admin publish, but it is not public-scene live yet.'
+      : normalizedBoothStatus === 'review'
+        ? 'Submitted booth is hidden from the public scene until admin approval.'
+        : normalizedBoothStatus === 'archived'
+          ? 'Archived booth is intentionally not eligible for the public scene.'
+          : normalizedBoothStatus === 'rejected'
+            ? 'Rejected booth must return to draft before it can re-enter review.'
+            : 'Draft booth can be previewed privately, but it is not public-scene eligible yet.';
+  const sponsorReadinessCategory: SponsorReadinessCategory =
+    normalizedBoothStatus === 'archived'
+      ? 'Archived'
+      : isExpoBoothPublicSceneStatus(normalizedBoothStatus)
+        ? 'Published'
+        : normalizedBoothStatus === 'review' || normalizedBoothStatus === 'approved'
+          ? 'Waiting for approval'
+          : !mediaReviewComplete
+            ? 'Needs media review'
+            : !ctaContactComplete
+              ? 'Needs CTA/contact info'
+              : 'Ready for demo';
+  const sponsorReadinessStyle = SPONSOR_READINESS_STYLE[sponsorReadinessCategory];
+  const readinessItems = [
+    {
+      detail: publicationSceneReadinessText,
+      label: 'Public scene',
+      status: isExpoBoothPublicSceneStatus(normalizedBoothStatus) ? 'Eligible now' : normalizedBoothStatus === 'approved' ? 'Approved, not live' : 'Not eligible yet',
+      tone: isExpoBoothPublicSceneStatus(normalizedBoothStatus) ? '#34d399' : normalizedBoothStatus === 'approved' ? '#c084fc' : '#fbbf24',
+    },
+    {
+      detail: publicMediaReady
+        ? 'At least one approved review upload has been promoted into explicit public booth/company media fields.'
+        : mediaReviewComplete
+          ? 'Reviewed media references or review uploads cover logo, poster or hero media, and sponsor story copy.'
+          : pendingReviewUploads.length > 0
+            ? 'Review uploads are pending. Add any missing logo, poster, hero coverage or story copy before public review.'
+            : rejectedReviewUploads.length > 0
+              ? 'Some uploads were rejected. Replace or revise them before public review.'
+              : 'Add reviewed logo, poster or hero media, and sponsor-facing notes before public review.',
+      label: 'Media review',
+      status: publicMediaReady
+        ? `Public-ready / ${promotedReviewUploads.length} promoted`
+        : mediaReviewComplete
+          ? `${countTruthy([hasReviewedLogo, hasReviewedPoster || hasReviewedHeroMedia, hasReviewTagline, hasReviewedMediaNotes])}/4 checkpoints`
+          : pendingReviewUploads.length > 0
+            ? `${pendingReviewUploads.length} pending`
+            : rejectedReviewUploads.length > 0
+              ? `${rejectedReviewUploads.length} rejected`
+              : `${countTruthy([hasReviewedLogo, hasReviewedPoster || hasReviewedHeroMedia, hasReviewTagline, hasReviewedMediaNotes])}/4 checkpoints`,
+      tone: publicMediaReady ? '#38bdf8' : mediaReviewComplete ? '#34d399' : '#f97316',
+    },
+    {
+      detail: pendingReviewUploads.length > 0
+        ? `${pendingReviewUploads.length} upload${pendingReviewUploads.length === 1 ? '' : 's'} are waiting for admin review.`
+        : approvedReviewUploads.length > 0
+          ? `${approvedReviewUploads.length} upload${approvedReviewUploads.length === 1 ? '' : 's'} approved and ready for explicit public promotion.`
+          : promotedReviewUploads.length > 0
+            ? `${promotedReviewUploads.length} upload${promotedReviewUploads.length === 1 ? '' : 's'} have already been promoted to public booth media.`
+            : rejectedReviewUploads.length > 0
+              ? `${rejectedReviewUploads.length} upload${rejectedReviewUploads.length === 1 ? '' : 's'} were rejected and remain private.`
+              : 'No private review uploads yet. Use references or upload private review media first.',
+      label: 'Upload status',
+      status: pendingReviewUploads.length > 0
+        ? `${pendingReviewUploads.length} pending`
+        : approvedReviewUploads.length > 0
+          ? `${approvedReviewUploads.length} approved`
+          : promotedReviewUploads.length > 0
+            ? `${promotedReviewUploads.length} promoted`
+            : rejectedReviewUploads.length > 0
+              ? `${rejectedReviewUploads.length} rejected`
+              : 'No uploads yet',
+      tone: pendingReviewUploads.length > 0 ? '#fbbf24' : approvedReviewUploads.length > 0 ? '#c084fc' : promotedReviewUploads.length > 0 ? '#38bdf8' : '#94a3b8',
+    },
+    {
+      detail: ctaContactComplete
+        ? 'CTA copy and a website or booking path are present for review.'
+        : 'Add CTA wording and a website or booking reference before sponsor handoff.',
+      label: 'CTA / contact',
+      status: `${countTruthy([hasReviewCta, hasReviewContactLink])}/2 ready`,
+      tone: ctaContactComplete ? '#34d399' : '#fbbf24',
+    },
+    {
+      detail: sponsorAssetPackReadiness.clientFriendlyReady
+        ? `Package tier ${company.sponsorAssetPack.packageTier.toUpperCase()} has enough sponsor material for a guided demo.`
+        : 'Sponsor package content is still incomplete for a client-facing walkthrough.',
+      label: 'Package / tier',
+      status: `${company.sponsorAssetPack.packageTier.toUpperCase()} / ${sponsorAssetPackReadiness.readyAssetCount} assets`,
+      tone: sponsorAssetPackReadiness.clientFriendlyReady ? '#38bdf8' : '#fbbf24',
+    },
+    {
+      detail: leads.length > 0
+        ? `${leads.length} lead${leads.length === 1 ? '' : 's'} loaded from the existing protected sponsor lead flow.`
+        : 'No sponsor leads are attached to this booth yet.',
+      label: 'Lead inbox',
+      status: leads.length > 0 ? `${leads.length} lead${leads.length === 1 ? '' : 's'}` : 'No leads yet',
+      tone: leads.length > 0 ? '#34d399' : '#94a3b8',
+    },
+    {
+      detail: analyticsTracked
+        ? 'Existing booth analytics counters are available as read-only visits, interactions, and leads.'
+        : 'Not tracked yet in the current booth analytics read path.',
+      label: 'Analytics',
+      status: analyticsTracked ? 'Read-only counters' : 'Not tracked yet',
+      tone: analyticsTracked ? '#93c5fd' : '#94a3b8',
+    },
+  ] as const;
   const launchSteps: AdminLaunchStep[] = [
     {
       body: sponsorAssetPackReadiness.clientFriendlyReady
@@ -1061,7 +1470,7 @@ export default function CompanyAdmin() {
           }}
         >
           <span className="btn-glass" style={{ padding: '7px 10px', fontSize: '0.72rem' }}>
-            {isActive ? 'UPLOADING...' : `UPLOAD ${label.toUpperCase()}`}
+            {isActive ? 'UPLOADING...' : isOperatorAdmin ? `UPLOAD ${label.toUpperCase()}` : `ADMIN-ONLY ${label.toUpperCase()} UPLOAD`}
           </span>
           <input
             type="file"
@@ -1078,6 +1487,135 @@ export default function CompanyAdmin() {
           <span style={{ color: sponsorAssetUploadStatus[target]?.toLowerCase().includes('failed') ? '#fca5a5' : '#94a3b8', fontSize: '0.72rem', lineHeight: 1.4 }}>
             {sponsorAssetUploadStatus[target]}
           </span>
+        )}
+        {!isOperatorAdmin && (
+          <span style={{ color: '#94a3b8', fontSize: '0.72rem', lineHeight: 1.4 }}>
+            Use Media Review uploads above for sponsor-submitted assets. Direct `expo_assets` uploads stay admin-only here.
+          </span>
+        )}
+      </div>
+    );
+  };
+  const renderMediaReviewUploadInput = (kind: ExpoMediaReviewUploadKind) => {
+    const label = getMediaReviewUploadLabel(kind);
+    const isActive = activeMediaReviewUpload === kind;
+
+    return (
+      <div style={{ marginTop: '9px', display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+        <label
+          style={{
+            alignItems: 'center',
+            cursor: mediaReviewUploadDisabled ? 'not-allowed' : 'pointer',
+            display: 'inline-flex',
+            margin: 0,
+            opacity: mediaReviewUploadDisabled && !isActive ? 0.58 : 1,
+          }}
+        >
+          <span className="btn-glass" style={{ padding: '7px 10px', fontSize: '0.72rem' }}>
+            {isActive ? 'UPLOADING...' : `UPLOAD ${label.toUpperCase()} FOR REVIEW`}
+          </span>
+          <input
+            type="file"
+            accept={getMediaReviewUploadAccept(kind)}
+            disabled={mediaReviewUploadDisabled}
+            onChange={(event) => {
+              void handleMediaReviewUpload(kind, event.currentTarget.files);
+              event.currentTarget.value = '';
+            }}
+            style={{ display: 'none' }}
+          />
+        </label>
+        {mediaReviewUploadStatus[kind] && (
+          <span style={{ color: mediaReviewUploadStatus[kind]?.toLowerCase().includes('http_') ? '#fca5a5' : '#94a3b8', fontSize: '0.72rem', lineHeight: 1.4 }}>
+            {mediaReviewUploadStatus[kind]}
+          </span>
+        )}
+      </div>
+    );
+  };
+  const renderMediaReviewUploadActions = (upload: ExpoMediaReviewUploadRecord) => {
+    const promoteTargets = getMediaReviewPromoteTargets(upload.kind);
+    const statusLabel = getExpoMediaReviewUploadStatusLabel(upload.reviewStatus).toUpperCase();
+
+    return (
+      <div style={{ display: 'grid', gap: '10px', marginTop: '10px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', alignItems: 'baseline', flexWrap: 'wrap' }}>
+          <div style={{ color: '#f8fafc', fontWeight: 800 }}>{upload.originalFilename}</div>
+          <div style={{ color: upload.reviewStatus === 'rejected' ? '#fca5a5' : upload.reviewStatus === 'promoted' ? '#67e8f9' : upload.reviewStatus === 'approved' ? '#c4b5fd' : '#fbbf24', fontSize: '0.7rem', fontWeight: 900, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+            {statusLabel}
+          </div>
+        </div>
+        <div style={{ color: '#94a3b8', fontSize: '0.76rem', lineHeight: 1.5 }}>
+          Kind: {upload.kind} / MIME: {upload.mimeType} / Size: {Math.max(1, Math.round(upload.size / 1024))} KB
+          <br />
+          Stored privately in {upload.bucket} at {new Date(upload.uploadedAt).toLocaleString()}.
+          {upload.reviewedAt ? (
+            <>
+              <br />
+              Reviewed at {new Date(upload.reviewedAt).toLocaleString()}.
+            </>
+          ) : null}
+          {upload.promotedAt && upload.promotedTarget ? (
+            <>
+              <br />
+              Promoted to public {upload.promotedTarget} at {new Date(upload.promotedAt).toLocaleString()}.
+            </>
+          ) : null}
+        </div>
+        {upload.reviewStatus === 'approved' && promoteTargets.length === 0 && (
+          <div style={{ padding: '10px 12px', borderRadius: '12px', background: 'rgba(30, 41, 59, 0.62)', border: '1px solid rgba(148, 163, 184, 0.14)', color: '#cbd5e1', fontSize: '0.74rem', lineHeight: 1.5 }}>
+            This upload is approved for internal review, but it has no direct public slot to promote automatically.
+          </div>
+        )}
+        {upload.reviewStatus === 'promoted' && upload.publicUrl ? (
+          <div style={{ padding: '10px 12px', borderRadius: '12px', background: 'rgba(8, 47, 73, 0.24)', border: '1px solid rgba(103, 232, 249, 0.2)', color: '#bae6fd', fontSize: '0.74rem', lineHeight: 1.5 }}>
+            Public release URL created for explicit admin publish. Private review source remains preserved for audit history.
+          </div>
+        ) : null}
+        {isOperatorAdmin ? (
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            {upload.reviewStatus !== 'approved' && upload.reviewStatus !== 'promoted' ? (
+              <button
+                type="button"
+                className="btn-glass"
+                onClick={() => void handleMediaReviewAdminAction(upload, 'approve')}
+                disabled={Boolean(activeMediaReviewAction)}
+                style={{ padding: '7px 10px', fontSize: '0.72rem', opacity: activeMediaReviewAction ? 0.66 : 1 }}
+              >
+                {activeMediaReviewAction === `${upload.bucket}:${upload.path}:approve:none` ? 'APPROVING...' : 'APPROVE'}
+              </button>
+            ) : null}
+            {upload.reviewStatus === 'pending_review' || upload.reviewStatus === 'approved' ? (
+              <button
+                type="button"
+                className="btn-glass"
+                onClick={() => void handleMediaReviewAdminAction(upload, 'reject')}
+                disabled={Boolean(activeMediaReviewAction)}
+                style={{ padding: '7px 10px', fontSize: '0.72rem', opacity: activeMediaReviewAction ? 0.66 : 1 }}
+              >
+                {activeMediaReviewAction === `${upload.bucket}:${upload.path}:reject:none` ? 'REJECTING...' : 'REJECT'}
+              </button>
+            ) : null}
+            {upload.reviewStatus === 'approved' ? promoteTargets.map((target) => {
+              const promoteActionKey = `${upload.bucket}:${upload.path}:promote:${target}`;
+              return (
+                <button
+                  key={target}
+                  type="button"
+                  className="btn-glass"
+                  onClick={() => void handleMediaReviewAdminAction(upload, 'promote', target)}
+                  disabled={Boolean(activeMediaReviewAction)}
+                  style={{ padding: '7px 10px', fontSize: '0.72rem', opacity: activeMediaReviewAction ? 0.66 : 1 }}
+                >
+                  {activeMediaReviewAction === promoteActionKey ? 'PROMOTING...' : `PROMOTE TO ${target.toUpperCase()}`}
+                </button>
+              );
+            }) : null}
+          </div>
+        ) : (
+          <div style={{ color: '#94a3b8', fontSize: '0.74rem', lineHeight: 1.5 }}>
+            Admin review controls are hidden for sponsor accounts. Upload status is visible here, but public promotion requires explicit admin action.
+          </div>
         )}
       </div>
     );
@@ -1206,10 +1744,10 @@ export default function CompanyAdmin() {
               Sponsor launch flow
             </div>
             <h2 style={{ color: '#f8fafc', margin: '8px 0 6px', fontSize: '1.55rem' }}>
-              From uploaded media to 3D booth preview
+              From uploaded media to booth profile
             </h2>
             <p style={{ color: '#94a3b8', fontSize: '0.88rem', lineHeight: 1.55, margin: 0, maxWidth: '720px' }}>
-              Use this checklist before sending a sponsor preview. It separates admin-managed preview from public scene release, so draft sponsor work does not leak into the default city.
+              Use this checklist before sending a sponsor profile for review. It separates admin-managed booth content from public scene release, so draft sponsor work does not leak into the default city.
             </p>
           </div>
           <div style={{ minWidth: '190px', padding: '14px 16px', borderRadius: '18px', background: 'rgba(2, 6, 23, 0.62)', border: '1px solid rgba(148, 163, 184, 0.16)' }}>
@@ -1329,6 +1867,163 @@ export default function CompanyAdmin() {
                   style={{ height: '120px' }}
                 />
               </label>
+
+              <div style={{ marginTop: '24px', paddingTop: '22px', borderTop: '1px solid rgba(148, 163, 184, 0.16)' }}>
+                <h3 style={{ margin: '0 0 8px', color: '#f8fafc' }}>Media Review</h3>
+                <p style={{ margin: '0 0 12px', color: '#94a3b8', fontSize: '0.88rem', lineHeight: 1.5 }}>
+                  Submit lightweight sponsor media references for review before approval and public publish. Reviewed assets may be adjusted before they appear in the public booth or city scene.
+                </p>
+                <div style={{ marginBottom: '14px', padding: '10px 12px', borderRadius: '14px', background: 'rgba(30, 64, 175, 0.16)', border: '1px solid rgba(147, 197, 253, 0.22)', color: '#bfdbfe', fontSize: '0.76rem', lineHeight: 1.5 }}>
+                  Sponsor guidance: public booths use reviewed media, not arbitrary direct uploads. Admin guidance: review these references before moving a booth to Approved or Published. Published booths are public scene eligible.
+                  <br />
+                  Reference safety: {EXPO_MEDIA_REVIEW_REFERENCE_POLICY_TEXT}. Localhost, private IPs, non-HTTPS URLs, SVG and embedded credentials are blocked.
+                </div>
+                <div style={{ marginBottom: '14px', padding: '10px 12px', borderRadius: '14px', background: 'rgba(8, 47, 73, 0.24)', border: '1px solid rgba(56, 189, 248, 0.24)', color: '#bae6fd', fontSize: '0.76rem', lineHeight: 1.5 }}>
+                  Upload for review: files go through the protected backend route into private bucket storage. Uploads are not public until approved and do not overwrite public booth media automatically.
+                </div>
+                <div style={{ marginBottom: '14px', padding: '10px 12px', borderRadius: '14px', background: 'rgba(30, 41, 59, 0.62)', border: '1px solid rgba(148, 163, 184, 0.16)', color: '#cbd5e1', fontSize: '0.76rem', lineHeight: 1.5 }}>
+                  Review-to-public path: admin can approve or reject private uploads. Only an explicit admin promote action may copy approved media into public release storage and update live booth/company media fields.
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px', marginBottom: '6px' }}>
+                  <div>{renderMediaReviewUploadInput('logo')}</div>
+                  <div>{renderMediaReviewUploadInput('poster')}</div>
+                  <div>{renderMediaReviewUploadInput('hero')}</div>
+                  <div>{renderMediaReviewUploadInput('reference')}</div>
+                </div>
+                {company.mediaReview.uploads.length > 0 && (
+                  <div style={{ display: 'grid', gap: '10px', marginBottom: '16px' }}>
+                    {company.mediaReview.uploads.map((upload) => (
+                      <div
+                        key={`${upload.bucket}:${upload.path}`}
+                        style={{
+                          padding: '12px 14px',
+                          borderRadius: '14px',
+                          background: 'rgba(15, 23, 42, 0.72)',
+                          border: '1px solid rgba(148, 163, 184, 0.16)',
+                        }}
+                      >
+                        {renderMediaReviewUploadActions(upload)}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px' }}>
+                  <label>
+                    Logo URL/reference
+                    <input
+                      type="url"
+                      inputMode="url"
+                      placeholder="https://cdn.example.com/logo.png"
+                      value={company.mediaReview.logoUrl}
+                      onChange={(event) => updateMediaReview({ logoUrl: event.target.value })}
+                    />
+                  </label>
+
+                  <label>
+                    Poster URL/reference
+                    <input
+                      type="url"
+                      inputMode="url"
+                      placeholder="https://cdn.example.com/poster.png"
+                      value={company.mediaReview.posterUrl}
+                      onChange={(event) => updateMediaReview({ posterUrl: event.target.value })}
+                    />
+                  </label>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px', marginTop: '16px' }}>
+                  <label>
+                    Hero image URL/reference
+                    <input
+                      type="url"
+                      inputMode="url"
+                      placeholder="https://cdn.example.com/hero.webp"
+                      value={company.mediaReview.heroImageUrl}
+                      onChange={(event) => updateMediaReview({ heroImageUrl: event.target.value })}
+                    />
+                  </label>
+
+                  <label>
+                    Hero video URL/reference
+                    <input
+                      type="url"
+                      inputMode="url"
+                      placeholder="https://cdn.example.com/hero.mp4"
+                      value={company.mediaReview.heroVideoUrl}
+                      onChange={(event) => updateMediaReview({ heroVideoUrl: event.target.value })}
+                    />
+                  </label>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px', marginTop: '16px' }}>
+                  <label>
+                    Desired CTA label
+                    <input
+                      type="text"
+                      placeholder="Request Demo"
+                      value={company.mediaReview.ctaLabel}
+                      onChange={(event) => updateMediaReview({ ctaLabel: event.target.value })}
+                    />
+                  </label>
+
+                  <label>
+                    Website link
+                    <input
+                      type="url"
+                      inputMode="url"
+                      placeholder="https://example.com"
+                      value={company.mediaReview.websiteUrl}
+                      onChange={(event) => updateMediaReview({ websiteUrl: event.target.value })}
+                    />
+                  </label>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px', marginTop: '16px' }}>
+                  <label>
+                    Booking link
+                    <input
+                      type="url"
+                      inputMode="url"
+                      placeholder="https://example.com/book"
+                      value={company.mediaReview.bookingUrl}
+                      onChange={(event) => updateMediaReview({ bookingUrl: event.target.value })}
+                    />
+                  </label>
+
+                  <label>
+                    Tagline
+                    <input
+                      type="text"
+                      placeholder="Short sponsor-facing media line"
+                      value={company.mediaReview.tagline}
+                      onChange={(event) => updateMediaReview({ tagline: event.target.value })}
+                    />
+                  </label>
+                </div>
+
+                <label style={{ marginTop: '16px' }}>
+                  Short media notes
+                  <textarea
+                    placeholder="Explain what should be reviewed, adjusted or prioritised before public publish."
+                    value={company.mediaReview.mediaNotes}
+                    onChange={(event) => updateMediaReview({ mediaNotes: event.target.value })}
+                    style={{ height: '92px' }}
+                  />
+                </label>
+
+                <div style={{ marginTop: '14px', padding: '12px 14px', borderRadius: '14px', background: mediaReviewValidation.ok ? 'rgba(6, 78, 59, 0.26)' : 'rgba(127, 29, 29, 0.28)', border: `1px solid ${mediaReviewValidation.ok ? 'rgba(52, 211, 153, 0.26)' : 'rgba(248, 113, 113, 0.32)'}`, color: mediaReviewValidation.ok ? '#bbf7d0' : '#fecaca', fontSize: '0.78rem', lineHeight: 1.5 }}>
+                  Media review references: {mediaReviewValidation.ok ? 'READY TO SAVE FOR REVIEW' : 'FIX REFERENCES BEFORE SAVE'}
+                  <br />
+                  Review path: save these references first, then move the booth through Submitted, Approved and Published using the existing booth status workflow.
+                  {!mediaReviewValidation.ok && mediaReviewIssueText ? (
+                    <>
+                      <br />
+                      Validation: {mediaReviewIssueText}
+                    </>
+                  ) : null}
+                </div>
+              </div>
             </div>
           </section>
 
@@ -1367,6 +2062,8 @@ export default function CompanyAdmin() {
                 Asset safety: {EXPO_SPONSOR_ASSET_PACK_MEDIA_POLICY_TEXT}. Localhost, private IPs, non-HTTPS URLs, SVG and embedded credentials are blocked.
                 <br />
                 Uploads use the Supabase Storage bucket expo_assets. After upload, save booth settings to attach the asset pack to this booth.
+                <br />
+                Public-release guard: direct expo_assets uploads and booth-screen copy controls are admin-only here. Sponsor review media should use the Media Review section above.
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px' }}>
@@ -1377,7 +2074,7 @@ export default function CompanyAdmin() {
                     onChange={(event) => updateSponsorAssetPack({ packageTier: event.target.value as ExpoSponsorPackageTier })}
                   >
                     <option value="standard">Standard Booth</option>
-                    <option value="premium">Premium Booth</option>
+                    <option value="premium">Featured Booth</option>
                     <option value="landmarkZone">Landmark Zone Sponsor</option>
                   </select>
                 </label>
@@ -1410,10 +2107,10 @@ export default function CompanyAdmin() {
                     type="url"
                     inputMode="url"
                     placeholder="https://cdn.example.com/logo.png"
-                    value={company.sponsorAssetPack.logoUrl}
-                    onChange={(event) => updateSponsorAssetPack({ logoUrl: event.target.value })}
+                      value={company.sponsorAssetPack.logoUrl}
+                      onChange={(event) => updateSponsorAssetPack({ logoUrl: event.target.value })}
                   />
-                  {renderSponsorAssetUploadInput('logoUrl')}
+                  {isOperatorAdmin ? renderSponsorAssetUploadInput('logoUrl') : null}
                 </label>
 
                 <label>
@@ -1422,10 +2119,10 @@ export default function CompanyAdmin() {
                     type="url"
                     inputMode="url"
                     placeholder="https://cdn.example.com/hero.webp"
-                    value={company.sponsorAssetPack.heroImageUrl}
-                    onChange={(event) => updateSponsorAssetPack({ heroImageUrl: event.target.value })}
+                      value={company.sponsorAssetPack.heroImageUrl}
+                      onChange={(event) => updateSponsorAssetPack({ heroImageUrl: event.target.value })}
                   />
-                  {renderSponsorAssetUploadInput('heroImageUrl')}
+                  {isOperatorAdmin ? renderSponsorAssetUploadInput('heroImageUrl') : null}
                 </label>
               </div>
 
@@ -1437,7 +2134,7 @@ export default function CompanyAdmin() {
                   onChange={(event) => updateSponsorAssetPack({ productImageUrls: event.target.value })}
                   style={{ height: '104px' }}
                 />
-                {renderSponsorAssetUploadInput('productImageUrls')}
+                {isOperatorAdmin ? renderSponsorAssetUploadInput('productImageUrls') : null}
               </label>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px', marginTop: '16px' }}>
@@ -1447,10 +2144,10 @@ export default function CompanyAdmin() {
                     type="url"
                     inputMode="url"
                     placeholder="https://cdn.example.com/demo.mp4"
-                    value={company.sponsorAssetPack.demoVideoUrl}
-                    onChange={(event) => updateSponsorAssetPack({ demoVideoUrl: event.target.value })}
+                      value={company.sponsorAssetPack.demoVideoUrl}
+                      onChange={(event) => updateSponsorAssetPack({ demoVideoUrl: event.target.value })}
                   />
-                  {renderSponsorAssetUploadInput('demoVideoUrl')}
+                  {isOperatorAdmin ? renderSponsorAssetUploadInput('demoVideoUrl') : null}
                 </label>
 
                 <label>
@@ -1459,10 +2156,10 @@ export default function CompanyAdmin() {
                     type="url"
                     inputMode="url"
                     placeholder="https://cdn.example.com/package.pdf"
-                    value={company.sponsorAssetPack.brochureUrl}
-                    onChange={(event) => updateSponsorAssetPack({ brochureUrl: event.target.value })}
+                      value={company.sponsorAssetPack.brochureUrl}
+                      onChange={(event) => updateSponsorAssetPack({ brochureUrl: event.target.value })}
                   />
-                  {renderSponsorAssetUploadInput('brochureUrl')}
+                  {isOperatorAdmin ? renderSponsorAssetUploadInput('brochureUrl') : null}
                 </label>
               </div>
 
@@ -1502,37 +2199,43 @@ export default function CompanyAdmin() {
                 </span>
               </label>
 
-              <div style={{ marginTop: '16px', padding: '12px 14px', borderRadius: '14px', background: 'rgba(15, 23, 42, 0.68)', border: '1px solid rgba(125, 211, 252, 0.18)' }}>
-                <div style={{ color: '#f8fafc', fontSize: '0.78rem', fontWeight: 900, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
-                  Send asset pack to booth screen
+              {isOperatorAdmin ? (
+                <div style={{ marginTop: '16px', padding: '12px 14px', borderRadius: '14px', background: 'rgba(15, 23, 42, 0.68)', border: '1px solid rgba(125, 211, 252, 0.18)' }}>
+                  <div style={{ color: '#f8fafc', fontSize: '0.78rem', fontWeight: 900, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+                    Send asset pack to booth screen
+                  </div>
+                  <div style={{ marginTop: '6px', color: '#94a3b8', fontSize: '0.76rem', lineHeight: 1.45 }}>
+                    Copies sponsor pack media into Booth Screen Content and sets it to Published. Save booth settings to apply it in the 3D city.
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', marginTop: '10px' }}>
+                    <button
+                      type="button"
+                      className="btn-glass"
+                      disabled={!sponsorAssetPackScreenImageUrl || sponsorPublicReleaseControlsDisabled}
+                      onClick={() => copySponsorAssetImageToBoothScreen(sponsorAssetPackScreenImageUrl)}
+                      style={{ padding: '7px 10px', fontSize: '0.72rem', opacity: !sponsorAssetPackScreenImageUrl || sponsorPublicReleaseControlsDisabled ? 0.58 : 1 }}
+                    >
+                      USE IMAGE ON BOOTH SCREEN
+                    </button>
+                    <button
+                      type="button"
+                      className="btn-glass"
+                      disabled={!sponsorAssetPackScreenVideoUrl || sponsorPublicReleaseControlsDisabled}
+                      onClick={() => copySponsorAssetVideoToBoothScreen(sponsorAssetPackScreenVideoUrl)}
+                      style={{ padding: '7px 10px', fontSize: '0.72rem', opacity: !sponsorAssetPackScreenVideoUrl || sponsorPublicReleaseControlsDisabled ? 0.58 : 1 }}
+                    >
+                      USE VIDEO SLOT ON BOOTH SCREEN
+                    </button>
+                    <span style={{ color: '#64748b', fontSize: '0.72rem' }}>
+                      Image source priority: hero, logo, then first product image. Video is saved as a safe placeholder until playback review is enabled.
+                    </span>
+                  </div>
                 </div>
-                <div style={{ marginTop: '6px', color: '#94a3b8', fontSize: '0.76rem', lineHeight: 1.45 }}>
-                  Copies sponsor pack media into Booth Screen Content and sets it to Published. Save booth settings to apply it in the 3D city.
+              ) : (
+                <div style={{ marginTop: '16px', padding: '12px 14px', borderRadius: '14px', background: 'rgba(30, 41, 59, 0.62)', border: '1px solid rgba(148, 163, 184, 0.16)', color: '#cbd5e1', fontSize: '0.76rem', lineHeight: 1.5 }}>
+                  Admin-only public-release controls are hidden from sponsor accounts here. Use the Media Review section above for sponsor-submitted assets.
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', marginTop: '10px' }}>
-                  <button
-                    type="button"
-                    className="btn-glass"
-                    disabled={!sponsorAssetPackScreenImageUrl}
-                    onClick={() => copySponsorAssetImageToBoothScreen(sponsorAssetPackScreenImageUrl)}
-                    style={{ padding: '7px 10px', fontSize: '0.72rem' }}
-                  >
-                    USE IMAGE ON BOOTH SCREEN
-                  </button>
-                  <button
-                    type="button"
-                    className="btn-glass"
-                    disabled={!sponsorAssetPackScreenVideoUrl}
-                    onClick={() => copySponsorAssetVideoToBoothScreen(sponsorAssetPackScreenVideoUrl)}
-                    style={{ padding: '7px 10px', fontSize: '0.72rem' }}
-                  >
-                    USE VIDEO SLOT ON BOOTH SCREEN
-                  </button>
-                  <span style={{ color: '#64748b', fontSize: '0.72rem' }}>
-                    Image source priority: hero, logo, then first product image. Video is saved as a safe placeholder until playback review is enabled.
-                  </span>
-                </div>
-              </div>
+              )}
 
               <div style={{ marginTop: '14px', padding: '12px 14px', borderRadius: '14px', background: sponsorAssetPackValidation.ok ? 'rgba(6, 78, 59, 0.26)' : 'rgba(127, 29, 29, 0.28)', border: `1px solid ${sponsorAssetPackValidation.ok ? 'rgba(52, 211, 153, 0.26)' : 'rgba(248, 113, 113, 0.32)'}`, color: sponsorAssetPackValidation.ok ? '#bbf7d0' : '#fecaca', fontSize: '0.78rem', lineHeight: 1.5 }}>
                 Asset pack: {sponsorAssetPackReadiness.clientFriendlyReady ? 'CLIENT PACKAGE READY' : 'MATERIALS READINESS IN PROGRESS'}
@@ -1716,12 +2419,86 @@ export default function CompanyAdmin() {
 
         <div className="calc-results-column">
           <section className="calc-section" style={{ marginBottom: '25px' }}>
+            <h2>Sponsor Readiness</h2>
+            <p style={{ marginTop: 0, color: '#94a3b8', fontSize: '0.86rem', lineHeight: 1.55 }}>
+              Lightweight MVP readiness view only. It reuses the current booth status, sponsor package, media review, lead inbox and analytics data without adding new tracking or review tables.
+            </p>
+            <div
+              style={{
+                marginTop: '16px',
+                padding: '18px',
+                borderRadius: '20px',
+                background: sponsorReadinessStyle.background,
+                border: `1px solid ${sponsorReadinessStyle.border}`,
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', alignItems: 'start', flexWrap: 'wrap' }}>
+                <div>
+                  <div style={{ color: sponsorReadinessStyle.accent, fontSize: '0.72rem', fontWeight: 900, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+                    Readiness category
+                  </div>
+                  <div style={{ color: '#f8fafc', fontSize: '1.5rem', fontWeight: 900, marginTop: '6px' }}>
+                    {sponsorReadinessCategory}
+                  </div>
+                  <div style={{ color: '#cbd5e1', fontSize: '0.82rem', lineHeight: 1.55, marginTop: '10px', maxWidth: '640px' }}>
+                    {publicationSceneReadinessText}
+                  </div>
+                </div>
+                <div style={{ minWidth: '180px', padding: '12px 14px', borderRadius: '16px', background: 'rgba(2, 6, 23, 0.3)', border: '1px solid rgba(148, 163, 184, 0.14)' }}>
+                  <div style={{ color: '#94a3b8', fontSize: '0.68rem', fontWeight: 900, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                    Readiness checklist
+                  </div>
+                  <div style={{ color: '#f8fafc', fontSize: '1.35rem', fontWeight: 900, marginTop: '6px' }}>
+                    {readinessChecklistCount}/5
+                  </div>
+                  <div style={{ color: '#94a3b8', fontSize: '0.76rem', lineHeight: 1.45, marginTop: '8px' }}>
+                    Save path, package, visible screen content, media review, and CTA/contact coverage.
+                  </div>
+                </div>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '12px', marginTop: '18px' }}>
+                <div style={{ padding: '14px', borderRadius: '16px', background: 'rgba(2, 6, 23, 0.42)', border: '1px solid rgba(148, 163, 184, 0.14)' }}>
+                  <div style={{ color: '#94a3b8', fontSize: '0.66rem', fontWeight: 900, letterSpacing: '0.08em', textTransform: 'uppercase' }}>Publication status</div>
+                  <div style={{ color: '#f8fafc', fontSize: '1.05rem', fontWeight: 900, marginTop: '6px' }}>{boothPublicationLabel}</div>
+                </div>
+                <div style={{ padding: '14px', borderRadius: '16px', background: 'rgba(2, 6, 23, 0.42)', border: '1px solid rgba(148, 163, 184, 0.14)' }}>
+                  <div style={{ color: '#94a3b8', fontSize: '0.66rem', fontWeight: 900, letterSpacing: '0.08em', textTransform: 'uppercase' }}>Scene presence</div>
+                  <div style={{ color: '#f8fafc', fontSize: '1.05rem', fontWeight: 900, marginTop: '6px' }}>{isExpoBoothPublicSceneStatus(normalizedBoothStatus) ? 'Public now' : hasVisibleScreenContent ? 'Preview-ready' : 'Needs screen content'}</div>
+                </div>
+                <div style={{ padding: '14px', borderRadius: '16px', background: 'rgba(2, 6, 23, 0.42)', border: '1px solid rgba(148, 163, 184, 0.14)' }}>
+                  <div style={{ color: '#94a3b8', fontSize: '0.66rem', fontWeight: 900, letterSpacing: '0.08em', textTransform: 'uppercase' }}>Package tier</div>
+                  <div style={{ color: '#f8fafc', fontSize: '1.05rem', fontWeight: 900, marginTop: '6px' }}>{company.sponsorAssetPack.packageTier.toUpperCase()}</div>
+                </div>
+                <div style={{ padding: '14px', borderRadius: '16px', background: 'rgba(2, 6, 23, 0.42)', border: '1px solid rgba(148, 163, 184, 0.14)' }}>
+                  <div style={{ color: '#94a3b8', fontSize: '0.66rem', fontWeight: 900, letterSpacing: '0.08em', textTransform: 'uppercase' }}>Lead count</div>
+                  <div style={{ color: '#f8fafc', fontSize: '1.05rem', fontWeight: 900, marginTop: '6px' }}>{leads.length}</div>
+                </div>
+              </div>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '12px', marginTop: '18px' }}>
+              {readinessItems.map((item) => (
+                <div key={item.label} style={{ padding: '15px', borderRadius: '16px', background: 'rgba(15, 23, 42, 0.76)', border: '1px solid rgba(148, 163, 184, 0.16)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', alignItems: 'baseline' }}>
+                    <div style={{ color: '#f8fafc', fontSize: '0.86rem', fontWeight: 900 }}>{item.label}</div>
+                    <div style={{ color: item.tone, fontSize: '0.68rem', fontWeight: 900, letterSpacing: '0.08em', textTransform: 'uppercase', textAlign: 'right' }}>
+                      {item.status}
+                    </div>
+                  </div>
+                  <div style={{ color: '#94a3b8', fontSize: '0.78rem', lineHeight: 1.5, marginTop: '9px' }}>
+                    {item.detail}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <section className="calc-section" style={{ marginBottom: '25px' }}>
             <h2>Operational Summary</h2>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '12px' }}>
               {[
-                { label: 'Visits', value: analytics?.visits ?? 0, color: '#f8fafc' },
-                { label: 'Interactions', value: analytics?.interactions ?? 0, color: '#93c5fd' },
-                { label: 'Leads', value: analytics?.leads_generated ?? 0, color: '#34d399' },
+                { label: 'Visits', value: analyticsTracked ? String(analytics?.visits ?? 0) : 'Not tracked', color: '#f8fafc' },
+                { label: 'Interactions', value: analyticsTracked ? String(analytics?.interactions ?? 0) : 'Not tracked', color: '#93c5fd' },
+                { label: 'Leads', value: analyticsTracked ? String(analytics?.leads_generated ?? 0) : 'Not tracked', color: '#34d399' },
               ].map((entry) => (
                 <div key={entry.label} style={{ padding: '16px', borderRadius: '16px', background: 'rgba(2, 6, 23, 0.68)', border: '1px solid rgba(148, 163, 184, 0.16)' }}>
                   <div style={{ fontSize: '0.72rem', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{entry.label}</div>
@@ -1762,7 +2539,7 @@ export default function CompanyAdmin() {
           <section className="calc-section" style={{ marginBottom: '25px' }}>
             <h2>Screen Inventory & Pricing</h2>
             <p style={{ marginTop: 0, color: '#94a3b8', fontSize: '0.86rem', lineHeight: 1.55 }}>
-              First commercial inventory model: booth-owned screens, premium city screens and event surfaces have separate value tiers, price hints and availability.
+              First commercial inventory model: booth-owned screens, featured city screens and event surfaces have separate value tiers, price hints and availability.
             </p>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: '10px', marginBottom: '14px' }}>
               {[

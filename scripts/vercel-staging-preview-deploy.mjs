@@ -7,6 +7,10 @@ const npx = process.platform === 'win32' ? 'npx.cmd' : 'npx';
 
 function run(args) {
   const result = spawnSync(npx, args, {
+    env: {
+      ...process.env,
+      NO_UPDATE_NOTIFIER: '1',
+    },
     stdio: 'inherit',
     shell: process.platform === 'win32',
   });

@@ -47,12 +47,12 @@ Usage:
 
 Checks:
   - Doppler scope is -3d-izstade / stg
-  - Doppler stg points frontend runtime to api-staging/signaling-staging
+  - Doppler stg points the core frontend runtime to api-staging and the optional legacy runtime to signaling-staging
   - Vercel app-staging responds on staging.30sek24.com
   - Hetzner API health and scene endpoints respond
   - Supabase db push dry-run is clean
   - Expo publication staging smoke test passes
-  - Pixel streaming baseline gateway/TURN check passes, streamer absence is warning-level in baseline mode
+  - Legacy runtime gateway/TURN check passes, streamer absence is warning-level in baseline mode
 
 Options:
   --fail-fast
@@ -227,18 +227,18 @@ async function run(options) {
     warnings.push({ name: 'expo publication staging smoke skipped', reason: 'requested by flag' });
   }
 
-  const pixel = runCommand('doppler', ['run', '--', 'npm.cmd', 'run', 'check:pixel-streaming', '--', '--mode', 'baseline'], { timeoutMs: 120000 });
+  const pixel = runCommand('doppler', ['run', '--', 'npm.cmd', 'run', 'check:expo:legacy-runtime', '--', '--mode', 'baseline'], { timeoutMs: 120000 });
   const pixelOutput = pixel.output;
   const pixelHardOk = pixel.status === 0
     && pixelOutput.includes('[PASS] backend-status-endpoint')
     && pixelOutput.includes('[PASS] gateway-status')
     && pixelOutput.includes('[PASS] turn-status');
   if (pixelOutput.includes('[WARN] streamer-status') || pixelOutput.includes('[WARN] session-readiness')) {
-    warnings.push({ name: 'pixel streaming active streamer', reason: 'Unreal streamer is not required for baseline readiness' });
+    warnings.push({ name: 'legacy runtime active streamer', reason: 'Legacy streamer is not required for baseline readiness' });
   }
   push({
     details: truncate(pixelOutput),
-    name: 'pixel streaming baseline gateway/turn',
+    name: 'legacy runtime baseline gateway/turn',
     ok: pixelHardOk,
   });
 

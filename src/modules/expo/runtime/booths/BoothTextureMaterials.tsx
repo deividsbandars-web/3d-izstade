@@ -206,7 +206,7 @@ function drawBoothProductPreviewBillboard(args: {
   const bullets = normalizeGeneratedBillboardLines(payload.bullets, 3);
   const ctaLabels = normalizeGeneratedBillboardLines(payload.ctaLabels, 3);
   const title = payload.label || 'Sponsor Concierge';
-  const tier = payload.tier || 'Premium Booth';
+  const tier = payload.tier || 'Booth Profile';
   const subtitle = payload.subtitle || 'Turn expo traffic into booked meetings and qualified leads.';
   const statusLabel = payload.statusLabel || 'Preview only - no live lead capture yet';
   const isStandardBooth = tier.toUpperCase().includes('STANDARD');

@@ -193,18 +193,21 @@ def update_showroom_map():
     tune_post_process(-1.15)
 
     exterior_location = unreal.Vector(center.x - 1650.0, center.y - 1080.0, 340.0)
-    overview_location = unreal.Vector(center.x - 1280.0, center.y - 980.0, 760.0)
-    terrace_location = unreal.Vector(terrace_target.x, terrace_target.y + 780.0, 240.0)
+    overview_location = unreal.Vector(center.x - 1560.0, center.y - 1180.0, 640.0)
+    roof_location = unreal.Vector(center.x - 40.0, center.y - 40.0, center.z + extent.z * 4.4)
+    terrace_location = unreal.Vector(terrace_target.x + 420.0, terrace_target.y + 880.0, 255.0)
     interior_location = unreal.Vector(living_target.x - 60.0, living_target.y + 680.0, 260.0)
 
     exterior_target = unreal.Vector(center.x + 120.0, center.y + 120.0, center.z + extent.z * 0.30)
-    overview_target = unreal.Vector(center.x + 140.0, center.y + 80.0, center.z + extent.z * 0.20)
-    terrace_target = unreal.Vector(terrace_target.x, terrace_target.y, 110.0)
+    overview_target = unreal.Vector(center.x + 220.0, center.y + 120.0, center.z + 110.0)
+    roof_target = unreal.Vector(center.x + 40.0, center.y + 20.0, center.z + extent.z * 1.05)
+    terrace_target = unreal.Vector(terrace_target.x - 40.0, terrace_target.y + 40.0, 105.0)
     interior_target = unreal.Vector(living_target.x, living_target.y, 130.0)
 
     spawn_or_update_camera("LT52A_Camera_Exterior", exterior_location, make_look_at_rotation(exterior_location, exterior_target), focal_length=34.0, fov=54.0)
-    spawn_or_update_camera("LT52A_Camera_Overview", overview_location, make_look_at_rotation(overview_location, overview_target), focal_length=26.0, fov=60.0)
-    spawn_or_update_camera("LT52A_Camera_Terrace", terrace_location, make_look_at_rotation(terrace_location, terrace_target), focal_length=18.0, fov=76.0)
+    spawn_or_update_camera("LT52A_Camera_Overview", overview_location, make_look_at_rotation(overview_location, overview_target), focal_length=30.0, fov=52.0)
+    spawn_or_update_camera("LT52A_Camera_Roof", roof_location, make_look_at_rotation(roof_location, roof_target), focal_length=42.0, fov=34.0)
+    spawn_or_update_camera("LT52A_Camera_Terrace", terrace_location, make_look_at_rotation(terrace_location, terrace_target), focal_length=28.0, fov=58.0)
     spawn_or_update_camera("LT52A_Camera_Interior", interior_location, make_look_at_rotation(interior_location, interior_target), focal_length=18.0, fov=70.0)
     unreal.EditorLevelLibrary.save_current_level()
 

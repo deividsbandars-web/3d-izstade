@@ -1,0 +1,71 @@
+{
+  "interiorWallMaterialOwner": "src/modules/expo/runtime/modularHome/construction/GalaWallSkinModel.ts:53-80",
+  "interiorBoardDimensionOwner": "src/modules/expo/runtime/modularHome/construction/GalaWallSkinModel.ts:18-24",
+  "exteriorBoardDimensionOwner": "src/modules/expo/runtime/modularHome/construction/GalaWallSkinModel.ts:7-17",
+  "wallSkinModelOwner": "src/modules/expo/runtime/modularHome/construction/GalaWallSkinModel.ts",
+  "furniturePlacementOwner": "src/modules/expo/runtime/modularHome/construction/GalaConstructionModel.ts:241-289",
+  "furnitureDimensionOwner": "src/modules/expo/runtime/modularHome/construction/GalaConstructionModel.ts:251-289",
+  "bathroomFixtureOwner": "src/modules/expo/runtime/modularHome/construction/GalaConstructionModel.ts:280-289 and src/modules/expo/runtime/modularHome/construction/GalaRoomAssembly.tsx:134-149",
+  "collisionGeometryOwner": "src/modules/expo/runtime/modularHome/construction/GalaConstructionModel.ts:157-237 and src/modules/expo/runtime/modularHome/construction/GalaWallAssembly.tsx:38-82,172-183",
+  "performanceHotspots": [
+    {
+      "owner": "src/modules/expo/runtime/modularHome/construction/GalaConstructionPrimitives.tsx:36-66",
+      "reason": "Every repeated construction box creates its own mesh, geometry, and material with shadows enabled by default."
+    },
+    {
+      "owner": "src/modules/expo/runtime/modularHome/construction/GalaCladdingAssembly.tsx:33-154",
+      "reason": "Exterior board cladding emits individual board meshes; runtime inventory counted 206 wall-skin board meshes."
+    },
+    {
+      "owner": "src/modules/expo/runtime/modularHome/construction/GalaWallAssembly.tsx:108-160,224-241",
+      "reason": "Interior panels use sparse individual groove strips that do not match exterior board module and add draw calls."
+    },
+    {
+      "owner": "src/modules/expo/runtime/modularHome/construction/GalaConstructionRenderer.tsx:167-275",
+      "reason": "Gable cladding remains a separate adapter with repeated board meshes."
+    }
+  ],
+  "meshCountsBySystem": {
+    "wallSkinBoards": 206,
+    "revealsGrooves": 185,
+    "trim": 158,
+    "roof": 5,
+    "furniture": 89,
+    "openings": 62,
+    "wallsFloorsCeilings": 77,
+    "other": 65,
+    "total": 847
+  },
+  "materialCountsBySystem": {
+    "totalMaterialSignatures": 71
+  },
+  "drawCalls": 814,
+  "triangles": 9860,
+  "fpsMedian": 60.24,
+  "frameTimeP95Ms": 54.1,
+  "intersectionsDetected": [
+    "gala-construction-kitchen-upper-cabinet-with-readable-gap",
+    "gala-construction-bedroom-bedside-cabinet-at-headboard-side",
+    "gala-construction-bathroom-shower-riser-and-head-pipe",
+    "gala-construction-bathroom-round-shower-head-cue",
+    "gala-construction-bathroom-vanity-drawer-front-and-handle",
+    "gala-construction-bathroom-vanity-drawer-handle",
+    "gala-construction-bathroom-sink-basin-readable",
+    "gala-construction-bathroom-sink-faucet-cue",
+    "gala-construction-bathroom-wc-dark-bowl-inset-cue",
+    "gala-construction-bathroom-wc-seat-inset",
+    "gala-construction-bathroom-wc-flush-button-cue"
+  ],
+  "throughWallVisibilityDetected": [
+    "through-wall visibility risk is present for the same objects detected inside wall-core bounding boxes"
+  ],
+  "overridePaths": [
+    "src/modules/expo/runtime/modularHome/construction/GalaWallAssembly.tsx can choose an unrelated interior module even though it consumes GalaWallSkinModel.ts",
+    "src/modules/expo/runtime/modularHome/construction/GalaRoomAssembly.tsx derives several fixture detail positions outside the placement model"
+  ],
+  "duplicateConstants": [
+    "Interior panelSpacingM=0.54 differs from exterior board module 0.194m inside the same wall-skin model"
+  ],
+  "risk": "blocker",
+  "notes": "Pre-fix audit identifies three blocker roots: interior wall boards consume the wall-skin model but use an unrelated panel module; render lag risk is caused by high mesh/draw-call count from repeated uninstanced construction boxes; furniture and fixture anchors/details lack a clearance rule and intersect authoritative wall-core geometry. productVisualAccepted must remain false."
+}

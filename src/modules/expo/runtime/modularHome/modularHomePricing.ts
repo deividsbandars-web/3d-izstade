@@ -336,6 +336,9 @@ const OPTION_PRICING_DISTRIBUTION_BY_GROUP = {
     margin: 0.06,
     contingency: 0.03,
   },
+  kitchenFinish: {},
+  furnitureMood: {},
+  interiorZoneFocus: {},
   wallPanelStyle: {
     material: 0.48,
     factoryLabor: 0.34,

@@ -39,6 +39,10 @@ export type ModularHomeQuoteBackendPayload = {
     wardrobePlaceholder: string;
     interiorFloorStyle: string;
     interiorWallFinish: string;
+    kitchenFinish: string;
+    furnitureMood: string;
+    interiorZoneFocus: string;
+    presetId: string;
     roofEdgeColor: string;
     roofGutterStyle: string;
     windowFrameColor: string;
@@ -103,7 +107,7 @@ const BACKEND_SUBMIT_TIMEOUT_MS = 6000;
 
 function getSourcePath() {
   if (typeof window === 'undefined') {
-    return '/expo-3d?homeDemo=1&homeQuoteBackend=1';
+    return '/modular-homes/studio?homeStudio=1&view=exterior&homeQuoteBackend=1';
   }
 
   return `${window.location.pathname}${window.location.search}`;
@@ -186,6 +190,10 @@ export function buildModularHomeQuoteBackendPayload(
       wardrobePlaceholder: config.wardrobePlaceholder,
       interiorFloorStyle: config.interiorFloorStyle,
       interiorWallFinish: config.interiorWallFinish,
+      kitchenFinish: config.kitchenFinish,
+      furnitureMood: config.furnitureMood,
+      interiorZoneFocus: config.interiorZoneFocus,
+      presetId: config.dimensionPreset,
       roofEdgeColor: config.roofEdgeColor,
       roofGutterStyle: config.roofGutterStyle,
       windowFrameColor: config.windowFrameColor,

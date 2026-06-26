@@ -1,0 +1,9 @@
+CHANGELOG.md
+docs\CURRENT_TASK.md
+docs\MODULAR_HOME_STUDIO_DETAIL_UPGRADE_REPORT.md
+FILES_CHANGED.txt
+src\modules\expo\runtime\app\Expo3D.tsx
+src\modules\expo\runtime\modularHome\HomeDesignInstanceShell.tsx
+src\modules\expo\runtime\modularHome\modularHomeConfig.ts
+src\modules\expo\runtime\modularHome\ModularHomeDemoOverlay.tsx
+VALIDATION.md

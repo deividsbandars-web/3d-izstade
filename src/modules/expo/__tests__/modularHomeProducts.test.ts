@@ -1471,7 +1471,9 @@ const shareUrl = createModularHomeShareUrl(
   'cutaway',
 );
 const shareUrlSearch = new URL(shareUrl).searchParams;
-assert.equal(shareUrl, 'https://example.test/expo-3d?homeDemo=1&model=family&layout=two&dims=wide&facade=dark&roof=flat&terrace=side&finish=standard&windows=panoramic&windowPlace=front&door=slider&doorPlace=terrace&boardDir=h&boardWidth=standard&boardProfile=square&boardSpacing=standard&trim=timber&roofEdge=graphite&gutter=minimal&frame=timber&frameType=standard&wall=plywood&floor=plywood&floorStyle=utility&wallPanel=plain&furniture=standard&sofa=1&table=1&bed=1&kitchen=1&wardrobe=1&view=cutaway');
+assert.equal(shareUrl, 'https://example.test/modular-homes/studio?homeStudio=1&model=family&layout=two&dims=wide&facade=dark&roof=flat&terrace=side&finish=standard&windows=panoramic&windowPlace=front&door=slider&doorPlace=terrace&boardDir=h&boardWidth=standard&boardProfile=square&boardSpacing=standard&trim=timber&roofEdge=graphite&gutter=minimal&frame=timber&frameType=standard&wall=plywood&floor=plywood&floorStyle=utility&wallPanel=plain&kitchenFinish=wood&furnitureMood=warm&interiorZoneFocus=living&furniture=standard&sofa=1&table=1&bed=1&kitchen=1&wardrobe=1&view=cutaway');
+assert.equal(shareUrlSearch.get('homeStudio'), '1');
+assert.equal(shareUrlSearch.get('homeDemo'), null);
 assert.equal(shareUrlSearch.get('old'), null);
 assert.equal(shareUrlSearch.get('model'), 'family');
 assert.equal(shareUrlSearch.get('layout'), 'two');

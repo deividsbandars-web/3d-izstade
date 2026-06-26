@@ -285,6 +285,7 @@ export function ModularHomeQuoteForm({ config, estimate, isTouchDevice = false }
 
   const attachedSummaryHighlights = [
     ['Model', estimate.baseModel],
+    ['Preset', estimate.selectedOptions.dimensionPreset],
     ['Layout', estimate.selectedOptions.layoutVariant],
     ['Facade', estimate.selectedOptions.facade],
     ['Roof', estimate.selectedOptions.roof],
@@ -302,6 +303,9 @@ export function ModularHomeQuoteForm({ config, estimate, isTouchDevice = false }
     ['Gutter', estimate.selectedOptions.roofGutterStyle],
     ['Frames', `${estimate.selectedOptions.windowFrameColor} / ${estimate.selectedOptions.windowFrameType}`],
     ['Interior', `${estimate.selectedOptions.wallPanelStyle} / ${estimate.selectedOptions.interiorFloorStyle}`],
+    ['Kitchen', estimate.selectedOptions.kitchenFinish],
+    ['Mood', estimate.selectedOptions.furnitureMood],
+    ['Focus', estimate.selectedOptions.interiorZoneFocus],
   ] as const;
 
   return (
@@ -404,6 +408,7 @@ export function ModularHomeQuoteForm({ config, estimate, isTouchDevice = false }
         </div>
         <div style={{ color: '#99f6e4', fontSize: isTouchDevice ? '0.54rem' : '0.57rem', fontWeight: 780, lineHeight: 1.35 }}>
           Interior toggles: sofa {estimate.selectedOptions.sofa}, table {estimate.selectedOptions.table}, bed {estimate.selectedOptions.bed}, kitchen {estimate.selectedOptions.kitchenLine}, wardrobe {estimate.selectedOptions.wardrobePlaceholder}.
+          Kitchen finish: {estimate.selectedOptions.kitchenFinish}. Furniture mood: {estimate.selectedOptions.furnitureMood}. Interior focus: {estimate.selectedOptions.interiorZoneFocus}.
         </div>
       </div>
 

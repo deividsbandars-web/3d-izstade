@@ -130,6 +130,9 @@ export type ModularHomeProjectComparisonSideSummary = {
   wardrobePlaceholder: string;
   interiorFloorStyle: string;
   interiorWallFinish: string;
+  kitchenFinish: string;
+  furnitureMood: string;
+  interiorZoneFocus: string;
   layoutVariant: string;
   moduleCount: number;
   product: string;
@@ -352,6 +355,9 @@ const COMPARE_OPTION_LABELS = {
   wardrobePlaceholder: 'Wardrobe placeholder',
   interiorFloorStyle: 'Interior floor style',
   interiorWallFinish: 'Interior wall finish',
+  kitchenFinish: 'Kitchen finish',
+  furnitureMood: 'Furniture mood',
+  interiorZoneFocus: 'Interior zone focus',
   layoutVariant: 'Layout variant',
   roomUseProfile: 'Room use profile',
   roof: 'Roof',
@@ -682,6 +688,9 @@ function createSideSummary(
     wardrobePlaceholder: configSummary.wardrobePlaceholder,
     interiorFloorStyle: configSummary.interiorFloorStyle,
     interiorWallFinish: configSummary.interiorWallFinish,
+    kitchenFinish: configSummary.kitchenFinish,
+    furnitureMood: configSummary.furnitureMood,
+    interiorZoneFocus: configSummary.interiorZoneFocus,
     layoutVariant: configSummary.layoutVariant,
     moduleCount,
     product: getProductLabel(project),

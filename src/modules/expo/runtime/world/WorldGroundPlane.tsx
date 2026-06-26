@@ -63,15 +63,31 @@ function resolveGroundRibbonOpacity(ribbon: GroundDetailRibbon) {
   return Math.min(resolveGroundDetailOpacity(ribbon) * 1.85, 0.145);
 }
 
-export function WorldGroundPlane({ visualProfile }: { visualProfile: ExpoWorldVisualProfile }) {
+export function WorldGroundPlane({
+  homeStudioMode = false,
+  visualProfile,
+}: {
+  homeStudioMode?: boolean;
+  visualProfile: ExpoWorldVisualProfile;
+}) {
   const globalBaseMaterial = FLOOR_MATERIAL_INTENTS.globalBase;
+  const globalGroundPosition: [number, number, number] = homeStudioMode
+    ? [GLOBAL_GROUND_POSITION[0], -0.34, GLOBAL_GROUND_POSITION[2]]
+    : GLOBAL_GROUND_POSITION;
+  const globalGroundColor = homeStudioMode ? '#4f5f57' : visualProfile.global.groundBase;
 
   return (
-    <group name="world-ground:global">
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={GLOBAL_GROUND_POSITION} receiveShadow={false} name="world-ground:global-base">
+    <group
+      name="world-ground:global"
+      userData={{
+        homeStudioGroundDetailDisabled: homeStudioMode,
+        worldGroundMaskedFromInterior: homeStudioMode,
+      }}
+    >
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={globalGroundPosition} receiveShadow={false} name="world-ground:global-base">
         <planeGeometry args={GLOBAL_GROUND_SIZE} />
         <meshStandardMaterial
-          color={visualProfile.global.groundBase}
+          color={globalGroundColor}
           emissive={globalBaseMaterial.emissive}
           emissiveIntensity={globalBaseMaterial.emissiveIntensity}
           metalness={globalBaseMaterial.metalness}
@@ -81,7 +97,7 @@ export function WorldGroundPlane({ visualProfile }: { visualProfile: ExpoWorldVi
           roughness={globalBaseMaterial.roughness}
         />
       </mesh>
-      {GROUND_DETAIL_RIBBONS.map((ribbon) => {
+      {!homeStudioMode && GROUND_DETAIL_RIBBONS.map((ribbon) => {
         const ribbonVisual = resolveGroundRibbonVisual(ribbon);
 
         return (
@@ -117,6 +133,7 @@ export function WorldGroundPlane({ visualProfile }: { visualProfile: ExpoWorldVi
           </mesh>
         );
       })}
+      {!homeStudioMode ? (
       <mesh
         name={`world-ground:${GROUND_SEAM_TRANSITION_PLATE.id}`}
         position={GROUND_SEAM_TRANSITION_PLATE.position}
@@ -145,6 +162,8 @@ export function WorldGroundPlane({ visualProfile }: { visualProfile: ExpoWorldVi
           roughness={globalBaseMaterial.roughness}
         />
       </mesh>
+      ) : null}
+      {!homeStudioMode ? (
       <mesh
         name={`world-ground:${SPONSOR_BOULEVARD_RIGHT_FLOOR_ANCHOR.id}`}
         position={SPONSOR_BOULEVARD_RIGHT_FLOOR_ANCHOR.position}
@@ -173,6 +192,8 @@ export function WorldGroundPlane({ visualProfile }: { visualProfile: ExpoWorldVi
           roughness={globalBaseMaterial.roughness}
         />
       </mesh>
+      ) : null}
+      {!homeStudioMode ? (
       <mesh
         name={`world-ground:${ARRIVAL_GATE_FLOOR_ANCHOR.id}`}
         position={ARRIVAL_GATE_FLOOR_ANCHOR.position}
@@ -201,6 +222,8 @@ export function WorldGroundPlane({ visualProfile }: { visualProfile: ExpoWorldVi
           roughness={globalBaseMaterial.roughness}
         />
       </mesh>
+      ) : null}
+      {!homeStudioMode ? (
       <mesh
         name={`world-ground:${CENTER_SPINE_FLOOR_GUIDE.id}`}
         position={CENTER_SPINE_FLOOR_GUIDE.position}
@@ -229,6 +252,7 @@ export function WorldGroundPlane({ visualProfile }: { visualProfile: ExpoWorldVi
           roughness={globalBaseMaterial.roughness}
         />
       </mesh>
+      ) : null}
     </group>
   );
 }

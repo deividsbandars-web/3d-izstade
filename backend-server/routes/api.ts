@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import express, { Router } from 'express';
 import * as dashboardController from '../controllers/dashboardController.js';
 import * as leadsController from '../controllers/leadsController.js';
 import * as agentsController from '../controllers/agentsController.js';
@@ -6,6 +6,7 @@ import * as marketplaceController from '../controllers/marketplaceController.js'
 import * as outreachController from '../controllers/outreachController.js';
 import * as expoController from '../controllers/expoController.js';
 import * as expoDataController from '../controllers/expoDataController.js';
+import * as authBootstrapController from '../controllers/authBootstrapController.js';
 import * as expoLeadController from '../controllers/expoLeadController.js';
 import * as expoLeadInboxController from '../controllers/expoLeadInboxController.js';
 import * as analyticsController from '../controllers/analyticsController.js';
@@ -48,12 +49,28 @@ router.get('/expo/scene', expoController.getExpoScene);
 const protectedRouter = Router();
 protectedRouter.use(authMiddleware);
 
+// Auth/bootstrap
+protectedRouter.post('/auth/bootstrap', authBootstrapController.bootstrapAuthenticatedProfile);
+
 // Dashboard
 protectedRouter.get('/dashboard', dashboardController.getDashboardData);
 
 // Expo data/business surface
 protectedRouter.post('/expo/booths', expoDataController.createBooth);
 protectedRouter.patch('/expo/booths/:boothId', expoDataController.updateBooth);
+protectedRouter.post(
+  '/expo/booths/:boothId/media-review-upload',
+  express.raw({
+    limit: '25mb',
+    type: ['image/png', 'image/jpeg', 'image/webp', 'video/mp4'],
+  }),
+  expoDataController.uploadBoothMediaReviewAsset,
+);
+protectedRouter.patch(
+  '/expo/booths/:boothId/media-review-uploads',
+  adminOnly,
+  expoDataController.reviewBoothMediaReviewAsset,
+);
 protectedRouter.get('/expo/booths/managed', expoDataController.getManagedBooths);
 protectedRouter.get('/expo/booths/:boothId', expoDataController.getBooth);
 protectedRouter.get('/expo/booths', expoDataController.getBooths);

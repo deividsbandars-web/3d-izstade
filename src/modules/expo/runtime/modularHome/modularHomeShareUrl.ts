@@ -62,7 +62,7 @@ export type ModularHomeShareDecodeResult = {
 const FALLBACK_PRODUCT_ID = 'compact-timber-40' satisfies ModularHomeProductId;
 const FALLBACK_VIEW_MODE = 'exterior' satisfies ModularHomeViewModeOption;
 
-const SHARE_PARAM_KEYS = ['model', 'homeModel', 'layout', 'layoutVariant', 'dims', 'dimensionPreset', 'facade', 'roof', 'terrace', 'finish', 'furniture', 'furniturePackage', 'sofa', 'table', 'bed', 'kitchen', 'kitchenLine', 'wardrobe', 'wardrobePlaceholder', 'windows', 'windowPlacement', 'windowPlace', 'door', 'doorPlacement', 'doorPlace', 'boardDir', 'boardOrientation', 'boardWidth', 'boardProfile', 'boardSpacing', 'trim', 'trimColor', 'roofEdge', 'gutter', 'roofGutter', 'windowFrame', 'frame', 'frameType', 'windowFrameType', 'wallFinish', 'wall', 'floorFinish', 'floor', 'floorStyle', 'wallPanel', 'wallPanelStyle', 'view'] as const;
+const SHARE_PARAM_KEYS = ['model', 'homeModel', 'layout', 'layoutVariant', 'dims', 'dimensionPreset', 'facade', 'roof', 'terrace', 'finish', 'furniture', 'furniturePackage', 'sofa', 'table', 'bed', 'kitchen', 'kitchenLine', 'wardrobe', 'wardrobePlaceholder', 'windows', 'windowPlacement', 'windowPlace', 'door', 'doorPlacement', 'doorPlace', 'boardDir', 'boardOrientation', 'boardWidth', 'boardProfile', 'boardSpacing', 'trim', 'trimColor', 'roofEdge', 'gutter', 'roofGutter', 'windowFrame', 'frame', 'frameType', 'windowFrameType', 'wallFinish', 'wall', 'floorFinish', 'floor', 'floorStyle', 'wallPanel', 'wallPanelStyle', 'kitchenFinish', 'furnitureMood', 'interiorZoneFocus', 'view'] as const;
 
 const PRODUCT_ALIAS_TO_ID: Record<string, ModularHomeProductId> = {
   compact: 'compact-timber-40',
@@ -259,6 +259,32 @@ const INTERIOR_FLOOR_STYLE_ALIAS_TO_TOKEN: Record<string, ModularHomeInteriorFlo
   utilityPlywood: 'utilityPlywood',
   warm: 'warmPlank',
   warmPlank: 'warmPlank',
+};
+
+const KITCHEN_FINISH_ALIAS_TO_TOKEN: Record<string, ModularHomeConfiguratorState['kitchenFinish']> = {
+  dark: 'dark',
+  white: 'white',
+  wood: 'wood',
+};
+
+const FURNITURE_MOOD_ALIAS_TO_TOKEN: Record<string, ModularHomeConfiguratorState['furnitureMood']> = {
+  minimal: 'minimal',
+  premium: 'premiumCompact',
+  premiumCompact: 'premiumCompact',
+  warm: 'warm',
+};
+
+const INTERIOR_ZONE_FOCUS_ALIAS_TO_TOKEN: Record<string, ModularHomeConfiguratorState['interiorZoneFocus']> = {
+  bathroom: 'bathroom',
+  focusBathroom: 'bathroom',
+  focusKitchen: 'kitchen',
+  focusLiving: 'living',
+  focusOverview: 'overview',
+  focusSleeping: 'sleeping',
+  kitchen: 'kitchen',
+  living: 'living',
+  overview: 'overview',
+  sleeping: 'sleeping',
 };
 
 const WALL_PANEL_STYLE_ALIAS_TO_TOKEN: Record<string, ModularHomeWallPanelStyleOption> = {
@@ -470,10 +496,30 @@ const FLOOR_FINISH_TOKEN_TO_ALIAS: Record<ModularHomeFloorFinishOption, string> 
   plywood: 'plywood',
 };
 
+const KITCHEN_FINISH_TOKEN_TO_ALIAS: Record<ModularHomeConfiguratorState['kitchenFinish'], string> = {
+  dark: 'dark',
+  white: 'white',
+  wood: 'wood',
+};
+
 const INTERIOR_FLOOR_STYLE_TOKEN_TO_ALIAS: Record<ModularHomeInteriorFloorStyleOption, string> = {
   polishedSlab: 'slab',
   utilityPlywood: 'utility',
   warmPlank: 'warm',
+};
+
+const FURNITURE_MOOD_TOKEN_TO_ALIAS: Record<ModularHomeConfiguratorState['furnitureMood'], string> = {
+  minimal: 'minimal',
+  premiumCompact: 'premium',
+  warm: 'warm',
+};
+
+const INTERIOR_ZONE_FOCUS_TOKEN_TO_ALIAS: Record<ModularHomeConfiguratorState['interiorZoneFocus'], string> = {
+  bathroom: 'bathroom',
+  kitchen: 'kitchen',
+  living: 'living',
+  overview: 'overview',
+  sleeping: 'sleeping',
 };
 
 const WALL_PANEL_STYLE_TOKEN_TO_ALIAS: Record<ModularHomeWallPanelStyleOption, string> = {
@@ -733,6 +779,9 @@ export function decodeModularHomeConfigFromUrl(
   const interiorWallFinishParamKey = params.has('wallFinish') ? 'wallFinish' : 'wall';
   const floorFinishParamKey = params.has('floorFinish') ? 'floorFinish' : 'floor';
   const wallPanelStyleParamKey = params.has('wallPanelStyle') ? 'wallPanelStyle' : 'wallPanel';
+  const kitchenFinishParamKey = params.has('kitchenFinish') ? 'kitchenFinish' : 'kitchen';
+  const furnitureMoodParamKey = params.has('furnitureMood') ? 'furnitureMood' : 'furniture';
+  const interiorZoneFocusParamKey = params.has('interiorZoneFocus') ? 'interiorZoneFocus' : 'focus';
   const furniturePackageParamKey = params.has('furniturePackage') ? 'furniturePackage' : 'furniture';
   const kitchenLineParamKey = params.has('kitchenLine') ? 'kitchenLine' : 'kitchen';
   const wardrobeParamKey = params.has('wardrobePlaceholder') ? 'wardrobePlaceholder' : 'wardrobe';
@@ -749,6 +798,9 @@ export function decodeModularHomeConfigFromUrl(
   const floorFinish = decodeOption(params, floorFinishParamKey, productResult.productId, 'floorFinish', FLOOR_FINISH_ALIAS_TO_TOKEN);
   const interiorFloorStyle = decodeOption(params, 'floorStyle', productResult.productId, 'interiorFloorStyle', INTERIOR_FLOOR_STYLE_ALIAS_TO_TOKEN);
   const wallPanelStyle = decodeOption(params, wallPanelStyleParamKey, productResult.productId, 'wallPanelStyle', WALL_PANEL_STYLE_ALIAS_TO_TOKEN);
+  const kitchenFinish = decodeOption(params, kitchenFinishParamKey, productResult.productId, 'kitchenFinish', KITCHEN_FINISH_ALIAS_TO_TOKEN);
+  const furnitureMood = decodeOption(params, furnitureMoodParamKey, productResult.productId, 'furnitureMood', FURNITURE_MOOD_ALIAS_TO_TOKEN);
+  const interiorZoneFocus = decodeOption(params, interiorZoneFocusParamKey, productResult.productId, 'interiorZoneFocus', INTERIOR_ZONE_FOCUS_ALIAS_TO_TOKEN);
   const furniturePackage = decodeOption(params, furniturePackageParamKey, productResult.productId, 'furniturePackage', FURNITURE_PACKAGE_ALIAS_TO_TOKEN);
   const sofa = decodeOption(params, 'sofa', productResult.productId, 'sofa', FURNITURE_TOGGLE_ALIAS_TO_TOKEN);
   const table = decodeOption(params, 'table', productResult.productId, 'table', FURNITURE_TOGGLE_ALIAS_TO_TOKEN);
@@ -899,6 +951,24 @@ export function decodeModularHomeConfigFromUrl(
     invalidKeys.push(wallPanelStyleParamKey);
   }
 
+  if (kitchenFinish.token) {
+    config.kitchenFinish = kitchenFinish.token;
+  } else if (kitchenFinish.invalid) {
+    invalidKeys.push(kitchenFinishParamKey);
+  }
+
+  if (furnitureMood.token) {
+    config.furnitureMood = furnitureMood.token;
+  } else if (furnitureMood.invalid) {
+    invalidKeys.push(furnitureMoodParamKey);
+  }
+
+  if (interiorZoneFocus.token) {
+    config.interiorZoneFocus = interiorZoneFocus.token;
+  } else if (interiorZoneFocus.invalid) {
+    invalidKeys.push(interiorZoneFocusParamKey);
+  }
+
   if (furniturePackage.token) {
     config.furniturePackage = furniturePackage.token;
   } else if (furniturePackage.invalid) {
@@ -953,7 +1023,7 @@ export function encodeModularHomeConfigToSearchParams(
   const params = new URLSearchParams();
   const productId = product?.id ?? FALLBACK_PRODUCT_ID;
 
-  params.set('homeDemo', '1');
+  params.set('homeStudio', '1');
   params.set('model', PRODUCT_ID_TO_ALIAS[productId] ?? productId);
   params.set('layout', LAYOUT_TOKEN_TO_ALIAS[config.layoutVariant]);
   const resolvedDimensionPreset = getModularHomeDimensionPreset(productId, config.dimensionPreset);
@@ -979,6 +1049,9 @@ export function encodeModularHomeConfigToSearchParams(
   params.set('floor', FLOOR_FINISH_TOKEN_TO_ALIAS[config.floorFinish]);
   params.set('floorStyle', INTERIOR_FLOOR_STYLE_TOKEN_TO_ALIAS[config.interiorFloorStyle]);
   params.set('wallPanel', WALL_PANEL_STYLE_TOKEN_TO_ALIAS[config.wallPanelStyle]);
+  params.set('kitchenFinish', KITCHEN_FINISH_TOKEN_TO_ALIAS[config.kitchenFinish]);
+  params.set('furnitureMood', FURNITURE_MOOD_TOKEN_TO_ALIAS[config.furnitureMood]);
+  params.set('interiorZoneFocus', INTERIOR_ZONE_FOCUS_TOKEN_TO_ALIAS[config.interiorZoneFocus]);
   params.set('furniture', FURNITURE_PACKAGE_TOKEN_TO_ALIAS[config.furniturePackage]);
   params.set('sofa', FURNITURE_TOGGLE_TOKEN_TO_ALIAS[config.sofa]);
   params.set('table', FURNITURE_TOGGLE_TOKEN_TO_ALIAS[config.table]);
@@ -988,6 +1061,36 @@ export function encodeModularHomeConfigToSearchParams(
   params.set('view', viewMode);
 
   return params;
+}
+
+export function buildCanonicalModularHomeStudioSearchParams(
+  viewMode: ModularHomeViewModeOption = FALLBACK_VIEW_MODE,
+): URLSearchParams {
+  const params = new URLSearchParams();
+  params.set('view', viewMode);
+  params.set('homeStudio', '1');
+  return params;
+}
+
+export function createCanonicalModularHomeStudioUrl(
+  currentHref?: string,
+  viewMode: ModularHomeViewModeOption = FALLBACK_VIEW_MODE,
+): string {
+  const href = currentHref
+    ?? (typeof window !== 'undefined' ? window.location.href : 'http://localhost/expo-3d');
+  const url = new URL(href, 'http://localhost');
+
+  url.pathname = '/modular-homes/studio';
+  url.search = `?${buildCanonicalModularHomeStudioSearchParams(viewMode).toString()}`;
+  url.hash = '';
+
+  return url.toString();
+}
+
+export function createCanonicalModularHomeStudioPath(
+  viewMode: ModularHomeViewModeOption = FALLBACK_VIEW_MODE,
+): string {
+  return `/modular-homes/studio?${buildCanonicalModularHomeStudioSearchParams(viewMode).toString()}`;
 }
 
 export function createModularHomeShareUrl(
@@ -1000,6 +1103,7 @@ export function createModularHomeShareUrl(
   const url = new URL(href, 'http://localhost');
   const configParams = encodeModularHomeConfigToSearchParams(config, viewMode);
 
+  url.pathname = '/modular-homes/studio';
   url.search = '';
   url.hash = '';
   for (const [key, value] of configParams.entries()) {

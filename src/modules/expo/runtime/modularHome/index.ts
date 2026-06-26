@@ -19,6 +19,12 @@ export {
   isHomeUploadPreviewRequested,
 } from './homeUploadPreviewFlags';
 export {
+  HomeDesignInstanceShell,
+} from './HomeDesignInstanceShell';
+export {
+  RoomPanoramaWalkthroughPanel,
+} from './RoomPanoramaWalkthroughPanel';
+export {
   ModularHomeDemoOverlay,
 } from './ModularHomeDemoOverlay';
 export {
@@ -262,6 +268,9 @@ export {
   useModularHomeViewMode,
 } from './modularHomeConfigurator';
 
+export type {
+  HomeDesignInstanceSectionId,
+} from './HomeDesignInstanceShell';
 export type {
   HomeDemoMode,
   HomeDemoSearchInput,

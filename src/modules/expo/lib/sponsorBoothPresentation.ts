@@ -71,10 +71,10 @@ export function isPremiumStreamingTier(adTier: SponsorBoothPresentation['adTier'
 
 function buildBoothBadgeLabel(adTier: SponsorBoothPresentation['adTier'], sponsorTier: SponsorTier) {
   if (adTier === 'elite') {
-    return 'UNREAL ELITE';
+    return 'FEATURED BOOTH';
   }
   if (adTier === 'premium') {
-    return 'PREMIUM LIVE';
+    return 'BOOTH PROFILE';
   }
   return sponsorTier.toUpperCase();
 }
@@ -86,10 +86,10 @@ function buildPresentationTagline(
 ) {
   const sourceTagline = truncateSponsorText(company.tagline || fallbackIdentity.supportLine || 'Meet the team. Explore the offer.', 34);
   if (adTier === 'elite') {
-    return sourceTagline || 'UNREAL POWERED BUYER SUITE';
+    return sourceTagline || 'FEATURED SPONSOR PROFILE';
   }
   if (adTier === 'premium') {
-    return sourceTagline || 'LIVE PREMIUM PRODUCT ROOM';
+    return sourceTagline || 'SPONSOR PROFILE WITH CONTACT PATH';
   }
   return truncateSponsorText(company.tagline || fallbackIdentity.supportLine || 'Meet the team. Explore the offer.', 30);
 }
@@ -255,12 +255,12 @@ export function buildSponsorCtas(company: ExpoSceneCompany): SponsorCta[] {
   }
 
   if (booking) {
-    actions.push({ kind: 'booking', label: company.ctaLabel || (isTopTier ? 'Book Meeting' : 'Meet Team'), url: booking });
+    actions.push({ kind: 'booking', label: company.ctaLabel || (isTopTier ? 'Contact Sponsor' : 'Contact Team'), url: booking });
   }
 
   actions.push({ kind: 'ai_chat', label: 'Ask AI', surface: 'feature' });
   actions.push({ kind: 'calculators', label: isTopTier ? 'Open Calculators' : 'Get Estimate' });
-  actions.push({ kind: 'demo_room', label: isTopTier ? 'Launch Premium Room' : 'Open Showroom' });
+  actions.push({ kind: 'demo_room', label: isTopTier ? 'Open Booth Profile' : 'Open Booth Profile' });
   return actions;
 }
 
@@ -358,7 +358,7 @@ export function buildSponsorBoothPresentation(
   const demoRoomPath = buildExpoBoothRoute({
     companyId: company.id,
     companySlug: company.slug,
-    stream: isPremiumStreamingTier(adTier),
+    stream: false,
   }) ?? '/expo/booth/unknown';
 
   return {

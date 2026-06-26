@@ -1,0 +1,38 @@
+{
+  "horizontalBoardMarkOwner": "src/modules/expo/runtime/modularHome/construction/GalaCladdingAssembly.tsx lines 51-52, 78-87, 155-169",
+  "openingClipOwner": "src/modules/expo/runtime/modularHome/construction/GalaCladdingAssembly.tsx lines 56-77 and 110-124",
+  "windowGlassOwner": "src/modules/expo/runtime/modularHome/construction/GalaOpeningAssembly.tsx lines 94 and 214-222",
+  "doorPortalClearanceOwner": "src/modules/expo/runtime/modularHome/construction/GalaOpeningAssembly.tsx lines 197-209; src/modules/expo/runtime/modularHome/GalaDoorState.ts",
+  "interiorBoardOwner": "src/modules/expo/runtime/modularHome/construction/GalaWallAssembly.tsx lines 93-148 and 245-274; src/modules/expo/runtime/modularHome/construction/GalaWallSkinModel.ts lines 24-32 and 66-92",
+  "interiorHorizontalBandOwner": "src/modules/expo/runtime/modularHome/construction/GalaFloorCeilingAssembly.tsx lines 126-132 and 231-253",
+  "houseFloorOwner": "src/modules/expo/runtime/modularHome/construction/GalaFloorCeilingAssembly.tsx lines 144-158",
+  "worldGroundOwner": "src/modules/expo/runtime/world/WorldGroundPlane.tsx lines 66-83; src/modules/expo/runtime/world/WorldGroundLayout.ts lines 25-30",
+  "groundDetailOwner": "src/modules/expo/runtime/world/WorldGroundPlane.tsx lines 84-214; src/modules/expo/runtime/world/WorldGroundLayout.ts lines 77-115",
+  "performanceHotspotOwners": [
+    "src/modules/expo/runtime/modularHome/construction/GalaCladdingAssembly.tsx",
+    "src/modules/expo/runtime/modularHome/construction/GalaOpeningAssembly.tsx",
+    "src/modules/expo/runtime/world/WorldGroundPlane.tsx",
+    "src/modules/expo/runtime/world/scene/ExpoWorldPlayerLayer.tsx lines 590-820"
+  ],
+  "boardsVisibleThroughOpenings": true,
+  "doorPortalBlockedByBoards": true,
+  "windowGlassTransparent": false,
+  "interiorUsesExactExteriorBoardModule": true,
+  "interiorUsesSameWoodTone": false,
+  "unwantedInteriorHorizontalBandsPresent": true,
+  "blueVoidOrGroundInsideInterior": true,
+  "floorColorStableDuringMovement": false,
+  "motionPerformanceBudgetMet": false,
+  "overridePaths": [
+    "GalaCladdingAssembly.tsx renders full-height exterior board instances after wall core clipping.",
+    "GalaCladdingAssembly.tsx renders a full-wall reveal backing plane behind apertures.",
+    "WorldGroundPlane.tsx is mounted for homeStudio mode by ExpoWorldSceneLayers.tsx.",
+    "GalaWallSkinModel.ts blends interior boards toward interior.wallPanelColor."
+  ],
+  "duplicateConstants": [
+    "Interior board material palette is separately computed from exterior board palette in GalaWallSkinModel.ts lines 66-68.",
+    "Interior horizontal trim/band sizes are owned in GalaConstructionModel.ts lines 56-60 and rendered in GalaFloorCeilingAssembly.tsx."
+  ],
+  "risk": "blocker",
+  "notes": "The rejected state is not a visibility failure; it is an aperture, material parity, floor isolation, and motion-stutter correctness failure. productVisualAccepted remains false."
+}

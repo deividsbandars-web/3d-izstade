@@ -37,7 +37,11 @@ export type ModularHomeQuoteReviewRow = {
     wardrobePlaceholder: string;
     interiorFloorStyle: string;
     interiorWallFinish: string;
+    kitchenFinish: string;
+    furnitureMood: string;
+    interiorZoneFocus: string;
     layoutVariant: string;
+    presetId: string;
     roof: string;
     roofEdgeColor: string;
     roofGutterStyle: string;
@@ -101,7 +105,11 @@ const MOCK_QUOTE_ROWS = [
       wardrobePlaceholder: 'Wardrobe on',
       interiorFloorStyle: 'Warm plank lines',
       interiorWallFinish: 'Warm panel walls',
+      kitchenFinish: 'Wood kitchen finish',
+      furnitureMood: 'Warm furniture mood',
+      interiorZoneFocus: 'Living',
       layoutVariant: 'Two bedroom',
+      presetId: 'familyStandard',
       roof: 'Pitched',
       roofEdgeColor: 'Graphite roof edge',
       roofGutterStyle: 'Minimal edge gutter',
@@ -154,7 +162,11 @@ const MOCK_QUOTE_ROWS = [
       wardrobePlaceholder: 'Wardrobe off',
       interiorFloorStyle: 'Utility plywood boards',
       interiorWallFinish: 'Plywood walls',
+      kitchenFinish: 'Dark kitchen finish',
+      furnitureMood: 'Minimal furniture mood',
+      interiorZoneFocus: 'Overview',
       layoutVariant: 'Sauna + rest room',
+      presetId: 'saunaDeepTerrace',
       roof: 'Flat',
       roofEdgeColor: 'Graphite roof edge',
       roofGutterStyle: 'Round gutter placeholder',
@@ -298,7 +310,11 @@ export function normalizeModularHomeQuoteReviewRow(
       wardrobePlaceholder: normalizeText(selectedOptions.wardrobePlaceholder, normalizeText(config.wardrobePlaceholder, 'Unknown wardrobe toggle')),
       interiorFloorStyle: normalizeText(selectedOptions.interiorFloorStyle, normalizeText(config.interiorFloorStyle, 'Unknown floor style')),
       interiorWallFinish: normalizeText(selectedOptions.interiorWallFinish, normalizeText(config.interiorWallFinish, 'Unknown wall finish')),
+      kitchenFinish: normalizeText(selectedOptions.kitchenFinish, normalizeText(config.kitchenFinish, 'Unknown kitchen finish')),
+      furnitureMood: normalizeText(selectedOptions.furnitureMood, normalizeText(config.furnitureMood, 'Unknown furniture mood')),
+      interiorZoneFocus: normalizeText(selectedOptions.interiorZoneFocus, normalizeText(config.interiorZoneFocus, 'Unknown interior zone focus')),
       layoutVariant: normalizeText(selectedOptions.layoutVariant, normalizeText(config.layoutVariant, 'Unknown layout')),
+      presetId: normalizeText(selectedOptions.dimensionPreset, normalizeText(config.presetId, normalizeText(config.layoutVariant, 'Unknown preset'))),
       roof: normalizeText(selectedOptions.roof, normalizeText(config.roof, 'Unknown roof')),
       roofEdgeColor: normalizeText(selectedOptions.roofEdgeColor, normalizeText(config.roofEdgeColor, 'Unknown roof edge')),
       roofGutterStyle: normalizeText(selectedOptions.roofGutterStyle, normalizeText(config.roofGutterStyle, 'Unknown gutter style')),
@@ -365,7 +381,11 @@ export function normalizeModularHomeQuoteAdminRow(value: unknown): ModularHomeQu
       wardrobePlaceholder: normalizeText(config.wardrobePlaceholder, 'Unknown wardrobe toggle'),
       interiorFloorStyle: normalizeText(config.interiorFloorStyle, 'Unknown floor style'),
       interiorWallFinish: normalizeText(config.interiorWallFinish, 'Unknown wall finish'),
+      kitchenFinish: normalizeText(config.kitchenFinish, 'Unknown kitchen finish'),
+      furnitureMood: normalizeText(config.furnitureMood, 'Unknown furniture mood'),
+      interiorZoneFocus: normalizeText(config.interiorZoneFocus, 'Unknown interior zone focus'),
       layoutVariant: normalizeText(config.layoutVariant, 'Unknown layout'),
+      presetId: normalizeText(config.presetId, normalizeText(config.layoutVariant, 'Unknown preset')),
       roof: normalizeText(config.roof, 'Unknown roof'),
       roofEdgeColor: normalizeText(config.roofEdgeColor, 'Unknown roof edge'),
       roofGutterStyle: normalizeText(config.roofGutterStyle, 'Unknown gutter style'),
@@ -469,12 +489,16 @@ export function serializeModularHomeQuoteReviewCsv(rows: readonly ModularHomeQuo
     'Floor Finish',
     'Interior Floor Style',
     'Wall Panel Style',
+    'Kitchen Finish',
+    'Furniture Mood',
+    'Interior Zone Focus',
     'Furniture Package',
     'Sofa',
     'Table',
     'Bed',
     'Kitchen Line',
     'Wardrobe Placeholder',
+    'Preset ID',
     'Window Placement',
     'Window Frame Color',
     'Window Frame Type',
@@ -513,12 +537,16 @@ export function serializeModularHomeQuoteReviewCsv(rows: readonly ModularHomeQuo
     row.config.floorFinish,
     row.config.interiorFloorStyle,
     row.config.wallPanelStyle,
+    row.config.kitchenFinish,
+    row.config.furnitureMood,
+    row.config.interiorZoneFocus,
     row.config.furniturePackage,
     row.config.sofa,
     row.config.table,
     row.config.bed,
     row.config.kitchenLine,
     row.config.wardrobePlaceholder,
+    row.config.presetId,
     row.config.windowPlacement,
     row.config.windowFrameColor,
     row.config.windowFrameType,

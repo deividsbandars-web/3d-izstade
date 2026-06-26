@@ -1,11 +1,18 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
-import { OrbitControls, PointerLockControls } from '@react-three/drei';
+import { Html, OrbitControls, PointerLockControls } from '@react-three/drei';
 import * as THREE from 'three';
 import type { ExpoMode } from '../../../state/expoRuntime';
 import type { ExpoStartView } from '../../../world-contract';
 import type { ExpoVerticalAccessNode, ExpoVerticalWalkableRegion } from '../../planning/types';
 import { EXPO_VERTICAL_CITY_SYSTEM } from '../../planning/vertical/verticalCitySystem';
+import {
+  GALA_DOOR_STATE_EVENT,
+  getGalaDoorStatesSnapshot,
+  installGalaDoorRuntime,
+  toggleGalaDoorState,
+} from '../../modularHome/GalaDoorState';
+import { isHomeStudioEnabled } from '../../modularHome/homeDemoFlags';
 import {
   WORLD_PHYSICS_DEFAULT_EDGE_SLACK,
   WORLD_PHYSICS_DEFAULT_Y_TOLERANCE,
@@ -32,11 +39,21 @@ import {
   type RideableElevatorHit,
   type RideableElevatorRuntimeRoute,
 } from '../physics/elevatorPhysics';
+import { isExpo3dQaEnabled } from '../../app/expo3dQa';
 import { EXPO_START_VIEW_KEY, collectPlayerCollisionTargets, isCollisionMesh } from '../WorldSceneSupport';
-
+import {
+  GALA_SHOWROOM_EYE_HEIGHT_Y,
+  buildGalaCollisionSegments,
+  findNearbyGalaDoor,
+  useGalaShowroomMovement,
+  type GalaDoorPromptState,
+} from './useGalaShowroomMovement';
 const PLAYER_RADIUS = 0.92;
 const PLAYER_WALK_SPEED = 108;
 const PLAYER_SPRINT_MULTIPLIER = 1.8;
+const PLAYER_HUMAN_EYE_HEIGHT_Y = 1.72;
+const PLAYER_LEGACY_LOW_START_Y = 5;
+const PLAYER_SPAWN_MIN_CLEARANCE_Y = 1.45;
 const PLAYER_KEYBOARD_TURN_SPEED = 2.25;
 const PLAYER_LOOK_PITCH_LIMIT = 1.32;
 const PLAYER_MOBILE_LOOK_PITCH_SPEED = 2.45;
@@ -69,21 +86,28 @@ const WALK_CONTROL_KEYS = new Set([
   'ShiftLeft',
   'ShiftRight',
 ]);
-
-type OperatorTeleportDetail = {
-  startView?: ExpoStartView;
-  zoneId?: string;
+function resolveInitialWalkElevation(startY: number, useGalaShowroomPhysics = false): number {
+  if (useGalaShowroomPhysics) {
+    return GALA_SHOWROOM_EYE_HEIGHT_Y;
+  }
+  if (startY > 12) {
+    return startY;
+  }
+  return Math.max(PLAYER_HUMAN_EYE_HEIGHT_Y, Math.min(PLAYER_LEGACY_LOW_START_Y, startY));
+}
+type OperatorTeleportDetail = { startView?: ExpoStartView; zoneId?: string };
+type VerticalLiftRequest = { nodeId?: string | null; requireNearby: boolean };
+type VerticalLiftRequestDetail = { nodeId?: string | null };
+type WalkMoveState = { f: boolean; b: boolean; l: boolean; r: boolean; s: boolean; turnL: boolean; turnR: boolean };
+const EMPTY_WALK_MOVE_STATE: WalkMoveState = {
+  b: false,
+  f: false,
+  l: false,
+  r: false,
+  s: false,
+  turnL: false,
+  turnR: false,
 };
-
-type VerticalLiftRequest = {
-  nodeId?: string | null;
-  requireNearby: boolean;
-};
-
-type VerticalLiftRequestDetail = {
-  nodeId?: string | null;
-};
-
 export function ExpoWorldPlayerLayer({
   bounds,
   debug = false,
@@ -95,18 +119,14 @@ export function ExpoWorldPlayerLayer({
   startView,
   verticalAccessNodes = [],
 }: {
-  bounds: { minX: number; maxX: number; minZ: number; maxZ: number };
-  debug?: boolean;
+  bounds: { minX: number; maxX: number; minZ: number; maxZ: number }; debug?: boolean;
   mobileMoveIntent?: { f: boolean; b: boolean; l: boolean; r: boolean; s?: boolean; turnL?: boolean; turnR?: boolean; jump?: boolean; lift?: boolean; lookX?: number; lookY?: number };
-  mode: ExpoMode;
-  onMove: (pos: number[]) => void;
-  physicsSurfaceRegistry?: WorldPhysicsSurfaceRegistry;
-  preserveReviewElevation?: boolean;
-  startView: ExpoStartView;
-  verticalAccessNodes?: ExpoVerticalAccessNode[];
+  mode: ExpoMode; onMove: (pos: number[]) => void; physicsSurfaceRegistry?: WorldPhysicsSurfaceRegistry;
+  preserveReviewElevation?: boolean; startView: ExpoStartView; verticalAccessNodes?: ExpoVerticalAccessNode[];
 }) {
   const { camera, scene } = useThree();
-  const [mov, setMov] = useState({ f: false, b: false, l: false, r: false, s: false, turnL: false, turnR: false });
+  const [nearbyDoorPrompt, setNearbyDoorPrompt] = useState<GalaDoorPromptState | null>(null);
+  const movRef = useRef<WalkMoveState>({ ...EMPTY_WALK_MOVE_STATE });
   const raycaster = useRef(new THREE.Raycaster());
   const cameraViewEuler = useRef(new THREE.Euler(0, 0, 0, 'YXZ'));
   const desiredMoveVector = useRef(new THREE.Vector3());
@@ -124,10 +144,14 @@ export function ExpoWorldPlayerLayer({
   const pendingJumpRequest = useRef(false);
   const lastMobileJumpIntent = useRef(false);
   const lastMobileLiftIntent = useRef(false);
+  const galaDoorStates = useRef(getGalaDoorStatesSnapshot());
+  const galaCollisionSegmentsRef = useRef(buildGalaCollisionSegments(getGalaDoorStatesSnapshot()));
+  const nearbyDoorPromptRef = useRef<GalaDoorPromptState | null>(null);
   const activeRideableElevatorRouteId = useRef<string | null>(null);
   const lastTraversalAction = useRef<string | null>(null);
   const verticalVelocityY = useRef(0);
   const verticalAirborne = useRef(false);
+  const homeStudioEnabled = useMemo(() => isHomeStudioEnabled(), []);
   const activeViewElevationY = useRef(startView.position[1]);
   const verticalLevelY = useRef(5);
   const effectiveVerticalAccessNodes = verticalAccessNodes.length > 0
@@ -140,30 +164,63 @@ export function ExpoWorldPlayerLayer({
   const basePhysicsSolids = physicsSurfaceRegistry?.solids ?? [];
   const basePhysicsWalkableSurfaces = physicsSurfaceRegistry?.walkableSurfaces ?? [];
   const startViewSignature = `${startView.position.join(',')}|${startView.lookAt.join(',')}|${startView.source}`;
+  const runGalaShowroomMovement = useGalaShowroomMovement({
+    activeViewElevationYRef: activeViewElevationY,
+    bounds,
+    camera,
+    desiredMoveVectorRef: desiredMoveVector,
+    galaCollisionSegmentsRef,
+    galaDoorStatesRef: galaDoorStates,
+    lastMoveTimeRef: lastMoveTime,
+    lastReportedPositionRef: lastReportedPosition,
+    moveVelocityRef: moveVelocity,
+    nearbyDoorPromptRef,
+    onMove,
+    pendingJumpRequestRef: pendingJumpRequest,
+    pendingLiftRequestRef: pendingLiftRequest,
+    setNearbyDoorPrompt,
+    verticalAirborneRef: verticalAirborne,
+    verticalLevelYRef: verticalLevelY,
+    verticalVelocityYRef: verticalVelocityY,
+  });
   const orbitMaxDistance = useMemo(() => {
     const startDistance = Math.hypot(
       startView.position[0] - startView.lookAt[0],
       startView.position[1] - startView.lookAt[1],
       startView.position[2] - startView.lookAt[2],
     );
-
     return Math.max(500, Math.min(16000, startDistance + 250));
   }, [startView]);
-
+  useEffect(() => {
+    if (!homeStudioEnabled) {
+      return undefined;
+    }
+    galaDoorStates.current = installGalaDoorRuntime();
+    galaCollisionSegmentsRef.current = buildGalaCollisionSegments(galaDoorStates.current);
+    const handleDoorStateChange = () => {
+      galaDoorStates.current = getGalaDoorStatesSnapshot();
+      galaCollisionSegmentsRef.current = buildGalaCollisionSegments(galaDoorStates.current);
+    };
+    window.addEventListener(GALA_DOOR_STATE_EVENT, handleDoorStateChange);
+    return () => {
+      window.removeEventListener(GALA_DOOR_STATE_EVENT, handleDoorStateChange);
+    };
+  }, [homeStudioEnabled]);
   const applyStartView = useCallback((
     nextStartView: ExpoStartView,
     reason: string,
     options?: { markFramed?: boolean },
   ) => {
+    const initialWalkY = resolveInitialWalkElevation(nextStartView.position[1], homeStudioEnabled);
     startFramingApplied.current = options?.markFramed ?? false;
     spawnChecked.current = false;
-    camera.position.set(...nextStartView.position);
+    camera.position.set(nextStartView.position[0], initialWalkY, nextStartView.position[2]);
     orbitControlsRef.current?.target.set(...nextStartView.lookAt);
     camera.lookAt(...nextStartView.lookAt);
     orbitControlsRef.current?.update();
     camera.updateMatrixWorld();
-    activeViewElevationY.current = nextStartView.position[1];
-    verticalLevelY.current = nextStartView.position[1] > 12 ? nextStartView.position[1] : 5;
+    activeViewElevationY.current = initialWalkY;
+    verticalLevelY.current = initialWalkY;
     desiredMoveVector.current.set(0, 0, 0);
     moveVelocity.current.set(0, 0, 0);
     pendingJumpRequest.current = false;
@@ -173,43 +230,37 @@ export function ExpoWorldPlayerLayer({
     lastTraversalAction.current = null;
     liftExitArmed.current = true;
     liftCooldownUntil.current = Date.now() + 450;
-    lastReportedPosition.current = [nextStartView.position[0], verticalLevelY.current, nextStartView.position[2]];
+    lastReportedPosition.current = [nextStartView.position[0], initialWalkY, nextStartView.position[2]];
     onMove(lastReportedPosition.current);
     logExpoWorldDebug(debug, reason, nextStartView);
-  }, [camera, debug, onMove]);
-
+  }, [camera, debug, homeStudioEnabled, onMove]);
   useEffect(() => {
-    camera.position.set(-8, 5, 10);
-    camera.lookAt(0, 3, -24);
+    const initialY = homeStudioEnabled ? GALA_SHOWROOM_EYE_HEIGHT_Y : PLAYER_HUMAN_EYE_HEIGHT_Y;
+    camera.position.set(-8, initialY, 10);
+    camera.lookAt(0, initialY, -24);
     logExpoWorldDebug(debug, 'CAMERA START:', camera.position);
-  }, [camera, debug]);
-
+  }, [camera, debug, homeStudioEnabled]);
   useEffect(() => {
     if (lastAppliedStartViewSignature.current === startViewSignature) {
       return;
     }
-
     lastAppliedStartViewSignature.current = startViewSignature;
     applyStartView(startView, '[ExpoView][StartViewChanged]');
   }, [applyStartView, startView, startViewSignature]);
-
   useEffect(() => {
     const handleOperatorTeleport = (event: Event) => {
       const detail = (event as CustomEvent<OperatorTeleportDetail>).detail;
       if (!detail?.startView) {
         return;
       }
-
       operatorTeleportUntil.current = Date.now() + OPERATOR_TELEPORT_SETTLE_MS;
       applyStartView(detail.startView, '[ExpoView][OperatorTeleport]', { markFramed: true });
     };
-
     window.addEventListener('expo:operator-teleport', handleOperatorTeleport as EventListener);
     return () => {
       window.removeEventListener('expo:operator-teleport', handleOperatorTeleport as EventListener);
     };
   }, [applyStartView]);
-
   const activateVerticalLift = useCallback((
     node: ExpoVerticalAccessNode,
     reason: 'auto' | 'manual' | 'operator-event',
@@ -237,7 +288,6 @@ export function ExpoWorldPlayerLayer({
       targetPosition: lastReportedPosition.current,
     });
   }, [camera, debug, onMove]);
-
   const activateTraversalSurface = useCallback((
     candidate: WorldPhysicsTraversalSurfaceCandidate,
     reason: 'mantle' | 'step-up',
@@ -266,7 +316,6 @@ export function ExpoWorldPlayerLayer({
       targetY: candidate.surface.playerY,
     });
   }, [camera, debug, onMove]);
-
   useEffect(() => {
     const handleVerticalLiftRequest = (event: Event) => {
       const detail = (event as CustomEvent<VerticalLiftRequestDetail>).detail;
@@ -275,134 +324,141 @@ export function ExpoWorldPlayerLayer({
         requireNearby: false,
       };
     };
-
     window.addEventListener('expo:vertical-lift', handleVerticalLiftRequest as EventListener);
     return () => {
       window.removeEventListener('expo:vertical-lift', handleVerticalLiftRequest as EventListener);
     };
   }, []);
-
   useEffect(() => {
     const timer = setTimeout(() => {
       if (spawnChecked.current) {
         return;
       }
-
       const downRay = new THREE.Raycaster(camera.position, new THREE.Vector3(0, -1, 0));
       const intersects = downRay.intersectObjects(collectPlayerCollisionTargets(scene), false);
       const hit = intersects.find((entry) => entry.object.visible && isCollisionMesh(entry.object));
-
-      if (hit && hit.distance < 2) {
+      if (hit && hit.distance < PLAYER_SPAWN_MIN_CLEARANCE_Y) {
         logExpoWorldDebug(debug, 'Spawn unsafe, pushing player upward.');
-        camera.position.y += (2 - hit.distance) + 1;
+        camera.position.y += (PLAYER_SPAWN_MIN_CLEARANCE_Y - hit.distance) + 0.2;
       }
-
       spawnChecked.current = true;
     }, 4500);
-
     return () => clearTimeout(timer);
   }, [camera, debug, scene]);
-
   useEffect(() => {
     if (mode !== 'walk') {
       return;
     }
-
     const onEscape = (event: KeyboardEvent) => {
       if (event.code === 'Escape' && document.pointerLockElement) {
         document.exitPointerLock?.();
       }
     };
-
     const onKeyDown = (event: KeyboardEvent) => {
       if (WALK_CONTROL_KEYS.has(event.code)) {
         event.preventDefault();
       }
-
-      if (LIFT_TRIGGER_KEYS.has(event.code)) {
+      if (event.code === 'KeyE' && homeStudioEnabled && !event.repeat) {
+        const nearbyDoor = findNearbyGalaDoor(camera.position);
+        if (nearbyDoor) {
+          galaDoorStates.current = toggleGalaDoorState(nearbyDoor.doorId);
+          galaCollisionSegmentsRef.current = buildGalaCollisionSegments(galaDoorStates.current);
+          movRef.current = { ...movRef.current, turnR: false };
+          return;
+        }
+      }
+      if (LIFT_TRIGGER_KEYS.has(event.code) && !homeStudioEnabled) {
         pendingLiftRequest.current = {
           nodeId: null,
           requireNearby: true,
         };
       }
-
-      if (event.code === 'Space' && !event.repeat) {
+      if (event.code === 'Space' && !event.repeat && !homeStudioEnabled) {
         pendingJumpRequest.current = true;
       }
-
       switch (event.code) {
         case 'ArrowUp':
-        case 'KeyW': setMov((value) => ({ ...value, f: true })); break;
+        case 'KeyW': movRef.current = { ...movRef.current, f: true }; break;
         case 'ArrowDown':
-        case 'KeyS': setMov((value) => ({ ...value, b: true })); break;
-        case 'KeyA': setMov((value) => ({ ...value, l: true })); break;
-        case 'KeyD': setMov((value) => ({ ...value, r: true })); break;
+        case 'KeyS': movRef.current = { ...movRef.current, b: true }; break;
+        case 'KeyA': movRef.current = { ...movRef.current, l: true }; break;
+        case 'KeyD': movRef.current = { ...movRef.current, r: true }; break;
         case 'ArrowLeft':
-        case 'KeyQ': setMov((value) => ({ ...value, turnL: true })); break;
+        case 'KeyQ': movRef.current = { ...movRef.current, turnL: true }; break;
         case 'ArrowRight':
-        case 'KeyE': setMov((value) => ({ ...value, turnR: true })); break;
+        case 'KeyE': movRef.current = { ...movRef.current, turnR: true }; break;
         case 'ShiftLeft':
-        case 'ShiftRight': setMov((value) => ({ ...value, s: true })); break;
+        case 'ShiftRight': movRef.current = { ...movRef.current, s: true }; break;
       }
     };
-
     const onKeyUp = (event: KeyboardEvent) => {
       if (WALK_CONTROL_KEYS.has(event.code)) {
         event.preventDefault();
       }
-
       switch (event.code) {
         case 'ArrowUp':
-        case 'KeyW': setMov((value) => ({ ...value, f: false })); break;
+        case 'KeyW': movRef.current = { ...movRef.current, f: false }; break;
         case 'ArrowDown':
-        case 'KeyS': setMov((value) => ({ ...value, b: false })); break;
-        case 'KeyA': setMov((value) => ({ ...value, l: false })); break;
-        case 'KeyD': setMov((value) => ({ ...value, r: false })); break;
+        case 'KeyS': movRef.current = { ...movRef.current, b: false }; break;
+        case 'KeyA': movRef.current = { ...movRef.current, l: false }; break;
+        case 'KeyD': movRef.current = { ...movRef.current, r: false }; break;
         case 'ArrowLeft':
-        case 'KeyQ': setMov((value) => ({ ...value, turnL: false })); break;
+        case 'KeyQ': movRef.current = { ...movRef.current, turnL: false }; break;
         case 'ArrowRight':
-        case 'KeyE': setMov((value) => ({ ...value, turnR: false })); break;
+        case 'KeyE': movRef.current = { ...movRef.current, turnR: false }; break;
         case 'ShiftLeft':
-        case 'ShiftRight': setMov((value) => ({ ...value, s: false })); break;
+        case 'ShiftRight': movRef.current = { ...movRef.current, s: false }; break;
       }
     };
-
     window.addEventListener('keydown', onKeyDown);
     window.addEventListener('keyup', onKeyUp);
     window.addEventListener('keydown', onEscape);
-
     return () => {
       window.removeEventListener('keydown', onKeyDown);
       window.removeEventListener('keyup', onKeyUp);
       window.removeEventListener('keydown', onEscape);
     };
-  }, [mode]);
-
+  }, [camera.position, homeStudioEnabled, mode]);
   useFrame((state, delta) => {
     if (!startFramingApplied.current) {
       const sceneStartView = scene.userData[EXPO_START_VIEW_KEY] as ExpoStartView | undefined;
       if (sceneStartView?.lookAt) {
-        camera.position.set(...sceneStartView.position);
+        const initialWalkY = resolveInitialWalkElevation(sceneStartView.position[1], homeStudioEnabled);
+        camera.position.set(sceneStartView.position[0], initialWalkY, sceneStartView.position[2]);
         camera.lookAt(...sceneStartView.lookAt);
         camera.updateMatrixWorld();
         startFramingApplied.current = true;
-        activeViewElevationY.current = sceneStartView.position[1];
-        verticalLevelY.current = sceneStartView.position[1] > 12 ? sceneStartView.position[1] : 5;
+        activeViewElevationY.current = initialWalkY;
+        verticalLevelY.current = initialWalkY;
         verticalVelocityY.current = 0;
         verticalAirborne.current = false;
-        lastReportedPosition.current = [sceneStartView.position[0], sceneStartView.position[1], sceneStartView.position[2]];
+        lastReportedPosition.current = [sceneStartView.position[0], initialWalkY, sceneStartView.position[2]];
         onMove(lastReportedPosition.current);
         logExpoWorldDebug(debug, '[ExpoView][StartFraming]', sceneStartView);
       }
     }
-
     if (mode !== 'walk') {
       return;
     }
-
+    const mov = movRef.current;
+    const useGalaShowroomPhysics = homeStudioEnabled && !isExpo3dQaEnabled();
     const activeElevationY = activeViewElevationY.current;
     const isOperatorReviewFrame = preserveReviewElevation && activeElevationY > 12;
     const operatorTeleportSettling = operatorTeleportUntil.current > Date.now();
+    if (useGalaShowroomPhysics) {
+      runGalaShowroomMovement({
+        delta,
+        isOperatorReviewFrame,
+        mobileMoveIntent,
+        mov,
+        operatorTeleportSettling,
+      });
+      return;
+    }
+    if (nearbyDoorPromptRef.current) {
+      nearbyDoorPromptRef.current = null;
+      setNearbyDoorPrompt(null);
+    }
     const elapsedTime = state.clock.getElapsedTime();
     const rideableElevatorPhysics = buildRideableElevatorPhysicsFrame(elapsedTime, rideableElevatorRoutes);
     const effectivePhysicsSolids = rideableElevatorPhysics.solids.length > 0
@@ -411,7 +467,6 @@ export function ExpoWorldPlayerLayer({
     const effectivePhysicsWalkableSurfaces = rideableElevatorPhysics.walkableSurfaces.length > 0
       ? [...basePhysicsWalkableSurfaces, ...rideableElevatorPhysics.walkableSurfaces]
       : basePhysicsWalkableSurfaces;
-
     const stableDelta = Math.min(delta, 1 / 90);
     const physicsDelta = Math.min(delta, 1 / 30);
     const mobileJumpIntent = Boolean(mobileMoveIntent?.jump);
@@ -420,21 +475,17 @@ export function ExpoWorldPlayerLayer({
     const mobileTurnR = Boolean(mobileMoveIntent?.turnR);
     const mobileLookX = Math.max(-1, Math.min(1, Number(mobileMoveIntent?.lookX ?? 0)));
     const mobileLookY = Math.max(-1, Math.min(1, Number(mobileMoveIntent?.lookY ?? 0)));
-
     if (mobileJumpIntent && !lastMobileJumpIntent.current) {
       pendingJumpRequest.current = true;
     }
-
     if (mobileLiftIntent && !lastMobileLiftIntent.current) {
       pendingLiftRequest.current = {
         nodeId: null,
         requireNearby: true,
       };
     }
-
     lastMobileJumpIntent.current = mobileJumpIntent;
     lastMobileLiftIntent.current = mobileLiftIntent;
-
     const keyboardTurnDirection = (mov.turnR ? 1 : 0) - (mov.turnL ? 1 : 0);
     const mobileTurnDirection = Math.abs(mobileLookX) > 0.05
       ? mobileLookX
@@ -445,7 +496,6 @@ export function ExpoWorldPlayerLayer({
     const shouldPreserveStartElevation = preserveReviewElevation && !hasMoveIntent && activeViewElevationY.current > 12;
     const sprintMultiplier = mov.s || mobileMoveIntent?.s ? PLAYER_SPRINT_MULTIPLIER : 1;
     const speed = PLAYER_WALK_SPEED * sprintMultiplier * stableDelta;
-
     if (keyboardTurnDirection !== 0 || mobileTurnDirection !== 0 || hasMobilePitchIntent) {
       const viewEuler = cameraViewEuler.current.setFromQuaternion(camera.quaternion, 'YXZ');
       viewEuler.y -= (keyboardTurnDirection * PLAYER_KEYBOARD_TURN_SPEED * stableDelta)
@@ -458,32 +508,28 @@ export function ExpoWorldPlayerLayer({
       camera.quaternion.setFromEuler(viewEuler);
       camera.updateMatrixWorld();
     }
-
     desiredMoveVector.current.set(0, 0, 0);
-
     if (mov.f || mobileMoveIntent?.f) desiredMoveVector.current.z -= speed;
     if (mov.b || mobileMoveIntent?.b) desiredMoveVector.current.z += speed;
     if (mov.l || mobileMoveIntent?.l) desiredMoveVector.current.x -= speed;
     if (mov.r || mobileMoveIntent?.r) desiredMoveVector.current.x += speed;
-
     moveVelocity.current.lerp(desiredMoveVector.current, Math.min(1, stableDelta * 18));
     if (desiredMoveVector.current.lengthSq() <= 0.00001 && moveVelocity.current.lengthSq() < 0.00002) {
       moveVelocity.current.set(0, 0, 0);
     }
-
     const moved = moveVelocity.current.lengthSq() > 0.00001;
-
     if (moved) {
       const moveDir = moveVelocity.current.clone().applyQuaternion(camera.quaternion);
       moveDir.y = 0;
+      const activePlayerRadius = PLAYER_RADIUS;
+      const nextMovePosition = camera.position.clone().add(moveDir);
       const origin = camera.position.clone().add(moveDir);
       origin.y -= 1;
       const collisionTargets = collectPlayerCollisionTargets(scene);
       const currentPhysicsHit = findBlockingWorldPhysicsSolid(camera.position, effectivePhysicsSolids, {
         playerSurfaceOffset: WORLD_PHYSICS_PLAYER_SURFACE_OFFSET,
-        radius: PLAYER_RADIUS,
+        radius: activePlayerRadius,
       });
-
       const checkCollision = (pos: THREE.Vector3, dir: THREE.Vector3) => {
         raycaster.current.set(pos, dir);
         const intersects = raycaster.current.intersectObjects(collisionTargets, false);
@@ -492,7 +538,7 @@ export function ExpoWorldPlayerLayer({
       const checkPhysicsCollision = (pos: THREE.Vector3) => {
         const hit = findBlockingWorldPhysicsSolid(pos, effectivePhysicsSolids, {
           playerSurfaceOffset: WORLD_PHYSICS_PLAYER_SURFACE_OFFSET,
-          radius: PLAYER_RADIUS,
+          radius: activePlayerRadius,
         });
         if (!hit) {
           return null;
@@ -500,25 +546,20 @@ export function ExpoWorldPlayerLayer({
         if (!currentPhysicsHit || hit.solid.id !== currentPhysicsHit.solid.id) {
           return hit;
         }
-
         return hit.penetrationXZ >= currentPhysicsHit.penetrationXZ + 0.02 ? hit : null;
       };
-
       const forwardDir = moveDir.clone().setY(0).normalize();
       const sideDir = new THREE.Vector3(-forwardDir.z, 0, forwardDir.x).normalize();
       const collisionDirections = [forwardDir, sideDir, sideDir.clone().multiplyScalar(-1)];
-
-      const nextMovePosition = camera.position.clone().add(moveDir);
       let movementBlockingPhysicsHit = checkPhysicsCollision(nextMovePosition);
       let isBlocked = Boolean(movementBlockingPhysicsHit);
       for (const direction of collisionDirections) {
         const hit = checkCollision(origin, direction);
-        if (hit && hit.distance < PLAYER_RADIUS) {
+        if (hit && hit.distance < activePlayerRadius) {
           isBlocked = true;
           break;
         }
       }
-
       if (!isBlocked) {
         camera.position.add(moveDir);
       } else {
@@ -526,54 +567,47 @@ export function ExpoWorldPlayerLayer({
           ? findWorldPhysicsTraversalSurface({
             blockingSolidId: movementBlockingPhysicsHit.solid.id,
             desiredPosition: nextMovePosition,
-            edgeSlack: PLAYER_RADIUS + 2,
+            edgeSlack: activePlayerRadius + 2,
             maxElevationDelta: VERTICAL_STEP_UP_MAX_DELTA,
             playerPosition: camera.position,
             surfaces: effectivePhysicsWalkableSurfaces,
           })
           : null;
-
         if (stepCandidate) {
           activateTraversalSurface(stepCandidate, 'step-up');
         } else {
-        const slideX = new THREE.Vector3(moveDir.x * 0.88, 0, 0);
-        const slideZ = new THREE.Vector3(0, 0, moveDir.z * 0.88);
-        const trySlide = (candidate: THREE.Vector3) => {
-          if (candidate.lengthSq() <= 0) {
-            return false;
-          }
-
-          const nextCandidate = camera.position.clone().add(candidate);
-          const candidateOrigin = nextCandidate.clone();
-          candidateOrigin.y -= 1;
-
-          movementBlockingPhysicsHit = checkPhysicsCollision(nextCandidate);
-          if (movementBlockingPhysicsHit) {
-            return false;
-          }
-
-          for (const direction of collisionDirections) {
-            const hit = checkCollision(candidateOrigin, direction);
-            if (hit && hit.distance < PLAYER_RADIUS) {
+          const slideX = new THREE.Vector3(moveDir.x * 0.88, 0, 0);
+          const slideZ = new THREE.Vector3(0, 0, moveDir.z * 0.88);
+          const trySlide = (candidate: THREE.Vector3) => {
+            if (candidate.lengthSq() <= 0) {
               return false;
             }
+            const nextCandidate = camera.position.clone().add(candidate);
+            const candidateOrigin = nextCandidate.clone();
+            candidateOrigin.y -= 1;
+            movementBlockingPhysicsHit = checkPhysicsCollision(nextCandidate);
+            if (movementBlockingPhysicsHit) {
+              return false;
+            }
+            for (const direction of collisionDirections) {
+              const hit = checkCollision(candidateOrigin, direction);
+              if (hit && hit.distance < activePlayerRadius) {
+                return false;
+              }
+            }
+            camera.position.copy(nextCandidate);
+            return true;
+          };
+          if (Math.abs(moveDir.x) >= Math.abs(moveDir.z)) {
+            if (!trySlide(slideX)) {
+              trySlide(slideZ);
+            }
+          } else if (!trySlide(slideZ)) {
+            trySlide(slideX);
           }
-
-          camera.position.copy(nextCandidate);
-          return true;
-        };
-
-        if (Math.abs(moveDir.x) >= Math.abs(moveDir.z)) {
-          if (!trySlide(slideX)) {
-            trySlide(slideZ);
-          }
-        } else if (!trySlide(slideZ)) {
-          trySlide(slideX);
-        }
         }
       }
     }
-
     const nearbyLiftNode = findNearbyVerticalAccessNode(camera.position, effectiveVerticalAccessNodes);
     const pendingLift = pendingLiftRequest.current;
     let liftActivatedThisFrame = false;
@@ -589,7 +623,6 @@ export function ExpoWorldPlayerLayer({
         requestedNode
         && (!pendingLift.requireNearby || requestedNode === nearbyLiftNode)
       );
-
       if (requestedNode && canUseRequestedNode) {
         activateVerticalLift(requestedNode, pendingLift.requireNearby ? 'manual' : 'operator-event');
         liftActivatedThisFrame = true;
@@ -608,9 +641,7 @@ export function ExpoWorldPlayerLayer({
       activateVerticalLift(nearbyLiftNode, 'auto');
       liftActivatedThisFrame = true;
     }
-
     let rideableElevatorThisFrame: RideableElevatorHit | null = null;
-
     if (!liftActivatedThisFrame) {
       rideableElevatorThisFrame = findAttachedRideableElevator(
         camera.position,
@@ -633,7 +664,6 @@ export function ExpoWorldPlayerLayer({
       } else if (!rideableElevatorThisFrame) {
         activeRideableElevatorRouteId.current = null;
       }
-
       const isOnPlanWalkable = isPositionOnVerticalWalkableRegion(camera.position, verticalLevelY.current, effectiveVerticalWalkableRegions);
       const isOnPhysicsWalkable = isWorldPhysicsPositionOnWalkableSurface(
         camera.position,
@@ -682,7 +712,6 @@ export function ExpoWorldPlayerLayer({
           verticalVelocityY: verticalVelocityY.current,
         });
       }
-
       if (pendingJumpRequest.current) {
         const mantleCandidate = canUseVerticalPhysics && isGrounded && !verticalAirborne.current && !operatorTeleportSettling
           ? findMantleTraversalSurface(
@@ -692,7 +721,6 @@ export function ExpoWorldPlayerLayer({
             verticalLevelY.current,
           )
           : null;
-
         if (mantleCandidate) {
           activateTraversalSurface(mantleCandidate, 'mantle');
         } else if (canUseVerticalPhysics && isGrounded && !verticalAirborne.current) {
@@ -706,7 +734,6 @@ export function ExpoWorldPlayerLayer({
         }
         pendingJumpRequest.current = false;
       }
-
       if (canUseVerticalPhysics) {
         if (!verticalAirborne.current && verticalLevelY.current > 5 + VERTICAL_LANDING_EPSILON && !isOnVerticalWalkable) {
           activeRideableElevatorRouteId.current = null;
@@ -717,7 +744,6 @@ export function ExpoWorldPlayerLayer({
             position: [camera.position.x, verticalLevelY.current, camera.position.z],
           });
         }
-
         if (verticalAirborne.current) {
           verticalVelocityY.current -= VERTICAL_GRAVITY * physicsDelta;
           const nextY = verticalLevelY.current + (verticalVelocityY.current * physicsDelta);
@@ -753,7 +779,6 @@ export function ExpoWorldPlayerLayer({
               },
             )?.playerY ?? 5,
           );
-
           if (nextY <= landingY + VERTICAL_LANDING_EPSILON && verticalVelocityY.current <= 0) {
             verticalLevelY.current = landingY;
             activeViewElevationY.current = landingY;
@@ -794,18 +819,16 @@ export function ExpoWorldPlayerLayer({
         }
       }
     }
-
-    camera.position.setY(shouldPreserveStartElevation ? activeViewElevationY.current : verticalLevelY.current);
-
+    if (!isExpo3dQaEnabled()) {
+      camera.position.setY(shouldPreserveStartElevation ? activeViewElevationY.current : verticalLevelY.current);
+    }
     if (!isOperatorReviewFrame && !operatorTeleportSettling) {
       camera.position.setX(Math.min(bounds.maxX, Math.max(bounds.minX, camera.position.x)));
       camera.position.setZ(Math.min(bounds.maxZ, Math.max(bounds.minZ, camera.position.z)));
     }
-
     if (rideableElevatorThisFrame && !moved) {
       const now = Date.now();
       const dy = Math.abs(camera.position.y - lastReportedPosition.current[1]);
-
       if (now - lastMoveTime.current > 180 || dy > 4) {
         lastMoveTime.current = now;
         lastReportedPosition.current = [camera.position.x, camera.position.y, camera.position.z];
@@ -816,7 +839,6 @@ export function ExpoWorldPlayerLayer({
       const dx = camera.position.x - lastReportedPosition.current[0];
       const dz = camera.position.z - lastReportedPosition.current[2];
       const distanceSq = (dx * dx) + (dz * dz);
-
       if (now - lastMoveTime.current > 450 || distanceSq > 28 * 28) {
         lastMoveTime.current = now;
         lastReportedPosition.current = [camera.position.x, camera.position.y, camera.position.z];
@@ -824,16 +846,33 @@ export function ExpoWorldPlayerLayer({
       }
     }
   });
-
-  return mode === 'fly'
+  if (homeStudioEnabled && mode === 'fly') {
+    return null;
+  }
+  const controls = mode === 'fly'
     ? <OrbitControls ref={orbitControlsRef} enablePan enableZoom enableRotate maxDistance={orbitMaxDistance} enableDamping dampingFactor={0.05} />
     : (mode === 'walk' ? <PointerLockControls onUnlock={() => document.body.style.cursor = 'auto'} pointerSpeed={0.18} /> : null);
+  return (
+    <>
+      {homeStudioEnabled && mode === 'walk' && nearbyDoorPrompt ? (
+        <Html fullscreen pointerEvents="none">
+          <div
+            data-gala-door-prompt={nearbyDoorPrompt.doorId}
+            style={{ alignItems: 'center', bottom: '18px', display: 'flex', justifyContent: 'center', left: 0, pointerEvents: 'none', position: 'fixed', right: 0, zIndex: 40 }}
+          >
+            <span
+              style={{ background: 'rgba(15, 23, 42, 0.56)', border: '1px solid rgba(248, 250, 252, 0.22)', borderRadius: '6px', color: '#f8fafc', fontFamily: 'Inter, system-ui, sans-serif', fontSize: '0.68rem', fontWeight: 800, lineHeight: 1.1, padding: '5px 8px', textShadow: '0 2px 8px rgba(2,6,23,0.72)', whiteSpace: 'nowrap' }}
+            >
+              {nearbyDoorPrompt.state === 'open' ? 'E: Close door' : 'E: Open door'} - {nearbyDoorPrompt.label}
+            </span>
+          </div>
+        </Html>
+      ) : null}
+      {controls}
+    </>
+  );
 }
-
-function findNearbyVerticalAccessNode(
-  playerPosition: THREE.Vector3,
-  nodes: ExpoVerticalAccessNode[],
-) {
+function findNearbyVerticalAccessNode(playerPosition: THREE.Vector3, nodes: ExpoVerticalAccessNode[]) {
   const candidates = nodes
     .map((node) => {
       const dx = playerPosition.x - node.position[0];
@@ -848,21 +887,13 @@ function findNearbyVerticalAccessNode(
       && distanceY <= Math.max(18, node.radius * 0.65)
     ))
     .sort((left, right) => left.distanceXZ - right.distanceXZ);
-
   return candidates[0]?.node ?? null;
 }
-
-function findMantleTraversalSurface(
-  camera: THREE.Camera,
-  solids: ReadonlyArray<WorldPhysicsSolid>,
-  surfaces: ReadonlyArray<WorldPhysicsWalkableSurface>,
-  playerY: number,
-) {
+function findMantleTraversalSurface(camera: THREE.Camera, solids: ReadonlyArray<WorldPhysicsSolid>, surfaces: ReadonlyArray<WorldPhysicsWalkableSurface>, playerY: number) {
   const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion).setY(0);
   if (forward.lengthSq() <= 0.0001) {
     return null;
   }
-
   forward.normalize();
   const playerPosition = {
     x: camera.position.x,
@@ -878,11 +909,9 @@ function findMantleTraversalSurface(
     playerSurfaceOffset: WORLD_PHYSICS_PLAYER_SURFACE_OFFSET,
     radius: PLAYER_RADIUS,
   });
-
   if (!blockingHit) {
     return null;
   }
-
   return findWorldPhysicsTraversalSurface({
     blockingSolidId: blockingHit.solid.id,
     desiredPosition,
@@ -893,17 +922,11 @@ function findMantleTraversalSurface(
     surfaces,
   });
 }
-
-function isPositionOnVerticalWalkableRegion(
-  playerPosition: THREE.Vector3,
-  playerY: number,
-  regions: ExpoVerticalWalkableRegion[],
-) {
+function isPositionOnVerticalWalkableRegion(playerPosition: THREE.Vector3, playerY: number, regions: ExpoVerticalWalkableRegion[]) {
   return regions.some((region) => {
     if (Math.abs(playerY - region.playerY) > VERTICAL_WALKABLE_Y_TOLERANCE) {
       return false;
     }
-
     const halfWidth = (region.size[0] * 0.5) + VERTICAL_WALKABLE_EDGE_SLACK;
     const halfDepth = (region.size[1] * 0.5) + VERTICAL_WALKABLE_EDGE_SLACK;
     return (
@@ -912,32 +935,17 @@ function isPositionOnVerticalWalkableRegion(
     );
   });
 }
-
-function isVerticalSystemPlayerY(
-  playerY: number,
-  regions: ExpoVerticalWalkableRegion[],
-) {
+function isVerticalSystemPlayerY(playerY: number, regions: ExpoVerticalWalkableRegion[]) {
   return regions.some((region) => Math.abs(playerY - region.playerY) <= VERTICAL_WALKABLE_Y_TOLERANCE);
 }
-
-function findCurrentVerticalRegionY(
-  playerPosition: THREE.Vector3,
-  playerY: number,
-  regions: ExpoVerticalWalkableRegion[],
-) {
+function findCurrentVerticalRegionY(playerPosition: THREE.Vector3, playerY: number, regions: ExpoVerticalWalkableRegion[]) {
   const region = regions.find((candidate) => (
     Math.abs(playerY - candidate.playerY) <= VERTICAL_WALKABLE_Y_TOLERANCE
     && isPointInsideVerticalWalkableRegion(playerPosition, candidate)
   ));
   return region?.playerY ?? null;
 }
-
-function findVerticalLandingY(
-  playerPosition: THREE.Vector3,
-  fromY: number,
-  toY: number,
-  regions: ExpoVerticalWalkableRegion[],
-) {
+function findVerticalLandingY(playerPosition: THREE.Vector3, fromY: number, toY: number, regions: ExpoVerticalWalkableRegion[]) {
   const upperY = Math.max(fromY, toY);
   const lowerY = Math.min(fromY, toY);
   const lowerWalkableRegions = regions
@@ -947,14 +955,9 @@ function findVerticalLandingY(
       && isPointInsideVerticalWalkableRegion(playerPosition, region)
     ))
     .sort((left, right) => right.playerY - left.playerY);
-
   return lowerWalkableRegions[0]?.playerY ?? 5;
 }
-
-function isPointInsideVerticalWalkableRegion(
-  playerPosition: THREE.Vector3,
-  region: ExpoVerticalWalkableRegion,
-) {
+function isPointInsideVerticalWalkableRegion(playerPosition: THREE.Vector3, region: ExpoVerticalWalkableRegion) {
   const halfWidth = (region.size[0] * 0.5) + VERTICAL_WALKABLE_EDGE_SLACK;
   const halfDepth = (region.size[1] * 0.5) + VERTICAL_WALKABLE_EDGE_SLACK;
   return (
@@ -962,25 +965,12 @@ function isPointInsideVerticalWalkableRegion(
     && Math.abs(playerPosition.z - region.position[2]) <= halfDepth
   );
 }
-
-function updateVerticalRuntimeDebug(state: {
-  canUseVerticalPhysics: boolean;
-  isGrounded: boolean;
-  isOnVerticalWalkable: boolean;
-  isVerticalSystemElevation: boolean;
-  lastTraversalAction: string | null;
-  operatorTeleportSettling: boolean;
-  playerY: number;
-  verticalAirborne: boolean;
-  verticalVelocityY: number;
-}) {
+function updateVerticalRuntimeDebug(state: { canUseVerticalPhysics: boolean; isGrounded: boolean; isOnVerticalWalkable: boolean; isVerticalSystemElevation: boolean; lastTraversalAction: string | null; operatorTeleportSettling: boolean; playerY: number; verticalAirborne: boolean; verticalVelocityY: number }) {
   if (typeof window === 'undefined') {
     return;
   }
-
   (window as unknown as { __WARPALA_EXPO_VERTICAL_RUNTIME__?: typeof state }).__WARPALA_EXPO_VERTICAL_RUNTIME__ = state;
 }
-
 function logExpoWorldDebug(enabled: boolean, ...args: unknown[]) {
   if (enabled) {
     console.log(...args);
