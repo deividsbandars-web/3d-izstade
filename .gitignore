@@ -55,6 +55,7 @@ pazudusie faili/
 .codex/
 GALA_PresentationUE5_Clean/
 artifacts/root-archive/
+artifacts/phase3-gala-pbr/
 server/node_modules/
 server/dist/
 *.png

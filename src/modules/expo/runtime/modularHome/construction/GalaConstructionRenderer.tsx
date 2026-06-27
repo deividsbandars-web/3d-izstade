@@ -254,22 +254,22 @@ function GableBoardCladding({
         }}
       >
         <shapeGeometry args={[shape]} />
-        <meshStandardMaterial
+        <meshPhysicalMaterial
+          {...exterior.materials.reveal}
           color={exterior.revealColor}
           opacity={opacityForCutaway(transparentCutaway)}
-          roughness={0.9}
           side={THREE.DoubleSide}
           transparent={Boolean(transparentCutaway)}
         />
       </mesh>
       {Object.entries(gableBoardInstancesByColor).map(([boardColor, instances]) => (
         <GalaConstructionInstancedBoxes
+          {...exterior.materials.board}
           key={`${side}-gable-${boardColor}-boards`}
           color={boardColor}
           instances={instances}
           name={`gala-construction-${side}-gable-individual-vertical-timber-board-panel-instanced`}
           opacity={opacityForCutaway(transparentCutaway)}
-          roughness={0.88}
           userData={{
             boardRevealGapM: exterior.gapWidthM,
             boardToGapRatio: Number((exterior.boardWidthM / exterior.gapWidthM).toFixed(2)),

@@ -223,12 +223,12 @@ export function GalaCladdingAssembly({ visualConfig, wall }: GalaCladdingAssembl
       }}
     >
       <GalaConstructionInstancedBoxes
+        {...exterior.materials.reveal}
         castShadow={false}
         color={exterior.revealColor}
         instances={revealInstances}
         name={`gala-construction-${wall.id}-opening-clipped-thin-shadow-reveal-strip-instanced`}
         opacity={0.68}
-        roughness={0.95}
         userData={{
           boardRevealGapM: gap,
           facadeGroovesAreConstructionGroovesNotDrawnLines: true,
@@ -243,11 +243,11 @@ export function GalaCladdingAssembly({ visualConfig, wall }: GalaCladdingAssembl
 
       {Object.entries(boardInstancesByColor).map(([boardColor, instances]) => (
         <GalaConstructionInstancedBoxes
+          {...exterior.materials.board}
           key={`${wall.id}-${boardColor}-boards`}
           color={boardColor}
           instances={instances}
           name={`gala-construction-${wall.id}-individual-vertical-timber-board-panel-instanced`}
-          roughness={0.88}
           userData={{
             boardRevealGapM: gap,
             boardToGapRatio: Number((boardWidth / gap).toFixed(2)),

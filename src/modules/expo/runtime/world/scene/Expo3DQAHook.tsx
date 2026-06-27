@@ -287,6 +287,16 @@ declare global {
     __WARPALA_3D_QA__?: {
       focusCanvas: () => boolean;
       getCenterRaycast: () => Expo3DQACenterRaycast;
+      getRendererInfo: () => {
+        environment: {
+          estimatedBytes: number | null;
+          height: number | null;
+          type: number | null;
+          width: number | null;
+        };
+        memory: { geometries: number; textures: number };
+        render: { calls: number; triangles: number };
+      };
       getSceneMeshInventory: () => Expo3DQAMeshInventoryItem[];
       getObjectSummary: () => Expo3DQAObjectSummary;
       getState: () => Expo3DQAState;
@@ -866,6 +876,30 @@ export function Expo3DQAHook({
       },
       getCenterRaycast() {
         return buildCenterRaycast(scene, camera);
+      },
+      getRendererInfo() {
+        const environment = scene.environment;
+        const image = environment?.image as { height?: number; width?: number } | undefined;
+        const width = image?.width ?? null;
+        const height = image?.height ?? null;
+        const type = environment?.type ?? null;
+        const bytesPerChannel = type === THREE.FloatType ? 4 : type === THREE.HalfFloatType ? 2 : 1;
+        return {
+          environment: {
+            estimatedBytes: width && height ? width * height * 4 * bytesPerChannel : null,
+            height,
+            type,
+            width,
+          },
+          memory: {
+            geometries: gl.info.memory.geometries,
+            textures: gl.info.memory.textures,
+          },
+          render: {
+            calls: gl.info.render.calls,
+            triangles: gl.info.render.triangles,
+          },
+        };
       },
       getSceneMeshInventory() {
         return buildSceneMeshInventory(scene);

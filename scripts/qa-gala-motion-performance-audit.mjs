@@ -111,7 +111,9 @@ async function installWebGlProfiler(page) {
         return;
       }
       const drawArrays = proto.drawArrays;
+      const drawArraysInstanced = proto.drawArraysInstanced;
       const drawElements = proto.drawElements;
+      const drawElementsInstanced = proto.drawElementsInstanced;
       proto.drawArrays = function patchedDrawArrays(mode, first, count) {
         state.current.drawCalls += 1;
         state.current.triangles += triangleCount(this, mode, count);
@@ -122,6 +124,20 @@ async function installWebGlProfiler(page) {
         state.current.triangles += triangleCount(this, mode, count);
         return drawElements.call(this, mode, count, type, offset);
       };
+      if (drawArraysInstanced) {
+        proto.drawArraysInstanced = function patchedDrawArraysInstanced(mode, first, count, instanceCount) {
+          state.current.drawCalls += 1;
+          state.current.triangles += triangleCount(this, mode, count) * instanceCount;
+          return drawArraysInstanced.call(this, mode, first, count, instanceCount);
+        };
+      }
+      if (drawElementsInstanced) {
+        proto.drawElementsInstanced = function patchedDrawElementsInstanced(mode, count, type, offset, instanceCount) {
+          state.current.drawCalls += 1;
+          state.current.triangles += triangleCount(this, mode, count) * instanceCount;
+          return drawElementsInstanced.call(this, mode, count, type, offset, instanceCount);
+        };
+      }
       proto.__galaMotionPerformancePatched = true;
     };
     patchContext('WebGLRenderingContext');

@@ -1,8 +1,15 @@
 # Current Task
 
 - Last updated: `2026-06-27`
-- Active objective: Phase 2 bounded architecture refactors.
+- Active objective: Phase 3 GALA visual and performance advancement.
 - Latest status:
+  - Product owner explicitly approved starting Phase 3 Tasks 3.1-3.5; `gate3ImplementationApproved=true`.
+  - Upgraded construction wall-skin rendering to centralized `MeshPhysicalMaterial` PBR profiles.
+  - Added a local 512x256 RGBE environment map for home-studio reflections and ambient response.
+  - Verified wall-skin instancing and corrected QA WebGL instrumentation to include instanced draw calls and triangles.
+  - Added a dedicated `modular-home` chunk and split Three.js core from React Three extras; no JavaScript chunk exceeds 500 kB gzip.
+  - Removed per-frame movement vectors/clones and empty elevator/vertical-access array work from the Expo city movement branch.
+  - Added `docs/GALA_PHASE3_VISUAL_PERFORMANCE_REPORT.md` with screenshots, renderer, texture, chunk, motion, and DevTools trace results.
   - Added `GalaHouseState.ts` zustand facade for Gala visual config, door state, and floorplan layout.
   - Replaced Gala door `window.__WARPALA_GALA_DOOR_STATES__` / custom DOM event synchronization with zustand store selectors/subscriptions.
   - Migrated `ModularHomeModel.tsx` to consume the Gala visual resolver through `GalaHouseState`.
@@ -11,6 +18,11 @@
   - Extracted Modular Home quote validation into `backend-server/schemas/quoteValidation.ts` and re-exported the existing controller API.
   - Switched backend tsconfigs to Node16 module resolution, added required `.js` extensions in backend/shared TS import paths, and adjusted full backend build output/start path.
 - Latest validation:
+  - Phase 3 production build profile: exterior 274 draw calls / 15,112 triangles; interior 208 / 14,104.
+  - Motion p95 was 4.3 ms with zero stutters over 50 ms; static and motion budgets passed.
+  - Runtime environment texture estimate is 1,048,576 bytes with four renderer textures.
+  - Controlled 32-second DevTools traces recorded identical GC event counts before/after; allocation sites were removed, but measurable GC reduction was not proven.
+  - Legacy construction-renderer QA still reports two contradictory floor-color flags while the focused design-intent audit passes; this remains a QA-script reconciliation item.
   - `npm.cmd run build` passed.
   - `npm.cmd run lint` passed.
   - `npm.cmd run check:all` passed.

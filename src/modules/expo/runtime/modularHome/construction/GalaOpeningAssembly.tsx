@@ -67,6 +67,12 @@ export function GalaOpeningAssembly({ onEntryDoorOpen, opening, visualConfig, wa
   const casingColor = wall.kind === 'exterior' ? wallSkin.exterior.trimColor : visual.trimColor;
   const revealColor = wall.kind === 'exterior' ? wallSkin.exterior.openingRevealColor : wallSkin.interior.panelRevealColor;
   const thresholdColor = wall.kind === 'exterior' ? wallSkin.exterior.thresholdColor : wallSkin.interior.panelRevealColor;
+  const revealMaterial = wall.kind === 'exterior'
+    ? wallSkin.exterior.materials.reveal
+    : wallSkin.interior.materials.panel;
+  const trimMaterial = wall.kind === 'exterior'
+    ? wallSkin.exterior.materials.trim
+    : wallSkin.interior.materials.trim;
   const glassColor = visual.glassColor;
   const glassOpacity = 0.46;
   const doorColor = visual.doorColor;
@@ -141,6 +147,7 @@ export function GalaOpeningAssembly({ onEntryDoorOpen, opening, visualConfig, wa
       }}
     >
       <GalaConstructionInstancedBoxes
+        {...revealMaterial}
         color={revealColor}
         instances={jambLinerInstances}
         name={`gala-construction-${opening.id}-wall-thickness-jamb-liner`}
@@ -151,6 +158,7 @@ export function GalaOpeningAssembly({ onEntryDoorOpen, opening, visualConfig, wa
       />
 
       <GalaConstructionInstancedBoxes
+        {...revealMaterial}
         color={revealColor}
         instances={headerSillLinerInstances}
         name={`gala-construction-${opening.id}-wall-thickness-header-sill-liner`}
@@ -161,6 +169,7 @@ export function GalaOpeningAssembly({ onEntryDoorOpen, opening, visualConfig, wa
       />
 
       <GalaConstructionInstancedBoxes
+        {...trimMaterial}
         color={casingColor}
         instances={casingInstances}
         name={`gala-construction-${opening.id}-two-sided-casing`}
@@ -212,6 +221,7 @@ export function GalaOpeningAssembly({ onEntryDoorOpen, opening, visualConfig, wa
       )}
 
       <GalaConstructionBox
+        {...trimMaterial}
         color={thresholdColor}
         name={`gala-construction-${opening.id}-controlled-y-threshold-sill`}
         position={wallPosition(wall, axisCenter, GALA_CONSTRUCTION_LEVELS.thresholdHeightM * 0.5 + 0.012, 0)}

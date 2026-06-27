@@ -5,7 +5,10 @@ import type { Vector3Tuple } from 'three';
 
 export type GalaConstructionBoxProps = {
   castShadow?: boolean;
+  clearcoat?: number;
+  clearcoatRoughness?: number;
   color: string;
+  envMapIntensity?: number;
   metalness?: number;
   name: string;
   onClick?: (event: ThreeEvent<MouseEvent>) => void;
@@ -19,7 +22,10 @@ export type GalaConstructionBoxProps = {
 
 export type GalaConstructionCylinderProps = {
   castShadow?: boolean;
+  clearcoat?: number;
+  clearcoatRoughness?: number;
   color: string;
+  envMapIntensity?: number;
   height: number;
   metalness?: number;
   name: string;
@@ -42,7 +48,10 @@ export type GalaConstructionBoxInstance = {
 
 export type GalaConstructionInstancedBoxesProps = {
   castShadow?: boolean;
+  clearcoat?: number;
+  clearcoatRoughness?: number;
   color: string;
+  envMapIntensity?: number;
   instances: readonly GalaConstructionBoxInstance[];
   metalness?: number;
   name: string;
@@ -71,7 +80,10 @@ function buildConstructionLocalBounds(position: Vector3Tuple, size: Vector3Tuple
 
 export function GalaConstructionBox({
   castShadow = true,
+  clearcoat = 0,
+  clearcoatRoughness = 0,
   color,
+  envMapIntensity = 1,
   metalness = 0.02,
   name,
   onClick,
@@ -98,8 +110,11 @@ export function GalaConstructionBox({
       }}
     >
       <boxGeometry args={size} />
-      <meshStandardMaterial
+      <meshPhysicalMaterial
+        clearcoat={clearcoat}
+        clearcoatRoughness={clearcoatRoughness}
         color={color}
+        envMapIntensity={envMapIntensity}
         metalness={metalness}
         opacity={opacity}
         roughness={roughness}
@@ -111,7 +126,10 @@ export function GalaConstructionBox({
 
 export function GalaConstructionInstancedBoxes({
   castShadow = false,
+  clearcoat = 0,
+  clearcoatRoughness = 0,
   color,
+  envMapIntensity = 1,
   instances,
   metalness = 0.02,
   name,
@@ -161,8 +179,11 @@ export function GalaConstructionInstancedBoxes({
       }}
     >
       <boxGeometry args={[1, 1, 1]} />
-      <meshStandardMaterial
+      <meshPhysicalMaterial
+        clearcoat={clearcoat}
+        clearcoatRoughness={clearcoatRoughness}
         color={color}
+        envMapIntensity={envMapIntensity}
         metalness={metalness}
         opacity={opacity}
         roughness={roughness}
@@ -174,7 +195,10 @@ export function GalaConstructionInstancedBoxes({
 
 export function GalaConstructionCylinder({
   castShadow = true,
+  clearcoat = 0,
+  clearcoatRoughness = 0,
   color,
+  envMapIntensity = 1,
   height,
   metalness = 0.02,
   name,
@@ -217,8 +241,11 @@ export function GalaConstructionCylinder({
       }}
     >
       <cylinderGeometry args={[radiusTop, radiusBottom, height, radialSegments]} />
-      <meshStandardMaterial
+      <meshPhysicalMaterial
+        clearcoat={clearcoat}
+        clearcoatRoughness={clearcoatRoughness}
         color={color}
+        envMapIntensity={envMapIntensity}
         metalness={metalness}
         opacity={opacity}
         roughness={roughness}

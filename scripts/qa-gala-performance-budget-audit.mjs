@@ -154,7 +154,9 @@ async function installWebGlProfiler(page) {
         return;
       }
       const drawArrays = proto.drawArrays;
+      const drawArraysInstanced = proto.drawArraysInstanced;
       const drawElements = proto.drawElements;
+      const drawElementsInstanced = proto.drawElementsInstanced;
       proto.drawArrays = function patchedDrawArrays(mode, first, count) {
         state.current.drawCalls += 1;
         state.current.triangles += triangleCount(this, mode, count);
@@ -165,6 +167,20 @@ async function installWebGlProfiler(page) {
         state.current.triangles += triangleCount(this, mode, count);
         return drawElements.call(this, mode, count, type, offset);
       };
+      if (drawArraysInstanced) {
+        proto.drawArraysInstanced = function patchedDrawArraysInstanced(mode, first, count, instanceCount) {
+          state.current.drawCalls += 1;
+          state.current.triangles += triangleCount(this, mode, count) * instanceCount;
+          return drawArraysInstanced.call(this, mode, first, count, instanceCount);
+        };
+      }
+      if (drawElementsInstanced) {
+        proto.drawElementsInstanced = function patchedDrawElementsInstanced(mode, count, type, offset, instanceCount) {
+          state.current.drawCalls += 1;
+          state.current.triangles += triangleCount(this, mode, count) * instanceCount;
+          return drawElementsInstanced.call(this, mode, count, type, offset, instanceCount);
+        };
+      }
       proto.__galaPerformancePatched = true;
     };
     patchContext('WebGLRenderingContext');
@@ -206,6 +222,7 @@ async function collectRouteMetrics(page, baseUrl, route) {
 
   const profile = await page.evaluate(() => window.__GALA_WEBGL_PROFILE__ ?? { frames: [] });
   const inventory = await page.evaluate(() => window.__WARPALA_3D_QA__?.getSceneMeshInventory?.() ?? []);
+  const rendererInfo = await page.evaluate(() => window.__WARPALA_3D_QA__?.getRendererInfo?.() ?? null);
   const frames = profile.frames.slice(2).filter((frame) => typeof frame.timestamp === 'number');
   const frameTimes = frames.slice(1)
     .map((frame, index) => frame.timestamp - frames[index].timestamp)
@@ -231,6 +248,7 @@ async function collectRouteMetrics(page, baseUrl, route) {
     route,
     status: response?.status() ?? null,
     triangles: Math.round(median(triangles) ?? 0),
+    rendererInfo,
     diagnostics: {
       frameSampleCount: frameTimes.length,
       materialCountsBySystem: inventorySummary.materialCountsBySystem,

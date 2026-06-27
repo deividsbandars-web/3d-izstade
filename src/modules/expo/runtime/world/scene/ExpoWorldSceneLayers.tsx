@@ -67,6 +67,7 @@ export function ExpoWorldSceneLayers({
         <>
           <color attach="background" args={['#081120']} />
           <fog attach="fog" args={['#081120', 96, 410]} />
+          <Environment files="/textures/gala/gala-studio-512.hdr" environmentIntensity={0.7} />
           <ambientLight intensity={0.44} />
           <directionalLight color="#fff1cc" position={[28, 34, 18]} intensity={1.08} castShadow={false} />
           <hemisphereLight args={['#cfe9ff', '#1e293b', 0.48]} />

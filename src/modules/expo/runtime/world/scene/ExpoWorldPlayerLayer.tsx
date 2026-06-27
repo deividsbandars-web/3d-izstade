@@ -54,6 +54,10 @@ const PLAYER_HUMAN_EYE_HEIGHT_Y = 1.72;
 const PLAYER_LEGACY_LOW_START_Y = 5;
 const PLAYER_SPAWN_MIN_CLEARANCE_Y = 1.45;
 const PLAYER_KEYBOARD_TURN_SPEED = 2.25;
+const EMPTY_RIDEABLE_ELEVATOR_PHYSICS_FRAME = {
+  solids: [] as WorldPhysicsSolid[],
+  walkableSurfaces: [] as WorldPhysicsWalkableSurface[],
+};
 const PLAYER_LOOK_PITCH_LIMIT = 1.32;
 const PLAYER_MOBILE_LOOK_PITCH_SPEED = 2.45;
 const PLAYER_MOBILE_LOOK_TURN_SPEED = 3.35;
@@ -130,6 +134,19 @@ export function ExpoWorldPlayerLayer({
   const cameraViewEuler = useRef(new THREE.Euler(0, 0, 0, 'YXZ'));
   const desiredMoveVector = useRef(new THREE.Vector3());
   const moveVelocity = useRef(new THREE.Vector3());
+  const frameMoveDirection = useRef(new THREE.Vector3());
+  const frameNextMovePosition = useRef(new THREE.Vector3());
+  const frameRayOrigin = useRef(new THREE.Vector3());
+  const frameCollisionDirections = useRef([
+    new THREE.Vector3(),
+    new THREE.Vector3(),
+    new THREE.Vector3(),
+  ]);
+  const frameSlideX = useRef(new THREE.Vector3());
+  const frameSlideZ = useRef(new THREE.Vector3());
+  const frameSlideCandidatePosition = useRef(new THREE.Vector3());
+  const frameSlideCandidateOrigin = useRef(new THREE.Vector3());
+  const frameMantleForward = useRef(new THREE.Vector3());
   const orbitControlsRef = useRef<any>(null);
   const spawnChecked = useRef(false);
   const startFramingApplied = useRef(false);
@@ -455,7 +472,9 @@ export function ExpoWorldPlayerLayer({
       setNearbyDoorPrompt(null);
     }
     const elapsedTime = state.clock.getElapsedTime();
-    const rideableElevatorPhysics = buildRideableElevatorPhysicsFrame(elapsedTime, rideableElevatorRoutes);
+    const rideableElevatorPhysics = rideableElevatorRoutes.length > 0
+      ? buildRideableElevatorPhysicsFrame(elapsedTime, rideableElevatorRoutes)
+      : EMPTY_RIDEABLE_ELEVATOR_PHYSICS_FRAME;
     const effectivePhysicsSolids = rideableElevatorPhysics.solids.length > 0
       ? [...basePhysicsSolids, ...rideableElevatorPhysics.solids]
       : basePhysicsSolids;
@@ -514,11 +533,11 @@ export function ExpoWorldPlayerLayer({
     }
     const moved = moveVelocity.current.lengthSq() > 0.00001;
     if (moved) {
-      const moveDir = moveVelocity.current.clone().applyQuaternion(camera.quaternion);
+      const moveDir = frameMoveDirection.current.copy(moveVelocity.current).applyQuaternion(camera.quaternion);
       moveDir.y = 0;
       const activePlayerRadius = PLAYER_RADIUS;
-      const nextMovePosition = camera.position.clone().add(moveDir);
-      const origin = camera.position.clone().add(moveDir);
+      const nextMovePosition = frameNextMovePosition.current.copy(camera.position).add(moveDir);
+      const origin = frameRayOrigin.current.copy(camera.position).add(moveDir);
       origin.y -= 1;
       const collisionTargets = collectPlayerCollisionTargets(scene);
       const currentPhysicsHit = findBlockingWorldPhysicsSolid(camera.position, effectivePhysicsSolids, {
@@ -543,9 +562,10 @@ export function ExpoWorldPlayerLayer({
         }
         return hit.penetrationXZ >= currentPhysicsHit.penetrationXZ + 0.02 ? hit : null;
       };
-      const forwardDir = moveDir.clone().setY(0).normalize();
-      const sideDir = new THREE.Vector3(-forwardDir.z, 0, forwardDir.x).normalize();
-      const collisionDirections = [forwardDir, sideDir, sideDir.clone().multiplyScalar(-1)];
+      const collisionDirections = frameCollisionDirections.current;
+      const forwardDir = collisionDirections[0].copy(moveDir).setY(0).normalize();
+      const sideDir = collisionDirections[1].set(-forwardDir.z, 0, forwardDir.x).normalize();
+      collisionDirections[2].copy(sideDir).multiplyScalar(-1);
       let movementBlockingPhysicsHit = checkPhysicsCollision(nextMovePosition);
       let isBlocked = Boolean(movementBlockingPhysicsHit);
       for (const direction of collisionDirections) {
@@ -571,14 +591,14 @@ export function ExpoWorldPlayerLayer({
         if (stepCandidate) {
           activateTraversalSurface(stepCandidate, 'step-up');
         } else {
-          const slideX = new THREE.Vector3(moveDir.x * 0.88, 0, 0);
-          const slideZ = new THREE.Vector3(0, 0, moveDir.z * 0.88);
+          const slideX = frameSlideX.current.set(moveDir.x * 0.88, 0, 0);
+          const slideZ = frameSlideZ.current.set(0, 0, moveDir.z * 0.88);
           const trySlide = (candidate: THREE.Vector3) => {
             if (candidate.lengthSq() <= 0) {
               return false;
             }
-            const nextCandidate = camera.position.clone().add(candidate);
-            const candidateOrigin = nextCandidate.clone();
+            const nextCandidate = frameSlideCandidatePosition.current.copy(camera.position).add(candidate);
+            const candidateOrigin = frameSlideCandidateOrigin.current.copy(nextCandidate);
             candidateOrigin.y -= 1;
             movementBlockingPhysicsHit = checkPhysicsCollision(nextCandidate);
             if (movementBlockingPhysicsHit) {
@@ -603,7 +623,9 @@ export function ExpoWorldPlayerLayer({
         }
       }
     }
-    const nearbyLiftNode = findNearbyVerticalAccessNode(camera.position, effectiveVerticalAccessNodes);
+    const nearbyLiftNode = effectiveVerticalAccessNodes.length > 0
+      ? findNearbyVerticalAccessNode(camera.position, effectiveVerticalAccessNodes)
+      : null;
     const pendingLift = pendingLiftRequest.current;
     let liftActivatedThisFrame = false;
     if (
@@ -638,17 +660,19 @@ export function ExpoWorldPlayerLayer({
     }
     let rideableElevatorThisFrame: RideableElevatorHit | null = null;
     if (!liftActivatedThisFrame) {
-      rideableElevatorThisFrame = findAttachedRideableElevator(
-        camera.position,
-        elapsedTime,
-        rideableElevatorRoutes,
-        activeRideableElevatorRouteId.current,
-      ) ?? findCurrentRideableElevator(
-        camera.position,
-        verticalLevelY.current,
-        elapsedTime,
-        rideableElevatorRoutes,
-      );
+      rideableElevatorThisFrame = rideableElevatorRoutes.length > 0
+        ? findAttachedRideableElevator(
+          camera.position,
+          elapsedTime,
+          rideableElevatorRoutes,
+          activeRideableElevatorRouteId.current,
+        ) ?? findCurrentRideableElevator(
+          camera.position,
+          verticalLevelY.current,
+          elapsedTime,
+          rideableElevatorRoutes,
+        )
+        : null;
       if (rideableElevatorThisFrame && !operatorTeleportSettling) {
         activeRideableElevatorRouteId.current = rideableElevatorThisFrame.route.id;
         verticalLevelY.current = rideableElevatorThisFrame.playerY;
@@ -714,6 +738,7 @@ export function ExpoWorldPlayerLayer({
             effectivePhysicsSolids,
             effectivePhysicsWalkableSurfaces,
             verticalLevelY.current,
+            frameMantleForward.current,
           )
           : null;
         if (mantleCandidate) {
@@ -868,24 +893,29 @@ export function ExpoWorldPlayerLayer({
   );
 }
 function findNearbyVerticalAccessNode(playerPosition: THREE.Vector3, nodes: ExpoVerticalAccessNode[]) {
-  const candidates = nodes
-    .map((node) => {
-      const dx = playerPosition.x - node.position[0];
-      const dz = playerPosition.z - node.position[2];
-      const distanceXZ = Math.hypot(dx, dz);
-      const nodePlayerY = Math.max(5, node.position[1]);
-      const distanceY = Math.abs(playerPosition.y - nodePlayerY);
-      return { distanceXZ, distanceY, node };
-    })
-    .filter(({ distanceXZ, distanceY, node }) => (
+  let nearestNode: ExpoVerticalAccessNode | null = null;
+  let nearestDistanceXZ = Number.POSITIVE_INFINITY;
+
+  for (const node of nodes) {
+    const dx = playerPosition.x - node.position[0];
+    const dz = playerPosition.z - node.position[2];
+    const distanceXZ = Math.hypot(dx, dz);
+    const nodePlayerY = Math.max(5, node.position[1]);
+    const distanceY = Math.abs(playerPosition.y - nodePlayerY);
+    if (
       distanceXZ <= node.radius
       && distanceY <= Math.max(18, node.radius * 0.65)
-    ))
-    .sort((left, right) => left.distanceXZ - right.distanceXZ);
-  return candidates[0]?.node ?? null;
+      && distanceXZ < nearestDistanceXZ
+    ) {
+      nearestNode = node;
+      nearestDistanceXZ = distanceXZ;
+    }
+  }
+
+  return nearestNode;
 }
-function findMantleTraversalSurface(camera: THREE.Camera, solids: ReadonlyArray<WorldPhysicsSolid>, surfaces: ReadonlyArray<WorldPhysicsWalkableSurface>, playerY: number) {
-  const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion).setY(0);
+function findMantleTraversalSurface(camera: THREE.Camera, solids: ReadonlyArray<WorldPhysicsSolid>, surfaces: ReadonlyArray<WorldPhysicsWalkableSurface>, playerY: number, forward: THREE.Vector3) {
+  forward.set(0, 0, -1).applyQuaternion(camera.quaternion).setY(0);
   if (forward.lengthSq() <= 0.0001) {
     return null;
   }

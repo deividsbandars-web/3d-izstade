@@ -164,6 +164,9 @@ export function GalaWallAssembly({ onEntryDoorOpen, visualConfig, wall }: GalaWa
     ? wallSkin.exterior.backingWallColor
     : wallSkin.interior.partitionCoreColor;
   const interiorFaceColor = wallSkin.interior.panelRevealColor;
+  const coreMaterial = wall.kind === 'exterior'
+    ? wallSkin.exterior.materials.reveal
+    : wallSkin.interior.materials.panel;
   const faceOffset = GALA_CONSTRUCTION_LEVELS.exteriorWallThicknessM * 0.5 + 0.009;
   const interiorBoardInstancesByColor = (wall.kind === 'exterior' ? [-faceOffset] : [-faceOffset, faceOffset])
     .reduce<Record<string, InteriorBoardInstanceGroup>>((groups, offset) => {
@@ -207,11 +210,11 @@ export function GalaWallAssembly({ onEntryDoorOpen, visualConfig, wall }: GalaWa
     >
       {wallCells.map((cell) => (
         <GalaConstructionBox
+          {...coreMaterial}
           key={`${wall.id}-core-${cell.axisCenterM}-${cell.yCenterM}`}
           color={wallColor}
           name={`gala-construction-${wall.id}-wall-core-cell-opening-aware`}
           position={wallPosition(wall, cell.axisCenterM, cell.yCenterM)}
-          roughness={0.88}
           size={wallSize(wall, cell.axisSizeM, cell.heightM, GALA_CONSTRUCTION_LEVELS.exteriorWallThicknessM)}
           userData={{
             componentHint: 'construction/GalaWallAssembly.tsx',
@@ -225,11 +228,11 @@ export function GalaWallAssembly({ onEntryDoorOpen, visualConfig, wall }: GalaWa
 
       {wall.kind === 'exterior' ? (
         <GalaConstructionInstancedBoxes
+          {...wallSkin.interior.materials.panel}
           castShadow={false}
           color={interiorFaceColor}
           instances={exteriorInteriorFaceInstances}
           name={`gala-construction-${wall.id}-flat-finished-interior-wall-face`}
-          roughness={0.86}
           userData={{
             interiorBoardModuleMatchesExterior: true,
             interiorFaceInstanceCount: exteriorInteriorFaceInstances.length,
@@ -243,11 +246,11 @@ export function GalaWallAssembly({ onEntryDoorOpen, visualConfig, wall }: GalaWa
         />
       ) : (
         <GalaConstructionInstancedBoxes
+          {...wallSkin.interior.materials.panel}
           castShadow={false}
           color={interiorFaceColor}
           instances={partitionFaceInstances}
           name={`gala-construction-${wall.id}-finished-partition-face`}
-          roughness={0.86}
           userData={{
             interiorBoardModuleMatchesExterior: true,
             interiorFaceInstanceCount: partitionFaceInstances.length,
@@ -263,11 +266,11 @@ export function GalaWallAssembly({ onEntryDoorOpen, visualConfig, wall }: GalaWa
 
       {Object.entries(interiorBoardInstancesByColor).map(([key, group]) => (
         <GalaConstructionInstancedBoxes
+          {...wallSkin.interior.materials.board}
           key={`${wall.id}-${key}`}
           color={group.color}
           instances={group.instances}
           name={`gala-construction-${wall.id}-${group.faceLabel}-interior-vertical-timber-board-panel-instanced`}
-          roughness={0.88}
           userData={{
             interiorBoardGapM: wallSkin.interior.gapWidthM,
             interiorBoardInstanceCount: group.instances.length,
@@ -301,6 +304,7 @@ export function GalaWallAssembly({ onEntryDoorOpen, visualConfig, wall }: GalaWa
 
       {wall.kind === 'exterior' ? (
         <GalaConstructionBox
+          {...wallSkin.exterior.materials.trim}
           color={wallSkin.exterior.trimColor}
           name={`gala-construction-${wall.id}-continuous-top-eaves-trim`}
           position={wallPosition(wall, (wall.axisStartM + wall.axisEndM) * 0.5, GALA_CONSTRUCTION_LEVELS.wallHeightM + 0.035, GALA_CONSTRUCTION_LEVELS.exteriorWallThicknessM * 0.5 + 0.035)}

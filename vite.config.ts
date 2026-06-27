@@ -85,16 +85,24 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks(id) {
+          const normalizedId = id.replaceAll('\\', '/')
+          if (normalizedId.includes('/src/modules/expo/runtime/modularHome/')) {
+            return 'modular-home'
+          }
+
           if (id.includes('node_modules')) {
+            if (normalizedId.includes('/node_modules/three/')) {
+              return 'three-core'
+            }
+
             if (
-              id.includes('/three/') ||
               id.includes('@react-three') ||
               id.includes('three-stdlib') ||
               id.includes('@pmndrs') ||
               id.includes('troika-') ||
               id.includes('suspend-react')
             ) {
-              return 'three-vendor'
+              return 'react-three-vendor'
             }
 
             if (

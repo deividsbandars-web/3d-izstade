@@ -15,6 +15,44 @@ const GALA_EXTERIOR_WALL_SKIN_DIMENSIONS = {
   revealBackingDepthM: 0.006,
 } as const;
 
+const GALA_WALL_SKIN_PBR_MATERIALS = {
+  exteriorBoard: {
+    clearcoat: 0.08,
+    clearcoatRoughness: 0.72,
+    envMapIntensity: 0.72,
+    metalness: 0,
+    roughness: 0.82,
+  },
+  exteriorReveal: {
+    clearcoat: 0,
+    clearcoatRoughness: 1,
+    envMapIntensity: 0.38,
+    metalness: 0,
+    roughness: 0.96,
+  },
+  interiorBoard: {
+    clearcoat: 0.04,
+    clearcoatRoughness: 0.78,
+    envMapIntensity: 0.58,
+    metalness: 0,
+    roughness: 0.86,
+  },
+  interiorPanel: {
+    clearcoat: 0.02,
+    clearcoatRoughness: 0.9,
+    envMapIntensity: 0.46,
+    metalness: 0,
+    roughness: 0.9,
+  },
+  trim: {
+    clearcoat: 0.12,
+    clearcoatRoughness: 0.62,
+    envMapIntensity: 0.76,
+    metalness: 0,
+    roughness: 0.7,
+  },
+} as const;
+
 export const GALA_WALL_SKIN_DIMENSIONS = {
   exterior: {
     ...GALA_EXTERIOR_WALL_SKIN_DIMENSIONS,
@@ -71,6 +109,11 @@ export function resolveGalaWallSkin(config?: GalaHouseVisualConfig) {
       boardPalette: exteriorBoardPalette,
       boardSubtleColor: subtleBoardColor,
       openingRevealColor: '#7c5638',
+      materials: {
+        board: GALA_WALL_SKIN_PBR_MATERIALS.exteriorBoard,
+        reveal: GALA_WALL_SKIN_PBR_MATERIALS.exteriorReveal,
+        trim: GALA_WALL_SKIN_PBR_MATERIALS.trim,
+      },
       revealColor: facade.seamColor,
       thresholdColor: facade.trimColor,
       trimColor: facade.trimColor,
@@ -85,6 +128,11 @@ export function resolveGalaWallSkin(config?: GalaHouseVisualConfig) {
       floorSeamColor: interior.wallSeamColor,
       panelRevealColor: facade.seamColor,
       partitionCoreColor: '#c8b496',
+      materials: {
+        board: GALA_WALL_SKIN_PBR_MATERIALS.interiorBoard,
+        panel: GALA_WALL_SKIN_PBR_MATERIALS.interiorPanel,
+        trim: GALA_WALL_SKIN_PBR_MATERIALS.trim,
+      },
       wallPanelColor: interior.wallPanelColor,
     },
     rules: {
