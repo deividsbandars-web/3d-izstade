@@ -1,3 +1,4 @@
+import { Clone, useGLTF } from '@react-three/drei';
 import { GALA_MATERIALS } from './GalaMaterials';
 import {
   planXToLocalX,
@@ -7,6 +8,74 @@ import {
   type Rect,
 } from './GalaFloorplan';
 import type { GalaInteriorVisualSpec } from './GalaHouseConfig';
+
+const GALA_SOFA_MODEL_URL = '/models/gala/sofa_02_1k/sofa_02_1k.gltf';
+const GALA_COFFEE_TABLE_MODEL_URL = '/models/gala/modern_coffee_table_01_1k/modern_coffee_table_01_1k.gltf';
+const GALA_CABINET_MODEL_URL = '/models/gala/painted_wooden_cabinet_1k/painted_wooden_cabinet_1k.gltf';
+
+type FurnitureModelProps = {
+  name: string;
+  position: [number, number, number];
+  rotation?: [number, number, number];
+  scale?: [number, number, number];
+  size?: [number, number, number];
+  userData?: Record<string, unknown>;
+};
+
+export function GalaLivingSofaModel({
+  name,
+  position,
+  rotation = [0, Math.PI, 0],
+  scale = [0.94, 1.5, 0.73],
+  userData,
+}: FurnitureModelProps) {
+  const { scene } = useGLTF(GALA_SOFA_MODEL_URL);
+
+  return (
+    <group name={name} position={position} rotation={rotation} scale={scale} userData={userData}>
+      <Clone object={scene} castShadow receiveShadow />
+    </group>
+  );
+}
+
+export function GalaCoffeeTableModel({
+  name,
+  position,
+  rotation = [0, Math.PI * 0.5, 0],
+  scale = [0.67, 1, 0.61],
+  userData,
+}: FurnitureModelProps) {
+  const { scene } = useGLTF(GALA_COFFEE_TABLE_MODEL_URL);
+
+  return (
+    <group name={name} position={position} rotation={rotation} scale={scale} userData={userData}>
+      <Clone object={scene} castShadow receiveShadow />
+    </group>
+  );
+}
+
+export function GalaCabinetModel({
+  name,
+  position,
+  rotation = [0, Math.PI * 0.5, 0],
+  scale = [1.02, 1.46, 0.58],
+  size,
+  userData,
+}: FurnitureModelProps) {
+  const { scene } = useGLTF(GALA_CABINET_MODEL_URL);
+  const resolvedPosition: [number, number, number] = size
+    ? [position[0], position[1] - size[1] * 0.5, position[2]]
+    : position;
+  const resolvedScale: [number, number, number] = size
+    ? [size[2] / 1.2, size[1] / 1.18, size[0] / 0.9]
+    : scale;
+
+  return (
+    <group name={name} position={resolvedPosition} rotation={rotation} scale={resolvedScale} userData={userData}>
+      <Clone object={scene} castShadow receiveShadow />
+    </group>
+  );
+}
 
 export type FurnitureAnchor =
   | 'againstWall'
@@ -187,13 +256,26 @@ export function GalaLivingFurniture({ visual }: { visual: GalaInteriorVisualSpec
         size={[1.9, 0.016, 1.06]}
         userData={{ floorDuplicateOrOverlayRemoved: true, floorMaterialStableWhileWalking: true, noBlueFloorOverlay: true, noFloorZFighting: true }}
       />
-      <FurnitureBox anchor="centeredOnRug" color={visual.sofaColor} name="gala-living-sofa-seat-cushion" position={[planXToLocalX(1.93), 0.28, 0.03]} size={[1.74, 0.28, 0.62]} />
-      <FurnitureBox anchor="centeredOnRug" color={visual.sofaBackColor} name="gala-living-sofa-back-cushion-against-seat" position={[planXToLocalX(1.93), 0.62, -0.28]} size={[1.82, 0.58, 0.16]} />
-      <FurnitureBox anchor="centeredOnRug" color={visual.sofaBackColor} name="gala-living-sofa-left-arm" position={[planXToLocalX(1.0), 0.43, 0.03]} size={[0.16, 0.5, 0.66]} />
-      <FurnitureBox anchor="centeredOnRug" color={visual.sofaBackColor} name="gala-living-sofa-right-arm" position={[planXToLocalX(2.86), 0.43, 0.03]} size={[0.16, 0.5, 0.66]} />
-      <LegSet anchor="centeredOnRug" color="#3f3024" depth={0.24} name="gala-living-sofa" x={planXToLocalX(1.93)} y={0.16} z={0.12} />
-      <FurnitureBox anchor="centeredOnRug" color={visual.tableColor} name="gala-living-coffee-table-top" position={[planXToLocalX(3.35), 0.34, 0.18]} size={[0.82, 0.08, 0.56]} />
-      <LegSet anchor="centeredOnRug" color="#3f3024" depth={0.22} name="gala-living-coffee-table" x={planXToLocalX(3.35)} y={0.3} z={0.18} />
+      <GalaLivingSofaModel
+        name="gala-living-sofa-high-quality-gltf"
+        position={[planXToLocalX(1.93), 0.02, 0.1]}
+        userData={{
+          anchor: 'centeredOnRug',
+          furnitureIsReadable: true,
+          furnitureNotFloating: true,
+          replacesPrimitiveSofaComposition: true,
+        }}
+      />
+      <GalaCoffeeTableModel
+        name="gala-living-coffee-table-high-quality-gltf"
+        position={[planXToLocalX(3.35), 0.04, 0.18]}
+        userData={{
+          anchor: 'centeredOnRug',
+          furnitureIsReadable: true,
+          furnitureNotFloating: true,
+          replacesPrimitiveCoffeeTableComposition: true,
+        }}
+      />
       <FurnitureBox anchor="againstWall" color={visual.wardrobeColor} name="gala-living-wall-storage-carcass" position={[planXToLocalX(3.08), 0.72, 2.18]} size={[0.56, 1.08, 0.28]} />
       <FurnitureBox anchor="againstWall" color="#1f2937" name="gala-living-storage-shelf-dark-inset" position={[planXToLocalX(3.08), 0.88, 2.02]} size={[0.46, 0.52, 0.035]} />
     </group>
@@ -287,11 +369,27 @@ export function GalaBedroomFurniture({ visual }: { visual: GalaInteriorVisualSpe
       <FurnitureBox anchor="againstWall" color={GALA_MATERIALS.pillow} name="gala-bedroom-pillow-pair-left-at-headboard-wall" position={[planXToLocalX(8.34), 0.68, -2.08]} size={[0.42, 0.14, 0.28]} userData={{ bedAndWardrobeLayoutImproved: true, bedHeadboardAgainstWall: true, bedroomLayoutImproved: true }} />
       <FurnitureBox anchor="againstWall" color={GALA_MATERIALS.pillow} name="gala-bedroom-pillow-pair-right-at-headboard-wall" position={[planXToLocalX(8.92), 0.68, -2.08]} size={[0.42, 0.14, 0.28]} userData={{ bedAndWardrobeLayoutImproved: true, bedHeadboardAgainstWall: true, bedroomLayoutImproved: true }} />
       <FurnitureBox anchor="againstWall" color="#6f4b2c" name="gala-bedroom-low-headboard-on-south-wall-behind-pillows" position={[planXToLocalX(8.68), 0.56, -2.36]} size={[1.78, 0.62, 0.08]} userData={{ bedAndWardrobeLayoutImproved: true, bedHeadboardAgainstWall: true, bedroomLayoutImproved: true }} />
-      <FurnitureBox anchor="againstWall" color={visual.wardrobeColor} name="gala-bedroom-wardrobe-against-east-wall-clear-of-bed-and-window" position={[planXToLocalX(9.95), 0.98, 1.12]} size={[0.34, 1.72, 1.18]} userData={{ bedAndWardrobeLayoutImproved: true, bedroomLayoutImproved: true, bedroomWalkPathClear: true }} />
-      <FurnitureBox anchor="againstWall" color="#1f2937" name="gala-bedroom-wardrobe-vertical-handle" position={[planXToLocalX(9.76), 1.02, 1.12]} size={[0.045, 0.56, 0.035]} userData={{ bedAndWardrobeLayoutImproved: true, bedroomLayoutImproved: true }} />
+      <GalaCabinetModel
+        name="gala-bedroom-wardrobe-against-east-wall-clear-of-bed-and-window"
+        position={[planXToLocalX(9.95), 0.02, 1.12]}
+        userData={{
+          anchor: 'againstWall',
+          bedAndWardrobeLayoutImproved: true,
+          bedroomLayoutImproved: true,
+          bedroomWalkPathClear: true,
+          furnitureAlignedToWalls: true,
+          furnitureIsReadable: true,
+          furnitureNotFloating: true,
+          replacesPrimitiveWardrobeComposition: true,
+        }}
+      />
       <FurnitureBox anchor="besideBed" color={visual.tableColor} name="gala-bedroom-bedside-cabinet-at-headboard-side" position={[planXToLocalX(7.72), 0.34, -2.04]} size={[0.44, 0.08, 0.34]} userData={{ bedAndWardrobeLayoutImproved: true, bedsideCabinetAtHeadboardSide: true, bedroomLayoutImproved: true }} />
       <LegSet anchor="besideBed" color="#3f3024" depth={0.12} name="gala-bedroom-bedside-cabinet" x={planXToLocalX(7.72)} y={0.3} z={-2.04} />
       <FurnitureBox anchor="againstWall" color="#1f2937" name="gala-bedroom-wall-mounted-tv-opposite-bed" position={[planXToLocalX(8.68), 1.26, 2.36]} size={[1.02, 0.58, 0.045]} userData={{ bedAndWardrobeLayoutImproved: true, bedroomLayoutImproved: true, tvOppositeBedAddedOrJustified: true }} />
     </group>
   );
 }
+
+useGLTF.preload(GALA_SOFA_MODEL_URL);
+useGLTF.preload(GALA_COFFEE_TABLE_MODEL_URL);
+useGLTF.preload(GALA_CABINET_MODEL_URL);

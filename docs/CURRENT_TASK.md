@@ -232,3 +232,13 @@ Close active Codex/VS Code Codex processes, remove the regenerated live `.codex`
 - Touched files this turn:
   - `docs/CURRENT_TASK.md`
 - Next recommended step: give Claude Opus 4.6 the planner prompt from this audit and require a staged plan that first freezes canonical runtime/change ownership, then audits modular-home renderer unification, then proposes minimal implementation packs with explicit validation gates.
+
+## 2026-06-27 GALA GLTF Furniture Upgrade
+
+- Replaced the living-room sofa and coffee-table block compositions with the supplied 1K GLTF assets.
+- Replaced the bedroom wardrobe block composition with the supplied painted cabinet GLTF.
+- Added reusable Drei `useGLTF` and `Clone` wrappers in `GalaInteriorFurniture.tsx`; cached scenes are not manually cloned or mutated, and cloned meshes cast and receive shadows.
+- Connected the wrappers to the active `GalaRoomAssembly` renderer while preserving room, furniture-clearance, and semantic group metadata.
+- Scaled the models against the existing `GALA_FURNITURE_LAYOUT` envelopes and removed the replaced active placeholder meshes.
+- Validation passed: `npm.cmd run build`, `npm.cmd run lint`, `npm.cmd run check:expo-boundaries`, and `qa-gala-furniture-clearance-audit.mjs` against `http://127.0.0.1:4174`.
+- Runtime scene inventory confirmed the sofa, coffee-table, and cabinet GLTF mesh names are present and the replaced placeholder mesh names are absent.
