@@ -3,6 +3,9 @@
 - Last updated: `2026-06-27`
 - Active objective: Phase 3 GALA visual and performance advancement.
 - Latest status:
+  - Replaced flat interior wall/core and floor-slab colors with the supplied 1K diffuse, OpenGL normal, and packed ARM texture sets.
+  - Added world-space triplanar sampling for construction boxes and instanced boxes so differently scaled wall cells and floor geometry retain a consistent physical texture scale.
+  - Configured the packed ARM texture as the shared AO, roughness, and metalness map, preserving R/G/B channel semantics in the custom shader.
   - Product owner explicitly approved starting Phase 3 Tasks 3.1-3.5; `gate3ImplementationApproved=true`.
   - Upgraded construction wall-skin rendering to centralized `MeshPhysicalMaterial` PBR profiles.
   - Added a local 512x256 RGBE environment map for home-studio reflections and ambient response.
@@ -18,6 +21,9 @@
   - Extracted Modular Home quote validation into `backend-server/schemas/quoteValidation.ts` and re-exported the existing controller API.
   - Switched backend tsconfigs to Node16 module resolution, added required `.js` extensions in backend/shared TS import paths, and adjusted full backend build output/start path.
 - Latest validation:
+  - PBR texture browser QA passed with no shader console errors or asset HTTP errors; 274 construction meshes were present.
+  - Renderer texture count is 10: the prior four textures plus six shared wall/floor PBR maps, with no per-wall texture clones.
+  - PBR performance audit passed at 238.1 median FPS and 4.3 ms p95 for both exterior and interior routes.
   - Phase 3 production build profile: exterior 274 draw calls / 15,112 triangles; interior 208 / 14,104.
   - Motion p95 was 4.3 ms with zero stutters over 50 ms; static and motion budgets passed.
   - Runtime environment texture estimate is 1,048,576 bytes with four renderer textures.
@@ -34,6 +40,12 @@
   - `npm.cmd start` in `backend-server` reached a listening server with required local env values; without env it correctly fails on missing `SUPABASE_URL`.
   - Browser smoke against local Vite preview passed for `/modular-homes/studio?view=interior&homeStudio=1`: overlay tabs switched, quote form mounted, canvas rendered, `E` key path ran, and the old Gala door window global was absent.
 - Latest touched files:
+  - `src/modules/expo/runtime/modularHome/construction/GalaConstructionPbrTextures.ts`
+  - `src/modules/expo/runtime/modularHome/construction/GalaConstructionPrimitives.tsx`
+  - `src/modules/expo/runtime/modularHome/construction/GalaWallAssembly.tsx`
+  - `src/modules/expo/runtime/modularHome/construction/GalaFloorCeilingAssembly.tsx`
+  - `public/models/gala/wood_plank_wall_1k/textures/*`
+  - `public/models/gala/wood_floor_1k/textures/*`
   - `src/modules/expo/runtime/modularHome/GalaHouseState.ts`
   - `src/modules/expo/runtime/modularHome/GalaDoorState.ts`
   - `src/modules/expo/runtime/modularHome/GalaInterior.tsx`

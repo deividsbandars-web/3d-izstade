@@ -10,6 +10,7 @@ import {
   GalaConstructionInstancedBoxes,
   type GalaConstructionBoxInstance,
 } from './GalaConstructionPrimitives';
+import { useGalaConstructionPbrTextures } from './GalaConstructionPbrTextures';
 import { resolveGalaWallSkin } from './GalaWallSkinModel';
 
 type GalaFloorCeilingAssemblyProps = {
@@ -89,6 +90,7 @@ function roomTrimRuns(): TrimRun[] {
 
 export function GalaFloorCeilingAssembly({ visualConfig }: GalaFloorCeilingAssemblyProps) {
   const wallSkin = resolveGalaWallSkin(visualConfig);
+  const floorPbrTextures = useGalaConstructionPbrTextures('floor');
   const { interior } = wallSkin;
   const floorY = -GALA_CONSTRUCTION_LEVELS.finishedFloorThicknessM * 0.5;
   const floorSize: [number, number, number] = [10.2, GALA_CONSTRUCTION_LEVELS.finishedFloorThicknessM, 5.0];
@@ -143,7 +145,8 @@ export function GalaFloorCeilingAssembly({ visualConfig }: GalaFloorCeilingAssem
       }}
     >
       <GalaConstructionBox
-        color={interior.floorColor}
+        {...floorPbrTextures}
+        color="#ffffff"
         name="gala-construction-single-finished-floor-no-overlays"
         position={[0, floorY, 0]}
         roughness={0.9}
