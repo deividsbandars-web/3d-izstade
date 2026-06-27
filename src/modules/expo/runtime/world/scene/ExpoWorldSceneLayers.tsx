@@ -1,5 +1,6 @@
 import { Suspense } from 'react';
 import { AdaptiveDpr, AdaptiveEvents, Environment, Html, Sky } from '@react-three/drei';
+import { EffectComposer, N8AO, SMAA } from '@react-three/postprocessing';
 import { DistrictBooth as RuntimeDistrictBooth } from '../../booths';
 import { EXPO_CITY_QUALITY_TIER, EXPO_FEATURE_FLAGS, type ExpoMode } from '../../../state/expoRuntime';
 import type { ExpoBoothPlacement, ExpoSectorMarker } from '../../../layout-engine';
@@ -37,6 +38,7 @@ export function ExpoWorldSceneLayers({
   verticalAccessNodes,
   visualProfile,
   walkRegions,
+  webglMode,
   zoneRuntimeState,
 }: {
   activeZoneId: string | null;
@@ -55,9 +57,11 @@ export function ExpoWorldSceneLayers({
   verticalAccessNodes: ExpoVerticalAccessNode[];
   visualProfile: ExpoWorldVisualProfile;
   walkRegions: ExpoWalkRegion[];
+  webglMode: 'webgl2' | 'webgl1' | null;
   zoneRuntimeState: ExpoZoneRuntimeState;
 }) {
   const homeStudioEnabled = isHomeStudioEnabled();
+  const homeStudioAoEnabled = homeStudioEnabled && !runtimeCaptureSafe && qualitySettings.resolvedTier !== 'low';
 
   return (
     <Suspense fallback={null}>
@@ -69,7 +73,22 @@ export function ExpoWorldSceneLayers({
           <fog attach="fog" args={['#081120', 96, 410]} />
           <Environment files="/textures/gala/gala-studio-512.hdr" environmentIntensity={0.7} />
           <ambientLight intensity={0.44} />
-          <directionalLight color="#fff1cc" position={[28, 34, 18]} intensity={1.08} castShadow={false} />
+          <directionalLight
+            castShadow={qualitySettings.shadowsEnabled}
+            color="#fff1cc"
+            intensity={1.08}
+            position={[28, 34, 18]}
+            shadow-bias={-0.00018}
+            shadow-camera-bottom={-18}
+            shadow-camera-far={90}
+            shadow-camera-left={-18}
+            shadow-camera-near={1}
+            shadow-camera-right={18}
+            shadow-camera-top={18}
+            shadow-mapSize-height={1024}
+            shadow-mapSize-width={1024}
+            shadow-normalBias={0.026}
+          />
           <hemisphereLight args={['#cfe9ff', '#1e293b', 0.48]} />
         </>
       ) : (
@@ -215,7 +234,53 @@ export function ExpoWorldSceneLayers({
           </div>
         </Html>
       )}
+      {homeStudioAoEnabled ? (
+        <GalaHomeStudioPostProcessing
+          qualityTier={qualitySettings.resolvedTier}
+          webglMode={webglMode}
+        />
+      ) : null}
     </Suspense>
+  );
+}
+
+function GalaHomeStudioPostProcessing({
+  qualityTier,
+  webglMode,
+}: {
+  qualityTier: ExpoQualitySettings['resolvedTier'];
+  webglMode: 'webgl2' | 'webgl1' | null;
+}) {
+  const isHighQuality = qualityTier === 'high';
+  const aoPass = (
+    <N8AO
+      aoRadius={2.2}
+      aoSamples={isHighQuality ? 16 : 10}
+      color="#15110b"
+      denoiseRadius={isHighQuality ? 10 : 8}
+      denoiseSamples={isHighQuality ? 8 : 4}
+      depthAwareUpsampling
+      distanceFalloff={1.35}
+      halfRes={!isHighQuality}
+      intensity={1.18}
+      quality={isHighQuality ? 'medium' : 'performance'}
+      screenSpaceRadius={false}
+    />
+  );
+
+  if (webglMode === 'webgl1') {
+    return (
+      <EffectComposer enableNormalPass={false} multisampling={0}>
+        {aoPass}
+        <SMAA />
+      </EffectComposer>
+    );
+  }
+
+  return (
+    <EffectComposer enableNormalPass={false} multisampling={4}>
+      {aoPass}
+    </EffectComposer>
   );
 }
 

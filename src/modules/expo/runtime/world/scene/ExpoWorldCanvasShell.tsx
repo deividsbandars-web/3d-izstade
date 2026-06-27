@@ -334,6 +334,7 @@ export function ExpoWorldCanvasShell({
         verticalAccessNodes={verticalAccessNodes}
         visualProfile={visualProfile}
         walkRegions={walkRegions}
+        webglMode={webglAvailability.mode}
         zoneRuntimeState={zoneRuntimeState}
       />
 

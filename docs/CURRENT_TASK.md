@@ -242,3 +242,20 @@ Close active Codex/VS Code Codex processes, remove the regenerated live `.codex`
 - Scaled the models against the existing `GALA_FURNITURE_LAYOUT` envelopes and removed the replaced active placeholder meshes.
 - Validation passed: `npm.cmd run build`, `npm.cmd run lint`, `npm.cmd run check:expo-boundaries`, and `qa-gala-furniture-clearance-audit.mjs` against `http://127.0.0.1:4174`.
 - Runtime scene inventory confirmed the sofa, coffee-table, and cabinet GLTF mesh names are present and the replaced placeholder mesh names are absent.
+
+## 2026-06-27 GALA AO Lighting Upgrade
+
+- Added home-studio scoped `@react-three/postprocessing` integration in `ExpoWorldSceneLayers.tsx` using `EffectComposer` and `N8AO`.
+- Configured this installed postprocessing version with `enableNormalPass={false}` for N8AO.
+- Preserved anti-aliasing on the postprocess path with `multisampling={4}` for WebGL2 and `SMAA` fallback for WebGL1.
+- Kept AO disabled for low-quality and runtime-capture paths, and did not enable the composer in the sponsor boulevard path.
+- Passed WebGL mode from `ExpoWorldCanvasShell.tsx` into scene layers so the composer can select the correct AA path.
+- Enabled quality-gated cast shadows on the home-studio directional light and added shadow camera bounds, bias, and normal bias to reduce panel acne in high-quality mode.
+- Validation passed: `npm.cmd run build`, `npm.cmd run lint`, `npm.cmd run check:expo-boundaries`.
+- Browser runtime smoke passed against local preview for `/modular-homes/studio?view=interior&homeStudio=1&qa3d=1&quality=high`: status 200, no console/page/request errors, canvas rendered, modular home visible, GLTF furniture present.
+- Furniture clearance QA passed after the AO change against local preview.
+- Visual design-intent QA loaded both exterior and interior routes and captured screenshots, but still failed the pre-existing interior palette/furniture intent assertions (`interiorUsesSameWoodTone=false`, `furnitureFixtureIntentAcceptable=false`); this was not a route load or postprocessing runtime failure.
+- Touched files:
+  - `src/modules/expo/runtime/world/scene/ExpoWorldSceneLayers.tsx`
+  - `src/modules/expo/runtime/world/scene/ExpoWorldCanvasShell.tsx`
+  - `docs/CURRENT_TASK.md`
