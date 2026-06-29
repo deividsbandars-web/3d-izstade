@@ -1,6 +1,6 @@
 import type * as THREE from 'three';
 import { Canvas } from '@react-three/fiber';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Suspense, lazy, useCallback, useEffect, useMemo, useState } from 'react';
 import type { ExpoMode } from '../../../state/expoRuntime';
 import type { ExpoStartView, ExpoWorldContract } from '../../../world-contract';
 import type { ExpoVerticalAccessNode } from '../../planning/types';
@@ -32,7 +32,6 @@ import {
 } from '../quality/expoScreenTextureRuntimeStats';
 import { useExpoZoneRuntimeState } from '../zones/expoZoneRuntimeState';
 import { reportExpoDevError } from '../../../lib/devErrorReporter';
-import { Expo3DQAHook } from './Expo3DQAHook';
 import { isExpo3dQaEnabled, isGalaConstructionAuditEnabled } from '../../app/expo3dQa';
 import { isHomeStudioEnabled } from '../../modularHome/homeDemoFlags';
 
@@ -51,6 +50,11 @@ const HOME_STUDIO_CAMERA_FOV = {
   desktop: 50,
   touch: 56,
 } as const;
+
+const LazyExpo3DQAHook = lazy(async () => {
+  const module = await import('./Expo3DQAHook');
+  return { default: module.Expo3DQAHook };
+});
 
 function detectWebglAvailability(): WebglAvailability {
   if (typeof window === 'undefined' || typeof document === 'undefined') {
@@ -146,6 +150,10 @@ export function ExpoWorldCanvasShell({
     ? (isTouchDevice ? HOME_STUDIO_CAMERA_FOV.touch : HOME_STUDIO_CAMERA_FOV.desktop)
     : (isTouchDevice ? EXPO_CAMERA_FOV.touch : EXPO_CAMERA_FOV.desktop);
   const performanceOverlayEnabled = useMemo(() => shouldEnableExpoPerformanceOverlay(), []);
+  const qaHookEnabled = useMemo(
+    () => import.meta.env.DEV || isExpo3dQaEnabled() || isGalaConstructionAuditEnabled(),
+    [],
+  );
   const qualitySettings = useExpoQualitySettings({ isTouchDevice, runtimeCaptureSafe });
   const activeVideoScreensCount = useExpoActiveVideoScreensCount();
   const screenTextureStats = useExpoScreenTextureRuntimeStats();
@@ -316,7 +324,11 @@ export function ExpoWorldCanvasShell({
         startView={effectiveStartView}
         startViewKey={EXPO_START_VIEW_KEY}
       />
-      {isExpo3dQaEnabled() || isGalaConstructionAuditEnabled() ? <Expo3DQAHook runtimeMode={mode} /> : null}
+      {qaHookEnabled ? (
+        <Suspense fallback={null}>
+          <LazyExpo3DQAHook runtimeMode={mode} />
+        </Suspense>
+      ) : null}
       {performanceOverlayEnabled && (
         <ExpoPerformanceSampler enabled={performanceOverlayEnabled} onSample={handlePerformanceSample} />
       )}

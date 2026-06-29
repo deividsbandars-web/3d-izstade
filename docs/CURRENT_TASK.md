@@ -1246,3 +1246,26 @@ Close active Codex/VS Code Codex processes, remove the regenerated live `.codex`
   - No collision dimensions, door interaction zones, finished-floor levels, camera/FOV/lookAt, movement constants, auth policy, quote endpoint contract, payment, Unreal, Pixel Streaming runtime, staging deploy, production deploy, or promotion changes were made.
 - Next step:
   - Decide whether to investigate the failing GALA walk-speed/performance QA as its own behavior-affecting remediation pack, or treat the current Pack 2.4 code split as a committed behavior-preserving refactor with failed QA documented.
+
+## 2026-06-29 Release Roadmap Phase 2 Pack 2.5 Dev-Gate Expo 3D QA Hook
+
+- Active objective: keep `Expo3DQAHook` and its `window.__WARPALA_3D_QA__` facade out of the default production route chunk while preserving QA access behind `qa3d=1`, the existing GALA construction audit flag, or dev mode.
+- Implementation status:
+  - Replaced the static `Expo3DQAHook` import in `ExpoWorldCanvasShell.tsx` with a `React.lazy` dynamic import wrapped in `Suspense`.
+  - Added a `qaHookEnabled` gate that mounts the lazy hook only when `import.meta.env.DEV`, `isExpo3dQaEnabled()`, or `isGalaConstructionAuditEnabled()` is true.
+  - Left `Expo3D.tsx` and `vite.config.ts` unchanged because the active static import lived in `ExpoWorldCanvasShell.tsx`, and the production build naturally emitted a separate `Expo3DQAHook-*.js` lazy chunk.
+  - Preserved the existing `qa3d=1` QA runtime contract and the GALA construction audit hook path.
+- Validation:
+  - `npx.cmd tsc --noEmit --pretty false -p tsconfig.json` passed with no compiler output.
+  - `npm.cmd run lint` passed with no warnings.
+  - `npm.cmd run build` passed; existing Vite large-chunk warning remains.
+  - `rg -l "__WARPALA_3D_QA__" dist\assets` returned only `dist\assets\Expo3DQAHook-iCHX2dSz.js`, confirming the QA facade implementation is isolated to the lazy QA chunk.
+  - Production `vite preview` smoke using system Chrome passed with `{"noQaFacade":false,"qaFacade":true}` for `/modular-homes/studio?homeStudio=1` versus `/modular-homes/studio?homeStudio=1&qa3d=1`.
+- Touched files:
+  - `src/modules/expo/runtime/world/scene/ExpoWorldCanvasShell.tsx`
+  - `docs/CURRENT_TASK.md`
+- Product/release status:
+  - `productVisualAccepted=false`.
+  - No camera/FOV/lookAt, movement physics, collision geometry, door runtime, quote endpoint contract, auth policy, payment, sponsor boulevard scene behavior, Unreal, Pixel Streaming runtime, staging deploy, production deploy, or promotion changes were made.
+- Next step:
+  - Continue to Phase 3 Pack 3.1 to define and enforce bundle-size budgets using the current release baseline.
