@@ -20,7 +20,8 @@ const PLAYER_KEYBOARD_TURN_SPEED = 2.25;
 const PLAYER_LOOK_PITCH_LIMIT = 1.32;
 const PLAYER_MOBILE_LOOK_PITCH_SPEED = 2.45;
 const PLAYER_MOBILE_LOOK_TURN_SPEED = 3.35;
-export const GALA_SHOWROOM_EYE_HEIGHT_Y = GALA_PREVIEW_POSITION.y + (GALA_GEOMETRY_LEVELS.eyeHeight * GALA_PREVIEW_SCALE);
+export const GALA_SHOWROOM_EYE_HEIGHT_Y = GALA_PREVIEW_POSITION.y
+  + (GALA_GEOMETRY_LEVELS.cameraEyeHeightMeters * GALA_PREVIEW_SCALE);
 const GALA_SHOWROOM_PLAYER_RADIUS = GALA_WALK_PHYSICS.playerRadiusM * GALA_PREVIEW_SCALE;
 const GALA_SHOWROOM_WALK_SPEED = GALA_WALK_PHYSICS.walkSpeedMps * GALA_PREVIEW_SCALE;
 const GALA_SHOWROOM_SPRINT_MULTIPLIER = GALA_WALK_PHYSICS.sprintSpeedMps / GALA_WALK_PHYSICS.walkSpeedMps;
@@ -246,9 +247,14 @@ export function useGalaShowroomMovement({
 
     lastGalaRuntimeDebugUpdate.current = Date.now();
     const currentGalaCollision = findGalaWallCollision(camera.position, GALA_SHOWROOM_PLAYER_RADIUS, collisionSegments);
+    const perspectiveCamera = camera as THREE.PerspectiveCamera;
     updateGalaShowroomRuntimeDebug({
-      cameraEyeHeightMeters: GALA_GEOMETRY_LEVELS.eyeHeight,
+      cameraEyeHeightMeters: GALA_GEOMETRY_LEVELS.cameraEyeHeightMeters,
       cameraEyeHeightWorldY: GALA_SHOWROOM_EYE_HEIGHT_Y,
+      cameraFov: Number((perspectiveCamera.fov ?? 50).toFixed(2)),
+      cameraPitch: Number(camera.rotation.x.toFixed(4)),
+      cameraRoll: Number(camera.rotation.z.toFixed(4)),
+      cameraRollApproximatelyZero: Math.abs(camera.rotation.z) <= 0.001,
       currentCollisionSegmentId: currentGalaCollision?.segmentId ?? null,
       currentPlanPosition: galaWorldPointToPlan(camera.position),
       doorStates: galaDoorStatesRef.current,

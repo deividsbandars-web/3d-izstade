@@ -57,6 +57,11 @@ type Expo3DQAMeshInventoryItem = {
   isWallAssemblyCandidate: boolean;
   material: {
     color: string | null;
+    hasAoMap: boolean;
+    hasMap: boolean;
+    hasMetalnessMap: boolean;
+    hasNormalMap: boolean;
+    hasRoughnessMap: boolean;
     metalness: number | null;
     opacity: number | null;
     roughness: number | null;
@@ -105,6 +110,9 @@ type Expo3DQAState = {
   cameraFacingModularHome: boolean;
   cameraInsideGeometryLikely: boolean;
   cameraFov: number;
+  cameraPitch: number;
+  cameraRoll: number;
+  cameraRollApproximatelyZero: boolean;
   cameraRotation: Vec3Like | null;
   houseVisualBounds: Expo3DBoundsLike;
   houseVisualBoundsCandidates: Expo3DBoundsCandidate[];
@@ -402,6 +410,11 @@ function materialInventorySummary(material: THREE.Material | THREE.Material[] | 
 
   return {
     color: materialWithColor?.color ? `#${materialWithColor.color.getHexString()}` : null,
+    hasAoMap: Boolean((singleMaterial as THREE.MeshStandardMaterial | THREE.MeshPhysicalMaterial | undefined)?.aoMap),
+    hasMap: Boolean((singleMaterial as THREE.MeshStandardMaterial | THREE.MeshPhysicalMaterial | undefined)?.map),
+    hasMetalnessMap: Boolean((singleMaterial as THREE.MeshStandardMaterial | THREE.MeshPhysicalMaterial | undefined)?.metalnessMap),
+    hasNormalMap: Boolean((singleMaterial as THREE.MeshStandardMaterial | THREE.MeshPhysicalMaterial | undefined)?.normalMap),
+    hasRoughnessMap: Boolean((singleMaterial as THREE.MeshStandardMaterial | THREE.MeshPhysicalMaterial | undefined)?.roughnessMap),
     metalness: typeof materialWithColor?.metalness === 'number' ? Number(materialWithColor.metalness.toFixed(4)) : null,
     opacity: typeof materialWithColor?.opacity === 'number' ? Number(materialWithColor.opacity.toFixed(4)) : null,
     roughness: typeof materialWithColor?.roughness === 'number' ? Number(materialWithColor.roughness.toFixed(4)) : null,
@@ -787,6 +800,9 @@ export function Expo3DQAHook({
     cameraFacingModularHome: false,
     cameraInsideGeometryLikely: false,
     cameraFov: 50,
+    cameraPitch: 0,
+    cameraRoll: 0,
+    cameraRollApproximatelyZero: true,
     cameraRotation: null,
     houseVisualBounds: HOUSE_VISUAL_BOUNDS,
     houseVisualBoundsCandidates: [],
@@ -1215,6 +1231,9 @@ export function Expo3DQAHook({
       cameraFacingModularHome,
       cameraInsideGeometryLikely,
       cameraFov: Number(((camera as THREE.PerspectiveCamera).fov ?? 50).toFixed(2)),
+      cameraPitch: nextCameraRotation.x,
+      cameraRoll: nextCameraRotation.z,
+      cameraRollApproximatelyZero: Math.abs(nextCameraRotation.z) <= 0.001,
       cameraRotation: nextCameraRotation,
       houseVisualBounds: objectSummary.houseVisualBounds,
       houseVisualBoundsCandidates: objectSummary.houseVisualBoundsCandidates,

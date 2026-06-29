@@ -22,7 +22,8 @@ import { GALA_PREVIEW_POSITION, GALA_PREVIEW_SCALE } from '../modularHome/GalaHo
 import { GALA_GEOMETRY_LEVELS, planXToLocalX } from '../modularHome/GalaFloorplan';
 import { MODULAR_HOME_PREVIEW_CONFIG } from '../modularHome/modularHomeConfig';
 
-const HOME_STUDIO_EYE_HEIGHT_Y = GALA_PREVIEW_POSITION.y + (GALA_GEOMETRY_LEVELS.eyeHeight * GALA_PREVIEW_SCALE);
+const HOME_STUDIO_EYE_HEIGHT_Y = GALA_PREVIEW_POSITION.y
+  + (GALA_GEOMETRY_LEVELS.cameraEyeHeightMeters * GALA_PREVIEW_SCALE);
 
 function galaPlanToWorld(planX: number, planZ: number): [number, number, number] {
   const unrotatedX = GALA_PREVIEW_POSITION.x + (planXToLocalX(planX) * GALA_PREVIEW_SCALE);
@@ -39,13 +40,13 @@ function galaPlanToWorld(planX: number, planZ: number): [number, number, number]
 
 const HOME_STUDIO_EXTERIOR_START_VIEW: ExpoStartView = {
   // Home studio walk mode starts at human eye height; QA shot presets remain separate and unchanged.
-  lookAt: galaPlanToWorld(4.64, -1.2),
+  lookAt: galaPlanToWorld(4.64, -0.25),
   position: galaPlanToWorld(4.64, -9.2),
   source: 'arrival-main',
 };
 
 const HOME_STUDIO_INTERIOR_START_VIEW: ExpoStartView = {
-  lookAt: galaPlanToWorld(4.6, -0.75),
+  lookAt: galaPlanToWorld(5.55, -0.35),
   position: galaPlanToWorld(2.1, 1.55),
   source: 'arrival-main',
 };

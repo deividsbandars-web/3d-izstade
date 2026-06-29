@@ -34,12 +34,23 @@ import { useExpoZoneRuntimeState } from '../zones/expoZoneRuntimeState';
 import { reportExpoDevError } from '../../../lib/devErrorReporter';
 import { Expo3DQAHook } from './Expo3DQAHook';
 import { isExpo3dQaEnabled, isGalaConstructionAuditEnabled } from '../../app/expo3dQa';
+import { isHomeStudioEnabled } from '../../modularHome/homeDemoFlags';
 
 type WebglAvailability = {
   available: boolean;
   mode: 'webgl2' | 'webgl1' | null;
   reason: string | null;
 };
+
+const EXPO_CAMERA_FOV = {
+  desktop: 60,
+  touch: 66,
+} as const;
+
+const HOME_STUDIO_CAMERA_FOV = {
+  desktop: 50,
+  touch: 56,
+} as const;
 
 function detectWebglAvailability(): WebglAvailability {
   if (typeof window === 'undefined' || typeof document === 'undefined') {
@@ -130,6 +141,10 @@ export function ExpoWorldCanvasShell({
   const [webglStatusKey, setWebglStatusKey] = useState(0);
   const [webglAvailability] = useState<WebglAvailability>(() => detectWebglAvailability());
   const [performanceMetrics, setPerformanceMetrics] = useState<ExpoPerformanceOverlayMetrics | null>(null);
+  const homeStudioEnabled = useMemo(() => isHomeStudioEnabled(), []);
+  const cameraFov = homeStudioEnabled
+    ? (isTouchDevice ? HOME_STUDIO_CAMERA_FOV.touch : HOME_STUDIO_CAMERA_FOV.desktop)
+    : (isTouchDevice ? EXPO_CAMERA_FOV.touch : EXPO_CAMERA_FOV.desktop);
   const performanceOverlayEnabled = useMemo(() => shouldEnableExpoPerformanceOverlay(), []);
   const qualitySettings = useExpoQualitySettings({ isTouchDevice, runtimeCaptureSafe });
   const activeVideoScreensCount = useExpoActiveVideoScreensCount();
@@ -292,7 +307,7 @@ export function ExpoWorldCanvasShell({
       dpr={qualitySettings.canvasDpr}
       gl={{ antialias: qualitySettings.antialiasEnabled, powerPreference: 'high-performance' }}
       performance={{ min: qualitySettings.performanceMin }}
-      camera={{ position: [0, 2, 10], fov: isTouchDevice ? 66 : 60, far: 10000 }}
+      camera={{ position: [0, 2, 10], fov: cameraFov, far: 10000 }}
       onCreated={onCreated as never}
     >
       <WorldSceneBridge

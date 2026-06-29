@@ -254,15 +254,15 @@ function GalaHomeStudioPostProcessing({
   const isHighQuality = qualityTier === 'high';
   const aoPass = (
     <N8AO
-      aoRadius={2.2}
+      aoRadius={1.65}
       aoSamples={isHighQuality ? 16 : 10}
       color="#15110b"
       denoiseRadius={isHighQuality ? 10 : 8}
       denoiseSamples={isHighQuality ? 8 : 4}
       depthAwareUpsampling
-      distanceFalloff={1.35}
+      distanceFalloff={1.12}
       halfRes={!isHighQuality}
-      intensity={1.18}
+      intensity={1.36}
       quality={isHighQuality ? 'medium' : 'performance'}
       screenSpaceRadius={false}
     />
@@ -270,7 +270,7 @@ function GalaHomeStudioPostProcessing({
 
   if (webglMode === 'webgl1') {
     return (
-      <EffectComposer enableNormalPass={false} multisampling={0}>
+      <EffectComposer enableNormalPass multisampling={0}>
         {aoPass}
         <SMAA />
       </EffectComposer>
@@ -278,7 +278,7 @@ function GalaHomeStudioPostProcessing({
   }
 
   return (
-    <EffectComposer enableNormalPass={false} multisampling={4}>
+    <EffectComposer enableNormalPass multisampling={4}>
       {aoPass}
     </EffectComposer>
   );

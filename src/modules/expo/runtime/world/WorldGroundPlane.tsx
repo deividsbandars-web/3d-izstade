@@ -11,6 +11,8 @@ import {
 } from './WorldGroundLayout';
 import type { GroundDetailRibbon } from './WorldGroundLayout';
 import { FLOOR_LAYER_ORDER, FLOOR_MATERIAL_INTENTS } from './floor/FloorVisualLanguage';
+import { GalaConstructionBox } from '../modularHome/construction/GalaConstructionPrimitives';
+import { useGalaConstructionPbrTextures } from '../modularHome/construction/GalaConstructionPbrTextures';
 
 const GROUND_BASE_POLYGON_OFFSET = {
   factor: 1,
@@ -63,6 +65,34 @@ function resolveGroundRibbonOpacity(ribbon: GroundDetailRibbon) {
   return Math.min(resolveGroundDetailOpacity(ribbon) * 1.85, 0.145);
 }
 
+function HomeStudioGroundPlane({
+  color,
+  position,
+}: {
+  color: string;
+  position: [number, number, number];
+}) {
+  const groundPbrTextures = useGalaConstructionPbrTextures('ground');
+  const groundThicknessM = 0.04;
+
+  return (
+    <GalaConstructionBox
+      {...groundPbrTextures}
+      castShadow={false}
+      color={color}
+      name="world-ground:global-base"
+      position={[position[0], position[1] - groundThicknessM * 0.5, position[2]]}
+      receiveShadow={false}
+      roughness={0.92}
+      size={[GLOBAL_GROUND_SIZE[0], groundThicknessM, GLOBAL_GROUND_SIZE[1]]}
+      userData={{
+        homeStudioGroundPbrMaterialApplied: true,
+        worldGroundMaskedFromInterior: true,
+      }}
+    />
+  );
+}
+
 export function WorldGroundPlane({
   homeStudioMode = false,
   visualProfile,
@@ -84,6 +114,9 @@ export function WorldGroundPlane({
         worldGroundMaskedFromInterior: homeStudioMode,
       }}
     >
+      {homeStudioMode ? (
+        <HomeStudioGroundPlane color={globalGroundColor} position={globalGroundPosition} />
+      ) : (
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={globalGroundPosition} receiveShadow={false} name="world-ground:global-base">
         <planeGeometry args={GLOBAL_GROUND_SIZE} />
         <meshStandardMaterial
@@ -97,6 +130,7 @@ export function WorldGroundPlane({
           roughness={globalBaseMaterial.roughness}
         />
       </mesh>
+      )}
       {!homeStudioMode && GROUND_DETAIL_RIBBONS.map((ribbon) => {
         const ribbonVisual = resolveGroundRibbonVisual(ribbon);
 
