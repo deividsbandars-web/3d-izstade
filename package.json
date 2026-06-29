@@ -10,6 +10,7 @@
     "check:bundle-budget": "node scripts/check-bundle-budget.mjs",
     "check:backend-boundaries": "node scripts/check-backend-boundaries.mjs",
     "check:backend-shared-boundaries": "node scripts/check-backend-shared-boundaries.cjs",
+    "check:backend-tests": "node scripts/check-backend-tests.mjs",
     "check:gala-ownership": "node scripts/check-gala-renderer-ownership.mjs",
     "check:supabase-rls": "node scripts/check-supabase-rls.mjs",
     "check:all": "npm run check:expo-boundaries && npm run check:gala-ownership && npm run check:backend-boundaries && npm run check:backend-shared-boundaries && npm run check:supabase-rls",

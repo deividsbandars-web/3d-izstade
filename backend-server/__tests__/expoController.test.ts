@@ -107,6 +107,17 @@ const mockSupabase = {
       };
     }
 
+    if (table === 'expo_booths') {
+      return {
+        select() {
+          return createResolvedQuery({
+            data: [],
+            error: null,
+          });
+        }
+      };
+    }
+
     throw new Error(`Unexpected table ${table}`);
   }
 };

@@ -1682,3 +1682,39 @@ Close active Codex/VS Code Codex processes, remove the regenerated live `.codex`
   - The canonical suite now avoids the known construction-renderer floor-color false-positive contradiction; the remaining release-suite failure is the active visual preflight signal for the interior view.
 - Next step:
   - Continue to Phase 5 Pack 5.2 for the CI release gate workflow.
+
+## 2026-06-29 Release Roadmap Phase 5 Pack 5.2 CI Release Gate
+
+- Active objective: add the PR release-gate workflow that runs the frontend, backend, static release, bundle-budget, backend-test, and modular-home quote staging checks without deploying.
+- Implementation status:
+  - Added `.github/workflows/release-gate.yml`.
+  - The workflow runs on pull requests targeting `main` and `release/**`, plus manual `workflow_dispatch`.
+  - The workflow uses Node 24, caches npm and root/backend `node_modules`, installs root and `backend-server` dependencies, and runs the requested release gates.
+  - Added root `npm run check:backend-tests` via `scripts/check-backend-tests.mjs` so backend tests run consistently in CI and locally.
+  - Updated `backend-server/__tests__/expoController.test.ts` fixture coverage for the current `expo_booths` managed-booth lookup used by `/api/expo/scene`.
+  - Documented the CI release-gate trigger, command order, required secrets, and no-deploy rule in `docs/CURRENT_INFRASTRUCTURE_INVENTORY.md`.
+- Validation:
+  - `node --check scripts/check-backend-tests.mjs` passed.
+  - `npm.cmd run check:backend-tests` passed; 14 backend test files ran.
+  - `npm.cmd run lint` passed.
+  - `npm.cmd run build` passed.
+  - `npm.cmd run check:bundle-budget` passed.
+  - `npm.cmd run check:all` passed.
+  - `npx.cmd tsc --noEmit -p tsconfig.json` in `backend-server` passed.
+  - `npm.cmd run lint` in `backend-server` passed.
+  - `npm.cmd run check:modular-home-quote-staging -- --json` first failed inside sandbox with network `EACCES`; rerun with network escalation reached staging.
+  - Escalated `npm.cmd run check:modular-home-quote-staging -- --json` failed overall because staging admin quote routes returned `401` for admin list/detail/update/export checks. The script confirmed staging health, flag-required behavior, valid quote submission, public rejection, public Supabase RLS rejection, production-default rejection, and cleanup of the temporary quote row.
+  - Draft PR workflow execution was not verified from this workspace because the staging quote gate is currently red and would fail the PR gate until admin quote auth on staging is fixed.
+- Touched files:
+  - `.github/workflows/release-gate.yml`
+  - `scripts/check-backend-tests.mjs`
+  - `package.json`
+  - `backend-server/__tests__/expoController.test.ts`
+  - `docs/CURRENT_INFRASTRUCTURE_INVENTORY.md`
+  - `docs/CURRENT_TASK.md`
+- Product/release status:
+  - `productVisualAccepted=false`.
+  - No camera/FOV/lookAt, movement physics, collision geometry, door runtime, GALA construction geometry, quote route auth policy, payment, Unreal runtime, staging deploy, production deploy, or promotion changes were made.
+  - CI now includes the staging quote contract and will correctly fail PRs while the staging admin auth contract remains broken.
+- Next step:
+  - Fix or reconfigure staging modular-home quote admin auth before treating the release-gate workflow as green, then continue to Phase 5 Pack 5.3 for backend route contract coverage.

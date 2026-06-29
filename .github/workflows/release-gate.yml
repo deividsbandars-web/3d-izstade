@@ -1,0 +1,88 @@
+name: Release Gate
+
+on:
+  pull_request:
+    branches:
+      - main
+      - 'release/**'
+  workflow_dispatch:
+
+concurrency:
+  group: release-gate-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  release-gate:
+    name: PR Release Gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    env:
+      VITE_PUBLIC_API_BASE_URL: ${{ secrets.VITE_PUBLIC_API_BASE_URL }}
+      VITE_PUBLIC_APP_URL: ${{ secrets.VITE_PUBLIC_APP_URL }}
+      VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+      VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+      SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+      MODULAR_HOME_QUOTE_SMOKE_BACKEND_URL: ${{ secrets.MODULAR_HOME_QUOTE_SMOKE_BACKEND_URL }}
+      MODULAR_HOME_QUOTE_SMOKE_PRODUCTION_URL: ${{ secrets.MODULAR_HOME_QUOTE_SMOKE_PRODUCTION_URL }}
+      MODULAR_HOME_QUOTE_SMOKE_ADMIN_EMAIL: ${{ secrets.MODULAR_HOME_QUOTE_SMOKE_ADMIN_EMAIL }}
+      MODULAR_HOME_QUOTE_SMOKE_USER_EMAIL: ${{ secrets.MODULAR_HOME_QUOTE_SMOKE_USER_EMAIL }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            backend-server/package-lock.json
+
+      - name: Cache node_modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            backend-server/node_modules
+            ~/.npm
+          key: ${{ runner.os }}-node24-release-gate-${{ hashFiles('package-lock.json', 'backend-server/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node24-release-gate-
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Install backend dependencies
+        working-directory: backend-server
+        run: npm ci
+
+      - name: Frontend lint
+        run: npm run lint
+
+      - name: Frontend build
+        run: npm run build
+
+      - name: Bundle budget
+        run: npm run check:bundle-budget
+
+      - name: Release static gates
+        run: npm run check:all
+
+      - name: Backend TypeScript
+        working-directory: backend-server
+        run: npx tsc --noEmit -p tsconfig.json
+
+      - name: Backend lint
+        working-directory: backend-server
+        run: npm run lint
+
+      - name: Backend tests
+        run: npm run check:backend-tests
+
+      - name: Modular-home quote staging contract
+        run: npm run check:modular-home-quote-staging -- --json

@@ -69,6 +69,18 @@ Storage:
 - nginx config: `deployment/configs/nginx.conf`
 - TURN config: `deployment/configs/turnserver.conf`
 
+## CI Release Gate
+
+`.github/workflows/release-gate.yml` is the canonical PR release gate. It runs on pull requests targeting `main` and `release/**`, plus manual `workflow_dispatch` runs. It does not run staging or production deploys.
+
+The gate uses Node 24, caches npm and `node_modules`, installs root and `backend-server` dependencies, then runs:
+
+1. Root frontend gates: `npm run lint`, `npm run build`, `npm run check:bundle-budget`, and `npm run check:all`.
+2. Backend gates: `npx tsc --noEmit -p tsconfig.json` in `backend-server`, `npm run lint` in `backend-server`, and root `npm run check:backend-tests`.
+3. Staging quote contract: `npm run check:modular-home-quote-staging -- --json`.
+
+The workflow expects GitHub Actions secrets for the frontend build and staging quote contract: `VITE_PUBLIC_API_BASE_URL`, `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `SUPABASE_URL`, `SUPABASE_SERVICE_KEY`, and either `SUPABASE_ANON_KEY` or `VITE_SUPABASE_ANON_KEY`. Optional smoke overrides are `MODULAR_HOME_QUOTE_SMOKE_BACKEND_URL`, `MODULAR_HOME_QUOTE_SMOKE_PRODUCTION_URL`, `MODULAR_HOME_QUOTE_SMOKE_ADMIN_EMAIL`, and `MODULAR_HOME_QUOTE_SMOKE_USER_EMAIL`.
+
 ## Production Env Matrix
 
 Frontend build env is enforced by `scripts/check-frontend-env.mjs`, which is run first by `npm.cmd run build`. `vercel.json` uses `buildCommand: "npm run build"`, so Vercel builds consume the same `VITE_PUBLIC_API_BASE_URL`, `VITE_SUPABASE_URL`, and `VITE_SUPABASE_ANON_KEY` checks before TypeScript/Vite compilation.
