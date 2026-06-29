@@ -61,7 +61,10 @@ export function ExpoWorldSceneLayers({
   zoneRuntimeState: ExpoZoneRuntimeState;
 }) {
   const homeStudioEnabled = isHomeStudioEnabled();
-  const homeStudioAoEnabled = homeStudioEnabled && !runtimeCaptureSafe && qualitySettings.resolvedTier !== 'low';
+  const homeStudioAoEnabled = homeStudioEnabled
+    && !runtimeCaptureSafe
+    && !qualitySettings.isMobileLike
+    && qualitySettings.resolvedTier !== 'low';
 
   return (
     <Suspense fallback={null}>

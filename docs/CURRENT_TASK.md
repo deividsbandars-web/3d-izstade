@@ -1339,3 +1339,45 @@ Close active Codex/VS Code Codex processes, remove the regenerated live `.codex`
   - No camera/FOV/lookAt, movement physics, collision geometry, door runtime, backend route behavior, quote endpoint contract, auth policy, payment, Unreal, Pixel Streaming runtime, staging deploy, production deploy, or promotion changes were made.
 - Next step:
   - Continue to Phase 3 Pack 3.3 for mobile DPR caps, zone visibility, and instancing/performance audit.
+
+## 2026-06-29 Release Roadmap Phase 3 Pack 3.3 Mobile DPR Caps And Performance Audit
+
+- Active objective: verify mobile DPR caps, zone visibility, instancing, and low-quality/mobile postprocessing behavior; tighten the missing mobile safeguards without changing camera, movement, collision, or GALA geometry.
+- Implementation status:
+  - Added mobile-specific DPR caps in `expoQualitySettings.ts`:
+    - mobile low: max DPR `0.9`.
+    - mobile medium: max DPR `1.1`.
+    - mobile high: max DPR `1.25`.
+    - desktop caps remain tied to the existing tier settings.
+  - Kept runtime capture fixed at DPR `1`.
+  - Disabled GALA home-studio AO/postprocessing on mobile-like paths by adding `!qualitySettings.isMobileLike` to the existing AO gate in `ExpoWorldSceneLayers.tsx`.
+  - Verified existing zone visibility/culling path remains active through `useExpoZoneRuntimeState` and `ExpoZoneGroup`.
+  - Verified existing instancing is already present for repeated GALA construction boards/reveals through `GalaConstructionInstancedBoxes`, plus existing world screen/rear-campus instancing.
+- Validation:
+  - `npx.cmd tsc --noEmit --pretty false -p tsconfig.json` passed with no compiler output.
+  - `npm.cmd run lint` passed with no warnings.
+  - `npm.cmd run build` passed.
+  - `npm.cmd run check:bundle-budget` passed:
+    - `react-three-vendor`: 469.45 kB / 516.39 kB.
+    - `three-core`: 187.82 kB / 206.60 kB.
+    - `Expo3D`: 158.12 kB / 178.72 kB.
+    - `modular-home`: 129.03 kB / 140.80 kB.
+    - `react-vendor`: 73.72 kB / 81.09 kB.
+  - Production `vite preview` mobile DPR smoke passed: viewport `390x844`, deviceScaleFactor `3`, effective canvas DPR `0.9`, `qaHookPresent=true`, `webglFallback=false`.
+  - `node scripts/qa-gala-performance-budget-audit.mjs --base-url=http://127.0.0.1:4175 --out-dir=artifacts/qa-gala-performance-budget-pack3-3-production` passed:
+    - exterior: FPS median `238.1`, frame p95 `8.4ms`, draw calls `551`, triangles `46529`.
+    - interior: FPS median `238.1`, frame p95 `8.4ms`, draw calls `416`, triangles `43973`.
+  - `node scripts/qa-gala-motion-performance-audit.mjs --base-url=http://127.0.0.1:4175 --out-dir=artifacts/qa-gala-motion-performance-pack3-3-production` passed:
+    - exterior stationary: FPS median `238.1`, frame p95 `8.4ms`, stutters `0`.
+    - exterior motion: FPS median `238.1`, frame p95 `8.4ms`, stutters `0`.
+    - interior stationary: FPS median `238.1`, frame p95 `8.4ms`, stutters `0`.
+    - interior motion: FPS median `238.1`, frame p95 `8.3ms`, stutters `0`.
+- Touched files:
+  - `src/modules/expo/runtime/world/quality/expoQualitySettings.ts`
+  - `src/modules/expo/runtime/world/scene/ExpoWorldSceneLayers.tsx`
+  - `docs/CURRENT_TASK.md`
+- Product/release status:
+  - `productVisualAccepted=false`.
+  - No camera/FOV/lookAt, movement physics, collision geometry, door runtime, GALA construction geometry, backend route behavior, quote endpoint contract, auth policy, payment, Unreal, Pixel Streaming runtime, staging deploy, production deploy, or promotion changes were made.
+- Next step:
+  - Continue to Phase 3 Pack 3.4 for mobile-first responsiveness and accessibility of the lead-gen overlay and quote form.

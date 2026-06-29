@@ -210,20 +210,49 @@ function resolveAutoTier(
   };
 }
 
-function resolveCanvasDpr(resolvedTier: ExpoResolvedQualityTier, runtimeCaptureSafe: boolean): number | [number, number] {
+function resolveMaxDpr(
+  resolvedTier: ExpoResolvedQualityTier,
+  runtimeCaptureSafe: boolean,
+  isMobileLike: boolean,
+) {
+  if (runtimeCaptureSafe) {
+    return 1;
+  }
+
+  if (!isMobileLike) {
+    return QUALITY_SETTINGS_BY_TIER[resolvedTier].maxDpr;
+  }
+
+  if (resolvedTier === 'high') {
+    return 1.25;
+  }
+
+  if (resolvedTier === 'medium') {
+    return 1.1;
+  }
+
+  return 0.9;
+}
+
+function resolveCanvasDpr(
+  resolvedTier: ExpoResolvedQualityTier,
+  runtimeCaptureSafe: boolean,
+  isMobileLike: boolean,
+  maxDpr: number,
+): number | [number, number] {
   if (runtimeCaptureSafe) {
     return 1;
   }
 
   if (resolvedTier === 'low') {
-    return [0.55, LOW_SETTINGS.maxDpr];
+    return [0.55, maxDpr];
   }
 
   if (resolvedTier === 'medium') {
-    return [0.65, MEDIUM_SETTINGS.maxDpr];
+    return [isMobileLike ? 0.6 : 0.65, maxDpr];
   }
 
-  return [0.85, HIGH_SETTINGS.maxDpr];
+  return [isMobileLike ? 0.75 : 0.85, maxDpr];
 }
 
 export function resolveExpoQualitySettings(input: ResolveExpoQualitySettingsInput): ExpoQualitySettings {
@@ -238,16 +267,17 @@ export function resolveExpoQualitySettings(input: ResolveExpoQualitySettingsInpu
       }
     : resolveAutoTier(isMobileLike, input.runtimeCaptureSafe, hints);
   const baseSettings = QUALITY_SETTINGS_BY_TIER[resolved.resolvedTier];
+  const maxDpr = resolveMaxDpr(resolved.resolvedTier, input.runtimeCaptureSafe, isMobileLike);
 
   return {
     ...baseSettings,
     adaptiveDprEnabled: input.runtimeCaptureSafe ? false : baseSettings.adaptiveDprEnabled,
     adaptiveEventsEnabled: input.runtimeCaptureSafe ? false : baseSettings.adaptiveEventsEnabled,
     antialiasEnabled: input.runtimeCaptureSafe ? false : baseSettings.antialiasEnabled,
-    canvasDpr: resolveCanvasDpr(resolved.resolvedTier, input.runtimeCaptureSafe),
+    canvasDpr: resolveCanvasDpr(resolved.resolvedTier, input.runtimeCaptureSafe, isMobileLike, maxDpr),
     isMobileLike,
     legacyFeaturePreset: EXPO_CITY_QUALITY_TIER,
-    maxDpr: input.runtimeCaptureSafe ? 1 : baseSettings.maxDpr,
+    maxDpr,
     performanceMin: input.runtimeCaptureSafe ? Math.max(baseSettings.performanceMin, 0.95) : baseSettings.performanceMin,
     postprocessingEnabled: false,
     reason: input.runtimeCaptureSafe
