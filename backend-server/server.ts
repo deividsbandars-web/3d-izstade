@@ -12,7 +12,17 @@ import { createApiRouter } from './routes/api.js';
 import { landingRouter } from './routes/landing.js';
 
 const app = express();
-const backendRuntimeEnv = getBackendRuntimeEnv();
+let backendRuntimeEnv: ReturnType<typeof getBackendRuntimeEnv>;
+try {
+  backendRuntimeEnv = getBackendRuntimeEnv();
+} catch (error) {
+  const message = error instanceof Error ? error.message : String(error);
+  console.error('[backend-env] Failed to resolve backend runtime environment.');
+  console.error(`[backend-env] ${message}`);
+  console.error('[backend-env] Required for GALA/expo-scene backend: SUPABASE_URL and SUPABASE_SERVICE_KEY.');
+  console.error('[backend-env] Required only when PIXEL_STREAMING_ROUTES_ENABLED=true: SIGNALING_STATUS_BASE_URL and UE5_SECRET_KEY.');
+  process.exit(1);
+}
 const apiRoutes = createApiRouter({
   pixelStreamingRoutesEnabled: backendRuntimeEnv.pixelStreamingRoutesEnabled,
 });

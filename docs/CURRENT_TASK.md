@@ -1611,3 +1611,42 @@ Close active Codex/VS Code Codex processes, remove the regenerated live `.codex`
   - No Supabase migrations were altered; this pack adds static enforcement and documentation.
 - Next step:
   - Continue to Phase 4 Pack 4.5 for production env matrix and `.env.example` coverage.
+
+## 2026-06-29 Release Roadmap Phase 4 Pack 4.5 Production Env Matrix
+
+- Active objective: document the authoritative frontend/backend env contract, provide safe `.env.example` files for both tiers, and make required frontend/backend env failures happen early with actionable messages.
+- Implementation status:
+  - Replaced the root `.env.example` with a release-scope frontend build and compose env template using placeholder values only.
+  - Added `backend-server/.env.example` with backend runtime variables, required/optional status, consumer, and defaults.
+  - Updated `.gitignore` so `backend-server/.env.example` is tracked while real `.env*` files stay ignored.
+  - Added `scripts/check-frontend-env.mjs`.
+  - Updated `package.json` so `npm.cmd run build` runs `check:frontend-env` before `tsc -b && vite build`.
+  - Kept `vercel.json` on `buildCommand: "npm run build"`, so Vercel builds consume the same required `VITE_PUBLIC_API_BASE_URL`, `VITE_SUPABASE_URL`, and `VITE_SUPABASE_ANON_KEY` checks before compilation.
+  - Updated `backend-server/server.ts` so missing backend runtime env prints a clear `[backend-env]` summary before exiting.
+  - Added the frontend/backend production env matrix to `docs/CURRENT_INFRASTRUCTURE_INVENTORY.md`.
+- Validation:
+  - `npm.cmd run check:frontend-env` passed with the local configured env.
+  - Expected negative frontend build test passed: `npm.cmd run build` with `WARPALA_SKIP_ENV_FILE_LOAD=1` and missing required `VITE_*` values exited `1` before TypeScript/Vite and printed missing `VITE_PUBLIC_API_BASE_URL`, `VITE_SUPABASE_URL`, and `VITE_SUPABASE_ANON_KEY`.
+  - Expected negative backend boot test passed: backend start with whitespace `SUPABASE_URL` and `SUPABASE_SERVICE_KEY` exited `1` and printed `[backend-env]` required-env guidance.
+  - `node --check scripts/check-frontend-env.mjs` passed.
+  - `npx.cmd tsx src/__tests__/runtimeEnv.test.ts` passed.
+  - `npx.cmd tsc --noEmit -p tsconfig.json` in `backend-server` passed.
+  - `npm.cmd run lint` in `backend-server` passed.
+  - `npm.cmd run build` passed; the build started with `check:frontend-env` and PWA precache reported `91` entries and `4648.97 KiB`.
+  - `npm.cmd run lint` at repo root passed.
+  - `npm.cmd run check:all` passed with all checks green, including `check:supabase-rls`.
+- Touched files:
+  - `.env.example`
+  - `.gitignore`
+  - `backend-server/.env.example`
+  - `backend-server/server.ts`
+  - `scripts/check-frontend-env.mjs`
+  - `package.json`
+  - `docs/CURRENT_INFRASTRUCTURE_INVENTORY.md`
+  - `docs/CURRENT_TASK.md`
+- Product/release status:
+  - `productVisualAccepted=false`.
+  - No camera/FOV/lookAt, movement physics, collision geometry, door runtime, GALA construction geometry, quote route auth policy, payment, Unreal runtime, staging deploy, production deploy, or promotion changes were made.
+  - No real secrets were added to tracked env examples.
+- Next step:
+  - Continue to Phase 5 Pack 5.1 for GALA QA script consolidation.

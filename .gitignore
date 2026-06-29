@@ -15,6 +15,7 @@ dist-phase3f
 .env
 .env.*
 !.env.example
+!backend-server/.env.example
 !.env.docker.example
 *.tsbuildinfo
 

@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "npm run check:frontend-env && tsc -b && vite build",
+    "check:frontend-env": "node scripts/check-frontend-env.mjs",
     "check:bundle-budget": "node scripts/check-bundle-budget.mjs",
     "check:backend-boundaries": "node scripts/check-backend-boundaries.mjs",
     "check:backend-shared-boundaries": "node scripts/check-backend-shared-boundaries.cjs",

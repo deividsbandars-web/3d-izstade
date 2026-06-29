@@ -69,6 +69,47 @@ Storage:
 - nginx config: `deployment/configs/nginx.conf`
 - TURN config: `deployment/configs/turnserver.conf`
 
+## Production Env Matrix
+
+Frontend build env is enforced by `scripts/check-frontend-env.mjs`, which is run first by `npm.cmd run build`. `vercel.json` uses `buildCommand: "npm run build"`, so Vercel builds consume the same `VITE_PUBLIC_API_BASE_URL`, `VITE_SUPABASE_URL`, and `VITE_SUPABASE_ANON_KEY` checks before TypeScript/Vite compilation.
+
+| Variable | Required | Consumer | Default |
+| --- | --- | --- | --- |
+| `VITE_PUBLIC_API_BASE_URL` | Yes | Frontend build, API clients, `/api/expo/scene`, quote submit | None |
+| `VITE_SUPABASE_URL` | Yes | Frontend build, Supabase browser auth/data client | None |
+| `VITE_SUPABASE_ANON_KEY` | Yes | Frontend build, Supabase browser auth/data client | None |
+| `VITE_PUBLIC_APP_URL` | No | Frontend build, auth redirects/share URLs | Derived from API origin when possible |
+| `VITE_SIGNALING_SERVER_URL` | No | Frontend build, optional Pixel Streaming/operator support | Unset |
+| `VITE_STUN_SERVER_URLS` | No | Frontend build, optional WebRTC ICE hints | Empty list |
+| `VITE_TURN_SERVER_URLS` | No | Frontend build, optional WebRTC ICE hints | Empty list |
+| `VITE_TURN_USERNAME` / `VITE_TURN_PASSWORD` | No | Frontend build, optional TURN credentials | Both unset; must be configured together |
+| `VITE_PIXEL_STREAMING_PROBE_TIMEOUT_MS` | No | Frontend build, optional Pixel Streaming probe | `2500` |
+| `VITE_ENABLE_3D_QA` | No | Frontend build, QA instrumentation flag | Disabled |
+| `VITE_EXPO_QUALITY_PRESET` | No | Frontend build, expo quality override | Runtime auto |
+| `SUPABASE_URL` | Yes | Backend runtime, Supabase service client | None |
+| `SUPABASE_SERVICE_KEY` | Yes | Backend runtime, Supabase service client | None |
+| `SUPABASE_ANON_KEY` | No | Backend shared auth helper compatibility | Unset |
+| `SUPABASE_SERVICE_ROLE_KEY` | No | Legacy shared admin helper alias | Falls back to `SUPABASE_SERVICE_KEY` where supported |
+| `REDIS_URL` | No for boot; required for production quote acceptance | Backend rate limiting/session infrastructure | In-memory fallback only outside production; production quote submissions fail closed without Redis |
+| `NODE_ENV` | No | Backend runtime | `development` |
+| `PORT` | No | Backend runtime | `3000` |
+| `PIXEL_STREAMING_ROUTES_ENABLED` | No | Backend optional Pixel Streaming/operator routes | `false` |
+| `PIXEL_STREAMING_ENABLED` | No | Legacy backend Pixel Streaming flag alias | `false` |
+| `SIGNALING_STATUS_BASE_URL` | Only when Pixel Streaming routes are enabled | Backend Pixel Streaming status/session routes | None |
+| `UE5_SECRET_KEY` | Only when Pixel Streaming routes are enabled | Backend `/api/expo/cities` UE5 API-key middleware | None |
+| `PIXEL_STREAMING_STATUS_TIMEOUT_MS` | No | Backend Pixel Streaming status/session routes | `2500` |
+| `APP_ENV` / `VERCEL_ENV` | No | Backend environment detection | Unset |
+| `MODULAR_HOME_QUOTE_SUBMISSION_ENABLED` | No | Modular-home quote backend gate | `false` |
+| `MODULAR_HOME_QUOTE_STAGING_HOSTS` | No | Modular-home quote staging host allowlist | Code defaults include staging/local hosts |
+| `MODULAR_HOME_QUOTE_PRODUCTION_HOSTS` | No | Modular-home quote production host allowlist | Empty |
+| `MODULAR_HOME_QUOTE_TURNSTILE_SECRET_KEY` | No | Modular-home quote anti-spam | Unset |
+| `MODULAR_HOME_QUOTE_TURNSTILE_REQUIRED` | No | Modular-home quote anti-spam | `false` |
+| `MODULAR_HOME_QUOTE_EMAIL_HANDOFF_ENABLED` | No | Modular-home quote email handoff | `false` |
+| `MODULAR_HOME_QUOTE_EMAIL_FROM` / `RESEND_FROM_EMAIL` | Only when email handoff is enabled | Modular-home quote email sender | Unset |
+| `MODULAR_HOME_QUOTE_EMAIL_REPLY_TO` | No | Modular-home quote email reply-to | Unset |
+| `MODULAR_HOME_QUOTE_EMAIL_HANDOFF_TO` | Only when email handoff is enabled | Modular-home quote email recipients | Unset |
+| `RESEND_API_KEY` | Only when email handoff is enabled | Modular-home quote email provider | Unset |
+
 ## Compose Inventory
 
 `docker-compose.yml`:
