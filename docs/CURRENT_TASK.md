@@ -1136,3 +1136,40 @@ Close active Codex/VS Code Codex processes, remove the regenerated live `.codex`
   - No modular-home pricing math, BOM logic, quote endpoint contract, backend route behavior, auth policy, payment, sponsor boulevard camera/FOV/lookAt, Unreal, Pixel Streaming runtime, staging deploy, production deploy, or promotion changes were made.
 - Next step:
   - Commit Pack 2.1, then continue to Phase 2 Pack 2.2 to split the estimate/pricing engine with parity coverage.
+
+## 2026-06-29 Release Roadmap Phase 2 Pack 2.2 Split Modular Home Estimate Engine
+
+- Active objective: split `src/modules/expo/runtime/modularHome/modularHomeEstimate.ts` into focused behavior-preserving estimate modules while keeping the original import path stable as a barrel and proving estimate parity for canonical products.
+- Implementation status:
+  - Replaced `modularHomeEstimate.ts` with a 12-line barrel that re-exports the public estimate API.
+  - Added focused files under `src/modules/expo/runtime/modularHome/estimate/`:
+    - `estimateTypes.ts` (195 lines)
+    - `estimateFormatting.ts` (75 lines)
+    - `estimateMetadata.ts` (287 lines)
+    - `estimateLineItems.ts` (270 lines)
+    - `estimateVat.ts` (29 lines)
+    - `estimateSections.ts` (549 lines)
+    - `estimateCore.ts` (87 lines)
+  - Added `modularHomeEstimateParity.test.ts` with before-split snapshots for `compact-timber-40`, `family-timber-80`, and `sauna-cabin-25`, covering estimated totals and line-item category/amount outputs.
+  - Confirmed all split files are below the 800-line Pack 2.2 target.
+- Validation:
+  - `npx.cmd tsx src\modules\expo\__tests__\modularHomeProducts.test.ts` passed.
+  - `npx.cmd tsx src\modules\expo\__tests__\modularHomeEstimateParity.test.ts` passed.
+  - `npm.cmd run lint` passed.
+  - `npm.cmd run build` passed; existing Vite large-chunk warning remains.
+- Touched files:
+  - `src/modules/expo/runtime/modularHome/modularHomeEstimate.ts`
+  - `src/modules/expo/runtime/modularHome/estimate/estimateTypes.ts`
+  - `src/modules/expo/runtime/modularHome/estimate/estimateFormatting.ts`
+  - `src/modules/expo/runtime/modularHome/estimate/estimateMetadata.ts`
+  - `src/modules/expo/runtime/modularHome/estimate/estimateLineItems.ts`
+  - `src/modules/expo/runtime/modularHome/estimate/estimateVat.ts`
+  - `src/modules/expo/runtime/modularHome/estimate/estimateSections.ts`
+  - `src/modules/expo/runtime/modularHome/estimate/estimateCore.ts`
+  - `src/modules/expo/__tests__/modularHomeEstimateParity.test.ts`
+  - `docs/CURRENT_TASK.md`
+- Product/release status:
+  - `productVisualAccepted=false`.
+  - No modular-home pricing math, quote endpoint contract, backend route behavior, auth policy, payment, sponsor boulevard camera/FOV/lookAt, Unreal, Pixel Streaming runtime, staging deploy, production deploy, or promotion changes were made.
+- Next step:
+  - Commit Pack 2.2, then continue to Phase 2 Pack 2.3 to decompose `CompanyAdmin.tsx` and `SponsorLeadInbox.tsx` without changing API/auth behavior.
