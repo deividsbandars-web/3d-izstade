@@ -23,7 +23,7 @@ The production backend target is the full Express server:
 | Calculator lead capture | `backend-server/routes/api.ts` | `calculatorLeadController.captureCalculatorLead` | Public |
 | GALA quote submit | `backend-server/routes/api.ts` | `modularHomeQuoteController.submitModularHomeQuote` | Public route with existing enablement, request-flag, staging-host, rate-limit and validation gates |
 | GALA quote admin list/export/read/update | `backend-server/routes/api.ts` | `modularHomeQuoteAdminController.*` | `authMiddleware` plus `adminOnly` |
-| Pixel Streaming status/session | `backend-server/routes/api.ts` | `expoController.*PixelStreaming*` | Public API route, still controlled by runtime env |
+| Pixel Streaming status/session | `backend-server/routes/api.ts` | `expoController.*PixelStreaming*` | Public API route only when `PIXEL_STREAMING_ROUTES_ENABLED=true` |
 | Auth, dashboard, expo data, billing, marketplace, automation | `backend-server/routes/api.ts` | existing controller modules | Existing protected/public policy preserved |
 | Landing pages | `backend-server/server.ts` | `landingRouter` | Existing policy preserved |
 
@@ -56,7 +56,9 @@ Staging compose uses the same Dockerfile with the staging service and port:
 docker compose -f docker-compose.staging.yml --env-file .env.docker up -d --build backend-staging
 ```
 
-The backend image requires the current runtime env contract enforced by `backend-server/config/runtimeEnv.ts`: `SUPABASE_URL`, `SUPABASE_SERVICE_KEY`, `SIGNALING_STATUS_BASE_URL`, and `UE5_SECRET_KEY`, with `PORT`, `NODE_ENV`, and `PIXEL_STREAMING_STATUS_TIMEOUT_MS` optional/defaulted.
+The backend image requires the current runtime env contract enforced by `backend-server/config/runtimeEnv.ts`: `SUPABASE_URL` and `SUPABASE_SERVICE_KEY` are always required, with `PORT`, `NODE_ENV`, and `PIXEL_STREAMING_STATUS_TIMEOUT_MS` optional/defaulted.
+
+Pixel Streaming and UE5 operator routes are opt-in. When `PIXEL_STREAMING_ROUTES_ENABLED=true` (or legacy `PIXEL_STREAMING_ENABLED=true`) is set, the backend also requires `SIGNALING_STATUS_BASE_URL` and `UE5_SECRET_KEY`, mounts `/api/pixel-streaming/status`, `/api/pixel-streaming/session`, and `/api/expo/cities`, and preserves the existing UE5/signaling behavior. Without the flag, a GALA + `/api/expo/scene` deploy can boot without UE5/signaling secrets.
 
 ## Retired Minimal Target
 

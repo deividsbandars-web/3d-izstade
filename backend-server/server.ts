@@ -21,7 +21,9 @@ app.use(morgan('dev'));
 app.use(express.json());
 app.use(requestContext);
 
-app.get('/api/expo/cities', ue5AuthMiddleware, expoController.getCitiesList);
+if (backendRuntimeEnv.pixelStreamingRoutesEnabled) {
+  app.get('/api/expo/cities', ue5AuthMiddleware, expoController.getCitiesList);
+}
 app.use('/api', apiRoutes);
 app.use('/lp', landingRouter);
 
@@ -31,5 +33,7 @@ app.get('/health', (_req, res) => {
 
 app.listen(port, () => {
   console.log(`Backend Server running at http://localhost:${port}`);
-  console.log(`Hardened City Network API active at http://localhost:${port}/api/expo/cities`);
+  if (backendRuntimeEnv.pixelStreamingRoutesEnabled) {
+    console.log(`Hardened City Network API active at http://localhost:${port}/api/expo/cities`);
+  }
 });

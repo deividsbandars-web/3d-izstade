@@ -1535,3 +1535,41 @@ Close active Codex/VS Code Codex processes, remove the regenerated live `.codex`
   - Email handoff is opt-in and remains off by default.
 - Next step:
   - Continue to Phase 4 Pack 4.3 to decouple UE5/signaling env from a GALA-only backend deploy.
+
+## 2026-06-29 Release Roadmap Phase 4 Pack 4.3 GALA-Only Backend Env Decoupling
+
+- Active objective: let the canonical backend boot for a GALA + `/api/expo/scene` deploy with only Supabase runtime env, while keeping UE5/signaling env required whenever Pixel Streaming routes are explicitly enabled.
+- Implementation status:
+  - Added `pixelStreamingRoutesEnabled` to `backend-server/config/runtimeEnv.ts`.
+  - Added `PIXEL_STREAMING_ROUTES_ENABLED=true` as the canonical Pixel Streaming route flag, with `PIXEL_STREAMING_ENABLED=true` accepted as a legacy alias.
+  - Made `SIGNALING_STATUS_BASE_URL` and `UE5_SECRET_KEY` conditional requirements: required only when Pixel Streaming routes are enabled, optional/null otherwise.
+  - Kept `SUPABASE_URL` and `SUPABASE_SERVICE_KEY` always required.
+  - Gated `/api/pixel-streaming/status`, `/api/pixel-streaming/session`, and `/api/expo/cities` behind the Pixel Streaming route flag.
+  - Left Pixel Streaming service behavior intact when enabled; missing signaling config still throws if a streaming status call is made without the required runtime config.
+  - Updated `docker-compose.yml` and `docker-compose.staging.yml` so backend services no longer require `UE5_SECRET_KEY` at compose interpolation time and no longer depend on signaling service health for backend boot.
+  - Updated `docs/BACKEND_RELEASE_PACKAGING.md` with the new always-required vs Pixel-only env contract.
+- Validation:
+  - `npx.cmd tsx __tests__/runtimeEnv.test.ts` in `backend-server` passed.
+  - `npx.cmd tsc --noEmit -p tsconfig.json` in `backend-server` passed.
+  - `npm.cmd run lint` in `backend-server` passed.
+  - `npx.cmd tsx __tests__/pixelStreamingStatus.test.ts` in `backend-server` passed.
+  - `npx.cmd tsx __tests__/pixelStreamingSessionBroker.test.ts` in `backend-server` passed.
+  - GALA-only backend boot smoke passed: server started with `NODE_ENV=production`, `PORT=4318`, `SUPABASE_URL`, and `SUPABASE_SERVICE_KEY` only; no `SIGNALING_STATUS_BASE_URL`, no `UE5_SECRET_KEY`, no Pixel Streaming flags; `/health` returned `200`.
+  - Pixel Streaming enabled route smoke passed: server started with `PIXEL_STREAMING_ROUTES_ENABLED=true`, dummy signaling URL, UE5 secret, and short timeout; `/api/pixel-streaming/status` returned `200`.
+- Touched files:
+  - `backend-server/config/runtimeEnv.ts`
+  - `backend-server/server.ts`
+  - `backend-server/routes/api.ts`
+  - `backend-server/middleware/ue5Auth.ts`
+  - `backend-server/services/pixelStreamingStatus.ts`
+  - `backend-server/__tests__/runtimeEnv.test.ts`
+  - `docker-compose.yml`
+  - `docker-compose.staging.yml`
+  - `docs/BACKEND_RELEASE_PACKAGING.md`
+  - `docs/CURRENT_TASK.md`
+- Product/release status:
+  - `productVisualAccepted=false`.
+  - No camera/FOV/lookAt, movement physics, collision geometry, door runtime, GALA construction geometry, quote route auth policy, payment, Unreal runtime, staging deploy, production deploy, or promotion changes were made.
+  - Pixel Streaming remains opt-in/operator-only for the backend route surface.
+- Next step:
+  - Continue to Phase 4 Pack 4.4 for Supabase RLS and migration-order verification gates.

@@ -33,20 +33,19 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3000
-      SIGNALING_STATUS_BASE_URL: http://signaling
+      PIXEL_STREAMING_ROUTES_ENABLED: ${PIXEL_STREAMING_ROUTES_ENABLED:-false}
+      SIGNALING_STATUS_BASE_URL: ${SIGNALING_STATUS_BASE_URL:-http://signaling}
       PIXEL_STREAMING_STATUS_TIMEOUT_MS: ${PIXEL_STREAMING_STATUS_TIMEOUT_MS:-2500}
       REDIS_URL: redis://redis:6379
       SUPABASE_URL: ${SUPABASE_URL:?SUPABASE_URL is required}
       SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY:?SUPABASE_ANON_KEY is required}
       SUPABASE_SERVICE_KEY: ${SUPABASE_SERVICE_KEY:?SUPABASE_SERVICE_KEY is required}
-      UE5_SECRET_KEY: ${UE5_SECRET_KEY:?UE5_SECRET_KEY is required}
+      UE5_SECRET_KEY: ${UE5_SECRET_KEY:-}
     ports:
       - "3000:3000"
     depends_on:
       redis:
         condition: service_started
-      signaling:
-        condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000/health >/dev/null 2>&1 || exit 1"]
       interval: 10s

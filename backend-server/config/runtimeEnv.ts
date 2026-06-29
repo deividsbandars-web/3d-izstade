@@ -1,11 +1,12 @@
 export type BackendRuntimeEnv = {
   nodeEnv: string;
   port: number;
+  pixelStreamingRoutesEnabled: boolean;
   supabaseUrl: string;
   supabaseServiceKey: string;
-  signalingStatusBaseUrl: string;
+  signalingStatusBaseUrl: string | null;
   pixelStreamingStatusTimeoutMs: number;
-  ue5SecretKey: string;
+  ue5SecretKey: string | null;
 };
 
 type RawBackendEnv = Record<string, string | undefined>;
@@ -19,6 +20,20 @@ function normalizeRequiredString(rawEnv: RawBackendEnv, key: string) {
     throw new Error(`BACKEND_ENV_MISSING:${key}`);
   }
   return normalized;
+}
+
+function normalizeOptionalString(rawEnv: RawBackendEnv, key: string) {
+  return rawEnv[key]?.trim() || null;
+}
+
+function normalizeBooleanFlag(rawEnv: RawBackendEnv, key: string) {
+  const normalized = rawEnv[key]?.trim().toLowerCase();
+  return normalized === '1' || normalized === 'true' || normalized === 'yes' || normalized === 'on';
+}
+
+function normalizePixelStreamingRoutesEnabled(rawEnv: RawBackendEnv) {
+  return normalizeBooleanFlag(rawEnv, 'PIXEL_STREAMING_ROUTES_ENABLED')
+    || normalizeBooleanFlag(rawEnv, 'PIXEL_STREAMING_ENABLED');
 }
 
 function normalizePort(rawEnv: RawBackendEnv) {
@@ -67,25 +82,30 @@ function normalizeUrl(value: string, key: string, allowedProtocols: string[]) {
 
 export function resolveBackendRuntimeEnv(rawEnv: RawBackendEnv): BackendRuntimeEnv {
   const nodeEnv = rawEnv.NODE_ENV?.trim() || 'development';
+  const pixelStreamingRoutesEnabled = normalizePixelStreamingRoutesEnabled(rawEnv);
   const supabaseUrl = normalizeUrl(
     normalizeRequiredString(rawEnv, 'SUPABASE_URL'),
     'SUPABASE_URL',
     ['http:', 'https:']
   );
-  const signalingStatusBaseUrl = normalizeUrl(
-    normalizeRequiredString(rawEnv, 'SIGNALING_STATUS_BASE_URL'),
-    'SIGNALING_STATUS_BASE_URL',
-    ['http:', 'https:']
-  );
+  const rawSignalingStatusBaseUrl = pixelStreamingRoutesEnabled
+    ? normalizeRequiredString(rawEnv, 'SIGNALING_STATUS_BASE_URL')
+    : normalizeOptionalString(rawEnv, 'SIGNALING_STATUS_BASE_URL');
+  const signalingStatusBaseUrl = rawSignalingStatusBaseUrl
+    ? normalizeUrl(rawSignalingStatusBaseUrl, 'SIGNALING_STATUS_BASE_URL', ['http:', 'https:'])
+    : null;
 
   return {
     nodeEnv,
     port: normalizePort(rawEnv),
+    pixelStreamingRoutesEnabled,
     supabaseUrl,
     supabaseServiceKey: normalizeRequiredString(rawEnv, 'SUPABASE_SERVICE_KEY'),
     signalingStatusBaseUrl,
     pixelStreamingStatusTimeoutMs: normalizeTimeout(rawEnv),
-    ue5SecretKey: normalizeRequiredString(rawEnv, 'UE5_SECRET_KEY'),
+    ue5SecretKey: pixelStreamingRoutesEnabled
+      ? normalizeRequiredString(rawEnv, 'UE5_SECRET_KEY')
+      : normalizeOptionalString(rawEnv, 'UE5_SECRET_KEY'),
   };
 }
 

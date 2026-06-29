@@ -20,6 +20,7 @@ import * as growthController from '../controllers/growthController.js';
 import * as calculatorLeadController from '../controllers/calculatorLeadController.js';
 import * as modularHomeQuoteAdminController from '../controllers/modularHomeQuoteAdminController.js';
 import * as modularHomeQuoteController from '../controllers/modularHomeQuoteController.js';
+import { getBackendRuntimeEnv } from '../config/runtimeEnv.js';
 import { adminOnly, authMiddleware } from '../middleware/authMiddleware.js';
 import { rateLimitMiddleware } from '../middleware/rateLimit.js';
 
@@ -32,8 +33,10 @@ router.use(rateLimitMiddleware);
  * PUBLIC ROUTES (Defined BEFORE authMiddleware)
  */
 router.post('/analytics/track', analyticsController.trackAnalytics);
-router.get('/pixel-streaming/status', expoController.getPixelStreamingRuntimeStatus);
-router.post('/pixel-streaming/session', expoController.createPixelStreamingSession);
+if (getBackendRuntimeEnv().pixelStreamingRoutesEnabled) {
+  router.get('/pixel-streaming/status', expoController.getPixelStreamingRuntimeStatus);
+  router.post('/pixel-streaming/session', expoController.createPixelStreamingSession);
+}
 router.post('/expo/lead', expoLeadController.captureExpoLead);
 router.post('/calculator/lead', calculatorLeadController.captureCalculatorLead);
 router.post('/modular-home/quote', modularHomeQuoteController.submitModularHomeQuote);
