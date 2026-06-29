@@ -392,6 +392,55 @@ resetModularHomeQuoteRateLimitForTests();
 resetModularHomeQuoteRateLimitForTests();
 
 {
+  process.env.MODULAR_HOME_QUOTE_SUBMISSION_ENABLED = 'true';
+  const { response, result } = createMockResponse();
+  await submitModularHomeQuoteWithDependencies({
+    body: createValidPayload(),
+    headers: { host: 'staging.30sek24.com', 'x-forwarded-for': '203.0.113.50' },
+    method: 'POST',
+    path: '/api/modular-home/quote',
+    query: { homeQuoteBackend: '1' },
+  } as unknown as Request, response, {
+    rateLimitStore: {
+      async increment(_key: string, _windowMs: number, nowMs: number) {
+        return { count: 6, resetAt: nowMs + 60_000 };
+      },
+    },
+    storage: createFakeQuoteStorage().storage,
+  });
+  assert.equal(result.statusCode, 429);
+  assert.equal(result.headers.get('Retry-After'), '60');
+  assert.match(JSON.stringify(result.body), /MODULAR_HOME_QUOTE_RATE_LIMITED/);
+}
+
+{
+  process.env.MODULAR_HOME_QUOTE_SUBMISSION_ENABLED = 'true';
+  const { response, result } = createMockResponse();
+  await submitModularHomeQuoteWithDependencies({
+    body: {
+      ...createValidPayload(),
+      requester: {
+        ...createValidPayload().requester,
+        email: 'bad-email',
+      },
+    },
+    headers: { host: 'staging.30sek24.com' },
+    method: 'POST',
+    path: '/api/modular-home/quote',
+    query: { homeQuoteBackend: '1' },
+  } as unknown as Request, response, {
+    rateLimitStore: {
+      async increment(_key: string, windowMs: number, nowMs: number) {
+        return { count: 1, resetAt: nowMs + windowMs };
+      },
+    },
+    storage: createFakeQuoteStorage().storage,
+  });
+  assert.equal(result.statusCode, 400);
+  assert.match(JSON.stringify(result.body), /MODULAR_HOME_QUOTE_EMAIL_INVALID/);
+}
+
+{
   const { response, result } = createMockResponse();
   await submitModularHomeQuote({
     body: createValidPayload(),

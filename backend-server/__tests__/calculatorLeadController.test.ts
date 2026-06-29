@@ -1,6 +1,29 @@
 import assert from 'node:assert/strict';
-import { normalizeCalculatorLeadOpsUpdate } from '../controllers/calculatorLeadController.js';
+import type { Request, Response } from 'express';
+import {
+  captureCalculatorLeadWithDependencies,
+  normalizeCalculatorLeadOpsUpdate,
+} from '../controllers/calculatorLeadController.js';
 import { validateCalculatorLeadRequest } from '../controllers/calculatorLeadValidation.js';
+
+function createMockResponse() {
+  const result = {
+    body: null as unknown,
+    statusCode: 200,
+  };
+  const response = {
+    json(body: unknown) {
+      result.body = body;
+      return response;
+    },
+    status(statusCode: number) {
+      result.statusCode = statusCode;
+      return response;
+    },
+  } as Response;
+
+  return { response, result };
+}
 
 const valid = validateCalculatorLeadRequest({
   contact_info: {
@@ -85,3 +108,52 @@ assert.deepEqual(normalizeCalculatorLeadOpsUpdate({ priority: 'medium', quality:
 assert.throws(() => normalizeCalculatorLeadOpsUpdate({}), /CALCULATOR_LEAD_UPDATE_EMPTY/);
 assert.throws(() => normalizeCalculatorLeadOpsUpdate({ salesPriority: 'now' }), /CALCULATOR_LEAD_PRIORITY_INVALID/);
 assert.throws(() => normalizeCalculatorLeadOpsUpdate({ leadQuality: 'maybe' }), /CALCULATOR_LEAD_QUALITY_INVALID/);
+
+{
+  const insertedRows: unknown[] = [];
+  const fakeSupabase = {
+    from(table: string) {
+      assert.equal(table, 'leads');
+      return {
+        insert(rows: unknown[]) {
+          insertedRows.push(...rows);
+          return {
+            select(columns: string) {
+              assert.equal(columns, 'id');
+              return {
+                async single() {
+                  return { data: { id: 'lead-123' }, error: null };
+                },
+              };
+            },
+          };
+        },
+      };
+    },
+  };
+  const { response, result } = createMockResponse();
+  await captureCalculatorLeadWithDependencies({
+    body: {
+      contact_info: {
+        calculatorId: 'roof',
+        calculatorTitle: 'Jumta tame',
+        email: 'client@example.com',
+        estimateTotal: 12650,
+        name: 'Klients',
+        phone: '+371 20000000',
+      },
+      message: 'Calculator: Jumta tame',
+      score: 72,
+      source: 'calculator:roof',
+    },
+  } as Request, response, { supabase: fakeSupabase as any });
+
+  assert.equal(result.statusCode, 201);
+  assert.deepEqual(result.body, {
+    calculatorId: 'roof',
+    id: 'lead-123',
+    source: 'calculator:roof',
+    success: true,
+  });
+  assert.equal(insertedRows.length, 1);
+}

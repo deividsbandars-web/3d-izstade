@@ -8,6 +8,10 @@ const CALCULATOR_LEAD_PRIORITIES = new Set(['low', 'medium', 'high', 'urgent']);
 const CALCULATOR_LEAD_QUALITIES = new Set(['unreviewed', 'low', 'medium', 'high']);
 const CALCULATOR_LEAD_STATUSES = new Set(['new', 'contacted', 'qualified', 'rejected']);
 
+type CalculatorLeadDependencies = {
+  supabase?: ReturnType<typeof getSupabase>;
+};
+
 function normalizeCalculatorLeadStatus(value: unknown) {
   const status = typeof value === 'string' ? value.trim().toLowerCase() : '';
   if (!CALCULATOR_LEAD_STATUSES.has(status)) {
@@ -96,10 +100,14 @@ export function normalizeCalculatorLeadOpsUpdate(body: unknown) {
   return update;
 }
 
-export async function captureCalculatorLead(req: Request, res: Response) {
+export async function captureCalculatorLeadWithDependencies(
+  req: Request,
+  res: Response,
+  dependencies: CalculatorLeadDependencies = {},
+) {
   try {
     const payload = validateCalculatorLeadRequest(req.body);
-    const supabase = getSupabase();
+    const supabase = dependencies.supabase ?? getSupabase();
     const { data, error } = await supabase
       .from('leads')
       .insert([{
@@ -131,6 +139,10 @@ export async function captureCalculatorLead(req: Request, res: Response) {
     const status = code.startsWith('CALCULATOR_LEAD_') ? 400 : 500;
     res.status(status).json({ error: code });
   }
+}
+
+export async function captureCalculatorLead(req: Request, res: Response) {
+  return captureCalculatorLeadWithDependencies(req, res);
 }
 
 export async function getCalculatorLeads(req: Request, res: Response) {

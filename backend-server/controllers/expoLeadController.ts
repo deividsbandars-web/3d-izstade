@@ -19,6 +19,10 @@ export type ValidExpoLeadRequest = {
   sourcePath: string | null;
 };
 
+type ExpoLeadDependencies = {
+  supabase?: ReturnType<typeof getSupabase>;
+};
+
 function normalizeRequiredText(value: unknown, code: string) {
   const normalized = typeof value === 'string' ? value.trim() : '';
   if (!normalized) {
@@ -79,10 +83,14 @@ async function resolveCompanyIdForLead(
   return typeof data?.id === 'string' ? data.id : null;
 }
 
-export async function captureExpoLead(req: Request, res: Response) {
+export async function captureExpoLeadWithDependencies(
+  req: Request,
+  res: Response,
+  dependencies: ExpoLeadDependencies = {},
+) {
   try {
     const payload = validateExpoLeadRequest(req.body);
-    const supabase = getSupabase();
+    const supabase = dependencies.supabase ?? getSupabase();
     const resolvedCompanyId = await resolveCompanyIdForLead(supabase, payload);
     const { error } = await supabase
       .from('service_requests')
@@ -109,4 +117,8 @@ export async function captureExpoLead(req: Request, res: Response) {
     const status = code.startsWith('EXPO_LEAD_') ? 400 : 500;
     res.status(status).json({ error: code });
   }
+}
+
+export async function captureExpoLead(req: Request, res: Response) {
+  return captureExpoLeadWithDependencies(req, res);
 }

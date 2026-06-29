@@ -1718,3 +1718,32 @@ Close active Codex/VS Code Codex processes, remove the regenerated live `.codex`
   - CI now includes the staging quote contract and will correctly fail PRs while the staging admin auth contract remains broken.
 - Next step:
   - Fix or reconfigure staging modular-home quote admin auth before treating the release-gate workflow as green, then continue to Phase 5 Pack 5.3 for backend route contract coverage.
+
+## 2026-06-29 Release Roadmap Phase 5 Pack 5.3 Backend API Contract Coverage
+
+- Active objective: ensure release-scope backend routes have hermetic contract coverage for `/api/expo/scene`, `/api/expo/lead`, `/api/calculator/lead`, `/api/modular-home/quote`, and modular-home quote admin auth-required behavior.
+- Implementation status:
+  - Added dependency-injected capture helpers for Expo lead and calculator lead controllers while preserving the existing exported route handlers.
+  - Added success-path tests for Expo lead capture and calculator lead capture using fake Supabase clients.
+  - Added route-level public contract coverage for `/api/expo/lead`, `/api/calculator/lead`, and `/api/modular-home/quote` invalid/disabled cases without importing the full backend router side-effect graph.
+  - Extended modular-home quote tests with response-level assertions for `MODULAR_HOME_QUOTE_RATE_LIMITED` (`429`) and `MODULAR_HOME_QUOTE_EMAIL_INVALID` (`400`).
+  - Existing `/api/expo/scene` route/controller contract tests and modular-home quote admin auth-required tests remain active in the backend test runner.
+- Validation:
+  - `npm.cmd run check:backend-tests` passed; 15 backend test files ran.
+  - `npx.cmd tsc --noEmit -p tsconfig.json` in `backend-server` passed.
+  - `npm.cmd run lint` in `backend-server` passed.
+  - `npm.cmd run check:modular-home-quote-staging -- --json` reached staging with network escalation and failed overall because staging admin quote routes returned `401` for non-admin/admin list, detail, status update, and export checks. Staging health, flag-required behavior, valid quote submission, public route rejection, public Supabase RLS rejection, production-default rejection, and cleanup of the temporary quote row passed.
+- Touched files:
+  - `backend-server/controllers/expoLeadController.ts`
+  - `backend-server/controllers/calculatorLeadController.ts`
+  - `backend-server/__tests__/expoLeadController.test.ts`
+  - `backend-server/__tests__/calculatorLeadController.test.ts`
+  - `backend-server/__tests__/modularHomeQuoteController.test.ts`
+  - `backend-server/routes/__tests__/releaseApiPublicRoutes.test.ts`
+  - `docs/CURRENT_TASK.md`
+- Product/release status:
+  - `productVisualAccepted=false`.
+  - No camera/FOV/lookAt, movement physics, collision geometry, door runtime, GALA construction geometry, quote route auth policy, payment, Unreal runtime, staging deploy, production deploy, or promotion changes were made.
+  - Local backend route contract coverage is green. Release remains blocked on staging modular-home quote admin auth returning `401`.
+- Next step:
+  - Resolve staging modular-home quote admin authentication before Phase 6 staging verification; Phase 6 deploy/promotion work still requires explicit authorization.
