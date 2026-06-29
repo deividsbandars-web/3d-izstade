@@ -47,7 +47,7 @@ The standalone `GalaInterior.tsx` route subtree is not mounted by `homeStudio=1`
 | Floor/ceiling/room trims | `construction/GalaFloorCeilingAssembly.tsx` | current | `GalaConstructionModel.ts` rooms and openings | Door trim interruption constants in the ceiling assembly; trim fragments in unrelated components mounted in current route |
 | DOM/Html overlays | `ModularHomeModel.tsx` for the legacy floating demo label, with `shouldShowFloatingHomeDemoModelLabel(homeStudioEnabled)` gate; route DOM panels own their own UI | current gated owner | DOM overlay QA | Un-gated Drei `Html` labels in `homeStudio=1` real-user routes |
 | Physics/collision | `GalaFloorplan.ts` data and `ExpoWorldPlayerLayer.tsx` runtime | current runtime owner | Door state runtime, real-user physics QA | Geometry renderer claiming collision pass without empirical real-user walk test |
-| QA/evidence | `scripts/qa-gala-dom-overlay-audit.mjs`, `scripts/qa-gala-renderer-ownership-audit.mjs`, and targeted runtime scripts | current | Evidence folders and reports | Screenshot existence, mesh count, or self-reported flags standing in for DOM, ownership, collision, or human visual acceptance |
+| QA/evidence | `scripts/check-gala-renderer-ownership.mjs`, `scripts/qa-gala-dom-overlay-audit.mjs`, `scripts/qa-gala-renderer-ownership-audit.mjs`, and targeted runtime scripts | current | Evidence folders and reports | Screenshot existence, mesh count, or self-reported flags standing in for DOM, ownership, collision, or human visual acceptance |
 
 ## Current vs Adapter vs Legacy
 
@@ -107,6 +107,7 @@ Therefore `singleSourceRendererProven=false`.
 - Construction assemblies may consume normalized openings but must not redefine `D-ENTRY`, `D-TERRACE`, `D-BEDROOM`, `D-BATHROOM`, or window dimensions locally.
 - Furniture placement resolves through `GALA_FURNITURE_LAYOUT`. `GalaRoomAssembly.tsx` may render furniture primitives, but it must not own primary placement coordinates.
 - `GalaRoof` may render roof primitives only as the roof adapter mounted under `GalaConstructionRenderer`.
+- `scripts/check-gala-renderer-ownership.mjs` must fail if the active construction render path imports `GalaInterior.tsx`, `GalaInteriorConstruction.tsx`, `GalaOpenings.tsx`, `GalaCeiling.tsx`, or full-room exports from `GalaInteriorFurniture.tsx`.
 - Mesh traversal QA is not visual safety. DOM overlay QA is required for every construction renderer evidence run that claims central scene visibility.
 
 ## Remaining Blockers

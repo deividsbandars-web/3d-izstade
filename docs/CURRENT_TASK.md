@@ -993,3 +993,36 @@ Close active Codex/VS Code Codex processes, remove the regenerated live `.codex`
   - No frontend route behavior, backend, auth, quote-submit API, payment, sponsor boulevard camera/FOV/lookAt, Unreal, Pixel Streaming, staging, deploy, or production promotion changes were made.
 - Next step:
   - Start Phase 1 Pack 1.2 to add an automated ownership/legacy-import guard.
+
+## 2026-06-29 Release Roadmap Phase 1 Pack 1.2 GALA Ownership Guard
+
+- Active objective: automate enforcement of the reconciled GALA renderer ownership contract so active construction render paths cannot re-import legacy modules or inactive furniture exports.
+- Implementation status:
+  - Added `scripts/check-gala-renderer-ownership.mjs`.
+  - The script traverses the active GALA render graph from `ModularHomeModel.tsx`, `GalaHouseShell.tsx`, and `construction/GalaConstructionRenderer.tsx`.
+  - The guard fails if the active graph imports contract-legacy files: `GalaInterior.tsx`, `GalaInteriorConstruction.tsx`, `GalaOpenings.tsx`, or `GalaCeiling.tsx`.
+  - The guard treats `GalaInteriorFurniture.tsx` as a mixed helper/legacy file: it allows only `GalaLivingSofaModel`, `GalaCoffeeTableModel`, `GalaBedFabricBox`, and `GalaBedWoodBox`, and blocks full-room exports (`GalaKitchenFurniture`, `GalaLivingFurniture`, `GalaBathroomFurniture`, `GalaBedroomFurniture`) plus broad namespace/default imports.
+  - Added `check:gala-ownership` to `package.json` and inserted it into the `check:all` chain after `check:expo-boundaries`.
+  - Updated `docs/GALA_RENDERER_OWNERSHIP_CONTRACT.md` to list the new guard as QA/evidence and state the enforced duplicate-ownership rule.
+- Validation:
+  - `node --check scripts/check-gala-renderer-ownership.mjs` passed.
+  - `npm.cmd run check:gala-ownership` passed:
+    - active files scanned: 27
+    - relative imports scanned: 80
+    - contract legacy files guarded: 4
+    - violations: 0
+  - `npm.cmd run check:all` passed:
+    - `check:expo-boundaries` passed with 0 violations.
+    - `check:gala-ownership` passed with 0 violations.
+    - `check:backend-boundaries` passed with 0 violations.
+    - `check:backend-shared-boundaries` passed with 0 violations.
+- Touched files:
+  - `scripts/check-gala-renderer-ownership.mjs`
+  - `package.json`
+  - `docs/GALA_RENDERER_OWNERSHIP_CONTRACT.md`
+  - `docs/CURRENT_TASK.md`
+- Product/release status:
+  - `productVisualAccepted=false`.
+  - No frontend runtime behavior, backend behavior, auth, quote-submit API, payment, sponsor boulevard camera/FOV/lookAt, Unreal, Pixel Streaming, staging, deploy, or production promotion changes were made.
+- Next step:
+  - Start Phase 1 Pack 1.3 to pin the production backend target and resolve the dual-build packaging risk.
