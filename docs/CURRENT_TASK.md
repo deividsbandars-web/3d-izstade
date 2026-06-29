@@ -939,3 +939,29 @@ Close active Codex/VS Code Codex processes, remove the regenerated live `.codex`
   - No frontend runtime, backend, auth, quote-submit API, payment, sponsor boulevard, Unreal, Pixel Streaming, staging, deploy, camera, movement, geometry, collision, or door-runtime changes were made.
 - Next step:
   - Commit Pack 0.2, then run Phase 0 Pack 0.3 only after the Pack 0.2 tree is clean.
+
+## 2026-06-29 Release Roadmap Phase 0 Pack 0.3 Release Baseline Pin
+
+- Active objective: create `release/v1-stabilization`, tag the freeze commit as `v1-baseline`, and record a reproducible release baseline.
+- Implementation status:
+  - Confirmed the Pack 0.2 working tree was clean on `feat/booth-camera-screen-feed-current`.
+  - Created branch `release/v1-stabilization` from freeze commit `f4244e8a3d4f6c27da22bdb5087b682f74cdc190`.
+  - Created annotated tag `v1-baseline`; `git rev-parse "v1-baseline^{}"` resolves to `f4244e8a3d4f6c27da22bdb5087b682f74cdc190`.
+  - Added `docs/RELEASE_BASELINE.md` with the current commit SHA, build chunk sizes, `check:all` summary, and backend TypeScript gate results.
+- Validation:
+  - `npm.cmd run build` passed; existing Vite large-chunk warning remains.
+  - `npm.cmd run check:all` passed:
+    - `check:expo-boundaries` passed with 0 violations.
+    - `check:backend-boundaries` passed with 0 violations.
+    - `check:backend-shared-boundaries` passed with 0 violations.
+  - In `backend-server`, `npx.cmd tsc --noEmit -p tsconfig.json` passed with no compiler output.
+  - In `backend-server`, `npx.cmd tsc --noEmit -p tsconfig.docker.json` passed with no compiler output.
+  - Branch/tag verification passed: `release/v1-stabilization` exists and `v1-baseline` points at the freeze commit.
+- Touched files:
+  - `docs/RELEASE_BASELINE.md`
+  - `docs/CURRENT_TASK.md`
+- Product/release status:
+  - `productVisualAccepted=false`.
+  - No frontend runtime, backend behavior, auth, quote-submit API, payment, sponsor boulevard camera/FOV/lookAt, Unreal, Pixel Streaming, staging, deploy, or production promotion changes were made.
+- Next step:
+  - Start Phase 1 Pack 1.1 to reconcile GALA renderer active-vs-legacy ownership on `release/v1-stabilization`.
