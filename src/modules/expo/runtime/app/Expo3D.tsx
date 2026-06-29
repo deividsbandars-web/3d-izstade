@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { WebGLUnsupported } from '../../../../components/WebGLUnsupported';
+import { useWebGLSupport } from '../../../../components/webglSupport';
 import { useZoneSystem } from '../../../../hooks/useZoneSystem';
 import type { ExpoStartView } from '../../../../shared/expo/worldContract';
 import { ExpoWorldHud } from './ExpoWorldHud';
@@ -52,8 +54,19 @@ const HOME_STUDIO_INTERIOR_START_VIEW: ExpoStartView = {
 };
 
 export default function Expo3D() {
+  const webglSupport = useWebGLSupport();
   const runtimeSession = useExpoRuntimeSession();
   const { data, isLoading } = useExpoSceneData();
+
+  if (!webglSupport.available) {
+    return (
+      <WebGLUnsupported
+        reason={webglSupport.reason}
+        routeLabel="Web3D Expo"
+        variant="expo"
+      />
+    );
+  }
 
   return (
     <WorldInspectionProvider>

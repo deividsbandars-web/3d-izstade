@@ -1,6 +1,7 @@
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, type ReactNode } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/Layout';
+import { RouteErrorBoundary, RouteLoadingFallback } from './components/RouteErrorBoundary';
 
 // Core un pamata lapas
 import Home from './pages/Home';
@@ -79,10 +80,33 @@ const CalculatorsHub = lazy(() => import('./modules/calculators/CalculatorsHub')
 const InventoryManager = lazy(() => import('./modules/inventory/InventoryManager'));
 const ContentGenerator = lazy(() => import('./modules/ai-tools/ContentGenerator'));
 
+function web3dRoute(
+  children: ReactNode,
+  label: string,
+  loadingLabel = `Loading ${label}`,
+) {
+  return (
+    <RouteErrorBoundary
+      ctaHref="/modular-homes/studio?homeStudio=1#fallback-quote"
+      ctaLabel="Request modular home quote"
+      label={label}
+    >
+      <Suspense fallback={<RouteLoadingFallback label={loadingLabel} />}>
+        {children}
+      </Suspense>
+    </RouteErrorBoundary>
+  );
+}
+
 export default function App() {
   return (
     <BrowserRouter>
-      <Suspense fallback={<div style={{ color: 'white', padding: '100px' }}>Initializing Warpala OS...</div>}>
+      <Suspense fallback={<RouteLoadingFallback label="Loading Warpala" />}>
+        <RouteErrorBoundary
+          ctaHref="/modular-homes/studio?homeStudio=1#fallback-quote"
+          ctaLabel="Request modular home quote"
+          label="Warpala"
+        >
         <Routes>
           <Route path="/" element={<Layout />}>
             <Route index element={<Home />} />
@@ -154,8 +178,8 @@ export default function App() {
             <Route path="expo" element={<Navigate to="/expo-3d" />} />
           </Route>
           
-          <Route path="/expo-3d" element={<Suspense fallback={null}><Expo3D /></Suspense>} />
-          <Route path="/modular-homes/studio" element={<Suspense fallback={null}><ModularHomeStudioPage /></Suspense>} />
+          <Route path="/expo-3d" element={web3dRoute(<Expo3D />, 'Web3D Expo')} />
+          <Route path="/modular-homes/studio" element={web3dRoute(<ModularHomeStudioPage />, 'Modular Home Studio')} />
           <Route path="/expo3d" element={<Navigate to="/expo-3d" replace />} />
           <Route path="/expo/booth/:id" element={<Suspense fallback={null}><BoothRoom /></Suspense>} />
           <Route path="/expo/booth/:id/stream" element={<Suspense fallback={null}><BoothStreamRoom /></Suspense>} />
@@ -163,6 +187,7 @@ export default function App() {
           <Route path="/galerija" element={<Suspense fallback={null}><DigitalGallery /></Suspense>} />
           <Route path="/projekcija" element={<Suspense fallback={null}><ProjectorRoom /></Suspense>} />
         </Routes>
+        </RouteErrorBoundary>
       </Suspense>
     </BrowserRouter>
   );

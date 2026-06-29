@@ -1,6 +1,14 @@
 import { Suspense, lazy, useLayoutEffect, useMemo } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { buildCanonicalModularHomeStudioSearchParams } from '../../modules/expo/runtime/modularHome/modularHomeShareUrl';
+import { WebGLUnsupported } from '../../components/WebGLUnsupported';
+import { useWebGLSupport } from '../../components/webglSupport';
+import { calculateModularHomeEstimate } from '../../modules/expo/runtime/modularHome/modularHomeEstimate';
+import { getDefaultHomeConfig } from '../../modules/expo/runtime/modularHome/modularHomeProducts';
+import { ModularHomeQuoteForm } from '../../modules/expo/runtime/modularHome/ModularHomeQuoteForm';
+import {
+  buildCanonicalModularHomeStudioSearchParams,
+  decodeModularHomeConfigFromUrl,
+} from '../../modules/expo/runtime/modularHome/modularHomeShareUrl';
 
 const Expo3D = lazy(() => import('../../modules/expo/Expo3D'));
 
@@ -19,11 +27,28 @@ function buildStudioSearch(search: string) {
 export default function ModularHomeStudioPage() {
   const location = useLocation();
   const navigate = useNavigate();
+  const webglSupport = useWebGLSupport();
   const currentViewMode = useMemo(() => new URLSearchParams(location.search).get('view'), [location.search]);
   const targetSearch = useMemo(() => buildStudioSearch(location.search), [location.search]);
   const isReady = location.search === targetSearch;
+  const fallbackQuoteConfig = useMemo(() => {
+    const decodedConfig = decodeModularHomeConfigFromUrl(location.search);
+    return decodedConfig.isSharedConfig ? decodedConfig.config : getDefaultHomeConfig(decodedConfig.productId);
+  }, [location.search]);
+  const fallbackQuoteEstimate = useMemo(() => calculateModularHomeEstimate(fallbackQuoteConfig), [fallbackQuoteConfig]);
+  const fallbackIsTouchDevice = useMemo(() => {
+    if (typeof window === 'undefined') {
+      return false;
+    }
+
+    return window.matchMedia?.('(pointer: coarse)').matches || navigator.maxTouchPoints > 0;
+  }, []);
 
   useLayoutEffect(() => {
+    if (!webglSupport.available) {
+      return;
+    }
+
     if (typeof window !== 'undefined' && new URLSearchParams(location.search).get('qa3d') === '1') {
       window.sessionStorage.setItem('warpala:qa3d', '1');
     }
@@ -39,7 +64,24 @@ export default function ModularHomeStudioPage() {
       },
       { replace: true },
     );
-  }, [isReady, location.pathname, location.search, navigate, targetSearch]);
+  }, [isReady, location.pathname, location.search, navigate, targetSearch, webglSupport.available]);
+
+  if (!webglSupport.available) {
+    return (
+      <WebGLUnsupported
+        quotePanel={(
+          <ModularHomeQuoteForm
+            config={fallbackQuoteConfig}
+            estimate={fallbackQuoteEstimate}
+            isTouchDevice={fallbackIsTouchDevice}
+          />
+        )}
+        reason={webglSupport.reason}
+        routeLabel="Modular Home Studio"
+        variant="modular-home"
+      />
+    );
+  }
 
   if (!isReady) {
     return null;

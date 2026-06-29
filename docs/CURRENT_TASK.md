@@ -1302,3 +1302,40 @@ Close active Codex/VS Code Codex processes, remove the regenerated live `.codex`
   - No runtime visuals, camera/FOV/lookAt, movement physics, collision geometry, door runtime, backend route behavior, quote endpoint contract, auth policy, payment, Unreal, Pixel Streaming runtime, staging deploy, production deploy, or promotion changes were made.
 - Next step:
   - Continue to Phase 3 Pack 3.2 for route-level error boundaries and WebGL fallback behavior.
+
+## 2026-06-29 Release Roadmap Phase 3 Pack 3.2 Route Error Boundaries And WebGL Fallback
+
+- Active objective: prevent blank-screen failure on `/expo-3d` and `/modular-homes/studio`, and keep a modular-home lead path reachable when WebGL is unavailable.
+- Implementation status:
+  - Added `src/components/RouteErrorBoundary.tsx` with a route recovery UI, reload action, quote CTA, and a branded loading fallback.
+  - Wrapped the app routes in a global route error boundary and added route-specific boundaries for `/expo-3d` and `/modular-homes/studio`.
+  - Replaced the raw `Initializing Warpala OS...` fallback with `RouteLoadingFallback`.
+  - Added `src/components/webglSupport.ts` with a WebGL probe, `getContext` exception handling, and deterministic `forceWebGLUnsupported=1` / `webgl=0` QA simulation support.
+  - Added `src/components/WebGLUnsupported.tsx` for the static WebGL fallback UI with quote CTA and retry action.
+  - Added early WebGL gating in `Expo3D.tsx`.
+  - Added a modular-home WebGL fallback in `ModularHomeStudioPage.tsx` that renders the existing `ModularHomeQuoteForm` with the current shared URL config when present, or the default home config otherwise, so the config and estimate still attach to the quote payload without loading 3D.
+- Validation:
+  - `npx.cmd tsc --noEmit --pretty false -p tsconfig.json` passed with no compiler output.
+  - `npm.cmd run lint` passed with no warnings.
+  - `npm.cmd run build` passed.
+  - `npm.cmd run check:bundle-budget` passed:
+    - `react-three-vendor`: 469.45 kB / 516.39 kB.
+    - `three-core`: 187.82 kB / 206.60 kB.
+    - `Expo3D`: 158.08 kB / 178.72 kB.
+    - `modular-home`: 129.03 kB / 140.80 kB.
+    - `react-vendor`: 73.72 kB / 81.09 kB.
+  - Production `vite preview` smoke using system Chrome passed for WebGL fallback: `/modular-homes/studio?homeStudio=1&forceWebGLUnsupported=1` returned `{"quotePanel":true,"quoteForm":true,"route":"modular-home"}`.
+  - Production `vite preview` smoke using system Chrome passed for chunk-load failure: blocking `/assets/Expo3D-*.js` on `/expo-3d` returned `{"label":"Web3D Expo","hasCta":true,"hasReload":true}`.
+- Touched files:
+  - `src/App.tsx`
+  - `src/components/RouteErrorBoundary.tsx`
+  - `src/components/WebGLUnsupported.tsx`
+  - `src/components/webglSupport.ts`
+  - `src/modules/expo/runtime/app/Expo3D.tsx`
+  - `src/pages/modularHome/ModularHomeStudioPage.tsx`
+  - `docs/CURRENT_TASK.md`
+- Product/release status:
+  - `productVisualAccepted=false`.
+  - No camera/FOV/lookAt, movement physics, collision geometry, door runtime, backend route behavior, quote endpoint contract, auth policy, payment, Unreal, Pixel Streaming runtime, staging deploy, production deploy, or promotion changes were made.
+- Next step:
+  - Continue to Phase 3 Pack 3.3 for mobile DPR caps, zone visibility, and instancing/performance audit.
