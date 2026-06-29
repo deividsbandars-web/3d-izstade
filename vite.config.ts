@@ -29,6 +29,7 @@ export default defineConfig({
     entries: ['index.html'],
   },
   resolve: {
+    dedupe: ['three', '@react-three/fiber', '@react-three/drei', 'react', 'react-dom'],
     alias: {
       ioredis: '/src/shims/ioredis-browser.ts',
     },
