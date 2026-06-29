@@ -1650,3 +1650,35 @@ Close active Codex/VS Code Codex processes, remove the regenerated live `.codex`
   - No real secrets were added to tracked env examples.
 - Next step:
   - Continue to Phase 5 Pack 5.1 for GALA QA script consolidation.
+
+## 2026-06-29 Release Roadmap Phase 5 Pack 5.1 GALA QA Suite Consolidation
+
+- Active objective: consolidate the GALA modular-home QA scripts into one canonical suite, retire contradictory historical checks from the release gate, and document the active owner per QA concern.
+- Implementation status:
+  - Added `scripts/qa-gala-suite.mjs` as the single GALA QA orchestrator.
+  - The suite supports `--base-url`, `--out-dir`, `--timeout-ms`, `--profile=release|smoke`, `--concerns=...`, and `--list`.
+  - Canonical release checks are now mapped to one active owner per concern: ownership, DOM overlay, wall-skin coverage, floor-ground isolation, geometry/clip, furniture clearance, static budget, motion performance, visual design intent, and visual acceptance preflight.
+  - Retired historical/diagnostic scripts from the canonical release report, including `qa-gala-construction-renderer.mjs`, whose stale floor-color flags can contradict `qa-gala-visual-design-intent-audit.mjs`.
+  - Updated `qa-gala-wall-skin-coverage-audit.mjs` so wall-skin coverage verifies runtime ownership/coverage while delegating interior/exterior palette matching to the design-intent audit.
+  - Documented the canonical suite and retired scripts in `docs/GALA_PERFORMANCE_BUDGET.md` and `docs/final-visual-review-checklist.md`.
+- Validation:
+  - `node --check scripts/qa-gala-suite.mjs` passed.
+  - `node --check scripts/qa-gala-wall-skin-coverage-audit.mjs` passed.
+  - `node scripts/qa-gala-suite.mjs --list` passed and emitted the canonical/retired mapping.
+  - Local preview smoke suite passed: `node scripts/qa-gala-suite.mjs --base-url=http://127.0.0.1:4326 --out-dir=artifacts/qa-gala-suite-pack5-1-smoke-rerun --profile=smoke --timeout-ms=240000`.
+  - Local preview release suite ran: `node scripts/qa-gala-suite.mjs --base-url=http://127.0.0.1:4327 --out-dir=artifacts/qa-gala-suite-pack5-1-release --profile=release --timeout-ms=300000`.
+  - Release suite result: 9/10 canonical checks passed; `visual-acceptance-preflight` failed for `interiorStudio` and `startInside` with `readabilityFailureReason=near-uniform-close-surface`. This is a current visual preflight failure, not a contradictory stale-script failure.
+  - `npm.cmd run lint` passed.
+  - `npm.cmd run check:all` passed.
+- Touched files:
+  - `scripts/qa-gala-suite.mjs`
+  - `scripts/qa-gala-wall-skin-coverage-audit.mjs`
+  - `docs/GALA_PERFORMANCE_BUDGET.md`
+  - `docs/final-visual-review-checklist.md`
+  - `docs/CURRENT_TASK.md`
+- Product/release status:
+  - `productVisualAccepted=false`.
+  - No camera/FOV/lookAt, movement physics, collision geometry, door runtime, GALA construction geometry, quote route auth policy, payment, Unreal runtime, staging deploy, production deploy, or promotion changes were made.
+  - The canonical suite now avoids the known construction-renderer floor-color false-positive contradiction; the remaining release-suite failure is the active visual preflight signal for the interior view.
+- Next step:
+  - Continue to Phase 5 Pack 5.2 for the CI release gate workflow.

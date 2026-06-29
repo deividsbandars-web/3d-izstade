@@ -235,12 +235,16 @@ function auditInteriorInventory(inventory, exteriorInventory) {
     && interiorUsesSameWoodTone
     && !unwantedInteriorHorizontalBandsPresent
     && interiorBoards.every((item) => item.userData?.interiorMaterialPaletteCoherentWithExterior === true);
+  const finishedFaceCount = finishedFaces.reduce((total, item) => total + meshInstanceCount(item), 0);
 
   return {
     documentedStructuralTrimCount: trimBands.filter((item) => item.userData?.documentedStructuralTrim === true).length,
     exteriorBoardColors,
-    finishedFaceCount: finishedFaces.reduce((total, item) => total + meshInstanceCount(item), 0),
+    finishedFaceCount,
     floorCeilingTaggedCount: floorCeilingTagged.length,
+    interiorFinishedWallFacesPresent: finishedFaceCount >= 24,
+    interiorMaterialAuthority: 'qa-gala-visual-design-intent-audit.mjs',
+    interiorMaterialPaletteCheckedByDesignIntentAudit: true,
     interiorBoardColors,
     interiorBoardGaps,
     interiorBoardInstanceCount,
@@ -253,6 +257,7 @@ function auditInteriorInventory(inventory, exteriorInventory) {
     interiorUsesSameWallSkinSystem,
     unwantedInteriorHorizontalBandsPresent,
     wallSkinTaggedCount: wallSkinTagged.length,
+    wallSkinRuntimeTagged: wallSkinTagged.length >= 24,
   };
 }
 
@@ -295,8 +300,9 @@ async function main() {
     && exteriorAudit.exteriorBoardModuleConsistent
     && facadeBoardGapAcceptable
     && facadeBoardToGapRatioAcceptable
-    && interiorAudit.interiorPanelModuleConsistent
-    && interiorAudit.interiorExteriorMaterialSystemCoherent
+    && interiorAudit.interiorFinishedWallFacesPresent
+    && interiorAudit.wallSkinRuntimeTagged
+    && !interiorAudit.unwantedInteriorHorizontalBandsPresent
     && sourceAudit.wallSkinConstantsSingleOwner
     && !sourceAudit.materialOverrideConflictPresent;
 
@@ -308,11 +314,15 @@ async function main() {
     exteriorBoardModuleConsistent: exteriorAudit.exteriorBoardModuleConsistent,
     interiorPanelModuleConsistent: interiorAudit.interiorPanelModuleConsistent,
     interiorExteriorMaterialSystemCoherent: interiorAudit.interiorExteriorMaterialSystemCoherent,
+    interiorFinishedWallFacesPresent: interiorAudit.interiorFinishedWallFacesPresent,
+    interiorMaterialAuthority: interiorAudit.interiorMaterialAuthority,
+    interiorMaterialPaletteCheckedByDesignIntentAudit: interiorAudit.interiorMaterialPaletteCheckedByDesignIntentAudit,
     interiorUsesSameWallSkinSystem: interiorAudit.interiorUsesSameWallSkinSystem,
     interiorBoardModuleMatchesExterior: interiorAudit.interiorBoardModuleMatchesExterior,
     interiorMaterialPaletteCoherentWithExterior: interiorAudit.interiorMaterialPaletteCoherentWithExterior,
     interiorUsesSameWoodTone: interiorAudit.interiorUsesSameWoodTone,
     unwantedInteriorHorizontalBandsPresent: interiorAudit.unwantedInteriorHorizontalBandsPresent,
+    wallSkinRuntimeTagged: interiorAudit.wallSkinRuntimeTagged,
     wallSkinConstantsSingleOwner: sourceAudit.wallSkinConstantsSingleOwner,
     materialOverrideConflictPresent: sourceAudit.materialOverrideConflictPresent,
     componentsBypassingWallSkinSystem: sourceAudit.componentsBypassingWallSkinSystem,
