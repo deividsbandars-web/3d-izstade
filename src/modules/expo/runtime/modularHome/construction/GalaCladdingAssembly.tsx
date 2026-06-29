@@ -14,6 +14,7 @@ import {
   resolveGalaWallSkin,
   shouldApplyExteriorWallSkin,
 } from './GalaWallSkinModel';
+import { useGalaConstructionPbrTextures } from './GalaConstructionPbrTextures';
 
 type GalaCladdingAssemblyProps = {
   visualConfig?: GalaHouseVisualConfig;
@@ -48,12 +49,13 @@ function wallFaceSize(wall: GalaConstructionWallSegment, axisSize: number, heigh
 }
 
 function openingApertureRect(opening: GalaConstructionOpening, yMin: number, yMax: number): CladdingRect {
+  const sillY = GALA_CONSTRUCTION_LEVELS.finishedFloorTopY + opening.sillM;
   return {
     axisEnd: constructionAxisEnd(opening) + APERTURE_CLIP_PADDING_M,
     axisStart: opening.axisStartM - APERTURE_CLIP_PADDING_M,
     index: -1,
-    yEnd: Math.min(yMax, opening.sillM + opening.heightM + APERTURE_CLIP_PADDING_M),
-    yStart: Math.max(yMin, opening.sillM - APERTURE_CLIP_PADDING_M),
+    yEnd: Math.min(yMax, sillY + opening.heightM + APERTURE_CLIP_PADDING_M),
+    yStart: Math.max(yMin, sillY - APERTURE_CLIP_PADDING_M),
   };
 }
 
@@ -122,8 +124,13 @@ export function GalaCladdingAssembly({ visualConfig, wall }: GalaCladdingAssembl
     return null;
   }
 
+  return <GalaExteriorCladdingAssembly visualConfig={visualConfig} wall={wall} />;
+}
+
+function GalaExteriorCladdingAssembly({ visualConfig, wall }: GalaCladdingAssemblyProps) {
   const wallSkin = resolveGalaWallSkin(visualConfig);
   const { exterior } = wallSkin;
+  const exteriorPbrTextures = useGalaConstructionPbrTextures('exterior', exterior.textureVariant);
   const boardWidth = exterior.boardWidthM;
   const gap = exterior.gapWidthM;
   const module = boardWidth + gap;
@@ -244,6 +251,7 @@ export function GalaCladdingAssembly({ visualConfig, wall }: GalaCladdingAssembl
       {Object.entries(boardInstancesByColor).map(([boardColor, instances]) => (
         <GalaConstructionInstancedBoxes
           {...exterior.materials.board}
+          {...exteriorPbrTextures}
           key={`${wall.id}-${boardColor}-boards`}
           color={boardColor}
           instances={instances}
@@ -256,6 +264,7 @@ export function GalaCladdingAssembly({ visualConfig, wall }: GalaCladdingAssembl
             controlledWoodToneVariation: true,
             darkStripeDominancePresent: false,
             exteriorBoardInstanceCount: instances.length,
+            exteriorPbrTextureVariant: exterior.textureVariant,
             extraDecorativeStripsPresent: false,
             facadeBoardGapAcceptable: true,
             facadeCladdingIsBoardSystemNotDrawnLines: true,

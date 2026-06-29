@@ -27,6 +27,17 @@ export type GalaDoorState = 'closed' | 'open';
 
 export type GalaDoorStateMap = Record<GalaDoorId, GalaDoorState>;
 
+declare global {
+  interface Window {
+    __WARPALA_GALA_DOOR_API__?: {
+      getDoorStates: () => GalaDoorStateMap;
+      resetDoorStates: () => GalaDoorStateMap;
+      setDoorState: (doorId: GalaDoorId, state: GalaDoorState) => GalaDoorStateMap;
+      toggleDoorState: (doorId: GalaDoorId) => GalaDoorStateMap;
+    };
+  }
+}
+
 export const DEFAULT_GALA_DOOR_STATES: GalaDoorStateMap = {
   'D-BATHROOM': 'closed',
   'D-BEDROOM': 'closed',
@@ -136,4 +147,13 @@ export function subscribeGalaDoorStates(listener: (states: GalaDoorStateMap) => 
     previousStates = state.doorStates;
     listener(cloneDoorStates(state.doorStates));
   });
+}
+
+if (typeof window !== 'undefined') {
+  window.__WARPALA_GALA_DOOR_API__ = {
+    getDoorStates: getGalaDoorStatesSnapshot,
+    resetDoorStates: resetGalaDoorStates,
+    setDoorState: setGalaDoorState,
+    toggleDoorState: toggleGalaDoorState,
+  };
 }

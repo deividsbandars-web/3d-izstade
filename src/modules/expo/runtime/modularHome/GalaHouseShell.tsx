@@ -7,7 +7,13 @@ import {
   DEFAULT_GALA_HOUSE_VISUAL_CONFIG,
   type GalaHouseVisualConfig,
 } from './GalaHouseConfig';
-import { GALA_CONSTRUCTION_MODEL } from './construction/GalaConstructionModel';
+import {
+  GALA_CONSTRUCTION_MODEL,
+  GALA_DEFAULT_CONSTRUCTION_ROOF,
+  GALA_DEFAULT_CONSTRUCTION_TERRACE,
+  type GalaConstructionRoofModel,
+  type GalaConstructionTerraceModel,
+} from './construction/GalaConstructionModel';
 import { GalaConstructionRenderer } from './construction/GalaConstructionRenderer';
 import type { ModularHomeViewModeOption } from './modularHomeConfigurator';
 
@@ -17,8 +23,106 @@ type GalaHouseShellProps = {
   viewMode: ModularHomeViewModeOption;
 };
 
-function resolveGalaConstructionModelForVisualConfig(_: GalaHouseVisualConfig) {
-  return GALA_CONSTRUCTION_MODEL;
+function resolveFlatRoofPitchDeg(roofRiseM: number, roofWidthM: number): number {
+  return Math.atan2(roofRiseM, roofWidthM * 0.5) * (180 / Math.PI);
+}
+
+function resolveGalaRoofModel(config: GalaHouseVisualConfig): GalaConstructionRoofModel {
+  const roofRiseM = config.roofStyle === 'bitumen-flat-dark'
+    ? 0.18
+    : GALA_DEFAULT_CONSTRUCTION_ROOF.roofRiseM;
+  const roofProfile = config.roofGutterProfile;
+  const roofPitchDeg = config.roofStyle === 'bitumen-flat-dark'
+    ? resolveFlatRoofPitchDeg(roofRiseM, GALA_DEFAULT_CONSTRUCTION_ROOF.roofWidthM)
+    : GALA_DEFAULT_CONSTRUCTION_ROOF.roofPitchDeg;
+
+  if (roofProfile === 'box-gutter') {
+    return {
+      ...GALA_DEFAULT_CONSTRUCTION_ROOF,
+      eaveTrimDepthM: 0.2,
+      eaveTrimHeightM: 0.2,
+      gutterDepthM: 0.22,
+      gutterHeightM: 0.18,
+      gutterProfile: roofProfile,
+      roofPitchDeg,
+      roofRiseM,
+      showGutter: true,
+    };
+  }
+
+  if (roofProfile === 'round-gutter') {
+    return {
+      ...GALA_DEFAULT_CONSTRUCTION_ROOF,
+      eaveTrimDepthM: 0.16,
+      eaveTrimHeightM: 0.15,
+      gutterDepthM: 0.18,
+      gutterHeightM: 0.18,
+      gutterProfile: roofProfile,
+      gutterRadiusM: 0.09,
+      roofPitchDeg,
+      roofRiseM,
+      showGutter: true,
+    };
+  }
+
+  return {
+    ...GALA_DEFAULT_CONSTRUCTION_ROOF,
+    roofPitchDeg,
+    roofRiseM,
+  };
+}
+
+function resolveGalaTerraceModel(config: GalaHouseVisualConfig): GalaConstructionTerraceModel {
+  if (config.terraceStyle === 'no-terrace') {
+    return {
+      ...GALA_DEFAULT_CONSTRUCTION_TERRACE,
+      depthM: 0,
+      enabled: false,
+      lengthM: 0,
+    };
+  }
+
+  if (config.terraceStyle === 'extended-deck-with-steps') {
+    return {
+      ...GALA_DEFAULT_CONSTRUCTION_TERRACE,
+      depthM: 2.45,
+      lengthM: 3.8,
+      stepBaseWidthM: 1.86,
+    };
+  }
+
+  if (config.terraceStyle === 'deck-with-light-rail') {
+    return {
+      ...GALA_DEFAULT_CONSTRUCTION_TERRACE,
+      depthM: 2.15,
+      lengthM: 3.2,
+      stepBaseWidthM: 1.72,
+    };
+  }
+
+  if (config.terraceStyle === 'deck-with-steps') {
+    return {
+      ...GALA_DEFAULT_CONSTRUCTION_TERRACE,
+      depthM: 1.55,
+      lengthM: 2.1,
+      stepBaseWidthM: 1.42,
+    };
+  }
+
+  return {
+    ...GALA_DEFAULT_CONSTRUCTION_TERRACE,
+    depthM: 1.1,
+    lengthM: 2.2,
+    stepBaseWidthM: 1.28,
+  };
+}
+
+function resolveGalaConstructionModelForVisualConfig(config: GalaHouseVisualConfig): typeof GALA_CONSTRUCTION_MODEL {
+  return {
+    ...GALA_CONSTRUCTION_MODEL,
+    roof: resolveGalaRoofModel(config),
+    terrace: resolveGalaTerraceModel(config),
+  };
 }
 
 export function GalaHouseShell({ onEnterInterior, visualConfig, viewMode }: GalaHouseShellProps) {

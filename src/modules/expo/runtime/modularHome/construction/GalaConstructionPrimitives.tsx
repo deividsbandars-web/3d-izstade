@@ -9,6 +9,7 @@ export type GalaConstructionBoxProps = {
   clearcoat?: number;
   clearcoatRoughness?: number;
   color: string;
+  depthWrite?: boolean;
   envMapIntensity?: number;
   metalness?: number;
   name: string;
@@ -16,6 +17,8 @@ export type GalaConstructionBoxProps = {
   opacity?: number;
   position: Vector3Tuple;
   receiveShadow?: boolean;
+  renderOrder?: number;
+  rotation?: Vector3Tuple;
   roughness?: number;
   size: Vector3Tuple;
   userData?: Record<string, unknown>;
@@ -66,6 +69,7 @@ type GalaConstructionMaterialProps = GalaConstructionPbrMapProps & {
   clearcoat: number;
   clearcoatRoughness: number;
   color: string;
+  depthWrite?: boolean;
   envMapIntensity: number;
   metalness: number;
   opacity: number;
@@ -116,9 +120,9 @@ vec3 galaTriplanarWeights() {
 vec4 galaTriplanarSample( sampler2D sourceMap ) {
   vec3 scaledPosition = vGalaWorldPosition * galaTriplanarScale;
   vec3 weights = galaTriplanarWeights();
-  vec4 xProjection = texture2D( sourceMap, scaledPosition.zy );
+  vec4 xProjection = texture2D( sourceMap, scaledPosition.yz );
   vec4 yProjection = texture2D( sourceMap, scaledPosition.xz );
-  vec4 zProjection = texture2D( sourceMap, scaledPosition.xy );
+  vec4 zProjection = texture2D( sourceMap, scaledPosition.yx );
   return ( xProjection * weights.x ) + ( yProjection * weights.y ) + ( zProjection * weights.z );
 }`,
       )
@@ -133,16 +137,16 @@ vec4 galaTriplanarSample( sampler2D sourceMap ) {
         `#ifdef USE_NORMALMAP_TANGENTSPACE
   vec3 weights = galaTriplanarWeights();
   vec3 scaledPosition = vGalaWorldPosition * galaTriplanarScale;
-  vec3 normalX = texture2D( normalMap, scaledPosition.zy ).xyz * 2.0 - 1.0;
+  vec3 normalX = texture2D( normalMap, scaledPosition.yz ).xyz * 2.0 - 1.0;
   vec3 normalY = texture2D( normalMap, scaledPosition.xz ).xyz * 2.0 - 1.0;
-  vec3 normalZ = texture2D( normalMap, scaledPosition.xy ).xyz * 2.0 - 1.0;
+  vec3 normalZ = texture2D( normalMap, scaledPosition.yx ).xyz * 2.0 - 1.0;
   normalX.xy *= normalScale;
   normalY.xy *= normalScale;
   normalZ.xy *= normalScale;
   vec3 axisSign = sign( vGalaWorldNormal );
-  vec3 worldNormalX = vec3( normalX.z * axisSign.x, normalX.y, -normalX.x * axisSign.x );
+  vec3 worldNormalX = vec3( normalX.z * axisSign.x, -normalX.x * axisSign.x, normalX.y );
   vec3 worldNormalY = vec3( normalY.x, normalY.z * axisSign.y, -normalY.y * axisSign.y );
-  vec3 worldNormalZ = vec3( normalZ.x * axisSign.z, normalZ.y, normalZ.z * axisSign.z );
+  vec3 worldNormalZ = vec3( normalZ.y, -normalZ.x * axisSign.z, normalZ.z * axisSign.z );
   vec3 triplanarNormal = normalize(
     worldNormalX * weights.x
     + worldNormalY * weights.y
@@ -183,7 +187,7 @@ vec4 galaTriplanarSample( sampler2D sourceMap ) {
 #endif`,
       );
   };
-  material.customProgramCacheKey = () => 'gala-construction-triplanar-pbr-v1';
+  material.customProgramCacheKey = () => 'gala-construction-triplanar-pbr-v2';
   material.needsUpdate = true;
 }
 
@@ -193,6 +197,7 @@ function GalaConstructionMaterial({
   clearcoat,
   clearcoatRoughness,
   color,
+  depthWrite = true,
   envMapIntensity,
   map,
   metalness,
@@ -223,6 +228,7 @@ function GalaConstructionMaterial({
       clearcoat={clearcoat}
       clearcoatRoughness={clearcoatRoughness}
       color={color}
+      depthWrite={depthWrite}
       envMapIntensity={envMapIntensity}
       map={map}
       metalness={metalness}
@@ -261,6 +267,7 @@ export function GalaConstructionBox({
   clearcoat = 0,
   clearcoatRoughness = 0,
   color,
+  depthWrite,
   envMapIntensity = 1,
   map,
   metalness = 0.02,
@@ -270,6 +277,8 @@ export function GalaConstructionBox({
   opacity = 1,
   position,
   receiveShadow = true,
+  renderOrder,
+  rotation,
   roughness = 0.78,
   roughnessMap,
   size,
@@ -285,6 +294,8 @@ export function GalaConstructionBox({
       onClick={onClick}
       position={position}
       receiveShadow={receiveShadow}
+      renderOrder={renderOrder}
+      rotation={rotation}
       userData={{
         constructionLocalBounds: buildConstructionLocalBounds(position, size),
         constructionLocalPosition: position,
@@ -300,6 +311,7 @@ export function GalaConstructionBox({
         clearcoat={clearcoat}
         clearcoatRoughness={clearcoatRoughness}
         color={color}
+        depthWrite={depthWrite}
         envMapIntensity={envMapIntensity}
         map={map}
         metalness={metalness}

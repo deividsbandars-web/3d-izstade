@@ -1,10 +1,11 @@
 import { resolveGalaInteriorVisual, type GalaHouseVisualConfig } from '../GalaHouseConfig';
 import {
-  GalaCabinetModel,
+  GalaBedFabricBox,
+  GalaBedWoodBox,
   GalaCoffeeTableModel,
   GalaLivingSofaModel,
 } from '../GalaInteriorFurniture';
-import { GALA_FURNITURE_LAYOUT } from './GalaConstructionModel';
+import { GALA_CONSTRUCTION_LEVELS, GALA_FURNITURE_LAYOUT } from './GalaConstructionModel';
 import { GalaConstructionBox, GalaConstructionCylinder } from './GalaConstructionPrimitives';
 
 type GalaRoomAssemblyProps = {
@@ -35,6 +36,9 @@ const WALL_MOUNTED_CLEARANCE_USER_DATA = {
 export function GalaRoomAssembly({ visualConfig }: GalaRoomAssemblyProps) {
   const visual = resolveGalaInteriorVisual(visualConfig);
   const layout = GALA_FURNITURE_LAYOUT;
+  const yAtFloor = (relativeY: number) => Number((
+    GALA_CONSTRUCTION_LEVELS.finishedFloorTopY + relativeY
+  ).toFixed(4));
 
   return (
     <group
@@ -48,21 +52,17 @@ export function GalaRoomAssembly({ visualConfig }: GalaRoomAssemblyProps) {
         furnitureFixtureFidelityImproved: true,
       }}
     >
-      <GalaConstructionBox
-        color="#9b7044"
-        name="gala-construction-living-rug-raised-separate-from-floor"
-        position={layout.livingRug.position}
-        size={layout.livingRug.size}
-        userData={{ floorStackHasNoCoplanarOverlays: true, noBlueFloorOverlay: true }}
-      />
       <GalaLivingSofaModel
         name="gala-construction-living-sofa-high-quality-gltf"
-        position={[layout.livingSofaSeat.position[0], 0.02, layout.livingSofaSeat.position[2]]}
+        position={[layout.livingSofaSeat.position[0], yAtFloor(0.64), layout.livingSofaSeat.position[2]]}
+        scale={[1.28, 1.12, 0.96]}
+        size={[1.72, 1.15, 0.86]}
         userData={{ ...FURNITURE_CLEARANCE_USER_DATA, furnitureAnchor: 'againstWall', furnitureIsReadable: true, furnitureNotFloating: true, replacesPrimitiveSofaComposition: true }}
       />
       <GalaCoffeeTableModel
         name="gala-construction-living-coffee-table-high-quality-gltf"
-        position={[layout.livingCoffeeTableTop.position[0], 0.04, layout.livingCoffeeTableTop.position[2]]}
+        position={[layout.livingCoffeeTableTop.position[0], yAtFloor(0.215), layout.livingCoffeeTableTop.position[2]]}
+        size={[0.78, 0.43, 0.48]}
         userData={{ ...FURNITURE_CLEARANCE_USER_DATA, furnitureIsReadable: true, furnitureNotFloating: true, replacesPrimitiveCoffeeTableComposition: true }}
       />
 
@@ -74,7 +74,7 @@ export function GalaRoomAssembly({ visualConfig }: GalaRoomAssemblyProps) {
           castShadow={false}
           color="#b17a47"
           name="gala-construction-kitchen-readable-cabinet-door-front"
-          position={[layout.kitchenBaseCabinets.position[0] + offset, 0.49, -2.012]}
+          position={[layout.kitchenBaseCabinets.position[0] + offset, yAtFloor(0.49), -2.012]}
           size={[0.44, 0.5, 0.026]}
           userData={{ furnitureFidelityImproved: true, kitchenAlignedToWall: true }}
         />
@@ -85,33 +85,24 @@ export function GalaRoomAssembly({ visualConfig }: GalaRoomAssemblyProps) {
           castShadow={false}
           color={FURNITURE_HANDLE}
           name="gala-construction-kitchen-small-dark-cabinet-handle"
-          position={[layout.kitchenBaseCabinets.position[0] + offset, 0.55, -1.994]}
+          position={[layout.kitchenBaseCabinets.position[0] + offset, yAtFloor(0.55), -1.994]}
           size={[0.12, 0.026, 0.02]}
           userData={{ furnitureFidelityImproved: true, kitchenAlignedToWall: true }}
         />
       ))}
       <GalaConstructionBox color={FIXTURE_CERAMIC} name="gala-construction-kitchen-sink-basin-cue" position={layout.kitchenSinkCue.position} size={layout.kitchenSinkCue.size} userData={{ ...FIXTURE_CLEARANCE_USER_DATA, mainFurnitureOrFixtureVisible: true }} />
       <GalaConstructionBox color="#25211c" name="gala-construction-kitchen-cooktop-cue" position={layout.kitchenCooktopCue.position} size={layout.kitchenCooktopCue.size} userData={{ ...FIXTURE_CLEARANCE_USER_DATA, mainFurnitureOrFixtureVisible: true }} />
-      <GalaConstructionBox color={visual.kitchenBacksplashColor} name="gala-construction-kitchen-backsplash-wall-panel" position={layout.kitchenBacksplash.position} size={layout.kitchenBacksplash.size} userData={{ ...WALL_MOUNTED_CLEARANCE_USER_DATA, interiorWallAssemblyCoherent: true }} />
-      <GalaConstructionBox color={visual.cabinetColor} name="gala-construction-kitchen-upper-cabinet-with-readable-gap" position={layout.kitchenUpperCabinet.position} size={layout.kitchenUpperCabinet.size} userData={{ ...FURNITURE_CLEARANCE_USER_DATA, furnitureFidelityImproved: true, kitchenAlignedToWall: true }} />
-      <GalaConstructionBox castShadow={false} color={FURNITURE_HANDLE} name="gala-construction-kitchen-upper-cabinet-handle-line" position={layout.kitchenUpperCabinetHandle.position} size={layout.kitchenUpperCabinetHandle.size} userData={{ ...FURNITURE_CLEARANCE_USER_DATA, furnitureFidelityImproved: true, kitchenAlignedToWall: true }} />
-
       <GalaConstructionBox color="#5f432b" name="gala-construction-bedroom-bed-frame-headboard-against-south-wall" position={layout.bedroomBedFrame.position} size={layout.bedroomBedFrame.size} userData={{ ...FURNITURE_CLEARANCE_USER_DATA, bedHeadboardAgainstWall: true, bedroomLayoutReadable: true }} />
-      <GalaConstructionBox color={visual.bedBaseColor} name="gala-construction-bedroom-mattress-head-against-wall" position={layout.bedroomMattress.position} size={layout.bedroomMattress.size} userData={{ ...FURNITURE_CLEARANCE_USER_DATA, bedHeadboardAgainstWall: true, furnitureNotFloating: true }} />
-      <GalaConstructionBox color={visual.blanketColor} name="gala-construction-bedroom-blanket-readable" position={layout.bedroomBlanket.position} size={layout.bedroomBlanket.size} userData={{ ...FURNITURE_CLEARANCE_USER_DATA, bedroomLayoutReadable: true }} />
-      <GalaConstructionBox castShadow={false} color="#7f96a7" name="gala-construction-bedroom-blanket-folded-edge-cue" position={[layout.bedroomBlanket.position[0], 0.626, -1.18]} size={[1.08, 0.024, 0.05]} userData={{ bedroomLayoutReadable: true, furnitureFidelityImproved: true }} />
-      <GalaConstructionBox color="#f4eadb" name="gala-construction-bedroom-left-pillow-at-headboard-wall" position={layout.bedroomLeftPillow.position} size={layout.bedroomLeftPillow.size} userData={{ bedHeadboardAgainstWall: true }} />
-      <GalaConstructionBox color="#f4eadb" name="gala-construction-bedroom-right-pillow-at-headboard-wall" position={layout.bedroomRightPillow.position} size={layout.bedroomRightPillow.size} userData={{ bedHeadboardAgainstWall: true }} />
-      <GalaConstructionBox color="#6f4b2c" name="gala-construction-bedroom-headboard-on-south-wall" position={layout.bedroomHeadboard.position} size={layout.bedroomHeadboard.size} userData={{ ...WALL_MOUNTED_CLEARANCE_USER_DATA, bedHeadboardAgainstWall: true }} />
+      <GalaBedFabricBox anchor="againstWall" color="#f0e7d7" name="gala-construction-bedroom-mattress-head-against-wall" position={layout.bedroomMattress.position} radius={0.055} size={layout.bedroomMattress.size} userData={{ ...FURNITURE_CLEARANCE_USER_DATA, bedHeadboardAgainstWall: true, furnitureNotFloating: true }} />
+      <GalaBedFabricBox anchor="againstWall" color="#c8beb0" name="gala-construction-bedroom-blanket-readable" position={layout.bedroomBlanket.position} radius={0.035} size={layout.bedroomBlanket.size} userData={{ ...FURNITURE_CLEARANCE_USER_DATA, bedroomLayoutReadable: true }} />
+      <GalaBedFabricBox anchor="againstWall" color="#eee7dc" name="gala-construction-bedroom-left-pillow-at-headboard-wall" position={layout.bedroomLeftPillow.position} radius={0.045} size={layout.bedroomLeftPillow.size} userData={{ bedHeadboardAgainstWall: true }} />
+      <GalaBedFabricBox anchor="againstWall" color="#eee7dc" name="gala-construction-bedroom-right-pillow-at-headboard-wall" position={layout.bedroomRightPillow.position} radius={0.045} size={layout.bedroomRightPillow.size} userData={{ bedHeadboardAgainstWall: true }} />
+      <GalaBedWoodBox anchor="againstWall" color="#ffffff" name="gala-construction-bedroom-headboard-on-south-wall" position={layout.bedroomHeadboard.position} radius={0.025} size={layout.bedroomHeadboard.size} userData={{ ...WALL_MOUNTED_CLEARANCE_USER_DATA, bedHeadboardAgainstWall: true }} verticalTexture />
       <GalaConstructionBox color={visual.tableColor} name="gala-construction-bedroom-bedside-cabinet-at-headboard-side" position={layout.bedroomBedsideCabinet.position} size={layout.bedroomBedsideCabinet.size} userData={{ ...FURNITURE_CLEARANCE_USER_DATA, bedsideCabinetAtHeadboardSide: true }} />
-      <GalaCabinetModel
-        name="gala-construction-bedroom-wardrobe-against-east-wall-high-quality-gltf"
-        position={layout.bedroomWardrobe.position}
-        size={layout.bedroomWardrobe.size}
-        userData={{ ...FURNITURE_CLEARANCE_USER_DATA, bedroomLayoutReadable: true, furnitureAnchor: 'againstWall', furnitureIsReadable: true, furnitureNotFloating: true, replacesPrimitiveWardrobeComposition: true }}
-      />
-      <GalaConstructionBox color="#26231f" name="gala-construction-bedroom-tv-opposite-bed-on-north-wall" position={layout.bedroomTv.position} size={layout.bedroomTv.size} userData={{ ...WALL_MOUNTED_CLEARANCE_USER_DATA, bedroomLayoutReadable: true, tvOppositeBedAddedOrJustified: true }} />
-
+      <GalaConstructionBox color={visual.wardrobeColor} name="gala-construction-bedroom-built-in-wardrobe-clean-carcass-against-east-wall" position={layout.bedroomWardrobe.position} size={layout.bedroomWardrobe.size} userData={{ ...FURNITURE_CLEARANCE_USER_DATA, bedroomLayoutReadable: true, furnitureAnchor: 'againstWall', furnitureIsReadable: true, furnitureNotFloating: true, replacesPrimitiveWardrobeComposition: true }} />
+      <GalaConstructionBox castShadow={false} color="#b9895b" name="gala-construction-bedroom-built-in-wardrobe-left-door-panel" position={[4.545, yAtFloor(1.0), 0.87]} size={[0.032, 1.42, 0.5]} userData={{ bedroomLayoutReadable: true, furnitureFidelityImproved: true }} />
+      <GalaConstructionBox castShadow={false} color="#b9895b" name="gala-construction-bedroom-built-in-wardrobe-right-door-panel" position={[4.545, yAtFloor(1.0), 1.45]} size={[0.032, 1.42, 0.5]} userData={{ bedroomLayoutReadable: true, furnitureFidelityImproved: true }} />
+      <GalaConstructionBox castShadow={false} color={FURNITURE_HANDLE} name="gala-construction-bedroom-built-in-wardrobe-door-handles" position={[4.518, yAtFloor(1.02), 1.16]} size={[0.024, 0.62, 0.04]} userData={{ bedroomLayoutReadable: true, furnitureFidelityImproved: true }} />
       <GalaConstructionBox color={visual.bathroomAccentColor} name="gala-construction-bathroom-shower-back-panel-integrated-with-wall" position={layout.bathroomShowerBackPanel.position} size={layout.bathroomShowerBackPanel.size} userData={{ ...WALL_MOUNTED_CLEARANCE_USER_DATA, bathroomLayoutReadable: true, showerPanelIntegratedOrRemoved: true }} />
       <GalaConstructionBox color={FIXTURE_GLASS} name="gala-construction-bathroom-shower-side-glass-panel" opacity={0.48} position={layout.bathroomShowerSidePanel.position} size={layout.bathroomShowerSidePanel.size} userData={{ ...FIXTURE_CLEARANCE_USER_DATA, bathroomLayoutReadable: true, showerPanelIntegratedOrRemoved: true }} />
       <GalaConstructionBox color={FIXTURE_METAL} name="gala-construction-bathroom-shower-riser-and-head-pipe" position={layout.bathroomShowerRiser.position} size={layout.bathroomShowerRiser.size} userData={{ ...FIXTURE_CLEARANCE_USER_DATA, bathroomFixtureFidelityImproved: true, bathroomLayoutReadable: true }} />

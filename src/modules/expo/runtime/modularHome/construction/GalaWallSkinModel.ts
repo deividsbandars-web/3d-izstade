@@ -116,6 +116,7 @@ export function resolveGalaWallSkin(config?: GalaHouseVisualConfig) {
       },
       revealColor: facade.seamColor,
       thresholdColor: facade.trimColor,
+      textureVariant: facade.textureVariant,
       trimColor: facade.trimColor,
     },
     interior: {
@@ -126,6 +127,7 @@ export function resolveGalaWallSkin(config?: GalaHouseVisualConfig) {
       boardSubtleColor: subtleBoardColor,
       floorColor: interior.floorColor,
       floorSeamColor: interior.wallSeamColor,
+      floorTextureVariant: interior.floorTextureVariant,
       panelRevealColor: facade.seamColor,
       partitionCoreColor: '#c8b496',
       materials: {
@@ -134,6 +136,7 @@ export function resolveGalaWallSkin(config?: GalaHouseVisualConfig) {
         trim: GALA_WALL_SKIN_PBR_MATERIALS.trim,
       },
       wallPanelColor: interior.wallPanelColor,
+      wallTextureVariant: interior.wallTextureVariant,
     },
     rules: {
       exteriorCladdingAppliesToVisibleExteriorWalls: true,

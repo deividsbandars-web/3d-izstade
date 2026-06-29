@@ -11,6 +11,11 @@ export type GalaRoofStyle =
   | 'metal-classic'
   | 'bitumen-flat-dark';
 
+export type GalaRoofGutterProfile =
+  | 'minimal-edge'
+  | 'box-gutter'
+  | 'round-gutter';
+
 export type GalaWindowTrimStyle =
   | 'minimal-dark'
   | 'white-frame'
@@ -22,8 +27,10 @@ export type GalaDoorStyle =
   | 'glass-panel';
 
 export type GalaTerraceStyle =
+  | 'no-terrace'
   | 'simple-low-deck'
   | 'deck-with-steps'
+  | 'extended-deck-with-steps'
   | 'deck-with-light-rail';
 
 export type GalaInteriorPackage =
@@ -31,28 +38,46 @@ export type GalaInteriorPackage =
   | 'nordic-light'
   | 'compact-premium';
 
+export type GalaFacadeTextureVariant = 'naturalTimber' | 'darkThermoWood' | 'lightPainted';
+export type GalaFloorTextureVariant = 'plywood' | 'oakLaminate' | 'polishedConcrete';
+export type GalaInteriorWallTextureVariant = 'plywood' | 'paintedWhite' | 'warmPanel';
+export type GalaRoofEdgeTone = 'graphite' | 'bronze' | 'lightMetal';
+export type GalaTrimTone = 'timber' | 'graphite' | 'bronze' | 'white';
+
 export interface GalaHouseVisualConfig {
   facadeStyle: GalaFacadeStyle;
   facadeTone: 'natural' | 'warm' | 'dark' | 'painted-light';
+  facadeTextureVariant: GalaFacadeTextureVariant;
   roofStyle: GalaRoofStyle;
+  roofEdgeTone: GalaRoofEdgeTone;
+  roofGutterProfile: GalaRoofGutterProfile;
   windowTrimStyle: GalaWindowTrimStyle;
   doorStyle: GalaDoorStyle;
   terraceStyle: GalaTerraceStyle;
   interiorPackage: GalaInteriorPackage;
   floorFinish: 'warm-plank' | 'utility-plywood' | 'polished-slab';
+  floorTextureVariant: GalaFloorTextureVariant;
+  trimTone: GalaTrimTone;
   wallFinish: 'plain-panel' | 'ribbed-panel' | 'painted-board';
+  interiorWallTextureVariant: GalaInteriorWallTextureVariant;
 }
 
 export const DEFAULT_GALA_HOUSE_VISUAL_CONFIG: GalaHouseVisualConfig = {
   facadeStyle: 'vertical-timber',
   facadeTone: 'natural',
+  facadeTextureVariant: 'naturalTimber',
   roofStyle: 'dark-standing-seam',
+  roofEdgeTone: 'graphite',
+  roofGutterProfile: 'minimal-edge',
   windowTrimStyle: 'minimal-dark',
   doorStyle: 'warm-wood',
   terraceStyle: 'deck-with-steps',
   interiorPackage: 'warm-minimal',
   floorFinish: 'warm-plank',
+  floorTextureVariant: 'plywood',
+  trimTone: 'timber',
   wallFinish: 'plain-panel',
+  interiorWallTextureVariant: 'plywood',
 };
 
 export type GalaFacadeVisualSpec = {
@@ -60,6 +85,7 @@ export type GalaFacadeVisualSpec = {
   seamSpacingM: number;
   seamWidthM: number;
   seamOpacity: number;
+  textureVariant: GalaFacadeTextureVariant;
   wallColor: string;
   wallLightColor: string;
   seamColor: string;
@@ -105,6 +131,7 @@ export type GalaInteriorVisualSpec = {
   cabinetColor: string;
   counterColor: string;
   floorColor: string;
+  floorTextureVariant: GalaFloorTextureVariant;
   kitchenBacksplashColor: string;
   partitionColor: string;
   rugColor: string;
@@ -113,6 +140,7 @@ export type GalaInteriorVisualSpec = {
   tableColor: string;
   wallPanelColor: string;
   wallSeamColor: string;
+  wallTextureVariant: GalaInteriorWallTextureVariant;
   wardrobeColor: string;
 };
 
@@ -155,6 +183,13 @@ const FACADE_TONE_COLORS: Record<GalaHouseVisualConfig['facadeTone'], Pick<GalaF
   },
 };
 
+const GALA_TRIM_TONE_COLORS: Record<GalaTrimTone, string> = {
+  bronze: '#8a5a34',
+  graphite: '#1f2937',
+  timber: '#704629',
+  white: '#f8fafc',
+};
+
 const FACADE_STYLE_PATTERN: Record<GalaFacadeStyle, Pick<GalaFacadeVisualSpec, 'seamOrientation' | 'seamOpacity' | 'seamSpacingM' | 'seamWidthM'>> = {
   'horizontal-timber': {
     seamOpacity: 0.58,
@@ -187,15 +222,24 @@ export function resolveGalaFacadeVisual(config?: GalaHouseVisualConfig): GalaFac
   return {
     ...FACADE_STYLE_PATTERN[resolved.facadeStyle],
     ...FACADE_TONE_COLORS[resolved.facadeTone],
+    textureVariant: resolved.facadeTextureVariant,
+    trimColor: GALA_TRIM_TONE_COLORS[resolved.trimTone],
   };
 }
 
 export function resolveGalaRoofVisual(config?: GalaHouseVisualConfig): GalaRoofVisualSpec {
   const resolved = resolveConfig(config);
+  const roofEdgeColorByTone: Record<GalaRoofEdgeTone, string> = {
+    bronze: '#8a5a34',
+    graphite: '#181f28',
+    lightMetal: '#cbd5e1',
+  };
+  const roofEdgeColor = roofEdgeColorByTone[resolved.roofEdgeTone];
+
   if (resolved.roofStyle === 'metal-classic') {
     return {
       roofColor: '#34414d',
-      roofEdgeColor: '#202833',
+      roofEdgeColor,
       roofMetalness: 0.32,
       roofRoughness: 0.48,
       seamColor: '#53606c',
@@ -208,7 +252,7 @@ export function resolveGalaRoofVisual(config?: GalaHouseVisualConfig): GalaRoofV
   if (resolved.roofStyle === 'bitumen-flat-dark') {
     return {
       roofColor: '#20242c',
-      roofEdgeColor: '#161b22',
+      roofEdgeColor,
       roofMetalness: 0.05,
       roofRoughness: 0.78,
       seamColor: '#2f3640',
@@ -220,7 +264,7 @@ export function resolveGalaRoofVisual(config?: GalaHouseVisualConfig): GalaRoofV
 
   return {
     roofColor: '#303943',
-    roofEdgeColor: '#181f28',
+    roofEdgeColor,
     roofMetalness: 0.22,
     roofRoughness: 0.42,
     seamColor: '#394556',
@@ -265,6 +309,20 @@ export function resolveGalaOpeningVisual(config?: GalaHouseVisualConfig): GalaOp
 
 export function resolveGalaTerraceVisual(config?: GalaHouseVisualConfig): GalaTerraceVisualSpec {
   const resolved = resolveConfig(config);
+  if (resolved.terraceStyle === 'no-terrace') {
+    return {
+      deckColor: '#b98250',
+      deckDarkColor: '#7a5230',
+      edgeTrimDepthM: 0.035,
+      edgeTrimHeightM: 0.035,
+      railColor: '#6f4b2c',
+      railHeightM: 0,
+      showLightRail: false,
+      showSteps: false,
+      stepCount: 0,
+    };
+  }
+
   if (resolved.terraceStyle === 'simple-low-deck') {
     return {
       deckColor: '#b98250',
@@ -276,6 +334,20 @@ export function resolveGalaTerraceVisual(config?: GalaHouseVisualConfig): GalaTe
       showLightRail: false,
       showSteps: false,
       stepCount: 0,
+    };
+  }
+
+  if (resolved.terraceStyle === 'extended-deck-with-steps') {
+    return {
+      deckColor: '#b98352',
+      deckDarkColor: '#76502f',
+      edgeTrimDepthM: 0.055,
+      edgeTrimHeightM: 0.055,
+      railColor: '#5c4028',
+      railHeightM: 0,
+      showLightRail: false,
+      showSteps: true,
+      stepCount: 2,
     };
   }
 
@@ -308,7 +380,7 @@ export function resolveGalaTerraceVisual(config?: GalaHouseVisualConfig): GalaTe
 
 export function resolveGalaInteriorVisual(config?: GalaHouseVisualConfig): GalaInteriorVisualSpec {
   const resolved = resolveConfig(config);
-  const packagePalette: Record<GalaInteriorPackage, Omit<GalaInteriorVisualSpec, 'floorColor' | 'wallPanelColor' | 'wallSeamColor'>> = {
+  const packagePalette: Record<GalaInteriorPackage, Omit<GalaInteriorVisualSpec, 'floorColor' | 'floorTextureVariant' | 'wallPanelColor' | 'wallSeamColor' | 'wallTextureVariant'>> = {
     'compact-premium': {
       bathroomAccentColor: '#b8a99a',
       bedBaseColor: '#3f3328',
@@ -375,7 +447,9 @@ export function resolveGalaInteriorVisual(config?: GalaHouseVisualConfig): GalaI
   return {
     ...packagePalette[resolved.interiorPackage],
     floorColor: floorColorByFinish[resolved.floorFinish],
+    floorTextureVariant: resolved.floorTextureVariant,
     ...wallByFinish[resolved.wallFinish],
+    wallTextureVariant: resolved.interiorWallTextureVariant,
   };
 }
 
@@ -394,11 +468,18 @@ export function resolveGalaHouseVisualConfigFromModularHomeConfig(
       : config.trimColor === 'bronze'
         ? 'warm'
         : 'natural';
+  const facadeTextureVariant: GalaFacadeTextureVariant = config.facade;
   const roofStyle: GalaRoofStyle = config.roof === 'flat' || config.roof === 'greenRoofPlaceholder'
     ? 'bitumen-flat-dark'
     : config.roofEdgeColor === 'lightMetal' || config.roofGutterStyle === 'roundGutter'
       ? 'metal-classic'
       : 'dark-standing-seam';
+  const roofEdgeTone: GalaRoofEdgeTone = config.roofEdgeColor;
+  const roofGutterProfile: GalaRoofGutterProfile = config.roofGutterStyle === 'boxGutter'
+    ? 'box-gutter'
+    : config.roofGutterStyle === 'roundGutter'
+      ? 'round-gutter'
+      : 'minimal-edge';
   const windowTrimStyle: GalaWindowTrimStyle = config.windowFrameColor === 'white'
     ? 'white-frame'
     : config.windowFrameColor === 'timber'
@@ -409,35 +490,56 @@ export function resolveGalaHouseVisualConfigFromModularHomeConfig(
     : config.doorPackage === 'terraceSlider'
       ? 'dark-modern'
       : 'warm-wood';
-  const terraceStyle: GalaTerraceStyle = config.terrace === 'coveredTerracePlaceholder'
+  const terraceStyle: GalaTerraceStyle = config.terrace === 'none'
+    ? 'no-terrace'
+    : config.terrace === 'coveredTerracePlaceholder'
     ? 'deck-with-light-rail'
-    : config.terrace === 'sideTerrace' || config.terrace === 'extendedTerrace'
-      ? 'deck-with-steps'
+    : config.terrace === 'extendedTerrace'
+      ? 'extended-deck-with-steps'
+      : config.terrace === 'sideTerrace'
+        ? 'deck-with-steps'
       : 'simple-low-deck';
   const interiorPackage: GalaInteriorPackage = config.furnitureMood === 'premiumCompact' || config.finishLevel === 'premium'
     ? 'compact-premium'
     : config.furnitureMood === 'minimal' || config.finishLevel === 'shell'
       ? 'nordic-light'
       : 'warm-minimal';
-  const floorFinish: GalaHouseVisualConfig['floorFinish'] = config.interiorFloorStyle === 'polishedSlab'
+  const floorTextureVariant: GalaFloorTextureVariant = config.floorFinish === 'polishedConcrete' || config.interiorFloorStyle === 'polishedSlab'
+    ? 'polishedConcrete'
+    : config.floorFinish === 'oakLaminate' || config.interiorFloorStyle === 'warmPlank'
+      ? 'oakLaminate'
+      : 'plywood';
+  const floorFinish: GalaHouseVisualConfig['floorFinish'] = floorTextureVariant === 'polishedConcrete'
     ? 'polished-slab'
-    : config.interiorFloorStyle === 'utilityPlywood'
+    : floorTextureVariant === 'plywood'
       ? 'utility-plywood'
       : 'warm-plank';
-  const wallFinish: GalaHouseVisualConfig['wallFinish'] = config.wallPanelStyle === 'ribbedPanel'
+  const interiorWallTextureVariant: GalaInteriorWallTextureVariant = config.interiorWallFinish === 'paintedWhite' || config.wallPanelStyle === 'paintReadyBoard'
+    ? 'paintedWhite'
+    : config.interiorWallFinish === 'warmPanel' || config.wallPanelStyle === 'ribbedPanel'
+      ? 'warmPanel'
+      : 'plywood';
+  const wallFinish: GalaHouseVisualConfig['wallFinish'] = interiorWallTextureVariant === 'warmPanel'
     ? 'ribbed-panel'
-    : config.wallPanelStyle === 'paintReadyBoard'
+    : interiorWallTextureVariant === 'paintedWhite'
       ? 'painted-board'
       : 'plain-panel';
+  const trimTone: GalaTrimTone = config.trimColor;
 
   return {
     doorStyle,
     facadeStyle,
     facadeTone,
+    facadeTextureVariant,
     floorFinish,
+    floorTextureVariant,
+    interiorWallTextureVariant,
     interiorPackage,
+    roofEdgeTone,
+    roofGutterProfile,
     roofStyle,
     terraceStyle,
+    trimTone,
     wallFinish,
     windowTrimStyle,
   };

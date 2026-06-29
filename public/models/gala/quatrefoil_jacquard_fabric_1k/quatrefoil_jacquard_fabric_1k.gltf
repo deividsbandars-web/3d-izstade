@@ -1,0 +1,223 @@
+{
+  "asset": {
+    "generator": "Khronos glTF Blender I/O v4.4.56",
+    "version": "2.0"
+  },
+  "extensionsUsed": [
+    "KHR_texture_transform",
+    "KHR_materials_specular",
+    "KHR_materials_sheen"
+  ],
+  "extensionsRequired": [
+    "KHR_texture_transform"
+  ],
+  "scene": 0,
+  "scenes": [
+    {
+      "name": "Scene",
+      "nodes": [
+        0
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "mesh": 0,
+      "name": "sphere_gltf"
+    }
+  ],
+  "materials": [
+    {
+      "doubleSided": true,
+      "extensions": {
+        "KHR_materials_specular": {
+          "specularTexture": {
+            "extensions": {
+              "KHR_texture_transform": {
+                "scale": [
+                  1.013142466545105,
+                  1
+                ]
+              }
+            },
+            "index": 0
+          }
+        },
+        "KHR_materials_sheen": {
+          "sheenColorFactor": [
+            1,
+            1,
+            1
+          ],
+          "sheenRoughnessFactor": 0.699999988079071
+        }
+      },
+      "name": "quatrefoil_jacquard_fabric",
+      "normalTexture": {
+        "extensions": {
+          "KHR_texture_transform": {
+            "scale": [
+              1.013142466545105,
+              1
+            ]
+          }
+        },
+        "index": 1
+      },
+      "pbrMetallicRoughness": {
+        "baseColorTexture": {
+          "extensions": {
+            "KHR_texture_transform": {
+              "scale": [
+                1.013142466545105,
+                1
+              ]
+            }
+          },
+          "index": 2
+        },
+        "metallicRoughnessTexture": {
+          "extensions": {
+            "KHR_texture_transform": {
+              "scale": [
+                1.013142466545105,
+                1
+              ]
+            }
+          },
+          "index": 3
+        }
+      }
+    }
+  ],
+  "meshes": [
+    {
+      "name": "Sphere.001",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 0,
+            "NORMAL": 1,
+            "TEXCOORD_0": 2
+          },
+          "indices": 3,
+          "material": 0
+        }
+      ]
+    }
+  ],
+  "textures": [
+    {
+      "sampler": 0,
+      "source": 0
+    },
+    {
+      "sampler": 0,
+      "source": 1
+    },
+    {
+      "sampler": 0,
+      "source": 2
+    },
+    {
+      "sampler": 0,
+      "source": 3
+    }
+  ],
+  "images": [
+    {
+      "mimeType": "image/jpeg",
+      "name": "quatrefoil_jacquard_fabric_spec_ior",
+      "uri": "textures/quatrefoil_jacquard_fabric_spec_ior_1k.jpg"
+    },
+    {
+      "mimeType": "image/jpeg",
+      "name": "quatrefoil_jacquard_fabric_nor_gl",
+      "uri": "textures/quatrefoil_jacquard_fabric_nor_gl_1k.jpg"
+    },
+    {
+      "mimeType": "image/jpeg",
+      "name": "quatrefoil_jacquard_fabric_diff",
+      "uri": "textures/quatrefoil_jacquard_fabric_diff_1k.jpg"
+    },
+    {
+      "mimeType": "image/jpeg",
+      "name": "quatrefoil_jacquard_fabric_metal-quatrefoil_jacquard_fabric_rough",
+      "uri": "textures/quatrefoil_jacquard_fabric_arm_1k.jpg"
+    }
+  ],
+  "accessors": [
+    {
+      "bufferView": 0,
+      "componentType": 5126,
+      "count": 53930,
+      "max": [
+        0.14199179410934448,
+        0.1419508159160614,
+        0.1419520378112793
+      ],
+      "min": [
+        -0.14199182391166687,
+        -0.14194302260875702,
+        -0.1419530063867569
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 1,
+      "componentType": 5126,
+      "count": 53930,
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 2,
+      "componentType": 5126,
+      "count": 53930,
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 3,
+      "componentType": 5123,
+      "count": 322170,
+      "type": "SCALAR"
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteLength": 647160,
+      "byteOffset": 0,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteLength": 647160,
+      "byteOffset": 647160,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteLength": 431440,
+      "byteOffset": 1294320,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteLength": 644340,
+      "byteOffset": 1725760,
+      "target": 34963
+    }
+  ],
+  "samplers": [
+    {
+      "magFilter": 9729,
+      "minFilter": 9987
+    }
+  ],
+  "buffers": [
+    {
+      "byteLength": 2370100,
+      "uri": "quatrefoil_jacquard_fabric.bin"
+    }
+  ]
+}

@@ -1,12 +1,14 @@
-import type { Dispatch, SetStateAction } from 'react';
+import { useState, type Dispatch, type SetStateAction } from 'react';
 import { ModularHomeShareLinkPanel } from './ModularHomeShareLinkPanel';
 import type { ModularHomeTemplateId } from './modularHomeConfig';
 import {
+  DEFAULT_MODULAR_HOME_CONFIG,
   type ModularHomeConfiguratorState,
   type ModularHomeViewModeOption,
   type useModularHomeConfigurator,
 } from './modularHomeConfigurator';
 import { formatHomeEstimateEur } from './modularHomeEstimate';
+import { createModularHomeShareUrl } from './modularHomeShareUrl';
 import {
   getDefaultDimensionPresetForProduct,
   getDefaultHomeConfig,
@@ -44,67 +46,93 @@ type HomeConfigUiGroup<Key extends keyof ModularHomeConfiguratorState = keyof Mo
   options: readonly HomeConfigUiOption<Key>[];
 };
 
-const HOME_CONSTRAINT_STATUS_LABELS = {
-  compatible: 'Compatible',
-  notAvailable: 'Not available',
-  requiresReview: 'Requires review',
-} as const satisfies Record<ModularHomeConstraintStatus, string>;
+const PRIMARY_CONFIGURATOR_GROUP_KEYS = [
+  'facade',
+  'roof',
+  'terrace',
+  'floorFinish',
+  'interiorWallFinish',
+  'furniturePackage',
+] as const satisfies readonly (keyof ModularHomeConfiguratorState)[];
 
-const HOME_CONSTRAINT_STATUS_STYLES = {
-  compatible: {
-    background: 'rgba(34, 197, 94, 0.12)',
-    border: '1px solid rgba(34, 197, 94, 0.24)',
-    color: '#bbf7d0',
-  },
-  notAvailable: {
-    background: 'rgba(100, 116, 139, 0.12)',
-    border: '1px solid rgba(148, 163, 184, 0.2)',
-    color: '#94a3b8',
-  },
-  requiresReview: {
-    background: 'rgba(251, 191, 36, 0.12)',
-    border: '1px solid rgba(251, 191, 36, 0.26)',
-    color: '#fde68a',
-  },
-} as const satisfies Record<ModularHomeConstraintStatus, {
-  background: string;
-  border: string;
-  color: string;
-}>;
+const PRIMARY_CONFIGURATOR_GROUP_KEY_SET = new Set<keyof ModularHomeConfiguratorState>(
+  PRIMARY_CONFIGURATOR_GROUP_KEYS,
+);
 
-const HOME_PRODUCTION_CONSTRAINT_SEVERITY_LABELS = {
-  blocked: 'Blocked',
-  info: 'Info',
-  requiresReview: 'Requires review',
-  warning: 'Warning',
-} as const satisfies Record<ModularHomeProductionConstraintSeverity, string>;
+type ConfiguratorStylePreset = {
+  helper: string;
+  id: string;
+  label: string;
+  overrides: Partial<ModularHomeConfiguratorState>;
+};
 
-const HOME_PRODUCTION_CONSTRAINT_SEVERITY_STYLES = {
-  blocked: {
-    background: 'rgba(127, 29, 29, 0.28)',
-    border: '1px solid rgba(248, 113, 113, 0.32)',
-    color: '#fecaca',
+const CONFIGURATOR_STYLE_PRESETS = [
+  {
+    helper: 'Warm timber, plywood interior, furnished studio',
+    id: 'natural',
+    label: 'Natural',
+    overrides: {
+      facade: 'naturalTimber',
+      floorFinish: 'plywood',
+      furnitureMood: 'warm',
+      furniturePackage: 'standardFurniture',
+      interiorFloorStyle: 'utilityPlywood',
+      interiorWallFinish: 'plywood',
+      kitchenFinish: 'wood',
+      roof: 'pitched',
+      roofEdgeColor: 'graphite',
+      terrace: 'frontDeck',
+      trimColor: 'timber',
+      wallPanelStyle: 'plainPanel',
+      windowFrameColor: 'timber',
+      windowPackage: 'standardWindows',
+    },
   },
-  info: {
-    background: 'rgba(14, 165, 233, 0.12)',
-    border: '1px solid rgba(125, 211, 252, 0.2)',
-    color: '#bae6fd',
+  {
+    helper: 'Bright facade, white frames, oak floor',
+    id: 'nordic-light',
+    label: 'Nordic light',
+    overrides: {
+      facade: 'lightPainted',
+      floorFinish: 'oakLaminate',
+      furnitureMood: 'minimal',
+      furniturePackage: 'standardFurniture',
+      interiorFloorStyle: 'warmPlank',
+      interiorWallFinish: 'paintedWhite',
+      kitchenFinish: 'white',
+      roof: 'pitched',
+      roofEdgeColor: 'lightMetal',
+      terrace: 'frontDeck',
+      trimColor: 'white',
+      wallPanelStyle: 'paintReadyBoard',
+      windowFrameColor: 'white',
+      windowPackage: 'panoramicWindows',
+    },
   },
-  requiresReview: {
-    background: 'rgba(251, 191, 36, 0.14)',
-    border: '1px solid rgba(251, 191, 36, 0.28)',
-    color: '#fde68a',
+  {
+    helper: 'Dark cladding, premium furniture, bronze details',
+    id: 'dark-premium',
+    label: 'Dark premium',
+    overrides: {
+      facade: 'darkThermoWood',
+      finishLevel: 'premium',
+      floorFinish: 'oakLaminate',
+      furnitureMood: 'premiumCompact',
+      furniturePackage: 'premiumFurniture',
+      interiorFloorStyle: 'warmPlank',
+      interiorWallFinish: 'warmPanel',
+      kitchenFinish: 'dark',
+      roof: 'flat',
+      roofEdgeColor: 'bronze',
+      terrace: 'extendedTerrace',
+      trimColor: 'graphite',
+      wallPanelStyle: 'ribbedPanel',
+      windowFrameColor: 'graphite',
+      windowFrameType: 'slimline',
+      windowPackage: 'panoramicWindows',
+    },
   },
-  warning: {
-    background: 'rgba(251, 146, 60, 0.14)',
-    border: '1px solid rgba(253, 186, 116, 0.26)',
-    color: '#fed7aa',
-  },
-} as const satisfies Record<ModularHomeProductionConstraintSeverity, {
-  background: string;
-  border: string;
-  color: string;
-}>;
+] as const satisfies readonly ConfiguratorStylePreset[];
 
 function setConfiguratorOption(
   setOption: ReturnType<typeof useModularHomeConfigurator>['setOption'],
@@ -122,55 +150,15 @@ function formatOptionPriceDelta(amount: number): string {
   return ` +${formatHomeEstimateEur(amount)}`;
 }
 
-function renderProductionConstraintCard(
-  constraint: ModularHomeProductionConstraint,
-  isTouchDevice: boolean,
-) {
-  const style = HOME_PRODUCTION_CONSTRAINT_SEVERITY_STYLES[constraint.severity];
-
-  return (
-    <div
-      key={constraint.id}
-      data-home-production-constraint={constraint.id}
-      data-home-production-constraint-affected={constraint.affectedOptions.join(',')}
-      data-home-production-constraint-next-step={constraint.nextStep}
-      data-home-production-constraint-severity={constraint.severity}
-      style={{
-        ...style,
-        borderRadius: '11px',
-        display: 'grid',
-        gap: '4px',
-        padding: isTouchDevice ? '7px 8px' : '8px 9px',
-      }}
-    >
-      <div style={{ alignItems: 'center', display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-        <span
-          style={{
-            background: 'rgba(2, 6, 23, 0.26)',
-            border: '1px solid rgba(255, 255, 255, 0.12)',
-            borderRadius: '999px',
-            fontSize: isTouchDevice ? '0.47rem' : '0.5rem',
-            fontWeight: 950,
-            letterSpacing: '0.08em',
-            lineHeight: 1,
-            padding: '4px 6px',
-            textTransform: 'uppercase',
-          }}
-        >
-          {HOME_PRODUCTION_CONSTRAINT_SEVERITY_LABELS[constraint.severity]}
-        </span>
-        <span style={{ fontSize: isTouchDevice ? '0.56rem' : '0.6rem', fontWeight: 920, lineHeight: 1.2 }}>
-          {constraint.message}
-        </span>
-      </div>
-      <div style={{ color: 'inherit', fontSize: isTouchDevice ? '0.52rem' : '0.56rem', fontWeight: 760, lineHeight: 1.28, opacity: 0.92 }}>
-        Affects: {constraint.affectedOptions.length > 0 ? constraint.affectedOptions.join(', ') : 'current configuration'}
-      </div>
-      <div style={{ color: 'inherit', fontSize: isTouchDevice ? '0.52rem' : '0.56rem', fontWeight: 820, lineHeight: 1.28 }}>
-        Next step: {constraint.nextStep}
-      </div>
-    </div>
-  );
+function createConfiguratorStylePresetConfig(
+  product: ModularHomeProduct,
+  overrides: Partial<ModularHomeConfiguratorState>,
+): ModularHomeConfiguratorState {
+  return {
+    ...DEFAULT_MODULAR_HOME_CONFIG,
+    ...getDefaultHomeConfig(product.id),
+    ...overrides,
+  };
 }
 
 function createOptionGroup<Key extends keyof ModularHomeConfiguratorState>(
@@ -287,6 +275,8 @@ type ConfiguratorOptionsPanelProps = {
   invalidConfigReasons: readonly string[];
   invalidShareKeys: readonly string[];
   isTouchDevice: boolean;
+  onConfigInteraction: () => void;
+  onStartInside: () => void;
   product: ModularHomeProduct;
   reset: () => void;
   reviewConfigWarnings: readonly ModularHomeProductionConstraint[];
@@ -304,6 +294,8 @@ export function ConfiguratorOptionsPanel({
   invalidConfigReasons,
   invalidShareKeys,
   isTouchDevice,
+  onConfigInteraction,
+  onStartInside,
   product,
   reset,
   reviewConfigWarnings,
@@ -315,7 +307,132 @@ export function ConfiguratorOptionsPanel({
   visibleProductionConstraints,
 }: ConfiguratorOptionsPanelProps) {
   const configuratorGroups = createConfiguratorGroups(product, config);
+  const [shareCopyStatus, setShareCopyStatus] = useState('');
+  const [showMoreOptions, setShowMoreOptions] = useState(false);
   const sharedConfigFromUrl = { invalidKeys: invalidShareKeys };
+  const shareUrl = createModularHomeShareUrl(config, undefined, viewMode);
+  const primaryConfiguratorGroups = PRIMARY_CONFIGURATOR_GROUP_KEYS
+    .map((key) => configuratorGroups.find((group) => group.key === key))
+    .filter((group): group is HomeConfigUiGroup => group !== undefined);
+  const moreConfiguratorGroups = configuratorGroups.filter((group) => !PRIMARY_CONFIGURATOR_GROUP_KEY_SET.has(group.key));
+
+  const copyPrimaryShareUrl = async () => {
+    if (typeof navigator === 'undefined' || typeof navigator.clipboard?.writeText !== 'function') {
+      setShareCopyStatus('Share link is ready below.');
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setShareCopyStatus('Saite nokopēta.');
+    } catch {
+      setShareCopyStatus('Share link is ready below.');
+    }
+  };
+
+  const renderConfiguratorGroup = (group: HomeConfigUiGroup) => (
+    <div key={group.key} data-home-config-group={group.key}>
+      <div
+        style={{
+          color: '#fed7aa',
+          fontSize: isTouchDevice ? '0.58rem' : '0.62rem',
+          fontWeight: 950,
+          letterSpacing: '0.1em',
+          marginBottom: '6px',
+          textTransform: 'uppercase',
+        }}
+      >
+        {group.label}
+      </div>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: isTouchDevice ? '7px' : '8px' }}>
+        {group.options.map((option) => {
+          const selected = config[group.key] === option.key;
+          const isDisabled = option.isDisabled;
+
+          return (
+            <button
+              key={option.key}
+              type="button"
+              aria-disabled={isDisabled}
+              aria-pressed={selected}
+              data-home-config-option={`${group.key}:${option.key}`}
+              data-home-config-constraint-message={option.constraintMessage}
+              data-home-config-constraint-status={option.constraintStatus}
+              data-home-config-disabled={isDisabled ? 'true' : 'false'}
+              data-home-config-disabled-reason={option.disabledReason}
+              data-home-config-production-next-step={option.productionNextStep}
+              data-home-config-production-severity={option.productionConstraintSeverity}
+              data-home-config-selected={selected ? 'true' : 'false'}
+              disabled={isDisabled}
+              title={option.label}
+              onClick={(event) => {
+                event.stopPropagation();
+                if (isDisabled) {
+                  return;
+                }
+
+                if (selected) {
+                  return;
+                }
+
+                if (group.key === 'template') {
+                  const nextProduct = getModularHomeProductForTemplate(option.key as ModularHomeTemplateId);
+                  if (nextProduct) {
+                    setConfig(getDefaultHomeConfig(nextProduct.id));
+                    onConfigInteraction();
+                    return;
+                  }
+                }
+
+                setConfiguratorOption(setOption, group.key, option.key);
+                onConfigInteraction();
+              }}
+              style={{
+                background: selected ? 'linear-gradient(135deg, rgba(251, 191, 36, 0.28), rgba(34, 197, 94, 0.2))' : 'rgba(15, 23, 42, 0.5)',
+                border: selected ? '1px solid rgba(251, 191, 36, 0.5)' : '1px solid rgba(255, 255, 255, 0.14)',
+                borderRadius: '999px',
+                color: isDisabled ? '#64748b' : selected ? '#fff7ed' : '#cbd5e1',
+                cursor: isDisabled ? 'not-allowed' : 'pointer',
+                display: 'inline-grid',
+                font: 'inherit',
+                fontSize: isTouchDevice ? '0.61rem' : '0.64rem',
+                fontWeight: selected ? 950 : 850,
+                gap: '5px',
+                justifyItems: 'start',
+                lineHeight: 1.12,
+                opacity: isDisabled ? 0.52 : 1,
+                padding: isTouchDevice ? '8px 9px' : '8px 10px',
+                whiteSpace: 'normal',
+              }}
+            >
+              <span>{option.label}{formatOptionPriceDelta(option.priceDelta)}</span>
+              <span data-home-config-constraint-label={`${group.key}:${option.key}:${option.constraintStatus}`} hidden />
+              {option.productionConstraintSeverity !== 'info' ? (
+                <span data-home-config-production-label={`${group.key}:${option.key}:${option.productionConstraintSeverity}`} hidden />
+              ) : null}
+            </button>
+          );
+        })}
+      </div>
+      {group.options.some((option) => option.isDisabled) ? (
+        <div
+          data-home-config-disabled-note={group.key}
+          style={{
+            color: '#94a3b8',
+            fontSize: isTouchDevice ? '0.54rem' : '0.58rem',
+            fontWeight: 760,
+            lineHeight: 1.3,
+            marginTop: '5px',
+          }}
+        >
+          Muted options are unavailable for {product.name}.
+        </div>
+      ) : null}
+      {group.options.some((option) => option.constraintStatus === 'requiresReview') ? (
+        <span data-home-config-review-note={group.key} hidden />
+      ) : null}
+    </div>
+  );
 
   return (
     <>
@@ -367,6 +484,58 @@ export function ConfiguratorOptionsPanel({
       
               <div style={{ display: 'grid', gap: isTouchDevice ? '11px' : '12px', marginTop: isTouchDevice ? '11px' : '12px' }}>
                 <div
+                  data-home-style-presets="true"
+                  style={{
+                    background: 'linear-gradient(180deg, rgba(251, 191, 36, 0.16), rgba(2, 6, 23, 0.34))',
+                    border: '1px solid rgba(251, 191, 36, 0.24)',
+                    borderRadius: '13px',
+                    display: 'grid',
+                    gap: '8px',
+                    padding: isTouchDevice ? '9px 10px' : '10px 11px',
+                  }}
+                >
+                  <div style={{ color: '#fde68a', fontSize: isTouchDevice ? '0.54rem' : '0.58rem', fontWeight: 950, letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+                    Start from a style
+                  </div>
+                  <div style={{ display: 'grid', gap: '7px', gridTemplateColumns: isTouchDevice ? '1fr' : '1fr' }}>
+                    {CONFIGURATOR_STYLE_PRESETS.map((preset) => (
+                      <button
+                        key={preset.id}
+                        type="button"
+                        data-home-style-preset={preset.id}
+                        title={preset.helper}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          setConfig(createConfiguratorStylePresetConfig(product, preset.overrides));
+                          onConfigInteraction();
+                        }}
+                        style={{
+                          alignItems: 'center',
+                          background: 'rgba(15, 23, 42, 0.58)',
+                          border: '1px solid rgba(251, 191, 36, 0.22)',
+                          borderRadius: '11px',
+                          color: '#fff7ed',
+                          cursor: 'pointer',
+                          display: 'grid',
+                          font: 'inherit',
+                          gap: '3px',
+                          justifyItems: 'start',
+                          padding: isTouchDevice ? '8px 9px' : '8px 10px',
+                          textAlign: 'left',
+                        }}
+                      >
+                        <span style={{ fontSize: isTouchDevice ? '0.64rem' : '0.68rem', fontWeight: 950, lineHeight: 1.08 }}>
+                          {preset.label}
+                        </span>
+                        <span style={{ color: '#fed7aa', fontSize: isTouchDevice ? '0.54rem' : '0.57rem', fontWeight: 780, lineHeight: 1.22 }}>
+                          {preset.helper}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div
                   style={{
                     background: 'rgba(2, 6, 23, 0.28)',
                     border: '1px solid rgba(125, 211, 252, 0.18)',
@@ -409,7 +578,7 @@ export function ConfiguratorOptionsPanel({
                       type="button"
                       onClick={(event) => {
                         event.stopPropagation();
-                        updateStudioViewMode('interior');
+                        onStartInside();
                       }}
                       style={{
                         background: 'rgba(15, 23, 42, 0.56)',
@@ -424,6 +593,27 @@ export function ConfiguratorOptionsPanel({
                       }}
                     >
                       Start inside
+                    </button>
+                    <button
+                      type="button"
+                      data-home-share-primary-copy="true"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        void copyPrimaryShareUrl();
+                      }}
+                      style={{
+                        background: 'linear-gradient(135deg, rgba(96, 165, 250, 0.92), rgba(45, 212, 191, 0.82))',
+                        border: '1px solid rgba(191, 219, 254, 0.34)',
+                        borderRadius: '999px',
+                        color: '#082f49',
+                        cursor: 'pointer',
+                        font: 'inherit',
+                        fontSize: isTouchDevice ? '0.56rem' : '0.6rem',
+                        fontWeight: 950,
+                        padding: '8px 10px',
+                      }}
+                    >
+                      Saglabā / kopīgo savu māju
                     </button>
                     <button
                       type="button"
@@ -446,146 +636,62 @@ export function ConfiguratorOptionsPanel({
                       Request quote
                     </button>
                   </div>
+                  {shareCopyStatus ? (
+                    <div data-home-share-primary-status="true" style={{ color: '#bfdbfe', fontSize: isTouchDevice ? '0.54rem' : '0.58rem', fontWeight: 880, lineHeight: 1.28 }}>
+                      {shareCopyStatus}
+                    </div>
+                  ) : null}
                 </div>
       
-                {configuratorGroups.map((group) => (
-                  <div key={group.key} data-home-config-group={group.key}>
-                    <div
+                {primaryConfiguratorGroups.map(renderConfiguratorGroup)}
+
+                {moreConfiguratorGroups.length > 0 ? (
+                  <div
+                    data-home-config-more-options="true"
+                    data-home-config-more-options-expanded={showMoreOptions ? 'true' : 'false'}
+                    style={{
+                      borderTop: '1px solid rgba(251, 191, 36, 0.14)',
+                      display: 'grid',
+                      gap: showMoreOptions ? (isTouchDevice ? '10px' : '11px') : 0,
+                      paddingTop: isTouchDevice ? '10px' : '11px',
+                    }}
+                  >
+                    <button
+                      type="button"
+                      aria-expanded={showMoreOptions}
+                      data-home-config-more-options-toggle="true"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        setShowMoreOptions((current) => !current);
+                      }}
                       style={{
-                        color: '#fed7aa',
-                        fontSize: isTouchDevice ? '0.58rem' : '0.62rem',
-                        fontWeight: 950,
-                        letterSpacing: '0.1em',
-                        marginBottom: '6px',
-                        textTransform: 'uppercase',
+                        alignItems: 'center',
+                        background: showMoreOptions ? 'rgba(251, 191, 36, 0.16)' : 'rgba(15, 23, 42, 0.5)',
+                        border: showMoreOptions ? '1px solid rgba(251, 191, 36, 0.32)' : '1px solid rgba(255, 255, 255, 0.14)',
+                        borderRadius: '999px',
+                        color: '#fef3c7',
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        font: 'inherit',
+                        fontSize: isTouchDevice ? '0.61rem' : '0.64rem',
+                        fontWeight: 930,
+                        justifyContent: 'space-between',
+                        lineHeight: 1.08,
+                        maxWidth: '100%',
+                        padding: isTouchDevice ? '9px 11px' : '9px 12px',
+                        width: 'fit-content',
                       }}
                     >
-                      {group.label}
-                    </div>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: isTouchDevice ? '7px' : '8px' }}>
-                      {group.options.map((option) => {
-                        const selected = config[group.key] === option.key;
-                        const isDisabled = option.isDisabled;
-                        const statusStyle = HOME_CONSTRAINT_STATUS_STYLES[option.constraintStatus];
-                        const statusLabel = HOME_CONSTRAINT_STATUS_LABELS[option.constraintStatus];
-      
-                        return (
-                          <button
-                            key={option.key}
-                            type="button"
-                            aria-disabled={isDisabled}
-                            aria-pressed={selected}
-                            data-home-config-option={`${group.key}:${option.key}`}
-                            data-home-config-constraint-message={option.constraintMessage}
-                            data-home-config-constraint-status={option.constraintStatus}
-                            data-home-config-disabled={isDisabled ? 'true' : 'false'}
-                            data-home-config-disabled-reason={option.disabledReason}
-                            data-home-config-production-next-step={option.productionNextStep}
-                            data-home-config-production-severity={option.productionConstraintSeverity}
-                            data-home-config-selected={selected ? 'true' : 'false'}
-                            disabled={isDisabled}
-                            title={`${option.constraintMessage || option.label} Next step: ${option.productionNextStep}`}
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              if (isDisabled) {
-                                return;
-                              }
-      
-                              if (group.key === 'template') {
-                                const nextProduct = getModularHomeProductForTemplate(option.key as ModularHomeTemplateId);
-                                if (nextProduct) {
-                                  setConfig(getDefaultHomeConfig(nextProduct.id));
-                                  return;
-                                }
-                              }
-      
-                              setConfiguratorOption(setOption, group.key, option.key);
-                            }}
-                            style={{
-                              background: selected ? 'linear-gradient(135deg, rgba(251, 191, 36, 0.28), rgba(34, 197, 94, 0.2))' : 'rgba(15, 23, 42, 0.5)',
-                              border: selected ? '1px solid rgba(251, 191, 36, 0.5)' : '1px solid rgba(255, 255, 255, 0.14)',
-                              borderRadius: '999px',
-                              color: isDisabled ? '#64748b' : selected ? '#fff7ed' : '#cbd5e1',
-                              cursor: isDisabled ? 'not-allowed' : 'pointer',
-                              display: 'inline-grid',
-                              font: 'inherit',
-                              fontSize: isTouchDevice ? '0.61rem' : '0.64rem',
-                              fontWeight: selected ? 950 : 850,
-                              gap: '5px',
-                              justifyItems: 'start',
-                              lineHeight: 1.12,
-                              opacity: isDisabled ? 0.52 : 1,
-                              padding: isTouchDevice ? '8px 9px' : '8px 10px',
-                              whiteSpace: 'normal',
-                            }}
-                          >
-                            <span>{option.label}{formatOptionPriceDelta(option.priceDelta)}</span>
-                            <span
-                              data-home-config-constraint-label={`${group.key}:${option.key}:${option.constraintStatus}`}
-                              style={{
-                                ...statusStyle,
-                                borderRadius: '999px',
-                                fontSize: isTouchDevice ? '0.44rem' : '0.47rem',
-                                fontWeight: 950,
-                                letterSpacing: '0.08em',
-                                lineHeight: 1,
-                                padding: '3px 5px',
-                                textTransform: 'uppercase',
-                              }}
-                            >
-                              {statusLabel}
-                            </span>
-                            {option.productionConstraintSeverity !== 'info' ? (
-                              <span
-                                data-home-config-production-label={`${group.key}:${option.key}:${option.productionConstraintSeverity}`}
-                                style={{
-                                  ...HOME_PRODUCTION_CONSTRAINT_SEVERITY_STYLES[option.productionConstraintSeverity],
-                                  borderRadius: '999px',
-                                  fontSize: isTouchDevice ? '0.44rem' : '0.47rem',
-                                  fontWeight: 950,
-                                  letterSpacing: '0.08em',
-                                  lineHeight: 1,
-                                  padding: '3px 5px',
-                                  textTransform: 'uppercase',
-                                }}
-                              >
-                                {HOME_PRODUCTION_CONSTRAINT_SEVERITY_LABELS[option.productionConstraintSeverity]}
-                              </span>
-                            ) : null}
-                          </button>
-                        );
-                      })}
-                    </div>
-                    {group.options.some((option) => option.isDisabled) ? (
-                      <div
-                        data-home-config-disabled-note={group.key}
-                        style={{
-                          color: '#94a3b8',
-                          fontSize: isTouchDevice ? '0.54rem' : '0.58rem',
-                          fontWeight: 760,
-                          lineHeight: 1.3,
-                          marginTop: '5px',
-                        }}
-                      >
-                        Muted options are unavailable for {product.name}.
-                      </div>
-                    ) : null}
-                    {group.options.some((option) => option.constraintStatus === 'requiresReview') ? (
-                      <div
-                        data-home-config-review-note={group.key}
-                        style={{
-                          color: '#fde68a',
-                          fontSize: isTouchDevice ? '0.54rem' : '0.58rem',
-                          fontWeight: 760,
-                          lineHeight: 1.3,
-                          marginTop: '5px',
-                        }}
-                      >
-                        Review-marked options need production confirmation before final quote.
+                      Vairāk opciju
+                    </button>
+
+                    {showMoreOptions ? (
+                      <div style={{ display: 'grid', gap: isTouchDevice ? '11px' : '12px' }}>
+                        {moreConfiguratorGroups.map(renderConfiguratorGroup)}
                       </div>
                     ) : null}
                   </div>
-                ))}
+                ) : null}
               </div>
       
               <div
@@ -609,23 +715,21 @@ export function ConfiguratorOptionsPanel({
       
               {visibleProductionConstraints.length > 0 ? (
                 <div
-                  aria-label="Modular home production readiness constraints"
+                  aria-hidden="true"
                   data-home-config-production-constraints="true"
                   data-home-config-production-constraint-count={visibleProductionConstraints.length}
-                  style={{
-                    background: 'rgba(2, 6, 23, 0.32)',
-                    border: '1px solid rgba(251, 191, 36, 0.2)',
-                    borderRadius: '13px',
-                    display: 'grid',
-                    gap: '6px',
-                    marginTop: isTouchDevice ? '8px' : '9px',
-                    padding: isTouchDevice ? '7px 8px' : '8px 9px',
-                  }}
+                  hidden
                 >
-                  <div style={{ color: '#fef3c7', fontSize: isTouchDevice ? '0.56rem' : '0.6rem', fontWeight: 950, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
-                    Production readiness
-                  </div>
-                  {visibleProductionConstraints.map((constraint) => renderProductionConstraintCard(constraint, isTouchDevice))}
+                  {visibleProductionConstraints.map((constraint) => (
+                    <span
+                      key={constraint.id}
+                      data-home-production-constraint={constraint.id}
+                      data-home-production-constraint-affected={constraint.affectedOptions.join(',')}
+                      data-home-production-constraint-next-step={constraint.nextStep}
+                      data-home-production-constraint-severity={constraint.severity}
+                      hidden
+                    />
+                  ))}
                 </div>
               ) : null}
       
@@ -652,25 +756,9 @@ export function ConfiguratorOptionsPanel({
                 </div>
               ) : null}
               {reviewConfigWarnings.length > 0 ? (
-                <div
-                  data-home-config-validation="requires-review"
-                  style={{
-                    background: 'rgba(120, 53, 15, 0.24)',
-                    border: '1px solid rgba(251, 191, 36, 0.28)',
-                    borderRadius: '12px',
-                    color: '#fde68a',
-                    display: 'grid',
-                    gap: '4px',
-                    fontSize: isTouchDevice ? '0.56rem' : '0.6rem',
-                    fontWeight: 800,
-                    lineHeight: 1.3,
-                    marginTop: isTouchDevice ? '8px' : '9px',
-                    padding: isTouchDevice ? '7px 8px' : '8px 9px',
-                  }}
-                >
-                  <span style={{ color: '#fef3c7', fontWeight: 950 }}>Requires review before production quote:</span>
+                <div data-home-config-validation="requires-review" hidden>
                   {reviewConfigWarnings.map((warning) => (
-                    <span key={warning.id} data-home-config-review-warning={warning.id}>
+                    <span key={warning.id} data-home-config-review-warning={warning.id} hidden>
                       {warning.message}
                     </span>
                   ))}

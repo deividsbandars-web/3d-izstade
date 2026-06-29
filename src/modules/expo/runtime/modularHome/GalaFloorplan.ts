@@ -53,7 +53,8 @@ export type OpeningGap = Rect & {
   id: string;
 };
 
-export const FLOOR_Y = 0;
+export const FINISHED_FLOOR_TOP_Y = 0.18;
+export const FLOOR_Y = FINISHED_FLOOR_TOP_Y;
 export const FINISHED_FLOOR_THICKNESS = 0.08;
 export const PLAYER_EYE_HEIGHT = 1.65;
 export const PLAYER_RADIUS = 0.28;
@@ -63,13 +64,13 @@ export const SPRINT_SPEED_MPS = 2.0;
 export const MAX_FRAME_STEP_METERS = 0.08;
 
 export const GALA_GEOMETRY_LEVELS = {
-  cameraEyeHeightMeters: PLAYER_EYE_HEIGHT,
+  cameraEyeHeightMeters: FINISHED_FLOOR_TOP_Y + PLAYER_EYE_HEIGHT,
   doorHeight: 2.1,
   eyeHeight: PLAYER_EYE_HEIGHT,
   finishedFloorY: FLOOR_Y,
   floorBottomY: FLOOR_Y - FINISHED_FLOOR_THICKNESS,
   floorTopY: FLOOR_Y,
-  wallBaseY: FLOOR_Y,
+  wallBaseY: 0,
   wallTopY: 2.7,
 } as const;
 
@@ -84,6 +85,15 @@ export const GALA_WALK_PHYSICS = {
 const wallLength = GALA_HOUSE_DIMENSIONS.houseLengthM;
 const wallWidth = GALA_HOUSE_DIMENSIONS.assembledWallEnvelopeWidthM;
 const wallThickness = 0.14;
+const bathroomPartitionPlanX = GALA_HOUSE_DIMENSIONS.bathroomStartXM + 0.105;
+const exteriorWallCollisionHalfDepth = wallThickness * 0.5 + 0.04;
+
+export const GALA_BATHROOM_DOOR_ENVELOPE: Rect = {
+  xMin: 5.95,
+  xMax: 6.85,
+  zMin: -0.08,
+  zMax: 0.72,
+};
 
 export const GALA_FLOORPLAN = {
   length: wallLength,
@@ -209,12 +219,7 @@ export const GALA_INTERIOR_DOORS: readonly GalaInteriorDoor[] = [
   {
     frameId: 'bathroomDoor',
     label: 'Accessible bathroom / WC door',
-    opening: {
-      xMin: 6.0,
-      xMax: 7.12,
-      zMin: -0.08,
-      zMax: 0.72,
-    },
+    opening: GALA_BATHROOM_DOOR_ENVELOPE,
     orientation: 'z-wall',
     wallZ: 0,
   },
@@ -268,7 +273,7 @@ export const GALA_INTERIOR_FURNITURE_FOOTPRINTS: readonly GalaFurnitureItem[] = 
   { id: 'living-sofa-bench', roomId: 'livingKitchenEntry', xMin: 1.02, xMax: 2.84, zMin: -0.28, zMax: 0.34 },
   { id: 'living-coffee-table', roomId: 'livingKitchenEntry', xMin: 2.98, xMax: 3.72, zMin: -0.08, zMax: 0.46 },
   { id: 'living-storage-shelf', roomId: 'livingKitchenEntry', xMin: 2.82, xMax: 3.34, zMin: 1.46, zMax: 2.14 },
-  { id: 'bedroom-bed', roomId: 'bedroom', xMin: 7.82, xMax: 9.54, zMin: -2.38, zMax: -1.1 },
+  { id: 'bedroom-bed', roomId: 'bedroom', xMin: 7.62, xMax: 9.58, zMin: -2.38, zMax: -0.52 },
   { id: 'bedroom-wardrobe', roomId: 'bedroom', xMin: 9.66, xMax: 10.08, zMin: 0.5, zMax: 1.82 },
   { id: 'bathroom-shower', roomId: 'bathroom', xMin: 5.28, xMax: 5.82, zMin: -2.2, zMax: -1.48 },
   { id: 'bathroom-sink', roomId: 'bathroom', xMin: 6.52, xMax: 6.98, zMin: -2.2, zMax: -1.72 },
@@ -292,10 +297,7 @@ export const GALA_OPENING_GAPS: readonly OpeningGap[] = [
   },
   {
     id: 'bathroom-door-gap',
-    xMin: 6.0,
-    xMax: 7.12,
-    zMin: -0.08,
-    zMax: 0.72,
+    ...GALA_BATHROOM_DOOR_ENVELOPE,
   },
   {
     id: 'bedroom-door-gap',
@@ -320,8 +322,8 @@ export const GALA_CLOSED_DOOR_COLLISION_SEGMENTS: readonly GalaClosedDoorCollisi
   {
     doorId: 'D-BATHROOM',
     id: 'closed-bathroom-door-slab',
-    xMin: 6.0,
-    xMax: 7.12,
+    xMin: GALA_BATHROOM_DOOR_ENVELOPE.xMin,
+    xMax: GALA_BATHROOM_DOOR_ENVELOPE.xMax,
     zMin: -wallThickness * 0.62,
     zMax: wallThickness * 0.62,
   },
@@ -375,48 +377,48 @@ export const GALA_WALL_COLLISION_SEGMENTS: readonly WallSegment[] = [
     id: 'south-exterior-wall-left-of-entry-door',
     xMin: 0,
     xMax: 4.185,
-    zMin: -wallWidth * 0.5 - wallThickness * 0.5,
-    zMax: -wallWidth * 0.5 + wallThickness * 0.5,
+    zMin: -wallWidth * 0.5 - exteriorWallCollisionHalfDepth,
+    zMax: -wallWidth * 0.5 + exteriorWallCollisionHalfDepth,
   },
   {
     id: 'south-exterior-wall-right-of-entry-door',
     xMin: 5.085,
     xMax: wallLength,
-    zMin: -wallWidth * 0.5 - wallThickness * 0.5,
-    zMax: -wallWidth * 0.5 + wallThickness * 0.5,
+    zMin: -wallWidth * 0.5 - exteriorWallCollisionHalfDepth,
+    zMax: -wallWidth * 0.5 + exteriorWallCollisionHalfDepth,
   },
   {
     id: 'north-exterior-wall-left-of-terrace-door',
     xMin: 0,
     xMax: 3.585,
-    zMin: wallWidth * 0.5 - wallThickness * 0.5,
-    zMax: wallWidth * 0.5 + wallThickness * 0.5,
+    zMin: wallWidth * 0.5 - exteriorWallCollisionHalfDepth,
+    zMax: wallWidth * 0.5 + exteriorWallCollisionHalfDepth,
   },
   {
     id: 'north-exterior-wall-right-of-terrace-door',
     xMin: 5.185,
     xMax: wallLength,
-    zMin: wallWidth * 0.5 - wallThickness * 0.5,
-    zMax: wallWidth * 0.5 + wallThickness * 0.5,
+    zMin: wallWidth * 0.5 - exteriorWallCollisionHalfDepth,
+    zMax: wallWidth * 0.5 + exteriorWallCollisionHalfDepth,
   },
   {
     id: 'west-exterior-wall',
-    xMin: -wallThickness * 0.5,
-    xMax: wallThickness * 0.5,
+    xMin: -exteriorWallCollisionHalfDepth,
+    xMax: exteriorWallCollisionHalfDepth,
     zMin: -wallWidth * 0.5,
     zMax: wallWidth * 0.5,
   },
   {
     id: 'east-exterior-wall',
-    xMin: wallLength - wallThickness * 0.5,
-    xMax: wallLength + wallThickness * 0.5,
+    xMin: wallLength - exteriorWallCollisionHalfDepth,
+    xMax: wallLength + exteriorWallCollisionHalfDepth,
     zMin: -wallWidth * 0.5,
     zMax: wallWidth * 0.5,
   },
   {
     id: 'bathroom-west-partition-wall',
-    xMin: GALA_HOUSE_DIMENSIONS.bathroomStartXM - wallThickness * 0.5,
-    xMax: GALA_HOUSE_DIMENSIONS.bathroomStartXM + wallThickness * 0.5,
+    xMin: bathroomPartitionPlanX - wallThickness * 0.5,
+    xMax: bathroomPartitionPlanX + wallThickness * 0.5,
     zMin: -wallWidth * 0.5,
     zMax: 0,
   },
@@ -436,14 +438,14 @@ export const GALA_WALL_COLLISION_SEGMENTS: readonly WallSegment[] = [
   },
   {
     id: 'bathroom-north-wall-left-of-door',
-    xMin: GALA_HOUSE_DIMENSIONS.bathroomStartXM,
-    xMax: 6.0,
+    xMin: bathroomPartitionPlanX,
+    xMax: GALA_BATHROOM_DOOR_ENVELOPE.xMin,
     zMin: -wallThickness * 0.5,
     zMax: wallThickness * 0.5,
   },
   {
     id: 'bathroom-north-wall-right-of-door',
-    xMin: 7.12,
+    xMin: GALA_BATHROOM_DOOR_ENVELOPE.xMax,
     xMax: GALA_HOUSE_DIMENSIONS.bathroomEndXM,
     zMin: -wallThickness * 0.5,
     zMax: wallThickness * 0.5,
@@ -477,10 +479,12 @@ export const GALA_INTERIOR_LAYOUT_DIAGNOSTICS = {
 } as const;
 
 export const GALA_GEOMETRY_SANITY = {
-  cameraEyeHeightMeters: PLAYER_EYE_HEIGHT,
+  cameraEyeHeightMeters: FINISHED_FLOOR_TOP_Y + PLAYER_EYE_HEIGHT,
   configuredMaxFrameStepMeters: MAX_FRAME_STEP_METERS,
   configuredWalkSpeedMps: WALK_SPEED_MPS,
   finishedFloorY: FLOOR_Y,
+  floorBottomY: FLOOR_Y - FINISHED_FLOOR_THICKNESS,
+  floorTopY: FLOOR_Y,
   playerRadiusMeters: PLAYER_RADIUS,
   source: 'configuration-only-not-a-pass-verdict',
   sprintSpeedMps: SPRINT_SPEED_MPS,

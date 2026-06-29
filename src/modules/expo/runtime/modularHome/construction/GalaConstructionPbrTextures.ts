@@ -2,7 +2,29 @@ import { useMemo } from 'react';
 import { useTexture } from '@react-three/drei';
 import * as THREE from 'three';
 
-type GalaConstructionTextureKind = 'floor' | 'wall';
+type GalaConstructionTextureKind =
+  | 'floor'
+  | 'wall'
+  | 'interiorWall'
+  | 'exterior'
+  | 'roof'
+  | 'ground'
+  | 'deck'
+  | 'door'
+  | 'trim';
+
+type GalaConstructionTexturePaths = {
+  arm: string;
+  diffuse: string;
+  normal: string;
+  normalScale?: number;
+  repeat?: readonly [number, number];
+  triplanarScale: number;
+};
+
+type GalaConstructionTextureVariantMap = Record<string, GalaConstructionTexturePaths> & {
+  default: GalaConstructionTexturePaths;
+};
 
 export type GalaConstructionPbrMapProps = {
   aoMap?: THREE.Texture;
@@ -17,35 +39,179 @@ export type GalaConstructionPbrMapProps = {
 
 const GALA_CONSTRUCTION_TEXTURE_PATHS = {
   floor: {
-    arm: '/models/gala/wood_floor_1k/textures/wood_floor_arm_1k.jpg',
-    diffuse: '/models/gala/wood_floor_1k/textures/wood_floor_diff_1k.jpg',
-    normal: '/models/gala/wood_floor_1k/textures/wood_floor_nor_gl_1k.jpg',
+    default: {
+      arm: '/models/gala/plank_flooring_04_1k/textures/plank_flooring_04_arm_1k.jpg',
+      diffuse: '/models/gala/plank_flooring_04_1k/textures/plank_flooring_04_diff_1k.jpg',
+      normal: '/models/gala/plank_flooring_04_1k/textures/plank_flooring_04_nor_gl_1k.jpg',
+      repeat: [6.8, 3.3],
+      triplanarScale: 0.08,
+    },
+    oakLaminate: {
+      arm: '/models/gala/wooden_floor_02_1k/textures/wooden_floor_02_arm_1k.jpg',
+      diffuse: '/models/gala/wooden_floor_02_1k/textures/wooden_floor_02_diff_1k.jpg',
+      normal: '/models/gala/wooden_floor_02_1k/textures/wooden_floor_02_nor_gl_1k.jpg',
+      repeat: [6.8, 3.3],
+      triplanarScale: 0.08,
+    },
+    plywood: {
+      arm: '/models/gala/plank_flooring_04_1k/textures/plank_flooring_04_arm_1k.jpg',
+      diffuse: '/models/gala/plank_flooring_04_1k/textures/plank_flooring_04_diff_1k.jpg',
+      normal: '/models/gala/plank_flooring_04_1k/textures/plank_flooring_04_nor_gl_1k.jpg',
+      repeat: [6.8, 3.3],
+      triplanarScale: 0.08,
+    },
+    polishedConcrete: {
+      arm: '/models/gala/wood_floor_1k/textures/wood_floor_arm_1k.jpg',
+      diffuse: '/models/gala/wood_floor_1k/textures/wood_floor_diff_1k.jpg',
+      normal: '/models/gala/wood_floor_1k/textures/wood_floor_nor_gl_1k.jpg',
+      normalScale: 0.28,
+      repeat: [6.8, 3.3],
+      triplanarScale: 0.1,
+    },
   },
   wall: {
-    arm: '/models/gala/wood_plank_wall_1k/textures/wood_plank_wall_arm_1k.jpg',
-    diffuse: '/models/gala/wood_plank_wall_1k/textures/wood_plank_wall_diff_1k.jpg',
-    normal: '/models/gala/wood_plank_wall_1k/textures/wood_plank_wall_nor_gl_1k.jpg',
+    default: {
+      arm: '/models/gala/wood_plank_wall_1k/textures/wood_plank_wall_arm_1k.jpg',
+      diffuse: '/models/gala/wood_plank_wall_1k/textures/wood_plank_wall_diff_1k.jpg',
+      normalScale: 0.22,
+      normal: '/models/gala/wood_plank_wall_1k/textures/wood_plank_wall_nor_gl_1k.jpg',
+      triplanarScale: 0.35,
+    },
   },
-} as const;
+  interiorWall: {
+    default: {
+      arm: '/models/gala/wood_plank_wall_1k/textures/wood_plank_wall_arm_1k.jpg',
+      diffuse: '/models/gala/wood_plank_wall_1k/textures/wood_plank_wall_diff_1k.jpg',
+      normal: '/models/gala/wood_plank_wall_1k/textures/wood_plank_wall_nor_gl_1k.jpg',
+      normalScale: 0.14,
+      triplanarScale: 0.16,
+    },
+    paintedWhite: {
+      arm: '/models/gala/white_planks_clean_1k/textures/white_planks_clean_arm_1k.jpg',
+      diffuse: '/models/gala/white_planks_clean_1k/textures/white_planks_clean_diff_1k.jpg',
+      normal: '/models/gala/white_planks_clean_1k/textures/white_planks_clean_nor_gl_1k.jpg',
+      normalScale: 0.08,
+      triplanarScale: 0.16,
+    },
+    plywood: {
+      arm: '/models/gala/wood_plank_wall_1k/textures/wood_plank_wall_arm_1k.jpg',
+      diffuse: '/models/gala/wood_plank_wall_1k/textures/wood_plank_wall_diff_1k.jpg',
+      normal: '/models/gala/wood_plank_wall_1k/textures/wood_plank_wall_nor_gl_1k.jpg',
+      normalScale: 0.14,
+      triplanarScale: 0.16,
+    },
+    warmPanel: {
+      arm: '/models/gala/white_maple_veneer_1k/textures/white_maple_veneer_arm_1k.jpg',
+      diffuse: '/models/gala/white_maple_veneer_1k/textures/white_maple_veneer_diff_1k.jpg',
+      normal: '/models/gala/white_maple_veneer_1k/textures/white_maple_veneer_nor_gl_1k.jpg',
+      normalScale: 0.11,
+      triplanarScale: 0.16,
+    },
+  },
+  exterior: {
+    darkThermoWood: {
+      arm: '/models/gala/black_painted_planks_1k/textures/black_painted_planks_arm_1k.jpg',
+      diffuse: '/models/gala/black_painted_planks_1k/textures/black_painted_planks_diff_1k.jpg',
+      normal: '/models/gala/black_painted_planks_1k/textures/black_painted_planks_nor_gl_1k.jpg',
+      triplanarScale: 0.35,
+    },
+    default: {
+      arm: '/models/gala/weathered_plank_siding_1k/textures/weathered_plank_siding_arm_1k.jpg',
+      diffuse: '/models/gala/weathered_plank_siding_1k/textures/weathered_plank_siding_diff_1k.jpg',
+      normal: '/models/gala/weathered_plank_siding_1k/textures/weathered_plank_siding_nor_gl_1k.jpg',
+      triplanarScale: 0.35,
+    },
+    lightPainted: {
+      arm: '/models/gala/white_planks_clean_1k/textures/white_planks_clean_arm_1k.jpg',
+      diffuse: '/models/gala/white_planks_clean_1k/textures/white_planks_clean_diff_1k.jpg',
+      normal: '/models/gala/white_planks_clean_1k/textures/white_planks_clean_nor_gl_1k.jpg',
+      normalScale: 0.18,
+      triplanarScale: 0.35,
+    },
+    naturalTimber: {
+      arm: '/models/gala/weathered_plank_siding_1k/textures/weathered_plank_siding_arm_1k.jpg',
+      diffuse: '/models/gala/weathered_plank_siding_1k/textures/weathered_plank_siding_diff_1k.jpg',
+      normal: '/models/gala/weathered_plank_siding_1k/textures/weathered_plank_siding_nor_gl_1k.jpg',
+      triplanarScale: 0.35,
+    },
+  },
+  roof: {
+    default: {
+      arm: '/models/gala/box_profile_metal_sheet_1k/textures/box_profile_metal_sheet_arm_1k.jpg',
+      diffuse: '/models/gala/box_profile_metal_sheet_1k/textures/box_profile_metal_sheet_diff_1k.jpg',
+      normal: '/models/gala/box_profile_metal_sheet_1k/textures/box_profile_metal_sheet_nor_gl_1k.jpg',
+      triplanarScale: 0.5,
+    },
+  },
+  ground: {
+    default: {
+      arm: '/models/gala/forest_ground_05_1k/textures/forest_ground_05_arm_1k.jpg',
+      diffuse: '/models/gala/forest_ground_05_1k/textures/forest_ground_05_diff_1k.jpg',
+      normal: '/models/gala/forest_ground_05_1k/textures/forest_ground_05_nor_gl_1k.jpg',
+      triplanarScale: 0.5,
+    },
+  },
+  deck: {
+    default: {
+      arm: '/models/gala/wood_floor_deck_1k/textures/wood_floor_deck_arm_1k.jpg',
+      diffuse: '/models/gala/wood_floor_deck_1k/textures/wood_floor_deck_diff_1k.jpg',
+      normal: '/models/gala/wood_floor_deck_1k/textures/wood_floor_deck_nor_gl_1k.jpg',
+      triplanarScale: 0.08,
+    },
+  },
+  door: {
+    default: {
+      arm: '/models/gala/rough_pine_door_1k/textures/rough_pine_door_arm_1k.jpg',
+      diffuse: '/models/gala/rough_pine_door_1k/textures/rough_pine_door_diff_1k.jpg',
+      normal: '/models/gala/rough_pine_door_1k/textures/rough_pine_door_nor_gl_1k.jpg',
+      normalScale: 0.42,
+      triplanarScale: 0.42,
+    },
+  },
+  trim: {
+    default: {
+      arm: '/models/gala/wood_shutter_1k/textures/wood_shutter_arm_1k.jpg',
+      diffuse: '/models/gala/wood_shutter_1k/textures/wood_shutter_diff_1k.jpg',
+      normal: '/models/gala/wood_shutter_1k/textures/wood_shutter_nor_gl_1k.jpg',
+      normalScale: 0.34,
+      triplanarScale: 0.55,
+    },
+  },
+} as const satisfies Record<GalaConstructionTextureKind, GalaConstructionTextureVariantMap>;
 
-const configuredTextures = new WeakSet<THREE.Texture>();
+const configuredTextures = new WeakMap<THREE.Texture, string>();
 
-function configuredTexture(source: THREE.Texture, colorSpace: THREE.ColorSpace) {
-  if (configuredTextures.has(source)) {
+function configuredTexture(source: THREE.Texture, colorSpace: THREE.ColorSpace, repeat?: readonly [number, number]) {
+  const configKey = `${colorSpace}:${repeat?.[0] ?? 1}:${repeat?.[1] ?? 1}`;
+  if (configuredTextures.get(source) === configKey) {
     return source;
   }
 
   source.colorSpace = colorSpace;
   source.wrapS = THREE.RepeatWrapping;
   source.wrapT = THREE.RepeatWrapping;
+  source.repeat.set(repeat?.[0] ?? 1, repeat?.[1] ?? 1);
   source.channel = 0;
   source.needsUpdate = true;
-  configuredTextures.add(source);
+  configuredTextures.set(source, configKey);
   return source;
 }
 
-export function useGalaConstructionPbrTextures(kind: GalaConstructionTextureKind): GalaConstructionPbrMapProps {
-  const paths = GALA_CONSTRUCTION_TEXTURE_PATHS[kind];
+function resolveGalaConstructionTexturePaths(
+  kind: GalaConstructionTextureKind,
+  variant?: string,
+): GalaConstructionTexturePaths {
+  const variants = GALA_CONSTRUCTION_TEXTURE_PATHS[kind] as GalaConstructionTextureVariantMap;
+  return variants[variant ?? 'default'] ?? variants.default;
+}
+
+export function useGalaConstructionPbrTextures(
+  kind: GalaConstructionTextureKind,
+  variant?: string,
+): GalaConstructionPbrMapProps {
+  const paths = resolveGalaConstructionTexturePaths(kind, variant);
+  const normalScaleValue = paths.normalScale ?? 0.72;
+  const repeat = paths.repeat;
   const [diffuseSource, normalSource, armSource] = useTexture([
     paths.diffuse,
     paths.normal,
@@ -53,9 +219,9 @@ export function useGalaConstructionPbrTextures(kind: GalaConstructionTextureKind
   ]);
 
   return useMemo(() => {
-    const map = configuredTexture(diffuseSource, THREE.SRGBColorSpace);
-    const normalMap = configuredTexture(normalSource, THREE.NoColorSpace);
-    const armMap = configuredTexture(armSource, THREE.NoColorSpace);
+    const map = configuredTexture(diffuseSource, THREE.SRGBColorSpace, repeat);
+    const normalMap = configuredTexture(normalSource, THREE.NoColorSpace, repeat);
+    const armMap = configuredTexture(armSource, THREE.NoColorSpace, repeat);
 
     return {
       aoMap: armMap,
@@ -63,9 +229,9 @@ export function useGalaConstructionPbrTextures(kind: GalaConstructionTextureKind
       map,
       metalnessMap: armMap,
       normalMap,
-      normalScale: new THREE.Vector2(0.72, 0.72),
+      normalScale: new THREE.Vector2(normalScaleValue, normalScaleValue),
       roughnessMap: armMap,
-      triplanarScale: 0.5,
+      triplanarScale: paths.triplanarScale,
     };
-  }, [armSource, diffuseSource, normalSource]);
+  }, [armSource, diffuseSource, normalScaleValue, normalSource, paths.triplanarScale, repeat]);
 }

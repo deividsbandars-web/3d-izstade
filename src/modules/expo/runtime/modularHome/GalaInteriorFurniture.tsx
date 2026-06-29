@@ -1,5 +1,6 @@
-import { Clone, useGLTF } from '@react-three/drei';
-import { GALA_MATERIALS } from './GalaMaterials';
+import { useMemo } from 'react';
+import { RoundedBox, useGLTF, useTexture } from '@react-three/drei';
+import * as THREE from 'three';
 import {
   planXToLocalX,
   rectCenter,
@@ -12,6 +13,20 @@ import type { GalaInteriorVisualSpec } from './GalaHouseConfig';
 const GALA_SOFA_MODEL_URL = '/models/gala/sofa_02_1k/sofa_02_1k.gltf';
 const GALA_COFFEE_TABLE_MODEL_URL = '/models/gala/modern_coffee_table_01_1k/modern_coffee_table_01_1k.gltf';
 const GALA_CABINET_MODEL_URL = '/models/gala/painted_wooden_cabinet_1k/painted_wooden_cabinet_1k.gltf';
+const GALA_FABRIC_TEXTURE_URLS = {
+  arm: '/models/gala/quatrefoil_jacquard_fabric_1k/textures/quatrefoil_jacquard_fabric_arm_1k.jpg',
+  diffuse: '/models/gala/quatrefoil_jacquard_fabric_1k/textures/quatrefoil_jacquard_fabric_diff_1k.jpg',
+  normal: '/models/gala/quatrefoil_jacquard_fabric_1k/textures/quatrefoil_jacquard_fabric_nor_gl_1k.jpg',
+} as const;
+const GALA_MAPLE_TEXTURE_URLS = {
+  arm: '/models/gala/white_maple_veneer_1k/textures/white_maple_veneer_arm_1k.jpg',
+  diffuse: '/models/gala/white_maple_veneer_1k/textures/white_maple_veneer_diff_1k.jpg',
+  normal: '/models/gala/white_maple_veneer_1k/textures/white_maple_veneer_nor_gl_1k.jpg',
+} as const;
+
+const SOFA_ORIGINAL_BOX_SIZE: [number, number, number] = [1.72, 1.15, 0.86];
+const COFFEE_TABLE_ORIGINAL_BOX_SIZE: [number, number, number] = [0.78, 0.43, 0.48];
+const CABINET_ORIGINAL_BOX_SIZE: [number, number, number] = [0.32, 1.72, 1.22];
 
 type FurnitureModelProps = {
   name: string;
@@ -22,19 +37,175 @@ type FurnitureModelProps = {
   userData?: Record<string, unknown>;
 };
 
+type FurnitureTextureUrls = {
+  arm: string;
+  diffuse: string;
+  normal: string;
+};
+
+type FurniturePbrMaps = {
+  aoMap: THREE.Texture;
+  map: THREE.Texture;
+  metalnessMap: THREE.Texture;
+  normalMap: THREE.Texture;
+  normalScale: THREE.Vector2;
+  roughnessMap: THREE.Texture;
+};
+
+function isMesh(object: THREE.Object3D): object is THREE.Mesh {
+  return (object as THREE.Mesh).isMesh === true;
+}
+
+function useShadowReadyScene(scene: THREE.Object3D) {
+  return useMemo(() => {
+    const clonedScene = scene.clone(true);
+    clonedScene.traverse((child) => {
+      if (!isMesh(child)) {
+        return;
+      }
+
+      child.castShadow = true;
+      child.receiveShadow = true;
+    });
+    return clonedScene;
+  }, [scene]);
+}
+
+function GltfFurnitureClearanceProxy({
+  name,
+  position,
+  size,
+  userData,
+}: {
+  name: string;
+  position: [number, number, number];
+  size: [number, number, number];
+  userData?: Record<string, unknown>;
+}) {
+  return (
+    <mesh
+      castShadow={false}
+      frustumCulled={false}
+      name={`${name}-clearance-proxy`}
+      receiveShadow={false}
+      raycast={() => {}}
+      userData={{
+        constructionLocalBounds: buildFurnitureLocalBounds(position, size),
+        constructionLocalPosition: position,
+        constructionLocalSize: size,
+        furnitureGltfClearanceProxy: true,
+        furnitureGltfVisualBoundsMeasurable: true,
+        gltfFurnitureUsesLayoutEnvelope: true,
+        ...userData,
+      }}
+    >
+      <boxGeometry args={size} />
+      <meshBasicMaterial color="#ffffff" colorWrite={false} depthWrite={false} opacity={0} transparent />
+    </mesh>
+  );
+}
+
+function FurnitureGltfModel({
+  name,
+  originalBoxSize,
+  position,
+  rotation,
+  scale,
+  scene,
+  userData,
+}: FurnitureModelProps & {
+  originalBoxSize: [number, number, number];
+  scene: THREE.Object3D;
+}) {
+  const shadowReadyScene = useShadowReadyScene(scene);
+
+  return (
+    <group name={name} position={position} rotation={rotation} userData={userData}>
+      <GltfFurnitureClearanceProxy name={name} position={position} size={originalBoxSize} userData={userData} />
+      <group position={[0, -originalBoxSize[1] * 0.5, 0]} scale={scale}>
+        <primitive object={shadowReadyScene} />
+      </group>
+    </group>
+  );
+}
+
+function configureFurnitureTexture(texture: THREE.Texture, colorSpace: THREE.ColorSpace, repeatX: number, repeatY: number) {
+  texture.colorSpace = colorSpace;
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.wrapT = THREE.RepeatWrapping;
+  texture.repeat.set(Math.max(0.5, repeatX), Math.max(0.5, repeatY));
+  texture.channel = 0;
+  texture.needsUpdate = true;
+  return texture;
+}
+
+function useFurniturePbrMaps(
+  textureUrls: FurnitureTextureUrls,
+  size: [number, number, number],
+  tileSizeM: number,
+  verticalTexture: boolean,
+): FurniturePbrMaps {
+  const [diffuseSource, normalSource, armSource] = useTexture([
+    textureUrls.diffuse,
+    textureUrls.normal,
+    textureUrls.arm,
+  ]);
+  const repeatX = size[0] / tileSizeM;
+  const repeatY = (verticalTexture ? size[1] : Math.max(size[1], size[2])) / tileSizeM;
+
+  return useMemo(() => {
+    const map = configureFurnitureTexture(diffuseSource.clone(), THREE.SRGBColorSpace, repeatX, repeatY);
+    const normalMap = configureFurnitureTexture(normalSource.clone(), THREE.NoColorSpace, repeatX, repeatY);
+    const armMap = configureFurnitureTexture(armSource.clone(), THREE.NoColorSpace, repeatX, repeatY);
+
+    return {
+      aoMap: armMap,
+      map,
+      metalnessMap: armMap,
+      normalMap,
+      normalScale: new THREE.Vector2(0.45, 0.45),
+      roughnessMap: armMap,
+    };
+  }, [armSource, diffuseSource, normalSource, repeatX, repeatY]);
+}
+
+function buildFurnitureLocalBounds(position: [number, number, number], size: [number, number, number]) {
+  return {
+    center: { x: position[0], y: position[1], z: position[2] },
+    max: {
+      x: position[0] + size[0] * 0.5,
+      y: position[1] + size[1] * 0.5,
+      z: position[2] + size[2] * 0.5,
+    },
+    min: {
+      x: position[0] - size[0] * 0.5,
+      y: position[1] - size[1] * 0.5,
+      z: position[2] - size[2] * 0.5,
+    },
+    size: { x: size[0], y: size[1], z: size[2] },
+  };
+}
+
 export function GalaLivingSofaModel({
   name,
   position,
   rotation = [0, Math.PI, 0],
   scale = [0.94, 1.5, 0.73],
+  size = SOFA_ORIGINAL_BOX_SIZE,
   userData,
 }: FurnitureModelProps) {
   const { scene } = useGLTF(GALA_SOFA_MODEL_URL);
 
   return (
-    <group name={name} position={position} rotation={rotation} scale={scale} userData={userData}>
-      <Clone object={scene} castShadow receiveShadow />
-    </group>
+    <FurnitureGltfModel
+      name={name}
+      originalBoxSize={size}
+      position={position}
+      rotation={rotation}
+      scale={scale}
+      scene={scene}
+      userData={userData}
+    />
   );
 }
 
@@ -43,37 +214,47 @@ export function GalaCoffeeTableModel({
   position,
   rotation = [0, Math.PI * 0.5, 0],
   scale = [0.67, 1, 0.61],
+  size = COFFEE_TABLE_ORIGINAL_BOX_SIZE,
   userData,
 }: FurnitureModelProps) {
   const { scene } = useGLTF(GALA_COFFEE_TABLE_MODEL_URL);
 
   return (
-    <group name={name} position={position} rotation={rotation} scale={scale} userData={userData}>
-      <Clone object={scene} castShadow receiveShadow />
-    </group>
+    <FurnitureGltfModel
+      name={name}
+      originalBoxSize={size}
+      position={position}
+      rotation={rotation}
+      scale={scale}
+      scene={scene}
+      userData={userData}
+    />
   );
 }
 
 export function GalaCabinetModel({
   name,
   position,
-  rotation = [0, Math.PI * 0.5, 0],
+  rotation = [0, -Math.PI * 0.5, 0],
   scale = [1.02, 1.46, 0.58],
-  size,
+  size = CABINET_ORIGINAL_BOX_SIZE,
   userData,
 }: FurnitureModelProps) {
   const { scene } = useGLTF(GALA_CABINET_MODEL_URL);
-  const resolvedPosition: [number, number, number] = size
-    ? [position[0], position[1] - size[1] * 0.5, position[2]]
-    : position;
-  const resolvedScale: [number, number, number] = size
+  const resolvedScale: [number, number, number] = size !== CABINET_ORIGINAL_BOX_SIZE
     ? [size[2] / 1.2, size[1] / 1.18, size[0] / 0.9]
     : scale;
 
   return (
-    <group name={name} position={resolvedPosition} rotation={rotation} scale={resolvedScale} userData={userData}>
-      <Clone object={scene} castShadow receiveShadow />
-    </group>
+    <FurnitureGltfModel
+      name={name}
+      originalBoxSize={size}
+      position={position}
+      rotation={rotation}
+      scale={resolvedScale}
+      scene={scene}
+      userData={userData}
+    />
   );
 }
 
@@ -112,6 +293,74 @@ function FurnitureBox({ anchor, color, name, position, size, userData }: Furnitu
       <meshStandardMaterial color={color} roughness={0.72} />
     </mesh>
   );
+}
+
+type RoundedFurnitureBoxProps = FurnitureBoxProps & {
+  material: 'fabric' | 'wood';
+  radius?: number;
+  verticalTexture?: boolean;
+};
+
+function RoundedFurnitureBox({
+  anchor,
+  color,
+  material,
+  name,
+  position,
+  radius = 0.04,
+  size,
+  userData,
+  verticalTexture = false,
+}: RoundedFurnitureBoxProps) {
+  const maps = useFurniturePbrMaps(
+    material === 'fabric' ? GALA_FABRIC_TEXTURE_URLS : GALA_MAPLE_TEXTURE_URLS,
+    size,
+    material === 'fabric' ? 0.58 : 0.72,
+    verticalTexture,
+  );
+
+  return (
+    <RoundedBox
+      castShadow
+      args={size}
+      name={name}
+      position={position}
+      radius={Math.min(radius, Math.min(...size) * 0.42)}
+      receiveShadow
+      smoothness={5}
+      userData={{
+        anchor,
+        constructionLocalBounds: buildFurnitureLocalBounds(position, size),
+        constructionLocalPosition: position,
+        constructionLocalSize: size,
+        furnitureAlignedToWalls: anchor === 'againstWall' || anchor === 'underWindow' || anchor === 'bathroomWall',
+        furnitureIsReadable: true,
+        furnitureNotFloating: true,
+        ...userData,
+      }}
+    >
+      <meshStandardMaterial
+        aoMap={maps.aoMap}
+        aoMapIntensity={0.85}
+        color={color}
+        map={material === 'fabric' ? undefined : maps.map}
+        metalness={material === 'wood' ? 0.03 : 0.01}
+        metalnessMap={maps.metalnessMap}
+        normalMap={maps.normalMap}
+        normalScale={maps.normalScale}
+        roughness={material === 'wood' ? 0.64 : 0.82}
+        roughnessMap={maps.roughnessMap}
+      />
+    </RoundedBox>
+  );
+}
+
+export function GalaBedFabricBox(props: Omit<RoundedFurnitureBoxProps, 'material'>) {
+  return <RoundedFurnitureBox {...props} material="fabric" />;
+}
+
+export function GalaBedWoodBox(props: Omit<RoundedFurnitureBoxProps, 'material'>) {
+  return <RoundedFurnitureBox {...props} material="wood" />;
 }
 
 function FurnitureCylinder({
@@ -258,7 +507,8 @@ export function GalaLivingFurniture({ visual }: { visual: GalaInteriorVisualSpec
       />
       <GalaLivingSofaModel
         name="gala-living-sofa-high-quality-gltf"
-        position={[planXToLocalX(1.93), 0.02, 0.1]}
+        position={[planXToLocalX(1.93), SOFA_ORIGINAL_BOX_SIZE[1] * 0.5, 0.1]}
+        size={SOFA_ORIGINAL_BOX_SIZE}
         userData={{
           anchor: 'centeredOnRug',
           furnitureIsReadable: true,
@@ -268,7 +518,8 @@ export function GalaLivingFurniture({ visual }: { visual: GalaInteriorVisualSpec
       />
       <GalaCoffeeTableModel
         name="gala-living-coffee-table-high-quality-gltf"
-        position={[planXToLocalX(3.35), 0.04, 0.18]}
+        position={[planXToLocalX(3.35), COFFEE_TABLE_ORIGINAL_BOX_SIZE[1] * 0.5, 0.18]}
+        size={COFFEE_TABLE_ORIGINAL_BOX_SIZE}
         userData={{
           anchor: 'centeredOnRug',
           furnitureIsReadable: true,
@@ -293,8 +544,8 @@ export function GalaBathroomFurniture({ visual }: { visual: GalaInteriorVisualSp
         semantic: 'gala bathroom vanity sink wc shower cues not random white blocks',
       }}
     >
-      <FurnitureBox anchor="bathroomWall" color={visual.bathroomAccentColor} name="gala-bathroom-shower-back-wall-panel-integrated-with-south-wall" position={[planXToLocalX(5.58), 0.92, -2.43]} size={[0.78, 1.72, 0.055]} userData={{ randomWhitePanelRemovedOrIntegrated: true, showerPanelIntegratedOrRemoved: true }} />
-      <FurnitureBox anchor="bathroomWall" color="#dbeafe" name="gala-bathroom-shower-side-glass-panel-integrated-not-random-white-board" position={[planXToLocalX(5.92), 0.82, -1.58]} size={[0.045, 1.42, 0.72]} userData={{ randomWhitePanelRemovedOrIntegrated: true, showerPanelIntegratedOrRemoved: true }} />
+      <FurnitureBox anchor="bathroomWall" color={visual.bathroomAccentColor} name="gala-bathroom-shower-back-wall-panel-integrated-with-south-wall" position={[planXToLocalX(5.48), 0.92, -2.43]} size={[0.58, 1.72, 0.045]} userData={{ randomWhitePanelRemovedOrIntegrated: true, showerPanelIntegratedOrRemoved: true }} />
+      <FurnitureBox anchor="bathroomWall" color="#dbeafe" name="gala-bathroom-shower-side-glass-panel-integrated-not-random-white-board" position={[planXToLocalX(5.72), 0.78, -1.64]} size={[0.045, 1.28, 0.62]} userData={{ randomWhitePanelRemovedOrIntegrated: true, showerPanelIntegratedOrRemoved: true }} />
       <FurnitureBox anchor="bathroomWall" color="#f8fafc" name="gala-bathroom-vanity-cabinet" position={[planXToLocalX(6.75), 0.36, -2.1]} size={[0.48, 0.56, 0.36]} />
       <FurnitureBox anchor="bathroomWall" color="#e2e8f0" name="gala-bathroom-sink-basin-readable" position={[planXToLocalX(6.75), 0.68, -2.1]} size={[0.42, 0.11, 0.3]} />
       <FurnitureBox anchor="bathroomWall" color="#94a3b8" name="gala-bathroom-faucet-cue" position={[planXToLocalX(6.75), 0.81, -2.25]} size={[0.06, 0.18, 0.06]} />
@@ -364,14 +615,16 @@ export function GalaBedroomFurniture({ visual }: { visual: GalaInteriorVisualSpe
     >
       <FurnitureBox anchor="againstWall" color="#5f4631" name="gala-bedroom-bed-frame-headboard-side-against-south-wall-clear-path-from-door" position={[planXToLocalX(8.68), 0.16, -1.74]} size={[1.72, 0.22, 1.18]} userData={{ bedAndWardrobeLayoutImproved: true, bedHeadboardAgainstWall: true, bedroomLayoutImproved: true, bedroomWalkPathClear: true, furnitureDoesNotClipWindows: true }} />
       <LegSet anchor="againstWall" color="#3f3024" depth={0.45} name="gala-bedroom-bed-frame" x={planXToLocalX(8.68)} y={0.18} z={-1.72} />
-      <FurnitureBox anchor="againstWall" color={visual.bedBaseColor} name="gala-bedroom-mattress-readable-headboard-against-south-wall" position={[planXToLocalX(8.68), 0.38, -1.74]} size={[1.58, 0.24, 1.06]} userData={{ bedAndWardrobeLayoutImproved: true, bedHeadboardAgainstWall: true, bedroomLayoutImproved: true, bedroomWalkPathClear: true, furnitureDoesNotClipWindows: true }} />
+      <GalaBedFabricBox anchor="againstWall" color="#ffffff" name="gala-bedroom-mattress-readable-headboard-against-south-wall" position={[planXToLocalX(8.68), 0.38, -1.74]} radius={0.055} size={[1.58, 0.24, 1.06]} userData={{ bedAndWardrobeLayoutImproved: true, bedHeadboardAgainstWall: true, bedroomLayoutImproved: true, bedroomWalkPathClear: true, furnitureDoesNotClipWindows: true }} />
       <FurnitureBox anchor="againstWall" color={visual.blanketColor} name="gala-bedroom-folded-blanket-cue" position={[planXToLocalX(8.68), 0.58, -1.42]} size={[1.18, 0.1, 0.58]} userData={{ bedAndWardrobeLayoutImproved: true, bedroomLayoutImproved: true }} />
-      <FurnitureBox anchor="againstWall" color={GALA_MATERIALS.pillow} name="gala-bedroom-pillow-pair-left-at-headboard-wall" position={[planXToLocalX(8.34), 0.68, -2.08]} size={[0.42, 0.14, 0.28]} userData={{ bedAndWardrobeLayoutImproved: true, bedHeadboardAgainstWall: true, bedroomLayoutImproved: true }} />
-      <FurnitureBox anchor="againstWall" color={GALA_MATERIALS.pillow} name="gala-bedroom-pillow-pair-right-at-headboard-wall" position={[planXToLocalX(8.92), 0.68, -2.08]} size={[0.42, 0.14, 0.28]} userData={{ bedAndWardrobeLayoutImproved: true, bedHeadboardAgainstWall: true, bedroomLayoutImproved: true }} />
-      <FurnitureBox anchor="againstWall" color="#6f4b2c" name="gala-bedroom-low-headboard-on-south-wall-behind-pillows" position={[planXToLocalX(8.68), 0.56, -2.36]} size={[1.78, 0.62, 0.08]} userData={{ bedAndWardrobeLayoutImproved: true, bedHeadboardAgainstWall: true, bedroomLayoutImproved: true }} />
+      <GalaBedFabricBox anchor="againstWall" color="#ffffff" name="gala-bedroom-pillow-pair-left-at-headboard-wall" position={[planXToLocalX(8.34), 0.68, -2.08]} radius={0.045} size={[0.42, 0.14, 0.28]} userData={{ bedAndWardrobeLayoutImproved: true, bedHeadboardAgainstWall: true, bedroomLayoutImproved: true }} />
+      <GalaBedFabricBox anchor="againstWall" color="#ffffff" name="gala-bedroom-pillow-pair-right-at-headboard-wall" position={[planXToLocalX(8.92), 0.68, -2.08]} radius={0.045} size={[0.42, 0.14, 0.28]} userData={{ bedAndWardrobeLayoutImproved: true, bedHeadboardAgainstWall: true, bedroomLayoutImproved: true }} />
+      <GalaBedWoodBox anchor="againstWall" color="#ffffff" name="gala-bedroom-low-headboard-on-south-wall-behind-pillows" position={[planXToLocalX(8.68), 0.56, -2.36]} radius={0.025} size={[1.78, 0.62, 0.08]} userData={{ bedAndWardrobeLayoutImproved: true, bedHeadboardAgainstWall: true, bedroomLayoutImproved: true }} verticalTexture />
       <GalaCabinetModel
         name="gala-bedroom-wardrobe-against-east-wall-clear-of-bed-and-window"
-        position={[planXToLocalX(9.95), 0.02, 1.12]}
+        position={[planXToLocalX(9.95), CABINET_ORIGINAL_BOX_SIZE[1] * 0.5, 1.12]}
+        rotation={[0, -Math.PI * 0.5, 0]}
+        size={CABINET_ORIGINAL_BOX_SIZE}
         userData={{
           anchor: 'againstWall',
           bedAndWardrobeLayoutImproved: true,
@@ -385,7 +638,6 @@ export function GalaBedroomFurniture({ visual }: { visual: GalaInteriorVisualSpe
       />
       <FurnitureBox anchor="besideBed" color={visual.tableColor} name="gala-bedroom-bedside-cabinet-at-headboard-side" position={[planXToLocalX(7.72), 0.34, -2.04]} size={[0.44, 0.08, 0.34]} userData={{ bedAndWardrobeLayoutImproved: true, bedsideCabinetAtHeadboardSide: true, bedroomLayoutImproved: true }} />
       <LegSet anchor="besideBed" color="#3f3024" depth={0.12} name="gala-bedroom-bedside-cabinet" x={planXToLocalX(7.72)} y={0.3} z={-2.04} />
-      <FurnitureBox anchor="againstWall" color="#1f2937" name="gala-bedroom-wall-mounted-tv-opposite-bed" position={[planXToLocalX(8.68), 1.26, 2.36]} size={[1.02, 0.58, 0.045]} userData={{ bedAndWardrobeLayoutImproved: true, bedroomLayoutImproved: true, tvOppositeBedAddedOrJustified: true }} />
     </group>
   );
 }

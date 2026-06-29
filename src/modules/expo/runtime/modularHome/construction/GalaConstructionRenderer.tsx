@@ -9,6 +9,7 @@ import { GalaRoof } from '../GalaRoof';
 import {
   GALA_CONSTRUCTION_LEVELS,
   GALA_CONSTRUCTION_MODEL,
+  type GalaConstructionModel,
 } from './GalaConstructionModel';
 import {
   GalaConstructionBox,
@@ -18,13 +19,14 @@ import {
 import { GalaFloorCeilingAssembly } from './GalaFloorCeilingAssembly';
 import { GalaRoomAssembly } from './GalaRoomAssembly';
 import { GalaWallAssembly } from './GalaWallAssembly';
+import { useGalaConstructionPbrTextures } from './GalaConstructionPbrTextures';
 import {
   resolveGalaExteriorBoardColor,
   resolveGalaWallSkin,
 } from './GalaWallSkinModel';
 
 type GalaConstructionRendererProps = {
-  constructionModel?: typeof GALA_CONSTRUCTION_MODEL;
+  constructionModel?: GalaConstructionModel;
   onEntryDoorOpen?: () => void;
   transparentCutaway?: boolean;
   visualConfig?: GalaHouseVisualConfig;
@@ -36,10 +38,15 @@ function opacityForCutaway(transparentCutaway: boolean | undefined): number {
 
 function FoundationAndBaseTrim({ visualConfig }: { visualConfig?: GalaHouseVisualConfig }) {
   const wallSkin = resolveGalaWallSkin(visualConfig);
+  const trimPbrTextures = useGalaConstructionPbrTextures('trim');
   const length = GALA_HOUSE_DIMENSIONS.houseLengthM;
   const width = GALA_HOUSE_DIMENSIONS.assembledWallEnvelopeWidthM;
   const halfLength = length * 0.5;
   const halfWidth = width * 0.5;
+  const foundationHeight = 0.16;
+  const baseTrimHeight = 0.15;
+  const foundationY = GALA_CONSTRUCTION_LEVELS.foundationSlabTopY - (foundationHeight * 0.5);
+  const baseTrimY = GALA_CONSTRUCTION_LEVELS.baseTrimTopY - (baseTrimHeight * 0.5);
 
   return (
     <group
@@ -52,18 +59,19 @@ function FoundationAndBaseTrim({ visualConfig }: { visualConfig?: GalaHouseVisua
       <GalaConstructionBox
         color="#8b8f94"
         name="gala-construction-low-foundation-slab-below-single-finished-floor"
-        position={[0, -0.18, 0]}
+        position={[0, foundationY, 0]}
         receiveShadow
-        size={[length + 0.24, 0.16, width + 0.24]}
+        size={[length + 0.24, foundationHeight, width + 0.24]}
         userData={{ floorStackHasNoCoplanarOverlays: true }}
       />
       {[
-        { name: 'south-base', position: [0, 0.075, -halfWidth - 0.075] as [number, number, number], size: [length + 0.16, 0.15, 0.085] as [number, number, number] },
-        { name: 'north-base', position: [0, 0.075, halfWidth + 0.075] as [number, number, number], size: [length + 0.16, 0.15, 0.085] as [number, number, number] },
-        { name: 'west-base', position: [-halfLength - 0.075, 0.075, 0] as [number, number, number], size: [0.085, 0.15, width + 0.16] as [number, number, number] },
-        { name: 'east-base', position: [halfLength + 0.075, 0.075, 0] as [number, number, number], size: [0.085, 0.15, width + 0.16] as [number, number, number] },
+        { name: 'south-base', position: [0, baseTrimY, -halfWidth - 0.075] as [number, number, number], size: [length + 0.16, baseTrimHeight, 0.085] as [number, number, number] },
+        { name: 'north-base', position: [0, baseTrimY, halfWidth + 0.075] as [number, number, number], size: [length + 0.16, baseTrimHeight, 0.085] as [number, number, number] },
+        { name: 'west-base', position: [-halfLength - 0.075, baseTrimY, 0] as [number, number, number], size: [0.085, baseTrimHeight, width + 0.16] as [number, number, number] },
+        { name: 'east-base', position: [halfLength + 0.075, baseTrimY, 0] as [number, number, number], size: [0.085, baseTrimHeight, width + 0.16] as [number, number, number] },
       ].map((trim) => (
         <GalaConstructionBox
+          {...trimPbrTextures}
           key={trim.name}
           color={wallSkin.exterior.trimColor}
           name={`gala-construction-${trim.name}-continuous-base-trim`}
@@ -82,6 +90,7 @@ function FoundationAndBaseTrim({ visualConfig }: { visualConfig?: GalaHouseVisua
 
 function CornerBoards({ visualConfig }: { visualConfig?: GalaHouseVisualConfig }) {
   const wallSkin = resolveGalaWallSkin(visualConfig);
+  const exteriorPbrTextures = useGalaConstructionPbrTextures('exterior', wallSkin.exterior.textureVariant);
   const halfLength = GALA_HOUSE_DIMENSIONS.houseLengthM * 0.5;
   const halfWidth = GALA_HOUSE_DIMENSIONS.assembledWallEnvelopeWidthM * 0.5;
 
@@ -93,6 +102,7 @@ function CornerBoards({ visualConfig }: { visualConfig?: GalaHouseVisualConfig }
       {[-halfLength, halfLength].flatMap((x) => (
         [-halfWidth, halfWidth].map((z) => (
           <GalaConstructionBox
+            {...exteriorPbrTextures}
             key={`${x}-${z}`}
             color={wallSkin.exterior.trimColor}
             name="gala-construction-full-height-corner-board-ties-wall-assemblies"
@@ -100,6 +110,7 @@ function CornerBoards({ visualConfig }: { visualConfig?: GalaHouseVisualConfig }
             size={[0.15, GALA_CONSTRUCTION_LEVELS.wallHeightM, 0.15]}
             userData={{
               cornerTrimAdded: true,
+              exteriorPbrTextureVariant: wallSkin.exterior.textureVariant,
               interiorWallAssemblyCoherent: true,
               wallSkinModelOwner: 'GalaWallSkinModel',
             }}
@@ -114,106 +125,163 @@ function ResidentialTerrace({
   constructionModel,
   visualConfig,
 }: {
-  constructionModel: typeof GALA_CONSTRUCTION_MODEL;
+  constructionModel: GalaConstructionModel;
   visualConfig?: GalaHouseVisualConfig;
 }) {
   const terraceVisual = resolveGalaTerraceVisual(visualConfig);
+  const deckPbrTextures = useGalaConstructionPbrTextures('deck');
+  const terrace = constructionModel.terrace;
   const terraceDoor = constructionModel.openings.find((opening) => opening.id === 'D-TERRACE');
   const terraceCenterX = terraceDoor
-    ? terraceDoor.axisStartM + terraceDoor.widthM * 0.5
+    ? terraceDoor.axisStartM + terraceDoor.widthM * 0.5 + terrace.centerOffsetXM
     : -0.7;
-  const deckZ = GALA_HOUSE_DIMENSIONS.assembledWallEnvelopeWidthM * 0.5 + GALA_HOUSE_DIMENSIONS.terraceDepthM * 0.5;
-  const deckFrontZ = deckZ + GALA_HOUSE_DIMENSIONS.terraceDepthM * 0.5;
+  const deckZ = GALA_HOUSE_DIMENSIONS.assembledWallEnvelopeWidthM * 0.5 + terrace.depthM * 0.5 - 0.10;
+  const deckFrontZ = deckZ + terrace.depthM * 0.5;
+  const deckY = constructionModel.floor.terraceDeckTopY - (terrace.deckThicknessM * 0.5);
+  const deckEdgeY = GALA_CONSTRUCTION_LEVELS.terraceDeckTopY - (terraceVisual.edgeTrimHeightM * 0.5) + 0.004;
+  const deckBackConnectorY = constructionModel.floor.terraceDeckTopY - ((terrace.deckThicknessM + 0.02) * 0.5);
+  const deckBackConnectorZ = GALA_HOUSE_DIMENSIONS.assembledWallEnvelopeWidthM * 0.5 + 0.005;
+
+  if (!terrace.enabled) {
+    return null;
+  }
 
   return (
     <group
       name="gala-construction-residential-terrace-integrated-low-deck"
       userData={{
         assembly: 'GalaConstructionRenderer/ResidentialTerrace',
+        terraceDepthM: terrace.depthM,
+        terraceLengthM: terrace.lengthM,
         terraceResidentialNotFortress: true,
       }}
     >
       <GalaConstructionBox
+        {...deckPbrTextures}
         color={terraceVisual.deckColor}
-        name="gala-construction-terrace-low-timber-deck-2400x2100"
-        position={[terraceCenterX, 0.105, deckZ]}
-        size={[GALA_HOUSE_DIMENSIONS.terraceLengthM, 0.15, GALA_HOUSE_DIMENSIONS.terraceDepthM]}
-        userData={{ terraceResidentialNotFortress: true }}
+        name="gala-construction-terrace-low-timber-deck-configurable"
+        position={[terraceCenterX, deckY, deckZ]}
+        size={[terrace.lengthM, terrace.deckThicknessM, terrace.depthM]}
+        userData={{
+          terraceDepthM: terrace.depthM,
+          terraceLengthM: terrace.lengthM,
+          terraceResidentialNotFortress: true,
+        }}
       />
-      {Array.from({ length: 12 }).map((_, index) => {
-        const z = deckZ - GALA_HOUSE_DIMENSIONS.terraceDepthM * 0.5 + ((index + 0.5) * GALA_HOUSE_DIMENSIONS.terraceDepthM / 12);
-        return (
-          <GalaConstructionBox
-            key={`deck-gap-${index}`}
-            color={terraceVisual.deckDarkColor}
-            name="gala-construction-terrace-recessed-board-gap"
-            position={[terraceCenterX, 0.188, z]}
-            size={[GALA_HOUSE_DIMENSIONS.terraceLengthM + 0.03, 0.012, 0.018]}
-            userData={{ terraceResidentialNotFortress: true }}
-          />
-        );
-      })}
       <GalaConstructionBox
         color={terraceVisual.deckDarkColor}
         name="gala-construction-terrace-low-front-edge-trim-not-barrier"
-        position={[terraceCenterX, 0.165, deckFrontZ]}
-        size={[GALA_HOUSE_DIMENSIONS.terraceLengthM + 0.04, terraceVisual.edgeTrimHeightM, terraceVisual.edgeTrimDepthM]}
+        position={[terraceCenterX, deckEdgeY, deckFrontZ]}
+        size={[terrace.lengthM + 0.04, terraceVisual.edgeTrimHeightM, terraceVisual.edgeTrimDepthM]}
         userData={{ terraceResidentialNotFortress: true }}
+      />
+      {[-1, 1].map((side) => (
+        <GalaConstructionBox
+          key={`terrace-side-edge-trim-${side}`}
+          color={terraceVisual.deckDarkColor}
+          name="gala-construction-terrace-low-side-edge-trim-not-barrier"
+          position={[
+            terraceCenterX + side * terrace.lengthM * 0.5,
+            deckEdgeY,
+            deckZ,
+          ]}
+          size={[
+            terraceVisual.edgeTrimDepthM,
+            terraceVisual.edgeTrimHeightM,
+            terrace.depthM + 0.04,
+          ]}
+          userData={{ terraceResidentialNotFortress: true }}
+        />
+      ))}
+      <GalaConstructionBox
+        color={terraceVisual.deckDarkColor}
+        name="gala-construction-terrace-house-wall-back-edge-connector-strip"
+        position={[terraceCenterX, deckBackConnectorY, deckBackConnectorZ]}
+        size={[terrace.lengthM + 0.04, terrace.deckThicknessM + 0.02, terrace.backConnectorDepthM]}
+        userData={{
+          terraceCladdingGapSealed: true,
+          terraceResidentialNotFortress: true,
+        }}
       />
       {terraceVisual.showSteps ? Array.from({ length: terraceVisual.stepCount }).map((_, index) => (
         <GalaConstructionBox
+          {...deckPbrTextures}
           key={`terrace-step-${index}`}
           color={terraceVisual.deckColor}
           name="gala-construction-terrace-residential-shallow-step"
-          position={[terraceCenterX, (index === 0 ? 0.105 : 0.075) * 0.5, deckFrontZ + 0.23 + (index * 0.34)]}
-          size={[1.54 + index * 0.22, index === 0 ? 0.105 : 0.075, 0.32]}
+          position={[terraceCenterX, (index === 0 ? 0.105 : 0.075) * 0.5, deckFrontZ + 0.23 + (index * (terrace.stepDepthM + 0.02))]}
+          size={[terrace.stepBaseWidthM + index * terrace.stepWidthIncrementM, index === 0 ? 0.105 : 0.075, terrace.stepDepthM]}
           userData={{ terraceResidentialNotFortress: true }}
         />
       )) : null}
+      {terraceVisual.showLightRail ? (
+        <>
+          <GalaConstructionBox
+            color={terraceVisual.railColor}
+            name="gala-construction-terrace-light-rail-front"
+            position={[terraceCenterX, constructionModel.floor.terraceDeckTopY + terraceVisual.railHeightM * 0.5, deckFrontZ - 0.1]}
+            size={[terrace.lengthM + 0.04, terraceVisual.railHeightM, 0.055]}
+            userData={{ terraceLightRail: true, terraceResidentialNotFortress: true }}
+          />
+          {[-1, 1].map((side) => (
+            <GalaConstructionBox
+              key={`terrace-light-rail-side-${side}`}
+              color={terraceVisual.railColor}
+              name="gala-construction-terrace-light-rail-side-return"
+              position={[terraceCenterX + side * terrace.lengthM * 0.5, constructionModel.floor.terraceDeckTopY + terraceVisual.railHeightM * 0.5, deckZ]}
+              size={[0.055, terraceVisual.railHeightM, Math.max(0.45, terrace.depthM - 0.28)]}
+              userData={{ terraceLightRail: true, terraceResidentialNotFortress: true }}
+            />
+          ))}
+        </>
+      ) : null}
     </group>
   );
 }
 
 function GableBoardCladding({
+  constructionModel,
   side,
   transparentCutaway,
   visualConfig,
 }: {
+  constructionModel: GalaConstructionModel;
   side: 'east' | 'west';
   transparentCutaway?: boolean;
   visualConfig?: GalaHouseVisualConfig;
 }) {
   const wallSkin = resolveGalaWallSkin(visualConfig);
   const { exterior } = wallSkin;
+  const exteriorPbrTextures = useGalaConstructionPbrTextures('exterior', exterior.textureVariant);
   const shape = useMemo(() => {
     const nextShape = new THREE.Shape();
-    const halfRoofWidth = GALA_HOUSE_DIMENSIONS.roofWidthM * 0.5;
+    const halfRoofWidth = constructionModel.roof.roofWidthM * 0.5;
     nextShape.moveTo(-halfRoofWidth, 0);
     nextShape.lineTo(halfRoofWidth, 0);
-    nextShape.lineTo(0, GALA_HOUSE_DIMENSIONS.roofRiseM);
+    nextShape.lineTo(0, constructionModel.roof.roofRiseM);
     nextShape.lineTo(-halfRoofWidth, 0);
     return nextShape;
-  }, []);
+  }, [constructionModel.roof.roofRiseM, constructionModel.roof.roofWidthM]);
   const x = side === 'west'
     ? -GALA_HOUSE_DIMENSIONS.houseLengthM * 0.5
     : GALA_HOUSE_DIMENSIONS.houseLengthM * 0.5;
   const rotationY = side === 'west' ? Math.PI * 0.5 : -Math.PI * 0.5;
   const faceX = x + (side === 'west' ? -0.09 : 0.09);
-  const halfRoofWidth = GALA_HOUSE_DIMENSIONS.roofWidthM * 0.5;
+  const halfRoofWidth = constructionModel.roof.roofWidthM * 0.5;
   const wallTopY = GALA_CONSTRUCTION_LEVELS.wallHeightM;
   const boards = useMemo(() => {
     const module = exterior.boardWidthM + exterior.gapWidthM;
     const nextBoards: Array<{ height: number; index: number; z: number }> = [];
     let index = 0;
     for (let z = -halfRoofWidth + module * 0.5; z < halfRoofWidth; z += module) {
-      const roofHeight = GALA_HOUSE_DIMENSIONS.roofRiseM * Math.max(0, 1 - (Math.abs(z) / halfRoofWidth));
+      const roofHeight = constructionModel.roof.roofRiseM * Math.max(0, 1 - ((Math.abs(z) + exterior.boardWidthM * 0.5) / halfRoofWidth)) - 0.045;
       if (roofHeight > 0.18) {
         nextBoards.push({ height: roofHeight, index, z });
       }
       index += 1;
     }
     return nextBoards;
-  }, [exterior.boardWidthM, exterior.gapWidthM, halfRoofWidth]);
+  }, [constructionModel.roof.roofRiseM, exterior.boardWidthM, exterior.gapWidthM, halfRoofWidth]);
   const gableBoardInstancesByColor = useMemo(() => boards.reduce<Record<string, GalaConstructionBoxInstance[]>>((acc, board) => {
     const boardColor = resolveGalaExteriorBoardColor(exterior.boardPalette, board.index);
     acc[boardColor] ??= [];
@@ -265,6 +333,7 @@ function GableBoardCladding({
       {Object.entries(gableBoardInstancesByColor).map(([boardColor, instances]) => (
         <GalaConstructionInstancedBoxes
           {...exterior.materials.board}
+          {...exteriorPbrTextures}
           key={`${side}-gable-${boardColor}-boards`}
           color={boardColor}
           instances={instances}
@@ -278,6 +347,7 @@ function GableBoardCladding({
             controlledWoodToneVariation: true,
             darkStripeDominancePresent: false,
             exteriorBoardInstanceCount: instances.length,
+            exteriorPbrTextureVariant: exterior.textureVariant,
             extraDecorativeStripsPresent: false,
             facadeBoardGapAcceptable: true,
             facadeCladdingIsBoardSystemNotDrawnLines: true,
@@ -318,12 +388,12 @@ export function GalaConstructionRenderer({
         name="gala-construction-roof-adapter-mounted-inside-construction-renderer"
         userData={{
           adapterFor: 'GalaRoof',
-          authoritativeDataSource: 'GALA_HOUSE_DIMENSIONS + GalaHouseVisualConfig',
+          authoritativeDataSource: 'GalaConstructionModel.roof + GalaHouseVisualConfig',
           ownerDocument: 'docs/GALA_RENDERER_OWNERSHIP_CONTRACT.md',
           roofOwnershipDocumented: true,
         }}
       >
-        <GalaRoof transparentCutaway={transparentCutaway} visualConfig={visualConfig} />
+        <GalaRoof roofModel={constructionModel.roof} transparentCutaway={transparentCutaway} visualConfig={visualConfig} />
       </group>
       <group
         name="gala-construction-owned-floor-wall-opening-room-assemblies"
@@ -343,8 +413,8 @@ export function GalaConstructionRenderer({
             wall={wall}
           />
         ))}
-        <GableBoardCladding side="west" transparentCutaway={transparentCutaway} visualConfig={visualConfig} />
-        <GableBoardCladding side="east" transparentCutaway={transparentCutaway} visualConfig={visualConfig} />
+        <GableBoardCladding constructionModel={constructionModel} side="west" transparentCutaway={transparentCutaway} visualConfig={visualConfig} />
+        <GableBoardCladding constructionModel={constructionModel} side="east" transparentCutaway={transparentCutaway} visualConfig={visualConfig} />
         <CornerBoards visualConfig={visualConfig} />
         <ResidentialTerrace constructionModel={constructionModel} visualConfig={visualConfig} />
         <GalaRoomAssembly visualConfig={visualConfig} />

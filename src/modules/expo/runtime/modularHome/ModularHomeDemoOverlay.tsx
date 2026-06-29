@@ -9,7 +9,7 @@ import {
   useModularHomeViewMode,
 } from './modularHomeConfigurator';
 import { getModularHomeTemplate } from './modularHomeConfig';
-import { calculateModularHomeEstimate } from './modularHomeEstimate';
+import { calculateModularHomeEstimate, formatHomeEstimateEur } from './modularHomeEstimate';
 import {
   calculateComponentBom,
   calculateManufacturingBomPreview,
@@ -47,11 +47,18 @@ type ModularHomeDemoOverlayProps = {
 type ModularHomeDemoTabId = 'overview' | 'design' | 'estimate' | 'bom' | 'quote' | 'projects' | 'upload';
 
 const HOME_DEMO_TABS = [
-  { id: 'design', label: 'Design', helper: 'Template and option controls' },
+  { id: 'design', label: 'Design', helper: 'Choose visible home options' },
+  { id: 'estimate', label: 'Cena / Estimate', helper: 'Live price overview' },
+  { id: 'quote', label: 'Pieprasīt piedāvājumu / Quote', helper: 'Request a quote' },
+] as const satisfies readonly {
+  helper: string;
+  id: ModularHomeDemoTabId;
+  label: string;
+}[];
+
+const HOME_DEMO_ADVANCED_TABS = [
   { id: 'overview', label: 'Overview', helper: 'Model, scale and view mode' },
-  { id: 'estimate', label: 'Estimate', helper: 'Pre-quote pricing' },
   { id: 'bom', label: 'BOM', helper: 'Module and manufacturing summary' },
-  { id: 'quote', label: 'Quote', helper: 'Local quote and print summary' },
   { id: 'projects', label: 'Projects', helper: 'Saved local configurations' },
   { id: 'upload', label: 'Upload', helper: 'Manual conversion workflow' },
 ] as const satisfies readonly {
@@ -60,8 +67,166 @@ const HOME_DEMO_TABS = [
   label: string;
 }[];
 
+const HOME_DEMO_ADVANCED_TAB_IDS = new Set<ModularHomeDemoTabId>(
+  HOME_DEMO_ADVANCED_TABS.map((tab) => tab.id),
+);
+
+const QUOTE_NUDGE_INTERACTION_THRESHOLD = 4;
+
 function stopHomeDemoHudEvent(event: { stopPropagation: () => void }) {
   event.stopPropagation();
+}
+
+function ModularHomeQuoteNudge({
+  isTouchDevice,
+  onDismiss,
+  onRequestQuote,
+}: {
+  isTouchDevice: boolean;
+  onDismiss: () => void;
+  onRequestQuote: () => void;
+}) {
+  return (
+    <section
+      aria-label="Quote request nudge"
+      data-home-quote-nudge="true"
+      style={{
+        background: 'linear-gradient(135deg, rgba(14, 165, 233, 0.24), rgba(34, 197, 94, 0.18))',
+        border: '1px solid rgba(125, 211, 252, 0.28)',
+        borderRadius: isTouchDevice ? '14px' : '16px',
+        display: 'grid',
+        gap: '8px',
+        marginTop: isTouchDevice ? '9px' : '10px',
+        padding: isTouchDevice ? '9px' : '10px',
+      }}
+    >
+      <div style={{ alignItems: 'center', display: 'flex', gap: '8px', justifyContent: 'space-between' }}>
+        <button
+          type="button"
+          data-home-quote-nudge-cta="true"
+          onClick={(event) => {
+            event.stopPropagation();
+            onRequestQuote();
+          }}
+          style={{
+            background: 'linear-gradient(135deg, rgba(251, 191, 36, 0.94), rgba(34, 197, 94, 0.86))',
+            border: '1px solid rgba(254, 243, 199, 0.42)',
+            borderRadius: '999px',
+            color: '#111827',
+            cursor: 'pointer',
+            flex: '1 1 auto',
+            font: 'inherit',
+            fontSize: isTouchDevice ? '0.66rem' : '0.7rem',
+            fontWeight: 980,
+            lineHeight: 1.1,
+            padding: isTouchDevice ? '9px 10px' : '10px 11px',
+            textAlign: 'center',
+          }}
+        >
+          Patīk? Saņem precīzu cenu →
+        </button>
+        <button
+          type="button"
+          aria-label="Dismiss quote nudge"
+          data-home-quote-nudge-dismiss="true"
+          onClick={(event) => {
+            event.stopPropagation();
+            onDismiss();
+          }}
+          style={{
+            background: 'rgba(15, 23, 42, 0.58)',
+            border: '1px solid rgba(255, 255, 255, 0.16)',
+            borderRadius: '999px',
+            color: '#cbd5e1',
+            cursor: 'pointer',
+            flex: '0 0 auto',
+            font: 'inherit',
+            fontSize: isTouchDevice ? '0.62rem' : '0.66rem',
+            fontWeight: 950,
+            height: '30px',
+            lineHeight: 1,
+            width: '30px',
+          }}
+        >
+          ×
+        </button>
+      </div>
+    </section>
+  );
+}
+
+function ModularHomeLivePriceBanner({
+  basePrice,
+  isTouchDevice,
+  onRequestPrice,
+  totalPrice,
+}: {
+  basePrice: number;
+  isTouchDevice: boolean;
+  onRequestPrice: () => void;
+  totalPrice: number;
+}) {
+  return (
+    <section
+      aria-label="Live modular home price"
+      data-home-live-price-banner="true"
+      data-home-live-price-base={basePrice}
+      data-home-live-price-total={totalPrice}
+      style={{
+        background: 'linear-gradient(135deg, rgba(251, 191, 36, 0.94), rgba(34, 197, 94, 0.88))',
+        border: '1px solid rgba(255, 247, 237, 0.42)',
+        borderRadius: isTouchDevice ? '14px' : '16px',
+        bottom: isTouchDevice ? 'max(96px, calc(env(safe-area-inset-bottom) + 88px))' : '16px',
+        boxShadow: '0 -10px 26px rgba(2, 6, 23, 0.34), 0 12px 32px rgba(2, 6, 23, 0.28)',
+        color: '#111827',
+        display: 'grid',
+        gap: isTouchDevice ? '8px' : '9px',
+        left: isTouchDevice ? '12px' : 'auto',
+        marginTop: isTouchDevice ? '11px' : '13px',
+        maxWidth: isTouchDevice ? 'calc(100vw - 24px)' : 'calc(100vw - 24px)',
+        padding: isTouchDevice ? '9px' : '10px',
+        position: 'fixed',
+        right: isTouchDevice ? '10px' : '12px',
+        width: isTouchDevice ? 'auto' : 'clamp(248px, 18vw, 286px)',
+        zIndex: 117,
+      }}
+    >
+      <div style={{ alignItems: 'end', display: 'flex', gap: '10px', justifyContent: 'space-between' }}>
+        <div style={{ minWidth: 0 }}>
+          <div style={{ color: 'rgba(17, 24, 39, 0.72)', fontSize: isTouchDevice ? '0.55rem' : '0.58rem', fontWeight: 950, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+            Bāze no {formatHomeEstimateEur(basePrice)}
+          </div>
+          <div style={{ color: '#0f172a', fontSize: isTouchDevice ? '1rem' : '1.08rem', fontWeight: 980, lineHeight: 1.05, marginTop: '3px' }}>
+            {formatHomeEstimateEur(totalPrice)}
+          </div>
+        </div>
+        <button
+          type="button"
+          data-home-live-price-cta="true"
+          onClick={(event) => {
+            event.stopPropagation();
+            onRequestPrice();
+          }}
+          style={{
+            background: '#0f172a',
+            border: '1px solid rgba(255, 255, 255, 0.28)',
+            borderRadius: '999px',
+            color: '#fef3c7',
+            cursor: 'pointer',
+            flex: '0 0 auto',
+            font: 'inherit',
+            fontSize: isTouchDevice ? '0.62rem' : '0.66rem',
+            fontWeight: 950,
+            lineHeight: 1.08,
+            padding: isTouchDevice ? '9px 11px' : '10px 12px',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          Saņemt cenu
+        </button>
+      </div>
+    </section>
+  );
 }
 
 export function ModularHomeDemoOverlay({ isTouchDevice = false }: ModularHomeDemoOverlayProps) {
@@ -70,6 +235,10 @@ export function ModularHomeDemoOverlay({ isTouchDevice = false }: ModularHomeDem
   const location = useLocation();
   const navigate = useNavigate();
   const [activeHomeDemoTab, setActiveHomeDemoTab] = useState<ModularHomeDemoTabId>('design');
+  const [homeConfigInteractionCount, setHomeConfigInteractionCount] = useState(0);
+  const [quoteNudgeDismissed, setQuoteNudgeDismissed] = useState(false);
+  const [quoteNudgeTriggeredByInterior, setQuoteNudgeTriggeredByInterior] = useState(false);
+  const [showAdvancedHomeDemoTabs, setShowAdvancedHomeDemoTabs] = useState(false);
   const homeStudioEnabled = useMemo(() => isHomeStudioEnabled(), []);
   const sharedConfigFromUrl = useMemo(() => decodeModularHomeConfigFromUrl(), []);
   const products = getModularHomeProducts();
@@ -93,6 +262,15 @@ export function ModularHomeDemoOverlay({ isTouchDevice = false }: ModularHomeDem
     constraint.severity !== 'info' || productionConstraints.length === 1
   ));
   const productionConstraintIds = productionConstraints.map((constraint) => constraint.id).join('|');
+  const visibleHomeDemoTabs = showAdvancedHomeDemoTabs
+    ? [...HOME_DEMO_TABS, ...HOME_DEMO_ADVANCED_TABS]
+    : HOME_DEMO_TABS;
+  const showQuoteNudge = !quoteNudgeDismissed
+    && activeHomeDemoTab !== 'quote'
+    && (homeConfigInteractionCount >= QUOTE_NUDGE_INTERACTION_THRESHOLD || quoteNudgeTriggeredByInterior);
+  const trackHomeConfigInteraction = useCallback(() => {
+    setHomeConfigInteractionCount((current) => current + 1);
+  }, []);
   const updateStudioViewMode = useCallback((nextViewMode: ModularHomeViewModeOption) => {
     setViewMode(nextViewMode);
 
@@ -109,6 +287,14 @@ export function ModularHomeDemoOverlay({ isTouchDevice = false }: ModularHomeDem
       { replace: true },
     );
   }, [location.pathname, navigate, setViewMode]);
+  const startInsideWithQuoteNudge = useCallback(() => {
+    updateStudioViewMode('interior');
+    setQuoteNudgeTriggeredByInterior(true);
+  }, [updateStudioViewMode]);
+  const requestQuoteFromNudge = useCallback(() => {
+    setQuoteNudgeDismissed(true);
+    setActiveHomeDemoTab('quote');
+  }, []);
 
   useEffect(() => {
     const nextViewMode = new URLSearchParams(location.search).get('view');
@@ -143,17 +329,19 @@ export function ModularHomeDemoOverlay({ isTouchDevice = false }: ModularHomeDem
         updateStudioViewMode('exterior');
         break;
       case 'floorplan':
+        setShowAdvancedHomeDemoTabs(true);
         setActiveHomeDemoTab('overview');
         updateStudioViewMode('floorplan');
         break;
       case 'interiorRooms':
         setActiveHomeDemoTab('design');
-        updateStudioViewMode('interior');
+        startInsideWithQuoteNudge();
         break;
       case 'quote':
         setActiveHomeDemoTab('quote');
         break;
       case 'cityPreview':
+        setShowAdvancedHomeDemoTabs(true);
         setActiveHomeDemoTab('overview');
         updateStudioViewMode('exterior');
         break;
@@ -204,6 +392,7 @@ export function ModularHomeDemoOverlay({ isTouchDevice = false }: ModularHomeDem
         maxWidth: isTouchDevice ? 'calc(100vw - 24px)' : 'calc(100vw - 24px)',
         overflowY: 'auto',
         padding: isTouchDevice ? '12px 12px' : '10px 11px',
+        paddingBottom: isTouchDevice ? '92px' : '90px',
         border: '1px solid rgba(251, 191, 36, 0.42)',
         borderRadius: isTouchDevice ? '18px' : '20px',
         background:
@@ -255,7 +444,11 @@ export function ModularHomeDemoOverlay({ isTouchDevice = false }: ModularHomeDem
             type="button"
             onClick={(event) => {
               event.stopPropagation();
-              updateStudioViewMode(viewMode === 'interior' ? 'exterior' : 'interior');
+              if (viewMode === 'interior') {
+                updateStudioViewMode('exterior');
+              } else {
+                startInsideWithQuoteNudge();
+              }
             }}
             style={{
               alignSelf: 'end',
@@ -277,6 +470,14 @@ export function ModularHomeDemoOverlay({ isTouchDevice = false }: ModularHomeDem
           </button>
         </div>
       </div>
+
+      {showQuoteNudge ? (
+        <ModularHomeQuoteNudge
+          isTouchDevice={isTouchDevice}
+          onDismiss={() => setQuoteNudgeDismissed(true)}
+          onRequestQuote={requestQuoteFromNudge}
+        />
+      ) : null}
 
       {homeStudioEnabled ? (
         <>
@@ -344,7 +545,7 @@ export function ModularHomeDemoOverlay({ isTouchDevice = false }: ModularHomeDem
                 type="button"
                 onClick={(event) => {
                   event.stopPropagation();
-                  updateStudioViewMode('interior');
+                  startInsideWithQuoteNudge();
                 }}
                 style={{
                   background: viewMode === 'interior' ? 'linear-gradient(135deg, rgba(34, 197, 94, 0.24), rgba(14, 165, 233, 0.16))' : 'rgba(15, 23, 42, 0.56)',
@@ -400,7 +601,7 @@ export function ModularHomeDemoOverlay({ isTouchDevice = false }: ModularHomeDem
           padding: isTouchDevice ? '8px' : '9px',
         }}
       >
-        {HOME_DEMO_TABS.map((tab) => {
+        {visibleHomeDemoTabs.map((tab) => {
           const selected = activeHomeDemoTab === tab.id;
 
           return (
@@ -426,13 +627,47 @@ export function ModularHomeDemoOverlay({ isTouchDevice = false }: ModularHomeDem
                 fontWeight: selected ? 950 : 850,
                 lineHeight: 1.08,
                 padding: isTouchDevice ? '8px 9px' : '9px 11px',
-                whiteSpace: 'nowrap',
+                minHeight: isTouchDevice ? '34px' : '36px',
+                whiteSpace: 'normal',
               }}
             >
               {tab.label}
             </button>
           );
         })}
+        <button
+          type="button"
+          aria-pressed={showAdvancedHomeDemoTabs}
+          data-home-demo-advanced-toggle="true"
+          data-home-demo-advanced-visible={showAdvancedHomeDemoTabs ? 'true' : 'false'}
+          title="Advanced"
+          onClick={(event) => {
+            event.stopPropagation();
+            setShowAdvancedHomeDemoTabs((current) => {
+              const next = !current;
+              if (!next && HOME_DEMO_ADVANCED_TAB_IDS.has(activeHomeDemoTab)) {
+                setActiveHomeDemoTab('design');
+              }
+              return next;
+            });
+          }}
+          style={{
+            background: showAdvancedHomeDemoTabs ? 'rgba(125, 211, 252, 0.18)' : 'rgba(15, 23, 42, 0.38)',
+            border: showAdvancedHomeDemoTabs ? '1px solid rgba(125, 211, 252, 0.34)' : '1px solid rgba(255, 255, 255, 0.12)',
+            borderRadius: '999px',
+            color: showAdvancedHomeDemoTabs ? '#bae6fd' : '#94a3b8',
+            cursor: 'pointer',
+            font: 'inherit',
+            fontSize: isTouchDevice ? '0.56rem' : '0.6rem',
+            fontWeight: 920,
+            lineHeight: 1.08,
+            minHeight: isTouchDevice ? '34px' : '36px',
+            padding: isTouchDevice ? '8px 9px' : '9px 11px',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          Pro skats
+        </button>
       </nav>
 
       {activeHomeDemoTab === 'overview' ? (
@@ -464,6 +699,8 @@ export function ModularHomeDemoOverlay({ isTouchDevice = false }: ModularHomeDem
           invalidConfigReasons={invalidConfigReasons}
           invalidShareKeys={sharedConfigFromUrl.invalidKeys}
           isTouchDevice={isTouchDevice}
+          onConfigInteraction={trackHomeConfigInteraction}
+          onStartInside={startInsideWithQuoteNudge}
           product={product}
           reset={reset}
           reviewConfigWarnings={reviewConfigWarnings}
@@ -519,6 +756,13 @@ export function ModularHomeDemoOverlay({ isTouchDevice = false }: ModularHomeDem
           <ModularHomeProjectSummary config={config} estimate={estimate} isTouchDevice={isTouchDevice} />
         </>
       ) : null}
+
+      <ModularHomeLivePriceBanner
+        basePrice={estimate.basePrice}
+        isTouchDevice={isTouchDevice}
+        onRequestPrice={() => setActiveHomeDemoTab('quote')}
+        totalPrice={estimate.totalPrice}
+      />
 
       <div
         style={{
