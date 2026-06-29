@@ -898,3 +898,44 @@ Close active Codex/VS Code Codex processes, remove the regenerated live `.codex`
   - No staging, production deploy, backend auth, quote-submit behavior, payment behavior, or sponsor-boulevard release path changes were made by Pack 0.1.
 - Next step:
   - Run Phase 0 Pack 0.2 to quarantine root audit/debug artifacts and tighten ignore rules for generated debris.
+
+## 2026-06-29 Release Roadmap Phase 0 Pack 0.2 Root Artifact Quarantine
+
+- Active objective: quarantine root-level audit/debug debris into `docs/recovery/2026-06-29-audit-archive/` and tighten ignore rules for generated artifacts without product behavior changes.
+- Implementation status:
+  - Moved the listed root audit/status/trace/remediation files into `docs/recovery/2026-06-29-audit-archive/`.
+  - Used `git mv` for tracked root artifacts so their history remains attributable.
+  - Moved ignored local root screenshots and temporary logs into the same local archive folder on disk; they remain ignored by the existing global screenshot/log patterns.
+  - Added explicit ignore coverage for `artifacts/`, `tmp-*.stderr.log`, `tmp-*.stdout.log`, and root `ss*.png` while keeping `artifacts/root-archive/` ignored.
+  - Moved the pre-existing untracked duplicate `public/models/gala/plank_flooring_04_1k.gltf (1)/` extraction into ignored `artifacts/root-archive/2026-06-29-audit-archive/` after confirming no source references.
+- Validation:
+  - `npm.cmd run build` passed; existing Vite large-chunk warning remains.
+  - `git status --short` showed only the intended `.gitignore` edit and tracked artifact renames after local debris quarantine.
+  - Exact filename `rg` check across `src`, `backend-server`, `scripts`, `public`, `supabase`, package/config files returned `NO_SOURCE_REFERENCES`.
+  - Root artifact presence check returned `ROOT_ARTIFACTS_MOVED`.
+- Touched files:
+  - `.gitignore`
+  - `docs/recovery/2026-06-29-audit-archive/AUDIT.md`
+  - `docs/recovery/2026-06-29-audit-archive/AUDIT_STATUS_AFTER_WALL_SKIN_REMEDIATION.json`
+  - `docs/recovery/2026-06-29-audit-archive/CLADDING_ARCHITECTURE_CONFLICT_AUDIT.md`
+  - `docs/recovery/2026-06-29-audit-archive/CLADDING_OWNER_TRACE.json`
+  - `docs/recovery/2026-06-29-audit-archive/FILES_CHANGED.txt`
+  - `docs/recovery/2026-06-29-audit-archive/INTERIOR_PERFORMANCE_GEOMETRY_AUDIT.md`
+  - `docs/recovery/2026-06-29-audit-archive/INTERIOR_PERFORMANCE_GEOMETRY_OWNER_TRACE.json`
+  - `docs/recovery/2026-06-29-audit-archive/MANUAL_WALL_SKIN_REVIEW.md`
+  - `docs/recovery/2026-06-29-audit-archive/OPENING_INTERIOR_FLOOR_PERFORMANCE_AUDIT.md`
+  - `docs/recovery/2026-06-29-audit-archive/OPENING_INTERIOR_FLOOR_PERFORMANCE_OWNER_TRACE.json`
+  - `docs/recovery/2026-06-29-audit-archive/PROJECT_CONTEXT_LOCK.md`
+  - `docs/recovery/2026-06-29-audit-archive/VISUAL_DESIGN_INTENT_REMEDIATION.md`
+  - `docs/recovery/2026-06-29-audit-archive/VISUAL_MATERIAL_OWNER_MATRIX.json`
+  - `docs/recovery/2026-06-29-audit-archive/VISUAL_REGRESSION_ARCHAEOLOGY.md`
+  - `docs/recovery/2026-06-29-audit-archive/WALL_SKIN_ARCHITECTURE_AUDIT.md`
+  - `docs/recovery/2026-06-29-audit-archive/WALL_SKIN_OWNER_TRACE.json`
+  - `docs/recovery/2026-06-29-audit-archive/diagnostics_output.txt`
+  - `docs/recovery/2026-06-29-audit-archive/modular-home-studio-detail-upgrade-final-entries.txt`
+  - `docs/CURRENT_TASK.md`
+- Product/release status:
+  - `productVisualAccepted=false`.
+  - No frontend runtime, backend, auth, quote-submit API, payment, sponsor boulevard, Unreal, Pixel Streaming, staging, deploy, camera, movement, geometry, collision, or door-runtime changes were made.
+- Next step:
+  - Commit Pack 0.2, then run Phase 0 Pack 0.3 only after the Pack 0.2 tree is clean.

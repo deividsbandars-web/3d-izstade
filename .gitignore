@@ -41,6 +41,8 @@ tmp/
 tmp-*/
 tmp-*
 tmp-*.*
+tmp-*.stderr.log
+tmp-*.stdout.log
 tmp-*/
 tmp-cdp-*
 tmp-expo-*
@@ -54,11 +56,13 @@ pazudusie faili/
 .gemini/
 .codex/
 GALA_PresentationUE5_Clean/
+artifacts/
 artifacts/root-archive/
 artifacts/gala-pbr-textures*/
 artifacts/phase3-gala-pbr/
 server/node_modules/
 server/dist/
+/ss*.png
 *.png
 *.jpg
 !public/textures/expo/**/*.png
