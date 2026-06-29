@@ -188,10 +188,12 @@ export function ModularHomeQuoteForm({ config, estimate, isTouchDevice = false }
       return;
     }
 
-    const submissionFields = {
-      ...fields,
-      consentGiven: true,
-    };
+    if (!fields.consentGiven) {
+      setError('Consent is required to request a quote.');
+      return;
+    }
+
+    const submissionFields = { ...fields };
 
     if (backendSubmissionEnabled) {
       setIsSubmitting(true);
@@ -237,6 +239,7 @@ export function ModularHomeQuoteForm({ config, estimate, isTouchDevice = false }
     font: 'inherit',
     fontSize: isTouchDevice ? '0.72rem' : '0.74rem',
     fontWeight: 780,
+    minHeight: isTouchDevice ? '44px' : '40px',
     minWidth: 0,
     outline: 'none',
     padding: isTouchDevice ? '10px 11px' : '10px 11px',
@@ -289,6 +292,18 @@ export function ModularHomeQuoteForm({ config, estimate, isTouchDevice = false }
         padding: isTouchDevice ? '12px' : '14px',
       }}
     >
+      <style>
+        {`
+          [data-home-quote-form="true"] input:focus-visible,
+          [data-home-quote-form="true"] select:focus-visible,
+          [data-home-quote-form="true"] textarea:focus-visible,
+          [data-home-quote-form="true"] button:focus-visible {
+            border-color: rgba(250, 204, 21, 0.78);
+            outline: 2px solid #facc15;
+            outline-offset: 2px;
+          }
+        `}
+      </style>
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', alignItems: 'start' }}>
         <div>
           <div style={{ color: '#67e8f9', fontSize: '0.58rem', fontWeight: 950, letterSpacing: '0.14em', textTransform: 'uppercase' }}>
@@ -439,6 +454,7 @@ export function ModularHomeQuoteForm({ config, estimate, isTouchDevice = false }
             fontSize: isTouchDevice ? '0.6rem' : '0.63rem',
             fontWeight: 920,
             justifySelf: 'start',
+            minHeight: isTouchDevice ? '44px' : '38px',
             padding: isTouchDevice ? '8px 10px' : '8px 11px',
           }}
         >
@@ -540,32 +556,58 @@ export function ModularHomeQuoteForm({ config, estimate, isTouchDevice = false }
           </label>
         </div>
 
-        <input checked data-home-quote-field="consentGiven" readOnly hidden type="checkbox" />
-
-        <div
+        <label
           data-home-quote-consent-row="true"
           style={{
+            alignItems: 'flex-start',
             background: 'rgba(15, 23, 42, 0.42)',
             border: '1px solid rgba(45, 212, 191, 0.16)',
             borderRadius: '12px',
             color: '#cffafe',
+            cursor: 'pointer',
+            display: 'flex',
             fontSize: isTouchDevice ? '0.58rem' : '0.61rem',
             fontWeight: 800,
+            gap: '9px',
             lineHeight: 1.32,
             padding: isTouchDevice ? '9px 10px' : '9px 10px',
           }}
         >
-          {consentText}
-        </div>
+          <input
+            checked={fields.consentGiven}
+            data-home-quote-field="consentGiven"
+            onChange={(event) => updateField('consentGiven', event.target.checked)}
+            required
+            style={{
+              accentColor: '#14b8a6',
+              flex: '0 0 auto',
+              height: '20px',
+              margin: '1px 0 0',
+              width: '20px',
+            }}
+            type="checkbox"
+          />
+          <span>{consentText}</span>
+        </label>
 
         {error ? (
-          <div data-home-quote-error="true" style={{ color: '#fecaca', fontSize: '0.62rem', fontWeight: 900 }}>
+          <div
+            aria-live="assertive"
+            data-home-quote-error="true"
+            role="alert"
+            style={{ color: '#fecaca', fontSize: '0.62rem', fontWeight: 900 }}
+          >
             {error}
           </div>
         ) : null}
 
         {success ? (
-          <div data-home-quote-success="true" style={{ color: '#bbf7d0', fontSize: '0.62rem', fontWeight: 900 }}>
+          <div
+            aria-live="polite"
+            data-home-quote-success="true"
+            role="status"
+            style={{ color: '#bbf7d0', fontSize: '0.62rem', fontWeight: 900 }}
+          >
             {success}
           </div>
         ) : null}
@@ -584,6 +626,7 @@ export function ModularHomeQuoteForm({ config, estimate, isTouchDevice = false }
             fontSize: isTouchDevice ? '0.72rem' : '0.76rem',
             fontWeight: 950,
             letterSpacing: '0.04em',
+            minHeight: isTouchDevice ? '44px' : '42px',
             opacity: isSubmitting ? 0.74 : 1,
             padding: isTouchDevice ? '11px 12px' : '11px 13px',
             textTransform: 'uppercase',

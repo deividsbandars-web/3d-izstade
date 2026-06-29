@@ -1381,3 +1381,40 @@ Close active Codex/VS Code Codex processes, remove the regenerated live `.codex`
   - No camera/FOV/lookAt, movement physics, collision geometry, door runtime, GALA construction geometry, backend route behavior, quote endpoint contract, auth policy, payment, Unreal, Pixel Streaming runtime, staging deploy, production deploy, or promotion changes were made.
 - Next step:
   - Continue to Phase 3 Pack 3.4 for mobile-first responsiveness and accessibility of the lead-gen overlay and quote form.
+
+## 2026-06-29 Release Roadmap Phase 3 Pack 3.4 Mobile Lead-Gen Accessibility
+
+- Active objective: make the modular-home quote/configurator overlay usable on 360-414px mobile widths and improve keyboard/accessibility coverage for the lead-gen quote form without changing the submit payload contract.
+- Implementation status:
+  - Changed the mobile modular-home overlay to span the available viewport width, scroll within `100dvh`, contain overscroll, and remain above the persistent live-price banner.
+  - Raised the primary overlay, configurator, quote, tab, CTA, nudge, share, and submit controls to 44px+ touch targets on mobile.
+  - Added scoped visible `:focus-visible` rings for the overlay, configurator, and quote form controls.
+  - Replaced the hidden always-true quote consent field with a visible, labelled, keyboard-focusable checkbox that keeps the existing `consentGiven` payload field.
+  - Added quote-form consent validation before local/backend submission.
+  - Added `aria-live`/`role` semantics for quote form success and error messages.
+  - Updated the modular-home studio shell to use `100dvh` with a `100vh` fallback.
+- Validation:
+  - `npx.cmd tsc --noEmit --pretty false -p tsconfig.json` passed with no compiler output.
+  - `npm.cmd run lint` passed with no warnings.
+  - `npm.cmd run build` passed.
+  - `npm.cmd run check:expo-boundaries` passed with `violations: 0`.
+  - `npm.cmd run check:bundle-budget` passed:
+    - `react-three-vendor`: 469.45 kB / 516.39 kB.
+    - `three-core`: 187.82 kB / 206.60 kB.
+    - `Expo3D`: 158.12 kB / 178.72 kB.
+    - `modular-home`: 129.62 kB / 140.80 kB.
+    - `react-vendor`: 73.72 kB / 81.09 kB.
+  - Production `dist` mobile keyboard smoke passed at viewport `390x844`: focused the Quote tab, submitted email/phone via keyboard, confirmed local preview success, and found zero console/page errors.
+  - Mobile a11y spot check passed: visible/focusable consent checkbox, labels on visible quote fields, `role="status"` + `aria-live="polite"` on success, and sampled primary tap targets all >=44px.
+  - No axe/Lighthouse package or script is currently installed in the repo, so the a11y spot check used the Playwright DOM assertions above without adding new dependencies.
+- Touched files:
+  - `src/modules/expo/runtime/modularHome/ConfiguratorOptionsPanel.tsx`
+  - `src/modules/expo/runtime/modularHome/ModularHomeDemoOverlay.tsx`
+  - `src/modules/expo/runtime/modularHome/ModularHomeQuoteForm.tsx`
+  - `src/pages/modularHome/ModularHomeStudioPage.tsx`
+  - `docs/CURRENT_TASK.md`
+- Product/release status:
+  - `productVisualAccepted=false`.
+  - No camera/FOV/lookAt, movement physics, collision geometry, door runtime, GALA construction geometry, backend route behavior, quote endpoint contract, auth policy, payment, Unreal, Pixel Streaming runtime, staging deploy, production deploy, or promotion changes were made.
+- Next step:
+  - Continue to Phase 3 Pack 3.5 for asset optimization, PBR dedupe, GLB lazy-load, and precache sanity.

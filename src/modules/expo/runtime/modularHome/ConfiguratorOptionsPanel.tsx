@@ -400,6 +400,7 @@ export function ConfiguratorOptionsPanel({
                 gap: '5px',
                 justifyItems: 'start',
                 lineHeight: 1.12,
+                minHeight: isTouchDevice ? '44px' : '38px',
                 opacity: isDisabled ? 0.52 : 1,
                 padding: isTouchDevice ? '8px 9px' : '8px 10px',
                 whiteSpace: 'normal',
@@ -448,6 +449,15 @@ export function ConfiguratorOptionsPanel({
                 padding: isTouchDevice ? '10px' : '12px',
               }}
             >
+              <style>
+                {`
+                  [data-home-configurator-panel="true"] button:focus-visible {
+                    border-color: rgba(250, 204, 21, 0.78);
+                    outline: 2px solid #facc15;
+                    outline-offset: 2px;
+                  }
+                `}
+              </style>
               <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', alignItems: 'center' }}>
                 <div>
                   <div style={{ color: '#86efac', fontSize: '0.58rem', fontWeight: 950, letterSpacing: '0.14em', textTransform: 'uppercase' }}>
@@ -474,6 +484,7 @@ export function ConfiguratorOptionsPanel({
                     fontSize: '0.55rem',
                     fontWeight: 900,
                     letterSpacing: '0.1em',
+                    minHeight: isTouchDevice ? '44px' : '36px',
                     padding: '5px 8px',
                     textTransform: 'uppercase',
                   }}
@@ -520,6 +531,7 @@ export function ConfiguratorOptionsPanel({
                           font: 'inherit',
                           gap: '3px',
                           justifyItems: 'start',
+                          minHeight: isTouchDevice ? '44px' : '40px',
                           padding: isTouchDevice ? '8px 9px' : '8px 10px',
                           textAlign: 'left',
                         }}
@@ -569,6 +581,7 @@ export function ConfiguratorOptionsPanel({
                         font: 'inherit',
                         fontSize: isTouchDevice ? '0.56rem' : '0.6rem',
                         fontWeight: 900,
+                        minHeight: isTouchDevice ? '44px' : '38px',
                         padding: '8px 10px',
                       }}
                     >
@@ -589,6 +602,7 @@ export function ConfiguratorOptionsPanel({
                         font: 'inherit',
                         fontSize: isTouchDevice ? '0.56rem' : '0.6rem',
                         fontWeight: 900,
+                        minHeight: isTouchDevice ? '44px' : '38px',
                         padding: '8px 10px',
                       }}
                     >
@@ -610,6 +624,7 @@ export function ConfiguratorOptionsPanel({
                         font: 'inherit',
                         fontSize: isTouchDevice ? '0.56rem' : '0.6rem',
                         fontWeight: 950,
+                        minHeight: isTouchDevice ? '44px' : '38px',
                         padding: '8px 10px',
                       }}
                     >
@@ -630,6 +645,7 @@ export function ConfiguratorOptionsPanel({
                         font: 'inherit',
                         fontSize: isTouchDevice ? '0.56rem' : '0.6rem',
                         fontWeight: 900,
+                        minHeight: isTouchDevice ? '44px' : '38px',
                         padding: '8px 10px',
                       }}
                     >
@@ -678,6 +694,7 @@ export function ConfiguratorOptionsPanel({
                         justifyContent: 'space-between',
                         lineHeight: 1.08,
                         maxWidth: '100%',
+                        minHeight: isTouchDevice ? '44px' : '38px',
                         padding: isTouchDevice ? '9px 11px' : '9px 12px',
                         width: 'fit-content',
                       }}

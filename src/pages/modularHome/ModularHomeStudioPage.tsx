@@ -88,7 +88,7 @@ export default function ModularHomeStudioPage() {
   }
 
   return (
-    <div style={{ background: '#020617', height: '100vh', overflow: 'hidden', position: 'relative', width: '100%' }}>
+    <div style={{ background: '#020617', height: '100dvh', minHeight: '100vh', overflow: 'hidden', position: 'relative', width: '100%' }}>
       <div
         style={{
           display: 'grid',

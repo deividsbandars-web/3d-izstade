@@ -119,6 +119,7 @@ function ModularHomeQuoteNudge({
             fontSize: isTouchDevice ? '0.66rem' : '0.7rem',
             fontWeight: 980,
             lineHeight: 1.1,
+            minHeight: isTouchDevice ? '44px' : '40px',
             padding: isTouchDevice ? '9px 10px' : '10px 11px',
             textAlign: 'center',
           }}
@@ -143,9 +144,9 @@ function ModularHomeQuoteNudge({
             font: 'inherit',
             fontSize: isTouchDevice ? '0.62rem' : '0.66rem',
             fontWeight: 950,
-            height: '30px',
+            height: isTouchDevice ? '44px' : '32px',
             lineHeight: 1,
-            width: '30px',
+            width: isTouchDevice ? '44px' : '32px',
           }}
         >
           ×
@@ -218,6 +219,7 @@ function ModularHomeLivePriceBanner({
             fontSize: isTouchDevice ? '0.62rem' : '0.66rem',
             fontWeight: 950,
             lineHeight: 1.08,
+            minHeight: isTouchDevice ? '44px' : '40px',
             padding: isTouchDevice ? '9px 11px' : '10px 12px',
             whiteSpace: 'nowrap',
           }}
@@ -382,14 +384,15 @@ export function ModularHomeDemoOverlay({ isTouchDevice = false }: ModularHomeDem
       onTouchStart={stopHomeDemoHudEvent}
       style={{
         position: 'absolute',
-        left: 'auto',
+        left: isTouchDevice ? '10px' : 'auto',
         right: isTouchDevice ? '10px' : '12px',
         top: isTouchDevice ? '10px' : '12px',
         bottom: isTouchDevice ? 'max(96px, calc(env(safe-area-inset-bottom) + 88px))' : '16px',
         zIndex: 116,
         width: isTouchDevice ? 'auto' : 'clamp(248px, 18vw, 286px)',
-        maxHeight: isTouchDevice ? '54vh' : 'calc(100vh - 26px)',
+        maxHeight: isTouchDevice ? 'calc(100dvh - 166px)' : 'calc(100vh - 26px)',
         maxWidth: isTouchDevice ? 'calc(100vw - 24px)' : 'calc(100vw - 24px)',
+        overscrollBehavior: 'contain',
         overflowY: 'auto',
         padding: isTouchDevice ? '12px 12px' : '10px 11px',
         paddingBottom: isTouchDevice ? '92px' : '90px',
@@ -401,8 +404,20 @@ export function ModularHomeDemoOverlay({ isTouchDevice = false }: ModularHomeDem
         color: '#fff7ed',
         fontFamily: 'inherit',
         pointerEvents: 'auto',
+        touchAction: 'pan-y',
+        WebkitOverflowScrolling: 'touch',
       }}
     >
+      <style>
+        {`
+          [data-home-demo-overlay="true"] button:focus-visible,
+          [data-home-demo-overlay="true"] a:focus-visible {
+            border-color: rgba(250, 204, 21, 0.78);
+            outline: 2px solid #facc15;
+            outline-offset: 2px;
+          }
+        `}
+      </style>
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', alignItems: 'start' }}>
         <div>
           <div
@@ -461,6 +476,7 @@ export function ModularHomeDemoOverlay({ isTouchDevice = false }: ModularHomeDem
               fontSize: '0.6rem',
               fontWeight: 950,
               letterSpacing: '0.08em',
+              minHeight: isTouchDevice ? '44px' : '36px',
               padding: '7px 10px',
               textTransform: 'uppercase',
               whiteSpace: 'nowrap',
@@ -536,6 +552,7 @@ export function ModularHomeDemoOverlay({ isTouchDevice = false }: ModularHomeDem
                   font: 'inherit',
                   fontSize: isTouchDevice ? '0.56rem' : '0.6rem',
                   fontWeight: 900,
+                  minHeight: isTouchDevice ? '44px' : '38px',
                   padding: '8px 10px',
                 }}
               >
@@ -556,6 +573,7 @@ export function ModularHomeDemoOverlay({ isTouchDevice = false }: ModularHomeDem
                   font: 'inherit',
                   fontSize: isTouchDevice ? '0.56rem' : '0.6rem',
                   fontWeight: 900,
+                  minHeight: isTouchDevice ? '44px' : '38px',
                   padding: '8px 10px',
                 }}
               >
@@ -576,6 +594,7 @@ export function ModularHomeDemoOverlay({ isTouchDevice = false }: ModularHomeDem
                   font: 'inherit',
                   fontSize: isTouchDevice ? '0.56rem' : '0.6rem',
                   fontWeight: 900,
+                  minHeight: isTouchDevice ? '44px' : '38px',
                   padding: '8px 10px',
                 }}
               >
@@ -627,7 +646,7 @@ export function ModularHomeDemoOverlay({ isTouchDevice = false }: ModularHomeDem
                 fontWeight: selected ? 950 : 850,
                 lineHeight: 1.08,
                 padding: isTouchDevice ? '8px 9px' : '9px 11px',
-                minHeight: isTouchDevice ? '34px' : '36px',
+                minHeight: isTouchDevice ? '44px' : '36px',
                 whiteSpace: 'normal',
               }}
             >
@@ -661,7 +680,7 @@ export function ModularHomeDemoOverlay({ isTouchDevice = false }: ModularHomeDem
             fontSize: isTouchDevice ? '0.56rem' : '0.6rem',
             fontWeight: 920,
             lineHeight: 1.08,
-            minHeight: isTouchDevice ? '34px' : '36px',
+            minHeight: isTouchDevice ? '44px' : '36px',
             padding: isTouchDevice ? '8px 9px' : '9px 11px',
             whiteSpace: 'nowrap',
           }}
