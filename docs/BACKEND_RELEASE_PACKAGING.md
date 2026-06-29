@@ -31,15 +31,16 @@ No route auth policy changes were made for this packaging pass.
 
 ## Build Boundary
 
-`backend-server/tsconfig.json` emits into `backend-server/dist`. Because the full backend imports shared platform modules, the build currently compiles these root surfaces into `backend-server/dist/src/**`:
+`backend-server/tsconfig.json` emits into `backend-server/dist`. The backend entry surface is limited to `backend-server/**/*.ts` plus `backend-server/types.d.ts`; TypeScript then pulls the root files reached by actual imports.
 
-- `src/backend/**/*.ts`
-- `src/lib/**/*.ts`
-- `src/core/**/*.ts`
-- `src/services/**/*.ts`
-- `src/types.d.ts`
+As of Release Roadmap Pack 1.4, the compiled root surface is:
 
-That shared compile surface is intentionally documented here and remains scheduled for the narrower boundary audit in Release Roadmap Pack 1.4.
+- 97 files under `src/backend/**`
+- 1 file under `src/lib/**`: `src/lib/supabaseClient.ts`
+- 0 files under `src/core/**`
+- 0 files under `src/services/**`
+
+The exact file list is recorded in `docs/BACKEND_SERVER_ONLY_DEPENDENCY_AUDIT.md`. `npm.cmd run check:backend-shared-boundaries` fails if broad `../src/**` include globs are reintroduced.
 
 ## Docker And Deploy Commands
 

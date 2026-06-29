@@ -18,10 +18,6 @@
   },
   "include": [
     "**/*.ts",
-    "../src/backend/**/*.ts",
-    "../src/lib/**/*.ts",
-    "../src/core/**/*.ts",
-    "../src/services/**/*.ts",
     "types.d.ts"
   ],
   "exclude": ["node_modules", "dist"]

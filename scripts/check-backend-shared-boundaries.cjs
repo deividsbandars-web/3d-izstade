@@ -3,6 +3,7 @@ const path = require('node:path');
 const process = require('node:process');
 
 const repoRoot = process.cwd();
+const backendTsconfigPath = path.join(repoRoot, 'backend-server', 'tsconfig.json');
 
 const SCAN_ROOTS = [
   path.join(repoRoot, 'src', 'backend'),
@@ -24,6 +25,14 @@ const PROHIBITED_IMPORTS = [
   '@react-three/fiber',
   '@react-three/drei',
   '@react-three/rapier',
+];
+
+const BROAD_BACKEND_TSCONFIG_INCLUDE_PATTERNS = [
+  '../src/**/*.ts',
+  '../src/backend/**/*.ts',
+  '../src/lib/**/*.ts',
+  '../src/core/**/*.ts',
+  '../src/services/**/*.ts',
 ];
 
 function toPosix(value) {
@@ -232,6 +241,32 @@ function checkFile(filePath) {
   return violations;
 }
 
+function collectBackendTsconfigIncludeViolations() {
+  if (!fs.existsSync(backendTsconfigPath)) {
+    return [
+      createViolation(
+        backendTsconfigPath,
+        'backend release tsconfig must exist for shared-boundary enforcement',
+        'missing backend-server/tsconfig.json',
+        null,
+      ),
+    ];
+  }
+
+  const contents = fs.readFileSync(backendTsconfigPath, 'utf8');
+  const config = JSON.parse(contents);
+  const includes = Array.isArray(config.include) ? config.include : [];
+
+  return includes
+    .filter((includePattern) => BROAD_BACKEND_TSCONFIG_INCLUDE_PATTERNS.includes(includePattern))
+    .map((includePattern) => createViolation(
+      backendTsconfigPath,
+      'backend release tsconfig must not include broad root src globs; let backend-server imports pull the minimal shared graph',
+      includePattern,
+      null,
+    ));
+}
+
 function printViolations(violations) {
   if (violations.length === 0) {
     return;
@@ -248,7 +283,9 @@ function printViolations(violations) {
 }
 
 const files = SCAN_ROOTS.flatMap((rootDir) => walkFiles(rootDir));
-const violations = files.flatMap((filePath) => checkFile(filePath));
+const tsconfigIncludeViolations = collectBackendTsconfigIncludeViolations();
+const sourceViolations = files.flatMap((filePath) => checkFile(filePath));
+const violations = [...tsconfigIncludeViolations, ...sourceViolations];
 
 printViolations(violations);
 
@@ -257,6 +294,7 @@ console.log(`- src/backend files scanned: ${walkFiles(SCAN_ROOTS[0]).length}`);
 console.log(`- src/lib files scanned: ${walkFiles(SCAN_ROOTS[1]).length}`);
 console.log(`- src/core files scanned: ${walkFiles(SCAN_ROOTS[2]).length}`);
 console.log(`- src/services files scanned: ${walkFiles(SCAN_ROOTS[3]).length}`);
+console.log(`- backend tsconfig broad include violations: ${tsconfigIncludeViolations.length}`);
 console.log(`- violations: ${violations.length}`);
 
 if (violations.length > 0) {

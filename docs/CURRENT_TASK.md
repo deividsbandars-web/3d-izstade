@@ -1064,3 +1064,38 @@ Close active Codex/VS Code Codex processes, remove the regenerated live `.codex`
   - No route auth policy, quote endpoint contract, payment, sponsor boulevard camera/FOV/lookAt, Unreal, Pixel Streaming runtime, staging deploy, production deploy, or promotion changes were made.
 - Next step:
   - Commit Pack 1.3, then start Phase 1 Pack 1.4 to narrow and document the root-to-backend shared compile boundary.
+
+## 2026-06-29 Release Roadmap Phase 1 Pack 1.4 Backend Shared Compile Boundary
+
+- Active objective: narrow `backend-server/tsconfig.json` so the backend compiles only its own entry files and the root shared modules reached by real imports, then document and guard that boundary.
+- Implementation status:
+  - Removed broad root include globs from `backend-server/tsconfig.json`: `../src/backend/**/*.ts`, `../src/lib/**/*.ts`, `../src/core/**/*.ts`, and `../src/services/**/*.ts`.
+  - Confirmed TypeScript still pulls required root modules transitively from backend imports.
+  - Current compiled root surface is 98 files: 97 under `src/backend/**`, one under `src/lib/**`, zero under `src/core/**`, and zero under `src/services/**`.
+  - Extended `scripts/check-backend-shared-boundaries.cjs` so it fails if broad `../src/**` backend tsconfig include globs are reintroduced.
+  - Updated `docs/BACKEND_SERVER_ONLY_DEPENDENCY_AUDIT.md` with the exact 98-file compiled root surface and dependency ownership notes.
+  - Updated `docs/BACKEND_RELEASE_PACKAGING.md` so the build-boundary section reflects the narrowed Pack 1.4 surface.
+- Validation:
+  - `npm.cmd run check:backend-boundaries` passed:
+    - route files scanned: 2
+    - controller/expo/distribution/platform/agents files scanned: 76
+    - violations: 0
+  - `npm.cmd run check:backend-shared-boundaries` passed:
+    - `src/backend` files scanned: 108
+    - `src/lib` files scanned: 1
+    - `src/core` files scanned: 6
+    - `src/services` files scanned: 32
+    - backend tsconfig broad include violations: 0
+    - violations: 0
+  - In `backend-server`, `npx.cmd tsc --noEmit -p tsconfig.json` passed with no compiler output.
+- Touched files:
+  - `backend-server/tsconfig.json`
+  - `scripts/check-backend-shared-boundaries.cjs`
+  - `docs/BACKEND_SERVER_ONLY_DEPENDENCY_AUDIT.md`
+  - `docs/BACKEND_RELEASE_PACKAGING.md`
+  - `docs/CURRENT_TASK.md`
+- Product/release status:
+  - `productVisualAccepted=false`.
+  - No backend route behavior, auth policy, quote endpoint contract, payment, sponsor boulevard camera/FOV/lookAt, Unreal, Pixel Streaming runtime, staging deploy, production deploy, or promotion changes were made.
+- Next step:
+  - Commit Pack 1.4, then move to Phase 2 behavior-preserving refactor packs after confirming the release branch remains clean.
