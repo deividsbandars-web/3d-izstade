@@ -1215,3 +1215,34 @@ Close active Codex/VS Code Codex processes, remove the regenerated live `.codex`
   - No sponsor inbox API contract, admin API contract, auth policy, quote endpoint contract, payment, sponsor boulevard camera/FOV/lookAt, Unreal, Pixel Streaming runtime, staging deploy, production deploy, or promotion changes were made.
 - Next step:
   - Provide the missing sponsor inbox QA env values and rerun the two blocked sponsor inbox gates, then commit Pack 2.3 and continue to Phase 2 Pack 2.4.
+
+## 2026-06-29 Release Roadmap Phase 2 Pack 2.4 Extract Expo Player Frame Loop And GALA Door Runtime
+
+- Active objective: split GALA door/collision runtime and generic player frame-loop code out of `ExpoWorldPlayerLayer.tsx` without changing collision envelopes, eye height, door passability, camera/FOV/lookAt, or movement constants.
+- Implementation status:
+  - Replaced `src/modules/expo/runtime/world/scene/ExpoWorldPlayerLayer.tsx` with a 1-line stable barrel export.
+  - Moved the player-layer component wiring into `ExpoWorldPlayerLayerRuntime.tsx` (429 lines).
+  - Added `useGalaShowroomRuntime.ts` for GALA door state subscription, collision segment refresh, nearby-door prompt refs, and `KeyE` door toggle plumbing.
+  - Added `ExpoWorldPlayerFrameSupport.ts` for the existing player movement constants, vertical helper functions, and shared runtime types.
+  - Added `useExpoWorldPlayerFrameLoop.ts` for the extracted generic boulevard player movement, vertical traversal, elevator, jump, mantle, slide, and world-physics frame loop.
+  - Preserved the original movement/collision values and the existing runtime behavior, including the existing vertical walkable `region.size[2]` and access-node `activationRadius` runtime lookups through explicit casts rather than changing them to different typed fields.
+- Validation:
+  - `npx.cmd tsc --noEmit --pretty false -p tsconfig.json` passed with no compiler output.
+  - `npm.cmd run lint` passed with no warnings.
+  - `npm.cmd run build` passed; existing Vite large-chunk warning remains.
+  - `node scripts/qa-gala-real-user-walk-physics.mjs --base-url=http://127.0.0.1:5173 --out-dir=artifacts/qa-gala-real-user-walk-physics-pack2-4-final` ran against a local Vite server and wrote evidence, but the report has `pass=false` because `walkSpeedPass=false`. Door/collision checks in that report passed: wall collision, entry/bedroom/bathroom closed-door blocking, open-door traversal, floor visual, opening gap, and eye-height visual.
+  - `node scripts/qa-gala-motion-performance-audit.mjs --base-url=http://127.0.0.1:5173 --out-dir=artifacts/qa-gala-motion-performance-pack2-4-final` failed with `pass=false`: `frameTimeP95Ms` was about `29.1-29.2` ms against the `28` ms budget, and interior motion had `stutterCountOver50Ms=2` against the max `1`.
+  - First sandboxed attempts of both QA scripts failed with `EPERM` because their default output path is `C:\qa\visual-evidence\...`; final runs used workspace `artifacts/` output directories.
+- Touched files:
+  - `src/modules/expo/runtime/world/scene/ExpoWorldPlayerLayer.tsx`
+  - `src/modules/expo/runtime/world/scene/ExpoWorldPlayerLayerRuntime.tsx`
+  - `src/modules/expo/runtime/world/scene/useGalaShowroomRuntime.ts`
+  - `src/modules/expo/runtime/world/scene/ExpoWorldPlayerFrameSupport.ts`
+  - `src/modules/expo/runtime/world/scene/useExpoWorldPlayerFrameLoop.ts`
+  - `docs/CURRENT_TASK.md`
+- Product/release status:
+  - `productVisualAccepted=false`.
+  - Pack 2.4 is not release-complete because the required GALA walk-physics and motion-performance QA reports are not green.
+  - No collision dimensions, door interaction zones, finished-floor levels, camera/FOV/lookAt, movement constants, auth policy, quote endpoint contract, payment, Unreal, Pixel Streaming runtime, staging deploy, production deploy, or promotion changes were made.
+- Next step:
+  - Decide whether to investigate the failing GALA walk-speed/performance QA as its own behavior-affecting remediation pack, or treat the current Pack 2.4 code split as a committed behavior-preserving refactor with failed QA documented.
