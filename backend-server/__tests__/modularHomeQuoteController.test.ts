@@ -133,6 +133,7 @@ const previousProductionHosts = process.env.MODULAR_HOME_QUOTE_PRODUCTION_HOSTS;
 const previousRedisUrl = process.env.REDIS_URL;
 const previousTurnstileSecret = process.env.MODULAR_HOME_QUOTE_TURNSTILE_SECRET_KEY;
 const previousTurnstileRequired = process.env.MODULAR_HOME_QUOTE_TURNSTILE_REQUIRED;
+const previousEmailHandoffEnabled = process.env.MODULAR_HOME_QUOTE_EMAIL_HANDOFF_ENABLED;
 
 function createFakeQuoteStorage({ duplicateId = null }: { duplicateId?: string | null } = {}) {
   const insertedRows: unknown[] = [];
@@ -266,6 +267,7 @@ process.env.MODULAR_HOME_QUOTE_PRODUCTION_HOSTS = '';
 process.env.REDIS_URL = '';
 process.env.MODULAR_HOME_QUOTE_TURNSTILE_SECRET_KEY = '';
 process.env.MODULAR_HOME_QUOTE_TURNSTILE_REQUIRED = '';
+process.env.MODULAR_HOME_QUOTE_EMAIL_HANDOFF_ENABLED = '';
 {
   const submissionConfig = getModularHomeQuoteSubmissionConfig();
   assert.equal(submissionConfig.enabled, false);
@@ -622,4 +624,9 @@ if (previousTurnstileRequired === undefined) {
   delete process.env.MODULAR_HOME_QUOTE_TURNSTILE_REQUIRED;
 } else {
   process.env.MODULAR_HOME_QUOTE_TURNSTILE_REQUIRED = previousTurnstileRequired;
+}
+if (previousEmailHandoffEnabled === undefined) {
+  delete process.env.MODULAR_HOME_QUOTE_EMAIL_HANDOFF_ENABLED;
+} else {
+  process.env.MODULAR_HOME_QUOTE_EMAIL_HANDOFF_ENABLED = previousEmailHandoffEnabled;
 }

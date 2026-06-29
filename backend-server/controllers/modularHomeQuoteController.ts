@@ -7,6 +7,7 @@ import {
   resetRedisRateLimitForTests,
   type RedisBackedRateLimitStore,
 } from '../services/redisRateLimit.js';
+import { enqueueModularHomeQuoteEmailHandoff } from '../services/modularHomeQuoteNotifier.js';
 import {
   MODULAR_HOME_QUOTE_BACKEND_CONSENT_TEXT,
   MODULAR_HOME_QUOTE_CONSENT_VERSION,
@@ -135,6 +136,7 @@ export type ModularHomeQuoteSelectBuilder = {
 };
 
 export type ModularHomeQuoteSubmitDependencies = {
+  emailHandoff?: typeof enqueueModularHomeQuoteEmailHandoff;
   fetchImpl?: typeof fetch;
   rateLimitStore?: RedisBackedRateLimitStore;
   storage?: ModularHomeQuoteStorageClient;
@@ -735,9 +737,13 @@ export async function submitModularHomeQuoteWithDependencies(
     }
 
     const id = await insertModularHomeQuoteRequest(payload, submissionConfig, dependencies.storage);
+    const emailHandoffQueued = (dependencies.emailHandoff ?? enqueueModularHomeQuoteEmailHandoff)({
+      payload,
+      quoteId: id,
+    });
 
     res.status(201).json({
-      emailHandoffQueued: false,
+      emailHandoffQueued,
       id,
       success: true,
     });

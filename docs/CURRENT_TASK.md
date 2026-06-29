@@ -1500,3 +1500,38 @@ Close active Codex/VS Code Codex processes, remove the regenerated live `.codex`
   - No camera/FOV/lookAt, movement physics, collision geometry, door runtime, GALA construction geometry, quote route auth policy, payment, Unreal, Pixel Streaming runtime, staging deploy, production deploy, or promotion changes were made.
 - Next step:
   - Investigate staging admin auth/token behavior before treating `check:modular-home-quote-staging` as a green release gate, then continue to Phase 4 Pack 4.2 email/CRM handoff.
+
+## 2026-06-29 Release Roadmap Phase 4 Pack 4.2 Quote Email Handoff
+
+- Active objective: add an opt-in, non-blocking email/CRM handoff for accepted modular-home quotes after Supabase insert, without changing the visitor response contract or making email provider success required.
+- Implementation status:
+  - Added `backend-server/services/modularHomeQuoteNotifier.ts`.
+  - Added `MODULAR_HOME_QUOTE_EMAIL_HANDOFF_ENABLED=true` gate; default remains disabled.
+  - Added env-based notifier config:
+    - `MODULAR_HOME_QUOTE_EMAIL_FROM` or `RESEND_FROM_EMAIL`
+    - `MODULAR_HOME_QUOTE_EMAIL_HANDOFF_TO`
+    - optional `MODULAR_HOME_QUOTE_EMAIL_REPLY_TO`
+    - `RESEND_API_KEY`
+  - Queueing now happens only after a quote row insert succeeds.
+  - The controller returns immediately with `emailHandoffQueued` and does not await Resend/provider completion.
+  - Added idempotency by quote id in notifier state so duplicate queue/send attempts for the same quote id are skipped.
+  - Added separate safe console logging for handoff sent/failed/misconfigured results without blocking the visitor response.
+  - Added `backend-server/__tests__/modularHomeQuoteNotifier.test.ts` covering disabled default, enabled fake send, queue idempotency, duplicate send skip, and misconfigured state.
+  - Kept controller tests deterministic by forcing email handoff disabled unless explicitly injected.
+- Validation:
+  - `npx.cmd tsc --noEmit -p tsconfig.json` in `backend-server` passed.
+  - `npx.cmd tsx __tests__/modularHomeQuoteNotifier.test.ts` in `backend-server` passed; expected safe email-handoff logs were printed for sent and misconfigured paths.
+  - `npx.cmd tsx __tests__/modularHomeQuoteController.test.ts` in `backend-server` passed; expected safe quote logs were printed for negative-path tests.
+  - `npm.cmd run lint` in `backend-server` passed.
+- Touched files:
+  - `backend-server/controllers/modularHomeQuoteController.ts`
+  - `backend-server/services/modularHomeQuoteNotifier.ts`
+  - `backend-server/__tests__/modularHomeQuoteController.test.ts`
+  - `backend-server/__tests__/modularHomeQuoteNotifier.test.ts`
+  - `docs/CURRENT_TASK.md`
+- Product/release status:
+  - `productVisualAccepted=false`.
+  - No camera/FOV/lookAt, movement physics, collision geometry, door runtime, GALA construction geometry, quote route auth policy, payment, Unreal, Pixel Streaming runtime, staging deploy, production deploy, or promotion changes were made.
+  - Email handoff is opt-in and remains off by default.
+- Next step:
+  - Continue to Phase 4 Pack 4.3 to decouple UE5/signaling env from a GALA-only backend deploy.
