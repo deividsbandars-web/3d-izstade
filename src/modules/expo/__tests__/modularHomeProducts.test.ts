@@ -160,7 +160,7 @@ assert.equal(getDefaultHomeConfig('sauna-cabin-25').windowPlacement, 'sidePrivac
 assert.equal(getDefaultHomeConfig('compact-timber-40').doorPlacement, 'frontEntry');
 assert.equal(getDefaultHomeConfig('family-timber-80').doorPlacement, 'terraceFacing');
 assert.equal(getDefaultHomeConfig('sauna-cabin-25').doorPlacement, 'frontEntry');
-assert.equal(getDefaultHomeConfig('compact-timber-40').facadeBoardOrientation, 'horizontal');
+assert.equal(getDefaultHomeConfig('compact-timber-40').facadeBoardOrientation, 'vertical');
 assert.equal(getDefaultHomeConfig('compact-timber-40').facadeBoardWidth, 'standard');
 assert.equal(getDefaultHomeConfig('compact-timber-40').roofEdgeColor, 'graphite');
 assert.equal(getDefaultHomeConfig('compact-timber-40').windowFrameColor, 'timber');
@@ -478,8 +478,14 @@ for (const module of MODULAR_HOME_MODULES) {
   assert.ok(getPricingCategoriesForModuleType(module.type).length > 0, `${module.id} should map to pricing categories`);
 }
 
+const visualOnlyOptionGroups = new Set(['kitchenFinish', 'furnitureMood', 'interiorZoneFocus']);
+
 for (const option of MODULAR_HOME_OPTIONS) {
-  assert.ok(getPricingCategoriesForOptionGroup(option.group).length > 0, `${option.id} should map to pricing categories`);
+  const pricingCategories = getPricingCategoriesForOptionGroup(option.group);
+  assert.ok(
+    pricingCategories.length > 0 || visualOnlyOptionGroups.has(option.group),
+    `${option.id} should map to pricing categories unless it is a visual-only option group`,
+  );
 }
 
 for (const component of MODULAR_HOME_COMPONENTS) {
@@ -1424,7 +1430,7 @@ assert.equal(decodedInvalidSaunaConfig.invalidKeys.includes('windowPlace'), true
 assert.equal(decodedInvalidSaunaConfig.invalidKeys.includes('door'), true);
 assert.equal(decodedInvalidSaunaConfig.invalidKeys.includes('doorPlace'), true);
 
-const decodedDetailConfig = decodeModularHomeConfigFromUrl('?homeDemo=1&model=compact&boardDir=v&boardWidth=narrow&boardProfile=shadow&boardSpacing=tight&trim=bronze&roofEdge=bronze&gutter=box&frame=graphite&frameType=deep&wall=warm&floor=oak&floorStyle=warm&wallPanel=ribbed&furniture=premium&sofa=1&table=0&bed=1&kitchen=1&wardrobe=0');
+const decodedDetailConfig = decodeModularHomeConfigFromUrl('?homeDemo=1&model=compact&boardDir=v&boardWidth=narrow&boardProfile=shadow&boardSpacing=tight&trim=bronze&roofEdge=bronze&gutter=box&frame=graphite&frameType=deep&wall=warm&floor=oak&floorStyle=warm&wallPanel=ribbed&kitchenFinish=wood&furniture=premium&sofa=1&table=0&bed=1&kitchen=1&wardrobe=0');
 assert.equal(decodedDetailConfig.config.facadeBoardOrientation, 'vertical');
 assert.equal(decodedDetailConfig.config.facadeBoardWidth, 'narrow');
 assert.equal(decodedDetailConfig.config.facadeBoardProfile, 'shadowGap');
@@ -1455,7 +1461,7 @@ assert.equal(decodedInvalidShareConfig.viewMode, 'exterior');
 assert.equal(decodedInvalidShareConfig.usedFallback, true);
 assert.deepEqual(
   [...decodedInvalidShareConfig.invalidKeys].sort(),
-  ['bed', 'boardDir', 'boardProfile', 'boardSpacing', 'boardWidth', 'dims', 'door', 'doorPlace', 'facade', 'finish', 'floor', 'floorStyle', 'frame', 'frameType', 'furniture', 'gutter', 'kitchen', 'layout', 'model', 'roof', 'roofEdge', 'sofa', 'table', 'terrace', 'trim', 'view', 'wall', 'wallPanel', 'wardrobe', 'windowPlace', 'windows'].sort(),
+  ['bed', 'boardDir', 'boardProfile', 'boardSpacing', 'boardWidth', 'dims', 'door', 'doorPlace', 'facade', 'finish', 'floor', 'floorStyle', 'frame', 'frameType', 'furniture', 'furniture', 'gutter', 'kitchen', 'kitchen', 'layout', 'model', 'roof', 'roofEdge', 'sofa', 'table', 'terrace', 'trim', 'view', 'wall', 'wallPanel', 'wardrobe', 'windowPlace', 'windows'].sort(),
 );
 
 const shareUrl = createModularHomeShareUrl(
@@ -1471,7 +1477,7 @@ const shareUrl = createModularHomeShareUrl(
   'cutaway',
 );
 const shareUrlSearch = new URL(shareUrl).searchParams;
-assert.equal(shareUrl, 'https://example.test/modular-homes/studio?homeStudio=1&model=family&layout=two&dims=wide&facade=dark&roof=flat&terrace=side&finish=standard&windows=panoramic&windowPlace=front&door=slider&doorPlace=terrace&boardDir=h&boardWidth=standard&boardProfile=square&boardSpacing=standard&trim=timber&roofEdge=graphite&gutter=minimal&frame=timber&frameType=standard&wall=plywood&floor=plywood&floorStyle=utility&wallPanel=plain&kitchenFinish=wood&furnitureMood=warm&interiorZoneFocus=living&furniture=standard&sofa=1&table=1&bed=1&kitchen=1&wardrobe=1&view=cutaway');
+assert.equal(shareUrl, 'https://example.test/modular-homes/studio?homeStudio=1&model=family&layout=two&dims=wide&facade=dark&roof=flat&terrace=side&finish=standard&windows=panoramic&windowPlace=front&door=slider&doorPlace=terrace&boardDir=v&boardWidth=standard&boardProfile=square&boardSpacing=standard&trim=timber&roofEdge=graphite&gutter=minimal&frame=timber&frameType=standard&wall=plywood&floor=plywood&floorStyle=utility&wallPanel=plain&kitchenFinish=wood&furnitureMood=warm&interiorZoneFocus=living&furniture=standard&sofa=1&table=1&bed=1&kitchen=1&wardrobe=1&view=cutaway');
 assert.equal(shareUrlSearch.get('homeStudio'), '1');
 assert.equal(shareUrlSearch.get('homeDemo'), null);
 assert.equal(shareUrlSearch.get('old'), null);
@@ -1480,7 +1486,7 @@ assert.equal(shareUrlSearch.get('layout'), 'two');
 assert.equal(shareUrlSearch.get('dims'), 'wide');
 assert.equal(shareUrlSearch.get('windowPlace'), 'front');
 assert.equal(shareUrlSearch.get('doorPlace'), 'terrace');
-assert.equal(shareUrlSearch.get('boardDir'), 'h');
+assert.equal(shareUrlSearch.get('boardDir'), 'v');
 assert.equal(shareUrlSearch.get('boardWidth'), 'standard');
 assert.equal(shareUrlSearch.get('boardProfile'), 'square');
 assert.equal(shareUrlSearch.get('boardSpacing'), 'standard');

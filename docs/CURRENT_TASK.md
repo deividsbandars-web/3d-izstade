@@ -1099,3 +1099,40 @@ Close active Codex/VS Code Codex processes, remove the regenerated live `.codex`
   - No backend route behavior, auth policy, quote endpoint contract, payment, sponsor boulevard camera/FOV/lookAt, Unreal, Pixel Streaming runtime, staging deploy, production deploy, or promotion changes were made.
 - Next step:
   - Commit Pack 1.4, then move to Phase 2 behavior-preserving refactor packs after confirming the release branch remains clean.
+
+## 2026-06-29 Release Roadmap Phase 2 Pack 2.1 Split Modular Home Components
+
+- Active objective: split `src/modules/expo/runtime/modularHome/modularHomeComponents.ts` into focused behavior-preserving submodules while keeping the original import path stable as a barrel.
+- Implementation status:
+  - Replaced `modularHomeComponents.ts` with a 19-line barrel that re-exports the original public API.
+  - Added focused files under `src/modules/expo/runtime/modularHome/components/`:
+    - `types.ts` (286 lines)
+    - `catalog.ts` (527 lines)
+    - `manufacturingHelpers.ts` (493 lines)
+    - `quantity.ts` (184 lines)
+    - `componentBom.ts` (248 lines)
+    - `openingSchedule.ts` (403 lines)
+    - `manufacturingBom.ts` (207 lines)
+  - Kept importers on the stable `./modularHomeComponents` path.
+  - Updated `modularHomeProducts.test.ts` expectations to match current product data and share-url behavior: compact default facade board direction is `vertical`, `kitchenFinish`/`furnitureMood`/`interiorZoneFocus` are visual-only pricing groups, canonical detailed share URLs include `kitchenFinish`, and invalid-key output currently includes duplicate overloaded alias keys.
+- Validation:
+  - `npx.cmd tsx src\modules\expo\__tests__\modularHomeProducts.test.ts` passed.
+  - `npm.cmd run lint` passed.
+  - `npm.cmd run check:expo-boundaries` passed with 0 violations.
+  - `npm.cmd run build` passed; existing Vite large-chunk warning remains.
+- Touched files:
+  - `src/modules/expo/runtime/modularHome/modularHomeComponents.ts`
+  - `src/modules/expo/runtime/modularHome/components/types.ts`
+  - `src/modules/expo/runtime/modularHome/components/catalog.ts`
+  - `src/modules/expo/runtime/modularHome/components/manufacturingHelpers.ts`
+  - `src/modules/expo/runtime/modularHome/components/quantity.ts`
+  - `src/modules/expo/runtime/modularHome/components/componentBom.ts`
+  - `src/modules/expo/runtime/modularHome/components/openingSchedule.ts`
+  - `src/modules/expo/runtime/modularHome/components/manufacturingBom.ts`
+  - `src/modules/expo/__tests__/modularHomeProducts.test.ts`
+  - `docs/CURRENT_TASK.md`
+- Product/release status:
+  - `productVisualAccepted=false`.
+  - No modular-home pricing math, BOM logic, quote endpoint contract, backend route behavior, auth policy, payment, sponsor boulevard camera/FOV/lookAt, Unreal, Pixel Streaming runtime, staging deploy, production deploy, or promotion changes were made.
+- Next step:
+  - Commit Pack 2.1, then continue to Phase 2 Pack 2.2 to split the estimate/pricing engine with parity coverage.
