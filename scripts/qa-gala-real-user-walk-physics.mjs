@@ -16,6 +16,14 @@ const HOUSE_LENGTH = 10.2;
 const HOUSE_WIDTH = 5.0;
 const WALL_THICKNESS = 0.14;
 const PLAYER_RADIUS_M = 0.28;
+const EXTERIOR_WALL_COLLISION_HALF_DEPTH = WALL_THICKNESS * 0.5 + 0.04;
+const BATHROOM_PARTITION_X = 5.255;
+const FINISHED_FLOOR_TOP_Y = 0.18;
+const PLAYER_EYE_HEIGHT_M = FINISHED_FLOOR_TOP_Y + 1.65;
+const BATHROOM_DOOR_X_MIN = 5.95;
+const BATHROOM_DOOR_X_MAX = 6.85;
+const BATHROOM_DOOR_Z_MIN = -0.08;
+const BATHROOM_DOOR_Z_MAX = 0.72;
 const TARGET_WALK_MIN_M = 1.15;
 const TARGET_WALK_MAX_M = 1.65;
 
@@ -109,19 +117,19 @@ function worldToPlan(position) {
 
 function baseCollisionRects() {
   const solidExteriorWalls = [
-    { id: 'south-exterior-wall-left-of-entry-door', xMin: 0, xMax: 4.185, zMin: -HOUSE_WIDTH * 0.5 - WALL_THICKNESS * 0.5, zMax: -HOUSE_WIDTH * 0.5 + WALL_THICKNESS * 0.5 },
-    { id: 'south-exterior-wall-right-of-entry-door', xMin: 5.085, xMax: HOUSE_LENGTH, zMin: -HOUSE_WIDTH * 0.5 - WALL_THICKNESS * 0.5, zMax: -HOUSE_WIDTH * 0.5 + WALL_THICKNESS * 0.5 },
-    { id: 'north-exterior-wall-left-of-terrace-door', xMin: 0, xMax: 3.585, zMin: HOUSE_WIDTH * 0.5 - WALL_THICKNESS * 0.5, zMax: HOUSE_WIDTH * 0.5 + WALL_THICKNESS * 0.5 },
-    { id: 'north-exterior-wall-right-of-terrace-door', xMin: 5.185, xMax: HOUSE_LENGTH, zMin: HOUSE_WIDTH * 0.5 - WALL_THICKNESS * 0.5, zMax: HOUSE_WIDTH * 0.5 + WALL_THICKNESS * 0.5 },
-    { id: 'west-exterior-wall', xMin: -WALL_THICKNESS * 0.5, xMax: WALL_THICKNESS * 0.5, zMin: -HOUSE_WIDTH * 0.5, zMax: HOUSE_WIDTH * 0.5 },
-    { id: 'east-exterior-wall', xMin: HOUSE_LENGTH - WALL_THICKNESS * 0.5, xMax: HOUSE_LENGTH + WALL_THICKNESS * 0.5, zMin: -HOUSE_WIDTH * 0.5, zMax: HOUSE_WIDTH * 0.5 },
+    { id: 'south-exterior-wall-left-of-entry-door', xMin: 0, xMax: 4.185, zMin: -HOUSE_WIDTH * 0.5 - EXTERIOR_WALL_COLLISION_HALF_DEPTH, zMax: -HOUSE_WIDTH * 0.5 + EXTERIOR_WALL_COLLISION_HALF_DEPTH },
+    { id: 'south-exterior-wall-right-of-entry-door', xMin: 5.085, xMax: HOUSE_LENGTH, zMin: -HOUSE_WIDTH * 0.5 - EXTERIOR_WALL_COLLISION_HALF_DEPTH, zMax: -HOUSE_WIDTH * 0.5 + EXTERIOR_WALL_COLLISION_HALF_DEPTH },
+    { id: 'north-exterior-wall-left-of-terrace-door', xMin: 0, xMax: 3.585, zMin: HOUSE_WIDTH * 0.5 - EXTERIOR_WALL_COLLISION_HALF_DEPTH, zMax: HOUSE_WIDTH * 0.5 + EXTERIOR_WALL_COLLISION_HALF_DEPTH },
+    { id: 'north-exterior-wall-right-of-terrace-door', xMin: 5.185, xMax: HOUSE_LENGTH, zMin: HOUSE_WIDTH * 0.5 - EXTERIOR_WALL_COLLISION_HALF_DEPTH, zMax: HOUSE_WIDTH * 0.5 + EXTERIOR_WALL_COLLISION_HALF_DEPTH },
+    { id: 'west-exterior-wall', xMin: -EXTERIOR_WALL_COLLISION_HALF_DEPTH, xMax: EXTERIOR_WALL_COLLISION_HALF_DEPTH, zMin: -HOUSE_WIDTH * 0.5, zMax: HOUSE_WIDTH * 0.5 },
+    { id: 'east-exterior-wall', xMin: HOUSE_LENGTH - EXTERIOR_WALL_COLLISION_HALF_DEPTH, xMax: HOUSE_LENGTH + EXTERIOR_WALL_COLLISION_HALF_DEPTH, zMin: -HOUSE_WIDTH * 0.5, zMax: HOUSE_WIDTH * 0.5 },
   ];
   const partitionWalls = [
-    { id: 'bathroom-west-partition-wall', xMin: 5.15 - WALL_THICKNESS * 0.5, xMax: 5.15 + WALL_THICKNESS * 0.5, zMin: -HOUSE_WIDTH * 0.5, zMax: 0 },
+    { id: 'bathroom-west-partition-wall', xMin: BATHROOM_PARTITION_X - WALL_THICKNESS * 0.5, xMax: BATHROOM_PARTITION_X + WALL_THICKNESS * 0.5, zMin: -HOUSE_WIDTH * 0.5, zMax: 0 },
     { id: 'bedroom-partition-south-of-door', xMin: 7.2 - WALL_THICKNESS * 0.5, xMax: 7.2 + WALL_THICKNESS * 0.5, zMin: -HOUSE_WIDTH * 0.5, zMax: 0.72 },
     { id: 'bedroom-partition-north-of-door', xMin: 7.2 - WALL_THICKNESS * 0.5, xMax: 7.2 + WALL_THICKNESS * 0.5, zMin: 1.62, zMax: HOUSE_WIDTH * 0.5 },
-    { id: 'bathroom-north-wall-left-of-door', xMin: 5.15, xMax: 6.1, zMin: -WALL_THICKNESS * 0.5, zMax: WALL_THICKNESS * 0.5 },
-    { id: 'bathroom-north-wall-right-of-door', xMin: 6.92, xMax: 7.2, zMin: -WALL_THICKNESS * 0.5, zMax: WALL_THICKNESS * 0.5 },
+    { id: 'bathroom-north-wall-left-of-door', xMin: BATHROOM_PARTITION_X, xMax: BATHROOM_DOOR_X_MIN, zMin: -WALL_THICKNESS * 0.5, zMax: WALL_THICKNESS * 0.5 },
+    { id: 'bathroom-north-wall-right-of-door', xMin: BATHROOM_DOOR_X_MAX, xMax: 7.2, zMin: -WALL_THICKNESS * 0.5, zMax: WALL_THICKNESS * 0.5 },
   ];
 
   return [...solidExteriorWalls, ...partitionWalls];
@@ -131,7 +139,7 @@ const BASE_COLLISION_RECTS = baseCollisionRects();
 const CLOSED_DOOR_RECTS = [
   { doorId: 'D-ENTRY', id: 'closed-entry-door-slab', xMin: 4.185, xMax: 5.085, zMin: -HOUSE_WIDTH * 0.5 - 0.13, zMax: -HOUSE_WIDTH * 0.5 + 0.13 },
   { doorId: 'D-TERRACE', id: 'closed-terrace-door-slab', xMin: 3.585, xMax: 5.185, zMin: HOUSE_WIDTH * 0.5 - 0.13, zMax: HOUSE_WIDTH * 0.5 + 0.13 },
-  { doorId: 'D-BATHROOM', id: 'closed-bathroom-door-slab', xMin: 6.0, xMax: 7.12, zMin: -WALL_THICKNESS * 0.62, zMax: WALL_THICKNESS * 0.62 },
+  { doorId: 'D-BATHROOM', id: 'closed-bathroom-door-slab', xMin: BATHROOM_DOOR_X_MIN, xMax: BATHROOM_DOOR_X_MAX, zMin: -WALL_THICKNESS * 0.62, zMax: WALL_THICKNESS * 0.62 },
   { doorId: 'D-BEDROOM', id: 'closed-bedroom-door-slab', xMin: 7.2 - WALL_THICKNESS * 0.62, xMax: 7.2 + WALL_THICKNESS * 0.62, zMin: 0.45, zMax: 1.82 },
 ];
 
@@ -217,13 +225,24 @@ function passableDoorCrossing(samples, door) {
 }
 
 async function getRuntimeState(page) {
-  return await page.evaluate(() => ({
+  const state = await page.evaluate(() => ({
     evidence: window.__WARPALA_EXPO_EVIDENCE__ ?? null,
     galaGeometrySanity: window.__WARPALA_GALA_GEOMETRY_SANITY__ ?? null,
     href: window.location.href,
     qaHookPresent: Boolean(window.__WARPALA_3D_QA__),
     realUserRuntime: window.__WARPALA_GALA_REAL_USER_RUNTIME__ ?? null,
   }));
+  const planPosition = state.galaGeometrySanity?.currentPlanPosition;
+  const sampledPlayerPosition = planPosition
+    && Number.isFinite(Number(planPosition.x))
+    && Number.isFinite(Number(planPosition.z))
+    ? planToWorld(Number(planPosition.x), PLAYER_EYE_HEIGHT_M, Number(planPosition.z))
+    : state.evidence?.playerPosition ?? null;
+
+  return {
+    ...state,
+    sampledPlayerPosition,
+  };
 }
 
 async function openInterior(page, baseUrl) {
@@ -289,7 +308,7 @@ async function keyProbe(browser, baseUrl, manualDir, label, keys, durationMs, sa
   await page.screenshot({ fullPage: true, path: beforePath });
 
   const startState = await getRuntimeState(page);
-  const startPosition = startState.evidence?.playerPosition ?? null;
+  const startPosition = startState.sampledPlayerPosition ?? null;
   const samples = [{ position: startPosition, tMs: 0 }];
   const filteredSampleTimes = [...new Set([...sampleTimes, durationMs])]
     .filter((value) => value > 0 && value <= durationMs)
@@ -304,7 +323,7 @@ async function keyProbe(browser, baseUrl, manualDir, label, keys, durationMs, sa
     await page.waitForTimeout(tMs - previous);
     previous = tMs;
     const state = await getRuntimeState(page);
-    samples.push({ position: state.evidence?.playerPosition ?? null, tMs });
+    samples.push({ position: state.sampledPlayerPosition ?? null, tMs });
   }
 
   for (const key of [...keys].reverse()) {
@@ -313,7 +332,7 @@ async function keyProbe(browser, baseUrl, manualDir, label, keys, durationMs, sa
   await page.waitForTimeout(350);
 
   const afterState = await getRuntimeState(page);
-  const afterPosition = afterState.evidence?.playerPosition ?? null;
+  const afterPosition = afterState.sampledPlayerPosition ?? null;
   const afterPath = path.join(manualDir, `${label}-after-${durationMs}ms.png`);
   await page.screenshot({ fullPage: true, path: afterPath });
   await page.close();
@@ -351,7 +370,7 @@ async function sequenceProbe(browser, baseUrl, manualDir, label, steps, probeOpt
   const beforePath = path.join(manualDir, `${label}-before.png`);
   await page.screenshot({ fullPage: true, path: beforePath });
   const startState = await getRuntimeState(page);
-  const startPosition = startState.evidence?.playerPosition ?? null;
+  const startPosition = startState.sampledPlayerPosition ?? null;
   const samples = [{ position: startPosition, step: 'start', tMs: 0 }];
   let elapsed = 0;
 
@@ -366,11 +385,11 @@ async function sequenceProbe(browser, baseUrl, manualDir, label, steps, probeOpt
     }
     await page.waitForTimeout(step.settleMs ?? 80);
     const state = await getRuntimeState(page);
-    samples.push({ position: state.evidence?.playerPosition ?? null, step: step.label, tMs: elapsed });
+    samples.push({ position: state.sampledPlayerPosition ?? null, step: step.label, tMs: elapsed });
   }
 
   const afterState = await getRuntimeState(page);
-  const afterPosition = afterState.evidence?.playerPosition ?? null;
+  const afterPosition = afterState.sampledPlayerPosition ?? null;
   const afterPath = path.join(manualDir, `${label}-after-${elapsed}ms.png`);
   await page.screenshot({ fullPage: true, path: afterPath });
   await page.close();
@@ -526,7 +545,7 @@ async function runPhase(options) {
   for (const durationMs of [250, 500, 1000, 3000]) {
     speedProbes.push(await keyProbe(browser, options.baseUrl, manualDir, `walk-speed-keyw-${durationMs}`, ['KeyW'], durationMs, [250, 500, 1000, 3000], {
       doorStates: DEFAULT_DOOR_STATES,
-      startView: { lookAt: [3.9, 1.35, -0.82], position: [1.38, 1.65, -0.82] },
+      startView: { lookAt: [3.9, FINISHED_FLOOR_TOP_Y + 1.35, -0.82], position: [1.38, PLAYER_EYE_HEIGHT_M, -0.82] },
     }));
   }
 
@@ -539,27 +558,27 @@ async function runPhase(options) {
   const doorProbes = {
     entryClosed: await keyProbe(browser, options.baseUrl, manualDir, 'door-entry-closed-keyw', ['KeyW'], 2400, [500, 1000, 1800, 2400], {
       doorStates: { ...DEFAULT_DOOR_STATES, 'D-ENTRY': 'closed' },
-      startView: { lookAt: [4.635, 1.35, -2.72], position: [4.635, 1.65, -1.28] },
+      startView: { lookAt: [4.635, FINISHED_FLOOR_TOP_Y + 1.35, -2.72], position: [4.635, PLAYER_EYE_HEIGHT_M, -1.28] },
     }),
     entryOpen: await keyProbe(browser, options.baseUrl, manualDir, 'door-entry-open-keyw', ['KeyW'], 3200, [500, 1000, 1800, 2600, 3200], {
       doorStates: { ...DEFAULT_DOOR_STATES, 'D-ENTRY': 'open' },
-      startView: { lookAt: [4.635, 1.35, -2.72], position: [4.635, 1.65, -1.28] },
+      startView: { lookAt: [4.635, FINISHED_FLOOR_TOP_Y + 1.35, -2.72], position: [4.635, PLAYER_EYE_HEIGHT_M, -1.28] },
     }),
     bedroomClosed: await keyProbe(browser, options.baseUrl, manualDir, 'door-bedroom-closed-keyw', ['KeyW'], 2400, [500, 1000, 1800, 2400], {
       doorStates: { ...DEFAULT_DOOR_STATES, 'D-BEDROOM': 'closed' },
-      startView: { lookAt: [8.6, 1.35, 1.13], position: [6.28, 1.65, 1.13] },
+      startView: { lookAt: [8.6, FINISHED_FLOOR_TOP_Y + 1.35, 1.13], position: [6.28, PLAYER_EYE_HEIGHT_M, 1.13] },
     }),
     bedroomOpen: await keyProbe(browser, options.baseUrl, manualDir, 'door-bedroom-open-keyw', ['KeyW'], 3600, [500, 1000, 1800, 2600, 3600], {
       doorStates: { ...DEFAULT_DOOR_STATES, 'D-BEDROOM': 'open' },
-      startView: { lookAt: [8.6, 1.35, 1.13], position: [6.28, 1.65, 1.13] },
+      startView: { lookAt: [8.6, FINISHED_FLOOR_TOP_Y + 1.35, 1.13], position: [6.28, PLAYER_EYE_HEIGHT_M, 1.13] },
     }),
     bathroomClosed: await keyProbe(browser, options.baseUrl, manualDir, 'door-bathroom-closed-keyw', ['KeyW'], 2200, [500, 1000, 1600, 2200], {
       doorStates: { ...DEFAULT_DOOR_STATES, 'D-BATHROOM': 'closed' },
-      startView: { lookAt: [6.56, 1.35, -1.45], position: [6.56, 1.65, 0.82] },
+      startView: { lookAt: [6.56, FINISHED_FLOOR_TOP_Y + 1.35, -1.45], position: [6.56, PLAYER_EYE_HEIGHT_M, 0.82] },
     }),
     bathroomOpen: await keyProbe(browser, options.baseUrl, manualDir, 'door-bathroom-open-keyw', ['KeyW'], 3200, [500, 1000, 1800, 2600, 3200], {
       doorStates: { ...DEFAULT_DOOR_STATES, 'D-BATHROOM': 'open' },
-      startView: { lookAt: [6.56, 1.35, -1.45], position: [6.56, 1.65, 0.82] },
+      startView: { lookAt: [6.56, FINISHED_FLOOR_TOP_Y + 1.35, -1.45], position: [6.56, PLAYER_EYE_HEIGHT_M, 0.82] },
     }),
   };
 
@@ -587,7 +606,7 @@ async function runPhase(options) {
     line: { axis: 'x', value: 7.2 },
   });
   const bathroomDoorOpen = passableDoorCrossing(doorProbes.bathroomOpen.samples, {
-    gap: { xMin: 6.0, xMax: 7.12, zMin: -0.08, zMax: 0.72 },
+    gap: { xMin: BATHROOM_DOOR_X_MIN, xMax: BATHROOM_DOOR_X_MAX, zMin: BATHROOM_DOOR_Z_MIN, zMax: BATHROOM_DOOR_Z_MAX },
     line: { axis: 'z', value: 0 },
   });
   const entryDoorClosed = passableDoorCrossing(doorProbes.entryClosed.samples, {
@@ -599,7 +618,7 @@ async function runPhase(options) {
     line: { axis: 'x', value: 7.2 },
   });
   const bathroomDoorClosed = passableDoorCrossing(doorProbes.bathroomClosed.samples, {
-    gap: { xMin: 6.0, xMax: 7.12, zMin: -0.08, zMax: 0.72 },
+    gap: { xMin: BATHROOM_DOOR_X_MIN, xMax: BATHROOM_DOOR_X_MAX, zMin: BATHROOM_DOOR_Z_MIN, zMax: BATHROOM_DOOR_Z_MAX },
     line: { axis: 'z', value: 0 },
   });
   const closedDoorBlocks = {
@@ -615,8 +634,8 @@ async function runPhase(options) {
   const walkSpeedPass = movementSpeedProbes.find((probe) => probe.durationMs === 1000)?.pass === true;
   const wallCollisionPass = wallCollisionTests.every((probe) => probe.collisionWorked);
   const doorTraversalPass = Object.values(closedDoorBlocks).every(Boolean) && Object.values(openDoorPasses).every(Boolean);
-  const initialPlayerY = initialState.evidence?.playerPosition?.[1] ?? null;
-  const expectedWorldEyeY = GALA_PREVIEW_POSITION.y + (1.65 * GALA_PREVIEW_SCALE);
+  const initialPlayerY = initialState.sampledPlayerPosition?.[1] ?? null;
+  const expectedWorldEyeY = GALA_PREVIEW_POSITION.y + (PLAYER_EYE_HEIGHT_M * GALA_PREVIEW_SCALE);
   const eyeHeightVisualPass = initialPlayerY !== null && Math.abs(initialPlayerY - expectedWorldEyeY) <= 0.04;
   const realUserMode = initialState.evidence?.mode === 'walk' && !initialState.href.includes('qa3d=1');
   const qa3d = initialState.href.includes('qa3d=1') || initialState.qaHookPresent;

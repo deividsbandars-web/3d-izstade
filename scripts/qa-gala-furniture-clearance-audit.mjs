@@ -16,8 +16,10 @@ const ROOM_FILE = 'src/modules/expo/runtime/modularHome/construction/GalaRoomAss
 const REQUIRED_FURNITURE_LAYOUT_KEYS = [
   'bedroomBedsideCabinet',
   'bedroomWardrobe',
-  'kitchenUpperCabinet',
-  'kitchenUpperCabinetHandle',
+];
+const REQUIRED_GLTF_CLEARANCE_PROXY_PATTERNS = [
+  /living-sofa.*clearance-proxy/,
+  /living-coffee-table.*clearance-proxy/,
 ];
 const REQUIRED_FIXTURE_LAYOUT_KEYS = [
   'bathroomMirror',
@@ -219,6 +221,10 @@ async function frameShot(page, shotName, screenshotPath) {
 function collectClearanceAudit(inventory) {
   const wallCores = inventory.filter(isWallCore);
   const subjects = inventory.filter(isClearanceSubject);
+  const gltfProxySubjects = subjects.filter((item) => item.userData?.furnitureGltfClearanceProxy === true);
+  const missingGltfProxySubjects = REQUIRED_GLTF_CLEARANCE_PROXY_PATTERNS
+    .filter((pattern) => !gltfProxySubjects.some((item) => pattern.test(item.name || '')))
+    .map((pattern) => String(pattern));
   const exteriorWallEnvelope = collectExteriorWallEnvelope(wallCores);
   const intersections = [];
   const clearanceViolations = [];
@@ -261,7 +267,9 @@ function collectClearanceAudit(inventory) {
   return {
     clearanceViolations,
     exteriorWallEnvelope: boundsToPlain(exteriorWallEnvelope),
+    gltfProxySubjectNames: gltfProxySubjects.map((item) => item.name),
     intersections,
+    missingGltfProxySubjects,
     subjectCount: subjects.length,
     throughWallVisibility,
     wallCoreCount: wallCores.length,
@@ -293,7 +301,8 @@ async function main() {
   const pass = !wallIntersectionsDetected
     && !throughWallVisibilityDetected
     && sourceAudit.furniturePlacementSingleOwner
-    && sourceAudit.fixturePlacementSingleOwner;
+    && sourceAudit.fixturePlacementSingleOwner
+    && clearanceAudit.missingGltfProxySubjects.length === 0;
   const result = {
     generatedAt: new Date().toISOString(),
     furnitureClearanceAuditRan: true,
@@ -308,6 +317,8 @@ async function main() {
     diagnostics: {
       clearanceViolations: clearanceAudit.clearanceViolations,
       exteriorWallEnvelope: clearanceAudit.exteriorWallEnvelope,
+      gltfProxySubjectNames: clearanceAudit.gltfProxySubjectNames,
+      missingGltfProxySubjects: clearanceAudit.missingGltfProxySubjects,
       route: ROUTE,
       screenshots: {
         bathroomFixture: 'bathroom-fixture-clearance-after.png',

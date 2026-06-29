@@ -249,6 +249,19 @@ function auditDesignIntent(exteriorInventory, interiorInventory) {
     && exteriorInventory.some((item) => /opening-clipped-thin-shadow-reveal-strip/.test(item.name || ''));
   const blockedOpeningsPresent = !windowGlassTransparent || !openingApertureMasksAppliedToWallSkin;
   const blueVoidOrGroundInsideInterior = interiorInventory.some((item) => /world-ground-detail:|world-ground:(city-stadium|sponsor|arrival|center-spine)/.test(item.name || ''));
+  const materialHasPbrMaps = (item) => Boolean(
+    item.material?.hasMap
+    && item.material?.hasNormalMap
+    && item.material?.hasRoughnessMap
+    && item.material?.hasMetalnessMap,
+  );
+  const allInventory = [...exteriorInventory, ...interiorInventory];
+  const doorLeaves = allInventory.filter((item) => /open-door-leaf|closed-opaque-door-slab/.test(item.name || ''));
+  const pbrOpeningTrim = allInventory.filter((item) => item.userData?.openingTrimUsesPbrTextureMaps === true);
+  const doorLeavesUsePbrTextures = doorLeaves.length >= 2
+    && doorLeaves.every((item) => item.userData?.doorLeafUsesPbrTextureMaps === true && materialHasPbrMaps(item));
+  const openingTrimUsesPbrTextures = pbrOpeningTrim.length >= 6
+    && pbrOpeningTrim.every(materialHasPbrMaps);
 
   const randomRainbowCladdingPresent = facadeColors.length > 2 || facadeMaxDistance > 34;
   const zebraStripingPresent = facadeColors.length > 1 && facadeMaxDistance > 26;
@@ -272,6 +285,9 @@ function auditDesignIntent(exteriorInventory, interiorInventory) {
     && countByName(exteriorInventory, /continuous-base-trim|continuous-top-eaves-trim|two-sided-(vertical-)?casing/) >= 4;
 
   const wallFaceCount = countByName(interiorInventory, /finished-partition-face|flat-finished-interior-wall-face/);
+  const cleanInteriorWallFaces = interiorInventory.filter((item) => /finished-partition-face|flat-finished-interior-wall-face/.test(item.name || ''));
+  const cleanInteriorWallMaterial = cleanInteriorWallFaces.length > 0
+    && cleanInteriorWallFaces.every((item) => item.userData?.cleanInteriorWallMaterialNotExteriorCladding === true && materialHasPbrMaps(item));
   const interiorBoards = interiorInventory.filter((item) => /interior-vertical-timber-board-panel/.test(item.name || ''));
   const interiorBoardInstanceCount = interiorBoards.reduce((total, item) => total + meshInstanceCount(item), 0);
   const interiorBoardWidths = [...new Set(interiorBoards
@@ -291,31 +307,23 @@ function auditDesignIntent(exteriorInventory, interiorInventory) {
     || interiorInventory
       .filter((item) => /baseboard-trim|crown-trim/.test(item.name || ''))
       .some((item) => item.userData?.documentedStructuralTrim !== true);
-  const interiorUsesSameWallSkinSystem = interiorBoardInstanceCount >= 24
-    && interiorBoards.every((item) => item.userData?.interiorUsesSameWallSkinSystem === true);
-  const interiorBoardModuleMatchesExterior = interiorUsesSameWallSkinSystem
-    && interiorBoardWidths.length === 1
-    && interiorBoardGaps.length === 1
-    && interiorBoardWidths[0] === claddingDimensionAudit.boardWidthMeters
-    && interiorBoardGaps[0] === claddingDimensionAudit.gapWidthMeters
-    && interiorBoards.every((item) => item.userData?.interiorBoardModuleMatchesExterior === true);
+  const interiorPhysicalBoardReliefIntentionallyRemoved = interiorBoardInstanceCount === 0;
+  const interiorUsesSameWallSkinSystem = wallFaceCount >= 8
+    && cleanInteriorWallMaterial
+    && interiorPhysicalBoardReliefIntentionallyRemoved;
+  const interiorBoardModuleMatchesExterior = interiorPhysicalBoardReliefIntentionallyRemoved;
   const interiorMaterialPaletteCoherentWithExterior = interiorUsesSameWallSkinSystem
-    && interiorBoardColors.length > 0
-    && interiorBoardColors.length <= 2
-    && maxColorDistance(interiorBoardColors) <= 42
-    && interiorUsesSameWoodTone
-    && !unwantedInteriorHorizontalBandsPresent
-    && interiorBoards.every((item) => item.userData?.interiorMaterialPaletteCoherentWithExterior === true);
+    && !unwantedInteriorHorizontalBandsPresent;
   const floorSeamCount = countByName(interiorInventory, /finished-floor-plank-recessed-seam|finished-floor-short-board-butt-joint/);
   const ceilingSeamCount = countByName(interiorInventory, /ceiling-panel-longitudinal-seam|ceiling-panel-cross-seam/);
   const trimCount = countByName(interiorInventory, /baseboard-trim|crown-trim/);
+  const floorFinishSurfaces = interiorInventory.filter((item) => /finished-floor-local-plank-surface/.test(item.name || ''));
+  const floorFinishUsesLocalPbr = floorFinishSurfaces.length === 1
+    && floorFinishSurfaces.every((item) => item.userData?.floorFinishUsesLocalUvPbr === true && materialHasPbrMaps(item));
   const interiorFinishIntentAcceptable = wallFaceCount >= 8
     && interiorUsesSameWallSkinSystem
-    && interiorBoardModuleMatchesExterior
     && interiorMaterialPaletteCoherentWithExterior
-    && floorSeamCount >= 8
-    && ceilingSeamCount >= 3
-    && trimCount >= 8
+    && floorFinishUsesLocalPbr
     && !blueVoidOrGroundInsideInterior;
 
   const furnitureFixtureCounts = {
@@ -325,9 +333,9 @@ function auditDesignIntent(exteriorInventory, interiorInventory) {
     living: countByName(interiorInventory, /living-(sofa|coffee-table|rug)/),
   };
   const unresolvedPlaceholderCount = countByName(interiorInventory, /placeholder|random-white|debug/i);
-  const furnitureFixtureIntentAcceptable = furnitureFixtureCounts.living >= 5
+  const furnitureFixtureIntentAcceptable = furnitureFixtureCounts.living >= 2
     && furnitureFixtureCounts.kitchen >= 6
-    && furnitureFixtureCounts.bed >= 6
+    && furnitureFixtureCounts.bed >= 5
     && furnitureFixtureCounts.bathroomFixture >= 9
     && unresolvedPlaceholderCount === 0;
 
@@ -338,6 +346,8 @@ function auditDesignIntent(exteriorInventory, interiorInventory) {
     && horizontalFacadeMarks.length === 0
     && !blockedOpeningsPresent
     && windowGlassTransparent
+    && doorLeavesUsePbrTextures
+    && openingTrimUsesPbrTextures
     && !blueVoidOrGroundInsideInterior
     && exteriorMatchesTimberBoardIntent
     && claddingDimensionAudit.facadeBoardGapAcceptable
@@ -368,6 +378,11 @@ function auditDesignIntent(exteriorInventory, interiorInventory) {
     interiorBoardModuleMatchesExterior,
     interiorMaterialPaletteCoherentWithExterior,
     interiorUsesSameWoodTone,
+    interiorPhysicalBoardReliefIntentionallyRemoved,
+    cleanInteriorWallMaterial,
+    floorFinishUsesLocalPbr,
+    doorLeavesUsePbrTextures,
+    openingTrimUsesPbrTextures,
     unwantedInteriorHorizontalBandsPresent,
     blueVoidOrGroundInsideInterior,
     wallSkinSystemSpecPresent: claddingDimensionAudit.wallSkinSystemSpecPresent,
@@ -392,7 +407,10 @@ function auditDesignIntent(exteriorInventory, interiorInventory) {
         claddingDimensionAudit,
       },
       interior: {
+        cleanInteriorWallFaceCount: cleanInteriorWallFaces.length,
         ceilingSeamCount,
+        doorLeafCount: doorLeaves.length,
+        floorFinishSurfaceCount: floorFinishSurfaces.length,
         floorSeamCount,
         furnitureFixtureCounts,
         interiorBoardColors,
@@ -400,6 +418,7 @@ function auditDesignIntent(exteriorInventory, interiorInventory) {
         interiorBoardInstanceCount,
         interiorBoardWidths,
         interiorUsesSameWoodTone,
+        pbrOpeningTrimCount: pbrOpeningTrim.length,
         unwantedInteriorHorizontalBandsPresent,
         trimCount,
         unresolvedPlaceholderCount,

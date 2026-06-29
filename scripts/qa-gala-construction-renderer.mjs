@@ -285,6 +285,18 @@ function buildResult(inventory, captures, domOverlayAudits = [], floorGroundIsol
   const wallCount = audits.walls.length;
   const facadeBoardCount = countByName(inventory, /individual-vertical-timber-board-panel/);
   const ceilingTrimCount = countByName(inventory, /continuous-crown-trim|continuous-flat-ceiling/);
+  const doorLeaves = inventory.filter((item) => /open-door-leaf|closed-opaque-door-slab/.test(item.name || ''));
+  const pbrOpeningTrim = inventory.filter((item) => item.userData?.openingTrimUsesPbrTextureMaps === true);
+  const materialHasPbrMaps = (item) => Boolean(
+    item.material?.hasMap
+    && item.material?.hasNormalMap
+    && item.material?.hasRoughnessMap
+    && item.material?.hasMetalnessMap,
+  );
+  const doorLeavesUsePbrTextures = doorLeaves.length >= 2
+    && doorLeaves.every((item) => item.userData?.doorLeafUsesPbrTextureMaps === true && materialHasPbrMaps(item));
+  const openingTrimUsesPbrTextures = pbrOpeningTrim.length >= 6
+    && pbrOpeningTrim.every(materialHasPbrMaps);
   const blockingHomeDemoLabelPresent = domOverlayAudits.some((audit) => audit.blockingHomeDemoLabelPresent);
   const blockingDomOverlayPresent = domOverlayAudits.some((audit) => audit.blockingDomOverlayPresent);
 
@@ -311,7 +323,9 @@ function buildResult(inventory, captures, domOverlayAudits = [], floorGroundIsol
       item.userData?.openingId === 'D-BATHROOM'
       && item.userData?.noVisibleSlitBetweenJambAndWall === true
     )),
+    doorLeavesUsePbrTextures,
     doorHeadersNoVisibleGap: hasRuntimeFlag(inventory, 'doorHeadersNoVisibleGap'),
+    openingTrimUsesPbrTextures,
     ceilingTrimContinuous: hasRuntimeFlag(inventory, 'ceilingTrimContinuous'),
     floorColorStableNearAndFar: floorGroundIsolationQaPass && hasRuntimeFlag(inventory, 'floorColorStableNearAndFar'),
     noBlueFloorOverlay: floorGroundIsolationQaPass && hasRuntimeFlag(inventory, 'noBlueFloorOverlay') && audits.floorCeilingStack.transparentFloorLikeObjects.length === 0,
