@@ -1453,3 +1453,50 @@ Close active Codex/VS Code Codex processes, remove the regenerated live `.codex`
   - No camera/FOV/lookAt, movement physics, collision geometry, door runtime, GALA construction geometry, backend route behavior, quote endpoint contract, auth policy, payment, Unreal, Pixel Streaming runtime, staging deploy, production deploy, or promotion changes were made.
 - Next step:
   - Continue to Phase 4 Pack 4.1 for productionizing the GALA quote endpoint only if backend hardening is the next authorized roadmap area.
+
+## 2026-06-29 Release Roadmap Phase 4 Pack 4.1 GALA Quote Endpoint Hardening
+
+- Active objective: make `POST /api/modular-home/quote` production-capable behind explicit env config without changing quote route auth policy, payment, deploy, or staging/production promotion.
+- Implementation status:
+  - Kept `MODULAR_HOME_QUOTE_SUBMISSION_ENABLED` and `homeQuoteBackend=1` as explicit gates.
+  - Added `MODULAR_HOME_QUOTE_PRODUCTION_HOSTS` production host allowlist; production hosts are accepted only when configured.
+  - Added `productionReady` calculation based on submission flag + production allowlist + `REDIS_URL`, and also Turnstile secret when `MODULAR_HOME_QUOTE_TURNSTILE_REQUIRED=true`.
+  - Added `backend-server/services/redisRateLimit.ts` and moved the quote route plus global API rate limiter to Redis-backed rate limiting, with in-memory fallback only for non-production/dev/test paths.
+  - Added fail-closed quote behavior when a production request needs Redis and the limiter is unavailable.
+  - Added honeypot rejection and optional Turnstile verification through `MODULAR_HOME_QUOTE_TURNSTILE_SECRET_KEY` / `MODULAR_HOME_QUOTE_TURNSTILE_REQUIRED`.
+  - Added duplicate-submission guard using normalized email + product/config hash, stored as `attribution.duplicateGuardKey` without changing the table schema.
+  - Kept email and phone required while allowing optional quote form fields to default server-side, matching the 2-field lead form UX.
+  - Added an empty `antiSpam` payload object from the frontend quote backend builder.
+  - Extended controller tests for production allowlist, Redis/injected limiter behavior, honeypot, Turnstile, duplicate guard, optional lead fields, and endpoint success with injected storage.
+- Validation:
+  - `npx.cmd tsc --noEmit -p tsconfig.json` in `backend-server` passed.
+  - `npx.cmd tsx __tests__/modularHomeQuoteController.test.ts` in `backend-server` passed; expected safe-log warnings were printed for negative-path tests.
+  - `npm.cmd run lint` in `backend-server` passed.
+  - `npm.cmd run lint` at repo root passed.
+  - `npm.cmd run build` at repo root passed; PWA precache reported `91` entries and `4648.97 KiB`.
+  - `npm.cmd run build` in `backend-server` initially failed in the sandbox with `EPERM` writing `backend-server/dist`; rerun with escalated filesystem permission passed.
+  - `npm.cmd run check:bundle-budget` passed:
+    - `react-three-vendor`: 469.45 kB / 516.39 kB.
+    - `three-core`: 187.82 kB / 206.60 kB.
+    - `Expo3D`: 158.13 kB / 178.72 kB.
+    - `modular-home`: 129.72 kB / 140.80 kB.
+    - `react-vendor`: 73.72 kB / 81.09 kB.
+  - `npm.cmd run check:expo-boundaries` passed with `violations: 0`.
+  - `npm.cmd run check:modular-home-quote-staging` first failed inside sandbox with network `EACCES`; rerun with network escalation reached staging.
+  - Escalated `npm.cmd run check:modular-home-quote-staging -- --json` failed overall because staging admin quote routes returned `401`:
+    - Passed: staging health, flag-required check, valid quote submit, public list/export/status denied, public Supabase read denied, production default not accepted.
+    - Failed: non-admin list expected `403` but got `401`; admin list/detail/status/export all got `401`.
+    - Cleanup succeeded for quote id `82ee953a-2229-48cb-a782-aa23d0d7d32a`.
+- Touched files:
+  - `backend-server/controllers/modularHomeQuoteController.ts`
+  - `backend-server/schemas/quoteValidation.ts`
+  - `backend-server/middleware/rateLimit.ts`
+  - `backend-server/services/redisRateLimit.ts`
+  - `backend-server/__tests__/modularHomeQuoteController.test.ts`
+  - `src/modules/expo/runtime/modularHome/modularHomeQuoteBackend.ts`
+  - `docs/CURRENT_TASK.md`
+- Product/release status:
+  - `productVisualAccepted=false`.
+  - No camera/FOV/lookAt, movement physics, collision geometry, door runtime, GALA construction geometry, quote route auth policy, payment, Unreal, Pixel Streaming runtime, staging deploy, production deploy, or promotion changes were made.
+- Next step:
+  - Investigate staging admin auth/token behavior before treating `check:modular-home-quote-staging` as a green release gate, then continue to Phase 4 Pack 4.2 email/CRM handoff.

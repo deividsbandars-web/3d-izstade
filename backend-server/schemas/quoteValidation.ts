@@ -1,11 +1,15 @@
 export type ModularHomeQuoteRequestBody = {
+  antiSpam?: unknown;
   attribution?: unknown;
   config?: unknown;
   consent?: unknown;
   estimate?: unknown;
   project?: unknown;
   requester?: unknown;
+  spam?: unknown;
   source?: unknown;
+  turnstileToken?: unknown;
+  website?: unknown;
 };
 
 export type ValidModularHomeQuoteRequest = {
@@ -313,14 +317,14 @@ export function validateModularHomeQuoteRequest(body: ModularHomeQuoteRequestBod
       shareUrl: normalizeOptionalText(project.shareUrl, 1200),
     },
     requester: {
-      budgetRange: normalizeEnum(requester.budgetRange, ALLOWED_BUDGET_RANGES, null, 'MODULAR_HOME_QUOTE_BUDGET_INVALID'),
-      countryCity: normalizeRequiredText(requester.countryCity, 'MODULAR_HOME_QUOTE_LOCATION_REQUIRED', 180),
+      budgetRange: normalizeEnum(requester.budgetRange, ALLOWED_BUDGET_RANGES, 'not-sure', 'MODULAR_HOME_QUOTE_BUDGET_INVALID'),
+      countryCity: normalizeOptionalText(requester.countryCity, 180) ?? 'Location not provided',
       email: normalizeEmail(requester.email),
       landOwned: normalizeEnum(requester.landOwned, ALLOWED_LAND_OWNED, 'unknown', 'MODULAR_HOME_QUOTE_LAND_INVALID'),
-      message: normalizeRequiredText(requester.message, 'MODULAR_HOME_QUOTE_MESSAGE_REQUIRED', MAX_MESSAGE_LENGTH),
-      name: normalizeRequiredText(requester.name, 'MODULAR_HOME_QUOTE_NAME_REQUIRED', 180),
+      message: normalizeOptionalText(requester.message, MAX_MESSAGE_LENGTH) ?? 'No message provided.',
+      name: normalizeOptionalText(requester.name, 180) ?? 'Name not provided',
       phone: normalizeRequiredText(requester.phone, 'MODULAR_HOME_QUOTE_PHONE_REQUIRED', 80),
-      targetBuildDate: normalizeEnum(requester.targetBuildDate, ALLOWED_TARGET_BUILD_DATES, null, 'MODULAR_HOME_QUOTE_TARGET_DATE_INVALID'),
+      targetBuildDate: normalizeEnum(requester.targetBuildDate, ALLOWED_TARGET_BUILD_DATES, 'research-phase', 'MODULAR_HOME_QUOTE_TARGET_DATE_INVALID'),
     },
     source: {
       path: normalizeOptionalText(source.path, 600),

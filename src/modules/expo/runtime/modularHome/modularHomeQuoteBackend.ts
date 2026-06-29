@@ -16,6 +16,10 @@ export type ModularHomeQuoteBackendFormFields = {
 };
 
 export type ModularHomeQuoteBackendPayload = {
+  antiSpam: {
+    turnstileToken: string | null;
+    website: '';
+  };
   attribution: {
     companySlug: 'warpala';
     salesOwner: 'modular-home-sales';
@@ -167,6 +171,10 @@ export function buildModularHomeQuoteBackendPayload(
   const dimensions = getModularHomeDimensionSummary(config);
 
   return {
+    antiSpam: {
+      turnstileToken: null,
+      website: '',
+    },
     attribution: {
       companySlug: 'warpala',
       salesOwner: 'modular-home-sales',
