@@ -1418,3 +1418,38 @@ Close active Codex/VS Code Codex processes, remove the regenerated live `.codex`
   - No camera/FOV/lookAt, movement physics, collision geometry, door runtime, GALA construction geometry, backend route behavior, quote endpoint contract, auth policy, payment, Unreal, Pixel Streaming runtime, staging deploy, production deploy, or promotion changes were made.
 - Next step:
   - Continue to Phase 3 Pack 3.5 for asset optimization, PBR dedupe, GLB lazy-load, and precache sanity.
+
+## 2026-06-29 Release Roadmap Phase 3 Pack 3.5 Asset Optimization And Precache Sanity
+
+- Active objective: audit GALA/public studio assets, avoid per-mesh PBR texture cloning, keep GLTF furniture lazy-loaded, and prevent silent Workbox/precache release payload issues.
+- Implementation status:
+  - Audited `public/models/gala`: before cleanup there were 24 ignored `.gltf.zip` source archives totaling `105,220,438` bytes under `public/models/gala`; these were copied into `dist` by Vite despite being ignored by Git.
+  - Moved those ignored source ZIP archives out of `public` to `artifacts/gala-source-zips-2026-06-29/` so local production builds no longer ship them.
+  - Confirmed no duplicate GALA JPG/PNG/WebP/KTX2/BIN payloads by SHA-256 hash after the ZIP cleanup.
+  - Updated `GalaInteriorFurniture.tsx` so furniture PBR textures are cached by source texture + color space + repeat settings instead of cloning on every mesh render.
+  - Removed eager `useGLTF.preload(...)` calls for the GALA sofa, coffee table, and cabinet. The route remains covered by the existing `Suspense fallback={null}` in `ExpoWorldSceneLayers.tsx`, and the GLTF URLs remain runtime-fetched only from the modular-home chunk.
+  - Extended `scripts/check-expo-release-assets.mjs` to fail when `.zip` source archives live under `public/models/gala`, or when any GALA public asset exceeds the `5,000,000` byte Workbox precache cap.
+  - Verified the rebuilt `dist/models/gala` contains zero ZIP files and no GALA public asset over `5,000,000` bytes.
+- Validation:
+  - `node --check scripts/check-expo-release-assets.mjs` passed with no output.
+  - `npm.cmd run check:expo-texture-pipeline` passed for `20` textures; savings ratio `0.9608`.
+  - `npm.cmd run lint` passed with no warnings.
+  - `npm.cmd run build` passed; PWA precache reported `91` entries and `4648.92 KiB`.
+  - `npm.cmd run check:expo-release-assets` passed; existing non-failing advisory remains for `public/models/default_booth.glb` being zero bytes.
+  - `npm.cmd run check:bundle-budget` passed:
+    - `react-three-vendor`: 469.45 kB / 516.39 kB.
+    - `three-core`: 187.82 kB / 206.60 kB.
+    - `Expo3D`: 158.13 kB / 178.72 kB.
+    - `modular-home`: 129.70 kB / 140.80 kB.
+    - `react-vendor`: 73.72 kB / 81.09 kB.
+- Touched files:
+  - `src/modules/expo/runtime/modularHome/GalaInteriorFurniture.tsx`
+  - `scripts/check-expo-release-assets.mjs`
+  - `docs/CURRENT_TASK.md`
+- Local ignored artifact move:
+  - `public/models/gala/*.gltf.zip` -> `artifacts/gala-source-zips-2026-06-29/`
+- Product/release status:
+  - `productVisualAccepted=false`.
+  - No camera/FOV/lookAt, movement physics, collision geometry, door runtime, GALA construction geometry, backend route behavior, quote endpoint contract, auth policy, payment, Unreal, Pixel Streaming runtime, staging deploy, production deploy, or promotion changes were made.
+- Next step:
+  - Continue to Phase 4 Pack 4.1 for productionizing the GALA quote endpoint only if backend hardening is the next authorized roadmap area.

@@ -139,6 +139,37 @@ function configureFurnitureTexture(texture: THREE.Texture, colorSpace: THREE.Col
   return texture;
 }
 
+const configuredFurnitureTextureVariants = new WeakMap<THREE.Texture, Map<string, THREE.Texture>>();
+
+function resolveConfiguredFurnitureTexture(
+  source: THREE.Texture,
+  colorSpace: THREE.ColorSpace,
+  repeatX: number,
+  repeatY: number,
+) {
+  const resolvedRepeatX = Math.max(0.5, repeatX);
+  const resolvedRepeatY = Math.max(0.5, repeatY);
+  const configKey = `${colorSpace}:${resolvedRepeatX.toFixed(4)}:${resolvedRepeatY.toFixed(4)}`;
+  let variants = configuredFurnitureTextureVariants.get(source);
+
+  if (!variants) {
+    variants = new Map();
+    configuredFurnitureTextureVariants.set(source, variants);
+  }
+
+  const cachedTexture = variants.get(configKey);
+  if (cachedTexture) {
+    return cachedTexture;
+  }
+
+  const texture = variants.size === 0
+    ? source
+    : source.clone();
+  const configured = configureFurnitureTexture(texture, colorSpace, resolvedRepeatX, resolvedRepeatY);
+  variants.set(configKey, configured);
+  return configured;
+}
+
 function useFurniturePbrMaps(
   textureUrls: FurnitureTextureUrls,
   size: [number, number, number],
@@ -154,9 +185,9 @@ function useFurniturePbrMaps(
   const repeatY = (verticalTexture ? size[1] : Math.max(size[1], size[2])) / tileSizeM;
 
   return useMemo(() => {
-    const map = configureFurnitureTexture(diffuseSource.clone(), THREE.SRGBColorSpace, repeatX, repeatY);
-    const normalMap = configureFurnitureTexture(normalSource.clone(), THREE.NoColorSpace, repeatX, repeatY);
-    const armMap = configureFurnitureTexture(armSource.clone(), THREE.NoColorSpace, repeatX, repeatY);
+    const map = resolveConfiguredFurnitureTexture(diffuseSource, THREE.SRGBColorSpace, repeatX, repeatY);
+    const normalMap = resolveConfiguredFurnitureTexture(normalSource, THREE.NoColorSpace, repeatX, repeatY);
+    const armMap = resolveConfiguredFurnitureTexture(armSource, THREE.NoColorSpace, repeatX, repeatY);
 
     return {
       aoMap: armMap,
@@ -641,7 +672,3 @@ export function GalaBedroomFurniture({ visual }: { visual: GalaInteriorVisualSpe
     </group>
   );
 }
-
-useGLTF.preload(GALA_SOFA_MODEL_URL);
-useGLTF.preload(GALA_COFFEE_TABLE_MODEL_URL);
-useGLTF.preload(GALA_CABINET_MODEL_URL);
