@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "check:bundle-budget": "node scripts/check-bundle-budget.mjs",
     "check:backend-boundaries": "node scripts/check-backend-boundaries.mjs",
     "check:backend-shared-boundaries": "node scripts/check-backend-shared-boundaries.cjs",
     "check:gala-ownership": "node scripts/check-gala-renderer-ownership.mjs",

@@ -1269,3 +1269,36 @@ Close active Codex/VS Code Codex processes, remove the regenerated live `.codex`
   - No camera/FOV/lookAt, movement physics, collision geometry, door runtime, quote endpoint contract, auth policy, payment, sponsor boulevard scene behavior, Unreal, Pixel Streaming runtime, staging deploy, production deploy, or promotion changes were made.
 - Next step:
   - Continue to Phase 3 Pack 3.1 to define and enforce bundle-size budgets using the current release baseline.
+
+## 2026-06-29 Release Roadmap Phase 3 Pack 3.1 Bundle Budget Gate
+
+- Active objective: add an automated gzip chunk-size budget gate for the release frontend chunks using the Phase 0 baseline plus 10% headroom.
+- Implementation status:
+  - Added `scripts/check-bundle-budget.mjs`, which reads `dist/assets`, gzips the emitted files, and fails if a budgeted chunk is missing, duplicated, or over budget.
+  - Added `npm.cmd run check:bundle-budget` to `package.json`.
+  - Added explicit budgets for:
+    - `react-three-vendor`: 469.45 kB baseline, 516.39 kB budget.
+    - `three-core`: 187.82 kB baseline, 206.60 kB budget.
+    - `Expo3D`: 162.47 kB baseline, 178.72 kB budget.
+    - `modular-home`: 128.00 kB baseline, 140.80 kB budget.
+    - `react-vendor`: 73.72 kB baseline, 81.09 kB budget.
+  - Set Vite `build.chunkSizeWarningLimit` to `1450`, matching the largest Phase 0 uncompressed chunk plus headroom while the gzip script now owns the enforceable budget gate.
+- Validation:
+  - `npm.cmd run lint` passed with no warnings.
+  - `npm.cmd run build` passed; with the new warning limit, Vite did not emit the previous default 500 kB chunk warning.
+  - `npm.cmd run check:bundle-budget` passed:
+    - `react-three-vendor`: 469.45 kB / 516.39 kB.
+    - `three-core`: 187.82 kB / 206.60 kB.
+    - `Expo3D`: 157.99 kB / 178.72 kB.
+    - `modular-home`: 127.99 kB / 140.80 kB.
+    - `react-vendor`: 73.72 kB / 81.09 kB.
+- Touched files:
+  - `scripts/check-bundle-budget.mjs`
+  - `package.json`
+  - `vite.config.ts`
+  - `docs/CURRENT_TASK.md`
+- Product/release status:
+  - `productVisualAccepted=false`.
+  - No runtime visuals, camera/FOV/lookAt, movement physics, collision geometry, door runtime, backend route behavior, quote endpoint contract, auth policy, payment, Unreal, Pixel Streaming runtime, staging deploy, production deploy, or promotion changes were made.
+- Next step:
+  - Continue to Phase 3 Pack 3.2 for route-level error boundaries and WebGL fallback behavior.
