@@ -79,7 +79,7 @@ The gate uses Node 24, caches npm and `node_modules`, installs root and `backend
 2. Backend gates: `npx tsc --noEmit -p tsconfig.json` in `backend-server`, `npm run lint` in `backend-server`, and root `npm run check:backend-tests`.
 3. Staging quote contract: `npm run check:modular-home-quote-staging -- --json`.
 
-The workflow expects GitHub Actions secrets for the frontend build and staging quote contract: `VITE_PUBLIC_API_BASE_URL`, `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `SUPABASE_URL`, `SUPABASE_SERVICE_KEY`, and either `SUPABASE_ANON_KEY` or `VITE_SUPABASE_ANON_KEY`. Optional smoke overrides are `MODULAR_HOME_QUOTE_SMOKE_BACKEND_URL`, `MODULAR_HOME_QUOTE_SMOKE_PRODUCTION_URL`, `MODULAR_HOME_QUOTE_SMOKE_ADMIN_EMAIL`, and `MODULAR_HOME_QUOTE_SMOKE_USER_EMAIL`.
+The workflow expects GitHub Actions secrets for the frontend build and staging quote contract: `VITE_PUBLIC_API_BASE_URL`, `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `SUPABASE_URL`, `SUPABASE_SERVICE_KEY`, and either `SUPABASE_ANON_KEY` or `VITE_SUPABASE_ANON_KEY`. The quote staging contract must use staging Supabase secrets for project ref `aasovfczmqytdtugcrmh`; `scripts/check-modular-home-quote-staging.mjs` fails before mutation if `SUPABASE_URL` points at a different project. Optional smoke overrides are `MODULAR_HOME_QUOTE_SMOKE_BACKEND_URL`, `MODULAR_HOME_QUOTE_SMOKE_PRODUCTION_URL`, `MODULAR_HOME_QUOTE_SMOKE_ADMIN_EMAIL`, and `MODULAR_HOME_QUOTE_SMOKE_USER_EMAIL`.
 
 ## Production Env Matrix
 

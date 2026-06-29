@@ -1747,3 +1747,44 @@ Close active Codex/VS Code Codex processes, remove the regenerated live `.codex`
   - Local backend route contract coverage is green. Release remains blocked on staging modular-home quote admin auth returning `401`.
 - Next step:
   - Resolve staging modular-home quote admin authentication before Phase 6 staging verification; Phase 6 deploy/promotion work still requires explicit authorization.
+
+## 2026-06-29 Staging Quote Gate Env Mismatch Investigation
+
+- Active objective: determine why `npm.cmd run check:modular-home-quote-staging -- --json` was red after Phase 5 even though staging quote submit itself worked.
+- Investigation status:
+  - Confirmed the failing run minted a Supabase JWT from local repo env project ref `gbmxrposlrhctyaaznmj`.
+  - Confirmed the token was locally valid and carried `app_metadata.role=admin`.
+  - Confirmed staging backend rejected that token with `401 Invalid or expired token`.
+  - Compared repo staging docs and helpers: current staging Supabase project ref is `aasovfczmqytdtugcrmh`; `gbmxrposlrhctyaaznmj` is explicitly treated as the blocked production/old ref in staging helpers.
+  - Confirmed Doppler staging env resolves both `SUPABASE_URL` and `VITE_SUPABASE_URL` to `aasovfczmqytdtugcrmh`.
+  - Reran the staging quote contract through Doppler staging env and it passed end-to-end.
+- Implementation status:
+  - Added a staging Supabase project-ref guard to `scripts/check-modular-home-quote-staging.mjs`.
+  - The script now defaults `MODULAR_HOME_QUOTE_SMOKE_EXPECTED_SUPABASE_REF` to `aasovfczmqytdtugcrmh` and fails before network mutation if `SUPABASE_URL` points elsewhere.
+  - Added explicit `MODULAR_HOME_QUOTE_SMOKE_EXPECTED_SUPABASE_REF=aasovfczmqytdtugcrmh` to `.github/workflows/release-gate.yml`.
+  - Updated `docs/CURRENT_INFRASTRUCTURE_INVENTORY.md` to state that the quote staging contract requires staging Supabase secrets, not production/local env.
+- Validation:
+  - `node --check scripts/check-modular-home-quote-staging.mjs` passed.
+  - Expected negative local-env run passed: `npm.cmd run check:modular-home-quote-staging -- --json` now exits before mutation with `Staging quote smoke Supabase project mismatch: expected aasovfczmqytdtugcrmh, got gbmxrposlrhctyaaznmj`.
+  - `powershell.exe -ExecutionPolicy Bypass -File scripts/run-with-doppler.ps1 run -- node scripts/check-modular-home-quote-staging.mjs --json` passed end-to-end:
+    - staging backend health `200`
+    - flag-required check `403`
+    - valid quote submission `201`
+    - public admin routes `401`
+    - non-admin list `403`
+    - admin list/detail/status/export `200`
+    - public Supabase direct read denied with `42501`
+    - temporary quote row cleanup `deleted=true`
+  - `npm.cmd run lint` passed.
+  - `npm.cmd run check:all` passed.
+- Touched files:
+  - `scripts/check-modular-home-quote-staging.mjs`
+  - `.github/workflows/release-gate.yml`
+  - `docs/CURRENT_INFRASTRUCTURE_INVENTORY.md`
+  - `docs/CURRENT_TASK.md`
+- Product/release status:
+  - `productVisualAccepted=false`.
+  - No camera/FOV/lookAt, movement physics, collision geometry, door runtime, GALA construction geometry, quote route auth policy, payment, Unreal runtime, staging deploy, production deploy, or promotion changes were made.
+  - The staging quote gate is green when run with the correct staging env. Bare local runs against the current repo `.env*` are intentionally blocked because they point at the wrong Supabase project.
+- Next step:
+  - Commit the guardrail change, then proceed only to Phase 6 staging verification if explicitly requested with staging deploy authorization.
