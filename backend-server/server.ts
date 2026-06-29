@@ -8,11 +8,14 @@ import * as expoController from './controllers/expoController.js';
 import { getBackendRuntimeEnv } from './config/runtimeEnv.js';
 import { requestContext } from './middleware/requestContext.js';
 import { ue5AuthMiddleware } from './middleware/ue5Auth.js';
-import { router as apiRoutes } from './routes/api.js';
+import { createApiRouter } from './routes/api.js';
 import { landingRouter } from './routes/landing.js';
 
 const app = express();
 const backendRuntimeEnv = getBackendRuntimeEnv();
+const apiRoutes = createApiRouter({
+  pixelStreamingRoutesEnabled: backendRuntimeEnv.pixelStreamingRoutesEnabled,
+});
 const port = backendRuntimeEnv.port;
 
 app.use(helmet());

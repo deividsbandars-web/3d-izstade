@@ -1573,3 +1573,41 @@ Close active Codex/VS Code Codex processes, remove the regenerated live `.codex`
   - Pixel Streaming remains opt-in/operator-only for the backend route surface.
 - Next step:
   - Continue to Phase 4 Pack 4.4 for Supabase RLS and migration-order verification gates.
+
+## 2026-06-29 Release Roadmap Phase 4 Pack 4.4 Supabase RLS And Migration Gate
+
+- Active objective: add an automated static gate for release-scope Supabase RLS, public-scene grants, and migration filename ordering, and document the public-vs-protected table matrix.
+- Implementation status:
+  - Added `scripts/check-supabase-rls.mjs`.
+  - The new gate verifies `public.modular_home_quote_requests` has RLS enabled, keeps a `FOR ALL` default-deny policy, and has no direct `anon`/`authenticated`/`public` read or DML grants.
+  - The gate verifies the intended public scene tables `public.sectors`, `public.companies`, and `public.booths` grant only public SELECT to `anon`/`authenticated`, with no public mutation grants.
+  - The gate verifies the canonical timestamped migration chain is strictly chronological with no duplicate timestamps.
+  - Existing legacy manual SQL helpers are explicitly allowlisted and reported: `create_expo_tables_and_seed.sql`, `run_me.sql`, and date-only legacy migration `20260318_production_setup.sql`.
+  - Added `check:supabase-rls` to `package.json` and appended it to `check:all`.
+  - Documented the release-scope Supabase public/protected table matrix in `docs/CURRENT_INFRASTRUCTURE_INVENTORY.md`.
+  - Fixed the previous Pack 4.3 route boundary issue by changing `backend-server/routes/api.ts` to export `createApiRouter({ pixelStreamingRoutesEnabled })`; `server.ts` now passes the runtime flag into the router without route-layer config imports.
+- Validation:
+  - `node --check scripts/check-supabase-rls.mjs` passed.
+  - `npm.cmd run check:supabase-rls` passed.
+  - `npm.cmd run check:backend-boundaries` passed after the router factory boundary fix.
+  - `npx.cmd tsc --noEmit -p tsconfig.json` in `backend-server` passed.
+  - `npm.cmd run lint` in `backend-server` passed.
+  - Final `npm.cmd run check:all` passed:
+    - `check:expo-boundaries` passed with `violations: 0`.
+    - `check:gala-ownership` passed with `violations: 0`.
+    - `check:backend-boundaries` passed with `violations: 0`.
+    - `check:backend-shared-boundaries` passed with `violations: 0`.
+    - `check:supabase-rls` passed; checked `41` timestamped migrations.
+- Touched files:
+  - `scripts/check-supabase-rls.mjs`
+  - `package.json`
+  - `docs/CURRENT_INFRASTRUCTURE_INVENTORY.md`
+  - `backend-server/routes/api.ts`
+  - `backend-server/server.ts`
+  - `docs/CURRENT_TASK.md`
+- Product/release status:
+  - `productVisualAccepted=false`.
+  - No camera/FOV/lookAt, movement physics, collision geometry, door runtime, GALA construction geometry, quote route auth policy, payment, Unreal runtime, staging deploy, production deploy, or promotion changes were made.
+  - No Supabase migrations were altered; this pack adds static enforcement and documentation.
+- Next step:
+  - Continue to Phase 4 Pack 4.5 for production env matrix and `.env.example` coverage.

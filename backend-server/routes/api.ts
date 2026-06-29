@@ -20,11 +20,16 @@ import * as growthController from '../controllers/growthController.js';
 import * as calculatorLeadController from '../controllers/calculatorLeadController.js';
 import * as modularHomeQuoteAdminController from '../controllers/modularHomeQuoteAdminController.js';
 import * as modularHomeQuoteController from '../controllers/modularHomeQuoteController.js';
-import { getBackendRuntimeEnv } from '../config/runtimeEnv.js';
 import { adminOnly, authMiddleware } from '../middleware/authMiddleware.js';
 import { rateLimitMiddleware } from '../middleware/rateLimit.js';
 
-export const router = Router();
+export type ApiRouterOptions = {
+  pixelStreamingRoutesEnabled?: boolean;
+};
+
+export function createApiRouter(options: ApiRouterOptions = {}) {
+const router = Router();
+const { pixelStreamingRoutesEnabled = false } = options;
 
 // Apply global rate limiting to all API routes
 router.use(rateLimitMiddleware);
@@ -33,7 +38,7 @@ router.use(rateLimitMiddleware);
  * PUBLIC ROUTES (Defined BEFORE authMiddleware)
  */
 router.post('/analytics/track', analyticsController.trackAnalytics);
-if (getBackendRuntimeEnv().pixelStreamingRoutesEnabled) {
+if (pixelStreamingRoutesEnabled) {
   router.get('/pixel-streaming/status', expoController.getPixelStreamingRuntimeStatus);
   router.post('/pixel-streaming/session', expoController.createPixelStreamingSession);
 }
@@ -155,3 +160,8 @@ protectedRouter.post('/outreach/email', outreachController.sendEmail);
 
 // Mount protected routes
 router.use(protectedRouter);
+
+return router;
+}
+
+export const router = createApiRouter();

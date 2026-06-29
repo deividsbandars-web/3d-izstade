@@ -107,6 +107,23 @@ Storage:
 - Migrations in repo: yes
 - Need new project: unknown
 
+## Supabase Public/Protected Table Matrix
+
+This matrix is repo-static and reflects the release-scope SQL invariants enforced by `npm.cmd run check:supabase-rls`.
+
+| Table/surface | Public client access | Backend/service access | Enforcement source |
+| --- | --- | --- | --- |
+| `public.modular_home_quote_requests` | No direct `anon`/`authenticated` read, update, or delete grants; RLS default-deny | `service_role` can select, insert, update, and delete for quote submit/admin/cleanup | `20260609040000_modular_home_quote_requests.sql`, `20260620000000_modular_home_quote_requests_service_role_privileges.sql` |
+| `public.sectors` | `anon` and `authenticated` get `SELECT` for `/api/expo/scene`; no public mutation grants | `service_role` gets `SELECT` | `20260618194500_expo_public_scene_select_grants.sql` |
+| `public.companies` | `anon` and `authenticated` get `SELECT` for `/api/expo/scene`; no public mutation grants | `service_role` gets `SELECT`; service-role insert/update grants support backend review/bootstrap flows | `20260618194500_expo_public_scene_select_grants.sql`, `20260619002000_service_role_update_companies_for_expo_review.sql`, `20260619012000_user_profiles_bootstrap_service_role_grants.sql` |
+| `public.booths` | `anon` and `authenticated` get `SELECT` for `/api/expo/scene`; no public mutation grants | `service_role` gets `SELECT` | `20260618194500_expo_public_scene_select_grants.sql` |
+| `public.expo_booths` | No release-scope public grants asserted by the RLS gate | `service_role` gets controlled select/insert/update for staging managed-booth and media-review operations | `20260618195500_expo_booths_service_role_privileges.sql`, `20260619000000_expo_booths_company_id_and_insert_privileges.sql` |
+| `public.user_profiles` | `authenticated` can select profile-linked data; no public write grant | `service_role` can select, insert, and update for auth bootstrap repair | `20260619004000_user_profiles_authenticated_select.sql`, `20260619012000_user_profiles_bootstrap_service_role_grants.sql` |
+| `public.expo_lead_ops` | Default-deny RLS; no public direct table access for release operations | Backend/admin routes operate through service-side policy | `20260418090000_expo_lead_ops.sql` |
+| `storage.objects` sponsor assets | Authenticated users can operate only inside their own `sponsor-assets/<auth.uid()>` prefix | Supabase service role remains authoritative for backend storage operations | `20260603193000_expo_sponsor_assets_storage.sql` |
+
+Legacy manual SQL helpers currently present in `supabase/migrations/` but excluded from the canonical ordered migration chain are `create_expo_tables_and_seed.sql` and `run_me.sql`. The date-only legacy migration `20260318_production_setup.sql` is allowed in the ordered chain as a preserved historical file. New migration files must use the canonical `YYYYMMDDHHMMSS_description.sql` format.
+
 ## Supabase Handling Rule
 
 - Treat Supabase as an existing dependency, not a greenfield choice.
