@@ -67,7 +67,8 @@ Backend:
 ```powershell
 cd backend-server
 npm install
-npm run start:docker
+npm run build
+npm start
 ```
 
 Docker stack:

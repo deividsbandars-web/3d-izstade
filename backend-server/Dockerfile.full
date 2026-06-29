@@ -35,17 +35,14 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 
-# Runtime keeps the source tree plus installed dependencies so staging can run
-# the full backend through tsx without being blocked by the current ESM output
-# layout in backend-server/dist.
+# Runtime ships the compiled full backend. The source tree is intentionally not
+# copied into the release image so production cannot drift back to tsx.
 COPY --from=builder /app/package.json /app/package-lock.json ./
 COPY --from=builder /app/backend-server/package.json /app/backend-server/package-lock.json ./backend-server/
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/backend-server/node_modules ./backend-server/node_modules
-COPY --from=builder /app/backend-server ./backend-server
-COPY --from=builder /app/src ./src
-COPY --from=builder /app/tsconfig.json /app/tsconfig.app.json /app/tsconfig.node.json ./
+COPY --from=builder /app/backend-server/dist ./backend-server/dist
 
-EXPOSE 3001
+EXPOSE 3000 3001
 
-CMD ["./node_modules/.bin/tsx", "backend-server/server.ts"]
+CMD ["node", "backend-server/dist/backend-server/server.js"]

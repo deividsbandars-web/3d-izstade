@@ -1026,3 +1026,41 @@ Close active Codex/VS Code Codex processes, remove the regenerated live `.codex`
   - No frontend runtime behavior, backend behavior, auth, quote-submit API, payment, sponsor boulevard camera/FOV/lookAt, Unreal, Pixel Streaming, staging, deploy, or production promotion changes were made.
 - Next step:
   - Start Phase 1 Pack 1.3 to pin the production backend target and resolve the dual-build packaging risk.
+
+## 2026-06-29 Release Roadmap Phase 1 Pack 1.3 Backend Release Packaging Target
+
+- Active objective: make the full backend the single canonical production target, built and run from compiled `dist`, and retire the divergent minimal Docker target that omitted the GALA quote routes.
+- Implementation status:
+  - Updated `backend-server/Dockerfile.full` so the runner stage copies compiled output and starts `node backend-server/dist/backend-server/server.js` instead of `tsx backend-server/server.ts`.
+  - Retired the minimal Docker target by removing `backend-server/Dockerfile`, `backend-server/server.docker.ts`, `backend-server/routes/api.docker.ts`, and `backend-server/tsconfig.docker.json`.
+  - Removed `build:docker` and `start:docker` from `backend-server/package.json`.
+  - Switched `backend-server/server.ts` to the existing `env.ts` bootstrap so compiled `npm start` keeps local dotenv fallback behavior.
+  - Updated the README backend local run command to `npm run build` + `npm start`.
+  - Added `docs/BACKEND_RELEASE_PACKAGING.md` naming `server.ts` + `routes/api.ts` + `tsconfig.json` + `Dockerfile.full` as the only canonical backend release target and documenting the current shared root compile surface for Pack 1.4.
+- Validation:
+  - `npx.cmd tsc --noEmit -p tsconfig.json` in `backend-server` passed with no compiler output.
+  - `npm.cmd run build` in `backend-server` passed. The first sandboxed build attempt hit `EPERM` writing `backend-server/dist`; rerunning with filesystem approval passed.
+  - `npm.cmd run lint` in `backend-server` passed.
+  - Compiled runtime validation passed on isolated port `3137` with required env and a local Supabase REST mock:
+    - `node dist/backend-server/server.js` booted.
+    - `/health` returned 200.
+    - `curl http://127.0.0.1:3137/api/expo/scene` returned 200.
+    - `POST http://127.0.0.1:3137/api/modular-home/quote?homeQuoteBackend=1` reached the quote backend gate and returned `MODULAR_HOME_QUOTE_BACKEND_DISABLED` with 503, not 404.
+  - Literal port `3000` validation could not be used as proof for this compiled process because Docker/WSL already owns `0.0.0.0:3000` and `[::]:3000` (`com.docker.backend` PID 6712 and `wslrelay` PID 13180). `curl http://127.0.0.1:3000/api/expo/scene` returned 200 from that existing listener; `POST /api/modular-home/quote?homeQuoteBackend=1` returned 401 from that existing listener, not from the new compiled validation job. The compiled backend route proof is the `3137` run above.
+  - Live reference scan across `package.json`, `backend-server`, `README.md`, compose files, `src`, `scripts`, and `supabase` found no remaining references to the retired minimal scripts/files.
+- Touched files:
+  - `README.md`
+  - `backend-server/Dockerfile.full`
+  - `backend-server/package.json`
+  - `backend-server/server.ts`
+  - `backend-server/Dockerfile` (deleted)
+  - `backend-server/server.docker.ts` (deleted)
+  - `backend-server/routes/api.docker.ts` (deleted)
+  - `backend-server/tsconfig.docker.json` (deleted)
+  - `docs/BACKEND_RELEASE_PACKAGING.md`
+  - `docs/CURRENT_TASK.md`
+- Product/release status:
+  - `productVisualAccepted=false`.
+  - No route auth policy, quote endpoint contract, payment, sponsor boulevard camera/FOV/lookAt, Unreal, Pixel Streaming runtime, staging deploy, production deploy, or promotion changes were made.
+- Next step:
+  - Commit Pack 1.3, then start Phase 1 Pack 1.4 to narrow and document the root-to-backend shared compile boundary.

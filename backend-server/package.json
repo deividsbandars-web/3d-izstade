@@ -7,10 +7,8 @@
     "dev": "tsx watch server.ts",
     "worker": "tsx worker.ts",
     "build": "tsc",
-    "build:docker": "tsc -p tsconfig.docker.json",
     "lint": "node ../node_modules/eslint/bin/eslint.js . --config eslint.config.js",
-    "start": "node dist/backend-server/server.js",
-    "start:docker": "node dist/server.docker.js"
+    "start": "node dist/backend-server/server.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.98.0",
