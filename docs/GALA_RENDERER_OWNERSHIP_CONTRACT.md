@@ -19,6 +19,16 @@ This contract applies to the real-user modular-home studio routes:
 
 `GalaConstructionRenderer.tsx` is the active construction render coordinator. It mounts the documented roof adapter and the owned floor, wall, opening, cladding, terrace, and room assemblies.
 
+`construction/GalaRoomAssembly.tsx` is mounted in both exterior and interior studio views. It consumes `GALA_FURNITURE_LAYOUT` for placement and reuses only the primitive/model helper exports from `GalaInteriorFurniture.tsx`: `GalaLivingSofaModel`, `GalaCoffeeTableModel`, `GalaBedFabricBox`, and `GalaBedWoodBox`.
+
+The standalone `GalaInterior.tsx` route subtree is not mounted by `homeStudio=1`.
+
+2026-06-29 Pack 1.1 runtime inventory evidence:
+
+- `scripts/qa-gala-construction-renderer.mjs --base-url=http://127.0.0.1:5173 --out-dir=artifacts/phase1-pack1.1/construction-runtime` collected 266 runtime mesh entries from `window.__WARPALA_3D_QA__.getSceneMeshInventory()`.
+- Runtime inventory contained no meshes from `GalaInterior.tsx`, `GalaOpenings.tsx`, `GalaCeiling.tsx`, or `GalaInteriorConstruction.tsx`.
+- Runtime room/furniture mesh names are `gala-construction-*` and are mounted through `construction/GalaRoomAssembly.tsx`; GLTF sofa/table and rounded bed helpers are helper exports consumed by that assembly.
+
 ## Owner Matrix
 
 | Responsibility | Authoritative owner | Current status | Allowed consumers | Forbidden duplicate ownership |
@@ -30,7 +40,7 @@ This contract applies to the real-user modular-home studio routes:
 | Door/window visual assembly | `construction/GalaOpeningAssembly.tsx` | current | Door runtime state, wall assembly | Independent frame/reveal/slab fragments in legacy `GalaOpenings.tsx` or `GalaInterior.tsx` must not be mounted in current route |
 | Door state and interaction | `GalaDoorState.ts` plus `ExpoWorldPlayerLayer.tsx` for prompt/collision use | current runtime owner | `GalaOpeningAssembly.tsx`, player layer, QA scripts | Closed/open passability rules duplicated in visual components without using the runtime state |
 | Furniture anchors and placement | `construction/GalaConstructionModel.ts` (`GALA_FURNITURE_ANCHORS`, `GALA_FURNITURE_LAYOUT`) | current adapter data | `GalaRoomAssembly.tsx`, QA scripts | Hardcoded furniture placement coordinates in `GalaRoomAssembly.tsx` or legacy furniture components mounted in current route |
-| Furniture visual primitives | `construction/GalaRoomAssembly.tsx` | current consumer/renderer | Construction model placement and visual config | Owning placement coordinates or independent room layout rules |
+| Furniture visual primitives | `construction/GalaRoomAssembly.tsx` plus primitive/model helpers in `GalaInteriorFurniture.tsx` | current mixed owner/helper split | Construction model placement, visual config, `GalaLivingSofaModel`, `GalaCoffeeTableModel`, `GalaBedFabricBox`, `GalaBedWoodBox` | Owning placement coordinates, mounting full legacy room furniture components, or independent room layout rules |
 | Roof geometry | `GalaRoof.tsx` mounted only through `GalaConstructionRenderer.tsx` | adapter | `GalaConstructionRenderer.tsx` | Mounting `GalaRoof` directly from `GalaHouseShell.tsx` or another parallel render path |
 | Wall core/faces/trim | `construction/GalaWallAssembly.tsx` | current | `GalaConstructionModel.ts` walls and openings | Legacy interior/exterior wall assemblies mounted in active route |
 | Exterior cladding | `construction/GalaCladdingAssembly.tsx` plus gable cladding inside `GalaConstructionRenderer.tsx` | current | `GalaWallAssembly.tsx`, visual config | Painted-line facade seams or independent cladding in legacy module preview path mounted in current route |
@@ -51,6 +61,11 @@ Current active render owners:
 - `construction/GalaFloorCeilingAssembly.tsx`
 - `construction/GalaCladdingAssembly.tsx`
 - `construction/GalaRoomAssembly.tsx`
+- `GalaInteriorFurniture.tsx` helper exports only:
+  - `GalaLivingSofaModel`
+  - `GalaCoffeeTableModel`
+  - `GalaBedFabricBox`
+  - `GalaBedWoodBox`
 - `GalaRoof.tsx` as a documented roof adapter mounted under the construction renderer
 
 Current runtime owners:
@@ -63,12 +78,16 @@ Legacy or inactive in the current route:
 
 - `GalaInterior.tsx`
 - `GalaInteriorConstruction.tsx`
-- `GalaInteriorFurniture.tsx`
+- `GalaInteriorFurniture.tsx` full-room exports:
+  - `GalaKitchenFurniture`
+  - `GalaLivingFurniture`
+  - `GalaBathroomFurniture`
+  - `GalaBedroomFurniture`
 - `GalaOpenings.tsx`
 - `GalaCeiling.tsx`
 - legacy module preview helpers inside `ModularHomeModel.tsx` behind `renderLegacyModulePreview=false`
 
-These legacy files may remain in the repository, but they must not be mounted in the current `homeStudio=1` route unless this contract is updated.
+These legacy files and full-room exports may remain in the repository, but they must not be mounted in the current `homeStudio=1` route unless this contract is updated.
 
 ## Single-Source Assessment
 

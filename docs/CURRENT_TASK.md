@@ -965,3 +965,31 @@ Close active Codex/VS Code Codex processes, remove the regenerated live `.codex`
   - No frontend runtime, backend behavior, auth, quote-submit API, payment, sponsor boulevard camera/FOV/lookAt, Unreal, Pixel Streaming, staging, deploy, or production promotion changes were made.
 - Next step:
   - Start Phase 1 Pack 1.1 to reconcile GALA renderer active-vs-legacy ownership on `release/v1-stabilization`.
+
+## 2026-06-29 Release Roadmap Phase 1 Pack 1.1 GALA Renderer Ownership Reconciliation
+
+- Active objective: reconcile `docs/GALA_RENDERER_OWNERSHIP_CONTRACT.md` with the actual mounted GALA renderer tree on `/modular-homes/studio?homeStudio=1` without changing rendered output.
+- Implementation status:
+  - Confirmed `GalaHouseShell.tsx` mounts `GalaConstructionRenderer` as the active GALA render coordinator and does not mount `GalaInterior.tsx`, `GalaOpenings.tsx`, `GalaCeiling.tsx`, or `GalaInteriorConstruction.tsx`.
+  - Confirmed `construction/GalaRoomAssembly.tsx` is active and imports only helper/model exports from `GalaInteriorFurniture.tsx`: `GalaLivingSofaModel`, `GalaCoffeeTableModel`, `GalaBedFabricBox`, and `GalaBedWoodBox`.
+  - Updated the ownership contract to mark the `GalaInteriorFurniture.tsx` helper exports as active consumers/helpers while keeping full-room exports (`GalaKitchenFurniture`, `GalaLivingFurniture`, `GalaBathroomFurniture`, `GalaBedroomFurniture`) legacy/inactive in `homeStudio=1`.
+  - Moved the remaining hardcoded wardrobe door-panel/handle placements out of `GalaRoomAssembly.tsx` into `GALA_FURNITURE_LAYOUT`, preserving the same coordinates/sizes while satisfying the ownership contract that placement data belongs to `GalaConstructionModel.ts`.
+  - Added a runtime-inventory evidence note to the ownership contract: `qa-gala-construction-renderer.mjs` collected 266 runtime mesh entries and found no meshes from the legacy `GalaInterior`, `GalaOpenings`, `GalaCeiling`, or `GalaInteriorConstruction` paths.
+- Validation:
+  - `node --check scripts/qa-gala-renderer-ownership-audit.mjs` passed.
+  - `node --check scripts/qa-gala-dom-overlay-audit.mjs` passed.
+  - `node scripts/qa-gala-renderer-ownership-audit.mjs --out-dir=artifacts/phase1-pack1.1/ownership-static-final` passed with `failures=[]`, `duplicateFurnitureOwnershipPresent=false`, `duplicateOpeningOwnershipPresent=false`, and `productVisualAccepted=false`.
+  - `node scripts/qa-gala-dom-overlay-audit.mjs --base-url=http://127.0.0.1:5173 --out-dir=artifacts/phase1-pack1.1/dom-overlay-runtime` passed with route statuses 200/200/200 and `blockingDomOverlayPresent=false`.
+  - Runtime scene inventory evidence: `node scripts/qa-gala-construction-renderer.mjs --base-url=http://127.0.0.1:5173 --out-dir=artifacts/phase1-pack1.1/construction-runtime` completed; `runtimeMeshInventoryIsActualSceneTraverse=true`, inventory count was 266, and `productVisualAccepted=false`.
+  - `npm.cmd run lint` passed.
+  - `npm.cmd run build` passed; existing Vite large-chunk warning remains.
+- Touched files:
+  - `docs/GALA_RENDERER_OWNERSHIP_CONTRACT.md`
+  - `src/modules/expo/runtime/modularHome/construction/GalaConstructionModel.ts`
+  - `src/modules/expo/runtime/modularHome/construction/GalaRoomAssembly.tsx`
+  - `docs/CURRENT_TASK.md`
+- Product/release status:
+  - `productVisualAccepted=false`.
+  - No frontend route behavior, backend, auth, quote-submit API, payment, sponsor boulevard camera/FOV/lookAt, Unreal, Pixel Streaming, staging, deploy, or production promotion changes were made.
+- Next step:
+  - Start Phase 1 Pack 1.2 to add an automated ownership/legacy-import guard.
