@@ -1173,3 +1173,45 @@ Close active Codex/VS Code Codex processes, remove the regenerated live `.codex`
   - No modular-home pricing math, quote endpoint contract, backend route behavior, auth policy, payment, sponsor boulevard camera/FOV/lookAt, Unreal, Pixel Streaming runtime, staging deploy, production deploy, or promotion changes were made.
 - Next step:
   - Commit Pack 2.2, then continue to Phase 2 Pack 2.3 to decompose `CompanyAdmin.tsx` and `SponsorLeadInbox.tsx` without changing API/auth behavior.
+
+## 2026-06-29 Release Roadmap Phase 2 Pack 2.3 Decompose Expo Admin And Sponsor Lead Inbox
+
+- Active objective: split `CompanyAdmin.tsx` and `SponsorLeadInbox.tsx` into thin route shells, extracted state hooks, section components, and shared expo service entry points without changing API calls or auth gating.
+- Implementation status:
+  - Replaced `src/pages/expo/CompanyAdmin.tsx` and `src/pages/expo/SponsorLeadInbox.tsx` with 3-line route shells that keep the existing lazy import paths stable.
+  - Moved the existing page bodies into:
+    - `src/pages/expo/companyAdmin/CompanyAdminView.tsx`
+    - `src/pages/expo/sponsorLeadInbox/SponsorLeadInboxView.tsx`
+  - Added state/data hooks:
+    - `useCompanyAdminState.ts` for admin auth bootstrap, managed booth loading, managed booth selection, and page state.
+    - `useSponsorLeadInboxState.ts` for sponsor inbox auth bootstrap, lead inbox loading, and page state.
+  - Added section components:
+    - `CompanyAdminSections.tsx` for the admin header, message, access notice, and launch-flow wrapper.
+    - `SponsorLeadInboxSections.tsx` for the inbox header, hero, access notice, and message.
+  - Added `src/modules/expo/services/companyAdminService.ts` and `src/modules/expo/services/sponsorLeadInboxClient.ts` as the stable expo service import layer for the refactored hooks/views.
+  - Preserved the existing API functions, auth/session checks, submit/update payloads, QA `data-*` hooks, and visible route paths.
+  - Route shell line counts are now below the Pack 2.3 target: `CompanyAdmin.tsx` 3 lines and `SponsorLeadInbox.tsx` 3 lines.
+- Validation:
+  - `npm.cmd run lint` passed with no warnings.
+  - `npm.cmd run build` passed; existing Vite large-chunk warning remains.
+  - `npm.cmd run check:expo-boundaries` passed with 0 violations.
+  - `npx.cmd tsc --noEmit --pretty false -p tsconfig.json` passed with no compiler output.
+  - `npm.cmd run check:expo-sponsor-inbox-auth` failed because this local environment does not provide `SPONSOR_LEAD_INBOX_ACCESS_TOKEN`, `SPONSOR_OPS_ACCESS_TOKEN`, or `SUPABASE_ACCESS_TOKEN`.
+  - `npm.cmd run check:expo-sponsor-inbox-browser-smoke` failed before browser execution because this local environment does not provide `SUPABASE_URL`.
+- Touched files:
+  - `src/pages/expo/CompanyAdmin.tsx`
+  - `src/pages/expo/companyAdmin/CompanyAdminView.tsx`
+  - `src/pages/expo/companyAdmin/CompanyAdminSections.tsx`
+  - `src/pages/expo/companyAdmin/useCompanyAdminState.ts`
+  - `src/pages/expo/SponsorLeadInbox.tsx`
+  - `src/pages/expo/sponsorLeadInbox/SponsorLeadInboxView.tsx`
+  - `src/pages/expo/sponsorLeadInbox/SponsorLeadInboxSections.tsx`
+  - `src/pages/expo/sponsorLeadInbox/useSponsorLeadInboxState.ts`
+  - `src/modules/expo/services/companyAdminService.ts`
+  - `src/modules/expo/services/sponsorLeadInboxClient.ts`
+  - `docs/CURRENT_TASK.md`
+- Product/release status:
+  - `productVisualAccepted=false`.
+  - No sponsor inbox API contract, admin API contract, auth policy, quote endpoint contract, payment, sponsor boulevard camera/FOV/lookAt, Unreal, Pixel Streaming runtime, staging deploy, production deploy, or promotion changes were made.
+- Next step:
+  - Provide the missing sponsor inbox QA env values and rerun the two blocked sponsor inbox gates, then commit Pack 2.3 and continue to Phase 2 Pack 2.4.
