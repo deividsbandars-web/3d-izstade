@@ -1,7 +1,8 @@
-import { lazy, Suspense, type ReactNode } from 'react';
+import { lazy, Suspense, type ComponentType, type LazyExoticComponent, type ReactNode } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/Layout';
 import { RouteErrorBoundary, RouteLoadingFallback } from './components/RouteErrorBoundary';
+import { ENABLE_DEMO_ROUTES } from './config/featureFlags';
 
 // Core un pamata lapas
 import Home from './pages/Home';
@@ -13,15 +14,9 @@ const Privacy = lazy(() => import('./pages/Privacy'));
 // PHASE 15: AI Platform Pages
 // ==========================================
 const PlatformDashboard = lazy(() => import('./pages/DashboardPage'));
-const PlatformAgents = lazy(() => import('./pages/AgentsPage'));
 const PlatformLeads = lazy(() => import('./pages/LeadsPage'));
 const PlatformMarketplace = lazy(() => import('./pages/MarketplacePage'));
 const PlatformExpo = lazy(() => import('./pages/ExpoPage'));
-const AiPlatformPrototype = lazy(() => import('./pages/AiPlatformPrototype'));
-const AutonomousEngine = lazy(() => import('./pages/AutonomousEngine'));
-const BusinessEconomy = lazy(() => import('./pages/BusinessEconomy'));
-const AutonomousBusinessManager = lazy(() => import('./pages/AutonomousBusinessManager'));
-const EconomySimulatorPage = lazy(() => import('./pages/EconomySimulatorPage'));
 const Onboarding = lazy(() => import('./pages/onboarding/OnboardingPage'));
 const WorkflowBuilder = lazy(() => import('./app/workflows/WorkflowBuilder'));
 
@@ -29,13 +24,9 @@ const WorkflowBuilder = lazy(() => import('./app/workflows/WorkflowBuilder'));
 const Dashboard = lazy(() => import('./modules/dashboard/Dashboard'));
 const ProjectBuilder = lazy(() => import('./modules/projects/ProjectBuilder'));
 const CityMap = lazy(() => import('./modules/expo/CityMap'));
-const AiGenerator = lazy(() => import('./modules/ai-tools/AiGenerator'));
-const BusinessAccelerator = lazy(() => import('./modules/ai-tools/BusinessAccelerator'));
-const AiAgentDashboard = lazy(() => import('./modules/ai-tools/AiAgentDashboard'));
 const AdminFinance = lazy(() => import('./modules/finance/AdminFinance'));
 const StudioMaster = lazy(() => import('./modules/finance/StudioMaster'));
 const YoutubeManager = lazy(() => import('./modules/finance/YoutubeManager'));
-const AiMatchmaker = lazy(() => import('./modules/ai-tools/AiMatchmaker'));
 const Leaderboard = lazy(() => import('./modules/dashboard/Leaderboard'));
 
 // Kalkulatori
@@ -78,7 +69,18 @@ const DocumentHub = lazy(() => import('./modules/documents/DocumentHub'));
 const Settings = lazy(() => import('./modules/settings/Settings'));
 const CalculatorsHub = lazy(() => import('./modules/calculators/CalculatorsHub'));
 const InventoryManager = lazy(() => import('./modules/inventory/InventoryManager'));
-const ContentGenerator = lazy(() => import('./modules/ai-tools/ContentGenerator'));
+
+const PlatformAgents = ENABLE_DEMO_ROUTES ? lazy(() => import('./pages/AgentsPage')) : null;
+const AiPlatformPrototype = ENABLE_DEMO_ROUTES ? lazy(() => import('./pages/AiPlatformPrototype')) : null;
+const AutonomousEngine = ENABLE_DEMO_ROUTES ? lazy(() => import('./pages/AutonomousEngine')) : null;
+const BusinessEconomy = ENABLE_DEMO_ROUTES ? lazy(() => import('./pages/BusinessEconomy')) : null;
+const AutonomousBusinessManager = ENABLE_DEMO_ROUTES ? lazy(() => import('./pages/AutonomousBusinessManager')) : null;
+const EconomySimulatorPage = ENABLE_DEMO_ROUTES ? lazy(() => import('./pages/EconomySimulatorPage')) : null;
+const AiGenerator = ENABLE_DEMO_ROUTES ? lazy(() => import('./modules/ai-tools/AiGenerator')) : null;
+const BusinessAccelerator = ENABLE_DEMO_ROUTES ? lazy(() => import('./modules/ai-tools/BusinessAccelerator')) : null;
+const AiAgentDashboard = ENABLE_DEMO_ROUTES ? lazy(() => import('./modules/ai-tools/AiAgentDashboard')) : null;
+const AiMatchmaker = ENABLE_DEMO_ROUTES ? lazy(() => import('./modules/ai-tools/AiMatchmaker')) : null;
+const ContentGenerator = ENABLE_DEMO_ROUTES ? lazy(() => import('./modules/ai-tools/ContentGenerator')) : null;
 
 function web3dRoute(
   children: ReactNode,
@@ -95,6 +97,20 @@ function web3dRoute(
         {children}
       </Suspense>
     </RouteErrorBoundary>
+  );
+}
+
+type DemoRouteComponent = LazyExoticComponent<ComponentType> | null;
+
+function demoRouteElement(Component: DemoRouteComponent) {
+  if (!ENABLE_DEMO_ROUTES || !Component) {
+    return <Navigate to="/" replace />;
+  }
+
+  return (
+    <Suspense fallback={<div style={{ color: 'white', padding: '50px' }}>Loading...</div>}>
+      <Component />
+    </Suspense>
   );
 }
 
@@ -115,13 +131,13 @@ export default function App() {
             <Route path="privacy" element={<Suspense fallback={null}><Privacy /></Suspense>} />
             
             {/* Jaunie AI Platformas Maršruti (Phase 15) */}
-            <Route path="economy-simulator" element={<Suspense fallback={<div style={{ color: 'white', padding: '50px' }}>Loading...</div>}><EconomySimulatorPage /></Suspense>} />
-            <Route path="business-fleet" element={<Suspense fallback={<div style={{ color: 'white', padding: '50px' }}>Loading...</div>}><AutonomousBusinessManager /></Suspense>} />
-            <Route path="business-economy" element={<Suspense fallback={<div style={{ color: 'white', padding: '50px' }}>Loading...</div>}><BusinessEconomy /></Suspense>} />
-            <Route path="autonomous-engine" element={<Suspense fallback={<div style={{ color: 'white', padding: '50px' }}>Loading...</div>}><AutonomousEngine /></Suspense>} />
-            <Route path="prototype" element={<Suspense fallback={<div style={{ color: 'white', padding: '50px' }}>Loading...</div>}><AiPlatformPrototype /></Suspense>} />
+            <Route path="economy-simulator" element={demoRouteElement(EconomySimulatorPage)} />
+            <Route path="business-fleet" element={demoRouteElement(AutonomousBusinessManager)} />
+            <Route path="business-economy" element={demoRouteElement(BusinessEconomy)} />
+            <Route path="autonomous-engine" element={demoRouteElement(AutonomousEngine)} />
+            <Route path="prototype" element={demoRouteElement(AiPlatformPrototype)} />
             <Route path="platform/dashboard" element={<Suspense fallback={<div style={{ color: 'white', padding: '50px' }}>Loading...</div>}><PlatformDashboard /></Suspense>} />
-            <Route path="platform/agents" element={<Suspense fallback={<div style={{ color: 'white', padding: '50px' }}>Loading...</div>}><PlatformAgents /></Suspense>} />
+            <Route path="platform/agents" element={demoRouteElement(PlatformAgents)} />
             <Route path="platform/leads" element={<Suspense fallback={<div style={{ color: 'white', padding: '50px' }}>Loading...</div>}><PlatformLeads /></Suspense>} />
             <Route path="platform/marketplace" element={<Suspense fallback={<div style={{ color: 'white', padding: '50px' }}>Loading...</div>}><PlatformMarketplace /></Suspense>} />
             <Route path="platform/expo" element={<Suspense fallback={<div style={{ color: 'white', padding: '50px' }}>Loading...</div>}><PlatformExpo /></Suspense>} />
@@ -140,12 +156,12 @@ export default function App() {
             <Route path="urgent-services" element={<Suspense fallback={null}><UrgentServices /></Suspense>} />
             <Route path="events" element={<Suspense fallback={null}><EventsHub /></Suspense>} />
             <Route path="ads-network" element={<Suspense fallback={null}><AdsNetwork /></Suspense>} />
-            <Route path="generator" element={<Suspense fallback={null}><AiGenerator /></Suspense>} />
-            <Route path="content-generator" element={<Suspense fallback={null}><ContentGenerator /></Suspense>} />
-            <Route path="akcelerators" element={<Suspense fallback={null}><BusinessAccelerator /></Suspense>} />
-            <Route path="ai-agent" element={<Suspense fallback={null}><AiAgentDashboard /></Suspense>} />
+            <Route path="generator" element={demoRouteElement(AiGenerator)} />
+            <Route path="content-generator" element={demoRouteElement(ContentGenerator)} />
+            <Route path="akcelerators" element={demoRouteElement(BusinessAccelerator)} />
+            <Route path="ai-agent" element={demoRouteElement(AiAgentDashboard)} />
             <Route path="finances" element={<Suspense fallback={null}><AdminFinance /></Suspense>} />
-            <Route path="ai-matchmaker" element={<Suspense fallback={null}><AiMatchmaker /></Suspense>} />
+            <Route path="ai-matchmaker" element={demoRouteElement(AiMatchmaker)} />
             <Route path="leaderboard" element={<Suspense fallback={null}><Leaderboard /></Suspense>} />
             <Route path="my-portal" element={<Suspense fallback={null}><ClientPortal /></Suspense>} />
             <Route path="studio" element={<Suspense fallback={null}><StudioMaster /></Suspense>} />

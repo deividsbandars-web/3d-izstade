@@ -1,5 +1,37 @@
 # Current Task
 
+## 2026-06-30 Pre-Release Product Audit WP-D Release Scope Lock
+
+- Active objective: start the pre-release product work from WP-D by separating release-scope routes from demo/stub routes without changing SHIP route behavior.
+- Implementation status:
+  - Preserved the supplied product audit plan as `docs/PRE_RELEASE_PRODUCT_AUDIT_AND_PLAN_V1.md`.
+  - Added `docs/RELEASE_SCOPE_LOCK.md` with a route matrix covering SHIP, INTERNAL, and DEMO-ONLY route status.
+  - Added `src/config/featureFlags.ts` and optional env `VITE_ENABLE_DEMO` with default disabled.
+  - Changed demo/stub routes in `src/App.tsx` so they redirect to `/` unless `VITE_ENABLE_DEMO=1`.
+  - Moved demo/stub dynamic imports behind a Vite build-time flag so default production builds exclude those demo chunks.
+  - Did not change sponsor boulevard camera/FOV/lookAt, booth geometry, auth behavior, quote behavior, payment behavior, backend packaging, staging, or production deployment.
+- Validation:
+  - `npm.cmd run lint` passed.
+  - `npm.cmd run check:expo-boundaries` passed.
+  - `npm.cmd run build` passed.
+  - `npm.cmd run check:bundle-budget` passed.
+  - `npm.cmd run check:all` passed.
+  - `rg "AgentsPage|AiGenerator|AiAgentDashboard|AiMatchmaker|BusinessAccelerator|ContentGenerator|AutonomousEngine|AutonomousBusinessManager|BusinessEconomy|EconomySimulatorPage|AiPlatformPrototype" dist/assets -n` returned no matches after the default production build, confirming demo chunks are absent with `VITE_ENABLE_DEMO=0`.
+- Touched files:
+  - `.env.example`
+  - `docs/PRE_RELEASE_PRODUCT_AUDIT_AND_PLAN_V1.md`
+  - `docs/RELEASE_SCOPE_LOCK.md`
+  - `docs/CURRENT_TASK.md`
+  - `src/App.tsx`
+  - `src/config/featureFlags.ts`
+  - `src/vite-env.d.ts`
+  - `vite.config.ts`
+- Product/release status:
+  - WP-D is complete for default production route-scope locking.
+  - Demo/stub functionality remains available for explicit demo builds through `VITE_ENABLE_DEMO=1`.
+- Next step:
+  - Continue to WP-B only after confirming Stripe productionization scope and required env/secrets policy.
+
 ## 2026-06-30 Phase 6.2 Pre-flight Fixes
 
 - Active objective: Clear the final technical blockers before production promotion.

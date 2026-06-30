@@ -1,4 +1,4 @@
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 import { execSync } from 'node:child_process'
@@ -20,10 +20,18 @@ function resolveBuildStamp() {
   return `${target}:${commit.slice(0, 12)}`
 }
 
-export default defineConfig({
+function isFeatureFlagEnabled(value: string | undefined) {
+  return ['1', 'true', 'yes', 'on'].includes(value?.trim().toLowerCase() ?? '')
+}
+
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), '')
+
+  return {
   define: {
     global: 'window',
     __WARPALA_EXPO_BUILD_STAMP__: JSON.stringify(resolveBuildStamp()),
+    __WARPALA_ENABLE_DEMO_ROUTES__: JSON.stringify(isFeatureFlagEnabled(env.VITE_ENABLE_DEMO)),
   },
   optimizeDeps: {
     entries: ['index.html'],
@@ -129,5 +137,6 @@ export default defineConfig({
         }
       }
     }
+  }
   }
 })

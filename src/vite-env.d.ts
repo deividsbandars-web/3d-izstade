@@ -11,8 +11,11 @@ interface ImportMetaEnv {
   readonly VITE_TURN_USERNAME?: string;
   readonly VITE_TURN_PASSWORD?: string;
   readonly VITE_PIXEL_STREAMING_PROBE_TIMEOUT_MS?: string;
+  readonly VITE_ENABLE_DEMO?: string;
 }
 
 interface ImportMeta {
   readonly env: ImportMetaEnv;
 }
+
+declare const __WARPALA_ENABLE_DEMO_ROUTES__: boolean;
