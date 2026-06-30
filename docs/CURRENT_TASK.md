@@ -1,5 +1,29 @@
 # Current Task
 
+## 2026-06-30 GALA Post-Fix Full Release Gate Verification
+
+- Active objective: verify the combined GALA motion-performance and interior-readability fixes against the complete canonical local release gate before any staging deployment.
+- Implementation status:
+  - Ran the canonical ten-concern GALA release suite against `vite preview` on `/modular-homes/studio?homeStudio=1`.
+  - Confirmed ownership, DOM overlay, wall-skin coverage, floor/ground isolation, opening clipping, furniture clearance, static performance budget, motion performance, visual design intent, and visual-acceptance preflight all pass together.
+  - Confirmed the combined fixes do not require further renderer, geometry, collision, camera, movement, door-runtime, pricing, configurator, quote, or backend changes.
+- Validation:
+  - `npm.cmd run check:all` passed, including expo boundaries, GALA ownership, backend boundaries, backend shared boundaries, and Supabase RLS.
+  - `node scripts\qa-gala-suite.mjs --base-url=http://127.0.0.1:4173 --profile=release --out-dir=artifacts\qa-gala-suite-after-readability` passed all 10 canonical concerns.
+  - Canonical suite desktop motion scenarios passed at 238.1 median FPS, 4.3-8.4 ms P95 frame time, and zero stutters.
+  - Canonical static budget passed for exterior and interior; the suite report is `artifacts/qa-gala-suite-after-readability/qa-gala-suite-report.json`.
+  - `npm.cmd run lint` passed.
+  - `npm.cmd run check:expo-boundaries` passed.
+  - `npm.cmd run build` passed; the existing large chunks remain within the configured build behavior.
+- Touched files:
+  - `docs/CURRENT_TASK.md`
+- Product/release status:
+  - The combined local GALA technical release gate is green.
+  - `productVisualAccepted=false`.
+  - No staging/production deploy, sponsor boulevard camera/FOV/lookAt change, GALA geometry/collision/door-runtime change, auth/quote/payment behavior change, Pixel Streaming change, or Unreal change was made.
+- Next step:
+  - With explicit staging-deploy authorization, deploy the verified branch and rerun the staging readiness/browser evidence against the deployed URL.
+
 ## 2026-06-30 GALA Interior Visual Preflight Readability Fix
 
 - Active objective: clear the canonical GALA visual-acceptance preflight failure where `interiorStudio` and `startInside` were classified as `near-uniform-close-surface`, without changing camera/FOV/lookAt, player movement physics, collision, door runtime, or structural wall core geometry.
