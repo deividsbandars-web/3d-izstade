@@ -5,7 +5,11 @@ import {
   GalaCoffeeTableModel,
   GalaLivingSofaModel,
 } from '../GalaInteriorFurniture';
-import { GALA_CONSTRUCTION_LEVELS, GALA_FURNITURE_LAYOUT } from './GalaConstructionModel';
+import {
+  GALA_BATHROOM_WEST_PARTITION_LOCAL_X,
+  GALA_CONSTRUCTION_LEVELS,
+  GALA_FURNITURE_LAYOUT,
+} from './GalaConstructionModel';
 import { GalaConstructionBox, GalaConstructionCylinder } from './GalaConstructionPrimitives';
 
 type GalaRoomDetailLevel = 'full' | 'reduced';
@@ -40,6 +44,9 @@ export function GalaRoomAssembly({ detailLevel = 'full', visualConfig }: GalaRoo
   const visual = resolveGalaInteriorVisual(visualConfig);
   const layout = GALA_FURNITURE_LAYOUT;
   const reducedDetail = detailLevel === 'reduced';
+  const partitionAccentX = GALA_BATHROOM_WEST_PARTITION_LOCAL_X
+    - (GALA_CONSTRUCTION_LEVELS.exteriorWallThicknessM * 0.5)
+    - 0.026;
   const yAtFloor = (relativeY: number) => Number((
     GALA_CONSTRUCTION_LEVELS.finishedFloorTopY + relativeY
   ).toFixed(4));
@@ -119,6 +126,29 @@ export function GalaRoomAssembly({ detailLevel = 'full', visualConfig }: GalaRoo
       ))}
       <GalaConstructionBox color={FIXTURE_CERAMIC} name="gala-construction-kitchen-sink-basin-cue" position={layout.kitchenSinkCue.position} size={layout.kitchenSinkCue.size} userData={{ ...FIXTURE_CLEARANCE_USER_DATA, mainFurnitureOrFixtureVisible: true }} />
       <GalaConstructionBox color="#25211c" name="gala-construction-kitchen-cooktop-cue" position={layout.kitchenCooktopCue.position} size={layout.kitchenCooktopCue.size} userData={{ ...FIXTURE_CLEARANCE_USER_DATA, mainFurnitureOrFixtureVisible: true }} />
+      <GalaConstructionBox
+        castShadow={false}
+        color={visual.rugColor}
+        name="gala-construction-living-wall-material-swatch-panel"
+        position={[partitionAccentX, yAtFloor(1.42), -1.18]}
+        size={[0.032, 0.46, 1.08]}
+        userData={{ ...WALL_MOUNTED_CLEARANCE_USER_DATA, interiorWallDecorAccent: true, materialSamplePanel: true }}
+      />
+      {[
+        { color: visual.sofaColor, id: 'sofa-fabric', z: -1.46 },
+        { color: visual.blanketColor, id: 'soft-accent', z: -1.18 },
+        { color: visual.counterColor, id: 'counter-detail', z: -0.9 },
+      ].map((swatch) => (
+        <GalaConstructionBox
+          key={swatch.id}
+          castShadow={false}
+          color={swatch.color}
+          name={`gala-construction-living-wall-material-swatch-${swatch.id}`}
+          position={[partitionAccentX - 0.006, yAtFloor(1.42), swatch.z]}
+          size={[0.034, 0.32, 0.18]}
+          userData={{ ...WALL_MOUNTED_CLEARANCE_USER_DATA, interiorWallDecorAccent: true, materialSamplePanel: true }}
+        />
+      ))}
       <GalaConstructionBox color="#5f432b" name="gala-construction-bedroom-bed-frame-headboard-against-south-wall" position={layout.bedroomBedFrame.position} size={layout.bedroomBedFrame.size} userData={{ ...FURNITURE_CLEARANCE_USER_DATA, bedHeadboardAgainstWall: true, bedroomLayoutReadable: true }} />
       <GalaBedFabricBox anchor="againstWall" color="#f0e7d7" name="gala-construction-bedroom-mattress-head-against-wall" position={layout.bedroomMattress.position} radius={0.055} size={layout.bedroomMattress.size} userData={{ ...FURNITURE_CLEARANCE_USER_DATA, bedHeadboardAgainstWall: true, furnitureNotFloating: true }} />
       {!reducedDetail ? (

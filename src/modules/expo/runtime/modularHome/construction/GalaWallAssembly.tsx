@@ -19,9 +19,16 @@ import {
 
 type WallCell = {
   axisCenterM: number;
+  axisEndM: number;
   axisSizeM: number;
+  axisStartM: number;
   heightM: number;
   yCenterM: number;
+};
+
+type PartitionFacePanel = {
+  instance: GalaConstructionBoxInstance;
+  panelIndex: number;
 };
 
 type GalaWallAssemblyProps = {
@@ -88,7 +95,9 @@ function buildWallCells(wall: GalaConstructionWallSegment): WallCell[] {
 
       cells.push({
         axisCenterM,
+        axisEndM: axisEnd,
         axisSizeM: axisEnd - axisStart,
+        axisStartM: axisStart,
         heightM: yEnd - yStart,
         yCenterM,
       });
@@ -113,6 +122,66 @@ function wallSize(wall: GalaConstructionWallSegment, axisSize: number, height: n
     : [depth, height, axisSize];
 }
 
+function blendHexChannel(left: string, right: string, ratio: number) {
+  return Math.round(Number.parseInt(left, 16) + ((Number.parseInt(right, 16) - Number.parseInt(left, 16)) * ratio))
+    .toString(16)
+    .padStart(2, '0');
+}
+
+function blendHexColor(left: string, right: string, ratio: number) {
+  const leftValue = left.replace('#', '');
+  const rightValue = right.replace('#', '');
+  if (!/^[0-9a-f]{6}$/i.test(leftValue) || !/^[0-9a-f]{6}$/i.test(rightValue)) {
+    return left;
+  }
+
+  return `#${blendHexChannel(leftValue.slice(0, 2), rightValue.slice(0, 2), ratio)}${blendHexChannel(leftValue.slice(2, 4), rightValue.slice(2, 4), ratio)}${blendHexChannel(leftValue.slice(4, 6), rightValue.slice(4, 6), ratio)}`;
+}
+
+function buildPartitionFacePanels({
+  cells,
+  faceOffset,
+  gapWidthM,
+  panelSpacingM,
+  wall,
+}: {
+  cells: readonly WallCell[];
+  faceOffset: number;
+  gapWidthM: number;
+  panelSpacingM: number;
+  wall: GalaConstructionWallSegment;
+}): PartitionFacePanel[] {
+  if (wall.kind !== 'partition') {
+    return [];
+  }
+
+  const panelGapM = Math.min(gapWidthM * 1.5, panelSpacingM * 0.24);
+  return [-faceOffset, faceOffset].flatMap((offset, offsetIndex) => (
+    cells.flatMap((cell) => {
+      const panels: PartitionFacePanel[] = [];
+      let panelStartM = cell.axisStartM;
+      let panelIndex = 0;
+
+      while (panelStartM < cell.axisEndM - 0.001) {
+        const panelEndM = Math.min(cell.axisEndM, panelStartM + panelSpacingM);
+        const panelSizeM = Math.max(0.03, panelEndM - panelStartM - panelGapM);
+        const panelCenterM = (panelStartM + panelEndM) * 0.5;
+        panels.push({
+          instance: {
+            position: wallPosition(wall, panelCenterM, cell.yCenterM, offset),
+            size: wallSize(wall, panelSizeM, cell.heightM, 0.02),
+          },
+          panelIndex: panelIndex + (offsetIndex * 1000),
+        });
+        panelStartM += panelSpacingM;
+        panelIndex += 1;
+      }
+
+      return panels;
+    })
+  ));
+}
+
 export function GalaWallAssembly({ onEntryDoorOpen, visualConfig, wall }: GalaWallAssemblyProps) {
   const wallSkin = resolveGalaWallSkin(visualConfig);
   const interiorWallPbrTextures = useGalaConstructionPbrTextures('interiorWall', wallSkin.interior.wallTextureVariant);
@@ -130,12 +199,24 @@ export function GalaWallAssembly({ onEntryDoorOpen, visualConfig, wall }: GalaWa
       size: wallSize(wall, cell.axisSizeM, cell.heightM, 0.022),
     }))
     : [];
-  const partitionFaceInstances: GalaConstructionBoxInstance[] = wall.kind === 'partition'
-    ? [-faceOffset, faceOffset].flatMap((offset) => wallCells.map((cell) => ({
-      position: wallPosition(wall, cell.axisCenterM, cell.yCenterM, offset),
-      size: wallSize(wall, cell.axisSizeM, cell.heightM, 0.02),
-    })))
-    : [];
+  const partitionFacePanels = buildPartitionFacePanels({
+    cells: wallCells,
+    faceOffset,
+    gapWidthM: wallSkin.interior.gapWidthM,
+    panelSpacingM: wallSkin.interior.panelSpacingM,
+    wall,
+  });
+  const partitionFacePanelBaseInstances = partitionFacePanels
+    .filter((panel) => panel.panelIndex % 3 !== 1)
+    .map((panel) => panel.instance);
+  const partitionFacePanelAccentInstances = partitionFacePanels
+    .filter((panel) => panel.panelIndex % 3 === 1)
+    .map((panel) => panel.instance);
+  const partitionFaceAccentColor = blendHexColor(
+    wallSkin.interior.wallPanelColor,
+    wallSkin.interior.floorSeamColor,
+    0.48,
+  );
 
   return (
     <group
@@ -195,30 +276,53 @@ export function GalaWallAssembly({ onEntryDoorOpen, visualConfig, wall }: GalaWa
           }}
         />
       ) : (
-        <GalaConstructionInstancedBoxes
-          {...wallSkin.interior.materials.panel}
-          {...interiorWallPbrTextures}
-          castShadow={false}
-          color={wallSkin.interior.wallPanelColor}
-          instances={partitionFaceInstances}
-          name={`gala-construction-${wall.id}-finished-partition-face`}
-          userData={{
-            cleanInteriorWallMaterialNotExteriorCladding: true,
-            interiorBoardModuleMatchesExterior: true,
-            interiorFaceInstanceCount: partitionFaceInstances.length,
-            interiorMaterialPaletteCoherentWithExterior: true,
-            interiorPanelModuleConsistent: true,
-            interiorWallPbrTextureKind: 'interiorWall',
-            interiorWallPbrTextureVariant: wallSkin.interior.wallTextureVariant,
-            interiorReliefGeometryRemovedForCleanCeilingLine: true,
-            interiorUsesExactExteriorBoardModule: true,
-            interiorUsesSameWallSkinSystem: true,
-            interiorUsesSameWoodTone: true,
-            interiorWallAssemblyCoherent: true,
-            wallSkinModelOwner: 'GalaWallSkinModel',
-            wallId: wall.id,
-          }}
-        />
+        <>
+          <GalaConstructionInstancedBoxes
+            {...wallSkin.interior.materials.panel}
+            {...interiorWallPbrTextures}
+            castShadow={false}
+            color={wallSkin.interior.wallPanelColor}
+            instances={partitionFacePanelBaseInstances}
+            name={`gala-construction-${wall.id}-finished-partition-face-panelized-base`}
+            userData={{
+              cleanInteriorWallMaterialNotExteriorCladding: true,
+              interiorBoardModuleMatchesExterior: true,
+              interiorFaceInstanceCount: partitionFacePanels.length,
+              interiorMaterialPaletteCoherentWithExterior: true,
+              interiorPanelModuleConsistent: true,
+              interiorPartitionFacesPanelizedForNearViewReadability: true,
+              interiorWallPbrTextureKind: 'interiorWall',
+              interiorWallPbrTextureVariant: wallSkin.interior.wallTextureVariant,
+              interiorReliefGeometryRemovedForCleanCeilingLine: true,
+              interiorUsesExactExteriorBoardModule: true,
+              interiorUsesSameWallSkinSystem: true,
+              interiorUsesSameWoodTone: true,
+              interiorWallAssemblyCoherent: true,
+              wallSkinModelOwner: 'GalaWallSkinModel',
+              wallId: wall.id,
+            }}
+          />
+          <GalaConstructionInstancedBoxes
+            {...wallSkin.interior.materials.panel}
+            {...interiorWallPbrTextures}
+            castShadow={false}
+            color={partitionFaceAccentColor}
+            instances={partitionFacePanelAccentInstances}
+            name={`gala-construction-${wall.id}-finished-partition-face-panelized-accent`}
+            userData={{
+              cleanInteriorWallMaterialNotExteriorCladding: true,
+              interiorFaceAccentPanelCount: partitionFacePanelAccentInstances.length,
+              interiorMaterialPaletteCoherentWithExterior: true,
+              interiorPanelModuleConsistent: true,
+              interiorPartitionFacesPanelizedForNearViewReadability: true,
+              interiorWallPbrTextureKind: 'interiorWall',
+              interiorWallPbrTextureVariant: wallSkin.interior.wallTextureVariant,
+              interiorWallAssemblyCoherent: true,
+              wallSkinModelOwner: 'GalaWallSkinModel',
+              wallId: wall.id,
+            }}
+          />
+        </>
       )}
 
       <GalaCladdingAssembly visualConfig={visualConfig} wall={wall} />

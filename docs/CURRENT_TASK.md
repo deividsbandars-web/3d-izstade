@@ -1,5 +1,33 @@
 # Current Task
 
+## 2026-06-30 GALA Interior Visual Preflight Readability Fix
+
+- Active objective: clear the canonical GALA visual-acceptance preflight failure where `interiorStudio` and `startInside` were classified as `near-uniform-close-surface`, without changing camera/FOV/lookAt, player movement physics, collision, door runtime, or structural wall core geometry.
+- Implementation status:
+  - Confirmed the failing preflight was not a blank canvas or DOM overlay issue; center raycast hit the bathroom west partition finished face at close range and the central crop had too few color bins.
+  - Added panelized finished partition faces with subtle alternate tones and visible grooves on partition wall skin while leaving structural wall core cells unchanged.
+  - Exposed the bathroom west partition local x-position from `GalaConstructionModel.ts` and added a small text-free wall-mounted material swatch panel in `GalaRoomAssembly`.
+  - The swatch uses existing interior palette colors and is decorative/readability-focused; it does not affect collision, movement, door runtime, camera, pricing, configurator state, or quote behavior.
+- Validation:
+  - `npm.cmd run lint` passed.
+  - `npm.cmd run check:expo-boundaries` passed.
+  - `npm.cmd run check:bundle-budget` passed.
+  - `npm.cmd run build` passed.
+  - `node scripts\qa-gala-visual-acceptance-local.mjs --base-url=http://127.0.0.1:4173 --out-dir=artifacts\gala-visual-preflight-material-swatch` passed against `vite preview`: exterior, interior, quote review, Start outside, and Start inside all passed; `productVisualAccepted=false`.
+  - `node scripts\qa-gala-motion-performance-audit.mjs --base-url=http://127.0.0.1:4173 --profile=desktop --out-dir=artifacts\gala-motion-after-visual-readability-desktop` passed: median FPS 238.1, P95 8.3-8.4 ms, stutters 0.
+  - `node scripts\qa-gala-motion-performance-audit.mjs --base-url=http://127.0.0.1:4173 --profile=constrained-mobile --out-dir=artifacts\gala-motion-after-visual-readability-constrained-mobile` passed: median FPS 80-232.56, P95 16.8-33.4 ms, stutters 0-3 under the 6-stutter constrained-mobile budget.
+- Touched files:
+  - `src/modules/expo/runtime/modularHome/construction/GalaConstructionModel.ts`
+  - `src/modules/expo/runtime/modularHome/construction/GalaRoomAssembly.tsx`
+  - `src/modules/expo/runtime/modularHome/construction/GalaWallAssembly.tsx`
+  - `docs/CURRENT_TASK.md`
+- Product/release status:
+  - Local canonical visual preflight is green, and local desktop/constrained-mobile motion performance remains green.
+  - `productVisualAccepted=false`.
+  - No staging/production deploy, sponsor boulevard camera/FOV/lookAt change, booth geometry edit, auth/quote/payment behavior change, Pixel Streaming change, or Unreal change was made.
+- Next step:
+  - Push the local commits and, only with explicit deploy authorization, redeploy/re-run staging evidence so production go/no-go can use these fixes.
+
 ## 2026-06-30 GALA Motion Performance Render LOD Fix
 
 - Active objective: fix the failing GALA motion-performance audit on `/modular-homes/studio?homeStudio=1` without changing camera/FOV/lookAt, player movement physics, collision, door runtime, or GALA construction geometry.

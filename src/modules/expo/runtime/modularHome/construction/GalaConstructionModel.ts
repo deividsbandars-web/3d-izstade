@@ -140,7 +140,7 @@ export const GALA_CONSTRUCTION_ROOMS = {
 
 const halfLength = GALA_HOUSE_DIMENSIONS.houseLengthM * 0.5;
 const halfWidth = GALA_HOUSE_DIMENSIONS.assembledWallEnvelopeWidthM * 0.5;
-const bathroomPartitionLocalX = planXToLocalX(GALA_HOUSE_DIMENSIONS.bathroomStartXM) + 0.105;
+export const GALA_BATHROOM_WEST_PARTITION_LOCAL_X = planXToLocalX(GALA_HOUSE_DIMENSIONS.bathroomStartXM) + 0.105;
 
 function scheduledOpeningToConstruction(opening: GalaOpeningScheduleItem): GalaConstructionOpening {
   const doorId = opening.id === 'D-ENTRY'
@@ -255,7 +255,7 @@ export const GALA_CONSTRUCTION_WALLS: readonly GalaConstructionWallSegment[] = [
     normal: [-1, 0],
     openings: [],
     roomSide: 'both',
-    xM: bathroomPartitionLocalX,
+    xM: GALA_BATHROOM_WEST_PARTITION_LOCAL_X,
   },
   {
     axis: 'z',
@@ -271,7 +271,7 @@ export const GALA_CONSTRUCTION_WALLS: readonly GalaConstructionWallSegment[] = [
   {
     axis: 'x',
     axisEndM: planXToLocalX(GALA_HOUSE_DIMENSIONS.bathroomEndXM),
-    axisStartM: bathroomPartitionLocalX,
+    axisStartM: GALA_BATHROOM_WEST_PARTITION_LOCAL_X,
     id: 'bathroom-north-partition-wall',
     kind: 'partition',
     normal: [0, 1],
