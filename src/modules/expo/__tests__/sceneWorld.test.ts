@@ -51,6 +51,21 @@ assert.ok(boulevardPlan.districts.some((district) => district.isCommerciallyElig
 assert.ok(boulevardPlan.districts.every((district) => district.authoredMomentCount >= 1));
 assert.deepEqual(buildSponsorBoulevardPlan(sponsorData.companies, sponsorData.sectors), boulevardPlan);
 
+const reservedSlotPlan = buildSponsorBoulevardPlan([
+  {
+    boothType: 'standard',
+    id: 'reserved-standard',
+    name: 'Reserved Standard',
+    priority: 12,
+    sector_id: 'sector-2',
+    slotId: 'showcase-right-standard-3',
+    sponsorTier: 'silver',
+  },
+], sponsorData.sectors);
+const reservedStandardNode = reservedSlotPlan.nodes.find((node) => node.companyId === 'reserved-standard');
+assert.equal(reservedStandardNode?.nodeType, 'standard_right');
+assert.deepEqual(reservedStandardNode?.position, [628, 0, -1074]);
+
 const overflowHeroPlan = buildSponsorBoulevardPlan([
   { boothType: 'hero', id: 'hero-1', name: 'Hero One', priority: 100, sector_id: 'sector-1', sponsorTier: 'hero' },
   { boothType: 'hero', id: 'hero-2', name: 'Hero Two', priority: 90, sector_id: 'sector-1', sponsorTier: 'hero' },

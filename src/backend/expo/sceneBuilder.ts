@@ -18,6 +18,27 @@ function resolveCanonicalSectorId(value: unknown, fallbackIndex = 0) {
   return EXPO_SCENE_CANONICAL_DISTRICTS[fallbackIndex % EXPO_SCENE_CANONICAL_DISTRICTS.length];
 }
 
+function resolveCompanyCanonicalSectorId(
+  company: Record<string, any>,
+  rawSectors: Record<string, any>[],
+  canonicalSectors: Array<{ id: string; name: string }>,
+  fallbackIndex: number,
+) {
+  const rawSectorId = String(company.sector_id || company.sectorId || '').trim();
+  if (rawSectorId) {
+    const rawSectorIndex = rawSectors.findIndex((sector) =>
+      String(sector.id || '').trim() === rawSectorId
+      || String(sector.name || '').trim().toLowerCase() === rawSectorId.toLowerCase()
+    );
+
+    if (rawSectorIndex >= 0 && canonicalSectors[rawSectorIndex]?.id) {
+      return canonicalSectors[rawSectorIndex].id;
+    }
+  }
+
+  return resolveCanonicalSectorId(company.sector_id, fallbackIndex);
+}
+
 function normalizeSceneLookupKey(value: unknown) {
   return String(value || '')
     .normalize('NFKD')
@@ -171,7 +192,7 @@ export const sceneBuilder = {
       logger.info('SceneBuilder', 'Building Expo Scene...');
 
       const [sectorsResult, companiesResult, boothsResult, managedBoothsResult] = await Promise.all([
-        supabaseClient.from('sectors').select('*'),
+        supabaseClient.from('sectors').select('*').order('created_at', { ascending: true }),
         supabaseClient.from('companies').select('*').eq('is_active', true),
         supabaseClient.from('booths').select('*'),
         listExpoBooths().catch((error) => ({ data: null, error, table: 'expo_booths' as const })),
@@ -183,7 +204,8 @@ export const sceneBuilder = {
 
       const rawBooths = boothsResult.data || [];
       const managedBoothIndex = buildManagedBoothIndex(!managedBoothsResult.error && managedBoothsResult.data ? managedBoothsResult.data : []);
-      const sectors = (sectorsResult.data || []).map((sector: any, index: number) => ({
+      const rawSectors = sectorsResult.data || [];
+      const sectors = rawSectors.map((sector: any, index: number) => ({
         ...sector,
         id: resolveCanonicalSectorId(sector.id || sector.name, index),
       }));
@@ -198,7 +220,7 @@ export const sceneBuilder = {
       });
       const companies = (companiesResult.data || []).map((company: any, index: number) => {
         const companyBooth = booths.find((b: any) => b.company_id === company.id);
-        const sectorId = resolveCanonicalSectorId(company.sector_id, index);
+        const sectorId = resolveCompanyCanonicalSectorId(company, rawSectors, sectors, index);
         return {
           ...company,
           boothType: companyBooth?.booth_type || company.booth_type || null,
@@ -208,6 +230,7 @@ export const sceneBuilder = {
           posterUrl: companyBooth?.poster_url || null,
           sectorId,
           sector_id: sectorId,
+          slotId: companyBooth?.slot_id || null,
         };
       });
       const sceneData: ExpoSceneContract = {
@@ -215,6 +238,7 @@ export const sceneBuilder = {
         booths: booths.map((booth: any) => ({
           ...booth,
           companyId: String(booth.companyId || booth.company_id || ''),
+          slotId: booth.slotId || booth.slot_id || null,
         })),
         cityInfo: {
           globalLocation: null,

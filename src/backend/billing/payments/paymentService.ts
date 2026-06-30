@@ -4,7 +4,7 @@ import { getSupabaseAdminClient } from '../../lib/supabaseAdmin.js';
 import { PlatformEvent } from '../../events/eventTypes.js';
 import { PLANS } from '../plans/planService.js';
 
-export type CheckoutKind = 'plan' | 'credits';
+export type CheckoutKind = 'plan' | 'credits' | 'booth-slot';
 
 type PaymentServiceError = {
   code: string;
@@ -21,6 +21,7 @@ type CheckoutProduct = {
   amountCents: number;
   creditAmount?: number;
   currency: string;
+  metadata?: Record<string, string>;
   mode: Stripe.Checkout.SessionCreateParams.Mode;
   name: string;
   planName?: string;
@@ -60,10 +61,24 @@ type EventPublisherLike = {
 
 type PaymentServiceDependencies = {
   env?: NodeJS.ProcessEnv;
+  finalizePaidBoothSlotReservation?: BoothSlotCheckoutHandlers['finalizePaidBoothSlotReservation'];
+  getBoothSlotCheckoutProduct?: BoothSlotCheckoutHandlers['getBoothSlotCheckoutProduct'];
   getCreditService?: () => CreditServiceLike | Promise<CreditServiceLike>;
   getEventPublisher?: () => EventPublisherLike | Promise<EventPublisherLike>;
+  markBoothSlotCheckoutStarted?: BoothSlotCheckoutHandlers['markBoothSlotCheckoutStarted'];
   getStorageClient?: () => SupabaseStorageClient;
   getStripeClient?: (secretKey: string) => StripeClientLike;
+};
+
+export type BoothSlotCheckoutHandlers = {
+  finalizePaidBoothSlotReservation(payload: {
+    amountCents: number | null;
+    currency: string | null;
+    reservationId: string;
+    stripeSessionId: string;
+  }, options: { storage: SupabaseStorageClient }): Promise<unknown>;
+  getBoothSlotCheckoutProduct(reservationId: string, options: { storage: SupabaseStorageClient }): Promise<CheckoutProduct>;
+  markBoothSlotCheckoutStarted(reservationId: string, stripeSessionId: string, options: { storage: SupabaseStorageClient }): Promise<unknown>;
 };
 
 const DEFAULT_CURRENCY = 'eur';
@@ -78,6 +93,7 @@ const CREDIT_PACKAGES: Record<string, { amountCents: number; credits: number; na
 
 let cachedStripeClient: StripeClientLike | null = null;
 let cachedStripeSecretKey: string | null = null;
+let registeredBoothSlotCheckoutHandlers: BoothSlotCheckoutHandlers | null = null;
 
 function createError(code: string, message: string, status = 500): PaymentServiceError {
   return { code, message, status };
@@ -169,6 +185,13 @@ export function resolveCheckoutProduct(productId: string, kind: CheckoutKind): P
     };
   }
 
+  if (kind === 'booth-slot') {
+    return {
+      data: null,
+      error: createError('BILLING_BOOTH_SLOT_LOOKUP_REQUIRED', 'Booth slot checkout products must be resolved from an active reservation.', 400),
+    };
+  }
+
   if (kind === 'plan') {
     const plan = PLANS[normalizedProductId as keyof typeof PLANS];
     if (!plan || plan.monthly_price <= 0) {
@@ -235,6 +258,10 @@ async function getDefaultEventPublisher() {
   return module.eventPublisher;
 }
 
+export function configureBoothSlotCheckoutHandlers(handlers: BoothSlotCheckoutHandlers) {
+  registeredBoothSlotCheckoutHandlers = handlers;
+}
+
 function getPaymentStorage(dependencies: PaymentServiceDependencies) {
   return dependencies.getStorageClient?.() ?? getDefaultStorageClient();
 }
@@ -245,6 +272,56 @@ async function getPaymentCreditService(dependencies: PaymentServiceDependencies)
 
 async function getPaymentEventPublisher(dependencies: PaymentServiceDependencies) {
   return dependencies.getEventPublisher?.() ?? getDefaultEventPublisher();
+}
+
+function coercePaymentServiceError(error: unknown): PaymentServiceError {
+  if (typeof error === 'object' && error) {
+    const candidate = error as Partial<PaymentServiceError>;
+    if (candidate.code && candidate.message) {
+      return createError(candidate.code, candidate.message, candidate.status ?? 500);
+    }
+  }
+
+  return createError(
+    'BILLING_PRODUCT_LOOKUP_FAILED',
+    error instanceof Error ? error.message : 'Failed to resolve billing product.',
+    500,
+  );
+}
+
+async function resolveCheckoutProductForCheckout(
+  productId: string,
+  kind: CheckoutKind,
+  dependencies: PaymentServiceDependencies,
+): Promise<PaymentServiceResult<CheckoutProduct>> {
+  if (kind !== 'booth-slot') {
+    return resolveCheckoutProduct(productId, kind);
+  }
+
+  try {
+    const storage = getPaymentStorage(dependencies);
+    const resolver = dependencies.getBoothSlotCheckoutProduct ?? registeredBoothSlotCheckoutHandlers?.getBoothSlotCheckoutProduct;
+    if (!resolver) {
+      return {
+        data: null,
+        error: createError(
+          'BILLING_BOOTH_SLOT_CHECKOUT_NOT_CONFIGURED',
+          'Booth slot checkout is not configured in this backend process.',
+          503,
+        ),
+      };
+    }
+
+    return {
+      data: await resolver(productId, { storage }),
+      error: null,
+    };
+  } catch (error) {
+    return {
+      data: null,
+      error: coercePaymentServiceError(error),
+    };
+  }
 }
 
 async function upsertPayment(storage: SupabaseStorageClient, values: Record<string, unknown>) {
@@ -283,13 +360,14 @@ export function createPaymentService(dependencies: PaymentServiceDependencies = 
           return { data: null, error: config.error };
         }
 
-        const product = resolveCheckoutProduct(productId, kind);
+        const product = await resolveCheckoutProductForCheckout(productId, kind, dependencies);
         if (product.error || !product.data) {
           return { data: null, error: product.error };
         }
 
         const stripe = getStripeClient(config.data.secretKey);
         const metadata: Record<string, string> = {
+          ...(product.data.metadata ?? {}),
           kind,
           product_id: product.data.productId,
           user_id: userId,
@@ -323,7 +401,8 @@ export function createPaymentService(dependencies: PaymentServiceDependencies = 
           ...(product.data.mode === 'subscription' ? { subscription_data: { metadata } } : {}),
         });
 
-        await upsertPayment(getPaymentStorage(dependencies), {
+        const storage = getPaymentStorage(dependencies);
+        await upsertPayment(storage, {
           amount_cents: product.data.amountCents,
           currency: product.data.currency,
           metadata,
@@ -334,6 +413,21 @@ export function createPaymentService(dependencies: PaymentServiceDependencies = 
           stripe_checkout_url: session.url,
           user_id: userId,
         });
+
+        if (kind === 'booth-slot') {
+          const marker = dependencies.markBoothSlotCheckoutStarted ?? registeredBoothSlotCheckoutHandlers?.markBoothSlotCheckoutStarted;
+          if (!marker) {
+            return {
+              data: null,
+              error: createError(
+                'BILLING_BOOTH_SLOT_CHECKOUT_NOT_CONFIGURED',
+                'Booth slot checkout is not configured in this backend process.',
+                503,
+              ),
+            };
+          }
+          await marker(product.data.productId, session.id, { storage });
+        }
 
         return {
           data: {
@@ -461,6 +555,17 @@ export function createPaymentService(dependencies: PaymentServiceDependencies = 
         if (result.error) {
           throw new Error(result.error);
         }
+      } else if (kind === 'booth-slot') {
+        const finalizer = dependencies.finalizePaidBoothSlotReservation ?? registeredBoothSlotCheckoutHandlers?.finalizePaidBoothSlotReservation;
+        if (!finalizer) {
+          throw new Error('Booth slot checkout is not configured in this backend process.');
+        }
+        await finalizer({
+          amountCents: session.amount_total ?? null,
+          currency: session.currency ?? DEFAULT_CURRENCY,
+          reservationId: productId,
+          stripeSessionId,
+        }, { storage });
       } else {
         throw new Error(`Unsupported checkout kind: ${kind}`);
       }

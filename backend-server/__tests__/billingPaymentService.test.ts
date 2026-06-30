@@ -68,6 +68,10 @@ assert.equal(creditPackage.data?.amountCents, 1900);
 assert.equal(creditPackage.data?.creditAmount, 100);
 assert.equal(creditPackage.data?.mode, 'payment');
 
+const boothSlotDirectLookup = resolveCheckoutProduct('reservation-1', 'booth-slot');
+assert.equal(boothSlotDirectLookup.data, null);
+assert.equal(boothSlotDirectLookup.error?.code, 'BILLING_BOOTH_SLOT_LOOKUP_REQUIRED');
+
 {
   let stripeCreateCalled = false;
   const service = createPaymentService({
@@ -153,6 +157,74 @@ assert.equal(creditPackage.data?.mode, 'payment');
 }
 
 {
+  const createdSessions: unknown[] = [];
+  const paymentStorage = createPaymentStorage();
+  let checkoutMarked: { reservationId: string; stripeSessionId: string } | null = null;
+  const service = createPaymentService({
+    env: {
+      STRIPE_SECRET_KEY: 'sk_test_123',
+      STRIPE_PUBLISHABLE_KEY: 'pk_test_123',
+      BILLING_PUBLIC_APP_URL: 'https://example.com',
+    },
+    getBoothSlotCheckoutProduct: async (reservationId) => ({
+      amountCents: 900000,
+      currency: 'eur',
+      metadata: {
+        booth_slot_id: 'showcase-right-standard-1',
+        booth_slot_reservation_id: reservationId,
+      },
+      mode: 'payment',
+      name: 'Web3D Expo premium booth slot',
+      productId: reservationId,
+    }),
+    getStorageClient: () => paymentStorage.storage,
+    getStripeClient: () => ({
+      checkout: {
+        sessions: {
+          async create(params: unknown) {
+            createdSessions.push(params);
+            return {
+              id: 'cs_booth_slot',
+              url: 'https://checkout.stripe.com/pay/cs_booth_slot',
+            };
+          },
+        },
+      },
+      webhooks: {
+        constructEvent() {
+          throw new Error('not used');
+        },
+      },
+    } as never),
+    markBoothSlotCheckoutStarted: async (reservationId, stripeSessionId) => {
+      checkoutMarked = { reservationId, stripeSessionId };
+    },
+  });
+
+  const result = await service.createCheckoutSession('user-1', 'reservation-1', 'booth-slot');
+  assert.equal(result.error, null);
+  assert.equal(result.data?.session_id, 'cs_booth_slot');
+  assert.equal(createdSessions.length, 1);
+  assert.deepEqual(checkoutMarked, { reservationId: 'reservation-1', stripeSessionId: 'cs_booth_slot' });
+
+  const sessionParams = createdSessions[0] as {
+    line_items?: Array<{ price_data?: { unit_amount?: number; recurring?: { interval?: string } } }>;
+    metadata?: Record<string, string>;
+    mode?: string;
+  };
+  assert.equal(sessionParams.mode, 'payment');
+  assert.equal(sessionParams.line_items?.[0]?.price_data?.unit_amount, 900000);
+  assert.equal(sessionParams.line_items?.[0]?.price_data?.recurring, undefined);
+  assert.deepEqual(sessionParams.metadata, {
+    booth_slot_id: 'showcase-right-standard-1',
+    booth_slot_reservation_id: 'reservation-1',
+    kind: 'booth-slot',
+    product_id: 'reservation-1',
+    user_id: 'user-1',
+  });
+}
+
+{
   const service = createPaymentService({
     env: {
       STRIPE_SECRET_KEY: 'sk_test_123',
@@ -180,6 +252,67 @@ assert.equal(creditPackage.data?.mode, 'payment');
   assert.equal(result.success, false);
   assert.equal(result.error?.status, 400);
   assert.equal(result.error?.code, 'BILLING_STRIPE_WEBHOOK_INVALID');
+}
+
+{
+  const paymentStorage = createPaymentStorage();
+  let finalizedReservation: unknown = null;
+  const service = createPaymentService({
+    env: {
+      STRIPE_SECRET_KEY: 'sk_test_123',
+      STRIPE_WEBHOOK_SECRET: 'whsec_123',
+      BILLING_PUBLIC_APP_URL: 'https://example.com',
+    },
+    finalizePaidBoothSlotReservation: async (payload) => {
+      finalizedReservation = payload;
+    },
+    getEventPublisher: async () => ({
+      async publish() {
+        return null;
+      },
+    }),
+    getStorageClient: () => paymentStorage.storage,
+    getStripeClient: () => ({
+      checkout: {
+        sessions: {
+          async create() {
+            throw new Error('not used');
+          },
+        },
+      },
+      webhooks: {
+        constructEvent() {
+          return {
+            data: {
+              object: {
+                amount_total: 900000,
+                currency: 'eur',
+                id: 'cs_completed',
+                metadata: {
+                  booth_slot_id: 'showcase-right-standard-1',
+                  kind: 'booth-slot',
+                  product_id: 'reservation-1',
+                  user_id: 'user-1',
+                },
+              },
+            },
+            type: 'checkout.session.completed',
+          };
+        },
+      },
+    } as never),
+  });
+
+  const result = await service.handleWebhook(Buffer.from('{}'), 'valid-signature');
+  assert.equal(result.success, true);
+  assert.equal(result.error, null);
+  assert.deepEqual(finalizedReservation, {
+    amountCents: 900000,
+    currency: 'eur',
+    reservationId: 'reservation-1',
+    stripeSessionId: 'cs_completed',
+  });
+  assert.equal(paymentStorage.upserts.length, 1);
 }
 
 {

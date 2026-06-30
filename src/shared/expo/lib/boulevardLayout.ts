@@ -35,6 +35,8 @@ export type BoulevardCompany = {
   priority?: number | null;
   sectorId?: string | null;
   sector_id?: string | null;
+  slotId?: string | null;
+  slot_id?: string | null;
   sponsorTier?: SponsorTier | null;
 };
 
@@ -121,6 +123,7 @@ export type RankedBoulevardCompany = {
   sectorId: string | null;
   sectorLabel: string;
   sectorOrder: number;
+  slotId: string | null;
   sponsorTier: SponsorTier;
 };
 
@@ -438,6 +441,11 @@ function normalizePriority(value: unknown) {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
+function normalizeSlotId(value: unknown) {
+  const normalized = typeof value === 'string' ? value.trim() : '';
+  return normalized.length > 0 ? normalized : null;
+}
+
 export function normalizeSponsorTier(value: unknown): SponsorTier {
   switch (String(value || '').trim().toLowerCase()) {
     case 'hero':
@@ -513,6 +521,7 @@ export function rankCompaniesForBoulevard(
       sectorId: sector?.id ? String(sector.id) : sectorId ?? UNASSIGNED_SECTOR_ID,
       sectorLabel: sector?.name ? String(sector.name) : UNASSIGNED_SECTOR_LABEL,
       sectorOrder: sector ? (sectorOrder.get(String(sector.id)) ?? Number.MAX_SAFE_INTEGER - 1) : Number.MAX_SAFE_INTEGER,
+      slotId: normalizeSlotId(company.slotId ?? company.slot_id),
       sponsorTier,
     };
   }).sort(compareRankedCompanies);
@@ -968,6 +977,69 @@ function getCuratedCompanySlots(
   return CURATED_COMPANY_SLOT_BANK[band][lane][kind];
 }
 
+function allocateCompanyNodesFromCuratedSlots({
+  clusterIndex,
+  color,
+  companies,
+  districtBand,
+  districtCenter,
+  rejectedNodes,
+  slots,
+}: {
+  clusterIndex: number;
+  color: string;
+  companies: RankedBoulevardCompany[];
+  districtBand: DistrictTierBand;
+  districtCenter: { x: number; z: number; lane: DistrictLane };
+  rejectedNodes: SponsorPlacementRejection[];
+  slots: CuratedCompanySlot[];
+}) {
+  const candidateNodes: SponsorBoulevardNode[] = [];
+  const usedSlotIds = new Set<string>();
+  const allocatedCompanyIds = new Set<string>();
+
+  companies.forEach((company) => {
+    if (!company.slotId) {
+      return;
+    }
+
+    const requestedSlot = slots.find((slot) => slot.slotId === company.slotId);
+    if (!requestedSlot || usedSlotIds.has(requestedSlot.slotId)) {
+      return;
+    }
+
+    const node = createCompanyNodeFromCuratedSlot(company, color, districtCenter, requestedSlot);
+    node.clusterIndex = clusterIndex;
+    candidateNodes.push(node);
+    usedSlotIds.add(requestedSlot.slotId);
+    allocatedCompanyIds.add(company.id);
+  });
+
+  companies
+    .filter((company) => !allocatedCompanyIds.has(company.id))
+    .forEach((company) => {
+      const slot = slots.find((entry) => !usedSlotIds.has(entry.slotId));
+      if (!slot) {
+        if (!ENABLE_LEGACY_BOOTH_FORMULA_FALLBACK) {
+          rejectedNodes.push(
+            createPlacementRejection(company, clusterIndex, districtBand, districtCenter.lane, 'slot-missing', {
+              slotId: company.slotId,
+            })
+          );
+        }
+        return;
+      }
+
+      const node = createCompanyNodeFromCuratedSlot(company, color, districtCenter, slot);
+      node.clusterIndex = clusterIndex;
+      candidateNodes.push(node);
+      usedSlotIds.add(slot.slotId);
+      allocatedCompanyIds.add(company.id);
+    });
+
+  return candidateNodes;
+}
+
 function buildPlanFootprint(nodes: SponsorBoulevardNode[]) {
   const footprintXs = nodes.map((node) => node.position[0]);
   const footprintZs = nodes.map((node) => node.position[2]);
@@ -1290,55 +1362,37 @@ export function buildSponsorBoulevardPlan(
     const candidateCompanyNodes: SponsorBoulevardNode[] = [];
 
     const heroSlots = getCuratedCompanySlots(districtTierBand, districtCenter.lane, 'hero');
-    heroPrimary.forEach((company, index) => {
-      const slot = heroSlots[index];
-      if (!slot) {
-        if (!ENABLE_LEGACY_BOOTH_FORMULA_FALLBACK) {
-          rejectedNodes.push(
-            createPlacementRejection(company, sectorIndex, districtTierBand, districtCenter.lane, 'slot-missing')
-          );
-        }
-        return;
-      }
-
-      const node = createCompanyNodeFromCuratedSlot(company, color, districtCenter, slot);
-      node.clusterIndex = sectorIndex;
-      candidateCompanyNodes.push(node);
-    });
+    candidateCompanyNodes.push(...allocateCompanyNodesFromCuratedSlots({
+      clusterIndex: sectorIndex,
+      color,
+      companies: heroPrimary,
+      districtBand: districtTierBand,
+      districtCenter,
+      rejectedNodes,
+      slots: heroSlots,
+    }));
 
     const premiumSlots = getCuratedCompanySlots(districtTierBand, districtCenter.lane, 'endcap');
-    premiumCompanies.forEach((company, index) => {
-      const slot = premiumSlots[index];
-      if (!slot) {
-        if (!ENABLE_LEGACY_BOOTH_FORMULA_FALLBACK) {
-          rejectedNodes.push(
-            createPlacementRejection(company, sectorIndex, districtTierBand, districtCenter.lane, 'slot-missing')
-          );
-        }
-        return;
-      }
-
-      const node = createCompanyNodeFromCuratedSlot(company, color, districtCenter, slot);
-      node.clusterIndex = sectorIndex;
-      candidateCompanyNodes.push(node);
-    });
+    candidateCompanyNodes.push(...allocateCompanyNodesFromCuratedSlots({
+      clusterIndex: sectorIndex,
+      color,
+      companies: premiumCompanies,
+      districtBand: districtTierBand,
+      districtCenter,
+      rejectedNodes,
+      slots: premiumSlots,
+    }));
 
     const standardSlots = getCuratedCompanySlots(districtTierBand, districtCenter.lane, 'standard');
-    standardCompanies.forEach((company, index) => {
-      const slot = standardSlots[index];
-      if (!slot) {
-        if (!ENABLE_LEGACY_BOOTH_FORMULA_FALLBACK) {
-          rejectedNodes.push(
-            createPlacementRejection(company, sectorIndex, districtTierBand, districtCenter.lane, 'slot-missing')
-          );
-        }
-        return;
-      }
-
-      const node = createCompanyNodeFromCuratedSlot(company, color, districtCenter, slot);
-      node.clusterIndex = sectorIndex;
-      candidateCompanyNodes.push(node);
-    });
+    candidateCompanyNodes.push(...allocateCompanyNodesFromCuratedSlots({
+      clusterIndex: sectorIndex,
+      color,
+      companies: standardCompanies,
+      districtBand: districtTierBand,
+      districtCenter,
+      rejectedNodes,
+      slots: standardSlots,
+    }));
 
     const provisionalFootprint = buildPlanFootprint([...nodes, ...candidateCompanyNodes]);
     const stadiumReserve = buildBoothPlacementReserveFromFootprint(provisionalFootprint);
@@ -1354,7 +1408,7 @@ export function buildSponsorBoulevardPlan(
           createPlacementRejection(company, sectorIndex, districtTierBand, districtCenter.lane, validation.reason, {
             blockedPocketId: validation.blockedPocketId ?? null,
             node,
-            slotId: node.id,
+            slotId: company.slotId,
           })
         );
       }

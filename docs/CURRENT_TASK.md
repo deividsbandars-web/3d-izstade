@@ -1,5 +1,54 @@
 # Current Task
 
+## 2026-06-30 Pre-Release Product Audit WP-C Self-Serve Booth Slot Marketplace
+
+- Active objective: add a sponsor-facing self-serve booth slot marketplace where a signed-in sponsor can choose an available booth slot, see the server-authored price, reserve a short hold, and continue to Stripe Checkout.
+- Implementation status:
+  - Added public `GET /api/expo/booth-slots` availability and protected `POST /api/expo/booth-slots/:slotId/reserve` reservation routes.
+  - Added `booth_slot_reservations` storage with default-deny RLS, active-slot uniqueness, hold expiry fields, and `booths.slot_id`/`marketplace_reservation_id` assignment columns.
+  - Added server-authored commercial slot mapping from `docs/booth-slot-bank.json`: arrival standard = EUR 2,500/common/support, non-arrival standard = EUR 9,000/premium/presentation, endcap = EUR 15,000/elite/large-format, hero = EUR 50,000/hero/landmark.
+  - Extended billing checkout with `booth-slot` product kind via backend-registered handlers, keeping plan/credits checkout behavior unchanged and avoiding Node-only marketplace code in the frontend bundle.
+  - Stripe `checkout.session.completed` now finalizes paid booth-slot reservations by creating the public `companies` and `booths` scene records and marking the reservation assigned.
+  - Added `/expo/booth-marketplace` and `/expo/slots` frontend routes with a mobile-safe slot map, filters, selected-slot detail, short reservation form, and Stripe redirect.
+  - Added a visible path from `SponsorPackages.tsx` into the marketplace.
+  - Plumbed `slotId` through the scene contract, backend scene builder, frontend normalizer, and sponsor boulevard layout so selected curated slots are honored when the slot band/lane is present.
+  - Ordered scene sectors by `created_at` to keep marketplace sector selection and scene district ordering deterministic.
+  - Added tests for booth-slot commercial mapping, billing checkout metadata/finalization, and exact curated-slot placement.
+- Validation:
+  - `npm.cmd run lint` passed.
+  - `npm.cmd run check:expo-boundaries` passed.
+  - `npm.cmd run build` passed.
+  - `npm.cmd run check:all` passed.
+  - `node scripts/check-backend-tests.mjs` passed all 17 backend test files.
+  - `(backend-server) npx.cmd tsc --noEmit -p tsconfig.json` passed.
+  - `(backend-server) npm.cmd run build` passed with escalated filesystem permission for `backend-server/dist` emit after the sandbox returned EPERM on dist writes.
+  - `(backend-server) npm.cmd run lint` passed.
+- Touched files:
+  - `backend-server/__tests__/billingPaymentService.test.ts`
+  - `backend-server/__tests__/boothSlotMarketplaceService.test.ts`
+  - `backend-server/controllers/boothSlotMarketplaceController.ts`
+  - `backend-server/routes/api.ts`
+  - `src/App.tsx`
+  - `src/app/expo/boothSlotAvailability.ts`
+  - `src/backend/billing/billingApplicationService.ts`
+  - `src/backend/billing/payments/paymentService.ts`
+  - `src/backend/expo/boothSlots/boothSlotMarketplaceService.ts`
+  - `src/backend/expo/sceneBuilder.ts`
+  - `src/modules/expo/__tests__/sceneWorld.test.ts`
+  - `src/modules/expo/runtime/data/sceneContract.ts`
+  - `src/pages/expo/BoothMarketplace.tsx`
+  - `src/pages/expo/SponsorPackages.tsx`
+  - `src/shared/expo/lib/boulevardLayout.ts`
+  - `src/shared/expo/sceneContract.ts`
+  - `supabase/migrations/20260630183000_booth_slot_marketplace.sql`
+  - `docs/CURRENT_TASK.md`
+- Product/release status:
+  - WP-C implementation is complete behind the existing authenticated backend and Stripe checkout path.
+  - `productVisualAccepted=false`.
+  - No staging/production deploy, sponsor boulevard camera/FOV/lookAt change, booth geometry edit, Pixel Streaming change, Unreal change, auth policy weakening, or quote behavior change was made.
+- Next step:
+  - Apply the new Supabase migration and verify a real signed-in reservation plus Stripe test checkout round trip in staging after explicit deploy authorization.
+
 ## 2026-06-30 Pre-Release Product Audit WP-B Real Stripe Checkout
 
 - Active objective: replace simulated billing checkout with real Stripe Checkout and a verified webhook path while keeping prices/products server-authored.

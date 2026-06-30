@@ -15,6 +15,7 @@ import * as automationController from '../controllers/automationController.js';
 import * as workflowsController from '../controllers/workflowsController.js';
 import * as billingController from '../controllers/billingController.js';
 import * as billingCheckoutController from '../controllers/billingCheckoutController.js';
+import * as boothSlotMarketplaceController from '../controllers/boothSlotMarketplaceController.js';
 import * as platformController from '../controllers/platformController.js';
 import * as businessController from '../controllers/businessController.js';
 import * as growthController from '../controllers/growthController.js';
@@ -50,6 +51,7 @@ router.post('/billing/webhook', billingCheckoutController.handleBillingWebhook);
 router.post('/ai-estimate', aiController.estimateWithAi);
 
 // Public read-only scene contract used by the Web3D client. Keep auth policy here only.
+router.get('/expo/booth-slots', boothSlotMarketplaceController.listBoothSlots);
 router.get('/expo/scene', expoController.getExpoScene);
 
 /**
@@ -66,6 +68,7 @@ protectedRouter.post('/auth/bootstrap', authBootstrapController.bootstrapAuthent
 protectedRouter.get('/dashboard', dashboardController.getDashboardData);
 
 // Expo data/business surface
+protectedRouter.post('/expo/booth-slots/:slotId/reserve', boothSlotMarketplaceController.reserveBoothSlot);
 protectedRouter.post('/expo/booths', expoDataController.createBooth);
 protectedRouter.patch('/expo/booths/:boothId', expoDataController.updateBooth);
 protectedRouter.post(

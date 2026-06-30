@@ -123,6 +123,7 @@ export function normalizeBooth(rawBooth: any, fallbackCompany: any): ExpoSceneBo
     posterUrl: normalizeReleaseMediaUrl(rawBooth.posterUrl ?? rawBooth.poster_url ?? fallbackCompany?.posterUrl ?? fallbackCompany?.poster_url),
     showroomEnabled: rawBooth.showroomEnabled === true || rawBooth.showroom_enabled === true,
     slug: normalizeSlug(rawBooth.slug, fallbackCompany?.name),
+    slotId: normalizeNullableString(rawBooth.slotId ?? rawBooth.slot_id ?? fallbackCompany?.slotId ?? fallbackCompany?.slot_id),
     video_url: normalizeReleaseMediaUrl(rawBooth.video_url ?? assets3d.video_url),
   };
 }
@@ -157,6 +158,7 @@ export function normalizeCompany(company: any, booth: ExpoSceneBooth | null): Ex
     sectorId: company?.sectorId ? String(company.sectorId) : (company?.sector_id ? String(company.sector_id) : null),
     sector_id: company?.sector_id ? String(company.sector_id) : (company?.sectorId ? String(company.sectorId) : null),
     slug: normalizeSlug(company?.slug, company?.name),
+    slotId: normalizeNullableString(company?.slotId ?? company?.slot_id ?? booth?.slotId),
     sponsorTier,
     tagline: normalizeNullableString(company?.tagline),
     website: normalizeNullableString(company?.website),

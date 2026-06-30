@@ -44,6 +44,7 @@ export interface ExpoSceneBooth {
   posterUrl: string | null;
   showroomEnabled?: boolean;
   slug: string | null;
+  slotId?: string | null;
   video_url: string | null;
 }
 
@@ -64,6 +65,7 @@ export interface ExpoSceneCompany {
   sectorId?: string | null;
   sector_id?: string | null;
   slug: string | null;
+  slotId?: string | null;
   sponsorTier: SponsorTier;
   tagline: string | null;
   website: string | null;

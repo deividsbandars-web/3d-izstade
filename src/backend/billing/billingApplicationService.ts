@@ -4,7 +4,7 @@ import { paymentService } from './payments/paymentService.js';
 import { billingQuotaService } from './usage/billingQuotaService.js';
 import { billingUsageService } from './usage/billingUsageService.js';
 
-type CheckoutKind = 'plan' | 'credits';
+type CheckoutKind = 'plan' | 'credits' | 'booth-slot';
 type BillingUsagePayload = Parameters<typeof billingUsageService.trackUsage>[0] & {
   maxDailyRequests?: number;
 };

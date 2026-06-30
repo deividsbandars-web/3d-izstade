@@ -99,6 +99,7 @@ const PACKAGE_COMPARISON_ROWS = [
 
 const SALES_ASSET_ROWS = [
   ['Sales demo', 'Landmark, Premium, Standard un Demo Arena sponsor preview vienā URL', '/expo-3d?salesDemo=1'],
+  ['Booth slot marketplace', 'Izvēlies konkrētu sponsor slotu, redzi cenu un turpini uz checkout', '/expo/booth-marketplace'],
   ['3D/Web3D tāmes kalkulators', 'Ātrs budžeta signāls vizualizācijām, expo stendam vai Web3D demo', '/visuals-calculator'],
   ['Sponsor lead inbox', 'Aizsargāta iekšējā rinda pieteikumu apstrādei', '/expo/sponsor-leads?sponsor=sponsor-concierge'],
   ['Kalkulatoru lead funnels', 'Būvniecības un servisu piemēri, kas savāc kvalificētus pieprasījumus', '/calculators'],
@@ -332,6 +333,9 @@ export default function SponsorPackages() {
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
               <Link className="btn-glass" to="/expo-3d?salesDemo=1" style={{ textDecoration: 'none' }}>
                 ATVĒRT SALES DEMO
+              </Link>
+              <Link className="btn-glass" to="/expo/booth-marketplace" style={{ textDecoration: 'none' }}>
+                IZVĒLĒTIES SLOTU
               </Link>
               <Link className="btn-glass" to="/visuals-calculator" style={{ textDecoration: 'none' }}>
                 APRĒĶINĀT 3D DEMO
