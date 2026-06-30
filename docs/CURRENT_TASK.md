@@ -1,5 +1,46 @@
 # Current Task
 
+## 2026-06-30 Phase 6.1 Staging Preview Deploy Fix
+
+- Active objective: Fix the Vercel staging preview deploy that failed on Windows with upload size issues and `spawn cmd.exe ENOENT` during local `vercel build`.
+- Implementation status:
+  - Confirmed the root causes: Vercel CLI upload size limits when uploading raw source files via `vercel --prod` and a known Windows bug in the Vercel CLI causing `spawn cmd.exe ENOENT` without proper shell context during local build.
+  - Successfully bypassed the upload limit and the shell execution bug by running the build phase through `npx vercel build --prod` inside the agent environment.
+  - Deployed the resulting `.vercel/output` directory using `npx vercel deploy --prebuilt --prod --skip-domain --yes --scope esaukans-6934s-projects`.
+- Validation:
+  - Build passed inside the agent environment.
+  - Deployment succeeded with URL: `https://app-staging-fmci99e0q-esaukans-6934s-projects.vercel.app`
+  - Follow-up verification showed that unauthenticated requests to this direct preview URL return Vercel's `Login - Vercel` HTML, so browser smoke cannot validate the SPA there without a bypass or staging alias promotion.
+- Product/release status:
+  - `productVisualAccepted=false` remains.
+  - The prebuilt deployment exists, but it is not yet publicly reviewable through the direct `vercel.app` URL.
+- Next step: explicitly promote the deployment to `staging.30sek24.com` or provide a valid Vercel protection bypass, then rerun browser smoke.
+
+## 2026-06-30 Phase 6.1 Prebuilt Preview Verification Follow-up
+
+- Active objective: verify the externally created Vercel prebuilt staging preview and make the repo deploy path repeatable.
+- Implementation status:
+  - Confirmed Vercel has a new ready `app-staging` deployment: `https://app-staging-fmci99e0q-esaukans-6934s-projects.vercel.app`.
+  - Confirmed Vercel metadata reports target `production`, status `Ready`, and prebuilt output (`Builds: . [0ms]`).
+  - Added `npm.cmd run deploy:staging:preview:prebuilt`, which links `app-staging`, runs `vercel build --prod`, and deploys with `vercel deploy --prebuilt --prod --skip-domain`.
+  - Hardened the staging deploy script's Windows env with `ComSpec` and System32/Node/npm PATH entries for the local `vercel build` path.
+- Validation:
+  - `npx.cmd vercel ls app-staging --scope esaukans-6934s-projects` showed the new deployment as `Ready`.
+  - `npx.cmd vercel inspect https://app-staging-fmci99e0q-esaukans-6934s-projects.vercel.app --scope esaukans-6934s-projects` passed and showed deployment id `dpl_4fBKHto6uCUQ3fqGU7LYzWv4QKra`.
+  - `npm.cmd run check:expo-staging-browser-smoke -- --base-url=https://app-staging-fmci99e0q-esaukans-6934s-projects.vercel.app --json` failed because the direct preview URL returns Vercel's `Login - Vercel` HTML, not the SPA.
+  - `npx.cmd vercel alias ls --scope esaukans-6934s-projects` showed `staging.30sek24.com` still points to the previous deployment `app-staging-lbm4hqy4m-esaukans-6934s-projects.vercel.app`.
+- Touched files:
+  - `scripts/vercel-staging-preview-deploy.mjs`
+  - `package.json`
+  - `docs/CURRENT_TASK.md`
+- Product/release status:
+  - `productVisualAccepted=false`.
+  - No production deploy or promotion was run.
+  - The new prebuilt deployment exists, but Phase 6.1 public browser validation is not complete until either `staging.30sek24.com` is explicitly promoted to that deployment or a valid Vercel protection bypass is used for the preview URL.
+- Next step:
+  - With explicit staging alias approval, run `npm.cmd run promote:staging -- https://app-staging-fmci99e0q-esaukans-6934s-projects.vercel.app`, then rerun `npm.cmd run check:staging-readiness` and `npm.cmd run check:expo-staging-browser-smoke -- --json`.
+
+
 ## 2026-06-29 GALA L-Shaped Door Handle Pass
 
 - Active objective: change the GALA door handle geometry in `src/modules/expo/runtime/modularHome/construction/GalaOpeningAssembly.tsx` from a straight protruding grip into an L-shaped lever that stays inside the exterior collision envelope.

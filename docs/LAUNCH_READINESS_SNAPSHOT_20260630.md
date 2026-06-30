@@ -17,7 +17,7 @@ green and the promoted staging frontend is verified from the intended deployment
 
 | Gate | Result | Evidence |
 | --- | --- | --- |
-| Frontend staging preview deploy | `FAIL` | `npm.cmd run deploy:staging:preview` repeatedly failed during Vercel `v2/files` upload with invalid JSON body beginning `Internal S...` / request abort. Upload context was reduced from about `2.9GB` to `56.2MB`, but the Vercel API failure remained. |
+| Frontend staging preview deploy | `PARTIAL` | Direct source upload via `npm.cmd run deploy:staging:preview` failed during Vercel `v2/files` upload. An external prebuilt deployment was later created at `https://app-staging-fmci99e0q-esaukans-6934s-projects.vercel.app`, but unauthenticated requests to that URL return Vercel's login page, so public browser validation must use `staging.30sek24.com` after explicit staging alias promotion or a valid protection bypass. |
 | Backend staging deploy | `PASS` | `npm.cmd run deploy:staging:backend -- -AllowDirty` built `Dockerfile.full`, recreated `backend-staging`, and `/health` returned `{"status":"ok"}`. |
 | Staging readiness | `PASS` | `npm.cmd run check:staging-readiness` passed on 2026-06-30: Doppler staging scope, frontend route, API health, scene, Supabase dry-run, and publication smoke passed. Legacy Pixel Streaming is optional by default and reported as a warning. |
 | Browser smoke | `PASS` | `npm.cmd run check:expo-staging-browser-smoke -- --json` passed on 2026-06-30 with no runtime exceptions, no browser errors, and no automatic lead API request on page load. |
@@ -38,6 +38,8 @@ green and the promoted staging frontend is verified from the intended deployment
   process-visible connection URL.
 - Legacy Pixel Streaming remains checked, but is warning-level by default because it is
   outside the release baseline. Use `--require-legacy-runtime` to make that check fatal.
+- A repeatable prebuilt staging deploy command is available as
+  `npm.cmd run deploy:staging:preview:prebuilt`.
 - `.vercelignore` now excludes large audit/archive trees and local `.vercel/` state from
   Vercel upload context. This reduced the upload context but did not resolve Vercel's
   server-side file API failure.
