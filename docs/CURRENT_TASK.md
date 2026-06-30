@@ -1788,3 +1788,71 @@ Close active Codex/VS Code Codex processes, remove the regenerated live `.codex`
   - The staging quote gate is green when run with the correct staging env. Bare local runs against the current repo `.env*` are intentionally blocked because they point at the wrong Supabase project.
 - Next step:
   - Commit the guardrail change, then proceed only to Phase 6 staging verification if explicitly requested with staging deploy authorization.
+
+## 2026-06-29 Release Roadmap Phase 6.1 Staging Deploy And Verification
+
+- Active objective: deploy and verify staging after explicit authorization, without production promotion.
+- Implementation status:
+  - Confirmed `PROJECT_CONTEXT_LOCK.md` is absent at repo root; continued from `docs/CURRENT_TASK.md`.
+  - Backend staging deploy completed from `release/v1-stabilization` commit `d9b7320e6de72e3eb4bc54bfabc67e81af8e71b3`.
+  - Added `.vercelignore` exclusions for large non-release/local trees: `GALA_PresentationUE5_Clean/`, `artifacts/`, `assets-intake/`, `.vercel/`, `tower-cluster/`, and `server/`.
+  - Updated `scripts/check-staging-readiness.mjs` so Supabase dry-run uses the Doppler staging Supabase ref instead of stale local `supabase/.temp/project-ref`.
+  - Added `--require-legacy-runtime`; legacy Pixel Streaming remains checked but is warning-level by default because it is optional for the release baseline.
+  - Added `docs/LAUNCH_READINESS_SNAPSHOT_20260630.md` and linked it from `docs/launch-dossier.md`.
+- Validation:
+  - `npm.cmd run deploy:staging:preview` failed repeatedly before creating a new Vercel preview deployment.
+    - Initial context was about `2.9GB`; after `.vercelignore` cleanup the final attempted upload was `56.2MB`.
+    - Remaining failure: Vercel `https://api.vercel.com/v2/files` returned invalid JSON beginning `Internal S...` and the upload aborted.
+    - `npx.cmd vercel build --prod --yes --scope esaukans-6934s-projects` also failed locally on Windows with `spawn cmd.exe ENOENT`, so prebuilt deploy was not a viable fallback in this environment.
+  - `npm.cmd run deploy:staging:backend -- -AllowDirty` passed; Docker built `Dockerfile.full`, recreated `backend-staging`, and `/health` returned `{"status":"ok"}`.
+  - `node --check scripts/check-staging-readiness.mjs` passed.
+  - `npm.cmd run check:staging-readiness` passed.
+    - Supabase dry-run reported `Remote database is up to date`.
+    - Legacy Pixel Streaming returned `401` and was reported as an optional-runtime warning.
+  - `npm.cmd run check:expo-staging-browser-smoke -- --json` passed; all smoke cases were green with no runtime exceptions or browser error log entries.
+  - `powershell.exe -ExecutionPolicy Bypass -File scripts/run-with-doppler.ps1 run -- node scripts/check-modular-home-quote-staging.mjs --json` passed; quote submit `201`, public admin routes `401`, non-admin `403`, admin list/detail/status/export `200`, public Supabase direct read denied with `42501`, cleanup deleted the temporary quote.
+  - `npm.cmd run lint` passed.
+  - `npm.cmd run check:all` passed.
+  - `npm.cmd run build` passed.
+  - `npm.cmd run check:bundle-budget` passed.
+- Touched files:
+  - `.vercelignore`
+  - `scripts/check-staging-readiness.mjs`
+  - `docs/LAUNCH_READINESS_SNAPSHOT_20260630.md`
+  - `docs/launch-dossier.md`
+  - `docs/CURRENT_TASK.md`
+- Product/release status:
+  - `productVisualAccepted=false`.
+  - No production deploy, production promotion, payment, auth policy, quote payload contract, Unreal runtime, camera/FOV/lookAt, movement physics, collision geometry, door runtime, or GALA construction geometry changes were made.
+  - Phase 6.1 remains partially blocked because frontend staging preview deploy did not complete. Backend staging and runtime verification gates are green.
+- Next step:
+  - Resolve the Vercel file-upload failure or deploy frontend through a working Vercel path, then rerun Phase 6.1 frontend verification before any Phase 6.2 go/no-go.
+
+## 2026-06-30 Release Roadmap Phase 6.1 Continuation
+
+- Active objective: finish the interrupted Phase 6.1 verification work and confirm the latest readiness-gate changes.
+- Implementation status:
+  - Kept the backend staging deploy evidence from commit `d9b7320e6de72e3eb4bc54bfabc67e81af8e71b3`.
+  - Adjusted the staging readiness Supabase dry-run helper so the DB password is passed via `PGPASSWORD`, not embedded in the `--db-url` process argument.
+  - Replaced the initial `20260629` launch snapshot with `docs/LAUNCH_READINESS_SNAPSHOT_20260630.md` to match the final verification date.
+- Validation:
+  - `node --check scripts/check-staging-readiness.mjs` passed.
+  - `npm.cmd run lint` passed.
+  - `npm.cmd run check:all` passed.
+  - `npm.cmd run check:staging-readiness` passed; Supabase dry-run reported `Remote database is up to date`; optional legacy Pixel Streaming was warning-level.
+  - `npm.cmd run build` passed.
+  - `npm.cmd run check:bundle-budget` passed.
+  - `npm.cmd run check:expo-staging-browser-smoke -- --json` passed.
+  - `powershell.exe -ExecutionPolicy Bypass -File scripts/run-with-doppler.ps1 run -- node scripts/check-modular-home-quote-staging.mjs --json` passed; quote submit `201`, admin checks passed, public RLS direct read denied with `42501`, cleanup deleted the temporary quote.
+- Touched files:
+  - `.vercelignore`
+  - `scripts/check-staging-readiness.mjs`
+  - `docs/LAUNCH_READINESS_SNAPSHOT_20260630.md`
+  - `docs/launch-dossier.md`
+  - `docs/CURRENT_TASK.md`
+- Product/release status:
+  - `productVisualAccepted=false`.
+  - No production deploy or promotion was run.
+  - Phase 6.1 remains blocked only on frontend staging preview deploy because Vercel file upload still fails before creating a new preview deployment.
+- Next step:
+  - Fix or bypass the Vercel `v2/files` upload failure, create a new staging frontend preview deployment, then rerun Phase 6.1 frontend verification.

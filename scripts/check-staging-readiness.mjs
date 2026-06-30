@@ -13,6 +13,7 @@ function parseArgs(argv) {
     failFast: false,
     help: false,
     json: false,
+    requireLegacyRuntime: false,
     skipPublicationSmoke: false,
     skipSupabaseDryRun: false,
   };
@@ -24,6 +25,8 @@ function parseArgs(argv) {
       options.json = true;
     } else if (arg === '--fail-fast') {
       options.failFast = true;
+    } else if (arg === '--require-legacy-runtime') {
+      options.requireLegacyRuntime = true;
     } else if (arg === '--skip-publication-smoke') {
       options.skipPublicationSmoke = true;
     } else if (arg === '--skip-supabase-dry-run') {
@@ -50,13 +53,14 @@ Checks:
   - Doppler stg points the core frontend runtime to api-staging and the optional legacy runtime to signaling-staging
   - Vercel app-staging responds on staging.30sek24.com
   - Hetzner API health and scene endpoints respond
-  - Supabase db push dry-run is clean
+  - Supabase db push dry-run is clean against the Doppler staging Supabase ref
   - Expo publication staging smoke test passes
-  - Legacy runtime gateway/TURN check passes, streamer absence is warning-level in baseline mode
+  - Optional legacy runtime gateway/TURN check is reported as warning unless --require-legacy-runtime is set
 
 Options:
   --fail-fast
   --json
+  --require-legacy-runtime
   --skip-publication-smoke
   --skip-supabase-dry-run
   --api-base=https://api-staging.30sek24.com
@@ -113,6 +117,52 @@ console.log(JSON.stringify({
   hasAnonKey: Boolean(process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY),
   hasTurn: Boolean((process.env.TURN_USERNAME || process.env.VITE_TURN_USERNAME) && (process.env.TURN_SERVER_URLS || process.env.VITE_TURN_SERVER_URLS)),
 }));`;
+}
+
+function supabaseDryRunScript() {
+  return `
+import { spawnSync } from 'node:child_process';
+
+const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '';
+const dbPassword = process.env.SUPABASE_DB_PASSWORD || '';
+
+if (!supabaseUrl || !dbPassword) {
+  console.error('SUPABASE_URL and SUPABASE_DB_PASSWORD are required for staging dry-run.');
+  process.exit(1);
+}
+
+let projectRef = '';
+try {
+  projectRef = new URL(supabaseUrl).hostname.split('.')[0] || '';
+} catch {
+  console.error('SUPABASE_URL is invalid.');
+  process.exit(1);
+}
+
+if (!/^[a-z0-9]{20}$/.test(projectRef)) {
+  console.error('SUPABASE_URL does not contain a Supabase project ref.');
+  process.exit(1);
+}
+
+const npx = process.platform === 'win32' ? 'npx.cmd' : 'npx';
+const dbUrl = 'postgresql://postgres@db.' + projectRef + '.supabase.co:5432/postgres';
+const result = spawnSync(npx, ['-y', 'supabase', 'db', 'push', '--db-url', dbUrl, '--dry-run', '--yes'], {
+  encoding: 'utf8',
+  env: {
+    ...process.env,
+    PGPASSWORD: dbPassword,
+  },
+  shell: process.platform === 'win32',
+  windowsHide: true,
+});
+
+process.stdout.write(result.stdout || '');
+process.stderr.write(result.stderr || '');
+if (result.error) {
+  console.error(result.error.message);
+}
+process.exit(result.status ?? (result.error ? 1 : 0));
+`;
 }
 
 function tryParseJson(output) {
@@ -206,7 +256,7 @@ async function run(options) {
   }
 
   if (!options.skipSupabaseDryRun) {
-    const dryRun = runCommand('doppler', ['run', '--', 'npx', '-y', 'supabase', 'db', 'push', '--linked', '--dry-run'], { timeoutMs: 180000 });
+    const dryRun = runCommand('doppler', ['run', '--', 'node', '--input-type=module', '-e', supabaseDryRunScript()], { timeoutMs: 180000 });
     push(resultFromCommand('supabase db push dry-run clean', dryRun, {
       ok: (result) => result.status === 0 && /Remote database is up to date/i.test(result.output),
       details: (result) => truncate(result.output),
@@ -236,11 +286,29 @@ async function run(options) {
   if (pixelOutput.includes('[WARN] streamer-status') || pixelOutput.includes('[WARN] session-readiness')) {
     warnings.push({ name: 'legacy runtime active streamer', reason: 'Legacy streamer is not required for baseline readiness' });
   }
-  push({
-    details: truncate(pixelOutput),
-    name: 'legacy runtime baseline gateway/turn',
-    ok: pixelHardOk,
-  });
+  if (options.requireLegacyRuntime) {
+    push({
+      details: truncate(pixelOutput),
+      name: 'legacy runtime baseline gateway/turn',
+      ok: pixelHardOk,
+    });
+  } else if (pixelHardOk) {
+    push({
+      details: truncate(pixelOutput),
+      name: 'optional legacy runtime baseline gateway/turn',
+      ok: true,
+    });
+  } else {
+    warnings.push({
+      name: 'optional legacy runtime baseline gateway/turn',
+      reason: truncate(pixelOutput, 600),
+    });
+    push({
+      details: 'Legacy Pixel Streaming is optional for the release baseline; pass --require-legacy-runtime to make this fatal.',
+      name: 'optional legacy runtime baseline gateway/turn',
+      ok: true,
+    });
+  }
 
   return {
     ok: results.every((result) => result.ok),

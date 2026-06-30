@@ -1,8 +1,14 @@
 WarpalaUE5
+GALA_PresentationUE5_Clean/
+artifacts/
+assets-intake/
+.vercel/
 diagnostics
 review-screenshots/
 review_artifacts/
 handoff/
+tower-cluster/
+server/
 .tmp/
 .tmp-*
 .tmp_release_pr_diff.txt

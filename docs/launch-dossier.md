@@ -1,5 +1,13 @@
 # Launch Dossier
 
+## 2026-06-30 Phase 6.1 Update
+
+Latest staging snapshot: [LAUNCH_READINESS_SNAPSHOT_20260630.md](/C:/3d/docs/LAUNCH_READINESS_SNAPSHOT_20260630.md)
+
+Current status: backend staging deploy and runtime gates are green, but frontend staging
+preview deploy is blocked by Vercel file-upload API failures. No production promotion was
+performed and `productVisualAccepted=false` remains.
+
 Date: 2026-04-17  
 Phase: `P9-T2`  
 Branch snapshot: `work/launch-dossier-p9`  
