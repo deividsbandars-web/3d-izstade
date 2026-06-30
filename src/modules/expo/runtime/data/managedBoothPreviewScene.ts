@@ -80,6 +80,7 @@ export function hasManagedBoothPreviewScreenContent(payload: ManagedBoothPreview
 
   return status === 'published' && (
     (mode === 'image' && hasImage)
+    || (mode === 'video' && hasVideo)
     || (mode === 'video-placeholder' && hasVideo)
     || mode === 'generated-card'
   );

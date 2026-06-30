@@ -74,4 +74,45 @@ const boothOwnedOverrides = buildManagedScreenAssignmentOverrides({
 assert.equal(boothOwnedOverrides.activeOverrideCount, 0);
 assert.equal(boothOwnedOverrides.publishedCitySlotCount, 0);
 
+const companiesWithManagedVideoScreen = PRODUCTION_SAFE_COMPANIES.map((company) => {
+  if (company.id !== 'sponsor-concierge') {
+    return company;
+  }
+
+  return {
+    ...company,
+    booth: {
+      ...company.booth,
+      heroScreenImageUrl: 'https://cdn.example.com/sponsor-concierge-video-poster.webp',
+      heroScreenSlotId: 'city-right-marquee-hero',
+      heroScreenStatus: 'published',
+      heroScreenText: 'Live managed sponsor video',
+      heroScreenTitle: 'Sponsor Concierge Live Video',
+      heroScreenType: 'video',
+      heroScreenVideoUrl: 'https://cdn.example.com/sponsor-concierge-live.mp4',
+    },
+  };
+});
+const videoWorld = buildExpoWorldContract({
+  companies: companiesWithManagedVideoScreen,
+  sectors: PRODUCTION_SAFE_SECTORS,
+});
+const videoPlan = buildCanonicalWorldPlanFromWorldContract(videoWorld);
+const videoOverrides = buildManagedScreenAssignmentOverrides({
+  assignments: videoPlan.screenAssignments,
+  boothPlacements: videoWorld.boothPlacements,
+  sockets: videoPlan.screenSockets,
+});
+const videoOverride = videoOverrides.overridesByAssignmentId.get('screen-marquee-right-1-socket-assignment');
+const videoPrimitive = (videoOverride?.assignment.renderIntent?.primitives ?? []).find((primitive) => primitive.kind === 'texture-plane');
+
+assert.ok(videoOverride);
+assert.equal(videoOverride.assignment.imageUrl, 'https://cdn.example.com/sponsor-concierge-live.mp4');
+assert.equal(videoOverride.source.mode, 'video');
+assert.ok(videoPrimitive);
+assert.equal(videoPrimitive.kind, 'texture-plane');
+if (videoPrimitive.kind === 'texture-plane') {
+  assert.equal(videoPrimitive.posterUrl, 'https://cdn.example.com/sponsor-concierge-video-poster.webp');
+}
+
 console.log('managed screen assignment override checks passed');

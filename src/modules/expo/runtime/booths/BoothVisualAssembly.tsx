@@ -1,6 +1,9 @@
 import type { RefObject } from 'react';
 import type * as THREE from 'three';
-import type { SponsorBoothPresentation } from '../../lib/sponsorBoothPresentation';
+import {
+  isSponsorManagedScreenVideoMode,
+  type SponsorBoothPresentation,
+} from '../../lib/sponsorBoothPresentation';
 import type { BoothProductPreviewCard } from '../boothProduct';
 import { EXPO_SPATIAL_DEBUG_FLAGS } from '../../state/expoRuntime';
 import { getBoothArchitectureMetrics, getBoothColliderSegments } from '../../components/BoothArchitectureKit';
@@ -298,12 +301,17 @@ export function BoothVisualAssembly({
   const managedScreenImageUrl = managedScreenContent?.mode === 'image' && managedScreenContent.imageUrl
     ? managedScreenContent.imageUrl
     : null;
-  const managedScreenVideoUrl = managedScreenContent?.mode === 'video-placeholder' && managedScreenContent.videoUrl
+  const managedScreenVideoUrl = managedScreenContent && isSponsorManagedScreenVideoMode(managedScreenContent.mode) && managedScreenContent.videoUrl
     ? managedScreenContent.videoUrl
     : null;
+  const managedScreenPosterUrl = managedScreenContent && isSponsorManagedScreenVideoMode(managedScreenContent.mode) && managedScreenContent.imageUrl
+    ? managedScreenContent.imageUrl
+    : null;
   const managedCameraPreviewImage = isManagedCameraPreviewImage(managedScreenImageUrl);
-  const useCameraFeedLoop = !boothProductPreviewCard && !managedScreenImageUrl;
+  const useCameraFeedLoop = !boothProductPreviewCard && !managedScreenImageUrl && !managedScreenVideoUrl;
   const effectiveManagedScreenUrl = managedScreenVideoUrl ?? (managedCameraPreviewImage ? null : managedScreenImageUrl);
+  const allowManagedScreenVideoPlayback = !managedScreenVideoUrl
+    || tierState.distanceToPlayer <= (tierState.isHeroFeature ? 360 : 220);
   const fallbackGeneratedScreenUrl = buildGeneratedBillboardTextureUrl({
     accentColor,
     aspect: pavilionLayout.screenSurfaceWidth / Math.max(1, pavilionLayout.screenSurfaceHeight),
@@ -320,11 +328,11 @@ export function BoothVisualAssembly({
         }
       : managedScreenContent
         ? {
-            chip: managedScreenContent.mode === 'video-placeholder' ? 'SAVED VIDEO SLOT' : 'CITY CAMERA LOOP',
+            chip: managedScreenContent.mode === 'video' ? 'LIVE VIDEO' : managedScreenContent.mode === 'video-placeholder' ? 'SAVED VIDEO SLOT' : 'CITY CAMERA LOOP',
             label: managedScreenContent.title,
             layout: (useCameraFeedLoop || managedCameraPreviewImage) ? 'camera-feed-loop' as const : undefined,
-            subtitle: managedScreenContent.mode === 'video-placeholder'
-              ? `${managedScreenContent.subtitle || 'Owner-managed booth screen'} - playback review pending`
+            subtitle: isSponsorManagedScreenVideoMode(managedScreenContent.mode)
+              ? `${managedScreenContent.subtitle || 'Owner-managed booth screen'} - static fallback ready`
               : managedScreenContent.subtitle || 'Owner-managed booth screen',
             tier: managedScreenContent.ctaLabel || 'PUBLISHED',
           }
@@ -352,6 +360,8 @@ export function BoothVisualAssembly({
           districtThemeId={districtThemeId}
           fallbackText={fallbackMonogram}
           metrics={metrics}
+          screenAllowVideoPlayback={allowManagedScreenVideoPlayback}
+          screenPosterUrl={managedScreenPosterUrl ?? (managedScreenVideoUrl ? fallbackGeneratedScreenUrl : null)}
           screenUrl={effectiveManagedScreenUrl ?? boothPresentationScreenUrl}
           tier={tierState.featureTier}
         />

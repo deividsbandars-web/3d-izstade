@@ -29,7 +29,7 @@ export type ExpoManagedBooth = {
 export type ExpoManagedBoothScreenContent = {
   ctaLabel?: string;
   imageUrl?: string;
-  mode?: 'generated-card' | 'image' | 'video-placeholder';
+  mode?: 'generated-card' | 'image' | 'video' | 'video-placeholder';
   screenSlotId?: string;
   status?: 'draft' | 'published';
   subtitle?: string;

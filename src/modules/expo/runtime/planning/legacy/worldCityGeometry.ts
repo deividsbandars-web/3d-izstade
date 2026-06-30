@@ -141,6 +141,7 @@ export type CanonicalPrimitiveTexturePlane = {
   fallbackColor: string;
   kind: 'texture-plane';
   opacity?: number;
+  posterUrl?: string | null;
   position: [number, number, number];
   size: [number, number];
   url: string | null;

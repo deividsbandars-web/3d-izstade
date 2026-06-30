@@ -6,7 +6,7 @@ import {
 import { buildGeneratedBillboardTextureUrl } from '../booths/generatedBillboardTextureUrl';
 import type { CityScreenAssignment, CityScreenSocket } from '../planning/types';
 
-type ManagedScreenMode = 'generated-card' | 'image' | 'video-placeholder';
+type ManagedScreenMode = 'generated-card' | 'image' | 'video' | 'video-placeholder';
 
 type ManagedScreenContent = {
   ctaLabel: string | null;
@@ -57,7 +57,11 @@ function normalizeManagedMode(value: unknown): ManagedScreenMode {
     return 'image';
   }
 
-  if (normalized === 'video' || normalized === 'video-placeholder') {
+  if (normalized === 'video') {
+    return 'video';
+  }
+
+  if (normalized === 'video-placeholder') {
     return 'video-placeholder';
   }
 
@@ -123,6 +127,10 @@ function getAssignmentTier(slot: ExpoScreenInventorySlot): CityScreenAssignment[
   return slot.valueTier === 'landmark' || slot.valueTier === 'hero' ? 'hero' : 'premium';
 }
 
+function isManagedScreenVideoMode(mode: ManagedScreenMode) {
+  return mode === 'video' || mode === 'video-placeholder';
+}
+
 function getSlotChip(slot: ExpoScreenInventorySlot) {
   switch (slot.valueTier) {
     case 'landmark':
@@ -137,7 +145,7 @@ function getSlotChip(slot: ExpoScreenInventorySlot) {
 }
 
 function buildManagedScreenTextureUrl(content: ManagedScreenContent, slot: ExpoScreenInventorySlot, aspect: number) {
-  if (content.mode === 'video-placeholder' && content.videoUrl) {
+  if (isManagedScreenVideoMode(content.mode) && content.videoUrl) {
     return content.videoUrl;
   }
 
@@ -148,11 +156,11 @@ function buildManagedScreenTextureUrl(content: ManagedScreenContent, slot: ExpoS
   return buildGeneratedBillboardTextureUrl({
     accentColor: getSlotTierAccent(slot),
     aspect,
-    chip: content.mode === 'video-placeholder' ? 'VIDEO SLOT READY' : getSlotChip(slot),
+    chip: content.mode === 'video' ? 'LIVE VIDEO' : content.mode === 'video-placeholder' ? 'VIDEO SLOT READY' : getSlotChip(slot),
     label: truncateManagedScreenText(content.title, 30).toUpperCase(),
     subtitle: truncateManagedScreenText(
-      content.mode === 'video-placeholder'
-        ? `${content.subtitle || 'Owner-managed sponsor screen'} - playback off`
+      isManagedScreenVideoMode(content.mode)
+        ? `${content.subtitle || 'Owner-managed sponsor screen'} - static fallback`
         : content.subtitle || 'Owner-managed sponsor screen',
       54,
     ).toUpperCase(),
@@ -252,6 +260,7 @@ function buildManagedScreenAssignment(
             fallbackColor: '#06111f',
             kind: 'texture-plane',
             opacity: 1,
+            posterUrl: candidate.content.imageUrl,
             position: [0, 0, 1.16],
             size: [frameWidth * 0.992, frameHeight * 0.992],
             url: textureUrl,

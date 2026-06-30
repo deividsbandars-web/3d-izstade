@@ -1,6 +1,6 @@
 import { isValidExpoScreenSlotId } from './screenInventory.js';
 
-export type ExpoManagedScreenContentMode = 'generated-card' | 'image' | 'video-placeholder';
+export type ExpoManagedScreenContentMode = 'generated-card' | 'image' | 'video' | 'video-placeholder';
 export type ExpoManagedScreenContentStatus = 'draft' | 'published';
 export type ExpoScreenMediaKind = 'image' | 'video';
 
@@ -52,7 +52,11 @@ export function normalizeExpoManagedScreenMode(value: unknown): ExpoManagedScree
     return 'image';
   }
 
-  if (normalized === 'video' || normalized === 'video-placeholder') {
+  if (normalized === 'video') {
+    return 'video';
+  }
+
+  if (normalized === 'video-placeholder') {
     return 'video-placeholder';
   }
 
@@ -180,8 +184,8 @@ export function normalizeExpoScreenContentForSave(input: ExpoScreenContentInput 
     issues.push({ field: 'imageUrl', message: 'Image mode needs a valid HTTPS image URL.' });
   }
 
-  if (mode === 'video-placeholder' && !videoResult.url) {
-    issues.push({ field: 'videoUrl', message: 'Video placeholder mode needs a valid HTTPS .mp4 or .webm URL.' });
+  if ((mode === 'video' || mode === 'video-placeholder') && !videoResult.url) {
+    issues.push({ field: 'videoUrl', message: 'Video mode needs a valid HTTPS .mp4 or .webm URL.' });
   }
 
   if (screenSlotId && !isValidExpoScreenSlotId(screenSlotId)) {

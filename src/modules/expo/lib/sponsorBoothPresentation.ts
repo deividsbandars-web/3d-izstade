@@ -20,7 +20,7 @@ export type SponsorCta = {
   url?: string | null;
 };
 
-export type SponsorManagedScreenMode = 'generated-card' | 'image' | 'video-placeholder';
+export type SponsorManagedScreenMode = 'generated-card' | 'image' | 'video' | 'video-placeholder';
 
 export type SponsorManagedScreenContent = {
   ctaLabel: string | null;
@@ -131,7 +131,11 @@ function normalizeManagedScreenMode(value: unknown): SponsorManagedScreenMode {
     return 'image';
   }
 
-  if (normalized === 'video' || normalized === 'video-placeholder') {
+  if (normalized === 'video') {
+    return 'video';
+  }
+
+  if (normalized === 'video-placeholder') {
     return 'video-placeholder';
   }
 
@@ -140,6 +144,10 @@ function normalizeManagedScreenMode(value: unknown): SponsorManagedScreenMode {
 
 function normalizeManagedScreenStatus(value: unknown): SponsorManagedScreenContent['status'] {
   return String(value || '').trim().toLowerCase() === 'draft' ? 'draft' : 'published';
+}
+
+export function isSponsorManagedScreenVideoMode(mode: SponsorManagedScreenMode | string | null | undefined) {
+  return mode === 'video' || mode === 'video-placeholder';
 }
 
 function buildManagedScreenContent(
@@ -309,7 +317,12 @@ function pickCustomInsertUrl(company: ExpoSceneCompany, booth: ExpoSceneBooth | 
 }
 
 function pickManagedHeroScreenImageUrl(booth: ExpoSceneBooth | null) {
-  if (booth?.heroScreenStatus !== 'published' || booth.heroScreenType !== 'image') {
+  if (booth?.heroScreenStatus !== 'published') {
+    return null;
+  }
+
+  const mode = normalizeManagedScreenMode(booth.heroScreenType);
+  if (mode !== 'image' && !isSponsorManagedScreenVideoMode(mode)) {
     return null;
   }
 

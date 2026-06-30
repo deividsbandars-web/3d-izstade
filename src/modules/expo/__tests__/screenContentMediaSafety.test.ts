@@ -60,6 +60,18 @@ const missingVideo = normalizeExpoScreenContentForSave({
 assert.equal(missingVideo.ok, false);
 assert.ok(missingVideo.issues.some((issue) => issue.field === 'videoUrl'));
 
+const videoContent = normalizeExpoScreenContentForSave({
+  imageUrl: 'https://cdn.example.com/video-poster.webp',
+  mode: 'video',
+  status: 'published',
+  title: 'Live Video Slot',
+  videoUrl: 'https://cdn.example.com/video/live-demo.webm',
+});
+assert.equal(videoContent.ok, true);
+assert.equal(videoContent.screenContent.mode, 'video');
+assert.equal(videoContent.screenContent.imageUrl, 'https://cdn.example.com/video-poster.webp');
+assert.equal(videoContent.screenContent.videoUrl, 'https://cdn.example.com/video/live-demo.webm');
+
 const sanitizedAssets = sanitizeExpoManagedBoothAssets({
   screen_content: {
     imageUrl: 'https://cdn.example.com/screen.jpg',

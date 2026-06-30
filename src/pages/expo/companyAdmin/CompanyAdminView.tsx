@@ -132,7 +132,7 @@ type AdminCompanyState = {
   status: ExpoBoothPublicationStatus;
 };
 
-type AdminScreenContentMode = 'generated-card' | 'image' | 'video-placeholder';
+type AdminScreenContentMode = 'generated-card' | 'image' | 'video' | 'video-placeholder';
 type AdminScreenContentStatus = 'draft' | 'published';
 
 type AdminScreenContentState = {
@@ -373,7 +373,11 @@ function normalizeScreenMode(value: unknown): AdminScreenContentMode {
     return 'image';
   }
 
-  if (normalized === 'video' || normalized === 'video-placeholder') {
+  if (normalized === 'video') {
+    return 'video';
+  }
+
+  if (normalized === 'video-placeholder') {
     return 'video-placeholder';
   }
 
@@ -830,6 +834,18 @@ export default function CompanyAdmin() {
     });
   }
 
+  function updateScreenVideoUrl(videoUrl: string) {
+    const normalizedUrl = videoUrl.trim();
+    updateScreenContent({
+      ctaLabel: normalizedUrl ? company.screenContent.ctaLabel || DEFAULT_SCREEN_TEST_CTA : company.screenContent.ctaLabel,
+      mode: normalizedUrl ? 'video' : company.screenContent.mode,
+      status: normalizedUrl ? 'published' : company.screenContent.status,
+      subtitle: normalizedUrl ? company.screenContent.subtitle || DEFAULT_SCREEN_TEST_SUBTITLE : company.screenContent.subtitle,
+      title: normalizedUrl ? company.screenContent.title || DEFAULT_SCREEN_TEST_TITLE : company.screenContent.title,
+      videoUrl,
+    });
+  }
+
   function copySponsorAssetImageToBoothScreen(imageUrl: string) {
     const normalizedUrl = imageUrl.trim();
     if (!normalizedUrl) {
@@ -857,13 +873,13 @@ export default function CompanyAdmin() {
 
     updateScreenContent({
       ctaLabel: company.sponsorAssetPack.ctaPrimary.trim() || company.screenContent.ctaLabel || DEFAULT_SCREEN_TEST_CTA,
-      mode: 'video-placeholder',
+      mode: 'video',
       status: 'published',
       subtitle: company.sponsorAssetPack.shortPitch.trim() || company.screenContent.subtitle || DEFAULT_SCREEN_TEST_SUBTITLE,
       title: company.sponsorAssetPack.headline.trim() || company.name.trim() || company.screenContent.title || DEFAULT_SCREEN_TEST_TITLE,
       videoUrl: normalizedUrl,
     });
-    setMessage({ type: 'success', text: 'Sponsor video slot copied to Booth Screen Content. Save booth settings to publish the video placeholder in 3D.' });
+    setMessage({ type: 'success', text: 'Sponsor video copied to Booth Screen Content. Save booth settings to publish it on the 3D screen.' });
   }
 
   function updateSponsorAssetPack(patch: Partial<AdminSponsorAssetPackState>) {
@@ -1089,7 +1105,7 @@ export default function CompanyAdmin() {
     && screenContentValidation.ok;
   const hasScreenVideoUrl = company.screenContent.videoUrl.trim().length > 0;
   const isPublishedVideoContent = company.screenContent.status === 'published'
-    && company.screenContent.mode === 'video-placeholder'
+    && (company.screenContent.mode === 'video' || company.screenContent.mode === 'video-placeholder')
     && hasScreenVideoUrl
     && screenContentValidation.ok;
   const screenVisibilityHint = isPublishedImageContent || isPublishedVideoContent
@@ -2129,7 +2145,7 @@ export default function CompanyAdmin() {
                   >
                     <option value="generated-card">Generated card</option>
                     <option value="image">Image</option>
-                    <option value="video-placeholder">Video (.mp4/.webm)</option>
+                    <option value="video">Live video (.mp4/.webm)</option>
                   </select>
                 </label>
 
@@ -2231,10 +2247,10 @@ export default function CompanyAdmin() {
                   inputMode="url"
                   placeholder="https://cdn.example.com/demo.mp4"
                   value={company.screenContent.videoUrl}
-                  onChange={(event) => updateScreenContent({ videoUrl: event.target.value })}
+                  onChange={(event) => updateScreenVideoUrl(event.target.value)}
                 />
                 <span style={{ display: 'block', marginTop: '7px', color: '#94a3b8', fontSize: '0.76rem', lineHeight: 1.45 }}>
-                  Direct public media file only. Supported: {EXPO_SCREEN_CONTENT_VIDEO_EXTENSIONS.join(', ')}. Do not paste YouTube, Vimeo, Google Drive, localhost, or signed/private URLs.
+                  Pasting a video URL sets Screen mode to Live video and Status to Published. Direct public media file only. Supported: {EXPO_SCREEN_CONTENT_VIDEO_EXTENSIONS.join(', ')}. Do not paste YouTube, Vimeo, Google Drive, localhost, or signed/private URLs.
                 </span>
               </label>
 

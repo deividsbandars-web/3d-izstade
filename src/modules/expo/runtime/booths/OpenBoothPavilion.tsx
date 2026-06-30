@@ -17,6 +17,8 @@ export function OpenBoothPavilion({
   districtThemeId,
   fallbackText,
   metrics,
+  screenAllowVideoPlayback = true,
+  screenPosterUrl,
   screenUrl,
   tier = 'standard',
 }: {
@@ -24,6 +26,8 @@ export function OpenBoothPavilion({
   districtThemeId?: DistrictThemeId | string | null;
   fallbackText: string;
   metrics: OpenBoothPavilionMetrics;
+  screenAllowVideoPlayback?: boolean;
+  screenPosterUrl?: string | null;
   screenUrl: string | null;
   tier?: OpenBoothPavilionTier;
 }) {
@@ -240,10 +244,12 @@ export function OpenBoothPavilion({
           {screenUrl ? (
             <Suspense fallback={<meshStandardMaterial color={mediaFallbackColor} emissive={accentColor} emissiveIntensity={mediaEmissiveIntensity} />}>
               <SponsorTextureSurface
+                allowVideoPlayback={screenAllowVideoPlayback}
                 doubleSided
                 fallbackColor={mediaFallbackColor}
                 emissiveColor={accentColor}
                 emissiveIntensity={mediaEmissiveIntensity}
+                posterUrl={screenPosterUrl}
                 url={screenUrl}
               />
             </Suspense>
@@ -256,10 +262,12 @@ export function OpenBoothPavilion({
           {screenUrl ? (
             <Suspense fallback={<meshStandardMaterial color={mediaFallbackColor} emissive={accentColor} emissiveIntensity={mediaEmissiveIntensity} />}>
               <SponsorTextureSurface
+                allowVideoPlayback={screenAllowVideoPlayback}
                 doubleSided
                 fallbackColor={mediaFallbackColor}
                 emissiveColor={accentColor}
                 emissiveIntensity={mediaEmissiveIntensity}
+                posterUrl={screenPosterUrl}
                 url={screenUrl}
               />
             </Suspense>
@@ -543,10 +551,12 @@ export function OpenBoothPavilion({
             {screenUrl ? (
               <Suspense fallback={<meshStandardMaterial color={mediaFallbackColor} emissive={accentColor} emissiveIntensity={mediaEmissiveIntensity} />}>
                 <SponsorTextureSurface
+                  allowVideoPlayback={screenAllowVideoPlayback}
                   doubleSided
                   fallbackColor={mediaFallbackColor}
                   emissiveColor={accentColor}
                   emissiveIntensity={mediaEmissiveIntensity}
+                  posterUrl={screenPosterUrl}
                   url={screenUrl}
                 />
               </Suspense>

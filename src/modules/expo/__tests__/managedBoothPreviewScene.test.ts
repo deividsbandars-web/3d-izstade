@@ -71,3 +71,25 @@ const unchangedScene = applyManagedBoothPreviewToScene(baseScene, {
 });
 
 assert.equal(unchangedScene, baseScene);
+
+const videoPreviewScene = applyManagedBoothPreviewToScene(baseScene, {
+  booth: {
+    assets_3d: {
+      screen_content: {
+        imageUrl: 'https://cdn.example.com/live-video-poster.webp',
+        mode: 'video',
+        status: 'published',
+        title: 'Live Video Preview',
+        videoUrl: 'https://cdn.example.com/live-video-preview.mp4',
+      },
+    },
+    company_name: 'Live Video Preview Booth',
+    id: 'live-video-preview-booth',
+  },
+});
+
+const videoPreviewCompany = videoPreviewScene.companies.find((company) => company.id === 'live-video-preview-booth');
+assert.ok(videoPreviewCompany);
+assert.equal(videoPreviewCompany.booth?.heroScreenType, 'video');
+assert.equal(videoPreviewCompany.booth?.heroScreenImageUrl, 'https://cdn.example.com/live-video-poster.webp');
+assert.equal(videoPreviewCompany.booth?.heroScreenVideoUrl, 'https://cdn.example.com/live-video-preview.mp4');

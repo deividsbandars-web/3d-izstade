@@ -934,30 +934,39 @@ function AnimatedCameraFeedSurface({
 }
 
 function VideoSponsorTextureSurface({
+  allowVideoPlayback = true,
   depthWrite,
   doubleSided = false,
   fallbackColor,
   emissiveColor,
   emissiveIntensity = 0,
   opacity = 1,
+  posterUrl,
   textureQualityHint,
   url,
 }: {
+  allowVideoPlayback?: boolean;
   depthWrite?: boolean;
   doubleSided?: boolean;
   emissiveColor?: string;
   emissiveIntensity?: number;
   fallbackColor: string;
   opacity?: number;
+  posterUrl?: string | null;
   textureQualityHint: ExpoScreenTextureQualityHint;
   url: string;
 }) {
   const [videoTexture, setVideoTexture] = useState<THREE.VideoTexture | null>(null);
   const side = doubleSided ? THREE.DoubleSide : THREE.FrontSide;
   const playbackId = useMemo(() => `booth-video:${url}`, [url]);
-  useExpoVideoScreenPlaybackRegistration(playbackId, Boolean(videoTexture));
+  useExpoVideoScreenPlaybackRegistration(playbackId, allowVideoPlayback && Boolean(videoTexture));
 
   useEffect(() => {
+    if (!allowVideoPlayback) {
+      queueMicrotask(() => setVideoTexture(null));
+      return undefined;
+    }
+
     if (typeof document === 'undefined') {
       return undefined;
     }
@@ -969,7 +978,7 @@ function VideoSponsorTextureSurface({
     video.loop = true;
     video.muted = true;
     video.playsInline = true;
-    video.preload = 'auto';
+    video.preload = 'metadata';
     video.src = url;
 
     const nextTexture = configureExpoTexture(new THREE.VideoTexture(video), textureQualityHint) as THREE.VideoTexture;
@@ -1000,9 +1009,9 @@ function VideoSponsorTextureSurface({
       video.load();
       nextTexture.dispose();
     };
-  }, [textureQualityHint, url]);
+  }, [allowVideoPlayback, textureQualityHint, url]);
 
-  if (videoTexture) {
+  if (allowVideoPlayback && videoTexture) {
     return (
       <meshBasicMaterial
         depthWrite={depthWrite ?? opacity >= 0.999}
@@ -1014,6 +1023,21 @@ function VideoSponsorTextureSurface({
         opacity={opacity}
         side={side}
         toneMapped={false}
+      />
+    );
+  }
+
+  if (posterUrl) {
+    return (
+      <StaticSponsorTextureSurface
+        depthWrite={depthWrite}
+        doubleSided={doubleSided}
+        fallbackColor={fallbackColor}
+        emissiveColor={emissiveColor}
+        emissiveIntensity={emissiveIntensity}
+        opacity={opacity}
+        textureQualityHint={textureQualityHint}
+        url={posterUrl}
       />
     );
   }
@@ -1123,21 +1147,25 @@ function StaticSponsorTextureSurface({
 }
 
 export function SponsorTextureSurface({
+  allowVideoPlayback,
   depthWrite,
   doubleSided = false,
   fallbackColor,
   emissiveColor,
   emissiveIntensity = 0,
   opacity = 1,
+  posterUrl,
   textureQualityHint,
   url,
 }: {
+  allowVideoPlayback?: boolean;
   depthWrite?: boolean;
   doubleSided?: boolean;
   emissiveColor?: string;
   emissiveIntensity?: number;
   fallbackColor: string;
   opacity?: number;
+  posterUrl?: string | null;
   textureQualityHint?: ExpoScreenTextureQualityHint;
   url: string;
 }) {
@@ -1162,12 +1190,14 @@ export function SponsorTextureSurface({
   if (isVideoTextureUrl(url)) {
     return (
       <VideoSponsorTextureSurface
+        allowVideoPlayback={allowVideoPlayback ?? true}
         depthWrite={depthWrite}
         doubleSided={doubleSided}
         fallbackColor={fallbackColor}
         emissiveColor={emissiveColor}
         emissiveIntensity={emissiveIntensity}
         opacity={opacity}
+        posterUrl={posterUrl}
         textureQualityHint={normalizedTextureQualityHint}
         url={url}
       />

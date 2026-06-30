@@ -78,7 +78,7 @@ function getManagedBoothMergePriority(booth: ExpoBoothRecord | null) {
   const hasMedia = Boolean(screenContent.imageUrl || screenContent.image_url || screenContent.assetUrl || screenContent.asset_url || screenContent.videoUrl || screenContent.video_url);
 
   return 100
-    + (mode === 'image' || mode === 'video-placeholder' ? 10 : 0)
+    + (mode === 'image' || mode === 'video' || mode === 'video-placeholder' ? 10 : 0)
     + (hasMedia ? 5 : 0);
 }
 

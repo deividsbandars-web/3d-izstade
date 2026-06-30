@@ -35,6 +35,7 @@ function renderPrimitive(
   key: string,
   textureQualityHint?: ExpoScreenTextureQualityHint,
   doubleSidedTexture = true,
+  allowVideoPlayback = true,
 ) {
   if (primitive.kind === 'plane') {
     const isOpaque = isOpaquePrimitive(primitive.opacity);
@@ -114,10 +115,12 @@ function renderPrimitive(
       <mesh key={key} position={primitive.position} renderOrder={9}>
         <planeGeometry args={primitive.size} />
         <SponsorTextureSurface
+          allowVideoPlayback={allowVideoPlayback}
           depthWrite={false}
           doubleSided={doubleSidedTexture}
           fallbackColor={primitive.fallbackColor}
           opacity={primitive.opacity ?? 0.92}
+          posterUrl={primitive.posterUrl}
           textureQualityHint={textureQualityHint}
           url={primitive.url}
         />
@@ -171,6 +174,7 @@ function renderRearTexturePrimitive(
   key: string,
   textureQualityHint: ExpoScreenTextureQualityHint | undefined,
   rearZ: number,
+  allowVideoPlayback: boolean,
 ) {
   if (primitive.kind !== 'texture-plane' || !primitive.url) {
     return null;
@@ -186,10 +190,12 @@ function renderRearTexturePrimitive(
     >
       <planeGeometry args={primitive.size} />
       <SponsorTextureSurface
+        allowVideoPlayback={allowVideoPlayback}
         depthWrite={false}
         doubleSided
         fallbackColor={primitive.fallbackColor}
         opacity={primitive.opacity ?? 0.92}
+        posterUrl={primitive.posterUrl}
         textureQualityHint={textureQualityHint}
         url={primitive.url}
       />
@@ -343,6 +349,7 @@ export function WorldCityScreenAssignments({
                 `${assignment.id}:${primitive.kind}:${index}`,
                 screenRuntimePolicy.textureQualityHint,
                 rearScreenContentZ === null,
+                screenRuntimePolicy.allowVideoPlayback,
               ),
             )}
             {rearScreenContentZ !== null && primitives.map((primitive, index) =>
@@ -351,6 +358,7 @@ export function WorldCityScreenAssignments({
                 `${assignment.id}:rear:${primitive.kind}:${index}`,
                 screenRuntimePolicy.textureQualityHint,
                 rearScreenContentZ,
+                screenRuntimePolicy.allowVideoPlayback,
               ),
             )}
           </group>

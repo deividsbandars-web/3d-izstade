@@ -1,5 +1,56 @@
 # Current Task
 
+## 2026-06-30 Pre-Release Product Audit WP-A Live Sponsor Video Screens
+
+- Active objective: replace the sponsor screen "video placeholder" behavior with a real live-video screen mode while keeping static poster/fallback behavior for distance, mobile/low-runtime policy, and legacy placeholder records.
+- Implementation status:
+  - Extended the managed booth screen-content contract to preserve `mode: "video"` instead of normalizing it back to `video-placeholder`.
+  - Kept `video-placeholder` as a legacy-compatible mode so old saved booths still load and publish.
+  - Updated Company Admin booth screen UX so entering a video URL switches the screen to Live video + Published, and copying a sponsor demo video saves `mode: "video"`.
+  - Updated sponsor booth presentation, managed booth preview, backend scene merge priority, and city screen assignment override flow so live video reaches the runtime renderer.
+  - Added optional `posterUrl` metadata to texture-plane primitives and propagated it to city screen rendering.
+  - Added `allowVideoPlayback` and `posterUrl` support to `SponsorTextureSurface`: live videos use `THREE.VideoTexture` only when allowed, preload metadata, and fall back to poster/static texture otherwise.
+  - Wired city-wide screens to the existing `resolveExpoScreenRuntimePolicy` distance/quality/video-count gate.
+  - Wired booth pavilion screens to the existing booth `distanceToPlayer` state so managed videos only play near the booth and show poster/static fallback farther away.
+  - Added/updated tests for live video screen content normalization, sponsor presentation, managed preview, and city screen assignment poster fallback.
+  - Updated stale sponsor presentation test expectations for the current booth-profile CTA labels/routes while touching that test file.
+- Validation:
+  - `npx.cmd tsx src\modules\expo\__tests__\screenContentMediaSafety.test.ts` passed.
+  - `npx.cmd tsx src\modules\expo\__tests__\managedScreenAssignmentOverride.test.ts` passed.
+  - `npx.cmd tsx src\modules\expo\__tests__\sponsorBoothPresentation.test.ts` passed.
+  - `npx.cmd tsx src\modules\expo\__tests__\managedBoothPreviewScene.test.ts` passed.
+  - `npx.cmd tsx src\modules\expo\__tests__\sceneContract.test.ts` passed.
+  - `npm.cmd run lint` passed.
+  - `npm.cmd run check:expo-boundaries` passed.
+  - `npm.cmd run build` passed.
+  - `npm.cmd run check:all` passed.
+  - `node scripts\qa-gala-motion-performance-audit.mjs --base-url=http://127.0.0.1:5173 --profile=desktop --out-dir=artifacts\wp-a-motion-desktop` ran and failed the existing GALA motion budget: median FPS was 80-120, but frameTime P95 was 29.2-33.3 ms against the 28 ms desktop budget and stutter counts reached 3.
+  - `node scripts\qa-gala-motion-performance-audit.mjs --base-url=http://127.0.0.1:5173 --profile=constrained-mobile --out-dir=artifacts\wp-a-motion-constrained-mobile` ran and failed the existing constrained-mobile budget: median FPS was 18.45-21.83 against the 30 FPS budget, with frameTime P95 87.6-154.2 ms and stutter counts 14-28.
+- Touched files:
+  - `src/app/expo/expoDashboardService.ts`
+  - `src/backend/expo/sceneBuilder.ts`
+  - `src/modules/expo/__tests__/managedBoothPreviewScene.test.ts`
+  - `src/modules/expo/__tests__/managedScreenAssignmentOverride.test.ts`
+  - `src/modules/expo/__tests__/screenContentMediaSafety.test.ts`
+  - `src/modules/expo/__tests__/sponsorBoothPresentation.test.ts`
+  - `src/modules/expo/lib/sponsorBoothPresentation.ts`
+  - `src/modules/expo/runtime/booths/BoothTextureMaterials.tsx`
+  - `src/modules/expo/runtime/booths/BoothVisualAssembly.tsx`
+  - `src/modules/expo/runtime/booths/OpenBoothPavilion.tsx`
+  - `src/modules/expo/runtime/data/managedBoothPreviewScene.ts`
+  - `src/modules/expo/runtime/planning/legacy/worldCityGeometry.ts`
+  - `src/modules/expo/runtime/world/WorldCityScreenAssignments.tsx`
+  - `src/modules/expo/runtime/world/managedScreenContentAssignments.ts`
+  - `src/pages/expo/companyAdmin/CompanyAdminView.tsx`
+  - `src/shared/expo/screenContentMedia.ts`
+  - `docs/CURRENT_TASK.md`
+- Product/release status:
+  - WP-A code implementation is complete for data flow, admin UX, runtime playback gating, and static fallback behavior.
+  - `productVisualAccepted=false`.
+  - No staging/production deploy, sponsor boulevard camera/FOV/lookAt change, booth geometry edit, GALA construction geometry edit, auth/quote/payment behavior change, Pixel Streaming change, or Unreal change was made.
+- Next step:
+  - Investigate and address the failing GALA motion-performance budgets separately before using motion audit as a green release signal; the failures were observed on the current GALA route under `artifacts\wp-a-motion-desktop` and `artifacts\wp-a-motion-constrained-mobile`.
+
 ## 2026-06-30 Pre-Release Product Audit WP-C Self-Serve Booth Slot Marketplace
 
 - Active objective: add a sponsor-facing self-serve booth slot marketplace where a signed-in sponsor can choose an available booth slot, see the server-authored price, reserve a short hold, and continue to Stripe Checkout.
