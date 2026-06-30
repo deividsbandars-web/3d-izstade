@@ -1,5 +1,28 @@
 # Current Task
 
+## 2026-07-01 Staging Read-Only Release Preflight
+
+- Active objective: verify the currently deployed staging frontend and API before authorizing a new staging deployment of the validated GALA/release branch.
+- Implementation status:
+  - Ran staging readiness in read-only mode, intentionally skipping the Supabase migration dry-run and temporary booth publication mutation.
+  - Confirmed Doppler remains scoped to `-3d-izstade / stg`, the frontend and backend use Supabase project `aasovfczmqytdtugcrmh`, and the configured API base is `https://api-staging.30sek24.com`.
+  - Ran the real-browser expo staging smoke across the default route, sponsor packages, sales demo overview and steps, and the technical operator snapshot.
+- Validation:
+  - `npm.cmd run check:staging-readiness -- --json --skip-publication-smoke --skip-supabase-dry-run` passed: staging frontend, API health, and `/api/expo/scene` returned HTTP 200.
+  - The optional legacy Pixel Streaming baseline returned HTTP 401 and remained a non-fatal warning, as required for the Web3D release baseline.
+  - `npm.cmd run check:expo-staging-browser-smoke -- --json` passed all browser cases with no runtime exceptions, browser error log entries, automatic lead submissions, or visible encoding fragments.
+  - `npm.cmd run lint` passed.
+  - `npm.cmd run check:expo-boundaries` passed.
+  - `npm.cmd run build` passed; the existing large chunks remain within the configured build behavior.
+- Touched files:
+  - `docs/CURRENT_TASK.md`
+- Product/release status:
+  - The existing staging Web3D deployment is healthy enough for a controlled redeploy of the verified branch.
+  - `productVisualAccepted=false`.
+  - No staging/production deploy, staging data mutation, camera/FOV/lookAt change, geometry/collision/door-runtime change, auth/quote/payment behavior change, Pixel Streaming change, or Unreal change was made.
+- Next step:
+  - Obtain explicit staging-deploy authorization, deploy the frontend/backend release target as applicable, then rerun the full staging readiness and deployed GALA evidence.
+
 ## 2026-06-30 GALA Post-Fix Full Release Gate Verification
 
 - Active objective: verify the combined GALA motion-performance and interior-readability fixes against the complete canonical local release gate before any staging deployment.
