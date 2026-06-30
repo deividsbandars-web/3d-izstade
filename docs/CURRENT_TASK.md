@@ -7,6 +7,8 @@
   - Ran the canonical ten-concern GALA release suite against `vite preview` on `/modular-homes/studio?homeStudio=1`.
   - Confirmed ownership, DOM overlay, wall-skin coverage, floor/ground isolation, opening clipping, furniture clearance, static performance budget, motion performance, visual design intent, and visual-acceptance preflight all pass together.
   - Confirmed the combined fixes do not require further renderer, geometry, collision, camera, movement, door-runtime, pricing, configurator, quote, or backend changes.
+  - Diagnosed the first manually dispatched GitHub Release Gate failure as missing repository Actions secrets; the frontend fail-fast check correctly rejected empty `VITE_PUBLIC_API_BASE_URL`, `VITE_SUPABASE_URL`, and `VITE_SUPABASE_ANON_KEY` values.
+  - Verified Doppler project `-3d-izstade` config `stg` targets Supabase project `aasovfczmqytdtugcrmh` and `api-staging.30sek24.com`, then synchronized the six required frontend/backend CI secret values to GitHub without printing or committing their values.
 - Validation:
   - `npm.cmd run check:all` passed, including expo boundaries, GALA ownership, backend boundaries, backend shared boundaries, and Supabase RLS.
   - `node scripts\qa-gala-suite.mjs --base-url=http://127.0.0.1:4173 --profile=release --out-dir=artifacts\qa-gala-suite-after-readability` passed all 10 canonical concerns.
@@ -15,10 +17,12 @@
   - `npm.cmd run lint` passed.
   - `npm.cmd run check:expo-boundaries` passed.
   - `npm.cmd run build` passed; the existing large chunks remain within the configured build behavior.
+  - GitHub Actions Release Gate run `28473820542` failed as expected at `Frontend build` because the repository had no configured Actions secrets; frontend lint passed and later steps were skipped.
+  - GitHub Actions Release Gate run `28475228329` passed on commit `e9060575cb8f0f2fa7815111c43dc3b5d0b00a01`: frontend lint/build, bundle budget, release static gates, backend TypeScript/lint/tests, and modular-home quote staging contract all passed.
 - Touched files:
   - `docs/CURRENT_TASK.md`
 - Product/release status:
-  - The combined local GALA technical release gate is green.
+  - The combined local GALA technical release gate and the remote GitHub Actions Release Gate are green.
   - `productVisualAccepted=false`.
   - No staging/production deploy, sponsor boulevard camera/FOV/lookAt change, GALA geometry/collision/door-runtime change, auth/quote/payment behavior change, Pixel Streaming change, or Unreal change was made.
 - Next step:
