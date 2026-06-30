@@ -1,5 +1,30 @@
 # Current Task
 
+## 2026-06-30 Phase 6.1 Staging Alias Promotion And Final Verification
+
+- Active objective: finish Phase 6.1 by promoting the ready prebuilt `app-staging` deployment to the public staging alias and rerunning release verification.
+- Implementation status:
+  - Promoted `https://app-staging-fmci99e0q-esaukans-6934s-projects.vercel.app` to `https://staging.30sek24.com`.
+  - Confirmed `vercel inspect staging.30sek24.com --scope esaukans-6934s-projects` resolves to deployment `dpl_4fBKHto6uCUQ3fqGU7LYzWv4QKra`.
+  - Confirmed `https://staging.30sek24.com/expo-3d?salesDemo=1` serves the SPA HTML with title `Warpala OS`.
+  - Updated `docs/LAUNCH_READINESS_SNAPSHOT_20260630.md` and `docs/launch-dossier.md` from partial/blocker status to staging verified.
+- Validation:
+  - `npm.cmd run promote:staging -- https://app-staging-fmci99e0q-esaukans-6934s-projects.vercel.app` passed.
+  - `npx.cmd vercel inspect staging.30sek24.com --scope esaukans-6934s-projects` passed.
+  - `npm.cmd run check:staging-readiness` passed; optional legacy Pixel Streaming remains warning-level.
+  - `npm.cmd run check:expo-staging-browser-smoke -- --json` passed against `https://staging.30sek24.com`.
+  - `powershell.exe -ExecutionPolicy Bypass -File scripts/run-with-doppler.ps1 run -- node scripts/check-modular-home-quote-staging.mjs --json` passed; quote submit `201`, admin checks passed, public RLS direct read denied with `42501`, cleanup deleted the temporary quote.
+- Touched files:
+  - `docs/LAUNCH_READINESS_SNAPSHOT_20260630.md`
+  - `docs/launch-dossier.md`
+  - `docs/CURRENT_TASK.md`
+- Product/release status:
+  - `productVisualAccepted=false`.
+  - No production deploy or promotion was run.
+  - Phase 6.1 staging deploy and verification are complete.
+- Next step:
+  - Phase 6.2 production go/no-go still requires explicit production authorization and human product visual acceptance.
+
 ## 2026-06-30 Phase 6.1 Staging Preview Deploy Fix
 
 - Active objective: Fix the Vercel staging preview deploy that failed on Windows with upload size issues and `spawn cmd.exe ENOENT` during local `vercel build`.

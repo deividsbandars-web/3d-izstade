@@ -4,9 +4,10 @@
 
 Latest staging snapshot: [LAUNCH_READINESS_SNAPSHOT_20260630.md](/C:/3d/docs/LAUNCH_READINESS_SNAPSHOT_20260630.md)
 
-Current status: backend staging deploy and runtime gates are green, but frontend staging
-preview deploy is blocked by Vercel file-upload API failures. No production promotion was
-performed and `productVisualAccepted=false` remains.
+Current status: Phase 6.1 staging deploy and verification are complete. The prebuilt
+frontend deployment is promoted to `staging.30sek24.com`, backend staging is healthy, and
+staging readiness, browser smoke, and quote round-trip gates are green. No production
+promotion was performed and `productVisualAccepted=false` remains.
 
 Date: 2026-04-17  
 Phase: `P9-T2`  
