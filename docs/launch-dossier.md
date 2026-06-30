@@ -9,6 +9,9 @@ gates checked in the preflight are green where listed, but production remains bl
 on explicit production authorization, CI run evidence, live production RLS verification,
 constrained-mobile FPS evidence, and human product visual acceptance.
 
+CI note: `release/v1-stabilization` is published at `91bfaea`, but manual dispatch of
+`release-gate.yml` is blocked by GitHub because the workflow is not on the default branch.
+
 ## 2026-06-30 Phase 6.1 Update
 
 Latest staging snapshot: [LAUNCH_READINESS_SNAPSHOT_20260630.md](/C:/3d/docs/LAUNCH_READINESS_SNAPSHOT_20260630.md)

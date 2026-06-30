@@ -21,7 +21,7 @@ recorded product visual status.
 | Requirement | Result | Evidence |
 | --- | --- | --- |
 | Explicit production promotion authorization in this session | `BLOCKED` | The session continued release preflight work, but no explicit instruction to run `promote:production` was given. |
-| All validation gates green in CI | `BLOCKED / UNVERIFIED` | `gh run list --branch release/v1-stabilization --limit 5 --json ...` returned `[]`, so there is no CI run evidence for this branch. |
+| All validation gates green in CI | `BLOCKED / UNVERIFIED` | `gh run list --branch release/v1-stabilization --limit 5 --json ...` returned `[]`, so there is no CI run evidence for this branch. After publishing `release/v1-stabilization`, `gh workflow run release-gate.yml --ref release/v1-stabilization` returned GitHub `HTTP 404: workflow release-gate.yml not found on the default branch`, so manual dispatch cannot be used until the workflow exists on the default branch or an equivalent CI path is provided. |
 | Bundle budget met | `PASS` | `npm.cmd run check:bundle-budget` passed after the production build. Current gzip usage: `react-three-vendor` 469.45/516.39 kB, `three-core` 187.82/206.60 kB, `Expo3D` 158.12/178.72 kB, `modular-home` 129.72/140.80 kB, `react-vendor` 73.72/81.09 kB. |
 | Backend ships from compiled dist, not `tsx` in prod | `PASS` | `backend-server/Dockerfile.full` production runner uses `node backend-server/dist/backend-server/server.js`. `docs/BACKEND_RELEASE_PACKAGING.md` names the full compiled backend as canonical and includes `/api/expo/scene` plus `/api/modular-home/quote`. |
 | Backend serves `/api/expo/scene` and `/api/modular-home/quote` | `PASS` | Backend contract tests passed via `npm.cmd run check:backend-tests`; staging quote contract passed through Doppler staging env. |
@@ -43,11 +43,13 @@ recorded product visual status.
 | `npm.cmd run check:backend-tests` | `PASS` |
 | `powershell.exe -ExecutionPolicy Bypass -File scripts/run-with-doppler.ps1 run -- node scripts/check-modular-home-quote-staging.mjs --json` | `PASS` |
 | `gh run list --branch release/v1-stabilization --limit 5 --json ...` | `UNVERIFIED`: returned `[]` |
+| `git push -u origin release/v1-stabilization` | `PASS AFTER LOCAL TIMEOUT`: remote ref verified at `91bfaea74b9bc5de0f5b1bafb0fd38acc34f87f8` |
+| `gh workflow run release-gate.yml --ref release/v1-stabilization` | `BLOCKED`: GitHub returned `HTTP 404` because the workflow is not on the default branch |
 
 ## Required Before Production Promotion
 
 1. Obtain explicit production promotion authorization in the active session.
-2. Capture a green CI release-gate run for the release branch or PR.
+2. Make the release-gate workflow dispatchable from GitHub or provide an equivalent green CI run for the release branch or PR.
 3. Verify production Supabase RLS default-deny behavior against the intended production table.
 4. Capture constrained-mobile 30 FPS and desktop 60 FPS evidence for the release surface.
 5. Have a human product owner record product visual acceptance through the designated release process.

@@ -7,6 +7,8 @@
   - Audited the Phase 6.2 requirements against the current release branch and staging evidence.
   - Added `docs/PRODUCTION_GO_NO_GO_20260630.md` with the production checklist, evidence, blockers, and required next actions.
   - Confirmed the current decision is `NO-GO / NO PRODUCTION PROMOTION`.
+  - Published `release/v1-stabilization` to `origin` at `91bfaea74b9bc5de0f5b1bafb0fd38acc34f87f8` so CI evidence can be collected once the workflow is dispatchable.
+  - Tried to trigger `release-gate.yml` manually, but GitHub returned `HTTP 404` because the workflow does not exist on the default branch.
   - Did not run `promote:production`, did not change production aliases, and did not mutate production Supabase.
 - Validation:
   - `npm.cmd run lint` passed.
@@ -18,6 +20,8 @@
   - `npm.cmd run check:backend-tests` passed.
   - `powershell.exe -ExecutionPolicy Bypass -File scripts/run-with-doppler.ps1 run -- node scripts/check-modular-home-quote-staging.mjs --json` passed.
   - `gh run list --branch release/v1-stabilization --limit 5 --json ...` returned `[]`, so CI evidence is still unverified.
+  - `git push -u origin release/v1-stabilization` published the branch; the local process timed out, but `git ls-remote --heads origin release/v1-stabilization` verified remote ref `91bfaea74b9bc5de0f5b1bafb0fd38acc34f87f8`.
+  - `gh workflow run release-gate.yml --ref release/v1-stabilization` failed with GitHub `HTTP 404: workflow release-gate.yml not found on the default branch`.
 - Touched files:
   - `docs/PRODUCTION_GO_NO_GO_20260630.md`
   - `docs/launch-dossier.md`
@@ -25,9 +29,9 @@
 - Product/release status:
   - `productVisualAccepted=false`.
   - No production deploy, production promotion, production alias change, payment change, auth-policy change, schema change, camera/FOV/lookAt change, movement-physics change, collision-geometry change, door-runtime change, or GALA construction geometry change was made.
-  - Production remains blocked on explicit production authorization, green CI evidence, live production RLS verification, constrained-mobile FPS evidence, and human product visual acceptance.
+  - Production remains blocked on explicit production authorization, dispatchable green CI evidence, live production RLS verification, constrained-mobile FPS evidence, and human product visual acceptance.
 - Next step:
-  - Resolve the remaining Phase 6.2 blockers before any production promotion command is run.
+  - Make the release-gate workflow available through an allowed GitHub CI path, then resolve the remaining Phase 6.2 blockers before any production promotion command is run.
 
 ## 2026-06-30 Phase 6.1 Staging Alias Promotion And Final Verification
 
