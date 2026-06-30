@@ -7,7 +7,7 @@
   - Audited the Phase 6.2 requirements against the current release branch and staging evidence.
   - Added `docs/PRODUCTION_GO_NO_GO_20260630.md` with the production checklist, evidence, blockers, and required next actions.
   - Confirmed the current decision is `NO-GO / NO PRODUCTION PROMOTION`.
-  - Published `release/v1-stabilization` to `origin`; latest verified remote head is `79c720c8bc86b9ad04e7902e098d76256c3eba1e`.
+  - Published `release/v1-stabilization` to `origin` so CI evidence can be collected once the workflow is dispatchable.
   - Tried to trigger `release-gate.yml` manually, but GitHub returned `HTTP 404` because the workflow does not exist on the default branch.
   - Did not run `promote:production`, did not change production aliases, and did not mutate production Supabase.
 - Validation:
@@ -20,7 +20,7 @@
   - `npm.cmd run check:backend-tests` passed.
   - `powershell.exe -ExecutionPolicy Bypass -File scripts/run-with-doppler.ps1 run -- node scripts/check-modular-home-quote-staging.mjs --json` passed.
   - `gh run list --branch release/v1-stabilization --limit 5 --json ...` returned `[]`, so CI evidence is still unverified.
-  - `git push -u origin release/v1-stabilization` published the branch; the initial local process timed out, a later fast-forward push succeeded, and `git ls-remote --heads origin release/v1-stabilization` verified remote ref `79c720c8bc86b9ad04e7902e098d76256c3eba1e`.
+  - `git push -u origin release/v1-stabilization` published the branch; the initial local process timed out, later fast-forward pushes succeeded, and `git ls-remote --heads origin release/v1-stabilization` verified the remote ref exists.
   - `gh workflow run release-gate.yml --ref release/v1-stabilization` failed with GitHub `HTTP 404: workflow release-gate.yml not found on the default branch`.
 - Touched files:
   - `docs/PRODUCTION_GO_NO_GO_20260630.md`

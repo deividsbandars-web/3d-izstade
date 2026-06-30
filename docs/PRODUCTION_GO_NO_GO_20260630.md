@@ -43,7 +43,7 @@ recorded product visual status.
 | `npm.cmd run check:backend-tests` | `PASS` |
 | `powershell.exe -ExecutionPolicy Bypass -File scripts/run-with-doppler.ps1 run -- node scripts/check-modular-home-quote-staging.mjs --json` | `PASS` |
 | `gh run list --branch release/v1-stabilization --limit 5 --json ...` | `UNVERIFIED`: returned `[]` |
-| `git push -u origin release/v1-stabilization` | `PASS`: branch published; latest remote ref verified at `79c720c8bc86b9ad04e7902e098d76256c3eba1e` |
+| `git push -u origin release/v1-stabilization` | `PASS`: branch published; later fast-forward pushes succeeded and the remote ref was verified with `git ls-remote` |
 | `gh workflow run release-gate.yml --ref release/v1-stabilization` | `BLOCKED`: GitHub returned `HTTP 404` because the workflow is not on the default branch |
 
 ## Required Before Production Promotion
