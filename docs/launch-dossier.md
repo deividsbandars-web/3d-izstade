@@ -1,5 +1,14 @@
 # Launch Dossier
 
+## 2026-06-30 Phase 6.2 Preflight Update
+
+Latest production go/no-go preflight: [PRODUCTION_GO_NO_GO_20260630.md](/C:/3d/docs/PRODUCTION_GO_NO_GO_20260630.md)
+
+Current status: Phase 6.2 production promotion is `NO-GO`. Local/staging technical
+gates checked in the preflight are green where listed, but production remains blocked
+on explicit production authorization, CI run evidence, live production RLS verification,
+constrained-mobile FPS evidence, and human product visual acceptance.
+
 ## 2026-06-30 Phase 6.1 Update
 
 Latest staging snapshot: [LAUNCH_READINESS_SNAPSHOT_20260630.md](/C:/3d/docs/LAUNCH_READINESS_SNAPSHOT_20260630.md)

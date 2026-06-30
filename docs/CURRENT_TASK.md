@@ -1,5 +1,34 @@
 # Current Task
 
+## 2026-06-30 Release Roadmap Phase 6.2 Production Go/No-Go Preflight
+
+- Active objective: evaluate the Phase 6.2 production go/no-go checklist without running production promotion.
+- Implementation status:
+  - Audited the Phase 6.2 requirements against the current release branch and staging evidence.
+  - Added `docs/PRODUCTION_GO_NO_GO_20260630.md` with the production checklist, evidence, blockers, and required next actions.
+  - Confirmed the current decision is `NO-GO / NO PRODUCTION PROMOTION`.
+  - Did not run `promote:production`, did not change production aliases, and did not mutate production Supabase.
+- Validation:
+  - `npm.cmd run lint` passed.
+  - `npm.cmd run build` passed.
+  - `npm.cmd run check:bundle-budget` passed.
+  - `npm.cmd run check:all` passed.
+  - `(backend-server) npx.cmd tsc --noEmit -p tsconfig.json` passed.
+  - `(backend-server) npm.cmd run lint` passed.
+  - `npm.cmd run check:backend-tests` passed.
+  - `powershell.exe -ExecutionPolicy Bypass -File scripts/run-with-doppler.ps1 run -- node scripts/check-modular-home-quote-staging.mjs --json` passed.
+  - `gh run list --branch release/v1-stabilization --limit 5 --json ...` returned `[]`, so CI evidence is still unverified.
+- Touched files:
+  - `docs/PRODUCTION_GO_NO_GO_20260630.md`
+  - `docs/launch-dossier.md`
+  - `docs/CURRENT_TASK.md`
+- Product/release status:
+  - `productVisualAccepted=false`.
+  - No production deploy, production promotion, production alias change, payment change, auth-policy change, schema change, camera/FOV/lookAt change, movement-physics change, collision-geometry change, door-runtime change, or GALA construction geometry change was made.
+  - Production remains blocked on explicit production authorization, green CI evidence, live production RLS verification, constrained-mobile FPS evidence, and human product visual acceptance.
+- Next step:
+  - Resolve the remaining Phase 6.2 blockers before any production promotion command is run.
+
 ## 2026-06-30 Phase 6.1 Staging Alias Promotion And Final Verification
 
 - Active objective: finish Phase 6.1 by promoting the ready prebuilt `app-staging` deployment to the public staging alias and rerunning release verification.
