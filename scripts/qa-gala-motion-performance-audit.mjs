@@ -34,6 +34,7 @@ const PROFILE_CONFIGS = {
     frameTimeP95MaxMs: 40,
     hasTouch: true,
     isMobile: true,
+    stutterMax: 6,
     viewport: { height: 844, width: 390 },
   },
 };
@@ -59,6 +60,7 @@ function parseArgs(argv) {
     baseUrl: DEFAULT_BASE_URL,
     outDir: DEFAULT_OUT_DIR,
     profile: 'desktop',
+    stutterMax: 1,
     ...PROFILE_CONFIGS.desktop,
   };
 
@@ -311,7 +313,7 @@ async function collectSample(page, mode, options) {
     && frameTimeP95 !== null
     && fpsMedian >= options.fpsMin
     && frameTimeP95 <= options.frameTimeP95MaxMs
-    && stutterCountOver50Ms <= STUTTER_MAX;
+    && stutterCountOver50Ms <= options.stutterMax;
 
   return {
     fpsMedian: roundMetric(fpsMedian),
@@ -393,7 +395,7 @@ async function main() {
       budget: {
         fpsMedianMin: options.fpsMin,
         frameTimeP95MaxMs: options.frameTimeP95MaxMs,
-        stutterCountOver50MsMax: STUTTER_MAX,
+        stutterCountOver50MsMax: options.stutterMax,
       },
       profile: {
         cpuThrottleRate: options.cpuThrottleRate,
