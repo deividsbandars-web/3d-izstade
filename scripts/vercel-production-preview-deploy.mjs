@@ -12,6 +12,7 @@ const options = new Set(process.argv.slice(2));
 function run(command, args, runOptions = {}) {
   const result = spawnSync(command, args, {
     encoding: runOptions.capture ? 'utf8' : undefined,
+    env: buildEnv(),
     shell: process.platform === 'win32',
     stdio: runOptions.capture ? 'pipe' : 'inherit',
     windowsHide: true,
@@ -35,6 +36,31 @@ function readProjectLink() {
   }
 
   return fs.readFileSync(projectJsonPath, 'utf8');
+}
+
+function buildEnv() {
+  const env = {
+    ...process.env,
+    NO_UPDATE_NOTIFIER: '1',
+  };
+
+  if (process.platform === 'win32') {
+    const pathValue = env.Path || env.PATH || '';
+    const requiredPathParts = [
+      'C:\\Windows\\System32',
+      'C:\\Windows',
+      'C:\\Windows\\System32\\Wbem',
+      'C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\',
+      'C:\\Program Files\\nodejs\\',
+      `${process.env.APPDATA || ''}\\npm`,
+    ].filter(Boolean);
+    const hardenedPath = [...requiredPathParts, pathValue].join(';');
+    env.ComSpec = env.ComSpec || 'C:\\Windows\\System32\\cmd.exe';
+    env.Path = hardenedPath;
+    env.PATH = hardenedPath;
+  }
+
+  return env;
 }
 
 function restoreProjectLink(previousProjectJson) {
@@ -93,7 +119,13 @@ console.log('After review, promote explicitly with: npm run promote:production -
 try {
   assertSafeGitState();
   run(npx, ['vercel', 'link', '--yes', '--project', project, '--scope', scope]);
-  run(npx, ['vercel', '--prod', '--skip-domain', '--yes', '--scope', scope]);
+  
+  if (options.has('--prebuilt')) {
+    run(npx, ['vercel', 'build', '--prod', '--yes', '--scope', scope]);
+    run(npx, ['vercel', 'deploy', '--prebuilt', '--prod', '--skip-domain', '--yes', '--scope', scope]);
+  } else {
+    run(npx, ['vercel', '--prod', '--skip-domain', '--yes', '--scope', scope]);
+  }
 } finally {
   restoreProjectLink(previousProjectJson);
   assertRestoredStagingLink(previousProjectJson);
