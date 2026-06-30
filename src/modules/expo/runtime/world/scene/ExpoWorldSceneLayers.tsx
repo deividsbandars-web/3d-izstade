@@ -65,6 +65,9 @@ export function ExpoWorldSceneLayers({
     && !runtimeCaptureSafe
     && !qualitySettings.isMobileLike
     && qualitySettings.resolvedTier !== 'low';
+  const modularHomeRenderDetailLevel = qualitySettings.isMobileLike || qualitySettings.resolvedTier === 'low'
+    ? 'reduced'
+    : 'full';
 
   return (
     <Suspense fallback={null}>
@@ -198,7 +201,7 @@ export function ExpoWorldSceneLayers({
           runtimeState={zoneRuntimeState}
           zoneId="center"
         >
-          <ModularHomeModel />
+          <ModularHomeModel renderDetailLevel={modularHomeRenderDetailLevel} />
           <ModularHomeUploadedModelPreview />
         </ExpoZoneGroup>
       ) : null}
@@ -258,10 +261,10 @@ function GalaHomeStudioPostProcessing({
   const aoPass = (
     <N8AO
       aoRadius={1.65}
-      aoSamples={isHighQuality ? 16 : 10}
+      aoSamples={isHighQuality ? 10 : 6}
       color="#15110b"
-      denoiseRadius={isHighQuality ? 10 : 8}
-      denoiseSamples={isHighQuality ? 8 : 4}
+      denoiseRadius={isHighQuality ? 8 : 6}
+      denoiseSamples={isHighQuality ? 5 : 3}
       depthAwareUpsampling
       distanceFalloff={1.12}
       halfRes={!isHighQuality}
@@ -281,7 +284,7 @@ function GalaHomeStudioPostProcessing({
   }
 
   return (
-    <EffectComposer enableNormalPass multisampling={4}>
+    <EffectComposer enableNormalPass multisampling={0}>
       {aoPass}
     </EffectComposer>
   );

@@ -17,8 +17,11 @@ import {
 import { GalaConstructionRenderer } from './construction/GalaConstructionRenderer';
 import type { ModularHomeViewModeOption } from './modularHomeConfigurator';
 
+export type GalaHouseRenderDetailLevel = 'full' | 'reduced';
+
 type GalaHouseShellProps = {
   onEnterInterior?: () => void;
+  renderDetailLevel?: GalaHouseRenderDetailLevel;
   visualConfig?: GalaHouseVisualConfig;
   viewMode: ModularHomeViewModeOption;
 };
@@ -125,7 +128,12 @@ function resolveGalaConstructionModelForVisualConfig(config: GalaHouseVisualConf
   };
 }
 
-export function GalaHouseShell({ onEnterInterior, visualConfig, viewMode }: GalaHouseShellProps) {
+export function GalaHouseShell({
+  onEnterInterior,
+  renderDetailLevel = 'full',
+  visualConfig,
+  viewMode,
+}: GalaHouseShellProps) {
   const resolvedVisualConfig = visualConfig ?? DEFAULT_GALA_HOUSE_VISUAL_CONFIG;
   const constructionModel = useMemo(
     () => resolveGalaConstructionModelForVisualConfig(resolvedVisualConfig),
@@ -162,7 +170,9 @@ export function GalaHouseShell({ onEnterInterior, visualConfig, viewMode }: Gala
       <GalaConstructionRenderer
         constructionModel={constructionModel}
         onEntryDoorOpen={onEnterInterior}
+        renderDetailLevel={renderDetailLevel}
         transparentCutaway={transparentCutaway}
+        viewMode={viewMode}
         visualConfig={resolvedVisualConfig}
       />
     </group>

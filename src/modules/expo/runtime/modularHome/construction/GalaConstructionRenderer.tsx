@@ -25,10 +25,15 @@ import {
   resolveGalaWallSkin,
 } from './GalaWallSkinModel';
 
+type GalaConstructionRenderDetailLevel = 'full' | 'reduced';
+type GalaConstructionRenderViewMode = 'cutaway' | 'exterior' | 'floorplan' | 'interior';
+
 type GalaConstructionRendererProps = {
   constructionModel?: GalaConstructionModel;
   onEntryDoorOpen?: () => void;
+  renderDetailLevel?: GalaConstructionRenderDetailLevel;
   transparentCutaway?: boolean;
+  viewMode?: GalaConstructionRenderViewMode;
   visualConfig?: GalaHouseVisualConfig;
 };
 
@@ -367,9 +372,13 @@ function GableBoardCladding({
 export function GalaConstructionRenderer({
   constructionModel = GALA_CONSTRUCTION_MODEL,
   onEntryDoorOpen,
+  renderDetailLevel = 'full',
   transparentCutaway = false,
+  viewMode = 'exterior',
   visualConfig,
 }: GalaConstructionRendererProps) {
+  const shouldRenderRoomAssembly = viewMode === 'interior' || viewMode === 'cutaway' || viewMode === 'floorplan';
+
   return (
     <group
       name="gala-construction-renderer-ownership-contracted-assembly"
@@ -377,6 +386,8 @@ export function GalaConstructionRenderer({
         constructionModel,
         constructionModelIsAdapter: true,
         fragmentedPrimitivePatchLoopStopped: true,
+        galaRenderDetailLevel: renderDetailLevel,
+        galaRenderViewMode: viewMode,
         productVisualAccepted: false,
         rendererOwnershipContract: 'docs/GALA_RENDERER_OWNERSHIP_CONTRACT.md',
         roofOwnershipDocumented: true,
@@ -417,7 +428,9 @@ export function GalaConstructionRenderer({
         <GableBoardCladding constructionModel={constructionModel} side="east" transparentCutaway={transparentCutaway} visualConfig={visualConfig} />
         <CornerBoards visualConfig={visualConfig} />
         <ResidentialTerrace constructionModel={constructionModel} visualConfig={visualConfig} />
-        <GalaRoomAssembly visualConfig={visualConfig} />
+        {shouldRenderRoomAssembly ? (
+          <GalaRoomAssembly detailLevel={renderDetailLevel} visualConfig={visualConfig} />
+        ) : null}
       </group>
     </group>
   );

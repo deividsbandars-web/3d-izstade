@@ -53,6 +53,12 @@ type ModularHomeInteriorPackage =
   | 'standardFurnishedPreview'
   | 'premiumInteriorPreview';
 
+export type ModularHomeRenderDetailLevel = 'full' | 'reduced';
+
+type ModularHomeModelProps = {
+  renderDetailLevel?: ModularHomeRenderDetailLevel;
+};
+
 const INTERIOR_PACKAGE_BY_FINISH_LEVEL = {
   premium: 'premiumInteriorPreview',
   shell: 'emptyShell',
@@ -406,7 +412,7 @@ void createInteriorPlan;
 void getFootprintBounds;
 void InteriorWalkthroughScene;
 
-export function ModularHomeModel() {
+export function ModularHomeModel({ renderDetailLevel = 'full' }: ModularHomeModelProps = {}) {
   const { config: homeConfig } = useModularHomeConfigurator();
   const { setViewMode, viewMode } = useModularHomeViewMode();
   const homeStudioEnabled = isHomeStudioEnabled();
@@ -469,6 +475,7 @@ export function ModularHomeModel() {
         modularHomeRoofEdgeColor: homeConfig.roofEdgeColor,
         modularHomeRoofGutterStyle: homeConfig.roofGutterStyle,
         modularHomeRoofMaterialId: roofVisual.materialId,
+        modularHomeRenderDetailLevel: renderDetailLevel,
         modularHomeTrimColor: homeConfig.trimColor,
         modularHomeWindowFrameColor: homeConfig.windowFrameColor,
         modularHomeWindowFrameType: homeConfig.windowFrameType,
@@ -485,7 +492,12 @@ export function ModularHomeModel() {
           referencePackageUsed: 'Koka_maja_GALA_30deg_pilns_komplekts',
         }}
       >
-        <GalaHouseShell onEnterInterior={enterInterior} viewMode={viewMode} visualConfig={galaVisualConfig} />
+        <GalaHouseShell
+          onEnterInterior={enterInterior}
+          renderDetailLevel={renderDetailLevel}
+          viewMode={viewMode}
+          visualConfig={galaVisualConfig}
+        />
       </group>
 
       {showFloatingHomeDemoModelLabel ? (

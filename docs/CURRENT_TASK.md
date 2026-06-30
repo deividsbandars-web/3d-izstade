@@ -1,5 +1,34 @@
 # Current Task
 
+## 2026-06-30 GALA Motion Performance Render LOD Fix
+
+- Active objective: fix the failing GALA motion-performance audit on `/modular-homes/studio?homeStudio=1` without changing camera/FOV/lookAt, player movement physics, collision, door runtime, or GALA construction geometry.
+- Implementation status:
+  - Added a render-detail-level path from `ExpoWorldSceneLayers` through `ModularHomeModel` and `GalaHouseShell` into `GalaConstructionRenderer`.
+  - Stopped mounting `GalaRoomAssembly` in exterior view so hidden interior furniture/fixtures are not rendered while the visitor is outside the home.
+  - Added a reduced-detail `GalaRoomAssembly` mode for mobile/low-quality runtime: keeps the main room cues visible, replaces high-detail GLTF sofa/table with lightweight readable proxies, and omits small fixture/furniture fidelity details.
+  - Reduced GALA studio AO/postprocess sampling cost on desktop while keeping the postprocess path available for non-mobile/high-quality views.
+  - Left pricing, configurator state, QA data attributes, camera/FOV/lookAt, movement physics, collision, door runtime, and GALA construction model geometry unchanged.
+- Validation:
+  - `npm.cmd run lint` passed.
+  - `npm.cmd run check:expo-boundaries` passed.
+  - `npm.cmd run build` passed.
+  - `node scripts\qa-gala-motion-performance-audit.mjs --base-url=http://127.0.0.1:4173 --profile=desktop --out-dir=artifacts\gala-motion-render-lod-desktop` passed against `vite preview`: exterior/interior median FPS 238.1, P95 4.5-8.4 ms, stutters 0.
+  - `node scripts\qa-gala-motion-performance-audit.mjs --base-url=http://127.0.0.1:4173 --profile=constrained-mobile --out-dir=artifacts\gala-motion-render-lod-constrained-mobile` passed against `vite preview`: median FPS 80-232.56, P95 20.7-20.9 ms, stutters 0-1.
+- Touched files:
+  - `src/modules/expo/runtime/modularHome/GalaHouseShell.tsx`
+  - `src/modules/expo/runtime/modularHome/ModularHomeModel.tsx`
+  - `src/modules/expo/runtime/modularHome/construction/GalaConstructionRenderer.tsx`
+  - `src/modules/expo/runtime/modularHome/construction/GalaRoomAssembly.tsx`
+  - `src/modules/expo/runtime/world/scene/ExpoWorldSceneLayers.tsx`
+  - `docs/CURRENT_TASK.md`
+- Product/release status:
+  - Motion-performance budget is green for desktop and constrained-mobile evidence artifacts.
+  - `productVisualAccepted=false`.
+  - No staging/production deploy, sponsor boulevard camera/FOV/lookAt change, booth geometry edit, GALA construction geometry edit, auth/quote/payment behavior change, Pixel Streaming change, or Unreal change was made.
+- Next step:
+  - Human visual review should confirm the reduced mobile/interior detail tradeoff is acceptable before treating this as product-visual accepted.
+
 ## 2026-06-30 Pre-Release Product Audit WP-A Live Sponsor Video Screens
 
 - Active objective: replace the sponsor screen "video placeholder" behavior with a real live-video screen mode while keeping static poster/fallback behavior for distance, mobile/low-runtime policy, and legacy placeholder records.
