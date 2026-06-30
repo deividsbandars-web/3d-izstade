@@ -10,7 +10,7 @@
   - Published `release/v1-stabilization` to `origin` so CI evidence can be collected once the workflow is dispatchable.
   - Tried to trigger `release-gate.yml` manually, but GitHub returned `HTTP 404` because the workflow does not exist on the default branch.
   - Added mobile/constrained-mobile profile support to the GALA static and motion performance QA scripts without changing product renderer code.
-  - Ran constrained-mobile performance QA against `https://staging.30sek24.com`; static passed, motion failed on stutter count.
+  - Ran constrained-mobile performance QA against `https://staging.30sek24.com`; static passed, motion failed on stutter count in two runs.
   - Did not run `promote:production`, did not change production aliases, and did not mutate production Supabase.
 - Validation:
   - `npm.cmd run lint` passed.
@@ -28,6 +28,7 @@
   - `node --check scripts/qa-gala-motion-performance-audit.mjs` passed.
   - `node scripts/qa-gala-performance-budget-audit.mjs --base-url=https://staging.30sek24.com --profile=constrained-mobile --out-dir=artifacts/phase6-2-constrained-mobile/static` passed after network escalation; first sandboxed attempt failed with `ERR_NETWORK_ACCESS_DENIED`.
   - `node scripts/qa-gala-motion-performance-audit.mjs --base-url=https://staging.30sek24.com --profile=constrained-mobile --out-dir=artifacts/phase6-2-constrained-mobile/motion` failed: exterior stationary had 3 stutters over 50ms and exterior motion had 2 stutters over 50ms, above the max of 1, while median FPS remained above 30.
+  - `node scripts/qa-gala-motion-performance-audit.mjs --base-url=https://staging.30sek24.com --profile=constrained-mobile --out-dir=artifacts/phase6-2-constrained-mobile/motion-rerun` failed again: exterior stationary had 4 stutters over 50ms, above the max of 1, while median FPS remained above 30.
 - Touched files:
   - `scripts/qa-gala-performance-budget-audit.mjs`
   - `scripts/qa-gala-motion-performance-audit.mjs`
