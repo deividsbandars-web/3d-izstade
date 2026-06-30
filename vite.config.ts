@@ -128,9 +128,6 @@ export default defineConfig(({ mode }) => {
               return 'supabase-vendor'
             }
 
-            if (id.includes('@stripe') || id.includes('/stripe/')) {
-              return 'stripe-vendor'
-            }
           }
 
           return undefined

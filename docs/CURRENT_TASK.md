@@ -1,5 +1,55 @@
 # Current Task
 
+## 2026-06-30 Pre-Release Product Audit WP-B Real Stripe Checkout
+
+- Active objective: replace simulated billing checkout with real Stripe Checkout and a verified webhook path while keeping prices/products server-authored.
+- Implementation status:
+  - Added real Stripe SDK dependency in the root and `backend-server` package manifests.
+  - Replaced `src/backend/billing/payments/paymentService.ts` mock checkout with env-gated Stripe Checkout session creation for plan and credit products.
+  - Added signed Stripe webhook handling for `checkout.session.completed` and duplicate-safe payment completion processing.
+  - Added `backend-server/controllers/billingCheckoutController.ts` and wired public `POST /api/billing/webhook` plus protected checkout routes through `backend-server/routes/api.ts`.
+  - Captured the raw request body for Stripe webhook verification in `backend-server/server.ts`.
+  - Added Supabase migration `20260630170000_billing_stripe_checkout.sql` for `billing_payments` plus Stripe columns on invoices, with RLS enabled/default-deny and service-role-only grants.
+  - Updated frontend billing/Stripe services to call backend checkout endpoints instead of generating mock checkout URLs or writing invoices client-side.
+  - Left legacy arbitrary client-amount checkout fail-closed because real checkout must use server-authored product ids/prices.
+  - Removed the old tracked JS mock duplicate `src/backend/billing/payments/paymentService.js`.
+  - Documented Stripe env keys in root and backend `.env.example`.
+- Validation:
+  - `(backend-server) npx.cmd tsc --noEmit -p tsconfig.json` passed.
+  - `(backend-server) npm.cmd run build` passed with escalated filesystem permission for `backend-server/dist` emit.
+  - `(backend-server) npm.cmd run lint` passed.
+  - `node scripts/check-backend-tests.mjs` passed, including the new billing payment service tests.
+  - `npm.cmd run lint` passed.
+  - `npm.cmd run build` passed.
+  - `npm.cmd run check:all` passed.
+- Touched files:
+  - `.env.example`
+  - `backend-server/.env.example`
+  - `backend-server/__tests__/billingPaymentService.test.ts`
+  - `backend-server/__tests__/runtimeEnv.test.ts`
+  - `backend-server/config/runtimeEnv.ts`
+  - `backend-server/controllers/billingCheckoutController.ts`
+  - `backend-server/package-lock.json`
+  - `backend-server/package.json`
+  - `backend-server/routes/api.ts`
+  - `backend-server/server.ts`
+  - `package-lock.json`
+  - `package.json`
+  - `src/backend/billing/billingApplicationService.ts`
+  - `src/backend/billing/payments/paymentService.ts`
+  - `src/backend/billing/payments/paymentService.js`
+  - `src/services/billing.ts`
+  - `src/services/stripeService.ts`
+  - `supabase/migrations/20260630170000_billing_stripe_checkout.sql`
+  - `vite.config.ts`
+  - `docs/CURRENT_TASK.md`
+- Product/release status:
+  - WP-B implementation is complete behind explicit Stripe env configuration.
+  - `productVisualAccepted=false`.
+  - No staging/production deploy, sponsor boulevard camera/FOV/lookAt change, booth geometry change, GALA renderer change, quote behavior change, or auth policy change was made.
+- Next step:
+  - Continue to WP-C only after applying the billing migration and configuring Stripe secrets/webhook endpoint in the target backend environment.
+
 ## 2026-06-30 Pre-Release Product Audit WP-D Release Scope Lock
 
 - Active objective: start the pre-release product work from WP-D by separating release-scope routes from demo/stub routes without changing SHIP route behavior.

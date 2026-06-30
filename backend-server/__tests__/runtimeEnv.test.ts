@@ -14,6 +14,9 @@ assert.equal(galaOnlyEnv.supabaseUrl, 'https://example.supabase.co');
 assert.equal(galaOnlyEnv.pixelStreamingRoutesEnabled, false);
 assert.equal(galaOnlyEnv.signalingStatusBaseUrl, null);
 assert.equal(galaOnlyEnv.ue5SecretKey, null);
+assert.equal(galaOnlyEnv.stripeSecretKey, null);
+assert.equal(galaOnlyEnv.stripeWebhookSecret, null);
+assert.equal(galaOnlyEnv.billingPublicAppUrl, null);
 assert.equal(galaOnlyEnv.pixelStreamingStatusTimeoutMs, 2500);
 
 const validEnv = resolveBackendRuntimeEnv({
@@ -25,6 +28,11 @@ const validEnv = resolveBackendRuntimeEnv({
   SIGNALING_STATUS_BASE_URL: 'http://signaling',
   PIXEL_STREAMING_STATUS_TIMEOUT_MS: '2500',
   UE5_SECRET_KEY: 'ue5-secret',
+  STRIPE_SECRET_KEY: 'stripe-secret',
+  STRIPE_WEBHOOK_SECRET: 'stripe-webhook-secret',
+  BILLING_CHECKOUT_SUCCESS_URL: 'https://example.com/billing/success',
+  BILLING_CHECKOUT_CANCEL_URL: 'https://example.com/billing/cancel',
+  BILLING_PUBLIC_APP_URL: 'https://example.com',
 });
 
 assert.equal(validEnv.port, 3000);
@@ -34,6 +42,11 @@ assert.equal(validEnv.pixelStreamingRoutesEnabled, true);
 assert.equal(validEnv.signalingStatusBaseUrl, 'http://signaling');
 assert.equal(validEnv.pixelStreamingStatusTimeoutMs, 2500);
 assert.equal(validEnv.ue5SecretKey, 'ue5-secret');
+assert.equal(validEnv.stripeSecretKey, 'stripe-secret');
+assert.equal(validEnv.stripeWebhookSecret, 'stripe-webhook-secret');
+assert.equal(validEnv.billingCheckoutSuccessUrl, 'https://example.com/billing/success');
+assert.equal(validEnv.billingCheckoutCancelUrl, 'https://example.com/billing/cancel');
+assert.equal(validEnv.billingPublicAppUrl, 'https://example.com');
 
 assert.throws(() => resolveBackendRuntimeEnv({
   NODE_ENV: 'production',

@@ -1,45 +1,33 @@
-import { supabase } from '../core/supabase.js';
+import { serverApiPost } from './serverApi.js';
+
+type CheckoutSessionResponse = {
+  publishableKey?: string | null;
+  session_id: string;
+  url: string;
+};
 
 export const stripeService = {
-  // Izveidot apmaksas sesiju
-  async createCheckoutSession(amount: number, projectName: string) {
-    try {
-      // Šī ir simulācija Edge funkcijai, kas izveidotu reālu Stripe sesiju
-      console.log(`Iniciē Stripe maksājumu: ${amount}€ priekš ${projectName}`);
-      
-      // 1. Reģistrējam rēķinu Supabase
-      const { data, error } = await supabase
-        .from('invoices')
-        .insert([{
-          amount,
-          status: 'unpaid',
-          project_id: null, // Šeit būtu reāls ID
-        }])
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      // 2. Simulējam novirzīšanu uz Stripe (reālajā dzīvē te būtu URL no Stripe API)
-      return {
-        url: `https://checkout.stripe.com/pay/simulated_session_${data.id}`,
-        invoiceId: data.id
-      };
-    } catch (e) {
-      console.error("Stripe Error:", e);
-      throw e;
+  async createCheckoutSession(productIdOrAmount: string | number, projectNameOrKind: string = 'plan') {
+    if (typeof productIdOrAmount === 'number') {
+      throw new Error(
+        `STRIPE_LEGACY_AMOUNT_CHECKOUT_DISABLED:${projectNameOrKind}. Use a server-authored billing product id instead of a client-provided amount.`,
+      );
     }
+
+    const kind = projectNameOrKind === 'credits' ? 'credits' : 'plan';
+    const data = await serverApiPost<CheckoutSessionResponse>('/api/billing/checkout-session', {
+      kind,
+      productId: productIdOrAmount,
+    });
+
+    return {
+      invoiceId: data.session_id,
+      sessionId: data.session_id,
+      url: data.url,
+    };
   },
 
-  // Pārbaudīt maksājuma statusu
-  async checkPaymentStatus(invoiceId: string) {
-    const { data, error } = await supabase
-      .from('invoices')
-      .select('status')
-      .eq('id', invoiceId)
-      .single();
-    
-    if (error) throw error;
-    return data.status === 'paid';
-  }
+  async checkPaymentStatus(_invoiceId: string) {
+    throw new Error('STRIPE_PAYMENT_STATUS_CHECK_MOVED_TO_BACKEND');
+  },
 };

@@ -31,7 +31,13 @@ const port = backendRuntimeEnv.port;
 app.use(helmet());
 app.use(cors());
 app.use(morgan('dev'));
-app.use(express.json());
+app.use(express.json({
+  verify: (req, _res, buffer) => {
+    if ('originalUrl' in req && req.originalUrl === '/api/billing/webhook') {
+      (req as typeof req & { rawBody?: Buffer }).rawBody = Buffer.from(buffer);
+    }
+  },
+}));
 app.use(requestContext);
 
 if (backendRuntimeEnv.pixelStreamingRoutesEnabled) {

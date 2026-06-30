@@ -9,5 +9,5 @@ export const BillingAPI = {
   buyCredits: async (userId: string, packageId: string) =>
     serverApiPost('/api/billing/credits/checkout', { userId, packageId }),
   createCheckoutSession: async (userId: string, productId: string, kind: string) =>
-    serverApiPost('/api/billing/checkout', { userId, productId, kind }),
+    serverApiPost('/api/billing/checkout-session', { userId, productId, kind }),
 };

@@ -14,6 +14,7 @@ import * as aiController from '../controllers/aiController.js';
 import * as automationController from '../controllers/automationController.js';
 import * as workflowsController from '../controllers/workflowsController.js';
 import * as billingController from '../controllers/billingController.js';
+import * as billingCheckoutController from '../controllers/billingCheckoutController.js';
 import * as platformController from '../controllers/platformController.js';
 import * as businessController from '../controllers/businessController.js';
 import * as growthController from '../controllers/growthController.js';
@@ -45,6 +46,7 @@ if (pixelStreamingRoutesEnabled) {
 router.post('/expo/lead', expoLeadController.captureExpoLead);
 router.post('/calculator/lead', calculatorLeadController.captureCalculatorLead);
 router.post('/modular-home/quote', modularHomeQuoteController.submitModularHomeQuote);
+router.post('/billing/webhook', billingCheckoutController.handleBillingWebhook);
 router.post('/ai-estimate', aiController.estimateWithAi);
 
 // Public read-only scene contract used by the Web3D client. Keep auth policy here only.
@@ -118,8 +120,9 @@ protectedRouter.get('/billing/plans/:planId/limits', billingController.getPlanLi
 protectedRouter.get('/billing/users/:userId/plan', billingController.getUserPlan);
 protectedRouter.post('/billing/upgrade', billingController.upgradePlan);
 protectedRouter.get('/billing/users/:userId/credits', billingController.getCreditBalance);
-protectedRouter.post('/billing/credits/checkout', billingController.buyCredits);
-protectedRouter.post('/billing/checkout', billingController.createCheckoutSession);
+protectedRouter.post('/billing/credits/checkout', billingCheckoutController.createBillingCreditCheckoutSession);
+protectedRouter.post('/billing/checkout-session', billingCheckoutController.createBillingCheckoutSession);
+protectedRouter.post('/billing/checkout', billingCheckoutController.createBillingCheckoutSession);
 
 // Platform
 protectedRouter.get('/platform/metrics', platformController.getPlatformMetrics);

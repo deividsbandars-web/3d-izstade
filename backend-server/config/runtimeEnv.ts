@@ -7,6 +7,11 @@ export type BackendRuntimeEnv = {
   signalingStatusBaseUrl: string | null;
   pixelStreamingStatusTimeoutMs: number;
   ue5SecretKey: string | null;
+  stripeSecretKey: string | null;
+  stripeWebhookSecret: string | null;
+  billingCheckoutSuccessUrl: string | null;
+  billingCheckoutCancelUrl: string | null;
+  billingPublicAppUrl: string | null;
 };
 
 type RawBackendEnv = Record<string, string | undefined>;
@@ -106,6 +111,11 @@ export function resolveBackendRuntimeEnv(rawEnv: RawBackendEnv): BackendRuntimeE
     ue5SecretKey: pixelStreamingRoutesEnabled
       ? normalizeRequiredString(rawEnv, 'UE5_SECRET_KEY')
       : normalizeOptionalString(rawEnv, 'UE5_SECRET_KEY'),
+    stripeSecretKey: normalizeOptionalString(rawEnv, 'STRIPE_SECRET_KEY'),
+    stripeWebhookSecret: normalizeOptionalString(rawEnv, 'STRIPE_WEBHOOK_SECRET'),
+    billingCheckoutSuccessUrl: normalizeOptionalString(rawEnv, 'BILLING_CHECKOUT_SUCCESS_URL'),
+    billingCheckoutCancelUrl: normalizeOptionalString(rawEnv, 'BILLING_CHECKOUT_CANCEL_URL'),
+    billingPublicAppUrl: normalizeOptionalString(rawEnv, 'BILLING_PUBLIC_APP_URL'),
   };
 }
 
