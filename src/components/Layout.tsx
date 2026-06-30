@@ -21,10 +21,10 @@ const Layout: React.FC = () => {
   return (
     <div style={{ minHeight: '100vh', background: '#020617', color: '#fff', fontFamily: 'Inter, sans-serif' }}>
       {/* TOP NAV */}
-      <nav style={{ 
-        height: '70px', background: 'rgba(15, 23, 42, 0.8)', backdropFilter: 'blur(10px)', 
-        borderBottom: '1px solid #1e293b', display: 'flex', alignItems: 'center', 
-        justifyContent: 'space-between', padding: '0 40px', position: 'sticky', top: 0, zIndex: 1000 
+      <nav style={{
+        height: '70px', background: 'rgba(15, 23, 42, 0.8)', backdropFilter: 'blur(10px)',
+        borderBottom: '1px solid #1e293b', display: 'flex', alignItems: 'center',
+        justifyContent: 'space-between', padding: '0 40px', position: 'sticky', top: 0, zIndex: 1000
       }}>
         <Link to="/" style={{ fontSize: '1.5rem', fontWeight: 900, color: '#fff', textDecoration: 'none', letterSpacing: '-1px' }}>
           30Sek24<span style={{ color: '#3b82f6' }}>.com</span>
@@ -33,11 +33,11 @@ const Layout: React.FC = () => {
         {/* Desktop Nav */}
         <div className="desktop-nav" style={{ display: 'flex', gap: '5px' }}>
           {navItems.map(item => (
-            <Link 
-              key={item.path} 
-              to={item.path} 
-              style={{ 
-                padding: '10px 15px', borderRadius: '8px', textDecoration: 'none', fontSize: '0.75rem', 
+            <Link
+              key={item.path}
+              to={item.path}
+              style={{
+                padding: '10px 15px', borderRadius: '8px', textDecoration: 'none', fontSize: '0.75rem',
                 fontWeight: 800, color: location.pathname === item.path ? '#fff' : '#64748b',
                 background: location.pathname === item.path ? 'rgba(59, 130, 246, 0.1)' : 'transparent',
                 transition: 'all 0.2s'
@@ -49,7 +49,8 @@ const Layout: React.FC = () => {
           ))}
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <Link to="/expo/sponsor-packages" style={{ background: 'rgba(56, 189, 248, 0.14)', border: '1px solid rgba(56, 189, 248, 0.34)', color: '#e0f2fe', padding: '10px 16px', borderRadius: '8px', textDecoration: 'none', fontWeight: 900, fontSize: '0.74rem' }} className="desktop-nav">SPONSOR PACKAGES</Link>
           <Link to="/expo" style={{ background: '#8b5cf6', color: '#fff', padding: '10px 20px', borderRadius: '8px', textDecoration: 'none', fontWeight: 900, fontSize: '0.8rem' }} className="desktop-nav">LIVE EXPO</Link>
           <button className="burger-btn" onClick={() => setIsMobileMenuOpen(true)}>☰</button>
           <div style={{ width: '35px', height: '35px', borderRadius: '50%', background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)' }} className="desktop-nav"></div>
@@ -65,9 +66,9 @@ const Layout: React.FC = () => {
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
             {navItems.map(item => (
-              <Link 
-                key={item.path} 
-                to={item.path} 
+              <Link
+                key={item.path}
+                to={item.path}
                 onClick={() => setIsMobileMenuOpen(false)}
                 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#fff', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '20px' }}
               >
@@ -75,10 +76,17 @@ const Layout: React.FC = () => {
                 {item.label}
               </Link>
             ))}
-            <Link 
-              to="/expo" 
+            <Link
+              to="/expo/sponsor-packages"
               onClick={() => setIsMobileMenuOpen(false)}
-              style={{ marginTop: '20px', background: '#8b5cf6', color: '#fff', padding: '20px', borderRadius: '15px', textDecoration: 'none', fontWeight: 900, textAlign: 'center' }}
+              style={{ marginTop: '20px', background: 'rgba(56, 189, 248, 0.16)', border: '1px solid rgba(56, 189, 248, 0.42)', color: '#e0f2fe', padding: '20px', borderRadius: '15px', textDecoration: 'none', fontWeight: 900, textAlign: 'center' }}
+            >
+              SPONSOR PACKAGES
+            </Link>
+            <Link
+              to="/expo"
+              onClick={() => setIsMobileMenuOpen(false)}
+              style={{ background: '#8b5cf6', color: '#fff', padding: '20px', borderRadius: '15px', textDecoration: 'none', fontWeight: 900, textAlign: 'center' }}
             >
               ENTER LIVE EXPO 🚀
             </Link>

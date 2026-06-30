@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { CalculatorLeadCta } from './CalculatorLeadCta';
 import '../../components/calculator/styles/CalculatorPro.css';
 
 const SERVICES = {
@@ -48,10 +49,21 @@ export default function DigitalArtCalc() {
           <div className="sticky-results">
             <h3 className="results-title">Dizaina Investīcija</h3>
             {!results ? <div className="empty-state">🎨 Izvēlieties pakalpojumu</div> : (
-              <div className="grand-total-box">
-                <span className="gt-label">KOPĒJĀ SUMMA</span>
-                <span className="gt-value">{results.grandTotal.toFixed(0)} €</span>
-              </div>
+              <>
+                <div className="grand-total-box">
+                  <span className="gt-label">KOPĒJĀ SUMMA</span>
+                  <span className="gt-value">{results.grandTotal.toFixed(0)} €</span>
+                </div>
+                <CalculatorLeadCta
+                  calculatorId="digital-art"
+                  calculatorTitle="Digitālā dizaina tāme"
+                  estimateTotal={results.grandTotal}
+                  summaryItems={[
+                    { label: 'Pakalpojums', value: SERVICES[params.service as keyof typeof SERVICES].name },
+                    { label: 'Līmenis', value: params.complexity === 'premium' ? 'Premium' : 'Standarta' },
+                  ]}
+                />
+              </>
             )}
           </div>
         </div>

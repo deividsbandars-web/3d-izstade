@@ -68,6 +68,32 @@ assert.deepEqual(resolveSponsorCtaIntent(heroPresentation.actions[2], heroPresen
 assert.deepEqual(resolveSponsorCtaIntent(heroPresentation.actions[3], heroPresentation), { type: 'navigate', target: '/calculators' });
 assert.deepEqual(resolveSponsorCtaIntent(heroPresentation.actions[4], heroPresentation), { type: 'navigate', target: '/expo/booth/hero-one/stream' });
 
+const managedScreenPresentation = buildSponsorBoothPresentation({
+  ...heroCompany,
+  booth: {
+    ...heroCompany.booth!,
+    heroScreenStatus: 'published',
+    heroScreenText: 'Owner campaign line for the sponsor screen',
+    heroScreenTitle: 'Owner Screen',
+    heroScreenType: 'video-placeholder',
+    heroScreenVideoUrl: 'https://cdn.example.com/owner-screen.mp4',
+  },
+}, {
+  ...heroCompany.booth!,
+  heroScreenStatus: 'published',
+  heroScreenText: 'Owner campaign line for the sponsor screen',
+  heroScreenTitle: 'Owner Screen',
+  heroScreenType: 'video-placeholder',
+  heroScreenVideoUrl: 'https://cdn.example.com/owner-screen.mp4',
+}, 'hero_left', { districtThemeId: 'platform_corridor' });
+
+assert.equal(managedScreenPresentation.managedScreenContent?.status, 'published');
+assert.equal(managedScreenPresentation.managedScreenContent?.mode, 'video-placeholder');
+assert.equal(managedScreenPresentation.managedScreenContent?.title, 'Owner Screen');
+assert.equal(managedScreenPresentation.managedScreenContent?.subtitle, 'Owner campaign line for the sponsor screen');
+assert.equal(managedScreenPresentation.managedScreenContent?.videoUrl, 'https://cdn.example.com/owner-screen.mp4');
+assert.equal(managedScreenPresentation.managedScreenContent?.ctaLabel, 'Book Strategy Session');
+
 const compactPresentation = buildSponsorBoothPresentation({
   ...heroCompany,
   booth: null,

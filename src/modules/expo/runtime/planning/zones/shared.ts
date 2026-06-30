@@ -34,7 +34,7 @@ export const ZONE_RULES: Record<ExpoPlanningZoneId, ExpoPlanningZoneRule> = {
   },
   'left-district': {
     allowedScreenFamilies: ['district-marquee', 'district-array'],
-    densityCaps: { assignmentCap: 9, screenSocketCap: 9, screenSurfaceCap: 9 },
+    densityCaps: { assignmentCap: 10, screenSocketCap: 10, screenSurfaceCap: 10 },
     id: 'left-district',
     name: 'Left District Belt',
     placementClasses: ['district', 'city-support'],
@@ -50,7 +50,7 @@ export const ZONE_RULES: Record<ExpoPlanningZoneId, ExpoPlanningZoneRule> = {
   },
   'right-district': {
     allowedScreenFamilies: ['district-marquee', 'district-array'],
-    densityCaps: { assignmentCap: 9, screenSocketCap: 9, screenSurfaceCap: 9 },
+    densityCaps: { assignmentCap: 10, screenSocketCap: 10, screenSurfaceCap: 10 },
     id: 'right-district',
     name: 'Right District Belt',
     placementClasses: ['district', 'city-support'],

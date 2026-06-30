@@ -1,4 +1,75 @@
-import type { CityMass, CityPlane, ExpoZonePlannerContext } from '../../types';
+import type { CanonicalPrimitive, CityGeometryPlanningSource, CityMass, CityPlane, ExpoZonePlannerContext } from '../../types';
+
+const CENTER_SPINE_GEOMETRY_SOURCE_FILE = 'src/modules/expo/runtime/planning/zones/center-spine/geometry.ts';
+const CENTER_SKY_COMPASS_SOURCE_KIND = 'center-sky-compass-render-rig';
+const SKY_MARKET_SPINE_SOURCE_KIND = 'sky-market-spine-render-rig';
+const GENESIS_PORTAL_GATE_SOURCE_KIND = 'genesis-portal-gate-render-rig';
+const AI_REACTOR_CORE_SOURCE_KIND = 'ai-reactor-core-render-rig';
+const ENERGY_GRID_NETWORK_SOURCE_KIND = 'energy-grid-network-render-rig';
+const AI_ORACLE_CHAMBER_SOURCE_KIND = 'ai-oracle-chamber-render-rig';
+
+const CENTER_SPINE_LANDMARK_LAYOUT = {
+  aiOracleChamber: [1540, 0, -540] as [number, number, number],
+  aiOracleHub: [1540, 760, -540] as [number, number, number],
+  aiReactorCore: [-1540, 0, -550] as [number, number, number],
+  aiReactorHub: [-1540, 700, -550] as [number, number, number],
+  centerSkyCompass: [1240, 0, -760] as [number, number, number],
+  energyGridOrigin: [-420, 0, -520] as [number, number, number],
+  towerClusterHub: [1298, 1180, -1588] as [number, number, number],
+};
+
+const AI_REACTOR_VISUAL_SCALE = 0.28;
+const AI_ORACLE_VISUAL_SCALE = 0.3;
+const ENABLE_CENTER_SPINE_GENESIS_PORTAL_GATE = false;
+const ENABLE_CENTER_SPINE_AI_LANDMARKS = false;
+
+function createCenterSpinePlanningSource(
+  sourceFunction: string,
+  sourceKind: string,
+): CityGeometryPlanningSource {
+  return {
+    safeEditSeam: CENTER_SPINE_GEOMETRY_SOURCE_FILE,
+    sourceFile: CENTER_SPINE_GEOMETRY_SOURCE_FILE,
+    sourceFunction,
+    sourceKind,
+  };
+}
+
+function scaleVector3(vector: [number, number, number], scale: number): [number, number, number] {
+  return [vector[0] * scale, vector[1] * scale, vector[2] * scale];
+}
+
+function scaleVector2(vector: [number, number], scale: number): [number, number] {
+  return [vector[0] * scale, vector[1] * scale];
+}
+
+function scaleCanonicalPrimitive(primitive: CanonicalPrimitive, scale: number): CanonicalPrimitive {
+  const position = scaleVector3(primitive.position, scale);
+  switch (primitive.kind) {
+    case 'box':
+      return { ...primitive, position, size: scaleVector3(primitive.size, scale) };
+    case 'plane':
+      return { ...primitive, position, size: scaleVector2(primitive.size, scale) };
+    case 'cylinder':
+      return {
+        ...primitive,
+        height: primitive.height * scale,
+        position,
+        radiusBottom: primitive.radiusBottom * scale,
+        radiusTop: primitive.radiusTop * scale,
+      };
+    case 'torus':
+      return { ...primitive, position, radius: primitive.radius * scale, tube: primitive.tube * scale };
+    case 'sphere':
+      return { ...primitive, position, radius: primitive.radius * scale };
+    case 'text':
+      return { ...primitive, position, maxWidth: primitive.maxWidth * scale, size: primitive.size * scale };
+    case 'texture-plane':
+      return { ...primitive, position, size: scaleVector2(primitive.size, scale) };
+    default:
+      return primitive;
+  }
+}
 
 function isCenterSpinePlane(plane: CityPlane) {
   return Math.abs(plane.position[0]) <= 260 && plane.position[2] > -2200;
@@ -6,6 +77,1514 @@ function isCenterSpinePlane(plane: CityPlane) {
 
 function isCenterSpineMass(mass: CityMass) {
   return Math.abs(mass.position[0]) <= 260 && mass.position[2] > -2200;
+}
+
+function buildSkyMarketSpineMasses(): CityMass[] {
+  const center: [number, number, number] = [0, 0, -520];
+  const accent = '#ffe08a';
+  const podZs = [-390, -130, 130, 390];
+
+  return [
+    {
+      color: '#141f2b',
+      decorPolicy: 'none',
+      id: 'sky-market-spine-primitive-rig',
+      planningSource: createCenterSpinePlanningSource('buildSkyMarketSpineMasses', SKY_MARKET_SPINE_SOURCE_KIND),
+      position: center,
+      renderIntent: {
+        emissive: accent,
+        emissiveIntensity: 0.018,
+        primitives: [
+          {
+            color: '#6d7d88',
+            emissive: accent,
+            emissiveIntensity: 0.012,
+            kind: 'box',
+            metalness: 0.12,
+            physics: 'decorative',
+            position: [0, 520, 0],
+            roughness: 0.58,
+            size: [820, 34, 1120],
+          },
+          {
+            color: '#8799a6',
+            emissive: accent,
+            emissiveIntensity: 0.016,
+            kind: 'box',
+            metalness: 0.16,
+            physics: 'decorative',
+            position: [0, 900, 0],
+            roughness: 0.5,
+            size: [620, 30, 980],
+          },
+          {
+            color: '#ffd766',
+            emissive: accent,
+            emissiveIntensity: 0.055,
+            kind: 'box',
+            metalness: 0.2,
+            physics: 'decorative',
+            position: [0, 542, 0],
+            roughness: 0.28,
+            size: [38, 10, 1080],
+          },
+          {
+            color: '#ffd766',
+            emissive: accent,
+            emissiveIntensity: 0.05,
+            kind: 'box',
+            metalness: 0.2,
+            physics: 'decorative',
+            position: [0, 922, 0],
+            roughness: 0.28,
+            size: [28, 8, 930],
+          },
+          {
+            color: '#91a5b0',
+            emissive: accent,
+            emissiveIntensity: 0.012,
+            kind: 'box',
+            metalness: 0.14,
+            physics: 'decorative',
+            position: [-450, 730, -420],
+            roughness: 0.54,
+            size: [70, 460, 70],
+          },
+          {
+            color: '#91a5b0',
+            emissive: accent,
+            emissiveIntensity: 0.012,
+            kind: 'box',
+            metalness: 0.14,
+            physics: 'decorative',
+            position: [450, 730, -420],
+            roughness: 0.54,
+            size: [70, 460, 70],
+          },
+          {
+            color: '#91a5b0',
+            emissive: accent,
+            emissiveIntensity: 0.012,
+            kind: 'box',
+            metalness: 0.14,
+            physics: 'decorative',
+            position: [-450, 730, 420],
+            roughness: 0.54,
+            size: [70, 460, 70],
+          },
+          {
+            color: '#91a5b0',
+            emissive: accent,
+            emissiveIntensity: 0.012,
+            kind: 'box',
+            metalness: 0.14,
+            physics: 'decorative',
+            position: [450, 730, 420],
+            roughness: 0.54,
+            size: [70, 460, 70],
+          },
+          {
+            color: '#243447',
+            emissive: accent,
+            emissiveIntensity: 0.018,
+            height: 760,
+            kind: 'cylinder',
+            metalness: 0.2,
+            physics: 'decorative',
+            position: [-520, 680, 0],
+            radialSegments: 18,
+            radiusBottom: 30,
+            radiusTop: 24,
+            roughness: 0.38,
+          },
+          {
+            color: '#243447',
+            emissive: accent,
+            emissiveIntensity: 0.018,
+            height: 760,
+            kind: 'cylinder',
+            metalness: 0.2,
+            physics: 'decorative',
+            position: [520, 680, 0],
+            radialSegments: 18,
+            radiusBottom: 30,
+            radiusTop: 24,
+            roughness: 0.38,
+          },
+          ...podZs.flatMap((z): CanonicalPrimitive[] => [
+            {
+              color: '#24384a',
+              emissive: accent,
+              emissiveIntensity: 0.016,
+              kind: 'box',
+              metalness: 0.18,
+              physics: 'decorative',
+              position: [-380, 600, z],
+              roughness: 0.46,
+              size: [150, 116, 88],
+            },
+            {
+              color: '#273c4e',
+              emissive: accent,
+              emissiveIntensity: 0.016,
+              kind: 'box',
+              metalness: 0.18,
+              physics: 'decorative',
+              position: [380, 600, z],
+              roughness: 0.46,
+              size: [150, 116, 88],
+            },
+            {
+              color: '#f7d36b',
+              emissive: accent,
+              emissiveIntensity: 0.035,
+              kind: 'box',
+              metalness: 0.22,
+              physics: 'decorative',
+              position: [-380, 680, z + 1],
+              roughness: 0.3,
+              size: [132, 10, 10],
+            },
+            {
+              color: '#f7d36b',
+              emissive: accent,
+              emissiveIntensity: 0.035,
+              kind: 'box',
+              metalness: 0.22,
+              physics: 'decorative',
+              position: [380, 680, z + 1],
+              roughness: 0.3,
+              size: [132, 10, 10],
+            },
+          ]),
+        ],
+        showCrownBeacon: false,
+        showFrontWing: false,
+        showHorizontalCap: false,
+        showMegaVerticalSpines: false,
+        showRearSpine: false,
+        showSideFloorBands: false,
+        showSideInset: false,
+        showSignatureBand: false,
+        skipBase: true,
+      },
+      role: 'structural',
+      sections: ['middle'],
+      size: [1, 1, 1],
+    },
+  ];
+}
+
+function buildGenesisPortalGateMasses(): CityMass[] {
+  const center: [number, number, number] = [0, 0, 1120];
+  const accent = '#ffdf8a';
+  const cyan = '#80fff2';
+  const shell = '#182736';
+
+  const sidePylons = [-560, 560].flatMap((x, index): CanonicalPrimitive[] => [
+    {
+      color: index === 0 ? '#26384a' : '#223445',
+      emissive: accent,
+      emissiveIntensity: 0.024,
+      kind: 'box',
+      metalness: 0.2,
+      physics: 'decorative',
+      position: [x, 560, 0],
+      roughness: 0.36,
+      size: [112, 1120, 150],
+    },
+    {
+      color: '#ffe7a6',
+      emissive: accent,
+      emissiveIntensity: 0.082,
+      kind: 'box',
+      metalness: 0.24,
+      opacity: 0.88,
+      physics: 'decorative',
+      position: [x, 1160, 0],
+      roughness: 0.22,
+      size: [168, 18, 38],
+      transparent: true,
+    },
+    {
+      color: '#0d1b2c',
+      emissive: cyan,
+      emissiveIntensity: 0.042,
+      kind: 'box',
+      metalness: 0.22,
+      physics: 'decorative',
+      position: [x * 0.985, 700, 82],
+      roughness: 0.28,
+      size: [22, 520, 96],
+    },
+  ]);
+
+  const dataVeilLines = [-240, -120, 0, 120, 240].map((x): CanonicalPrimitive => ({
+    color: cyan,
+    emissive: cyan,
+    emissiveIntensity: 0.07,
+    kind: 'box',
+    metalness: 0.14,
+    opacity: 0.72,
+    physics: 'decorative',
+    position: [x, 900, -18],
+    roughness: 0.18,
+    size: [10, 920, 8],
+    transparent: true,
+  }));
+
+  const crownBeacons = [-360, 0, 360].map((x, index): CanonicalPrimitive => ({
+    color: index === 1 ? '#fff3c6' : '#ffe08a',
+    emissive: accent,
+    emissiveIntensity: index === 1 ? 0.1 : 0.068,
+    height: index === 1 ? 360 : 260,
+    kind: 'cylinder',
+    metalness: 0.24,
+    opacity: 0.88,
+    physics: 'decorative',
+    position: [x, index === 1 ? 1770 : 1710, 0],
+    radialSegments: 16,
+    radiusBottom: index === 1 ? 28 : 20,
+    radiusTop: 7,
+    roughness: 0.2,
+    transparent: true,
+  }));
+
+  return [
+    {
+      color: '#101e2d',
+      decorPolicy: 'none',
+      id: 'genesis-portal-gate-primitive-rig',
+      planningSource: createCenterSpinePlanningSource('buildGenesisPortalGateMasses', GENESIS_PORTAL_GATE_SOURCE_KIND),
+      position: center,
+      renderIntent: {
+        emissive: accent,
+        emissiveIntensity: 0.026,
+        primitives: [
+          {
+            color: shell,
+            emissive: accent,
+            emissiveIntensity: 0.018,
+            kind: 'box',
+            metalness: 0.22,
+            physics: 'decorative',
+            position: [0, 42, 0],
+            roughness: 0.34,
+            size: [1300, 84, 330],
+          },
+          {
+            color: '#243444',
+            emissive: accent,
+            emissiveIntensity: 0.016,
+            kind: 'box',
+            metalness: 0.18,
+            physics: 'decorative',
+            position: [0, 96, 168],
+            roughness: 0.38,
+            size: [980, 44, 120],
+          },
+          {
+            color: '#ffe08a',
+            emissive: accent,
+            emissiveIntensity: 0.085,
+            kind: 'torus',
+            metalness: 0.28,
+            opacity: 0.9,
+            physics: 'decorative',
+            position: [0, 1020, 0],
+            radialSegments: 18,
+            radius: 570,
+            roughness: 0.2,
+            transparent: true,
+            tube: 16,
+            tubularSegments: 168,
+          },
+          {
+            color: '#80fff2',
+            emissive: cyan,
+            emissiveIntensity: 0.076,
+            kind: 'torus',
+            metalness: 0.2,
+            opacity: 0.74,
+            physics: 'decorative',
+            position: [0, 1020, -10],
+            radialSegments: 14,
+            radius: 456,
+            roughness: 0.18,
+            transparent: true,
+            tube: 7,
+            tubularSegments: 144,
+          },
+          {
+            color: '#fff5c8',
+            emissive: accent,
+            emissiveIntensity: 0.066,
+            kind: 'torus',
+            metalness: 0.22,
+            opacity: 0.7,
+            physics: 'decorative',
+            position: [0, 1020, 10],
+            radialSegments: 10,
+            radius: 660,
+            rotation: [0, 0, 0.18],
+            roughness: 0.2,
+            transparent: true,
+            tube: 5,
+            tubularSegments: 144,
+          },
+          {
+            color: '#80fff2',
+            kind: 'plane',
+            opacity: 0.24,
+            physics: 'decorative',
+            position: [0, 920, -26],
+            size: [760, 1040],
+            transparent: true,
+          },
+          {
+            color: '#ffd56e',
+            emissive: accent,
+            emissiveIntensity: 0.055,
+            kind: 'box',
+            metalness: 0.24,
+            opacity: 0.88,
+            physics: 'decorative',
+            position: [0, 1410, 0],
+            roughness: 0.24,
+            size: [720, 18, 34],
+            transparent: true,
+          },
+          {
+            color: '#ffd56e',
+            emissive: accent,
+            emissiveIntensity: 0.05,
+            kind: 'box',
+            metalness: 0.24,
+            opacity: 0.86,
+            physics: 'decorative',
+            position: [0, 640, 0],
+            roughness: 0.24,
+            size: [660, 14, 30],
+            transparent: true,
+          },
+          ...sidePylons,
+          ...dataVeilLines,
+          ...crownBeacons,
+        ],
+        showCrownBeacon: false,
+        showFrontWing: false,
+        showHorizontalCap: false,
+        showMegaVerticalSpines: false,
+        showRearSpine: false,
+        showSideFloorBands: false,
+        showSideInset: false,
+        showSignatureBand: false,
+        skipBase: true,
+      },
+      planningZone: 'arrival',
+      role: 'structural',
+      sections: ['arrival', 'middle'],
+      size: [1480, 2300, 620],
+    },
+  ];
+}
+
+function buildAiReactorCoreMasses(): CityMass[] {
+  const center = CENTER_SPINE_LANDMARK_LAYOUT.aiReactorCore;
+  const accent = '#6fffe9';
+  const deepAccent = '#1bc9bd';
+  const shell = '#112c38';
+
+  const containmentPylons: CanonicalPrimitive[] = [
+    [-330, -220],
+    [330, -220],
+    [-330, 220],
+    [330, 220],
+  ].flatMap(([x, z], index): CanonicalPrimitive[] => [
+    {
+      color: index % 2 === 0 ? '#253d49' : '#2d4652',
+      emissive: accent,
+      emissiveIntensity: 0.018,
+      height: 1180,
+      kind: 'cylinder',
+      metalness: 0.22,
+      physics: 'decorative',
+      position: [x, 680, z],
+      radialSegments: 18,
+      radiusBottom: 28,
+      radiusTop: 18,
+      roughness: 0.34,
+    },
+    {
+      color: '#6fffe9',
+      emissive: accent,
+      emissiveIntensity: 0.075,
+      kind: 'box',
+      metalness: 0.24,
+      physics: 'decorative',
+      position: [x, 1285, z],
+      roughness: 0.24,
+      size: [118, 14, 34],
+    },
+  ]);
+
+  const coolingTowers: CanonicalPrimitive[] = [-470, 470].flatMap((x, index): CanonicalPrimitive[] => [
+    {
+      color: index === 0 ? '#516672' : '#5b707b',
+      emissive: accent,
+      emissiveIntensity: 0.012,
+      height: 1040,
+      kind: 'cylinder',
+      metalness: 0.16,
+      opacity: 0.96,
+      physics: 'decorative',
+      position: [x, 540, 360],
+      radialSegments: 32,
+      radiusBottom: 174,
+      radiusTop: 104,
+      roughness: 0.5,
+      transparent: true,
+    },
+    {
+      color: '#c6f8f3',
+      emissive: accent,
+      emissiveIntensity: 0.04,
+      height: 28,
+      kind: 'cylinder',
+      metalness: 0.18,
+      opacity: 0.68,
+      physics: 'decorative',
+      position: [x, 1076, 360],
+      radialSegments: 32,
+      radiusBottom: 120,
+      radiusTop: 108,
+      roughness: 0.26,
+      transparent: true,
+    },
+    {
+      color: deepAccent,
+      emissive: accent,
+      emissiveIntensity: 0.052,
+      kind: 'box',
+      metalness: 0.24,
+      opacity: 0.8,
+      physics: 'decorative',
+      position: [x * 0.5, 260, 250],
+      rotation: [0, x < 0 ? -0.18 : 0.18, 0],
+      roughness: 0.24,
+      size: [360, 18, 34],
+      transparent: true,
+    },
+  ]);
+
+  const containmentRibs: CanonicalPrimitive[] = [
+    [0, -305, 0, [92, 1240, 42] as [number, number, number]],
+    [0, 305, 0, [92, 1240, 42] as [number, number, number]],
+    [-305, 0, 0, [42, 1240, 92] as [number, number, number]],
+    [305, 0, 0, [42, 1240, 92] as [number, number, number]],
+  ].map(([x, z, yaw, size], index): CanonicalPrimitive => ({
+    color: index % 2 === 0 ? '#2c4753' : '#253f4c',
+    emissive: accent,
+    emissiveIntensity: 0.022,
+    kind: 'box',
+    metalness: 0.26,
+    physics: 'decorative',
+    position: [x as number, 800, z as number],
+    rotation: [0, yaw as number, 0],
+    roughness: 0.32,
+    size: size as [number, number, number],
+  }));
+
+  const containmentBands: CanonicalPrimitive[] = [650, 980].map((y, index): CanonicalPrimitive => ({
+    color: index === 0 ? '#d7e2ea' : '#fff2b8',
+    emissive: index === 0 ? accent : '#ffdf8a',
+    emissiveIntensity: index === 0 ? 0.028 : 0.052,
+    kind: 'torus',
+    metalness: 0.26,
+    opacity: index === 0 ? 0.48 : 0.64,
+    physics: 'decorative',
+    position: [0, y, 0],
+    radialSegments: 16,
+    radius: index === 0 ? 344 : 384,
+    rotation: [Math.PI / 2, 0, 0],
+    roughness: 0.2,
+    transparent: true,
+    tube: index === 0 ? 8 : 14,
+    tubularSegments: 144,
+  }));
+
+  const reactorPlantBase: CanonicalPrimitive[] = [-300, 300].flatMap((x, index): CanonicalPrimitive[] => [
+    {
+      color: index === 0 ? '#243745' : '#283c49',
+      emissive: accent,
+      emissiveIntensity: 0.014,
+      kind: 'box',
+      metalness: 0.2,
+      physics: 'decorative',
+      position: [x, 150, 520],
+      roughness: 0.42,
+      size: [360, 230, 190],
+    },
+    {
+      color: '#ffdf8a',
+      emissive: '#ffdf8a',
+      emissiveIntensity: 0.054,
+      kind: 'box',
+      metalness: 0.24,
+      opacity: 0.82,
+      physics: 'decorative',
+      position: [x, 250, 622],
+      roughness: 0.24,
+      size: [284, 14, 18],
+      transparent: true,
+    },
+    {
+      color: '#79fff1',
+      emissive: accent,
+      emissiveIntensity: 0.046,
+      kind: 'box',
+      metalness: 0.22,
+      opacity: 0.78,
+      physics: 'decorative',
+      position: [x, 184, 630],
+      roughness: 0.24,
+      size: [44, 84, 14],
+      transparent: true,
+    },
+  ]);
+
+  const reactorCoreShell: CanonicalPrimitive[] = [
+    {
+      color: '#244653',
+      emissive: accent,
+      emissiveIntensity: 0.028,
+      heightSegments: 24,
+      kind: 'sphere',
+      metalness: 0.18,
+      opacity: 0.52,
+      physics: 'decorative',
+      position: [0, 600, 0],
+      radius: 404,
+      roughness: 0.2,
+      transparent: true,
+      widthSegments: 56,
+    },
+    {
+      color: '#173847',
+      emissive: accent,
+      emissiveIntensity: 0.026,
+      height: 1040,
+      kind: 'cylinder',
+      metalness: 0.22,
+      opacity: 0.42,
+      physics: 'decorative',
+      position: [0, 760, 0],
+      radialSegments: 48,
+      radiusBottom: 292,
+      radiusTop: 236,
+      roughness: 0.26,
+      transparent: true,
+    },
+    {
+      color: '#eafffd',
+      emissive: accent,
+      emissiveIntensity: 0.13,
+      heightSegments: 24,
+      kind: 'sphere',
+      metalness: 0.08,
+      opacity: 0.78,
+      physics: 'decorative',
+      position: [0, 820, 0],
+      radius: 210,
+      roughness: 0.14,
+      transparent: true,
+      widthSegments: 48,
+    },
+    {
+      color: '#ffdf8a',
+      emissive: '#ffdf8a',
+      emissiveIntensity: 0.056,
+      kind: 'torus',
+      metalness: 0.18,
+      opacity: 0.54,
+      physics: 'decorative',
+      position: [0, 820, 0],
+      radialSegments: 12,
+      radius: 262,
+      roughness: 0.18,
+      transparent: true,
+      tube: 8,
+      tubularSegments: 112,
+    },
+    {
+      color: '#ffdf8a',
+      emissive: '#ffdf8a',
+      emissiveIntensity: 0.066,
+      kind: 'box',
+      metalness: 0.26,
+      opacity: 0.88,
+      physics: 'decorative',
+      position: [0, 235, -360],
+      roughness: 0.24,
+      size: [820, 18, 38],
+      transparent: true,
+    },
+  ];
+
+  const cityEnergyFeeds: CanonicalPrimitive[] = [
+    {
+      color: deepAccent,
+      emissive: accent,
+      emissiveIntensity: 0.055,
+      kind: 'box',
+      metalness: 0.28,
+      opacity: 0.86,
+      physics: 'decorative',
+      position: [1030, 690, -170],
+      roughness: 0.25,
+      size: [1980, 10, 16],
+      transparent: true,
+    },
+    {
+      color: '#9ffcf3',
+      emissive: accent,
+      emissiveIntensity: 0.05,
+      kind: 'box',
+      metalness: 0.28,
+      opacity: 0.78,
+      physics: 'decorative',
+      position: [1030, 910, 170],
+      roughness: 0.24,
+      size: [1980, 8, 14],
+      transparent: true,
+    },
+    {
+      color: '#38dccb',
+      emissive: accent,
+      emissiveIntensity: 0.038,
+      kind: 'box',
+      metalness: 0.24,
+      opacity: 0.72,
+      physics: 'decorative',
+      position: [790, 1250, 0],
+      rotation: [0, 0, -0.08],
+      roughness: 0.28,
+      size: [1480, 7, 12],
+      transparent: true,
+    },
+  ];
+
+  return [
+    {
+      color: '#081d24',
+      decorPolicy: 'none',
+      id: 'ai-reactor-core-primitive-rig',
+      planningSource: createCenterSpinePlanningSource('buildAiReactorCoreMasses', AI_REACTOR_CORE_SOURCE_KIND),
+      position: center,
+      renderIntent: {
+        emissive: accent,
+        emissiveIntensity: 0.024,
+        primitives: ([
+          {
+            color: '#0f2631',
+            emissive: accent,
+            emissiveIntensity: 0.018,
+            height: 132,
+            kind: 'cylinder',
+            metalness: 0.22,
+            physics: 'decorative',
+            position: [0, 66, 0],
+            radialSegments: 48,
+            radiusBottom: 430,
+            radiusTop: 350,
+            roughness: 0.38,
+          },
+          {
+            color: shell,
+            emissive: accent,
+            emissiveIntensity: 0.018,
+            height: 72,
+            kind: 'cylinder',
+            metalness: 0.28,
+            physics: 'decorative',
+            position: [0, 178, 0],
+            radialSegments: 48,
+            radiusBottom: 286,
+            radiusTop: 238,
+            roughness: 0.32,
+          },
+          {
+            color: '#1c3341',
+            emissive: '#ffdf8a',
+            emissiveIntensity: 0.02,
+            height: 68,
+            kind: 'cylinder',
+            metalness: 0.28,
+            physics: 'decorative',
+            position: [0, 258, 0],
+            radialSegments: 56,
+            radiusBottom: 474,
+            radiusTop: 390,
+            roughness: 0.3,
+          },
+          ...coolingTowers,
+          ...reactorPlantBase,
+          ...reactorCoreShell,
+          ...containmentBands,
+          ...containmentRibs,
+          {
+            color: '#7dfff1',
+            emissive: accent,
+            emissiveIntensity: 0.048,
+            height: 760,
+            kind: 'cylinder',
+            metalness: 0.14,
+            opacity: 0.38,
+            physics: 'decorative',
+            position: [0, 770, 0],
+            radialSegments: 32,
+            radiusBottom: 70,
+            radiusTop: 52,
+            roughness: 0.16,
+            transparent: true,
+          },
+          {
+            color: '#324d5a',
+            emissive: '#ffdf8a',
+            emissiveIntensity: 0.026,
+            kind: 'box',
+            metalness: 0.26,
+            physics: 'decorative',
+            position: [0, 1320, -430],
+            roughness: 0.32,
+            size: [980, 92, 82],
+          },
+          {
+            color: '#324d5a',
+            emissive: '#ffdf8a',
+            emissiveIntensity: 0.026,
+            kind: 'box',
+            metalness: 0.26,
+            physics: 'decorative',
+            position: [0, 1320, 430],
+            roughness: 0.32,
+            size: [980, 92, 82],
+          },
+          {
+            color: '#2b4552',
+            emissive: accent,
+            emissiveIntensity: 0.018,
+            kind: 'box',
+            metalness: 0.24,
+            physics: 'decorative',
+            position: [-430, 820, 0],
+            roughness: 0.34,
+            size: [76, 880, 144],
+          },
+          {
+            color: '#2b4552',
+            emissive: accent,
+            emissiveIntensity: 0.018,
+            kind: 'box',
+            metalness: 0.24,
+            physics: 'decorative',
+            position: [430, 820, 0],
+            roughness: 0.34,
+            size: [76, 880, 144],
+          },
+          {
+            color: '#ffdf8a',
+            emissive: '#ffdf8a',
+            emissiveIntensity: 0.052,
+            kind: 'box',
+            metalness: 0.24,
+            opacity: 0.76,
+            physics: 'decorative',
+            position: [0, 1260, 0],
+            roughness: 0.22,
+            size: [720, 18, 42],
+            transparent: true,
+          },
+          {
+            color: '#ffdf8a',
+            emissive: '#ffdf8a',
+            emissiveIntensity: 0.05,
+            kind: 'box',
+            metalness: 0.24,
+            opacity: 0.74,
+            physics: 'decorative',
+            position: [0, 1284, 0],
+            roughness: 0.22,
+            size: [42, 18, 720],
+            transparent: true,
+          },
+          {
+            color: '#3ddcca',
+            emissive: accent,
+            emissiveIntensity: 0.026,
+            kind: 'box',
+            metalness: 0.2,
+            physics: 'decorative',
+            position: [0, 540, 0],
+            roughness: 0.28,
+            size: [980, 10, 16],
+          },
+          {
+            color: '#3ddcca',
+            emissive: accent,
+            emissiveIntensity: 0.026,
+            kind: 'box',
+            metalness: 0.2,
+            physics: 'decorative',
+            position: [0, 560, 0],
+            roughness: 0.28,
+            size: [16, 10, 980],
+          },
+          {
+            color: '#6fffe9',
+            kind: 'plane',
+            opacity: 0.12,
+            physics: 'decorative',
+            position: [0, 430, 0],
+            rotation: [-Math.PI / 2, 0, 0],
+            size: [620, 620],
+            transparent: true,
+          },
+          ...containmentPylons,
+          ...cityEnergyFeeds,
+        ] as CanonicalPrimitive[]).map((primitive) => scaleCanonicalPrimitive(primitive, AI_REACTOR_VISUAL_SCALE)),
+        showCrownBeacon: false,
+        showFrontWing: false,
+        showHorizontalCap: false,
+        showMegaVerticalSpines: false,
+        showRearSpine: false,
+        showSideFloorBands: false,
+        showSideInset: false,
+        showSignatureBand: false,
+        skipBase: true,
+      },
+      planningZone: 'left-district',
+      role: 'structural',
+      sections: ['left'],
+      size: [360, 820, 360],
+    },
+  ];
+}
+
+function toLocalPoint(
+  origin: [number, number, number],
+  point: [number, number, number],
+): [number, number, number] {
+  return [
+    point[0] - origin[0],
+    point[1] - origin[1],
+    point[2] - origin[2],
+  ];
+}
+
+function buildEnergyGridBeam(args: {
+  color?: string;
+  emissiveIntensity?: number;
+  end: [number, number, number];
+  origin: [number, number, number];
+  start: [number, number, number];
+  thickness?: number;
+}): CanonicalPrimitive {
+  const dx = args.end[0] - args.start[0];
+  const dz = args.end[2] - args.start[2];
+  const length = Math.max(1, Math.hypot(dx, dz));
+  const center: [number, number, number] = [
+    (args.start[0] + args.end[0]) * 0.5,
+    (args.start[1] + args.end[1]) * 0.5,
+    (args.start[2] + args.end[2]) * 0.5,
+  ];
+
+  return {
+    color: args.color ?? '#47f5e5',
+    emissive: '#6fffe9',
+    emissiveIntensity: args.emissiveIntensity ?? 0.052,
+    kind: 'box',
+    metalness: 0.24,
+    opacity: 0.82,
+    physics: 'decorative',
+    position: toLocalPoint(args.origin, center),
+    rotation: [0, -Math.atan2(dz, dx), 0],
+    roughness: 0.22,
+    size: [length, args.thickness ?? 8, args.thickness ?? 8],
+    transparent: true,
+  };
+}
+
+function buildEnergyGridNode(args: {
+  height?: number;
+  origin: [number, number, number];
+  point: [number, number, number];
+  radius?: number;
+}): CanonicalPrimitive[] {
+  const height = args.height ?? 220;
+  const radius = args.radius ?? 18;
+
+  return [
+    {
+      color: '#8ffff4',
+      emissive: '#6fffe9',
+      emissiveIntensity: 0.07,
+      height,
+      kind: 'cylinder',
+      metalness: 0.22,
+      opacity: 0.56,
+      physics: 'decorative',
+      position: toLocalPoint(args.origin, [
+        args.point[0],
+        args.point[1] + (height * 0.5),
+        args.point[2],
+      ]),
+      radialSegments: 18,
+      radiusBottom: radius,
+      radiusTop: radius * 0.46,
+      roughness: 0.2,
+      transparent: true,
+    },
+    {
+      color: '#dffefb',
+      emissive: '#6fffe9',
+      emissiveIntensity: 0.068,
+      kind: 'torus',
+      metalness: 0.24,
+      opacity: 0.72,
+      physics: 'decorative',
+      position: toLocalPoint(args.origin, [args.point[0], args.point[1] + height + 24, args.point[2]]),
+      radialSegments: 10,
+      radius: radius * 3.2,
+      rotation: [Math.PI / 2, 0, 0],
+      roughness: 0.2,
+      transparent: true,
+      tube: 2.6,
+      tubularSegments: 80,
+    },
+  ];
+}
+
+function buildEnergyGridNetworkMasses(): CityMass[] {
+  const origin = CENTER_SPINE_LANDMARK_LAYOUT.energyGridOrigin;
+  const reactorHub = CENTER_SPINE_LANDMARK_LAYOUT.aiReactorHub;
+  const trunkHub: [number, number, number] = [-760, 1040, -520];
+  const exchangeHub: [number, number, number] = [-520, 920, -700];
+  const skyMarketHub: [number, number, number] = [0, 1160, -520];
+  const centerScreenHub: [number, number, number] = [-184, 860, -796];
+  const deepCenterHub: [number, number, number] = [-184, 940, -1344];
+  const leftFrontHub: [number, number, number] = [-1546, 900, -216];
+  const leftRearHub: [number, number, number] = [-1546, 980, -910];
+  const rightHaloHub: [number, number, number] = [1136, 940, -400];
+  const rightCitadelHub: [number, number, number] = [844, 1020, -164];
+  const towerClusterHub = CENTER_SPINE_LANDMARK_LAYOUT.towerClusterHub;
+  const oracleHub = CENTER_SPINE_LANDMARK_LAYOUT.aiOracleHub;
+  const genesisPortalHub: [number, number, number] = [0, 1040, 1120];
+
+  const beams = [
+    buildEnergyGridBeam({ color: '#6fffe9', emissiveIntensity: 0.07, origin, start: reactorHub, end: trunkHub, thickness: 12 }),
+    buildEnergyGridBeam({ color: '#d9fffb', emissiveIntensity: 0.06, origin, start: trunkHub, end: [exchangeHub[0], 1040, exchangeHub[2]], thickness: 10 }),
+    buildEnergyGridBeam({ color: '#94fff5', emissiveIntensity: 0.058, origin, start: trunkHub, end: skyMarketHub, thickness: 10 }),
+    buildEnergyGridBeam({ color: '#48ead9', emissiveIntensity: 0.052, origin, start: trunkHub, end: centerScreenHub, thickness: 8 }),
+    buildEnergyGridBeam({ color: '#48ead9', emissiveIntensity: 0.05, origin, start: trunkHub, end: deepCenterHub, thickness: 8 }),
+    buildEnergyGridBeam({ color: '#a9fff7', emissiveIntensity: 0.048, origin, start: reactorHub, end: leftFrontHub, thickness: 8 }),
+    buildEnergyGridBeam({ color: '#a9fff7', emissiveIntensity: 0.048, origin, start: reactorHub, end: leftRearHub, thickness: 8 }),
+    buildEnergyGridBeam({ color: '#6fffe9', emissiveIntensity: 0.052, origin, start: skyMarketHub, end: rightHaloHub, thickness: 9 }),
+    buildEnergyGridBeam({ color: '#5df5e7', emissiveIntensity: 0.05, origin, start: skyMarketHub, end: rightCitadelHub, thickness: 8 }),
+    buildEnergyGridBeam({ color: '#83fff3', emissiveIntensity: 0.058, origin, start: skyMarketHub, end: towerClusterHub, thickness: 10 }),
+    buildEnergyGridBeam({ color: '#d8fffb', emissiveIntensity: 0.064, origin, start: skyMarketHub, end: oracleHub, thickness: 10 }),
+    buildEnergyGridBeam({ color: '#ffe08a', emissiveIntensity: 0.062, origin, start: exchangeHub, end: genesisPortalHub, thickness: 9 }),
+  ];
+
+  const nodes = [
+    reactorHub,
+    trunkHub,
+    exchangeHub,
+    skyMarketHub,
+    centerScreenHub,
+    deepCenterHub,
+    leftFrontHub,
+    leftRearHub,
+    rightHaloHub,
+    rightCitadelHub,
+    towerClusterHub,
+    oracleHub,
+    genesisPortalHub,
+  ].flatMap((point) => buildEnergyGridNode({
+    height: point === exchangeHub ? 420 : 220,
+    origin,
+    point,
+    radius: point === exchangeHub ? 58 : point === reactorHub ? 24 : point === genesisPortalHub ? 22 : 16,
+  }));
+
+  return [
+    {
+      color: '#061d24',
+      decorPolicy: 'none',
+      id: 'energy-grid-network-primitive-rig',
+      planningSource: createCenterSpinePlanningSource('buildEnergyGridNetworkMasses', ENERGY_GRID_NETWORK_SOURCE_KIND),
+      position: origin,
+      renderIntent: {
+        emissive: '#6fffe9',
+        emissiveIntensity: 0.024,
+        primitives: [
+          ...beams,
+          ...nodes,
+        ],
+        showCrownBeacon: false,
+        showFrontWing: false,
+        showHorizontalCap: false,
+        showMegaVerticalSpines: false,
+        showRearSpine: false,
+        showSideFloorBands: false,
+        showSideInset: false,
+        showSignatureBand: false,
+        skipBase: true,
+      },
+      planningZone: 'center-spine',
+      role: 'structural',
+      sections: ['left', 'middle', 'right'],
+      size: [1, 1700, 1],
+    },
+  ];
+}
+
+function buildAiOracleChamberMasses(): CityMass[] {
+  const center = CENTER_SPINE_LANDMARK_LAYOUT.aiOracleChamber;
+  const accent = '#b7fff8';
+  const violet = '#9da7ff';
+  const shell = '#172d3a';
+
+  const pylons: CanonicalPrimitive[] = [
+    [0, -330, 0],
+    [286, 165, Math.PI * 0.66],
+    [-286, 165, -Math.PI * 0.66],
+  ].flatMap(([x, z, yaw], index): CanonicalPrimitive[] => [
+    {
+      color: index === 0 ? '#263e4b' : '#213846',
+      emissive: accent,
+      emissiveIntensity: 0.024,
+      kind: 'box',
+      metalness: 0.24,
+      physics: 'decorative',
+      position: [x, 610, z],
+      rotation: [0, yaw, 0],
+      roughness: 0.34,
+      size: [76, 1220, 92],
+    },
+    {
+      color: '#ddfffb',
+      emissive: accent,
+      emissiveIntensity: 0.08,
+      kind: 'box',
+      metalness: 0.28,
+      physics: 'decorative',
+      position: [x, 1238, z],
+      rotation: [0, yaw, 0],
+      roughness: 0.22,
+      size: [118, 16, 34],
+    },
+  ]);
+
+  const portalPanels: CanonicalPrimitive[] = [
+    [-210, -210, -0.44],
+    [210, -210, 0.44],
+    [-250, 120, 0.62],
+    [250, 120, -0.62],
+  ].map(([x, z, yaw], index): CanonicalPrimitive => ({
+    color: index < 2 ? '#101b2e' : '#152337',
+    emissive: index < 2 ? violet : accent,
+    emissiveIntensity: index < 2 ? 0.05 : 0.04,
+    kind: 'box',
+    metalness: 0.26,
+    opacity: 0.9,
+    physics: 'decorative',
+    position: [x, 520, z],
+    rotation: [0, yaw, 0],
+    roughness: 0.26,
+    size: [36, 560, 220],
+    transparent: true,
+  }));
+
+  return [
+    {
+      color: '#081923',
+      decorPolicy: 'none',
+      id: 'ai-oracle-chamber-primitive-rig',
+      planningSource: createCenterSpinePlanningSource('buildAiOracleChamberMasses', AI_ORACLE_CHAMBER_SOURCE_KIND),
+      position: center,
+      renderIntent: {
+        emissive: accent,
+        emissiveIntensity: 0.028,
+        primitives: ([
+          {
+            color: '#102633',
+            emissive: accent,
+            emissiveIntensity: 0.022,
+            height: 92,
+            kind: 'cylinder',
+            metalness: 0.28,
+            physics: 'decorative',
+            position: [0, 46, 0],
+            radialSegments: 64,
+            radiusBottom: 430,
+            radiusTop: 360,
+            roughness: 0.34,
+          },
+          {
+            color: '#1f3d4a',
+            emissive: accent,
+            emissiveIntensity: 0.026,
+            height: 34,
+            kind: 'cylinder',
+            metalness: 0.28,
+            physics: 'decorative',
+            position: [0, 138, 0],
+            radialSegments: 64,
+            radiusBottom: 330,
+            radiusTop: 300,
+            roughness: 0.28,
+          },
+          {
+            color: '#effffd',
+            emissive: accent,
+            emissiveIntensity: 0.075,
+            kind: 'torus',
+            metalness: 0.24,
+            opacity: 0.86,
+            physics: 'decorative',
+            position: [0, 210, 0],
+            radialSegments: 14,
+            radius: 390,
+            rotation: [Math.PI / 2, 0, 0],
+            roughness: 0.18,
+            transparent: true,
+            tube: 6,
+            tubularSegments: 144,
+          },
+          {
+            color: '#9ffcf3',
+            emissive: accent,
+            emissiveIntensity: 0.068,
+            kind: 'torus',
+            metalness: 0.2,
+            opacity: 0.72,
+            physics: 'decorative',
+            position: [0, 860, 0],
+            radialSegments: 12,
+            radius: 320,
+            rotation: [Math.PI / 2, 0.1, 0.4],
+            roughness: 0.2,
+            transparent: true,
+            tube: 7,
+            tubularSegments: 136,
+          },
+          {
+            color: '#d9fffb',
+            emissive: accent,
+            emissiveIntensity: 0.082,
+            kind: 'torus',
+            metalness: 0.24,
+            opacity: 0.82,
+            physics: 'decorative',
+            position: [0, 1260, 0],
+            radialSegments: 14,
+            radius: 470,
+            rotation: [0, Math.PI / 2, 0],
+            roughness: 0.18,
+            transparent: true,
+            tube: 7,
+            tubularSegments: 144,
+          },
+          {
+            color: '#dffefb',
+            emissive: accent,
+            emissiveIntensity: 0.09,
+            height: 1420,
+            kind: 'cylinder',
+            metalness: 0.16,
+            opacity: 0.42,
+            physics: 'decorative',
+            position: [0, 850, 0],
+            radialSegments: 28,
+            radiusBottom: 78,
+            radiusTop: 42,
+            roughness: 0.18,
+            transparent: true,
+          },
+          {
+            color: '#f6fffe',
+            emissive: accent,
+            emissiveIntensity: 0.12,
+            heightSegments: 20,
+            kind: 'sphere',
+            metalness: 0.08,
+            opacity: 0.72,
+            physics: 'decorative',
+            position: [0, 760, 0],
+            radius: 148,
+            roughness: 0.18,
+            transparent: true,
+            widthSegments: 40,
+          },
+          {
+            color: '#b7fff8',
+            emissive: accent,
+            emissiveIntensity: 0.085,
+            kind: 'torus',
+            metalness: 0.18,
+            opacity: 0.78,
+            physics: 'decorative',
+            position: [0, 760, 0],
+            radialSegments: 10,
+            radius: 180,
+            rotation: [0.42, Math.PI / 2, 0],
+            roughness: 0.2,
+            transparent: true,
+            tube: 4,
+            tubularSegments: 96,
+          },
+          {
+            color: '#9da7ff',
+            emissive: violet,
+            emissiveIntensity: 0.07,
+            kind: 'torus',
+            metalness: 0.18,
+            opacity: 0.62,
+            physics: 'decorative',
+            position: [0, 760, 0],
+            radialSegments: 10,
+            radius: 220,
+            rotation: [Math.PI / 2, 0.18, 0.72],
+            roughness: 0.22,
+            transparent: true,
+            tube: 3.4,
+            tubularSegments: 112,
+          },
+          {
+            color: '#b7fff8',
+            kind: 'plane',
+            opacity: 0.2,
+            physics: 'decorative',
+            position: [0, 156, 0],
+            rotation: [-Math.PI / 2, 0, 0],
+            size: [560, 560],
+            transparent: true,
+          },
+          {
+            color: shell,
+            emissive: accent,
+            emissiveIntensity: 0.034,
+            kind: 'box',
+            metalness: 0.22,
+            physics: 'decorative',
+            position: [0, 260, -240],
+            roughness: 0.28,
+            size: [420, 46, 84],
+          },
+          {
+            color: '#d7fffb',
+            emissive: accent,
+            emissiveIntensity: 0.08,
+            kind: 'box',
+            metalness: 0.26,
+            opacity: 0.82,
+            physics: 'decorative',
+            position: [0, 294, -240],
+            roughness: 0.22,
+            size: [360, 8, 58],
+            transparent: true,
+          },
+          ...pylons,
+          ...portalPanels,
+        ] as CanonicalPrimitive[]).map((primitive) => scaleCanonicalPrimitive(primitive, AI_ORACLE_VISUAL_SCALE)),
+        showCrownBeacon: false,
+        showFrontWing: false,
+        showHorizontalCap: false,
+        showMegaVerticalSpines: false,
+        showRearSpine: false,
+        showSideFloorBands: false,
+        showSideInset: false,
+        showSignatureBand: false,
+        skipBase: true,
+      },
+      planningZone: 'right-district',
+      role: 'structural',
+      sections: ['right'],
+      size: [260, 820, 260],
+    },
+  ];
+}
+
+function buildCenterSkyCompassMasses(): CityMass[] {
+  const center = CENTER_SPINE_LANDMARK_LAYOUT.centerSkyCompass;
+  const accent = '#8ee8ff';
+
+  return [
+    {
+      color: '#0c1c2b',
+      decorPolicy: 'none',
+      id: 'center-sky-compass-primitive-rig',
+      planningSource: createCenterSpinePlanningSource('buildCenterSkyCompassMasses', CENTER_SKY_COMPASS_SOURCE_KIND),
+      position: center,
+      renderIntent: {
+        emissive: accent,
+        emissiveIntensity: 0.02,
+        primitives: [
+          {
+            color: '#6d8190',
+            emissive: accent,
+            emissiveIntensity: 0.01,
+            kind: 'box',
+            metalness: 0.14,
+            physics: 'decorative',
+            position: [0, 26, 0],
+            roughness: 0.62,
+            size: [620, 52, 620],
+          },
+          {
+            color: '#7f95a3',
+            emissive: accent,
+            emissiveIntensity: 0.012,
+            kind: 'box',
+            metalness: 0.16,
+            physics: 'decorative',
+            position: [-230, 640, 0],
+            roughness: 0.58,
+            size: [72, 1280, 112],
+          },
+          {
+            color: '#7f95a3',
+            emissive: accent,
+            emissiveIntensity: 0.012,
+            kind: 'box',
+            metalness: 0.16,
+            physics: 'decorative',
+            position: [230, 640, 0],
+            roughness: 0.58,
+            size: [72, 1280, 112],
+          },
+          {
+            color: '#748998',
+            emissive: accent,
+            emissiveIntensity: 0.012,
+            kind: 'box',
+            metalness: 0.16,
+            physics: 'decorative',
+            position: [0, 640, -230],
+            roughness: 0.58,
+            size: [112, 1280, 72],
+          },
+          {
+            color: '#748998',
+            emissive: accent,
+            emissiveIntensity: 0.012,
+            kind: 'box',
+            metalness: 0.16,
+            physics: 'decorative',
+            position: [0, 640, 230],
+            roughness: 0.58,
+            size: [112, 1280, 72],
+          },
+          {
+            color: '#9eb8c7',
+            emissive: accent,
+            emissiveIntensity: 0.03,
+            height: 3200,
+            kind: 'cylinder',
+            metalness: 0.24,
+            physics: 'decorative',
+            position: [0, 1720, 0],
+            radialSegments: 24,
+            radiusBottom: 68,
+            radiusTop: 42,
+            roughness: 0.3,
+          },
+          {
+            color: '#c8e7f3',
+            emissive: accent,
+            emissiveIntensity: 0.035,
+            height: 58,
+            kind: 'cylinder',
+            metalness: 0.24,
+            opacity: 0.92,
+            physics: 'decorative',
+            position: [0, 3050, 0],
+            radialSegments: 64,
+            radiusBottom: 440,
+            radiusTop: 390,
+            roughness: 0.24,
+            transparent: true,
+          },
+          {
+            color: '#dffbff',
+            emissive: accent,
+            emissiveIntensity: 0.06,
+            height: 1700,
+            kind: 'cylinder',
+            metalness: 0.3,
+            physics: 'decorative',
+            position: [0, 3925, 0],
+            radialSegments: 18,
+            radiusBottom: 28,
+            radiusTop: 7,
+            roughness: 0.2,
+          },
+          {
+            color: '#ffffff',
+            emissive: accent,
+            emissiveIntensity: 0.05,
+            height: 34,
+            kind: 'cylinder',
+            metalness: 0.28,
+            opacity: 0.86,
+            physics: 'decorative',
+            position: [0, 4780, 0],
+            radialSegments: 48,
+            radiusBottom: 170,
+            radiusTop: 130,
+            roughness: 0.22,
+            transparent: true,
+          },
+          {
+            color: '#91e8ff',
+            emissive: accent,
+            emissiveIntensity: 0.03,
+            kind: 'box',
+            metalness: 0.2,
+            physics: 'decorative',
+            position: [0, 3068, 0],
+            roughness: 0.34,
+            size: [980, 18, 24],
+          },
+          {
+            color: '#91e8ff',
+            emissive: accent,
+            emissiveIntensity: 0.03,
+            kind: 'box',
+            metalness: 0.2,
+            physics: 'decorative',
+            position: [0, 3088, 0],
+            roughness: 0.34,
+            size: [24, 18, 980],
+          },
+        ],
+        showCrownBeacon: false,
+        showFrontWing: false,
+        showHorizontalCap: false,
+        showMegaVerticalSpines: false,
+        showRearSpine: false,
+        showSideFloorBands: false,
+        showSideInset: false,
+        showSignatureBand: false,
+        skipBase: true,
+      },
+      planningZone: 'right-district',
+      role: 'structural',
+      sections: ['right'],
+      size: [1, 1, 1],
+    },
+  ];
 }
 
 export function buildCenterSpineZoneGeometry(context: ExpoZonePlannerContext) {
@@ -22,6 +1601,12 @@ export function buildCenterSpineZoneGeometry(context: ExpoZonePlannerContext) {
     ...context.geometry.observatoryMasses.filter(isCenterSpineMass),
     ...context.geometry.signatureMasses.filter(isCenterSpineMass),
     ...context.geometry.skybridgeMasses.filter(isCenterSpineMass),
+    ...buildSkyMarketSpineMasses(),
+    ...(ENABLE_CENTER_SPINE_GENESIS_PORTAL_GATE ? buildGenesisPortalGateMasses() : []),
+    ...(ENABLE_CENTER_SPINE_AI_LANDMARKS ? buildAiReactorCoreMasses() : []),
+    ...(ENABLE_CENTER_SPINE_AI_LANDMARKS ? buildEnergyGridNetworkMasses() : []),
+    ...(ENABLE_CENTER_SPINE_AI_LANDMARKS ? buildAiOracleChamberMasses() : []),
+    ...(ENABLE_CENTER_SPINE_AI_LANDMARKS ? buildCenterSkyCompassMasses() : []),
   ];
 
   return {

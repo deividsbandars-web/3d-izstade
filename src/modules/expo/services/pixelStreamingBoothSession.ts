@@ -14,6 +14,14 @@ export function buildBoothStreamingLevel(boothId: string | null | undefined) {
   return normalizedBoothId ? `Level_Booth_${normalizedBoothId}` : null;
 }
 
+function buildPreferredBoothStreamerId(boothId: string | null | undefined) {
+  if (!boothId) {
+    return null;
+  }
+
+  return boothId.startsWith('booth-') ? boothId : `booth-${boothId}`;
+}
+
 export function getPreferredBoothStreamerIds(record: SponsorRoomRecord) {
   const boothId = normalizeToken(record.boothId);
   const slug = normalizeToken(record.slugOrId);
@@ -21,7 +29,8 @@ export function getPreferredBoothStreamerIds(record: SponsorRoomRecord) {
   const streamingLevel = buildBoothStreamingLevel(record.boothId);
 
   const ids = [
-    boothId ? `booth-${boothId}` : null,
+    buildPreferredBoothStreamerId(boothId),
+    boothId,
     slug ? `booth-${slug}` : null,
     slug ? `stream-${slug}` : null,
     boothId ? `level-booth-${boothId}` : null,

@@ -1,4 +1,4 @@
-import { supabaseClient } from '../../../lib/supabaseClient';
+import { getSupabaseAdminClient } from '../../lib/supabaseAdmin.js';
 import { logger } from '../../logging/logger';
 import { EXPO_SCENE_CANONICAL_DISTRICTS } from '../../../shared/expo/sceneContract.js';
 import { listExpoBooths } from '../data/expoBoothStore';
@@ -18,7 +18,7 @@ export const cityMapService = {
       // Group booths by district
       const mapLayout = districts.data?.map((district: string) => ({
         district,
-        booths: booths?.filter(b => b.district === district) || []
+        booths: booths?.filter((b: { district?: string | null }) => b.district === district) || []
       }));
 
       return { data: mapLayout, error: null };
@@ -46,6 +46,7 @@ export const cityMapService = {
   async assignBoothToDistrict(boothId: string, districtName: string) {
     try {
       logger.info('CityMapService', `Assigning booth ${boothId} to ${districtName}`);
+      const supabaseClient = getSupabaseAdminClient();
       const { data, error } = await supabaseClient
         .from('expo_booths')
         .update({ district: districtName })
@@ -54,15 +55,15 @@ export const cityMapService = {
         .single();
 
       if (error?.code === 'PGRST205') {
-        return {
-          data: {
-            id: boothId,
-            district: districtName,
-            compatibilityMode: 'legacy-expo_booth',
-            updated: false,
-          },
-          error: null,
-        };
+        const legacyResult = await supabaseClient
+          .from('expo_booth')
+          .update({ district: districtName })
+          .eq('id', boothId)
+          .select()
+          .single();
+
+        if (legacyResult.error) throw legacyResult.error;
+        return { data: legacyResult.data, error: null };
       }
 
       if (error) throw error;

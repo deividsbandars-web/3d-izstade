@@ -1,4 +1,4 @@
-import { supabaseClient } from '../../../lib/supabaseClient';
+import { getSupabaseAdminClient } from '../../lib/supabaseAdmin.js';
 import { EXPO_SCENE_CANONICAL_DISTRICTS } from '../../../shared/expo/sceneContract.js';
 
 type SupabaseLikeError = {
@@ -17,6 +17,7 @@ export type ExpoBoothRecord = {
   org_id?: string | null;
   plan_type?: string | null;
   side?: string | null;
+  status?: string | null;
   title?: string | null;
   updated_at?: string | null;
   ['3d_model_url']?: string | null;
@@ -83,6 +84,7 @@ function normalizeLegacyBooth(record: Record<string, any>): ExpoBoothRecord {
 }
 
 export async function listExpoBooths() {
+  const supabaseClient = getSupabaseAdminClient();
   const pluralResult = await supabaseClient
     .from('expo_booths')
     .select('*')
@@ -90,7 +92,7 @@ export async function listExpoBooths() {
 
   if (!pluralResult.error) {
     return {
-      data: (pluralResult.data ?? []).map((record) => normalizePluralBooth(record)),
+      data: (pluralResult.data ?? []).map((record: Record<string, any>) => normalizePluralBooth(record)),
       error: null,
       table: 'expo_booths' as const,
     };
@@ -110,13 +112,14 @@ export async function listExpoBooths() {
   }
 
   return {
-    data: (legacyResult.data ?? []).map((record) => normalizeLegacyBooth(record)),
+    data: (legacyResult.data ?? []).map((record: Record<string, any>) => normalizeLegacyBooth(record)),
     error: null,
     table: 'expo_booth' as const,
   };
 }
 
 export async function getExpoBoothById(id: string) {
+  const supabaseClient = getSupabaseAdminClient();
   const pluralResult = await supabaseClient
     .from('expo_booths')
     .select('*')

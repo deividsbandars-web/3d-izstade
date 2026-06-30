@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
 import PixelStreamingViewer from '../../modules/expo/PixelStreamingViewer';
 import { usePixelStreamingStatus } from '../../modules/expo/hooks/usePixelStreamingStatus';
@@ -6,7 +6,7 @@ import { loadExpoSceneForRelease } from '../../modules/expo/lib/sceneDataSource'
 import { isPremiumStreamingTier } from '../../modules/expo/lib/sponsorBoothPresentation';
 import { resolveSponsorRoomRecord, type SponsorRoomRecord } from '../../modules/expo/lib/sponsorRoom';
 import { reservePixelStreamingSession, type PixelStreamingSessionReservationResponse } from '../../modules/expo/services/pixelStreamingConfig';
-import { withPreferredBoothSession } from '../../modules/expo/services/pixelStreamingBoothSession';
+import { buildBoothStreamingLevel, withPreferredBoothSession } from '../../modules/expo/services/pixelStreamingBoothSession';
 
 type StreamRoomState =
   | { status: 'loading' }
@@ -18,6 +18,7 @@ type StreamLaunchPhase = 'loading_record' | 'launching' | 'pending' | 'reserved'
 const SESSION_RETRY_DELAY_MS = 3500;
 const SESSION_MAX_ATTEMPTS = 4;
 const RESERVED_TRANSITION_MS = 1200;
+const EMPTY_PREFERRED_STREAMER_IDS: string[] = [];
 
 export default function BoothStreamRoom() {
   const { id } = useParams<{ id: string }>();
@@ -26,17 +27,31 @@ export default function BoothStreamRoom() {
   const [sessionReservation, setSessionReservation] = useState<PixelStreamingSessionReservationResponse | null>(null);
   const [launchPhase, setLaunchPhase] = useState<StreamLaunchPhase>('loading_record');
   const [reservationAttempt, setReservationAttempt] = useState(0);
-  const boothContext = state.status === 'ready'
-    ? {
-        boothId: state.record.boothId,
-        slugOrId: state.record.slugOrId,
-        streamingLevel: state.record.streamingLevel,
-      }
-    : undefined;
+  const boothRecord = state.status === 'ready' ? state.record : null;
+  const boothContextBoothId = boothRecord?.preferredStreamerIds[0] ?? boothRecord?.boothId ?? null;
+  const boothContextSlugOrId = boothRecord?.slugOrId ?? null;
+  const boothContextStreamingLevel = buildBoothStreamingLevel(boothContextBoothId) ?? boothRecord?.streamingLevel ?? null;
+  const boothContext = useMemo(() => {
+    if (boothContextBoothId === null || boothContextSlugOrId === null || boothContextStreamingLevel === null) {
+      return undefined;
+    }
+
+    return {
+      boothId: boothContextBoothId,
+      slugOrId: boothContextSlugOrId,
+      streamingLevel: boothContextStreamingLevel,
+    };
+  }, [boothContextBoothId, boothContextSlugOrId, boothContextStreamingLevel]);
   const { availability, config, runtimeStatus } = usePixelStreamingStatus({
     boothContext,
     shouldProbe: true,
   });
+  const preferredStreamerIds = boothRecord?.preferredStreamerIds ?? EMPTY_PREFERRED_STREAMER_IDS;
+  const reservedRuntimeStatus = sessionReservation?.runtimeStatus ?? runtimeStatus;
+  const boothRuntimeStatus = useMemo(
+    () => withPreferredBoothSession(reservedRuntimeStatus, preferredStreamerIds),
+    [preferredStreamerIds, reservedRuntimeStatus],
+  );
 
   useEffect(() => {
     let active = true;
@@ -75,11 +90,11 @@ export default function BoothStreamRoom() {
       };
     }
 
-    const reservationSessionId = `booth-stream-${state.record.boothId || state.record.slugOrId}`;
+    const reservationSessionId = `booth-stream-${boothContextBoothId || state.record.boothId || state.record.slugOrId}`;
     reservePixelStreamingSession(config, {
-      boothId: state.record.boothId,
-      slug: state.record.slugOrId,
-      streamingLevel: state.record.streamingLevel,
+      boothId: boothContextBoothId,
+      slug: boothContextSlugOrId,
+      streamingLevel: boothContextStreamingLevel,
       sessionId: reservationSessionId,
       allowSharedFallback: true,
     })
@@ -122,7 +137,7 @@ export default function BoothStreamRoom() {
         window.clearTimeout(reservedTimer);
       }
     };
-  }, [config, reservationAttempt, state]);
+  }, [boothContextBoothId, boothContextSlugOrId, boothContextStreamingLevel, config, reservationAttempt, state]);
 
   if (state.status === 'loading') {
     return <div style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', background: '#020617', color: '#f8fafc' }}>Launching premium room...</div>;
@@ -133,9 +148,6 @@ export default function BoothStreamRoom() {
   }
 
   const { record } = state;
-  const preferredStreamerIds = record.preferredStreamerIds;
-  const reservedRuntimeStatus = sessionReservation?.runtimeStatus ?? runtimeStatus;
-  const boothRuntimeStatus = withPreferredBoothSession(reservedRuntimeStatus, preferredStreamerIds);
   const effectiveAvailability = sessionReservation?.status === 'ready' && availability === 'available' ? 'available' : 'degraded';
 
   if (!isPremiumStreamingTier(record.presentation.adTier)) {

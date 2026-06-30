@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls, PointerLockControls } from '@react-three/drei';
 import * as THREE from 'three';
@@ -23,12 +23,24 @@ import {
   type WorldPhysicsWalkableSurface,
   type WorldPhysicsSurfaceRegistry,
 } from '../physics/worldPhysicsSurfaceRegistry';
+import {
+  buildRideableElevatorPhysicsFrame,
+  buildRideableElevatorRuntimeRoutes,
+  findAttachedRideableElevator,
+  findCurrentRideableElevator,
+  findRideableElevatorLandingY,
+  type RideableElevatorHit,
+  type RideableElevatorRuntimeRoute,
+} from '../physics/elevatorPhysics';
 import { EXPO_START_VIEW_KEY, collectPlayerCollisionTargets, isCollisionMesh } from '../WorldSceneSupport';
 
 const PLAYER_RADIUS = 0.92;
 const PLAYER_WALK_SPEED = 108;
 const PLAYER_SPRINT_MULTIPLIER = 1.8;
 const PLAYER_KEYBOARD_TURN_SPEED = 2.25;
+const PLAYER_LOOK_PITCH_LIMIT = 1.32;
+const PLAYER_MOBILE_LOOK_PITCH_SPEED = 2.45;
+const PLAYER_MOBILE_LOOK_TURN_SPEED = 3.35;
 const OPERATOR_TELEPORT_SETTLE_MS = 1200;
 const VERTICAL_LIFT_COOLDOWN_MS = 1400;
 const VERTICAL_GRAVITY = 340;
@@ -44,6 +56,8 @@ const LIFT_TRIGGER_KEYS = new Set(['KeyF']);
 const WALK_CONTROL_KEYS = new Set([
   'ArrowLeft',
   'ArrowRight',
+  'ArrowUp',
+  'ArrowDown',
   'KeyA',
   'KeyD',
   'KeyE',
@@ -83,7 +97,7 @@ export function ExpoWorldPlayerLayer({
 }: {
   bounds: { minX: number; maxX: number; minZ: number; maxZ: number };
   debug?: boolean;
-  mobileMoveIntent?: { f: boolean; b: boolean; l: boolean; r: boolean; s?: boolean };
+  mobileMoveIntent?: { f: boolean; b: boolean; l: boolean; r: boolean; s?: boolean; turnL?: boolean; turnR?: boolean; jump?: boolean; lift?: boolean; lookX?: number; lookY?: number };
   mode: ExpoMode;
   onMove: (pos: number[]) => void;
   physicsSurfaceRegistry?: WorldPhysicsSurfaceRegistry;
@@ -94,6 +108,7 @@ export function ExpoWorldPlayerLayer({
   const { camera, scene } = useThree();
   const [mov, setMov] = useState({ f: false, b: false, l: false, r: false, s: false, turnL: false, turnR: false });
   const raycaster = useRef(new THREE.Raycaster());
+  const cameraViewEuler = useRef(new THREE.Euler(0, 0, 0, 'YXZ'));
   const desiredMoveVector = useRef(new THREE.Vector3());
   const moveVelocity = useRef(new THREE.Vector3());
   const orbitControlsRef = useRef<any>(null);
@@ -107,6 +122,9 @@ export function ExpoWorldPlayerLayer({
   const liftCooldownUntil = useRef(0);
   const pendingLiftRequest = useRef<VerticalLiftRequest | null>(null);
   const pendingJumpRequest = useRef(false);
+  const lastMobileJumpIntent = useRef(false);
+  const lastMobileLiftIntent = useRef(false);
+  const activeRideableElevatorRouteId = useRef<string | null>(null);
   const lastTraversalAction = useRef<string | null>(null);
   const verticalVelocityY = useRef(0);
   const verticalAirborne = useRef(false);
@@ -116,9 +134,21 @@ export function ExpoWorldPlayerLayer({
     ? verticalAccessNodes
     : EXPO_VERTICAL_CITY_SYSTEM.accessNodes;
   const effectiveVerticalWalkableRegions = EXPO_VERTICAL_CITY_SYSTEM.walkableRegions;
-  const effectivePhysicsSolids = physicsSurfaceRegistry?.solids ?? [];
-  const effectivePhysicsWalkableSurfaces = physicsSurfaceRegistry?.walkableSurfaces ?? [];
+  const rideableElevatorRoutes = useMemo<RideableElevatorRuntimeRoute[]>(() => (
+    buildRideableElevatorRuntimeRoutes(EXPO_VERTICAL_CITY_SYSTEM.elevatorRoutes)
+  ), []);
+  const basePhysicsSolids = physicsSurfaceRegistry?.solids ?? [];
+  const basePhysicsWalkableSurfaces = physicsSurfaceRegistry?.walkableSurfaces ?? [];
   const startViewSignature = `${startView.position.join(',')}|${startView.lookAt.join(',')}|${startView.source}`;
+  const orbitMaxDistance = useMemo(() => {
+    const startDistance = Math.hypot(
+      startView.position[0] - startView.lookAt[0],
+      startView.position[1] - startView.lookAt[1],
+      startView.position[2] - startView.lookAt[2],
+    );
+
+    return Math.max(500, Math.min(16000, startDistance + 250));
+  }, [startView]);
 
   const applyStartView = useCallback((
     nextStartView: ExpoStartView,
@@ -137,6 +167,7 @@ export function ExpoWorldPlayerLayer({
     desiredMoveVector.current.set(0, 0, 0);
     moveVelocity.current.set(0, 0, 0);
     pendingJumpRequest.current = false;
+    activeRideableElevatorRouteId.current = null;
     verticalVelocityY.current = 0;
     verticalAirborne.current = false;
     lastTraversalAction.current = null;
@@ -193,6 +224,7 @@ export function ExpoWorldPlayerLayer({
     liftExitArmed.current = false;
     liftCooldownUntil.current = Date.now() + VERTICAL_LIFT_COOLDOWN_MS;
     pendingLiftRequest.current = null;
+    activeRideableElevatorRouteId.current = null;
     moveVelocity.current.set(0, 0, 0);
     camera.position.set(node.targetPosition[0], nextY, node.targetPosition[2]);
     camera.updateMatrixWorld();
@@ -215,6 +247,7 @@ export function ExpoWorldPlayerLayer({
     verticalVelocityY.current = 0;
     verticalAirborne.current = false;
     pendingJumpRequest.current = false;
+    activeRideableElevatorRouteId.current = null;
     liftExitArmed.current = false;
     lastTraversalAction.current = `${reason}:${candidate.surface.ownerId}`;
     moveVelocity.current.multiplyScalar(reason === 'mantle' ? 0 : 0.35);
@@ -298,7 +331,9 @@ export function ExpoWorldPlayerLayer({
       }
 
       switch (event.code) {
+        case 'ArrowUp':
         case 'KeyW': setMov((value) => ({ ...value, f: true })); break;
+        case 'ArrowDown':
         case 'KeyS': setMov((value) => ({ ...value, b: true })); break;
         case 'KeyA': setMov((value) => ({ ...value, l: true })); break;
         case 'KeyD': setMov((value) => ({ ...value, r: true })); break;
@@ -317,7 +352,9 @@ export function ExpoWorldPlayerLayer({
       }
 
       switch (event.code) {
+        case 'ArrowUp':
         case 'KeyW': setMov((value) => ({ ...value, f: false })); break;
+        case 'ArrowDown':
         case 'KeyS': setMov((value) => ({ ...value, b: false })); break;
         case 'KeyA': setMov((value) => ({ ...value, l: false })); break;
         case 'KeyD': setMov((value) => ({ ...value, r: false })); break;
@@ -341,7 +378,7 @@ export function ExpoWorldPlayerLayer({
     };
   }, [mode]);
 
-  useFrame((_, delta) => {
+  useFrame((state, delta) => {
     if (!startFramingApplied.current) {
       const sceneStartView = scene.userData[EXPO_START_VIEW_KEY] as ExpoStartView | undefined;
       if (sceneStartView?.lookAt) {
@@ -366,17 +403,59 @@ export function ExpoWorldPlayerLayer({
     const activeElevationY = activeViewElevationY.current;
     const isOperatorReviewFrame = preserveReviewElevation && activeElevationY > 12;
     const operatorTeleportSettling = operatorTeleportUntil.current > Date.now();
+    const elapsedTime = state.clock.getElapsedTime();
+    const rideableElevatorPhysics = buildRideableElevatorPhysicsFrame(elapsedTime, rideableElevatorRoutes);
+    const effectivePhysicsSolids = rideableElevatorPhysics.solids.length > 0
+      ? [...basePhysicsSolids, ...rideableElevatorPhysics.solids]
+      : basePhysicsSolids;
+    const effectivePhysicsWalkableSurfaces = rideableElevatorPhysics.walkableSurfaces.length > 0
+      ? [...basePhysicsWalkableSurfaces, ...rideableElevatorPhysics.walkableSurfaces]
+      : basePhysicsWalkableSurfaces;
 
     const stableDelta = Math.min(delta, 1 / 90);
     const physicsDelta = Math.min(delta, 1 / 30);
-    const hasKeyboardTurnIntent = mov.turnL || mov.turnR;
-    const hasMoveIntent = mov.f || mov.b || mov.l || mov.r || mov.s || hasKeyboardTurnIntent || mobileMoveIntent?.f || mobileMoveIntent?.b || mobileMoveIntent?.l || mobileMoveIntent?.r || mobileMoveIntent?.s;
+    const mobileJumpIntent = Boolean(mobileMoveIntent?.jump);
+    const mobileLiftIntent = Boolean(mobileMoveIntent?.lift);
+    const mobileTurnL = Boolean(mobileMoveIntent?.turnL);
+    const mobileTurnR = Boolean(mobileMoveIntent?.turnR);
+    const mobileLookX = Math.max(-1, Math.min(1, Number(mobileMoveIntent?.lookX ?? 0)));
+    const mobileLookY = Math.max(-1, Math.min(1, Number(mobileMoveIntent?.lookY ?? 0)));
+
+    if (mobileJumpIntent && !lastMobileJumpIntent.current) {
+      pendingJumpRequest.current = true;
+    }
+
+    if (mobileLiftIntent && !lastMobileLiftIntent.current) {
+      pendingLiftRequest.current = {
+        nodeId: null,
+        requireNearby: true,
+      };
+    }
+
+    lastMobileJumpIntent.current = mobileJumpIntent;
+    lastMobileLiftIntent.current = mobileLiftIntent;
+
+    const keyboardTurnDirection = (mov.turnR ? 1 : 0) - (mov.turnL ? 1 : 0);
+    const mobileTurnDirection = Math.abs(mobileLookX) > 0.05
+      ? mobileLookX
+      : ((mobileTurnR ? 1 : 0) - (mobileTurnL ? 1 : 0));
+    const hasKeyboardTurnIntent = keyboardTurnDirection !== 0 || mobileTurnDirection !== 0;
+    const hasMobilePitchIntent = Math.abs(mobileLookY) > 0.05;
+    const hasMoveIntent = mov.f || mov.b || mov.l || mov.r || mov.s || hasKeyboardTurnIntent || mobileMoveIntent?.f || mobileMoveIntent?.b || mobileMoveIntent?.l || mobileMoveIntent?.r || mobileMoveIntent?.s || mobileJumpIntent || mobileLiftIntent || Math.abs(mobileLookX) > 0.05 || hasMobilePitchIntent;
+    const shouldPreserveStartElevation = preserveReviewElevation && !hasMoveIntent && activeViewElevationY.current > 12;
     const sprintMultiplier = mov.s || mobileMoveIntent?.s ? PLAYER_SPRINT_MULTIPLIER : 1;
     const speed = PLAYER_WALK_SPEED * sprintMultiplier * stableDelta;
-    const turnDirection = (mov.turnR ? 1 : 0) - (mov.turnL ? 1 : 0);
 
-    if (turnDirection !== 0) {
-      camera.rotateY(-turnDirection * PLAYER_KEYBOARD_TURN_SPEED * stableDelta);
+    if (keyboardTurnDirection !== 0 || mobileTurnDirection !== 0 || hasMobilePitchIntent) {
+      const viewEuler = cameraViewEuler.current.setFromQuaternion(camera.quaternion, 'YXZ');
+      viewEuler.y -= (keyboardTurnDirection * PLAYER_KEYBOARD_TURN_SPEED * stableDelta)
+        + (mobileTurnDirection * PLAYER_MOBILE_LOOK_TURN_SPEED * stableDelta);
+      viewEuler.x = Math.max(
+        -PLAYER_LOOK_PITCH_LIMIT,
+        Math.min(PLAYER_LOOK_PITCH_LIMIT, viewEuler.x + (mobileLookY * PLAYER_MOBILE_LOOK_PITCH_SPEED * stableDelta)),
+      );
+      viewEuler.z = 0;
+      camera.quaternion.setFromEuler(viewEuler);
       camera.updateMatrixWorld();
     }
 
@@ -530,7 +609,31 @@ export function ExpoWorldPlayerLayer({
       liftActivatedThisFrame = true;
     }
 
+    let rideableElevatorThisFrame: RideableElevatorHit | null = null;
+
     if (!liftActivatedThisFrame) {
+      rideableElevatorThisFrame = findAttachedRideableElevator(
+        camera.position,
+        elapsedTime,
+        rideableElevatorRoutes,
+        activeRideableElevatorRouteId.current,
+      ) ?? findCurrentRideableElevator(
+        camera.position,
+        verticalLevelY.current,
+        elapsedTime,
+        rideableElevatorRoutes,
+      );
+      if (rideableElevatorThisFrame && !operatorTeleportSettling) {
+        activeRideableElevatorRouteId.current = rideableElevatorThisFrame.route.id;
+        verticalLevelY.current = rideableElevatorThisFrame.playerY;
+        activeViewElevationY.current = rideableElevatorThisFrame.playerY;
+        verticalVelocityY.current = 0;
+        verticalAirborne.current = false;
+        lastTraversalAction.current = `elevator-ride:${rideableElevatorThisFrame.route.id}`;
+      } else if (!rideableElevatorThisFrame) {
+        activeRideableElevatorRouteId.current = null;
+      }
+
       const isOnPlanWalkable = isPositionOnVerticalWalkableRegion(camera.position, verticalLevelY.current, effectiveVerticalWalkableRegions);
       const isOnPhysicsWalkable = isWorldPhysicsPositionOnWalkableSurface(
         camera.position,
@@ -552,7 +655,8 @@ export function ExpoWorldPlayerLayer({
         },
       );
       const isOnPhysicsSolidTop = currentPhysicsSolidTopY !== null;
-      const isOnVerticalWalkable = isOnPlanWalkable || isOnPhysicsWalkable || isOnPhysicsSolidTop;
+      const isOnRideableElevator = Boolean(rideableElevatorThisFrame);
+      const isOnVerticalWalkable = isOnPlanWalkable || isOnPhysicsWalkable || isOnPhysicsSolidTop || isOnRideableElevator;
       const isVerticalSystemElevation = (
         isVerticalSystemPlayerY(verticalLevelY.current, effectiveVerticalWalkableRegions)
         || isWorldPhysicsSurfacePlayerY(
@@ -561,13 +665,10 @@ export function ExpoWorldPlayerLayer({
           WORLD_PHYSICS_DEFAULT_Y_TOLERANCE,
         )
         || isOnPhysicsSolidTop
+        || isOnRideableElevator
       );
       const isGrounded = verticalLevelY.current <= 5 + VERTICAL_LANDING_EPSILON || isOnVerticalWalkable;
-      const canUseVerticalPhysics = !operatorTeleportSettling && (
-        verticalAirborne.current
-        || isVerticalSystemElevation
-        || verticalLevelY.current <= 5 + VERTICAL_LANDING_EPSILON
-      );
+      const canUseVerticalPhysics = !operatorTeleportSettling && !shouldPreserveStartElevation;
       if (debug || preserveReviewElevation) {
         updateVerticalRuntimeDebug({
           canUseVerticalPhysics,
@@ -608,6 +709,7 @@ export function ExpoWorldPlayerLayer({
 
       if (canUseVerticalPhysics) {
         if (!verticalAirborne.current && verticalLevelY.current > 5 + VERTICAL_LANDING_EPSILON && !isOnVerticalWalkable) {
+          activeRideableElevatorRouteId.current = null;
           verticalAirborne.current = true;
           verticalVelocityY.current = Math.min(0, verticalVelocityY.current);
           logExpoWorldDebug(debug, '[ExpoView][VerticalFallStart]', {
@@ -622,6 +724,13 @@ export function ExpoWorldPlayerLayer({
           const fromY = verticalLevelY.current;
           const landingY = Math.max(
             findVerticalLandingY(camera.position, fromY, nextY, effectiveVerticalWalkableRegions),
+            findRideableElevatorLandingY(
+              camera.position,
+              fromY,
+              nextY,
+              elapsedTime,
+              rideableElevatorRoutes,
+            ) ?? 5,
             findWorldPhysicsLandingSurface(
               camera.position,
               fromY,
@@ -670,12 +779,14 @@ export function ExpoWorldPlayerLayer({
             }
           }
         } else if (isOnVerticalWalkable) {
-          const snappedY = findCurrentVerticalRegionY(camera.position, verticalLevelY.current, effectiveVerticalWalkableRegions)
+          const snappedY = rideableElevatorThisFrame?.playerY
+            ?? findCurrentVerticalRegionY(camera.position, verticalLevelY.current, effectiveVerticalWalkableRegions)
             ?? findCurrentWorldPhysicsSurfaceY(camera.position, verticalLevelY.current, effectivePhysicsWalkableSurfaces, {
               edgeSlack: WORLD_PHYSICS_DEFAULT_EDGE_SLACK,
               yTolerance: WORLD_PHYSICS_DEFAULT_Y_TOLERANCE,
             })
-            ?? currentPhysicsSolidTopY;
+            ?? currentPhysicsSolidTopY
+            ?? null;
           if (snappedY !== null) {
             verticalLevelY.current = snappedY;
             activeViewElevationY.current = snappedY;
@@ -684,7 +795,6 @@ export function ExpoWorldPlayerLayer({
       }
     }
 
-    const shouldPreserveStartElevation = preserveReviewElevation && !hasMoveIntent && activeViewElevationY.current > 12;
     camera.position.setY(shouldPreserveStartElevation ? activeViewElevationY.current : verticalLevelY.current);
 
     if (!isOperatorReviewFrame && !operatorTeleportSettling) {
@@ -692,7 +802,16 @@ export function ExpoWorldPlayerLayer({
       camera.position.setZ(Math.min(bounds.maxZ, Math.max(bounds.minZ, camera.position.z)));
     }
 
-    if (moved) {
+    if (rideableElevatorThisFrame && !moved) {
+      const now = Date.now();
+      const dy = Math.abs(camera.position.y - lastReportedPosition.current[1]);
+
+      if (now - lastMoveTime.current > 180 || dy > 4) {
+        lastMoveTime.current = now;
+        lastReportedPosition.current = [camera.position.x, camera.position.y, camera.position.z];
+        onMove(lastReportedPosition.current);
+      }
+    } else if (moved) {
       const now = Date.now();
       const dx = camera.position.x - lastReportedPosition.current[0];
       const dz = camera.position.z - lastReportedPosition.current[2];
@@ -707,7 +826,7 @@ export function ExpoWorldPlayerLayer({
   });
 
   return mode === 'fly'
-    ? <OrbitControls ref={orbitControlsRef} enablePan enableZoom enableRotate maxDistance={500} enableDamping dampingFactor={0.05} />
+    ? <OrbitControls ref={orbitControlsRef} enablePan enableZoom enableRotate maxDistance={orbitMaxDistance} enableDamping dampingFactor={0.05} />
     : (mode === 'walk' ? <PointerLockControls onUnlock={() => document.body.style.cursor = 'auto'} pointerSpeed={0.18} /> : null);
 }
 

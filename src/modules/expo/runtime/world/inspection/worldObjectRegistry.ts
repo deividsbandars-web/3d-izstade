@@ -7,6 +7,7 @@ import type {
   CityScreenSurface,
   CityTower,
   ExpoVerticalAccessNode,
+  ExpoVerticalElevatorRoute,
   ExpoVerticalHeightBand,
   ExpoVerticalLevelId,
   ExpoVerticalOwner,
@@ -57,7 +58,8 @@ export type WorldObjectLayer =
   | 'stadium-screen-surface'
   | 'stadium-structure'
   | 'stadium-tower'
-  | 'vertical-access-node';
+  | 'vertical-access-node'
+  | 'vertical-elevator-route';
 
 export type WorldObjectRegistryPhysicsPart = {
   id: string;
@@ -215,18 +217,20 @@ function createLocalPhysicsPart({
 function buildCityMassPhysicsParts(mass: CityMass): WorldObjectRegistryPhysicsPart[] {
   const baseY = mass.vertical?.baseY ?? 0;
   const parentRotation = mass.rotation ?? [0, 0, 0];
-  const parts: WorldObjectRegistryPhysicsPart[] = [
-    createLocalPhysicsPart({
+  const intent = mass.renderIntent;
+  const parts: WorldObjectRegistryPhysicsPart[] = [];
+
+  if (intent?.skipBase !== true) {
+    parts.push(createLocalPhysicsPart({
       baseY,
       id: 'base',
       localPosition: [0, mass.size[1] * 0.5, 0],
       origin: mass.position,
       parentRotation,
       size: mass.size,
-    }),
-  ];
+    }));
+  }
 
-  const intent = mass.renderIntent;
   if (intent?.showHorizontalCap) {
     parts.push(createLocalPhysicsPart({
       baseY,
@@ -322,7 +326,41 @@ function buildCityMassPhysicsParts(mass: CityMass): WorldObjectRegistryPhysicsPa
           size: [Math.max(12, mass.size[0] * 0.86), 1.6, 2.2],
           walkableTop: false,
         }));
+
+        if (intent?.showSideFloorBands) {
+          parts.push(
+            createLocalPhysicsPart({
+              baseY,
+              id: `floor-band-left-${floorY}`,
+              localPosition: [-mass.size[0] * 0.51, floorY, 0],
+              origin: mass.position,
+              parentRotation,
+              size: [2.2, 1.6, Math.max(12, mass.size[2] * 0.74)],
+              walkableTop: false,
+            }),
+            createLocalPhysicsPart({
+              baseY,
+              id: `floor-band-right-${floorY}`,
+              localPosition: [mass.size[0] * 0.51, floorY, 0],
+              origin: mass.position,
+              parentRotation,
+              size: [2.2, 1.6, Math.max(12, mass.size[2] * 0.74)],
+              walkableTop: false,
+            }),
+          );
+        }
       });
+  }
+
+  const primitiveParts = buildPrimitivePhysicsParts({
+    baseY,
+    idPrefix: 'primitive',
+    origin: mass.position,
+    parentRotation,
+    primitives: intent?.primitives,
+  });
+  if (primitiveParts) {
+    parts.push(...primitiveParts);
   }
 
   return parts;
@@ -342,6 +380,10 @@ function buildPrimitivePhysicsParts({
   primitives?: CanonicalPrimitive[];
 }): WorldObjectRegistryPhysicsPart[] | undefined {
   const parts = (primitives ?? []).flatMap((primitive, index): WorldObjectRegistryPhysicsPart[] => {
+    if ('physics' in primitive && primitive.physics === 'decorative') {
+      return [];
+    }
+
     if (primitive.kind === 'box') {
       return [createLocalPhysicsPart({
         baseY,
@@ -640,6 +682,52 @@ function buildVerticalAccessNodeEntries(nodes: ExpoVerticalAccessNode[]): WorldO
   }));
 }
 
+function buildVerticalElevatorRouteEntries(routes: ExpoVerticalElevatorRoute[]): WorldObjectRegistryEntry[] {
+  return routes.map((route) => {
+    const xs = route.waypoints.map((point) => point[0]);
+    const ys = route.waypoints.map((point) => point[1]);
+    const zs = route.waypoints.map((point) => point[2]);
+    const minX = Math.min(...xs);
+    const maxX = Math.max(...xs);
+    const minY = Math.min(...ys);
+    const maxY = Math.max(...ys);
+    const minZ = Math.min(...zs);
+    const maxZ = Math.max(...zs);
+
+    return createEntry({
+      aliases: [route.label],
+      diagnosticOwners: [
+        'src/modules/expo/runtime/world/WorldVerticalElevatorRoutes.tsx',
+      ],
+      id: route.id,
+      interactionOwner: null,
+      layer: 'vertical-elevator-route',
+      planningRole: 'animated-lift-route',
+      planningZone: route.zoneId,
+      position: [
+        (minX + maxX) * 0.5,
+        (minY + maxY) * 0.5,
+        (minZ + maxZ) * 0.5,
+      ],
+      reviewTargetPosition: [
+        (minX + maxX) * 0.5,
+        Math.min(maxY, minY + ((maxY - minY) * 0.72)),
+        (minZ + maxZ) * 0.5,
+      ],
+      rotation: [0, 0, 0],
+      safeEditSeam: 'src/modules/expo/runtime/planning/vertical/verticalCitySystem.ts',
+      size: [
+        (maxX - minX) + route.cabinSize[0] + route.railSpacing,
+        (maxY - minY) + route.cabinSize[1],
+        (maxZ - minZ) + Math.max(route.cabinSize[2], route.stationSize[2]),
+      ],
+      sourceFile: 'src/modules/expo/runtime/planning/vertical/verticalCitySystem.ts',
+      sourceFunction: 'EXPO_VERTICAL_CITY_SYSTEM',
+      sourceKind: 'vertical-elevator-route',
+    });
+  });
+}
+
 export function buildGroundWorldObjectRegistry(): WorldObjectRegistryEntry[] {
   return [
     createEntry({
@@ -678,11 +766,16 @@ export function buildCityWorldObjectRegistry({
 
   return [
     ...buildCityPerimeterEntries(plan.stadiumReserve),
-    ...plan.filteredMasses.filter((mass) => mass.renderIntent?.skipBase !== true).map((mass) => createEntry({
+    ...plan.filteredMasses.filter((mass) => (
+      mass.renderIntent?.skipBase !== true || (mass.renderIntent?.primitives?.length ?? 0) > 0
+    )).map((mass) => createEntry({
       diagnosticOwners: [],
       id: mass.id,
       interactionOwner: null,
       layer: 'city-mass',
+      nodeType: mass.renderIntent?.skipBase === true && (mass.renderIntent?.primitives?.length ?? 0) > 0
+        ? 'decorative-render-rig'
+        : null,
       physicsParts: buildCityMassPhysicsParts(mass),
       planningSections: mass.sections,
       planningRole: mass.role ?? null,
@@ -770,6 +863,7 @@ export function buildCityWorldObjectRegistry({
       sockets: plan.screenSockets,
     }),
     ...buildVerticalAccessNodeEntries(plan.verticalSystem.accessNodes),
+    ...buildVerticalElevatorRouteEntries(plan.verticalSystem.elevatorRoutes),
     ...buildMegaLandmarkEntries({ districtCount, districtStride, stadiumReserve: plan.stadiumReserve }),
   ];
 }
@@ -827,6 +921,9 @@ export function buildStadiumWorldObjectRegistry({
   rearCampusPlan,
 }: BuildStadiumWorldObjectRegistryArgs): WorldObjectRegistryEntry[] {
   const rearCampus = rearCampusPlan.zoneExtension?.rearCampus;
+  const rearCampusPerimeterConnectorIds = new Set(
+    (rearCampus?.perimeterConnectors ?? []).map((connector) => connector.id),
+  );
 
   return [
     ...(rearCampus?.forecourts ?? []).map((plane) => createEntry({
@@ -891,6 +988,30 @@ export function buildStadiumWorldObjectRegistry({
       sourceFile: 'src/modules/expo/runtime/planning/zones/rear-campus/index.ts',
       sourceFunction: 'buildRearCampusZonePlan',
       sourceKind: 'rear-campus-perimeter-connector',
+    })),
+    ...rearCampusPlan.masses.filter((mass) => (
+      !rearCampusPerimeterConnectorIds.has(mass.id)
+      && (mass.renderIntent?.skipBase !== true || (mass.renderIntent?.primitives?.length ?? 0) > 0)
+    )).map((mass) => createEntry({
+      diagnosticOwners: [],
+      id: mass.id,
+      interactionOwner: null,
+      layer: 'stadium-structure',
+      nodeType: mass.renderIntent?.skipBase === true && (mass.renderIntent?.primitives?.length ?? 0) > 0
+        ? 'decorative-render-rig'
+        : null,
+      physicsParts: buildCityMassPhysicsParts(mass),
+      planningSections: mass.sections,
+      planningRole: mass.role ?? null,
+      planningZone: mass.planningZone ?? 'rear-campus',
+      position: baseAnchoredBoxCenter(mass.position, mass.size, mass.vertical?.baseY),
+      rotation: mass.rotation ?? [0, 0, 0],
+      safeEditSeam: mass.planningSource?.safeEditSeam ?? 'src/modules/expo/runtime/planning/zones/rear-campus/index.ts',
+      size: mass.size,
+      sourceFile: mass.planningSource?.sourceFile ?? 'src/modules/expo/runtime/planning/zones/rear-campus/index.ts',
+      sourceFunction: mass.planningSource?.sourceFunction ?? 'buildRearCampusZonePlan',
+      sourceKind: mass.planningSource?.sourceKind ?? 'rear-campus-mass',
+      ...verticalRegistryFields(mass.vertical),
     })),
     ...buildRecoveredStadiumStructureEntries(campusCenterZ),
     ...buildStadiumScreenHostShellEntries(rearCampusPlan.screenSurfaces),

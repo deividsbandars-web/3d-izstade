@@ -1,8 +1,10 @@
 import { expoService, type ExpoBusinessSceneAdapterPayload } from '../../../../services/expoService';
+import { ExpoDataAPI } from '../../../../services/expo';
 import { getFrontendRuntimeEnv } from '../../../../config/runtimeEnv';
 import { buildExpoLayoutEngine } from '../../layout-engine';
 import { reportExpoDevError } from '../../lib/devErrorReporter';
 import { adaptBackendScenePayload, normalizeBooth, normalizeCompany, normalizeSector } from './sceneContract';
+import { applyManagedBoothPreviewToScene, getManagedBoothPreviewIdFromSearch } from './managedBoothPreviewScene';
 import { shouldUseReviewExpoSceneSource } from './sceneDataMode';
 import { buildDevFallbackScene, buildProductionSafeFallbackScene } from './sceneFallbacks';
 import { type ExpoSceneData } from '../../types/scene';
@@ -67,6 +69,28 @@ function shouldUseRuntimeReviewSceneSource() {
   });
 }
 
+async function applyRuntimeManagedBoothPreview(scene: ExpoSceneData): Promise<ExpoSceneData> {
+  if (typeof window === 'undefined') {
+    return scene;
+  }
+
+  const boothId = getManagedBoothPreviewIdFromSearch(window.location.search);
+  if (!boothId) {
+    return scene;
+  }
+
+  try {
+    const payload = await ExpoDataAPI.getReviewBooth(boothId);
+    const previewScene = applyManagedBoothPreviewToScene(scene, payload as any);
+    reportBoothPlacementDiagnostics(previewScene, 'managed-booth-preview');
+    return previewScene;
+  } catch (error) {
+    reportExpoDevError('sceneDataSource.applyRuntimeManagedBoothPreview', error, { boothId });
+    console.warn('Managed booth preview unavailable. Continuing with base Expo scene.', error);
+    return scene;
+  }
+}
+
 export async function loadExpoSceneFromBackendContract(): Promise<ExpoSceneData> {
   const response = await fetch(getPublicExpoSceneEndpoint(), {
     method: 'GET',
@@ -127,21 +151,21 @@ function buildRuntimeSceneFromAdapterPayload(adapterPayload: ExpoBusinessSceneAd
 
 export async function loadExpoSceneForRelease(): Promise<ExpoSceneData> {
   if (shouldUseRuntimeReviewSceneSource()) {
-    return buildProductionSafeFallbackScene();
+    return applyRuntimeManagedBoothPreview(buildProductionSafeFallbackScene());
   }
 
   if (shouldPreferLocalExpoDataSource()) {
     try {
-      return await loadExpoSceneFromSupabaseService();
+      return await applyRuntimeManagedBoothPreview(await loadExpoSceneFromSupabaseService());
     } catch (supabaseError) {
       reportExpoDevError('sceneDataSource.loadExpoSceneForRelease.localSupabase', supabaseError);
       console.error('Expo local scene loading failed. Falling back to seeded Expo scene.', supabaseError);
-      return buildDevFallbackScene();
+      return applyRuntimeManagedBoothPreview(buildDevFallbackScene());
     }
   }
 
   try {
-    return await loadExpoSceneFromBackendContract();
+    return await applyRuntimeManagedBoothPreview(await loadExpoSceneFromBackendContract());
   } catch (backendError) {
     if (isViteDev()) {
       reportExpoDevError('sceneDataSource.loadExpoSceneForRelease.backendContract', backendError, {
@@ -155,13 +179,13 @@ export async function loadExpoSceneForRelease(): Promise<ExpoSceneData> {
 
   if (isViteDev()) {
     try {
-      return await loadExpoSceneFromSupabaseService();
+      return await applyRuntimeManagedBoothPreview(await loadExpoSceneFromSupabaseService());
     } catch (supabaseError) {
       reportExpoDevError('sceneDataSource.loadExpoSceneForRelease.devSupabaseFallback', supabaseError);
       console.error('Expo scene loading failed.', supabaseError);
-      return buildDevFallbackScene();
+      return applyRuntimeManagedBoothPreview(buildDevFallbackScene());
     }
   }
 
-  return buildProductionSafeFallbackScene();
+  return applyRuntimeManagedBoothPreview(buildProductionSafeFallbackScene());
 }

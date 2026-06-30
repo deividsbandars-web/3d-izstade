@@ -34,10 +34,14 @@ export type CityPlane = {
 export type CityMassRenderIntent = {
   emissive: string;
   emissiveIntensity: number;
+  primitives?: CanonicalPrimitive[];
+  showCrownBeacon: boolean;
   showFrontWing: boolean;
   showHorizontalCap: boolean;
+  showMegaVerticalSpines: boolean;
   showRearSpine: boolean;
   showSideInset: boolean;
+  showSideFloorBands: boolean;
   showSignatureBand: boolean;
   skipBase: boolean;
 };
@@ -48,6 +52,7 @@ export type CanonicalPrimitiveBox = {
   emissiveIntensity?: number;
   kind: 'box';
   metalness?: number;
+  physics?: 'solid' | 'decorative';
   position: [number, number, number];
   roughness?: number;
   rotation?: [number, number, number];
@@ -60,6 +65,7 @@ export type CanonicalPrimitivePlane = {
   color: string;
   kind: 'plane';
   opacity?: number;
+  physics?: 'solid' | 'decorative';
   position: [number, number, number];
   rotation?: [number, number, number];
   size: [number, number];
@@ -72,13 +78,51 @@ export type CanonicalPrimitiveCylinder = {
   emissiveIntensity?: number;
   kind: 'cylinder';
   metalness?: number;
+  opacity?: number;
+  physics?: 'solid' | 'decorative';
   position: [number, number, number];
   radiusBottom: number;
   radiusTop: number;
   roughness?: number;
   rotation?: [number, number, number];
   radialSegments?: number;
+  transparent?: boolean;
   height: number;
+};
+
+export type CanonicalPrimitiveTorus = {
+  arc?: number;
+  color: string;
+  emissive?: string;
+  emissiveIntensity?: number;
+  kind: 'torus';
+  metalness?: number;
+  opacity?: number;
+  physics?: 'decorative';
+  position: [number, number, number];
+  radialSegments?: number;
+  radius: number;
+  roughness?: number;
+  rotation?: [number, number, number];
+  transparent?: boolean;
+  tube: number;
+  tubularSegments?: number;
+};
+
+export type CanonicalPrimitiveSphere = {
+  color: string;
+  emissive?: string;
+  emissiveIntensity?: number;
+  heightSegments?: number;
+  kind: 'sphere';
+  metalness?: number;
+  opacity?: number;
+  physics?: 'decorative';
+  position: [number, number, number];
+  radius: number;
+  roughness?: number;
+  transparent?: boolean;
+  widthSegments?: number;
 };
 
 export type CanonicalPrimitiveText = {
@@ -106,6 +150,8 @@ export type CanonicalPrimitive =
   | CanonicalPrimitiveBox
   | CanonicalPrimitivePlane
   | CanonicalPrimitiveCylinder
+  | CanonicalPrimitiveTorus
+  | CanonicalPrimitiveSphere
   | CanonicalPrimitiveText
   | CanonicalPrimitiveTexturePlane;
 
@@ -861,25 +907,38 @@ export function buildRightSupportBlocks(
   boothPlacements: ExpoBoothPlacement[],
   districtStride: number
 ): CityMass[] {
+  function resolveLegacySupportSpacingOverride(id: string, position: [number, number, number]): [number, number, number] {
+    switch (id) {
+      case 'showcase-row-right-support-rear':
+        return [820, position[1], -1630];
+      default:
+        return position;
+    }
+  }
+
   const entries: CityMass[] = districtPrograms.slice(0, Math.max(3, districtPrograms.length)).flatMap((district, districtIndex) => {
+    const idPrefix = district.sectorId ?? district.clusterIndex;
     const baseZ = -196 - (districtIndex * districtStride);
     return [
-      { id: `${district.sectorId ?? district.clusterIndex}-right-support-front`, position: [512, 18, baseZ + 78], size: [48, 18, 48], color: '#c8d4dc' },
-      { id: `${district.sectorId ?? district.clusterIndex}-right-support-rear`, position: [584, 36, baseZ - 210], size: [64, 54, 76], color: '#95a8b4' },
-      { id: `${district.sectorId ?? district.clusterIndex}-center-transition-left`, position: [-102, 12, baseZ + 108], size: [28, 16, 28], color: '#d4dee5' },
-      { id: `${district.sectorId ?? district.clusterIndex}-center-transition-right`, position: [102, 12, baseZ + 96], size: [28, 16, 28], color: '#d4dee5' },
-      { id: `${district.sectorId ?? district.clusterIndex}-center-transition-rear-left`, position: [-146, 10, baseZ - 42], size: [22, 12, 22], color: '#dde6ec' },
-      { id: `${district.sectorId ?? district.clusterIndex}-center-transition-rear-right`, position: [146, 10, baseZ - 54], size: [22, 12, 22], color: '#dde6ec' },
-      { id: `${district.sectorId ?? district.clusterIndex}-support-link-left`, position: [-212, 10, baseZ + 126], size: [18, 10, 18], color: '#e1e9ef' },
-      { id: `${district.sectorId ?? district.clusterIndex}-support-link-right`, position: [212, 10, baseZ + 114], size: [18, 10, 18], color: '#e1e9ef' },
-      { id: `${district.sectorId ?? district.clusterIndex}-support-band-left`, position: [-288, 8, baseZ + 204], size: [52, 8, 24], color: '#e4ecf1' },
-      { id: `${district.sectorId ?? district.clusterIndex}-support-band-right`, position: [288, 8, baseZ + 194], size: [52, 8, 24], color: '#e4ecf1' },
-      { id: `${district.sectorId ?? district.clusterIndex}-support-gate-left`, position: [-412, 0, baseZ + 228], size: [20, 54, 18], color: '#d6e1e8' },
-      { id: `${district.sectorId ?? district.clusterIndex}-support-gate-right`, position: [412, 0, baseZ + 216], size: [20, 54, 18], color: '#d6e1e8' },
-      { id: `${district.sectorId ?? district.clusterIndex}-support-center-marker`, position: [0, 0, baseZ + 182], size: [10, 20, 10], color: '#eaf1f5' },
-      { id: `${district.sectorId ?? district.clusterIndex}-support-transition-court-left`, position: [-214, 0, baseZ + 154], size: [26, 14, 22], color: '#e1e9ef' },
-      { id: `${district.sectorId ?? district.clusterIndex}-support-transition-court-right`, position: [214, 0, baseZ + 144], size: [26, 14, 22], color: '#e1e9ef' },
-    ] as CityMass[];
+      { id: `${idPrefix}-right-support-front`, position: [512, 18, baseZ + 78], size: [48, 18, 48], color: '#c8d4dc' },
+      { id: `${idPrefix}-right-support-rear`, position: [584, 36, baseZ - 210], size: [64, 54, 76], color: '#95a8b4' },
+      { id: `${idPrefix}-center-transition-left`, position: [-102, 12, baseZ + 108], size: [28, 16, 28], color: '#d4dee5' },
+      { id: `${idPrefix}-center-transition-right`, position: [102, 12, baseZ + 96], size: [28, 16, 28], color: '#d4dee5' },
+      { id: `${idPrefix}-center-transition-rear-left`, position: [-146, 10, baseZ - 42], size: [22, 12, 22], color: '#dde6ec' },
+      { id: `${idPrefix}-center-transition-rear-right`, position: [146, 10, baseZ - 54], size: [22, 12, 22], color: '#dde6ec' },
+      { id: `${idPrefix}-support-link-left`, position: [-212, 10, baseZ + 126], size: [18, 10, 18], color: '#e1e9ef' },
+      { id: `${idPrefix}-support-link-right`, position: [212, 10, baseZ + 114], size: [18, 10, 18], color: '#e1e9ef' },
+      { id: `${idPrefix}-support-band-left`, position: [-288, 8, baseZ + 204], size: [52, 8, 24], color: '#e4ecf1' },
+      { id: `${idPrefix}-support-band-right`, position: [288, 8, baseZ + 194], size: [52, 8, 24], color: '#e4ecf1' },
+      { id: `${idPrefix}-support-gate-left`, position: [-412, 0, baseZ + 228], size: [20, 54, 18], color: '#d6e1e8' },
+      { id: `${idPrefix}-support-gate-right`, position: [412, 0, baseZ + 216], size: [20, 54, 18], color: '#d6e1e8' },
+      { id: `${idPrefix}-support-center-marker`, position: [0, 0, baseZ + 182], size: [10, 20, 10], color: '#eaf1f5' },
+      { id: `${idPrefix}-support-transition-court-left`, position: [-214, 0, baseZ + 154], size: [26, 14, 22], color: '#e1e9ef' },
+      { id: `${idPrefix}-support-transition-court-right`, position: [214, 0, baseZ + 144], size: [26, 14, 22], color: '#e1e9ef' },
+    ].map((mass) => ({
+      ...mass,
+      position: resolveLegacySupportSpacingOverride(mass.id, mass.position as [number, number, number]),
+    })) as CityMass[];
   });
 
   return filterStructuralCityMasses(
@@ -992,7 +1051,7 @@ export function buildSignatureMegaLandmarks(districtCount: number, districtStrid
     { id: 'signature-mega-front-court', position: [0, 0, boulevardCenterZ - 72], size: [112, 8, 22], color: '#e5edf2' },
     { id: 'signature-mega-pylon-left', position: [-1390, 0, boulevardCenterZ - 140], size: [48, 246, 48], color: '#748998' },
     { id: 'signature-mega-pylon-right', position: [500, 0, boulevardCenterZ + 200], size: [48, 238, 48], color: '#748998' },
-    { id: 'signature-mega-center-beacon', position: [0, 0, boulevardCenterZ - 326], size: [24, 118, 24], color: '#b6c5ce' },
+    { id: 'signature-mega-center-beacon', position: [-96, 0, boulevardCenterZ - 289], size: [24, 118, 24], color: '#b6c5ce' },
     { id: 'signature-mega-dais-left', position: [-162, 0, boulevardCenterZ - 176], size: [62, 12, 28], color: '#dbe4ea' },
     { id: 'signature-mega-dais-right', position: [162, 0, boulevardCenterZ - 190], size: [62, 12, 28], color: '#dbe4ea' },
     { id: 'signature-mega-outer-node-left', position: [-286, 0, boulevardCenterZ - 148], size: [26, 54, 20], color: '#d6e0e7' },
@@ -1017,7 +1076,27 @@ export function buildCleanTowerLandmarks(
   districtStride: number,
   visualProfile: Pick<ExpoWorldVisualProfile, 'global'>
 ): CityTower[] {
+  function resolveLegacyTowerSpacingOverride(id: string, position: [number, number, number]): [number, number, number] {
+    switch (id) {
+      case 'arrival-core-outer-support-tower-right':
+        return [1420, position[1], -40];
+      case 'meetings-hero-tower-right':
+        return [1450, position[1], -1988];
+      case 'meetings-outer-support-tower-right':
+        return [1500, position[1], -1100];
+      case 'showcase-row-mid-tower-right':
+        return [680, position[1], -1530];
+      case 'showcase-row-outer-support-tower-left':
+        return [-1380, position[1], -1280];
+      case 'showcase-row-outer-support-tower-right':
+        return [1650, position[1], -1600];
+      default:
+        return position;
+    }
+  }
+
   const entries: CityTower[] = districtPrograms.slice(0, Math.max(3, districtPrograms.length)).flatMap((district, districtIndex) => {
+    const idPrefix = district.sectorId ?? district.clusterIndex;
     const baseZ = -196 - (districtIndex * districtStride);
     const towerRhythm = [
       {
@@ -1054,15 +1133,18 @@ export function buildCleanTowerLandmarks(
     const heightStep = districtIndex % 3;
 
     return [
-      { id: `${district.sectorId ?? district.clusterIndex}-hero-tower-left`, position: [towerRhythm.heroLeft[0], 106, baseZ + towerRhythm.heroLeft[1]], baseSize: [48 + (heightStep * 2), 218 + (heightStep * 8), 36], upperSize: [34, 90 + (heightStep * 6), 26], color: '#617583', crownColor: visualProfile.global.hudAccent, role: 'hero', composition: 'hero' },
-      { id: `${district.sectorId ?? district.clusterIndex}-hero-tower-right`, position: [towerRhythm.heroRight[0], 116, baseZ + towerRhythm.heroRight[1]], baseSize: [54, 236 + (heightStep * 9), 40], upperSize: [38, 100 + (heightStep * 5), 28], color: '#647887', crownColor: visualProfile.global.hudAccent, role: 'hero', composition: 'hero' },
-      { id: `${district.sectorId ?? district.clusterIndex}-mid-tower-left`, position: [towerRhythm.midLeft[0], 78, baseZ + towerRhythm.midLeft[1]], baseSize: [32, 144 + (heightStep * 10), 24], upperSize: [24, 54 + (heightStep * 5), 18], color: '#718391', crownColor: '#d7e2ea', role: 'mid', composition: 'standard' },
-      { id: `${district.sectorId ?? district.clusterIndex}-mid-tower-right`, position: [towerRhythm.midRight[0], 74, baseZ + towerRhythm.midRight[1]], baseSize: [32, 150 + (heightStep * 8), 24], upperSize: [24, 52 + (heightStep * 4), 18], color: '#718391', crownColor: '#d7e2ea', role: 'mid', composition: 'standard' },
-      { id: `${district.sectorId ?? district.clusterIndex}-support-tower-left`, position: [towerRhythm.supportLeft[0], 54, baseZ + towerRhythm.supportLeft[1]], baseSize: [24, 92 + (heightStep * 9), 18], upperSize: [18, 28 + (heightStep * 4), 14], color: '#7e909c', crownColor: '#d7e2ea', role: 'support', composition: 'minimal' },
-      { id: `${district.sectorId ?? district.clusterIndex}-support-tower-right`, position: [towerRhythm.supportRight[0], 52, baseZ + towerRhythm.supportRight[1]], baseSize: [24, 88 + (heightStep * 8), 18], upperSize: [18, 26 + (heightStep * 4), 14], color: '#7e909c', crownColor: '#d7e2ea', role: 'support', composition: 'minimal' },
-      { id: `${district.sectorId ?? district.clusterIndex}-outer-support-tower-left`, position: [towerRhythm.outerLeft[0], 44, baseZ + towerRhythm.outerLeft[1]], baseSize: [20, 72 + (heightStep * 7), 16], upperSize: [14, 22 + (heightStep * 3), 12], color: '#8798a4', crownColor: '#dfe8ee', role: 'outer-support', composition: 'minimal' },
-      { id: `${district.sectorId ?? district.clusterIndex}-outer-support-tower-right`, position: [towerRhythm.outerRight[0], 42, baseZ + towerRhythm.outerRight[1]], baseSize: [20, 70 + (heightStep * 6), 16], upperSize: [14, 20 + (heightStep * 3), 12], color: '#8798a4', crownColor: '#dfe8ee', role: 'outer-support', composition: 'minimal' },
-    ] as CityTower[];
+      { id: `${idPrefix}-hero-tower-left`, position: [towerRhythm.heroLeft[0], 106, baseZ + towerRhythm.heroLeft[1]], baseSize: [48 + (heightStep * 2), 218 + (heightStep * 8), 36], upperSize: [34, 90 + (heightStep * 6), 26], color: '#617583', crownColor: visualProfile.global.hudAccent, role: 'hero', composition: 'hero' },
+      { id: `${idPrefix}-hero-tower-right`, position: [towerRhythm.heroRight[0], 116, baseZ + towerRhythm.heroRight[1]], baseSize: [54, 236 + (heightStep * 9), 40], upperSize: [38, 100 + (heightStep * 5), 28], color: '#647887', crownColor: visualProfile.global.hudAccent, role: 'hero', composition: 'hero' },
+      { id: `${idPrefix}-mid-tower-left`, position: [towerRhythm.midLeft[0], 78, baseZ + towerRhythm.midLeft[1]], baseSize: [32, 144 + (heightStep * 10), 24], upperSize: [24, 54 + (heightStep * 5), 18], color: '#718391', crownColor: '#d7e2ea', role: 'mid', composition: 'standard' },
+      { id: `${idPrefix}-mid-tower-right`, position: [towerRhythm.midRight[0], 74, baseZ + towerRhythm.midRight[1]], baseSize: [32, 150 + (heightStep * 8), 24], upperSize: [24, 52 + (heightStep * 4), 18], color: '#718391', crownColor: '#d7e2ea', role: 'mid', composition: 'standard' },
+      { id: `${idPrefix}-support-tower-left`, position: [towerRhythm.supportLeft[0], 54, baseZ + towerRhythm.supportLeft[1]], baseSize: [24, 92 + (heightStep * 9), 18], upperSize: [18, 28 + (heightStep * 4), 14], color: '#7e909c', crownColor: '#d7e2ea', role: 'support', composition: 'minimal' },
+      { id: `${idPrefix}-support-tower-right`, position: [towerRhythm.supportRight[0], 52, baseZ + towerRhythm.supportRight[1]], baseSize: [24, 88 + (heightStep * 8), 18], upperSize: [18, 26 + (heightStep * 4), 14], color: '#7e909c', crownColor: '#d7e2ea', role: 'support', composition: 'minimal' },
+      { id: `${idPrefix}-outer-support-tower-left`, position: [towerRhythm.outerLeft[0], 44, baseZ + towerRhythm.outerLeft[1]], baseSize: [20, 72 + (heightStep * 7), 16], upperSize: [14, 22 + (heightStep * 3), 12], color: '#8798a4', crownColor: '#dfe8ee', role: 'outer-support', composition: 'minimal' },
+      { id: `${idPrefix}-outer-support-tower-right`, position: [towerRhythm.outerRight[0], 42, baseZ + towerRhythm.outerRight[1]], baseSize: [20, 70 + (heightStep * 6), 16], upperSize: [14, 20 + (heightStep * 3), 12], color: '#8798a4', crownColor: '#dfe8ee', role: 'outer-support', composition: 'minimal' },
+    ].map((tower) => ({
+      ...tower,
+      position: resolveLegacyTowerSpacingOverride(tower.id, tower.position as [number, number, number]),
+    })) as CityTower[];
   });
 
   return filterReservedSponsorFrontageEntries(entries, boothPlacements, { frontDepth: 620, rearDepth: 260, sideWidth: 300, radius: 420 });

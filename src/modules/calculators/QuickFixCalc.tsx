@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { CalculatorLeadCta } from './CalculatorLeadCta';
 import '../../components/calculator/styles/CalculatorPro.css';
 
 const SERVICES = {
@@ -45,10 +46,21 @@ export default function QuickFixCalc() {
           <div className="sticky-results">
             <h3 className="results-title">Izsaukuma Tāme</h3>
             {!results ? <div className="empty-state">🛠️ Izvēlieties speciālistu</div> : (
-              <div className="grand-total-box">
-                <span className="gt-label">FIKSĒTĀ SUMMA</span>
-                <span className="gt-value">{results.grandTotal.toFixed(0)} €</span>
-              </div>
+              <>
+                <div className="grand-total-box">
+                  <span className="gt-label">FIKSĒTĀ SUMMA</span>
+                  <span className="gt-value">{results.grandTotal.toFixed(0)} €</span>
+                </div>
+                <CalculatorLeadCta
+                  calculatorId="quick-fix"
+                  calculatorTitle="Saimnieka palīga tāme"
+                  estimateTotal={results.grandTotal}
+                  summaryItems={[
+                    { label: 'Pakalpojums', value: SERVICES[params.service as keyof typeof SERVICES].name },
+                    { label: 'Stundas', value: String(params.hours) },
+                  ]}
+                />
+              </>
             )}
           </div>
         </div>

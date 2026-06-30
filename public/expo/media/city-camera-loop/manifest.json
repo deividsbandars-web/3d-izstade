@@ -1,0 +1,164 @@
+{
+  "capturedAt": "2026-06-02T11:34:27.561Z",
+  "frameCount": 31,
+  "height": 432,
+  "siteUrl": "https://staging.30sek24.com/expo-3d?operator=1&expoData=review&quality=high",
+  "width": 768,
+  "frames": [
+    {
+      "file": "public/expo/media/city-camera-loop/01-arrival-gate.png",
+      "url": "/expo/media/city-camera-loop/01-arrival-gate.png",
+      "zoneId": "arrival-gate"
+    },
+    {
+      "file": "public/expo/media/city-camera-loop/02-arrival-civic-axis.png",
+      "url": "/expo/media/city-camera-loop/02-arrival-civic-axis.png",
+      "zoneId": "arrival-civic-axis"
+    },
+    {
+      "file": "public/expo/media/city-camera-loop/03-center-spine.png",
+      "url": "/expo/media/city-camera-loop/03-center-spine.png",
+      "zoneId": "center-spine"
+    },
+    {
+      "file": "public/expo/media/city-camera-loop/04-center-spine-side.png",
+      "url": "/expo/media/city-camera-loop/04-center-spine-side.png",
+      "zoneId": "center-spine-side"
+    },
+    {
+      "file": "public/expo/media/city-camera-loop/05-mid-start-deep.png",
+      "url": "/expo/media/city-camera-loop/05-mid-start-deep.png",
+      "zoneId": "mid-start-deep"
+    },
+    {
+      "file": "public/expo/media/city-camera-loop/06-left-marquee.png",
+      "url": "/expo/media/city-camera-loop/06-left-marquee.png",
+      "zoneId": "left-marquee"
+    },
+    {
+      "file": "public/expo/media/city-camera-loop/07-left-marquee-close.png",
+      "url": "/expo/media/city-camera-loop/07-left-marquee-close.png",
+      "zoneId": "left-marquee-close"
+    },
+    {
+      "file": "public/expo/media/city-camera-loop/08-left-edge-far.png",
+      "url": "/expo/media/city-camera-loop/08-left-edge-far.png",
+      "zoneId": "left-edge-far"
+    },
+    {
+      "file": "public/expo/media/city-camera-loop/09-right-marquee.png",
+      "url": "/expo/media/city-camera-loop/09-right-marquee.png",
+      "zoneId": "right-marquee"
+    },
+    {
+      "file": "public/expo/media/city-camera-loop/10-right-marquee-close.png",
+      "url": "/expo/media/city-camera-loop/10-right-marquee-close.png",
+      "zoneId": "right-marquee-close"
+    },
+    {
+      "file": "public/expo/media/city-camera-loop/11-right-edge-far.png",
+      "url": "/expo/media/city-camera-loop/11-right-edge-far.png",
+      "zoneId": "right-edge-far"
+    },
+    {
+      "file": "public/expo/media/city-camera-loop/12-sponsor-boulevard-left.png",
+      "url": "/expo/media/city-camera-loop/12-sponsor-boulevard-left.png",
+      "zoneId": "sponsor-boulevard-left"
+    },
+    {
+      "file": "public/expo/media/city-camera-loop/13-sponsor-boulevard-left-close.png",
+      "url": "/expo/media/city-camera-loop/13-sponsor-boulevard-left-close.png",
+      "zoneId": "sponsor-boulevard-left-close"
+    },
+    {
+      "file": "public/expo/media/city-camera-loop/14-sponsor-boulevard-right.png",
+      "url": "/expo/media/city-camera-loop/14-sponsor-boulevard-right.png",
+      "zoneId": "sponsor-boulevard-right"
+    },
+    {
+      "file": "public/expo/media/city-camera-loop/15-sponsor-boulevard-right-medium.png",
+      "url": "/expo/media/city-camera-loop/15-sponsor-boulevard-right-medium.png",
+      "zoneId": "sponsor-boulevard-right-medium"
+    },
+    {
+      "file": "public/expo/media/city-camera-loop/16-array-band.png",
+      "url": "/expo/media/city-camera-loop/16-array-band.png",
+      "zoneId": "array-band"
+    },
+    {
+      "file": "public/expo/media/city-camera-loop/17-array-band-south.png",
+      "url": "/expo/media/city-camera-loop/17-array-band-south.png",
+      "zoneId": "array-band-south"
+    },
+    {
+      "file": "public/expo/media/city-camera-loop/18-sky-market-spine.png",
+      "url": "/expo/media/city-camera-loop/18-sky-market-spine.png",
+      "zoneId": "sky-market-spine"
+    },
+    {
+      "file": "public/expo/media/city-camera-loop/19-sky-market-spine-access.png",
+      "url": "/expo/media/city-camera-loop/19-sky-market-spine-access.png",
+      "zoneId": "sky-market-spine-access"
+    },
+    {
+      "file": "public/expo/media/city-camera-loop/20-tower-cluster.png",
+      "url": "/expo/media/city-camera-loop/20-tower-cluster.png",
+      "zoneId": "tower-cluster"
+    },
+    {
+      "file": "public/expo/media/city-camera-loop/21-tower-cluster-mega-skyline.png",
+      "url": "/expo/media/city-camera-loop/21-tower-cluster-mega-skyline.png",
+      "zoneId": "tower-cluster-mega-skyline"
+    },
+    {
+      "file": "public/expo/media/city-camera-loop/22-tower-cluster-television-tower-crown.png",
+      "url": "/expo/media/city-camera-loop/22-tower-cluster-television-tower-crown.png",
+      "zoneId": "tower-cluster-television-tower-crown"
+    },
+    {
+      "file": "public/expo/media/city-camera-loop/23-ai-reactor-core.png",
+      "url": "/expo/media/city-camera-loop/23-ai-reactor-core.png",
+      "zoneId": "ai-reactor-core"
+    },
+    {
+      "file": "public/expo/media/city-camera-loop/24-ai-oracle-chamber.png",
+      "url": "/expo/media/city-camera-loop/24-ai-oracle-chamber.png",
+      "zoneId": "ai-oracle-chamber"
+    },
+    {
+      "file": "public/expo/media/city-camera-loop/25-center-sky-compass.png",
+      "url": "/expo/media/city-camera-loop/25-center-sky-compass.png",
+      "zoneId": "center-sky-compass"
+    },
+    {
+      "file": "public/expo/media/city-camera-loop/26-stadium-approach.png",
+      "url": "/expo/media/city-camera-loop/26-stadium-approach.png",
+      "zoneId": "stadium-approach"
+    },
+    {
+      "file": "public/expo/media/city-camera-loop/27-rear-campus-entry-pulse-arches.png",
+      "url": "/expo/media/city-camera-loop/27-rear-campus-entry-pulse-arches.png",
+      "zoneId": "rear-campus-entry-pulse-arches"
+    },
+    {
+      "file": "public/expo/media/city-camera-loop/28-rear-campus-center.png",
+      "url": "/expo/media/city-camera-loop/28-rear-campus-center.png",
+      "zoneId": "rear-campus-center"
+    },
+    {
+      "file": "public/expo/media/city-camera-loop/29-stadium-feed-axis.png",
+      "url": "/expo/media/city-camera-loop/29-stadium-feed-axis.png",
+      "zoneId": "stadium-feed-axis"
+    },
+    {
+      "file": "public/expo/media/city-camera-loop/30-rear-campus-orbital-scoregate.png",
+      "url": "/expo/media/city-camera-loop/30-rear-campus-orbital-scoregate.png",
+      "zoneId": "rear-campus-orbital-scoregate"
+    },
+    {
+      "file": "public/expo/media/city-camera-loop/31-rear-campus-mega-hall.png",
+      "url": "/expo/media/city-camera-loop/31-rear-campus-mega-hall.png",
+      "zoneId": "rear-campus-mega-hall"
+    }
+  ]
+}

@@ -17,7 +17,7 @@ export function HeroOrEliteHalo({
     <group position={[0, (haloHeight * 0.5) + (isHero ? 0.52 : 0.38), haloZ]}>
       <mesh castShadow receiveShadow>
         <boxGeometry args={[frameWidth, 0.28, 0.32]} />
-        <meshStandardMaterial color="#cbd8e3" metalness={0.16} roughness={0.34} />
+        <meshStandardMaterial color="#d7effb" metalness={0.16} roughness={0.3} />
       </mesh>
       <mesh position={[0, 0, 0.1]}>
         <boxGeometry args={[frameWidth - (isHero ? 1.1 : 0.9), 0.1, 0.14]} />
@@ -27,7 +27,7 @@ export function HeroOrEliteHalo({
         <group key={`halo-leg-${side}`} position={[side * ((frameWidth * 0.5) - 0.14), -(haloHeight * 0.5), 0]}>
           <mesh castShadow receiveShadow>
             <boxGeometry args={[0.28, isHero ? haloHeight : haloHeight - 1.1, 0.32]} />
-            <meshStandardMaterial color="#cbd8e3" metalness={0.16} roughness={0.34} />
+            <meshStandardMaterial color="#d7effb" metalness={0.16} roughness={0.3} />
           </mesh>
           <mesh position={[0, 0, 0.1]}>
             <boxGeometry args={[0.1, isHero ? haloHeight - 1.1 : haloHeight - 2.1, 0.14]} />
@@ -52,7 +52,7 @@ export function PremiumPortalShell({
     <group position={[0, premiumPortalHeight * 0.5, 2.4]}>
       <mesh castShadow receiveShadow>
         <boxGeometry args={[premiumPortalWidth, 0.28, 0.34]} />
-        <meshStandardMaterial color="#d8e4ec" metalness={0.16} roughness={0.34} />
+        <meshStandardMaterial color="#e0f5ff" metalness={0.16} roughness={0.3} />
       </mesh>
       <mesh position={[0, 0, 0.12]}>
         <boxGeometry args={[premiumPortalWidth - 0.9, 0.12, 0.14]} />
@@ -62,7 +62,7 @@ export function PremiumPortalShell({
         <group key={`premium-portal-leg-${side}`} position={[side * ((premiumPortalWidth * 0.5) - 0.26), -(premiumPortalHeight * 0.5), 0]}>
           <mesh castShadow receiveShadow>
             <boxGeometry args={[0.52, premiumPortalHeight, 0.34]} />
-            <meshStandardMaterial color="#d8e4ec" metalness={0.16} roughness={0.34} />
+            <meshStandardMaterial color="#e0f5ff" metalness={0.16} roughness={0.3} />
           </mesh>
           <mesh position={[0, 0, 0.12]}>
             <boxGeometry args={[0.16, premiumPortalHeight - 1.2, 0.12]} />
@@ -95,7 +95,7 @@ export function EliteMonolithShell({
         <group key={`elite-monolith-${side}`} position={[side * eliteMonolithOffsetX, eliteMonolithHeight * 0.5, eliteMonolithZ]}>
           <mesh castShadow receiveShadow>
             <boxGeometry args={[1.22, eliteMonolithHeight, depth * 0.42]} />
-            <meshStandardMaterial color="#d9e5ed" metalness={0.18} roughness={0.3} />
+            <meshStandardMaterial color="#e1f6ff" metalness={0.18} roughness={0.26} />
           </mesh>
           <mesh position={[0, 0.2, 0.18]}>
             <boxGeometry args={[0.22, eliteMonolithHeight - 1.1, depth * 0.18]} />
@@ -106,7 +106,7 @@ export function EliteMonolithShell({
       <group position={[0, eliteMonolithHeight + 0.44, eliteMonolithZ + 0.12]}>
         <mesh castShadow receiveShadow>
           <boxGeometry args={[width + 7.2, 0.42, 0.46]} />
-          <meshStandardMaterial color="#dbe7ee" metalness={0.18} roughness={0.28} />
+          <meshStandardMaterial color="#e3f7ff" metalness={0.18} roughness={0.24} />
         </mesh>
         <mesh position={[0, 0, 0.14]}>
           <boxGeometry args={[width + 6.2, 0.16, 0.16]} />
@@ -142,7 +142,7 @@ export function EliteRoofCrown({
         <group key={`elite-crown-fin-${side}`} position={[side * (width * 0.24), 0.72, 0]}>
           <mesh castShadow receiveShadow rotation={[0, 0, side < 0 ? 0.16 : -0.16]}>
             <boxGeometry args={[0.22, 1.28, depth * 0.16]} />
-            <meshStandardMaterial color="#d8e5ee" metalness={0.14} roughness={0.28} />
+            <meshStandardMaterial color="#e0f6ff" metalness={0.14} roughness={0.24} />
           </mesh>
           <mesh position={[0, 0, 0.08]} rotation={[0, 0, side < 0 ? 0.16 : -0.16]}>
             <boxGeometry args={[0.08, 1.02, depth * 0.1]} />
@@ -202,7 +202,7 @@ export function TierScreenFrame({
   const pillarOffset = (railWidth * 0.5) - (isHero ? 0.42 : isScreenFirst ? 0.2 : isElite ? 0.38 : 0.34);
   const pillarWidth = isScreenFirst ? 0.18 : 0.3;
   const pillarAccentWidth = isScreenFirst ? 0.06 : 0.1;
-  const trimColor = isHero ? '#dbe7f2' : isElite ? '#d7e3ec' : '#ced9e4';
+  const trimColor = isHero ? '#dff6ff' : isElite ? '#d7f0fb' : '#c8e4f2';
   const glowIntensity = isHero ? 0.22 : isScreenFirst ? 0.08 : isElite ? 0.18 : tier === 'premium' ? 0.14 : 0.08;
 
   return (

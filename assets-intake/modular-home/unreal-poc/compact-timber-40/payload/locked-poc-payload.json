@@ -1,0 +1,73 @@
+{
+  "schemaVersion": "modular-home-unreal-visualizer-v2",
+  "experience": "modular-home-premium-visualizer",
+  "projectId": "poc-compact-timber-40-one-bedroom-natural-premium",
+  "productId": "compact-timber-40",
+  "layoutVariant": "oneBedroom",
+  "moduleInstances": [
+    {
+      "instanceId": "compact-40-living-01",
+      "moduleId": "compact-living-module",
+      "quantity": 1,
+      "role": "Living and kitchen module",
+      "positionHint": "front living/kitchen zone",
+      "productionGroup": "primary-shell"
+    },
+    {
+      "instanceId": "compact-40-bedroom-01",
+      "moduleId": "compact-bedroom-module",
+      "quantity": 1,
+      "role": "Bedroom module",
+      "positionHint": "rear private zone",
+      "productionGroup": "primary-shell"
+    },
+    {
+      "instanceId": "compact-40-bathroom-core-01",
+      "moduleId": "bathroom-core-module",
+      "quantity": 1,
+      "role": "Bathroom core",
+      "positionHint": "rear service corner",
+      "productionGroup": "service-core"
+    }
+  ],
+  "facade": "naturalTimber",
+  "roof": "pitched",
+  "terrace": "frontDeck",
+  "windowPlacement": "balanced",
+  "doorPlacement": "frontEntry",
+  "finish": "premium",
+  "interiorPackage": "premiumInterior",
+  "furniturePackage": "premiumFurniture",
+  "materialTokens": {
+    "facadeMaterialId": "natural-timber-siding",
+    "roofMaterialId": "metal-roof",
+    "interiorMaterialIds": [
+      "interior-plywood",
+      "bathroom-wet-core"
+    ],
+    "terraceMaterialId": "timber-terrace-deck",
+    "glassMaterialId": "clear-low-iron-glass",
+    "doorMaterialId": "timber-entry-door",
+    "trimMaterialId": "timber-trim"
+  },
+  "estimateSummary": {
+    "currency": "EUR",
+    "estimatedTotal": 88900,
+    "confidence": "estimated",
+    "lineItemCount": 20,
+    "finalQuote": false,
+    "disclaimer": "Preview estimate only; final quote depends on site, transport, engineering and selected production specification."
+  },
+  "notes": [
+    "Locked first Unreal POC production payload.",
+    "One layout, one facade and one premium interior package only.",
+    "Use Web3D Modular Home as fallback until Pixel Streaming staging is explicitly enabled."
+  ],
+  "safety": {
+    "piiIncluded": false,
+    "uploadedUserAssetsIncluded": false,
+    "externalAssetUrlsIncluded": false,
+    "finalQuote": false,
+    "pixelStreamingEnabledByThisPayload": false
+  }
+}

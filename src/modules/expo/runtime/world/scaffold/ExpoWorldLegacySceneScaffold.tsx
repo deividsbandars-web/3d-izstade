@@ -3,6 +3,7 @@ import { Html } from '@react-three/drei';
 import { ExpoArchitecturalMassMaterial } from '../WorldSceneSupport';
 import { ExpoRearCampus as RuntimeExpoRearCampus } from '../ExpoRearCampus';
 import { WorldCitySkeleton } from '../WorldCitySkeleton';
+import { useExpoQualitySettings } from '../quality/expoQualitySettings';
 import type { ExpoBoothPlacement } from '../../../layout-engine';
 import type { ExpoDistrictProgramSummary, ExpoWorldVisualProfile } from '../../../world-contract';
 
@@ -224,7 +225,16 @@ export function CleanExpoCitySkeleton({
   districtPrograms: ExpoDistrictProgramSummary[];
   visualProfile: ExpoWorldVisualProfile;
 }) {
-  return <WorldCitySkeleton boothPlacements={boothPlacements} districtPrograms={districtPrograms} visualProfile={visualProfile} />;
+  const qualitySettings = useExpoQualitySettings({ isTouchDevice: false, runtimeCaptureSafe: false });
+
+  return (
+    <WorldCitySkeleton
+      boothPlacements={boothPlacements}
+      districtPrograms={districtPrograms}
+      qualitySettings={qualitySettings}
+      visualProfile={visualProfile}
+    />
+  );
 }
 
 export function ExpoRearCampus({
@@ -236,5 +246,14 @@ export function ExpoRearCampus({
   playerPosition?: [number, number, number];
   visualProfile: ExpoWorldVisualProfile;
 }) {
-  return <RuntimeExpoRearCampus boothPlacements={boothPlacements} playerPosition={playerPosition} visualProfile={visualProfile} />;
+  const qualitySettings = useExpoQualitySettings({ isTouchDevice: false, runtimeCaptureSafe: false });
+
+  return (
+    <RuntimeExpoRearCampus
+      boothPlacements={boothPlacements}
+      playerPosition={playerPosition}
+      qualitySettings={qualitySettings}
+      visualProfile={visualProfile}
+    />
+  );
 }

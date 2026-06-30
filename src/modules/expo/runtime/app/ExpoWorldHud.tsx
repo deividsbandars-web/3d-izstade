@@ -1,15 +1,17 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
-import { EXPO_CITY_QUALITY_TIER, EXPO_MODE_COPY } from '../../state/expoRuntime';
+import { EXPO_CITY_QUALITY_TIER, EXPO_MODE_COPY, type ExpoMode } from '../../state/expoRuntime';
 import type { ExpoSectorMarker } from '../../layout-engine';
 import type { ExpoWorldVisualProfile } from '../../world-contract';
+import { EXPO_MOBILE_MOVE_IDLE, type ExpoMobileMoveIntent } from './useExpoRuntimeSession';
 
 interface ExpoWorldHudProps {
   guests: any[];
   isMicOn: boolean;
   isSpeaking: boolean;
   isTouchDevice?: boolean;
-  onMoveTouch?: (intent: { f: boolean; b: boolean; l: boolean; r: boolean; s: boolean }) => void;
+  mode: ExpoMode;
+  onMoveTouch?: (intent: ExpoMobileMoveIntent) => void;
   operatorBuildStamp?: string | null;
   playerPos: number[];
   sectorMarkers: ExpoSectorMarker[];
@@ -23,6 +25,7 @@ export function ExpoWorldHud({
   isMicOn,
   isSpeaking,
   isTouchDevice = false,
+  mode,
   onMoveTouch,
   operatorBuildStamp = null,
   playerPos,
@@ -32,11 +35,17 @@ export function ExpoWorldHud({
   onExit,
 }: ExpoWorldHudProps) {
   const [joystickOffset, setJoystickOffset] = useState({ x: 0, y: 0 });
+  const [isAutoWalkActive, setIsAutoWalkActive] = useState(false);
   const [isSprintActive, setIsSprintActive] = useState(false);
+  const [mobileGuideDismissed, setMobileGuideDismissed] = useState(false);
   const [mobileOptionsOpen, setMobileOptionsOpen] = useState(false);
   const [mobileMapOpen, setMobileMapOpen] = useState(false);
   const joystickRef = useRef<HTMLDivElement | null>(null);
-  const radarSize = 208;
+  const lookPadRef = useRef<HTMLDivElement | null>(null);
+  const lookAnchorRef = useRef<{ x: number; y: number } | null>(null);
+  const mobileIntentRef = useRef<ExpoMobileMoveIntent>(EXPO_MOBILE_MOVE_IDLE);
+  const isWalkMode = mode === 'walk';
+  const radarSize = isTouchDevice ? 156 : 208;
   const orderedMarkers = [...sectorMarkers].sort((left, right) => {
     const leftDistance = Math.hypot(left.position[0] - playerPos[0], left.position[2] - playerPos[2]);
     const rightDistance = Math.hypot(right.position[0] - playerPos[0], right.position[2] - playerPos[2]);
@@ -70,6 +79,25 @@ export function ExpoWorldHud({
     color: '#f8fafc',
   };
 
+  useEffect(() => {
+    if (!isWalkMode && isAutoWalkActive) {
+      const resetTimer = window.setTimeout(() => setIsAutoWalkActive(false), 0);
+      return () => window.clearTimeout(resetTimer);
+    }
+  }, [isAutoWalkActive, isWalkMode]);
+
+  const emitMobileIntent = (partial: Partial<ExpoMobileMoveIntent>) => {
+    if (!onMoveTouch) {
+      return;
+    }
+
+    mobileIntentRef.current = {
+      ...mobileIntentRef.current,
+      ...partial,
+    };
+    onMoveTouch(mobileIntentRef.current);
+  };
+
   const emitJoystickIntent = (offsetX: number, offsetY: number, sprint: boolean) => {
     if (!onMoveTouch || !joystickRef.current) {
       return;
@@ -77,7 +105,7 @@ export function ExpoWorldHud({
 
     const maxRadius = joystickRef.current.getBoundingClientRect().width * 0.28;
     const threshold = maxRadius * 0.35;
-    onMoveTouch({
+    emitMobileIntent({
       f: offsetY < -threshold,
       b: offsetY > threshold,
       l: offsetX < -threshold,
@@ -103,8 +131,12 @@ export function ExpoWorldHud({
     const offsetY = rawY * clampRatio;
     const threshold = maxRadius * 0.35;
 
+    if (isAutoWalkActive) {
+      setIsAutoWalkActive(false);
+    }
     setJoystickOffset({ x: offsetX, y: offsetY });
-    onMoveTouch({
+    setMobileGuideDismissed(true);
+    emitMobileIntent({
       f: offsetY < -threshold,
       b: offsetY > threshold,
       l: offsetX < -threshold,
@@ -115,12 +147,63 @@ export function ExpoWorldHud({
 
   const resetJoystickIntent = () => {
     setJoystickOffset({ x: 0, y: 0 });
-    onMoveTouch?.({ f: false, b: false, l: false, r: false, s: isSprintActive });
+    emitMobileIntent({ f: isAutoWalkActive, b: false, l: false, r: false, s: isSprintActive });
   };
 
   const setSprintActive = (active: boolean) => {
     setIsSprintActive(active);
+    if (isAutoWalkActive) {
+      emitMobileIntent({ f: true, b: false, l: false, r: false, s: active });
+      return;
+    }
+
     emitJoystickIntent(joystickOffset.x, joystickOffset.y, active);
+  };
+
+  const setAutoWalkActive = (active: boolean) => {
+    setIsAutoWalkActive(active);
+    setMobileGuideDismissed(true);
+    setJoystickOffset({ x: 0, y: active ? -30 : 0 });
+    emitMobileIntent({ f: active, b: false, l: false, r: false, s: isSprintActive });
+  };
+
+  const updateLookIntent = (clientX: number, clientY: number, options?: { start?: boolean }) => {
+    if (!lookPadRef.current || !onMoveTouch) {
+      return;
+    }
+
+    const rect = lookPadRef.current.getBoundingClientRect();
+    if (options?.start || !lookAnchorRef.current) {
+      lookAnchorRef.current = { x: clientX, y: clientY };
+    }
+
+    const anchor = lookAnchorRef.current;
+    const rawX = clientX - anchor.x;
+    const rawY = clientY - anchor.y;
+    const maxX = Math.max(44, Math.min(96, rect.width * 0.22));
+    const maxY = Math.max(34, Math.min(82, rect.height * 0.22));
+    const offsetX = Math.max(-maxX, Math.min(maxX, rawX));
+    const offsetY = Math.max(-maxY, Math.min(maxY, rawY));
+    const lookX = Math.abs(offsetX) < maxX * 0.1 ? 0 : offsetX / maxX;
+    const lookY = Math.abs(offsetY) < maxY * 0.1 ? 0 : -offsetY / maxY;
+
+    setMobileGuideDismissed(true);
+    emitMobileIntent({
+      lookX,
+      lookY,
+      turnL: lookX < -0.08,
+      turnR: lookX > 0.08,
+    });
+  };
+
+  const resetLookIntent = () => {
+    lookAnchorRef.current = null;
+    emitMobileIntent({ lookX: 0, lookY: 0, turnL: false, turnR: false });
+  };
+
+  const pulseMobileAction = (key: 'jump' | 'lift', active: boolean) => {
+    setMobileGuideDismissed(true);
+    emitMobileIntent({ [key]: active } as Partial<ExpoMobileMoveIntent>);
   };
 
   return (
@@ -156,11 +239,11 @@ export function ExpoWorldHud({
             onClick={() => setMobileMapOpen((value) => !value)}
             style={{
               position: 'absolute',
-              top: '18px',
-              right: '80px',
+              top: 'max(14px, env(safe-area-inset-top))',
+              right: '76px',
               zIndex: 112,
-              width: '52px',
-              height: '52px',
+              width: '50px',
+              height: '50px',
               borderRadius: '999px',
               border: '1px solid rgba(255,255,255,0.12)',
               background: mobileMapOpen ? 'rgba(15, 23, 42, 0.72)' : 'rgba(15, 23, 42, 0.38)',
@@ -178,11 +261,11 @@ export function ExpoWorldHud({
             onClick={() => setMobileOptionsOpen((value) => !value)}
             style={{
               position: 'absolute',
-              top: '18px',
-              right: '18px',
+              top: 'max(14px, env(safe-area-inset-top))',
+              right: '14px',
               zIndex: 112,
-              width: '52px',
-              height: '52px',
+              width: '50px',
+              height: '50px',
               borderRadius: '999px',
               border: '1px solid rgba(255,255,255,0.12)',
               background: mobileOptionsOpen ? 'rgba(15, 23, 42, 0.72)' : 'rgba(15, 23, 42, 0.38)',
@@ -196,25 +279,64 @@ export function ExpoWorldHud({
           >
             ...
           </button>
+          {!mobileGuideDismissed && !mobileOptionsOpen && !mobileMapOpen && (
+            <button
+              type="button"
+              onClick={() => setMobileGuideDismissed(true)}
+              style={{
+                ...primaryPanelStyle,
+                position: 'absolute',
+                top: 'max(72px, calc(env(safe-area-inset-top) + 68px))',
+                left: '14px',
+                right: '14px',
+                zIndex: 109,
+                padding: '9px 12px',
+                borderRadius: '16px',
+                color: '#e2f3ff',
+                fontSize: '0.72rem',
+                fontWeight: 850,
+                letterSpacing: '0.04em',
+                lineHeight: 1.35,
+                textAlign: 'left',
+                cursor: 'pointer',
+              }}
+            >
+              {isWalkMode
+                ? 'LEFT STICK MOVE | SWIPE RIGHT SIDE TO LOOK UP/DOWN | AUTO WALK | JUMP/LIFT'
+                : 'DRAG TO ORBIT | PINCH TO ZOOM | MAP shows nearest zones'}
+            </button>
+          )}
         </>
       )}
 
       {(!isTouchDevice || mobileOptionsOpen) && (
         <div
           data-expo-world-hud-top="true"
-          style={{ position: 'absolute', top: '26px', right: '26px', zIndex: 100, display: 'flex', gap: '14px', alignItems: 'stretch', maxWidth: 'calc(100vw - 52px)', flexWrap: 'wrap', justifyContent: 'flex-end' }}
+          style={isTouchDevice
+            ? {
+              position: 'absolute',
+              top: 'max(74px, calc(env(safe-area-inset-top) + 70px))',
+              left: '12px',
+              right: '12px',
+              zIndex: 111,
+              display: 'grid',
+              gap: '8px',
+              maxHeight: '42vh',
+              overflowY: 'auto',
+            }
+            : { position: 'absolute', top: '26px', right: '26px', zIndex: 100, display: 'flex', gap: '14px', alignItems: 'stretch', maxWidth: 'calc(100vw - 52px)', flexWrap: 'wrap', justifyContent: 'flex-end' }}
         >
-          <div style={{ ...primaryPanelStyle, minWidth: '280px', padding: '14px 18px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <div style={{ ...primaryPanelStyle, minWidth: isTouchDevice ? 0 : '280px', padding: isTouchDevice ? '11px 12px' : '14px 18px', display: 'flex', flexDirection: 'column', gap: isTouchDevice ? '7px' : '8px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
               <div>
-                <div style={{ fontSize: '0.66rem', letterSpacing: '0.2em', fontWeight: 800, color: visualProfile.global.hudAccent }}>WARPALA EXPO CITY</div>
-                <div style={{ fontSize: '1.02rem', fontWeight: 800, color: '#f8fafc' }}>Sponsor Boulevard Live</div>
+                <div style={{ fontSize: isTouchDevice ? '0.56rem' : '0.66rem', letterSpacing: '0.2em', fontWeight: 800, color: visualProfile.global.hudAccent }}>WARPALA EXPO CITY</div>
+                <div style={{ fontSize: isTouchDevice ? '0.92rem' : '1.02rem', fontWeight: 800, color: '#f8fafc' }}>Sponsor Boulevard Live</div>
               </div>
               <div style={{ padding: '6px 10px', borderRadius: '999px', background: 'rgba(34, 197, 94, 0.14)', color: '#86efac', fontWeight: 800, fontSize: '0.72rem', letterSpacing: '0.08em' }}>
                 ONLINE {guests.length + 1}
               </div>
             </div>
-            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: isTouchDevice ? '6px' : '10px', flexWrap: 'wrap' }}>
               <div style={{ padding: '7px 11px', borderRadius: '999px', background: 'rgba(15, 23, 42, 0.8)', color: '#cbd5e1', fontWeight: 700, fontSize: '0.75rem' }}>
                 {EXPO_MODE_COPY.publicModeBadge}
               </div>
@@ -234,12 +356,12 @@ export function ExpoWorldHud({
 
           <button
             onClick={onToggleMic}
-            style={{ ...primaryPanelStyle, background: isMicOn ? 'linear-gradient(180deg, rgba(16, 185, 129, 0.9), rgba(5, 150, 105, 0.88))' : 'linear-gradient(180deg, rgba(30, 41, 59, 0.92), rgba(15, 23, 42, 0.9))', padding: '0 18px', minWidth: '120px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.08)', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', letterSpacing: '0.08em' }}
+            style={{ ...primaryPanelStyle, background: isMicOn ? 'linear-gradient(180deg, rgba(16, 185, 129, 0.9), rgba(5, 150, 105, 0.88))' : 'linear-gradient(180deg, rgba(30, 41, 59, 0.92), rgba(15, 23, 42, 0.9))', padding: isTouchDevice ? '13px 14px' : '0 18px', minWidth: isTouchDevice ? 0 : '120px', minHeight: isTouchDevice ? '48px' : undefined, borderRadius: '16px', border: '1px solid rgba(255,255,255,0.08)', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', letterSpacing: '0.08em' }}
           >
             {isMicOn ? 'MIC ON' : 'MIC OFF'}
           </button>
 
-          <div style={{ ...primaryPanelStyle, padding: '14px 18px', minWidth: '140px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+          <div style={{ ...primaryPanelStyle, padding: isTouchDevice ? '11px 12px' : '14px 18px', minWidth: isTouchDevice ? 0 : '140px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
             <div style={{ fontSize: '0.64rem', letterSpacing: '0.16em', color: '#b7c4d5', fontWeight: 800 }}>BOULEVARD</div>
             <div style={{ marginTop: '6px', display: 'flex', alignItems: 'center', gap: '8px' }}>
               <div
@@ -281,16 +403,30 @@ export function ExpoWorldHud({
             </div>
           </div>
 
-          <button onClick={onExit} style={{ background: 'linear-gradient(180deg, #f8fafc, #e2e8f0)', padding: '0 22px', borderRadius: '16px', border: 'none', fontWeight: 800, cursor: 'pointer', color: '#0f172a', boxShadow: '0 14px 32px rgba(226, 232, 240, 0.18)' }}>
+          <button onClick={onExit} style={{ background: 'linear-gradient(180deg, #f8fafc, #e2e8f0)', padding: isTouchDevice ? '13px 14px' : '0 22px', minHeight: isTouchDevice ? '48px' : undefined, borderRadius: '16px', border: 'none', fontWeight: 800, cursor: 'pointer', color: '#0f172a', boxShadow: '0 14px 32px rgba(226, 232, 240, 0.18)' }}>
             {EXPO_MODE_COPY.exitToLobby}
           </button>
         </div>
       )}
 
-      {(!isTouchDevice || mobileMapOpen) && (
+      {!isTouchDevice && (
         <div
           data-expo-world-hud-radar="true"
-          style={{ position: 'absolute', bottom: '26px', left: '26px', zIndex: 100, width: `${radarSize}px`, height: `${radarSize}px`, background: `linear-gradient(180deg, ${visualProfile.global.hudPanel}, rgba(15, 23, 42, 0.7))`, borderRadius: '50%', border: `1px solid ${visualProfile.global.hudAccent}44`, overflow: 'hidden', backdropFilter: 'blur(10px)', boxShadow: '0 18px 48px rgba(0,0,0,0.45)' }}
+          style={{
+            position: 'absolute',
+            bottom: isTouchDevice ? 'auto' : '26px',
+            left: isTouchDevice ? '14px' : '26px',
+            top: isTouchDevice ? 'max(74px, calc(env(safe-area-inset-top) + 70px))' : 'auto',
+            zIndex: isTouchDevice ? 111 : 100,
+            width: `${radarSize}px`,
+            height: `${radarSize}px`,
+            background: `linear-gradient(180deg, ${visualProfile.global.hudPanel}, rgba(15, 23, 42, 0.7))`,
+            borderRadius: '50%',
+            border: `1px solid ${visualProfile.global.hudAccent}44`,
+            overflow: 'hidden',
+            backdropFilter: 'blur(10px)',
+            boxShadow: '0 18px 48px rgba(0,0,0,0.45)',
+          }}
         >
           <div style={{ width: '100%', height: '100%', position: 'relative', background: `radial-gradient(circle at center, ${visualProfile.global.hudAccent}30 0%, rgba(15, 23, 42, 0.04) 70%)` }}>
             <div style={{ position: 'absolute', top: '50%', left: '0', width: '100%', height: '1px', background: 'rgba(255,255,255,0.1)' }} />
@@ -329,17 +465,138 @@ export function ExpoWorldHud({
         </div>
       )}
 
-      {isTouchDevice && onMoveTouch && (
+      {isTouchDevice && mobileMapOpen && (
+        <div
+          data-expo-mobile-map-sheet="true"
+          style={{
+            ...primaryPanelStyle,
+            position: 'absolute',
+            left: '10px',
+            right: '10px',
+            bottom: 'max(10px, env(safe-area-inset-bottom))',
+            zIndex: 114,
+            maxHeight: '46dvh',
+            overflowY: 'auto',
+            padding: '14px',
+            borderRadius: '22px 22px 16px 16px',
+            background: `linear-gradient(180deg, ${visualProfile.global.hudPanel}, rgba(2, 6, 23, 0.88))`,
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
+            <div>
+              <div style={{ color: visualProfile.global.hudAccent, fontSize: '0.62rem', fontWeight: 950, letterSpacing: '0.16em' }}>MOBILE MAP</div>
+              <div style={{ marginTop: '4px', color: '#f8fafc', fontSize: '1rem', fontWeight: 900 }}>Nearest zones</div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setMobileMapOpen(false)}
+              style={{
+                width: '42px',
+                height: '42px',
+                borderRadius: '999px',
+                border: '1px solid rgba(255,255,255,0.12)',
+                background: 'rgba(15, 23, 42, 0.72)',
+                color: '#f8fafc',
+                fontWeight: 950,
+              }}
+            >
+              X
+            </button>
+          </div>
+          <div style={{ marginTop: '12px', display: 'grid', gap: '8px' }}>
+            {orderedMarkers.slice(0, 5).map((marker) => {
+              const distance = Math.round(Math.hypot(marker.position[0] - playerPos[0], marker.position[2] - playerPos[2]));
+              return (
+                <div
+                  key={marker.id}
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'auto 1fr auto',
+                    alignItems: 'center',
+                    gap: '10px',
+                    padding: '10px 12px',
+                    borderRadius: '14px',
+                    background: 'rgba(15, 23, 42, 0.62)',
+                    border: `1px solid ${marker.color}44`,
+                  }}
+                >
+                  <span style={{ width: '10px', height: '10px', borderRadius: '999px', background: marker.color, boxShadow: `0 0 12px ${marker.color}` }} />
+                  <span style={{ minWidth: 0, color: '#e2e8f0', fontSize: '0.82rem', fontWeight: 850, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {marker.label}
+                  </span>
+                  <span style={{ color: marker.color, fontSize: '0.76rem', fontWeight: 950 }}>{distance}u</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {isTouchDevice && onMoveTouch && isWalkMode && (
+        <>
+        <div
+          ref={lookPadRef}
+          onTouchStart={(event) => {
+            event.preventDefault();
+            const touch = event.touches[0];
+            if (!touch) return;
+            updateLookIntent(touch.clientX, touch.clientY, { start: true });
+          }}
+          onTouchMove={(event) => {
+            event.preventDefault();
+            const touch = event.touches[0];
+            if (!touch) return;
+            updateLookIntent(touch.clientX, touch.clientY);
+          }}
+          onTouchEnd={(event) => {
+            event.preventDefault();
+            resetLookIntent();
+          }}
+          onTouchCancel={(event) => {
+            event.preventDefault();
+            resetLookIntent();
+          }}
+          style={{
+            position: 'absolute',
+            top: 'max(82px, calc(env(safe-area-inset-top) + 78px))',
+            right: 0,
+            bottom: 'max(116px, calc(env(safe-area-inset-bottom) + 112px))',
+            width: '58vw',
+            zIndex: 108,
+            touchAction: 'none',
+            userSelect: 'none',
+          }}
+        >
+          <div
+            style={{
+              position: 'absolute',
+              right: '16px',
+              bottom: '12px',
+              padding: '7px 10px',
+              borderRadius: '999px',
+              background: 'rgba(2, 6, 23, 0.36)',
+              border: '1px solid rgba(186, 230, 253, 0.18)',
+              color: '#bae6fd',
+              fontSize: '0.58rem',
+              fontWeight: 950,
+              letterSpacing: '0.12em',
+              opacity: mobileGuideDismissed ? 0.32 : 0.78,
+              pointerEvents: 'none',
+            }}
+          >
+            SWIPE LOOK
+          </div>
+        </div>
         <div
           style={{
             position: 'absolute',
-            left: '24px',
-            bottom: '24px',
+            left: 'max(14px, env(safe-area-inset-left))',
+            bottom: 'max(14px, env(safe-area-inset-bottom))',
             zIndex: 111,
             display: 'flex',
             flexDirection: 'row',
             alignItems: 'center',
-            gap: '14px',
+            gap: '10px',
           }}
         >
           <div
@@ -375,8 +632,8 @@ export function ExpoWorldHud({
             onMouseLeave={resetJoystickIntent}
             style={{
               ...primaryPanelStyle,
-              width: '172px',
-              height: '172px',
+              width: '148px',
+              height: '148px',
               borderRadius: '999px',
               border: '1px solid rgba(255,255,255,0.08)',
               position: 'relative',
@@ -398,8 +655,8 @@ export function ExpoWorldHud({
                 position: 'absolute',
                 left: '50%',
                 top: '50%',
-                width: '68px',
-                height: '68px',
+                width: '58px',
+                height: '58px',
                 borderRadius: '999px',
                 transform: `translate(calc(-50% + ${joystickOffset.x}px), calc(-50% + ${joystickOffset.y}px))`,
                 background: 'linear-gradient(180deg, rgba(248, 250, 252, 0.96), rgba(203, 213, 225, 0.92))',
@@ -408,39 +665,123 @@ export function ExpoWorldHud({
               }}
             />
           </div>
-          <button
-            onTouchStart={(event) => {
-              event.preventDefault();
-              setSprintActive(true);
-            }}
-            onTouchEnd={(event) => {
-              event.preventDefault();
-              setSprintActive(false);
-            }}
-            onTouchCancel={(event) => {
-              event.preventDefault();
-              setSprintActive(false);
-            }}
-            onMouseDown={() => setSprintActive(true)}
-            onMouseUp={() => setSprintActive(false)}
-            onMouseLeave={() => setSprintActive(false)}
-            style={{
-              ...primaryPanelStyle,
-              padding: '8px 14px',
-              minWidth: '104px',
-              borderRadius: '999px',
-              border: '1px solid rgba(255,255,255,0.08)',
-              fontWeight: 900,
-              letterSpacing: '0.08em',
-              background: isSprintActive
-                ? 'linear-gradient(180deg, rgba(239, 68, 68, 0.86), rgba(185, 28, 28, 0.82))'
-                : primaryPanelStyle.background,
-            }}
-          >
-            SPRINT
-          </button>
+          <div style={{ display: 'grid', gap: '8px' }}>
+            <button
+              onTouchStart={(event) => {
+                event.preventDefault();
+                setSprintActive(true);
+              }}
+              onTouchEnd={(event) => {
+                event.preventDefault();
+                setSprintActive(false);
+              }}
+              onTouchCancel={(event) => {
+                event.preventDefault();
+                setSprintActive(false);
+              }}
+              onMouseDown={() => setSprintActive(true)}
+              onMouseUp={() => setSprintActive(false)}
+              onMouseLeave={() => setSprintActive(false)}
+              style={{
+                ...primaryPanelStyle,
+                padding: '8px 12px',
+                minWidth: '86px',
+                minHeight: '52px',
+                borderRadius: '999px',
+                border: '1px solid rgba(255,255,255,0.08)',
+                fontWeight: 900,
+                letterSpacing: '0.08em',
+                background: isSprintActive
+                  ? 'linear-gradient(180deg, rgba(239, 68, 68, 0.86), rgba(185, 28, 28, 0.82))'
+                  : primaryPanelStyle.background,
+              }}
+            >
+              SPRINT
+            </button>
+            <button
+              type="button"
+              onClick={() => setAutoWalkActive(!isAutoWalkActive)}
+              style={{
+                ...primaryPanelStyle,
+                padding: '8px 12px',
+                minWidth: '86px',
+                minHeight: '52px',
+                borderRadius: '999px',
+                border: isAutoWalkActive ? '1px solid rgba(45, 212, 191, 0.48)' : '1px solid rgba(255,255,255,0.08)',
+                fontWeight: 950,
+                letterSpacing: '0.08em',
+                background: isAutoWalkActive
+                  ? 'linear-gradient(180deg, rgba(20, 184, 166, 0.9), rgba(13, 148, 136, 0.84))'
+                  : primaryPanelStyle.background,
+              }}
+            >
+              AUTO
+            </button>
+          </div>
         </div>
+        <div
+          style={{
+            position: 'absolute',
+            right: 'max(14px, env(safe-area-inset-right))',
+            bottom: 'max(14px, env(safe-area-inset-bottom))',
+            zIndex: 111,
+            display: 'grid',
+            gap: '10px',
+            justifyItems: 'end',
+          }}
+        >
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <button
+              type="button"
+              onTouchStart={(event) => { event.preventDefault(); pulseMobileAction('jump', true); }}
+              onTouchEnd={(event) => { event.preventDefault(); pulseMobileAction('jump', false); }}
+              onTouchCancel={(event) => { event.preventDefault(); pulseMobileAction('jump', false); }}
+              onMouseDown={() => pulseMobileAction('jump', true)}
+              onMouseUp={() => pulseMobileAction('jump', false)}
+              onMouseLeave={() => pulseMobileAction('jump', false)}
+              style={{
+                ...primaryPanelStyle,
+                width: '78px',
+                height: '62px',
+                borderRadius: '20px',
+                border: '1px solid rgba(125, 211, 252, 0.24)',
+                background: 'linear-gradient(180deg, rgba(14, 165, 233, 0.86), rgba(2, 132, 199, 0.86))',
+                color: '#effaff',
+                fontSize: '0.78rem',
+                fontWeight: 950,
+                letterSpacing: '0.08em',
+              }}
+            >
+              JUMP
+            </button>
+            <button
+              type="button"
+              onTouchStart={(event) => { event.preventDefault(); pulseMobileAction('lift', true); }}
+              onTouchEnd={(event) => { event.preventDefault(); pulseMobileAction('lift', false); }}
+              onTouchCancel={(event) => { event.preventDefault(); pulseMobileAction('lift', false); }}
+              onMouseDown={() => pulseMobileAction('lift', true)}
+              onMouseUp={() => pulseMobileAction('lift', false)}
+              onMouseLeave={() => pulseMobileAction('lift', false)}
+              style={{
+                ...primaryPanelStyle,
+                width: '70px',
+                height: '62px',
+                borderRadius: '20px',
+                border: '1px solid rgba(251, 191, 36, 0.26)',
+                background: 'linear-gradient(180deg, rgba(245, 158, 11, 0.86), rgba(180, 83, 9, 0.84))',
+                color: '#fff7ed',
+                fontSize: '0.78rem',
+                fontWeight: 950,
+                letterSpacing: '0.08em',
+              }}
+            >
+              LIFT
+            </button>
+          </div>
+        </div>
+        </>
       )}
+
     </>
   );
 }

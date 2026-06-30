@@ -77,6 +77,8 @@ export const WORLD_PHYSICS_DEFAULT_Y_TOLERANCE = 10;
 const WALKABLE_MIN_FOOTPRINT = 18;
 const COLLISION_VERTICAL_FOOT_CLEARANCE = 0.75;
 const COLLISION_HEAD_CLEARANCE = 2;
+const LEFT_CIVILIZATION_MONUMENT_SOURCE_KIND = 'left-civilization-monument-mass';
+const RIGHT_ORBITAL_BROADCAST_FOUNDRY_SOURCE_KIND = 'right-orbital-broadcast-foundry-mass';
 
 const SOLID_LAYERS = new Set<WorldObjectLayer>([
   'booth',
@@ -151,7 +153,10 @@ function isPerimeterStructure(entry: WorldObjectRegistryEntry) {
 function isNonWalkableSupportStructure(entry: WorldObjectRegistryEntry) {
   return (
     isPerimeterStructure(entry)
+    || entry.sourceKind === LEFT_CIVILIZATION_MONUMENT_SOURCE_KIND
+    || entry.sourceKind === RIGHT_ORBITAL_BROADCAST_FOUNDRY_SOURCE_KIND
     || entry.sourceKind === 'tower-cluster-plinth-mass'
+    || entry.sourceKind === 'tower-cluster-television-tower-mass'
     || entry.id.endsWith('-tower-cluster-plinth')
     || (entry.sourceKind === 'tower-cluster-vertical-pilot-mass' && entry.id.includes('-core-'))
     || entry.sourceKind === 'city-screen-host-mass'
@@ -161,7 +166,7 @@ function isNonWalkableSupportStructure(entry: WorldObjectRegistryEntry) {
 }
 
 function resolvePhysicsBoxes(entry: WorldObjectRegistryEntry) {
-  if (entry.physicsParts?.length) {
+  if (entry.physicsParts) {
     return entry.physicsParts
       .filter((part) => isFinitePositiveSize(part.size))
       .map((part) => ({

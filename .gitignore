@@ -32,6 +32,9 @@ dist-phase3f
 .vercel
 apps/frontend/.next
 diagnostics
+review-screenshots/
+review_artifacts/
+handoff/
 .tmp-*
 .tmp*
 tmp/

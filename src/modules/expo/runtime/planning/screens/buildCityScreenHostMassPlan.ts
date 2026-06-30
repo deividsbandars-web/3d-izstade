@@ -6,6 +6,14 @@ function round1(value: number) {
   return Math.round(value * 10) / 10;
 }
 
+function isPreviousCivilizationMonumentScreen(surface: CityScreenSurface) {
+  return surface.id === 'screen-array-left-upper-3';
+}
+
+function isOrbitalBroadcastFoundryScreen(surface: CityScreenSurface) {
+  return surface.id === 'screen-array-right-upper-3';
+}
+
 export function buildCityScreenHostMasses(surfaces: ReadonlyArray<CityScreenSurface>): CityMass[] {
   return surfaces
     .filter((surface) => surface.type === 'wall')
@@ -14,13 +22,28 @@ export function buildCityScreenHostMasses(surfaces: ReadonlyArray<CityScreenSurf
       const isMarquee = surface.id.startsWith('screen-marquee-');
       const isSpine = surface.id.startsWith('screen-spine-');
       const isSideArray = surface.id.startsWith('screen-array-');
+      const isMonumentScreen = isPreviousCivilizationMonumentScreen(surface);
+      const isFoundryScreen = isOrbitalBroadcastFoundryScreen(surface);
+      const isElevatedLandmarkScreen = isMonumentScreen || isFoundryScreen;
+      const elevatedLandmarkHostHeight = round1(surface.size[1] * (isFoundryScreen ? 1.04 : 1.13));
+      const elevatedLandmarkBaseOffsetY = isFoundryScreen ? 28 : 0;
       const hostTop = surface.position[1] + (surface.size[1] * 0.5) + (isSideArray ? 42 : isMarquee ? 8 : 6);
-      const hostWidth = Math.max(
-        surface.size[0] + (isSideArray ? 36 : 8),
-        surface.size[0] * (isSideArray ? 1.26 : 1.08),
-      );
-      const hostDepth = Math.max(isSideArray ? 32 : 24, surface.size[2] * (isSideArray ? 9.4 : 7.2));
+      const hostBaseY = isElevatedLandmarkScreen
+        ? round1(surface.position[1] - (elevatedLandmarkHostHeight * 0.5) + elevatedLandmarkBaseOffsetY)
+        : 0;
+      const hostWidth = isElevatedLandmarkScreen
+        ? round1(surface.size[0] * 1.25)
+        : Math.max(
+            surface.size[0] + (isSideArray ? 36 : 8),
+            surface.size[0] * (isSideArray ? 1.26 : 1.08),
+          );
+      const hostDepth = isElevatedLandmarkScreen
+        ? round1(Math.max(12, surface.size[2] * 3.2))
+        : Math.max(isSideArray ? 32 : 24, surface.size[2] * (isSideArray ? 9.4 : 7.2));
       const backset = (hostDepth * 0.5) + (surface.size[2] * 0.5) - 1.2;
+      const hostHeight = isElevatedLandmarkScreen
+        ? elevatedLandmarkHostHeight
+        : Math.max(surface.size[1] + (isMarquee ? 58 : isSpine ? 46 : isSideArray ? 126 : 34), hostTop);
 
       return {
         id: `${surface.id}-host`,
@@ -38,10 +61,21 @@ export function buildCityScreenHostMasses(surfaces: ReadonlyArray<CityScreenSurf
         rotation: [0, yaw, 0],
         size: [
           round1(hostWidth),
-          round1(Math.max(surface.size[1] + (isMarquee ? 58 : isSpine ? 46 : isSideArray ? 126 : 34), hostTop)),
+          round1(hostHeight),
           round1(hostDepth),
         ],
-        color: isSpine ? '#7c909e' : isMarquee ? '#718795' : '#8294a0',
+        vertical: isElevatedLandmarkScreen
+          ? {
+              baseY: hostBaseY,
+              floorCount: 1,
+              floorHeight: round1(hostHeight),
+              heightBand: 'high-rise',
+              level: 'tower',
+              verticalOwner: 'city',
+            }
+          : undefined,
+        color: isMonumentScreen ? '#263743' : isFoundryScreen ? '#233947' : isSpine ? '#7c909e' : isMarquee ? '#718795' : '#8294a0',
+        sections: surface.sections,
       } satisfies CityMass;
     });
 }

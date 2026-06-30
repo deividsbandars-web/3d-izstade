@@ -15,7 +15,16 @@ import {
   type WorldObjectLayer,
   type WorldObjectRegistryEntry,
 } from '../../world/inspection/worldObjectRegistry';
+import { resolveExpoQualitySettings } from '../../world/quality/expoQualitySettings';
 import { resolveRearCampusScreenHostId } from '../../world/rearCampusScreenHosts';
+import { resolveExpoZoneRuntimeState } from '../../world/zones/expoZoneRuntimeState';
+import {
+  getDemoArenaAnalyticsSummary,
+  getDemoArenaCtaInteractionSummary,
+  getDemoArenaPreviewRuntimeSummary,
+} from '../../demoArena';
+import { getBoothProductDebugSummary, getBoothProductPreviewSummary } from '../../boothProduct';
+import { getSalesDemoSummary } from '../../salesDemo';
 
 type LayerStates = {
   booths: boolean;
@@ -125,6 +134,37 @@ function rotatePointAroundPivotY(
     point[1],
     pivot[2] + (dx * sin) + (dz * cos),
   ];
+}
+
+function normalizeOperatorPlayerPosition(position: number[]): [number, number, number] {
+  const x = Number(position[0]);
+  const y = Number(position[1]);
+  const z = Number(position[2]);
+
+  return [
+    Number.isFinite(x) ? x : 0,
+    Number.isFinite(y) ? y : 0,
+    Number.isFinite(z) ? z : 0,
+  ];
+}
+
+function buildSnapshotZoneRuntime(args: {
+  activeZoneId: string | null;
+  operatorZoneId: string | null;
+  playerPos: number[];
+}) {
+  const qualitySettings = resolveExpoQualitySettings({
+    isTouchDevice: false,
+    runtimeCaptureSafe: false,
+  });
+
+  return resolveExpoZoneRuntimeState({
+    externalActiveZoneId: args.operatorZoneId ?? args.activeZoneId,
+    playerPosition: normalizeOperatorPlayerPosition(args.playerPos),
+    previousActiveZoneId: null,
+    qualitySettings,
+    runtimeCaptureSafe: false,
+  });
 }
 
 export function buildZoneObservationsFromSnapshot(
@@ -901,13 +941,28 @@ export function buildExpoReviewOperatorSnapshot(args: {
     }),
   }));
 
+  const demoArenaPreview = getDemoArenaPreviewRuntimeSummary();
+  const demoArenaCtaAnalytics = getDemoArenaAnalyticsSummary(undefined, demoArenaPreview.enabled);
+  const demoArenaCtaInteraction = getDemoArenaCtaInteractionSummary(undefined, demoArenaPreview.enabled);
+  const boothProduct = getBoothProductDebugSummary();
+  const boothProductPreview = getBoothProductPreviewSummary();
+  const salesDemo = getSalesDemoSummary({
+    boothProductPreviewEnabled: boothProductPreview.enabled,
+    demoArenaPreviewEnabled: demoArenaPreview.enabled,
+  });
+
   return {
     activeZoneId: args.activeZoneId,
+    boothProduct,
+    boothProductPreview,
     centerStack: args.centerStack,
     centerTarget: args.centerTarget,
     clickStack: args.clickStack,
     clickTarget: args.clickTarget,
     dataMode: args.dataMode,
+    ...(demoArenaPreview.enabled ? { demoArenaCtaAnalytics } : {}),
+    ...(demoArenaPreview.enabled ? { demoArenaCtaInteraction } : {}),
+    ...(demoArenaPreview.enabled ? { demoArenaPreview } : {}),
     diagnostics: args.diagnosticReport,
     focusSlug: args.focusSlug,
     inspector: args.inspector,
@@ -945,9 +1000,16 @@ export function buildExpoReviewOperatorSnapshot(args: {
       inspectorEntries: resolvedInspectorEntries,
       targetBasketEntries: args.targetBasket.map((id) => registryById[id]).filter(Boolean),
     },
+    salesDemo,
+    salesDemoStep: salesDemo.step,
     sceneVersion: args.sceneVersion,
     sectionStates: args.sectionStates,
     targetBasket: args.targetBasket,
+    zoneRuntime: buildSnapshotZoneRuntime({
+      activeZoneId: args.activeZoneId,
+      operatorZoneId: args.operatorZoneId,
+      playerPos: args.playerPos,
+    }),
     zones: zoneValidations,
   };
 }

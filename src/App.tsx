@@ -5,6 +5,7 @@ import Layout from './components/Layout';
 // Core un pamata lapas
 import Home from './pages/Home';
 import Login from './pages/Login';
+const Privacy = lazy(() => import('./pages/Privacy'));
 
 // ==========================================
 // PHASE 15: AI Platform Pages
@@ -43,11 +44,13 @@ const RenovationCalculator = lazy(() => import('./modules/calculators/InteriorCa
 const TimberHouseCalculator = lazy(() => import('./modules/calculators/TimberHouseCalc'));
 const WindowsCalculator = lazy(() => import('./modules/calculators/WindowsCalc'));
 const VisualsCalculator = lazy(() => import('./modules/calculators/VisualsCalc'));
-const DigitalArtCalculator = lazy(() => import('./modules/calculators/DigitalArtCalc'));
-const AutoserviceCalculator = lazy(() => import('./modules/calculators/AutoserviceCalc'));
-const CleaningCalculator = lazy(() => import('./modules/calculators/CleaningCalc'));
-const QuickFixCalculator = lazy(() => import('./modules/calculators/QuickFixCalc'));
+const FenceCalculator = lazy(() => import('./modules/calculators/FenceCalc'));
+const PavingCalculator = lazy(() => import('./modules/calculators/PavingCalc'));
+const FacadeCalculator = lazy(() => import('./modules/calculators/FacadeCalc'));
+const FloorCalculator = lazy(() => import('./modules/calculators/FloorCalc'));
 const PlumbingCalculator = lazy(() => import('./modules/calculators/PlumbingCalc'));
+const CalculatorLeadInbox = lazy(() => import('./modules/calculators/CalculatorLeadInbox'));
+const ModularHomeQuoteReview = lazy(() => import('./pages/modularHome/ModularHomeQuoteReview'));
 
 // Expo
 const Expo3D = lazy(() => import('./modules/expo/Expo3D'));
@@ -56,6 +59,8 @@ const ProjectorRoom = lazy(() => import('./modules/expo/ProjectorRoom'));
 const BoothRoom = lazy(() => import('./pages/expo/BoothRoom'));
 const BoothStreamRoom = lazy(() => import('./pages/expo/BoothStreamRoom'));
 const CompanyAdmin = lazy(() => import('./pages/expo/CompanyAdmin'));
+const SponsorPackages = lazy(() => import('./pages/expo/SponsorPackages'));
+const SponsorLeadInbox = lazy(() => import('./pages/expo/SponsorLeadInbox'));
 const Marketplace = lazy(() => import('./modules/expo/Marketplace'));
 const UrgentServices = lazy(() => import('./modules/expo/UrgentServices'));
 const EventsHub = lazy(() => import('./modules/expo/EventsHub'));
@@ -80,6 +85,7 @@ export default function App() {
           <Route path="/" element={<Layout />}>
             <Route index element={<Home />} />
             <Route path="login" element={<Login />} />
+            <Route path="privacy" element={<Suspense fallback={null}><Privacy /></Suspense>} />
             
             {/* Jaunie AI Platformas Maršruti (Phase 15) */}
             <Route path="economy-simulator" element={<Suspense fallback={<div style={{ color: 'white', padding: '50px' }}>Loading...</div>}><EconomySimulatorPage /></Suspense>} />
@@ -101,6 +107,8 @@ export default function App() {
             <Route path="clients" element={<Suspense fallback={null}><ClientsDashboard /></Suspense>} />
             <Route path="inventory" element={<Suspense fallback={null}><InventoryManager /></Suspense>} />
             <Route path="calculators" element={<Suspense fallback={null}><CalculatorsHub /></Suspense>} />
+            <Route path="calculators/leads" element={<Suspense fallback={null}><CalculatorLeadInbox /></Suspense>} />
+            <Route path="modular-homes/quotes" element={<Suspense fallback={null}><ModularHomeQuoteReview /></Suspense>} />
             <Route path="marketplace" element={<Suspense fallback={null}><Marketplace /></Suspense>} />
             <Route path="urgent-services" element={<Suspense fallback={null}><UrgentServices /></Suspense>} />
             <Route path="events" element={<Suspense fallback={null}><EventsHub /></Suspense>} />
@@ -127,13 +135,19 @@ export default function App() {
             <Route path="timber-house-calculator" element={<Suspense fallback={null}><TimberHouseCalculator /></Suspense>} />
             <Route path="windows-calculator" element={<Suspense fallback={null}><WindowsCalculator /></Suspense>} />
             <Route path="visuals-calculator" element={<Suspense fallback={null}><VisualsCalculator /></Suspense>} />
-            <Route path="digital-art-calculator" element={<Suspense fallback={null}><DigitalArtCalculator /></Suspense>} />
-            <Route path="autoservice-calculator" element={<Suspense fallback={null}><AutoserviceCalculator /></Suspense>} />
-            <Route path="cleaning-calculator" element={<Suspense fallback={null}><CleaningCalculator /></Suspense>} />
-            <Route path="quick-fix-calculator" element={<Suspense fallback={null}><QuickFixCalculator /></Suspense>} />
+            <Route path="fence-calculator" element={<Suspense fallback={null}><FenceCalculator /></Suspense>} />
+            <Route path="digital-art-calculator" element={<Navigate to="/fence-calculator" replace />} />
+            <Route path="paving-calculator" element={<Suspense fallback={null}><PavingCalculator /></Suspense>} />
+            <Route path="autoservice-calculator" element={<Navigate to="/paving-calculator" replace />} />
+            <Route path="facade-calculator" element={<Suspense fallback={null}><FacadeCalculator /></Suspense>} />
+            <Route path="cleaning-calculator" element={<Navigate to="/facade-calculator" replace />} />
+            <Route path="floor-calculator" element={<Suspense fallback={null}><FloorCalculator /></Suspense>} />
+            <Route path="quick-fix-calculator" element={<Navigate to="/floor-calculator" replace />} />
             <Route path="plumbing-calculator" element={<Suspense fallback={null}><PlumbingCalculator /></Suspense>} />
             
             <Route path="expo/admin" element={<Suspense fallback={null}><CompanyAdmin /></Suspense>} />
+            <Route path="expo/sponsor-packages" element={<Suspense fallback={null}><SponsorPackages /></Suspense>} />
+            <Route path="expo/sponsor-leads" element={<Suspense fallback={null}><SponsorLeadInbox /></Suspense>} />
             <Route path="expo" element={<Navigate to="/expo-3d" />} />
           </Route>
           

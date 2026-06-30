@@ -14,6 +14,9 @@ import { maybeRunExpoOperatorFreshCacheReset } from './expoOperatorFreshCache';
 import { useExpoRuntimeErrorBridge } from './useExpoRuntimeErrorBridge';
 import { useExpoRuntimeSession } from './useExpoRuntimeSession';
 import { WorldInspectionProvider } from '../world/inspection/worldInspectionState';
+import { SalesDemoGuideOverlay } from '../salesDemo';
+import { SponsorConciergeLeadCaptureOverlay } from '../boothProduct';
+import { ModularHomeDemoOverlay, ModularHomeUploadPreviewPanel } from '../modularHome';
 
 export default function Expo3D() {
   const runtimeSession = useExpoRuntimeSession();
@@ -43,7 +46,10 @@ function ExpoRuntimeExperience({
   const worldContract = useMemo(() => buildExpoWorldContract(data), [data]);
   const inspectionEnabled = import.meta.env.DEV || runtimeSession.operatorSession.enabled;
   const pixelStreamingStatus = usePixelStreamingStatus();
-  const { guests, playerPos, isMicOn, isSpeaking, setIsMicOn, handlePlayerMove } = useExpoPresence(runtimeSession.mode);
+  const { guests, playerPos, isMicOn, isSpeaking, setIsMicOn, handlePlayerMove } = useExpoPresence(
+    runtimeSession.mode,
+    { enabled: !runtimeSession.salesDemoEnabled && !runtimeSession.boothProductPreviewEnabled && !runtimeSession.homeDemoEnabled && !runtimeSession.homeUploadPreviewRequested },
+  );
   const { activeZone, zoneSystem } = useZoneSystem(playerPos as any);
   const operatorSceneLayer = useExpoOperatorLayer({
     activeZoneId: activeZone?.id ? String(activeZone.id) : null,
@@ -91,23 +97,35 @@ function ExpoRuntimeExperience({
   return (
     <ExpoRuntimeShell
       hudLayer={(
-        <ExpoWorldHud
-          guests={guests}
-          isMicOn={isMicOn}
-          isSpeaking={isSpeaking}
-          isTouchDevice={runtimeSession.isTouchDevice}
-          onMoveTouch={runtimeSession.setMobileMoveIntent}
-          playerPos={playerPos}
-          sectorMarkers={worldContract.sectorMarkers}
-          visualProfile={worldContract.visualProfile}
-          onToggleMic={() => setIsMicOn((value) => !value)}
-          operatorBuildStamp={runtimeSession.operatorSession.enabled ? EXPO_REVIEW_BUILD_STAMP : null}
-          onExit={() => {
-            document.exitPointerLock();
-            runtimeSession.setMode('menu');
-          }}
-        />
+        <>
+          <ExpoWorldHud
+            guests={guests}
+            isMicOn={isMicOn}
+            isSpeaking={isSpeaking}
+            isTouchDevice={runtimeSession.isTouchDevice}
+            mode={runtimeSession.mode}
+            onMoveTouch={runtimeSession.setMobileMoveIntent}
+            playerPos={playerPos}
+            sectorMarkers={worldContract.sectorMarkers}
+            visualProfile={worldContract.visualProfile}
+            onToggleMic={() => setIsMicOn((value) => !value)}
+            operatorBuildStamp={runtimeSession.operatorSession.enabled ? EXPO_REVIEW_BUILD_STAMP : null}
+            onExit={() => {
+              document.exitPointerLock();
+              runtimeSession.setMode('menu');
+            }}
+          />
+          <SalesDemoGuideOverlay
+            isTouchDevice={runtimeSession.isTouchDevice}
+            mode={runtimeSession.mode}
+            onSetMode={runtimeSession.setMode}
+          />
+          <ModularHomeDemoOverlay isTouchDevice={runtimeSession.isTouchDevice} />
+          <ModularHomeUploadPreviewPanel isTouchDevice={runtimeSession.isTouchDevice} />
+          <SponsorConciergeLeadCaptureOverlay isTouchDevice={runtimeSession.isTouchDevice} />
+        </>
       )}
+      isTouchDevice={runtimeSession.isTouchDevice}
       isLoading={isLoading}
       mode={runtimeSession.mode}
       onBack={() => nav('/')}
@@ -120,6 +138,7 @@ function ExpoRuntimeExperience({
           debug={operatorSceneLayer.debug}
           guests={guests}
           mobileMoveIntent={runtimeSession.mobileMoveIntent}
+          isTouchDevice={runtimeSession.isTouchDevice}
           mode={runtimeSession.mode}
           onMove={handlePlayerMove}
           inspectionEnabled={inspectionEnabled}

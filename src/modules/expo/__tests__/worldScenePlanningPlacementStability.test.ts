@@ -144,9 +144,12 @@ function gapXZ(left: { position: number[]; rotation?: number[]; size: number[] }
   const dz = Math.max(0, Math.max(leftBounds.minZ - rightBounds.maxZ, rightBounds.minZ - leftBounds.maxZ));
   return Math.sqrt((dx * dx) + (dz * dz));
 }
+function resolveClearanceEntry(id: string) {
+  return cityMassById.get(id) ?? unfilteredScreenHostById.get(id) ?? rightSupportMassById.get(id) ?? clearanceTowerById.get(id) ?? signatureMegaById.get(id) ?? megaLandmarkBoundsById.get(id) ?? perimeterById.get(id);
+}
 function assertMinGap(idA: string, idB: string, minGap: number) {
-  const left = cityMassById.get(idA) ?? unfilteredScreenHostById.get(idA) ?? rightSupportMassById.get(idA) ?? clearanceTowerById.get(idA) ?? signatureMegaById.get(idA) ?? megaLandmarkBoundsById.get(idA) ?? perimeterById.get(idA);
-  const right = cityMassById.get(idB) ?? unfilteredScreenHostById.get(idB) ?? rightSupportMassById.get(idB) ?? clearanceTowerById.get(idB) ?? signatureMegaById.get(idB) ?? megaLandmarkBoundsById.get(idB) ?? perimeterById.get(idB);
+  const left = resolveClearanceEntry(idA);
+  const right = resolveClearanceEntry(idB);
   assert.ok(left, `${idA} must exist for city clearance checks`);
   assert.ok(right, `${idB} must exist for city clearance checks`);
   assert.ok(gapXZ(left, right) >= minGap, `${idA} must stay at least ${minGap} units from ${idB}`);
@@ -269,7 +272,8 @@ for (const surface of sideArrayScreenSurfaces) {
   const host = sideArrayHostMassById.get(`${surface.id}-host`);
   assert.ok(host, `${surface.id} must have a planned host mass`);
   assert.ok(host.size[0] >= surface.size[0] * 1.25, `${host?.id} must be wider than its side-array screen`);
-  assert.ok(host.size[1] >= surface.position[1] + (surface.size[1] * 0.5) + 38, `${host?.id} must carry the elevated side-array plate`);
+  const hostTopY = (host.vertical?.baseY ?? 0) + host.size[1];
+  assert.ok(hostTopY >= surface.position[1] + (surface.size[1] * 0.5) + 38, `${host?.id} must carry the elevated side-array plate`);
 
   const socket = sideArraySocketBySurfaceId.get(surface.id);
   assert.ok(socket, `${surface.id} must have a screen socket`);
@@ -322,8 +326,21 @@ assertMinGap('arrival-core-mid-tower-right', 'mega-landmark-right-support-spire'
 assertMinGap('meetings-hero-tower-right', 'mega-landmark-media-frame-wall', 72);
 assertMinGap('meetings-outer-support-tower-right', 'mega-landmark-media-frame-wall', 72);
 assertMinGap('showcase-row-outer-support-tower-right', 'mega-landmark-media-frame-wall', 72);
+for (const migratedRearCampusLandmarkId of [
+  'ai-reactor-core-primitive-rig',
+  'energy-grid-network-primitive-rig',
+  'ai-oracle-chamber-primitive-rig',
+  'center-sky-compass-primitive-rig',
+]) {
+  assert.ok(
+    !cityMassById.has(migratedRearCampusLandmarkId),
+    `${migratedRearCampusLandmarkId} must not be authored as a front-city mass`,
+  );
+}
 assertSurfaceZSpacing('screen-marquee-left-1', 'screen-array-left-1', 96);
 assertSurfaceZSpacing('screen-array-left-1', 'screen-array-left-upper-1', 96);
+assertSurfaceCenterDistance('screen-marquee-right-2', 'screen-array-right-2', 340);
+assertSurfaceCenterDistance('screen-marquee-right-2', 'screen-array-right-upper-2', 340);
 assertSurfaceCenterDistance('screen-marquee-right-2', 'meetings-hero-tower-right-crown-beacon', 320);
 assertSurfaceCenterDistance('screen-marquee-right-2', 'meetings-hero-tower-right-tower-ribbon', 320);
 assertWorldBoothScreenHostClearance(world, 'primary-world');

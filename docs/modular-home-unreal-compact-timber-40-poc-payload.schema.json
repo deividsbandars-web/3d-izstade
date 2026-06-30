@@ -1,0 +1,232 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://30sek24.com/schemas/modular-home-unreal-compact-timber-40-poc-payload.schema.json",
+  "title": "Compact Timber 40 Unreal POC Payload",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "experience",
+    "sessionId",
+    "streamerId",
+    "product",
+    "config",
+    "modules",
+    "materials",
+    "variants",
+    "camera",
+    "safety"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "modular-home-unreal-poc-v1"
+    },
+    "experience": {
+      "const": "modular-home-visualizer"
+    },
+    "sessionId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 120
+    },
+    "streamerId": {
+      "const": "home-compact-timber-40-premium-poc"
+    },
+    "product": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "productId",
+        "name",
+        "templateId",
+        "floorAreaM2",
+        "footprint",
+        "ceilingHeightM"
+      ],
+      "properties": {
+        "productId": {
+          "const": "compact-timber-40"
+        },
+        "name": {
+          "const": "Compact Timber 40"
+        },
+        "templateId": {
+          "const": "compactTimber40"
+        },
+        "floorAreaM2": {
+          "const": 40
+        },
+        "footprint": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["widthM", "lengthM"],
+          "properties": {
+            "widthM": { "const": 8 },
+            "lengthM": { "const": 5 }
+          }
+        },
+        "ceilingHeightM": {
+          "const": 2.6
+        }
+      }
+    },
+    "config": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "facade",
+        "roof",
+        "terrace",
+        "finishLevel",
+        "windowPackage",
+        "doorPackage"
+      ],
+      "properties": {
+        "facade": {
+          "enum": ["naturalTimber", "darkThermoWood", "lightPainted"]
+        },
+        "roof": {
+          "enum": ["pitched", "flat", "greenRoofPlaceholder"]
+        },
+        "terrace": {
+          "enum": ["none", "frontDeck", "sideTerrace", "extendedTerrace", "coveredTerracePlaceholder"]
+        },
+        "finishLevel": {
+          "enum": ["shell", "standard", "premium"]
+        },
+        "windowPackage": {
+          "enum": ["standardWindows", "panoramicWindows", "cornerGlazing", "compactPrivacy"]
+        },
+        "doorPackage": {
+          "enum": ["standardEntry", "terraceSlider", "premiumGlazedEntry"]
+        }
+      }
+    },
+    "modules": {
+      "type": "array",
+      "minItems": 3,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "instanceId",
+          "moduleId",
+          "quantity",
+          "role",
+          "positionHint",
+          "productionGroup"
+        ],
+        "properties": {
+          "instanceId": { "type": "string", "minLength": 1 },
+          "moduleId": {
+            "enum": ["compact-living-module", "compact-bedroom-module", "bathroom-core-module"]
+          },
+          "quantity": { "type": "integer", "minimum": 1 },
+          "role": { "type": "string", "minLength": 1 },
+          "positionHint": { "type": "string", "minLength": 1 },
+          "productionGroup": {
+            "enum": ["primary-shell", "service-core"]
+          }
+        }
+      }
+    },
+    "materials": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "facadeMaterialId",
+        "roofMaterialId",
+        "interiorMaterialIds",
+        "terraceMaterialId",
+        "glassMaterialId"
+      ],
+      "properties": {
+        "facadeMaterialId": {
+          "enum": ["natural-timber-siding", "dark-thermo-wood", "light-painted-facade"]
+        },
+        "roofMaterialId": {
+          "enum": ["metal-roof", "green-roof-placeholder"]
+        },
+        "interiorMaterialIds": {
+          "type": "array",
+          "items": {
+            "enum": ["interior-plywood-finish", "bathroom-wet-core", "premium-furniture-package"]
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "terraceMaterialId": {
+          "const": "timber-terrace-deck"
+        },
+        "glassMaterialId": {
+          "const": "clear-low-iron-glass"
+        }
+      }
+    },
+    "variants": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "facadeVariant",
+        "roofVariant",
+        "terraceVariant",
+        "interiorPackage",
+        "windowVariant",
+        "doorVariant"
+      ],
+      "properties": {
+        "facadeVariant": { "enum": ["naturalTimber", "darkThermoWood", "lightPainted"] },
+        "roofVariant": { "enum": ["pitched", "flat", "greenRoofPlaceholder"] },
+        "terraceVariant": { "enum": ["none", "frontDeck", "sideTerrace", "extendedTerrace", "coveredTerracePlaceholder"] },
+        "interiorPackage": { "enum": ["shell", "standard", "premium"] },
+        "windowVariant": { "enum": ["standardWindows", "panoramicWindows", "cornerGlazing", "compactPrivacy"] },
+        "doorVariant": { "enum": ["standardEntry", "terraceSlider", "premiumGlazedEntry"] }
+      }
+    },
+    "camera": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["initialPreset", "allowedPresets"],
+      "properties": {
+        "initialPreset": {
+          "enum": ["exterior-hero", "walkthrough-entry", "living-kitchen", "bedroom", "bathroom-core", "terrace"]
+        },
+        "allowedPresets": {
+          "type": "array",
+          "items": {
+            "enum": ["exterior-hero", "walkthrough-entry", "living-kitchen", "bedroom", "bathroom-core", "terrace"]
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        }
+      }
+    },
+    "quoteContext": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["currency", "estimatedTotal", "finalQuote", "disclaimer"],
+      "properties": {
+        "currency": { "const": "EUR" },
+        "estimatedTotal": { "type": "number", "minimum": 0 },
+        "finalQuote": { "const": false },
+        "disclaimer": { "type": "string", "minLength": 1 }
+      }
+    },
+    "safety": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "piiIncluded",
+        "uploadedUserAssets",
+        "finalQuote",
+        "productionEnabled"
+      ],
+      "properties": {
+        "piiIncluded": { "const": false },
+        "uploadedUserAssets": { "const": false },
+        "finalQuote": { "const": false },
+        "productionEnabled": { "const": false }
+      }
+    }
+  }
+}
