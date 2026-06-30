@@ -27,7 +27,7 @@ recorded product visual status.
 | Backend serves `/api/expo/scene` and `/api/modular-home/quote` | `PASS` | Backend contract tests passed via `npm.cmd run check:backend-tests`; staging quote contract passed through Doppler staging env. |
 | Quote endpoint production-gated, distributed-limited, spam-protected | `PASS / LIVE PROD UNVERIFIED` | Code and backend tests cover production host allowlist, Redis-backed limiting, honeypot, optional Turnstile, and duplicate guard. No live production quote mutation was run. |
 | RLS default-deny verified on production Supabase table | `BLOCKED / UNVERIFIED` | Static `npm.cmd run check:all` includes `check:supabase-rls` and passed. Staging direct public read was denied with `42501`. Production Supabase was not mutated or queried. |
-| 30/60 FPS evidence on constrained mobile and desktop | `PARTIAL / BLOCKED` | Desktop/local GALA performance evidence exists in `docs/GALA_PHASE3_VISUAL_PERFORMANCE_REPORT.md`; roadmap risk still marks constrained-mobile 30 FPS evidence as unproven. No fresh constrained production/staging FPS capture was produced in this preflight. |
+| 30/60 FPS evidence on constrained mobile and desktop | `BLOCKED` | Desktop/local GALA performance evidence exists in `docs/GALA_PHASE3_VISUAL_PERFORMANCE_REPORT.md`. Fresh staging constrained-mobile static budget passed at 390x844, dSF 3, CPU throttle 4x. Fresh staging constrained-mobile motion budget failed because exterior stationary reported 3 stutters over 50ms and exterior motion reported 2 stutters over 50ms; max allowed is 1. Median FPS remained above 30. Evidence: `artifacts/phase6-2-constrained-mobile/static/qa-gala-performance-budget-result.json` and `artifacts/phase6-2-constrained-mobile/motion/qa-gala-motion-performance-result.json`. |
 | Human product visual acceptance recorded | `BLOCKED` | `productVisualAccepted=false` remains recorded. This is a human gate and was not self-approved. |
 
 ## Validation Run During Preflight
@@ -45,12 +45,14 @@ recorded product visual status.
 | `gh run list --branch release/v1-stabilization --limit 5 --json ...` | `UNVERIFIED`: returned `[]` |
 | `git push -u origin release/v1-stabilization` | `PASS`: branch published; later fast-forward pushes succeeded and the remote ref was verified with `git ls-remote` |
 | `gh workflow run release-gate.yml --ref release/v1-stabilization` | `BLOCKED`: GitHub returned `HTTP 404` because the workflow is not on the default branch |
+| `node scripts/qa-gala-performance-budget-audit.mjs --base-url=https://staging.30sek24.com --profile=constrained-mobile --out-dir=artifacts/phase6-2-constrained-mobile/static` | `PASS`: constrained-mobile static budget passed on staging |
+| `node scripts/qa-gala-motion-performance-audit.mjs --base-url=https://staging.30sek24.com --profile=constrained-mobile --out-dir=artifacts/phase6-2-constrained-mobile/motion` | `FAIL`: constrained-mobile motion budget failed on stutter count, despite median FPS above 30 |
 
 ## Required Before Production Promotion
 
 1. Obtain explicit production promotion authorization in the active session.
 2. Make the release-gate workflow dispatchable from GitHub or provide an equivalent green CI run for the release branch or PR.
 3. Verify production Supabase RLS default-deny behavior against the intended production table.
-4. Capture constrained-mobile 30 FPS and desktop 60 FPS evidence for the release surface.
+4. Fix or re-evaluate the constrained-mobile motion stutter budget, then recapture passing mobile/desktop FPS evidence for the release surface.
 5. Have a human product owner record product visual acceptance through the designated release process.
 6. Only after all items are green, run the production promotion command and record the release in `CHANGELOG.md`.

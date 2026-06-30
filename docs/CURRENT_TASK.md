@@ -9,6 +9,8 @@
   - Confirmed the current decision is `NO-GO / NO PRODUCTION PROMOTION`.
   - Published `release/v1-stabilization` to `origin` so CI evidence can be collected once the workflow is dispatchable.
   - Tried to trigger `release-gate.yml` manually, but GitHub returned `HTTP 404` because the workflow does not exist on the default branch.
+  - Added mobile/constrained-mobile profile support to the GALA static and motion performance QA scripts without changing product renderer code.
+  - Ran constrained-mobile performance QA against `https://staging.30sek24.com`; static passed, motion failed on stutter count.
   - Did not run `promote:production`, did not change production aliases, and did not mutate production Supabase.
 - Validation:
   - `npm.cmd run lint` passed.
@@ -22,16 +24,23 @@
   - `gh run list --branch release/v1-stabilization --limit 5 --json ...` returned `[]`, so CI evidence is still unverified.
   - `git push -u origin release/v1-stabilization` published the branch; the initial local process timed out, later fast-forward pushes succeeded, and `git ls-remote --heads origin release/v1-stabilization` verified the remote ref exists.
   - `gh workflow run release-gate.yml --ref release/v1-stabilization` failed with GitHub `HTTP 404: workflow release-gate.yml not found on the default branch`.
+  - `node --check scripts/qa-gala-performance-budget-audit.mjs` passed.
+  - `node --check scripts/qa-gala-motion-performance-audit.mjs` passed.
+  - `node scripts/qa-gala-performance-budget-audit.mjs --base-url=https://staging.30sek24.com --profile=constrained-mobile --out-dir=artifacts/phase6-2-constrained-mobile/static` passed after network escalation; first sandboxed attempt failed with `ERR_NETWORK_ACCESS_DENIED`.
+  - `node scripts/qa-gala-motion-performance-audit.mjs --base-url=https://staging.30sek24.com --profile=constrained-mobile --out-dir=artifacts/phase6-2-constrained-mobile/motion` failed: exterior stationary had 3 stutters over 50ms and exterior motion had 2 stutters over 50ms, above the max of 1, while median FPS remained above 30.
 - Touched files:
+  - `scripts/qa-gala-performance-budget-audit.mjs`
+  - `scripts/qa-gala-motion-performance-audit.mjs`
+  - `docs/GALA_PERFORMANCE_BUDGET.md`
   - `docs/PRODUCTION_GO_NO_GO_20260630.md`
   - `docs/launch-dossier.md`
   - `docs/CURRENT_TASK.md`
 - Product/release status:
   - `productVisualAccepted=false`.
   - No production deploy, production promotion, production alias change, payment change, auth-policy change, schema change, camera/FOV/lookAt change, movement-physics change, collision-geometry change, door-runtime change, or GALA construction geometry change was made.
-  - Production remains blocked on explicit production authorization, dispatchable green CI evidence, live production RLS verification, constrained-mobile FPS evidence, and human product visual acceptance.
+  - Production remains blocked on explicit production authorization, dispatchable green CI evidence, live production RLS verification, constrained-mobile motion stutter evidence, and human product visual acceptance.
 - Next step:
-  - Make the release-gate workflow available through an allowed GitHub CI path, then resolve the remaining Phase 6.2 blockers before any production promotion command is run.
+  - Make the release-gate workflow available through an allowed GitHub CI path and fix or re-evaluate constrained-mobile motion stutter behavior before any production promotion command is run.
 
 ## 2026-06-30 Phase 6.1 Staging Alias Promotion And Final Verification
 

@@ -20,6 +20,24 @@ It is not product visual acceptance and does not authorize staging deploy.
 - Material count must be controlled and reported.
 - QA hooks must not invalidate motion performance measurements; motion QA should use the real homeStudio walk loop and only enable inventory/profiling hooks needed for measurement.
 
+## Device Profiles
+
+The static and motion performance audits default to the existing desktop profile. They
+also support mobile evidence profiles for release-readiness checks:
+
+| Profile | Viewport | Device scale | CPU throttle | Median FPS minimum | P95 frame max |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| `desktop` | `1440x900` | `1` | `1x` | `45` | `28ms` |
+| `mobile` | `390x844` | `3` | `1x` | `30` | `40ms` |
+| `constrained-mobile` | `390x844` | `3` | `4x` | `30` | `40ms` |
+
+Example constrained-mobile commands:
+
+```powershell
+node scripts/qa-gala-performance-budget-audit.mjs --base-url=https://staging.30sek24.com --profile=constrained-mobile --out-dir=artifacts/phase6-2-constrained-mobile/static
+node scripts/qa-gala-motion-performance-audit.mjs --base-url=https://staging.30sek24.com --profile=constrained-mobile --out-dir=artifacts/phase6-2-constrained-mobile/motion
+```
+
 ## Static Scene Rules
 
 - Board mesh count must not explode per wall segment.

@@ -12,6 +12,9 @@ constrained-mobile FPS evidence, and human product visual acceptance.
 CI note: `release/v1-stabilization` is published, but manual dispatch of
 `release-gate.yml` is blocked by GitHub because the workflow is not on the default branch.
 
+Performance note: fresh staging constrained-mobile static QA passed, but constrained-mobile
+motion QA failed on >50ms stutter count. Production remains blocked on that evidence.
+
 ## 2026-06-30 Phase 6.1 Update
 
 Latest staging snapshot: [LAUNCH_READINESS_SNAPSHOT_20260630.md](/C:/3d/docs/LAUNCH_READINESS_SNAPSHOT_20260630.md)

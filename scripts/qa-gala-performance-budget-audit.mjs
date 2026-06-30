@@ -8,20 +8,59 @@ import { chromium } from 'playwright';
 const DEFAULT_BASE_URL = 'http://127.0.0.1:5173';
 const DEFAULT_OUT_DIR = 'C:\\qa\\visual-evidence\\gala-interior-performance-geometry-remediation-local';
 const CHROME_PATH = 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe';
-const VIEWPORT = { height: 900, width: 1440 };
+const PROFILE_CONFIGS = {
+  desktop: {
+    cpuThrottleRate: 1,
+    deviceScaleFactor: 1,
+    fpsMin: 45,
+    frameTimeP95MaxMs: 28,
+    hasTouch: false,
+    isMobile: false,
+    viewport: { height: 900, width: 1440 },
+  },
+  mobile: {
+    cpuThrottleRate: 1,
+    deviceScaleFactor: 3,
+    fpsMin: 30,
+    frameTimeP95MaxMs: 40,
+    hasTouch: true,
+    isMobile: true,
+    viewport: { height: 844, width: 390 },
+  },
+  'constrained-mobile': {
+    cpuThrottleRate: 4,
+    deviceScaleFactor: 3,
+    fpsMin: 30,
+    frameTimeP95MaxMs: 40,
+    hasTouch: true,
+    isMobile: true,
+    viewport: { height: 844, width: 390 },
+  },
+};
 const ROUTES = {
   exterior: '/modular-homes/studio?view=exterior&homeStudio=1&qa3d=1',
   interior: '/modular-homes/studio?view=interior&homeStudio=1&qa3d=1',
   startInside: '/modular-homes/studio?start=inside&homeStudio=1&qa3d=1',
   startOutside: '/modular-homes/studio?start=outside&homeStudio=1&qa3d=1',
 };
-const FPS_MIN = 45;
-const FRAME_TIME_P95_MAX_MS = 28;
+
+function parseViewport(value) {
+  const match = /^(\d+)x(\d+)$/i.exec(value);
+  if (!match) {
+    throw new Error('--viewport must use WIDTHxHEIGHT, for example 390x844');
+  }
+  return {
+    height: Number(match[2]),
+    width: Number(match[1]),
+  };
+}
 
 function parseArgs(argv) {
-  const options = {
+  let options = {
     baseUrl: DEFAULT_BASE_URL,
     outDir: DEFAULT_OUT_DIR,
+    profile: 'desktop',
+    ...PROFILE_CONFIGS.desktop,
   };
 
   for (const arg of argv) {
@@ -29,9 +68,46 @@ function parseArgs(argv) {
       options.baseUrl = arg.slice('--base-url='.length).replace(/\/+$/, '');
     } else if (arg.startsWith('--out-dir=')) {
       options.outDir = path.resolve(arg.slice('--out-dir='.length));
+    } else if (arg.startsWith('--profile=')) {
+      const profile = arg.slice('--profile='.length);
+      if (!PROFILE_CONFIGS[profile]) {
+        throw new Error(`Unknown profile: ${profile}`);
+      }
+      options = {
+        ...options,
+        ...PROFILE_CONFIGS[profile],
+        profile,
+      };
+    } else if (arg.startsWith('--viewport=')) {
+      options.viewport = parseViewport(arg.slice('--viewport='.length));
+    } else if (arg.startsWith('--device-scale-factor=')) {
+      options.deviceScaleFactor = Number(arg.slice('--device-scale-factor='.length));
+    } else if (arg === '--mobile') {
+      options.isMobile = true;
+    } else if (arg === '--has-touch') {
+      options.hasTouch = true;
+    } else if (arg.startsWith('--fps-min=')) {
+      options.fpsMin = Number(arg.slice('--fps-min='.length));
+    } else if (arg.startsWith('--frame-time-p95-max-ms=')) {
+      options.frameTimeP95MaxMs = Number(arg.slice('--frame-time-p95-max-ms='.length));
+    } else if (arg.startsWith('--cpu-throttle-rate=')) {
+      options.cpuThrottleRate = Number(arg.slice('--cpu-throttle-rate='.length));
     } else {
       throw new Error(`Unknown argument: ${arg}`);
     }
+  }
+
+  if (!Number.isFinite(options.deviceScaleFactor) || options.deviceScaleFactor <= 0) {
+    throw new Error('--device-scale-factor must be a positive number');
+  }
+  if (!Number.isFinite(options.fpsMin) || options.fpsMin <= 0) {
+    throw new Error('--fps-min must be a positive number');
+  }
+  if (!Number.isFinite(options.frameTimeP95MaxMs) || options.frameTimeP95MaxMs <= 0) {
+    throw new Error('--frame-time-p95-max-ms must be a positive number');
+  }
+  if (!Number.isFinite(options.cpuThrottleRate) || options.cpuThrottleRate < 1) {
+    throw new Error('--cpu-throttle-rate must be a number greater than or equal to 1');
   }
 
   return options;
@@ -200,6 +276,15 @@ async function installWebGlProfiler(page) {
   });
 }
 
+async function applyCpuThrottle(page, rate) {
+  if (rate <= 1) {
+    return null;
+  }
+  const client = await page.context().newCDPSession(page);
+  await client.send('Emulation.setCPUThrottlingRate', { rate });
+  return client;
+}
+
 async function waitForGalaScene(page) {
   await page.waitForFunction(() => Boolean(window.__WARPALA_3D_QA__), null, { timeout: 60000 });
   await page.waitForFunction(() => {
@@ -208,7 +293,8 @@ async function waitForGalaScene(page) {
   }, null, { timeout: 60000 });
 }
 
-async function collectRouteMetrics(page, baseUrl, route) {
+async function collectRouteMetrics(page, options, route) {
+  const { baseUrl } = options;
   const response = await page.goto(`${baseUrl}${route}`, { timeout: 60000, waitUntil: 'domcontentloaded' });
   await waitForGalaScene(page);
   await page.waitForTimeout(1200);
@@ -235,8 +321,8 @@ async function collectRouteMetrics(page, baseUrl, route) {
   const inventorySummary = summarizeInventory(inventory);
   const pass = fpsMedian !== null
     && frameTimeP95 !== null
-    && fpsMedian >= FPS_MIN
-    && frameTimeP95 <= FRAME_TIME_P95_MAX_MS;
+    && fpsMedian >= options.fpsMin
+    && frameTimeP95 <= options.frameTimeP95MaxMs;
 
   return {
     drawCalls: Math.round(median(drawCalls) ?? 0),
@@ -265,13 +351,20 @@ async function main() {
     executablePath: fs.existsSync(CHROME_PATH) ? CHROME_PATH : undefined,
     headless: true,
   });
-  const page = await browser.newPage({ viewport: VIEWPORT });
+  const page = await browser.newPage({
+    deviceScaleFactor: options.deviceScaleFactor,
+    hasTouch: options.hasTouch,
+    isMobile: options.isMobile,
+    viewport: options.viewport,
+  });
+  const cpuThrottleClient = await applyCpuThrottle(page, options.cpuThrottleRate);
   await installWebGlProfiler(page);
 
-  const exterior = await collectRouteMetrics(page, options.baseUrl, ROUTES.exterior);
-  const interior = await collectRouteMetrics(page, options.baseUrl, ROUTES.interior);
-  const startOutside = await collectRouteMetrics(page, options.baseUrl, ROUTES.startOutside);
-  const startInside = await collectRouteMetrics(page, options.baseUrl, ROUTES.startInside);
+  const exterior = await collectRouteMetrics(page, options, ROUTES.exterior);
+  const interior = await collectRouteMetrics(page, options, ROUTES.interior);
+  const startOutside = await collectRouteMetrics(page, options, ROUTES.startOutside);
+  const startInside = await collectRouteMetrics(page, options, ROUTES.startInside);
+  await cpuThrottleClient?.detach();
   await browser.close();
 
   const hotspots = Object.entries({
@@ -293,8 +386,16 @@ async function main() {
     pass: performanceBudgetMet,
     diagnostics: {
       budget: {
-        fpsMedianMin: FPS_MIN,
-        frameTimeP95MaxMs: FRAME_TIME_P95_MAX_MS,
+        fpsMedianMin: options.fpsMin,
+        frameTimeP95MaxMs: options.frameTimeP95MaxMs,
+      },
+      profile: {
+        cpuThrottleRate: options.cpuThrottleRate,
+        deviceScaleFactor: options.deviceScaleFactor,
+        hasTouch: options.hasTouch,
+        isMobile: options.isMobile,
+        name: options.profile,
+        viewport: options.viewport,
       },
       startInside,
       startOutside,
