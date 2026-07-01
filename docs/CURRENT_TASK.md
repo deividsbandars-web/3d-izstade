@@ -1,5 +1,36 @@
 # Current Task
 
+## 2026-07-01 GALA Remote QA Navigation And Cleanup Hardening
+
+- Active objective: make the canonical GALA multi-route audits deterministic for remote staging runs and guarantee browser-process cleanup after navigation failures or orchestrator timeouts.
+- Implementation status:
+  - Added `scripts/qa-gala-browser-navigation.mjs` with commit-level navigation followed by an explicit React-root readiness check, avoiding remote `DOMContentLoaded` waits that were blocked by slow asset/module activity.
+  - Updated DOM-overlay and wall-skin audits to use isolated Playwright contexts with service workers blocked so staging PWA cache state cannot mix routes or stale chunks.
+  - Wrapped the wall-skin browser lifecycle in `try/finally`, matching the existing DOM-overlay cleanup behavior.
+  - Updated `qa-gala-suite.mjs` so Windows timeout handling terminates the full child process tree with `taskkill /T /F`, not only the Node child process.
+- Validation:
+  - `node --check` passed for the new helper and all three modified audit/orchestrator scripts.
+  - A direct helper contract probe confirmed `waitUntil: "commit"`, propagated timeout values, React-root readiness waiting, and response preservation.
+  - An intentional 3-second wall-skin suite timeout exited red as expected after 3.2 seconds and left zero new Node/Chrome processes.
+  - Local canonical smoke passed all 5 concerns in 50.3 seconds.
+  - Local canonical release passed all 10 concerns in 196.3 seconds; `productVisualAccepted=false` remains unchanged.
+  - After service-worker isolation, targeted local DOM-overlay and wall-skin concerns both passed in 32.2 seconds.
+  - Sandbox staging execution produced the expected `ERR_NETWORK_ACCESS_DENIED` for both target concerns in about 10.9 seconds, wrote a suite report, and exited without leaked browser processes.
+  - The required escalated staging rerun was requested but did not start because execution approval was not granted; no remote pass/fail claim is recorded for the modified scripts.
+  - `npm.cmd run lint` passed.
+  - `npm.cmd run check:all` passed.
+- Touched files:
+  - `scripts/qa-gala-browser-navigation.mjs`
+  - `scripts/qa-gala-dom-overlay-audit.mjs`
+  - `scripts/qa-gala-wall-skin-coverage-audit.mjs`
+  - `scripts/qa-gala-suite.mjs`
+  - `docs/CURRENT_TASK.md`
+- Product/release status:
+  - QA tooling is hardened locally; no product renderer, camera/FOV/lookAt, geometry, collision, movement, door runtime, pricing, auth, payment, frontend/backend deployment, Supabase mutation, Pixel Streaming, Unreal, staging alias, or production state was changed.
+  - `productVisualAccepted=false`.
+- Next step:
+  - With staging network execution approval, rerun the targeted DOM-overlay and wall-skin concerns against `https://staging.30sek24.com`, then run the 5-concern staging smoke if both pass. Stripe Checkout verification remains separately blocked on provisioning staging test secrets and callback URLs.
+
 ## 2026-07-01 Staging Release Deploy And Runtime Fixes
 
 - Active objective: deploy the validated GALA/release branch to staging, apply the pending additive data contract, and verify the sponsor-facing Web3D baseline end to end.

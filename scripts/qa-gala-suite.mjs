@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { spawn } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
@@ -211,6 +211,22 @@ function assertNoActiveConcernContradictions(checks) {
   return duplicates;
 }
 
+function terminateCheckProcessTree(child) {
+  if (!child.pid || child.exitCode !== null) {
+    return;
+  }
+
+  if (process.platform === 'win32') {
+    spawnSync('taskkill.exe', ['/PID', String(child.pid), '/T', '/F'], {
+      stdio: 'ignore',
+      windowsHide: true,
+    });
+    return;
+  }
+
+  child.kill('SIGTERM');
+}
+
 function runCheck(check, options) {
   const scriptPath = path.resolve(process.cwd(), 'scripts', check.script);
   const checkOutDir = path.join(options.outDir, check.concern);
@@ -233,7 +249,7 @@ function runCheck(check, options) {
     let timedOut = false;
     const timer = setTimeout(() => {
       timedOut = true;
-      child.kill('SIGTERM');
+      terminateCheckProcessTree(child);
     }, options.timeoutMs);
 
     child.stdout.on('data', (chunk) => {

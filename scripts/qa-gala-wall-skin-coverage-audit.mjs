@@ -5,6 +5,7 @@ import path from 'node:path';
 import process from 'node:process';
 import { chromium } from 'playwright';
 import sharp from 'sharp';
+import { navigateForGalaAudit } from './qa-gala-browser-navigation.mjs';
 
 const DEFAULT_BASE_URL = 'http://127.0.0.1:5173';
 const DEFAULT_OUT_DIR = 'C:\\qa\\visual-evidence\\gala-wall-skin-architecture-remediation-local';
@@ -148,7 +149,7 @@ async function collectInventory(page) {
 }
 
 async function captureRoute(page, baseUrl, route, screenshotPath) {
-  const response = await page.goto(`${baseUrl}${route}`, { timeout: 60000, waitUntil: 'domcontentloaded' });
+  const response = await navigateForGalaAudit(page, `${baseUrl}${route}`);
   await waitForGalaScene(page);
   await page.waitForTimeout(900);
   await page.screenshot({ fullPage: false, path: screenshotPath });
@@ -270,24 +271,34 @@ async function main() {
     executablePath: fs.existsSync(CHROME_PATH) ? CHROME_PATH : undefined,
     headless: true,
   });
-  const page = await browser.newPage({ viewport: VIEWPORT });
+  const context = await browser.newContext({
+    serviceWorkers: 'block',
+    viewport: VIEWPORT,
+  });
+  const page = await context.newPage();
+  let exteriorInventory;
+  let exteriorStatus;
+  let interiorInventory;
+  let interiorStatus;
 
-  const exteriorFront = path.join(options.outDir, 'exterior-front-after-wall-skin-fix.png');
-  const exteriorStatus = await captureRoute(page, options.baseUrl, ROUTES.exterior, exteriorFront);
-  const exteriorInventory = await collectInventory(page);
-  await sharp(exteriorFront)
-    .extract({ height: 430, left: 40, top: 245, width: 1060 })
-    .toFile(path.join(options.outDir, 'exterior-detail-after-wall-skin-fix.png'));
-  await frameShot(page, 'exteriorSideAngle', path.join(options.outDir, 'exterior-side-after-wall-skin-fix.png'));
+  try {
+    const exteriorFront = path.join(options.outDir, 'exterior-front-after-wall-skin-fix.png');
+    exteriorStatus = await captureRoute(page, options.baseUrl, ROUTES.exterior, exteriorFront);
+    exteriorInventory = await collectInventory(page);
+    await sharp(exteriorFront)
+      .extract({ height: 430, left: 40, top: 245, width: 1060 })
+      .toFile(path.join(options.outDir, 'exterior-detail-after-wall-skin-fix.png'));
+    await frameShot(page, 'exteriorSideAngle', path.join(options.outDir, 'exterior-side-after-wall-skin-fix.png'));
 
-  const interiorScreenshot = path.join(options.outDir, 'interior-after-wall-skin-fix.png');
-  const interiorStatus = await captureRoute(page, options.baseUrl, ROUTES.interior, interiorScreenshot);
-  const interiorInventory = await collectInventory(page);
-  await sharp(interiorScreenshot)
-    .extract({ height: 560, left: 80, top: 165, width: 850 })
-    .toFile(path.join(options.outDir, 'interior-detail-after-wall-skin-fix.png'));
-
-  await browser.close();
+    const interiorScreenshot = path.join(options.outDir, 'interior-after-wall-skin-fix.png');
+    interiorStatus = await captureRoute(page, options.baseUrl, ROUTES.interior, interiorScreenshot);
+    interiorInventory = await collectInventory(page);
+    await sharp(interiorScreenshot)
+      .extract({ height: 560, left: 80, top: 165, width: 850 })
+      .toFile(path.join(options.outDir, 'interior-detail-after-wall-skin-fix.png'));
+  } finally {
+    await browser.close();
+  }
 
   const exteriorAudit = auditExteriorInventory(exteriorInventory);
   const interiorAudit = auditInteriorInventory(interiorInventory, exteriorInventory);

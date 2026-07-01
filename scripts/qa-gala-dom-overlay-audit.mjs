@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 import { chromium } from 'playwright';
+import { navigateForGalaAudit } from './qa-gala-browser-navigation.mjs';
 
 const DEFAULT_BASE_URL = 'http://127.0.0.1:5173';
 const DEFAULT_OUT_DIR = 'C:\\qa\\visual-evidence\\gala-label-overlay-remediation-local';
@@ -58,7 +59,7 @@ function copyAuditReference(outDir) {
 }
 
 async function captureRoute(page, url, target) {
-  const response = await page.goto(url, { timeout: 60000, waitUntil: 'domcontentloaded' });
+  const response = await navigateForGalaAudit(page, url);
   await page.waitForTimeout(4500);
   await page.screenshot({ fullPage: false, path: target });
   return response?.status() ?? null;
@@ -281,7 +282,11 @@ async function main() {
     executablePath: fs.existsSync(CHROME_PATH) ? CHROME_PATH : undefined,
     headless: true,
   });
-  const page = await browser.newPage({ viewport: VIEWPORT });
+  const context = await browser.newContext({
+    serviceWorkers: 'block',
+    viewport: VIEWPORT,
+  });
+  const page = await context.newPage();
   const generatedAt = new Date().toISOString();
   const routeResults = {};
 
