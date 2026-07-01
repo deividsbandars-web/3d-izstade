@@ -62,7 +62,7 @@
   - QA tooling is hardened locally and verified against staging; no product renderer, camera/FOV/lookAt, geometry, collision, movement, door runtime, pricing, auth, payment, frontend/backend deployment, Supabase mutation, Pixel Streaming, Unreal, staging alias, or production state was changed.
   - `productVisualAccepted=false`.
 - Next step:
-  - Stripe Checkout verification remains blocked on provisioning staging test secrets and callback URLs.
+  - No GALA QA follow-up remains from this item; Stripe Checkout follow-through is now covered by the completed `2026-07-01 Booth Slot Stripe Staging Verification` item above.
 
 ## 2026-07-01 Staging Release Deploy And Runtime Fixes
 
@@ -74,7 +74,7 @@
   - Deployed frontend commit `5ee0332` as Vercel deployment `dpl_H1KtjcxKvUt33i4gi4gN3JnzVk57` and promoted it only to `staging.30sek24.com`.
   - Diagnosed the initial staging GALA blank canvas: the whole scene was behind one Suspense boundary while many 1K PBR and furniture assets took 28-36+ seconds to load from staging.
   - Added a shared non-Suspense progressive texture loader and local GLTF furniture proxy fallbacks so construction geometry renders before PBR/furniture assets finish loading.
-  - Reconfirmed by name-only checks that the remote Hetzner `.env.docker` and Doppler `stg` config do not contain `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `BILLING_CHECKOUT_SUCCESS_URL`, `BILLING_CHECKOUT_CANCEL_URL`, or `BILLING_PUBLIC_APP_URL`. Follow-up Doppler `prd`, `dev`, and `dev_personal` checks found Stripe secrets, but the available secret keys classify as `live`, not `test`; no config exposes staging-safe billing callback/public-app URL names. Real staging Stripe Checkout remains unavailable until staging test Stripe secrets and staging-safe callback URLs are provisioned.
+  - Initial Stripe verification was blocked because the remote Hetzner `.env.docker` and Doppler `stg` config did not yet contain staging test Stripe credentials or billing callback URLs. This has since been resolved and verified in the `2026-07-01 Booth Slot Stripe Staging Verification` item above.
 - Validation:
   - `npm.cmd run lint` passed.
   - `npm.cmd run check:expo-boundaries` passed.
@@ -101,7 +101,7 @@
   - `productVisualAccepted=false`.
   - No production deploy/promotion, production Supabase mutation, camera/FOV/lookAt change, movement-physics change, collision-geometry change, door-runtime change, GALA construction geometry change, auth-policy weakening, Pixel Streaming change, or Unreal change was made.
 - Next step:
-  - Provision Stripe staging test secrets and billing callback URLs, then run one authenticated booth reservation through Stripe test Checkout and webhook finalization. Do not copy the Doppler `prd` live Stripe key into staging for this test.
+  - The authenticated booth reservation, Stripe test Checkout, signed webhook finalization, and cleanup-safe staging evidence are complete in the `2026-07-01 Booth Slot Stripe Staging Verification` item above. Do not mix Doppler `prd` live Stripe keys into staging.
 
 ## 2026-07-01 Staging Read-Only Release Preflight
 
