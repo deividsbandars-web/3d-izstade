@@ -1,5 +1,38 @@
 # Current Task
 
+## 2026-07-02 Modular Home Start Composition And Mobile Load Perception Fix
+
+- Active objective: investigate the modular-home studio appearing only partially loaded and fix the visible cause without changing GALA construction assets, renderer ownership, quote, pricing, backend, staging, or production state.
+- Diagnosis:
+  - Staging and production network probes showed no missing modular-home assets: route status `200`, no failed requests, no page errors, and no bad GALA model/texture responses.
+  - Staging fresh-cache route probes loaded the GALA scene with 227 exterior meshes and 273 interior meshes; production loaded 266 meshes in both exterior and interior.
+  - The visible problem was composition/layout, not an asset load failure: the exterior start camera was aimed too close to the facade, and mobile rendered both the route card and the large configurator rail over the canvas.
+- Implementation status:
+  - Moved the modular-home exterior start view farther back and off-axis, with a separate look-at height, so first load reads as a complete house instead of a wall close-up.
+  - Hid the duplicated modular-home route card on touch/mobile viewports.
+  - Converted the mobile configurator overlay into a compact bottom sheet above the price bar, kept it scrollable, and removed desktop-only `HomeDesignInstanceShell` guidance from mobile.
+  - Left the GALA construction renderer, GLTF furniture loading, progressive textures, collision, pricing, quote, backend, staging alias, production alias, Pixel Streaming, and Unreal flows unchanged.
+- Validation:
+  - Staging diagnostic before the fix: exterior `200`, 0 failed requests, 227 meshes; interior `200`, 0 failed requests, 273 meshes.
+  - Production diagnostic before the fix: exterior/interior `200`, 0 failed requests, 266 meshes.
+  - Local post-fix desktop/mobile screenshot probes passed with 0 failed requests; mobile route card rect is zero/hidden, mobile duplicate `HomeDesignInstanceShell` is absent, and the GALA inventory remains 227 meshes on exterior.
+  - `npm.cmd run lint` passed.
+  - `npm.cmd run build` passed.
+  - `npm.cmd run check:bundle-budget` passed.
+  - `npm.cmd run check:all` passed.
+  - `node scripts/qa-gala-visual-acceptance-local.mjs --base-url=http://127.0.0.1:4173 --out-dir=artifacts/modular-home-start-composition-gala-visual-preflight` passed for exterior, interior, quote review, start outside, and start inside; `productVisualAccepted=false`.
+- Touched files:
+  - `src/modules/expo/runtime/app/Expo3D.tsx`
+  - `src/modules/expo/runtime/modularHome/ModularHomeDemoOverlay.tsx`
+  - `src/pages/modularHome/ModularHomeStudioPage.tsx`
+  - `docs/CURRENT_TASK.md`
+- Product/release status:
+  - The modular-home studio no longer presents the initial exterior view as a partial facade load, and mobile no longer stacks duplicate top/rail overlays over the first canvas view.
+  - No production deploy/promotion, production Supabase mutation, live Stripe key usage, GALA asset/geometry change, payment change, auth change, Pixel Streaming change, or Unreal change was made.
+  - `productVisualAccepted=false`.
+- Next step:
+  - Deploy this frontend fix to staging when authorized, then rerun the staging modular-home screenshot probe and GALA visual preflight against `https://staging.30sek24.com`.
+
 ## 2026-07-01 Final Release Gate And Production Go/No-Go Refresh
 
 - Active objective: finish the remaining release-plan sweep after staging Stripe/backend verification, document the production go/no-go state, and avoid changing production until the human product gate is explicit.

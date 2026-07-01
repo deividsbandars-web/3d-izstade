@@ -177,7 +177,7 @@ function ModularHomeLivePriceBanner({
         background: 'linear-gradient(135deg, rgba(251, 191, 36, 0.94), rgba(34, 197, 94, 0.88))',
         border: '1px solid rgba(255, 247, 237, 0.42)',
         borderRadius: isTouchDevice ? '14px' : '16px',
-        bottom: isTouchDevice ? 'max(96px, calc(env(safe-area-inset-bottom) + 88px))' : '16px',
+        bottom: isTouchDevice ? 'max(10px, calc(env(safe-area-inset-bottom) + 10px))' : '16px',
         boxShadow: '0 -10px 26px rgba(2, 6, 23, 0.34), 0 12px 32px rgba(2, 6, 23, 0.28)',
         color: '#111827',
         display: 'grid',
@@ -386,16 +386,16 @@ export function ModularHomeDemoOverlay({ isTouchDevice = false }: ModularHomeDem
         position: 'absolute',
         left: isTouchDevice ? '10px' : 'auto',
         right: isTouchDevice ? '10px' : '12px',
-        top: isTouchDevice ? '10px' : '12px',
-        bottom: isTouchDevice ? 'max(96px, calc(env(safe-area-inset-bottom) + 88px))' : '16px',
+        top: isTouchDevice ? 'auto' : '12px',
+        bottom: isTouchDevice ? 'max(112px, calc(env(safe-area-inset-bottom) + 104px))' : '16px',
         zIndex: 116,
         width: isTouchDevice ? 'auto' : 'clamp(248px, 18vw, 286px)',
-        maxHeight: isTouchDevice ? 'calc(100dvh - 166px)' : 'calc(100vh - 26px)',
+        maxHeight: isTouchDevice ? 'min(24dvh, 220px)' : 'calc(100vh - 26px)',
         maxWidth: isTouchDevice ? 'calc(100vw - 24px)' : 'calc(100vw - 24px)',
         overscrollBehavior: 'contain',
         overflowY: 'auto',
         padding: isTouchDevice ? '12px 12px' : '10px 11px',
-        paddingBottom: isTouchDevice ? '92px' : '90px',
+        paddingBottom: isTouchDevice ? '12px' : '90px',
         border: '1px solid rgba(251, 191, 36, 0.42)',
         borderRadius: isTouchDevice ? '18px' : '20px',
         background:
@@ -431,10 +431,10 @@ export function ModularHomeDemoOverlay({ isTouchDevice = false }: ModularHomeDem
           >
             Modular home preview
           </div>
-          <div style={{ fontSize: isTouchDevice ? '0.96rem' : '1.06rem', fontWeight: 950, letterSpacing: '-0.02em', lineHeight: 1.05, marginTop: '5px' }}>
+          <div style={{ fontSize: isTouchDevice ? '0.84rem' : '1.06rem', fontWeight: 950, letterSpacing: 0, lineHeight: 1.08, marginTop: '5px' }}>
             {instanceTitle}
           </div>
-          <div style={{ marginTop: '6px', color: '#fed7aa', fontSize: isTouchDevice ? '0.68rem' : '0.72rem', fontWeight: 800, lineHeight: 1.3 }}>
+          <div style={{ marginTop: '6px', color: '#fed7aa', fontSize: isTouchDevice ? '0.6rem' : '0.72rem', fontWeight: 800, lineHeight: 1.28 }}>
             {instanceSubtitle}
           </div>
         </div>
@@ -473,10 +473,10 @@ export function ModularHomeDemoOverlay({ isTouchDevice = false }: ModularHomeDem
               color: '#f8fafc',
               cursor: 'pointer',
               font: 'inherit',
-              fontSize: '0.6rem',
+              fontSize: isTouchDevice ? '0.56rem' : '0.6rem',
               fontWeight: 950,
               letterSpacing: '0.08em',
-              minHeight: isTouchDevice ? '44px' : '36px',
+              minHeight: isTouchDevice ? '40px' : '36px',
               padding: '7px 10px',
               textTransform: 'uppercase',
               whiteSpace: 'nowrap',
@@ -495,7 +495,7 @@ export function ModularHomeDemoOverlay({ isTouchDevice = false }: ModularHomeDem
         />
       ) : null}
 
-      {homeStudioEnabled ? (
+      {homeStudioEnabled && !isTouchDevice ? (
         <>
           <HomeDesignInstanceShell
             activeSection={activeHomeDesignSection}

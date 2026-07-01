@@ -89,7 +89,17 @@ export default function ModularHomeStudioPage() {
 
   return (
     <div style={{ background: '#020617', height: '100dvh', minHeight: '100vh', overflow: 'hidden', position: 'relative', width: '100%' }}>
+      <style>
+        {`
+          @media (max-width: 720px), (pointer: coarse) {
+            [data-modular-home-studio-route-card="true"] {
+              display: none !important;
+            }
+          }
+        `}
+      </style>
       <div
+        data-modular-home-studio-route-card="true"
         style={{
           display: 'grid',
           gap: '5px',

@@ -24,10 +24,7 @@ import { GALA_PREVIEW_POSITION, GALA_PREVIEW_SCALE } from '../modularHome/GalaHo
 import { GALA_GEOMETRY_LEVELS, planXToLocalX } from '../modularHome/GalaFloorplan';
 import { MODULAR_HOME_PREVIEW_CONFIG } from '../modularHome/modularHomeConfig';
 
-const HOME_STUDIO_EYE_HEIGHT_Y = GALA_PREVIEW_POSITION.y
-  + (GALA_GEOMETRY_LEVELS.cameraEyeHeightMeters * GALA_PREVIEW_SCALE);
-
-function galaPlanToWorld(planX: number, planZ: number): [number, number, number] {
+function galaPlanPointToWorld(planX: number, planY: number, planZ: number): [number, number, number] {
   const unrotatedX = GALA_PREVIEW_POSITION.x + (planXToLocalX(planX) * GALA_PREVIEW_SCALE);
   const unrotatedZ = GALA_PREVIEW_POSITION.z + (planZ * GALA_PREVIEW_SCALE);
   const cos = Math.cos(MODULAR_HOME_PREVIEW_CONFIG.rotationY);
@@ -35,15 +32,20 @@ function galaPlanToWorld(planX: number, planZ: number): [number, number, number]
 
   return [
     (unrotatedX * cos) + (unrotatedZ * sin),
-    HOME_STUDIO_EYE_HEIGHT_Y,
+    GALA_PREVIEW_POSITION.y + (planY * GALA_PREVIEW_SCALE),
     (-unrotatedX * sin) + (unrotatedZ * cos),
   ];
 }
 
+function galaPlanToWorld(planX: number, planZ: number): [number, number, number] {
+  return galaPlanPointToWorld(planX, GALA_GEOMETRY_LEVELS.cameraEyeHeightMeters, planZ);
+}
+
 const HOME_STUDIO_EXTERIOR_START_VIEW: ExpoStartView = {
   // Home studio walk mode starts at human eye height; QA shot presets remain separate and unchanged.
-  lookAt: galaPlanToWorld(4.64, -0.25),
-  position: galaPlanToWorld(4.64, -9.2),
+  // Start farther back and off-axis so first load reads as a complete house, not a facade close-up.
+  lookAt: galaPlanPointToWorld(5.1, 1.45, 0.05),
+  position: galaPlanToWorld(2.0, -16.8),
   source: 'arrival-main',
 };
 
