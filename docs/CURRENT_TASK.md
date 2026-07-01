@@ -1,5 +1,44 @@
 # Current Task
 
+## 2026-07-01 Staging Release Deploy And Runtime Fixes
+
+- Active objective: deploy the validated GALA/release branch to staging, apply the pending additive data contract, and verify the sponsor-facing Web3D baseline end to end.
+- Implementation status:
+  - Applied `20260630170000_billing_stripe_checkout.sql` and `20260630183000_booth_slot_marketplace.sql` to staging Supabase project `aasovfczmqytdtugcrmh`; the post-deploy dry-run reports `Remote database is up to date`.
+  - Added the Stripe/billing runtime variables to `docker-compose.staging.yml` and deployed backend commit `3fa6573ea861230c9ac0a89de8b055e8e3861d13`.
+  - Fixed the first deployed marketplace failure (`BOOTH_SLOT_BANK_MISSING`) by packaging `docs/booth-slot-bank.json` in both the backend deploy archive and `Dockerfile.full` runtime image.
+  - Deployed frontend commit `5ee0332` as Vercel deployment `dpl_H1KtjcxKvUt33i4gi4gN3JnzVk57` and promoted it only to `staging.30sek24.com`.
+  - Diagnosed the initial staging GALA blank canvas: the whole scene was behind one Suspense boundary while many 1K PBR and furniture assets took 28-36+ seconds to load from staging.
+  - Added a shared non-Suspense progressive texture loader and local GLTF furniture proxy fallbacks so construction geometry renders before PBR/furniture assets finish loading.
+  - Confirmed the remote Hetzner `.env.docker` and Doppler `stg` config do not contain `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, or billing checkout URLs. Real Stripe Checkout remains intentionally unavailable until staging test secrets are provisioned.
+- Validation:
+  - `npm.cmd run lint` passed.
+  - `npm.cmd run check:expo-boundaries` passed.
+  - `npm.cmd run check:bundle-budget` passed.
+  - `npm.cmd run build` passed.
+  - `node scripts/qa-gala-suite.mjs --base-url=http://127.0.0.1:4173 --profile=release ...` passed all 10 canonical concerns after the progressive-loading fix.
+  - `npm.cmd run check:staging-readiness -- --json` passed after final alias promotion, including clean Supabase dry-run and 11-check publication smoke cleanup; optional legacy Pixel Streaming still returns warning-level HTTP 401.
+  - `npm.cmd run check:expo-staging-browser-smoke -- --json` passed all cases with no runtime exceptions, browser error entries, automatic lead submissions, or visible encoding fragments.
+  - Staging quote contract passed end to end; temporary quote cleanup reported `deleted=true`.
+  - `GET /api/expo/booth-slots` returns HTTP 200 with 84 slots; unauthenticated reserve returns HTTP 401; the mobile marketplace route renders `84 slots in current filter` with no browser errors.
+  - Direct staging GALA evidence after the fix returned HTTP 200, reached 270 inventory objects in 18.8 seconds, and produced `artifacts/staging-gala-progressive-textures/studio-ready.png` with visible interior geometry.
+  - The final staging GALA smoke passed ownership, floor-ground isolation, and geometry-clip. DOM-overlay and wall-skin runs captured their primary GALA views but remained red on later remote `page.goto(..., waitUntil: "domcontentloaded")` timeouts; this is residual multi-route QA navigation instability, not a blank-scene recurrence.
+- Touched files:
+  - `docker-compose.staging.yml`
+  - `backend-server/Dockerfile.full`
+  - `scripts/deploy-staging-backend-hetzner.ps1`
+  - `src/modules/expo/runtime/modularHome/useProgressiveTextureSet.ts`
+  - `src/modules/expo/runtime/modularHome/GalaInteriorFurniture.tsx`
+  - `src/modules/expo/runtime/modularHome/construction/GalaConstructionPbrTextures.ts`
+  - `src/modules/expo/runtime/modularHome/construction/GalaRoomAssembly.tsx`
+  - `docs/CURRENT_TASK.md`
+- Product/release status:
+  - The sponsor-facing Web3D staging frontend, backend, scene API, publication flow, quote contract, and booth marketplace availability route are deployed and healthy.
+  - `productVisualAccepted=false`.
+  - No production deploy/promotion, production Supabase mutation, camera/FOV/lookAt change, movement-physics change, collision-geometry change, door-runtime change, GALA construction geometry change, auth-policy weakening, Pixel Streaming change, or Unreal change was made.
+- Next step:
+  - Provision Stripe staging test secrets and billing callback URLs, then run one authenticated booth reservation through Stripe test Checkout and webhook finalization. Separately harden the multi-route GALA QA scripts so remote navigation failures always close browsers and produce deterministic deployed-suite results.
+
 ## 2026-07-01 Staging Read-Only Release Preflight
 
 - Active objective: verify the currently deployed staging frontend and API before authorizing a new staging deployment of the validated GALA/release branch.
