@@ -42,7 +42,7 @@
   - Deployed frontend commit `5ee0332` as Vercel deployment `dpl_H1KtjcxKvUt33i4gi4gN3JnzVk57` and promoted it only to `staging.30sek24.com`.
   - Diagnosed the initial staging GALA blank canvas: the whole scene was behind one Suspense boundary while many 1K PBR and furniture assets took 28-36+ seconds to load from staging.
   - Added a shared non-Suspense progressive texture loader and local GLTF furniture proxy fallbacks so construction geometry renders before PBR/furniture assets finish loading.
-  - Reconfirmed by name-only checks that the remote Hetzner `.env.docker` and Doppler `stg` config do not contain `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `BILLING_CHECKOUT_SUCCESS_URL`, `BILLING_CHECKOUT_CANCEL_URL`, or `BILLING_PUBLIC_APP_URL`. Real Stripe Checkout remains intentionally unavailable until staging test secrets are provisioned.
+  - Reconfirmed by name-only checks that the remote Hetzner `.env.docker` and Doppler `stg` config do not contain `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `BILLING_CHECKOUT_SUCCESS_URL`, `BILLING_CHECKOUT_CANCEL_URL`, or `BILLING_PUBLIC_APP_URL`. A follow-up Doppler `prd` check found `STRIPE_SECRET`, `STRIPE_SECRET_KEY`, and `STRIPE_WEBHOOK_SECRET`, but the secret key is a `live` key and `prd` still has no billing callback/public-app URL names. Real staging Stripe Checkout remains unavailable until staging test Stripe secrets and staging-safe callback URLs are provisioned.
 - Validation:
   - `npm.cmd run lint` passed.
   - `npm.cmd run check:expo-boundaries` passed.
@@ -69,7 +69,7 @@
   - `productVisualAccepted=false`.
   - No production deploy/promotion, production Supabase mutation, camera/FOV/lookAt change, movement-physics change, collision-geometry change, door-runtime change, GALA construction geometry change, auth-policy weakening, Pixel Streaming change, or Unreal change was made.
 - Next step:
-  - Provision Stripe staging test secrets and billing callback URLs, then run one authenticated booth reservation through Stripe test Checkout and webhook finalization. Separately harden the multi-route GALA QA scripts so remote navigation failures always close browsers and produce deterministic deployed-suite results.
+  - Provision Stripe staging test secrets and billing callback URLs, then run one authenticated booth reservation through Stripe test Checkout and webhook finalization. Do not copy the Doppler `prd` live Stripe key into staging for this test.
 
 ## 2026-07-01 Staging Read-Only Release Preflight
 
