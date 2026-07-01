@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { RoundedBox, useGLTF, useTexture } from '@react-three/drei';
+import { RoundedBox, useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 import {
   planXToLocalX,
@@ -9,6 +9,7 @@ import {
   type Rect,
 } from './GalaFloorplan';
 import type { GalaInteriorVisualSpec } from './GalaHouseConfig';
+import { useProgressiveTextureSet } from './useProgressiveTextureSet';
 
 const GALA_SOFA_MODEL_URL = '/models/gala/sofa_02_1k/sofa_02_1k.gltf';
 const GALA_COFFEE_TABLE_MODEL_URL = '/models/gala/modern_coffee_table_01_1k/modern_coffee_table_01_1k.gltf';
@@ -44,12 +45,12 @@ type FurnitureTextureUrls = {
 };
 
 type FurniturePbrMaps = {
-  aoMap: THREE.Texture;
-  map: THREE.Texture;
-  metalnessMap: THREE.Texture;
-  normalMap: THREE.Texture;
-  normalScale: THREE.Vector2;
-  roughnessMap: THREE.Texture;
+  aoMap?: THREE.Texture;
+  map?: THREE.Texture;
+  metalnessMap?: THREE.Texture;
+  normalMap?: THREE.Texture;
+  normalScale?: THREE.Vector2;
+  roughnessMap?: THREE.Texture;
 };
 
 function isMesh(object: THREE.Object3D): object is THREE.Mesh {
@@ -176,15 +177,21 @@ function useFurniturePbrMaps(
   tileSizeM: number,
   verticalTexture: boolean,
 ): FurniturePbrMaps {
-  const [diffuseSource, normalSource, armSource] = useTexture([
+  const texturePaths = useMemo(() => [
     textureUrls.diffuse,
     textureUrls.normal,
     textureUrls.arm,
-  ]);
+  ], [textureUrls.arm, textureUrls.diffuse, textureUrls.normal]);
+  const textureSet = useProgressiveTextureSet(texturePaths);
   const repeatX = size[0] / tileSizeM;
   const repeatY = (verticalTexture ? size[1] : Math.max(size[1], size[2])) / tileSizeM;
 
   return useMemo(() => {
+    if (!textureSet) {
+      return {};
+    }
+
+    const [diffuseSource, normalSource, armSource] = textureSet;
     const map = resolveConfiguredFurnitureTexture(diffuseSource, THREE.SRGBColorSpace, repeatX, repeatY);
     const normalMap = resolveConfiguredFurnitureTexture(normalSource, THREE.NoColorSpace, repeatX, repeatY);
     const armMap = resolveConfiguredFurnitureTexture(armSource, THREE.NoColorSpace, repeatX, repeatY);
@@ -197,7 +204,7 @@ function useFurniturePbrMaps(
       normalScale: new THREE.Vector2(0.45, 0.45),
       roughnessMap: armMap,
     };
-  }, [armSource, diffuseSource, normalSource, repeatX, repeatY]);
+  }, [repeatX, repeatY, textureSet]);
 }
 
 function buildFurnitureLocalBounds(position: [number, number, number], size: [number, number, number]) {

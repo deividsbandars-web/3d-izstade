@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import { resolveGalaInteriorVisual, type GalaHouseVisualConfig } from '../GalaHouseConfig';
 import {
   GalaBedFabricBox,
@@ -74,13 +75,26 @@ export function GalaRoomAssembly({ detailLevel = 'full', visualConfig }: GalaRoo
           userData={{ ...FURNITURE_CLEARANCE_USER_DATA, furnitureAnchor: 'againstWall', furnitureIsReadable: true, furnitureLowDetailProxy: true, furnitureNotFloating: true }}
         />
       ) : (
-        <GalaLivingSofaModel
-          name="gala-construction-living-sofa-high-quality-gltf"
-          position={[layout.livingSofaSeat.position[0], yAtFloor(0.64), layout.livingSofaSeat.position[2]]}
-          scale={[1.28, 1.12, 0.96]}
-          size={[1.72, 1.15, 0.86]}
-          userData={{ ...FURNITURE_CLEARANCE_USER_DATA, furnitureAnchor: 'againstWall', furnitureIsReadable: true, furnitureNotFloating: true, replacesPrimitiveSofaComposition: true }}
-        />
+        <Suspense
+          fallback={(
+            <GalaConstructionBox
+              castShadow={false}
+              color={visual.sofaColor}
+              name="gala-construction-living-sofa-loading-readable-proxy"
+              position={[layout.livingSofaSeat.position[0], yAtFloor(0.42), layout.livingSofaSeat.position[2]]}
+              size={[1.72, 0.48, 0.86]}
+              userData={{ ...FURNITURE_CLEARANCE_USER_DATA, furnitureAnchor: 'againstWall', furnitureIsReadable: true, furnitureLoadingProxy: true, furnitureNotFloating: true }}
+            />
+          )}
+        >
+          <GalaLivingSofaModel
+            name="gala-construction-living-sofa-high-quality-gltf"
+            position={[layout.livingSofaSeat.position[0], yAtFloor(0.64), layout.livingSofaSeat.position[2]]}
+            scale={[1.28, 1.12, 0.96]}
+            size={[1.72, 1.15, 0.86]}
+            userData={{ ...FURNITURE_CLEARANCE_USER_DATA, furnitureAnchor: 'againstWall', furnitureIsReadable: true, furnitureNotFloating: true, replacesPrimitiveSofaComposition: true }}
+          />
+        </Suspense>
       )}
       {reducedDetail ? (
         <GalaConstructionBox
@@ -92,12 +106,25 @@ export function GalaRoomAssembly({ detailLevel = 'full', visualConfig }: GalaRoo
           userData={{ ...FURNITURE_CLEARANCE_USER_DATA, furnitureIsReadable: true, furnitureLowDetailProxy: true, furnitureNotFloating: true }}
         />
       ) : (
-        <GalaCoffeeTableModel
-          name="gala-construction-living-coffee-table-high-quality-gltf"
-          position={[layout.livingCoffeeTableTop.position[0], yAtFloor(0.215), layout.livingCoffeeTableTop.position[2]]}
-          size={[0.78, 0.43, 0.48]}
-          userData={{ ...FURNITURE_CLEARANCE_USER_DATA, furnitureIsReadable: true, furnitureNotFloating: true, replacesPrimitiveCoffeeTableComposition: true }}
-        />
+        <Suspense
+          fallback={(
+            <GalaConstructionBox
+              castShadow={false}
+              color={visual.tableColor}
+              name="gala-construction-living-coffee-table-loading-readable-proxy"
+              position={[layout.livingCoffeeTableTop.position[0], yAtFloor(0.215), layout.livingCoffeeTableTop.position[2]]}
+              size={[0.78, 0.16, 0.48]}
+              userData={{ ...FURNITURE_CLEARANCE_USER_DATA, furnitureIsReadable: true, furnitureLoadingProxy: true, furnitureNotFloating: true }}
+            />
+          )}
+        >
+          <GalaCoffeeTableModel
+            name="gala-construction-living-coffee-table-high-quality-gltf"
+            position={[layout.livingCoffeeTableTop.position[0], yAtFloor(0.215), layout.livingCoffeeTableTop.position[2]]}
+            size={[0.78, 0.43, 0.48]}
+            userData={{ ...FURNITURE_CLEARANCE_USER_DATA, furnitureIsReadable: true, furnitureNotFloating: true, replacesPrimitiveCoffeeTableComposition: true }}
+          />
+        </Suspense>
       )}
 
       <GalaConstructionBox color={visual.cabinetColor} name="gala-construction-kitchen-base-cabinets-against-south-wall" position={layout.kitchenBaseCabinets.position} size={layout.kitchenBaseCabinets.size} userData={{ ...FURNITURE_CLEARANCE_USER_DATA, furnitureAnchor: 'againstWall', kitchenAlignedToWall: true }} />

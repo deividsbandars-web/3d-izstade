@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
-import { useTexture } from '@react-three/drei';
 import * as THREE from 'three';
+import { useProgressiveTextureSet } from '../useProgressiveTextureSet';
 
 type GalaConstructionTextureKind =
   | 'floor'
@@ -212,13 +212,21 @@ export function useGalaConstructionPbrTextures(
   const paths = resolveGalaConstructionTexturePaths(kind, variant);
   const normalScaleValue = paths.normalScale ?? 0.72;
   const repeat = paths.repeat;
-  const [diffuseSource, normalSource, armSource] = useTexture([
+  const texturePaths = useMemo(() => [
     paths.diffuse,
     paths.normal,
     paths.arm,
-  ]);
+  ], [paths.arm, paths.diffuse, paths.normal]);
+  const textureSet = useProgressiveTextureSet(texturePaths);
 
   return useMemo(() => {
+    if (!textureSet) {
+      return {
+        triplanarScale: paths.triplanarScale,
+      };
+    }
+
+    const [diffuseSource, normalSource, armSource] = textureSet;
     const map = configuredTexture(diffuseSource, THREE.SRGBColorSpace, repeat);
     const normalMap = configuredTexture(normalSource, THREE.NoColorSpace, repeat);
     const armMap = configuredTexture(armSource, THREE.NoColorSpace, repeat);
@@ -233,5 +241,5 @@ export function useGalaConstructionPbrTextures(
       roughnessMap: armMap,
       triplanarScale: paths.triplanarScale,
     };
-  }, [armSource, diffuseSource, normalScaleValue, normalSource, paths.triplanarScale, repeat]);
+  }, [normalScaleValue, paths.triplanarScale, repeat, textureSet]);
 }
