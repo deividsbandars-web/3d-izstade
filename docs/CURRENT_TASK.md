@@ -11,7 +11,10 @@
   - Moved the modular-home exterior start view farther back and off-axis, with a separate look-at height, so first load reads as a complete house instead of a wall close-up.
   - Hid the duplicated modular-home route card on touch/mobile viewports.
   - Converted the mobile configurator overlay into a compact bottom sheet above the price bar, kept it scrollable, and removed desktop-only `HomeDesignInstanceShell` guidance from mobile.
-  - Left the GALA construction renderer, GLTF furniture loading, progressive textures, collision, pricing, quote, backend, staging alias, production alias, Pixel Streaming, and Unreal flows unchanged.
+  - Deployed the frontend fix to staging through a prebuilt Vercel deployment after the source-upload preview build failed because `.vercelignore` excludes `scripts/` while the remote build still runs `scripts/check-frontend-env.mjs`.
+  - Promoted only the staging alias: `https://staging.30sek24.com` now points to Vercel deployment `dpl_3DcJ43CFBuQCYDyMAh1QmrAj57EF` (`https://app-staging-14ypih9ix-esaukans-6934s-projects.vercel.app`).
+  - Hardened `scripts/qa-gala-visual-acceptance-local.mjs` after post-deploy validation exposed the same remote WebGL navigation issue seen in earlier GALA audits: the script now uses the shared `navigateForGalaAudit` helper, blocks service workers, and captures each visual route in a fresh Playwright page.
+  - Left the GALA construction renderer, GLTF furniture loading, progressive textures, collision, pricing, quote, backend, production alias, Pixel Streaming, and Unreal flows unchanged.
 - Validation:
   - Staging diagnostic before the fix: exterior `200`, 0 failed requests, 227 meshes; interior `200`, 0 failed requests, 273 meshes.
   - Production diagnostic before the fix: exterior/interior `200`, 0 failed requests, 266 meshes.
@@ -21,17 +24,28 @@
   - `npm.cmd run check:bundle-budget` passed.
   - `npm.cmd run check:all` passed.
   - `node scripts/qa-gala-visual-acceptance-local.mjs --base-url=http://127.0.0.1:4173 --out-dir=artifacts/modular-home-start-composition-gala-visual-preflight` passed for exterior, interior, quote review, start outside, and start inside; `productVisualAccepted=false`.
+  - `npm.cmd run deploy:staging:preview` failed before deploy upload completion on Vercel remote build with `Cannot find module '/vercel/path0/scripts/check-frontend-env.mjs'`; no alias was promoted from that failed preview.
+  - `npm.cmd run deploy:staging:preview:prebuilt` passed and produced `https://app-staging-14ypih9ix-esaukans-6934s-projects.vercel.app` / `dpl_3DcJ43CFBuQCYDyMAh1QmrAj57EF`.
+  - Direct preview URL probing was not usable as application evidence because the Vercel preview URL redirected to Vercel login/protection; public staging alias validation was used after promotion.
+  - `npm.cmd run promote:staging -- https://app-staging-14ypih9ix-esaukans-6934s-projects.vercel.app` passed; `https://staging.30sek24.com` points to the new deployment.
+  - `npm.cmd run check:staging-readiness -- --json --skip-publication-smoke --skip-supabase-dry-run` passed after promotion: frontend route `200`, API health `200`, scene API `200`, Doppler scope `-3d-izstade/stg`, staging API base `https://api-staging.30sek24.com`, and staging Supabase ref `aasovfczmqytdtugcrmh`; skipped checks were intentional read-only skips and optional legacy Pixel Streaming remained warning-only.
+  - `npm.cmd run check:expo-staging-browser-smoke -- --json` passed after promotion with no runtime exceptions, browser errors, automatic lead submission, or mojibake.
+  - Staging modular-home desktop/mobile probe against `https://staging.30sek24.com/modular-homes/studio?view=exterior&homeStudio=1&qa3d=1` passed: desktop/mobile status `200`, 0 failed requests, 227 meshes, camera position `{-7.2056, 9.882, -83.2513}`, camera distance `73.4087`, camera facing the modular home, mobile route card `display:none`, mobile duplicate `HomeDesignInstanceShell` absent; screenshots and metrics are in `artifacts/modular-home-start-composition-staging-after/`.
+  - The first two staging visual-preflight reruns exposed a QA-only failure on reused-page navigation from exterior to interior; after the script hardening, `node scripts/qa-gala-visual-acceptance-local.mjs --base-url=https://staging.30sek24.com --out-dir=artifacts/modular-home-start-composition-staging-gala-visual-preflight` passed for exterior, interior, quote review, start outside, and start inside; `productVisualAccepted=false`.
+  - `node --check scripts/qa-gala-visual-acceptance-local.mjs` passed.
+  - `npm.cmd run lint` passed after the QA-script hardening.
 - Touched files:
   - `src/modules/expo/runtime/app/Expo3D.tsx`
   - `src/modules/expo/runtime/modularHome/ModularHomeDemoOverlay.tsx`
   - `src/pages/modularHome/ModularHomeStudioPage.tsx`
+  - `scripts/qa-gala-visual-acceptance-local.mjs`
   - `docs/CURRENT_TASK.md`
 - Product/release status:
-  - The modular-home studio no longer presents the initial exterior view as a partial facade load, and mobile no longer stacks duplicate top/rail overlays over the first canvas view.
-  - No production deploy/promotion, production Supabase mutation, live Stripe key usage, GALA asset/geometry change, payment change, auth change, Pixel Streaming change, or Unreal change was made.
+  - The modular-home studio fix is deployed to staging and verified on the public staging alias; the first exterior view no longer presents as a partial facade load, and mobile no longer stacks duplicate top/rail overlays over the first canvas view.
+  - No production deploy/promotion, production alias change, production Supabase mutation, live Stripe key usage, GALA asset/geometry change, payment change, auth change, backend deploy, Pixel Streaming change, or Unreal change was made.
   - `productVisualAccepted=false`.
 - Next step:
-  - Deploy this frontend fix to staging when authorized, then rerun the staging modular-home screenshot probe and GALA visual preflight against `https://staging.30sek24.com`.
+  - Keep production promotion held until explicit human visual/product acceptance and explicit production-promotion authorization are recorded.
 
 ## 2026-07-01 Final Release Gate And Production Go/No-Go Refresh
 

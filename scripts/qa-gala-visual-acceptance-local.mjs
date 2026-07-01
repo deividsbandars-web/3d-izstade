@@ -5,6 +5,7 @@ import path from 'node:path';
 import process from 'node:process';
 import { chromium } from 'playwright';
 import sharp from 'sharp';
+import { navigateForGalaAudit } from './qa-gala-browser-navigation.mjs';
 
 const DEFAULT_BASE_URL = 'http://127.0.0.1:5173';
 const DEFAULT_OUT_DIR = 'C:\\qa\\visual-evidence\\gala-visual-acceptance-qa-local';
@@ -400,10 +401,7 @@ function classifySceneReadability({
 
 async function captureAndClassifyRoute(page, baseUrl, route) {
   const targetPath = route.targetPath;
-  const response = await page.goto(`${baseUrl}${route.path}`, {
-    timeout: 60000,
-    waitUntil: 'domcontentloaded',
-  });
+  const response = await navigateForGalaAudit(page, `${baseUrl}${route.path}`);
   await page.waitForTimeout(1500);
   if (route.clickButtonText) {
     const button = page.getByRole('button', {
@@ -508,10 +506,7 @@ async function captureAndClassifyRoute(page, baseUrl, route) {
 }
 
 async function captureAndClassifyQuote(page, baseUrl, route) {
-  const response = await page.goto(`${baseUrl}${route.path}`, {
-    timeout: 60000,
-    waitUntil: 'domcontentloaded',
-  });
+  const response = await navigateForGalaAudit(page, `${baseUrl}${route.path}`);
   await page.waitForTimeout(2500);
   await page.screenshot({ fullPage: false, path: route.targetPath });
   const screenshotCaptured = fs.existsSync(route.targetPath);
@@ -666,45 +661,60 @@ async function run(options) {
     headless: true,
   });
 
-  const page = await browser.newPage({ viewport: VIEWPORT });
+  const context = await browser.newContext({
+    serviceWorkers: 'block',
+    viewport: VIEWPORT,
+  });
   const browserLogs = [];
-  page.on('console', (message) => {
-    browserLogs.push({
-      text: message.text(),
-      type: message.type(),
+
+  async function withAuditPage(task) {
+    const page = await context.newPage();
+    page.on('console', (message) => {
+      browserLogs.push({
+        text: message.text(),
+        type: message.type(),
+      });
     });
-  });
-  page.on('pageerror', (error) => {
-    browserLogs.push({
-      text: error.stack || error.message,
-      type: 'pageerror',
+    page.on('pageerror', (error) => {
+      browserLogs.push({
+        text: error.stack || error.message,
+        type: 'pageerror',
+      });
     });
-  });
-  await page.addInitScript(() => {
-    window.sessionStorage?.setItem('warpala:galaConstructionAudit', '1');
-  });
+    await page.addInitScript(() => {
+      window.sessionStorage?.setItem('warpala:galaConstructionAudit', '1');
+    });
+
+    try {
+      return await task(page);
+    } finally {
+      await page.close().catch(() => {});
+    }
+  }
+
   const routeResults = {};
   const startFlows = {};
 
   for (const key of ['exteriorStudio', 'interiorStudio']) {
-    routeResults[key] = await captureAndClassifyRoute(page, options.baseUrl, {
+    routeResults[key] = await withAuditPage((page) => captureAndClassifyRoute(page, options.baseUrl, {
       ...ROUTES[key],
       targetPath: path.join(options.outDir, ROUTES[key].screenshot),
-    });
+    }));
   }
 
-  routeResults.quoteReview = await captureAndClassifyQuote(page, options.baseUrl, {
+  routeResults.quoteReview = await withAuditPage((page) => captureAndClassifyQuote(page, options.baseUrl, {
     ...ROUTES.quoteReview,
     targetPath: path.join(options.outDir, ROUTES.quoteReview.screenshot),
-  });
+  }));
 
   for (const key of ['startOutside', 'startInside']) {
-    startFlows[key] = await captureAndClassifyRoute(page, options.baseUrl, {
+    startFlows[key] = await withAuditPage((page) => captureAndClassifyRoute(page, options.baseUrl, {
       ...ROUTES[key],
       targetPath: path.join(options.outDir, ROUTES[key].screenshot),
-    });
+    }));
   }
 
+  await context.close();
   await browser.close();
 
   const blockingHomeDemoLabelPresent = [
