@@ -19,6 +19,7 @@
     "check:expo-release-assets": "node scripts/check-expo-release-assets.mjs",
     "check:expo-sponsor-inbox-auth": "node scripts/check-expo-sponsor-inbox-auth.mjs",
     "check:expo-commercial-staging": "node scripts/check-expo-commercial-staging.mjs",
+    "check:booth-slot-stripe-staging": "node scripts/check-booth-slot-stripe-staging.mjs",
     "check:expo-sponsor-inbox-browser-smoke": "node scripts/check-expo-sponsor-inbox-browser-smoke.mjs",
     "check:expo-sponsor-ops": "node scripts/check-expo-sponsor-ops-readiness.mjs",
     "check:expo-texture-pipeline": "node scripts/check-expo-texture-pipeline.mjs",

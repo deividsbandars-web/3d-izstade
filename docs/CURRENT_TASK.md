@@ -1,5 +1,37 @@
 # Current Task
 
+## 2026-07-01 Booth Slot Stripe Staging Verification
+
+- Active objective: finish the staging booth-slot marketplace payment verification with Stripe test credentials, signed webhook verification, and cleanup-safe evidence.
+- Implementation status:
+  - Confirmed Doppler `stg` now contains `STRIPE_SECRET_KEY` classified as `test`, `STRIPE_WEBHOOK_SECRET` classified as a Stripe webhook signing secret, and `STRIPE_PUBLISHABLE_KEY` classified as `test`; no secret values were printed.
+  - Synced those staging test Stripe values into Hetzner `/root/3d-izstade-staging/.env.docker` without printing values, added staging-safe callback URLs, and recreated `backend-staging`.
+  - Set `BILLING_PUBLIC_APP_URL=https://staging.30sek24.com`, `BILLING_CHECKOUT_SUCCESS_URL=https://staging.30sek24.com/expo/booth-marketplace?checkout=success&session_id={CHECKOUT_SESSION_ID}`, and `BILLING_CHECKOUT_CANCEL_URL=https://staging.30sek24.com/expo/booth-marketplace?checkout=cancel`.
+  - Added `scripts/check-booth-slot-stripe-staging.mjs` plus `npm run check:booth-slot-stripe-staging`; the script requires staging Supabase ref `aasovfczmqytdtugcrmh`, `sk_test_...`, and `whsec_...`, creates a real Stripe test Checkout Session, posts a signed `checkout.session.completed` event to the deployed backend, verifies finalization, expires the open Stripe test session, and cleans up staging rows without printing secrets, JWTs, or Checkout URLs.
+  - The first signed-webhook smoke exposed a real DB contract gap: backend service-role finalization could insert `companies` but failed with `permission denied for table booths`.
+  - Added and applied staging migration `20260701194000_booth_slot_marketplace_service_role_booth_grants.sql`, granting backend service-role `SELECT, INSERT, UPDATE` on `public.booths` so paid slot finalization can create the release scene booth.
+  - Deactivated one orphan `Stripe Smoke ...` company left by the first failed webhook attempt; the failed attempt's payment audit row was marked `refunded` with smoke cleanup metadata.
+- Validation:
+  - Remote backend env prefix check passed: `STRIPE_SECRET_KEY_MODE=test`, `STRIPE_WEBHOOK_SECRET_MODE=stripe-webhook-secret`, `STRIPE_PUBLISHABLE_KEY_MODE=test`, `BILLING_URLS_PRESENT=true`, and API health returned ok.
+  - Supabase dry-run against the correct staging ref first showed only `20260701194000_booth_slot_marketplace_service_role_booth_grants.sql` pending; applying it succeeded.
+  - `powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/run-with-doppler.ps1 run --project -3d-izstade --config stg -- npm.cmd run check:booth-slot-stripe-staging -- --json` passed all checks: backend health, 84 available slots, authenticated reservation, `cs_test_` Checkout Session, checkout_started reservation/payment rows, signed webhook HTTP 200, assigned reservation, completed payment, and released slot after cleanup.
+  - The successful smoke used slot `arrival-left-standard-0`; cleanup expired the Stripe test session, released the booth slot, deactivated the temporary company when DELETE was not granted, removed the temporary reservation, and cleaned the successful smoke payment row.
+  - `node --check scripts/check-booth-slot-stripe-staging.mjs` passed.
+  - `npm.cmd run lint` passed.
+  - `npm.cmd run check:all` passed, including Supabase RLS migration ordering/default-deny checks.
+  - Post-migration Supabase dry-run against staging reports `Remote database is up to date`.
+- Touched files:
+  - `package.json`
+  - `scripts/check-booth-slot-stripe-staging.mjs`
+  - `supabase/migrations/20260701194000_booth_slot_marketplace_service_role_booth_grants.sql`
+  - `docs/CURRENT_TASK.md`
+- Product/release status:
+  - Staging booth-slot Stripe test checkout and signed webhook finalization are verified end to end against the deployed staging backend.
+  - No production deploy/promotion, production Supabase mutation, live Stripe key usage, camera/FOV/lookAt change, renderer/geometry/collision/movement/door-runtime change, Pixel Streaming change, or Unreal change was made.
+  - `productVisualAccepted=false`.
+- Next step:
+  - For a human Stripe Dashboard check, keep the staging webhook destination subscribed to `checkout.session.completed` and pointed at `https://api-staging.30sek24.com/api/billing/webhook`; production keys must remain separate from this staging test flow.
+
 ## 2026-07-01 GALA Remote QA Navigation And Cleanup Hardening
 
 - Active objective: make the canonical GALA multi-route audits deterministic for remote staging runs and guarantee browser-process cleanup after navigation failures or orchestrator timeouts.
