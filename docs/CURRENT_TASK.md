@@ -16,7 +16,8 @@
   - Local canonical release passed all 10 concerns in 196.3 seconds; `productVisualAccepted=false` remains unchanged.
   - After service-worker isolation, targeted local DOM-overlay and wall-skin concerns both passed in 32.2 seconds.
   - Sandbox staging execution produced the expected `ERR_NETWORK_ACCESS_DENIED` for both target concerns in about 10.9 seconds, wrote a suite report, and exited without leaked browser processes.
-  - The required escalated staging rerun was requested but did not start because execution approval was not granted; no remote pass/fail claim is recorded for the modified scripts.
+  - The escalated targeted staging rerun passed both modified concerns against `https://staging.30sek24.com`: DOM-overlay in 176.0 seconds and wall-skin-coverage in 32.0 seconds, with report `artifacts/qa-gala-navigation-hardened-staging-final/qa-gala-suite-report.json`.
+  - The escalated 5-concern staging smoke passed ownership, DOM-overlay, wall-skin-coverage, floor-ground-isolation, and geometry-clip in 221.0 seconds, with report `artifacts/qa-gala-navigation-hardened-staging-smoke/qa-gala-suite-report.json`.
   - `npm.cmd run lint` passed.
   - `npm.cmd run check:all` passed.
 - Touched files:
@@ -26,10 +27,10 @@
   - `scripts/qa-gala-suite.mjs`
   - `docs/CURRENT_TASK.md`
 - Product/release status:
-  - QA tooling is hardened locally; no product renderer, camera/FOV/lookAt, geometry, collision, movement, door runtime, pricing, auth, payment, frontend/backend deployment, Supabase mutation, Pixel Streaming, Unreal, staging alias, or production state was changed.
+  - QA tooling is hardened locally and verified against staging; no product renderer, camera/FOV/lookAt, geometry, collision, movement, door runtime, pricing, auth, payment, frontend/backend deployment, Supabase mutation, Pixel Streaming, Unreal, staging alias, or production state was changed.
   - `productVisualAccepted=false`.
 - Next step:
-  - With staging network execution approval, rerun the targeted DOM-overlay and wall-skin concerns against `https://staging.30sek24.com`, then run the 5-concern staging smoke if both pass. Stripe Checkout verification remains separately blocked on provisioning staging test secrets and callback URLs.
+  - Stripe Checkout verification remains blocked on provisioning staging test secrets and callback URLs.
 
 ## 2026-07-01 Staging Release Deploy And Runtime Fixes
 
@@ -41,7 +42,7 @@
   - Deployed frontend commit `5ee0332` as Vercel deployment `dpl_H1KtjcxKvUt33i4gi4gN3JnzVk57` and promoted it only to `staging.30sek24.com`.
   - Diagnosed the initial staging GALA blank canvas: the whole scene was behind one Suspense boundary while many 1K PBR and furniture assets took 28-36+ seconds to load from staging.
   - Added a shared non-Suspense progressive texture loader and local GLTF furniture proxy fallbacks so construction geometry renders before PBR/furniture assets finish loading.
-  - Confirmed the remote Hetzner `.env.docker` and Doppler `stg` config do not contain `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, or billing checkout URLs. Real Stripe Checkout remains intentionally unavailable until staging test secrets are provisioned.
+  - Reconfirmed by name-only checks that the remote Hetzner `.env.docker` and Doppler `stg` config do not contain `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `BILLING_CHECKOUT_SUCCESS_URL`, `BILLING_CHECKOUT_CANCEL_URL`, or `BILLING_PUBLIC_APP_URL`. Real Stripe Checkout remains intentionally unavailable until staging test secrets are provisioned.
 - Validation:
   - `npm.cmd run lint` passed.
   - `npm.cmd run check:expo-boundaries` passed.
