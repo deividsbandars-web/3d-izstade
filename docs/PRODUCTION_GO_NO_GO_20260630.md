@@ -4,6 +4,43 @@ Phase: Release Roadmap V1 Phase 6.2 production go/no-go checklist
 Branch: `release/v1-stabilization`
 Preflight baseline commit: `ee24342e09c2f18ceaf8cb8e48e3dd520ce56d29`
 
+## 2026-07-01 Refresh
+
+Status: `TECHNICAL GO / PROMOTION HOLD`
+
+Refresh commit: `e3e793563002ac5154117bca48b4b760404bb66e`
+
+All currently required technical release evidence for the sponsor-facing Web3D staging
+baseline is green after the final staging sweep. No production deploy, production
+promotion, production alias change, production Supabase mutation, live Stripe key usage,
+payment mode change, auth-policy change, Pixel Streaming change, or Unreal change was
+run during this refresh.
+
+Production promotion remains held because `productVisualAccepted=false` is still the
+recorded product visual state, and no explicit instruction to move the production aliases
+after accepting the visuals has been recorded.
+
+| Requirement | 2026-07-01 Result | Evidence |
+| --- | --- | --- |
+| GitHub Release Gate on current release commit | `PASS` | Run `28549649511` passed on `e3e793563002ac5154117bca48b4b760404bb66e` in 3m18s: frontend lint/build, bundle budget, release static gates, backend TypeScript/lint/tests, and modular-home quote staging contract. |
+| Final staging readiness | `PASS` | Doppler `stg` readiness passed for staging frontend, API health, `/api/expo/scene`, Supabase dry-run, and publication smoke; optional Pixel Streaming remained warning-level HTTP 401 outside the Web3D baseline. |
+| Staging browser smoke | `PASS` | Real-browser expo staging smoke passed without runtime exceptions, browser error entries, automatic lead submissions, or mojibake. |
+| GALA staging smoke | `PASS` | Full 5-concern smoke passed: ownership, DOM-overlay, wall-skin coverage, floor/ground isolation, and geometry clip. |
+| Stripe staging checkout and webhook | `PASS` | Real Stripe test Checkout Session, signed `checkout.session.completed` webhook finalization, payment completion, and cleanup passed against staging; Stripe endpoint metadata shows one enabled non-livemode endpoint for `https://api-staging.30sek24.com/api/billing/webhook`. |
+| Constrained-mobile performance | `PASS` | Staging constrained-mobile static and motion audits exited green; motion budget allows up to 6 stutters for the constrained profile and all scenarios stayed within that budget. |
+| Production public endpoint sanity | `PASS / READ-ONLY` | `https://api.30sek24.com/health`, `https://api.30sek24.com/api/expo/scene`, `https://www.30sek24.com/`, `/expo-3d`, `/expo/sponsor-packages`, `/expo/booth-marketplace`, and `/modular-homes/studio?homeStudio=1` returned HTTP 200. |
+| Production Supabase direct RLS verification | `NOT RUN` | No production Supabase table query or mutation was run in this refresh. Static RLS checks and staging direct-public RLS evidence remain green. |
+| Human product visual acceptance recorded | `BLOCKED` | `productVisualAccepted=false` remains recorded. The technical visual preflight passed, but this is not a human product acceptance record. |
+| Explicit production promotion authorization | `BLOCKED` | No explicit instruction to accept the visuals and run production preview deploy plus production alias promotion was recorded. |
+
+Required before production promotion:
+
+1. Record human product visual acceptance, changing `productVisualAccepted` from false by the designated release process.
+2. Give explicit production promotion authorization in the active session.
+3. Decide whether to run live production Supabase direct RLS verification before promotion, or document why static/staging RLS evidence is sufficient.
+4. Handle the unrelated tracked `supabase/.temp/cli-latest` worktree change before using production deploy tooling, or intentionally run with the deploy script's dirty-worktree override.
+5. Run production preview deploy, promote production aliases, then record the production release.
+
 ## Decision
 
 Status: `NO-GO / NO PRODUCTION PROMOTION`

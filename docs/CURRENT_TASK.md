@@ -1,5 +1,29 @@
 # Current Task
 
+## 2026-07-01 Final Release Gate And Production Go/No-Go Refresh
+
+- Active objective: finish the remaining release-plan sweep after staging Stripe/backend verification, document the production go/no-go state, and avoid changing production until the human product gate is explicit.
+- Implementation status:
+  - Rechecked the latest GitHub Actions Release Gate on commit `e3e793563002ac5154117bca48b4b760404bb66e`; the first run failed only at the staging modular-home quote contract after Supabase Auth returned a non-JSON `Internal s...` response from `listUsers`.
+  - Immediately reran the same modular-home quote staging contract locally through Doppler `stg`; it passed end to end and cleaned up the temporary quote.
+  - Reran GitHub Actions Release Gate on the same commit; the rerun passed frontend lint/build, bundle budget, release static gates, backend TypeScript/lint/tests, and the modular-home quote staging contract.
+  - Rechecked production public surfaces in read-only mode: production API health, production scene API, homepage, expo, sponsor packages, booth marketplace, and GALA studio routes all returned HTTP 200.
+  - Reconciled the production go/no-go state after the final staging sweep: the release branch is technically green for the Web3D baseline, but production promotion remains held until human visual/product acceptance and explicit production-promotion authorization are recorded.
+- Validation:
+  - `gh run watch 28549649511 --exit-status` passed; Release Gate completed in 3m18s on commit `e3e793563002ac5154117bca48b4b760404bb66e`.
+  - `powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/run-with-doppler.ps1 run --project -3d-izstade --config stg -- npm.cmd run check:modular-home-quote-staging -- --json` passed after the transient CI failure; quote cleanup deleted the temporary quote.
+  - Production read-only endpoint sanity passed for `https://api.30sek24.com/health`, `https://api.30sek24.com/api/expo/scene`, `https://www.30sek24.com/`, `/expo-3d`, `/expo/sponsor-packages`, `/expo/booth-marketplace`, and `/modular-homes/studio?homeStudio=1`.
+  - The final staging sweep below remains green for staging readiness, expo browser smoke, GALA smoke, Stripe test Checkout/webhook finalization, constrained-mobile static and motion performance, and technical visual preflight.
+- Touched files:
+  - `docs/CURRENT_TASK.md`
+  - `docs/PRODUCTION_GO_NO_GO_20260630.md`
+- Product/release status:
+  - Technical release gates are green for the release branch and deployed staging Web3D baseline.
+  - No production deploy, production promotion, production alias change, production Supabase mutation, live Stripe key usage, product renderer change, camera/FOV/lookAt change, geometry/collision/movement change, Pixel Streaming change, or Unreal change was made.
+  - `productVisualAccepted=false`; this remains a human/product gate and was not self-approved.
+- Next step:
+  - Await explicit human visual/product acceptance and explicit production-promotion authorization before running production preview deploy or production alias promotion.
+
 ## 2026-07-01 Final Staging Sweep And GALA Wall QA Stabilization
 
 - Active objective: complete the final staging sweep after Stripe env/backend changes and close the remaining GALA wall-skin remote QA instability without changing product runtime behavior.
