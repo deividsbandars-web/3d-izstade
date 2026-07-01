@@ -5,6 +5,7 @@ param(
   [string]$RemoteDir = "/root/3d-izstade-staging",
   [string[]]$ReleasePaths = @(
     "backend-server",
+    "docs/booth-slot-bank.json",
     "src",
     "package.json",
     "package-lock.json",
