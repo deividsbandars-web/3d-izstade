@@ -275,27 +275,30 @@ async function main() {
     serviceWorkers: 'block',
     viewport: VIEWPORT,
   });
-  const page = await context.newPage();
   let exteriorInventory;
   let exteriorStatus;
   let interiorInventory;
   let interiorStatus;
 
   try {
+    const exteriorPage = await context.newPage();
     const exteriorFront = path.join(options.outDir, 'exterior-front-after-wall-skin-fix.png');
-    exteriorStatus = await captureRoute(page, options.baseUrl, ROUTES.exterior, exteriorFront);
-    exteriorInventory = await collectInventory(page);
+    exteriorStatus = await captureRoute(exteriorPage, options.baseUrl, ROUTES.exterior, exteriorFront);
+    exteriorInventory = await collectInventory(exteriorPage);
     await sharp(exteriorFront)
       .extract({ height: 430, left: 40, top: 245, width: 1060 })
       .toFile(path.join(options.outDir, 'exterior-detail-after-wall-skin-fix.png'));
-    await frameShot(page, 'exteriorSideAngle', path.join(options.outDir, 'exterior-side-after-wall-skin-fix.png'));
+    await frameShot(exteriorPage, 'exteriorSideAngle', path.join(options.outDir, 'exterior-side-after-wall-skin-fix.png'));
+    await exteriorPage.close();
 
+    const interiorPage = await context.newPage();
     const interiorScreenshot = path.join(options.outDir, 'interior-after-wall-skin-fix.png');
-    interiorStatus = await captureRoute(page, options.baseUrl, ROUTES.interior, interiorScreenshot);
-    interiorInventory = await collectInventory(page);
+    interiorStatus = await captureRoute(interiorPage, options.baseUrl, ROUTES.interior, interiorScreenshot);
+    interiorInventory = await collectInventory(interiorPage);
     await sharp(interiorScreenshot)
       .extract({ height: 560, left: 80, top: 165, width: 850 })
       .toFile(path.join(options.outDir, 'interior-detail-after-wall-skin-fix.png'));
+    await interiorPage.close();
   } finally {
     await browser.close();
   }

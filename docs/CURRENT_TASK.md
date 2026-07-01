@@ -1,5 +1,39 @@
 # Current Task
 
+## 2026-07-01 Final Staging Sweep And GALA Wall QA Stabilization
+
+- Active objective: complete the final staging sweep after Stripe env/backend changes and close the remaining GALA wall-skin remote QA instability without changing product runtime behavior.
+- Implementation status:
+  - Ran full staging readiness after Stripe staging env sync and backend restart; frontend, API health, scene API, Supabase dry-run, publication smoke, and optional legacy-runtime handling passed.
+  - Ran real-browser expo staging smoke across default expo, sales demo overview/steps, sponsor packages, and operator snapshot routes; all cases passed without runtime exceptions, browser error entries, automatic lead submissions, or mojibake.
+  - The first two full GALA staging smoke reruns exposed a repeatable QA-script issue: `qa-gala-wall-skin-coverage-audit.mjs` captured exterior successfully but then timed out navigating the same Playwright page to the interior route, while a direct fresh-page navigation to the same interior URL returned HTTP 200 and 270 scene inventory objects in 9.3 seconds.
+  - Updated `scripts/qa-gala-wall-skin-coverage-audit.mjs` to use a fresh page for the exterior route and a fresh page for the interior route within the same service-worker-blocked browser context. This keeps the same assertions and screenshots, but avoids stale WebGL/navigation state from the exterior capture.
+  - Re-ran the full 5-concern GALA staging smoke after the wall-skin page-isolation change; ownership, DOM-overlay, wall-skin-coverage, floor-ground-isolation, and geometry-clip all passed.
+  - Re-ran the booth-slot Stripe staging smoke; real Stripe test Checkout Session creation, signed webhook finalization, payment completion, and cleanup all passed.
+  - Checked Stripe test webhook endpoint metadata through the Stripe API without printing secrets: one enabled non-livemode endpoint points to `https://api-staging.30sek24.com/api/billing/webhook` and listens to `checkout.session.completed`.
+  - Ran the staging GALA technical visual-acceptance preflight; exterior studio, interior studio, quote review, start outside, and start inside all passed as readable with screenshots captured.
+- Validation:
+  - `powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/run-with-doppler.ps1 run --project -3d-izstade --config stg -- npm.cmd run check:staging-readiness -- --json` passed; optional Pixel Streaming remains a warning-level HTTP 401 outside the Web3D release baseline.
+  - `npm.cmd run check:expo-staging-browser-smoke -- --json` passed.
+  - Direct staging interior GALA route probe returned HTTP 200, 270 inventory objects, and completed in 9.3 seconds.
+  - `node scripts/qa-gala-wall-skin-coverage-audit.mjs --base-url=https://staging.30sek24.com --out-dir=artifacts/final-staging-sweep-wall-skin-after-page-isolation` passed.
+  - `node scripts/qa-gala-suite.mjs --base-url=https://staging.30sek24.com --profile=smoke --timeout-ms=300000 --out-dir=artifacts/final-staging-sweep-gala-smoke-after-wall-page-isolation` passed all 5 smoke concerns in 57.3 seconds.
+  - `powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/run-with-doppler.ps1 run --project -3d-izstade --config stg -- npm.cmd run check:booth-slot-stripe-staging -- --json` passed.
+  - Stripe webhook endpoint metadata check passed: `livemode=false`, `status=enabled`, URL is staging billing webhook, and enabled events include `checkout.session.completed`.
+  - `node scripts/qa-gala-visual-acceptance-local.mjs --base-url=https://staging.30sek24.com --out-dir=artifacts/final-staging-sweep-gala-visual-preflight` passed; `productVisualAccepted=false` remains a separate human/product decision.
+  - `node --check scripts/qa-gala-wall-skin-coverage-audit.mjs` passed.
+  - `npm.cmd run lint` passed.
+  - `npm.cmd run check:all` passed.
+- Touched files:
+  - `scripts/qa-gala-wall-skin-coverage-audit.mjs`
+  - `docs/CURRENT_TASK.md`
+- Product/release status:
+  - Final staging technical sweep is green for the Web3D release baseline, GALA smoke, staging browser smoke, Stripe test Checkout, signed webhook finalization, and technical visual preflight.
+  - No product renderer, camera/FOV/lookAt, geometry, collision, movement, door runtime, pricing, auth, payment semantics, frontend/backend deployment, staging alias, production deploy/promotion, production Supabase mutation, live Stripe key usage, Pixel Streaming, or Unreal change was made in this item.
+  - `productVisualAccepted=false`.
+- Next step:
+  - Production deploy/promotion remains a go/no-go decision. The technical gates are green, but human visual/product acceptance must be explicit before treating `productVisualAccepted` as true.
+
 ## 2026-07-01 Booth Slot Stripe Staging Verification
 
 - Active objective: finish the staging booth-slot marketplace payment verification with Stripe test credentials, signed webhook verification, and cleanup-safe evidence.
