@@ -1,5 +1,30 @@
 # Current Task
 
+## 2026-07-04 Staging Release Commit Push And Deploy
+
+- Active objective: commit and push the current release-stabilization work, deploy it to staging, and bring staging readiness back to green.
+- Git/release actions:
+  - Created and pushed `bf218f9 feat(expo): stabilize staging release` on `release/v1-stabilization`.
+  - Fixed Vercel source packaging after the first remote build exposed `.vercelignore` excluding `src/modules/expo/runtime/planning/zones/tower-cluster`.
+  - Created and pushed `bc79531 fix(deploy): include tower cluster source in Vercel`.
+  - Deployed Vercel app-staging preview `https://app-staging-oyr2pxfae-esaukans-6934s-projects.vercel.app`.
+  - Promoted `https://staging.30sek24.com` to the new preview deployment.
+  - Applied staging Supabase migrations `20260702100000_public_lead_abuse_controls.sql` and `20260704160000_expo_community_content.sql`.
+- Validation passed:
+  - `npm run deploy:staging:preview`
+  - `npm run promote:staging -- https://app-staging-oyr2pxfae-esaukans-6934s-projects.vercel.app`
+  - `Invoke-WebRequest https://staging.30sek24.com`
+  - `npm run check:staging-readiness`
+  - Supabase dry-run now reports `Remote database is up to date.`
+- Release state:
+  - Staging frontend alias changed; production was not changed.
+  - Staging Supabase schema was mutated by applying the two pending migrations above.
+  - Staging readiness is `PASS`; optional legacy Pixel Streaming still reports an `HTTP_401` warning and remains non-fatal for the baseline release path.
+  - Residual local changes remain intentionally uncommitted: `supabase/.temp/cli-latest`, `.claude/`, and `Master_Execution_Plan.md`.
+- Remaining weak points:
+  - `productVisualAccepted=false` remains unchanged; human visual acceptance is still required before production promotion.
+  - Optional Pixel Streaming/operator runtime remains outside the sponsor-facing baseline release path.
+
 ## 2026-07-04 City First View Ground And Lighting Polish Continuation
 
 - Active objective: continue from the remaining release-audit weak spot where the city first-person view had too much dark ground foreground, without deploying, changing backend contracts, or mutating Supabase state.
