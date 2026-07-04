@@ -15,6 +15,10 @@ import {
   normalizeExpoBoothPublicationStatus,
   type ExpoBoothPublicationStatus,
 } from '../../shared/expo/boothPublicationStatus';
+import {
+  normalizeExpoCityScreenCampaign,
+  type ExpoCityScreenCampaignStatus,
+} from '../../shared/expo/cityScreenCampaign';
 
 export type ExpoManagedBooth = {
   assets_3d?: Record<string, unknown> | null;
@@ -27,6 +31,9 @@ export type ExpoManagedBooth = {
 };
 
 export type ExpoManagedBoothScreenContent = {
+  campaignEndDate?: string;
+  campaignStartDate?: string;
+  campaignStatus?: ExpoCityScreenCampaignStatus;
   ctaLabel?: string;
   imageUrl?: string;
   mode?: 'generated-card' | 'image' | 'video' | 'video-placeholder';
@@ -107,6 +114,7 @@ export const expoDashboardService = {
 
   async saveManagedBooth({
     boothId,
+    cityScreenContent,
     companyName,
     description,
     district,
@@ -117,6 +125,7 @@ export const expoDashboardService = {
     videoUrl,
   }: {
     boothId?: string;
+    cityScreenContent?: ExpoManagedBoothScreenContent;
     companyName: string;
     description: string;
     district: string;
@@ -130,6 +139,14 @@ export const expoDashboardService = {
       const screenContentResult = normalizeExpoScreenContentForSave(screenContent);
       if (!screenContentResult.ok) {
         throw new Error(screenContentResult.issues.map((issue) => issue.message).join(' '));
+      }
+      const cityScreenContentResult = normalizeExpoScreenContentForSave(cityScreenContent);
+      if (!cityScreenContentResult.ok) {
+        throw new Error(cityScreenContentResult.issues.map((issue) => issue.message).join(' '));
+      }
+      const cityScreenCampaignResult = normalizeExpoCityScreenCampaign(cityScreenContent);
+      if (!cityScreenCampaignResult.ok) {
+        throw new Error(cityScreenCampaignResult.issues.map((issue) => issue.message).join(' '));
       }
 
       const sponsorAssetPackResult = normalizeExpoSponsorAssetPackForSave(sponsorAssetPack);
@@ -149,6 +166,10 @@ export const expoDashboardService = {
 
       const payload = {
         assets_3d: {
+          city_screen_content: {
+            ...cityScreenContentResult.screenContent,
+            ...cityScreenCampaignResult.campaign,
+          },
           media_review: mediaReviewResult.mediaReview,
           screen_content: screenContentResult.screenContent,
           sponsor_asset_pack: sponsorAssetPackResult.assetPack,

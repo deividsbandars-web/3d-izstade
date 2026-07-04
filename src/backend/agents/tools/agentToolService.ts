@@ -22,7 +22,7 @@ export function createAgentToolRegistry(): Record<string, AgentTool> {
       name: 'scrape_website',
       description: 'Scrapes text content from a URL. Arguments: { "url": "https://..." }',
       execute: async (args: { url: string }) => {
-        logger.info('AgentTools', `Executing scrape_website for: ${args.url}`);
+        logger.info('AgentTools', 'Executing scrape_website');
         return dataSourceToolAdapters.scrapeWebsite(args.url);
       },
     },

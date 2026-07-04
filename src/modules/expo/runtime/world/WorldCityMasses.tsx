@@ -1,6 +1,16 @@
+import { useLayoutEffect, useMemo, useRef } from 'react';
+import * as THREE from 'three';
 import type { ExpoWorldVisualProfile } from '../../world-contract';
 import type { CanonicalPrimitive, CityMass } from '../planning/types';
 import type { StadiumReserve } from './WorldCitySkeletonLayout';
+import {
+  buildInstancedTransformMatrix,
+  clearExpoInstancingTargetStats,
+  publishExpoInstancingTargetStats,
+} from './performance/expoInstancingUtils';
+import { disableRaycastForNonInteractiveObject } from './performance/expoRaycastUtils';
+
+const LOW_QUALITY_CITY_MASS_TARGET_ID = 'low-quality-city-masses';
 
 function tintHex(hex: string, ratio: number) {
   const normalized = hex.replace('#', '').padStart(6, '0').slice(0, 6);
@@ -33,13 +43,13 @@ function WorldArchitecturalMassMaterial({
   emissiveIntensity?: number;
 }) {
   const base = emissiveIntensity > 0.012
-    ? mixHex(tintHex(fallbackColor, 0.24), globalHudAccent, 0.26)
-    : mixHex(tintHex(fallbackColor, 0.13), globalHudAccent, 0.18);
-  const color = emissiveIntensity > 0.018 ? tintHex(base, 0.1) : base;
+    ? mixHex(tintHex(fallbackColor, 0.16), globalHudAccent, 0.16)
+    : mixHex(tintHex(fallbackColor, 0.05), '#263a46', 0.22);
+  const color = emissiveIntensity > 0.018 ? tintHex(base, 0.06) : base;
   const materialEmissive = emissiveIntensity > 0 ? emissive : globalHudAccent;
   const materialEmissiveIntensity = emissiveIntensity > 0
     ? emissiveIntensity + (emissive === globalHudAccent ? 0.004 : 0)
-    : 0.01;
+    : 0.003;
 
   return (
     <meshStandardMaterial
@@ -73,9 +83,11 @@ function renderCityMassPrimitive(
 
   if (primitive.kind === 'cylinder') {
     const hasEmissive = (primitive.emissiveIntensity ?? 0) > 0;
-    const color = mixHex(tintHex(primitive.color, hasEmissive ? 0.08 : 0.03), globalHudAccent, hasEmissive ? 0.18 : 0.12);
+    const color = hasEmissive
+      ? mixHex(tintHex(primitive.color, 0.08), globalHudAccent, 0.14)
+      : mixHex(tintHex(primitive.color, 0.02), '#263a46', 0.16);
     const emissive = primitive.emissive ?? globalHudAccent;
-    const emissiveIntensity = (primitive.emissiveIntensity ?? 0) + (primitive.emissive ? 0 : 0.006);
+    const emissiveIntensity = (primitive.emissiveIntensity ?? 0) + (primitive.emissive ? 0 : 0.002);
 
     return (
       <mesh key={key} name={key} position={primitive.position} rotation={primitive.rotation}>
@@ -96,9 +108,11 @@ function renderCityMassPrimitive(
 
   if (primitive.kind === 'torus') {
     const hasEmissive = (primitive.emissiveIntensity ?? 0) > 0;
-    const color = mixHex(tintHex(primitive.color, hasEmissive ? 0.08 : 0.03), globalHudAccent, hasEmissive ? 0.2 : 0.14);
+    const color = hasEmissive
+      ? mixHex(tintHex(primitive.color, 0.08), globalHudAccent, 0.16)
+      : mixHex(tintHex(primitive.color, 0.02), '#263a46', 0.16);
     const emissive = primitive.emissive ?? globalHudAccent;
-    const emissiveIntensity = (primitive.emissiveIntensity ?? 0) + (primitive.emissive ? 0 : 0.008);
+    const emissiveIntensity = (primitive.emissiveIntensity ?? 0) + (primitive.emissive ? 0 : 0.002);
 
     return (
       <mesh key={key} name={key} position={primitive.position} rotation={primitive.rotation}>
@@ -127,9 +141,11 @@ function renderCityMassPrimitive(
 
   if (primitive.kind === 'sphere') {
     const hasEmissive = (primitive.emissiveIntensity ?? 0) > 0;
-    const color = mixHex(tintHex(primitive.color, hasEmissive ? 0.08 : 0.03), globalHudAccent, hasEmissive ? 0.2 : 0.14);
+    const color = hasEmissive
+      ? mixHex(tintHex(primitive.color, 0.08), globalHudAccent, 0.16)
+      : mixHex(tintHex(primitive.color, 0.02), '#263a46', 0.16);
     const emissive = primitive.emissive ?? globalHudAccent;
-    const emissiveIntensity = (primitive.emissiveIntensity ?? 0) + (primitive.emissive ? 0 : 0.008);
+    const emissiveIntensity = (primitive.emissiveIntensity ?? 0) + (primitive.emissive ? 0 : 0.002);
 
     return (
       <mesh key={key} name={key} position={primitive.position}>
@@ -169,18 +185,102 @@ function renderCityMassPrimitive(
   return null;
 }
 
+function LowQualityCityMassInstances({
+  masses,
+  visualProfile,
+}: {
+  masses: CityMass[];
+  visualProfile: ExpoWorldVisualProfile;
+}) {
+  const meshRef = useRef<THREE.InstancedMesh>(null);
+  const matrix = useMemo(() => new THREE.Matrix4(), []);
+  const color = useMemo(() => new THREE.Color(), []);
+
+  useLayoutEffect(() => {
+    const mesh = meshRef.current;
+    if (!mesh) {
+      return undefined;
+    }
+
+    masses.forEach((mass, index) => {
+      const verticalBaseY = mass.vertical?.baseY ?? 0;
+      mesh.setMatrixAt(index, buildInstancedTransformMatrix({
+        position: [mass.position[0], verticalBaseY + (mass.size[1] * 0.5), mass.position[2]],
+        rotation: mass.rotation,
+        scale: mass.size,
+      }, matrix));
+      mesh.setColorAt(index, color.set(mixHex(tintHex(mass.color, 0.08), visualProfile.global.hudAccent, 0.12)));
+    });
+    mesh.instanceMatrix.needsUpdate = true;
+    if (mesh.instanceColor) {
+      mesh.instanceColor.needsUpdate = true;
+    }
+    mesh.computeBoundingSphere();
+
+    publishExpoInstancingTargetStats({
+      estimatedDrawCallReduction: Math.max(0, masses.length - 1),
+      instanceCount: masses.length,
+      label: 'low-quality city mass silhouettes',
+      replacedMeshCount: masses.length,
+      targetId: LOW_QUALITY_CITY_MASS_TARGET_ID,
+    });
+    const restoreRaycast = disableRaycastForNonInteractiveObject(mesh, {
+      reason: 'low-quality scenic city mass silhouettes are non-interactive',
+      targetId: LOW_QUALITY_CITY_MASS_TARGET_ID,
+    });
+
+    return () => {
+      restoreRaycast();
+      clearExpoInstancingTargetStats(LOW_QUALITY_CITY_MASS_TARGET_ID);
+    };
+  }, [color, masses, matrix, visualProfile.global.hudAccent]);
+
+  if (masses.length === 0) {
+    return null;
+  }
+
+  return (
+    <instancedMesh
+      ref={meshRef}
+      args={[undefined, undefined, masses.length]}
+      name="city-mass:low-quality-instanced-silhouettes"
+      userData={{
+        expoInstancingInstanceCount: masses.length,
+        expoInstancingTarget: LOW_QUALITY_CITY_MASS_TARGET_ID,
+        sceneLayerRole: 'scenic-non-colliding',
+      }}
+    >
+      <boxGeometry args={[1, 1, 1]} />
+      <meshStandardMaterial
+        color="#ffffff"
+        emissive={visualProfile.global.hudAccent}
+        emissiveIntensity={0.006}
+        metalness={0.06}
+        roughness={0.72}
+        vertexColors
+      />
+    </instancedMesh>
+  );
+}
+
 export function WorldCityMasses({
+  lowDetail = false,
   masses,
   meshNamePrefix = 'city-mass',
   stadiumReserve: _stadiumReserve,
   visualProfile,
 }: {
+  lowDetail?: boolean;
   masses: CityMass[];
   meshNamePrefix?: string;
   stadiumReserve: StadiumReserve;
   visualProfile: ExpoWorldVisualProfile;
 }) {
   void _stadiumReserve;
+
+  if (lowDetail) {
+    return <LowQualityCityMassInstances masses={masses} visualProfile={visualProfile} />;
+  }
 
   return (
     <>

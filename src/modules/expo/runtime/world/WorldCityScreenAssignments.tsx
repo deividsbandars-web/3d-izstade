@@ -22,7 +22,11 @@ function isOpaquePrimitive(opacity: number | undefined) {
   return (opacity ?? 1) >= 0.999;
 }
 
-function shouldCullDistantScreens() {
+function shouldCullDistantScreens(qualitySettings: ExpoQualitySettings) {
+  if (qualitySettings.resolvedTier === 'low') {
+    return true;
+  }
+
   if (typeof window === 'undefined') {
     return false;
   }
@@ -111,13 +115,13 @@ function renderPrimitive(
       );
     }
 
-    return (
-      <mesh key={key} position={primitive.position} renderOrder={9}>
+    const textureSurface = (
+      <mesh key={`${key}:front`} position={primitive.position} renderOrder={9}>
         <planeGeometry args={primitive.size} />
         <SponsorTextureSurface
           allowVideoPlayback={allowVideoPlayback}
           depthWrite={false}
-          doubleSided={doubleSidedTexture}
+          doubleSided={false}
           fallbackColor={primitive.fallbackColor}
           opacity={primitive.opacity ?? 0.92}
           posterUrl={primitive.posterUrl}
@@ -125,6 +129,29 @@ function renderPrimitive(
           url={primitive.url}
         />
       </mesh>
+    );
+
+    if (!doubleSidedTexture) {
+      return textureSurface;
+    }
+
+    return (
+      <Fragment key={key}>
+        {textureSurface}
+        <mesh key={`${key}:rear`} position={primitive.position} rotation={[0, Math.PI, 0]} renderOrder={9}>
+          <planeGeometry args={primitive.size} />
+          <SponsorTextureSurface
+            allowVideoPlayback={allowVideoPlayback}
+            depthWrite={false}
+            doubleSided={false}
+            fallbackColor={primitive.fallbackColor}
+            opacity={primitive.opacity ?? 0.92}
+            posterUrl={primitive.posterUrl}
+            textureQualityHint={textureQualityHint}
+            url={primitive.url}
+          />
+        </mesh>
+      </Fragment>
     );
   }
 
@@ -192,7 +219,7 @@ function renderRearTexturePrimitive(
       <SponsorTextureSurface
         allowVideoPlayback={allowVideoPlayback}
         depthWrite={false}
-        doubleSided
+        doubleSided={false}
         fallbackColor={primitive.fallbackColor}
         opacity={primitive.opacity ?? 0.92}
         posterUrl={primitive.posterUrl}
@@ -221,7 +248,7 @@ export function WorldCityScreenAssignments({
   const navigate = useNavigate();
   const socketById = useMemo(() => new Map(sockets.map((socket) => [socket.id, socket])), [sockets]);
   const surfaceById = useMemo(() => new Map(surfaces.map((surface) => [surface.id, surface])), [surfaces]);
-  const cullDistantScreens = shouldCullDistantScreens();
+  const cullDistantScreens = shouldCullDistantScreens(qualitySettings);
   const demoArenaPreviewEnabled = isDemoArenaPreviewEnabled();
   const demoArenaPreviewSummary = useMemo(
     () => buildDemoArenaPreviewRuntimeSummary(assignments, sockets, demoArenaPreviewEnabled),
@@ -254,6 +281,7 @@ export function WorldCityScreenAssignments({
           : null;
         const managedScreenOverride = managedScreenOverrides.overridesByAssignmentId.get(assignment.id) ?? null;
         const effectiveAssignment = previewAssignment?.assignment ?? managedScreenOverride?.assignment ?? assignment;
+        const commercialIntent = effectiveAssignment.commercial;
         const resolvedAction = resolveSponsorScreenInteraction({
           companyId: effectiveAssignment.companyId,
           id: effectiveAssignment.id,
@@ -262,7 +290,7 @@ export function WorldCityScreenAssignments({
         });
         const isRouteAction = resolvedAction.kind === 'route';
         const intent = effectiveAssignment.renderIntent;
-        const maxDistance = intent?.maxDistance ?? 980;
+        const maxDistance = (intent?.maxDistance ?? 980) * qualitySettings.renderDistanceMultiplier;
         if (cullDistantScreens && distanceSq > maxDistance * maxDistance) {
           return null;
         }
@@ -306,6 +334,17 @@ export function WorldCityScreenAssignments({
             position={socket.position}
             rotation={socket.rotation}
             userData={{
+              expoScreenFallbackImageUrl: commercialIntent?.fallbackImageUrl,
+              expoScreenMediaMode: commercialIntent?.mediaMode ?? (effectiveAssignment.imageUrl ? 'image' : 'generated-card'),
+              expoScreenMediaUrl: commercialIntent?.mediaUrl ?? effectiveAssignment.imageUrl,
+              expoScreenOwnerId: commercialIntent?.ownerId ?? effectiveAssignment.companyId,
+              expoScreenOwnerKind: commercialIntent?.ownerKind ?? (effectiveAssignment.companyId ? 'sponsor' : 'platform'),
+              expoScreenOwnerLabel: commercialIntent?.ownerLabel ?? effectiveAssignment.label,
+              expoScreenPriority: commercialIntent?.priority ?? 0,
+              expoScreenQualityTierBehavior: commercialIntent?.qualityTierBehavior ?? 'static-billboard',
+              expoScreenSlotId: commercialIntent?.screenSlotId ?? null,
+              expoScreenSource: commercialIntent?.source ?? 'scene-fallback',
+              expoScreenValueTier: commercialIntent?.valueTier ?? effectiveAssignment.tier,
               expoScreenRuntimePolicy: screenRuntimePolicy.status,
               expoScreenTextureQualityHint: screenRuntimePolicy.textureQualityHint,
               expoVideoPlaybackAllowed: screenRuntimePolicy.allowVideoPlayback,
@@ -348,7 +387,7 @@ export function WorldCityScreenAssignments({
                 primitive,
                 `${assignment.id}:${primitive.kind}:${index}`,
                 screenRuntimePolicy.textureQualityHint,
-                rearScreenContentZ === null,
+                qualitySettings.resolvedTier !== 'low' && rearScreenContentZ === null,
                 screenRuntimePolicy.allowVideoPlayback,
               ),
             )}

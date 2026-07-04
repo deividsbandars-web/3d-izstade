@@ -56,6 +56,11 @@ export function useExpoRuntimeSession() {
   const homeUploadPreviewRequested = useMemo(() => isHomeUploadPreviewRequested(), []);
   const homeUploadPreviewEnabled = useMemo(() => isHomeUploadPreviewEnabled(), []);
   const boothProductPreviewEnabled = useMemo(() => isBoothProductPreviewEnabled(), []);
+  const communityQaEnabled = useMemo(() => (
+    import.meta.env.DEV
+    && typeof window !== 'undefined'
+    && new URLSearchParams(window.location.search).get('communityQa') === '1'
+  ), []);
   const previewSessionEnabled = salesDemoEnabled || boothProductPreviewEnabled || homeDemoEnabled || homeUploadPreviewRequested;
   const [mode, setModeState] = useState<ExpoMode>(() => {
     if (operatorSession.enabled) {
@@ -63,6 +68,10 @@ export function useExpoRuntimeSession() {
     }
 
     if (homeStudioEnabled) {
+      return 'walk';
+    }
+
+    if (communityQaEnabled) {
       return 'walk';
     }
 

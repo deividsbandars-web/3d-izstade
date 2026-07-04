@@ -16,6 +16,17 @@ export function ExpoLobby({ isTouchDevice = false, onOpenModularHomes, onSelectM
   const modeButtonStyle = isTouchDevice
     ? { width: '100%', minHeight: '52px', fontSize: '0.95rem' }
     : undefined;
+  const secondaryActionStyle = {
+    padding: isTouchDevice ? '14px 16px' : '15px 20px',
+    background: 'rgba(15, 23, 42, 0.72)',
+    color: '#e2e8f0',
+    border: '1px solid rgba(148, 163, 184, 0.24)',
+    borderRadius: '8px',
+    fontSize: isTouchDevice ? '0.95rem' : '1rem',
+    fontWeight: 'bold',
+    cursor: 'pointer',
+    minHeight: isTouchDevice ? '52px' : undefined,
+  } as const;
 
   return (
     <div
@@ -44,33 +55,45 @@ export function ExpoLobby({ isTouchDevice = false, onOpenModularHomes, onSelectM
           overflowY: isTouchDevice ? 'auto' : undefined,
         }}
       >
-        <h1 className="text-accent" style={{ fontSize: isTouchDevice ? '2rem' : '5rem', fontWeight: 950, margin: 0 }}>{EXPO_MODE_COPY.title}</h1>
-        <h2 style={{ fontSize: isTouchDevice ? '0.95rem' : '2rem', color: '#fff', marginBottom: isTouchDevice ? '18px' : '50px', lineHeight: 1.35 }}>{EXPO_MODE_COPY.subtitle}</h2>
+        <h1 className="text-accent" style={{ fontSize: isTouchDevice ? '2.2rem' : '4.7rem', fontWeight: 950, margin: 0 }}>{EXPO_MODE_COPY.title}</h1>
+        <h2 style={{ fontSize: isTouchDevice ? '1rem' : '1.8rem', color: '#fff', marginBottom: isTouchDevice ? '14px' : '24px', lineHeight: 1.35 }}>{EXPO_MODE_COPY.subtitle}</h2>
         <div style={{ marginBottom: isTouchDevice ? '18px' : '32px', display: 'grid', gap: isTouchDevice ? '8px' : '12px', maxWidth: '720px', textAlign: 'left' }}>
-          <div style={{ padding: cardPadding, borderRadius: '12px', background: 'rgba(15, 23, 42, 0.7)', border: '1px solid rgba(59, 130, 246, 0.25)', color: '#cbd5e1', fontSize: isTouchDevice ? '0.82rem' : undefined, lineHeight: 1.45 }}>
+          <div style={{ padding: cardPadding, borderRadius: '8px', background: 'rgba(15, 23, 42, 0.68)', border: '1px solid rgba(59, 130, 246, 0.22)', color: '#cbd5e1', fontSize: isTouchDevice ? '0.86rem' : '0.98rem', lineHeight: 1.5 }}>
             <strong style={{ color: '#fff' }}>{EXPO_MODE_COPY.publicLabel}</strong> {EXPO_MODE_COPY.publicDescription}
+            <div style={{ marginTop: '8px', color: '#dbeafe', fontWeight: 800 }}>
+              {EXPO_MODE_COPY.boothDescription}
+            </div>
             {isTouchDevice && (
               <div style={{ marginTop: '8px', color: '#bfdbfe', fontWeight: 800 }}>
-                Left stick moves. Right pad turns. JUMP climbs ledges. LIFT works near pads.
+                Move on the left. Look on the right. Tap Auto for a hands-free walk.
               </div>
             )}
           </div>
-          <div style={{ padding: cardPadding, borderRadius: '12px', background: 'rgba(6, 78, 59, 0.3)', border: '1px solid rgba(16, 185, 129, 0.25)', color: '#d1fae5', fontSize: isTouchDevice ? '0.82rem' : undefined, lineHeight: 1.45 }}>
-            <strong style={{ color: '#fff' }}>{EXPO_MODE_COPY.boothLabel}</strong> {EXPO_MODE_COPY.boothDescription}
-            <div style={{ marginTop: '8px', color: '#c7f9cc', fontSize: '0.9rem', fontWeight: 800 }}>
-              {EXPO_MODE_COPY.cityFallbackDescription}
-            </div>
-          </div>
-          <div style={{ padding: cardPadding, borderRadius: '12px', background: 'rgba(30, 41, 59, 0.7)', border: '1px solid rgba(148, 163, 184, 0.2)', color: '#cbd5e1', fontSize: isTouchDevice ? '0.82rem' : undefined, lineHeight: 1.45 }}>
-            <strong style={{ color: '#fff' }}>{EXPO_MODE_COPY.fallbackLabel}</strong> {EXPO_MODE_COPY.cityFallbackDescription}
-          </div>
         </div>
-        <div style={{ display: 'flex', gap: isTouchDevice ? '10px' : '20px', flexDirection: 'column' }}>
-          <div style={{ display: 'flex', gap: isTouchDevice ? '10px' : '20px', justifyContent: 'center', flexDirection: isTouchDevice ? 'column' : 'row' }}>
+        <div style={{ display: 'grid', gap: '10px', gridTemplateColumns: isTouchDevice ? '1fr' : 'repeat(3, minmax(0, 1fr))' }}>
             <button onClick={() => onSelectMode('walk')} className="btn-primary" style={modeButtonStyle}>{EXPO_MODE_COPY.walkCta}</button>
-            <button onClick={() => onSelectMode('fly')} className="btn-glass" style={modeButtonStyle}>{EXPO_MODE_COPY.flyCta}</button>
-          </div>
-          <div style={{ display: 'grid', gap: '10px', gridTemplateColumns: isTouchDevice ? '1fr' : 'repeat(2, minmax(0, 1fr))' }}>
+            <button onClick={() => onSelectMode('walk')} className="btn-glass" style={modeButtonStyle}>View sponsor booths</button>
+            <button
+              type="button"
+              onClick={() => navigate('/expo/booth-marketplace')}
+              style={secondaryActionStyle}
+            >
+              Buy / rent booth
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate('/expo/city-screens')}
+              style={secondaryActionStyle}
+            >
+              Rent city screen
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate('/expo/admin?task=booth')}
+              style={secondaryActionStyle}
+            >
+              Configure booth
+            </button>
             <button
               type="button"
               onClick={onOpenModularHomes || (() => navigate(createCanonicalModularHomeStudioPath('exterior')))}
@@ -91,21 +114,10 @@ export function ExpoLobby({ isTouchDevice = false, onOpenModularHomes, onSelectM
             <button
               type="button"
               onClick={() => navigate('/expo/sponsor-packages')}
-              style={{
-                padding: isTouchDevice ? '14px 16px' : '15px 20px',
-                background: 'rgba(15, 23, 42, 0.72)',
-                color: '#e2e8f0',
-                border: '1px solid rgba(148, 163, 184, 0.24)',
-                borderRadius: '8px',
-                fontSize: isTouchDevice ? '0.95rem' : '1rem',
-                fontWeight: 'bold',
-                cursor: 'pointer',
-                minHeight: isTouchDevice ? '52px' : undefined,
-              }}
+              style={secondaryActionStyle}
             >
-              View sponsor packages
+              Request quote
             </button>
-          </div>
         </div>
         <button onClick={onBack} style={{ marginTop: isTouchDevice ? '18px' : '40px', background: 'transparent', color: '#94a3b8', border: 'none', cursor: 'pointer', fontWeight: 'bold' }}>
           {EXPO_MODE_COPY.backToDashboard}

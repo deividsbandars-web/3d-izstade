@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { createHash } from 'node:crypto';
 import { getSupabase } from '../services/supabase.js';
 import { getPixelStreamingStatus } from '../services/pixelStreamingStatus.js';
 import { reservePixelStreamingSession } from '../services/pixelStreamingSessionBroker.js';
@@ -6,6 +7,8 @@ import { reservePixelStreamingSession } from '../services/pixelStreamingSessionB
 export const EXPO_SCENE_AUTH_POLICY = 'public-readonly';
 export const EXPO_SCENE_VERSION = 'expo-scene-v2-sponsor';
 export const EXPO_SCENE_RELEASE_MODE = 'sponsor-boulevard';
+export const EXPO_SCENE_CACHE_TTL_MS = 30_000;
+const EXPO_SCENE_STALE_WHILE_REVALIDATE_SECONDS = 120;
 
 type SponsorTier = 'hero' | 'platinum' | 'gold' | 'silver' | 'bronze' | 'standard';
 type BoothType = 'hero' | 'premium' | 'standard' | 'poster';
@@ -16,6 +19,14 @@ type ExpoSceneResponse = {
     releaseMode: typeof EXPO_SCENE_RELEASE_MODE;
     booths: Array<{
         boothType: BoothType;
+        cityScreenCtaLabel?: string | null;
+        cityScreenImageUrl?: string | null;
+        cityScreenSlotId?: string | null;
+        cityScreenStatus?: string | null;
+        cityScreenText?: string | null;
+        cityScreenTitle?: string | null;
+        cityScreenType?: string | null;
+        cityScreenVideoUrl?: string | null;
         companyId: string;
         ctaLabel: string | null;
         featuredAssetDescription?: string | null;
@@ -24,6 +35,7 @@ type ExpoSceneResponse = {
         featuredAssetUrl?: string | null;
         heroAssetUrl: string | null;
         heroScreenImageUrl?: string | null;
+        heroScreenSlotId?: string | null;
         heroScreenStatus?: string | null;
         heroScreenText?: string | null;
         heroScreenTitle?: string | null;
@@ -69,6 +81,20 @@ type ExpoSceneResponse = {
         name: string;
     }>;
 };
+
+type ExpoSceneCacheEntry = {
+    etag: string;
+    expiresAt: number;
+    response: ExpoSceneResponse;
+};
+
+type ExpoSceneCacheOptions = {
+    cache?: Map<string, ExpoSceneCacheEntry>;
+    now?: () => number;
+    ttlMs?: number;
+};
+
+const defaultExpoSceneCache = new Map<string, ExpoSceneCacheEntry>();
 
 // Define architecture styles to match UE5 enum
 enum EArchitectureStyle {
@@ -280,17 +306,30 @@ const getSceneBoothLookupKeys = (booth: Record<string, unknown> | null, company:
     .map(normalizeLookupKey)
     .filter(Boolean);
 
-const buildManagedBoothScreenContentIndex = (managedBooths: Array<Record<string, unknown>>) => {
+const buildManagedBoothScreenContentIndex = (
+    managedBooths: Array<Record<string, unknown>>,
+    assetKey: 'city_screen_content' | 'screen_content',
+) => {
     const index = new Map<string, Record<string, unknown>>();
 
     managedBooths.forEach((booth) => {
         const assets3d = normalizeRecord(booth.assets_3d);
-        const screenContent = normalizeRecord(assets3d.screen_content);
+        const screenContent = normalizeRecord(assets3d[assetKey]);
         if (Object.keys(screenContent).length === 0) {
             return;
         }
         if (String(screenContent.status || '').trim().toLowerCase() !== 'published') {
             return;
+        }
+
+        if (assetKey === 'city_screen_content' && Object.prototype.hasOwnProperty.call(screenContent, 'campaignStatus')) {
+            const campaignStatus = String(screenContent.campaignStatus || '').trim().toLowerCase();
+            const campaignStartDate = String(screenContent.campaignStartDate || '').trim();
+            const campaignEndDate = String(screenContent.campaignEndDate || '').trim();
+            const today = new Date().toISOString().slice(0, 10);
+            if (campaignStatus !== 'live' || !campaignStartDate || !campaignEndDate || today < campaignStartDate || today > campaignEndDate) {
+                return;
+            }
         }
 
         getManagedBoothLookupKeys(booth).forEach((key) => {
@@ -374,6 +413,35 @@ export const getExpoSceneErrorStatus = (error: unknown) => {
     return (error as { message?: string } | null)?.message === 'INVALID_CITY_ID' ? 400 : 500;
 };
 
+const buildExpoSceneCacheKey = (cityId: string | undefined) => {
+    return cityId ? `city:${cityId}` : 'city:active';
+};
+
+const createExpoSceneEtag = (response: ExpoSceneResponse) => {
+    return `"${createHash('sha256').update(JSON.stringify(response)).digest('base64url').slice(0, 32)}"`;
+};
+
+const getIfNoneMatchValues = (req: Request) => {
+    const headerValue = req.headers?.['if-none-match'];
+    const values = Array.isArray(headerValue) ? headerValue : [headerValue];
+
+    return values
+        .flatMap((value) => String(value || '').split(','))
+        .map((value) => value.trim())
+        .filter(Boolean);
+};
+
+const isIfNoneMatch = (req: Request, etag: string) => {
+    const matchValues = getIfNoneMatchValues(req);
+    return matchValues.includes('*') || matchValues.includes(etag);
+};
+
+const setExpoSceneCacheHeaders = (res: Response, etag: string, ttlMs: number) => {
+    const maxAgeSeconds = Math.max(0, Math.floor(ttlMs / 1000));
+    res.set('Cache-Control', `public, max-age=${maxAgeSeconds}, stale-while-revalidate=${EXPO_SCENE_STALE_WHILE_REVALIDATE_SECONDS}`);
+    res.set('ETag', etag);
+};
+
 /**
  * Get list of all available cities in the network from Supabase.
  */
@@ -405,12 +473,33 @@ export const getCitiesList = async (req: Request, res: Response) => {
 /**
  * Get scene data for a specific city from Supabase.
  */
-export const createGetExpoScene = (getSupabaseClient: typeof getSupabase) => async (req: Request, res: Response) => {
+export const createGetExpoScene = (
+    getSupabaseClient: typeof getSupabase,
+    cacheOptions: ExpoSceneCacheOptions = {},
+) => async (req: Request, res: Response) => {
     try {
+        const { cityId } = validateExpoSceneQuery(req.query);
+        const cache = cacheOptions.cache ?? defaultExpoSceneCache;
+        const now = cacheOptions.now ?? (() => Date.now());
+        const ttlMs = cacheOptions.ttlMs ?? EXPO_SCENE_CACHE_TTL_MS;
+        const requestTime = now();
+        const cacheKey = buildExpoSceneCacheKey(cityId);
+        const cachedScene = cache.get(cacheKey);
+
+        if (cachedScene && cachedScene.expiresAt > requestTime) {
+            setExpoSceneCacheHeaders(res, cachedScene.etag, ttlMs);
+
+            if (isIfNoneMatch(req, cachedScene.etag)) {
+                res.status(304).end();
+                return;
+            }
+
+            res.status(200).json(cachedScene.response);
+            return;
+        }
+
         const supabase = getSupabaseClient();
         if (!supabase) throw new Error("Supabase not configured");
-
-        const { cityId } = validateExpoSceneQuery(req.query);
 
         // 1. Fetch City Metadata
         let cityQuery = supabase.from('cities').select('*');
@@ -470,7 +559,8 @@ export const createGetExpoScene = (getSupabaseClient: typeof getSupabase) => asy
 
         if (companyError) throw companyError;
         const managedBooths = await fetchManagedBoothsForScreenContent(supabase);
-        const managedScreenContentIndex = buildManagedBoothScreenContentIndex(managedBooths);
+        const managedBoothScreenContentIndex = buildManagedBoothScreenContentIndex(managedBooths, 'screen_content');
+        const managedCityScreenContentIndex = buildManagedBoothScreenContentIndex(managedBooths, 'city_screen_content');
         const sortedCompanies = [...(companies || [])].sort(compareCompanies);
         const uniqueSlugMap = buildUniqueSlugMap(sortedCompanies);
 
@@ -515,7 +605,8 @@ export const createGetExpoScene = (getSupabaseClient: typeof getSupabase) => asy
                 const sponsorTier = normalizeSponsorTier(c.sponsor_tier);
                 const booth = normalizeBoothRelation(c.booths);
                 const slug = uniqueSlugMap.get(String(c.id)) || normalizeCompanySlug(c);
-                const managedScreenContent = getManagedScreenContentForSceneBooth(managedScreenContentIndex, booth, { ...c, slug });
+                const managedBoothScreenContent = getManagedScreenContentForSceneBooth(managedBoothScreenContentIndex, booth, { ...c, slug });
+                const managedCityScreenContent = getManagedScreenContentForSceneBooth(managedCityScreenContentIndex, booth, { ...c, slug });
                 return {
                 id: booth?.id || `booth_${c.id}`,
                 companyId: c.id,
@@ -525,12 +616,21 @@ export const createGetExpoScene = (getSupabaseClient: typeof getSupabase) => asy
                 posterUrl: normalizeReleaseMediaUrl(c.poster_url ?? booth?.poster_url),
                 heroAssetUrl: normalizeReleaseMediaUrl(c.hero_asset_url ?? booth?.hero_asset_url),
                 showroomEnabled: booth?.showroom_enabled === true,
-                heroScreenType: normalizeNullableString(managedScreenContent.mode ?? managedScreenContent.mediaType ?? managedScreenContent.media_type ?? booth?.hero_screen_type),
-                heroScreenImageUrl: normalizeReleaseMediaUrl(managedScreenContent.imageUrl ?? managedScreenContent.image_url ?? managedScreenContent.assetUrl ?? managedScreenContent.asset_url ?? booth?.hero_screen_image_url),
-                heroScreenStatus: normalizeNullableString(managedScreenContent.status ?? booth?.hero_screen_status),
-                heroScreenVideoUrl: normalizeReleaseMediaUrl(managedScreenContent.videoUrl ?? managedScreenContent.video_url ?? booth?.hero_screen_video_url),
-                heroScreenTitle: normalizeNullableString(managedScreenContent.title ?? booth?.hero_screen_title),
-                heroScreenText: normalizeNullableString(managedScreenContent.subtitle ?? managedScreenContent.text ?? booth?.hero_screen_text),
+                heroScreenType: normalizeNullableString(managedBoothScreenContent.mode ?? managedBoothScreenContent.mediaType ?? managedBoothScreenContent.media_type ?? booth?.hero_screen_type),
+                heroScreenImageUrl: normalizeReleaseMediaUrl(managedBoothScreenContent.imageUrl ?? managedBoothScreenContent.image_url ?? managedBoothScreenContent.assetUrl ?? managedBoothScreenContent.asset_url ?? booth?.hero_screen_image_url),
+                heroScreenSlotId: normalizeNullableString(managedBoothScreenContent.screenSlotId ?? managedBoothScreenContent.screen_slot_id ?? booth?.hero_screen_slot_id),
+                heroScreenStatus: normalizeNullableString(managedBoothScreenContent.status ?? booth?.hero_screen_status),
+                heroScreenVideoUrl: normalizeReleaseMediaUrl(managedBoothScreenContent.videoUrl ?? managedBoothScreenContent.video_url ?? booth?.hero_screen_video_url),
+                heroScreenTitle: normalizeNullableString(managedBoothScreenContent.title ?? booth?.hero_screen_title),
+                heroScreenText: normalizeNullableString(managedBoothScreenContent.subtitle ?? managedBoothScreenContent.text ?? booth?.hero_screen_text),
+                cityScreenCtaLabel: normalizeNullableString(managedCityScreenContent.ctaLabel ?? managedCityScreenContent.cta_label),
+                cityScreenType: normalizeNullableString(managedCityScreenContent.mode ?? managedCityScreenContent.mediaType ?? managedCityScreenContent.media_type),
+                cityScreenImageUrl: normalizeReleaseMediaUrl(managedCityScreenContent.imageUrl ?? managedCityScreenContent.image_url ?? managedCityScreenContent.assetUrl ?? managedCityScreenContent.asset_url),
+                cityScreenSlotId: normalizeNullableString(managedCityScreenContent.screenSlotId ?? managedCityScreenContent.screen_slot_id),
+                cityScreenStatus: normalizeNullableString(managedCityScreenContent.status),
+                cityScreenVideoUrl: normalizeReleaseMediaUrl(managedCityScreenContent.videoUrl ?? managedCityScreenContent.video_url),
+                cityScreenTitle: normalizeNullableString(managedCityScreenContent.title),
+                cityScreenText: normalizeNullableString(managedCityScreenContent.subtitle ?? managedCityScreenContent.text),
                 featuredAssetType: normalizeNullableString(booth?.featured_asset_type),
                 featuredAssetUrl: normalizeReleaseMediaUrl(booth?.featured_asset_url),
                 featuredAssetTitle: normalizeNullableString(booth?.featured_asset_title),
@@ -540,6 +640,19 @@ export const createGetExpoScene = (getSupabaseClient: typeof getSupabase) => asy
                 };
             })
         });
+
+        const etag = createExpoSceneEtag(response);
+        cache.set(cacheKey, {
+            etag,
+            expiresAt: requestTime + ttlMs,
+            response,
+        });
+        setExpoSceneCacheHeaders(res, etag, ttlMs);
+
+        if (isIfNoneMatch(req, etag)) {
+            res.status(304).end();
+            return;
+        }
 
         res.status(200).json(response);
     } catch (error: any) {

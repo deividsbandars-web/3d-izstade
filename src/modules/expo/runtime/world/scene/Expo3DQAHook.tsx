@@ -68,6 +68,7 @@ type Expo3DQAMeshInventoryItem = {
     transparent: boolean | null;
   };
   name: string;
+  parentName: string | null;
   position: [number, number, number];
   scale: [number, number, number];
   userData: Record<string, unknown>;
@@ -463,6 +464,10 @@ function buildSceneMeshInventory(scene: THREE.Scene): Expo3DQAMeshInventoryItem[
     const lowerName = name.toLowerCase();
     const userData = primitiveUserData(mesh.userData as Record<string, unknown> | undefined);
     const componentHint = typeof userData.componentHint === 'string' ? userData.componentHint : null;
+    let namedParent = mesh.parent;
+    while (namedParent && !namedParent.name) {
+      namedParent = namedParent.parent;
+    }
     const worldPosition = mesh.getWorldPosition(new THREE.Vector3());
     const worldScale = mesh.getWorldScale(new THREE.Vector3());
     const bounds = toBox3Like(new THREE.Box3().setFromObject(mesh));
@@ -478,6 +483,7 @@ function buildSceneMeshInventory(scene: THREE.Scene): Expo3DQAMeshInventoryItem[
       isWallAssemblyCandidate: Boolean(userData.wallAssemblyOwnsCoreFacesRevealsTrim) || lowerName.includes('wall-assembly') || lowerName.includes('wall-core'),
       material: materialInventorySummary(mesh.material),
       name,
+      parentName: namedParent?.name || null,
       position: [
         Number(worldPosition.x.toFixed(4)),
         Number(worldPosition.y.toFixed(4)),

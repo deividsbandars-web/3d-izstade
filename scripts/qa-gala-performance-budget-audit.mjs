@@ -289,7 +289,10 @@ async function waitForGalaScene(page) {
   await page.waitForFunction(() => Boolean(window.__WARPALA_3D_QA__), null, { timeout: 60000 });
   await page.waitForFunction(() => {
     const inventory = window.__WARPALA_3D_QA__?.getSceneMeshInventory?.() ?? [];
-    return inventory.filter((item) => /gala-construction|vertical-timber|bathroom|bedroom|kitchen|sofa/i.test(item.name || '')).length > 80;
+    const galaMeshes = inventory.filter((item) => /gala-construction|vertical-timber|bathroom|bedroom|kitchen|sofa/i.test(item.name || ''));
+    const hasConstructionCore = inventory.some((item) => /gala-construction-.*wall-core-cell-opening-aware|gala-construction-single-finished-floor/i.test(item.name || ''));
+    const renderCalls = Number(window.__WARPALA_3D_QA__?.getRendererInfo?.()?.render?.calls ?? 0);
+    return galaMeshes.length >= 30 && hasConstructionCore && renderCalls > 0;
   }, null, { timeout: 60000 });
 }
 

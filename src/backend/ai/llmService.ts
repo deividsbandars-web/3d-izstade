@@ -27,28 +27,130 @@ export interface GenerateTextOptions {
   temperature?: number;
   maxTokens?: number;
   timeoutMs?: number;
-  userId?: string;
+  metering: LlmMeteringContext;
+}
+
+export type LlmMeteringContext =
+  | {
+      source: 'http';
+      userId: string;
+      route: string;
+      action: string;
+    }
+  | {
+      source: 'system';
+      actor: string;
+      action: string;
+      budget: string;
+      billable?: boolean;
+      route?: string;
+      userId?: string;
+    };
+
+export function createSystemLlmMetering(actor: string, action: string, budget = 'internal-ops'): LlmMeteringContext {
+  return {
+    source: 'system',
+    actor,
+    action,
+    budget,
+    billable: false,
+  };
+}
+
+function getNonEmptyString(value: unknown) {
+  return typeof value === 'string' && value.trim().length > 0 ? value.trim() : '';
+}
+
+function resolveMeteringContext(metering: LlmMeteringContext | undefined): LlmMeteringContext {
+  if (!metering) {
+    throw new Error('LLM metering context is required');
+  }
+
+  const action = getNonEmptyString(metering.action);
+  if (!action) {
+    throw new Error('LLM metering action is required');
+  }
+
+  if (metering.source === 'http') {
+    const userId = getNonEmptyString(metering.userId);
+    const route = getNonEmptyString(metering.route);
+    if (!userId) {
+      throw new Error('HTTP LLM calls require an authenticated user id');
+    }
+    if (!route) {
+      throw new Error('HTTP LLM calls require a route id');
+    }
+
+    return {
+      source: 'http',
+      userId,
+      route,
+      action,
+    };
+  }
+
+  const actor = getNonEmptyString(metering.actor);
+  const budget = getNonEmptyString(metering.budget);
+  if (!actor) {
+    throw new Error('System LLM calls require an actor id');
+  }
+  if (!budget) {
+    throw new Error('System LLM calls require a budget id');
+  }
+
+  return {
+    source: 'system',
+    actor,
+    action,
+    budget,
+    billable: metering.billable === true,
+    route: getNonEmptyString(metering.route) || undefined,
+    userId: getNonEmptyString(metering.userId) || undefined,
+  };
+}
+
+function getMeteredUserId(metering: LlmMeteringContext) {
+  if (metering.source === 'http') {
+    return metering.userId;
+  }
+
+  return metering.billable === true ? metering.userId : undefined;
+}
+
+function createUsageMetadata(metering: LlmMeteringContext, promptLength: number) {
+  return {
+    action: metering.action,
+    actor: metering.source === 'system' ? metering.actor : undefined,
+    billable: metering.source === 'http' ? true : metering.billable === true,
+    budget: metering.source === 'system' ? metering.budget : undefined,
+    promptLength,
+    route: metering.route,
+    source: metering.source,
+  };
 }
 
 export const llmService = {
-  async generateText(prompt: string, options: GenerateTextOptions = {}): Promise<{ text: string | null; error: any }> {
+  async generateText(prompt: string, options: GenerateTextOptions): Promise<{ text: string | null; error: any }> {
     const provider = options.provider || 'openai';
     const timeoutMs = options.timeoutMs || 30000;
-    const userId = options.userId;
 
     try {
+      const metering = resolveMeteringContext(options.metering);
+      const userId = getMeteredUserId(metering);
+      const usageMetadata = createUsageMetadata(metering, prompt.length);
+
       // 1. Check daily limits first
       if (userId) {
         const quotaCheck = await billingApplicationService.enforceQuota(userId, {
           provider,
           model: options.model,
           maxDailyRequests: 50,
-          metadata: { promptLength: prompt.length },
+          metadata: usageMetadata,
         });
         if (!quotaCheck.allowed) throw new Error(quotaCheck.reason || 'Daily API limit reached');
       }
 
-      logger.info('LLMService', `Generating text via ${provider}`, { promptLength: prompt.length });
+      logger.info('LLMService', `Generating text via ${provider}`, usageMetadata);
 
       const timeoutPromise = new Promise<never>((_, reject) =>
         setTimeout(() => reject(new Error('LLM request timed out')), timeoutMs)
@@ -68,7 +170,10 @@ export const llmService = {
           promptTokens: result.usage.prompt_tokens,
           completionTokens: result.usage.completion_tokens,
           costUsd: this._calculateOpenAICost(result.usage.prompt_tokens, result.usage.completion_tokens),
-          metadata: { task: prompt.substring(0, 50) }
+          metadata: {
+            ...usageMetadata,
+            task: prompt.substring(0, 50),
+          }
         });
       }
 

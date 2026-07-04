@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useSyncExternalStore } from 'react';
+import { useEffect, useSyncExternalStore } from 'react';
 import * as THREE from 'three';
 
 type TextureSetEntry = {
@@ -28,6 +28,10 @@ function getTextureSetEntry(paths: readonly string[]) {
   return { entry, key };
 }
 
+function parseTextureSetKey(key: string) {
+  return key.length > 0 ? key.split('\u0000') : [];
+}
+
 function notify(entry: TextureSetEntry) {
   entry.listeners.forEach((listener) => listener());
 }
@@ -54,19 +58,19 @@ function loadTextureSet(entry: TextureSetEntry, paths: readonly string[]) {
 
 export function useProgressiveTextureSet(paths: readonly string[]) {
   const { entry, key } = getTextureSetEntry(paths);
-  const subscribe = useCallback((listener: () => void) => {
-    entry.listeners.add(listener);
-    return () => {
-      entry.listeners.delete(listener);
-    };
-  }, [entry]);
-  const getSnapshot = useCallback(() => entry.textures, [entry]);
-  const textures = useSyncExternalStore(subscribe, getSnapshot, () => null);
 
   useEffect(() => {
-    const current = getTextureSetEntry(paths).entry;
-    loadTextureSet(current, paths);
-  }, [key, paths]);
+    loadTextureSet(entry, parseTextureSetKey(key));
+  }, [entry, key]);
 
-  return textures;
+  return useSyncExternalStore(
+    (listener) => {
+      entry.listeners.add(listener);
+      return () => {
+        entry.listeners.delete(listener);
+      };
+    },
+    () => entry.textures,
+    () => null,
+  );
 }

@@ -45,6 +45,12 @@ assert.deepEqual(
 );
 
 const canonicalPlan = buildCanonicalWorldPlanFromWorldContract(world);
+const canonicalMassIds = canonicalPlan.filteredMasses.map((mass) => mass.id);
+assert.equal(
+  new Set(canonicalMassIds).size,
+  canonicalMassIds.length,
+  'canonical city mass IDs must be unique across planning zones',
+);
 function resolveReserveOverlappingMassIds(plan: typeof canonicalPlan) {
   return plan.filteredMasses
     .filter((mass) => {

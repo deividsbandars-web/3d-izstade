@@ -259,10 +259,14 @@ assert.ok(sparseWorldBounds.maxZ - sparseWorldBounds.minZ >= 700);
 
 const startView = buildExpoSponsorStartView(boulevardPlan);
 assert.equal(startView.source, 'arrival-main');
-assert.ok(Math.abs(startView.position[0]) <= 32);
-assert.equal(startView.position[1], 8.2);
+assert.ok(startView.position[0] >= 18 && startView.position[0] <= 72);
+assert.ok(startView.position[1] >= 5 && startView.position[1] <= 6);
 assert.ok(startView.position[2] > boulevardPlan.arrivalNode.position[2]);
+assert.ok(startView.position[2] <= boulevardPlan.arrivalNode.position[2] + 40);
+assert.ok(startView.lookAt[1] >= 34 && startView.lookAt[1] <= 40);
+assert.ok(Math.abs(startView.lookAt[0] - startView.position[0]) <= 8);
 assert.ok(startView.lookAt[2] < boulevardPlan.arrivalNode.position[2]);
+assert.ok(startView.lookAt[2] <= boulevardPlan.arrivalNode.position[2] - 260);
 
 const walkRegions = buildExpoWalkRegionContract(multiPlacements).walkRegions;
 assert.ok(walkRegions.some((region) => region.type === 'arrival'));

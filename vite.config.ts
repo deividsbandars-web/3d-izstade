@@ -2,6 +2,11 @@ import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 import { execSync } from 'node:child_process'
+import { rmSync } from 'node:fs'
+import path from 'node:path'
+import type { Plugin, ResolvedConfig } from 'vite'
+
+const RELEASE_PRUNED_PUBLIC_PATHS = ['textures/expo']
 
 function resolveBuildStamp() {
   const commit =
@@ -22,6 +27,25 @@ function resolveBuildStamp() {
 
 function isFeatureFlagEnabled(value: string | undefined) {
   return ['1', 'true', 'yes', 'on'].includes(value?.trim().toLowerCase() ?? '')
+}
+
+function releasePublicAssetPrunePlugin(): Plugin {
+  let resolvedConfig: ResolvedConfig
+
+  return {
+    name: 'warpala-release-public-asset-prune',
+    apply: 'build',
+    enforce: 'post',
+    configResolved(config) {
+      resolvedConfig = config
+    },
+    closeBundle() {
+      const outDir = path.resolve(resolvedConfig.root, resolvedConfig.build.outDir)
+      for (const relativePath of RELEASE_PRUNED_PUBLIC_PATHS) {
+        rmSync(path.join(outDir, relativePath), { recursive: true, force: true })
+      }
+    },
+  }
 }
 
 export default defineConfig(({ mode }) => {
@@ -48,9 +72,9 @@ export default defineConfig(({ mode }) => {
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
       manifest: {
-        name: 'Platformu Centrs',
-        short_name: 'PCentrs',
-        description: 'Būvniecības Metaversa Izstāde un PRO Kalkulatori',
+        name: 'Warpala Sponsor Expo',
+        short_name: 'Warpala',
+        description: 'Web3D sponsor expo, city screens, booths, and modular-home studio',
         theme_color: '#0f172a',
         background_color: '#0f172a',
         display: 'standalone',
@@ -74,12 +98,14 @@ export default defineConfig(({ mode }) => {
         ]
       },
       workbox: {
-        maximumFileSizeToCacheInBytes: 5000000
+        maximumFileSizeToCacheInBytes: 5000000,
+        globIgnores: ['**/textures/expo/**']
       },
       devOptions: {
-        enabled: false // IZSLEEDZAM CACHING IZSTRĀDES LAIKĀ!!!
+        enabled: false // Disable dev caching during expo iteration.
       }
-    })
+    }),
+    releasePublicAssetPrunePlugin()
   ],
   server: {
     proxy: {

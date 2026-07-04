@@ -1,4 +1,4 @@
-import { runAgent } from './baseAgent.js';
+import { GrowthAPI } from '../services/growth.js';
 
 export async function runSeoTask() {
   const topics = [
@@ -9,14 +9,9 @@ export async function runSeoTask() {
 
   for (const topic of topics) {
     console.log(`[SEO Agent] Working on: ${topic}`);
-    await runAgent(`
-      Generate an SEO-optimized article about ${topic}. 
-      Include a table of costs, FAQs and a guide. 
-      Format: Markdown. 
-      Tone: Professional.
-    `);
+    await GrowthAPI.generateKeywordClusters({ topic });
     
     // Šeit tiktu izsaukts serviss, kas izveido lapu un publicē to tavā CMS vai DB
-    console.log(`[SEO Agent] Article generated for ${topic}. Ready to publish.`);
+    console.log(`[SEO Agent] Keyword cluster generated for ${topic}.`);
   }
 }

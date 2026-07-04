@@ -1,4 +1,4 @@
-import { llmService } from '../../ai/llmService.js';
+import { createSystemLlmMetering, llmService } from '../../ai/llmService.js';
 import { logger } from '../../logging/logger.js';
 import { supabaseClient } from '../../../lib/supabaseClient.js';
 import { platformMetrics } from '../metrics/platformMetrics.js';
@@ -41,7 +41,10 @@ Identify:
 
 Format your response cleanly.`;
 
-      const { text, error } = await llmService.generateText(prompt, { temperature: 0.4 });
+      const { text, error } = await llmService.generateText(prompt, {
+        metering: createSystemLlmMetering('platform-brain', 'analyze-system-performance'),
+        temperature: 0.4,
+      });
       
       if (error || !text) throw new Error(error || 'Analysis failed');
 
@@ -93,7 +96,10 @@ ${JSON.stringify(failures)}
 Write a revised, highly robust system prompt that directly addresses and prevents these failures.
 Respond ONLY with the new prompt text.`;
 
-      const { text, error } = await llmService.generateText(prompt, { temperature: 0.5 });
+      const { text, error } = await llmService.generateText(prompt, {
+        metering: createSystemLlmMetering('platform-brain', 'optimize-agent-prompts'),
+        temperature: 0.5,
+      });
       if (error || !text) throw new Error(error || 'Failed to generate new prompt');
 
       // Self-healing: Update the agent in the database

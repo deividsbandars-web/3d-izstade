@@ -12,7 +12,7 @@ export function resolveOpenBoothPavilionLayout(
   const isPremium = tier === 'premium';
   const isStandard = tier === 'standard';
   const isScreenFirstPremium = isPremium && !isElite && !isHero;
-  const isScreenFirstBooth = true;
+  const isScreenFirstBooth = isHero || isElite || isPremium;
   const width = metrics.footprintSize[0] * (isHero ? 0.92 : isElite ? 0.94 : isPremium ? 0.9 : 0.82);
   const depth = metrics.footprintSize[1] * (isHero ? 0.44 : isElite || isPremium ? 0.42 : 0.46);
   const postHeight = Math.max(isHero ? 9.4 : isElite ? 8.4 : isPremium ? 7.3 : 6.7, metrics.colliderSize[1] * (isHero ? 0.78 : isScreenFirstBooth ? 0.7 : isElite ? 0.72 : isPremium ? 0.66 : 0.61));
@@ -42,14 +42,14 @@ export function resolveOpenBoothPavilionLayout(
     screenSurfaceHeight,
     screenSurfaceWidth,
     showSignalTowers: isScreenFirstBooth,
-    showFrontThreshold: false,
-    showFrontageCanopy: false,
-    showFrontageFins: false,
+    showFrontThreshold: !isScreenFirstBooth,
+    showFrontageCanopy: !isScreenFirstBooth,
+    showFrontageFins: !isScreenFirstBooth && (isPremium || isElite || isHero),
     showFullRoof: !isScreenFirstBooth,
     showPremiumOrEliteBlades: false,
     showPremiumPortalShell: isPremium && !isElite && !isHero && !isScreenFirstBooth,
     showScreenTrimOverlays: !isScreenFirstBooth,
-    showTierSideBanners: false,
+    showTierSideBanners: !isScreenFirstBooth && !isStandard,
     signalTowerHeight,
     signalTowerOffsetX,
     width,

@@ -14,9 +14,9 @@ type RoomState =
 type BoothProfileTier = 'elite' | 'premium' | 'standard' | 'support';
 
 const TIER_LABELS: Record<BoothProfileTier, string> = {
-  elite: 'FEATURED BOOTH PROFILE',
-  premium: 'BOOTH PROFILE',
-  standard: 'BOOTH PROFILE',
+  elite: 'FEATURED SPONSOR',
+  premium: 'PREMIUM BOOTH',
+  standard: 'SPONSOR BOOTH',
   support: 'SPONSOR PROFILE',
 };
 
@@ -29,8 +29,8 @@ const TIER_COLOR: Record<BoothProfileTier, string> = {
 
 const TIER_POINTS: Record<BoothProfileTier, string[]> = {
   elite: ['High-visibility sponsor presence', 'Public booth profile', 'Sponsor contact path'],
-  premium: ['Booth profile', 'Contact sponsor', 'Admin booth tools'],
-  standard: ['Sponsor profile', 'Open booth', 'Request info'],
+  premium: ['Premium sponsor presence', 'Contact sponsor', 'Media-ready screen'],
+  standard: ['Sponsor offer', 'Contact team', 'Request info'],
   support: ['Public profile', 'Contact team', 'Return to expo'],
 };
 
@@ -135,7 +135,7 @@ function BoothActionLinks({ record }: { record: SponsorRoomRecord }) {
           rel={brochureAction.intent?.type === 'external' ? 'noreferrer' : undefined}
           style={{ ...buttonStyle('#38bdf8'), textDecoration: 'none' }}
         >
-          Open booth profile
+          View sponsor profile
         </a>
       ) : null}
 
@@ -177,14 +177,11 @@ function BoothActionLinks({ record }: { record: SponsorRoomRecord }) {
         return null;
       })}
 
-      <Link to="/expo/admin" style={{ ...buttonStyle('#111827'), textDecoration: 'none', color: '#e2e8f0' }}>
-        Manage booth
-      </Link>
       <Link to="/expo/sponsor-packages" style={{ ...buttonStyle('#111827'), textDecoration: 'none', color: '#e2e8f0' }}>
-        View sponsor packages
+        Buy / rent booth
       </Link>
       <Link to="/expo-3d" style={{ ...buttonStyle('#111827'), textDecoration: 'none', color: '#e2e8f0' }}>
-        Return to expo
+        Walk expo city
       </Link>
     </div>
   );
@@ -246,8 +243,8 @@ export default function BoothRoom() {
   const roomSummary = record.presentation.tagline || 'Open the booth profile to view the sponsor summary and current public details.';
   const hasInteractiveRoom = Boolean(record.presentation.managedScreenContent || record.presentation.videoUrl || record.presentation.customInsertUrl);
   const roomStatus = hasInteractiveRoom
-    ? 'This booth has public profile content and managed screen content attached.'
-    : 'This booth does not yet have a configured interactive room.';
+    ? 'This booth has sponsor media and contact actions attached.'
+    : 'This sponsor profile is ready for contact. Richer media can be added from the sponsor setup flow.';
 
   return (
     <main style={{ background: 'radial-gradient(circle at 20% 8%, rgba(56, 189, 248, 0.16), transparent 32%), linear-gradient(135deg, #050b14 0%, #07111f 50%, #020617 100%)', color: '#f8fafc', minHeight: '100vh' }}>
@@ -270,22 +267,22 @@ export default function BoothRoom() {
 
           <div style={{ display: 'grid', gap: 10 }}>
             <div style={{ color: roomModel.accent, fontSize: '0.74rem', fontWeight: 900, letterSpacing: '0.14em', textTransform: 'uppercase' }}>
-              Booth actions
+              Contact options
             </div>
             <BoothActionLinks record={record} />
           </div>
 
           <div style={{ background: 'rgba(2, 6, 23, 0.6)', border: '1px solid rgba(148, 163, 184, 0.14)', borderRadius: 22, padding: 18 }}>
             <div style={{ color: '#94a3b8', fontSize: '0.78rem', fontWeight: 900, letterSpacing: '0.12em', marginBottom: 12, textTransform: 'uppercase' }}>
-              Booth status
+              Sponsor content
             </div>
             <p style={{ color: '#e2e8f0', fontSize: '0.95rem', lineHeight: 1.55, margin: 0 }}>
               {roomStatus}
             </p>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 14 }}>
-              <StaticPill>Open booth profile</StaticPill>
+              <StaticPill>Sponsor profile</StaticPill>
               <StaticPill>Contact sponsor</StaticPill>
-              <StaticPill>Manage booth</StaticPill>
+              <StaticPill>Package setup</StaticPill>
             </div>
           </div>
 

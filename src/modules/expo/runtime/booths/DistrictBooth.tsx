@@ -21,12 +21,14 @@ const BOOTH_ENTRY_PORTAL_TRIGGER_RADIUS = 2.75;
 function BoothEntryPortal({
   accentColor,
   label,
+  lowDetail = false,
   onEnter,
   position,
   rotationY = 0,
 }: {
   accentColor: string;
   label: string;
+  lowDetail?: boolean;
   onEnter: () => void;
   position: [number, number, number];
   rotationY?: number;
@@ -48,6 +50,29 @@ function BoothEntryPortal({
     event.stopPropagation();
     requestEnter();
   };
+
+  if (lowDetail) {
+    return (
+      <group name="booth-entry-portal booth-entry-portal-low-detail" position={position} rotation={[0, rotationY, 0]}>
+        <mesh position={[0, 0.62, 0]} onPointerDown={handleEnterPointer}>
+          <boxGeometry args={[3.9, 1.24, 0.2]} />
+          <meshStandardMaterial color="#102031" emissive={accentColor} emissiveIntensity={0.14} roughness={0.42} />
+        </mesh>
+        <Text position={[0, 0.67, 0.12]} fontSize={0.22} color="#f8fafc" anchorX="center" anchorY="middle" maxWidth={3.2}>
+          {safeLabel}
+        </Text>
+        <mesh
+          name="booth-entry-portal-trigger"
+          position={[0, 0.7, 0]}
+          onPointerDown={handleEnterPointer}
+          userData={{ expoBoothEntryPortalTrigger: true, expoInteractionOwner: 'DistrictBooth' }}
+        >
+          <boxGeometry args={[4.4, 1.5, 1.8]} />
+          <meshBasicMaterial depthWrite={false} opacity={0} transparent visible={false} />
+        </mesh>
+      </group>
+    );
+  }
 
   return (
     <group
@@ -158,7 +183,7 @@ function BoothEntryPortal({
         }}
       >
         <boxGeometry args={[4.65, 1.72, 2.9]} />
-        <meshBasicMaterial depthWrite={false} opacity={0} transparent />
+        <meshBasicMaterial depthWrite={false} opacity={0} transparent visible={false} />
       </mesh>
       <Text position={[0, 1.31, 1.18]} fontSize={0.115} color="#f8fafc" anchorX="center" anchorY="middle" maxWidth={3.15}>
         {safeLabel}
@@ -194,6 +219,7 @@ function getBoothEntryPortalDistance({
 
 export function DistrictBooth({
   districtVisual,
+  lowDetail = false,
   placement,
   playerPosition,
 }: {
@@ -203,6 +229,7 @@ export function DistrictBooth({
     groundAccent: string;
     shellAccent: string;
   };
+  lowDetail?: boolean;
   placement: ExpoBoothPlacement;
   playerPosition: [number, number, number];
 }) {
@@ -322,6 +349,7 @@ export function DistrictBooth({
         boothProductPreviewCard={boothProductPreviewCard}
         districtThemeId={placement.districtThemeId}
         fallbackMonogram={presentation.fallbackIdentity.monogram}
+        lowDetail={lowDetail}
         presentation={presentation}
         tierState={{ ...tierState, districtVisual }}
       />
@@ -330,6 +358,7 @@ export function DistrictBooth({
           key={`booth-entry-portal-${entryPortal.position[2]}`}
           accentColor={districtVisual.shellAccent || placement.color}
           label={presentation.displayName}
+          lowDetail={lowDetail}
           onEnter={selectBoothAndOpenRoom}
           position={entryPortal.position}
           rotationY={entryPortal.rotationY}

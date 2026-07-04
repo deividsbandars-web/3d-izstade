@@ -46,17 +46,24 @@ type HomeConfigUiGroup<Key extends keyof ModularHomeConfiguratorState = keyof Mo
   options: readonly HomeConfigUiOption<Key>[];
 };
 
-const PRIMARY_CONFIGURATOR_GROUP_KEYS = [
+export const MODULAR_HOME_PRIMARY_CONFIGURATOR_GROUP_KEYS = [
+  'template',
+  'layoutVariant',
+  'roomUseProfile',
   'facade',
   'roof',
   'terrace',
+  'trimColor',
+  'windowFrameColor',
+  'doorPackage',
+  'roofEdgeColor',
   'floorFinish',
   'interiorWallFinish',
   'furniturePackage',
 ] as const satisfies readonly (keyof ModularHomeConfiguratorState)[];
 
 const PRIMARY_CONFIGURATOR_GROUP_KEY_SET = new Set<keyof ModularHomeConfiguratorState>(
-  PRIMARY_CONFIGURATOR_GROUP_KEYS,
+  MODULAR_HOME_PRIMARY_CONFIGURATOR_GROUP_KEYS,
 );
 
 type ConfiguratorStylePreset = {
@@ -311,7 +318,7 @@ export function ConfiguratorOptionsPanel({
   const [showMoreOptions, setShowMoreOptions] = useState(false);
   const sharedConfigFromUrl = { invalidKeys: invalidShareKeys };
   const shareUrl = createModularHomeShareUrl(config, undefined, viewMode);
-  const primaryConfiguratorGroups = PRIMARY_CONFIGURATOR_GROUP_KEYS
+  const primaryConfiguratorGroups = MODULAR_HOME_PRIMARY_CONFIGURATOR_GROUP_KEYS
     .map((key) => configuratorGroups.find((group) => group.key === key))
     .filter((group): group is HomeConfigUiGroup => group !== undefined);
   const moreConfiguratorGroups = configuratorGroups.filter((group) => !PRIMARY_CONFIGURATOR_GROUP_KEY_SET.has(group.key));
@@ -324,7 +331,7 @@ export function ConfiguratorOptionsPanel({
 
     try {
       await navigator.clipboard.writeText(shareUrl);
-      setShareCopyStatus('Saite nokopēta.');
+      setShareCopyStatus('Link copied.');
     } catch {
       setShareCopyStatus('Share link is ready below.');
     }
@@ -494,6 +501,8 @@ export function ConfiguratorOptionsPanel({
               </div>
       
               <div style={{ display: 'grid', gap: isTouchDevice ? '11px' : '12px', marginTop: isTouchDevice ? '11px' : '12px' }}>
+                {primaryConfiguratorGroups.map(renderConfiguratorGroup)}
+
                 <div
                   data-home-style-presets="true"
                   style={{
@@ -628,7 +637,7 @@ export function ConfiguratorOptionsPanel({
                         padding: '8px 10px',
                       }}
                     >
-                      Saglabā / kopīgo savu māju
+                      Save / share this home
                     </button>
                     <button
                       type="button"
@@ -659,8 +668,6 @@ export function ConfiguratorOptionsPanel({
                   ) : null}
                 </div>
       
-                {primaryConfiguratorGroups.map(renderConfiguratorGroup)}
-
                 {moreConfiguratorGroups.length > 0 ? (
                   <div
                     data-home-config-more-options="true"
@@ -699,7 +706,7 @@ export function ConfiguratorOptionsPanel({
                         width: 'fit-content',
                       }}
                     >
-                      Vairāk opciju
+                      More options
                     </button>
 
                     {showMoreOptions ? (

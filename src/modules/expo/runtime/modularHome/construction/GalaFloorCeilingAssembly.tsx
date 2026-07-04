@@ -5,15 +5,22 @@ import {
 import { GalaConstructionBox } from './GalaConstructionPrimitives';
 import { useGalaConstructionPbrTextures } from './GalaConstructionPbrTextures';
 import { resolveGalaWallSkin } from './GalaWallSkinModel';
+import type { GalaConstructionRenderDetailLevel } from './GalaConstructionDetailPolicy';
 
 type GalaFloorCeilingAssemblyProps = {
+  renderDetailLevel?: GalaConstructionRenderDetailLevel;
   visualConfig?: GalaHouseVisualConfig;
 };
 
-export function GalaFloorCeilingAssembly({ visualConfig }: GalaFloorCeilingAssemblyProps) {
+export function GalaFloorCeilingAssembly({
+  renderDetailLevel = 'full',
+  visualConfig,
+}: GalaFloorCeilingAssemblyProps) {
   const wallSkin = resolveGalaWallSkin(visualConfig);
   const { interior } = wallSkin;
   const floorPbrTextures = useGalaConstructionPbrTextures('floor', interior.floorTextureVariant);
+  const renderFineDetail = renderDetailLevel === 'full';
+  const floorTextureProps = renderFineDetail ? floorPbrTextures : {};
   const floorY = GALA_CONSTRUCTION_LEVELS.finishedFloorTopY
     - (GALA_CONSTRUCTION_LEVELS.finishedFloorThicknessM * 0.5);
   const floorSize: [number, number, number] = [10.2, GALA_CONSTRUCTION_LEVELS.finishedFloorThicknessM, 5.0];
@@ -30,7 +37,7 @@ export function GalaFloorCeilingAssembly({ visualConfig }: GalaFloorCeilingAssem
       }}
     >
       <GalaConstructionBox
-        {...floorPbrTextures}
+        {...floorTextureProps}
         color={interior.floorColor}
         name="gala-construction-single-finished-floor-no-overlays"
         position={[0, floorY, 0]}
@@ -46,7 +53,8 @@ export function GalaFloorCeilingAssembly({ visualConfig }: GalaFloorCeilingAssem
         }}
       />
 
-      <mesh
+      {renderFineDetail ? (
+        <mesh
         name="gala-construction-finished-floor-local-plank-surface"
         position={[0, GALA_CONSTRUCTION_LEVELS.finishedFloorTopY + 0.004, 0]}
         receiveShadow
@@ -74,7 +82,8 @@ export function GalaFloorCeilingAssembly({ visualConfig }: GalaFloorCeilingAssem
           roughness={0.84}
           roughnessMap={floorPbrTextures.roughnessMap}
         />
-      </mesh>
+        </mesh>
+      ) : null}
 
       <GalaConstructionBox
         color={interior.ceilingColor}

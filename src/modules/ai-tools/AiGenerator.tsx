@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import '../../components/calculator/styles/CalculatorPro.css';
+import { openExternalUrl } from '../../utils/openExternalUrl';
 import { generateAiResponse } from '../../services/aiService';
 
 export default function AiGenerator() {
@@ -38,7 +39,9 @@ export default function AiGenerator() {
     // Simulējam Stripe maksājumu
     setTimeout(() => {
       alert("Maksājums veiksmīgs (2 €)! Lejupielāde sākas...");
-      window.open(videoUrl!, '_blank');
+      if (!openExternalUrl(videoUrl)) {
+        alert("Video lejupielÄdes saite nav derÄ«ga.");
+      }
       setStep('input');
       setPrompt('');
     }, 2000);

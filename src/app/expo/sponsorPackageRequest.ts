@@ -8,12 +8,16 @@ export type SponsorPackageRequestSyncStatus = 'backend-pending' | 'backend-synce
 
 export type SponsorPackageRequestForm = {
   budgetRange: string;
+  ctaLabel: string;
   company: string;
   email: string;
+  logoUrl: string;
+  mediaUrl: string;
   message: string;
   name: string;
   packageInterest: SponsorPackageInterest;
   phone: string;
+  sponsorHeadline: string;
   timeline: string;
   website: string;
 };
@@ -43,12 +47,16 @@ const SPONSOR_PACKAGE_LEAD_COMPANY_SLUG = 'sponsor-concierge';
 
 export const INITIAL_SPONSOR_PACKAGE_REQUEST_FORM: SponsorPackageRequestForm = {
   budgetRange: '',
+  ctaLabel: '',
   company: '',
   email: '',
+  logoUrl: '',
+  mediaUrl: '',
   message: '',
   name: '',
   packageInterest: 'premium',
   phone: '',
+  sponsorHeadline: '',
   timeline: '',
   website: '',
 };
@@ -58,15 +66,32 @@ export function normalizeSponsorPackageRequestForm(
 ): SponsorPackageRequestForm {
   return {
     budgetRange: form.budgetRange.trim(),
+    ctaLabel: form.ctaLabel.trim(),
     company: form.company.trim(),
     email: form.email.trim(),
+    logoUrl: form.logoUrl.trim(),
+    mediaUrl: form.mediaUrl.trim(),
     message: form.message.trim(),
     name: form.name.trim(),
     packageInterest: form.packageInterest,
     phone: form.phone.trim(),
+    sponsorHeadline: form.sponsorHeadline.trim(),
     timeline: form.timeline.trim(),
     website: form.website.trim(),
   };
+}
+
+function isOptionalPublicHttpsUrl(value: string) {
+  if (!value) {
+    return true;
+  }
+
+  try {
+    const parsed = new URL(value);
+    return parsed.protocol === 'https:' && !parsed.username && !parsed.password;
+  } catch {
+    return false;
+  }
 }
 
 export function validateSponsorPackageRequestForm(form: SponsorPackageRequestForm) {
@@ -86,6 +111,14 @@ export function validateSponsorPackageRequestForm(form: SponsorPackageRequestFor
 
   if (!normalized.message) {
     return 'Add what you want to sponsor or discuss.';
+  }
+
+  if (!isOptionalPublicHttpsUrl(normalized.logoUrl)) {
+    return 'Use a public HTTPS logo URL or leave it blank.';
+  }
+
+  if (!isOptionalPublicHttpsUrl(normalized.mediaUrl)) {
+    return 'Use a public HTTPS media URL or leave it blank.';
   }
 
   return null;
@@ -150,6 +183,10 @@ export function buildSponsorPackageLeadPayload(
     `Sponsor company: ${normalized.company}`,
     normalized.phone ? `Contact phone: ${normalized.phone}` : null,
     normalized.website ? `Website: ${normalized.website}` : null,
+    normalized.logoUrl ? `Logo URL: ${normalized.logoUrl}` : null,
+    normalized.mediaUrl ? `Media URL: ${normalized.mediaUrl}` : null,
+    normalized.sponsorHeadline ? `Booth headline: ${normalized.sponsorHeadline}` : null,
+    normalized.ctaLabel ? `Preferred CTA: ${normalized.ctaLabel}` : null,
     normalized.budgetRange ? `Budget signal: ${normalized.budgetRange}` : null,
     normalized.timeline ? `Timeline: ${normalized.timeline}` : null,
     '',

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import '../../components/calculator/styles/CalculatorPro.css';
 import { stripeService } from '../../services/stripeService';
+import { openExternalUrl } from '../../utils/openExternalUrl';
 
 export default function ClientPortal() {
   const [isPaying, setIsPaying] = useState(false);
@@ -17,7 +18,9 @@ export default function ClientPortal() {
     setIsPaying(true);
     try {
       const { url } = await stripeService.createCheckoutSession(3950, 'Project Payment: ' + activeProject.name);
-      window.open(url, '_blank');
+      if (!openExternalUrl(url)) {
+        throw new Error('Invalid checkout URL');
+      }
     } catch {
       alert("Maksājuma kļūda. Lūdzu, mēģiniet vēlreiz.");
     } finally {

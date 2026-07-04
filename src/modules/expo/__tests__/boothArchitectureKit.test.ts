@@ -44,18 +44,18 @@ assert.ok(premiumLayout.signalTowerHeight > premiumLayout.screenFrameHeight);
 assert.ok(premiumLayout.signalTowerOffsetX > premiumLayout.screenFrameWidth * 0.5);
 
 const standardLayout = resolveOpenBoothPavilionLayout(getBoothArchitectureMetrics('standard_arcade'), 'standard');
-assert.equal(standardLayout.isScreenFirstBooth, true);
-assert.equal(standardLayout.showFullRoof, false);
-assert.equal(standardLayout.showFrontageCanopy, false);
-assert.equal(standardLayout.showSignalTowers, true);
+assert.equal(standardLayout.isScreenFirstBooth, false);
+assert.equal(standardLayout.showFullRoof, true);
+assert.equal(standardLayout.showFrontageCanopy, true);
+assert.equal(standardLayout.showFrontThreshold, true);
+assert.equal(standardLayout.showScreenTrimOverlays, true);
+assert.equal(standardLayout.showSignalTowers, false);
 assert.equal(standardLayout.mediaSurfaceCount, 1);
 assert.ok(standardLayout.depth / getBoothArchitectureMetrics('standard_arcade').footprintSize[1] <= 0.48);
 assert.ok(standardLayout.screenFrameWidth / standardLayout.width <= 1);
 assert.ok(standardLayout.screenFrameHeight >= 8);
-assert.ok(standardLayout.screenSurfaceWidth / standardLayout.screenFrameWidth >= 0.99);
-assert.ok(standardLayout.screenSurfaceHeight / standardLayout.screenFrameHeight >= 0.98);
-assert.ok(standardLayout.signalTowerHeight > standardLayout.screenFrameHeight);
-assert.ok(standardLayout.signalTowerOffsetX > standardLayout.screenFrameWidth * 0.5);
+assert.ok(standardLayout.screenSurfaceWidth / standardLayout.width <= 0.56);
+assert.ok(standardLayout.screenSurfaceHeight <= 4.3);
 
 const eliteLayout = resolveOpenBoothPavilionLayout(getBoothArchitectureMetrics('premium_spine'), 'elite');
 assert.equal(eliteLayout.isScreenFirstBooth, true);

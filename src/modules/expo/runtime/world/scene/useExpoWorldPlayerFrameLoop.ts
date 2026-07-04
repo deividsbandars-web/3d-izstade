@@ -5,7 +5,7 @@ import * as THREE from 'three';
 import type { ExpoMode } from '../../../state/expoRuntime';
 import type { ExpoVerticalAccessNode, ExpoVerticalWalkableRegion } from '../../planning/types';
 import { isExpo3dQaEnabled } from '../../app/expo3dQa';
-import { EXPO_START_VIEW_KEY, collectPlayerCollisionTargets, isCollisionMesh } from '../WorldSceneSupport';
+import { EXPO_START_VIEW_KEY, isCollisionMesh, queryNearbyPlayerCollisionTargets } from '../WorldSceneSupport';
 import {
   WORLD_PHYSICS_DEFAULT_EDGE_SLACK,
   WORLD_PHYSICS_DEFAULT_Y_TOLERANCE,
@@ -281,13 +281,16 @@ export function useExpoWorldPlayerFrameLoop({
       const nextMovePosition = frameNextMovePosition.current.copy(camera.position).add(moveDir);
       const origin = frameRayOrigin.current.copy(camera.position).add(moveDir);
       origin.y -= 1;
-      const collisionTargets = collectPlayerCollisionTargets(scene);
+      const collisionQueryRadius = Math.max(8, activePlayerRadius + moveDir.length() + 6);
+      const collisionTargets = queryNearbyPlayerCollisionTargets(scene, nextMovePosition, collisionQueryRadius);
       const currentPhysicsHit = findBlockingWorldPhysicsSolid(camera.position, effectivePhysicsSolids, {
         playerSurfaceOffset: WORLD_PHYSICS_PLAYER_SURFACE_OFFSET,
         radius: activePlayerRadius,
       });
       const checkCollision = (pos: THREE.Vector3, dir: THREE.Vector3) => {
         raycaster.current.set(pos, dir);
+        raycaster.current.near = 0;
+        raycaster.current.far = activePlayerRadius;
         const intersects = raycaster.current.intersectObjects(collisionTargets, false);
         return intersects.find((entry) => entry.object.visible && isCollisionMesh(entry.object));
       };

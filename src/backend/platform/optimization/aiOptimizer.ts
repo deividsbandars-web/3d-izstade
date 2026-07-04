@@ -1,12 +1,14 @@
 import { logger } from '../../logging/logger.js';
-import { llmService } from '../../ai/llmService.js';
+import { createSystemLlmMetering, llmService, type LlmMeteringContext } from '../../ai/llmService.js';
 import { supabaseClient } from '../../../lib/supabaseClient.js';
 
 export const aiOptimizer = {
   /**
    * Analyzes platform lead conversion data to provide insights
    */
-  async analyzeLeadConversion() {
+  async analyzeLeadConversion(
+    metering: LlmMeteringContext = createSystemLlmMetering('ai-optimizer', 'analyze-lead-conversion'),
+  ) {
     try {
       logger.info('AiOptimizer', 'Analyzing lead conversion performance');
       
@@ -17,7 +19,7 @@ export const aiOptimizer = {
       const prompt = `Act as a Data Scientist. We have generated ${totalLeads || 0} leads, out of which ${highScoring || 0} scored above 70/100. 
       Analyze this conversion funnel conceptually and provide 3 actionable insights to improve lead quality.`;
 
-      const { text, error } = await llmService.generateText(prompt, { temperature: 0.5 });
+      const { text, error } = await llmService.generateText(prompt, { metering, temperature: 0.5 });
       if (error) throw new Error(error);
 
       return { data: text, error: null };
@@ -30,13 +32,15 @@ export const aiOptimizer = {
   /**
    * Suggests better business niches based on active projects
    */
-  async suggestBetterNiches() {
+  async suggestBetterNiches(
+    metering: LlmMeteringContext = createSystemLlmMetering('ai-optimizer', 'suggest-better-niches'),
+  ) {
     try {
       logger.info('AiOptimizer', 'Suggesting optimal niches');
       
       const prompt = `Based on current market trends and typical B2B SaaS/Metaverse platforms, suggest 5 highly profitable, underserved niches for automated business generation. Format as a bulleted list with brief justifications.`;
       
-      const { text, error } = await llmService.generateText(prompt, { temperature: 0.7 });
+      const { text, error } = await llmService.generateText(prompt, { metering, temperature: 0.7 });
       if (error) throw new Error(error);
 
       return { data: text, error: null };
@@ -49,14 +53,16 @@ export const aiOptimizer = {
   /**
    * Recommends optimizations for Agent Task execution times and roles
    */
-  async optimizeAgentTasks() {
+  async optimizeAgentTasks(
+    metering: LlmMeteringContext = createSystemLlmMetering('ai-optimizer', 'optimize-agent-tasks'),
+  ) {
     try {
       logger.info('AiOptimizer', 'Optimizing agent task workflows');
       
       const prompt = `You are a Systems Architect. Our AI agents process workflows (CEO -> Marketing -> SEO -> Lead -> Sales). 
       Suggest 3 ways to parallelize these tasks or reduce LLM latency during execution to improve platform throughput.`;
 
-      const { text, error } = await llmService.generateText(prompt, { temperature: 0.4 });
+      const { text, error } = await llmService.generateText(prompt, { metering, temperature: 0.4 });
       if (error) throw new Error(error);
 
       return { data: text, error: null };

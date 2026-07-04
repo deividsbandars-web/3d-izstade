@@ -3,7 +3,7 @@ import { expoService } from '../../src/backend/expo/expoService.js';
 import { cityMapService } from '../../src/backend/expo/city/cityMapService.js';
 import { expoSceneService } from '../../src/backend/expo/scenes/expoSceneService.js';
 import { boothAnalytics } from '../../src/backend/expo/analytics/boothAnalytics.js';
-import { getExpoBoothById } from '../../src/backend/expo/data/expoBoothStore.js';
+import { getExpoBoothById, listExpoBooths } from '../../src/backend/expo/data/expoBoothStore.js';
 import { getSupabase } from '../services/supabase.js';
 import { getSupabaseAdminClient } from '../../src/backend/lib/supabaseAdmin.js';
 import {
@@ -38,6 +38,12 @@ import {
   normalizeExpoMediaReviewReferencesForSave,
   readExpoMediaReviewReferencesFromAssets,
 } from '../../src/shared/expo/mediaReviewReferences.js';
+import { getExpoScreenSlotById } from '../../src/shared/expo/screenInventory.js';
+import {
+  findExpoCityScreenCampaignConflict,
+  normalizeExpoCityScreenCampaign,
+  type ExpoCityScreenCampaignRecord,
+} from '../../src/shared/expo/cityScreenCampaign.js';
 import type { AuthRequest } from '../middleware/authMiddleware.js';
 
 function getIdParam(value: unknown) {
@@ -48,6 +54,86 @@ function getRequestedPublicationStatus(payload: Record<string, unknown>) {
   return Object.prototype.hasOwnProperty.call(payload, 'status')
     ? normalizeExpoBoothPublicationStatus(payload.status)
     : null;
+}
+
+function asRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : {};
+}
+
+async function validateCityScreenCampaignRequest(
+  payload: Record<string, unknown>,
+  options: { boothId?: string; role?: string | null },
+) {
+  const assets = asRecord(payload.assets_3d);
+  if (!Object.prototype.hasOwnProperty.call(assets, 'city_screen_content')) {
+    return { error: null, status: 200 as const };
+  }
+
+  const rawCampaign = asRecord(assets.city_screen_content);
+  const normalized = normalizeExpoCityScreenCampaign(rawCampaign, {
+    today: new Date().toISOString().slice(0, 10),
+  });
+  if (!normalized.ok) {
+    return {
+      error: normalized.issues.map((issue) => issue.message).join(' '),
+      status: 400 as const,
+    };
+  }
+
+  if (options.role !== 'admin' && !['draft', 'submitted'].includes(normalized.campaign.campaignStatus)) {
+    return {
+      error: 'Only an operator can approve, reject, or publish a city screen campaign.',
+      status: 403 as const,
+    };
+  }
+
+  if (normalized.campaign.campaignStatus === 'draft') {
+    return { error: null, status: 200 as const };
+  }
+
+  const boothsResult = await listExpoBooths();
+  if (boothsResult.error || !boothsResult.data) {
+    return {
+      error: 'City screen availability could not be verified. Try again before submitting.',
+      status: 503 as const,
+    };
+  }
+
+  const existingCampaigns = boothsResult.data.flatMap((booth: {
+    assets_3d?: Record<string, unknown> | null;
+    company_name?: string;
+    id: string;
+  }) => {
+    const boothAssets = asRecord(booth.assets_3d);
+    const boothCampaign = normalizeExpoCityScreenCampaign(asRecord(boothAssets.city_screen_content));
+    if (!boothCampaign.ok || !boothCampaign.campaign.screenSlotId) {
+      return [];
+    }
+
+    return [{
+      boothId: booth.id,
+      campaignEndDate: boothCampaign.campaign.campaignEndDate,
+      campaignStartDate: boothCampaign.campaign.campaignStartDate,
+      campaignStatus: boothCampaign.campaign.campaignStatus,
+      companyName: booth.company_name,
+      screenSlotId: boothCampaign.campaign.screenSlotId,
+    } satisfies ExpoCityScreenCampaignRecord];
+  });
+
+  const conflict = findExpoCityScreenCampaignConflict({
+    boothId: options.boothId,
+    ...normalized.campaign,
+  }, existingCampaigns);
+  if (conflict) {
+    return {
+      error: `This screen already has a campaign request for ${conflict.campaignStartDate} to ${conflict.campaignEndDate}. Choose different dates or another screen.`,
+      status: 409 as const,
+    };
+  }
+
+  return { error: null, status: 200 as const };
 }
 
 function canUserSetPublicationStatus(
@@ -101,6 +187,14 @@ export const createBooth = async (req: AuthRequest, res: Response) => {
     });
   }
 
+  const cityScreenCampaignValidation = await validateCityScreenCampaignRequest(
+    payload as Record<string, unknown>,
+    { role: req.user?.role },
+  );
+  if (cityScreenCampaignValidation.error) {
+    return res.status(cityScreenCampaignValidation.status).json({ error: cityScreenCampaignValidation.error });
+  }
+
   const result = await expoService.createBooth(
     mergeOwnedBoothPayload(payload as Record<string, unknown>, req.user ?? {}) as any,
   );
@@ -146,6 +240,14 @@ export const updateBooth = async (req: AuthRequest, res: Response) => {
     });
   }
 
+  const cityScreenCampaignValidation = await validateCityScreenCampaignRequest(
+    payload as Record<string, unknown>,
+    { boothId, role: req.user?.role },
+  );
+  if (cityScreenCampaignValidation.error) {
+    return res.status(cityScreenCampaignValidation.status).json({ error: cityScreenCampaignValidation.error });
+  }
+
   const result = await expoService.updateBooth(
     boothId,
     mergeOwnedBoothPayload(payload as Record<string, unknown>, req.user ?? {}) as any,
@@ -173,7 +275,7 @@ function buildPromotedExpoMediaStoragePath(input: {
   boothId: string;
   companyId: string;
   fileName: string;
-  target: 'hero' | 'logo' | 'poster';
+  target: 'booth-screen' | 'city-screen' | 'hero' | 'logo' | 'poster';
 }) {
   const safeCompanyId = sanitizeExpoMediaReviewUploadFilename(input.companyId);
   const safeBoothId = sanitizeExpoMediaReviewUploadFilename(input.boothId);
@@ -388,6 +490,11 @@ export const reviewBoothMediaReviewAsset = async (req: AuthRequest, res: Respons
   let nextUpload = {
     ...existingUpload,
   };
+  let promotedScreenAsset: {
+    assetKey: 'city_screen_content' | 'screen_content';
+    mimeType: string;
+    publicUrl: string;
+  } | null = null;
 
   if (action === 'approve') {
     nextUpload = {
@@ -409,6 +516,13 @@ export const reviewBoothMediaReviewAsset = async (req: AuthRequest, res: Respons
     const resolvedTarget = promoteTarget;
     if (!resolvedTarget || !getExpoMediaReviewUploadPromoteTargets(existingUpload.kind).includes(resolvedTarget)) {
       return res.status(400).json({ error: 'This review upload cannot be promoted to the requested public media target.' });
+    }
+    if (resolvedTarget === 'city-screen') {
+      const cityScreenContent = asBodyRecord(existingAssets.city_screen_content);
+      const cityScreenSlot = getExpoScreenSlotById(String(cityScreenContent.screenSlotId || ''));
+      if (!cityScreenSlot || cityScreenSlot.scope !== 'city') {
+        return res.status(400).json({ error: 'Choose a valid city advertising screen before promoting this campaign.' });
+      }
     }
 
     const supabase = getSupabase();
@@ -443,15 +557,23 @@ export const reviewBoothMediaReviewAsset = async (req: AuthRequest, res: Respons
       return res.status(500).json({ error: 'Public media URL could not be created for the promoted upload.' });
     }
 
-    try {
-      await applyPromotedExpoPublicMedia({
-        companyId,
+    if (resolvedTarget === 'booth-screen' || resolvedTarget === 'city-screen') {
+      promotedScreenAsset = {
+        assetKey: resolvedTarget === 'city-screen' ? 'city_screen_content' : 'screen_content',
+        mimeType: existingUpload.mimeType,
         publicUrl,
-        target: resolvedTarget,
-      });
-    } catch (error) {
-      await supabase.storage.from(EXPO_PUBLIC_PROMOTED_MEDIA_BUCKET).remove([publicPath]);
-      return res.status(500).json({ error: error instanceof Error ? error.message : String(error) });
+      };
+    } else {
+      try {
+        await applyPromotedExpoPublicMedia({
+          companyId,
+          publicUrl,
+          target: resolvedTarget,
+        });
+      } catch (error) {
+        await supabase.storage.from(EXPO_PUBLIC_PROMOTED_MEDIA_BUCKET).remove([publicPath]);
+        return res.status(500).json({ error: error instanceof Error ? error.message : String(error) });
+      }
     }
 
     nextUpload = {
@@ -474,10 +596,21 @@ export const reviewBoothMediaReviewAsset = async (req: AuthRequest, res: Respons
     uploads: nextUploads,
   });
   const nextMediaReview = nextMediaReviewResult.mediaReview;
-  const nextAssets = {
+  const nextAssets: Record<string, unknown> = {
     ...existingAssets,
     media_review: nextMediaReview,
   };
+  if (promotedScreenAsset) {
+    const existingScreenContent = asBodyRecord(existingAssets[promotedScreenAsset.assetKey]);
+    const isVideo = promotedScreenAsset.mimeType === 'video/mp4';
+    nextAssets[promotedScreenAsset.assetKey] = {
+      ...existingScreenContent,
+      imageUrl: isVideo ? String(existingScreenContent.imageUrl || '') : promotedScreenAsset.publicUrl,
+      mode: isVideo ? 'video' : 'image',
+      status: 'published',
+      videoUrl: isVideo ? promotedScreenAsset.publicUrl : '',
+    };
+  }
   const updateResult = await expoService.updateBooth(boothId, {
     assets_3d: nextAssets,
   });

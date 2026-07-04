@@ -1,4 +1,4 @@
-import type { ExpoSceneBooth, ExpoSceneCompany, SponsorTier } from '../types/scene';
+﻿import type { ExpoSceneBooth, ExpoSceneCompany, SponsorTier } from '../types/scene';
 import { buildExpoBoothRoute } from './expoBoothRoutes';
 
 export type SponsorBoothTemplate =
@@ -71,10 +71,10 @@ export function isPremiumStreamingTier(adTier: SponsorBoothPresentation['adTier'
 
 function buildBoothBadgeLabel(adTier: SponsorBoothPresentation['adTier'], sponsorTier: SponsorTier) {
   if (adTier === 'elite') {
-    return 'FEATURED BOOTH';
+    return 'FEATURED SPONSOR';
   }
   if (adTier === 'premium') {
-    return 'BOOTH PROFILE';
+    return 'PREMIUM BOOTH';
   }
   return sponsorTier.toUpperCase();
 }
@@ -86,10 +86,10 @@ function buildPresentationTagline(
 ) {
   const sourceTagline = truncateSponsorText(company.tagline || fallbackIdentity.supportLine || 'Meet the team. Explore the offer.', 34);
   if (adTier === 'elite') {
-    return sourceTagline || 'FEATURED SPONSOR PROFILE';
+    return sourceTagline || 'FEATURED SPONSOR OFFER';
   }
   if (adTier === 'premium') {
-    return sourceTagline || 'SPONSOR PROFILE WITH CONTACT PATH';
+    return sourceTagline || 'SPONSOR OFFER WITH CONTACT';
   }
   return truncateSponsorText(company.tagline || fallbackIdentity.supportLine || 'Meet the team. Explore the offer.', 30);
 }
@@ -221,10 +221,10 @@ function buildFallbackIdentity(
   const sourceTagline = truncateSponsorText(company.tagline || String(boothRecord?.tagline || '') || 'Live demos and guided product sessions.', 44);
 
   return {
-    eyebrow: `${tierLine} • ${sectorLine}`.toUpperCase(),
+    eyebrow: `${tierLine} | ${sectorLine}`.toUpperCase(),
     headline: truncateSponsorText(displayName, 24).toUpperCase(),
     monogram: buildMonogram(displayName),
-    supportLine: sourceTagline || 'LIVE DEMOS • TEAM MEETUPS • PRODUCT STORIES',
+    supportLine: sourceTagline || 'LIVE DEMOS | TEAM MEETUPS | PRODUCT STORIES',
   };
 }
 
@@ -259,16 +259,16 @@ export function buildSponsorCtas(company: ExpoSceneCompany): SponsorCta[] {
   const isTopTier = sponsorTier === 'hero' || sponsorTier === 'platinum' || sponsorTier === 'gold';
 
   if (website) {
-    actions.push({ kind: 'website', label: isTopTier ? 'Open Website' : 'Visit Website', url: website });
+    actions.push({ kind: 'website', label: 'Visit Website', url: website });
   }
 
   if (booking) {
-    actions.push({ kind: 'booking', label: company.ctaLabel || (isTopTier ? 'Contact Sponsor' : 'Contact Team'), url: booking });
+    actions.push({ kind: 'booking', label: company.ctaLabel || (isTopTier ? 'Book Meeting' : 'Contact Team'), url: booking });
   }
 
-  actions.push({ kind: 'ai_chat', label: 'Ask AI', surface: 'feature' });
-  actions.push({ kind: 'calculators', label: isTopTier ? 'Open Calculators' : 'Get Estimate' });
-  actions.push({ kind: 'demo_room', label: isTopTier ? 'Open Booth Profile' : 'Open Booth Profile' });
+  actions.push({ kind: 'ai_chat', label: 'Ask Guide', surface: 'feature' });
+  actions.push({ kind: 'calculators', label: 'Get Estimate' });
+  actions.push({ kind: 'demo_room', label: 'View Booth' });
   return actions;
 }
 

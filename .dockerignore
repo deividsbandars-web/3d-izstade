@@ -6,6 +6,16 @@ Dockerfile
 .gitignore
 .geminiignore
 
+# Never send local secret-bearing env files to Docker build contexts.
+.env
+.env.*
+!.env.example
+!.env.*.example
+backend-server/.env
+backend-server/.env.*
+!backend-server/.env.example
+!backend-server/.env.*.example
+
 # Ignore large folders and Unreal Engine stuff
 WarpalaUE5
 database
@@ -19,3 +29,12 @@ backend-server/node_modules
 dist
 build
 out
+
+# Raw source texture pack is local intake only; release builds use expo-runtime.
+public/textures/expo
+
+# Backend local build/test/runtime artifacts are not needed by release images.
+backend-server/dist
+backend-server/__tests__
+backend-server/routes/__tests__
+backend-server/*.log

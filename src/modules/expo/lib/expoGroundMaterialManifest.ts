@@ -1,6 +1,5 @@
 import * as THREE from 'three';
 import type { BoulevardMaterialKey, BoulevardSurfaceKind } from './boulevardArtPass';
-import { resolveExpoTextureCandidateUrls } from './expoTexturePipeline';
 
 type GroundTextureSet = {
   map: string[];
@@ -18,19 +17,19 @@ type GroundFallbackProfile = {
 
 const GROUND_TEXTURE_MANIFEST: Record<Exclude<BoulevardMaterialKey, 'dark_field' | 'trim_glow'>, GroundTextureSet> = {
   hero_paver: {
-    map: resolveExpoTextureCandidateUrls('/textures/expo/hero-paver-4k/pavement_01_diff_4k.png'),
-    normalMap: resolveExpoTextureCandidateUrls('/textures/expo/hero-paver-4k/pavement_01_nor_gl_4k.png'),
-    roughnessMap: resolveExpoTextureCandidateUrls('/textures/expo/hero-paver-4k/pavement_01_rough_4k.png'),
+    map: ['/textures/expo-runtime/hero-paver-4k/pavement_01_diff_4k.webp'],
+    normalMap: ['/textures/expo-runtime/hero-paver-4k/pavement_01_nor_gl_4k.webp'],
+    roughnessMap: ['/textures/expo-runtime/hero-paver-4k/pavement_01_rough_4k.webp'],
   },
   light_concrete: {
-    map: resolveExpoTextureCandidateUrls('/textures/expo/master-phase/concrete/concrete_diff_4k.png'),
-    normalMap: resolveExpoTextureCandidateUrls('/textures/expo/master-phase/concrete/concrete_nor_gl_4k.png'),
-    roughnessMap: resolveExpoTextureCandidateUrls('/textures/expo/master-phase/concrete/concrete_rough_4k.png'),
+    map: ['/textures/expo-runtime/light-concrete-4k/concrete_floor_worn_001_diff_4k.webp'],
+    normalMap: ['/textures/expo-runtime/light-concrete-4k/concrete_floor_worn_001_nor_gl_4k.webp'],
+    roughnessMap: ['/textures/expo-runtime/light-concrete-4k/concrete_floor_worn_001_rough_4k.webp'],
   },
   urban_grass: {
-    map: resolveExpoTextureCandidateUrls('/textures/expo/urban-grass-4k/sparse_grass_diff_4k.png'),
-    normalMap: resolveExpoTextureCandidateUrls('/textures/expo/urban-grass-4k/sparse_grass_nor_gl_4k.png'),
-    roughnessMap: resolveExpoTextureCandidateUrls('/textures/expo/urban-grass-4k/sparse_grass_rough_4k.png'),
+    map: ['/textures/expo-runtime/urban-grass-4k/sparse_grass_diff_4k.webp'],
+    normalMap: ['/textures/expo-runtime/urban-grass-4k/sparse_grass_nor_gl_4k.webp'],
+    roughnessMap: ['/textures/expo-runtime/urban-grass-4k/sparse_grass_rough_4k.webp'],
   },
 };
 

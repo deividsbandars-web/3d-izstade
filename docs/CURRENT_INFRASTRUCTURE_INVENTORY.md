@@ -65,6 +65,7 @@ Storage:
 - Staging frontend domain: `README.md`, `docs/release/WEB3D_EXPO_DEPLOYMENT_CONTRACT.md`
 - Hetzner staging backend deployment script: `scripts/deploy-staging-backend-hetzner.ps1`
 - Main compose services: `docker-compose.yml`
+- Optional Pixel Streaming compose override: `docker-compose.pixel-streaming.yml`
 - Staging compose services: `docker-compose.staging.yml`
 - nginx config: `deployment/configs/nginx.conf`
 - TURN config: `deployment/configs/turnserver.conf`
@@ -102,9 +103,18 @@ Frontend build env is enforced by `scripts/check-frontend-env.mjs`, which is run
 | `SUPABASE_SERVICE_KEY` | Yes | Backend runtime, Supabase service client | None |
 | `SUPABASE_ANON_KEY` | No | Backend shared auth helper compatibility | Unset |
 | `SUPABASE_SERVICE_ROLE_KEY` | No | Legacy shared admin helper alias | Falls back to `SUPABASE_SERVICE_KEY` where supported |
-| `REDIS_URL` | No for boot; required for production quote acceptance | Backend rate limiting/session infrastructure | In-memory fallback only outside production; production quote submissions fail closed without Redis |
+| `REDIS_URL` | No for boot; required for production API/lead/quote acceptance | Backend rate limits, events, and scheduler infrastructure | `redis://` only for local/private/internal hosts; remote managed services must use certificate-validated `rediss://` |
 | `NODE_ENV` | No | Backend runtime | `development` |
 | `PORT` | No | Backend runtime | `3000` |
+| `BACKEND_TRUST_PROXY_HOPS` | No | Backend client-IP normalization | `0`; set to the exact trusted reverse-proxy hop count |
+| `BACKEND_CORS_ALLOWED_ORIGINS` | No | Backend browser-origin allowlist | Canonical production/staging origins; local Vite origins outside production |
+| `PUBLIC_EXPO_LEAD_RATE_LIMIT_MAX_REQUESTS` | No | Public Expo lead route limit | `5` |
+| `PUBLIC_CALCULATOR_LEAD_RATE_LIMIT_MAX_REQUESTS` | No | Public calculator lead route limit | `5` |
+| `PUBLIC_LEAD_RATE_LIMIT_WINDOW_MS` | No | Public lead per-route rate-limit window | `600000` |
+| `PUBLIC_LEAD_DUPLICATE_WINDOW_MS` | No | Public lead duplicate-suppression window | `1800000` |
+| `PUBLIC_LEAD_TURNSTILE_SECRET_KEY` | Required only when public lead Turnstile is required | Public lead anti-spam | Unset |
+| `PUBLIC_LEAD_TURNSTILE_REQUIRED` | No | Public lead staged Turnstile enforcement | `false` |
+| `PUBLIC_LEAD_TURNSTILE_TIMEOUT_MS` | No | Public lead Turnstile verification timeout | `5000` |
 | `PIXEL_STREAMING_ROUTES_ENABLED` | No | Backend optional Pixel Streaming/operator routes | `false` |
 | `PIXEL_STREAMING_ENABLED` | No | Legacy backend Pixel Streaming flag alias | `false` |
 | `SIGNALING_STATUS_BASE_URL` | Only when Pixel Streaming routes are enabled | Backend Pixel Streaming status/session routes | None |
@@ -122,15 +132,29 @@ Frontend build env is enforced by `scripts/check-frontend-env.mjs`, which is run
 | `MODULAR_HOME_QUOTE_EMAIL_HANDOFF_TO` | Only when email handoff is enabled | Modular-home quote email recipients | Unset |
 | `RESEND_API_KEY` | Only when email handoff is enabled | Modular-home quote email provider | Unset |
 
+## Release Static Payload Rules
+
+- Raw Expo source textures under `public/textures/expo/**` are source/intake assets, not release payload.
+- Release runtime texture URLs must resolve to `public/textures/expo-runtime/**` WebP derivatives.
+- `.vercelignore` and `.dockerignore` exclude `public/textures/expo/**` from release upload/build contexts.
+- Vite prunes `dist/textures/expo/**` after copying `public/`.
+- `npm run check:release-static-payload` validates the source-context and built-output contract.
+- Current release payload ceilings are 850 MiB for source-upload public payload after exclusions, 850 MiB for built `dist/`, and 90 MiB for any individual release payload file.
+- `npm run check:all` runs both `check:release-static-payload` and `check:expo-release-assets`; the GitHub Release Gate runs `check:all` after `npm run build`.
+
 ## Compose Inventory
 
-`docker-compose.yml`:
+`docker-compose.yml` baseline services:
 - `frontend`
 - `redis`
 - `backend`
+
+`docker-compose.pixel-streaming.yml` optional operator services and overrides:
 - `signaling`
 - `turn`
 - `sync-server`
+- enables backend Pixel Streaming routes and wires backend/frontend service dependencies to `signaling`
+- requires explicit TURN credentials and `UE5_SECRET_KEY`; these are not baseline compose inputs
 
 `docker-compose.staging.yml`:
 - `redis-staging`

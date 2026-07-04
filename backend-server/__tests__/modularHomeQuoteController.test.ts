@@ -392,6 +392,30 @@ resetModularHomeQuoteRateLimitForTests();
 resetModularHomeQuoteRateLimitForTests();
 
 {
+  const capturedKeys: string[] = [];
+  const rateLimitedRequest = {
+    headers: { 'x-forwarded-for': '203.0.113.200' },
+    ip: '198.51.100.25',
+    query: { homeQuoteBackend: '1' },
+  } as unknown as Request;
+
+  const result = await checkModularHomeQuoteRateLimit(
+    rateLimitedRequest,
+    Date.parse('2026-06-05T12:00:00.000Z'),
+    getModularHomeQuoteSubmissionConfig(),
+    {
+      async increment(key: string, windowMs: number, nowMs: number) {
+        capturedKeys.push(key);
+        return { count: 1, resetAt: nowMs + windowMs };
+      },
+    },
+  );
+
+  assert.equal(result.allowed, true);
+  assert.deepEqual(capturedKeys, ['modular-home-quote:198.51.100.25']);
+}
+
+{
   process.env.MODULAR_HOME_QUOTE_SUBMISSION_ENABLED = 'true';
   const { response, result } = createMockResponse();
   await submitModularHomeQuoteWithDependencies({
@@ -606,11 +630,17 @@ resetModularHomeQuoteRateLimitForTests();
     antiSpam: { turnstileToken: 'token-123', website: '' },
   }, {
     headers: { 'x-forwarded-for': '203.0.113.42', host: 'staging.30sek24.com' },
+    ip: '198.51.100.42',
     query: { homeQuoteBackend: '1' },
-  } as unknown as Request, async () => new Response(JSON.stringify({ success: true }), {
+  } as unknown as Request, async (_input, init) => {
+    const body = init?.body;
+    assert.ok(body instanceof URLSearchParams);
+    assert.equal(body.get('remoteip'), '198.51.100.42');
+    return new Response(JSON.stringify({ success: true }), {
     headers: { 'Content-Type': 'application/json' },
     status: 200,
-  }));
+    });
+  });
   assert.deepEqual(verified, { ok: true });
   process.env.MODULAR_HOME_QUOTE_TURNSTILE_SECRET_KEY = '';
   process.env.MODULAR_HOME_QUOTE_TURNSTILE_REQUIRED = '';

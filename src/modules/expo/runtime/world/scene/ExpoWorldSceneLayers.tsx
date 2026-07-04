@@ -20,10 +20,17 @@ import { WorldPromenade } from '../WorldPromenade';
 import { WorldWayfinding } from '../WorldWayfinding';
 import { ModularHomeEntrancePortal } from '../ModularHomeEntrancePortal';
 import { ModularHomeModel, ModularHomeUploadedModelPreview, isHomeStudioEnabled } from '../../modularHome';
+import { resolveExpoWorldSceneQualityStrategy } from './ExpoWorldSceneQualityStrategy';
+import {
+  WorldCommunityHub,
+  WorldVisitorPresence,
+} from '../../community';
+import type { ExpoPresenceGuest } from '../../community/expoPresencePolicy';
 
 export function ExpoWorldSceneLayers({
   activeZoneId,
   districtPrograms,
+  guests,
   layerToggles,
   mode,
   playerPosition,
@@ -43,6 +50,7 @@ export function ExpoWorldSceneLayers({
 }: {
   activeZoneId: string | null;
   districtPrograms: ExpoDistrictProgramSummary[];
+  guests: ExpoPresenceGuest[];
   layerToggles: ExpoWorldLayerToggles;
   mode: ExpoMode;
   playerPosition: [number, number, number];
@@ -61,13 +69,15 @@ export function ExpoWorldSceneLayers({
   zoneRuntimeState: ExpoZoneRuntimeState;
 }) {
   const homeStudioEnabled = isHomeStudioEnabled();
-  const homeStudioAoEnabled = homeStudioEnabled
-    && !runtimeCaptureSafe
-    && !qualitySettings.isMobileLike
-    && qualitySettings.resolvedTier !== 'low';
-  const modularHomeRenderDetailLevel = qualitySettings.isMobileLike || qualitySettings.resolvedTier === 'low'
-    ? 'reduced'
-    : 'full';
+  const sceneQualityStrategy = resolveExpoWorldSceneQualityStrategy({
+    homeStudioEnabled,
+    qualitySettings,
+    runtimeCaptureSafe,
+  });
+  const lowDetail = false;
+  const renderRearCampus = !lowDetail
+    || zoneRuntimeState.activeZoneId === 'rearCampus'
+    || zoneRuntimeState.adjacentZoneIds.includes('rearCampus');
 
   return (
     <Suspense fallback={null}>
@@ -99,17 +109,17 @@ export function ExpoWorldSceneLayers({
         </>
       ) : (
         <>
-          {runtimeCaptureSafe ? (
-            <color attach="background" args={['#e5dcff']} />
+          {runtimeCaptureSafe || lowDetail ? (
+            <color attach="background" args={[runtimeCaptureSafe ? '#e5dcff' : '#b8d6df']} />
           ) : (
-            <Sky distance={450000} sunPosition={[56, 12, 42]} inclination={0.4} azimuth={0.18} />
+            <Sky distance={450000} sunPosition={[68, 28, 36]} inclination={0.38} azimuth={0.16} />
           )}
-          {!runtimeCaptureSafe && EXPO_FEATURE_FLAGS.enableStreetEnvironmentLighting && (
-            <Environment files="/models/modern_evening_street_4k.exr" />
-          )}
-          <ambientLight intensity={runtimeCaptureSafe ? 0.18 : 0.28} />
-          <directionalLight color="#fff1cc" position={[16, 26, 10]} intensity={runtimeCaptureSafe ? 0.7 : 1.04} castShadow={false} />
-          <hemisphereLight args={['#bfe9ff', '#574263', runtimeCaptureSafe ? 0.3 : 0.44]} />
+          {sceneQualityStrategy.streetEnvironmentFile ? (
+            <Environment files={sceneQualityStrategy.streetEnvironmentFile} />
+          ) : null}
+          <ambientLight intensity={runtimeCaptureSafe ? 0.2 : 0.34} />
+          <directionalLight color="#fff1cc" position={[18, 30, 12]} intensity={runtimeCaptureSafe ? 0.76 : 1.1} castShadow={false} />
+          <hemisphereLight args={['#d7f0ff', '#65757a', runtimeCaptureSafe ? 0.34 : 0.52]} />
           {EXPO_FEATURE_FLAGS.enableFog && <fog attach="fog" args={['#7b75a5', 460, 2550]} />}
         </>
       )}
@@ -120,7 +130,7 @@ export function ExpoWorldSceneLayers({
         runtimeState={zoneRuntimeState}
         zoneId="perimeter"
       >
-        <WorldGroundPlane homeStudioMode={homeStudioEnabled} visualProfile={visualProfile} />
+        <WorldGroundPlane homeStudioMode={homeStudioEnabled} lowDetail={lowDetail} visualProfile={visualProfile} />
       </ExpoZoneGroup>
       {!homeStudioEnabled ? (
         <>
@@ -145,7 +155,7 @@ export function ExpoWorldSceneLayers({
               zoneRuntimeState={zoneRuntimeState}
             />
           )}
-          {layerToggles.stadium && sectionToggles.stadium && (
+          {layerToggles.stadium && sectionToggles.stadium && renderRearCampus && (
             <ExpoRearCampus
               boothPlacements={planningBoothPlacements}
               playerPosition={playerPosition}
@@ -175,7 +185,22 @@ export function ExpoWorldSceneLayers({
               runtimeState={zoneRuntimeState}
               zoneId="center"
             >
-              <ModularHomeEntrancePortal playerPosition={playerPosition} />
+            <ModularHomeEntrancePortal lowDetail={lowDetail} playerPosition={playerPosition} />
+            </ExpoZoneGroup>
+          )}
+          {layerToggles.city && (
+            <ExpoZoneGroup
+              alwaysVisible
+              groupId="expo-community-hub"
+              runtimeState={zoneRuntimeState}
+              zoneId="center"
+            >
+              <WorldCommunityHub />
+              <WorldVisitorPresence
+                guests={guests}
+                playerPosition={playerPosition}
+                qualitySettings={qualitySettings}
+              />
             </ExpoZoneGroup>
           )}
           {layerToggles.skyline && EXPO_FEATURE_FLAGS.enableCuratedSkylineRing && (
@@ -201,7 +226,7 @@ export function ExpoWorldSceneLayers({
           runtimeState={zoneRuntimeState}
           zoneId="center"
         >
-          <ModularHomeModel renderDetailLevel={modularHomeRenderDetailLevel} />
+          <ModularHomeModel renderDetailLevel={sceneQualityStrategy.modularHomeRenderDetailLevel} />
           <ModularHomeUploadedModelPreview />
         </ExpoZoneGroup>
       ) : null}
@@ -225,6 +250,7 @@ export function ExpoWorldSceneLayers({
           {sectionVisibleBoothPlacements.map((placement) => (
             <RuntimeDistrictBooth
               key={placement.id}
+              lowDetail={lowDetail}
               districtVisual={getDistrictVisualProfile(placement.sectorId, placement.clusterIndex, visualProfile)}
               placement={placement}
               playerPosition={playerPosition}
@@ -240,7 +266,7 @@ export function ExpoWorldSceneLayers({
           </div>
         </Html>
       )}
-      {homeStudioAoEnabled ? (
+      {sceneQualityStrategy.homeStudioAoEnabled ? (
         <GalaHomeStudioPostProcessing
           qualityTier={qualitySettings.resolvedTier}
           webglMode={webglMode}

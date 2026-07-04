@@ -33,13 +33,13 @@ function WorldArchitecturalMassMaterial({
   emissiveIntensity?: number;
 }) {
   const base = emissiveIntensity > 0.012
-    ? mixHex(tintHex(fallbackColor, 0.22), globalHudAccent, 0.24)
-    : mixHex(tintHex(fallbackColor, 0.12), globalHudAccent, 0.16);
-  const color = emissiveIntensity > 0.02 ? tintHex(base, 0.08) : base;
+    ? mixHex(tintHex(fallbackColor, 0.16), globalHudAccent, 0.16)
+    : mixHex(tintHex(fallbackColor, 0.05), '#263a46', 0.22);
+  const color = emissiveIntensity > 0.02 ? tintHex(base, 0.06) : base;
   const materialEmissive = emissiveIntensity > 0 ? emissive : globalHudAccent;
   const materialEmissiveIntensity = emissiveIntensity > 0
     ? emissiveIntensity + (emissive === globalHudAccent ? 0.004 : 0)
-    : 0.008;
+    : 0.003;
 
   return (
     <meshStandardMaterial
@@ -87,9 +87,11 @@ export function WorldCityTowers({
 
               if (primitive.kind === 'cylinder') {
                 const hasEmissive = (primitive.emissiveIntensity ?? 0) > 0;
-                const color = mixHex(tintHex(primitive.color, hasEmissive ? 0.08 : 0.03), visualProfile.global.hudAccent, hasEmissive ? 0.2 : 0.14);
+                const color = hasEmissive
+                  ? mixHex(tintHex(primitive.color, 0.08), visualProfile.global.hudAccent, 0.16)
+                  : mixHex(tintHex(primitive.color, 0.02), '#263a46', 0.16);
                 const emissive = primitive.emissive ?? visualProfile.global.hudAccent;
-                const emissiveIntensity = (primitive.emissiveIntensity ?? 0) + (primitive.emissive ? 0 : 0.008);
+                const emissiveIntensity = (primitive.emissiveIntensity ?? 0) + (primitive.emissive ? 0 : 0.002);
 
                 return (
                   <mesh key={`${tower.id}:cylinder:${index}`} position={primitive.position} rotation={primitive.rotation}>

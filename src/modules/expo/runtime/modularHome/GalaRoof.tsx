@@ -8,10 +8,15 @@ import {
   GALA_CONSTRUCTION_MODEL,
   type GalaConstructionRoofModel,
 } from './construction/GalaConstructionModel';
+import {
+  shouldRenderGalaRoofFineDetail,
+  type GalaConstructionRenderDetailLevel,
+} from './construction/GalaConstructionDetailPolicy';
 import { GalaConstructionBox, GalaConstructionCylinder } from './construction/GalaConstructionPrimitives';
 import { useGalaConstructionPbrTextures } from './construction/GalaConstructionPbrTextures';
 
 type GalaRoofProps = {
+  renderDetailLevel?: GalaConstructionRenderDetailLevel;
   roofModel?: GalaConstructionRoofModel;
   transparentCutaway: boolean;
   visualConfig?: GalaHouseVisualConfig;
@@ -22,6 +27,7 @@ function roofOpacity(transparentCutaway: boolean): number {
 }
 
 export function GalaRoof({
+  renderDetailLevel = 'full',
   roofModel = GALA_CONSTRUCTION_MODEL.roof,
   transparentCutaway,
   visualConfig,
@@ -38,6 +44,8 @@ export function GalaRoof({
   const halfRoofWidth = roofModel.roofWidthM * 0.5;
   const roofLength = roofModel.roofLengthM;
   const seamCount = roofVisual.seamCount;
+  const renderFineDetail = shouldRenderGalaRoofFineDetail(renderDetailLevel);
+  const roofTextureProps = renderFineDetail ? roofPbrTextures : {};
 
   return (
     <group
@@ -51,7 +59,7 @@ export function GalaRoof({
       }}
     >
       <GalaConstructionBox
-        {...roofPbrTextures}
+        {...roofTextureProps}
         castShadow
         color={roofVisual.roofColor}
         metalness={roofVisual.roofMetalness}
@@ -66,7 +74,7 @@ export function GalaRoof({
       />
 
       <GalaConstructionBox
-        {...roofPbrTextures}
+        {...roofTextureProps}
         castShadow
         color={roofVisual.roofColor}
         metalness={roofVisual.roofMetalness}
@@ -85,7 +93,7 @@ export function GalaRoof({
         <meshStandardMaterial color={roofVisual.roofEdgeColor} roughness={0.36} />
       </mesh>
 
-      {[-halfRoofWidth, halfRoofWidth].map((z) => (
+      {renderFineDetail ? [-halfRoofWidth, halfRoofWidth].map((z) => (
         <group key={`roof-eave-${z}`} name="gala-roof-edge-and-gutter-profile">
           <mesh castShadow name="gala-roof-dark-eave-edge-trim" position={[0, wallTopY - 0.03, z]}>
             <boxGeometry args={[roofLength + 0.1, roofModel.eaveTrimHeightM, roofModel.eaveTrimDepthM]} />
@@ -115,9 +123,9 @@ export function GalaRoof({
             />
           ) : null}
         </group>
-      ))}
+      )) : null}
 
-      {roofVisual.seamVisible ? Array.from({ length: seamCount }).map((_, index) => {
+      {renderFineDetail && roofVisual.seamVisible ? Array.from({ length: seamCount }).map((_, index) => {
         const x = -roofLength * 0.5 + ((index + 0.5) * roofLength / seamCount);
         return (
           <group key={`roof-standing-seam-${index}`} name="gala-roof-standing-seam-lines">

@@ -1,4 +1,4 @@
-import { llmService } from '../backend/ai/llmService.js';
+import { createSystemLlmMetering, llmService } from '../backend/ai/llmService.js';
 import { supabaseClient } from '../lib/supabaseClient.js';
 import { logger } from '../backend/logging/logger.js';
 
@@ -20,7 +20,10 @@ export abstract class BaseAgent {
       const prompt = this.generatePrompt(taskData);
       const fullPrompt = `${this.systemPrompt}\n\nTask: ${prompt}`;
 
-      const { text, error } = await llmService.generateText(fullPrompt, { temperature: 0.7 });
+      const { text, error } = await llmService.generateText(fullPrompt, {
+        metering: createSystemLlmMetering(this.role, 'execute-agent-task'),
+        temperature: 0.7,
+      });
       
       if (error || !text) throw new Error(error || 'LLM execution failed');
 
@@ -50,6 +53,8 @@ export abstract class BaseAgent {
 
 // Legacy support
 export async function runAgent(task: string) {
-  const { text } = await llmService.generateText(`You are an autonomous business AI agent.\n\nTask: ${task}`);
+  const { text } = await llmService.generateText(`You are an autonomous business AI agent.\n\nTask: ${task}`, {
+    metering: createSystemLlmMetering('base-agent', 'run-legacy-agent'),
+  });
   return text;
 }

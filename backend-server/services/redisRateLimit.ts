@@ -1,4 +1,8 @@
 import { Redis, type Redis as RedisClient } from 'ioredis';
+import {
+  getRedisTlsOptions,
+  resolveRedisConnectionPolicy,
+} from '../../src/backend/infrastructure/redisConnectionPolicy.js';
 
 export type RedisBackedRateLimitStore = {
   increment: (key: string, windowMs: number, nowMs: number) => Promise<{
@@ -35,11 +39,8 @@ let redisClient: RedisClient | null | undefined;
 let redisClientErrorLogged = false;
 
 function normalizeRedisUrl() {
-  return process.env.REDIS_URL?.trim() || '';
-}
-
-function shouldUseRedisTls(redisUrl: string) {
-  return redisUrl.startsWith('redis://') && redisUrl.includes('upstash');
+  const redisUrl = process.env.REDIS_URL?.trim();
+  return redisUrl ? resolveRedisConnectionPolicy(redisUrl).url : '';
 }
 
 function getRedisClient(): RedisClient | null {
@@ -52,11 +53,12 @@ function getRedisClient(): RedisClient | null {
     return redisClient;
   }
 
-  const client = new Redis(redisUrl, {
+  const policy = resolveRedisConnectionPolicy(redisUrl);
+  const client = new Redis(policy.url, {
     enableOfflineQueue: false,
     lazyConnect: true,
     maxRetriesPerRequest: 1,
-    ...(shouldUseRedisTls(redisUrl) ? { tls: { rejectUnauthorized: false } } : {}),
+    ...getRedisTlsOptions(policy),
   });
   redisClient = client;
   client.on('error', (error) => {

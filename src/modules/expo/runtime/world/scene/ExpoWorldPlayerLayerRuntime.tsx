@@ -35,6 +35,7 @@ import {
   type VerticalLiftRequestDetail,
   type WalkMoveState,
   logExpoWorldDebug,
+  isExpoTextEntryTarget,
   resolveInitialWalkElevation,
 } from './ExpoWorldPlayerFrameSupport';
 import { useExpoWorldPlayerFrameLoop } from './useExpoWorldPlayerFrameLoop';
@@ -291,6 +292,9 @@ export function ExpoWorldPlayerLayer({
       }
     };
     const onKeyDown = (event: KeyboardEvent) => {
+      if (isExpoTextEntryTarget(event.target)) {
+        return;
+      }
       if (WALK_CONTROL_KEYS.has(event.code)) {
         event.preventDefault();
       }

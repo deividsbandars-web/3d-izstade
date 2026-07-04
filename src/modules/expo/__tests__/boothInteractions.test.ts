@@ -67,7 +67,7 @@ assert.equal(openShowcaseRoom({
 assert.deepEqual(navigateCalls, []);
 assert.equal(analyticsEvents.length, 0);
 
-const calculatorsAction: SponsorCta = { kind: 'calculators', label: 'Open Calculators' };
+const calculatorsAction: SponsorCta = { kind: 'calculators', label: 'Get Estimate' };
 assert.equal(handleBoothAction({
   action: calculatorsAction,
   analyticsEnabled: true,

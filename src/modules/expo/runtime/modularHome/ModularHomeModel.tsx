@@ -55,6 +55,8 @@ type ModularHomeInteriorPackage =
 
 export type ModularHomeRenderDetailLevel = 'full' | 'reduced';
 
+const ACTIVE_MODULAR_HOME_RENDER_DETAIL_LEVEL: ModularHomeRenderDetailLevel = 'full';
+
 type ModularHomeModelProps = {
   renderDetailLevel?: ModularHomeRenderDetailLevel;
 };
@@ -475,7 +477,9 @@ export function ModularHomeModel({ renderDetailLevel = 'full' }: ModularHomeMode
         modularHomeRoofEdgeColor: homeConfig.roofEdgeColor,
         modularHomeRoofGutterStyle: homeConfig.roofGutterStyle,
         modularHomeRoofMaterialId: roofVisual.materialId,
-        modularHomeRenderDetailLevel: renderDetailLevel,
+        modularHomeRenderDetailLevel: ACTIVE_MODULAR_HOME_RENDER_DETAIL_LEVEL,
+        modularHomeRenderDetailLockedFull: true,
+        modularHomeRequestedRenderDetailLevel: renderDetailLevel,
         modularHomeTrimColor: homeConfig.trimColor,
         modularHomeWindowFrameColor: homeConfig.windowFrameColor,
         modularHomeWindowFrameType: homeConfig.windowFrameType,
@@ -494,7 +498,7 @@ export function ModularHomeModel({ renderDetailLevel = 'full' }: ModularHomeMode
       >
         <GalaHouseShell
           onEnterInterior={enterInterior}
-          renderDetailLevel={renderDetailLevel}
+          renderDetailLevel={ACTIVE_MODULAR_HOME_RENDER_DETAIL_LEVEL}
           viewMode={viewMode}
           visualConfig={galaVisualConfig}
         />

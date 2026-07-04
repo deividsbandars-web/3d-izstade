@@ -1,4 +1,8 @@
 import { spawnSync } from 'node:child_process';
+import {
+  printVercelSourceContextReport,
+  verifyVercelSourceContext,
+} from './check-vercel-source-context.mjs';
 
 const scope = 'esaukans-6934s-projects';
 const project = 'app-staging';
@@ -70,6 +74,15 @@ if (options.has('--help') || options.has('-h')) {
 }
 
 const prebuilt = options.has('--prebuilt');
+
+if (!prebuilt) {
+  try {
+    printVercelSourceContextReport(verifyVercelSourceContext());
+  } catch (error) {
+    console.error(error instanceof Error ? error.message : String(error));
+    process.exit(1);
+  }
+}
 
 console.log(`Creating an app-staging ${prebuilt ? 'prebuilt ' : ''}preview deployment.`);
 console.log('This does NOT move staging.30sek24.com.');

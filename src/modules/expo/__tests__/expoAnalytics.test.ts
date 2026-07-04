@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import {
+  buildExpoAnalyticsEndpoint,
   createExpoAnalyticsDetail,
+  persistExpoAnalytics,
   trackExpoAnalyticsEvent,
   trackExpoBookingClicked,
   trackExpoBoothClicked,
@@ -91,3 +93,34 @@ assert.deepEqual(analyticsTrackCalls[0]?.payload, {
   sessionId: null,
   sponsorTier: 'gold',
 });
+
+assert.equal(
+  buildExpoAnalyticsEndpoint('https://api-staging.30sek24.com/'),
+  'https://api-staging.30sek24.com/api/analytics/track'
+);
+
+const fetchCalls: Array<{ input: string; init?: RequestInit }> = [];
+persistExpoAnalytics(
+  {
+    eventName: 'scene_loaded',
+    sessionId: 'session-1',
+  },
+  {
+    apiBaseUrl: 'https://api-staging.30sek24.com',
+    browserAvailable: true,
+    dev: false,
+    fetchImpl: (input, init) => {
+      fetchCalls.push({ input: String(input), init });
+      return Promise.resolve({ ok: true } as Response);
+    },
+    sendBeacon: null,
+  }
+);
+assert.equal(fetchCalls.length, 1);
+assert.equal(fetchCalls[0]?.input, 'https://api-staging.30sek24.com/api/analytics/track');
+assert.equal(fetchCalls[0]?.init?.method, 'POST');
+assert.equal(fetchCalls[0]?.init?.keepalive, true);
+assert.equal(
+  fetchCalls[0]?.init?.body,
+  JSON.stringify({ payload: { eventName: 'scene_loaded', sessionId: 'session-1' } })
+);

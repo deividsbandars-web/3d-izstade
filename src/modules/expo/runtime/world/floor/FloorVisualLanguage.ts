@@ -95,39 +95,39 @@ export const FLOOR_ROLE_TOKENS: Record<FloorVisualLanguageRole, FloorRoleToken> 
 
 export const FLOOR_MATERIAL_INTENTS: Record<FloorMaterialIntent, FloorMaterialIntentToken> = {
   arrivalAnchor: {
-    color: '#38506c',
+    color: '#789496',
     emissive: '#22e7ff',
-    emissiveIntensity: 0.014,
+    emissiveIntensity: 0.019,
     metalness: 0.022,
-    roughness: 0.86,
+    roughness: 0.8,
   },
   centerSpineGuide: {
-    color: '#46507a',
-    emissive: '#c084fc',
-    emissiveIntensity: 0.012,
+    color: '#82a09b',
+    emissive: '#7dd3fc',
+    emissiveIntensity: 0.02,
     metalness: 0.022,
-    roughness: 0.86,
+    roughness: 0.8,
   },
   globalBase: {
     color: 'visual-profile-ground-base',
     emissive: '#22e7ff',
-    emissiveIntensity: 0.018,
+    emissiveIntensity: 0.014,
     metalness: 0.024,
     roughness: 0.88,
   },
   seamTransition: {
-    color: '#40556b',
+    color: '#5b7076',
     emissive: '#ffb84d',
-    emissiveIntensity: 0.013,
+    emissiveIntensity: 0.015,
     metalness: 0.02,
-    roughness: 0.88,
+    roughness: 0.84,
   },
   sponsorZoneAnchor: {
-    color: '#354f58',
+    color: '#609286',
     emissive: '#2dd4bf',
-    emissiveIntensity: 0.013,
+    emissiveIntensity: 0.018,
     metalness: 0.024,
-    roughness: 0.86,
+    roughness: 0.81,
   },
 };
 

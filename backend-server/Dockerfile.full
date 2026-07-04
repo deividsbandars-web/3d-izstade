@@ -23,7 +23,17 @@ RUN --mount=type=cache,target=/root/.npm npm ci --no-audit --no-fund --prefer-of
 RUN --mount=type=cache,target=/root/.npm cd backend-server && npm ci --no-audit --no-fund --prefer-offline
 
 # Copy only the backend/full-platform inputs needed by backend-server/tsconfig.json.
-COPY backend-server ./backend-server
+# Keep local env files, tests, dist output, and worker smoke logs out of build layers.
+COPY backend-server/env.ts backend-server/server.ts backend-server/worker.ts backend-server/types.d.ts backend-server/tsconfig.json ./backend-server/
+COPY backend-server/config ./backend-server/config
+COPY backend-server/controllers ./backend-server/controllers
+COPY backend-server/events ./backend-server/events
+COPY backend-server/lib ./backend-server/lib
+COPY backend-server/middleware ./backend-server/middleware
+COPY backend-server/observability ./backend-server/observability
+COPY backend-server/routes/api.ts backend-server/routes/landing.ts ./backend-server/routes/
+COPY backend-server/schemas ./backend-server/schemas
+COPY backend-server/services ./backend-server/services
 COPY src ./src
 COPY docs/booth-slot-bank.json ./docs/booth-slot-bank.json
 COPY tsconfig.json tsconfig.app.json tsconfig.node.json ./

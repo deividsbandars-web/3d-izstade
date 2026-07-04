@@ -11,12 +11,36 @@ import {
   buildStadiumWorldObjectRegistry,
   type WorldObjectRegistryEntry,
 } from '../inspection/worldObjectRegistry';
-import { buildWorldPhysicsSurfaceRegistry } from '../physics/worldPhysicsSurfaceRegistry';
+import { buildWorldPhysicsSurfaceRegistry, type WorldPhysicsSurfaceRegistry } from '../physics/worldPhysicsSurfaceRegistry';
 import { buildWorldPhysicsAccessAudit } from '../physics/worldPhysicsAccessAudit';
 import { buildWorldPhysicsTraversalGraph } from '../physics/worldPhysicsTraversalGraph';
 import { buildWorldPhysicsVerticalAccessNodes } from '../physics/worldPhysicsVerticalAccessNodes';
 import { buildRenderedRearCampusRegistryPlan } from '../rearCampusRenderPolicy';
 import { useExpoWorldAnalyticsActions, useExpoWorldAnalyticsState } from './ExpoWorldAnalyticsProvider';
+
+let physicsSurfaceRegistryCache: {
+  registry: WorldPhysicsSurfaceRegistry;
+  signature: string;
+} | null = null;
+
+function resolveCachedPhysicsSurfaceRegistry(entries: WorldObjectRegistryEntry[]) {
+  const signature = entries.map((entry) => [
+    entry.id,
+    entry.layer,
+    entry.planningRole,
+    entry.position.join(','),
+    entry.rotation?.join(',') ?? '',
+    entry.size?.join(',') ?? '',
+    entry.physicsParts?.map((part) => `${part.id}:${part.position.join(',')}:${part.size.join(',')}`).join('|') ?? '',
+  ].join(':')).join(';');
+  if (physicsSurfaceRegistryCache?.signature === signature) {
+    return physicsSurfaceRegistryCache.registry;
+  }
+
+  const registry = buildWorldPhysicsSurfaceRegistry(entries);
+  physicsSurfaceRegistryCache = { registry, signature };
+  return registry;
+}
 
 export function useExpoWorldSceneRuntime({
   activeZone,
@@ -58,8 +82,36 @@ export function useExpoWorldSceneRuntime({
     walkRegions,
   } = worldContract;
   const effectiveStartView = startViewOverride ?? startView;
-  const layerToggles = normalizeWorldLayerToggles(runtimeLayerToggles);
-  const sectionToggles = normalizeWorldSectionToggles(runtimeSectionToggles);
+  const layerBooths = runtimeLayerToggles?.booths ?? true;
+  const layerCity = runtimeLayerToggles?.city ?? true;
+  const layerPromenade = runtimeLayerToggles?.promenade ?? true;
+  const layerSkyline = runtimeLayerToggles?.skyline ?? true;
+  const layerStadium = runtimeLayerToggles?.stadium ?? true;
+  const sectionArrival = runtimeSectionToggles?.arrival ?? true;
+  const sectionLeft = runtimeSectionToggles?.left ?? true;
+  const sectionMiddle = runtimeSectionToggles?.middle ?? true;
+  const sectionRight = runtimeSectionToggles?.right ?? true;
+  const sectionStadium = runtimeSectionToggles?.stadium ?? true;
+  const layerToggles = useMemo(
+    () => normalizeWorldLayerToggles({
+      booths: layerBooths,
+      city: layerCity,
+      promenade: layerPromenade,
+      skyline: layerSkyline,
+      stadium: layerStadium,
+    }),
+    [layerBooths, layerCity, layerPromenade, layerSkyline, layerStadium],
+  );
+  const sectionToggles = useMemo(
+    () => normalizeWorldSectionToggles({
+      arrival: sectionArrival,
+      left: sectionLeft,
+      middle: sectionMiddle,
+      right: sectionRight,
+      stadium: sectionStadium,
+    }),
+    [sectionArrival, sectionLeft, sectionMiddle, sectionRight, sectionStadium],
+  );
   const canonicalWorldPlan = useMemo(
     () => buildCanonicalWorldPlanFromWorldContract(worldContract),
     [worldContract],
@@ -101,7 +153,7 @@ export function useExpoWorldSceneRuntime({
       entries.push(...buildBoothWorldObjectRegistry(sectionVisibleBoothPlacements));
     }
 
-    return buildWorldPhysicsSurfaceRegistry(entries);
+    return resolveCachedPhysicsSurfaceRegistry(entries);
   }, [
     canonicalWorldPlan,
     districtPrograms.length,

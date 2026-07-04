@@ -110,6 +110,14 @@ export function WorldCitySkeleton({
     }),
     [playerPosition, qualitySettings, zoneRuntimeState],
   );
+  const lowDetail = false;
+  const isZoneRelevant = useCallback((zoneId: ExpoZoneRuntimeState['activeZoneId']) => (
+    effectiveZoneRuntimeState.activeZoneId === zoneId
+    || effectiveZoneRuntimeState.adjacentZoneIds.includes(zoneId)
+  ), [effectiveZoneRuntimeState.activeZoneId, effectiveZoneRuntimeState.adjacentZoneIds]);
+  const renderVerticalAccess = !lowDetail || isZoneRelevant('towerCluster') || isZoneRelevant('skyMarket');
+  const renderMegaLandmarks = !lowDetail || isZoneRelevant('skyMarket');
+  const renderTowers = !lowDetail || isZoneRelevant('towerCluster');
 
   const cityInspectionEntries = useMemo(() => [
     ...buildGroundWorldObjectRegistry(),
@@ -175,33 +183,38 @@ export function WorldCitySkeleton({
         zoneId="center"
       >
         <WorldCityMasses
+          lowDetail={lowDetail}
           masses={filteredMasses}
           stadiumReserve={stadiumReserve}
           visualProfile={visualProfile}
         />
       </ExpoZoneGroup>
-      <ExpoZoneGroup
-        groupId="city-vertical-access"
-        runtimeState={effectiveZoneRuntimeState}
-        zoneId="towerCluster"
-      >
-        <WorldVerticalAccessNodes
-          accessNodes={renderedVerticalAccessNodes}
-          playerPosition={playerPosition}
-        />
-        <WorldVerticalElevatorRoutes routes={canonicalWorldPlan.verticalSystem.elevatorRoutes} />
-      </ExpoZoneGroup>
-      <ExpoZoneGroup
-        canHideInLowQuality
-        groupId="city-perimeter"
-        runtimeState={effectiveZoneRuntimeState}
-        zoneId="perimeter"
-      >
-        <WorldCityPerimeter
-          accent={visualProfile.global.hudAccent}
-          stadiumReserve={stadiumReserve}
-        />
-      </ExpoZoneGroup>
+      {renderVerticalAccess && (
+        <ExpoZoneGroup
+          groupId="city-vertical-access"
+          runtimeState={effectiveZoneRuntimeState}
+          zoneId="towerCluster"
+        >
+          <WorldVerticalAccessNodes
+            accessNodes={renderedVerticalAccessNodes}
+            playerPosition={playerPosition}
+          />
+          <WorldVerticalElevatorRoutes routes={canonicalWorldPlan.verticalSystem.elevatorRoutes} />
+        </ExpoZoneGroup>
+      )}
+      {!lowDetail && (
+        <ExpoZoneGroup
+          canHideInLowQuality
+          groupId="city-perimeter"
+          runtimeState={effectiveZoneRuntimeState}
+          zoneId="perimeter"
+        >
+          <WorldCityPerimeter
+            accent={visualProfile.global.hudAccent}
+            stadiumReserve={stadiumReserve}
+          />
+        </ExpoZoneGroup>
+      )}
       <ExpoZoneGroup
         groupId="city-screen-surfaces"
         runtimeState={effectiveZoneRuntimeState}
@@ -209,6 +222,7 @@ export function WorldCitySkeleton({
       >
         <WorldCityScreenSurfaces
           playerPosition={playerPosition}
+          qualitySettings={qualitySettings}
           stadiumReserve={stadiumReserve}
           surfaces={filteredScreenSurfaces}
         />
@@ -238,25 +252,29 @@ export function WorldCitySkeleton({
           sockets={screenSockets}
         />
       </ExpoZoneGroup>
-      <ExpoZoneGroup
-        groupId="city-mega-landmarks"
-        runtimeState={effectiveZoneRuntimeState}
-        zoneId="skyMarket"
-      >
-        <WorldCityMegaLandmarks
-          districtCount={districtPrograms.length}
-          districtStride={districtStride}
-          sectionToggles={sectionToggles}
-          stadiumReserve={stadiumReserve}
-        />
-      </ExpoZoneGroup>
-      <ExpoZoneGroup
-        groupId="city-towers"
-        runtimeState={effectiveZoneRuntimeState}
-        zoneId="towerCluster"
-      >
-        <WorldCityTowers towers={filteredTowerLandmarks} stadiumReserve={stadiumReserve} visualProfile={visualProfile} />
-      </ExpoZoneGroup>
+      {renderMegaLandmarks && (
+        <ExpoZoneGroup
+          groupId="city-mega-landmarks"
+          runtimeState={effectiveZoneRuntimeState}
+          zoneId="skyMarket"
+        >
+          <WorldCityMegaLandmarks
+            districtCount={districtPrograms.length}
+            districtStride={districtStride}
+            sectionToggles={sectionToggles}
+            stadiumReserve={stadiumReserve}
+          />
+        </ExpoZoneGroup>
+      )}
+      {renderTowers && (
+        <ExpoZoneGroup
+          groupId="city-towers"
+          runtimeState={effectiveZoneRuntimeState}
+          zoneId="towerCluster"
+        >
+          <WorldCityTowers towers={filteredTowerLandmarks} stadiumReserve={stadiumReserve} visualProfile={visualProfile} />
+        </ExpoZoneGroup>
+      )}
     </ExpoZoneGroup>
   );
 }

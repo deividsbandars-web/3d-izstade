@@ -25,6 +25,14 @@ export interface ExpoSceneSector {
 
 export interface ExpoSceneBooth {
   boothType: BoothType;
+  cityScreenCtaLabel?: string | null;
+  cityScreenImageUrl?: string | null;
+  cityScreenSlotId?: string | null;
+  cityScreenStatus?: string | null;
+  cityScreenText?: string | null;
+  cityScreenTitle?: string | null;
+  cityScreenType?: string | null;
+  cityScreenVideoUrl?: string | null;
   companyId: string;
   ctaLabel: string | null;
   featuredAssetDescription?: string | null;

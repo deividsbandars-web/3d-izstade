@@ -32,6 +32,18 @@ async function buildServerApiHeaders(includeJsonBody: boolean, accessToken?: str
   return headers;
 }
 
+async function buildServerApiError(response: Response) {
+  let detail = '';
+  try {
+    const payload = await response.clone().json() as { error?: unknown; message?: unknown };
+    detail = String(payload.error || payload.message || '').trim();
+  } catch {
+    detail = '';
+  }
+
+  return new Error(`SERVER_API_HTTP_${response.status}${detail ? `: ${detail}` : ''}`);
+}
+
 export async function serverApiGet<T>(path: string): Promise<T> {
   const response = await fetch(buildServerApiUrl(path), {
     method: 'GET',
@@ -39,7 +51,7 @@ export async function serverApiGet<T>(path: string): Promise<T> {
   });
 
   if (!response.ok) {
-    throw new Error(`SERVER_API_HTTP_${response.status}`);
+    throw await buildServerApiError(response);
   }
 
   return await response.json() as T;
@@ -58,7 +70,7 @@ export async function serverApiGetText(path: string): Promise<{
   });
 
   if (!response.ok) {
-    throw new Error(`SERVER_API_HTTP_${response.status}`);
+    throw await buildServerApiError(response);
   }
 
   return {
@@ -75,7 +87,7 @@ export async function serverApiPost<T>(path: string, body: unknown, accessToken?
   });
 
   if (!response.ok) {
-    throw new Error(`SERVER_API_HTTP_${response.status}`);
+    throw await buildServerApiError(response);
   }
 
   return await response.json() as T;
@@ -89,7 +101,7 @@ export async function serverApiPatch<T>(path: string, body: unknown): Promise<T>
   });
 
   if (!response.ok) {
-    throw new Error(`SERVER_API_HTTP_${response.status}`);
+    throw await buildServerApiError(response);
   }
 
   return await response.json() as T;
@@ -117,7 +129,7 @@ export async function serverApiUploadBinary<T>(
   });
 
   if (!response.ok) {
-    throw new Error(`SERVER_API_HTTP_${response.status}`);
+    throw await buildServerApiError(response);
   }
 
   return await response.json() as T;

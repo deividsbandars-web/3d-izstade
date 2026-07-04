@@ -129,7 +129,7 @@ export function resolveGalaWallSkin(config?: GalaHouseVisualConfig) {
       floorSeamColor: interior.wallSeamColor,
       floorTextureVariant: interior.floorTextureVariant,
       panelRevealColor: facade.seamColor,
-      partitionCoreColor: '#c8b496',
+      partitionCoreColor: interior.wallSeamColor,
       materials: {
         board: GALA_WALL_SKIN_PBR_MATERIALS.interiorBoard,
         panel: GALA_WALL_SKIN_PBR_MATERIALS.interiorPanel,

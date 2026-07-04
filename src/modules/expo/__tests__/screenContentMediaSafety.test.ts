@@ -73,6 +73,15 @@ assert.equal(videoContent.screenContent.imageUrl, 'https://cdn.example.com/video
 assert.equal(videoContent.screenContent.videoUrl, 'https://cdn.example.com/video/live-demo.webm');
 
 const sanitizedAssets = sanitizeExpoManagedBoothAssets({
+  city_screen_content: {
+    campaignEndDate: '2026-08-30',
+    campaignStartDate: '2026-08-01',
+    campaignStatus: 'submitted',
+    mode: 'generated-card',
+    screenSlotId: 'city-center-spine-hero-wall',
+    status: 'draft',
+    title: 'Safe city campaign',
+  },
   screen_content: {
     imageUrl: 'https://cdn.example.com/screen.jpg',
     mode: 'image',
@@ -82,6 +91,19 @@ const sanitizedAssets = sanitizeExpoManagedBoothAssets({
   video_url: 'https://cdn.example.com/room.webm',
 });
 assert.deepEqual(sanitizedAssets, {
+  city_screen_content: {
+    campaignEndDate: '2026-08-30',
+    campaignStartDate: '2026-08-01',
+    campaignStatus: 'submitted',
+    ctaLabel: '',
+    imageUrl: '',
+    mode: 'generated-card',
+    screenSlotId: 'city-center-spine-hero-wall',
+    status: 'draft',
+    subtitle: '',
+    title: 'Safe city campaign',
+    videoUrl: '',
+  },
   screen_content: {
     ctaLabel: '',
     imageUrl: 'https://cdn.example.com/screen.jpg',

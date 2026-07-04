@@ -21,7 +21,8 @@ deployment
 docker-compose.yml
 turnserver.conf
 supabase
-scripts
+scripts/*
+!scripts/check-frontend-env.mjs
 logs
 node_modules
 .git
@@ -44,6 +45,7 @@ tmp-expo-zone-shots*
 tmp-full-city-clean-pass
 tmp-full-city-clean-pass*
 docs/recovery
+public/textures/expo/
 .env
 .env.*
 !.env.example

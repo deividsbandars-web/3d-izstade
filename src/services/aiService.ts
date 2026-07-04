@@ -1,3 +1,5 @@
+import { serverApiPost } from './serverApi.js';
+
 const IS_LIVE_AI = false;
 
 interface AiVideoResult {
@@ -14,17 +16,7 @@ interface AiApiRequest {
 }
 
 async function postAiApi<T>(path: string, payload: AiApiRequest): Promise<T> {
-  const response = await fetch(path, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-  });
-
-  if (!response.ok) {
-    throw new Error(`AI_API_HTTP_${response.status}`);
-  }
-
-  return await response.json() as T;
+  return await serverApiPost<T>(path, payload);
 }
 
 export async function aiEstimate(description: string) {

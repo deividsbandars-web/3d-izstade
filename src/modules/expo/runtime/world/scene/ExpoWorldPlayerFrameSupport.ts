@@ -91,6 +91,12 @@ export const EMPTY_WALK_MOVE_STATE: WalkMoveState = {
   turnR: false,
 };
 
+export function isExpoTextEntryTarget(target: unknown) {
+  const candidate = target as { isContentEditable?: boolean; tagName?: string } | null;
+  const tagName = String(candidate?.tagName || '').toUpperCase();
+  return candidate?.isContentEditable === true || tagName === 'INPUT' || tagName === 'SELECT' || tagName === 'TEXTAREA';
+}
+
 export function resolveInitialWalkElevation(startY: number, useGalaShowroomPhysics = false): number {
   if (useGalaShowroomPhysics) {
     return GALA_SHOWROOM_EYE_HEIGHT_Y;

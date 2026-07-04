@@ -19,6 +19,8 @@ import type { ModularHomeViewModeOption } from './modularHomeConfigurator';
 
 export type GalaHouseRenderDetailLevel = 'full' | 'reduced';
 
+const GALA_REVIEW_RENDER_DETAIL_LEVEL: GalaHouseRenderDetailLevel = 'full';
+
 type GalaHouseShellProps = {
   onEnterInterior?: () => void;
   renderDetailLevel?: GalaHouseRenderDetailLevel;
@@ -152,6 +154,9 @@ export function GalaHouseShell({
         galaBodyMeters: '10.2 x 5.0 x 2.7',
         galaModelRebuilt: true,
         galaPreviewScale: GALA_PREVIEW_SCALE,
+        galaRenderDetailLevel: GALA_REVIEW_RENDER_DETAIL_LEVEL,
+        galaRenderDetailPolicy: 'full-detail-locked-for-product-visual-review',
+        galaRequestedRenderDetailLevel: renderDetailLevel,
         galaVisualConfig: resolvedVisualConfig,
         productVisualAccepted: false,
         referencePackageUsed: 'Koka_maja_GALA_30deg_pilns_komplekts',
@@ -170,7 +175,7 @@ export function GalaHouseShell({
       <GalaConstructionRenderer
         constructionModel={constructionModel}
         onEntryDoorOpen={onEnterInterior}
-        renderDetailLevel={renderDetailLevel}
+        renderDetailLevel={GALA_REVIEW_RENDER_DETAIL_LEVEL}
         transparentCutaway={transparentCutaway}
         viewMode={viewMode}
         visualConfig={resolvedVisualConfig}

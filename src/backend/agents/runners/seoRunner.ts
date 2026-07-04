@@ -1,4 +1,4 @@
-import { llmService } from '../../ai/llmService.js';
+import { createSystemLlmMetering, llmService } from '../../ai/llmService.js';
 import { logger } from '../../logging/logger.js';
 import { agentScheduler } from '../../../agents/system/scheduler/agentScheduler.js';
 
@@ -19,7 +19,11 @@ export const seoRunner = {
       Provide a detailed SEO strategy, keyword clusters, and technical recommendations.`;
 
       // 3. Call LLM Service
-      const { text, error } = await llmService.generateText(prompt, { provider: 'openai', temperature: 0.6 });
+      const { text, error } = await llmService.generateText(prompt, {
+        metering: createSystemLlmMetering('seo-runner', 'execute-seo-task'),
+        provider: 'openai',
+        temperature: 0.6,
+      });
 
       if (error || !text) {
         throw new Error(`LLM Generation failed: ${error}`);

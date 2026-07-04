@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import * as THREE from 'three';
-import { useProgressiveTextureSet } from '../useProgressiveTextureSet';
+import { useLoader } from '@react-three/fiber';
 
 type GalaConstructionTextureKind =
   | 'floor'
@@ -217,7 +217,7 @@ export function useGalaConstructionPbrTextures(
     paths.normal,
     paths.arm,
   ], [paths.arm, paths.diffuse, paths.normal]);
-  const textureSet = useProgressiveTextureSet(texturePaths);
+  const textureSet = useLoader(THREE.TextureLoader, texturePaths);
 
   return useMemo(() => {
     if (!textureSet) {

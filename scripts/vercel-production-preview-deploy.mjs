@@ -1,13 +1,19 @@
 import fs from 'node:fs';
 import { spawnSync } from 'node:child_process';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import {
+  printVercelSourceContextReport,
+  verifyVercelSourceContext,
+} from './check-vercel-source-context.mjs';
 
 const scope = 'esaukans-6934s-projects';
 const project = 'app';
-const expectedBranch = process.env.PRODUCTION_DEPLOY_BRANCH || 'feat/booth-camera-screen-feed-current';
 const projectJsonPath = '.vercel/project.json';
 const npx = process.platform === 'win32' ? 'npx.cmd' : 'npx';
-
-const options = new Set(process.argv.slice(2));
+const DEFAULT_PRODUCTION_BRANCHES = ['main'];
+const DEFAULT_PRODUCTION_BRANCH_PREFIXES = ['release/'];
+const PRODUCTION_CONFIRM_OPTION = '--confirm-production-preview';
 
 function run(command, args, runOptions = {}) {
   const result = spawnSync(command, args, {
@@ -72,16 +78,81 @@ function restoreProjectLink(previousProjectJson) {
   fs.writeFileSync(projectJsonPath, previousProjectJson);
 }
 
-function assertSafeGitState() {
-  const branch = run('git', ['branch', '--show-current'], { capture: true });
-  if (branch !== expectedBranch && !options.has('--allow-branch')) {
+export function resolveProductionBranchPolicy(env = process.env) {
+  const exactBranch = env.PRODUCTION_DEPLOY_BRANCH?.trim();
+  if (exactBranch) {
+    return {
+      exactBranch,
+      mode: 'exact',
+    };
+  }
+
+  return {
+    allowedBranches: DEFAULT_PRODUCTION_BRANCHES,
+    allowedPrefixes: DEFAULT_PRODUCTION_BRANCH_PREFIXES,
+    mode: 'default-release-policy',
+  };
+}
+
+export function isProductionBranchAllowed(branch, policy = resolveProductionBranchPolicy()) {
+  if (policy.mode === 'exact') {
+    return branch === policy.exactBranch;
+  }
+
+  return policy.allowedBranches.includes(branch)
+    || policy.allowedPrefixes.some((prefix) => branch.startsWith(prefix));
+}
+
+export function describeProductionBranchPolicy(policy = resolveProductionBranchPolicy()) {
+  if (policy.mode === 'exact') {
+    return `PRODUCTION_DEPLOY_BRANCH=${policy.exactBranch}`;
+  }
+
+  return [
+    ...policy.allowedBranches,
+    ...policy.allowedPrefixes.map((prefix) => `${prefix}*`),
+  ].join(', ');
+}
+
+export function resolveProductionAuthorization(options, env = process.env) {
+  if (options.has(PRODUCTION_CONFIRM_OPTION)) {
+    return {
+      authorized: true,
+      source: PRODUCTION_CONFIRM_OPTION,
+    };
+  }
+
+  if (['1', 'true', 'yes'].includes(env.PRODUCTION_PREVIEW_DEPLOY_AUTHORIZED?.trim().toLowerCase())) {
+    return {
+      authorized: true,
+      source: 'PRODUCTION_PREVIEW_DEPLOY_AUTHORIZED',
+    };
+  }
+
+  return {
+    authorized: false,
+    source: null,
+  };
+}
+
+export function assertSafeGitState({
+  env = process.env,
+  options = new Set(),
+  runCommand = run,
+} = {}) {
+  const branch = runCommand('git', ['branch', '--show-current'], { capture: true });
+  const branchPolicy = resolveProductionBranchPolicy(env);
+  const branchPolicyDescription = describeProductionBranchPolicy(branchPolicy);
+  const branchAllowed = isProductionBranchAllowed(branch, branchPolicy);
+
+  if (!branchAllowed && !options.has('--allow-branch')) {
     throw new Error(
-      `Refusing production deploy from branch ${branch}. Expected ${expectedBranch}. `
+      `Refusing production deploy from branch ${branch}. Allowed branch policy: ${branchPolicyDescription}. `
       + 'Pass --allow-branch only for an intentional release exception.',
     );
   }
 
-  const status = run('git', ['status', '--short', '--untracked-files=no'], { capture: true });
+  const status = runCommand('git', ['status', '--short', '--untracked-files=no'], { capture: true });
   if (status && !options.has('--allow-dirty')) {
     throw new Error(
       'Refusing production deploy with modified tracked files. '
@@ -89,8 +160,21 @@ function assertSafeGitState() {
     );
   }
 
-  const head = run('git', ['rev-parse', 'HEAD'], { capture: true });
+  const authorization = resolveProductionAuthorization(options, env);
+  if (!authorization.authorized) {
+    throw new Error(
+      `Refusing production preview deploy without explicit authorization. Pass ${PRODUCTION_CONFIRM_OPTION} `
+      + 'or set PRODUCTION_PREVIEW_DEPLOY_AUTHORIZED=true for this run.',
+    );
+  }
+
+  const head = runCommand('git', ['rev-parse', 'HEAD'], { capture: true });
   console.log(`Production deploy source: ${branch} @ ${head}`);
+  console.log(`Production branch policy: ${branchPolicyDescription}`);
+  if (!branchAllowed) {
+    console.log(`Production branch override: --allow-branch accepted ${branch}.`);
+  }
+  console.log(`Production authorization: ${authorization.source}`);
 }
 
 function assertRestoredStagingLink(previousProjectJson) {
@@ -110,23 +194,36 @@ function assertRestoredStagingLink(previousProjectJson) {
   }
 }
 
-const previousProjectJson = readProjectLink();
+export function main(argv = process.argv.slice(2)) {
+  const options = new Set(argv);
+  const previousProjectJson = readProjectLink();
 
-console.log('Creating an app production deployment without moving www.30sek24.com yet.');
-console.log('This script temporarily links .vercel to project app, then restores the previous link.');
-console.log('After review, promote explicitly with: npm run promote:production -- <deployment-url>');
+  console.log('Creating an app production deployment without moving www.30sek24.com yet.');
+  console.log('This script temporarily links .vercel to project app, then restores the previous link.');
+  console.log('After review, promote explicitly with: npm run promote:production -- <deployment-url>');
 
-try {
-  assertSafeGitState();
-  run(npx, ['vercel', 'link', '--yes', '--project', project, '--scope', scope]);
-  
-  if (options.has('--prebuilt')) {
-    run(npx, ['vercel', 'build', '--prod', '--yes', '--scope', scope]);
-    run(npx, ['vercel', 'deploy', '--prebuilt', '--prod', '--skip-domain', '--yes', '--scope', scope]);
-  } else {
-    run(npx, ['vercel', '--prod', '--skip-domain', '--yes', '--scope', scope]);
+  try {
+    if (!options.has('--prebuilt')) {
+      printVercelSourceContextReport(verifyVercelSourceContext());
+    }
+    assertSafeGitState({ options });
+    run(npx, ['vercel', 'link', '--yes', '--project', project, '--scope', scope]);
+
+    if (options.has('--prebuilt')) {
+      run(npx, ['vercel', 'build', '--prod', '--yes', '--scope', scope]);
+      run(npx, ['vercel', 'deploy', '--prebuilt', '--prod', '--skip-domain', '--yes', '--scope', scope]);
+    } else {
+      run(npx, ['vercel', '--prod', '--skip-domain', '--yes', '--scope', scope]);
+    }
+  } finally {
+    restoreProjectLink(previousProjectJson);
+    assertRestoredStagingLink(previousProjectJson);
   }
-} finally {
-  restoreProjectLink(previousProjectJson);
-  assertRestoredStagingLink(previousProjectJson);
+}
+
+const isDirectExecution = process.argv[1]
+  && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+
+if (isDirectExecution) {
+  main();
 }

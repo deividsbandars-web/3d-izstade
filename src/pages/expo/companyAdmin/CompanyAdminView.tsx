@@ -1,4 +1,4 @@
-import { Suspense } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Canvas } from '@react-three/fiber';
 import { Environment, OrbitControls, Text, useVideoTexture } from '@react-three/drei';
@@ -58,6 +58,10 @@ import {
   normalizeExpoBoothPublicationStatus,
   type ExpoBoothPublicationStatus,
 } from '../../../shared/expo/boothPublicationStatus';
+import {
+  normalizeExpoCityScreenCampaign,
+  type ExpoCityScreenCampaignStatus,
+} from '../../../shared/expo/cityScreenCampaign';
 import '../../../components/calculator/styles/CalculatorPro.css';
 import {
   CompanyAdminAccessNotice,
@@ -65,6 +69,12 @@ import {
   CompanyAdminMessage,
   CompanyAdminPageHeader,
 } from './CompanyAdminSections';
+import {
+  BoothQuickSetup,
+  CityScreenQuickSetup,
+  CompanyAdminWorkspaceTabs,
+  type CompanyAdminWorkspaceMode,
+} from './CompanyAdminQuickSetup';
 import { useCompanyAdminState } from './useCompanyAdminState';
 
 function VideoPreviewMaterial({ url }: { url: string }) {
@@ -121,6 +131,7 @@ type AdminCompanyState = {
   booth: {
     video_url: string;
   };
+  cityScreenContent: AdminScreenContentState;
   description: string;
   district: string;
   id: string;
@@ -136,6 +147,9 @@ type AdminScreenContentMode = 'generated-card' | 'image' | 'video' | 'video-plac
 type AdminScreenContentStatus = 'draft' | 'published';
 
 type AdminScreenContentState = {
+  campaignEndDate: string;
+  campaignStartDate: string;
+  campaignStatus: ExpoCityScreenCampaignStatus;
   ctaLabel: string;
   imageUrl: string;
   mode: AdminScreenContentMode;
@@ -241,11 +255,11 @@ const DEFAULT_SCREEN_TEST_CTA = 'Open Booth';
 const SCREEN_MEDIA_SETUP_GUIDE = [
   {
     label: 'Image',
-    value: 'Direct public HTTPS image file ending .jpg, .jpeg, .png, .webp, or .gif.',
+    value: 'Upload an image or use a direct image file link ending .jpg, .jpeg, .png, .webp, or .gif.',
   },
   {
     label: 'Video',
-    value: 'Direct public HTTPS video file ending .mp4 or .webm. Sharing pages from YouTube, Drive, or Vimeo are not direct media files.',
+    value: 'Upload a video or use a direct .mp4 or .webm file link. Sharing pages are reviewed separately.',
   },
   {
     label: 'Website / CTA',
@@ -253,7 +267,7 @@ const SCREEN_MEDIA_SETUP_GUIDE = [
   },
   {
     label: 'Visibility',
-    value: 'Matched booth screens can show saved published media now. Paid city screen slots are stored as inventory metadata until the city-screen render integration is wired.',
+    value: 'This section controls the screen inside the booth. City advertising is configured separately in the City advertising tab.',
   },
 ] as const;
 
@@ -340,6 +354,19 @@ const DEFAULT_MEDIA_REVIEW: AdminMediaReviewState = {
 
 const DEFAULT_COMPANY: AdminCompanyState = {
   booth: { video_url: '' },
+  cityScreenContent: {
+    campaignEndDate: '',
+    campaignStartDate: '',
+    campaignStatus: 'draft',
+    ctaLabel: '',
+    imageUrl: '',
+    mode: 'generated-card',
+    screenSlotId: '',
+    status: 'draft',
+    subtitle: '',
+    title: '',
+    videoUrl: '',
+  },
   description: '',
   district: EXPO_CANONICAL_DISTRICT_CATALOG[0]?.id ?? '',
   id: '',
@@ -347,6 +374,9 @@ const DEFAULT_COMPANY: AdminCompanyState = {
   mediaReview: DEFAULT_MEDIA_REVIEW,
   name: DEFAULT_VISIBLE_SCENE_COMPANY_NAME,
   screenContent: {
+    campaignEndDate: '',
+    campaignStartDate: '',
+    campaignStatus: 'draft',
     ctaLabel: '',
     imageUrl: '',
     mode: 'generated-card',
@@ -417,11 +447,17 @@ function buildManagedBoothPreviewRoute(boothId: string) {
   return `/expo-3d?${params.toString()}`;
 }
 
-function readAdminScreenContent(assets3d: unknown): AdminScreenContentState {
+function readAdminScreenContent(
+  assets3d: unknown,
+  assetKey: 'city_screen_content' | 'screen_content' = 'screen_content',
+): AdminScreenContentState {
   const assets = asRecord(assets3d);
-  const screenContent = asRecord(assets.screen_content);
+  const screenContent = asRecord(assets[assetKey]);
 
   return {
+    campaignEndDate: String(screenContent.campaignEndDate || screenContent.campaign_end_date || ''),
+    campaignStartDate: String(screenContent.campaignStartDate || screenContent.campaign_start_date || ''),
+    campaignStatus: normalizeExpoCityScreenCampaign(screenContent).campaign.campaignStatus,
     ctaLabel: String(screenContent.ctaLabel || screenContent.cta_label || ''),
     imageUrl: String(screenContent.imageUrl || screenContent.image_url || screenContent.assetUrl || screenContent.asset_url || ''),
     mode: normalizeScreenMode(screenContent.mode || screenContent.mediaType || screenContent.media_type),
@@ -430,6 +466,19 @@ function readAdminScreenContent(assets3d: unknown): AdminScreenContentState {
     subtitle: String(screenContent.subtitle || screenContent.text || ''),
     title: String(screenContent.title || ''),
     videoUrl: String(screenContent.videoUrl || screenContent.video_url || assets.video_url || ''),
+  };
+}
+
+function getDefaultCityScreenCampaignDates() {
+  const start = new Date();
+  start.setUTCHours(0, 0, 0, 0);
+  start.setUTCDate(start.getUTCDate() + 7);
+  const end = new Date(start);
+  end.setUTCDate(end.getUTCDate() + 29);
+
+  return {
+    campaignEndDate: end.toISOString().slice(0, 10),
+    campaignStartDate: start.toISOString().slice(0, 10),
   };
 }
 
@@ -559,12 +608,14 @@ function readAdminCompanyFromBoothPayload(payload: unknown, fallbackId = ''): Ad
     status?: string;
   };
   const screenContent = readAdminScreenContent(booth.assets_3d);
+  const cityScreenContent = readAdminScreenContent(booth.assets_3d, 'city_screen_content');
   const sponsorAssetPack = readAdminSponsorAssetPack(booth.assets_3d);
 
   return {
     booth: {
       video_url: String(booth.assets_3d?.video_url || ''),
     },
+    cityScreenContent,
     description: String(booth.contact_info?.description || ''),
     district: String(booth.district || EXPO_CANONICAL_DISTRICT_CATALOG[0]?.id || ''),
     id: String(booth.id || fallbackId),
@@ -599,6 +650,21 @@ function getManagedLeadOpsNotes(lead: ManagedLead) {
 
 export default function CompanyAdmin() {
   const nav = useNavigate();
+  const [workspaceMode, setWorkspaceMode] = useState<CompanyAdminWorkspaceMode>(() => {
+    if (typeof window === 'undefined') {
+      return 'city-screen';
+    }
+
+    const requestedTask = new URLSearchParams(window.location.search).get('task');
+    return requestedTask === 'advanced' || requestedTask === 'booth' ? requestedTask : 'city-screen';
+  });
+  const [cityScreenSlotSelection, setCityScreenSlotSelection] = useState(() => {
+    if (typeof window === 'undefined') {
+      return '';
+    }
+
+    return new URLSearchParams(window.location.search).get('screen') || '';
+  });
   const {
     activeLeadAction,
     activeLeadOpsSave,
@@ -652,28 +718,54 @@ export default function CompanyAdmin() {
     resolveAccessStateFromError: resolveAdminAccessStateFromError,
   });
 
-  async function handleSave(nextStatus?: ExpoBoothPublicationStatus) {
-    if (adminAccessState !== 'ready') {
-      setMessage({ type: 'error', text: 'Sign in with a sponsor/admin account before saving booth screen content.' });
+  useEffect(() => {
+    if (loading || !cityScreenSlotSelection) {
       return;
     }
 
-    if (nextStatus && !canTransitionExpoBoothPublicationStatus(company.status, nextStatus)) {
+    setCompany((current) => {
+      if (current.cityScreenContent.campaignStartDate || current.cityScreenContent.campaignEndDate) {
+        return current;
+      }
+
+      return {
+        ...current,
+        cityScreenContent: {
+          ...current.cityScreenContent,
+          ...getDefaultCityScreenCampaignDates(),
+          screenSlotId: cityScreenSlotSelection,
+        },
+      };
+    });
+  }, [cityScreenSlotSelection, loading, setCompany]);
+
+  async function handleSave(
+    nextStatus?: ExpoBoothPublicationStatus,
+    companyOverride?: AdminCompanyState,
+  ) {
+    if (adminAccessState !== 'ready') {
+      setMessage({ type: 'error', text: 'Sign in with a sponsor/admin account before saving booth screen content.' });
+      return false;
+    }
+
+    const sourceCompany = companyOverride ?? company;
+
+    if (nextStatus && !canTransitionExpoBoothPublicationStatus(sourceCompany.status, nextStatus)) {
       setMessage({
         type: 'error',
-        text: `Invalid booth status transition from ${getExpoBoothPublicationStatusLabel(company.status).toLowerCase()} to ${getExpoBoothPublicationStatusLabel(nextStatus).toLowerCase()}.`,
+        text: `Invalid booth status transition from ${getExpoBoothPublicationStatusLabel(sourceCompany.status).toLowerCase()} to ${getExpoBoothPublicationStatusLabel(nextStatus).toLowerCase()}.`,
       });
-      return;
+      return false;
     }
 
     const companyForSave: AdminCompanyState = {
-      ...company,
-      status: nextStatus ?? company.status,
+      ...sourceCompany,
+      status: nextStatus ?? sourceCompany.status,
     };
 
     if (!companyForSave.name || !companyForSave.district) {
       setMessage({ type: 'error', text: 'Please provide a company name and district.' });
-      return;
+      return false;
     }
 
     const companyNameForSave = resolveVisibleSceneCompanyName(companyForSave.name.trim());
@@ -681,6 +773,7 @@ export default function CompanyAdmin() {
     try {
       const result = await companyAdminService.saveManagedBooth({
         boothId: companyForSave.id || undefined,
+        cityScreenContent: companyForSave.cityScreenContent,
         companyName: companyNameForSave,
         description: companyForSave.description,
         district: companyForSave.district,
@@ -698,6 +791,7 @@ export default function CompanyAdmin() {
       const savedId = String((result.data as { id?: string } | null)?.id || company.id || '');
       setCompany((current) => ({
         ...current,
+        ...companyForSave,
         id: savedId,
         name: companyNameForSave,
         status: companyForSave.status,
@@ -725,17 +819,21 @@ export default function CompanyAdmin() {
           ? `Booth saved as ${getExpoBoothPublicationStatusLabel(nextStatus).toLowerCase()}.`
           : 'Booth sponsor settings saved.',
       });
+      return true;
     } catch (error) {
       const errorText = formatRequestError(error);
       const accessState = resolveAdminAccessStateFromError(errorText);
-      if (errorText.includes('SERVER_API_HTTP_')) {
+      const isRequestValidationError = errorText.includes('SERVER_API_HTTP_400') || errorText.includes('SERVER_API_HTTP_409');
+      if (errorText.includes('SERVER_API_HTTP_') && !isRequestValidationError) {
         setAdminAccessError(errorText);
         setAdminAccessState(accessState);
       }
 
       setMessage({
         type: 'error',
-        text: accessState === 'signed-out'
+        text: isRequestValidationError
+          ? errorText.replace(/^.*SERVER_API_HTTP_(?:400|409):\s*/, '')
+          : accessState === 'signed-out'
           ? 'Your admin session is missing or expired. Sign in again, then save the booth screen.'
           : accessState === 'access-denied'
             ? 'This account is not allowed to save this booth.'
@@ -743,6 +841,7 @@ export default function CompanyAdmin() {
               ? 'The Expo admin service is not reachable right now. This is not an API key issue; reload after the service is restored.'
               : 'Failed to save booth screen settings.',
       });
+      return false;
     } finally {
       setLoading(false);
     }
@@ -831,6 +930,153 @@ export default function CompanyAdmin() {
       status: normalizedUrl ? 'published' : company.screenContent.status,
       subtitle: normalizedUrl ? company.screenContent.subtitle || DEFAULT_SCREEN_TEST_SUBTITLE : company.screenContent.subtitle,
       title: normalizedUrl ? company.screenContent.title || DEFAULT_SCREEN_TEST_TITLE : company.screenContent.title,
+    });
+  }
+
+  function updateCityScreenContent(patch: Partial<AdminScreenContentState>) {
+    setCompany((current) => ({
+      ...current,
+      cityScreenContent: {
+        ...current.cityScreenContent,
+        ...patch,
+      },
+    }));
+  }
+
+  function selectCityScreenSlot(screenSlotId: string) {
+    setCityScreenSlotSelection(screenSlotId);
+    updateCityScreenContent({
+      screenSlotId,
+      ...(!company.cityScreenContent.campaignStartDate && !company.cityScreenContent.campaignEndDate
+        ? getDefaultCityScreenCampaignDates()
+        : {}),
+    });
+  }
+
+  async function handleCityScreenSave(action: 'approve' | 'draft' | 'publish' | 'reject' | 'review') {
+    const selectedSlotId = cityScreenSlotSelection || company.cityScreenContent.screenSlotId;
+    const selectedSlot = getExpoScreenSlotById(selectedSlotId);
+    if (!selectedSlot || selectedSlot.scope !== 'city') {
+      setMessage({ type: 'error', text: 'Choose a city advertising screen first.' });
+      return;
+    }
+
+    if ((action === 'approve' || action === 'publish' || action === 'reject') && !isOperatorAdmin) {
+      setMessage({ type: 'error', text: 'Submit the screen request for review. The Warpala team approves and publishes city advertising.' });
+      return;
+    }
+
+    const cityScreenContent: AdminScreenContentState = {
+      ...company.cityScreenContent,
+      campaignStatus: action === 'publish'
+        ? 'live'
+        : action === 'approve'
+          ? 'approved'
+          : action === 'reject'
+            ? 'rejected'
+          : action === 'review'
+            ? 'submitted'
+            : 'draft',
+      screenSlotId: selectedSlot.id,
+      status: action === 'publish' ? 'published' : 'draft',
+    };
+    const validation = normalizeExpoScreenContentForSave(cityScreenContent);
+    if (!validation.ok) {
+      setMessage({
+        type: 'error',
+        text: validation.issues.map((issue) => issue.message).join(' '),
+      });
+      return;
+    }
+    const campaignValidation = normalizeExpoCityScreenCampaign(cityScreenContent, {
+      requireSchedule: action !== 'draft',
+      today: new Date().toISOString().slice(0, 10),
+    });
+    if (!campaignValidation.ok) {
+      setMessage({
+        type: 'error',
+        text: campaignValidation.issues.map((issue) => issue.message).join(' '),
+      });
+      return;
+    }
+
+    const nextCompany: AdminCompanyState = {
+      ...company,
+      cityScreenContent,
+    };
+    setCompany(nextCompany);
+
+    const nextStatus = action === 'review' && canTransitionExpoBoothPublicationStatus(company.status, 'review')
+      ? 'review'
+      : undefined;
+    const saved = await handleSave(nextStatus, nextCompany);
+    if (!saved) {
+      return;
+    }
+    setMessage({
+      type: 'success',
+      text: action === 'publish'
+        ? `${selectedSlot.label} is live for the selected campaign dates.`
+        : action === 'approve'
+          ? `${selectedSlot.label} campaign is approved and ready to publish.`
+        : action === 'reject'
+          ? `${selectedSlot.label} campaign was returned for changes.`
+        : action === 'review'
+          ? `${selectedSlot.label} request was submitted. The next step is Warpala review.`
+          : `${selectedSlot.label} draft was saved.`,
+    });
+  }
+
+  async function handleBoothQuickSave(action: 'draft' | 'review') {
+    const fallbackImage = company.sponsorAssetPack.heroImageUrl.trim()
+      || company.sponsorAssetPack.logoUrl.trim();
+    const nextScreenContent: AdminScreenContentState = {
+      ...company.screenContent,
+      ctaLabel: company.screenContent.ctaLabel.trim()
+        || company.sponsorAssetPack.ctaPrimary.trim()
+        || 'Learn more',
+      imageUrl: company.screenContent.mode === 'image' && !company.screenContent.imageUrl.trim()
+        ? fallbackImage
+        : company.screenContent.imageUrl,
+      status: 'published',
+      subtitle: company.screenContent.subtitle.trim()
+        || company.sponsorAssetPack.shortPitch.trim(),
+      title: company.screenContent.title.trim()
+        || company.sponsorAssetPack.headline.trim()
+        || company.name.trim(),
+    };
+    const screenValidation = normalizeExpoScreenContentForSave(nextScreenContent);
+    const assetPackValidation = normalizeExpoSponsorAssetPackForSave(company.sponsorAssetPack);
+    if (!screenValidation.ok || !assetPackValidation.ok) {
+      setMessage({
+        type: 'error',
+        text: [
+          ...screenValidation.issues.map((issue) => issue.message),
+          ...assetPackValidation.issues.map((issue) => issue.message),
+        ].join(' '),
+      });
+      return;
+    }
+
+    const nextCompany: AdminCompanyState = {
+      ...company,
+      description: company.description.trim() || company.sponsorAssetPack.shortPitch.trim(),
+      screenContent: nextScreenContent,
+    };
+    setCompany(nextCompany);
+    const nextStatus = action === 'review' && canTransitionExpoBoothPublicationStatus(company.status, 'review')
+      ? 'review'
+      : undefined;
+    const saved = await handleSave(nextStatus, nextCompany);
+    if (!saved) {
+      return;
+    }
+
+    setMessage({
+      type: 'success',
+      text: action === 'review'
+        ? 'Booth setup was submitted for review.'
+        : 'Booth setup was saved. Open the 3D preview to check it.',
     });
   }
 
@@ -1067,15 +1313,29 @@ export default function CompanyAdmin() {
     ? new Date(String(sortedLeads[0].created_at)).toLocaleString()
     : 'No inbound activity yet';
   const screenContentValidation = normalizeExpoScreenContentForSave(company.screenContent);
+  const cityScreenContentValidation = normalizeExpoScreenContentForSave(company.cityScreenContent);
+  const cityScreenCampaignValidation = normalizeExpoCityScreenCampaign(company.cityScreenContent);
+  const cityScreenSubmissionValidation = normalizeExpoCityScreenCampaign(company.cityScreenContent, {
+    requireSchedule: true,
+    today: new Date().toISOString().slice(0, 10),
+  });
   const boothVideoValidation = validateExpoScreenMediaUrl(company.booth.video_url, 'video');
   const sponsorAssetPackValidation = normalizeExpoSponsorAssetPackForSave(company.sponsorAssetPack);
   const sponsorAssetPackReadiness = getExpoSponsorAssetPackReadiness(company.sponsorAssetPack);
   const mediaReviewValidation = normalizeExpoMediaReviewReferencesForSave(company.mediaReview);
-  const mediaPolicyText = `Images: ${EXPO_SCREEN_CONTENT_IMAGE_EXTENSIONS.join(', ')}. Videos: ${EXPO_SCREEN_CONTENT_VIDEO_EXTENSIONS.join(', ')}. Direct public HTTPS files only.`;
+  const mediaPolicyText = `Images: ${EXPO_SCREEN_CONTENT_IMAGE_EXTENSIONS.join(', ')}. Videos: ${EXPO_SCREEN_CONTENT_VIDEO_EXTENSIONS.join(', ')}. Upload files or use direct media file links.`;
   const screenContentIssueText = [
     ...screenContentValidation.issues.map((issue) => issue.message),
     ...(boothVideoValidation.ok ? [] : [boothVideoValidation.reason]),
   ].filter(Boolean).join(' ');
+  const cityScreenContentIssueText = cityScreenContentValidation.issues
+    .map((issue) => issue.message)
+    .filter(Boolean)
+    .join(' ');
+  const cityScreenCampaignIssueText = cityScreenCampaignValidation.issues
+    .map((issue) => issue.message)
+    .filter(Boolean)
+    .join(' ');
   const sponsorAssetPackIssueText = sponsorAssetPackValidation.issues
     .map((issue) => issue.message)
     .filter(Boolean)
@@ -1120,7 +1380,17 @@ export default function CompanyAdmin() {
   const screenInventorySlots = getExpoScreenInventorySlots();
   const screenInventorySummary = getExpoScreenInventorySummary();
   const availableScreenSlots = getAvailableExpoScreenSlots();
-  const selectedScreenSlot = getExpoScreenSlotById(company.screenContent.screenSlotId);
+  const boothScreenSlots = screenInventorySlots.filter((slot) => slot.scope === 'booth');
+  const cityScreenSlots = screenInventorySlots.filter((slot) => slot.scope === 'city');
+  const selectedScreenSlotCandidate = getExpoScreenSlotById(company.screenContent.screenSlotId);
+  const selectedScreenSlot = selectedScreenSlotCandidate?.scope === 'booth'
+    ? selectedScreenSlotCandidate
+    : null;
+  const selectedCityScreenSlotId = cityScreenSlotSelection || company.cityScreenContent.screenSlotId;
+  const selectedCityScreenSlotCandidate = getExpoScreenSlotById(selectedCityScreenSlotId);
+  const selectedCityScreenSlot = selectedCityScreenSlotCandidate?.scope === 'city'
+    ? selectedCityScreenSlotCandidate
+    : null;
   const ownedScreenSlots = getExpoScreenSlotsForBooth(company.id);
   const adminAccessNotice = getAdminAccessNotice(adminAccessState, adminAccessError);
   const canSaveBooth = adminAccessState === 'ready' && !loading;
@@ -1201,12 +1471,12 @@ export default function CompanyAdmin() {
   const publicationBody = isExpoBoothPublicSceneStatus(normalizedBoothStatus)
     ? 'This booth is published in the public scene. Future sponsor edits should go back through draft, review, approval and publish control.'
     : normalizedBoothStatus === 'approved'
-      ? 'Approved booths are ready for admin publishing into the public scene.'
+      ? 'Approved booths are ready for public publishing.'
       : normalizedBoothStatus === 'review'
-        ? 'Submitted booths stay out of the public scene until an admin approves or rejects them.'
+        ? 'Submitted booths stay out of the public scene until the team approves or requests changes.'
         : normalizedBoothStatus === 'rejected'
           ? 'Rejected booths must return to draft before the sponsor can resubmit them for review.'
-          : 'Draft booths are admin-preview only. Submit for review when the sponsor package and booth screen are ready.';
+          : 'Draft booths are preview-only. Submit for review when the sponsor package and booth screen are ready.';
   const publicationStepState: AdminLaunchStepState = isExpoBoothPublicSceneStatus(normalizedBoothStatus)
     ? 'ready'
     : canSubmitForReview || normalizedBoothStatus === 'review' || normalizedBoothStatus === 'approved'
@@ -1252,9 +1522,9 @@ export default function CompanyAdmin() {
   const publicationSceneReadinessText = isExpoBoothPublicSceneStatus(normalizedBoothStatus)
     ? 'Published booth is currently eligible for the public 3D scene.'
     : normalizedBoothStatus === 'approved'
-      ? 'Approved booth is ready for admin publish, but it is not public-scene live yet.'
+      ? 'Approved booth is ready to publish, but it is not live in the public scene yet.'
       : normalizedBoothStatus === 'review'
-        ? 'Submitted booth is hidden from the public scene until admin approval.'
+        ? 'Submitted booth is hidden from the public scene until team approval.'
         : normalizedBoothStatus === 'archived'
           ? 'Archived booth is intentionally not eligible for the public scene.'
           : normalizedBoothStatus === 'rejected'
@@ -1377,12 +1647,12 @@ export default function CompanyAdmin() {
     {
       actionLabel: adminAccessState === 'ready' ? saveButtonLabel : undefined,
       body: adminAccessState === 'ready'
-        ? 'Save after media or copy changes. 3D preview uses the last saved backend version.'
-        : 'Sign in and restore Expo admin service before saving sponsor content.',
-      label: 'Save to backend',
+        ? 'Save after media or text changes. 3D preview uses the latest saved version.'
+        : 'Sign in before saving sponsor content.',
+      label: 'Save draft',
       onAction: adminAccessState === 'ready' ? () => void handleSave() : undefined,
       state: adminAccessState === 'ready' ? 'review' : 'blocked',
-      status: adminAccessState === 'ready' ? 'Manual save required' : 'Save unavailable',
+      status: adminAccessState === 'ready' ? 'Ready to save' : 'Save unavailable',
     },
     {
       actionLabel: canOpenManagedPreview ? 'Open 3D preview' : undefined,
@@ -1518,12 +1788,12 @@ export default function CompanyAdmin() {
         </div>
         {upload.reviewStatus === 'approved' && promoteTargets.length === 0 && (
           <div style={{ padding: '10px 12px', borderRadius: '12px', background: 'rgba(30, 41, 59, 0.62)', border: '1px solid rgba(148, 163, 184, 0.14)', color: '#cbd5e1', fontSize: '0.74rem', lineHeight: 1.5 }}>
-            This upload is approved for internal review, but it has no direct public slot to promote automatically.
+            This upload is approved for team review, but it is not assigned to a live public slot yet.
           </div>
         )}
         {upload.reviewStatus === 'promoted' && upload.publicUrl ? (
           <div style={{ padding: '10px 12px', borderRadius: '12px', background: 'rgba(8, 47, 73, 0.24)', border: '1px solid rgba(103, 232, 249, 0.2)', color: '#bae6fd', fontSize: '0.74rem', lineHeight: 1.5 }}>
-            Public release URL created for explicit admin publish. Private review source remains preserved for audit history.
+            Public release link created for approved publishing. The original review file remains saved for history.
           </div>
         ) : null}
         {isOperatorAdmin ? (
@@ -1611,7 +1881,7 @@ export default function CompanyAdmin() {
             disabled={loading}
             style={{ marginTop: '12px', padding: '7px 10px', fontSize: '0.72rem' }}
           >
-            {loading && step.label === 'Save to backend' ? 'SAVING...' : step.actionLabel}
+            {loading && step.label === 'Save draft' ? 'SAVING...' : step.actionLabel}
           </button>
         )}
       </div>
@@ -1620,24 +1890,89 @@ export default function CompanyAdmin() {
 
   return (
     <div className="calculator-pro-wrapper" style={{ maxWidth: '1200px', margin: '0 auto', padding: '40px 20px', color: 'white' }}>
-      <CompanyAdminPageHeader onNavigate={nav} />
+      <CompanyAdminPageHeader onNavigate={nav} showOperatorTools={workspaceMode === 'advanced'} />
 
       <div className="calc-header">
-        <h1 className="text-accent" style={{ fontSize: '3rem' }}>EXPO ADMIN</h1>
-        <p>Manage booth identity, paid screen placement, and published sponsor screen content.</p>
+        <h1 className="text-accent" style={{ fontSize: '2.2rem' }}>SPONSOR WORKSPACE</h1>
+        <p>Choose one task. City advertising and booth content are configured separately.</p>
       </div>
 
       <CompanyAdminMessage message={message} />
       <CompanyAdminAccessNotice notice={adminAccessNotice} onNavigate={nav} />
-      <CompanyAdminLaunchFlow
-        boothPublicationLabel={boothPublicationLabel}
-        launchStepCount={launchSteps.length}
-        unblockedLaunchStepCount={unblockedLaunchStepCount}
-      >
-        {launchSteps.map(renderLaunchStep)}
-      </CompanyAdminLaunchFlow>
+      <CompanyAdminWorkspaceTabs mode={workspaceMode} onChange={setWorkspaceMode} />
 
-      <div className="calc-grid" style={{ gridTemplateColumns: '1fr 1fr' }}>
+      {workspaceMode === 'city-screen' && (
+        <CityScreenQuickSetup
+          canUpload={adminAccessState === 'ready' && Boolean(company.id) && !activeMediaReviewUpload}
+          canSave={canSaveBooth && Boolean(company.name.trim()) && Boolean(selectedCityScreenSlot) && cityScreenContentValidation.ok && cityScreenCampaignValidation.ok}
+          canSubmit={canSaveBooth && Boolean(company.name.trim()) && Boolean(selectedCityScreenSlot) && cityScreenContentValidation.ok && cityScreenSubmissionValidation.ok}
+          companyName={company.name}
+          content={company.cityScreenContent}
+          isOperatorAdmin={isOperatorAdmin}
+          loading={loading}
+          onChange={updateCityScreenContent}
+          onChangeCompanyName={(name) => setCompany((current) => ({ ...current, name }))}
+          onOpenBoothSetup={() => setWorkspaceMode('booth')}
+          onOpenCatalog={() => nav('/expo/city-screens')}
+          onOpenCity={() => nav('/expo-3d')}
+          onApprove={() => void handleCityScreenSave('approve')}
+          onPublish={() => void handleCityScreenSave('publish')}
+          onRequestChanges={() => void handleCityScreenSave('reject')}
+          onSaveDraft={() => void handleCityScreenSave('draft')}
+          onSelectSlot={selectCityScreenSlot}
+          onSubmitReview={() => void handleCityScreenSave('review')}
+          onUploadMedia={(files) => void handleMediaReviewUpload('city-screen', files)}
+          selectedSlot={selectedCityScreenSlot}
+          slots={cityScreenSlots}
+          uploadStatus={mediaReviewUploadStatus['city-screen'] || ''}
+          uploading={activeMediaReviewUpload === 'city-screen'}
+          validationIssue={cityScreenContentIssueText || cityScreenCampaignIssueText}
+        />
+      )}
+
+      {workspaceMode === 'booth' && (
+        <BoothQuickSetup
+          boothMediaUploadStatus={mediaReviewUploadStatus['booth-screen'] || ''}
+          canUpload={adminAccessState === 'ready' && Boolean(company.id) && !activeMediaReviewUpload}
+          canOpenPreview={canOpenManagedPreview}
+          canSave={canSaveBooth && Boolean(company.name.trim())}
+          ctaPrimary={company.sponsorAssetPack.ctaPrimary}
+          companyName={company.name}
+          content={company.screenContent}
+          headline={company.sponsorAssetPack.headline}
+          heroImageUrl={company.sponsorAssetPack.heroImageUrl}
+          loading={loading}
+          logoUploadStatus={mediaReviewUploadStatus.logo || ''}
+          logoUrl={company.sponsorAssetPack.logoUrl}
+          onChangeAssetPack={updateSponsorAssetPack}
+          onChangeCompanyName={(name) => setCompany((current) => ({ ...current, name }))}
+          onChangeScreen={updateScreenContent}
+          onOpenCityAdvertising={() => setWorkspaceMode('city-screen')}
+          onOpenPreview={() => company.id && nav(buildManagedBoothPreviewRoute(company.id))}
+          onSave={() => void handleBoothQuickSave('draft')}
+          onSubmitReview={() => void handleBoothQuickSave('review')}
+          onUploadBoothMedia={(files) => void handleMediaReviewUpload('booth-screen', files)}
+          onUploadLogo={(files) => void handleMediaReviewUpload('logo', files)}
+          packageTier={company.sponsorAssetPack.packageTier}
+          shortPitch={company.sponsorAssetPack.shortPitch}
+          validationIssue={screenContentIssueText || sponsorAssetPackIssueText}
+          websiteUrl={company.sponsorAssetPack.websiteUrl}
+          uploadingBoothMedia={activeMediaReviewUpload === 'booth-screen'}
+          uploadingLogo={activeMediaReviewUpload === 'logo'}
+        />
+      )}
+
+      {workspaceMode === 'advanced' && (
+      <>
+        <CompanyAdminLaunchFlow
+          boothPublicationLabel={boothPublicationLabel}
+          launchStepCount={launchSteps.length}
+          unblockedLaunchStepCount={unblockedLaunchStepCount}
+        >
+          {launchSteps.map(renderLaunchStep)}
+        </CompanyAdminLaunchFlow>
+
+        <div className="calc-grid" style={{ gridTemplateColumns: '1fr 1fr' }}>
         <div className="calc-form-column">
           <section className="calc-section" style={{ marginBottom: '25px' }}>
             <h2>Managed Booths</h2>
@@ -1751,7 +2086,7 @@ export default function CompanyAdmin() {
                   Upload for review: files go through the protected backend route into private bucket storage. Uploads are not public until approved and do not overwrite public booth media automatically.
                 </div>
                 <div style={{ marginBottom: '14px', padding: '10px 12px', borderRadius: '14px', background: 'rgba(30, 41, 59, 0.62)', border: '1px solid rgba(148, 163, 184, 0.16)', color: '#cbd5e1', fontSize: '0.76rem', lineHeight: 1.5 }}>
-                  Review-to-public path: admin can approve or reject private uploads. Only an explicit admin promote action may copy approved media into public release storage and update live booth/company media fields.
+                  Review path: approved media can be published to the booth or selected city screen only after a reviewer confirms it.
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px', marginBottom: '6px' }}>
                   <div>{renderMediaReviewUploadInput('logo')}</div>
@@ -1912,7 +2247,7 @@ export default function CompanyAdmin() {
                     })}
                 />
                 <span style={{ display: 'block', marginTop: '7px', color: '#94a3b8', fontSize: '0.76rem', lineHeight: 1.45 }}>
-                  Optional booth-room video preview. {EXPO_SCREEN_CONTENT_VIDEO_EXTENSIONS.join(' / ')} over public HTTPS only.
+                  Optional booth-room video preview. Use an uploaded file or a direct {EXPO_SCREEN_CONTENT_VIDEO_EXTENSIONS.join(' / ')} file link.
                 </span>
                 {!boothVideoValidation.ok && company.booth.video_url.trim() && (
                   <span style={{ display: 'block', marginTop: '7px', color: '#fca5a5', fontSize: '0.76rem', lineHeight: 1.45 }}>
@@ -1925,7 +2260,7 @@ export default function CompanyAdmin() {
             <div style={{ marginTop: '24px', paddingTop: '22px', borderTop: '1px solid rgba(148, 163, 184, 0.16)' }}>
               <h3 style={{ margin: '0 0 8px', color: '#f8fafc' }}>Sponsor Asset Pack</h3>
               <p style={{ margin: '0 0 18px', color: '#94a3b8', fontSize: '0.88rem', lineHeight: 1.5 }}>
-                Client-friendly sponsor material kit. Sponsors can provide normal web assets now; 3D product model import stays optional for operator prep.
+                Client-friendly sponsor material kit. Sponsors can provide normal web assets now; 3D product model import stays optional for Warpala prep.
               </p>
               <div style={{ marginBottom: '16px', padding: '10px 12px', borderRadius: '14px', background: 'rgba(30, 64, 175, 0.16)', border: '1px solid rgba(147, 197, 253, 0.22)', color: '#bfdbfe', fontSize: '0.76rem', lineHeight: 1.5 }}>
                 Asset safety: {EXPO_SPONSOR_ASSET_PACK_MEDIA_POLICY_TEXT}. Localhost, private IPs, non-HTTPS URLs, SVG and embedded credentials are blocked.
@@ -2120,7 +2455,7 @@ export default function CompanyAdmin() {
             <div style={{ marginTop: '24px', paddingTop: '22px', borderTop: '1px solid rgba(148, 163, 184, 0.16)' }}>
               <h3 style={{ margin: '0 0 8px', color: '#f8fafc' }}>Booth Screen Content</h3>
               <p style={{ margin: '0 0 18px', color: '#94a3b8', fontSize: '0.88rem', lineHeight: 1.5 }}>
-                Published image or video content can replace the generated booth screen card in the 3D city. Use direct public media URLs; city-wide paid screen slots are tracked as inventory until the next screen-slot render integration.
+                This content appears on the screen inside the sponsor booth. City advertising screens are configured separately in the City advertising tab.
               </p>
               <div style={{ marginBottom: '16px', padding: '10px 12px', borderRadius: '14px', background: 'rgba(14, 116, 144, 0.16)', border: '1px solid rgba(125, 211, 252, 0.22)', color: '#bae6fd', fontSize: '0.76rem', lineHeight: 1.5 }}>
                 Media safety: {mediaPolicyText} Localhost, private IPs, non-HTTPS URLs, SVG and embedded credentials are blocked.
@@ -2182,25 +2517,25 @@ export default function CompanyAdmin() {
               </label>
 
               <label style={{ marginTop: '16px' }}>
-                Screen placement slot
+                Booth screen
                 <select
                   value={company.screenContent.screenSlotId}
                   onChange={(event) => updateScreenContent({ screenSlotId: event.target.value })}
                 >
-                  <option value="">No paid screen slot selected</option>
-                  {screenInventorySlots.map((slot) => (
+                  <option value="">Use the booth's default screen</option>
+                  {boothScreenSlots.map((slot) => (
                     <option key={slot.id} value={slot.id}>
-                      {slot.label} - {slot.valueTier.toUpperCase()} - EUR {slot.monthlyPriceHintEur}/mo - {slot.status}
+                      {slot.label}
                     </option>
                   ))}
                 </select>
                 <span style={{ display: 'block', marginTop: '7px', color: '#94a3b8', fontSize: '0.76rem', lineHeight: 1.45 }}>
-                  Slot selection is stored as inventory metadata first. Booth screen media works now; city-wide screen rendering is the next integration step.
+                  Optional. Most sponsors should keep the default booth screen.
                 </span>
               </label>
               {selectedScreenSlot && (
                 <div style={{ marginTop: '10px', padding: '12px 14px', borderRadius: '14px', background: 'rgba(2, 6, 23, 0.62)', border: '1px solid rgba(125, 211, 252, 0.18)', color: '#cbd5e1', fontSize: '0.78rem', lineHeight: 1.55 }}>
-                  Selected slot: <strong style={{ color: '#f8fafc' }}>{selectedScreenSlot.valueTier.toUpperCase()}</strong> / score {selectedScreenSlot.valueScore} / {selectedScreenSlot.sizeLabel} / {selectedScreenSlot.operatorZoneId}
+                  Selected screen: <strong style={{ color: '#f8fafc' }}>{selectedScreenSlot.label}</strong> / {selectedScreenSlot.sizeLabel}
                   <br />
                   {selectedScreenSlot.placementNotes}
                 </div>
@@ -2434,7 +2769,7 @@ export default function CompanyAdmin() {
                   <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', alignItems: 'start' }}>
                     <div>
                       <div style={{ color: '#f8fafc', fontWeight: 900 }}>{slot.label}</div>
-                      <div style={{ color: '#94a3b8', fontSize: '0.76rem', marginTop: '4px' }}>{slot.sizeLabel} / {slot.operatorZoneId}</div>
+                      <div style={{ color: '#94a3b8', fontSize: '0.76rem', marginTop: '4px' }}>{slot.sizeLabel}</div>
                     </div>
                     <div style={{ color: slot.valueTier === 'landmark' ? '#fbbf24' : slot.valueTier === 'hero' ? '#93c5fd' : '#cbd5e1', fontSize: '0.72rem', fontWeight: 900, textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
                       {slot.valueTier} / EUR {slot.monthlyPriceHintEur}
@@ -2627,6 +2962,8 @@ export default function CompanyAdmin() {
           </section>
         </div>
       </div>
+      </>
+      )}
     </div>
   );
 }

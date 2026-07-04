@@ -15,8 +15,10 @@ import {
   shouldApplyExteriorWallSkin,
 } from './GalaWallSkinModel';
 import { useGalaConstructionPbrTextures } from './GalaConstructionPbrTextures';
+import type { GalaConstructionRenderDetailLevel } from './GalaConstructionDetailPolicy';
 
 type GalaCladdingAssemblyProps = {
+  renderDetailLevel: GalaConstructionRenderDetailLevel;
   visualConfig?: GalaHouseVisualConfig;
   wall: GalaConstructionWallSegment;
 };
@@ -119,20 +121,25 @@ function rectToInstance(wall: GalaConstructionWallSegment, rect: CladdingRect, d
   };
 }
 
-export function GalaCladdingAssembly({ visualConfig, wall }: GalaCladdingAssemblyProps) {
+export function GalaCladdingAssembly({ renderDetailLevel, visualConfig, wall }: GalaCladdingAssemblyProps) {
   if (!shouldApplyExteriorWallSkin(wall)) {
     return null;
   }
 
-  return <GalaExteriorCladdingAssembly visualConfig={visualConfig} wall={wall} />;
+  return <GalaExteriorCladdingAssembly renderDetailLevel={renderDetailLevel} visualConfig={visualConfig} wall={wall} />;
 }
 
-function GalaExteriorCladdingAssembly({ visualConfig, wall }: GalaCladdingAssemblyProps) {
+function GalaExteriorCladdingAssembly({ renderDetailLevel, visualConfig, wall }: GalaCladdingAssemblyProps) {
   const wallSkin = resolveGalaWallSkin(visualConfig);
   const { exterior } = wallSkin;
   const exteriorPbrTextures = useGalaConstructionPbrTextures('exterior', exterior.textureVariant);
-  const boardWidth = exterior.boardWidthM;
-  const gap = exterior.gapWidthM;
+  const reducedDetail = renderDetailLevel === 'reduced';
+  const boardWidth = reducedDetail
+    ? Number((exterior.boardWidthM * 1.75).toFixed(4))
+    : exterior.boardWidthM;
+  const gap = reducedDetail
+    ? Number((exterior.gapWidthM * 1.25).toFixed(4))
+    : exterior.gapWidthM;
   const module = boardWidth + gap;
   const faceOffset = GALA_CONSTRUCTION_LEVELS.exteriorWallThicknessM * 0.5
     + exterior.boardDepthM * 0.5
@@ -233,7 +240,7 @@ function GalaExteriorCladdingAssembly({ visualConfig, wall }: GalaCladdingAssemb
         {...exterior.materials.reveal}
         castShadow={false}
         color={exterior.revealColor}
-        instances={revealInstances}
+        instances={reducedDetail ? [] : revealInstances}
         name={`gala-construction-${wall.id}-opening-clipped-thin-shadow-reveal-strip-instanced`}
         opacity={0.68}
         userData={{
@@ -251,7 +258,7 @@ function GalaExteriorCladdingAssembly({ visualConfig, wall }: GalaCladdingAssemb
       {Object.entries(boardInstancesByColor).map(([boardColor, instances]) => (
         <GalaConstructionInstancedBoxes
           {...exterior.materials.board}
-          {...exteriorPbrTextures}
+          {...(reducedDetail ? {} : exteriorPbrTextures)}
           key={`${wall.id}-${boardColor}-boards`}
           color={boardColor}
           instances={instances}

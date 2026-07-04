@@ -4,6 +4,11 @@ import { useFrame } from '@react-three/fiber';
 import { useNavigate } from 'react-router-dom';
 import * as THREE from 'three';
 import { createCanonicalModularHomeStudioPath } from '../modularHome/modularHomeShareUrl';
+import {
+  MODULAR_HOME_PORTAL_DEFAULT_POSITION,
+  MODULAR_HOME_PORTAL_DEFAULT_ROTATION_Y,
+  MODULAR_HOME_PORTAL_DEFAULT_SCALE,
+} from './ModularHomeEntrancePortalLayout';
 
 const MODULAR_HOME_ROUTE = createCanonicalModularHomeStudioPath('exterior');
 const PORTAL_TRIGGER_SIZE: [number, number, number] = [7.2, 4.6, 4.8];
@@ -14,11 +19,13 @@ const PORTAL_ACTIVE_DISTANCE_Y = 22;
 const PORTAL_AUTO_ENTER_DELAY_MS = 2000;
 
 export function ModularHomeEntrancePortal({
+  lowDetail = false,
   playerPosition,
-  position = [0, 0, 126],
-  rotationY = 0,
-  scale = 4,
+  position = MODULAR_HOME_PORTAL_DEFAULT_POSITION,
+  rotationY = MODULAR_HOME_PORTAL_DEFAULT_ROTATION_Y,
+  scale = MODULAR_HOME_PORTAL_DEFAULT_SCALE,
 }: {
+  lowDetail?: boolean;
   playerPosition: [number, number, number];
   position?: [number, number, number];
   rotationY?: number;
@@ -167,25 +174,61 @@ export function ModularHomeEntrancePortal({
 
   const promptText = isTouchLike
     ? visibleAutoEnterCountdown !== null
-      ? `Ieeja pec ${Math.max(1, visibleAutoEnterCountdown)} s`
-      : 'Pieskaries, lai ieietu'
+      ? `Opening in ${Math.max(1, visibleAutoEnterCountdown)} s`
+      : 'Tap to view modular home'
     : proximity.isNearby
       ? visibleAutoEnterCountdown !== null
-        ? `Ieeja pec ${Math.max(1, visibleAutoEnterCountdown)} s`
-        : 'Enter / Space - enter the modular home presentation'
-      : 'Apskatit modularo maju';
+        ? `Opening in ${Math.max(1, visibleAutoEnterCountdown)} s`
+        : 'Enter / Space - view modular home'
+      : 'View modular home';
 
   const helperText = proximity.isActive
-    ? 'Paliec zonā vai nospied Enter / Space'
+    ? 'Stay here or press Enter / Space'
     : proximity.isNearby
-      ? 'Tuvojies vai izmanto Enter / Space'
-      : 'Pietuvojies, lai aktivizetu';
+      ? 'Move closer or press Enter / Space'
+      : 'Walk closer to open';
 
   const doorHint = proximity.isNearby
     ? visibleAutoEnterCountdown !== null
       ? `Auto-entry ${Math.max(1, visibleAutoEnterCountdown)} s`
       : 'Enter / Space'
-    : 'Klikskini uz portalu vai durvim';
+    : 'Click portal or door';
+
+  if (lowDetail) {
+    return (
+      <group
+        name="modular-home-entrance-portal modular-home-entrance-portal-low-detail"
+        position={position}
+        rotation={[0, rotationY, 0]}
+        scale={[scale, scale, scale]}
+        onClick={(event) => {
+          event.stopPropagation();
+          requestEnter();
+        }}
+        onPointerDown={(event) => {
+          event.stopPropagation();
+          requestEnter();
+        }}
+        userData={{
+          expoInteractionOwner: 'ModularHomeEntrancePortal',
+          expoModularHomeEntryPortal: true,
+          expoRouteTarget: MODULAR_HOME_ROUTE,
+        }}
+      >
+        <mesh position={[0, 1.7, 0]}>
+          <boxGeometry args={[5.4, 3.4, 0.34]} />
+          <meshStandardMaterial color="#102031" emissive="#0ea5e9" emissiveIntensity={0.16} roughness={0.48} />
+        </mesh>
+        <mesh position={[0, 1.7, 0.2]}>
+          <boxGeometry args={[4.5, 2.65, 0.1]} />
+          <meshStandardMaterial color="#dbeafe" emissive="#38bdf8" emissiveIntensity={0.12} roughness={0.4} />
+        </mesh>
+        <Text position={[0, 1.7, 0.28]} fontSize={0.32} color="#0f172a" anchorX="center" anchorY="middle" maxWidth={4}>
+          MODULAR HOME
+        </Text>
+      </group>
+    );
+  }
 
   return (
     <group
@@ -270,7 +313,7 @@ export function ModularHomeEntrancePortal({
         anchorY="middle"
         maxWidth={6.4}
       >
-        MODULĀRĀS MĀJAS
+        MODULAR HOME
       </Text>
       <Text
         position={[0, 4.48, 0.22]}
@@ -281,7 +324,7 @@ export function ModularHomeEntrancePortal({
         anchorY="middle"
         maxWidth={6.4}
       >
-        IENĀKT PREZENTĀCIJĀ
+        DESIGN STUDIO
       </Text>
       <Text
         position={[0, 1.2, 1.44]}
@@ -291,7 +334,7 @@ export function ModularHomeEntrancePortal({
         anchorY="middle"
         maxWidth={4.2}
       >
-        Apskatīt modulāro māju
+        View modular home
       </Text>
       <Text
         position={[0, 0.66, 1.46]}
@@ -332,7 +375,7 @@ export function ModularHomeEntrancePortal({
           }}
         >
           <span style={{ fontSize: '0.76rem', fontWeight: 950, letterSpacing: '0.14em', textTransform: 'uppercase' }}>
-            Modulārās mājas
+            Modular home
           </span>
           <span style={{ fontSize: '1rem', fontWeight: 900, lineHeight: 1.1 }}>
             {promptText}

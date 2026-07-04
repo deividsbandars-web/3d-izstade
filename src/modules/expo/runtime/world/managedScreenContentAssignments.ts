@@ -3,6 +3,7 @@ import {
   getExpoScreenSlotById,
   type ExpoScreenInventorySlot,
 } from '../../../../shared/expo/screenInventory';
+import { validateExpoScreenMediaUrl } from '../../../../shared/expo/screenContentMedia';
 import { buildGeneratedBillboardTextureUrl } from '../booths/generatedBillboardTextureUrl';
 import type { CityScreenAssignment, CityScreenSocket } from '../planning/types';
 
@@ -85,28 +86,73 @@ function getBoothRecord(placement: ExpoBoothPlacement) {
 
 function getManagedScreenContent(placement: ExpoBoothPlacement): ManagedScreenContent | null {
   const booth = getBoothRecord(placement);
-  const screenSlotId = normalizeNullableString(booth.heroScreenSlotId ?? booth.hero_screen_slot_id);
+  const screenSlotId = normalizeNullableString(
+    booth.cityScreenSlotId
+    ?? booth.city_screen_slot_id
+    ?? booth.heroScreenSlotId
+    ?? booth.hero_screen_slot_id,
+  );
 
   if (!screenSlotId) {
     return null;
   }
 
-  const title = normalizeNullableString(booth.heroScreenTitle ?? booth.hero_screen_title)
+  const title = normalizeNullableString(
+    booth.cityScreenTitle
+    ?? booth.city_screen_title
+    ?? booth.heroScreenTitle
+    ?? booth.hero_screen_title,
+  )
     ?? normalizeNullableString(placement.company?.name)
     ?? 'Sponsor Screen';
-  const subtitle = normalizeNullableString(booth.heroScreenText ?? booth.hero_screen_text)
+  const subtitle = normalizeNullableString(
+    booth.cityScreenText
+    ?? booth.city_screen_text
+    ?? booth.heroScreenText
+    ?? booth.hero_screen_text,
+  )
     ?? normalizeNullableString(placement.company?.tagline)
-    ?? 'Owner-managed sponsor screen';
+    ?? 'Sponsor-managed city screen';
+  const rawImageUrl = normalizeNullableString(
+    booth.cityScreenImageUrl
+    ?? booth.city_screen_image_url
+    ?? booth.heroScreenImageUrl
+    ?? booth.hero_screen_image_url,
+  );
+  const rawVideoUrl = normalizeNullableString(
+    booth.cityScreenVideoUrl
+    ?? booth.city_screen_video_url
+    ?? booth.heroScreenVideoUrl
+    ?? booth.hero_screen_video_url,
+  );
+  const imageResult = validateExpoScreenMediaUrl(rawImageUrl, 'image');
+  const videoResult = validateExpoScreenMediaUrl(rawVideoUrl, 'video');
 
   return {
-    ctaLabel: normalizeNullableString(booth.ctaLabel ?? booth.cta_label ?? placement.company?.ctaLabel),
-    imageUrl: normalizeNullableString(booth.heroScreenImageUrl ?? booth.hero_screen_image_url),
-    mode: normalizeManagedMode(booth.heroScreenType ?? booth.hero_screen_type),
+    ctaLabel: normalizeNullableString(
+      booth.cityScreenCtaLabel
+      ?? booth.city_screen_cta_label
+      ?? booth.ctaLabel
+      ?? booth.cta_label
+      ?? placement.company?.ctaLabel,
+    ),
+    imageUrl: imageResult.ok && imageResult.url ? imageResult.url : null,
+    mode: normalizeManagedMode(
+      booth.cityScreenType
+      ?? booth.city_screen_type
+      ?? booth.heroScreenType
+      ?? booth.hero_screen_type,
+    ),
     screenSlotId,
-    status: normalizeManagedStatus(booth.heroScreenStatus ?? booth.hero_screen_status),
+    status: normalizeManagedStatus(
+      booth.cityScreenStatus
+      ?? booth.city_screen_status
+      ?? booth.heroScreenStatus
+      ?? booth.hero_screen_status,
+    ),
     subtitle,
     title,
-    videoUrl: normalizeNullableString(booth.heroScreenVideoUrl ?? booth.hero_screen_video_url),
+    videoUrl: videoResult.ok && videoResult.url ? videoResult.url : null,
   };
 }
 
@@ -144,29 +190,49 @@ function getSlotChip(slot: ExpoScreenInventorySlot) {
   }
 }
 
-function buildManagedScreenTextureUrl(content: ManagedScreenContent, slot: ExpoScreenInventorySlot, aspect: number) {
-  if (isManagedScreenVideoMode(content.mode) && content.videoUrl) {
-    return content.videoUrl;
-  }
-
-  if (content.mode === 'image' && content.imageUrl) {
-    return content.imageUrl;
-  }
-
+function buildManagedScreenBillboardTextureUrl(content: ManagedScreenContent, slot: ExpoScreenInventorySlot, aspect: number) {
   return buildGeneratedBillboardTextureUrl({
     accentColor: getSlotTierAccent(slot),
     aspect,
-    chip: content.mode === 'video' ? 'LIVE VIDEO' : content.mode === 'video-placeholder' ? 'VIDEO SLOT READY' : getSlotChip(slot),
+    chip: content.mode === 'video' ? 'SPONSOR VIDEO' : content.mode === 'video-placeholder' ? 'VIDEO SLOT' : getSlotChip(slot),
     label: truncateManagedScreenText(content.title, 30).toUpperCase(),
     subtitle: truncateManagedScreenText(
       isManagedScreenVideoMode(content.mode)
-        ? `${content.subtitle || 'Owner-managed sponsor screen'} - static fallback`
-        : content.subtitle || 'Owner-managed sponsor screen',
+        ? `${content.subtitle || 'Sponsor-managed city screen'} - poster fallback`
+        : content.subtitle || 'Sponsor-managed city screen',
       54,
     ).toUpperCase(),
     tier: truncateManagedScreenText(content.ctaLabel || slot.valueTier, 18).toUpperCase(),
     tierAccent: getSlotTierAccent(slot),
   });
+}
+
+function buildManagedScreenTextureUrl(content: ManagedScreenContent, slot: ExpoScreenInventorySlot, aspect: number) {
+  if (content.mode === 'video' && content.videoUrl) {
+    return content.videoUrl;
+  }
+
+  if ((content.mode === 'image' || content.mode === 'video-placeholder') && content.imageUrl) {
+    return content.imageUrl;
+  }
+
+  return buildManagedScreenBillboardTextureUrl(content, slot, aspect);
+}
+
+function resolveManagedScreenMediaMode(content: ManagedScreenContent): NonNullable<CityScreenAssignment['commercial']>['mediaMode'] {
+  if (content.mode === 'video' && content.videoUrl) {
+    return 'video';
+  }
+
+  if (content.mode === 'video-placeholder') {
+    return 'video-placeholder';
+  }
+
+  if (content.mode === 'image' && content.imageUrl) {
+    return 'image';
+  }
+
+  return 'generated-card';
 }
 
 function slotMatchesAssignment(
@@ -219,6 +285,8 @@ function buildManagedScreenAssignment(
   const frameHeight = assignment.renderIntent?.frameHeight ?? socket.frameSize[1];
   const aspect = Number((frameWidth / Math.max(0.1, frameHeight)).toFixed(3));
   const textureUrl = buildManagedScreenTextureUrl(candidate.content, candidate.slot, aspect);
+  const fallbackImageUrl = buildManagedScreenBillboardTextureUrl(candidate.content, candidate.slot, aspect);
+  const mediaMode = resolveManagedScreenMediaMode(candidate.content);
   const tierAccent = getSlotTierAccent(candidate.slot);
   const baseRenderIntent = assignment.renderIntent ?? {
     bodyPanelWidth: frameWidth * 0.97,
@@ -247,6 +315,20 @@ function buildManagedScreenAssignment(
       ...assignment,
       accentColor: tierAccent,
       companyId: candidate.companyId,
+      commercial: {
+        fallbackImageUrl,
+        mediaMode,
+        mediaUrl: textureUrl,
+        ownerId: candidate.companyId,
+        ownerKind: 'sponsor',
+        ownerLabel: candidate.companyName,
+        posterUrl: candidate.content.imageUrl,
+        priority: candidate.priority + candidate.slot.valueScore,
+        qualityTierBehavior: mediaMode === 'video' ? 'video-budgeted-by-quality-and-distance' : 'static-billboard',
+        screenSlotId: candidate.slot.id,
+        source: 'managed-screen',
+        valueTier: candidate.slot.valueTier,
+      },
       imageUrl: textureUrl,
       label: candidate.content.title,
       renderIntent: {

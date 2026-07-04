@@ -1,0 +1,72 @@
+services:
+  frontend:
+    depends_on:
+      signaling:
+        condition: service_healthy
+
+  backend:
+    depends_on:
+      signaling:
+        condition: service_healthy
+    environment:
+      PIXEL_STREAMING_ROUTES_ENABLED: ${PIXEL_STREAMING_ROUTES_ENABLED:-true}
+      SIGNALING_STATUS_BASE_URL: ${SIGNALING_STATUS_BASE_URL:-http://signaling}
+      UE5_SECRET_KEY: ${UE5_SECRET_KEY:?UE5_SECRET_KEY is required when Pixel Streaming is enabled}
+
+  signaling:
+    build:
+      context: ./deployment/signaling
+      dockerfile: Dockerfile
+    environment:
+      STUN_SERVER_URLS: ${STUN_SERVER_URLS:-}
+      TURN_SERVER_URLS: ${TURN_SERVER_URLS:?TURN_SERVER_URLS is required when Pixel Streaming is enabled}
+      TURN_USERNAME: ${TURN_USERNAME:?TURN_USERNAME is required when Pixel Streaming is enabled}
+      TURN_PASSWORD: ${TURN_PASSWORD:?TURN_PASSWORD is required when Pixel Streaming is enabled}
+    expose:
+      - "80"
+    ports:
+      - "8888:8888"
+      - "8889:8889"
+    depends_on:
+      turn:
+        condition: service_started
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1/api/status >/dev/null 2>&1 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 15s
+    restart: unless-stopped
+
+  turn:
+    image: coturn/coturn
+    entrypoint: ["turnserver"]
+    command:
+      - -c
+      - /etc/coturn/turnserver.conf
+      - --realm=${TURN_REALM:?TURN_REALM is required when Pixel Streaming is enabled}
+      - --external-ip=${TURN_PUBLIC_IP:?TURN_PUBLIC_IP is required when Pixel Streaming is enabled}
+      - --listening-ip=${TURN_LISTEN_IP:-0.0.0.0}
+      - --min-port=${TURN_MIN_PORT:-49260}
+      - --max-port=${TURN_MAX_PORT:-49279}
+      - --user=${TURN_USERNAME:?TURN_USERNAME is required when Pixel Streaming is enabled}:${TURN_PASSWORD:?TURN_PASSWORD is required when Pixel Streaming is enabled}
+      - --no-tls
+      - --no-dtls
+    volumes:
+      - ./deployment/configs/turnserver.conf:/etc/coturn/turnserver.conf:ro
+    ports:
+      - "3478:3478/tcp"
+      - "3478:3478/udp"
+      - "${TURN_MIN_PORT:-49260}-${TURN_MAX_PORT:-49279}:${TURN_MIN_PORT:-49260}-${TURN_MAX_PORT:-49279}/tcp"
+      - "${TURN_MIN_PORT:-49260}-${TURN_MAX_PORT:-49279}:${TURN_MIN_PORT:-49260}-${TURN_MAX_PORT:-49279}/udp"
+    restart: unless-stopped
+
+  sync-server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    environment:
+      PORT: 8890
+    ports:
+      - "8890:8890"
+    restart: unless-stopped

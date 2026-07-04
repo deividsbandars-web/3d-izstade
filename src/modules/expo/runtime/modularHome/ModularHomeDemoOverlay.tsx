@@ -48,8 +48,8 @@ type ModularHomeDemoTabId = 'overview' | 'design' | 'estimate' | 'bom' | 'quote'
 
 const HOME_DEMO_TABS = [
   { id: 'design', label: 'Design', helper: 'Choose visible home options' },
-  { id: 'estimate', label: 'Cena / Estimate', helper: 'Live price overview' },
-  { id: 'quote', label: 'Pieprasīt piedāvājumu / Quote', helper: 'Request a quote' },
+  { id: 'estimate', label: 'Price', helper: 'Live price overview' },
+  { id: 'quote', label: 'Quote', helper: 'Request a quote' },
 ] as const satisfies readonly {
   helper: string;
   id: ModularHomeDemoTabId;
@@ -59,7 +59,7 @@ const HOME_DEMO_TABS = [
 const HOME_DEMO_ADVANCED_TABS = [
   { id: 'overview', label: 'Overview', helper: 'Model, scale and view mode' },
   { id: 'bom', label: 'BOM', helper: 'Module and manufacturing summary' },
-  { id: 'projects', label: 'Projects', helper: 'Saved local configurations' },
+  { id: 'projects', label: 'Projects', helper: 'Saved design comparisons' },
   { id: 'upload', label: 'Upload', helper: 'Manual conversion workflow' },
 ] as const satisfies readonly {
   helper: string;
@@ -124,7 +124,7 @@ function ModularHomeQuoteNudge({
             textAlign: 'center',
           }}
         >
-          Patīk? Saņem precīzu cenu →
+          Like this design? Request a final quote
         </button>
         <button
           type="button"
@@ -149,7 +149,7 @@ function ModularHomeQuoteNudge({
             width: isTouchDevice ? '44px' : '32px',
           }}
         >
-          ×
+          X
         </button>
       </div>
     </section>
@@ -184,10 +184,10 @@ function ModularHomeLivePriceBanner({
         gap: isTouchDevice ? '8px' : '9px',
         left: isTouchDevice ? '12px' : 'auto',
         marginTop: isTouchDevice ? '11px' : '13px',
-        maxWidth: isTouchDevice ? 'calc(100vw - 24px)' : 'calc(100vw - 24px)',
+        maxWidth: isTouchDevice ? 'calc(100vw - 24px)' : 'calc(100vw - 112px)',
         padding: isTouchDevice ? '9px' : '10px',
         position: 'fixed',
-        right: isTouchDevice ? '10px' : '12px',
+        right: isTouchDevice ? '10px' : '96px',
         width: isTouchDevice ? 'auto' : 'clamp(248px, 18vw, 286px)',
         zIndex: 117,
       }}
@@ -195,7 +195,7 @@ function ModularHomeLivePriceBanner({
       <div style={{ alignItems: 'end', display: 'flex', gap: '10px', justifyContent: 'space-between' }}>
         <div style={{ minWidth: 0 }}>
           <div style={{ color: 'rgba(17, 24, 39, 0.72)', fontSize: isTouchDevice ? '0.55rem' : '0.58rem', fontWeight: 950, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-            Bāze no {formatHomeEstimateEur(basePrice)}
+            Base from {formatHomeEstimateEur(basePrice)}
           </div>
           <div style={{ color: '#0f172a', fontSize: isTouchDevice ? '1rem' : '1.08rem', fontWeight: 980, lineHeight: 1.05, marginTop: '3px' }}>
             {formatHomeEstimateEur(totalPrice)}
@@ -224,7 +224,7 @@ function ModularHomeLivePriceBanner({
             whiteSpace: 'nowrap',
           }}
         >
-          Saņemt cenu
+          Request quote
         </button>
       </div>
     </section>
@@ -319,10 +319,10 @@ export function ModularHomeDemoOverlay({ isTouchDevice = false }: ModularHomeDem
       : viewMode === 'floorplan'
         ? 'floorplan'
         : 'exteriorDesign';
-  const instanceTitle = 'Unified modular-home showroom';
+  const instanceTitle = 'GALA modular home studio';
   const instanceSubtitle = viewMode === 'interior'
-    ? 'The interior start position is active, but the scene remains the same walkable house.'
-    : 'The exterior start position is active, and the same house scene stays available for walking.';
+    ? 'Interior view is active. Change room finishes, furniture, and layout focus while walking the same house.'
+    : 'Exterior view is active. Change facade, roof, terrace, trim, windows, and doors.';
 
   const selectHomeDesignSection = (section: HomeDesignInstanceSectionId) => {
     switch (section) {
@@ -387,15 +387,15 @@ export function ModularHomeDemoOverlay({ isTouchDevice = false }: ModularHomeDem
         left: isTouchDevice ? '10px' : 'auto',
         right: isTouchDevice ? '10px' : '12px',
         top: isTouchDevice ? 'auto' : '12px',
-        bottom: isTouchDevice ? 'max(112px, calc(env(safe-area-inset-bottom) + 104px))' : '16px',
+        bottom: isTouchDevice ? 'max(174px, calc(env(safe-area-inset-bottom) + 166px))' : '110px',
         zIndex: 116,
         width: isTouchDevice ? 'auto' : 'clamp(248px, 18vw, 286px)',
-        maxHeight: isTouchDevice ? 'min(24dvh, 220px)' : 'calc(100vh - 26px)',
+        maxHeight: isTouchDevice ? 'min(30dvh, 280px)' : 'calc(100vh - 122px)',
         maxWidth: isTouchDevice ? 'calc(100vw - 24px)' : 'calc(100vw - 24px)',
         overscrollBehavior: 'contain',
         overflowY: 'auto',
         padding: isTouchDevice ? '12px 12px' : '10px 11px',
-        paddingBottom: isTouchDevice ? '12px' : '90px',
+        paddingBottom: isTouchDevice ? '12px' : '16px',
         border: '1px solid rgba(251, 191, 36, 0.42)',
         borderRadius: isTouchDevice ? '18px' : '20px',
         background:
@@ -453,7 +453,7 @@ export function ModularHomeDemoOverlay({ isTouchDevice = false }: ModularHomeDem
               whiteSpace: 'nowrap',
             }}
           >
-            Preset studio
+            Home studio
           </div>
           <button
             type="button"
@@ -522,19 +522,19 @@ export function ModularHomeDemoOverlay({ isTouchDevice = false }: ModularHomeDem
           >
             <div style={{ color: '#e0f2fe', fontSize: isTouchDevice ? '0.6rem' : '0.64rem', fontWeight: 920, lineHeight: 1.18 }}>
               {activeHomeDesignSection === 'exteriorDesign'
-                ? 'Exterior controls keep the house centered while the rail handles facade, roof, trim and entry edits.'
+                ? 'Exterior controls update facade, roof, terrace, trim, windows, doors and entry details.'
                 : activeHomeDesignSection === 'floorplan'
-                  ? 'Floorplan keeps the controlled review view for layout and room measurements.'
+                  ? 'Floorplan view helps compare layout, room sizes and circulation.'
                   : activeHomeDesignSection === 'interiorRooms'
-                    ? 'Interior room focus uses the shared house scene with room presets, finish choices and the same walkable shell.'
-                    : 'Quote keeps the current browser quote-preparation flow, estimate review and manual follow-up path unchanged.'}
+                    ? 'Interior room focus shows finish choices, furniture packages and room-by-room views.'
+                    : 'Quote view keeps the selected design, estimate and contact request together.'}
             </div>
             <div style={{ color: '#94a3b8', fontSize: isTouchDevice ? '0.52rem' : '0.56rem', fontWeight: 780, lineHeight: 1.26 }}>
               {activeHomeDesignSection === 'interiorRooms'
-                ? 'Use this section to frame room-by-room focus and interior finish choices without changing configurator, pricing, save or backend behavior in this step.'
+                ? 'Use this section to review room-by-room options before requesting a quote.'
                 : activeHomeDesignSection === 'quote'
-                  ? 'Existing quote logic, pricing and project save behavior remain intact.'
-                  : 'The modular-home studio remains browser-based and reuses the existing configurator state and overlay systems.'}
+                  ? 'Review the estimate, add contact details and send the quote request.'
+                  : 'Your visible selections stay connected to the current home design and estimate.'}
             </div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '4px' }}>
               <button
@@ -685,7 +685,7 @@ export function ModularHomeDemoOverlay({ isTouchDevice = false }: ModularHomeDem
             whiteSpace: 'nowrap',
           }}
         >
-          Pro skats
+          More tools
         </button>
       </nav>
 
@@ -793,7 +793,7 @@ export function ModularHomeDemoOverlay({ isTouchDevice = false }: ModularHomeDem
           paddingTop: isTouchDevice ? '9px' : '10px',
         }}
       >
-        {'Preview model \u00b7 quote requests are saved locally only'}
+        {'Review model and request a quote when the design feels right.'}
       </div>
     </aside>
   );

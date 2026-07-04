@@ -1,6 +1,7 @@
 import { aiOptimizer } from './optimization/aiOptimizer.js';
 import { platformMetrics } from './metrics/platformMetrics.js';
 import { systemMonitor } from './monitoring/systemMonitor.js';
+import type { LlmMeteringContext } from '../ai/llmService.js';
 
 export const platformApplicationService = {
   async getPlatformMetricsSnapshot() {
@@ -45,15 +46,15 @@ export const platformApplicationService = {
     };
   },
 
-  async analyzeLeadConversion() {
-    return aiOptimizer.analyzeLeadConversion();
+  async analyzeLeadConversion(metering?: LlmMeteringContext) {
+    return aiOptimizer.analyzeLeadConversion(metering);
   },
 
-  async suggestBetterNiches() {
-    return aiOptimizer.suggestBetterNiches();
+  async suggestBetterNiches(metering?: LlmMeteringContext) {
+    return aiOptimizer.suggestBetterNiches(metering);
   },
 
-  async optimizeAgentTasks() {
-    return aiOptimizer.optimizeAgentTasks();
+  async optimizeAgentTasks(metering?: LlmMeteringContext) {
+    return aiOptimizer.optimizeAgentTasks(metering);
   },
 };

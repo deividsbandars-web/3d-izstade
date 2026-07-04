@@ -1,5 +1,1664 @@
 # Current Task
 
+## 2026-07-04 City First View Ground And Lighting Polish Continuation
+
+- Active objective: continue from the remaining release-audit weak spot where the city first-person view had too much dark ground foreground, without deploying, changing backend contracts, or mutating Supabase state.
+- Implementation:
+  - Lightened the Web3D expo global ground blend and arrival/sponsor/center-spine floor material intents so the first walk view no longer reads as a dark slab.
+  - Added a static arrival commercial apron with restrained paver edges, center crosswalk, side edges, and clear-lane markers; these render as unlit transparent floor markers so they stay readable without shadows, textures, animation, or raycast cost.
+  - Raised the non-home-studio expo scene lighting with slightly stronger ambient/directional/hemisphere light and a higher sun position, while keeping the release path free of heavy realtime shadows.
+  - Reframed the default sponsor boulevard start view closer to the boulevard threshold and higher toward sponsor signage/screens, reducing empty foreground in the public `Walk city` first frame.
+  - Extended composition tests to protect lighter floor material luminance, the new apron/crosswalk markers, and the higher/closer first-walk start view.
+- Validation passed:
+  - `npx.cmd tsx src/modules/expo/__tests__/cityCompositionPolish.test.ts`
+  - `npx.cmd tsx src/modules/expo/__tests__/sceneWorld.test.ts`
+  - `npx.cmd tsc --noEmit -p tsconfig.app.json`
+  - `npm.cmd run lint`
+  - `npm.cmd run build`
+  - `node scripts/qa-expo-community.mjs http://127.0.0.1:4182 review_artifacts/warpala-expo-ground-polish-final` through a controlled local Vite dev server
+  - `git diff --check -- src/modules/expo/runtime/world/floor/FloorVisualLanguage.ts src/modules/expo/runtime/world/WorldGroundLayout.ts src/modules/expo/runtime/world/WorldGroundPlane.tsx src/modules/expo/runtime/world/scene/ExpoWorldSceneLayers.tsx src/shared/expo/worldContract.ts src/modules/expo/__tests__/cityCompositionPolish.test.ts src/modules/expo/__tests__/sceneWorld.test.ts`
+- Visual evidence:
+  - `review_artifacts/warpala-expo-ground-polish-unlit/default-walk-city-desktop-v2.png`
+  - `review_artifacts/warpala-expo-ground-polish-unlit/default-walk-city-mobile-v2.png`
+  - `review_artifacts/warpala-expo-ground-polish-final/community-city-desktop.png`
+  - `review_artifacts/warpala-expo-ground-polish-final/community-city-mobile.png`
+  - `review_artifacts/warpala-expo-ground-polish-final/community-panel-desktop.png`
+  - `review_artifacts/warpala-expo-ground-polish-final/community-panel-mobile.png`
+  - `review_artifacts/warpala-expo-ground-polish-final/result.json`
+- Release state:
+  - No deployment, staging, production, payment, backend API, or Supabase state changed.
+  - `productVisualAccepted=false` remains unchanged; this is a polish pass with screenshots for review, not human visual acceptance.
+  - The dirty worktree remains intentionally preserved; unrelated existing modified/untracked files were not reset.
+- Remaining weak points:
+  - The city is brighter and the default first walk frame is better composed, but human visual acceptance is still required before changing product acceptance state.
+  - Community-board QA framing still naturally includes a large ground foreground because it targets a low in-world board; a future pass could add a board-specific camera/framing state or richer nearby floor detail.
+  - Ground treatment is still intentionally low-cost flat geometry; future premium visual work could add compressed material detail only if bundle/performance budgets remain safe.
+
+## 2026-07-04 Dirty Worktree Stabilization And Audit Fixes
+
+- Active objective: preserve the dirty worktree, avoid destructive cleanup, and close the highest-impact product/release audit gaps that could be fixed without backend schema, deployment, production, or Supabase changes.
+- Implemented fixes:
+  - Added release route gating so internal/legacy/demo frontend pages are no longer directly reachable on normal buyer paths; internal pages require explicit `?operator=1`, and demo routes also require `ENABLE_DEMO_ROUTES`.
+  - Moved `POST /api/leads/capture` to the real public API router before auth and added a real-router regression test proving it is public while `/api/ai-estimate` remains protected.
+  - Removed public operator/system console wording from the root layout footer/nav path and hid utility admin links from anonymous users.
+  - Simplified sponsor setup copy: city advertising, booth setup, packages, team review, save draft, and public publishing language replaced backend/operator/admin wording in normal buyer flows.
+  - Rebranded PWA manifest and calculator PDF output to Warpala; fixed broken Latvian PDF text and old `Platformu Centrs` public output.
+  - Removed the tracked zero-byte legacy `public/models/default_booth.glb` and its release advisory/disabled manifest reference; release fallback remains `public/models/construction_assets.glb`.
+  - Reduced the desktop expo HUD menu button from a large white block to a smaller dark action button.
+- Validation passed:
+  - `npx.cmd tsx src/modules/expo/__tests__/releaseRouteOwnership.test.ts`
+  - `npx.cmd tsx backend-server/routes/__tests__/releaseApiPublicRoutes.test.ts`
+  - `npx.cmd tsc --noEmit -p tsconfig.app.json`
+  - `npx.cmd tsc --noEmit -p backend-server/tsconfig.json`
+  - `npm.cmd run lint`
+  - `npm.cmd run check:all`
+  - `npm.cmd run build`
+  - `npm.cmd run check:backend-tests`
+- Screenshot artifacts:
+  - `diagnostics/reports/expo-3d-20260704.png`
+  - `diagnostics/reports/expo-3d-city-20260704.png`
+  - `diagnostics/reports/modular-home-studio-20260704.png`
+- Release state:
+  - No deployment, staging, production, or Supabase state changed.
+  - `productVisualAccepted=false` remains unchanged; human visual acceptance is still required.
+  - Dirty worktree is still large and intentionally preserved; this pass did not reset, delete unrelated work, or attempt to make a release commit.
+- Remaining weak spots:
+  - City screen rental and availability still need transactional backend/schema support.
+  - Sponsor/city screen setup is clearer but still needs authenticated buyer testing with real owned booths, real storage policies, and real screen ownership.
+  - City first-person view still has too much dark ground foreground and needs a composition/camera/ground-material polish pass.
+  - Release payload remains close to the 850 MiB cap even though current checks pass.
+
+## 2026-07-04 Full Repo Product/Release Audit
+
+- Active objective: audit the full release-relevant repo surface and identify what still blocks Warpala from feeling clear, sellable, rentable, visually polished, and operationally ready.
+- Scope:
+  - Audited root Vite SPA, `backend-server`, `/expo-3d`, `/api/expo/scene`, sponsor booths, city screens, sponsor setup, modular-home studio, Supabase migrations/contracts, release gates, Docker/Vercel hygiene, and focused Web3D tests.
+  - Did not deep-audit archival/operator folders excluded by `AGENTS.md` (`WarpalaUE5/`, `assets-intake/`, `handoff/`, `diagnostics/`, `apps/frontend/`, `docs/recovery/`, `node_modules/`); `dist` was inspected only through build/static-payload outputs.
+- Deliverable:
+  - Added `docs/FULL_REPO_AUDIT_20260704.md`.
+- Highest-risk findings:
+  - Worktree is not release-stable: `239` changed/untracked entries (`175` modified, `64` untracked).
+  - `productVisualAccepted=false` remains unchanged; human visual acceptance is still required.
+  - Internal/legacy frontend routes are still directly routable even though route ownership marks several as `internal`.
+  - `POST /api/leads/capture` appears to remain behind auth despite code/comment evidence that it may be intended as a public landing-form endpoint.
+  - Public route tests manually mount controllers and do not prove actual `createApiRouter()` auth placement.
+  - Sponsor admin is still too technical for buyers: normal sponsor paths expose direct public URL rules, operator review wording, slot score/operator zone details, and promotion mechanics.
+  - City screen rental exists and is clearer, but inventory/pricing/availability are shared compiled config, not a transactional backend inventory/reservation system.
+  - City screen conflict detection scans existing booth records and is not transactionally locked.
+  - Release static payload passes but is fragile: built `dist` is about `806.06 MiB / 850 MiB`, raw source texture pack is `927.58 MiB`, and `public/models/default_booth.glb` is zero bytes.
+  - Public buyer pages still expose operator/system language such as `MEZGLS: RTX_4080_ULTRA` and `SYSTEM_SYNC: ACTIVE`.
+  - Modular-home proof case still has buyer-facing placeholder language and local-only quote preview states.
+- Positive findings:
+  - `check:all`, backend tests, lint, TypeScript, build, bundle budget, focused scene/booth/screen/modular-home/community tests all passed.
+  - `/api/expo/scene` remains public-readonly and sanitizes known placeholder/sample media.
+  - Booths, screens, scene planning, media safety, city composition, and modular-home controls have meaningful focused tests.
+  - City screen rental and campaign approval flows exist; the next gap is transactional backend/schema support.
+- Validation passed:
+  - `npm.cmd run check:all`
+  - `npm.cmd run check:backend-tests`
+  - `npx.cmd tsc --noEmit -p tsconfig.app.json`
+  - `npx.cmd tsc --noEmit -p backend-server/tsconfig.json`
+  - `npm.cmd run lint`
+  - `npm.cmd run build`
+  - `npm.cmd run check:bundle-budget`
+  - `npx.cmd tsx src/modules/expo/__tests__/sceneContract.test.ts`
+  - `npx.cmd tsx src/modules/expo/__tests__/sponsorBoothPresentation.test.ts`
+  - `npx.cmd tsx src/modules/expo/__tests__/screenRuntimePolicy.test.ts`
+  - `npx.cmd tsx src/modules/expo/__tests__/screenContentMediaSafety.test.ts`
+  - `npx.cmd tsx src/modules/expo/__tests__/screenSurfaceOverlapDiagnostics.test.ts`
+  - `npx.cmd tsx src/modules/expo/__tests__/screenBoothProximityDiagnostics.test.ts`
+  - `npx.cmd tsx src/shared/expo/cityScreenCampaign.test.ts`
+  - `npx.cmd tsx src/app/expo/cityScreenRental.test.ts`
+  - `npx.cmd tsx src/modules/expo/__tests__/managedScreenAssignmentOverride.test.ts`
+  - `npx.cmd tsx src/modules/expo/__tests__/modularHomeConfiguratorPrimaryControls.test.ts`
+  - `npx.cmd tsx src/modules/expo/__tests__/worldScenePlanningPlacementStability.test.ts`
+  - `npx.cmd tsx src/modules/expo/runtime/community/expoPresencePolicy.test.ts`
+  - `npx.cmd tsx src/shared/expo/communityContent.test.ts`
+  - `npx.cmd tsx src/modules/expo/__tests__/cityCompositionPolish.test.ts`
+  - `npx.cmd tsx src/modules/expo/__tests__/boothArchitectureKit.test.ts`
+  - `npx.cmd tsx src/modules/expo/__tests__/productionSafeScreenCoverage.test.ts`
+  - `npx.cmd tsx src/modules/expo/__tests__/screenReadableSurfaceRendering.test.ts`
+  - `npx.cmd tsx backend-server/routes/__tests__/expoCommunity.controller.test.ts`
+  - `git diff --check`
+- Validation warnings:
+  - `check:all` passed with `public/models/default_booth.glb` zero-byte advisory.
+  - `git diff --check` passed with many CRLF normalization warnings.
+  - Backend tests passed with expected negative-path logs for auth/rate-limit/signature failures.
+- Release state:
+  - No deployment, staging, production, or Supabase state changed.
+  - No new screenshot capture was created for this audit pass.
+  - `productVisualAccepted=false` remains unchanged.
+
+## 2026-07-04 Expo Community Board, Legal Graffiti And Visitor Presence
+
+- Active objective: make the sponsor city feel inhabited and socially useful with a moderated message board, short voice notes, controlled community marks, and visible moving visitors.
+- Product decisions:
+  - Community content belongs on one intentional city destination, not on arbitrary sponsor booths or building surfaces.
+  - Text, small adverts, voice notes, and graffiti all require sign-in and operator review before becoming publicly listed.
+  - Voice never autoplays and is limited to 15 seconds / 800 KB.
+  - Graffiti is limited to the legal community wall and to 3 submissions per authenticated user per hour.
+  - Other visitors use anonymous low-poly avatars; email-derived names are not exposed.
+- Implementation:
+  - Added public community read routes plus authenticated message, advert, voice, and graffiti submission routes.
+  - Added admin-only moderation list and approve/reject routes.
+  - Added a community storage layer: development/test keeps bounded process-memory fallback, while production or `EXPO_COMMUNITY_STORAGE=supabase` uses persistent Supabase tables.
+  - Added Supabase migration file `supabase/migrations/20260704160000_expo_community_content.sql` for moderated city board entries, voice payload metadata, legal graffiti marks, reports, audit events, expiry fields, and removal state; the migration was not applied.
+  - Added Redis-backed hourly action limits with development memory fallback; the fourth graffiti attempt returns HTTP 429.
+  - Added authenticated visitor reporting for board entries and graffiti marks, including an hourly report limit.
+  - Added report counts, auto-return-to-review after 3 reports, operator `Remove`, removal reason, and recent audit actions.
+  - Added retention defaults: messages/voice 7 days, small adverts 14 days, graffiti 30 days. Expired approved content is no longer emitted in public city board responses.
+  - Added strict text, color, image URL, length, audio MIME, and audio-size validation.
+  - Added an in-city community destination with a readable message board, legal graffiti wall, and elevated `COMMUNITY` wayfinding marker.
+  - Added a responsive `City board` panel with Board, Write, Voice, Graffiti, and operator Review views.
+  - Added browser microphone recording with an automatic 15-second stop. Audio remains user-initiated and uses `preload=none`.
+  - Added optional public HTTPS logo images to graffiti submissions and the approved board gallery. The physical wall uses a short readable mark to stay stable at walking distance.
+  - Connected the existing Supabase Presence channel to visible low-poly visitor avatars with position interpolation, anonymous labels, speaking indication, distance culling, and 6/12/20 avatar quality budgets.
+  - Sanitized incoming realtime position, color, ID, and speaking data before rendering.
+  - Prevented walk controls and jump actions from firing while users type in an input, textarea, select, or editable field.
+  - Community panel opening exits pointer lock and hides competing map/chat HUD layers until the panel closes.
+- Validation passed:
+  - `npx.cmd tsx src/shared/expo/communityContent.test.ts`
+  - `npx.cmd tsx src/modules/expo/runtime/community/expoPresencePolicy.test.ts`
+  - `npx.cmd tsx backend-server/routes/__tests__/expoCommunity.controller.test.ts`
+  - `npx.cmd tsx src/modules/expo/__tests__/sceneContract.test.ts`
+  - `npx.cmd tsx src/modules/expo/__tests__/worldScenePlanningPlacementStability.test.ts`
+  - `npx.cmd tsc --noEmit -p tsconfig.app.json`
+  - `npx.cmd tsc --noEmit -p backend-server/tsconfig.json`
+  - `npm.cmd run lint`
+  - `npm.cmd run build`
+  - `git diff --check`
+  - `node scripts/qa-expo-community.mjs http://127.0.0.1:5173 review_artifacts/warpala-expo-community`
+- Touched files:
+  - `backend-server/controllers/expoCommunityController.ts`
+  - `backend-server/routes/api.ts`
+  - `backend-server/routes/__tests__/expoCommunity.controller.test.ts`
+  - `backend-server/services/expoCommunityStore.ts`
+  - `src/shared/expo/communityContent.ts`
+  - `src/shared/expo/communityContent.test.ts`
+  - `src/app/expo/expoCommunityService.ts`
+  - `src/components/chat/GlobalChat.tsx`
+  - `src/modules/expo/hooks/useExpoPresence.ts`
+  - `src/modules/expo/components/ExpoWorldScene.tsx`
+  - `src/modules/expo/runtime/app/Expo3D.tsx`
+  - `src/modules/expo/runtime/app/useExpoRuntimeSession.ts`
+  - `src/modules/expo/runtime/community/*`
+  - `src/modules/expo/runtime/world/scene/ExpoWorldCanvasShell.tsx`
+  - `src/modules/expo/runtime/world/scene/ExpoWorldPlayerFrameSupport.ts`
+  - `src/modules/expo/runtime/world/scene/ExpoWorldPlayerLayerRuntime.tsx`
+  - `src/modules/expo/runtime/world/scene/ExpoWorldSceneLayers.tsx`
+  - `src/modules/expo/runtime/world/scene/ExpoWorldSceneRoot.tsx`
+  - `scripts/qa-expo-community.mjs`
+  - `supabase/migrations/20260704160000_expo_community_content.sql`
+  - `docs/CURRENT_TASK.md`
+- Visual evidence:
+  - `review_artifacts/warpala-expo-community/community-city-desktop.png`
+  - `review_artifacts/warpala-expo-community/community-panel-desktop.png`
+  - `review_artifacts/warpala-expo-community/community-canvas-desktop.png`
+  - `review_artifacts/warpala-expo-community/community-city-mobile.png`
+  - `review_artifacts/warpala-expo-community/community-panel-mobile.png`
+  - `review_artifacts/warpala-expo-community/community-canvas-mobile.png`
+  - `review_artifacts/warpala-expo-community/result.json`
+  - No page errors. Canvas entropy: desktop `5.27`, mobile `5.66`.
+- Release state:
+  - No deployment, staging, production, or Supabase state changed.
+  - Supabase migration file was added but not applied.
+  - `productVisualAccepted=false` remains unchanged; human visual acceptance is required.
+- Residual risk:
+  - Production release still needs explicit approval to apply the community migration and set `EXPO_COMMUNITY_STORAGE=supabase`.
+  - Basic retention, reporting, remove, and audit workflows now exist. Production still needs final business policy for exact retention periods, legal deletion/export obligations, and longer-term audio storage strategy.
+  - Production rate limits require configured Redis and intentionally fail closed when Redis is unavailable.
+  - Real multi-user validation with two authenticated browsers and the deployed Supabase Presence policy is still required.
+
+## 2026-07-03 City Screen Campaign Booking And Approval Continuation
+
+- Active objective: close the remaining commercial gaps in the city advertising flow without deploying or changing Supabase.
+- Product gap outcome:
+  - Buyers could choose a city screen and upload content, but could not choose a campaign period or understand the estimated booking value.
+  - City screen requests had only generic draft/published media state, with no buyer-facing submitted/approved/live lifecycle.
+  - The backend did not reject overlapping campaign requests for the same city screen and period.
+  - Published managed city screen content did not automatically stop resolving through `/api/expo/scene` after its campaign end date.
+  - The global system-sync footer and chat bubble covered sponsor workspace content on desktop and mobile.
+- Implementation:
+  - Added a shared city screen campaign contract with strict ISO date validation, maximum 12-month duration, billing-month and estimated-price calculation, status labels, period overlap checks, and active-date evaluation.
+  - Extended `assets_3d.city_screen_content` with compatible `campaignStartDate`, `campaignEndDate`, and `campaignStatus` fields. Existing legacy records without these fields remain readable.
+  - Added start/end date controls and an immediate duration/price summary to the simple city advertising flow. Selecting a screen from the catalog supplies a useful 30-day default period.
+  - Added the clear lifecycle `Draft -> Waiting for review -> Approved -> Live in city`, plus an operator `Request changes` path.
+  - Added backend role enforcement so sponsors can save drafts or submit requests, while only operators can approve, reject, or publish campaigns.
+  - Added server-side overlap detection across managed booth records. Conflicting submitted/approved/live periods now return HTTP 409 with a buyer-readable message.
+  - Updated scene resolution so scheduled city campaigns with explicit lifecycle metadata are emitted only while `live` and within their configured dates; expired campaigns stop appearing without a frontend deploy.
+  - Preserved media sanitization for city campaign JSON and improved API errors so validation/conflict detail reaches the sponsor workspace.
+  - Hid the global debug footer and chat overlay on `/expo/admin`, where both obscured the commercial setup flow.
+  - Added a reusable Playwright campaign-flow screenshot script.
+- Validation passed:
+  - `npx.cmd tsx src/shared/expo/cityScreenCampaign.test.ts`
+  - `npx.cmd tsx src/modules/expo/__tests__/screenContentMediaSafety.test.ts`
+  - `npx.cmd tsx src/app/expo/cityScreenRental.test.ts`
+  - `npx.cmd tsx src/shared/expo/mediaReviewUpload.test.ts`
+  - `npx.cmd tsx src/modules/expo/__tests__/sceneContract.test.ts`
+  - `npx.cmd tsx src/modules/expo/__tests__/managedScreenAssignmentOverride.test.ts`
+  - `npx.cmd tsx backend-server/routes/__tests__/expoScene.controller.test.ts`
+  - `npx.cmd tsc --noEmit -p tsconfig.app.json`
+  - `npx.cmd tsc --noEmit -p backend-server/tsconfig.json`
+  - `npm.cmd run lint`
+  - focused ESLint for all touched source/controller files
+  - `npm.cmd run build`
+  - `git diff --check`
+  - `node scripts/qa-city-screen-campaign-flow.mjs http://127.0.0.1:5173 review_artifacts/warpala-city-screen-campaign-flow`
+- Visual evidence:
+  - `review_artifacts/warpala-city-screen-campaign-flow/city-screen-campaign-desktop.png`
+  - `review_artifacts/warpala-city-screen-campaign-flow/city-screen-campaign-mobile.png`
+  - `review_artifacts/warpala-city-screen-campaign-flow/result.json`
+  - Both captures completed with no page errors. Date/price layout remained readable at 1440x1000 and 390x844 viewports.
+- Release state:
+  - No deployment, staging, or production state changed.
+  - No Supabase schema, policy, storage, or data changed.
+  - The existing JSON backend contract gained optional city campaign metadata; existing records remain compatible.
+  - `productVisualAccepted=false` remains unchanged. Human visual acceptance is still required.
+- Residual risk:
+  - Conflict checking is server-side but not transactionally locked. A dedicated booking table or exclusion/unique constraint is still required to eliminate simultaneous-request races.
+  - Pricing remains an estimate; contracts, invoices, payment, cancellation, and refunds are not implemented.
+  - Authenticated sponsor/operator testing against real ownership and storage policies is still required.
+  - A new sponsor still needs an owned booth draft before private campaign media can be uploaded.
+
+## 2026-07-03 City Screen Rental And Sponsor Workspace Simplification Continuation
+
+- Active objective: make a specific city advertising screen easy to find, rent, configure, upload media for, and submit without confusing it with the screen inside a sponsor booth.
+- Product gap outcome:
+  - The existing admin mixed booth screen content and city advertising content into one `screen_content` object.
+  - Buyers had no public catalog for choosing an exact city screen, despite the shared inventory already defining real city slots, placement, runtime assignment, availability, and price hints.
+  - The default sponsor admin exposed a dense operator-oriented form and expected users to understand internal slot IDs, media URLs, publication state, and review mechanics.
+  - Sponsor uploads existed only in the advanced review workflow and were not presented where a buyer configures a city or booth screen.
+- Implementation:
+  - Added `/expo/city-screens` with exact rentable city screen locations, buyer-facing placement labels, availability, size, price, and a direct `Configure screen` action.
+  - Added `Rent city screen` to the `/expo-3d` lobby and redirected legacy `/expo/slots` and `/expo/screens` paths to the city screen catalog.
+  - Split managed content into `assets_3d.screen_content` for booth screens and `assets_3d.city_screen_content` for city advertising without a database migration.
+  - Extended `GET /api/expo/scene` with optional `cityScreen*` fields while preserving legacy `heroScreen*` booth fields and runtime fallback behavior.
+  - Added a default three-task sponsor workspace: `City advertising`, `Booth setup`, and `Advanced`.
+  - Added a three-step city flow: choose exact screen, add campaign/upload media with preview, then save or submit.
+  - Added a three-step booth flow: sponsor/package details, logo and booth screen media, then save/preview/submit.
+  - Hid operator navigation from normal sponsor paths and retained it only in `Advanced`.
+  - Extended private media review uploads with `city-screen` and `booth-screen` targets. Approved media is copied to public storage and attached only to the selected city screen or booth screen content.
+  - Added responsive quick-form styling so URL, select, text, and textarea controls remain readable on desktop and mobile.
+- Validation passed:
+  - `npx.cmd tsc --noEmit -p tsconfig.app.json`
+  - `npx.cmd tsc --noEmit -p backend-server/tsconfig.json`
+  - `npm.cmd run lint`
+  - `npm.cmd run build`
+  - `npx.cmd tsx src/app/expo/cityScreenRental.test.ts`
+  - `npx.cmd tsx src/modules/expo/__tests__/sceneContract.test.ts`
+  - `npx.cmd tsx src/modules/expo/__tests__/managedScreenAssignmentOverride.test.ts`
+  - `npx.cmd tsx src/modules/expo/__tests__/sponsorBoothPresentation.test.ts`
+  - `npx.cmd tsx src/modules/expo/__tests__/screenContentMediaSafety.test.ts`
+  - `npx.cmd tsx src/modules/expo/__tests__/productionSafeScreenCoverage.test.ts`
+  - `npx.cmd tsx src/shared/expo/mediaReviewUpload.test.ts`
+  - `npx.cmd tsx backend-server/routes/__tests__/expoScene.controller.test.ts`
+- Validation limitation:
+  - `npm.cmd run build` in `backend-server` could not write existing `backend-server/dist` files because Windows returned `EPERM`. Backend TypeScript passed separately with `--noEmit`.
+- Visual evidence captured from the existing local Vite server on `http://127.0.0.1:5173`:
+  - `review_artifacts/warpala-city-screen-workspace-polish/city-screens-desktop.png`
+  - `review_artifacts/warpala-city-screen-workspace-polish/city-screens-mobile.png`
+  - `review_artifacts/warpala-city-screen-workspace-polish/city-screen-admin-desktop.png`
+  - `review_artifacts/warpala-city-screen-workspace-polish/city-screen-admin-mobile.png`
+  - `review_artifacts/warpala-city-screen-workspace-polish/booth-setup-desktop.png`
+  - `review_artifacts/warpala-city-screen-workspace-polish/booth-setup-mobile.png`
+- Release state:
+  - No deployment changed.
+  - No staging or production mutation changed.
+  - No Supabase schema or data changed.
+  - The backend response contract gained optional city screen fields; existing fields remain compatible.
+  - `productVisualAccepted=false` remains unchanged; human visual acceptance is still required.
+- Residual risk:
+  - Screen availability and monthly prices are still config-driven hints, not a transactional reservation, conflict, contract, or payment system.
+  - A new sponsor must save the booth draft before private media upload because uploads require an owned booth ID.
+  - Campaign scheduling, start/end dates, screen-specific analytics, and automatic expiry still need backend/config support.
+  - The workspace is materially clearer, but authenticated sponsor/operator testing with real owned booths and real storage policies is still required before release acceptance.
+
+## 2026-07-03 City Composition And Screen Readability Polish Continuation
+
+- Active objective: make the root Vite `/expo-3d` sponsor boulevard first walking view clearer, less blocked, less visually noisy, and more commercially readable without changing `/api/expo/scene`, backend contracts, deployment, staging, production, or Supabase.
+- Product gap outcome:
+  - The centered modular-home portal was acting like a foreground wall and blocked the first sponsor boulevard read.
+  - The first walking view still had a dark/flat foreground and noisy background silhouettes competing with sponsor surfaces.
+  - Mobile/desktop screenshot review exposed a screen readability issue: some generated billboard texture planes could be viewed from the rear and show mirrored sponsor/platform text.
+- Implementation:
+  - Moved the modular-home entrance portal to a right-side destination position, scaled it down, and angled it back toward the walking lane using shared layout constants.
+  - Calmed city mass and tower material tint/emissive behavior so background architecture reads more like scenery and less like competing sponsor media.
+  - Shifted the global ground toward a more coherent neutral blue/charcoal base, extended the center walking spine, and added subtle clear-lane edge/threshold markers.
+  - Changed city screen texture rendering so two-sided texture content uses separate front/rear planes with front-sided materials instead of one mirrored DoubleSide material.
+  - Added focused tests for city composition layout constants and readable city screen texture rendering.
+- Validation passed:
+  - `npx.cmd tsx src/modules/expo/__tests__/cityCompositionPolish.test.ts`
+  - `npx.cmd tsx src/modules/expo/__tests__/worldScenePlanningPlacementStability.test.ts`
+  - `npx.cmd tsx src/modules/expo/__tests__/boothArchitectureKit.test.ts`
+  - `npx.cmd tsx src/modules/expo/__tests__/managedScreenAssignmentOverride.test.ts`
+  - `npx.cmd tsx src/modules/expo/__tests__/productionSafeScreenCoverage.test.ts`
+  - `npx.cmd tsx src/modules/expo/__tests__/screenRuntimePolicy.test.ts`
+  - `npx.cmd tsx src/modules/expo/__tests__/screenReadableSurfaceRendering.test.ts`
+  - `npx.cmd tsx src/modules/expo/__tests__/sceneContract.test.ts`
+  - `npx.cmd tsx src/modules/expo/__tests__/sceneFallbacks.test.ts`
+  - `npx.cmd tsx src/modules/expo/__tests__/sponsorBoothPresentation.test.ts`
+  - `npx.cmd tsx src/modules/expo/__tests__/screenSurfaceOverlapDiagnostics.test.ts`
+  - `npx.cmd tsx src/modules/expo/__tests__/screenBoothProximityDiagnostics.test.ts`
+  - `npx.cmd tsx src/modules/expo/__tests__/modularHomeConfiguratorPrimaryControls.test.ts`
+  - `npx.cmd tsc --noEmit -p tsconfig.app.json`
+  - `npm.cmd run lint`
+  - `npm.cmd run build`
+- Visual evidence captured from existing local Vite server on `http://127.0.0.1:5173`:
+  - Baseline: `review_artifacts/warpala-city-composition-polish/baseline/expo-3d-lobby-baseline.png`
+  - Baseline: `review_artifacts/warpala-city-composition-polish/baseline/expo-3d-walk-city-baseline.png`
+  - After: `review_artifacts/warpala-city-composition-polish/after/expo-3d-lobby-after.png`
+  - After: `review_artifacts/warpala-city-composition-polish/after/expo-3d-walk-city-readable-after.png`
+  - After mobile: `review_artifacts/warpala-city-composition-polish/after/expo-3d-mobile-walk-city-readable-after.png`
+- Release state:
+  - No deployment changed.
+  - No staging or production mutation changed.
+  - No Supabase schema or data changed.
+  - No backend API contract changed.
+  - `productVisualAccepted=false` remains unchanged; human visual acceptance is still required.
+- Residual risk:
+  - The boulevard is clearer, but the foreground ground still reads too flat/dark and lane markers are subtle in screenshots.
+  - Several near side screens/signs are still partially clipped or too dark in the first camera view; a deeper screen placement and sightline pass is still needed.
+  - The city is improved but not product-finished; dense silhouettes, scale hierarchy, and mobile first-view composition still need human art/product review.
+  - Full commercial screen ownership still needs backend/config/schema support for booking, approval, scheduling, active status, and sales handoff.
+
+## 2026-07-03 Modular Home Primary Controls Polish Continuation
+
+- Active objective: make the GALA modular-home studio feel like a finished buyer proof case by exposing meaningful design choices directly, preserving full-detail GALA rendering, and fixing HUD overlap that made mobile/desktop review feel cramped.
+- Product gap outcome:
+  - The GALA visual mapping already supported facade, roof, terrace, trim, window, door, floor, wall, furniture, layout, and room-use variation, but several buyer-critical choices were hidden behind `More options`.
+  - The desktop price banner and mobile chat/HUD placement could cover configuration content, making the studio feel less operationally polished.
+- Implementation:
+  - Promoted product, layout, room use, trim color, window frame color, door package, roof edge color, floor finish, interior wall finish, and furniture package into the primary configurator groups.
+  - Moved primary configurator groups above style presets so buyers see concrete configurable choices first.
+  - Added focused modular-home coverage for the primary control set and GALA visual config mapping.
+  - Adjusted the modular-home studio overlay so the live price banner no longer covers the right-hand panel on desktop and the mobile panel clears the compact chat bubble.
+  - Made the global chat compact docking route-aware for expo/studio paths while keeping desktop docking normal.
+  - Preserved full-detail GALA rendering; no reduced/proxy modular-home path was reintroduced.
+- Validation passed:
+  - `npx.cmd tsx src/modules/expo/__tests__/modularHomeConfiguratorPrimaryControls.test.ts`
+  - `npx.cmd tsx src/modules/expo/__tests__/modularHomeProducts.test.ts`
+  - `npx.cmd tsc --noEmit -p tsconfig.app.json`
+  - `npm.cmd run lint`
+  - `npm.cmd run build`
+- Visual evidence captured from existing local Vite server on `http://127.0.0.1:5173`:
+  - `review_artifacts/warpala-modular-home-primary-controls/gala-studio/modular-home-exterior-primary-controls-final.png`
+  - `review_artifacts/warpala-modular-home-primary-controls/gala-studio/modular-home-interior-primary-controls-final.png`
+  - `review_artifacts/warpala-modular-home-primary-controls/gala-studio/modular-home-exterior-mobile-primary-controls-fixed.png`
+  - `review_artifacts/warpala-modular-home-primary-controls/gala-studio/modular-home-interior-mobile-primary-controls-fixed.png`
+- Release state:
+  - No deployment changed.
+  - No staging or production mutation changed.
+  - No Supabase schema or data changed.
+  - No backend API contract changed.
+  - `productVisualAccepted=false` remains unchanged; human visual acceptance is still required.
+- Residual risk:
+  - The studio overlay is clearer but still dense, especially on mobile where users must scroll inside the HUD for deeper option groups.
+  - A true production modular-home buyer flow still needs backend support for quote lifecycle, uploaded assets, option review status, saved configurations, and sales handoff.
+  - Full product acceptance still needs human review of multiple option combinations, not just the default exterior/interior screenshots.
+
+## 2026-07-03 Sponsor Buyer Setup Flow Polish Continuation
+
+- Active objective: make the sponsor package and setup flow more commercially usable so a buyer can choose a package, provide booth/screen setup details, preview the request, and submit a quote request without backend contract changes.
+- Product gap outcome:
+  - The sponsor packages page already explained packages and submitted leads, but it did not capture logo/media/headline/CTA as structured setup inputs.
+  - Buyers could not see a practical booth/screen setup preview before submitting, which made the flow feel more like a generic lead form than a rentable expo product.
+- Implementation:
+  - Extended the sponsor package request form with optional setup fields: sponsor headline, CTA label, logo URL, and media URL.
+  - Added public HTTPS validation for optional logo/media URLs and preserved these fields in local browser backup records.
+  - Included the new setup fields in the existing backend lead message payload, avoiding any backend API contract change.
+  - Added a live booth setup preview panel on `/expo/sponsor-packages` showing selected package, company/logo state, media readiness, headline, sponsor goal, CTA, and setup readiness.
+  - Fixed long URL input layout so logo/media URLs truncate inside their fields instead of overlapping adjacent controls.
+- Validation passed:
+  - `npx.cmd tsx src/app/expo/sponsorPackageRequest.test.ts`
+  - `npx.cmd tsx src/modules/expo/__tests__/managedScreenAssignmentOverride.test.ts`
+  - `npx.cmd tsc --noEmit -p tsconfig.app.json`
+  - `npm.cmd run lint`
+  - `npm.cmd run build`
+- Visual evidence captured from existing local Vite server on `http://127.0.0.1:5173`:
+  - `review_artifacts/warpala-sponsor-buyer-flow/expo-sponsor-packages/sponsor-packages-full-page.png`
+  - `review_artifacts/warpala-sponsor-buyer-flow/expo-sponsor-packages/sponsor-setup-preview-filled.png`
+- Release state:
+  - No deployment changed.
+  - No staging or production mutation changed.
+  - No Supabase schema or data changed.
+  - No backend API contract changed.
+  - `productVisualAccepted=false` remains unchanged; human visual acceptance is still required.
+- Residual risk:
+  - Sponsor setup data is still serialized into the lead message instead of a dedicated backend schema.
+  - A true release-grade buyer setup system still needs backend support for asset upload/approval, booth draft status, screen booking, quote lifecycle, and package payment/contract state.
+  - The page is commercially clearer, but the next product gap is connecting this request preview to an actual booth preview/configurator state after submission.
+
+## 2026-07-03 Screen Media Ownership And Safety Polish Continuation
+
+- Active objective: make city screens more operationally sellable and safer as sponsor-owned commercial surfaces without changing `/api/expo/scene`, deployment, staging, production, or Supabase.
+- Product gap outcome:
+  - City screens rendered, but assignment records did not expose a single commercial metadata contract for owner, source, media mode, fallback image, priority, slot, and quality-tier behavior.
+  - Managed screen overrides accepted already-saved booth data, but malformed media URLs and `video-placeholder` could still resolve too close to active media behavior in the runtime override layer.
+- Implementation:
+  - Added optional commercial metadata to `CityScreenAssignment`: owner, media mode, media URL, generated fallback image, priority, source, slot, value tier, and quality-tier behavior.
+  - Populated canonical city screen assignments with config-derived commercial metadata from the screen planner instead of renderer hardcoding.
+  - Removed the remaining sponsor-id-specific full-bleed screen special case from the city screen planner; base city screens now use generated static billboards unless managed screen config explicitly overrides them.
+  - Hardened managed city screen overrides by validating image/video URLs with the shared screen media validator before rendering.
+  - Changed `video-placeholder` managed screens to render static poster/generated content instead of an active video texture; only `video` mode resolves to video media, and playback is still budgeted by quality/distance policy.
+  - Exposed screen owner/media/source/priority/fallback/slot metadata through `WorldCityScreenAssignments` `userData` for QA/operator inspection without adding public debug UI.
+  - Updated demo arena preview assignment metadata so preview screens report `demo-preview` source and event ownership.
+- Validation passed:
+  - `npx.cmd tsx src/modules/expo/__tests__/managedScreenAssignmentOverride.test.ts`
+  - `npx.cmd tsx src/modules/expo/__tests__/productionSafeScreenCoverage.test.ts`
+  - `npx.cmd tsx src/modules/expo/__tests__/screenRuntimePolicy.test.ts`
+  - `npx.cmd tsx src/modules/expo/__tests__/screenContentMediaSafety.test.ts`
+  - `npx.cmd tsx src/modules/expo/__tests__/worldScenePlanningPlacementStability.test.ts`
+  - `npx.cmd tsc --noEmit -p tsconfig.app.json`
+  - `npm.cmd run lint`
+  - `npm.cmd run build`
+- Visual evidence captured from existing local Vite server on `http://127.0.0.1:5173`:
+  - `review_artifacts/warpala-screen-media-polish/expo-3d/expo-3d-lobby.png`
+  - `review_artifacts/warpala-screen-media-polish/expo-3d/expo-3d-walk-city-screen-media.png`
+- Release state:
+  - No deployment changed.
+  - No staging or production mutation changed.
+  - No Supabase schema or data changed.
+  - No backend API contract changed.
+  - `productVisualAccepted=false` remains unchanged; human visual acceptance is still required.
+- Residual risk:
+  - Screen inventory is still partly frontend/shared config. A release-ready operator workflow still needs backend/config schema support for owner, package, asset approval, schedule, active status, and screen booking lifecycle.
+  - The city remains visually dense around overlapping background silhouettes and screen surfaces; this pass improves operational safety and auditability, not final visual acceptance.
+  - Video playback policy is tested at runtime-policy level, but full browser proof of paused offscreen media should be added once the media schedule/schema is formalized.
+
+## 2026-07-03 City Tier And Ground Visual Polish Continuation
+
+- Active objective: continue making the canonical root Vite `/expo-3d` sponsor boulevard feel more sellable and less like a tech demo without changing backend contracts, deployment, staging, production, or Supabase.
+- Product gap outcome:
+  - The latest city screenshot showed two immediate sellability gaps: booth tiers still looked too similar at walking distance, and the modular-home portal still exposed old/broken public copy inside the 3D scene.
+  - The wider city remains visually heavy, with many background silhouettes and screen surfaces competing for attention; this needs a deeper composition pass before human visual acceptance.
+- Implementation:
+  - Restored standard-tier booths to a more open pavilion silhouette while keeping premium/elite/hero booths in the media-wall-first presentation, so tier differences are visible through config-driven layout behavior.
+  - Added lightweight tier signal towers for screen-first premium booths to improve sponsor hierarchy from walking distance without adding video, heavy shadows, or postprocessing.
+  - Calmed ground ribbon colors and opacity across sponsor, transition, stadium, edge, and default city zones to reduce noisy mixed ground tones.
+  - Replaced the modular-home entrance portal's public 3D and HTML copy with short buyer-facing English labels: `MODULAR HOME`, `DESIGN STUDIO`, `View modular home`, and clear open/enter prompts.
+- Validation passed:
+  - `npx.cmd tsx src/modules/expo/__tests__/boothArchitectureKit.test.ts`
+  - `npx.cmd tsx src/modules/expo/__tests__/worldScenePlanningPlacementStability.test.ts`
+  - `npx.cmd tsx src/modules/expo/__tests__/managedScreenAssignmentOverride.test.ts`
+  - `npx.cmd tsx src/modules/expo/__tests__/modularHomeProducts.test.ts`
+  - `npx.cmd tsc --noEmit -p tsconfig.app.json`
+  - `npm.cmd run lint`
+  - `npm.cmd run build`
+- Visual evidence captured from existing local Vite server on `http://127.0.0.1:5173`:
+  - `review_artifacts/warpala-city-tier-polish/expo-3d/expo-3d-lobby.png`
+  - `review_artifacts/warpala-city-tier-polish/expo-3d/expo-3d-walk-city-tier-ground.png`
+- Release state:
+  - No deployment changed.
+  - No staging or production mutation changed.
+  - No Supabase schema or data changed.
+  - No backend API contract changed.
+  - `productVisualAccepted=false` remains unchanged; human visual acceptance is still required.
+- Residual risk:
+  - The city still needs deeper design work on silhouette hierarchy, sign spacing, screen density, and foreground/background readability.
+  - Screen ownership and active-media budgets are still mostly frontend/config behavior; stronger backend/config schema support is still needed for commercial operations.
+  - Multilingual public copy should be formalized later if Latvian/English switching is required; this pass prioritizes removing broken public text from the sellable route.
+
+## 2026-07-03 Sponsor Expo Product Clarity And Buyer-Flow Polish
+
+- Active objective: make the canonical root Vite `/expo-3d` sponsor expo clearer, more sellable, and more buyer-ready without changing backend contracts, deployment, staging, production, or Supabase.
+- Product gap report outcome:
+  - Biggest blockers were internal/operator language on public paths, broken encoded copy in sponsor/modular-home flows, unclear first-screen CTAs, public booth profile/admin wording, and weak commercial fallback language for booth and screen surfaces.
+  - Remaining larger gaps still need backend/config support: first-class `/api/expo/scene` screen ownership records, sponsor asset/setup status, quote/package lifecycle state, and stronger tier-driven booth silhouette diversity.
+- Implementation:
+  - Reworked the `/expo-3d` lobby copy and first-screen CTAs around buyer actions: walk city, view sponsor booths, buy/rent booth, configure booth, view modular home, and request quote.
+  - Hid normal-user HUD diagnostics such as quality, voice/mic, keyboard controls, and position readouts behind operator-build context while keeping the public map/action surface cleaner.
+  - Updated booth presentation actions, badges, fallback identity copy, generated booth billboards, city screen override billboards, and public booth profile wording to sound like commercial sponsor surfaces instead of internal previews.
+  - Replaced the sponsor package page with a concise English buyer flow while preserving backend submit, local backup queue, and pending sync behavior.
+  - Cleaned exposed modular-home studio and overlay labels so buyers see design, price, quote, save/share, and more-options actions instead of route/debug or broken-language text.
+- Validation passed:
+  - `npx.cmd tsx src/modules/expo/__tests__/sponsorBoothPresentation.test.ts`
+  - `npx.cmd tsx src/modules/expo/__tests__/managedScreenAssignmentOverride.test.ts`
+  - `npx.cmd tsx src/modules/expo/__tests__/boothInteractions.test.ts`
+  - `npx.cmd tsx src/app/expo/sponsorPackageRequest.test.ts`
+  - `npx.cmd tsx src/modules/expo/__tests__/screenContentMediaSafety.test.ts`
+  - `npx.cmd tsx src/modules/expo/__tests__/worldScenePlanningPlacementStability.test.ts`
+  - `npx.cmd tsx src/modules/expo/__tests__/modularHomeProducts.test.ts`
+  - `npx.cmd tsx backend-server/routes/__tests__/expoScene.controller.test.ts`
+  - `npx.cmd tsx backend-server/__tests__/expoController.test.ts`
+  - `npx.cmd tsc --noEmit -p tsconfig.app.json`
+  - `npm.cmd run lint`
+  - `npm.cmd run build`
+- Visual evidence captured from existing local Vite server on `http://127.0.0.1:5173`:
+  - `review_artifacts/warpala-product-polish/expo-3d/expo-3d-lobby.png`
+  - `review_artifacts/warpala-product-polish/expo-3d/expo-3d-walk-city.png`
+  - `review_artifacts/warpala-product-polish/gala-visual/exterior-studio-after.png`
+  - `review_artifacts/warpala-product-polish/gala-visual/interior-studio-after.png`
+  - `review_artifacts/warpala-product-polish/gala-visual/quote-review-after.png`
+  - `review_artifacts/warpala-product-polish/gala-visual/start-outside-after.png`
+  - `review_artifacts/warpala-product-polish/gala-visual/start-inside-after.png`
+  - `review_artifacts/warpala-product-polish/gala-visual/qa-gala-visual-acceptance-result.json`
+- Release state:
+  - No deployment changed.
+  - No staging or production mutation changed.
+  - No Supabase schema or data changed.
+  - No backend API contract changed.
+  - `productVisualAccepted=false` remains unchanged; human visual acceptance is still required.
+- Residual risk:
+  - The city still needs a deeper composition/material pass for ground palette, silhouette diversity, spacing, and screen hierarchy.
+  - Booth tiers still need stronger visual differentiation beyond copy and fallback presentation.
+  - Screen ownership should move into backend/config schema instead of staying split between local inventory and managed booth overrides.
+
+## 2026-07-03 Visual Review Recovery After Failed Low-Tier Result
+
+- Active objective: correct the release direction after visual review found the low/reduced city and GALA presentation unacceptable.
+- Decision:
+  - `productVisualAccepted=false` remains unchanged.
+  - The performance-first low/reduced visual result is a no-go for sponsor-facing release.
+  - Release review must use the visually complete sponsor city and modular-home presentation first; performance controls must not make the product look black, cut out, or cartoonish.
+- Implementation:
+  - Changed mobile auto quality resolution from `low` to `medium`; explicit `quality=low` is no longer selected automatically just because a mobile device has high DPR.
+  - Restored modular-home/GALA rendering to full detail from the scene quality strategy, so the textured/furnished home path is the default again.
+  - Locked the active `ModularHomeModel` and `GalaHouseShell` render path to full GALA detail, so accidental upstream `reduced` quality requests cannot put the cardboard/proxy version into product visual review.
+  - Disabled city low-detail geometry/sky cuts in the normal scene layer path; quality settings can still cap DPR, video, screen, and raycast budgets without replacing the city with reduced silhouettes.
+  - Updated the scene quality test so mobile/low settings no longer imply reduced GALA render detail.
+- Validation passed:
+  - `npx.cmd tsc --noEmit -p tsconfig.app.json`
+  - `npx.cmd tsx src\modules\expo\__tests__\expoWorldSceneLayersQuality.test.ts`
+  - `npx.cmd tsx src\modules\expo\__tests__\galaConstructionDetailPolicy.test.ts`
+  - `npx.cmd tsx src\modules\expo\__tests__\worldScenePlanningPlacementStability.test.ts`
+  - Targeted ESLint for `expoQualitySettings.ts`, `ExpoWorldSceneQualityStrategy.ts`, `ExpoWorldSceneLayers.tsx`, `WorldCitySkeleton.tsx`, and `expoWorldSceneLayersQuality.test.ts`.
+  - Targeted ESLint for `GalaHouseShell.tsx` and `ModularHomeModel.tsx` after locking GALA full-detail visual review.
+  - `node scripts\qa-gala-visual-acceptance-local.mjs --base-url=http://127.0.0.1:5173 --out-dir=artifacts\visual-review\gala-full-detail-recovery`
+  - Local `/expo-3d` HTTP smoke returned `200` after starting Vite on `http://127.0.0.1:5173`.
+- Artifacts:
+  - `artifacts/visual-review/gala-full-detail-recovery/exterior-studio-after.png`
+  - `artifacts/visual-review/gala-full-detail-recovery/interior-studio-after.png`
+  - `artifacts/visual-review/gala-full-detail-recovery/qa-gala-visual-acceptance-result.json`
+  - `artifacts/visual-review/expo-3d-recovery-walk-city-high.png`
+  - `artifacts/visual-review/expo-3d-recovery-high.png`
+- Residual risk:
+  - Full visual pass still needs browser review and screenshots; this entry records code recovery, not visual acceptance.
+  - City screenshot now renders the sponsor boulevard instead of the reduced/black/cut-out failure path, but it is not visually accepted and still needs human design review for composition quality.
+  - Full release gates should be rerun after visual acceptance.
+
+## 2026-07-03 GALA Constrained-Mobile Proof Continuation
+
+- Active objective: continue the `/expo-3d` release goal by closing the remaining GALA sponsor-quality performance proof risk without changing the sponsor city scene contract or treating GALA as the whole product.
+- Implementation:
+  - Added `GalaConstructionDetailPolicy` so reduced/mobile GALA rendering has explicit rules for exterior/interior wall visibility, cladding, opening fine detail, roof fine detail, and room assembly.
+  - Reduced constrained GALA draw cost by instancing wall-core cells, skipping exterior partition walls in reduced exterior view, hiding exterior interior wall faces when outside, simplifying reduced openings to readable frame + panel, omitting reduced roof/gable/floor/terrace fine detail, and avoiding PBR texture maps on reduced decorative surfaces.
+  - Updated the GALA performance audit readiness checks to use semantic rendered-scene evidence instead of old high mesh-count thresholds that failed after optimization.
+  - Added `galaConstructionDetailPolicy.test.ts` for reduced/full detail policy regressions.
+- Production constrained-mobile GALA evidence (`390x844`, DPR 3 profile, 4x CPU throttle, production preview):
+  - Static PASS: exterior `46` draw calls, `3,278` triangles, P95 `8.4 ms`; interior `53` draw calls, `4,742` triangles, P95 `8.5 ms`.
+  - Motion PASS: stationary/motion P95 `8.3-8.4 ms`, stutters over 50 ms `0`, max frame time `45.9 ms`.
+  - Artifacts: `artifacts/perf/mobile-static-production-after-gala-reduced/qa-gala-performance-budget-result.json` and `artifacts/perf/mobile-motion-production-after-gala-reduced/qa-gala-motion-performance-result.json`.
+- Dev-server GALA evidence:
+  - Static and motion audits now complete with the reduced renderer, but Vite dev runtime still fails the P95/stutter budgets (`54-67 ms` static P95, `58-67 ms` motion P95). Release evidence is based on the production build/preview artifact.
+  - Artifacts: `artifacts/perf/mobile-static-after-gala-reduced/qa-gala-performance-budget-result.json` and `artifacts/perf/mobile-motion-after-gala-reduced/qa-gala-motion-performance-result.json`.
+- Validation passed:
+  - `npx.cmd tsc --noEmit -p tsconfig.app.json`
+  - `npx.cmd tsx src\modules\expo\__tests__\galaConstructionDetailPolicy.test.ts`
+  - `npx.cmd tsx src\modules\expo\__tests__\expoWorldSceneLayersQuality.test.ts`
+  - `node --check scripts\qa-gala-performance-budget-audit.mjs`
+  - `node --check scripts\qa-gala-motion-performance-audit.mjs`
+  - `npm.cmd run lint`
+  - `npm.cmd run build`
+  - `npm.cmd run check:bundle-budget`
+  - `npm.cmd run check:all`
+  - `npm.cmd run check:backend-tests`
+  - `npm.cmd --prefix backend-server run build`
+  - `npm.cmd --prefix backend-server run lint`
+- Read-only staging evidence:
+  - PASS with escalation for network/browser access only: `https://api-staging.30sek24.com/health` returned `status=ok`.
+  - PASS with escalation for network/browser access only: `https://api-staging.30sek24.com/api/expo/scene` returned `sceneVersion=expo-scene-v2-sponsor`, `sponsorCount=1`, `boothCount=3`, `screenCount=1`.
+  - PASS with escalation for Chrome CDP only: `npm.cmd run check:expo-staging-browser-smoke -- --json`.
+- Residual risk:
+  - Human visual acceptance is still required for the reduced GALA mobile presentation; `productVisualAccepted=false` remains unchanged.
+  - Vite dev-server GALA audits remain noisy under 4x CPU throttle and are not treated as release artifact performance evidence.
+  - `check:all` still reports the existing advisory `public/models/default_booth.glb zeroByte=true sizeMiB=0`.
+- Release state:
+  - No deployment, production promotion, staging mutation, Supabase migration/data mutation, Unreal, Pixel Streaming, or TURN state changed.
+  - No sponsor city scene contract fields were changed.
+
+## 2026-07-02 Root Vite Web3D Sponsor City Release Gate
+
+- Active objective: finish and release-gate the root Vite `/expo-3d` sponsor city and `backend-server` scene contract without treating Unreal/Pixel Streaming as baseline.
+- Baseline fixes:
+  - Removed the dead GALA wall color helpers that blocked app TypeScript.
+  - Reworked progressive texture loading around `useSyncExternalStore`, removing the render-loop state update lint violation.
+  - Removed browser imports of Node backend execution/logging code. Browser dashboard services now use `clientLogger`; agent/SEO calls use existing HTTP APIs.
+- Scene/city/booth/screen implementation:
+  - Verified backend and frontend `/api/expo/scene` contract tests for release mode, auth policy, tiers/types, media, slugs, malformed data, and fallbacks.
+  - Made left/center/right planning filters disjoint and added a canonical city mass ID uniqueness assertion.
+  - Added a local Liberation Sans runtime font so restricted networks cannot crash the Canvas through Troika's CDN Unicode fallback.
+  - Added low-tier instanced city mass silhouettes, compact tier-aware booth/entry/portal rendering, automatic screen distance culling, single-sided low-tier media, hidden renderer materials for collision/hit meshes, reduced ground detail, and zone-aware rear-campus/tower/vertical-access visibility.
+  - Stabilized zone runtime updates and world toggle identities, then cached equivalent physics surface registries to remove repeated full-scene physics rebuilds.
+  - Extended the QA mesh inventory with named parent ownership for actionable hotspot analysis.
+- Production constrained-mobile evidence (`390x844`, DPR 3 device profile, 4x CPU throttle, low quality):
+  - PASS: median FPS `238.10`, P95 frame time `8.40 ms`, stutters over 50 ms `0`.
+  - Renderer: `38` draw calls, `1,638` triangles, `49` geometries, `5` textures, `0` active videos, `83` visible meshes.
+  - Payload: `1,458,276` transfer bytes / `4,156,959` decoded bytes.
+  - Artifacts: `artifacts/perf/expo-city-mobile/expo-city-mobile-result.json`, `expo-city-mobile.png`, and `expo-city-mobile-cpu-profile.json`.
+- Validation passed:
+  - `npx.cmd tsc --noEmit -p tsconfig.app.json`
+  - `npm.cmd run lint`
+  - `npm.cmd run build` (production bundle built with local API URL for read-only QA)
+  - `npm.cmd run check:bundle-budget`
+  - `npm.cmd run check:all`
+  - `npm.cmd --prefix backend-server run build`
+  - `npm.cmd --prefix backend-server run lint`
+  - `npm.cmd run check:backend-tests` (`25` files)
+  - Scene contract tests: backend controller/routes and frontend `useExpoSceneData.contract`.
+  - City/booth/screen tests: placement stability, zone state, collision broadphase, booth presentation, media safety, surface overlap, and booth proximity.
+- Not run / residual risk:
+  - `npm.cmd ci` and `npm.cmd --prefix backend-server ci` were not rerun because installed lockfile dependencies completed all mechanical gates.
+  - Read-only staging health, scene, and browser smokes were blocked by network connectivity; the escalated read-only request also timed out. Staging was not mutated.
+  - GALA constrained-mobile proof remains below its own P95/stutter budgets: static P95 about `75 ms`; motion P95 `141.9-158.5 ms`. GALA is not the city baseline but remains a sponsor-quality residual risk.
+  - `check:all` still reports the non-blocking existing zero-byte `public/models/default_booth.glb` advisory.
+  - Local preview reported expected restricted-network Supabase realtime errors and a local-only analytics CORS error; city renderer metrics and `/api/expo/scene` remained available.
+- Release state:
+  - `productVisualAccepted=false` remains unchanged; automation did not grant visual acceptance.
+  - No deployment, staging/production alias, production promotion, Supabase migration/data mutation, Unreal, Pixel Streaming, or TURN state changed.
+
+## 2026-07-02 Master Execution Plan Issue 25 WebGL Unsupported Handling Deduplication
+
+- Active objective: execute Issue 25 from `Master_Execution_Plan.md`: deduplicate WebGL unsupported startup detection and fallback presentation.
+- Implementation status:
+  - Refactored `src/modules/expo/runtime/world/scene/ExpoWorldCanvasShell.tsx` to use the shared `detectWebGLSupport` contract from `src/components/webglSupport.ts`.
+  - Refactored the canvas shell startup unsupported state to render the shared `WebGLUnsupported` component instead of maintaining separate inline unsupported copy.
+  - Removed the local `detectWebglAvailability` helper and duplicate unsupported messages such as `WEBGL REQUIRED`, `3D world cannot start`, and the `get.webgl.org` hint from the canvas shell.
+  - Preserved canvas-specific WebGL context lost/restored handling, including:
+    - `webgl.contextlost` telemetry,
+    - `webgl.contextrestored` telemetry,
+    - lost-context timeout telemetry,
+    - renderer remount via `webglStatusKey` after context restore.
+  - Kept Issue 23's canvas-safe Suspense fallback for lazy QA tools.
+  - Added a targeted WebGL unsupported contract test proving `?forceWebGLUnsupported=1` resolves through the shared support helper and that `ExpoWorldCanvasShell.tsx` imports shared fallback/detection instead of containing duplicate startup unsupported logic.
+- Validation:
+  - `npx.cmd tsx src\modules\expo\__tests__\webglUnsupportedContract.test.ts` passed.
+  - Targeted ESLint for `src/modules/expo/runtime/world/scene/ExpoWorldCanvasShell.tsx`, `src/components/webglSupport.ts`, `src/components/WebGLUnsupported.tsx`, and `src/modules/expo/__tests__/webglUnsupportedContract.test.ts` passed.
+  - `npm.cmd run check:all` passed.
+  - `rg` confirmed `detectWebglAvailability`, `WEBGL REQUIRED`, `get.webgl.org`, and `3D world cannot start` no longer appear in `ExpoWorldCanvasShell.tsx`.
+  - `rg` confirmed `ExpoWorldCanvasShell.tsx` now references `detectWebGLSupport`, `WebGLUnsupported`, and still retains `webgl.contextlost`/`webgl.contextrestored` telemetry.
+  - `npx.cmd tsc --noEmit -p tsconfig.app.json` still fails only on the pre-existing dirty GALA code: `src/modules/expo/runtime/modularHome/construction/GalaWallAssembly.tsx:128` unused `blendHexColor`.
+  - Scoped `git diff --check` for Issue 25 edited files passed; Git only reported LF-to-CRLF working-copy normalization warnings.
+  - No browser smoke of `/expo-3d?forceWebGLUnsupported=1`, real WebGL-disabled device test, or context-lost browser simulation was performed.
+- Touched files:
+  - `src/modules/expo/runtime/world/scene/ExpoWorldCanvasShell.tsx`
+  - `src/modules/expo/__tests__/webglUnsupportedContract.test.ts`
+  - `docs/CURRENT_TASK.md`
+- Product/release status:
+  - `productVisualAccepted=false` remains unchanged.
+  - No deployment, staging/production alias, backend runtime, Supabase state, analytics table state, payment, Web3D renderer visual content, GALA asset, Pixel Streaming service, TURN service, sync server, or Unreal state was changed.
+- Residual verification:
+  - After the existing GALA TypeScript blocker is resolved, rerun full app TypeScript and browser-smoke `/expo-3d?forceWebGLUnsupported=1` to confirm the shared fallback renders exactly once.
+- Next step:
+  - `Master_Execution_Plan.md` currently ends at Issue 25; no Issue 26 is present in the plan file.
+
+## 2026-07-02 Master Execution Plan Issue 24 Browser New-Tab Noopener/Noreferrer
+
+- Active objective: execute Issue 24 from `Master_Execution_Plan.md`: harden browser new-tab opens so `_blank` windows always use `noopener,noreferrer`.
+- Implementation status:
+  - Added frontend-only `src/utils/openExternalUrl.ts` with:
+    - `normalizeExternalHttpUrl(value)`, accepting only absolute `http:` and `https:` URLs.
+    - `openExternalUrl(value, openWindow)`, which opens valid URLs with `_blank` and `noopener,noreferrer`.
+  - Replaced `window.open(url, '_blank')` in `src/modules/clients/ClientPortal.tsx`; invalid checkout URLs now fall into the existing payment error path.
+  - Replaced `window.open(videoUrl!, '_blank')` in `src/modules/ai-tools/AiGenerator.tsx`; invalid generated video URLs now surface an alert instead of opening.
+  - Kept the existing booth interaction open path unchanged because it already uses `noopener,noreferrer`.
+  - Moved the helper out of `src/lib` into `src/utils` after `check:backend-shared-boundaries` correctly flagged browser globals inside backend-shared source.
+  - Added a helper unit test covering URL normalization, rejection of `javascript:`, `ftp:`, relative, and empty URLs, and the exact `_blank` feature string.
+- Validation:
+  - `npx.cmd tsx src\modules\expo\__tests__\openExternalUrl.test.ts` passed.
+  - Targeted ESLint for `src/utils/openExternalUrl.ts`, `src/modules/clients/ClientPortal.tsx`, `src/modules/ai-tools/AiGenerator.tsx`, and `src/modules/expo/__tests__/openExternalUrl.test.ts` passed.
+  - `npm.cmd run check:all` passed after moving the helper to `src/utils`.
+  - `rg -n "window\.open" src` now finds only `src/utils/openExternalUrl.ts` and the pre-existing safe `BoothInteractions.ts` call.
+  - `rg -n "_blank" ...` confirms `_blank` use in the touched/safe surfaces is paired with `noopener,noreferrer`, plus the helper test assertion.
+  - `npx.cmd tsc --noEmit -p tsconfig.app.json` still fails only on the pre-existing dirty GALA code: `src/modules/expo/runtime/modularHome/construction/GalaWallAssembly.tsx:128` unused `blendHexColor`.
+  - Scoped `git diff --check` for Issue 24 edited files passed; Git only reported LF-to-CRLF working-copy normalization warnings.
+  - No live Stripe checkout or generated-video browser flow was executed.
+- Touched files:
+  - `src/utils/openExternalUrl.ts`
+  - `src/modules/clients/ClientPortal.tsx`
+  - `src/modules/ai-tools/AiGenerator.tsx`
+  - `src/modules/expo/__tests__/openExternalUrl.test.ts`
+  - `docs/CURRENT_TASK.md`
+- Product/release status:
+  - `productVisualAccepted=false` remains unchanged.
+  - No payment provider config, backend payment flow, generated media service, deployment, staging/production alias, backend runtime, Supabase state, analytics table state, Web3D renderer visual content, GALA asset, Pixel Streaming service, TURN service, sync server, or Unreal state was changed.
+- Residual verification:
+  - If these legacy/demo surfaces remain in production scope, browser-smoke the payment/video flows to confirm popup behavior is still acceptable under browser popup policies.
+- Next step:
+  - Continue with Issue 25 from `Master_Execution_Plan.md`: deduplicate WebGL unsupported handling.
+
+## 2026-07-02 Master Execution Plan Issue 23 Route Suspense Loading Fallbacks
+
+- Active objective: execute Issue 23 from `Master_Execution_Plan.md`: replace blank route-level Suspense fallbacks with consistent loading states.
+- Implementation status:
+  - Rewrote `src/App.tsx` lazy route wrapping around a shared `lazyRoute(children, label)` helper.
+  - Replaced route-level `fallback={null}` usage in `App.tsx` with `RouteLoadingFallback` labels for privacy, platform, internal, calculator, expo, booth, showroom, gallery, and projector routes.
+  - Updated demo route wrapping so enabled demo chunks also use `RouteLoadingFallback`; disabled demo routes still redirect to `/`.
+  - Kept the existing `web3dRoute` error boundary behavior while routing its Suspense fallback through the same loading UI.
+  - Added a canvas-safe Suspense fallback in `ExpoWorldCanvasShell.tsx` for the lazy QA hook: an in-canvas `Html` pill with `pointerEvents: none`, so it does not resize page layout or block controls.
+  - Added a static fallback test that rejects `fallback={null}` in `App.tsx`, rejects null Suspense fallbacks in the Expo canvas shell, and checks for the canvas fallback marker.
+- Validation:
+  - `npx.cmd tsx src\modules\expo\__tests__\routeSuspenseFallbacks.test.ts` passed.
+  - Targeted ESLint for `src/App.tsx`, `src/modules/expo/runtime/world/scene/ExpoWorldCanvasShell.tsx`, and `src/modules/expo/__tests__/routeSuspenseFallbacks.test.ts` passed.
+  - `npm.cmd run check:all` passed.
+  - `npx.cmd tsc --noEmit -p tsconfig.app.json` still fails only on the pre-existing dirty GALA code: `src/modules/expo/runtime/modularHome/construction/GalaWallAssembly.tsx:128` unused `blendHexColor`.
+  - Scoped `git diff --check` for Issue 23 edited files passed; Git only reported LF-to-CRLF working-copy normalization warnings.
+  - No delayed chunk browser simulation, mobile network throttling smoke, or visual loading-state QA was performed.
+- Touched files:
+  - `src/App.tsx`
+  - `src/modules/expo/runtime/world/scene/ExpoWorldCanvasShell.tsx`
+  - `src/modules/expo/__tests__/routeSuspenseFallbacks.test.ts`
+  - `docs/CURRENT_TASK.md`
+- Product/release status:
+  - `productVisualAccepted=false` remains unchanged.
+  - No route handler was removed or newly auth-gated.
+  - No deployment, staging/production alias, backend runtime, Supabase state, analytics table state, payment, Web3D renderer visual content, GALA asset, Pixel Streaming service, TURN service, sync server, or Unreal state was changed.
+- Residual verification:
+  - After the existing GALA TypeScript blocker is resolved, rerun full app TypeScript and browser-smoke slow chunk loading on mobile-sized viewport.
+- Next step:
+  - Continue with Issue 24 from `Master_Execution_Plan.md`: harden `_blank` browser opens with `noopener,noreferrer`.
+
+## 2026-07-02 Master Execution Plan Issue 22 Release Route and Navigation Ownership
+
+- Active objective: execute Issue 22 from `Master_Execution_Plan.md`: align the root SPA route/navigation ownership with the sponsor-facing Web3D expo release surface.
+- Implementation status:
+  - Added `src/config/releaseRouteOwnership.ts` as the centralized release route ownership and navigation config.
+  - Added route ownership statuses for key `ship`, `internal`, and `demo-only` surfaces, matching the release-scope split without removing existing route handlers.
+  - Added release primary navigation items centered on `/expo-3d`, sponsor packages, booth marketplace, modular-home studio, and calculators.
+  - Added release utility navigation items for sponsor admin and sponsor lead inbox.
+  - Moved login `next` routing into `buildReleaseLoginHref`, preserving sponsor admin, sponsor lead inbox, and modular-home quote review redirects.
+  - Rewrote `src/components/Layout.tsx` to consume the release navigation config instead of promoting legacy dashboard/projects/clients/inventory/AI/documents/finance/settings links in the default shell.
+  - Kept existing internal/backoffice route handlers registered in `App.tsx`; this issue did not add auth/role guards or remove internal route code.
+  - Added a targeted route ownership test proving primary/utility nav excludes internal/demo paths, required release nav paths are present, route ownership resolves specific paths, and login redirect mapping remains intact.
+- Validation:
+  - `npx.cmd tsx src\modules\expo\__tests__\releaseRouteOwnership.test.ts` passed.
+  - Targeted ESLint for `src/components/Layout.tsx`, `src/config/releaseRouteOwnership.ts`, and `src/modules/expo/__tests__/releaseRouteOwnership.test.ts` passed.
+  - `npm.cmd run check:all` passed.
+  - `npx.cmd tsc --noEmit -p tsconfig.app.json` still fails only on the pre-existing dirty GALA code: `src/modules/expo/runtime/modularHome/construction/GalaWallAssembly.tsx:128` unused `blendHexColor`.
+  - Scoped `git diff --check` for Issue 22 edited files passed; Git only reported LF-to-CRLF working-copy normalization warnings.
+  - No browser navigation smoke, auth redirect smoke, or production route crawl was performed.
+- Touched files:
+  - `src/config/releaseRouteOwnership.ts`
+  - `src/components/Layout.tsx`
+  - `src/modules/expo/__tests__/releaseRouteOwnership.test.ts`
+  - `docs/CURRENT_TASK.md`
+- Product/release status:
+  - `productVisualAccepted=false` remains unchanged.
+  - No existing route handler was deleted or newly auth-gated.
+  - No deployment, staging/production alias, backend runtime, Supabase state, analytics table state, payment, Web3D renderer visual content, GALA asset, Pixel Streaming service, TURN service, sync server, or Unreal state was changed.
+- Residual verification:
+  - A follow-up hardening task should decide whether internal/backoffice routes need actual auth/role guards or feature flags beyond being removed from the default release navigation.
+  - After the existing GALA TypeScript blocker is resolved, rerun full app TypeScript and browser-smoke the root shell desktop/mobile nav plus sponsor-admin and lead-inbox login redirects.
+- Next step:
+  - Continue with Issue 23 from `Master_Execution_Plan.md`.
+
+## 2026-07-02 Master Execution Plan Issue 21 Modular Home Quality-Aware Detail and Environment Strategy
+
+- Active objective: execute Issue 21 from `Master_Execution_Plan.md`: make modular-home scene detail quality-aware and avoid loading the 85 MB street EXR on constrained tiers.
+- Implementation status:
+  - Added `resolveExpoWorldSceneQualityStrategy` in a non-component module so scene quality decisions are testable and React fast-refresh compliant.
+  - Replaced the hardcoded modular-home `renderDetailLevel='full'` in `ExpoWorldSceneLayers` with the strategy result.
+  - Mobile-like, low-tier, and static-screen/constrained quality settings now use `renderDetailLevel='reduced'` for the modular-home model.
+  - Desktop high quality and runtime capture-safe QA mode can still use `renderDetailLevel='full'`.
+  - Kept GALA/home-studio ambient occlusion disabled on mobile-like, low-tier, and runtime capture-safe paths.
+  - Gated `/models/modern_evening_street_4k.exr` so it only mounts when street environment lighting is enabled, the scene is not home-studio, runtime capture-safe mode is off, the device is not mobile-like, and the resolved tier is `high`.
+  - Constrained/mobile/low paths fall back to existing sky/ambient/directional/hemisphere lighting without mounting the 85 MB street EXR.
+  - Added targeted strategy tests proving mobile low uses reduced detail and no street EXR, desktop high can still use full detail and EXR when the flag is enabled, and capture-safe QA uses full detail while disabling home-studio AO.
+- Validation:
+  - `npx.cmd tsx src\modules\expo\__tests__\expoWorldSceneLayersQuality.test.ts` passed.
+  - Targeted ESLint for `src/modules/expo/runtime/world/scene/ExpoWorldSceneLayers.tsx`, `src/modules/expo/runtime/world/scene/ExpoWorldSceneQualityStrategy.ts`, and `src/modules/expo/__tests__/expoWorldSceneLayersQuality.test.ts` passed.
+  - `npm.cmd run check:all` passed; `check:release-static-payload` now scans 255 active Expo runtime source files and still reports no raw texture release leak.
+  - `npx.cmd tsc --noEmit -p tsconfig.app.json` still fails only on the pre-existing dirty GALA code: `src/modules/expo/runtime/modularHome/construction/GalaWallAssembly.tsx:128` unused `blendHexColor`.
+  - Scoped `git diff --check` for Issue 21 edited files passed; Git only reported LF-to-CRLF working-copy normalization warnings.
+  - No browser load waterfall, mobile performance capture, or visual QA pass was performed.
+- Touched files:
+  - `src/modules/expo/runtime/world/scene/ExpoWorldSceneLayers.tsx`
+  - `src/modules/expo/runtime/world/scene/ExpoWorldSceneQualityStrategy.ts`
+  - `src/modules/expo/__tests__/expoWorldSceneLayersQuality.test.ts`
+  - `docs/CURRENT_TASK.md`
+- Product/release status:
+  - `productVisualAccepted=false` remains unchanged.
+  - No asset was moved, deleted, compressed, regenerated, or uploaded.
+  - No deployment, staging/production alias, backend runtime, Supabase state, analytics table state, payment, GALA asset, Pixel Streaming service, TURN service, sync server, or Unreal state was changed.
+- Residual verification:
+  - After the existing GALA TypeScript blocker is resolved, rerun full app TypeScript and perform mobile/constrained browser smoke to verify the street EXR is absent from the network waterfall and modular-home movement/visuals remain acceptable in reduced detail.
+- Next step:
+  - Continue with Issue 22 from `Master_Execution_Plan.md`: align release route/navigation ownership with the sponsor-facing Web3D expo.
+
+## 2026-07-02 Master Execution Plan Issue 20 Zone Runtime State Churn
+
+- Active objective: execute Issue 20 from `Master_Execution_Plan.md`: reduce avoidable zone runtime state updates that fan out into Web3D scene groups.
+- Implementation status:
+  - Added a stable zone runtime signature that captures material render/visibility state: active zone, previous zone, operator zone, adjacency, quality tier, cull/detail policy, group visibility/detail maps, and visible/hidden/reduced group identity.
+  - Intentionally excluded volatile debug/sample fields from the signature, including `lastUpdateAt`, `playerPosition`, and `activeZoneReason`, so idle or same-zone polling does not force a new state object.
+  - Added `resolveStableExpoZoneRuntimeState(current, next)` and used it inside `useExpoZoneRuntimeState` interval updates.
+  - The interval still resolves current effective input, including operator review overrides, but now returns the existing state object when the material zone/render signature is unchanged.
+  - Zone changes still produce a new state object and correctly set `previousActiveZoneId` through the existing active-zone probe.
+  - Added a targeted zone runtime state test proving same-zone movement preserves referential stability while a changed zone returns the new state/signature.
+- Validation:
+  - `npx.cmd tsx src\modules\expo\__tests__\expoZoneRuntimeState.test.ts` passed.
+  - Targeted ESLint for `src/modules/expo/runtime/world/zones/expoZoneRuntimeState.ts` and `src/modules/expo/__tests__/expoZoneRuntimeState.test.ts` passed.
+  - `npm.cmd run check:all` passed.
+  - `npx.cmd tsc --noEmit -p tsconfig.app.json` still fails only on the pre-existing dirty GALA code: `src/modules/expo/runtime/modularHome/construction/GalaWallAssembly.tsx:128` unused `blendHexColor`.
+  - Scoped `git diff --check` for Issue 20 edited files passed; Git only reported LF-to-CRLF working-copy normalization warnings.
+  - No expo browser smoke, hidden-tab timing test, or live render-churn profile was performed.
+- Touched files:
+  - `src/modules/expo/runtime/world/zones/expoZoneRuntimeState.ts`
+  - `src/modules/expo/__tests__/expoZoneRuntimeState.test.ts`
+  - `docs/CURRENT_TASK.md`
+- Product/release status:
+  - `productVisualAccepted=false` remains unchanged.
+  - No deployment, staging/production alias, backend runtime, Supabase state, analytics table state, payment, Web3D renderer visual content, GALA asset, Pixel Streaming service, TURN service, sync server, or Unreal state was changed.
+- Residual verification:
+  - After the existing GALA TypeScript blocker is resolved, rerun full app TypeScript and perform an expo browser smoke/performance overlay check to confirm idle same-zone scenes no longer show avoidable zone fan-out renders.
+- Next step:
+  - Continue with Issue 21 from `Master_Execution_Plan.md`: make modular-home scene detail quality-aware and avoid constrained-tier street EXR load.
+
+## 2026-07-02 Master Execution Plan Issue 19 Movement Collision Broadphase Candidate Filtering
+
+- Active objective: execute Issue 19 from `Master_Execution_Plan.md`: bound per-frame player movement collision raycast candidates in dense Web3D scenes.
+- Implementation status:
+  - Kept the ADR-0002 explicit collision-role policy intact: broadphase indexes only objects already registered through player collider roots; scenic/non-colliding assets remain outside collision registration.
+  - Added a static x/z grid broadphase on top of the existing scene-level `collectPlayerCollisionTargets(scene)` cache.
+  - Added `queryNearbyPlayerCollisionTargets(scene, position, queryRadius)`, which returns only collider targets in nearby cells plus explicitly dynamic collider targets.
+  - Marked vertical elevator cabin collider roots as dynamic so moving cabin blockers are always included as raycast candidates and never missed by a stale static grid cell.
+  - Updated the movement frame loop to query nearby candidates around `nextMovePosition` instead of raycasting every movement direction against all collision targets.
+  - Limited movement raycaster `far` distance to the active player radius, matching the existing blocker test and reducing unnecessary raycast work inside the candidate set.
+  - Added player collision broadphase runtime stats and surfaced them in the performance overlay as candidate/total target counts plus grid/dynamic counts.
+  - Added a targeted broadphase test proving near static colliders are included, far static colliders are excluded, dynamic colliders remain candidates, and stats report total/indexed/dynamic/candidate counts.
+- Validation:
+  - `npx.cmd tsx src\modules\expo\__tests__\playerCollisionBroadphase.test.ts` passed.
+  - Targeted ESLint for `src/modules/expo/runtime/world/WorldSceneSupport.tsx`, `src/modules/expo/runtime/world/scene/useExpoWorldPlayerFrameLoop.ts`, `src/modules/expo/runtime/world/WorldVerticalElevatorRoutes.tsx`, `src/modules/expo/runtime/world/scene/ExpoPerformanceOverlay.tsx`, and `src/modules/expo/__tests__/playerCollisionBroadphase.test.ts` passed.
+  - `npm.cmd run check:all` passed.
+  - `npx.cmd tsc --noEmit -p tsconfig.app.json` still fails only on the pre-existing dirty GALA code: `src/modules/expo/runtime/modularHome/construction/GalaWallAssembly.tsx:128` unused `blendHexColor`.
+  - Scoped `git diff --check` for Issue 19 edited files passed; Git only reported LF-to-CRLF working-copy normalization warnings.
+  - No browser walkthrough, mobile FPS capture, or live performance overlay QA was performed.
+- Touched files:
+  - `src/modules/expo/runtime/world/WorldSceneSupport.tsx`
+  - `src/modules/expo/runtime/world/scene/useExpoWorldPlayerFrameLoop.ts`
+  - `src/modules/expo/runtime/world/WorldVerticalElevatorRoutes.tsx`
+  - `src/modules/expo/runtime/world/scene/ExpoPerformanceOverlay.tsx`
+  - `src/modules/expo/__tests__/playerCollisionBroadphase.test.ts`
+  - `docs/CURRENT_TASK.md`
+- Product/release status:
+  - `productVisualAccepted=false` remains unchanged.
+  - No deployment, staging/production alias, backend runtime, Supabase state, analytics table state, payment, Web3D renderer visual content, GALA asset, Pixel Streaming service, TURN service, sync server, or Unreal state was changed.
+- Residual verification:
+  - After the existing GALA TypeScript blocker is resolved, rerun full app TypeScript and perform a constrained-mobile walkthrough with the performance overlay to confirm collision candidates stay bounded near the player and movement behavior is unchanged.
+- Next step:
+  - Continue with Issue 20 from `Master_Execution_Plan.md`: reduce zone runtime polling/global state churn.
+
+## 2026-07-02 Master Execution Plan Issue 18 Public Scene API Cache and ETag
+
+- Active objective: execute Issue 18 from `Master_Execution_Plan.md`: add cache/ETag behavior to the public `/api/expo/scene` endpoint.
+- Implementation status:
+  - Added a short in-process cache for `createGetExpoScene`, keyed by the relevant public scene query state: default active city requests use `city:active`, and explicit `cityId` requests use `city:<id>`.
+  - Added `EXPO_SCENE_CACHE_TTL_MS = 30_000` as the default cache TTL.
+  - Added deterministic response ETag generation from the exact JSON scene response payload.
+  - Added `Cache-Control: public, max-age=30, stale-while-revalidate=120` and `ETag` headers to successful scene responses.
+  - Added `If-None-Match` handling for cached responses and freshly generated responses; matching ETags return `304` with headers and no JSON body.
+  - Moved Supabase acquisition after query validation and cache lookup, so valid cache hits do not call Supabase.
+  - Kept error responses uncached and left the public scene JSON contract unchanged.
+  - Added injectable cache, clock, and TTL options to `createGetExpoScene` for deterministic backend tests.
+  - Extended backend scene controller tests to prove cache hit reuse, `ETag`/`Cache-Control` headers, `304` conditional requests, and fresh Supabase reads after TTL expiry.
+- Validation:
+  - `npx.cmd tsx backend-server\routes\__tests__\expoScene.controller.test.ts` passed.
+  - `npx.cmd tsx backend-server\__tests__\expoController.test.ts` passed.
+  - `npx.cmd tsc --noEmit -p backend-server\tsconfig.json` passed.
+  - Targeted ESLint for `backend-server/controllers/expoController.ts`, `backend-server/routes/__tests__/expoScene.controller.test.ts`, and `backend-server/__tests__/expoController.test.ts` passed.
+  - `npm.cmd run check:backend-tests` passed for 25 backend test files.
+  - `npm.cmd run check:all` passed.
+  - Scoped `git diff --check` for Issue 18 backend files passed; Git only reported existing LF-to-CRLF working-copy normalization warnings.
+  - No live API, browser, CDN/proxy cache, Supabase, staging, or production smoke test was performed.
+- Touched files:
+  - `backend-server/controllers/expoController.ts`
+  - `backend-server/routes/__tests__/expoScene.controller.test.ts`
+  - `backend-server/__tests__/expoController.test.ts`
+  - `docs/CURRENT_TASK.md`
+- Product/release status:
+  - `productVisualAccepted=false` remains unchanged.
+  - No deployment, staging/production alias, backend runtime, Supabase state, analytics table state, payment, Web3D renderer, GALA asset, Pixel Streaming service, TURN service, sync server, or Unreal state was changed.
+- Residual verification:
+  - When a staging backend is available, smoke `/api/expo/scene` twice with the first response `ETag` in `If-None-Match` to verify the deployed proxy/runtime preserves `304` behavior.
+- Next step:
+  - Continue with Issue 19 from `Master_Execution_Plan.md`: implement movement collision broadphase candidate filtering.
+
+## 2026-07-02 Master Execution Plan Issue 17 Cross-Origin Expo Analytics Persistence
+
+- Active objective: execute Issue 17 from `Master_Execution_Plan.md`: allow expo analytics persistence from separate frontend and API production/staging origins.
+- Implementation status:
+  - Removed the same-origin-only guard from `src/modules/expo/lib/expoAnalytics.ts`; analytics persistence no longer returns early when the configured API origin differs from `window.location.origin`.
+  - Added `buildExpoAnalyticsEndpoint(apiBaseUrl)` so the analytics endpoint is built from the validated frontend runtime API base URL.
+  - Exported `persistExpoAnalytics` and added dependency injection for `apiBaseUrl`, `browserAvailable`, `dev`, `fetchImpl`, and `sendBeacon`, so the browser persistence path can be tested without a live browser.
+  - Kept development-mode suppression: analytics persistence still returns when `import.meta.env.DEV` is true.
+  - Kept invalid endpoint handling safe: endpoint construction is wrapped and persistence returns without throwing if URL construction fails.
+  - Left backend validation/CORS policy unchanged; cross-origin browser access remains governed by the backend CORS allowlist introduced in earlier issues.
+  - Extended `src/modules/expo/__tests__/expoAnalytics.test.ts` with a staging-like cross-origin test proving persistence posts to `https://api-staging.30sek24.com/api/analytics/track`.
+- Validation:
+  - `npx.cmd tsx src\modules\expo\__tests__\expoAnalytics.test.ts` passed.
+  - Targeted ESLint for `src/modules/expo/lib/expoAnalytics.ts` and `src/modules/expo/__tests__/expoAnalytics.test.ts` passed.
+  - `rg` confirmed `endpointOrigin` and `window.location.origin` no longer appear in `src/modules/expo/lib/expoAnalytics.ts`.
+  - `npx.cmd tsc --noEmit -p tsconfig.app.json` still fails only on pre-existing dirty GALA code: `src/modules/expo/runtime/modularHome/construction/GalaWallAssembly.tsx:128` unused `blendHexColor`.
+  - `npm.cmd run check:all` passed after the analytics change.
+  - Root package and lockfile JSON parse successfully.
+  - Scoped `git diff --check` for Issue 17 files passed.
+  - No live analytics request, browser smoke, staging check, backend route change, or CORS config mutation was performed.
+- Touched files:
+  - `src/modules/expo/lib/expoAnalytics.ts`
+  - `src/modules/expo/__tests__/expoAnalytics.test.ts`
+  - `docs/CURRENT_TASK.md`
+- Product/release status:
+  - `productVisualAccepted=false` remains unchanged.
+  - No deployment, staging/production alias, backend runtime, Supabase state, analytics table state, payment, Web3D renderer, GALA asset, Pixel Streaming service, TURN service, sync server, or Unreal state was changed.
+- Residual verification:
+  - After the separate frontend build blockers are resolved, run browser/staging analytics smoke to confirm the backend receives cross-origin events under the configured CORS allowlist.
+- Next step:
+  - Continue with Issue 18 from `Master_Execution_Plan.md`: add cache/ETag behavior to the public `/api/expo/scene` endpoint.
+
+## 2026-07-02 Master Execution Plan Issue 16 Release Static Payload Budget Gate
+
+- Active objective: execute Issue 16 from `Master_Execution_Plan.md`: enforce total release static payload budgets and ensure asset gates run in the release path.
+- Implementation status:
+  - Extended `scripts/check-release-static-payload.mjs` beyond raw texture exclusion checks.
+  - Added total release public payload budget enforcement using `.vercelignore` semantics, so local source/intake assets excluded from release upload do not count against the release payload ceiling.
+  - Added built `dist/` payload budget enforcement when `dist/index.html` exists.
+  - Added per-file release payload budget enforcement across both release public payload and built `dist`.
+  - Current ceilings are intentionally set as stabilization guardrails around the post-Issue-15 payload: 850 MiB release public payload after source exclusions, 850 MiB built `dist`, and 90 MiB per release payload file.
+  - Kept the existing critical asset checker useful by adding `npm run check:expo-release-assets` into `npm run check:all`.
+  - The GitHub Release Gate already runs `npm run check:all` after `npm run build`, so both `check:release-static-payload` and `check:expo-release-assets` now run in the release-gate static checks without a separate workflow edit.
+  - Updated `docs/release/WEB3D_EXPO_ASSET_BUDGET.md`, `docs/release/WEB3D_EXPO_DEPLOYMENT_CONTRACT.md`, and `docs/CURRENT_INFRASTRUCTURE_INVENTORY.md` with the total/per-file payload ceilings and gate wiring.
+- Validation:
+  - `node --check scripts\check-release-static-payload.mjs` passed.
+  - Targeted ESLint for `scripts/check-release-static-payload.mjs` passed.
+  - Root package and lockfile JSON parse successfully.
+  - `npm.cmd run check:release-static-payload` passed:
+    - raw source texture pack excluded from release contexts: 35 files / 927.58 MiB
+    - runtime texture pack available for release: 21 files / 27.17 MiB
+    - release public payload after exclusions: 343 files / 801.72 MiB under the 850 MiB budget
+    - built `dist` payload: 418 files / 805.85 MiB under the 850 MiB budget
+    - per-file release payload budget: 90 MiB
+    - active Expo runtime source files checked for raw texture references: 254
+    - `dist/textures/expo` absent when `dist` exists
+  - `npm.cmd run check:all` passed with both `check:release-static-payload` and `check:expo-release-assets` included.
+  - `npm.cmd run check:expo-release-assets` still writes `diagnostics/reports/expo-release-asset-budget.json`; the only current advisory is the pre-existing non-failing `public/models/default_booth.glb` zero-byte advisory.
+  - Scoped `git diff --check` for Issue 16 files passed.
+  - No separate GitHub Actions run was triggered from this workspace.
+- Touched files:
+  - `scripts/check-release-static-payload.mjs`
+  - `package.json`
+  - `docs/release/WEB3D_EXPO_ASSET_BUDGET.md`
+  - `docs/release/WEB3D_EXPO_DEPLOYMENT_CONTRACT.md`
+  - `docs/CURRENT_INFRASTRUCTURE_INVENTORY.md`
+  - `docs/CURRENT_TASK.md`
+- Product/release status:
+  - `productVisualAccepted=false` remains unchanged.
+  - No assets were moved, deleted, regenerated, or uploaded.
+  - No Docker image was built, tagged, pushed, or started; no container was created.
+  - No deployment, staging/production alias, backend runtime, Supabase state, payment, Web3D renderer, GALA asset, Pixel Streaming service, TURN service, sync server, or Unreal state was changed.
+- Residual verification:
+  - The budget gate is now wired, but a fully successful `npm.cmd run build` remains blocked by the separate frontend bundle leak and existing GALA TypeScript/lint failures documented under Issue 15.
+- Next step:
+  - Continue with Issue 17 from `Master_Execution_Plan.md`: fix expo analytics persistence across separate frontend/API production origins.
+
+## 2026-07-02 Master Execution Plan Issue 15 Raw Expo Source Texture Release Payload
+
+- Active objective: execute Issue 15 from `Master_Execution_Plan.md`: remove raw 4K/source assets from the deployed public release payload and add a payload guard.
+- Implementation status:
+  - Kept the raw source texture pack in place as local source/intake material, but removed it from release/deploy paths.
+  - Added `public/textures/expo/` to `.vercelignore`, so Vercel source uploads do not include the raw source PNG pack.
+  - Added `public/textures/expo` to `.dockerignore`, so frontend Docker build contexts do not include the raw source PNG pack.
+  - Updated `src/modules/expo/lib/expoTexturePipeline.ts` so `resolveExpoTextureCandidateUrls` returns runtime WebP derivatives only by default. Raw source fallback is now development-only and requires `VITE_EXPO_ALLOW_SOURCE_TEXTURE_FALLBACK=1`.
+  - Updated `src/modules/expo/lib/expoGroundMaterialManifest.ts` to reference `public/textures/expo-runtime/**` WebP files directly instead of source PNG paths.
+  - Fixed the masked `light_concrete` mapping by switching it from the old `master-phase/concrete` source PNG names, which had no runtime derivatives, to the existing `light-concrete-4k/concrete_floor_worn_001_*` WebP derivatives.
+  - Updated `src/modules/expo/lib/sponsorScreenLayout.ts` to reference `expo-runtime` screen placeholder and hero facade WebP files directly.
+  - Added a Vite build plugin in `vite.config.ts` that prunes `dist/textures/expo` after public asset copy, and added Workbox `globIgnores` so raw source textures are not precached.
+  - Added `scripts/check-release-static-payload.mjs`, which validates `.vercelignore`, `.dockerignore`, Vite prune/precache config, runtime texture manifest files, default source-fallback behavior, active Expo runtime source references, and absence of `dist/textures/expo` when `dist` exists.
+  - Added `npm run check:release-static-payload` and placed it in `npm run check:all`.
+  - Updated release docs: `docs/release/EXPO_TEXTURE_PIPELINE.md`, `docs/release/WEB3D_EXPO_ASSET_BUDGET.md`, `docs/release/WEB3D_EXPO_DEPLOYMENT_CONTRACT.md`, and `docs/CURRENT_INFRASTRUCTURE_INVENTORY.md`.
+- Validation:
+  - `node --check scripts\check-release-static-payload.mjs` passed.
+  - `npx.cmd tsc --noEmit -p tsconfig.node.json` passed after the Vite config change.
+  - Ignore semantics check confirmed both `.vercelignore` and `.dockerignore` exclude `public/textures/expo/hero-paver-4k/pavement_01_diff_4k.png`.
+  - `npm.cmd run check:release-static-payload` passed: 35 raw source texture files / 927.58 MiB excluded from release contexts, 21 runtime texture files / 27.17 MiB available, 254 active Expo runtime source files scanned for raw texture references, and `dist/textures/expo` absent.
+  - `npx.cmd tsx src\modules\expo\__tests__\expoTexturePipeline.test.ts` passed with runtime-only candidate expectations.
+  - Targeted ESLint passed for `scripts/check-release-static-payload.mjs`, `vite.config.ts`, `expoTexturePipeline.ts`, `expoGroundMaterialManifest.ts`, `sponsorScreenLayout.ts`, and the texture pipeline test.
+  - `npm.cmd run check:vercel-source-context`, `npm.cmd run check:docker-secret-hygiene`, and `npm.cmd run check:frontend-docker-contract` passed after the release payload exclusions.
+  - `npm.cmd run check:expo-texture-pipeline` passed for 20 runtime textures with savings ratio `0.9608`.
+  - `npm.cmd run check:expo-release-assets` passed; it still reports the existing non-failing advisory for `public/models/default_booth.glb` being zero bytes.
+  - `npm.cmd run check:all` passed with the new release static payload gate included.
+  - Scoped `git diff --check` for Issue 15 files passed.
+  - `npx.cmd tsc --noEmit -p tsconfig.app.json` still fails only on pre-existing dirty GALA code: `src/modules/expo/runtime/modularHome/construction/GalaWallAssembly.tsx:128` unused `blendHexColor`.
+  - `npm.cmd run lint` at repo root still fails only on pre-existing dirty GALA code: `src/modules/expo/runtime/modularHome/useProgressiveTextureSet.ts:63` (`react-hooks/set-state-in-effect`).
+  - Direct `npx.cmd vite build` with the three required frontend env values transformed 1,889 modules and wrote a `dist` tree where `dist/textures/expo` is absent and `dist/textures/expo-runtime` is present, but exited `1` before a successful build because the current dirty frontend bundle imports backend code: `src/backend/logging/logger.js` imports `node:async_hooks`, which Rollup externalizes as browser-incompatible. No release build should be treated as green until that separate bundle leak is resolved.
+  - `rg` found no raw texture references in `dist/sw.js`, `dist/manifest.webmanifest`, `dist/index.html`, or the generated Workbox file.
+- Touched files:
+  - `.vercelignore`
+  - `.dockerignore`
+  - `vite.config.ts`
+  - `package.json`
+  - `scripts/check-release-static-payload.mjs`
+  - `src/modules/expo/lib/expoTexturePipeline.ts`
+  - `src/modules/expo/lib/expoGroundMaterialManifest.ts`
+  - `src/modules/expo/lib/sponsorScreenLayout.ts`
+  - `src/modules/expo/__tests__/expoTexturePipeline.test.ts`
+  - `docs/release/EXPO_TEXTURE_PIPELINE.md`
+  - `docs/release/WEB3D_EXPO_ASSET_BUDGET.md`
+  - `docs/release/WEB3D_EXPO_DEPLOYMENT_CONTRACT.md`
+  - `docs/CURRENT_INFRASTRUCTURE_INVENTORY.md`
+  - `docs/CURRENT_TASK.md`
+- Product/release status:
+  - `productVisualAccepted=false` remains unchanged.
+  - Raw source texture files were not moved, deleted, regenerated, or uploaded; they remain local source/intake assets.
+  - No Docker image was built, tagged, pushed, or started; no container was created.
+  - No deployment, staging/production alias, backend runtime, Supabase state, payment, Web3D renderer, GALA asset, Pixel Streaming service, TURN service, sync server, or Unreal state was changed.
+- Residual verification:
+  - After the unrelated frontend bundle leak and existing GALA TypeScript/lint failures are resolved, rerun `npm.cmd run build` and verify the full built `dist` plus browser smoke.
+- Next step:
+  - Continue with Issue 16 from `Master_Execution_Plan.md`: extend release static payload gates to enforce total public/dist budgets and wire the release asset gate into CI if needed.
+
+## 2026-07-02 Master Execution Plan Issue 14 Frontend Env Documentation Reconciliation
+
+- Active objective: execute Issue 14 from `Master_Execution_Plan.md`: reconcile README and infrastructure docs for frontend env requirements.
+- Implementation status:
+  - Completed by the Issue 12 documentation/env-contract changes and verified explicitly for Issue 14.
+  - `README.md` now lists only `VITE_PUBLIC_API_BASE_URL`, `VITE_SUPABASE_URL`, and `VITE_SUPABASE_ANON_KEY` as required frontend release build variables.
+  - `README.md` now lists Pixel Streaming/TURN frontend variables separately as optional operator settings.
+  - `README.md` now cites `scripts/check-frontend-env.mjs` as the build-time source of truth for required frontend variables.
+  - `README.md` Docker guidance now says the baseline frontend image needs only the three required public build values.
+  - `docs/CURRENT_INFRASTRUCTURE_INVENTORY.md` already matches this contract: three required frontend build variables, optional Pixel Streaming/TURN values, and the same env-checker source of truth.
+  - `docs/release/WEB3D_EXPO_DEPLOYMENT_CONTRACT.md` also matches the same required/optional split.
+- Validation:
+  - `rg` confirmed the README required frontend env block contains only the three required frontend values, while Pixel Streaming/TURN values are listed under optional operator settings.
+  - `rg` confirmed `docs/CURRENT_INFRASTRUCTURE_INVENTORY.md` marks the three required frontend build variables as `Yes` and Pixel Streaming/TURN frontend variables as `No`.
+  - `rg` confirmed `scripts/check-frontend-env.mjs` requires only `VITE_PUBLIC_API_BASE_URL`, `VITE_SUPABASE_URL`, and `VITE_SUPABASE_ANON_KEY`; Pixel Streaming/TURN values remain optional with pair validation for TURN username/password.
+  - `npm.cmd run check:compose-baseline-contract` passed and validates README required/optional frontend env separation.
+  - `npm.cmd run check:frontend-docker-contract` passed and validates the Docker/frontend build contract against the env checker.
+  - The latest `npm.cmd run check:all` passed after these documentation and contract changes.
+- Touched files:
+  - `README.md`
+  - `docs/CURRENT_INFRASTRUCTURE_INVENTORY.md`
+  - `docs/release/WEB3D_EXPO_DEPLOYMENT_CONTRACT.md`
+  - `docs/CURRENT_TASK.md`
+- Product/release status:
+  - `productVisualAccepted=false` remains unchanged.
+  - No deployment, staging/production alias, backend runtime, Supabase state, payment, Web3D renderer, GALA asset, Pixel Streaming service, TURN service, sync server, or Unreal state was changed.
+- Next step:
+  - Continue with Issue 15 from `Master_Execution_Plan.md`: remove raw 4K/source assets from the deployed public release payload and add a payload guard.
+
+## 2026-07-02 Master Execution Plan Issue 13 Production Preview Branch Guard
+
+- Active objective: execute Issue 13 from `Master_Execution_Plan.md`: remove the stale production preview deploy branch guard while preserving production safety.
+- Implementation status:
+  - Removed the stale `feat/booth-camera-screen-feed-current` default from `scripts/vercel-production-preview-deploy.mjs`.
+  - Replaced the single hardcoded branch expectation with a default production branch policy that allows `main` and `release/*`.
+  - Preserved `PRODUCTION_DEPLOY_BRANCH` as an exact branch override for narrower release windows.
+  - Preserved `--allow-branch` for documented emergency exceptions and now logs the active branch policy, branch/commit, and authorization source.
+  - Added explicit run-level production preview authorization separate from branch matching: pass `--confirm-production-preview` or set `PRODUCTION_PREVIEW_DEPLOY_AUTHORIZED=true`.
+  - Refactored the deploy script so guard helpers are exportable and Vercel execution only runs on direct CLI use.
+  - Added `scripts/check-production-deploy-branch-guard.mjs` with mocked git checks for default policy, exact override policy, unapproved branch rejection, authorization enforcement, and dirty tracked-file rejection.
+  - Added `npm run check:production-deploy-branch-guard` and placed it in `npm run check:all`.
+  - Updated `docs/release/WEB3D_EXPO_DEPLOYMENT_CONTRACT.md` with the production preview branch policy and explicit authorization command.
+- Validation:
+  - `node --check scripts\vercel-production-preview-deploy.mjs` passed.
+  - `node --check scripts\check-production-deploy-branch-guard.mjs` passed.
+  - `npm.cmd run check:production-deploy-branch-guard` passed.
+  - Targeted ESLint for `scripts/vercel-production-preview-deploy.mjs` and `scripts/check-production-deploy-branch-guard.mjs` passed.
+  - `rg` confirmed the stale branch literal is absent from active deploy guard files and release contract docs.
+  - Root package and lockfile JSON parse successfully.
+  - `npm.cmd run check:all` passed with the new production deploy branch guard included.
+  - Scoped `git diff --check` for Issue 13 files passed.
+  - No Vercel command, production preview deploy, production promotion, upload, alias change, or link mutation was run.
+- Touched files:
+  - `scripts/vercel-production-preview-deploy.mjs`
+  - `scripts/check-production-deploy-branch-guard.mjs`
+  - `package.json`
+  - `docs/release/WEB3D_EXPO_DEPLOYMENT_CONTRACT.md`
+  - `docs/CURRENT_TASK.md`
+- Product/release status:
+  - `productVisualAccepted=false` remains unchanged.
+  - No deployment, staging/production alias, backend runtime, Supabase state, payment, Web3D renderer, GALA asset, Pixel Streaming service, TURN service, sync server, or Unreal state was changed.
+- Next step:
+  - Continue with Issue 14 from `Master_Execution_Plan.md`: reconcile README and infrastructure docs for frontend env requirements.
+
+## 2026-07-02 Master Execution Plan Issue 12 Compose Baseline Pixel Streaming Separation
+
+- Active objective: execute Issue 12 from `Master_Execution_Plan.md`: keep optional Pixel Streaming/signaling/TURN services out of the default Docker compose baseline and remove weak TURN defaults.
+- Implementation status:
+  - Updated `docker-compose.yml` so the default stack contains only the release baseline services: `frontend`, `redis`, and `backend`.
+  - Removed default frontend dependency on `signaling`; frontend now depends only on the healthy backend in the baseline stack.
+  - Changed baseline backend `SIGNALING_STATUS_BASE_URL` to default empty while `PIXEL_STREAMING_ROUTES_ENABLED` remains default `false`.
+  - Added `docker-compose.pixel-streaming.yml` as the optional operator override for `signaling`, `turn`, and `sync-server`.
+  - The optional override wires frontend/backend to `signaling`, defaults backend Pixel Streaming routes to enabled for that override, and keeps the internal status URL defaulted to `http://signaling`.
+  - The optional override requires explicit `UE5_SECRET_KEY`, `TURN_SERVER_URLS`, `TURN_USERNAME`, `TURN_PASSWORD`, `TURN_REALM`, and `TURN_PUBLIC_IP`; no `TURN_PASSWORD:-change-me` or `warpala.local` fallback remains.
+  - Updated `.env.docker.example` so optional Pixel Streaming/TURN values are blank and documented as required only when the optional override is used.
+  - Updated `README.md`, `docs/CURRENT_INFRASTRUCTURE_INVENTORY.md`, and `docs/release/WEB3D_EXPO_DEPLOYMENT_CONTRACT.md` to document the baseline compose command separately from the optional Pixel Streaming override.
+  - Added `scripts/check-compose-baseline-contract.mjs` to enforce the baseline service set, optional override service set, required TURN/UE5 interpolation, blank optional env examples, and README required/optional frontend env separation.
+  - Added `npm run check:compose-baseline-contract` and placed it in `npm run check:all`.
+- Validation:
+  - `node --check scripts\check-compose-baseline-contract.mjs` passed.
+  - `npm.cmd run check:compose-baseline-contract` passed: 3 baseline services, 3 optional Pixel Streaming services moved to override, and 3 required frontend env values documented.
+  - `docker compose --env-file .env.docker.example config --services` returned only `redis`, `backend`, and `frontend`; Docker emitted sandbox/user-config access warnings but exited `0`.
+  - Expected negative optional override check passed: `docker compose -f docker-compose.yml -f docker-compose.pixel-streaming.yml --env-file .env.docker.example config --services` failed before config output because `TURN_SERVER_URLS` was blank.
+  - Positive optional override config check passed with explicit placeholder `UE5_SECRET_KEY`, `TURN_USERNAME`, `TURN_PASSWORD`, `TURN_REALM`, `TURN_PUBLIC_IP`, and `TURN_SERVER_URLS`; services resolved as `turn`, `signaling`, `sync-server`, `redis`, `backend`, and `frontend`.
+  - Targeted ESLint for `scripts/check-compose-baseline-contract.mjs` and `scripts/check-docker-secret-hygiene.mjs` passed.
+  - `npm.cmd run check:frontend-docker-contract` passed after the compose split.
+  - Root package and lockfile JSON parse successfully.
+  - `npm.cmd run check:all` passed with both Docker context and compose baseline gates included.
+  - Scoped `git diff --check` for Issue 12 files passed.
+  - Actual `docker compose up`, image build, and HTTP smoke were not run; no image or container was created.
+- Touched files:
+  - `docker-compose.yml`
+  - `docker-compose.pixel-streaming.yml`
+  - `.env.docker.example`
+  - `README.md`
+  - `package.json`
+  - `scripts/check-compose-baseline-contract.mjs`
+  - `docs/CURRENT_INFRASTRUCTURE_INVENTORY.md`
+  - `docs/release/WEB3D_EXPO_DEPLOYMENT_CONTRACT.md`
+  - `docs/CURRENT_TASK.md`
+- Product/release status:
+  - `productVisualAccepted=false` remains unchanged.
+  - No Docker image was built, tagged, pushed, or started; no container was created.
+  - No deployment, staging/production alias, backend runtime, Supabase state, payment, Web3D renderer, GALA asset, Pixel Streaming service, TURN service, sync server, or Unreal state was changed.
+- Next step:
+  - Continue with Issue 13 from `Master_Execution_Plan.md`: remove the stale production preview deploy branch guard.
+
+## 2026-07-02 Master Execution Plan Issue 11 Docker Context Secret Hygiene
+
+- Active objective: execute Issue 11 from `Master_Execution_Plan.md`: prevent local secret files and unnecessary backend paths from entering Docker build contexts.
+- Implementation status:
+  - Confirmed `PROJECT_CONTEXT_LOCK.md` is absent at repo root and continued from `docs/CURRENT_TASK.md`.
+  - Updated root `.dockerignore` to exclude root and backend real env files: `.env`, `.env.*`, `backend-server/.env`, and `backend-server/.env.*`.
+  - Added explicit allow exceptions so tracked examples remain available in Docker contexts: `.env.example`, `.env.*.example`, `backend-server/.env.example`, and `backend-server/.env.*.example`.
+  - Added backend local artifact exclusions for `backend-server/dist`, backend test trees, and backend worker smoke logs.
+  - Narrowed `backend-server/Dockerfile.full` so the builder no longer executes `COPY backend-server ./backend-server`; it now copies only package metadata, runtime/build backend source directories, explicit route files, `src`, the booth slot bank JSON, and TS config files.
+  - Added `scripts/check-docker-secret-hygiene.mjs`, which validates `.dockerignore` behavior without reading env-file contents, checks actual local env filenames are excluded, verifies env examples stay available, rejects broad backend copies, and confirms required backend Docker inputs are copied explicitly.
+  - Added `npm run check:docker-secret-hygiene` and placed it in `npm run check:all` after the frontend Docker contract gate.
+  - Updated `docs/release/WEB3D_EXPO_DEPLOYMENT_CONTRACT.md` with the Docker context secret-hygiene rule and preflight command.
+- Validation:
+  - `node --check scripts\check-docker-secret-hygiene.mjs` passed.
+  - `npm.cmd run check:docker-secret-hygiene` passed: 9 secret env candidates excluded, 4 actual local env files excluded, 3 env examples available, 5 local backend artifacts excluded, and 17 backend Docker inputs copied explicitly.
+  - Targeted ESLint for `scripts/check-docker-secret-hygiene.mjs` passed.
+  - `npm.cmd run check:frontend-docker-contract` passed.
+  - `npx.cmd tsc --noEmit -p backend-server\tsconfig.json` passed.
+  - `npm.cmd run check:all` passed with the new Docker secret-hygiene gate included.
+  - `docker compose --env-file .env.docker.example config --no-interpolate --format json` parsed successfully; Docker emitted sandbox/user-config access warnings but exited `0`.
+  - Escalated BuildKit static check `docker build --check -f backend-server\Dockerfile.full .` passed with no warnings and did not create an image.
+  - Escalated BuildKit static check for the frontend Dockerfile with the three required Vite build args passed with no warnings and did not create an image.
+  - Root package and lockfile JSON parse successfully.
+  - Scoped `git diff --check` for Issue 11 files passed.
+  - Actual frontend/backend image builds and HTTP smoke were not run; prior Docker image smoke evidence from Issue 10 remains pending until the environment and unrelated GALA compile issue allow full image builds.
+- Touched files:
+  - `.dockerignore`
+  - `backend-server/Dockerfile.full`
+  - `scripts/check-docker-secret-hygiene.mjs`
+  - `package.json`
+  - `docs/release/WEB3D_EXPO_DEPLOYMENT_CONTRACT.md`
+  - `docs/CURRENT_TASK.md`
+- Product/release status:
+  - `productVisualAccepted=false` remains unchanged.
+  - No Docker release image was built, tagged, pushed, or started; no container was created.
+  - No deployment, staging/production alias, backend runtime, Supabase state, payment, Web3D renderer, GALA asset, Pixel Streaming service, or Unreal state was changed.
+- Next step:
+  - Continue with Issue 12 from `Master_Execution_Plan.md`: remove optional Pixel Streaming/signaling/TURN requirements from the default compose baseline and eliminate weak TURN defaults.
+
+## 2026-07-02 Master Execution Plan Issue 10 Frontend Docker Build Contract
+
+- Active objective: execute Issue 10 from `Master_Execution_Plan.md`: the frontend Docker image cannot satisfy the current Vite build env contract.
+- Implementation status:
+  - Added `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` build arguments and environment propagation to the root frontend `Dockerfile`, alongside the existing required API base.
+  - Added the complete optional frontend env surface with empty defaults: public app URL plus signaling, probe timeout, STUN, TURN URLs, TURN username, and TURN password. Removed the baked-in local signaling URL.
+  - Copied `scripts/check-frontend-env.mjs` into the builder before `RUN npm run build`, so Docker executes the same fail-fast contract as local, CI, and Vercel builds.
+  - Updated `docker-compose.yml` to require exactly the three baseline frontend build values and pass every optional Pixel Streaming value with an empty fallback. Removed the signaling requirement and all compiled-in STUN/TURN/demo credential defaults from the frontend image arguments.
+  - Updated `.env.docker.example` with the three frontend values and explicit blank optional frontend settings while preserving the separate backend and optional operator-stack examples.
+  - Added `scripts/check-frontend-docker-contract.mjs` using structured YAML parsing plus Dockerfile checks. It verifies Dockerfile ARG/ENV propagation, the actual frontend env checker, Compose required/optional semantics, `.dockerignore` visibility, package build wiring, release documentation, NGINX dist copy, and SPA history fallback.
+  - Added `npm run check:frontend-docker-contract` and placed it in `npm run check:all`.
+  - Updated `docs/release/WEB3D_EXPO_DEPLOYMENT_CONTRACT.md` with all three required frontend values, optional Pixel Streaming values, a baseline three-argument `docker build` command, and the daemon-free preflight command.
+- Validation:
+  - `npm.cmd run check:frontend-docker-contract` passed: three required build args, seven optional empty-default args, env-check copy ordering, NGINX Vite dist root, and SPA fallback.
+  - `docker compose --env-file .env.docker.example config --no-interpolate --format json` parsed successfully and showed the expected frontend argument contract.
+  - `node --check scripts\check-frontend-docker-contract.mjs` passed.
+  - Targeted ESLint for `scripts/check-frontend-docker-contract.mjs` passed.
+  - Root package and lockfile JSON parse successfully and declare the same direct `js-yaml` version.
+  - `npm.cmd run check:all` passed with both the Vercel source-context and frontend Docker gates.
+  - `npx.cmd tsc --noEmit -p tsconfig.json`, `npx.cmd tsc --noEmit -p backend-server\tsconfig.json`, and backend ESLint passed.
+  - Scoped `git diff --check` for Issue 10 files passed.
+  - Docker BuildKit `docker build --check` was attempted with only the three required frontend build arguments against both the repository context and an empty temporary context. The Docker/buildx environment returned no output and both attempts were terminated; no image or container was created.
+  - An actual image build and NGINX HTTP smoke remain unverified in this environment. The worktree `npm.cmd run build` finds and passes the frontend env checker, then still fails on pre-existing dirty GALA code: `src/modules/expo/runtime/modularHome/construction/GalaWallAssembly.tsx:128` unused `blendHexColor`.
+  - `npm.cmd run lint` at repo root still fails only on pre-existing dirty GALA code: `src/modules/expo/runtime/modularHome/useProgressiveTextureSet.ts:63` (`react-hooks/set-state-in-effect`).
+- Touched files:
+  - `Dockerfile`
+  - `docker-compose.yml`
+  - `.env.docker.example`
+  - `package.json`
+  - `package-lock.json`
+  - `scripts/check-frontend-docker-contract.mjs`
+  - `docs/release/WEB3D_EXPO_DEPLOYMENT_CONTRACT.md`
+  - `docs/CURRENT_TASK.md`
+- Product/release status:
+  - `productVisualAccepted=false` remains unchanged.
+  - No Docker image or container was created, tagged, pushed, or started.
+  - No deployment, staging/production alias, backend runtime, Supabase state, payment, Web3D renderer, GALA asset, Pixel Streaming service, or Unreal state was changed.
+- Residual verification:
+  - Re-run the documented three-argument `docker build` and HTTP SPA smoke once Docker BuildKit is responsive and the unrelated GALA compile error is resolved; this acceptance evidence is explicitly still pending.
+- Next step:
+  - Continue with Issue 11 from `Master_Execution_Plan.md`: prevent local secret files and other unnecessary paths from entering Docker build contexts.
+
+## 2026-07-02 Master Execution Plan Issue 9 Vercel Source Deploy Build Inputs
+
+- Active objective: execute Issue 9 from `Master_Execution_Plan.md`: Vercel source deploy excludes a script required by the remote frontend build.
+- Implementation status:
+  - Replaced the blanket `.vercelignore` `scripts` exclusion with a scripts-only deny pattern and an explicit allow entry for `scripts/check-frontend-env.mjs`.
+  - Added `scripts/check-vercel-source-context.mjs`, which follows the root `npm run build` script chain, verifies every derived build script and core Vite/TypeScript input exists and is not ignored, and rejects any non-build script that would be uploaded.
+  - The preflight currently proves that 12 required remote-build inputs are included, only `scripts/check-frontend-env.mjs` is uploaded from `scripts/` (4,063 bytes), and 122 QA/deploy/operator scripts remain excluded. Included build scripts have a 128 KiB guardrail.
+  - Added `ignore` as an explicit development dependency so the check uses Git-compatible ignore semantics instead of an ad hoc wildcard implementation.
+  - Added `npm run check:vercel-source-context` and placed it first in `npm run check:all`.
+  - Both staging and production source-deploy wrappers now run the context preflight before Vercel link/upload work. Their `--prebuilt` paths intentionally skip the source-context gate and retain the existing local-build deployment flow.
+  - Updated `docs/staging-deploy-flow.md` with the explicit preflight and preserved prebuilt fallback.
+- Validation:
+  - `npm.cmd run check:vercel-source-context` passed: 12 required inputs, one 4,063-byte build script included, and 122 other scripts excluded.
+  - `node scripts\check-vercel-source-context.mjs --json` passed and returned the same machine-readable counts.
+  - An isolated production-mode `node scripts\check-frontend-env.mjs` run passed with only the three required frontend build variables, proving the now-included remote script executes independently of local env files.
+  - `node --check` passed for the context checker and both Vercel preview-deploy wrappers.
+  - Targeted ESLint passed for the context checker and both Vercel preview-deploy wrappers.
+  - Staging wrapper `--help` passed, and static wrapper assertions confirmed source-mode preflight plus preserved prebuilt branches.
+  - Root package and lockfile JSON parse successfully and declare the same direct `ignore` version.
+  - `npm.cmd run check:all` passed with the new Vercel source-context gate first.
+  - `npx.cmd tsc --noEmit -p tsconfig.json` and `npx.cmd tsc --noEmit -p backend-server\tsconfig.json` passed.
+  - Scoped `git diff --check` for Issue 9 files passed.
+  - Vercel CLI 54.17.2 `deploy --dry` was attempted as an additional no-upload manifest check, but produced no output while traversing the large repository tree and was terminated; no deployment, upload, link change, or alias change occurred.
+  - `npm.cmd run build` now finds and passes `scripts/check-frontend-env.mjs`, then still fails only on pre-existing dirty GALA code: `src/modules/expo/runtime/modularHome/construction/GalaWallAssembly.tsx:128` unused `blendHexColor`.
+  - `npm.cmd run lint` at repo root still fails only on pre-existing dirty GALA code: `src/modules/expo/runtime/modularHome/useProgressiveTextureSet.ts:63` (`react-hooks/set-state-in-effect`).
+- Touched files:
+  - `.vercelignore`
+  - `package.json`
+  - `package-lock.json`
+  - `scripts/check-vercel-source-context.mjs`
+  - `scripts/vercel-staging-preview-deploy.mjs`
+  - `scripts/vercel-production-preview-deploy.mjs`
+  - `docs/staging-deploy-flow.md`
+  - `docs/CURRENT_TASK.md`
+- Product/release status:
+  - `productVisualAccepted=false` remains unchanged.
+  - No Vercel deployment was created, no source files were uploaded, and no staging or production alias was changed.
+  - No backend, Supabase, payment, Web3D renderer, GALA asset, Pixel Streaming, or Unreal state was changed.
+  - Total static asset payload remains tracked separately by Master Execution Plan Issues 15 and 16; this issue constrains the scripts portion of the source context without claiming that later payload work is complete.
+- Next step:
+  - Continue with Issue 10 from `Master_Execution_Plan.md`: align the frontend Docker build context and build arguments with the current three-variable Vite release contract.
+
+## 2026-07-02 Master Execution Plan Issue 8 Structured Backend Request Logging
+
+- Active objective: execute Issue 8 from `Master_Execution_Plan.md`: authenticated route logging is noisy, fragmented, and not request-correlated.
+- Implementation status:
+  - Consolidated backend logging behind `src/backend/logging/logger.ts` and its active JS compatibility counterpart; `backend-server/lib/logger.ts` now re-exports that implementation and the legacy `prodLogger` delegates to it.
+  - Production logs are one-line structured JSON, while development logs use concise readable lines. Production `DEBUG` output is suppressed.
+  - Added bounded, circular-safe log data serialization with sensitive-key redaction. Production errors retain safe names/messages but omit stack traces.
+  - Added `AsyncLocalStorage` request context propagation. Caller-provided correlation IDs are accepted only as UUIDs or 16-32 character hexadecimal trace IDs; invalid values are replaced with a generated UUID and returned in `x-correlation-id`.
+  - Replaced the unconditional auth `console.log` with request-scoped `DEBUG` logging. Authentication and admin warnings/errors retain severity and include the request ID without logging bearer tokens.
+  - Replaced global `morgan('dev')` with an environment-aware HTTP access middleware. It records method, path without query, status, duration, and request ID; successful production health checks are omitted and 4xx/5xx responses use warning/error severity.
+  - Removed the unused `morgan` runtime dependency and `@types/morgan` development dependency from backend package metadata.
+  - Added `backend-server/__tests__/backendLogging.test.ts` for production/development formatting, debug suppression, redaction, safe errors, async request context, correlation-ID validation, auth/admin logs, access-log severity, health suppression, and query/token exclusion.
+- Validation:
+  - `npx.cmd tsc --noEmit -p backend-server\tsconfig.json` passed.
+  - `npx.cmd tsx __tests__\backendLogging.test.ts` passed.
+  - Targeted ESLint for all Issue 8 TypeScript files passed.
+  - `npm.cmd run lint` in `backend-server` passed.
+  - `npm.cmd run check:backend-tests` passed 25 backend test files.
+  - `npx.cmd tsc --noEmit -p tsconfig.json` passed.
+  - `npm.cmd run check:all` passed.
+  - Backend package and lockfile parse successfully and contain no `morgan` package metadata.
+  - Scoped `git diff --check` for Issue 8 files passed.
+  - `npm.cmd run build` in `backend-server` reached emit but could not overwrite the existing `backend-server/dist` tree due workspace `EPERM`; the equivalent backend `--noEmit` typecheck passed.
+  - `npm.cmd run lint` at repo root still fails only on pre-existing dirty GALA code: `src/modules/expo/runtime/modularHome/useProgressiveTextureSet.ts:63` (`react-hooks/set-state-in-effect`).
+  - `npm.cmd run build` at repo root still fails only on pre-existing dirty GALA code: `src/modules/expo/runtime/modularHome/construction/GalaWallAssembly.tsx:128` unused `blendHexColor`.
+- Touched files:
+  - `src/backend/logging/logger.ts`
+  - `src/backend/logging/logger.js`
+  - `src/backend/logging/prodLogger.ts`
+  - `backend-server/lib/logger.ts`
+  - `backend-server/middleware/requestContext.ts`
+  - `backend-server/middleware/httpAccessLog.ts`
+  - `backend-server/middleware/authMiddleware.ts`
+  - `backend-server/server.ts`
+  - `backend-server/package.json`
+  - `backend-server/package-lock.json`
+  - `backend-server/__tests__/backendLogging.test.ts`
+  - `docs/CURRENT_TASK.md`
+- Product/release status:
+  - `productVisualAccepted=false` remains unchanged.
+  - No deployment, production promotion, staging alias change, Supabase mutation, payment change, Web3D renderer change, GALA asset change, Pixel Streaming change, or Unreal change was made.
+- Next step:
+  - Continue with Issue 9 from `Master_Execution_Plan.md`: repair the Vercel source-deploy file set so required frontend build scripts are uploaded without expanding the deployment payload unnecessarily.
+
+## 2026-07-02 Master Execution Plan Issue 7 Redis TLS Certificate Validation
+
+- Active objective: execute Issue 7 from `Master_Execution_Plan.md`: Redis clients disable TLS certificate validation for Upstash-like URLs.
+- Implementation status:
+  - Added shared `src/backend/infrastructure/redisConnectionPolicy.ts` plus its active JS compatibility counterpart so all backend Redis consumers apply the same URL and transport rules.
+  - `redis://` remains supported for localhost, loopback/private IPs, internal DNS suffixes, and single-label Docker/service hosts.
+  - Upstash-like hosts using `redis://` are rejected with `REDIS_URL_TLS_REQUIRED` in every environment.
+  - Public remote hosts using cleartext `redis://` are rejected in production with `REDIS_URL_PLAINTEXT_REMOTE_FORBIDDEN`; managed remote services must use `rediss://`.
+  - `rediss://` clients now receive explicit `tls: { rejectUnauthorized: true }`; URL query parameters attempting to alter TLS/SSL, certificate rejection, or server-identity checks are rejected.
+  - Applied the shared policy to the Redis-backed API rate limiter, event publisher/subscriber clients, and content scheduler queue client. No active Redis constructor retains an automatic Upstash TLS heuristic or `rejectUnauthorized: false` path.
+  - Backend runtime env resolution now validates `REDIS_URL` during startup and exposes the validated URL, so insecure production configuration fails before serving requests.
+  - Updated root/backend env examples and `docs/CURRENT_INFRASTRUCTURE_INVENTORY.md` to distinguish local/private `redis://` from certificate-validated remote `rediss://`.
+  - Added `backend-server/__tests__/redisConnectionPolicy.test.ts` for local Docker/IPv4/IPv6 Redis, validated `rediss://`, Upstash scheme misuse, public production cleartext rejection, development compatibility, forbidden TLS query overrides, malformed protocols, rate-limiter policy use, and a static guard against certificate-validation bypasses.
+  - Extended runtime-env tests for absent Redis, validated `rediss://`, production rejection, Upstash rejection, and production Docker Redis compatibility.
+- Validation:
+  - `npx.cmd tsc --noEmit -p backend-server\tsconfig.json` passed.
+  - `npx.cmd tsx __tests__\redisConnectionPolicy.test.ts` passed.
+  - `npx.cmd tsx __tests__\runtimeEnv.test.ts` passed.
+  - Targeted ESLint for all Issue 7 TS/JS files passed.
+  - `node C:\3d\node_modules\eslint\bin\eslint.js . --config C:\3d\backend-server\eslint.config.js` passed.
+  - `npm.cmd run check:backend-tests` passed 24 backend test files.
+  - `npx.cmd tsc --noEmit -p tsconfig.json` passed.
+  - `npm.cmd run check:all` passed.
+  - `rg` confirmed no `rejectUnauthorized: false` remains under active `backend-server/` or `src/` production code.
+  - Scoped `git diff --check` for Issue 7 files passed.
+  - `npm.cmd run lint` at repo root still fails only on pre-existing dirty GALA code: `src/modules/expo/runtime/modularHome/useProgressiveTextureSet.ts:63` (`react-hooks/set-state-in-effect`).
+  - `npm.cmd run build` still fails only on pre-existing dirty GALA code: `src/modules/expo/runtime/modularHome/construction/GalaWallAssembly.tsx:128` unused `blendHexColor`.
+- Touched files:
+  - `.env.example`
+  - `backend-server/.env.example`
+  - `backend-server/config/runtimeEnv.ts`
+  - `backend-server/services/redisRateLimit.ts`
+  - `backend-server/__tests__/redisConnectionPolicy.test.ts`
+  - `backend-server/__tests__/runtimeEnv.test.ts`
+  - `src/backend/infrastructure/redisConnectionPolicy.ts`
+  - `src/backend/infrastructure/redisConnectionPolicy.js`
+  - `src/backend/events/eventBus.ts`
+  - `src/backend/events/eventBus.js`
+  - `src/backend/distribution/contentScheduler.ts`
+  - `docs/CURRENT_INFRASTRUCTURE_INVENTORY.md`
+  - `docs/CURRENT_TASK.md`
+- Product/release status:
+  - `productVisualAccepted=false` remains unchanged.
+  - No Redis service, `REDIS_URL` secret, deployment, production promotion, staging alias, live Supabase data, payment, Web3D renderer, GALA asset, Pixel Streaming, or Unreal state was changed.
+- Next step:
+  - Continue with Issue 8 from `Master_Execution_Plan.md`: consolidate authenticated/backend request logging and remove noisy unstructured production logs.
+
+## 2026-07-02 Master Execution Plan Issue 6 Public Lead Abuse Controls
+
+- Active objective: execute Issue 6 from `Master_Execution_Plan.md`: public Expo and calculator lead writes lack route-specific spam and abuse controls.
+- Implementation status:
+  - Added `backend-server/config/publicLeadAbuse.ts` with validated defaults for separate Expo/calculator limits (5 attempts per 10 minutes per trusted client IP), a 30-minute duplicate window, a 5-second Turnstile timeout, and production Redis fail-closed behavior.
+  - Added staged Turnstile flags (`PUBLIC_LEAD_TURNSTILE_SECRET_KEY` and `PUBLIC_LEAD_TURNSTILE_REQUIRED`); optional mode preserves existing valid submissions, while required mode fails backend startup if the secret is absent.
+  - Added `backend-server/services/publicLeadAbuse.ts` for route-specific Redis-backed counters, common top-level/nested honeypot checks, bounded Turnstile token extraction/verification, deterministic duplicate fingerprints, and PII-safe provenance/audit events.
+  - Provenance and audit metadata retain only validated UUID/trace correlation IDs, HTTP origins without paths or credentials, URL paths without queries, IP version, method, timestamp, and user-agent presence. Raw IPs, emails, query strings, and full user-agent values are excluded.
+  - Updated both public controllers to enforce controls in this order: route limit, honeypot, Turnstile, schema validation, rolling duplicate lookup, then fingerprinted insert.
+  - Expo duplicate matching uses normalized email + resolved company + sponsor lead source; calculator duplicate matching uses normalized email + calculator source. Both return `409` for rolling-window matches and unique-index races.
+  - Unknown Supabase errors are now normalized to stable storage error codes instead of returning database messages, and Expo lead text fields now have explicit server-side length limits.
+  - Added `supabase/migrations/20260702100000_public_lead_abuse_controls.sql` with PII-safe metadata columns and partial unique indexes for race-resistant fingerprint enforcement on `service_requests` and `leads`.
+  - Updated root/backend env examples and `docs/CURRENT_INFRASTRUCTURE_INVENTORY.md` for all public lead controls, plus the trusted-proxy/CORS variables introduced by earlier plan items.
+  - Extended controller and public-route tests for honeypots, disabled/required/verified Turnstile modes, route-specific counters, Redis fail-closed configuration, rolling query shape, duplicate responses, unique-index races, startup validation, fingerprint windows, and audit/provenance redaction.
+- Validation:
+  - `npx.cmd tsc --noEmit -p backend-server\tsconfig.json` passed.
+  - `npx.cmd tsx __tests__\publicLeadAbuse.test.ts` passed.
+  - `npx.cmd tsx __tests__\expoLeadController.test.ts` passed.
+  - `npx.cmd tsx __tests__\calculatorLeadController.test.ts` passed.
+  - `npx.cmd tsx __tests__\runtimeEnv.test.ts` passed.
+  - `npx.cmd tsx routes\__tests__\releaseApiPublicRoutes.test.ts` passed.
+  - Targeted ESLint for all Issue 6 TypeScript files passed.
+  - `node C:\3d\node_modules\eslint\bin\eslint.js . --config C:\3d\backend-server\eslint.config.js` passed.
+  - `npm.cmd run check:backend-tests` passed 23 backend test files.
+  - `npx.cmd tsc --noEmit -p tsconfig.json` passed.
+  - `npm.cmd run check:all` passed, including strict ordering/RLS checks across 45 timestamped migrations.
+  - Scoped `git diff --check` for Issue 6 files passed.
+  - `npm.cmd run lint` at repo root still fails only on pre-existing dirty GALA code: `src/modules/expo/runtime/modularHome/useProgressiveTextureSet.ts:63` (`react-hooks/set-state-in-effect`).
+  - `npm.cmd run build` still fails only on pre-existing dirty GALA code: `src/modules/expo/runtime/modularHome/construction/GalaWallAssembly.tsx:128` unused `blendHexColor`.
+- Touched files:
+  - `.env.example`
+  - `backend-server/.env.example`
+  - `backend-server/config/publicLeadAbuse.ts`
+  - `backend-server/config/runtimeEnv.ts`
+  - `backend-server/services/publicLeadAbuse.ts`
+  - `backend-server/controllers/expoLeadController.ts`
+  - `backend-server/controllers/calculatorLeadController.ts`
+  - `backend-server/controllers/calculatorLeadValidation.ts`
+  - `backend-server/__tests__/publicLeadAbuse.test.ts`
+  - `backend-server/__tests__/expoLeadController.test.ts`
+  - `backend-server/__tests__/calculatorLeadController.test.ts`
+  - `backend-server/__tests__/runtimeEnv.test.ts`
+  - `backend-server/routes/__tests__/releaseApiPublicRoutes.test.ts`
+  - `supabase/migrations/20260702100000_public_lead_abuse_controls.sql`
+  - `docs/CURRENT_INFRASTRUCTURE_INVENTORY.md`
+  - `docs/CURRENT_TASK.md`
+- Product/release status:
+  - `productVisualAccepted=false` remains unchanged.
+  - The Supabase migration was added locally but not applied to any project.
+  - No deployment, production promotion, staging alias change, live Supabase mutation, payment change, Web3D renderer change, GALA asset change, Pixel Streaming change, or Unreal change was made.
+- Next step:
+  - Continue with Issue 7 from `Master_Execution_Plan.md`: remove Redis TLS certificate-validation bypasses and require validated `rediss://` transport for TLS endpoints.
+
+## 2026-07-02 Master Execution Plan Issue 5 Website Scraper SSRF Fix
+
+- Active objective: execute Issue 5 from `Master_Execution_Plan.md`: the website scraper permits SSRF and unbounded response reads.
+- Implementation status:
+  - Added `src/backend/dataSources/safeTextFetch.ts` as a reusable server-side outbound text fetcher with an HTTP/HTTPS-only protocol policy, credential rejection, bounded URL length, and stable error codes.
+  - Resolves every DNS address and rejects the entire address set if any result is loopback, private, link-local, shared, documentation/reserved, multicast, metadata-adjacent, mapped IPv4, or otherwise outside public IPv6 unicast space.
+  - Pins the actual HTTP/HTTPS connection to a validated address while preserving the original `Host` header and TLS SNI, closing the DNS-rebinding gap between validation and connection.
+  - Handles redirects manually with a default limit of three and repeats URL, DNS, and address validation for every hop.
+  - Applies a 10-second whole-operation `AbortController` timeout, including DNS wait, connection, and body streaming.
+  - Requires textual content types, requests identity encoding, rejects unexpected compressed responses, prechecks `Content-Length`, and streams into a default 512 KiB cap without retaining the chunk that crosses the limit.
+  - Updated `websiteScraper.scrapeText` to preserve its `{ data, error }` contract while using the safe fetcher, retaining the 10,000-character LLM text cap, and logging only sanitized host/error-code metadata.
+  - Removed full caller-controlled scrape URLs from the agent-tool execution log so query strings and URL credentials cannot leak there before scraper validation.
+  - Added `backend-server/__tests__/websiteScraperSecurity.test.ts` for unsupported protocols, URL credentials, localhost and alternate IPv4 encodings, private/DNS-mixed targets, cloud metadata addresses, IPv4-mapped/ULA/link-local/multicast/reserved IPv6, redirect-to-private, redirect limits, DNS and request timeouts, unsupported content types, stream errors, streaming overflow, validated-address pinning, valid HTML cleanup, and sanitized logging.
+- Validation:
+  - `npx.cmd tsc --noEmit -p backend-server\tsconfig.json` passed.
+  - `npx.cmd tsx __tests__\websiteScraperSecurity.test.ts` passed.
+  - Targeted ESLint for all Issue 5 files passed.
+  - `node C:\3d\node_modules\eslint\bin\eslint.js . --config C:\3d\backend-server\eslint.config.js` passed.
+  - `npm.cmd run check:backend-tests` passed 22 backend test files.
+  - `npx.cmd tsc --noEmit -p tsconfig.json` passed.
+  - `npm.cmd run check:all` passed.
+  - Scoped `git diff --check` for the Issue 5 files passed; repository-wide `git diff --check` still finds pre-existing trailing whitespace in dirty `src/modules/expo/runtime/modularHome/useProgressiveTextureSet.ts:61`.
+  - `npm.cmd run lint` at repo root still fails on pre-existing dirty GALA code: `src/modules/expo/runtime/modularHome/useProgressiveTextureSet.ts:63` (`react-hooks/set-state-in-effect`).
+  - `npm.cmd run build` still fails on pre-existing dirty GALA code: `src/modules/expo/runtime/modularHome/construction/GalaWallAssembly.tsx:128` unused `blendHexColor`.
+- Touched files:
+  - `src/backend/dataSources/safeTextFetch.ts`
+  - `src/backend/dataSources/websiteScraper.ts`
+  - `src/backend/agents/tools/agentToolService.ts`
+  - `backend-server/__tests__/websiteScraperSecurity.test.ts`
+  - `docs/CURRENT_TASK.md`
+- Product/release status:
+  - `productVisualAccepted=false` remains unchanged.
+  - No deployment, production promotion, staging alias change, Supabase mutation, payment change, Web3D renderer change, GALA asset change, Pixel Streaming change, or Unreal change was made.
+- Next step:
+  - Continue with Issue 6 from `Master_Execution_Plan.md`: add route-specific abuse controls to the public expo and calculator lead endpoints.
+
+## 2026-07-02 Master Execution Plan Issue 4 Backend CORS Fix
+
+- Active objective: execute Issue 4 from `Master_Execution_Plan.md`: backend CORS is wide open.
+- Implementation status:
+  - Added validated `BACKEND_CORS_ALLOWED_ORIGINS` runtime configuration using exact HTTP/HTTPS origins; invalid origins, credentials, paths, queries, and fragments are rejected.
+  - Production defaults allow the canonical production and staging origins; non-production defaults additionally allow the local Vite development and preview origins.
+  - Added `backend-server/middleware/corsPolicy.ts` to allow configured origins, preserve no-origin server-to-server requests, reject unknown browser origins with `403 CORS_ORIGIN_DENIED`, emit `Vary: Origin`, and handle allowed preflight requests.
+  - Replaced the permissive global `cors()` middleware in `backend-server/server.ts` with the configured CORS policy.
+  - Added `BACKEND_CORS_ALLOWED_ORIGINS` documentation to `.env.example` and `backend-server/.env.example`.
+  - Added `backend-server/__tests__/corsPolicy.test.ts` and extended runtime-env tests for allowed, denied, no-origin, preflight, default, deduplicated, and invalid-origin behavior.
+- Validation:
+  - `npx.cmd tsc --noEmit -p backend-server\tsconfig.json` passed.
+  - `npx.cmd tsx __tests__\runtimeEnv.test.ts` passed.
+  - `npx.cmd tsx __tests__\corsPolicy.test.ts` passed.
+  - `node C:\3d\node_modules\eslint\bin\eslint.js . --config C:\3d\backend-server\eslint.config.js` passed.
+  - `npm.cmd run check:backend-tests` passed 21 backend test files.
+  - `npx.cmd tsc --noEmit -p tsconfig.json` passed.
+  - `npm.cmd run check:all` passed.
+  - `npm.cmd run lint` at repo root still fails on pre-existing dirty GALA code: `src/modules/expo/runtime/modularHome/useProgressiveTextureSet.ts:63` (`react-hooks/set-state-in-effect`).
+  - `npm.cmd run build` still fails on pre-existing dirty GALA code: `src/modules/expo/runtime/modularHome/construction/GalaWallAssembly.tsx:128` unused `blendHexColor`.
+- Touched files:
+  - `.env.example`
+  - `backend-server/.env.example`
+  - `backend-server/config/runtimeEnv.ts`
+  - `backend-server/server.ts`
+  - `backend-server/middleware/corsPolicy.ts`
+  - `backend-server/__tests__/corsPolicy.test.ts`
+  - `backend-server/__tests__/runtimeEnv.test.ts`
+  - `docs/CURRENT_TASK.md`
+- Product/release status:
+  - `productVisualAccepted=false` remains unchanged.
+  - No deployment, production promotion, staging alias change, Supabase mutation, payment change, Web3D renderer change, GALA asset change, Pixel Streaming change, or Unreal change was made.
+- Next step:
+  - Continue with Issue 5 from `Master_Execution_Plan.md`: website scraper SSRF and unbounded response reads.
+
+## 2026-07-02 Master Execution Plan Issue 3 Trusted Client IP Fix
+
+- Active objective: execute Issue 3 from `Master_Execution_Plan.md`: rate limiting is spoofable through raw `X-Forwarded-For`.
+- Implementation status:
+  - Added `BACKEND_TRUST_PROXY_HOPS` to backend runtime env parsing and configured Express `trust proxy` from that value; default is `0`/disabled.
+  - Added `backend-server/middleware/clientIp.ts` as the shared normalized client IP helper.
+  - Updated global API rate limiting to use `req.ip` after Express trust-proxy normalization, not raw `x-forwarded-for`.
+  - Added a testable `createRateLimitMiddleware` factory while preserving the exported `rateLimitMiddleware`.
+  - Updated modular-home quote rate limiting and Turnstile `remoteip` to use the same normalized client IP helper.
+  - Added `BACKEND_TRUST_PROXY_HOPS=0` to `.env.example` and `backend-server/.env.example`.
+  - Added `backend-server/__tests__/clientIpRateLimit.test.ts` and extended runtime-env and modular-home quote tests for untrusted spoofed headers, trusted proxy behavior, and Turnstile `remoteip`.
+- Validation:
+  - `npx.cmd tsc --noEmit -p backend-server\tsconfig.json` passed.
+  - `npx.cmd tsx __tests__\clientIpRateLimit.test.ts` passed.
+  - `npx.cmd tsx __tests__\runtimeEnv.test.ts` passed.
+  - `npx.cmd tsx __tests__\modularHomeQuoteController.test.ts` passed.
+  - `node C:\3d\node_modules\eslint\bin\eslint.js . --config C:\3d\backend-server\eslint.config.js` passed.
+  - `npm.cmd run check:backend-tests` passed 20 backend test files.
+  - `npx.cmd tsc --noEmit -p tsconfig.json` passed.
+  - `npm.cmd run check:all` passed.
+  - `npm.cmd run lint` at repo root still fails on pre-existing dirty GALA code: `src/modules/expo/runtime/modularHome/useProgressiveTextureSet.ts:63` (`react-hooks/set-state-in-effect`).
+  - `npm.cmd run build` still fails on pre-existing dirty GALA code: `src/modules/expo/runtime/modularHome/construction/GalaWallAssembly.tsx:128` unused `blendHexColor`.
+- Touched files:
+  - `.env.example`
+  - `backend-server/.env.example`
+  - `backend-server/config/runtimeEnv.ts`
+  - `backend-server/server.ts`
+  - `backend-server/middleware/clientIp.ts`
+  - `backend-server/middleware/rateLimit.ts`
+  - `backend-server/controllers/modularHomeQuoteController.ts`
+  - `backend-server/__tests__/clientIpRateLimit.test.ts`
+  - `backend-server/__tests__/runtimeEnv.test.ts`
+  - `backend-server/__tests__/modularHomeQuoteController.test.ts`
+  - `docs/CURRENT_TASK.md`
+- Product/release status:
+  - `productVisualAccepted=false` remains unchanged.
+  - No deployment, production promotion, staging alias change, Supabase mutation, payment change, Web3D renderer change, GALA asset change, Pixel Streaming change, or Unreal change was made.
+- Next step:
+  - Continue with Issue 4 from `Master_Execution_Plan.md`: backend CORS is wide open.
+
+## 2026-07-02 Master Execution Plan Issue 2 Billing Marketplace Identity Fix
+
+- Active objective: execute Issue 2 from `Master_Execution_Plan.md`: protected billing and marketplace routes trust caller-supplied user IDs.
+- Implementation status:
+  - Updated `backend-server/controllers/billingController.ts` so plan and credit reads resolve user identity from `req.user.id`, rejecting mismatched route/body user IDs for non-admin users with `403`.
+  - Admin-gated direct `/api/billing/upgrade` at the route layer with `adminOnly`, and added controller-level admin enforcement before `billingApplicationService.upgradePlan`.
+  - Tightened legacy `billingController` credit checkout and checkout-session helpers so they use authenticated identity and reject mismatched body `userId` if these exports are ever re-mounted.
+  - Updated `backend-server/controllers/marketplaceController.ts` so agent, workflow, and template installs always target `req.user.id`; optional body `userId` is accepted only when it matches the authenticated user.
+  - Updated `src/services/billing.ts` so the legacy `upgradePlan` client uses Stripe checkout creation instead of the admin-only mutation endpoint, and checkout helpers no longer send body `userId`.
+  - Updated `src/services/marketplace.ts` so install calls no longer send caller-supplied user IDs.
+  - Added `backend-server/__tests__/billingMarketplaceIdentity.test.ts` covering mismatched billing IDs, admin direct upgrade, non-admin upgrade rejection, marketplace install spoofing, and authenticated install targets.
+- Validation:
+  - `npx.cmd tsc --noEmit -p backend-server\tsconfig.json` passed.
+  - `npx.cmd tsx __tests__\billingMarketplaceIdentity.test.ts` passed.
+  - `node C:\3d\node_modules\eslint\bin\eslint.js . --config C:\3d\backend-server\eslint.config.js` passed.
+  - `npm.cmd run check:backend-tests` passed 19 backend test files.
+  - `npx.cmd tsc --noEmit -p tsconfig.json` passed.
+  - `npm.cmd run check:all` passed.
+  - `npm.cmd run lint` at repo root still fails on pre-existing dirty GALA code: `src/modules/expo/runtime/modularHome/useProgressiveTextureSet.ts:63` (`react-hooks/set-state-in-effect`).
+  - `npm.cmd run build` still fails on pre-existing dirty GALA code: `src/modules/expo/runtime/modularHome/construction/GalaWallAssembly.tsx:128` unused `blendHexColor`.
+- Touched files:
+  - `backend-server/controllers/billingController.ts`
+  - `backend-server/controllers/marketplaceController.ts`
+  - `backend-server/routes/api.ts`
+  - `backend-server/__tests__/billingMarketplaceIdentity.test.ts`
+  - `src/services/billing.ts`
+  - `src/services/marketplace.ts`
+  - `docs/CURRENT_TASK.md`
+- Product/release status:
+  - `productVisualAccepted=false` remains unchanged.
+  - No deployment, production promotion, staging alias change, Supabase mutation, payment semantic change beyond routing self-service upgrades through Checkout, Web3D renderer change, GALA asset change, Pixel Streaming change, or Unreal change was made.
+- Next step:
+  - Continue with Issue 3 from `Master_Execution_Plan.md`: rate limiting is spoofable through raw `X-Forwarded-For`.
+
+## 2026-07-02 Master Execution Plan Issue 1 AI Metering Fix
+
+- Active objective: execute Issue 1 from `Master_Execution_Plan.md`: public and optional LLM metering enables unbounded AI spend.
+- Implementation status:
+  - Moved `/api/ai-estimate` from the public route group into the authenticated API router.
+  - Added `backend-server/lib/httpLlmMetering.ts` so HTTP-triggered LLM controllers derive metering identity only from `req.user.id`.
+  - Updated AI, business, growth, and platform optimization controllers to pass authenticated HTTP metering context with route/action metadata.
+  - Updated `src/backend/ai/llmService.ts` so `generateText` requires explicit metering context, enforces quota for authenticated HTTP users, and records route/action/source metadata in quota and usage payloads.
+  - Updated business, growth, platform, agent, content, outreach, revenue, and platform-intelligence LLM callers to pass either authenticated HTTP metering or named internal system metering.
+  - Updated the frontend AI API helper to use the existing authenticated `serverApiPost` path instead of raw unauthenticated `fetch`.
+  - Added `backend-server/__tests__/aiMeteringController.test.ts` and extended `backend-server/routes/__tests__/releaseApiPublicRoutes.test.ts` for unauthenticated `/api/ai-estimate`, authenticated AI metering, body `userId` spoofing, and missing metering context.
+- Validation:
+  - `npx.cmd tsc --noEmit -p backend-server\tsconfig.json` passed.
+  - `node C:\3d\node_modules\eslint\bin\eslint.js . --config C:\3d\backend-server\eslint.config.js` passed.
+  - `npm.cmd run check:backend-tests` passed 18 backend test files.
+  - `npx.cmd tsc --noEmit -p tsconfig.json` passed.
+  - `npm.cmd run check:all` passed.
+  - `npm.cmd run lint` at repo root failed on pre-existing dirty GALA code: `src/modules/expo/runtime/modularHome/useProgressiveTextureSet.ts:63` (`react-hooks/set-state-in-effect`).
+  - `npm.cmd run build` failed on pre-existing dirty GALA code: `src/modules/expo/runtime/modularHome/construction/GalaWallAssembly.tsx:128` unused `blendHexColor`.
+  - `npm.cmd run lint` from `backend-server` resolved `../node_modules` through the sandbox cwd and failed to find ESLint; the absolute-path backend lint command above was used successfully.
+- Touched files:
+  - `backend-server/controllers/aiController.ts`
+  - `backend-server/controllers/businessController.ts`
+  - `backend-server/controllers/growthController.ts`
+  - `backend-server/controllers/platformController.ts`
+  - `backend-server/lib/httpLlmMetering.ts`
+  - `backend-server/routes/api.ts`
+  - `backend-server/__tests__/aiMeteringController.test.ts`
+  - `backend-server/routes/__tests__/releaseApiPublicRoutes.test.ts`
+  - `src/backend/ai/llmService.ts`
+  - `src/backend/business/businessGenerator.ts`
+  - `src/backend/growth/landingGenerator.ts`
+  - `src/backend/growth/nicheDiscovery.ts`
+  - `src/backend/growth/seoEngine.ts`
+  - `src/backend/growth/trafficAutomation.ts`
+  - `src/backend/platform/platformApplicationService.ts`
+  - `src/backend/platform/optimization/aiOptimizer.ts`
+  - `src/backend/platform/intelligence/platformBrain.ts`
+  - `src/backend/agents/engine/agentPlanner.ts`
+  - `src/backend/agents/runners/leadRunner.ts`
+  - `src/backend/agents/runners/marketingRunner.ts`
+  - `src/backend/agents/runners/salesRunner.ts`
+  - `src/backend/agents/runners/seoRunner.ts`
+  - `src/backend/content/contentGenerator.ts`
+  - `src/backend/outreach/emailOutreach.ts`
+  - `src/backend/revenue/offerGenerator.ts`
+  - `src/agents/baseAgent.ts`
+  - `src/services/aiService.ts`
+  - `docs/CURRENT_TASK.md`
+- Product/release status:
+  - `productVisualAccepted=false` remains unchanged.
+  - No deployment, production promotion, staging alias change, Supabase mutation, payment change, Web3D renderer change, GALA asset change, Pixel Streaming change, or Unreal change was made.
+- Next step:
+  - Continue with Issue 2 from `Master_Execution_Plan.md`: protected billing and marketplace routes trust caller-supplied user IDs.
+
+## 2026-07-02 Master Execution Plan Goal Activation
+
+- Active objective: execute `Master_Execution_Plan.md` in priority order, starting with the P0 security and cost-control issues.
+- Goal status:
+  - Created an active goal with the goal tool for the master execution plan.
+  - No implementation work has started under this goal yet.
+- Product/release status:
+  - `productVisualAccepted=false` remains unchanged.
+  - No source code, deployment, backend, database, production, staging, payment, Pixel Streaming, Unreal, or GALA asset changes were made.
+- Next step:
+  - Begin Issue 1 from `Master_Execution_Plan.md`: public and optional LLM metering enables unbounded AI spend.
+
+## 2026-07-02 Repository Architecture Audit And Master Execution Plan
+
+- Active objective: perform a no-code-modification architecture/codebase audit and create `Master_Execution_Plan.md`.
+- Audit status:
+  - Confirmed `PROJECT_CONTEXT_LOCK.md` is absent at repo root; continued from this task log.
+  - Honored `.codexignore` and focused the audit on the root Vite SPA, `backend-server`, deployment/build config, Supabase contracts, public assets, scripts, and release documentation.
+  - Created `Master_Execution_Plan.md` with 25 prioritized findings covering security, cost controls, deployment drift, asset payload, Web3D performance, route/UX ownership, and observability.
+  - Each finding includes issue summary, exact file/line locations, proposed architecture/fix, and a copy-paste implementer prompt with acceptance criteria.
+- Validation:
+  - Verified `Master_Execution_Plan.md` exists.
+  - Verified the artifact contains 25 `## Issue` sections and 25 `Implementer Prompt:` entries.
+  - No source code, deployment, backend, database, production, staging, GALA asset, quote, payment, Pixel Streaming, or Unreal changes were made.
+- Product/release status:
+  - `productVisualAccepted=false` remains unchanged.
+  - This was an audit/documentation task only.
+- Next step:
+  - Triage `Master_Execution_Plan.md` and assign implementer agents starting with the P0 security/cost-control items.
+
 ## 2026-07-02 Modular Home Start Composition And Mobile Load Perception Fix
 
 - Active objective: investigate the modular-home studio appearing only partially loaded and fix the visible cause without changing GALA construction assets, renderer ownership, quote, pricing, backend, staging, or production state.
@@ -2491,3 +4150,486 @@ Close active Codex/VS Code Codex processes, remove the regenerated live `.codex`
   - Phase 6.1 remains blocked only on frontend staging preview deploy because Vercel file upload still fails before creating a new preview deployment.
 - Next step:
   - Fix or bypass the Vercel `v2/files` upload failure, create a new staging frontend preview deployment, then rerun Phase 6.1 frontend verification.
+
+## 2026-07-04 Expo City First-View Visual Polish Continuation
+
+- Active objective: continue the sponsor expo audit fixes by improving the weak `/expo-3d` first city walk view without changing backend scene contracts.
+- Implementation status:
+  - Reframed `buildExpoSponsorStartView` to start from the right walking lane and look forward along the sponsor boulevard instead of yawing into one foreground screen wall.
+  - Tightened the expo camera FOV so the first walk view feels more like a commercial product view and less like a wide tech-demo capture.
+  - Lightened the global city ground, arrival anchor, center-spine guide, seam transition, and sponsor-zone floor token colors.
+  - Enlarged the arrival and center walking-lane floor anchors so the first screen has a clear boulevard surface instead of a single dark ground block.
+  - Reworked the center-spine sky-market scenic rig from broad centered overhead slabs into open side rails, reducing the under-structure feel in the first view.
+  - Added tests that protect the first-view framing, readable walking lane, and no broad centered overhead slab regression.
+- Validation:
+  - `npx.cmd tsx src/modules/expo/__tests__/sceneWorld.test.ts` passed.
+  - `npx.cmd tsx src/modules/expo/__tests__/cityCompositionPolish.test.ts` passed.
+  - `npx.cmd tsc --noEmit -p tsconfig.app.json` passed.
+  - `npm.cmd run lint` passed.
+  - `npm.cmd run check:all` passed.
+  - `npm.cmd run build` passed.
+  - `git diff --check` passed with existing LF/CRLF warnings only.
+- Visual evidence:
+  - Latest accepted artifact for this pass: `diagnostics/reports/expo-3d-city-20260704-lane-forward-polish.png`.
+  - Earlier comparison artifacts from this pass:
+    - `diagnostics/reports/expo-3d-city-20260704-floor-fov-polish.png`
+    - `diagnostics/reports/expo-3d-city-20260704-walking-lane-polish.png`
+    - `diagnostics/reports/expo-3d-city-20260704-open-spine-polish.png`
+- Touched files for this continuation:
+  - `src/shared/expo/worldContract.ts`
+  - `src/modules/expo/runtime/world/scene/ExpoWorldCanvasShell.tsx`
+  - `src/modules/expo/runtime/world/floor/FloorVisualLanguage.ts`
+  - `src/modules/expo/runtime/world/WorldGroundLayout.ts`
+  - `src/modules/expo/runtime/world/WorldGroundPlane.tsx`
+  - `src/modules/expo/runtime/planning/zones/center-spine/geometry.ts`
+  - `src/modules/expo/__tests__/sceneWorld.test.ts`
+  - `src/modules/expo/__tests__/cityCompositionPolish.test.ts`
+  - `docs/CURRENT_TASK.md`
+- Product/release status:
+  - `productVisualAccepted=false`; human visual acceptance is still required.
+  - No backend API contract, staging deploy, production deploy, payment, Supabase mutation, or Unreal/Pixel Streaming baseline change was made.
+  - The city first view is clearer and more sellable, but remaining visual debt includes the large cropped left screen, general city clutter, and foreground floor still needing stronger material detail or texture in a later pass.
+- Next step:
+  - Continue with city screen rental/setup clarity and booth-admin copy/flow polish, then capture buyer-flow screenshots.
+
+## 2026-07-04 City Screen Rental and Booth Admin Clarity Pass
+
+- Active objective: fix the confusing sponsor admin flow for renting a specific city screen and separating it from booth-screen setup.
+- Implementation status:
+  - Added shared buyer-friendly city screen setup steps so the public marketplace and sponsor admin use the same simple language.
+  - Updated the city screen marketplace CTA from generic configuration language to a direct "Rent this city screen" purchase intent.
+  - Added a clear city-screen scope banner in sponsor admin: selected exact screen, city advertising only, review before live, and a direct escape hatch to booth setup.
+  - Added a selected city screen summary with location, placement, price, and placement notes before the user enters media.
+  - Reworked city screen upload/copy from technical campaign/hosted-media wording into "what visitors will see" and explicit city-ad media guidance.
+  - Added a booth setup scope banner and booth-screen distinction so sponsors know booth logo/media is separate from rented public city screens.
+  - Fixed the mobile city-screen selection rows so price/status no longer squeeze the screen name into unreadable word breaks.
+  - Added tests that protect buyer-facing city-screen steps from drifting back into operator/slot/internal language.
+- Validation:
+  - `npx.cmd tsx src/app/expo/cityScreenRental.test.ts` passed.
+  - `npx.cmd tsc --noEmit -p tsconfig.app.json` passed.
+  - `npm.cmd run lint` passed.
+  - `npm.cmd run build` passed.
+  - `git diff --check` passed with existing LF/CRLF warnings only.
+- Visual evidence:
+  - `review_artifacts/warpala-city-screen-campaign-flow/city-screen-campaign-desktop.png`
+  - `review_artifacts/warpala-city-screen-campaign-flow/city-screen-campaign-mobile.png`
+  - `review_artifacts/warpala-city-screen-campaign-flow/result.json`
+- Touched files for this continuation:
+  - `src/app/expo/cityScreenRental.ts`
+  - `src/app/expo/cityScreenRental.test.ts`
+  - `src/pages/expo/CityScreenMarketplace.tsx`
+  - `src/pages/expo/companyAdmin/CompanyAdminQuickSetup.tsx`
+  - `src/pages/expo/companyAdmin/CompanyAdminQuickSetup.css`
+  - `src/pages/expo/companyAdmin/CompanyAdminView.tsx`
+  - `docs/CURRENT_TASK.md`
+- Product/release status:
+  - `productVisualAccepted=false`; human visual acceptance is still required.
+  - No backend API contract, staging deploy, production deploy, payment, Supabase mutation, or Unreal/Pixel Streaming baseline change was made.
+  - City screen rental is now much easier to understand in the frontend, but it still uses the existing admin/save path rather than a dedicated city-screen order/ownership backend model.
+- Remaining weak points:
+  - Mobile top navigation is still visually compressed around login/menu.
+  - Public city-screen catalog still needs a more polished layout pass beyond copy/CTA cleanup.
+  - Dedicated backend support is still needed for true city-screen rental orders, availability calendar, owner history, media approval audit, payment state, and per-screen publishing.
+- Next step:
+  - Continue with the dedicated city notice-board/graffiti/presence product audit and define the smallest safe config/backend path before building interactive city writing surfaces.
+
+## 2026-07-04 Community Board, Graffiti, and Presence Polish Pass
+
+- Active objective: continue the weak-point fixes for city life features: message board, small ads, voice notes, graffiti/logo marks, rate limits, and visible visitors.
+- Implementation status:
+  - Confirmed the repo already has community board backend/store/controller paths, protected posting, moderation, reporting, voice upload, graffiti rate limits, and Supabase-backed storage support.
+  - Simplified the visible community overlay language from technical/legal wording to buyer/user language: City board, small ads, voice notes, approved graffiti.
+  - Added a short panel intro so visitors understand that posts and marks are reviewed before they appear publicly.
+  - Updated the graffiti form labels and notice so the 3-per-hour limit and approved wall behavior are clear.
+  - Upgraded the 3D graffiti wall so approved graffiti with a logo image URL attempts to render the logo as an image tile; if the image fails or CORS blocks it, the wall keeps a text fallback.
+  - Updated community QA to include a mock logo image, panel hit-target checks, nonblank canvas checks, desktop/mobile screenshots, and explicit failure propagation.
+- Validation:
+  - `npx.cmd tsx src/shared/expo/communityContent.test.ts` passed.
+  - `npx.cmd tsx src/modules/expo/runtime/community/expoPresencePolicy.test.ts` passed.
+  - `npx.cmd tsx backend-server/routes/__tests__/expoCommunity.controller.test.ts` passed.
+  - `npx.cmd tsc --noEmit -p tsconfig.app.json` passed.
+  - `npm.cmd run lint` passed after fixing the texture state effect.
+  - `npm.cmd run build` passed.
+  - `node scripts/qa-expo-community.mjs http://127.0.0.1:5173 review_artifacts/warpala-expo-community` passed through controlled local Vite job; no page errors, canvas entropy above blank threshold.
+- Visual evidence:
+  - `review_artifacts/warpala-expo-community/community-city-desktop.png`
+  - `review_artifacts/warpala-expo-community/community-panel-desktop.png`
+  - `review_artifacts/warpala-expo-community/community-canvas-desktop.png`
+  - `review_artifacts/warpala-expo-community/community-city-mobile.png`
+  - `review_artifacts/warpala-expo-community/community-panel-mobile.png`
+  - `review_artifacts/warpala-expo-community/community-canvas-mobile.png`
+  - `review_artifacts/warpala-expo-community/result.json`
+- Touched files for this continuation:
+  - `src/modules/expo/runtime/community/ExpoCommunityOverlay.tsx`
+  - `src/modules/expo/runtime/community/ExpoCommunityOverlay.css`
+  - `src/modules/expo/runtime/community/WorldCommunityHub.tsx`
+  - `scripts/qa-expo-community.mjs`
+  - `docs/CURRENT_TASK.md`
+- Product/release status:
+  - `productVisualAccepted=false`; human visual acceptance is still required.
+  - No staging deploy, production deploy, payment, Supabase mutation, or Unreal/Pixel Streaming baseline change was made.
+  - Community features are present and more understandable, but real public persistence still depends on deploying/applying the existing backend/Supabase support through an approved release path.
+- Remaining weak points:
+  - 3D logo graffiti depends on the image URL supporting WebGL/CORS; the fallback is safe text.
+  - Presence still uses simple generic visitor avatars, not a polished avatar/custom identity system.
+  - The community hub location is visible in QA, but normal city wayfinding could make it more discoverable from the default boulevard route.
+  - Moderation is functional but still operator-oriented; a polished operator review screen would help before real public usage.
+- Next step:
+  - Continue with city discoverability/nav polish: make the default `/expo-3d` path better surface the city board, rentable city screens, sponsor booths, and modular-home destination without adding clutter.
+
+## 2026-07-04 Expo City Discoverability Guide Pass
+
+- Active objective: make `/expo-3d` easier to understand after the visitor enters the city, without adding backend contracts or visual clutter.
+- Implementation status:
+  - Added a compact desktop City guide overlay with direct buyer/user actions: Sponsor booths, Rent city screen, City board, Modular home, Request quote.
+  - Added a mobile Explore entry point that opens the same City guide actions in a touch-friendly sheet.
+  - Wired guide actions to existing product routes and overlays: booth marketplace, city screen marketplace, community board, modular-home studio, and sponsor quote request.
+  - Corrected the ExpoLobby "Configure booth" CTA so it opens the booth setup workspace instead of sending users back to package comparison.
+  - Added a stable `request-quote` anchor to the sponsor request form.
+  - Updated community QA to verify the City guide actions, mobile touch context, City board opening through the guide, hit-target safety, and guide screenshots.
+- Validation:
+  - `npx.cmd tsc --noEmit -p tsconfig.app.json` passed.
+  - `npm.cmd run lint` passed.
+  - `npm.cmd run build` passed.
+  - `npx.cmd tsx src/app/expo/cityScreenRental.test.ts` passed.
+  - `node scripts/qa-expo-community.mjs http://127.0.0.1:5173 review_artifacts/warpala-expo-community` passed through controlled local Vite job.
+- Visual evidence:
+  - `review_artifacts/warpala-expo-community/community-guide-desktop.png`
+  - `review_artifacts/warpala-expo-community/community-guide-mobile.png`
+  - `review_artifacts/warpala-expo-community/community-panel-desktop.png`
+  - `review_artifacts/warpala-expo-community/community-panel-mobile.png`
+  - `review_artifacts/warpala-expo-community/result.json`
+- Touched files for this continuation:
+  - `src/modules/expo/components/ExpoLobby.tsx`
+  - `src/modules/expo/runtime/app/Expo3D.tsx`
+  - `src/modules/expo/runtime/app/ExpoWorldHud.tsx`
+  - `src/pages/expo/SponsorPackages.tsx`
+  - `scripts/qa-expo-community.mjs`
+  - `docs/CURRENT_TASK.md`
+- Product/release status:
+  - `productVisualAccepted=false`; human visual acceptance is still required.
+  - No backend API contract, staging deploy, production deploy, payment, Supabase mutation, or Unreal/Pixel Streaming baseline change was made.
+  - City discovery is clearer, but the bottom-left City board launcher still competes with mobile movement controls and should be folded into the guide in a later cleanup.
+- Next step:
+  - Continue with visual/navigation cleanup around bottom-left mobile controls and city-board launcher overlap, then review public catalog polish for booth and city screen marketplaces.
+
+## 2026-07-04 Mobile Launcher and Marketplace Polish Pass
+
+- Active objective: fix the remaining visible weak spots around the mobile city-board launcher and the public booth/city-screen rental catalog pages.
+- Implementation status:
+  - Removed the separate floating `City board` launcher on touch devices. Mobile users now open the board through the `Explore` city guide, so it no longer competes with joystick movement controls.
+  - Kept the desktop `City board` launcher for quick access where it does not block movement controls.
+  - Reworked booth marketplace buyer language from internal slot/checkout wording into a clearer rental flow: choose booth location, understand what is included, reserve booth, then complete sponsor setup.
+  - Removed the internal slot ID from the main booth buyer detail panel and replaced it with buyer-readable area/status details.
+  - Added a compact "included" summary to the booth marketplace so buyers can immediately see booth location, sponsor identity, booth screen media, and lead/contact action.
+  - Reworked the city-screen marketplace hero into a clearer rental offer with `Add city screen ad`, `Walk the city first`, available screen count, monthly starting price, and media review summary.
+  - Improved city-screen cards with stronger preview panels, tier labels, buyer-friendly media copy, and full-width mobile-safe `Rent this screen` CTAs.
+  - Added `scripts/qa-expo-marketplaces.mjs` for desktop/mobile screenshot QA of booth and city-screen marketplace pages with mocked booth availability.
+- Validation:
+  - `npx.cmd tsc --noEmit -p tsconfig.app.json` passed.
+  - `npm.cmd run lint` passed.
+  - `npm.cmd run build` passed after the final CTA layout fix.
+  - `npx.cmd tsx src/app/expo/cityScreenRental.test.ts` passed.
+  - `node scripts/qa-expo-community.mjs http://127.0.0.1:4177 review_artifacts/warpala-expo-community-mobile-launcher-cleanup` passed through a controlled local Vite server; desktop/mobile canvas and guide screenshots were nonblank and had no page errors.
+  - `node scripts/qa-expo-marketplaces.mjs http://127.0.0.1:4177 review_artifacts/warpala-expo-marketplaces` passed through a controlled local Vite server; desktop/mobile screenshots had no horizontal overflow and old internal marketplace copy was absent.
+  - `git diff --check` passed with pre-existing CRLF warnings only.
+- Visual evidence:
+  - `review_artifacts/warpala-expo-community-mobile-launcher-cleanup/community-city-mobile.png`
+  - `review_artifacts/warpala-expo-community-mobile-launcher-cleanup/community-guide-mobile.png`
+  - `review_artifacts/warpala-expo-community-mobile-launcher-cleanup/community-panel-mobile.png`
+  - `review_artifacts/warpala-expo-community-mobile-launcher-cleanup/community-city-desktop.png`
+  - `review_artifacts/warpala-expo-community-mobile-launcher-cleanup/community-guide-desktop.png`
+  - `review_artifacts/warpala-expo-community-mobile-launcher-cleanup/result.json`
+  - `review_artifacts/warpala-expo-marketplaces/booth-marketplace-desktop.png`
+  - `review_artifacts/warpala-expo-marketplaces/booth-marketplace-mobile.png`
+  - `review_artifacts/warpala-expo-marketplaces/city-screen-marketplace-desktop.png`
+  - `review_artifacts/warpala-expo-marketplaces/city-screen-marketplace-mobile.png`
+  - `review_artifacts/warpala-expo-marketplaces/result.json`
+- Touched files for this continuation:
+  - `src/modules/expo/runtime/community/ExpoCommunityOverlay.tsx`
+  - `src/modules/expo/runtime/community/ExpoCommunityOverlay.css`
+  - `src/pages/expo/BoothMarketplace.tsx`
+  - `src/pages/expo/CityScreenMarketplace.tsx`
+  - `scripts/qa-expo-marketplaces.mjs`
+  - `docs/CURRENT_TASK.md`
+- Product/release status:
+  - `productVisualAccepted=false`; human visual acceptance is still required.
+  - No backend API contract, staging deploy, production deploy, payment, Supabase mutation, or Unreal/Pixel Streaming baseline change was made.
+  - The public rental pages are clearer and more sellable, but they still rely on existing backend/admin paths rather than a dedicated end-to-end city-screen order model.
+- Remaining weak points:
+  - Global mobile nav/login/menu and the global chat bubble still visually compete with dense buyer pages.
+  - Booth marketplace still needs a richer visual location preview/map if this becomes a primary sales page.
+  - City-screen marketplace is now readable and safer on mobile, but final polish would benefit from real campaign preview media instead of stylized placeholder screen cards.
+  - True city-screen ownership still needs backend/config/schema support: availability calendar, campaign owner, approval audit, payment state, and active publishing history.
+
+## 2026-07-04 Buyer Page Clutter and Preview Polish Pass
+
+- Active objective: continue fixing the remaining buyer-page weak spots after the first marketplace polish pass.
+- Implementation status:
+  - Hid the closed global chat bubble on mobile buyer pages (`/expo/booth-marketplace`, `/expo/city-screens`, `/expo/sponsor-packages`) so it no longer floats over pricing, CTA buttons, or screen cards.
+  - Preserved global chat on desktop buyer pages and kept event-driven chat opening possible on mobile because the component still mounts and listens for open events.
+  - Converted the mobile menu button from visible text to a compact menu icon with the existing accessible `Open menu` label.
+  - Added mobile-safe release nav/brand CSS so the header fits better on narrow screens.
+  - Added a buyer-facing selected booth location preview to the booth marketplace. The preview shows lane, zone, booth type, and "Your booth" position without exposing internal slot IDs.
+  - Upgraded city-screen slot preview panels into campaign-like screen mockups with location, tier, "Your campaign", media expectation, size label, and preview badge.
+  - Extended marketplace QA to assert the new selected booth preview, new city-screen campaign preview, mobile hidden chat bubble, no horizontal overflow, and absence of old internal copy.
+- Validation:
+  - `npx.cmd tsc --noEmit -p tsconfig.app.json` passed.
+  - `npx.cmd tsx src/app/expo/cityScreenRental.test.ts` passed.
+  - `npm.cmd run lint` passed.
+  - `npm.cmd run build` passed.
+  - `node scripts/qa-expo-marketplaces.mjs http://127.0.0.1:4177 review_artifacts/warpala-expo-marketplaces-next` passed through a controlled local Vite server; desktop/mobile screenshots were nonblank, had no page errors, no horizontal overflow, and no mobile closed chat bubble.
+  - `git diff --check -- src/components/Layout.tsx src/components/chat/GlobalChat.tsx src/index.css src/pages/expo/BoothMarketplace.tsx src/pages/expo/CityScreenMarketplace.tsx scripts/qa-expo-marketplaces.mjs` passed with pre-existing CRLF warnings only.
+- Visual evidence:
+  - `review_artifacts/warpala-expo-marketplaces-next/booth-marketplace-desktop.png`
+  - `review_artifacts/warpala-expo-marketplaces-next/booth-marketplace-mobile.png`
+  - `review_artifacts/warpala-expo-marketplaces-next/city-screen-marketplace-desktop.png`
+  - `review_artifacts/warpala-expo-marketplaces-next/city-screen-marketplace-mobile.png`
+  - `review_artifacts/warpala-expo-marketplaces-next/result.json`
+- Touched files for this continuation:
+  - `src/components/Layout.tsx`
+  - `src/components/chat/GlobalChat.tsx`
+  - `src/index.css`
+  - `src/pages/expo/BoothMarketplace.tsx`
+  - `src/pages/expo/CityScreenMarketplace.tsx`
+  - `scripts/qa-expo-marketplaces.mjs`
+  - `docs/CURRENT_TASK.md`
+- Product/release status:
+  - `productVisualAccepted=false`; human visual acceptance is still required.
+  - No backend API contract, staging deploy, production deploy, payment, Supabase mutation, or Unreal/Pixel Streaming baseline change was made.
+  - Buyer pages are less cluttered on mobile and more commercially understandable, but the underlying city-screen order/ownership model still needs backend support.
+- Remaining weak points:
+  - Desktop buyer pages still show the global chat bubble; this is acceptable now but should be reconsidered if screenshots or buyers find it distracting.
+  - Booth location preview is a lightweight schematic, not a true live city map or route preview.
+  - City-screen preview is still synthetic; real campaign preview media and owner-specific draft rendering need backend/config support.
+  - Sponsor package page has not yet received the same dense mobile clutter pass.
+
+## 2026-07-04 Sponsor Packages Buyer Clarity Pass
+
+- Active objective: apply the same buyer-page clarity cleanup to `/expo/sponsor-packages` after the booth and city-screen marketplace polish.
+- Implementation status:
+  - Removed public-facing operator/backoffice language from the buyer links and request status copy.
+  - Replaced the public "Sponsor lead inbox" link with a buyer-facing `Request quote` link.
+  - Changed "Booth slot" language to "booth location" or "event sponsor moment" where it appears in buyer-facing package copy.
+  - Reworked the default request status from local-backup language into a simple quote request instruction.
+  - Moved saved-request/backlog messaging behind a real saved-request condition, so first-time buyers see a clean next-step note instead of storage/sync details.
+  - Reworded connection failure and saved-request sync messages into buyer-facing "saved on this device" and "send saved requests" language.
+  - Simplified form labels from URL/backend-style terms toward buyer terms: `Logo link (optional)`, `Screen media link (optional)`, and `Budget range`.
+  - Extended marketplace QA to cover `/expo/sponsor-packages` desktop/mobile screenshots, hidden mobile chat bubble, no horizontal overflow, and absence of old internal copy.
+- Validation:
+  - `npx.cmd tsc --noEmit -p tsconfig.app.json` passed.
+  - `npx.cmd tsx src/app/expo/sponsorPackageRequest.test.ts` passed.
+  - `npm.cmd run lint` passed.
+  - `npm.cmd run build` passed.
+  - `node scripts/qa-expo-marketplaces.mjs http://127.0.0.1:4177 review_artifacts/warpala-expo-buyer-pages` passed through a controlled local Vite server; booth, city-screen, and sponsor-package desktop/mobile screenshots were nonblank with no horizontal overflow or mobile closed chat bubble.
+  - `git diff --check -- src/components/Layout.tsx src/components/chat/GlobalChat.tsx src/index.css src/pages/expo/BoothMarketplace.tsx src/pages/expo/CityScreenMarketplace.tsx src/pages/expo/SponsorPackages.tsx scripts/qa-expo-marketplaces.mjs docs/CURRENT_TASK.md` passed with pre-existing CRLF warnings only.
+- Visual evidence:
+  - `review_artifacts/warpala-expo-buyer-pages/booth-marketplace-desktop.png`
+  - `review_artifacts/warpala-expo-buyer-pages/booth-marketplace-mobile.png`
+  - `review_artifacts/warpala-expo-buyer-pages/city-screen-marketplace-desktop.png`
+  - `review_artifacts/warpala-expo-buyer-pages/city-screen-marketplace-mobile.png`
+  - `review_artifacts/warpala-expo-buyer-pages/sponsor-packages-desktop.png`
+  - `review_artifacts/warpala-expo-buyer-pages/sponsor-packages-mobile.png`
+  - `review_artifacts/warpala-expo-buyer-pages/result.json`
+- Touched files for this continuation:
+  - `src/pages/expo/SponsorPackages.tsx`
+  - `scripts/qa-expo-marketplaces.mjs`
+  - `docs/CURRENT_TASK.md`
+- Product/release status:
+  - `productVisualAccepted=false`; human visual acceptance is still required.
+  - No backend API contract, staging deploy, production deploy, payment, Supabase mutation, or Unreal/Pixel Streaming baseline change was made.
+  - Sponsor package buying is clearer, but the page is still long on mobile because it contains packages, comparison, request form, preview, and buyer links in one route.
+- Remaining weak points:
+  - Sponsor packages mobile length can still feel heavy; a future pass could add a sticky package summary or split quote request into a shorter stepper.
+  - Desktop buyer pages still show global chat; mobile buyer pages now hide the closed bubble.
+  - True city-screen/sponsor order state still needs backend/config/schema support.
+
+## 2026-07-04 City Screen Visibility, Temporary Sprays, and Presence Reality Pass
+
+- Active objective: address the latest product-owner weak spots around exact city-screen rental visibility, useless fixed graffiti wall behavior, a more useful city board, and whether multi-user presence/walking actually works.
+- Implementation status:
+  - Added city-screen map metadata to the shared screen rental helpers: every rentable city screen now has buyer-facing map coordinates, route hint, view hint, location label, placement label, and screen code.
+  - Upgraded `/expo/city-screens` with a selected city-screen map, numbered pins, highlighted selected screen, route/view explanation, price, and screen code so buyers can see which exact public city screen they are choosing.
+  - Reworded city board/graffiti UI to buyer/visitor language: `Spray`, `Temporary city sprays`, `Messages, voice notes and sprays`.
+  - Changed spray visibility from the old long retention model to about 10 minutes through `EXPO_COMMUNITY_LIMITS.graffitiVisibleMinutes`.
+  - Extended the community spray contract with optional placement coordinates (`x/y/z/rotationY/surfaceLabel`) so approved sprays can render at the visitor's city spot instead of only a fixed wall slot.
+  - Passed the current player position from `/expo-3d` into the community overlay. Spray submissions now include the current city spot when available, with fallback support for older wall-slot-only marks.
+  - Updated backend community creation/storage to accept and return spray placement for memory and Supabase-backed persistence. The Supabase migration file was updated, but it was not applied to any Supabase project.
+  - Made the 3D city board larger and more interactive-looking with a bigger live board, visible `OPEN BOARD` call-to-action, and city-level temporary spray rendering around the scene.
+  - Improved visitor presence avatars from simple placeholder capsules into small animated visitor figures with head/body/arms/legs, movement bob, facing direction, and speaking ring.
+  - Extended QA scripts to verify the city-screen selected map, pin selection, screen code, Spray tab, 10-minute spray copy, current city spot copy, mobile guide copy, no old `Messages and graffiti` wording, no horizontal overflow, and nonblank screenshots.
+- Presence/walking reality check:
+  - The current presence system is designed for live visitors to see each other through Supabase Realtime presence when both are in `/expo-3d` and presence is enabled.
+  - It syncs remote visitor position, color, and speaking state, and it excludes the local user from the remote guest list.
+  - Local walking already includes keyboard/mobile movement, camera look, sprint/auto-walk, jump, vertical physics, collision, step/mantle style traversal, and lift/elevator support.
+  - Remote avatars now infer walking from movement and interpolate between updates. They do not yet sync full identity, exact animation state, exact jump state, or a production-quality character rig.
+- Validation:
+  - `npx.cmd tsc --noEmit -p tsconfig.app.json` passed.
+  - `npm.cmd run lint` passed.
+  - `npm.cmd run build` passed.
+  - `npx.cmd tsx src/app/expo/cityScreenRental.test.ts` passed.
+  - `npx.cmd tsx src/shared/expo/communityContent.test.ts` passed.
+  - `npx.cmd tsx backend-server/routes/__tests__/expoCommunity.controller.test.ts` passed.
+  - `npx.cmd tsx src/modules/expo/runtime/community/expoPresencePolicy.test.ts` passed.
+  - `npx.cmd tsx src/modules/expo/__tests__/sceneContract.test.ts` passed.
+  - `npx.cmd tsx src/modules/expo/__tests__/screenRuntimePolicy.test.ts` passed.
+  - `npx.cmd tsx src/modules/expo/__tests__/screenContentMediaSafety.test.ts` passed.
+  - `npx.cmd tsx src/modules/expo/__tests__/productionSafeScreenCoverage.test.ts` passed earlier in this pass.
+  - `npx.cmd tsx src/modules/expo/__tests__/managedScreenAssignmentOverride.test.ts` passed earlier in this pass.
+  - `npx.cmd tsx src/modules/expo/__tests__/screenReadableSurfaceRendering.test.ts` passed earlier in this pass.
+  - `npx.cmd tsx src/modules/expo/__tests__/worldScenePlanningPlacementStability.test.ts` passed.
+  - `npx.cmd tsx src/modules/expo/__tests__/cityCompositionPolish.test.ts` passed earlier in this pass.
+  - `node scripts/qa-expo-community.mjs http://127.0.0.1:4177 review_artifacts/warpala-expo-community-sprays` passed through a controlled local Vite server.
+  - `node scripts/qa-expo-marketplaces.mjs http://127.0.0.1:4177 review_artifacts/warpala-expo-screen-visibility` passed through a controlled local Vite server.
+- Visual evidence:
+  - `review_artifacts/warpala-expo-community-sprays/community-city-desktop.png`
+  - `review_artifacts/warpala-expo-community-sprays/community-city-mobile.png`
+  - `review_artifacts/warpala-expo-community-sprays/community-guide-desktop.png`
+  - `review_artifacts/warpala-expo-community-sprays/community-guide-mobile.png`
+  - `review_artifacts/warpala-expo-community-sprays/community-panel-desktop.png`
+  - `review_artifacts/warpala-expo-community-sprays/community-panel-mobile.png`
+  - `review_artifacts/warpala-expo-community-sprays/result.json`
+  - `review_artifacts/warpala-expo-screen-visibility/city-screen-marketplace-desktop.png`
+  - `review_artifacts/warpala-expo-screen-visibility/city-screen-marketplace-mobile.png`
+  - `review_artifacts/warpala-expo-screen-visibility/booth-marketplace-desktop.png`
+  - `review_artifacts/warpala-expo-screen-visibility/booth-marketplace-mobile.png`
+  - `review_artifacts/warpala-expo-screen-visibility/sponsor-packages-desktop.png`
+  - `review_artifacts/warpala-expo-screen-visibility/sponsor-packages-mobile.png`
+  - `review_artifacts/warpala-expo-screen-visibility/result.json`
+- Touched files for this continuation:
+  - `src/app/expo/cityScreenRental.ts`
+  - `src/app/expo/cityScreenRental.test.ts`
+  - `src/shared/expo/communityContent.ts`
+  - `src/shared/expo/communityContent.test.ts`
+  - `src/app/expo/expoCommunityService.ts`
+  - `src/pages/expo/CityScreenMarketplace.tsx`
+  - `src/modules/expo/runtime/app/Expo3D.tsx`
+  - `src/modules/expo/runtime/app/ExpoWorldHud.tsx`
+  - `src/modules/expo/runtime/community/ExpoCommunityOverlay.tsx`
+  - `src/modules/expo/runtime/community/WorldCommunityHub.tsx`
+  - `src/modules/expo/runtime/community/WorldVisitorPresence.tsx`
+  - `backend-server/controllers/expoCommunityController.ts`
+  - `backend-server/services/expoCommunityStore.ts`
+  - `backend-server/routes/__tests__/expoCommunity.controller.test.ts`
+  - `scripts/qa-expo-community.mjs`
+  - `scripts/qa-expo-marketplaces.mjs`
+  - `supabase/migrations/20260704160000_expo_community_content.sql`
+  - `docs/CURRENT_TASK.md`
+- Product/release status:
+  - `productVisualAccepted=false`; human visual acceptance is still required.
+  - No staging deploy, production deploy, payment mutation, live database migration, or Supabase project mutation was performed.
+  - The Supabase migration file changed in the repo only; it must be reviewed/applied before a Supabase-backed environment can persist arbitrary spray placement columns.
+- Remaining weak points:
+  - Spray placement now follows the visitor's current city position, but it is still not a true mesh-surface decal picked by camera raycast/normal. A production version should capture exact reachable surface hit, normal, rotation, moderation preview, and collision/surface allowlist.
+  - Multi-user presence needs a real two-browser/two-user Supabase Realtime QA run before it can be called proven in the deployed environment.
+  - Remote avatars are more readable and animated, but they are still lightweight visitor markers, not full branded avatars with exact gait/jump replication.
+  - City board is more useful and larger, but a future pass should add richer board content layout and moderation/preview states for audio, small ads, and spray approvals.
+
+## 2026-07-04 Spray Picker and Presence Clarity Follow-Up
+
+- Active objective: continue fixing weak points after the first city board/spray pass, specifically making spray placement feel chosen by the visitor and making presence status understandable.
+- Implementation status:
+  - Added `WorldSprayPlacementPicker`, a canvas-side bridge that listens for `expo:start-spray-placement`, lets the visitor aim in the city, and captures a nearby camera-forward spray placement on click/tap.
+  - Added `Pick spot in city` and `Use current spot` controls to the Spray tab. The board closes during picking, shows a focused placement prompt, then reopens with `selected city spot` after the click/tap.
+  - Placement mode now hides mobile movement/look/top controls and chat while active so the canvas tap is not blocked by the joystick, look pad, Explore, Map, or menu buttons.
+  - Fixed runtime shell layering so the 3D scene is isolated under HUD UI, and empty operator wrappers no longer intercept visitor clicks.
+  - Made community panel/launcher fixed-position so they remain click-safe above the canvas.
+  - Added presence status to the runtime HUD: `Live visitors`, `Finding visitors`, `Solo preview`, or `Solo mode`, instead of only showing a raw visitor count.
+  - Updated `useExpoPresence` to expose a user-facing presence status while preserving Supabase Realtime behavior and clearing remote guests when presence is disabled.
+  - Extended community QA to click through the spray picker flow, assert selected spot copy, assert 10-minute spray copy, assert live visitor copy in QA mode, and verify desktop/mobile nonblank screenshots.
+- Validation:
+  - `npx.cmd tsc --noEmit -p tsconfig.app.json` passed.
+  - `npm.cmd run lint` passed.
+  - `npm.cmd run build` passed after the final selected-state styling fix.
+  - `npx.cmd tsx src/shared/expo/communityContent.test.ts` passed.
+  - `npx.cmd tsx backend-server/routes/__tests__/expoCommunity.controller.test.ts` passed.
+  - `npx.cmd tsx src/modules/expo/runtime/community/expoPresencePolicy.test.ts` passed.
+  - `npx.cmd tsx src/modules/expo/__tests__/sceneContract.test.ts` passed earlier in this follow-up.
+  - `npx.cmd tsx src/modules/expo/__tests__/screenRuntimePolicy.test.ts` passed earlier in this follow-up.
+  - `npx.cmd tsx src/modules/expo/__tests__/worldScenePlanningPlacementStability.test.ts` passed earlier in this follow-up.
+  - `node scripts/qa-expo-community.mjs http://127.0.0.1:4177 review_artifacts/warpala-expo-spray-picker` passed through a controlled local Vite server.
+  - `node scripts/qa-expo-marketplaces.mjs http://127.0.0.1:4177 review_artifacts/warpala-expo-screen-visibility-next` passed through a controlled local Vite server.
+- Visual evidence:
+  - `review_artifacts/warpala-expo-spray-picker/community-city-desktop.png`
+  - `review_artifacts/warpala-expo-spray-picker/community-city-mobile.png`
+  - `review_artifacts/warpala-expo-spray-picker/community-guide-desktop.png`
+  - `review_artifacts/warpala-expo-spray-picker/community-guide-mobile.png`
+  - `review_artifacts/warpala-expo-spray-picker/community-panel-desktop.png`
+  - `review_artifacts/warpala-expo-spray-picker/community-panel-mobile.png`
+  - `review_artifacts/warpala-expo-spray-picker/result.json`
+  - `review_artifacts/warpala-expo-screen-visibility-next/city-screen-marketplace-desktop.png`
+  - `review_artifacts/warpala-expo-screen-visibility-next/city-screen-marketplace-mobile.png`
+  - `review_artifacts/warpala-expo-screen-visibility-next/result.json`
+- Touched files for this continuation:
+  - `src/modules/expo/runtime/community/WorldSprayPlacementPicker.tsx`
+  - `src/modules/expo/runtime/community/index.ts`
+  - `src/modules/expo/runtime/community/ExpoCommunityOverlay.tsx`
+  - `src/modules/expo/runtime/community/ExpoCommunityOverlay.css`
+  - `src/modules/expo/runtime/app/ExpoRuntimeShell.tsx`
+  - `src/modules/expo/runtime/app/ExpoWorldHud.tsx`
+  - `src/modules/expo/runtime/world/scene/ExpoWorldCanvasShell.tsx`
+  - `src/modules/expo/hooks/useExpoPresence.ts`
+  - `scripts/qa-expo-community.mjs`
+  - `docs/CURRENT_TASK.md`
+- Product/release status:
+  - `productVisualAccepted=false`; human visual acceptance is still required.
+  - No staging deploy, production deploy, payment mutation, live database migration, or Supabase project mutation was performed.
+  - Spray selection is now a user-visible pick flow, but still uses a camera-forward reachable placement instead of a true mesh-normal decal raycast.
+- Remaining weak points:
+  - The next spray quality step is exact surface hit testing: raycast against an allowlisted set of reachable city meshes, save surface normal/host id, and render as a decal stuck to that mesh instead of a camera-facing plane.
+  - Multi-user presence still needs a real two-user Supabase Realtime proof run outside QA mocks.
+  - The city board content model still needs richer moderation preview for voice notes, small ads, and spray placements before this is fully operator-ready.
+
+## 2026-07-04 Spray Raycast Surface And City Board Polish Follow-Up
+
+- Active objective: continue fixing the weak points in the city community layer, specifically making spray placement attach to an actual picked city surface and making the city board feel more visible and useful in the 3D city.
+- Implementation status:
+  - Upgraded `WorldSprayPlacementPicker` from camera-forward placement to true canvas raycasting against nearby city meshes.
+  - Captured and normalized the picked surface point, surface normal, rotation, host id, and friendly surface label for spray submissions.
+  - Kept a camera-forward fallback when the visitor clicks open space or no nearby mesh is hit, so the flow does not fail silently.
+  - Extended the shared spray placement contract and backend community storage mapping with `hostId` and `normalX/normalY/normalZ`.
+  - Updated the Supabase migration file with the new placement columns; the migration was not applied to any live Supabase project.
+  - Rendered temporary city sprays using the saved surface normal, so marks face the picked surface instead of always behaving like a flat camera-facing marker.
+  - Reworked the 3D city board into a larger, closer, clearer community destination with readable message cards, live counts, separate voice/ad/spray panels, a bigger open-board CTA, and a separate temporary-spray surface that no longer blocks the main board content.
+  - Improved spray panel copy so visitors can tell whether they are using their current spot or a selected city spot, without exposing technical host IDs.
+  - Updated community QA to assert the new spray target copy while continuing to exercise the pick-spot flow on desktop and mobile.
+- Validation passed:
+  - `npx.cmd tsc --noEmit -p tsconfig.app.json`
+  - `npx.cmd tsc --noEmit -p backend-server/tsconfig.json`
+  - `npm.cmd run lint`
+  - `npm.cmd run build`
+  - `npx.cmd tsx src/shared/expo/communityContent.test.ts`
+  - `npx.cmd tsx backend-server/routes/__tests__/expoCommunity.controller.test.ts`
+  - `npx.cmd tsx src/modules/expo/runtime/community/expoPresencePolicy.test.ts`
+  - `node scripts/qa-expo-community.mjs http://127.0.0.1:4180 review_artifacts/warpala-expo-community-board-polish-final`
+  - `git diff --check -- src/shared/expo/communityContent.ts src/shared/expo/communityContent.test.ts src/modules/expo/runtime/community/WorldSprayPlacementPicker.tsx src/modules/expo/runtime/community/WorldCommunityHub.tsx src/modules/expo/runtime/community/ExpoCommunityOverlay.tsx backend-server/services/expoCommunityStore.ts backend-server/routes/__tests__/expoCommunity.controller.test.ts scripts/qa-expo-community.mjs supabase/migrations/20260704160000_expo_community_content.sql`
+- Visual evidence:
+  - `review_artifacts/warpala-expo-community-board-polish-final/community-city-desktop.png`
+  - `review_artifacts/warpala-expo-community-board-polish-final/community-city-mobile.png`
+  - `review_artifacts/warpala-expo-community-board-polish-final/community-guide-desktop.png`
+  - `review_artifacts/warpala-expo-community-board-polish-final/community-guide-mobile.png`
+  - `review_artifacts/warpala-expo-community-board-polish-final/community-panel-desktop.png`
+  - `review_artifacts/warpala-expo-community-board-polish-final/community-panel-mobile.png`
+  - `review_artifacts/warpala-expo-community-board-polish-final/community-canvas-desktop.png`
+  - `review_artifacts/warpala-expo-community-board-polish-final/community-canvas-mobile.png`
+  - `review_artifacts/warpala-expo-community-board-polish-final/result.json`
+- Touched files for this continuation:
+  - `src/shared/expo/communityContent.ts`
+  - `src/shared/expo/communityContent.test.ts`
+  - `src/modules/expo/runtime/community/WorldSprayPlacementPicker.tsx`
+  - `src/modules/expo/runtime/community/WorldCommunityHub.tsx`
+  - `src/modules/expo/runtime/community/ExpoCommunityOverlay.tsx`
+  - `backend-server/services/expoCommunityStore.ts`
+  - `backend-server/routes/__tests__/expoCommunity.controller.test.ts`
+  - `scripts/qa-expo-community.mjs`
+  - `supabase/migrations/20260704160000_expo_community_content.sql`
+  - `docs/CURRENT_TASK.md`
+- Product/release status:
+  - `productVisualAccepted=false`; human visual acceptance is still required.
+  - No staging deploy, production deploy, payment mutation, live database migration, or Supabase project mutation was performed.
+  - The Supabase migration file changed in the repo only.
+  - The dirty worktree remains intentionally preserved; untracked community files were not reset or force-added.
+- Remaining weak points:
+  - Spray placement now has surface hit, normal, and host metadata, but production still needs a deliberate reachable-surface allowlist, moderation preview of exact placement, and business rules for where sponsor/community marks are permitted.
+  - Multi-user presence still needs a real two-browser/two-user Supabase Realtime proof run outside QA mocks.
+  - The city board is more visible and commercially understandable, but the broader city still needs a ground/material/lighting pass before `productVisualAccepted` should change.

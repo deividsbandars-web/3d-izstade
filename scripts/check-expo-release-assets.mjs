@@ -16,7 +16,6 @@ const criticalAssets = [
 
 const advisoryAssets = [
   { path: 'public/models/realistic_city.glb', type: 'legacy_city_backdrop' },
-  { path: 'public/models/default_booth.glb', type: 'legacy_fallback_model' },
 ];
 
 const TOTAL_CRITICAL_BUDGET_MIB = 200;

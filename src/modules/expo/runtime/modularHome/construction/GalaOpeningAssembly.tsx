@@ -12,6 +12,10 @@ import {
   type GalaConstructionWallSegment,
 } from './GalaConstructionModel';
 import {
+  shouldRenderGalaOpeningFineDetail,
+  type GalaConstructionRenderDetailLevel,
+} from './GalaConstructionDetailPolicy';
+import {
   GalaConstructionBox,
   GalaConstructionInstancedBoxes,
   type GalaConstructionBoxInstance,
@@ -22,6 +26,7 @@ import { resolveGalaWallSkin } from './GalaWallSkinModel';
 type GalaOpeningAssemblyProps = {
   onEntryDoorOpen?: () => void;
   opening: GalaConstructionOpening;
+  renderDetailLevel: GalaConstructionRenderDetailLevel;
   visualConfig?: GalaHouseVisualConfig;
   wall: GalaConstructionWallSegment;
 };
@@ -66,7 +71,13 @@ function sizeAcrossWall(wall: GalaConstructionWallSegment, jambWidth: number, yS
     : [revealDepth, ySize, jambWidth];
 }
 
-export function GalaOpeningAssembly({ onEntryDoorOpen, opening, visualConfig, wall }: GalaOpeningAssemblyProps) {
+export function GalaOpeningAssembly({
+  onEntryDoorOpen,
+  opening,
+  renderDetailLevel,
+  visualConfig,
+  wall,
+}: GalaOpeningAssemblyProps) {
   const visual = resolveGalaOpeningVisual(visualConfig);
   const wallSkin = resolveGalaWallSkin(visualConfig);
   const doorStates = useGalaDoorStates();
@@ -114,6 +125,7 @@ export function GalaOpeningAssembly({ onEntryDoorOpen, opening, visualConfig, wa
     wallSkinModelOwner: 'GalaWallSkinModel',
     wallId: wall.id,
   };
+  const renderFineDetail = shouldRenderGalaOpeningFineDetail(renderDetailLevel);
   const handleDoorClick = (event: ThreeEvent<MouseEvent>) => {
     if (!opening.doorId) {
       return;
@@ -263,6 +275,83 @@ export function GalaOpeningAssembly({ onEntryDoorOpen, opening, visualConfig, wa
       size: sizeAlongWall(wall, opening.widthM + CASING_OVERLAP * 2, FRAME_WIDTH, CASING_DEPTH),
     }] : []),
   ]));
+
+  if (!renderFineDetail) {
+    return (
+      <group
+        name={`gala-construction-opening-assembly-${opening.id}`}
+        userData={{
+          ...commonUserData,
+          closedDoorsAreNotPassThrough: true,
+          galaOpeningReducedDetail: true,
+          passableDoorsLookOpen: true,
+          windowsAreSealed: opening.kind === 'window',
+        }}
+      >
+        <GalaConstructionInstancedBoxes
+          {...trimMaterial}
+          castShadow={false}
+          color={casingColor}
+          instances={casingInstances}
+          name={`gala-construction-${opening.id}-reduced-readable-casing-frame`}
+          receiveShadow={false}
+          userData={{
+            ...commonUserData,
+            galaOpeningReducedDetail: true,
+            reducedCasingInstanceCount: casingInstances.length,
+          }}
+        />
+
+        {isDoor && doorState === 'open' ? (
+          <GalaConstructionBox
+            color={doorColor}
+            castShadow={false}
+            name={`gala-construction-${opening.id}-reduced-open-door-leaf-clear-passage`}
+            onClick={handleDoorClick}
+            position={openLeafPosition}
+            receiveShadow={false}
+            roughness={0.68}
+            size={openLeafSize}
+            userData={{
+              ...commonUserData,
+              doorState: 'open',
+              galaOpeningReducedDetail: true,
+              openDoorsArePassable: true,
+              openDoorLooksPassable: true,
+            }}
+          />
+        ) : (
+          <GalaConstructionBox
+            color={isDoor ? doorColor : glassColor}
+            castShadow={false}
+            depthWrite={isDoor ? undefined : false}
+            metalness={isDoor ? 0.08 : 0.18}
+            name={isDoor
+              ? `gala-construction-${opening.id}-reduced-closed-opaque-door-slab-blocks-passage`
+              : `gala-construction-${opening.id}-reduced-transparent-window-glass-panel`}
+            opacity={isDoor ? 1 : 0.54}
+            onClick={isDoor ? handleDoorClick : undefined}
+            position={wallPosition(wall, axisCenter, yCenter, 0)}
+            receiveShadow={false}
+            renderOrder={isDoor ? undefined : 4}
+            roughness={isDoor ? 0.68 : 0.28}
+            size={sizeAlongWall(wall, visiblePanelWidth, visiblePanelHeight, slabDepth)}
+            userData={{
+              ...commonUserData,
+              closedDoorsBlockPlayer: isDoor,
+              doorState,
+              galaOpeningReducedDetail: true,
+              glassPanelsFillFrame: !isDoor,
+              windowGlassOpacity: isDoor ? null : 0.54,
+              windowGlassTransparent: !isDoor,
+              windowsDoNotReadAsVoid: !isDoor,
+              windowsStillSealed: !isDoor,
+            }}
+          />
+        )}
+      </group>
+    );
+  }
 
   return (
     <group

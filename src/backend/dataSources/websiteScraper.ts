@@ -1,4 +1,25 @@
 import { logger } from '../logging/logger.js';
+import { safeFetchText, SafeTextFetchError } from './safeTextFetch.js';
+
+const MAX_SCRAPED_TEXT_CHARACTERS = 10_000;
+
+export function extractWebsiteText(html: string) {
+  return html
+    .replace(/<script\b[^>]*>([\s\S]*?)<\/script>/gmi, '')
+    .replace(/<style\b[^>]*>([\s\S]*?)<\/style>/gmi, '')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .substring(0, MAX_SCRAPED_TEXT_CHARACTERS);
+}
+
+function getLogHostname(input: string) {
+  try {
+    return new URL(input).hostname || '<invalid>';
+  } catch {
+    return '<invalid>';
+  }
+}
 
 export const websiteScraper = {
   /**
@@ -6,37 +27,22 @@ export const websiteScraper = {
    * In production, this can be upgraded to use Firecrawl or a Puppeteer-based server.
    */
   async scrapeText(url: string) {
+    const hostname = getLogHostname(url);
     try {
-      logger.info('WebsiteScraper', `Scraping REAL content from: ${url}`);
-      
-      // Heuristic: Use a public CORS-friendly markdown extractor or direct fetch if on server
-      // For the backend-server, direct fetch works.
-      const response = await fetch(url, {
-        headers: {
-          'User-Agent': 'WarpalaBot/1.0 (AI Business OS)'
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to fetch website: ${response.statusText}`);
-      }
-
-      const html = await response.text();
-      
-      // Clean HTML to get text (Basic implementation)
-      const text = html
-        .replace(/<script\b[^>]*>([\s\S]*?)<\/script>/gmi, "")
-        .replace(/<style\b[^>]*>([\s\S]*?)<\/style>/gmi, "")
-        .replace(/<[^>]+>/g, " ")
-        .replace(/\s+/g, " ")
-        .trim()
-        .substring(0, 10000); // Limit to 10k chars for LLM safety
+      logger.info('WebsiteScraper', `Scraping host=${hostname}`);
+      const html = await safeFetchText(url);
+      const text = extractWebsiteText(html);
 
       return { data: text, error: null };
     } catch (error) {
-      logger.error('WebsiteScraper', `Failed to scrape ${url}`, error);
-      // Fallback: If direct fetch fails (CORS in browser), return error
-      return { data: null, error: String(error) };
+      const code = error instanceof SafeTextFetchError ? error.code : 'UNKNOWN_ERROR';
+      logger.error('WebsiteScraper', `Scrape failed host=${hostname} code=${code}`);
+      return {
+        data: null,
+        error: error instanceof SafeTextFetchError
+          ? `${error.code}: ${error.message}`
+          : 'UNKNOWN_ERROR: Website scrape failed',
+      };
     }
   }
 };

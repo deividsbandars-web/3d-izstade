@@ -8,6 +8,7 @@ import {
   type RedisBackedRateLimitStore,
 } from '../services/redisRateLimit.js';
 import { enqueueModularHomeQuoteEmailHandoff } from '../services/modularHomeQuoteNotifier.js';
+import { getClientIpRateLimitKey } from '../middleware/clientIp.js';
 import {
   MODULAR_HOME_QUOTE_BACKEND_CONSENT_TEXT,
   MODULAR_HOME_QUOTE_CONSENT_VERSION,
@@ -417,13 +418,7 @@ export type ModularHomeQuoteRateLimitResult = {
 };
 
 function getModularHomeQuoteRateLimitKey(req: Request): string {
-  const forwardedFor = readFirstHeaderValue(req, 'x-forwarded-for')?.split(',')[0]?.trim();
-  const realIp = readFirstHeaderValue(req, 'x-real-ip');
-  const directIp = typeof req.ip === 'string' ? req.ip : '';
-  const socketIp = typeof req.socket?.remoteAddress === 'string' ? req.socket.remoteAddress : '';
-  const candidate = forwardedFor || realIp || directIp || socketIp || 'unknown';
-
-  return candidate.slice(0, 96);
+  return getClientIpRateLimitKey(req);
 }
 
 export function resetModularHomeQuoteRateLimitForTests(): void {

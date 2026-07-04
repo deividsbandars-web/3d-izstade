@@ -9,14 +9,23 @@ type AdminAccessNotice = {
   title: string;
 } | null;
 
-export function CompanyAdminPageHeader({ onNavigate }: { onNavigate: (path: string) => void }) {
+export function CompanyAdminPageHeader({
+  onNavigate,
+  showOperatorTools = false,
+}: {
+  onNavigate: (path: string) => void;
+  showOperatorTools?: boolean;
+}) {
   return (
     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '40px', alignItems: 'center' }}>
       <WarpalaLogo size={50} />
-      <div style={{ display: 'flex', gap: '15px' }}>
-        <button onClick={() => onNavigate('/expo/sponsor-leads?sponsor=sponsor-concierge')} className="btn-glass">SPONSOR LEADS</button>
-        <button onClick={() => onNavigate('/expo-3d?operator=1')} className="btn-glass">OPEN 3D OPERATOR</button>
-        <button onClick={() => onNavigate('/dashboard')} className="btn-glass">DASHBOARD</button>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', justifyContent: 'flex-end' }}>
+        <button onClick={() => onNavigate('/expo/sponsor-leads?sponsor=sponsor-concierge')} className="btn-glass">Leads</button>
+        <button onClick={() => onNavigate('/expo-3d')} className="btn-glass">View city</button>
+        {showOperatorTools && (
+          <button onClick={() => onNavigate('/expo-3d?operator=1')} className="btn-glass">City review</button>
+        )}
+        <button onClick={() => onNavigate('/expo/sponsor-packages')} className="btn-glass">Packages</button>
       </div>
     </div>
   );

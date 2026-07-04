@@ -20,7 +20,5 @@ assert.deepEqual(
   resolveExpoTextureCandidateUrls('/textures/expo/hero-facade-screen-8k/hero_facade_screen_01.png'),
   [
     '/textures/expo-runtime/hero-facade-screen-8k/hero_facade_screen_01.webp',
-    '/textures/expo/hero-facade-screen-8k/hero_facade_screen_01.png',
   ]
 );
-

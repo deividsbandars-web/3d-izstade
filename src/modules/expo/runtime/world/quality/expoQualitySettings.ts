@@ -182,8 +182,8 @@ function resolveAutoTier(
   if (isMobileLike) {
     if ((hints.deviceMemory !== null && hints.deviceMemory <= 4) || hints.devicePixelRatio >= 2.5) {
       return {
-        reason: 'auto resolved to low for mobile-like constrained device',
-        resolvedTier: 'low',
+        reason: 'auto resolved to medium for mobile-like constrained device; low is explicit fallback only',
+        resolvedTier: 'medium',
       };
     }
 
@@ -231,7 +231,7 @@ function resolveMaxDpr(
     return 1.1;
   }
 
-  return 0.9;
+  return 0.75;
 }
 
 function resolveCanvasDpr(
@@ -245,7 +245,7 @@ function resolveCanvasDpr(
   }
 
   if (resolvedTier === 'low') {
-    return [0.55, maxDpr];
+    return [0.45, maxDpr];
   }
 
   if (resolvedTier === 'medium') {

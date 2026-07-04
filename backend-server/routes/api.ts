@@ -22,6 +22,7 @@ import * as growthController from '../controllers/growthController.js';
 import * as calculatorLeadController from '../controllers/calculatorLeadController.js';
 import * as modularHomeQuoteAdminController from '../controllers/modularHomeQuoteAdminController.js';
 import * as modularHomeQuoteController from '../controllers/modularHomeQuoteController.js';
+import * as expoCommunityController from '../controllers/expoCommunityController.js';
 import { adminOnly, authMiddleware } from '../middleware/authMiddleware.js';
 import { rateLimitMiddleware } from '../middleware/rateLimit.js';
 
@@ -47,12 +48,14 @@ if (pixelStreamingRoutesEnabled) {
 router.post('/expo/lead', expoLeadController.captureExpoLead);
 router.post('/calculator/lead', calculatorLeadController.captureCalculatorLead);
 router.post('/modular-home/quote', modularHomeQuoteController.submitModularHomeQuote);
+router.post('/leads/capture', express.urlencoded({ extended: false }), leadsController.captureLead);
 router.post('/billing/webhook', billingCheckoutController.handleBillingWebhook);
-router.post('/ai-estimate', aiController.estimateWithAi);
 
 // Public read-only scene contract used by the Web3D client. Keep auth policy here only.
 router.get('/expo/booth-slots', boothSlotMarketplaceController.listBoothSlots);
 router.get('/expo/scene', expoController.getExpoScene);
+router.get('/expo/community', expoCommunityController.listExpoCommunity);
+router.get('/expo/community/audio/:id', expoCommunityController.getExpoCommunityAudio);
 
 /**
  * PROTECTED ROUTES (Require Supabase JWT)
@@ -70,6 +73,19 @@ protectedRouter.get('/dashboard', dashboardController.getDashboardData);
 // Expo data/business surface
 protectedRouter.post('/expo/booth-slots/:slotId/reserve', boothSlotMarketplaceController.reserveBoothSlot);
 protectedRouter.post('/expo/booths', expoDataController.createBooth);
+protectedRouter.post('/expo/community/entries', expoCommunityController.createExpoCommunityEntry);
+protectedRouter.post('/expo/community/report/:id', expoCommunityController.reportExpoCommunityItem);
+protectedRouter.post(
+  '/expo/community/voice',
+  express.raw({
+    limit: '800kb',
+    type: ['audio/webm', 'audio/ogg', 'audio/mp4', 'audio/mpeg'],
+  }),
+  expoCommunityController.createExpoCommunityVoice,
+);
+protectedRouter.post('/expo/community/graffiti', expoCommunityController.createExpoCommunityGraffiti);
+protectedRouter.get('/expo/community/moderation', adminOnly, expoCommunityController.listExpoCommunityModeration);
+protectedRouter.patch('/expo/community/moderation/:id', adminOnly, expoCommunityController.moderateExpoCommunity);
 protectedRouter.patch('/expo/booths/:boothId', expoDataController.updateBooth);
 protectedRouter.post(
   '/expo/booths/:boothId/media-review-upload',
@@ -116,12 +132,12 @@ protectedRouter.post('/leads', leadsController.createLead);
 protectedRouter.patch('/leads/:leadId', leadsController.updateLead);
 protectedRouter.post('/leads/by-source', leadsController.getLeadsBySource);
 protectedRouter.post('/leads/generate', leadsController.generateLeads);
-protectedRouter.post('/leads/capture', leadsController.captureLead); // This was incorrectly protected before
+protectedRouter.post('/ai-estimate', aiController.estimateWithAi);
 
 // Billing
 protectedRouter.get('/billing/plans/:planId/limits', billingController.getPlanLimits);
 protectedRouter.get('/billing/users/:userId/plan', billingController.getUserPlan);
-protectedRouter.post('/billing/upgrade', billingController.upgradePlan);
+protectedRouter.post('/billing/upgrade', adminOnly, billingController.upgradePlan);
 protectedRouter.get('/billing/users/:userId/credits', billingController.getCreditBalance);
 protectedRouter.post('/billing/credits/checkout', billingCheckoutController.createBillingCreditCheckoutSession);
 protectedRouter.post('/billing/checkout-session', billingCheckoutController.createBillingCheckoutSession);

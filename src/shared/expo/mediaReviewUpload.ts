@@ -1,6 +1,6 @@
-export type ExpoMediaReviewUploadKind = 'hero' | 'logo' | 'poster' | 'reference';
+export type ExpoMediaReviewUploadKind = 'booth-screen' | 'city-screen' | 'hero' | 'logo' | 'poster' | 'reference';
 export type ExpoMediaReviewUploadReviewStatus = 'approved' | 'pending_review' | 'promoted' | 'rejected';
-export type ExpoMediaReviewUploadPromoteTarget = 'hero' | 'logo' | 'poster';
+export type ExpoMediaReviewUploadPromoteTarget = 'booth-screen' | 'city-screen' | 'hero' | 'logo' | 'poster';
 export type ExpoMediaReviewUploadAdminAction = 'approve' | 'promote' | 'reject';
 
 export type ExpoMediaReviewUploadRecord = {
@@ -35,11 +35,23 @@ export const EXPO_MEDIA_REVIEW_UPLOAD_RECORD_LIMIT = 12;
 
 const IMAGE_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp'] as const;
 const HERO_REFERENCE_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'video/mp4'] as const;
-const VALID_UPLOAD_KINDS = new Set<ExpoMediaReviewUploadKind>(['hero', 'logo', 'poster', 'reference']);
+const VALID_UPLOAD_KINDS = new Set<ExpoMediaReviewUploadKind>(['booth-screen', 'city-screen', 'hero', 'logo', 'poster', 'reference']);
 const VALID_REVIEW_STATUSES = new Set<ExpoMediaReviewUploadReviewStatus>(['approved', 'pending_review', 'promoted', 'rejected']);
-const VALID_PROMOTE_TARGETS = new Set<ExpoMediaReviewUploadPromoteTarget>(['hero', 'logo', 'poster']);
+const VALID_PROMOTE_TARGETS = new Set<ExpoMediaReviewUploadPromoteTarget>(['booth-screen', 'city-screen', 'hero', 'logo', 'poster']);
 
 const UPLOAD_CONFIG: Record<ExpoMediaReviewUploadKind, ExpoMediaReviewUploadConfig> = {
+  'booth-screen': {
+    accept: 'image/jpeg,image/png,image/webp,video/mp4',
+    allowedMimeTypes: HERO_REFERENCE_MIME_TYPES,
+    label: 'booth screen campaign',
+    maxBytes: EXPO_MEDIA_REVIEW_UPLOAD_MAX_VIDEO_BYTES,
+  },
+  'city-screen': {
+    accept: 'image/jpeg,image/png,image/webp,video/mp4',
+    allowedMimeTypes: HERO_REFERENCE_MIME_TYPES,
+    label: 'city screen campaign',
+    maxBytes: EXPO_MEDIA_REVIEW_UPLOAD_MAX_VIDEO_BYTES,
+  },
   hero: {
     accept: 'image/jpeg,image/png,image/webp,video/mp4',
     allowedMimeTypes: HERO_REFERENCE_MIME_TYPES,
@@ -97,6 +109,10 @@ export function getExpoMediaReviewUploadAccept(kind: ExpoMediaReviewUploadKind) 
 
 export function getExpoMediaReviewUploadPromoteTargets(kind: ExpoMediaReviewUploadKind): readonly ExpoMediaReviewUploadPromoteTarget[] {
   switch (kind) {
+    case 'booth-screen':
+      return ['booth-screen'] as const;
+    case 'city-screen':
+      return ['city-screen'] as const;
     case 'logo':
       return ['logo'] as const;
     case 'poster':

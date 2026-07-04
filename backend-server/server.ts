@@ -1,11 +1,12 @@
 import './env.js';
 
-import cors from 'cors';
 import express from 'express';
 import helmet from 'helmet';
-import morgan from 'morgan';
 import * as expoController from './controllers/expoController.js';
 import { getBackendRuntimeEnv } from './config/runtimeEnv.js';
+import { logger } from './lib/logger.js';
+import { createBackendCorsMiddleware } from './middleware/corsPolicy.js';
+import { createHttpAccessLogMiddleware } from './middleware/httpAccessLog.js';
 import { requestContext } from './middleware/requestContext.js';
 import { ue5AuthMiddleware } from './middleware/ue5Auth.js';
 import { createApiRouter } from './routes/api.js';
@@ -17,10 +18,7 @@ try {
   backendRuntimeEnv = getBackendRuntimeEnv();
 } catch (error) {
   const message = error instanceof Error ? error.message : String(error);
-  console.error('[backend-env] Failed to resolve backend runtime environment.');
-  console.error(`[backend-env] ${message}`);
-  console.error('[backend-env] Required for GALA/expo-scene backend: SUPABASE_URL and SUPABASE_SERVICE_KEY.');
-  console.error('[backend-env] Required only when PIXEL_STREAMING_ROUTES_ENABLED=true: SIGNALING_STATUS_BASE_URL and UE5_SECRET_KEY.');
+  logger.error('BackendEnv', 'Failed to resolve backend runtime environment', { code: message });
   process.exit(1);
 }
 const apiRoutes = createApiRouter({
@@ -28,9 +26,11 @@ const apiRoutes = createApiRouter({
 });
 const port = backendRuntimeEnv.port;
 
+app.set('trust proxy', backendRuntimeEnv.trustProxyHops > 0 ? backendRuntimeEnv.trustProxyHops : false);
+app.use(requestContext);
+app.use(createHttpAccessLogMiddleware());
 app.use(helmet());
-app.use(cors());
-app.use(morgan('dev'));
+app.use(createBackendCorsMiddleware(backendRuntimeEnv.corsAllowedOrigins));
 app.use(express.json({
   verify: (req, _res, buffer) => {
     if ('originalUrl' in req && req.originalUrl === '/api/billing/webhook') {
@@ -38,7 +38,6 @@ app.use(express.json({
     }
   },
 }));
-app.use(requestContext);
 
 if (backendRuntimeEnv.pixelStreamingRoutesEnabled) {
   app.get('/api/expo/cities', ue5AuthMiddleware, expoController.getCitiesList);
@@ -51,8 +50,8 @@ app.get('/health', (_req, res) => {
 });
 
 app.listen(port, () => {
-  console.log(`Backend Server running at http://localhost:${port}`);
+  logger.info('BackendServer', 'Backend server started', { port });
   if (backendRuntimeEnv.pixelStreamingRoutesEnabled) {
-    console.log(`Hardened City Network API active at http://localhost:${port}/api/expo/cities`);
+    logger.info('BackendServer', 'Pixel Streaming operator routes enabled');
   }
 });

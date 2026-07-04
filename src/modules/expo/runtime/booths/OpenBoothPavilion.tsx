@@ -12,10 +12,71 @@ import {
 import { SponsorTextureSurface } from './BoothTextureMaterials';
 import { resolveOpenBoothPavilionLayout, type OpenBoothPavilionMetrics, type OpenBoothPavilionTier } from './OpenBoothPavilionLayout';
 
+function LowDetailOpenBoothPavilion({
+  accentColor,
+  fallbackText,
+  layout,
+  screenAllowVideoPlayback,
+  screenPosterUrl,
+  screenUrl,
+}: {
+  accentColor: string;
+  fallbackText: string;
+  layout: ReturnType<typeof resolveOpenBoothPavilionLayout>;
+  screenAllowVideoPlayback: boolean;
+  screenPosterUrl?: string | null;
+  screenUrl: string | null;
+}) {
+  const screenY = layout.postHeight * 0.5;
+  const screenZ = -((layout.depth * 0.5) - 0.42);
+
+  return (
+    <group name="booth-open-pavilion booth-low-detail-pavilion">
+      <mesh position={[0, 0.1, 0]} receiveShadow>
+        <boxGeometry args={[layout.width, 0.2, layout.depth]} />
+        <meshStandardMaterial color="#152536" emissive={accentColor} emissiveIntensity={0.025} roughness={0.7} />
+      </mesh>
+      <mesh position={[0, screenY, screenZ]} receiveShadow>
+        <boxGeometry args={[layout.screenFrameWidth + 0.5, layout.screenFrameHeight + 0.5, 0.24]} />
+        <meshStandardMaterial color="#d9e7ee" emissive={accentColor} emissiveIntensity={0.06} roughness={0.56} />
+      </mesh>
+      <mesh position={[0, screenY, screenZ + 0.14]}>
+        <planeGeometry args={[layout.screenSurfaceWidth, layout.screenSurfaceHeight]} />
+        {screenUrl ? (
+          <Suspense fallback={<meshStandardMaterial color="#102031" emissive={accentColor} emissiveIntensity={0.08} />}>
+            <SponsorTextureSurface
+              allowVideoPlayback={screenAllowVideoPlayback}
+              fallbackColor="#102031"
+              emissiveColor={accentColor}
+              emissiveIntensity={0.08}
+              posterUrl={screenPosterUrl}
+              url={screenUrl}
+            />
+          </Suspense>
+        ) : (
+          <meshStandardMaterial color="#102031" emissive={accentColor} emissiveIntensity={0.08} />
+        )}
+      </mesh>
+      {!screenUrl && (
+        <Text position={[0, screenY, screenZ + 0.16]} fontSize={0.58} color="#f8fafc" anchorX="center" anchorY="middle" maxWidth={layout.screenSurfaceWidth * 0.82}>
+          {fallbackText}
+        </Text>
+      )}
+      {[-1, 1].map((side) => (
+        <mesh key={`low-detail-booth-post-${side}`} position={[side * (layout.width * 0.42), layout.postHeight * 0.5, 0]} receiveShadow>
+          <boxGeometry args={[0.32, layout.postHeight, 0.32]} />
+          <meshStandardMaterial color="#e7f0f4" emissive={accentColor} emissiveIntensity={0.08} roughness={0.48} />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
 export function OpenBoothPavilion({
   accentColor,
   districtThemeId,
   fallbackText,
+  lowDetail = false,
   metrics,
   screenAllowVideoPlayback = true,
   screenPosterUrl,
@@ -25,6 +86,7 @@ export function OpenBoothPavilion({
   accentColor: string;
   districtThemeId?: DistrictThemeId | string | null;
   fallbackText: string;
+  lowDetail?: boolean;
   metrics: OpenBoothPavilionMetrics;
   screenAllowVideoPlayback?: boolean;
   screenPosterUrl?: string | null;
@@ -50,9 +112,25 @@ export function OpenBoothPavilion({
     showPremiumOrEliteBlades,
     showPremiumPortalShell,
     showScreenTrimOverlays,
+    showSignalTowers,
     showTierSideBanners,
+    signalTowerHeight,
+    signalTowerOffsetX,
     width,
   } = resolveOpenBoothPavilionLayout(metrics, tier);
+  const lowDetailLayout = resolveOpenBoothPavilionLayout(metrics, tier);
+  if (lowDetail) {
+    return (
+      <LowDetailOpenBoothPavilion
+        accentColor={accentColor}
+        fallbackText={fallbackText}
+        layout={lowDetailLayout}
+        screenAllowVideoPlayback={screenAllowVideoPlayback}
+        screenPosterUrl={screenPosterUrl}
+        screenUrl={screenUrl}
+      />
+    );
+  }
   const postOffsetX = (width * 0.5) - (isHero ? 1.52 : isElite ? 1.36 : isPremium ? 1.24 : 1.1);
   const postOffsetZ = (depth * 0.5) - (isHero ? 1.26 : isElite ? 1.16 : isPremium ? 1.06 : 0.94);
   const rearScreenZ = -((depth * 0.5) - 0.56);
@@ -133,6 +211,10 @@ export function OpenBoothPavilion({
     const sideWallDepth = houseDepth * 0.78;
     const sideWallY = houseWallY + 0.16;
     const sideWallZ = wallZ + sideWallDepth * 0.42;
+    const signalTowerWidth = isHero ? 0.72 : isElite ? 0.62 : isPremium ? 0.52 : 0.42;
+    const signalTowerDepth = isHero ? 0.76 : isElite ? 0.66 : isPremium ? 0.56 : 0.46;
+    const signalTowerY = signalTowerHeight * 0.5;
+    const signalTowerZ = wallZ + houseDepth * (isHero ? 0.3 : isElite ? 0.28 : 0.26);
     const frontPortalPostWidth = isHero ? 0.58 : isElite ? 0.5 : isPremium ? 0.44 : 0.36;
     const frontPortalHeight = houseWallHeight * (isHero ? 0.96 : isElite ? 0.92 : isPremium ? 0.86 : 0.78);
     const frontPortalY = 0.38 + frontPortalHeight * 0.5;
@@ -175,6 +257,22 @@ export function OpenBoothPavilion({
           <boxGeometry args={[roofWidth * 0.72, 0.12, 0.32]} />
           <meshStandardMaterial color="#0d2235" emissive={accentColor} emissiveIntensity={0.08} metalness={0.16} roughness={0.36} />
         </mesh>
+        {showSignalTowers && [-1, 1].map((side) => (
+          <group key={`screen-first-signal-tower-${side}`} name={`booth-tier-signal-tower-${tier}-${side}`} position={[side * signalTowerOffsetX, signalTowerY, signalTowerZ]}>
+            <mesh castShadow={false} receiveShadow>
+              <boxGeometry args={[signalTowerWidth, signalTowerHeight, signalTowerDepth]} />
+              <meshStandardMaterial color={isHero ? '#edf9ff' : isElite ? '#e4f5fb' : '#d7eaf4'} metalness={0.12} roughness={0.36} />
+            </mesh>
+            <mesh position={[0, 0.1, signalTowerDepth * 0.36]}>
+              <boxGeometry args={[signalTowerWidth * 0.32, signalTowerHeight - (isHero ? 1.8 : 1.4), 0.12]} />
+              <meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={isHero ? 0.2 : isElite ? 0.16 : 0.12} roughness={0.22} metalness={0.1} />
+            </mesh>
+            <mesh position={[0, signalTowerHeight * 0.5 + 0.18, 0]} castShadow={false} receiveShadow>
+              <boxGeometry args={[signalTowerWidth * 1.35, 0.28, signalTowerDepth * 1.18]} />
+              <meshStandardMaterial color="#f6fbff" emissive={accentColor} emissiveIntensity={isHero ? 0.08 : 0.055} metalness={0.12} roughness={0.28} />
+            </mesh>
+          </group>
+        ))}
         {[-1, 1].map((side) => (
           <group key={`booth-house-side-room-${side}`} name={`booth-house-side-room-${side}`}>
             <mesh position={[side * roomX, roomY, roomZ]} castShadow receiveShadow>

@@ -15,24 +15,32 @@ import { ExpoDataAPI } from '../../services/expo';
 const validForm: SponsorPackageRequestForm = {
   ...INITIAL_SPONSOR_PACKAGE_REQUEST_FORM,
   budgetRange: ' 10k-25k ',
+  ctaLabel: ' Request demo ',
   company: ' Warpala Sponsor ',
   email: ' buyer@example.com ',
+  logoUrl: ' https://cdn.example.com/logo.webp ',
+  mediaUrl: ' https://cdn.example.com/screen.webp ',
   message: ' Interested in Premium Booth and Demo Arena sponsorship. ',
   name: ' Sponsor Buyer ',
   packageInterest: 'premium',
   phone: ' +371 20000000 ',
+  sponsorHeadline: ' Launch-ready Web3D sponsor booth ',
   timeline: ' next-month ',
   website: ' https://example.com ',
 };
 
 assert.deepEqual(normalizeSponsorPackageRequestForm(validForm), {
   budgetRange: '10k-25k',
+  ctaLabel: 'Request demo',
   company: 'Warpala Sponsor',
   email: 'buyer@example.com',
+  logoUrl: 'https://cdn.example.com/logo.webp',
+  mediaUrl: 'https://cdn.example.com/screen.webp',
   message: 'Interested in Premium Booth and Demo Arena sponsorship.',
   name: 'Sponsor Buyer',
   packageInterest: 'premium',
   phone: '+371 20000000',
+  sponsorHeadline: 'Launch-ready Web3D sponsor booth',
   timeline: 'next-month',
   website: 'https://example.com',
 });
@@ -40,6 +48,8 @@ assert.deepEqual(normalizeSponsorPackageRequestForm(validForm), {
 assert.equal(validateSponsorPackageRequestForm(validForm), null);
 assert.equal(validateSponsorPackageRequestForm({ ...validForm, email: 'bad-email' }), 'Enter a valid work email.');
 assert.equal(validateSponsorPackageRequestForm({ ...validForm, company: '' }), 'Enter a company name.');
+assert.equal(validateSponsorPackageRequestForm({ ...validForm, logoUrl: 'http://cdn.example.com/logo.webp' }), 'Use a public HTTPS logo URL or leave it blank.');
+assert.equal(validateSponsorPackageRequestForm({ ...validForm, mediaUrl: 'not-a-url' }), 'Use a public HTTPS media URL or leave it blank.');
 assert.equal(getSponsorPackageInterestLabel('arena'), 'Demo Arena Sponsor');
 assert.equal(getSponsorPackageInterestLabel('unsure'), 'Not sure yet');
 
@@ -54,6 +64,10 @@ assert.match(payload.message, /Sponsor package interest: Premium Booth/);
 assert.match(payload.message, /Sponsor company: Warpala Sponsor/);
 assert.match(payload.message, /Contact phone: \+371 20000000/);
 assert.match(payload.message, /Website: https:\/\/example\.com/);
+assert.match(payload.message, /Logo URL: https:\/\/cdn\.example\.com\/logo\.webp/);
+assert.match(payload.message, /Media URL: https:\/\/cdn\.example\.com\/screen\.webp/);
+assert.match(payload.message, /Booth headline: Launch-ready Web3D sponsor booth/);
+assert.match(payload.message, /Preferred CTA: Request demo/);
 assert.match(payload.message, /Interested in Premium Booth and Demo Arena sponsorship\./);
 
 const originalWindow = globalThis.window;

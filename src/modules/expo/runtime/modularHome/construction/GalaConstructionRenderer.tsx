@@ -21,12 +21,16 @@ import { GalaRoomAssembly } from './GalaRoomAssembly';
 import { GalaWallAssembly } from './GalaWallAssembly';
 import { useGalaConstructionPbrTextures } from './GalaConstructionPbrTextures';
 import {
+  shouldRenderGalaRoofFineDetail,
+  shouldRenderGalaRoomAssembly,
+  shouldRenderGalaWallSegment,
+  type GalaConstructionRenderDetailLevel,
+  type GalaConstructionRenderViewMode,
+} from './GalaConstructionDetailPolicy';
+import {
   resolveGalaExteriorBoardColor,
   resolveGalaWallSkin,
 } from './GalaWallSkinModel';
-
-type GalaConstructionRenderDetailLevel = 'full' | 'reduced';
-type GalaConstructionRenderViewMode = 'cutaway' | 'exterior' | 'floorplan' | 'interior';
 
 type GalaConstructionRendererProps = {
   constructionModel?: GalaConstructionModel;
@@ -41,9 +45,16 @@ function opacityForCutaway(transparentCutaway: boolean | undefined): number {
   return transparentCutaway ? 0.34 : 1;
 }
 
-function FoundationAndBaseTrim({ visualConfig }: { visualConfig?: GalaHouseVisualConfig }) {
+function FoundationAndBaseTrim({
+  renderDetailLevel,
+  visualConfig,
+}: {
+  renderDetailLevel: GalaConstructionRenderDetailLevel;
+  visualConfig?: GalaHouseVisualConfig;
+}) {
   const wallSkin = resolveGalaWallSkin(visualConfig);
   const trimPbrTextures = useGalaConstructionPbrTextures('trim');
+  const trimTextureProps = renderDetailLevel === 'full' ? trimPbrTextures : {};
   const length = GALA_HOUSE_DIMENSIONS.houseLengthM;
   const width = GALA_HOUSE_DIMENSIONS.assembledWallEnvelopeWidthM;
   const halfLength = length * 0.5;
@@ -76,7 +87,7 @@ function FoundationAndBaseTrim({ visualConfig }: { visualConfig?: GalaHouseVisua
         { name: 'east-base', position: [halfLength + 0.075, baseTrimY, 0] as [number, number, number], size: [0.085, baseTrimHeight, width + 0.16] as [number, number, number] },
       ].map((trim) => (
         <GalaConstructionBox
-          {...trimPbrTextures}
+          {...trimTextureProps}
           key={trim.name}
           color={wallSkin.exterior.trimColor}
           name={`gala-construction-${trim.name}-continuous-base-trim`}
@@ -93,9 +104,16 @@ function FoundationAndBaseTrim({ visualConfig }: { visualConfig?: GalaHouseVisua
   );
 }
 
-function CornerBoards({ visualConfig }: { visualConfig?: GalaHouseVisualConfig }) {
+function CornerBoards({
+  renderDetailLevel,
+  visualConfig,
+}: {
+  renderDetailLevel: GalaConstructionRenderDetailLevel;
+  visualConfig?: GalaHouseVisualConfig;
+}) {
   const wallSkin = resolveGalaWallSkin(visualConfig);
   const exteriorPbrTextures = useGalaConstructionPbrTextures('exterior', wallSkin.exterior.textureVariant);
+  const exteriorTextureProps = renderDetailLevel === 'full' ? exteriorPbrTextures : {};
   const halfLength = GALA_HOUSE_DIMENSIONS.houseLengthM * 0.5;
   const halfWidth = GALA_HOUSE_DIMENSIONS.assembledWallEnvelopeWidthM * 0.5;
 
@@ -107,7 +125,7 @@ function CornerBoards({ visualConfig }: { visualConfig?: GalaHouseVisualConfig }
       {[-halfLength, halfLength].flatMap((x) => (
         [-halfWidth, halfWidth].map((z) => (
           <GalaConstructionBox
-            {...exteriorPbrTextures}
+            {...exteriorTextureProps}
             key={`${x}-${z}`}
             color={wallSkin.exterior.trimColor}
             name="gala-construction-full-height-corner-board-ties-wall-assemblies"
@@ -128,10 +146,14 @@ function CornerBoards({ visualConfig }: { visualConfig?: GalaHouseVisualConfig }
 
 function ResidentialTerrace({
   constructionModel,
+  renderDetailLevel,
   visualConfig,
+  viewMode,
 }: {
   constructionModel: GalaConstructionModel;
+  renderDetailLevel: GalaConstructionRenderDetailLevel;
   visualConfig?: GalaHouseVisualConfig;
+  viewMode: GalaConstructionRenderViewMode;
 }) {
   const terraceVisual = resolveGalaTerraceVisual(visualConfig);
   const deckPbrTextures = useGalaConstructionPbrTextures('deck');
@@ -150,6 +172,11 @@ function ResidentialTerrace({
   if (!terrace.enabled) {
     return null;
   }
+  if (renderDetailLevel === 'reduced' && viewMode === 'interior') {
+    return null;
+  }
+  const renderFineDetail = renderDetailLevel === 'full';
+  const deckTextureProps = renderFineDetail ? deckPbrTextures : {};
 
   return (
     <group
@@ -162,7 +189,7 @@ function ResidentialTerrace({
       }}
     >
       <GalaConstructionBox
-        {...deckPbrTextures}
+        {...deckTextureProps}
         color={terraceVisual.deckColor}
         name="gala-construction-terrace-low-timber-deck-configurable"
         position={[terraceCenterX, deckY, deckZ]}
@@ -180,7 +207,7 @@ function ResidentialTerrace({
         size={[terrace.lengthM + 0.04, terraceVisual.edgeTrimHeightM, terraceVisual.edgeTrimDepthM]}
         userData={{ terraceResidentialNotFortress: true }}
       />
-      {[-1, 1].map((side) => (
+      {renderFineDetail ? [-1, 1].map((side) => (
         <GalaConstructionBox
           key={`terrace-side-edge-trim-${side}`}
           color={terraceVisual.deckDarkColor}
@@ -197,18 +224,20 @@ function ResidentialTerrace({
           ]}
           userData={{ terraceResidentialNotFortress: true }}
         />
-      ))}
-      <GalaConstructionBox
-        color={terraceVisual.deckDarkColor}
-        name="gala-construction-terrace-house-wall-back-edge-connector-strip"
-        position={[terraceCenterX, deckBackConnectorY, deckBackConnectorZ]}
-        size={[terrace.lengthM + 0.04, terrace.deckThicknessM + 0.02, terrace.backConnectorDepthM]}
-        userData={{
-          terraceCladdingGapSealed: true,
-          terraceResidentialNotFortress: true,
-        }}
-      />
-      {terraceVisual.showSteps ? Array.from({ length: terraceVisual.stepCount }).map((_, index) => (
+      )) : null}
+      {renderFineDetail ? (
+        <GalaConstructionBox
+          color={terraceVisual.deckDarkColor}
+          name="gala-construction-terrace-house-wall-back-edge-connector-strip"
+          position={[terraceCenterX, deckBackConnectorY, deckBackConnectorZ]}
+          size={[terrace.lengthM + 0.04, terrace.deckThicknessM + 0.02, terrace.backConnectorDepthM]}
+          userData={{
+            terraceCladdingGapSealed: true,
+            terraceResidentialNotFortress: true,
+          }}
+        />
+      ) : null}
+      {renderFineDetail && terraceVisual.showSteps ? Array.from({ length: terraceVisual.stepCount }).map((_, index) => (
         <GalaConstructionBox
           {...deckPbrTextures}
           key={`terrace-step-${index}`}
@@ -219,7 +248,7 @@ function ResidentialTerrace({
           userData={{ terraceResidentialNotFortress: true }}
         />
       )) : null}
-      {terraceVisual.showLightRail ? (
+      {renderFineDetail && terraceVisual.showLightRail ? (
         <>
           <GalaConstructionBox
             color={terraceVisual.railColor}
@@ -246,11 +275,13 @@ function ResidentialTerrace({
 
 function GableBoardCladding({
   constructionModel,
+  renderDetailLevel,
   side,
   transparentCutaway,
   visualConfig,
 }: {
   constructionModel: GalaConstructionModel;
+  renderDetailLevel: GalaConstructionRenderDetailLevel;
   side: 'east' | 'west';
   transparentCutaway?: boolean;
   visualConfig?: GalaHouseVisualConfig;
@@ -300,6 +331,7 @@ function GableBoardCladding({
     });
     return acc;
   }, {}), [boards, exterior.boardDepthM, exterior.boardPalette, exterior.boardWidthM, faceX, wallTopY]);
+  const renderFineDetail = shouldRenderGalaRoofFineDetail(renderDetailLevel);
 
   return (
     <group
@@ -335,7 +367,7 @@ function GableBoardCladding({
           transparent={Boolean(transparentCutaway)}
         />
       </mesh>
-      {Object.entries(gableBoardInstancesByColor).map(([boardColor, instances]) => (
+      {renderFineDetail ? Object.entries(gableBoardInstancesByColor).map(([boardColor, instances]) => (
         <GalaConstructionInstancedBoxes
           {...exterior.materials.board}
           {...exteriorPbrTextures}
@@ -364,7 +396,7 @@ function GableBoardCladding({
             zebraStripingPresent: false,
           }}
         />
-      ))}
+      )) : null}
     </group>
   );
 }
@@ -377,7 +409,7 @@ export function GalaConstructionRenderer({
   viewMode = 'exterior',
   visualConfig,
 }: GalaConstructionRendererProps) {
-  const shouldRenderRoomAssembly = viewMode === 'interior' || viewMode === 'cutaway' || viewMode === 'floorplan';
+  const renderRoomAssembly = shouldRenderGalaRoomAssembly({ renderDetailLevel, viewMode });
 
   return (
     <group
@@ -404,7 +436,12 @@ export function GalaConstructionRenderer({
           roofOwnershipDocumented: true,
         }}
       >
-        <GalaRoof roofModel={constructionModel.roof} transparentCutaway={transparentCutaway} visualConfig={visualConfig} />
+        <GalaRoof
+          renderDetailLevel={renderDetailLevel}
+          roofModel={constructionModel.roof}
+          transparentCutaway={transparentCutaway}
+          visualConfig={visualConfig}
+        />
       </group>
       <group
         name="gala-construction-owned-floor-wall-opening-room-assemblies"
@@ -414,21 +451,34 @@ export function GalaConstructionRenderer({
           singleSourceRendererProven: false,
         }}
       >
-        <FoundationAndBaseTrim visualConfig={visualConfig} />
-        <GalaFloorCeilingAssembly visualConfig={visualConfig} />
-        {constructionModel.walls.map((wall) => (
+        <FoundationAndBaseTrim renderDetailLevel={renderDetailLevel} visualConfig={visualConfig} />
+        <GalaFloorCeilingAssembly renderDetailLevel={renderDetailLevel} visualConfig={visualConfig} />
+        {constructionModel.walls
+          .filter((wall) => shouldRenderGalaWallSegment({
+            renderDetailLevel,
+            viewMode,
+            wallKind: wall.kind,
+          }))
+          .map((wall) => (
           <GalaWallAssembly
             key={wall.id}
             onEntryDoorOpen={onEntryDoorOpen}
+            renderDetailLevel={renderDetailLevel}
             visualConfig={visualConfig}
+            viewMode={viewMode}
             wall={wall}
           />
         ))}
-        <GableBoardCladding constructionModel={constructionModel} side="west" transparentCutaway={transparentCutaway} visualConfig={visualConfig} />
-        <GableBoardCladding constructionModel={constructionModel} side="east" transparentCutaway={transparentCutaway} visualConfig={visualConfig} />
-        <CornerBoards visualConfig={visualConfig} />
-        <ResidentialTerrace constructionModel={constructionModel} visualConfig={visualConfig} />
-        {shouldRenderRoomAssembly ? (
+        <GableBoardCladding constructionModel={constructionModel} renderDetailLevel={renderDetailLevel} side="west" transparentCutaway={transparentCutaway} visualConfig={visualConfig} />
+        <GableBoardCladding constructionModel={constructionModel} renderDetailLevel={renderDetailLevel} side="east" transparentCutaway={transparentCutaway} visualConfig={visualConfig} />
+        <CornerBoards renderDetailLevel={renderDetailLevel} visualConfig={visualConfig} />
+        <ResidentialTerrace
+          constructionModel={constructionModel}
+          renderDetailLevel={renderDetailLevel}
+          viewMode={viewMode}
+          visualConfig={visualConfig}
+        />
+        {renderRoomAssembly ? (
           <GalaRoomAssembly detailLevel={renderDetailLevel} visualConfig={visualConfig} />
         ) : null}
       </group>

@@ -1,19 +1,21 @@
 import { logger } from '../logging/logger.js';
-import { llmService } from '../ai/llmService.js';
+import { createSystemLlmMetering, llmService, type LlmMeteringContext } from '../ai/llmService.js';
 import { supabaseClient } from '../../lib/supabaseClient.js';
 import { workflowEngine } from '../automation/workflowEngine.js';
+
+const businessGeneratorMetering = (action: string) => createSystemLlmMetering('business-generator', action);
 
 export const businessGenerator = {
   /**
    * 1. Analyzes a raw idea or market niche and expands it into a full concept
    */
-  async generateBusinessIdea(niche: string) {
+  async generateBusinessIdea(niche: string, metering: LlmMeteringContext = businessGeneratorMetering('generate-business-idea')) {
     try {
       logger.info('BusinessGenerator', `Analyzing niche: ${niche}`);
       const prompt = `Act as an expert Business Strategist. I have an idea for a niche: "${niche}". 
       Please provide a complete business brief including: Name, Target Audience, Core Value Proposition, and Monetization Strategy. Format as JSON if possible or clear text.`;
       
-      const { text, error } = await llmService.generateText(prompt, { temperature: 0.8 });
+      const { text, error } = await llmService.generateText(prompt, { metering, temperature: 0.8 });
       if (error) throw new Error(error);
 
       return { data: text, error: null };
@@ -53,12 +55,16 @@ export const businessGenerator = {
   /**
    * 3 & 4. Orchestrates the creation and triggers the workflow engine
    */
-  async launchBusinessWorkflow(niche: string, userId?: string) {
+  async launchBusinessWorkflow(
+    niche: string,
+    userId?: string,
+    metering: LlmMeteringContext = businessGeneratorMetering('launch-business-workflow'),
+  ) {
     try {
       logger.info('BusinessGenerator', `Launching full workflow for niche: ${niche}`);
 
       // Step 1: Generate Idea
-      const ideaResponse = await this.generateBusinessIdea(niche);
+      const ideaResponse = await this.generateBusinessIdea(niche, metering);
       if (ideaResponse.error || !ideaResponse.data) throw new Error('Idea generation failed');
       const brief = ideaResponse.data;
 

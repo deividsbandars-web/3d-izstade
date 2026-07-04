@@ -4,7 +4,24 @@ import { createGetExpoScene } from '../controllers/expoController.js';
 function createMockResponse() {
   return {
     body: null as any,
+    ended: false,
+    headers: {} as Record<string, string>,
     statusCode: 200,
+    end() {
+      this.ended = true;
+      return this;
+    },
+    set(field: string | Record<string, string>, value?: string) {
+      if (typeof field === 'string') {
+        this.headers[field.toLowerCase()] = String(value);
+      } else {
+        Object.entries(field).forEach(([key, headerValue]) => {
+          this.headers[key.toLowerCase()] = String(headerValue);
+        });
+      }
+
+      return this;
+    },
     status(code: number) {
       this.statusCode = code;
       return this;

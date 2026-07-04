@@ -39,6 +39,26 @@ const TIER_COLORS: Record<BoothSlotAvailabilityRecord['tier'], string> = {
   premium: '#a78bfa',
 };
 
+const BUYER_INCLUDED_ITEMS = [
+  'Exact booth location in the 3D city',
+  'Sponsor name, logo, headline and CTA',
+  'Booth screen image or video',
+  'Lead/contact action after setup',
+];
+
+const BAND_PREVIEW_POSITION: Record<BoothSlotBand, string> = {
+  arrival: '18%',
+  showcase: '42%',
+  media: '66%',
+  discovery: '84%',
+};
+
+const LANE_PREVIEW_POSITION: Record<BoothSlotLane, string> = {
+  center: '50%',
+  left: '24%',
+  right: '76%',
+};
+
 const pageStyle: CSSProperties = {
   background: 'linear-gradient(180deg, #030712 0%, #07111f 48%, #020617 100%)',
   color: '#f8fafc',
@@ -83,6 +103,98 @@ function groupSlots(slots: BoothSlotAvailabilityRecord[]) {
   return [...groups.entries()].sort(([left], [right]) => left.localeCompare(right));
 }
 
+function BoothLocationPreview({ slot }: { slot: BoothSlotAvailabilityRecord }) {
+  const accent = TIER_COLORS[slot.tier];
+
+  return (
+    <div
+      aria-label="Selected booth location preview"
+      style={{
+        background: 'linear-gradient(180deg, rgba(8, 47, 73, 0.42), rgba(2, 6, 23, 0.78))',
+        border: '1px solid rgba(103, 232, 249, 0.22)',
+        borderRadius: '8px',
+        marginBottom: '16px',
+        overflow: 'hidden',
+      }}
+    >
+      <div style={{ alignItems: 'center', borderBottom: '1px solid rgba(148, 163, 184, 0.14)', display: 'flex', justifyContent: 'space-between', padding: '11px 12px' }}>
+        <div>
+          <div style={{ color: '#67e8f9', fontSize: '0.66rem', fontWeight: 950, textTransform: 'uppercase' }}>Selected booth location</div>
+          <div style={{ color: '#e2e8f0', fontSize: '0.82rem', fontWeight: 850, marginTop: '3px' }}>{BAND_LABELS[slot.band]} / {LANE_LABELS[slot.lane]}</div>
+        </div>
+        <div style={{ color: accent, fontSize: '0.7rem', fontWeight: 950, textTransform: 'uppercase' }}>{KIND_LABELS[slot.kind]}</div>
+      </div>
+      <div style={{ minHeight: 168, position: 'relative' }}>
+        {(['left', 'center', 'right'] as const).map((lane) => (
+          <div
+            key={lane}
+            style={{
+              background: lane === 'center' ? 'rgba(103, 232, 249, 0.1)' : 'rgba(15, 23, 42, 0.36)',
+              borderLeft: lane === 'center' ? '1px solid rgba(103, 232, 249, 0.2)' : '1px solid rgba(148, 163, 184, 0.08)',
+              borderRight: lane === 'center' ? '1px solid rgba(103, 232, 249, 0.2)' : 'none',
+              bottom: 0,
+              left: lane === 'left' ? '0%' : lane === 'center' ? '33.33%' : '66.66%',
+              position: 'absolute',
+              top: 0,
+              width: '33.33%',
+            }}
+          />
+        ))}
+        {(['arrival', 'showcase', 'media', 'discovery'] as const).map((band) => (
+          <div
+            key={band}
+            style={{
+              alignItems: 'center',
+              display: 'flex',
+              gap: '8px',
+              left: '10px',
+              position: 'absolute',
+              right: '10px',
+              top: BAND_PREVIEW_POSITION[band],
+              transform: 'translateY(-50%)',
+            }}
+          >
+            <span style={{ background: 'rgba(148, 163, 184, 0.18)', flex: 1, height: 1 }} />
+            <span style={{ color: '#94a3b8', fontSize: '0.58rem', fontWeight: 900, textTransform: 'uppercase' }}>{BAND_LABELS[band]}</span>
+          </div>
+        ))}
+        <div
+          style={{
+            background: accent,
+            border: '3px solid #f8fafc',
+            borderRadius: '999px',
+            boxShadow: `0 0 24px ${accent}`,
+            height: 18,
+            left: LANE_PREVIEW_POSITION[slot.lane],
+            position: 'absolute',
+            top: BAND_PREVIEW_POSITION[slot.band],
+            transform: 'translate(-50%, -50%)',
+            width: 18,
+          }}
+        />
+        <div
+          style={{
+            background: 'rgba(2, 6, 23, 0.82)',
+            border: `1px solid ${accent}`,
+            borderRadius: '999px',
+            color: '#f8fafc',
+            fontSize: '0.64rem',
+            fontWeight: 900,
+            left: LANE_PREVIEW_POSITION[slot.lane],
+            padding: '5px 8px',
+            position: 'absolute',
+            top: `calc(${BAND_PREVIEW_POSITION[slot.band]} + 24px)`,
+            transform: 'translateX(-50%)',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          Your booth
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function BoothMarketplace() {
   const [slots, setSlots] = useState<BoothSlotAvailabilityRecord[]>([]);
   const [selectedSlotId, setSelectedSlotId] = useState<string | null>(null);
@@ -92,14 +204,14 @@ export default function BoothMarketplace() {
   const [contactEmail, setContactEmail] = useState('');
   const [website, setWebsite] = useState('');
   const [status, setStatus] = useState<{ tone: 'error' | 'idle' | 'loading' | 'success'; text: string }>({
-    text: 'Choose a slot, add company details, and continue to Stripe Checkout.',
+    text: 'Choose a booth location, add company details, and continue.',
     tone: 'idle',
   });
   const [isReserving, setIsReserving] = useState(false);
 
   useEffect(() => {
     let active = true;
-    setStatus({ text: 'Loading booth slot availability...', tone: 'loading' });
+    setStatus({ text: 'Loading available booth locations...', tone: 'loading' });
 
     getBoothSlotAvailability()
       .then((response) => {
@@ -108,7 +220,7 @@ export default function BoothMarketplace() {
         }
         setSlots(response.slots);
         setSelectedSlotId((current) => current ?? response.slots.find((slot) => slot.status === 'available')?.slotId ?? response.slots[0]?.slotId ?? null);
-        setStatus({ text: 'Availability loaded. Prices are server-authored and checkout-ready.', tone: 'success' });
+        setStatus({ text: 'Booth locations loaded. Choose a location and start your sponsor request.', tone: 'success' });
       })
       .catch((error) => {
         if (!active) {
@@ -141,11 +253,11 @@ export default function BoothMarketplace() {
   async function handleReserve(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!selectedSlot) {
-      setStatus({ text: 'Select a booth slot first.', tone: 'error' });
+      setStatus({ text: 'Choose a booth location first.', tone: 'error' });
       return;
     }
     if (selectedSlot.status !== 'available') {
-      setStatus({ text: 'This slot is no longer available. Pick another slot.', tone: 'error' });
+      setStatus({ text: 'This booth is no longer available. Pick another location.', tone: 'error' });
       return;
     }
     if (!companyName.trim()) {
@@ -154,7 +266,7 @@ export default function BoothMarketplace() {
     }
 
     setIsReserving(true);
-    setStatus({ text: 'Creating a 15 minute hold and Stripe checkout session...', tone: 'loading' });
+    setStatus({ text: 'Holding this booth for 15 minutes and opening checkout...', tone: 'loading' });
 
     try {
       const response = await reserveBoothSlot(selectedSlot.slotId, {
@@ -171,11 +283,11 @@ export default function BoothMarketplace() {
         return;
       }
 
-      setStatus({ text: 'Reservation created, but checkout URL was missing. Contact the sponsor team.', tone: 'error' });
+      setStatus({ text: 'Reservation created, but checkout did not open. Contact the sponsor team.', tone: 'error' });
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       setStatus({
-        text: message.includes('401') ? 'Sign in before reserving a booth slot.' : `Reservation failed: ${message}`,
+        text: message.includes('401') ? 'Sign in before reserving a booth.' : `Reservation failed: ${message}`,
         tone: 'error',
       });
     } finally {
@@ -191,22 +303,34 @@ export default function BoothMarketplace() {
             <WarpalaLogo size={44} />
             <div>
               <div style={{ color: '#38bdf8', fontSize: '0.75rem', fontWeight: 900, letterSpacing: '0.12em', textTransform: 'uppercase' }}>
-                Web3D Expo Slot Marketplace
+                Web3D Expo Booths
               </div>
               <h1 style={{ fontSize: 'clamp(1.8rem, 5vw, 3.9rem)', letterSpacing: '-0.025em', lineHeight: 1, margin: '4px 0 0' }}>
-                Pick a sponsor booth slot.
+                Rent a sponsor booth.
               </h1>
+              <p style={{ color: '#cbd5e1', lineHeight: 1.55, margin: '10px 0 0', maxWidth: '690px' }}>
+                Pick the exact city location for your sponsor booth. After checkout, add your logo, media, headline and call to action in sponsor setup.
+              </p>
             </div>
           </div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
             <Link className="btn-glass" style={{ minHeight: 44, textDecoration: 'none' }} to="/expo-3d?salesDemo=1">
-              Open 3D demo
+              Walk city preview
             </Link>
             <Link className="btn-glass" style={{ minHeight: 44, textDecoration: 'none' }} to="/expo/sponsor-packages">
               Compare packages
             </Link>
           </div>
         </header>
+
+        <section style={{ display: 'grid', gap: '12px', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', marginBottom: '16px' }}>
+          {BUYER_INCLUDED_ITEMS.map((item) => (
+            <div key={item} style={{ ...panelStyle, minHeight: 82, padding: '14px' }}>
+              <div style={{ color: '#67e8f9', fontSize: '0.68rem', fontWeight: 950, textTransform: 'uppercase' }}>Included</div>
+              <div style={{ fontSize: '0.9rem', fontWeight: 850, lineHeight: 1.35, marginTop: '6px' }}>{item}</div>
+            </div>
+          ))}
+        </section>
 
         <section style={{ ...panelStyle, marginBottom: '16px', padding: '14px' }}>
           <div style={{ alignItems: 'center', display: 'flex', flexWrap: 'wrap', gap: '12px', justifyContent: 'space-between' }}>
@@ -241,8 +365,8 @@ export default function BoothMarketplace() {
           <section style={{ ...panelStyle, overflow: 'hidden' }}>
             <div style={{ alignItems: 'center', borderBottom: '1px solid rgba(148, 163, 184, 0.16)', display: 'flex', flexWrap: 'wrap', gap: '10px', justifyContent: 'space-between', padding: '16px' }}>
               <div>
-                <h2 style={{ fontSize: '1.08rem', margin: 0 }}>Available booth map</h2>
-                <p style={{ color: '#94a3b8', margin: '5px 0 0' }}>{visibleSlots.length} slots in current filter</p>
+                <h2 style={{ fontSize: '1.08rem', margin: 0 }}>Choose a location</h2>
+                <p style={{ color: '#94a3b8', margin: '5px 0 0' }}>{visibleSlots.length} booths in current view</p>
               </div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                 {(['all', 'standard', 'endcap', 'hero'] as const).map((kind) => (
@@ -304,7 +428,7 @@ export default function BoothMarketplace() {
                               {KIND_LABELS[slot.kind]}
                             </span>
                             <span style={{ fontSize: '0.93rem', fontWeight: 850 }}>{slot.priceLabel}</span>
-                            <span style={{ color: '#94a3b8', fontSize: '0.76rem' }}>{slot.screenClass}</span>
+                            <span style={{ color: '#94a3b8', fontSize: '0.76rem' }}>{slot.screenClass} screen</span>
                             <span style={{ color: slot.status === 'available' ? '#bbf7d0' : '#fecaca', fontSize: '0.76rem', fontWeight: 800 }}>
                               {getStatusLabel(slot)}
                             </span>
@@ -321,19 +445,20 @@ export default function BoothMarketplace() {
           <aside style={{ ...panelStyle, alignSelf: 'start', padding: '18px' }}>
             {selectedSlot ? (
               <>
+                <BoothLocationPreview slot={selectedSlot} />
                 <div style={{ color: TIER_COLORS[selectedSlot.tier], fontSize: '0.76rem', fontWeight: 950, letterSpacing: '0.12em', textTransform: 'uppercase' }}>
                   {BAND_LABELS[selectedSlot.band]} / {LANE_LABELS[selectedSlot.lane]}
                 </div>
                 <h2 style={{ fontSize: '1.55rem', margin: '8px 0 6px' }}>{KIND_LABELS[selectedSlot.kind]}</h2>
                 <div style={{ color: '#f8fafc', fontSize: '2rem', fontWeight: 950, marginBottom: '4px' }}>{selectedSlot.priceLabel}</div>
                 <p style={{ color: '#94a3b8', lineHeight: 1.48, margin: '0 0 14px' }}>
-                  Includes a {selectedSlot.screenClass} screen class and {selectedSlot.boothType} sponsor presence. Payment creates the public scene assignment.
+                  This booth includes a {selectedSlot.screenClass} screen and {selectedSlot.boothType} sponsor presentation. After checkout, Warpala reviews your assets and prepares the public booth.
                 </p>
 
                 <div style={{ display: 'grid', gap: '8px', gridTemplateColumns: '1fr 1fr', marginBottom: '16px' }}>
                   <div style={{ background: 'rgba(2, 6, 23, 0.5)', borderRadius: '8px', padding: '10px' }}>
-                    <div style={{ color: '#94a3b8', fontSize: '0.72rem', fontWeight: 850 }}>Slot</div>
-                    <div style={{ fontSize: '0.82rem', fontWeight: 850, overflowWrap: 'anywhere' }}>{selectedSlot.slotId}</div>
+                    <div style={{ color: '#94a3b8', fontSize: '0.72rem', fontWeight: 850 }}>Area</div>
+                    <div style={{ fontSize: '0.82rem', fontWeight: 850 }}>{BAND_LABELS[selectedSlot.band]} / {LANE_LABELS[selectedSlot.lane]}</div>
                   </div>
                   <div style={{ background: 'rgba(2, 6, 23, 0.5)', borderRadius: '8px', padding: '10px' }}>
                     <div style={{ color: '#94a3b8', fontSize: '0.72rem', fontWeight: 850 }}>Status</div>
@@ -384,10 +509,10 @@ export default function BoothMarketplace() {
                     }}
                     type="submit"
                   >
-                    {isReserving ? 'Creating checkout...' : 'Reserve and pay'}
+                    {isReserving ? 'Opening checkout...' : 'Reserve booth'}
                   </button>
                   <p style={{ color: '#94a3b8', fontSize: '0.82rem', lineHeight: 1.45, margin: 0 }}>
-                    Hold lasts 15 minutes. Stripe confirms payment before the booth is assigned into the public 3D scene.
+                    Hold lasts 15 minutes. Payment confirms the booth location; sponsor setup collects your public booth content.
                   </p>
                   <Link style={{ color: '#bfdbfe', fontSize: '0.84rem', fontWeight: 850 }} to="/login?next=/expo/booth-marketplace">
                     Need to sign in first?

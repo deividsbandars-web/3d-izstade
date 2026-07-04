@@ -51,8 +51,12 @@ export function ExpoRuntimeShell({
 
       {mode !== 'menu' && (
         <>
-          {sceneLayer}
-          {operatorLayer}
+          <div style={{ inset: 0, position: 'absolute', zIndex: 0 }}>
+            {sceneLayer}
+          </div>
+          <div style={{ inset: 0, pointerEvents: 'none', position: 'absolute', zIndex: 10 }}>
+            {operatorLayer}
+          </div>
           {hudLayer}
           <GlobalChat expoMobileCompact={isTouchDevice} />
         </>

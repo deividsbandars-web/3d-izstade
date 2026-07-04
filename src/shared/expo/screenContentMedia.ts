@@ -1,4 +1,5 @@
 import { isValidExpoScreenSlotId } from './screenInventory.js';
+import { normalizeExpoCityScreenCampaign } from './cityScreenCampaign.js';
 
 export type ExpoManagedScreenContentMode = 'generated-card' | 'image' | 'video' | 'video-placeholder';
 export type ExpoManagedScreenContentStatus = 'draft' | 'published';
@@ -217,6 +218,9 @@ function asRecord(value: unknown): Record<string, unknown> {
 export function sanitizeExpoManagedBoothAssets(assets3d: unknown) {
   const assets = asRecord(assets3d);
   const screenContentResult = normalizeExpoScreenContentForSave(asRecord(assets.screen_content));
+  const rawCityScreenContent = asRecord(assets.city_screen_content);
+  const cityScreenContentResult = normalizeExpoScreenContentForSave(rawCityScreenContent);
+  const cityScreenCampaignResult = normalizeExpoCityScreenCampaign(rawCityScreenContent);
   const videoResult = validateExpoScreenMediaUrl(assets.video_url, 'video');
   const sanitizedAssets: Record<string, unknown> = { ...assets };
 
@@ -224,6 +228,15 @@ export function sanitizeExpoManagedBoothAssets(assets3d: unknown) {
     sanitizedAssets.screen_content = screenContentResult.screenContent;
   } else {
     delete sanitizedAssets.screen_content;
+  }
+
+  if (cityScreenContentResult.ok && cityScreenCampaignResult.ok) {
+    sanitizedAssets.city_screen_content = {
+      ...cityScreenContentResult.screenContent,
+      ...cityScreenCampaignResult.campaign,
+    };
+  } else {
+    delete sanitizedAssets.city_screen_content;
   }
 
   if (videoResult.ok && videoResult.url) {

@@ -9,7 +9,8 @@ The runtime must not depend on the raw source PNG pack under `public/textures/ex
 Instead:
 - source PNG textures remain the editable intake/source layer
 - optimized runtime derivatives are generated under `public/textures/expo-runtime/**`
-- the release runtime prefers the generated `webp` derivatives and only falls back to the source PNG when a derivative is missing
+- the release runtime uses the generated `webp` derivatives only
+- source PNG fallback is development-only and requires `VITE_EXPO_ALLOW_SOURCE_TEXTURE_FALLBACK=1`
 
 ## Current active pipeline
 
@@ -62,3 +63,9 @@ Current repo behavior:
 ## Release rule
 
 If a texture is referenced in the sponsor runtime and does not have a generated runtime derivative, that is a release gap.
+
+Raw source PNGs under `public/textures/expo/**` are excluded from Vercel and Docker release contexts and pruned from Vite `dist/` output. Validate this contract with:
+
+```powershell
+npm.cmd run check:release-static-payload
+```
