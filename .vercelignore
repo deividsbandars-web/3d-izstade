@@ -7,7 +7,7 @@ diagnostics
 review-screenshots/
 review_artifacts/
 handoff/
-tower-cluster/
+/tower-cluster/
 server/
 .tmp/
 .tmp-*
