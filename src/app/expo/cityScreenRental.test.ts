@@ -4,6 +4,7 @@ import {
   getCityScreenAvailabilityLabel,
   getCityScreenBuyerSteps,
   getCityScreenMapPins,
+  getCityScreenWindowPreview,
   getRentableCityScreenSlots,
 } from './cityScreenRental.js';
 
@@ -33,3 +34,18 @@ assert.ok(mapPins.every((pin) => pin.mapXPercent >= 0 && pin.mapXPercent <= 100)
 assert.ok(mapPins.every((pin) => pin.mapYPercent >= 0 && pin.mapYPercent <= 100));
 assert.ok(mapPins.every((pin) => pin.routeHint.length > 20 && pin.viewHint.length > 20));
 assert.ok(mapPins.some((pin) => pin.id === 'city-center-spine-hero-wall' && pin.mapXPercent === 50));
+
+const previews = slots.map((slot) => ({ preview: getCityScreenWindowPreview(slot), slot }));
+assert.equal(previews.length, slots.length);
+assert.ok(previews.every(({ preview }) => preview.screenFrame.leftPercent >= 0 && preview.screenFrame.leftPercent <= 100));
+assert.ok(previews.every(({ preview }) => preview.screenFrame.topPercent >= 0 && preview.screenFrame.topPercent <= 100));
+assert.ok(previews.every(({ preview }) => preview.screenFrame.widthPercent >= 20 && preview.screenFrame.widthPercent <= 45));
+assert.ok(previews.every(({ preview }) => preview.screenFrame.heightPercent >= 18 && preview.screenFrame.heightPercent <= 38));
+assert.ok(previews.every(({ preview }) => preview.viewLabel.length > 12 && preview.windowCaption.length > 24));
+assert.ok(
+  getCityScreenWindowPreview(slots.find((slot) => slot.id === 'city-center-spine-hero-wall')!).viewerDistanceLabel
+    .toLowerCase()
+    .includes('first'),
+);
+
+console.log('city screen rental tests passed');

@@ -118,6 +118,67 @@ body.expo-spray-placement-active [data-global-chat='true'] {
   margin: 10px 0;
 }
 
+.expo-community-ready-marks {
+  display: grid;
+  gap: 7px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 2px 0 4px;
+}
+
+.expo-community-ready-marks button {
+  min-height: 34px;
+  padding: 6px 8px;
+}
+
+.expo-community-graffiti-size-row {
+  align-items: center;
+  background: rgba(8, 47, 73, 0.2);
+  border: 1px solid rgba(103, 232, 249, 0.16);
+  border-radius: 7px;
+  color: #94a3b8;
+  display: flex;
+  font-size: 0.68rem;
+  font-weight: 850;
+  justify-content: space-between;
+  margin-top: 12px;
+  padding: 8px 10px;
+}
+
+.expo-community-graffiti-size-row strong {
+  color: #e0f2fe;
+  font-size: 0.72rem;
+}
+
+.expo-community-graffiti-preview {
+  align-items: center;
+  aspect-ratio: 3.4 / 1.55;
+  background: #111827;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 7px;
+  display: grid;
+  font-size: 1.3rem;
+  font-weight: 950;
+  justify-items: center;
+  margin-top: 8px;
+  min-height: 118px;
+  overflow: hidden;
+  padding: 14px;
+  text-align: center;
+  text-transform: uppercase;
+  word-break: break-word;
+}
+
+.expo-community-graffiti-preview img {
+  max-height: 62px;
+  max-width: 78%;
+  object-fit: contain;
+}
+
+.expo-community-graffiti-preview img + strong {
+  font-size: 0.82rem;
+  margin-top: 8px;
+}
+
 .expo-community-placement-prompt {
   background: rgba(3, 10, 22, 0.92);
   border: 1px solid rgba(103, 232, 249, 0.42);
@@ -307,6 +368,10 @@ body.expo-spray-placement-active [data-global-chat='true'] {
 
   .expo-community-placement-actions {
     grid-template-columns: 1fr;
+  }
+
+  .expo-community-ready-marks {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .expo-community-placement-prompt {

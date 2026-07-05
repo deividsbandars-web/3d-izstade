@@ -8,6 +8,10 @@ import {
   type BoothSlotKind,
   type BoothSlotLane,
 } from '../../app/expo/boothSlotAvailability';
+import {
+  getRecommendedExpoCalculatorsForBooth,
+  type ExpoCalculatorCatalogItem,
+} from '../../app/expo/expoCalculatorCatalog';
 import '../../components/calculator/styles/CalculatorPro.css';
 import WarpalaLogo from '../../shared/Logo';
 
@@ -195,6 +199,89 @@ function BoothLocationPreview({ slot }: { slot: BoothSlotAvailabilityRecord }) {
   );
 }
 
+function CalculatorAddOnSelector({
+  calculators,
+  selectedIds,
+  onToggle,
+}: {
+  calculators: ExpoCalculatorCatalogItem[];
+  selectedIds: string[];
+  onToggle: (calculatorId: string) => void;
+}) {
+  if (calculators.length === 0) {
+    return null;
+  }
+
+  return (
+    <section
+      aria-label="Recommended calculator add-ons"
+      style={{
+        background: 'rgba(2, 6, 23, 0.42)',
+        border: '1px solid rgba(148, 163, 184, 0.16)',
+        borderRadius: '8px',
+        display: 'grid',
+        gap: '10px',
+        marginBottom: '16px',
+        padding: '12px',
+      }}
+    >
+      <div style={{ display: 'flex', gap: '10px', justifyContent: 'space-between' }}>
+        <div>
+          <div style={{ color: '#facc15', fontSize: '0.68rem', fontWeight: 950, textTransform: 'uppercase' }}>
+            Calculator add-ons
+          </div>
+          <p style={{ color: '#94a3b8', fontSize: '0.78rem', lineHeight: 1.4, margin: '5px 0 0' }}>
+            Pick the estimate tools visitors should see beside this booth.
+          </p>
+        </div>
+        <div style={{ color: '#e2e8f0', fontSize: '0.72rem', fontWeight: 900, whiteSpace: 'nowrap' }}>
+          {selectedIds.length} selected
+        </div>
+      </div>
+      <div style={{ display: 'grid', gap: '8px' }}>
+        {calculators.map((calculator) => {
+          const checked = selectedIds.includes(calculator.id);
+          return (
+            <label
+              key={calculator.id}
+              style={{
+                alignItems: 'start',
+                background: checked ? `${calculator.accent}1f` : 'rgba(15, 23, 42, 0.54)',
+                border: `1px solid ${checked ? calculator.accent : 'rgba(148, 163, 184, 0.18)'}`,
+                borderRadius: '8px',
+                cursor: 'pointer',
+                display: 'grid',
+                gap: '10px',
+                gridTemplateColumns: 'auto 1fr',
+                minHeight: 72,
+                padding: '10px',
+              }}
+            >
+              <input
+                checked={checked}
+                onChange={() => onToggle(calculator.id)}
+                style={{ accentColor: calculator.accent, height: 18, marginTop: 3, width: 18 }}
+                type="checkbox"
+              />
+              <span style={{ minWidth: 0 }}>
+                <span style={{ color: calculator.accent, display: 'block', fontSize: '0.68rem', fontWeight: 950, textTransform: 'uppercase' }}>
+                  {calculator.cityZoneLabel}
+                </span>
+                <span style={{ color: '#f8fafc', display: 'block', fontSize: '0.86rem', fontWeight: 900, lineHeight: 1.24, marginTop: 2 }}>
+                  {calculator.title}
+                </span>
+                <span style={{ color: '#94a3b8', display: 'block', fontSize: '0.72rem', lineHeight: 1.34, marginTop: 4 }}>
+                  {calculator.summary}
+                </span>
+              </span>
+            </label>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
 export default function BoothMarketplace() {
   const [slots, setSlots] = useState<BoothSlotAvailabilityRecord[]>([]);
   const [selectedSlotId, setSelectedSlotId] = useState<string | null>(null);
@@ -203,6 +290,7 @@ export default function BoothMarketplace() {
   const [companyName, setCompanyName] = useState('');
   const [contactEmail, setContactEmail] = useState('');
   const [website, setWebsite] = useState('');
+  const [selectedCalculatorIds, setSelectedCalculatorIds] = useState<string[]>([]);
   const [status, setStatus] = useState<{ tone: 'error' | 'idle' | 'loading' | 'success'; text: string }>({
     text: 'Choose a booth location, add company details, and continue.',
     tone: 'idle',
@@ -249,6 +337,31 @@ export default function BoothMarketplace() {
     [selectedSlotId, slots],
   );
   const groupedSlots = useMemo(() => groupSlots(visibleSlots), [visibleSlots]);
+  const recommendedCalculators = useMemo(
+    () => selectedSlot ? getRecommendedExpoCalculatorsForBooth(selectedSlot) : [],
+    [selectedSlot],
+  );
+  const selectedCalculatorAddOns = useMemo(
+    () => recommendedCalculators.filter((calculator) => selectedCalculatorIds.includes(calculator.id)),
+    [recommendedCalculators, selectedCalculatorIds],
+  );
+
+  useEffect(() => {
+    if (!selectedSlot) {
+      setSelectedCalculatorIds([]);
+      return;
+    }
+
+    setSelectedCalculatorIds(getRecommendedExpoCalculatorsForBooth(selectedSlot).slice(0, 3).map((calculator) => calculator.id));
+  }, [selectedSlot]);
+
+  function toggleCalculatorAddOn(calculatorId: string) {
+    setSelectedCalculatorIds((current) => (
+      current.includes(calculatorId)
+        ? current.filter((id) => id !== calculatorId)
+        : [...current, calculatorId]
+    ));
+  }
 
   async function handleReserve(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -273,6 +386,11 @@ export default function BoothMarketplace() {
         companyName: companyName.trim(),
         contactEmail: contactEmail.trim() || undefined,
         metadata: {
+          calculatorAddOns: selectedCalculatorAddOns.map((calculator) => ({
+            id: calculator.id,
+            route: calculator.route,
+            title: calculator.title,
+          })),
           sourcePath: typeof window !== 'undefined' ? window.location.pathname : '/expo/booth-marketplace',
         },
         website: website.trim() || undefined,
@@ -452,7 +570,7 @@ export default function BoothMarketplace() {
                 <h2 style={{ fontSize: '1.55rem', margin: '8px 0 6px' }}>{KIND_LABELS[selectedSlot.kind]}</h2>
                 <div style={{ color: '#f8fafc', fontSize: '2rem', fontWeight: 950, marginBottom: '4px' }}>{selectedSlot.priceLabel}</div>
                 <p style={{ color: '#94a3b8', lineHeight: 1.48, margin: '0 0 14px' }}>
-                  This booth includes a {selectedSlot.screenClass} screen and {selectedSlot.boothType} sponsor presentation. After checkout, Warpala reviews your assets and prepares the public booth.
+                  This booth includes a {selectedSlot.screenClass} screen and {selectedSlot.boothType} sponsor presentation. Add estimate tools now, then upload public booth content after checkout.
                 </p>
 
                 <div style={{ display: 'grid', gap: '8px', gridTemplateColumns: '1fr 1fr', marginBottom: '16px' }}>
@@ -465,6 +583,12 @@ export default function BoothMarketplace() {
                     <div style={{ fontSize: '0.82rem', fontWeight: 850 }}>{getStatusLabel(selectedSlot)}</div>
                   </div>
                 </div>
+
+                <CalculatorAddOnSelector
+                  calculators={recommendedCalculators}
+                  onToggle={toggleCalculatorAddOn}
+                  selectedIds={selectedCalculatorIds}
+                />
 
                 <form onSubmit={handleReserve} style={{ display: 'grid', gap: '12px' }}>
                   <label style={{ color: '#cbd5e1', display: 'grid', fontSize: '0.82rem', fontWeight: 850, gap: '7px' }}>

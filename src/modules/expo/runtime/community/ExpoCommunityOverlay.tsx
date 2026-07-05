@@ -3,9 +3,12 @@ import { expoCommunityService, type ExpoCommunityResponse } from '../../../../ap
 import { EXPO_COMMUNITY_LIMITS, getExpoCommunityStatusLabel } from '../../../../shared/expo/communityContent';
 import type { ExpoCommunityAuditEvent, ExpoCommunityEntry, ExpoCommunityGraffiti, ExpoCommunitySprayPlacement } from '../../../../shared/expo/communityContent';
 import { supabaseClient } from '../../../../lib/supabaseClient';
+import { CITY_GRAFFITI_PANEL_SIZE_METERS } from './cityGraffitiVisual';
 import './ExpoCommunityOverlay.css';
 
 type CommunityTab = 'feed' | 'graffiti' | 'post' | 'review' | 'voice';
+
+const GRAFFITI_READY_MARKS = ['HELLO', 'MEETUP', 'OPEN', 'WARPALA', 'START', 'DEMO'] as const;
 
 function buildCurrentSprayPlacement(playerPosition?: [number, number, number]): ExpoCommunitySprayPlacement | undefined {
   if (!playerPosition) return undefined;
@@ -21,7 +24,7 @@ function buildCurrentSprayPlacement(playerPosition?: [number, number, number]): 
 }
 
 function formatSprayTarget(placement: ExpoCommunitySprayPlacement | null | undefined, selected: boolean) {
-  if (!placement) return 'Spray target: the nearest approved city spot.';
+  if (!placement) return 'Graffiti target: the nearest approved city spot.';
   const x = Math.round(placement.x);
   const z = Math.round(placement.z);
   if (selected) {
@@ -32,9 +35,9 @@ function formatSprayTarget(placement: ExpoCommunitySprayPlacement | null | undef
       : lowerLabel.includes('expo-')
         ? 'city surface'
         : rawLabel;
-    return `Spray target: selected ${label} near X ${x}, Z ${z}.`;
+    return `Graffiti target: selected ${label} near X ${x}, Z ${z}.`;
   }
-  return `Spray target: your current city spot near X ${x}, Z ${z}.`;
+  return `Graffiti target: your current city spot near X ${x}, Z ${z}.`;
 }
 
 export function ExpoCommunityOverlay({ isTouchDevice, playerPosition }: { isTouchDevice: boolean; playerPosition?: [number, number, number] }) {
@@ -79,7 +82,7 @@ export function ExpoCommunityOverlay({ isTouchDevice, playerPosition }: { isTouc
       setPlacementMode(false);
       setTab('graffiti');
       setOpen(true);
-      setMessage('Spray spot selected. Add your mark and send it for review.');
+      setMessage('Graffiti spot selected. Add your mark and place it in the city.');
     }) as EventListener;
     const onSprayPlacementStatus = ((event: CustomEvent<{ status: string }>) => {
       if (event.detail.status === 'active') setPlacementMode(true);
@@ -145,7 +148,7 @@ export function ExpoCommunityOverlay({ isTouchDevice, playerPosition }: { isTouc
       });
       setGraffiti({ color: '#22d3ee', logoUrl: '', markText: '' });
       setSelectedSprayPlacement(null);
-      setMessage(`Sent for review. ${result.remaining} spray submissions remain this hour.`);
+      setMessage(`Visible now. ${result.remaining} graffiti submissions remain this hour.`);
     } catch (error) {
       showError(error);
     } finally {
@@ -210,6 +213,8 @@ export function ExpoCommunityOverlay({ isTouchDevice, playerPosition }: { isTouc
 
   const currentSprayPlacement = buildCurrentSprayPlacement(playerPosition);
   const effectiveSprayPlacement = selectedSprayPlacement ?? currentSprayPlacement;
+  const graffitiLogoUrl = graffiti.logoUrl.trim();
+  const graffitiPreviewText = graffiti.markText.trim().toUpperCase() || (graffitiLogoUrl ? '' : 'YOUR MARK');
 
   function startSprayPlacementPick() {
     if (document.pointerLockElement) document.exitPointerLock?.();
@@ -228,8 +233,8 @@ export function ExpoCommunityOverlay({ isTouchDevice, playerPosition }: { isTouc
       className="expo-community-placement-prompt"
       role="status"
     >
-      <strong>Pick spray spot</strong>
-      <span>Aim at a nearby city surface, then click or tap to place the spray. Esc cancels.</span>
+      <strong>Pick graffiti spot</strong>
+      <span>Aim at a nearby city surface, then click or tap to place the graffiti. Esc cancels.</span>
       <button type="button" onClick={cancelSprayPlacementPick}>Cancel</button>
     </div>
   ) : null;
@@ -276,18 +281,18 @@ export function ExpoCommunityOverlay({ isTouchDevice, playerPosition }: { isTouc
       <header className="expo-community-header">
         <div>
           <strong style={{ display: 'block', fontSize: '0.96rem' }}>City board</strong>
-          <span style={{ color: '#94a3b8', fontSize: '0.68rem' }}>Messages, small ads, voice notes and temporary sprays</span>
+          <span style={{ color: '#94a3b8', fontSize: '0.68rem' }}>Messages, small ads, voice notes and instant temporary graffiti</span>
         </div>
         <button type="button" aria-label="Close city board" onClick={() => setOpen(false)}>X</button>
       </header>
       <div className="expo-community-body">
         <p className="expo-community-intro">
-          Leave something for other visitors to find. New posts and marks are reviewed before they appear in the city.
+          Leave something for other visitors to find. Posts and voice notes are reviewed; graffiti appears right away and can be reported.
         </p>
         <nav className="expo-community-tabs" aria-label="Community board sections">
           {(['feed', 'post', 'voice', 'graffiti', ...(isAdmin ? ['review' as const] : [])] as const).map((value) => (
             <button key={value} type="button" data-active={tab === value} onClick={() => { setTab(value); setMessage(''); if (value === 'review') void loadModeration(); }}>
-              {value === 'feed' ? 'Board' : value === 'post' ? 'Write' : value === 'voice' ? 'Voice' : value === 'review' ? 'Review' : 'Spray'}
+              {value === 'feed' ? 'Board' : value === 'post' ? 'Write' : value === 'voice' ? 'Voice' : value === 'review' ? 'Review' : 'Graffiti'}
             </button>
           ))}
         </nav>
@@ -308,7 +313,7 @@ export function ExpoCommunityOverlay({ isTouchDevice, playerPosition }: { isTouc
             ))}
             {(data?.graffiti || []).length > 0 && (
               <div className="expo-community-entry">
-                <strong style={{ display: 'block', fontSize: '0.8rem', marginBottom: '9px' }}>Temporary city sprays</strong>
+                <strong style={{ display: 'block', fontSize: '0.8rem', marginBottom: '9px' }}>Temporary city graffiti</strong>
                 <div style={{ display: 'grid', gap: '7px', gridTemplateColumns: 'repeat(3, 1fr)' }}>
                   {data?.graffiti.map((mark) => (
                     <div key={mark.id} className="expo-community-graffiti-card" style={{ color: mark.color }}>
@@ -342,19 +347,38 @@ export function ExpoCommunityOverlay({ isTouchDevice, playerPosition }: { isTouc
 
         {tab === 'graffiti' && (
           <>
+            <div className="expo-community-ready-marks" aria-label="Ready graffiti marks">
+              {GRAFFITI_READY_MARKS.map((mark) => (
+                <button
+                  key={mark}
+                  type="button"
+                  onClick={() => setGraffiti((current) => ({ ...current, markText: mark }))}
+                >
+                  {mark}
+                </button>
+              ))}
+            </div>
             <label>Short mark<input maxLength={EXPO_COMMUNITY_LIMITS.markText} value={graffiti.markText} onChange={(event) => setGraffiti((current) => ({ ...current, markText: event.target.value }))} placeholder="Up to 12 characters" /></label>
-            <label>Logo image link (optional)<input type="url" value={graffiti.logoUrl} onChange={(event) => setGraffiti((current) => ({ ...current, logoUrl: event.target.value }))} placeholder="https://.../logo.webp" /></label>
+            <label>Own logo image link (optional)<input type="url" value={graffiti.logoUrl} onChange={(event) => setGraffiti((current) => ({ ...current, logoUrl: event.target.value }))} placeholder="https://.../logo.webp" /></label>
             <label>Color<input type="color" value={graffiti.color} onChange={(event) => setGraffiti((current) => ({ ...current, color: event.target.value }))} /></label>
-            <div style={{ background: '#111827', border: '1px solid rgba(148,163,184,.2)', borderRadius: '7px', color: graffiti.color, fontSize: '1.4rem', fontWeight: 950, marginTop: '12px', minHeight: '74px', padding: '18px', textAlign: 'center' }}>{graffiti.markText.toUpperCase() || 'YOUR MARK'}</div>
+            <div className="expo-community-graffiti-size-row">
+              <span>Approx city size</span>
+              <strong>{CITY_GRAFFITI_PANEL_SIZE_METERS.width}m x {CITY_GRAFFITI_PANEL_SIZE_METERS.height}m</strong>
+            </div>
+            <div className="expo-community-graffiti-preview" style={{ color: graffiti.color }}>
+              {graffitiLogoUrl && <img alt={graffiti.markText.trim() || 'Graffiti logo preview'} src={graffitiLogoUrl} />}
+              {graffitiPreviewText && <strong>{graffitiPreviewText}</strong>}
+            </div>
+            <p className="expo-community-notice">Use a short mark, your own HTTPS logo image, or both. The city graffiti panel keeps this same wide sign shape.</p>
             <p className="expo-community-notice">
               {formatSprayTarget(effectiveSprayPlacement, Boolean(selectedSprayPlacement))}
             </p>
             <div className="expo-community-placement-actions">
-              <button type="button" onClick={startSprayPlacementPick}>Pick spot in city</button>
+              <button type="button" onClick={startSprayPlacementPick}>Pick city spot</button>
               <button type="button" disabled={!selectedSprayPlacement} onClick={() => setSelectedSprayPlacement(null)}>Use my spot</button>
             </div>
-            <p className="expo-community-notice">Approved sprays appear as temporary city marks for about {EXPO_COMMUNITY_LIMITS.graffitiVisibleMinutes} minutes. Limit: {EXPO_COMMUNITY_LIMITS.graffitiPerHour} submissions per hour. Every mark is reviewed.</p>
-            <button type="button" className="primary" disabled={busy || (!graffiti.markText.trim() && !graffiti.logoUrl.trim())} onClick={() => void submitGraffiti()}>Send spray for review</button>
+            <p className="expo-community-notice">Graffiti appears in the city right away for about {EXPO_COMMUNITY_LIMITS.graffitiVisibleMinutes} minutes. Limit: {EXPO_COMMUNITY_LIMITS.graffitiPerHour} submissions per hour. Reported marks go to operator review.</p>
+            <button type="button" className="primary" disabled={busy || (!graffiti.markText.trim() && !graffiti.logoUrl.trim())} onClick={() => void submitGraffiti()}>Place graffiti now</button>
           </>
         )}
 
@@ -370,7 +394,7 @@ export function ExpoCommunityOverlay({ isTouchDevice, playerPosition }: { isTouc
                     {(item.reportCount || 0) > 0 ? ` / ${item.reportCount} report${item.reportCount === 1 ? '' : 's'}` : ''}
                     {item.expiresAt ? ` / expires ${new Date(item.expiresAt).toLocaleDateString()}` : ''}
                   </p>
-                  <p style={{ color: '#cbd5e1', fontSize: '0.74rem', margin: '6px 0 10px' }}>{'kind' in item ? item.body : `Spray / ${item.color}`}</p>
+                  <p style={{ color: '#cbd5e1', fontSize: '0.74rem', margin: '6px 0 10px' }}>{'kind' in item ? item.body : `Graffiti / ${item.color}`}</p>
                   {'kind' in item && item.audioUrl && <audio controls preload="none" src={item.audioUrl} style={{ height: '36px', marginBottom: '10px', width: '100%' }} />}
                   <div className="expo-community-actions">
                     <button type="button" className="primary" disabled={busy} onClick={() => void moderate(item.id, 'approved')}>Approve</button>

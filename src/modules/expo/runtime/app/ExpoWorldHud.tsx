@@ -5,6 +5,17 @@ import type { ExpoSectorMarker } from '../../layout-engine';
 import type { ExpoWorldVisualProfile } from '../../world-contract';
 import { EXPO_MOBILE_MOVE_IDLE, type ExpoMobileMoveIntent } from './useExpoRuntimeSession';
 import type { ExpoPresenceStatus } from '../../hooks/useExpoPresence';
+import { getExpoCalculatorMapPins } from '../../../../app/expo/expoCalculatorCatalog';
+
+const EXPO_CALCULATOR_MAP_PINS = getExpoCalculatorMapPins();
+
+function openCalculatorRoute(route: string) {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  window.location.assign(route);
+}
 
 interface ExpoWorldHudProps {
   guests: any[];
@@ -65,6 +76,11 @@ export function ExpoWorldHud({
     const rightDistance = Math.hypot(right.position[0] - playerPos[0], right.position[2] - playerPos[2]);
     return leftDistance - rightDistance;
   });
+  const orderedCalculatorPins = [...EXPO_CALCULATOR_MAP_PINS].sort((left, right) => {
+    const leftDistance = Math.hypot(left.position[0] - playerPos[0], left.position[2] - playerPos[2]);
+    const rightDistance = Math.hypot(right.position[0] - playerPos[0], right.position[2] - playerPos[2]);
+    return leftDistance - rightDistance;
+  });
   const nearestMarker = sectorMarkers.reduce<ExpoSectorMarker | null>((nearest, marker) => {
     if (!nearest) {
       return marker;
@@ -82,6 +98,13 @@ export function ExpoWorldHud({
     distance: Math.round(Math.hypot(marker.position[0] - playerPos[0], marker.position[2] - playerPos[2])),
     id: marker.id,
     label: marker.label,
+  }));
+  const calculatorLegend = orderedCalculatorPins.slice(0, 3).map((pin) => ({
+    color: pin.accent,
+    distance: Math.round(Math.hypot(pin.position[0] - playerPos[0], pin.position[2] - playerPos[2])),
+    id: pin.id,
+    label: pin.shortTitle,
+    route: pin.route,
   }));
   const presenceLabel = presenceStatus === 'live'
     ? 'Live visitors'
@@ -102,9 +125,14 @@ export function ExpoWorldHud({
       onClick: onOpenCityScreens,
     },
     {
-      body: 'Messages, voice notes and sprays',
+      body: 'Messages, voice notes and graffiti',
       label: 'City board',
       onClick: onOpenCityBoard,
+    },
+    {
+      body: 'Estimator stands around the map',
+      label: 'Calculators',
+      onClick: () => openCalculatorRoute('/calculators'),
     },
     {
       body: 'Premium proof case',
@@ -268,7 +296,7 @@ export function ExpoWorldHud({
         alignItems: 'stretch',
         display: 'grid',
         gap: compact ? '8px' : '10px',
-        gridTemplateColumns: compact ? '1fr' : 'repeat(5, minmax(118px, 1fr))',
+        gridTemplateColumns: compact ? '1fr' : 'repeat(6, minmax(108px, 1fr))',
         padding: compact ? '10px' : '11px',
         pointerEvents: 'auto',
       }}
@@ -551,6 +579,30 @@ export function ExpoWorldHud({
                   <span style={{ color: marker.color }}>{marker.distance}</span>
                 </div>
               ))}
+              {calculatorLegend.map((pin) => (
+                <button
+                  key={pin.id}
+                  onClick={() => openCalculatorRoute(pin.route)}
+                  style={{
+                    alignItems: 'center',
+                    background: 'rgba(15, 23, 42, 0.56)',
+                    border: `1px solid ${pin.color}55`,
+                    borderRadius: '999px',
+                    color: '#dbe7f4',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    fontSize: '0.64rem',
+                    fontWeight: 800,
+                    gap: '6px',
+                    padding: '4px 8px',
+                  }}
+                  type="button"
+                >
+                  <span style={{ background: pin.color, borderRadius: '3px', display: 'inline-block', height: '7px', width: '7px' }} />
+                  <span>{pin.label.toUpperCase()}</span>
+                  <span style={{ color: pin.color }}>{pin.distance}</span>
+                </button>
+              ))}
             </div>
           </div>
 
@@ -613,6 +665,30 @@ export function ExpoWorldHud({
           <div style={{ width: '100%', height: '100%', position: 'relative', background: `radial-gradient(circle at center, ${visualProfile.global.hudAccent}30 0%, rgba(15, 23, 42, 0.04) 70%)` }}>
             <div style={{ position: 'absolute', top: '50%', left: '0', width: '100%', height: '1px', background: 'rgba(255,255,255,0.1)' }} />
             <div style={{ position: 'absolute', top: '0', left: '50%', width: '1px', height: '100%', background: 'rgba(255,255,255,0.1)' }} />
+            {EXPO_CALCULATOR_MAP_PINS.map((pin) => (
+              <button
+                aria-label={`Open ${pin.title}`}
+                key={pin.id}
+                onClick={() => openCalculatorRoute(pin.route)}
+                style={{
+                  background: pin.accent,
+                  border: '1px solid rgba(248,250,252,0.8)',
+                  borderRadius: '3px',
+                  boxShadow: `0 0 12px ${pin.accent}`,
+                  cursor: 'pointer',
+                  height: '9px',
+                  left: `${pin.mapXPercent}%`,
+                  opacity: 0.86,
+                  padding: 0,
+                  position: 'absolute',
+                  top: `${pin.mapYPercent}%`,
+                  transform: 'translate(-50%, -50%) rotate(45deg)',
+                  width: '9px',
+                }}
+                title={`${pin.title} stand`}
+                type="button"
+              />
+            ))}
             {sectorMarkers.slice(0, 12).map((marker) => (
               <div
                 key={marker.id}
@@ -667,7 +743,7 @@ export function ExpoWorldHud({
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
             <div>
               <div style={{ color: visualProfile.global.hudAccent, fontSize: '0.62rem', fontWeight: 950, letterSpacing: '0.16em' }}>CITY MAP</div>
-              <div style={{ marginTop: '4px', color: '#f8fafc', fontSize: '1rem', fontWeight: 900 }}>Nearest zones</div>
+              <div style={{ marginTop: '4px', color: '#f8fafc', fontSize: '1rem', fontWeight: 900 }}>Nearest zones and stands</div>
             </div>
             <button
               type="button"
@@ -708,6 +784,45 @@ export function ExpoWorldHud({
                   </span>
                   <span style={{ color: marker.color, fontSize: '0.76rem', fontWeight: 950 }}>{distance}</span>
                 </div>
+              );
+            })}
+          </div>
+          <div style={{ color: '#facc15', fontSize: '0.64rem', fontWeight: 950, letterSpacing: '0.12em', marginTop: '14px', textTransform: 'uppercase' }}>
+            Calculator stands
+          </div>
+          <div style={{ marginTop: '8px', display: 'grid', gap: '8px' }}>
+            {orderedCalculatorPins.slice(0, 5).map((pin) => {
+              const distance = Math.round(Math.hypot(pin.position[0] - playerPos[0], pin.position[2] - playerPos[2]));
+              return (
+                <button
+                  key={pin.id}
+                  onClick={() => openCalculatorRoute(pin.route)}
+                  style={{
+                    alignItems: 'center',
+                    background: 'rgba(15, 23, 42, 0.62)',
+                    border: `1px solid ${pin.accent}55`,
+                    borderRadius: '14px',
+                    color: '#f8fafc',
+                    cursor: 'pointer',
+                    display: 'grid',
+                    gap: '10px',
+                    gridTemplateColumns: 'auto 1fr auto',
+                    padding: '10px 12px',
+                    textAlign: 'left',
+                  }}
+                  type="button"
+                >
+                  <span style={{ background: pin.accent, borderRadius: '3px', boxShadow: `0 0 12px ${pin.accent}`, height: '10px', transform: 'rotate(45deg)', width: '10px' }} />
+                  <span style={{ minWidth: 0 }}>
+                    <span style={{ display: 'block', fontSize: '0.82rem', fontWeight: 900, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {pin.title}
+                    </span>
+                    <span style={{ color: '#94a3b8', display: 'block', fontSize: '0.68rem', fontWeight: 750, marginTop: 2 }}>
+                      {pin.zoneLabel}
+                    </span>
+                  </span>
+                  <span style={{ color: pin.accent, fontSize: '0.76rem', fontWeight: 950 }}>{distance}</span>
+                </button>
               );
             })}
           </div>

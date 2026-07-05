@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import * as THREE from 'three';
 import { expoCommunityService, type ExpoCommunityResponse } from '../../../../app/expo/expoCommunityService';
 import type { ExpoCommunityEntry, ExpoCommunityGraffiti } from '../../../../shared/expo/communityContent';
+import { CITY_GRAFFITI_PANEL_SIZE_METERS } from './cityGraffitiVisual';
 
 export const EXPO_COMMUNITY_HUB_POSITION = [-24, 0, -29] as const;
 
@@ -192,12 +193,12 @@ function CitySprayMark({ mark }: { mark: ExpoCommunityGraffiti }) {
   return (
     <group position={placement.position} quaternion={sprayQuaternion}>
       <mesh position={[0, 0, -0.02]}>
-        <planeGeometry args={[3.4, 1.55]} />
+        <planeGeometry args={[CITY_GRAFFITI_PANEL_SIZE_METERS.width, CITY_GRAFFITI_PANEL_SIZE_METERS.height]} />
         <meshBasicMaterial color="#03111f" transparent opacity={0.7} toneMapped={false} />
       </mesh>
       <GraffitiWallMark mark={mark} position={[0, 0, 0.04]} rotationZ={(mark.wallSlot % 2 ? -1 : 1) * 0.05} />
       <Text anchorX="center" color="#bae6fd" fontSize={0.2} maxWidth={3.2} outlineColor="#020617" outlineWidth={0.018} position={[0, -1.08, 0.08]}>
-        {placement.label} / temporary spray
+        {placement.label} / temporary graffiti
       </Text>
     </group>
   );
@@ -219,7 +220,7 @@ export function WorldCommunityHub() {
     { accent: '#22d3ee', label: `${data?.entries?.filter((entry) => entry.kind === 'message').length || 0} messages` },
     { accent: '#a78bfa', label: `${data?.entries?.filter((entry) => entry.kind === 'voice').length || 0} voice` },
     { accent: '#f59e0b', label: `${data?.entries?.filter((entry) => entry.kind === 'advert').length || 0} ads` },
-    { accent: '#34d399', label: `${marks.length} sprays` },
+    { accent: '#34d399', label: `${marks.length} graffiti` },
   ];
 
   return (
@@ -237,7 +238,7 @@ export function WorldCommunityHub() {
         CITY BOARD
       </Text>
       <Text anchorX="left" color="#bae6fd" fontSize={0.18} fontWeight={800} maxWidth={7.6} position={[-6.82, 7.63, 0.4]}>
-        Messages, small ads, voice notes and temporary sprays
+        Messages, small ads, voice notes and instant temporary graffiti
       </Text>
       <mesh position={[5.92, 7.86, 0.42]}>
         <boxGeometry args={[1.74, 0.48, 0.12]} />
@@ -271,7 +272,7 @@ export function WorldCommunityHub() {
         OPEN BOARD
       </Text>
       <Text anchorX="center" color="#94a3b8" fontSize={0.17} maxWidth={8.6} position={[0, 0.2, 0.36]}>
-        Tap to write a note, record voice, post a small ad, or choose a spray spot in the city
+        Tap to write a note, record voice, post a small ad, or place graffiti in the city
       </Text>
       <mesh position={[0, 8.95, 0]}>
         <cylinderGeometry args={[0.1, 0.14, 4.4, 8]} />
@@ -296,14 +297,14 @@ export function WorldCommunityHub() {
             Leave the first city post
           </Text>
           <Text anchorX="center" color="#94a3b8" fontSize={0.2} lineHeight={1.15} maxWidth={5.2} position={[0, -0.16, 0.18]} textAlign="center">
-            Messages, voice notes, small ads and sprays appear here after review
+            Messages, voice notes and small ads appear here after review. Graffiti appears right away.
           </Text>
         </group>
       )}
 
       <BoardFeatureCard accent="#a78bfa" detail="Visitors press play. No autoplay." label="Voice notes" position={[4.56, 4.8, 0.34]} />
       <BoardFeatureCard accent="#f59e0b" detail="Small city promos after review." label="Small ads" position={[4.56, 3.45, 0.34]} />
-      <BoardFeatureCard accent="#34d399" detail="Pick a real spot. Fades in 10 min." label="City sprays" position={[4.56, 2.1, 0.34]} />
+      <BoardFeatureCard accent="#34d399" detail="Pick a real spot. Fades in 10 min." label="Graffiti" position={[4.56, 2.1, 0.34]} />
 
       <mesh position={[0, -0.08, 0]}>
         <boxGeometry args={[13.5, 0.24, 2.6]} />
@@ -320,7 +321,7 @@ export function WorldCommunityHub() {
           <meshStandardMaterial color="#4c1d95" emissive="#7c3aed" emissiveIntensity={0.3} />
         </mesh>
         <Text anchorX="center" color="#f8fafc" fontSize={0.32} fontWeight={900} position={[0, 5.1, 0.25]}>
-          TEMPORARY SPRAYS
+          TEMPORARY GRAFFITI
         </Text>
         <Text anchorX="center" color="#c4b5fd" fontSize={0.18} maxWidth={7.5} position={[0, 4.6, 0.28]}>
           Approved marks fade after about 10 minutes
@@ -339,7 +340,7 @@ export function WorldCommunityHub() {
         })}
         {!marks.length && (
           <Text anchorX="center" color="#94a3b8" fontSize={0.28} maxWidth={6.8} position={[0, 2.45, 0.3]} textAlign="center">
-            Pick a nearby city surface, add a mark, and send it for review
+            Pick a nearby city surface, add a mark, and place it instantly
           </Text>
         )}
       </group>

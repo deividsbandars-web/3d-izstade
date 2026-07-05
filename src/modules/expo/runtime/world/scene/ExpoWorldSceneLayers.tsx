@@ -25,6 +25,7 @@ import {
   WorldCommunityHub,
   WorldVisitorPresence,
 } from '../../community';
+import { WorldCalculatorKiosks } from '../../calculators';
 import type { ExpoPresenceGuest } from '../../community/expoPresencePolicy';
 
 export function ExpoWorldSceneLayers({
@@ -186,6 +187,16 @@ export function ExpoWorldSceneLayers({
               zoneId="center"
             >
             <ModularHomeEntrancePortal lowDetail={lowDetail} playerPosition={playerPosition} />
+            </ExpoZoneGroup>
+          )}
+          {layerToggles.city && (
+            <ExpoZoneGroup
+              alwaysVisible
+              groupId="expo-calculator-kiosks"
+              runtimeState={zoneRuntimeState}
+              zoneId="center"
+            >
+              <WorldCalculatorKiosks />
             </ExpoZoneGroup>
           )}
           {layerToggles.city && (

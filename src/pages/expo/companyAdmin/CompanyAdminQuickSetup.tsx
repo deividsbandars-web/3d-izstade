@@ -11,6 +11,7 @@ import {
   getCityScreenBuyerSteps,
   getCityScreenLocationLabel,
   getCityScreenPlacementLabel,
+  getCityScreenWindowPreview,
 } from '../../../app/expo/cityScreenRental';
 import {
   getExpoCityScreenCampaignStatusLabel,
@@ -177,27 +178,56 @@ function CityScreenSelectedSummary({ slot }: { slot: ExpoScreenInventorySlot | n
     );
   }
 
+  const windowPreview = getCityScreenWindowPreview(slot);
+  const accent = slot.valueTier === 'landmark'
+    ? '#facc15'
+    : slot.valueTier === 'hero'
+      ? '#7dd3fc'
+      : '#5eead4';
+
   return (
     <div className="company-admin-selected-screen">
-      <div>
-        <span>Selected city screen</span>
-        <strong>{slot.label}</strong>
+      <div className="company-admin-selected-screen-layout">
+        <div className="company-admin-selected-screen-window" aria-label={`Selected city screen view for ${slot.label}`}>
+          <div className="company-admin-selected-screen-road" />
+          <div
+            className="company-admin-selected-screen-frame"
+            style={{
+              borderColor: accent,
+              boxShadow: `0 0 22px ${accent}77`,
+              height: `${windowPreview.screenFrame.heightPercent}%`,
+              left: `${windowPreview.screenFrame.leftPercent}%`,
+              top: `${windowPreview.screenFrame.topPercent}%`,
+              transform: `rotate(${windowPreview.screenFrame.rotateDeg}deg)`,
+              width: `${windowPreview.screenFrame.widthPercent}%`,
+            }}
+          >
+            <span>{slot.valueTier}</span>
+            <strong>Your ad</strong>
+          </div>
+        </div>
+        <div>
+          <div>
+            <span>Selected city screen</span>
+            <strong>{slot.label}</strong>
+          </div>
+          <dl>
+            <div>
+              <dt>Location</dt>
+              <dd>{getCityScreenLocationLabel(slot)}</dd>
+            </div>
+            <div>
+              <dt>Placement</dt>
+              <dd>{getCityScreenPlacementLabel(slot)}</dd>
+            </div>
+            <div>
+              <dt>Price</dt>
+              <dd>EUR {slot.monthlyPriceHintEur}/month</dd>
+            </div>
+          </dl>
+          <p>{windowPreview.viewLabel}. {windowPreview.windowCaption}</p>
+        </div>
       </div>
-      <dl>
-        <div>
-          <dt>Location</dt>
-          <dd>{getCityScreenLocationLabel(slot)}</dd>
-        </div>
-        <div>
-          <dt>Placement</dt>
-          <dd>{getCityScreenPlacementLabel(slot)}</dd>
-        </div>
-        <div>
-          <dt>Price</dt>
-          <dd>EUR {slot.monthlyPriceHintEur}/month</dd>
-        </div>
-      </dl>
-      <p>{slot.placementNotes}</p>
     </div>
   );
 }

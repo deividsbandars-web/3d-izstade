@@ -139,7 +139,7 @@ export async function createExpoCommunityGraffiti(req: AuthRequest, res: Respons
   if (!normalized.ok) return res.status(400).json({ error: normalized.issues.join(' ') });
   const rateLimit = await checkActionLimit(req, 'graffiti');
   if (rateLimit.unavailable) return res.status(503).json({ error: 'Graffiti limit is unavailable. Try again later.' });
-  if (!rateLimit.allowed) return res.status(429).json({ error: 'You can add sprays up to 3 times per hour.', retryAfter: rateLimit.retryAfterSeconds });
+  if (!rateLimit.allowed) return res.status(429).json({ error: 'You can add graffiti up to 3 times per hour.', retryAfter: rateLimit.retryAfterSeconds });
 
   const item: ExpoCommunityGraffiti = {
     authorLabel: authorLabel(req),
@@ -149,7 +149,7 @@ export async function createExpoCommunityGraffiti(req: AuthRequest, res: Respons
     logoUrl: normalized.logoUrl || undefined,
     markText: normalized.markText,
     reportCount: 0,
-    status: 'pending',
+    status: 'approved',
     wallSlot: 0,
     placement: normalized.placement,
   };

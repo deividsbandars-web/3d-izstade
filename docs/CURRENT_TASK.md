@@ -1,5 +1,72 @@
 # Current Task
 
+## 2026-07-05 Expo Calculator Booth And City Integration
+
+- Active objective: make calculators selectable in booth buying and visible as useful city destinations so walking the expo city has more practical choices.
+- Implementation:
+  - Added a shared expo calculator catalog with industry grouping, booth-fit rules, route metadata, kiosk world positions, and map coordinates.
+  - Added booth marketplace calculator add-ons with default recommendations based on the selected booth zone/type/screen class; selected add-ons are sent in booth reservation metadata.
+  - Added lightweight 3D calculator kiosks in the Web3D city, each opening the matching existing calculator route.
+  - Added calculator pins to the desktop city map, a `Calculators` city-guide action, and mobile map rows with nearest calculator stands and distances.
+  - Added catalog regression coverage for unique IDs, valid routes, recommendation ordering, outdoor booth matches, and bounded map pins.
+- Validation passed:
+  - `npx.cmd tsx src/app/expo/expoCalculatorCatalog.test.ts`
+  - `npx.cmd tsc --noEmit -p tsconfig.app.json`
+  - `npm.cmd run lint`
+  - `npm.cmd run build`
+  - `git diff --check -- src/app/expo/expoCalculatorCatalog.ts src/app/expo/expoCalculatorCatalog.test.ts src/pages/expo/BoothMarketplace.tsx src/modules/expo/runtime/calculators/WorldCalculatorKiosks.tsx src/modules/expo/runtime/calculators/index.ts src/modules/expo/runtime/world/scene/ExpoWorldSceneLayers.tsx src/modules/expo/runtime/app/ExpoWorldHud.tsx docs/CURRENT_TASK.md`
+- Release state:
+  - No commit, push, deploy, production promotion, staging alias change, or Supabase migration/data mutation has been made for this pass yet.
+  - Existing residual local changes remain intentionally preserved: `supabase/.temp/cli-latest`, `.claude/`, and `Master_Execution_Plan.md`.
+- Remaining weak points:
+  - Calculator add-ons are currently stored as reservation metadata only; the sponsor admin/public booth presentation does not yet render those selected tools as booth widgets after checkout.
+  - Kiosks open calculator pages directly; a future pass could add in-world hover details or route guidance if the city needs stronger navigation.
+
+## 2026-07-05 City Screen Rental Visual Selection
+
+- Active objective: make the city screen rental choice visually understandable so buyers can pick a specific rentable screen and see which city surface they are requesting.
+- Implementation:
+  - Added `getCityScreenWindowPreview()` to the city screen rental data layer with per-screen city-window framing, screen position, view label, buyer distance hint, and caption.
+  - Reworked `/expo/city-screens` so the selected screen is shown in a large window-like city preview with the rentable screen highlighted in-place.
+  - Kept the map pins as a compact selector beside the visual preview, and added `View this screen` controls to the screen list.
+  - Changed primary marketplace CTAs to use the currently selected screen path instead of a generic city-screen request path.
+  - Added a compact selected-screen visual preview to the city advertising admin setup so the buyer still sees which screen they are configuring after clicking rent.
+- Validation passed:
+  - `npx.cmd tsx src/app/expo/cityScreenRental.test.ts`
+  - `npx.cmd tsc --noEmit -p tsconfig.app.json`
+  - `npm.cmd run lint`
+- Release state:
+  - No commit, push, deploy, production promotion, staging alias change, or Supabase migration/data mutation has been made for this pass yet.
+  - Existing residual local changes remain intentionally preserved: `supabase/.temp/cli-latest`, `.claude/`, and `Master_Execution_Plan.md`.
+- Remaining weak points:
+  - The visual window is an in-app schematic preview, not a captured WebGL screenshot from the exact runtime camera. A future pass could generate per-screen screenshots from the 3D scene if stronger visual fidelity is needed.
+  - The marketplace still supports rental/request flow only; it does not implement a true purchase checkout for permanent screen ownership.
+
+## 2026-07-05 Instant Graffiti Community Flow
+
+- Active objective: reduce community graffiti friction by removing pre-publication review for temporary city graffiti while keeping lightweight abuse controls.
+- Implementation:
+  - Changed new graffiti submissions to start as `approved`, so they appear in the public city feed and world immediately.
+  - Added ready graffiti mark buttons, an own-logo HTTPS image link path, and a wide preview that matches the in-city graffiti panel shape.
+  - Exposed the approximate city graffiti size in the UI as `3.4m x 1.55m`, backed by a shared render constant so the preview and 3D mark stay aligned.
+  - Preserved existing safeguards: authenticated submission, 3 graffiti submissions per hour, 12-character mark limit, HTTPS image URL validation, 10-minute visibility, report action, audit trail, and admin remove/reject controls.
+  - Kept posts and voice notes in pre-publication review; only temporary graffiti changed to instant-visible.
+  - Retained auto-hide behavior after the configured report threshold; reported approved graffiti is moved back to `pending` and disappears from the public city until operator action.
+  - Updated City board, Graffiti tab, 3D community board, and HUD copy so the UI no longer says graffiti is sent for review before appearing.
+  - Confirmed the city presence path is already wired through Supabase realtime presence and anonymous 3D visitor avatars; visible guest caps are 20/12/6 for high/medium/low quality.
+- Validation passed:
+  - `npx.cmd tsx backend-server/routes/__tests__/expoCommunity.controller.test.ts`
+  - `npx.cmd tsx src/modules/expo/runtime/community/expoPresencePolicy.test.ts`
+  - `npx.cmd tsc --noEmit -p tsconfig.app.json`
+  - `npx.cmd tsc --noEmit -p backend-server/tsconfig.json`
+  - `npm.cmd run lint`
+- Release state:
+  - No commit, push, deploy, production promotion, staging alias change, or Supabase migration/data mutation has been made for this pass yet.
+  - Existing residual local changes remain intentionally preserved: `supabase/.temp/cli-latest`, `.claude/`, and `Master_Execution_Plan.md`.
+- Remaining weak points:
+  - The instant graffiti path still needs a two-browser staging smoke test after deployment to confirm realtime presence, immediate graffiti visibility, report auto-hide, and mobile placement UX together.
+  - Logo/image graffiti is still externally hosted HTTPS media, not a direct file upload; report/auto-hide mitigates abuse, but a future stricter policy could separate instant text marks from uploaded image/logo marks if needed.
+
 ## 2026-07-04 Staging Release Commit Push And Deploy
 
 - Active objective: commit and push the current release-stabilization work, deploy it to staging, and bring staging readiness back to green.

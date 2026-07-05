@@ -52,34 +52,27 @@ for (let index = 0; index < 4; index += 1) {
 
   if (index < 3) {
     assert.equal(state.statusCode, 201);
-    assert.equal(state.body.graffiti.status, 'pending');
+    assert.equal(state.body.graffiti.status, 'approved');
     assert.deepEqual(state.body.graffiti.placement, { hostId: 'city-panel-1', normalX: 0, normalY: 0, normalZ: 1, rotationY: 0.4, surfaceLabel: 'Current city spot', x: -12.5, y: 3.2, z: -44.25 });
     firstGraffitiId ||= state.body.graffiti.id;
   } else {
     assert.equal(state.statusCode, 429);
-    assert.match(state.body.error, /3 times per hour/i);
+    assert.match(state.body.error, /graffiti up to 3 times per hour/i);
   }
 }
 
-const beforeApproval = createResponseCapture();
-await listExpoCommunity({} as AuthRequest, beforeApproval.response);
-assert.equal(beforeApproval.state.body.graffiti.length, 0);
-assert.equal(beforeApproval.state.body.persistence, 'process-memory');
+const afterCreate = createResponseCapture();
+await listExpoCommunity({} as AuthRequest, afterCreate.response);
+assert.equal(afterCreate.state.body.graffiti.length, 3);
+assert.equal(afterCreate.state.body.persistence, 'process-memory');
 
-const moderation = createResponseCapture();
-await moderateExpoCommunity({
-  body: { status: 'approved' },
-  params: { id: firstGraffitiId },
-} as unknown as AuthRequest, moderation.response);
-assert.equal(moderation.state.body.item.status, 'approved');
-
-const afterApproval = createResponseCapture();
-await listExpoCommunity({} as AuthRequest, afterApproval.response);
-assert.equal(afterApproval.state.body.graffiti.length, 1);
-assert.equal(afterApproval.state.body.graffiti[0].markText, 'MARK0');
-assert.equal(afterApproval.state.body.graffiti[0].placement.surfaceLabel, 'Current city spot');
-assert.equal(afterApproval.state.body.graffiti[0].placement.hostId, 'city-panel-1');
-assert.ok(afterApproval.state.body.graffiti[0].expiresAt);
+const visibleGraffiti = createResponseCapture();
+await listExpoCommunity({} as AuthRequest, visibleGraffiti.response);
+assert.equal(visibleGraffiti.state.body.graffiti.length, 3);
+assert.equal(visibleGraffiti.state.body.graffiti[0].markText, 'MARK0');
+assert.equal(visibleGraffiti.state.body.graffiti[0].placement.surfaceLabel, 'Current city spot');
+assert.equal(visibleGraffiti.state.body.graffiti[0].placement.hostId, 'city-panel-1');
+assert.ok(visibleGraffiti.state.body.graffiti[0].expiresAt);
 
 for (let index = 0; index < 3; index += 1) {
   const report = createResponseCapture();
@@ -94,11 +87,12 @@ for (let index = 0; index < 3; index += 1) {
 
 const afterReports = createResponseCapture();
 await listExpoCommunity({} as AuthRequest, afterReports.response);
-assert.equal(afterReports.state.body.graffiti.length, 0);
+assert.equal(afterReports.state.body.graffiti.length, 2);
 
 const moderationAfterReports = createResponseCapture();
 await listExpoCommunityModeration({} as AuthRequest, moderationAfterReports.response);
 const reportedGraffiti = moderationAfterReports.state.body.graffiti.find((item: any) => item.id === firstGraffitiId);
+assert.equal(reportedGraffiti.status, 'pending');
 assert.equal(reportedGraffiti.reportCount, 3);
 assert.ok(moderationAfterReports.state.body.audit.some((event: any) => event.action === 'reported'));
 

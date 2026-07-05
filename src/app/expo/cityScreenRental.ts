@@ -11,6 +11,21 @@ type CityScreenMapCoordinate = {
   viewHint: string;
 };
 
+export type CityScreenWindowPreview = {
+  backdropLabel: string;
+  foregroundLabel: string;
+  screenFrame: {
+    heightPercent: number;
+    leftPercent: number;
+    rotateDeg: number;
+    topPercent: number;
+    widthPercent: number;
+  };
+  viewLabel: string;
+  viewerDistanceLabel: string;
+  windowCaption: string;
+};
+
 export const CITY_SCREEN_BUYER_STEPS = [
   {
     body: 'Pick the real city location, size and monthly price before you start.',
@@ -76,6 +91,52 @@ export function getCityScreenVisualGuide(slot: ExpoScreenInventorySlot) {
     locationLabel: getCityScreenLocationLabel(slot),
     placementLabel: getCityScreenPlacementLabel(slot),
     runtimeSurfaceLabel: slot.runtimeSurfaceId || slot.runtimeAssignmentId || slot.id,
+  };
+}
+
+export function getCityScreenWindowPreview(slot: ExpoScreenInventorySlot): CityScreenWindowPreview {
+  const previews: Record<string, CityScreenWindowPreview> = {
+    'city-center-spine-hero-wall': {
+      backdropLabel: 'Sponsor boulevard entrance',
+      foregroundLabel: 'Main walking lane',
+      screenFrame: { heightPercent: 32, leftPercent: 32, rotateDeg: 0, topPercent: 18, widthPercent: 36 },
+      viewLabel: 'Straight-ahead arrival view',
+      viewerDistanceLabel: 'Seen in the first seconds after entering the city',
+      windowCaption: 'The largest first-impression surface on the central city axis.',
+    },
+    'city-left-marquee-hero': {
+      backdropLabel: 'Left sponsor district',
+      foregroundLabel: 'Side-route foot traffic',
+      screenFrame: { heightPercent: 29, leftPercent: 13, rotateDeg: 7, topPercent: 31, widthPercent: 33 },
+      viewLabel: 'Left district approach',
+      viewerDistanceLabel: 'Seen while visitors branch into the left sponsor route',
+      windowCaption: 'A strong district screen for discovery campaigns and featured launches.',
+    },
+    'city-right-marquee-hero': {
+      backdropLabel: 'Right sponsor district',
+      foregroundLabel: 'High-traffic sponsor route',
+      screenFrame: { heightPercent: 29, leftPercent: 54, rotateDeg: -7, topPercent: 31, widthPercent: 33 },
+      viewLabel: 'Right district approach',
+      viewerDistanceLabel: 'Seen while visitors move toward the right sponsor route',
+      windowCaption: 'A prominent side-district screen for sponsor takeovers and product pushes.',
+    },
+    'city-sponsor-boulevard-right-screen': {
+      backdropLabel: 'Sponsor booth row',
+      foregroundLabel: 'Booth-adjacent decision point',
+      screenFrame: { heightPercent: 23, leftPercent: 58, rotateDeg: -5, topPercent: 51, widthPercent: 28 },
+      viewLabel: 'Booth-route reinforcement view',
+      viewerDistanceLabel: 'Seen near sponsor booths and meeting decisions',
+      windowCaption: 'A practical reminder screen close to booth traffic and visitor actions.',
+    },
+  };
+
+  return previews[slot.id] ?? {
+    backdropLabel: getCityScreenLocationLabel(slot),
+    foregroundLabel: 'Sponsor boulevard traffic',
+    screenFrame: { heightPercent: 25, leftPercent: 36, rotateDeg: 0, topPercent: 34, widthPercent: 30 },
+    viewLabel: 'City walking view',
+    viewerDistanceLabel: 'Seen from the sponsor city route',
+    windowCaption: 'A rentable city screen for a clear sponsor message or offer.',
   };
 }
 
