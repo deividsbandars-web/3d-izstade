@@ -1,6 +1,9 @@
 import type * as THREE from 'three';
+import { Html } from '@react-three/drei';
 import { Canvas } from '@react-three/fiber';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Suspense, lazy, useCallback, useEffect, useMemo, useState } from 'react';
+import { WebGLUnsupported } from '../../../../../components/WebGLUnsupported';
+import { detectWebGLSupport, type WebGLSupportResult } from '../../../../../components/webglSupport';
 import type { ExpoMode } from '../../../state/expoRuntime';
 import type { ExpoStartView, ExpoWorldContract } from '../../../world-contract';
 import type { ExpoVerticalAccessNode } from '../../planning/types';
@@ -32,40 +35,56 @@ import {
 } from '../quality/expoScreenTextureRuntimeStats';
 import { useExpoZoneRuntimeState } from '../zones/expoZoneRuntimeState';
 import { reportExpoDevError } from '../../../lib/devErrorReporter';
+import { isExpo3dQaEnabled, isGalaConstructionAuditEnabled } from '../../app/expo3dQa';
+import { isHomeStudioEnabled } from '../../modularHome/homeDemoFlags';
+import type { ExpoPresenceGuest } from '../../community/expoPresencePolicy';
+import { WorldSprayPlacementPicker } from '../../community';
 
-type WebglAvailability = {
-  available: boolean;
-  mode: 'webgl2' | 'webgl1' | null;
-  reason: string | null;
-};
+const EXPO_CAMERA_FOV = {
+  desktop: 50,
+  touch: 56,
+} as const;
 
-function detectWebglAvailability(): WebglAvailability {
-  if (typeof window === 'undefined' || typeof document === 'undefined') {
-    return { available: false, mode: null, reason: 'Browser environment unavailable.' };
-  }
+const HOME_STUDIO_CAMERA_FOV = {
+  desktop: 50,
+  touch: 56,
+} as const;
 
-  const canvas = document.createElement('canvas');
-  const webgl2 = canvas.getContext('webgl2');
-  if (webgl2) {
-    return { available: true, mode: 'webgl2', reason: null };
-  }
-
-  const webgl1 = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
-  if (webgl1) {
-    return { available: true, mode: 'webgl1', reason: null };
-  }
-
-  return {
-    available: false,
-    mode: null,
-    reason: 'WebGL is disabled or unavailable in this browser/device.',
-  };
+function ExpoCanvasSuspenseFallback({ label }: { label: string }) {
+  return (
+    <Html center style={{ pointerEvents: 'none' }}>
+      <div
+        data-expo-canvas-loading-fallback="true"
+        style={{
+          background: 'rgba(2, 6, 23, 0.72)',
+          border: '1px solid rgba(125, 211, 252, 0.28)',
+          borderRadius: '999px',
+          color: '#bae6fd',
+          fontFamily: 'Inter, sans-serif',
+          fontSize: '11px',
+          fontWeight: 900,
+          letterSpacing: '0.12em',
+          padding: '8px 12px',
+          textTransform: 'uppercase',
+          whiteSpace: 'nowrap',
+        }}
+      >
+        {label}
+      </div>
+    </Html>
+  );
 }
+
+const LazyExpo3DQAHook = lazy(async () => {
+  const module = await import('./Expo3DQAHook');
+  return { default: module.Expo3DQAHook };
+});
 
 export function ExpoWorldCanvasShell({
   activeZoneId,
   debug,
   districtPrograms,
+  guests,
   effectiveStartView,
   hardIsolateNonTargets,
   highlightedTargets,
@@ -96,6 +115,7 @@ export function ExpoWorldCanvasShell({
   activeZoneId: string | null;
   debug: boolean;
   districtPrograms: ExpoDistrictProgramSummary[];
+  guests: ExpoPresenceGuest[];
   effectiveStartView: ExpoStartView;
   hardIsolateNonTargets: boolean;
   highlightedTargets: string[];
@@ -126,9 +146,17 @@ export function ExpoWorldCanvasShell({
   const [webglLost, setWebglLost] = useState(false);
   const [webglLostAt, setWebglLostAt] = useState<string | null>(null);
   const [webglStatusKey, setWebglStatusKey] = useState(0);
-  const [webglAvailability] = useState<WebglAvailability>(() => detectWebglAvailability());
+  const [webglAvailability] = useState<WebGLSupportResult>(() => detectWebGLSupport());
   const [performanceMetrics, setPerformanceMetrics] = useState<ExpoPerformanceOverlayMetrics | null>(null);
+  const homeStudioEnabled = useMemo(() => isHomeStudioEnabled(), []);
+  const cameraFov = homeStudioEnabled
+    ? (isTouchDevice ? HOME_STUDIO_CAMERA_FOV.touch : HOME_STUDIO_CAMERA_FOV.desktop)
+    : (isTouchDevice ? EXPO_CAMERA_FOV.touch : EXPO_CAMERA_FOV.desktop);
   const performanceOverlayEnabled = useMemo(() => shouldEnableExpoPerformanceOverlay(), []);
+  const qaHookEnabled = useMemo(
+    () => import.meta.env.DEV || isExpo3dQaEnabled() || isGalaConstructionAuditEnabled(),
+    [],
+  );
   const qualitySettings = useExpoQualitySettings({ isTouchDevice, runtimeCaptureSafe });
   const activeVideoScreensCount = useExpoActiveVideoScreensCount();
   const screenTextureStats = useExpoScreenTextureRuntimeStats();
@@ -229,27 +257,20 @@ export function ExpoWorldCanvasShell({
     return () => window.clearTimeout(timer);
   }, [webglLost, webglLostAt]);
 
+  if (!webglAvailability.available) {
+    return (
+      <div style={{ position: 'absolute', inset: 0 }}>
+        <WebGLUnsupported
+          reason={webglAvailability.reason}
+          routeLabel={homeStudioEnabled ? 'Modular Home Studio' : 'Web3D Expo'}
+          variant={homeStudioEnabled ? 'modular-home' : 'expo'}
+        />
+      </div>
+    );
+  }
+
   return (
     <div style={{ position: 'absolute', inset: 0 }}>
-      {!webglAvailability.available && (
-        <div style={{ position: 'absolute', inset: 0, zIndex: 1800, display: 'grid', placeItems: 'center', padding: '28px', background: 'rgba(0,0,0,0.88)', color: '#e2e8f0' }}>
-          <div style={{ maxWidth: '760px', width: '100%', borderRadius: '18px', border: '1px solid rgba(251, 191, 36, 0.35)', background: 'rgba(15, 23, 42, 0.8)', padding: '18px 20px' }}>
-            <div style={{ fontSize: '0.72rem', letterSpacing: '0.18em', fontWeight: 900, color: '#fcd34d' }}>
-              WEBGL REQUIRED
-            </div>
-            <div style={{ marginTop: '10px', fontWeight: 800, fontSize: '1.05rem' }}>
-              3D world cannot start on this device/browser.
-            </div>
-            <div style={{ marginTop: '10px', fontSize: '0.9rem', lineHeight: 1.5, color: '#cbd5e1' }}>
-              {webglAvailability.reason || 'WebGL context could not be created.'}
-              {' '}Enable hardware acceleration/WebGL in browser settings, update GPU drivers, or switch browser/device.
-            </div>
-            <div style={{ marginTop: '12px', fontSize: '0.82rem', lineHeight: 1.5, color: '#94a3b8' }}>
-              Hint: test WebGL on `get.webgl.org`. If only WebGL1 works, keep browser in WebGL1-compatible mode and reload.
-            </div>
-          </div>
-        </div>
-      )}
       {webglLost && (
         <div style={{ position: 'absolute', inset: 0, zIndex: 1800, display: 'grid', placeItems: 'center', padding: '28px', background: 'rgba(0,0,0,0.82)', color: '#e2e8f0' }}>
           <div style={{ maxWidth: '720px', width: '100%', borderRadius: '18px', border: '1px solid rgba(248, 113, 113, 0.32)', background: 'rgba(15, 23, 42, 0.72)', padding: '18px 20px' }}>
@@ -290,7 +311,7 @@ export function ExpoWorldCanvasShell({
       dpr={qualitySettings.canvasDpr}
       gl={{ antialias: qualitySettings.antialiasEnabled, powerPreference: 'high-performance' }}
       performance={{ min: qualitySettings.performanceMin }}
-      camera={{ position: [0, 2, 10], fov: isTouchDevice ? 66 : 60, far: 10000 }}
+      camera={{ position: [0, 2, 10], fov: cameraFov, far: 10000 }}
       onCreated={onCreated as never}
     >
       <WorldSceneBridge
@@ -299,11 +320,17 @@ export function ExpoWorldCanvasShell({
         startView={effectiveStartView}
         startViewKey={EXPO_START_VIEW_KEY}
       />
+      {qaHookEnabled ? (
+        <Suspense fallback={<ExpoCanvasSuspenseFallback label="Loading QA tools" />}>
+          <LazyExpo3DQAHook runtimeMode={mode} />
+        </Suspense>
+      ) : null}
       {performanceOverlayEnabled && (
         <ExpoPerformanceSampler enabled={performanceOverlayEnabled} onSample={handlePerformanceSample} />
       )}
       <CenterScreenInspector inspectionEnabled={inspectionEnabled} />
       <ClickInspector clickInspectionEnabled={inspectionEnabled} />
+      <WorldSprayPlacementPicker />
 
       <ExpoWorldDebugLayer
         hardIsolateNonTargets={hardIsolateNonTargets}
@@ -317,6 +344,7 @@ export function ExpoWorldCanvasShell({
       <ExpoWorldSceneLayers
         activeZoneId={activeZoneId}
         districtPrograms={districtPrograms}
+        guests={guests}
         layerToggles={layerToggles}
         mode={mode}
         playerPosition={playerPosition}
@@ -331,6 +359,7 @@ export function ExpoWorldCanvasShell({
         verticalAccessNodes={verticalAccessNodes}
         visualProfile={visualProfile}
         walkRegions={walkRegions}
+        webglMode={webglAvailability.mode}
         zoneRuntimeState={zoneRuntimeState}
       />
 

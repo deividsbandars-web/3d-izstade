@@ -1,6 +1,6 @@
-import { llmService } from '../../ai/llmService';
-import { logger } from '../../logging/logger';
-import { agentScheduler } from '../../../agents/system/scheduler/agentScheduler';
+import { createSystemLlmMetering, llmService } from '../../ai/llmService.js';
+import { logger } from '../../logging/logger.js';
+import { agentScheduler } from '../../../agents/system/scheduler/agentScheduler.js';
 
 export const marketingRunner = {
   async execute(taskId: string, _agentId: string, taskData: any) {
@@ -16,7 +16,11 @@ export const marketingRunner = {
       
       Generate a comprehensive go-to-market strategy, ad copy examples, and campaign structure.`;
 
-      const { text, error } = await llmService.generateText(prompt, { provider: 'openai', temperature: 0.8 });
+      const { text, error } = await llmService.generateText(prompt, {
+        metering: createSystemLlmMetering('marketing-runner', 'execute-marketing-task'),
+        provider: 'openai',
+        temperature: 0.8,
+      });
 
       if (error || !text) throw new Error(String(error));
 

@@ -1,11 +1,15 @@
-import { llmService } from '../ai/llmService.js';
+import { createSystemLlmMetering, llmService, type LlmMeteringContext } from '../ai/llmService.js';
 import { logger } from '../logging/logger.js';
 
 export const trafficAutomation = {
   /**
    * Generates promotional content tailored for specific social media platforms.
    */
-  async generateSocialContent(productContext: string, platform: 'reddit' | 'twitter' | 'linkedin') {
+  async generateSocialContent(
+    productContext: string,
+    platform: 'reddit' | 'twitter' | 'linkedin',
+    metering: LlmMeteringContext = createSystemLlmMetering('traffic-automation', 'generate-social-content'),
+  ) {
     try {
       logger.info('TrafficAutomation', `Generating ${platform} content for product.`);
 
@@ -21,7 +25,7 @@ Rules: ${rules}
 
 Return only the exact text content to be posted.`;
 
-      const { text, error } = await llmService.generateText(prompt, { temperature: 0.8 });
+      const { text, error } = await llmService.generateText(prompt, { metering, temperature: 0.8 });
       if (error || !text) throw new Error(error || 'Failed to generate social content');
 
       // In a real system, you would integrate with Twitter API, Reddit API, LinkedIn API to auto-post here.

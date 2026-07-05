@@ -113,10 +113,11 @@ export type ExpoWorldContract = {
 export function buildExpoSponsorStartView(plan: Pick<SponsorBoulevardPlan, 'arrivalNode' | 'footprint'>): ExpoStartView {
   const centerX = (plan.footprint.minX + plan.footprint.maxX) * 0.5;
   const arrivalZ = plan.arrivalNode.position[2];
+  const laneOffsetX = Math.max(-72, Math.min(72, centerX + 46));
 
   return {
-    lookAt: [centerX, 3.6, arrivalZ - 46],
-    position: [centerX, 8.2, arrivalZ + 182],
+    lookAt: [laneOffsetX - 4, 36, arrivalZ - 284],
+    position: [laneOffsetX, 5.4, arrivalZ + 24],
     source: 'arrival-main',
   };
 }

@@ -1,9 +1,6 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 import { SignallingServer } from '@epicgames-ps/lib-pixelstreamingsignalling-ue5.7';
 
-/* eslint-disable @typescript-eslint/no-unsafe-call,
-                  @typescript-eslint/no-unsafe-member-access */
-
 export default function (signallingServer: SignallingServer) {
     const operations = {
         GET

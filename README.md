@@ -37,7 +37,13 @@ Staging:
 Frontend release builds must use:
 
 - `VITE_PUBLIC_API_BASE_URL`
+- `VITE_SUPABASE_URL`
+- `VITE_SUPABASE_ANON_KEY`
+
+Optional Pixel Streaming/operator frontend settings:
+
 - `VITE_SIGNALING_SERVER_URL`
+- `VITE_PIXEL_STREAMING_PROBE_TIMEOUT_MS`
 - `VITE_STUN_SERVER_URLS`
 - `VITE_TURN_SERVER_URLS`
 - `VITE_TURN_USERNAME`
@@ -49,11 +55,15 @@ Backend release deploys must use:
 - `SUPABASE_SERVICE_KEY`
 - `PORT`
 - `NODE_ENV`
+
+Optional Pixel Streaming/operator backend settings:
+
+- `PIXEL_STREAMING_ROUTES_ENABLED`
 - `SIGNALING_STATUS_BASE_URL`
 - `PIXEL_STREAMING_STATUS_TIMEOUT_MS`
 - `UE5_SECRET_KEY`
 
-See [WEB3D_EXPO_DEPLOYMENT_CONTRACT.md](C:/3d/docs/release/WEB3D_EXPO_DEPLOYMENT_CONTRACT.md) and [ADR-0001](C:/3d/docs/adr/ADR-0001-canonical-web3d-expo-release-topology.md).
+`scripts/check-frontend-env.mjs` is the build-time source of truth for required frontend variables. See [WEB3D_EXPO_DEPLOYMENT_CONTRACT.md](C:/3d/docs/release/WEB3D_EXPO_DEPLOYMENT_CONTRACT.md) and [ADR-0001](C:/3d/docs/adr/ADR-0001-canonical-web3d-expo-release-topology.md).
 
 ## Local development
 
@@ -67,7 +77,8 @@ Backend:
 ```powershell
 cd backend-server
 npm install
-npm run start:docker
+npm run build
+npm start
 ```
 
 Docker stack:
@@ -76,12 +87,18 @@ Copy-Item .env.docker.example .env.docker
 docker compose --env-file .env.docker up -d --build
 ```
 
+Optional Pixel Streaming/operator stack:
+```powershell
+docker compose -f docker-compose.yml -f docker-compose.pixel-streaming.yml --env-file .env.docker up -d --build
+```
+
 Docker compose secrets:
 - Root `docker compose` does not read `backend-server/.env` for `${...}` interpolation.
 - Keep backend-only secrets in `/.env.docker`, not in frontend `VITE_*` variables.
 - `/.env.docker` is local-only and ignored by git through `.env.*`.
 - Frontend `VITE_*` values remain separate and are only for public client/runtime configuration.
-- For the Dockerized frontend build, set `VITE_PUBLIC_API_BASE_URL` and `VITE_SIGNALING_SERVER_URL` in `/.env.docker` as explicit public endpoints.
+- For the Dockerized baseline frontend build, set `VITE_PUBLIC_API_BASE_URL`, `VITE_SUPABASE_URL`, and `VITE_SUPABASE_ANON_KEY` in `/.env.docker` as explicit public build values.
+- Configure TURN credentials and `UE5_SECRET_KEY` only when using the optional Pixel Streaming override.
 
 ## Release discipline
 

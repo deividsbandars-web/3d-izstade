@@ -1,0 +1,3 @@
+export const MODULAR_HOME_PORTAL_DEFAULT_POSITION: [number, number, number] = [236, 0, 118];
+export const MODULAR_HOME_PORTAL_DEFAULT_ROTATION_Y = -0.18;
+export const MODULAR_HOME_PORTAL_DEFAULT_SCALE = 2.75;

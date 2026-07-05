@@ -5,17 +5,19 @@ services:
       dockerfile: Dockerfile
       args:
         VITE_PUBLIC_API_BASE_URL: ${VITE_PUBLIC_API_BASE_URL:?VITE_PUBLIC_API_BASE_URL is required}
-        VITE_SIGNALING_SERVER_URL: ${VITE_SIGNALING_SERVER_URL:?VITE_SIGNALING_SERVER_URL is required}
-        VITE_STUN_SERVER_URLS: ${STUN_SERVER_URLS:-stun:stun.l.google.com:19302}
-        VITE_TURN_SERVER_URLS: ${TURN_SERVER_URLS:-turn:${TURN_PUBLIC_HOST:-localhost}:3478?transport=udp,turn:${TURN_PUBLIC_HOST:-localhost}:3478?transport=tcp}
-        VITE_TURN_USERNAME: ${TURN_USERNAME:-pixelstream_user}
-        VITE_TURN_PASSWORD: ${TURN_PASSWORD:-change-me}
+        VITE_SUPABASE_URL: ${VITE_SUPABASE_URL:?VITE_SUPABASE_URL is required}
+        VITE_SUPABASE_ANON_KEY: ${VITE_SUPABASE_ANON_KEY:?VITE_SUPABASE_ANON_KEY is required}
+        VITE_PUBLIC_APP_URL: ${VITE_PUBLIC_APP_URL:-}
+        VITE_SIGNALING_SERVER_URL: ${VITE_SIGNALING_SERVER_URL:-}
+        VITE_PIXEL_STREAMING_PROBE_TIMEOUT_MS: ${VITE_PIXEL_STREAMING_PROBE_TIMEOUT_MS:-}
+        VITE_STUN_SERVER_URLS: ${VITE_STUN_SERVER_URLS:-}
+        VITE_TURN_SERVER_URLS: ${VITE_TURN_SERVER_URLS:-}
+        VITE_TURN_USERNAME: ${VITE_TURN_USERNAME:-}
+        VITE_TURN_PASSWORD: ${VITE_TURN_PASSWORD:-}
     ports:
       - "8080:80"
     depends_on:
       backend:
-        condition: service_healthy
-      signaling:
         condition: service_healthy
     restart: unless-stopped
 
@@ -33,84 +35,25 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3000
-      SIGNALING_STATUS_BASE_URL: http://signaling
+      PIXEL_STREAMING_ROUTES_ENABLED: ${PIXEL_STREAMING_ROUTES_ENABLED:-false}
+      SIGNALING_STATUS_BASE_URL: ${SIGNALING_STATUS_BASE_URL:-}
       PIXEL_STREAMING_STATUS_TIMEOUT_MS: ${PIXEL_STREAMING_STATUS_TIMEOUT_MS:-2500}
       REDIS_URL: redis://redis:6379
       SUPABASE_URL: ${SUPABASE_URL:?SUPABASE_URL is required}
       SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY:?SUPABASE_ANON_KEY is required}
       SUPABASE_SERVICE_KEY: ${SUPABASE_SERVICE_KEY:?SUPABASE_SERVICE_KEY is required}
-      UE5_SECRET_KEY: ${UE5_SECRET_KEY:?UE5_SECRET_KEY is required}
+      UE5_SECRET_KEY: ${UE5_SECRET_KEY:-}
     ports:
       - "3000:3000"
     depends_on:
       redis:
         condition: service_started
-      signaling:
-        condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000/health >/dev/null 2>&1 || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 12
       start_period: 10s
-    restart: unless-stopped
-
-  signaling:
-    build:
-      context: ./deployment/signaling
-      dockerfile: Dockerfile
-    environment:
-      STUN_SERVER_URLS: ${STUN_SERVER_URLS:-stun:stun.l.google.com:19302}
-      TURN_SERVER_URLS: ${TURN_SERVER_URLS:?TURN_SERVER_URLS is required}
-      TURN_USERNAME: ${TURN_USERNAME:?TURN_USERNAME is required}
-      TURN_PASSWORD: ${TURN_PASSWORD:?TURN_PASSWORD is required}
-    expose:
-      - "80"
-    ports:
-      - "8888:8888"
-      - "8889:8889"
-    depends_on:
-      turn:
-        condition: service_started
-    healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1/api/status >/dev/null 2>&1 || exit 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 12
-      start_period: 15s
-    restart: unless-stopped
-
-  turn:
-    image: coturn/coturn
-    entrypoint: ["turnserver"]
-    command:
-      - -c
-      - /etc/coturn/turnserver.conf
-      - --realm=${TURN_REALM:-warpala.local}
-      - --external-ip=${TURN_PUBLIC_IP:?TURN_PUBLIC_IP is required}
-      - --listening-ip=${TURN_LISTEN_IP:-0.0.0.0}
-      - --min-port=${TURN_MIN_PORT:-49260}
-      - --max-port=${TURN_MAX_PORT:-49279}
-      - --user=${TURN_USERNAME:?TURN_USERNAME is required}:${TURN_PASSWORD:?TURN_PASSWORD is required}
-      - --no-tls
-      - --no-dtls
-    volumes:
-      - ./deployment/configs/turnserver.conf:/etc/coturn/turnserver.conf:ro
-    ports:
-      - "3478:3478/tcp"
-      - "3478:3478/udp"
-      - "${TURN_MIN_PORT:-49260}-${TURN_MAX_PORT:-49279}:${TURN_MIN_PORT:-49260}-${TURN_MAX_PORT:-49279}/tcp"
-      - "${TURN_MIN_PORT:-49260}-${TURN_MAX_PORT:-49279}:${TURN_MIN_PORT:-49260}-${TURN_MAX_PORT:-49279}/udp"
-    restart: unless-stopped
-
-  sync-server:
-    build:
-      context: ./server
-      dockerfile: Dockerfile
-    environment:
-      PORT: 8890
-    ports:
-      - "8890:8890"
     restart: unless-stopped
 
 networks:

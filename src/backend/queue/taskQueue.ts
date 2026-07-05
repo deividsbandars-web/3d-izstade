@@ -1,4 +1,4 @@
-import { supabaseClient } from '../../lib/supabaseClient';
+import { supabaseClient } from '../../lib/supabaseClient.js';
 import { agentsApplicationService } from '../agents/agentsApplicationService.js';
 
 const LEASE_DURATION_MS = 5 * 60_000;

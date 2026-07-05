@@ -205,10 +205,10 @@ function drawBoothProductPreviewBillboard(args: {
   const isLandscape = width > height * 1.08;
   const bullets = normalizeGeneratedBillboardLines(payload.bullets, 3);
   const ctaLabels = normalizeGeneratedBillboardLines(payload.ctaLabels, 3);
-  const title = payload.label || 'Sponsor Concierge';
-  const tier = payload.tier || 'Premium Booth';
+  const title = payload.label || 'Sponsor Booth';
+  const tier = payload.tier || 'Booth Profile';
   const subtitle = payload.subtitle || 'Turn expo traffic into booked meetings and qualified leads.';
-  const statusLabel = payload.statusLabel || 'Preview only - no live lead capture yet';
+  const statusLabel = payload.statusLabel || 'Request a meeting or open the booth profile';
   const isStandardBooth = tier.toUpperCase().includes('STANDARD');
   const isPremiumBooth = tier.toUpperCase().includes('PREMIUM');
   const isLandmarkZone = tier.toUpperCase().includes('LANDMARK');
@@ -263,8 +263,8 @@ function drawBoothProductPreviewBillboard(args: {
     context.lineWidth = Math.max(2, shortSide * 0.0032);
     context.stroke();
 
-    drawBillboardText(context, 'PRODUCT SHOWCASE', showcasePanelX + showcasePanelWidth * 0.1, showcasePanelY + showcasePanelHeight * 0.12, showcasePanelWidth * 0.8, font(900, bodySize * 0.82), tierAccent);
-    ['Profile', 'Demo screen', 'Package request'].forEach((label, index) => {
+    drawBillboardText(context, 'SPONSOR OFFER', showcasePanelX + showcasePanelWidth * 0.1, showcasePanelY + showcasePanelHeight * 0.12, showcasePanelWidth * 0.8, font(900, bodySize * 0.82), tierAccent);
+    ['Offer', 'Media', 'Contact'].forEach((label, index) => {
       const itemY = showcasePanelY + showcasePanelHeight * (0.34 + index * 0.19);
       context.fillStyle = index === 0 ? accentColor : 'rgba(148, 163, 184, 0.34)';
       context.beginPath();
@@ -289,8 +289,8 @@ function drawBoothProductPreviewBillboard(args: {
     context.lineWidth = Math.max(2, shortSide * 0.0032);
     context.stroke();
 
-    drawBillboardText(context, 'CONVERSION FLOW', conversionPanelX + conversionPanelWidth * 0.1, conversionPanelY + conversionPanelHeight * 0.12, conversionPanelWidth * 0.8, font(900, bodySize * 0.82), tierAccent);
-    ['Booked meeting', 'AI diagnostic', 'Lead report'].forEach((label, index) => {
+    drawBillboardText(context, 'LEAD PATH', conversionPanelX + conversionPanelWidth * 0.1, conversionPanelY + conversionPanelHeight * 0.12, conversionPanelWidth * 0.8, font(900, bodySize * 0.82), tierAccent);
+    ['Booked meeting', 'Qualified request', 'Lead report'].forEach((label, index) => {
       const itemY = conversionPanelY + conversionPanelHeight * (0.34 + index * 0.19);
       context.fillStyle = index === 0 ? accentColor : 'rgba(45, 212, 191, 0.22)';
       context.beginPath();
@@ -315,7 +315,7 @@ function drawBoothProductPreviewBillboard(args: {
     context.lineWidth = Math.max(2, shortSide * 0.0032);
     context.stroke();
 
-    drawBillboardText(context, 'ZONE OWNERSHIP', ownershipPanelX + ownershipPanelWidth * 0.1, ownershipPanelY + ownershipPanelHeight * 0.11, ownershipPanelWidth * 0.8, font(900, bodySize * 0.82), '#fde68a');
+    drawBillboardText(context, 'ZONE SPONSORSHIP', ownershipPanelX + ownershipPanelWidth * 0.1, ownershipPanelY + ownershipPanelHeight * 0.11, ownershipPanelWidth * 0.8, font(900, bodySize * 0.82), '#fde68a');
     ['Naming rights', 'Hero presence', 'Arena slot', 'Sponsor report'].forEach((label, index) => {
       const itemY = ownershipPanelY + ownershipPanelHeight * (0.3 + index * 0.155);
       context.fillStyle = index === 0 ? '#facc15' : 'rgba(250, 204, 21, 0.24)';
@@ -457,7 +457,7 @@ function drawCameraFeedLoopBillboard(args: {
   context.beginPath();
   context.arc(liveDotX, liveDotY, Math.max(5, smallSize * 0.18), 0, Math.PI * 2);
   context.fill();
-  drawBillboardText(context, `LIVE CITY CAMERA - ${label}`, liveDotX + smallSize * 0.55, liveDotY - smallSize * 0.42, badgeWidth - badgeHeight, font(900, smallSize * 0.86), tierAccent);
+  drawBillboardText(context, `SPONSOR SCREEN - ${label}`, liveDotX + smallSize * 0.55, liveDotY - smallSize * 0.42, badgeWidth - badgeHeight, font(900, smallSize * 0.86), tierAccent);
 
   context.strokeStyle = accentColor;
   context.globalAlpha = 0.36;
@@ -934,30 +934,39 @@ function AnimatedCameraFeedSurface({
 }
 
 function VideoSponsorTextureSurface({
+  allowVideoPlayback = true,
   depthWrite,
   doubleSided = false,
   fallbackColor,
   emissiveColor,
   emissiveIntensity = 0,
   opacity = 1,
+  posterUrl,
   textureQualityHint,
   url,
 }: {
+  allowVideoPlayback?: boolean;
   depthWrite?: boolean;
   doubleSided?: boolean;
   emissiveColor?: string;
   emissiveIntensity?: number;
   fallbackColor: string;
   opacity?: number;
+  posterUrl?: string | null;
   textureQualityHint: ExpoScreenTextureQualityHint;
   url: string;
 }) {
   const [videoTexture, setVideoTexture] = useState<THREE.VideoTexture | null>(null);
   const side = doubleSided ? THREE.DoubleSide : THREE.FrontSide;
   const playbackId = useMemo(() => `booth-video:${url}`, [url]);
-  useExpoVideoScreenPlaybackRegistration(playbackId, Boolean(videoTexture));
+  useExpoVideoScreenPlaybackRegistration(playbackId, allowVideoPlayback && Boolean(videoTexture));
 
   useEffect(() => {
+    if (!allowVideoPlayback) {
+      queueMicrotask(() => setVideoTexture(null));
+      return undefined;
+    }
+
     if (typeof document === 'undefined') {
       return undefined;
     }
@@ -969,7 +978,7 @@ function VideoSponsorTextureSurface({
     video.loop = true;
     video.muted = true;
     video.playsInline = true;
-    video.preload = 'auto';
+    video.preload = 'metadata';
     video.src = url;
 
     const nextTexture = configureExpoTexture(new THREE.VideoTexture(video), textureQualityHint) as THREE.VideoTexture;
@@ -1000,9 +1009,9 @@ function VideoSponsorTextureSurface({
       video.load();
       nextTexture.dispose();
     };
-  }, [textureQualityHint, url]);
+  }, [allowVideoPlayback, textureQualityHint, url]);
 
-  if (videoTexture) {
+  if (allowVideoPlayback && videoTexture) {
     return (
       <meshBasicMaterial
         depthWrite={depthWrite ?? opacity >= 0.999}
@@ -1014,6 +1023,21 @@ function VideoSponsorTextureSurface({
         opacity={opacity}
         side={side}
         toneMapped={false}
+      />
+    );
+  }
+
+  if (posterUrl) {
+    return (
+      <StaticSponsorTextureSurface
+        depthWrite={depthWrite}
+        doubleSided={doubleSided}
+        fallbackColor={fallbackColor}
+        emissiveColor={emissiveColor}
+        emissiveIntensity={emissiveIntensity}
+        opacity={opacity}
+        textureQualityHint={textureQualityHint}
+        url={posterUrl}
       />
     );
   }
@@ -1123,21 +1147,25 @@ function StaticSponsorTextureSurface({
 }
 
 export function SponsorTextureSurface({
+  allowVideoPlayback,
   depthWrite,
   doubleSided = false,
   fallbackColor,
   emissiveColor,
   emissiveIntensity = 0,
   opacity = 1,
+  posterUrl,
   textureQualityHint,
   url,
 }: {
+  allowVideoPlayback?: boolean;
   depthWrite?: boolean;
   doubleSided?: boolean;
   emissiveColor?: string;
   emissiveIntensity?: number;
   fallbackColor: string;
   opacity?: number;
+  posterUrl?: string | null;
   textureQualityHint?: ExpoScreenTextureQualityHint;
   url: string;
 }) {
@@ -1162,12 +1190,14 @@ export function SponsorTextureSurface({
   if (isVideoTextureUrl(url)) {
     return (
       <VideoSponsorTextureSurface
+        allowVideoPlayback={allowVideoPlayback ?? true}
         depthWrite={depthWrite}
         doubleSided={doubleSided}
         fallbackColor={fallbackColor}
         emissiveColor={emissiveColor}
         emissiveIntensity={emissiveIntensity}
         opacity={opacity}
+        posterUrl={posterUrl}
         textureQualityHint={normalizedTextureQualityHint}
         url={url}
       />

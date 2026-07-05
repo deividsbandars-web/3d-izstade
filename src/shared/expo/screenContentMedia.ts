@@ -1,6 +1,7 @@
 import { isValidExpoScreenSlotId } from './screenInventory.js';
+import { normalizeExpoCityScreenCampaign } from './cityScreenCampaign.js';
 
-export type ExpoManagedScreenContentMode = 'generated-card' | 'image' | 'video-placeholder';
+export type ExpoManagedScreenContentMode = 'generated-card' | 'image' | 'video' | 'video-placeholder';
 export type ExpoManagedScreenContentStatus = 'draft' | 'published';
 export type ExpoScreenMediaKind = 'image' | 'video';
 
@@ -52,7 +53,11 @@ export function normalizeExpoManagedScreenMode(value: unknown): ExpoManagedScree
     return 'image';
   }
 
-  if (normalized === 'video' || normalized === 'video-placeholder') {
+  if (normalized === 'video') {
+    return 'video';
+  }
+
+  if (normalized === 'video-placeholder') {
     return 'video-placeholder';
   }
 
@@ -180,8 +185,8 @@ export function normalizeExpoScreenContentForSave(input: ExpoScreenContentInput 
     issues.push({ field: 'imageUrl', message: 'Image mode needs a valid HTTPS image URL.' });
   }
 
-  if (mode === 'video-placeholder' && !videoResult.url) {
-    issues.push({ field: 'videoUrl', message: 'Video placeholder mode needs a valid HTTPS .mp4 or .webm URL.' });
+  if ((mode === 'video' || mode === 'video-placeholder') && !videoResult.url) {
+    issues.push({ field: 'videoUrl', message: 'Video mode needs a valid HTTPS .mp4 or .webm URL.' });
   }
 
   if (screenSlotId && !isValidExpoScreenSlotId(screenSlotId)) {
@@ -213,6 +218,9 @@ function asRecord(value: unknown): Record<string, unknown> {
 export function sanitizeExpoManagedBoothAssets(assets3d: unknown) {
   const assets = asRecord(assets3d);
   const screenContentResult = normalizeExpoScreenContentForSave(asRecord(assets.screen_content));
+  const rawCityScreenContent = asRecord(assets.city_screen_content);
+  const cityScreenContentResult = normalizeExpoScreenContentForSave(rawCityScreenContent);
+  const cityScreenCampaignResult = normalizeExpoCityScreenCampaign(rawCityScreenContent);
   const videoResult = validateExpoScreenMediaUrl(assets.video_url, 'video');
   const sanitizedAssets: Record<string, unknown> = { ...assets };
 
@@ -220,6 +228,15 @@ export function sanitizeExpoManagedBoothAssets(assets3d: unknown) {
     sanitizedAssets.screen_content = screenContentResult.screenContent;
   } else {
     delete sanitizedAssets.screen_content;
+  }
+
+  if (cityScreenContentResult.ok && cityScreenCampaignResult.ok) {
+    sanitizedAssets.city_screen_content = {
+      ...cityScreenContentResult.screenContent,
+      ...cityScreenCampaignResult.campaign,
+    };
+  } else {
+    delete sanitizedAssets.city_screen_content;
   }
 
   if (videoResult.ok && videoResult.url) {

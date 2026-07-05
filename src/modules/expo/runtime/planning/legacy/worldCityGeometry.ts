@@ -141,6 +141,7 @@ export type CanonicalPrimitiveTexturePlane = {
   fallbackColor: string;
   kind: 'texture-plane';
   opacity?: number;
+  posterUrl?: string | null;
   position: [number, number, number];
   size: [number, number];
   url: string | null;
@@ -268,6 +269,20 @@ export type CityScreenSocket = {
 export type CityScreenAssignment = {
   accentColor: string;
   companyId: string | null;
+  commercial?: {
+    fallbackImageUrl: string;
+    mediaMode: 'generated-card' | 'image' | 'video' | 'video-placeholder';
+    mediaUrl: string | null;
+    ownerId: string | null;
+    ownerKind: 'event' | 'platform' | 'sponsor';
+    ownerLabel: string;
+    posterUrl?: string | null;
+    priority: number;
+    qualityTierBehavior: 'static-billboard' | 'video-budgeted-by-quality-and-distance';
+    screenSlotId?: string | null;
+    source: 'demo-preview' | 'managed-screen' | 'scene-fallback' | 'scene-sponsor';
+    valueTier: 'hero' | 'landmark' | 'premium' | 'standard';
+  };
   id: string;
   imageUrl: string | null;
   label: string;

@@ -1,0 +1,801 @@
+import { useState, type Dispatch, type SetStateAction } from 'react';
+import { ModularHomeShareLinkPanel } from './ModularHomeShareLinkPanel';
+import type { ModularHomeTemplateId } from './modularHomeConfig';
+import {
+  DEFAULT_MODULAR_HOME_CONFIG,
+  type ModularHomeConfiguratorState,
+  type ModularHomeViewModeOption,
+  type useModularHomeConfigurator,
+} from './modularHomeConfigurator';
+import { formatHomeEstimateEur } from './modularHomeEstimate';
+import { createModularHomeShareUrl } from './modularHomeShareUrl';
+import {
+  getDefaultDimensionPresetForProduct,
+  getDefaultHomeConfig,
+  getModularHomeDimensionPresetsForProduct,
+  getModularHomeLayoutVariantsForProduct,
+  getModularHomeOptionChoices,
+  getModularHomeProductForTemplate,
+  getModularHomeProducts,
+  getModularHomeRoomUseChoices,
+  type ModularHomeConstraintStatus,
+  type ModularHomeOptionGroup,
+  type ModularHomeProduct,
+  type ModularHomeProductConfigSummary,
+  type ModularHomeProductionConstraint,
+  type ModularHomeProductionConstraintSeverity,
+} from './modularHomeProducts';
+
+type ModularHomeDemoTabId = 'overview' | 'design' | 'estimate' | 'bom' | 'quote' | 'projects' | 'upload';
+
+type HomeConfigUiOption<Key extends keyof ModularHomeConfiguratorState = keyof ModularHomeConfiguratorState> = {
+  constraintMessage: string;
+  constraintStatus: ModularHomeConstraintStatus;
+  disabledReason: string;
+  isDisabled: boolean;
+  key: ModularHomeConfiguratorState[Key];
+  label: string;
+  priceDelta: number;
+  productionConstraintSeverity: ModularHomeProductionConstraintSeverity;
+  productionNextStep: string;
+};
+
+type HomeConfigUiGroup<Key extends keyof ModularHomeConfiguratorState = keyof ModularHomeConfiguratorState> = {
+  key: Key;
+  label: string;
+  options: readonly HomeConfigUiOption<Key>[];
+};
+
+export const MODULAR_HOME_PRIMARY_CONFIGURATOR_GROUP_KEYS = [
+  'template',
+  'layoutVariant',
+  'roomUseProfile',
+  'facade',
+  'roof',
+  'terrace',
+  'trimColor',
+  'windowFrameColor',
+  'doorPackage',
+  'roofEdgeColor',
+  'floorFinish',
+  'interiorWallFinish',
+  'furniturePackage',
+] as const satisfies readonly (keyof ModularHomeConfiguratorState)[];
+
+const PRIMARY_CONFIGURATOR_GROUP_KEY_SET = new Set<keyof ModularHomeConfiguratorState>(
+  MODULAR_HOME_PRIMARY_CONFIGURATOR_GROUP_KEYS,
+);
+
+type ConfiguratorStylePreset = {
+  helper: string;
+  id: string;
+  label: string;
+  overrides: Partial<ModularHomeConfiguratorState>;
+};
+
+const CONFIGURATOR_STYLE_PRESETS = [
+  {
+    helper: 'Warm timber, plywood interior, furnished studio',
+    id: 'natural',
+    label: 'Natural',
+    overrides: {
+      facade: 'naturalTimber',
+      floorFinish: 'plywood',
+      furnitureMood: 'warm',
+      furniturePackage: 'standardFurniture',
+      interiorFloorStyle: 'utilityPlywood',
+      interiorWallFinish: 'plywood',
+      kitchenFinish: 'wood',
+      roof: 'pitched',
+      roofEdgeColor: 'graphite',
+      terrace: 'frontDeck',
+      trimColor: 'timber',
+      wallPanelStyle: 'plainPanel',
+      windowFrameColor: 'timber',
+      windowPackage: 'standardWindows',
+    },
+  },
+  {
+    helper: 'Bright facade, white frames, oak floor',
+    id: 'nordic-light',
+    label: 'Nordic light',
+    overrides: {
+      facade: 'lightPainted',
+      floorFinish: 'oakLaminate',
+      furnitureMood: 'minimal',
+      furniturePackage: 'standardFurniture',
+      interiorFloorStyle: 'warmPlank',
+      interiorWallFinish: 'paintedWhite',
+      kitchenFinish: 'white',
+      roof: 'pitched',
+      roofEdgeColor: 'lightMetal',
+      terrace: 'frontDeck',
+      trimColor: 'white',
+      wallPanelStyle: 'paintReadyBoard',
+      windowFrameColor: 'white',
+      windowPackage: 'panoramicWindows',
+    },
+  },
+  {
+    helper: 'Dark cladding, premium furniture, bronze details',
+    id: 'dark-premium',
+    label: 'Dark premium',
+    overrides: {
+      facade: 'darkThermoWood',
+      finishLevel: 'premium',
+      floorFinish: 'oakLaminate',
+      furnitureMood: 'premiumCompact',
+      furniturePackage: 'premiumFurniture',
+      interiorFloorStyle: 'warmPlank',
+      interiorWallFinish: 'warmPanel',
+      kitchenFinish: 'dark',
+      roof: 'flat',
+      roofEdgeColor: 'bronze',
+      terrace: 'extendedTerrace',
+      trimColor: 'graphite',
+      wallPanelStyle: 'ribbedPanel',
+      windowFrameColor: 'graphite',
+      windowFrameType: 'slimline',
+      windowPackage: 'panoramicWindows',
+    },
+  },
+] as const satisfies readonly ConfiguratorStylePreset[];
+
+function setConfiguratorOption(
+  setOption: ReturnType<typeof useModularHomeConfigurator>['setOption'],
+  key: keyof ModularHomeConfiguratorState,
+  value: ModularHomeConfiguratorState[keyof ModularHomeConfiguratorState],
+) {
+  setOption(key as never, value as never);
+}
+
+function formatOptionPriceDelta(amount: number): string {
+  if (amount <= 0) {
+    return '';
+  }
+
+  return ` +${formatHomeEstimateEur(amount)}`;
+}
+
+function createConfiguratorStylePresetConfig(
+  product: ModularHomeProduct,
+  overrides: Partial<ModularHomeConfiguratorState>,
+): ModularHomeConfiguratorState {
+  return {
+    ...DEFAULT_MODULAR_HOME_CONFIG,
+    ...getDefaultHomeConfig(product.id),
+    ...overrides,
+  };
+}
+
+function createOptionGroup<Key extends keyof ModularHomeConfiguratorState>(
+  product: ModularHomeProduct,
+  config: ModularHomeConfiguratorState,
+  key: Key,
+  label: string,
+  optionGroup: ModularHomeOptionGroup,
+): HomeConfigUiGroup<Key> {
+  return {
+    key,
+    label,
+    options: getModularHomeOptionChoices(product.id, optionGroup, config).map((option) => ({
+      constraintMessage: option.constraintMessage,
+      constraintStatus: option.constraintStatus,
+      disabledReason: option.disabledReason,
+      isDisabled: !option.isCompatible,
+      key: option.visualToken as ModularHomeConfiguratorState[Key],
+      label: option.label,
+      priceDelta: option.priceDelta,
+      productionConstraintSeverity: option.productionConstraintSeverity,
+      productionNextStep: option.productionNextStep,
+    })),
+  };
+}
+
+function createConfiguratorGroups(
+  product: ModularHomeProduct,
+  config: ModularHomeConfiguratorState,
+): readonly HomeConfigUiGroup[] {
+  const templateOptions = getModularHomeProducts().map((item) => ({
+    constraintMessage: 'Compatible with Modular Home preview.',
+    constraintStatus: 'compatible',
+    disabledReason: '',
+    isDisabled: false,
+    key: item.defaultTemplateId,
+    label: item.name,
+    priceDelta: 0,
+    productionConstraintSeverity: 'info',
+    productionNextStep: 'Continue with the selected product preview; final production package still requires review.',
+  })) satisfies readonly HomeConfigUiOption<'template'>[];
+  const layoutOptions = getModularHomeLayoutVariantsForProduct(product.id).map((variant) => ({
+    constraintMessage: variant.summaryNote,
+    constraintStatus: 'compatible',
+    disabledReason: '',
+    isDisabled: false,
+    key: variant.id,
+    label: variant.label,
+    priceDelta: 0,
+    productionConstraintSeverity: 'info',
+    productionNextStep: 'Use this controlled layout variant for preview only; production drawings require review.',
+  })) satisfies readonly HomeConfigUiOption<'layoutVariant'>[];
+  const dimensionPresetOptions = getModularHomeDimensionPresetsForProduct(product.id).map((preset) => ({
+    constraintMessage: preset.summaryNote,
+    constraintStatus: 'compatible',
+    disabledReason: '',
+    isDisabled: false,
+    key: preset.id,
+    label: preset.label,
+    priceDelta: 0,
+    productionConstraintSeverity: preset.id === getDefaultDimensionPresetForProduct(product.id) ? 'info' : 'requiresReview',
+    productionNextStep: preset.moduleDimensionNote,
+  })) satisfies readonly HomeConfigUiOption<'dimensionPreset'>[];
+  const roomUseOptions = getModularHomeRoomUseChoices(product.id, config.layoutVariant).map((profile) => ({
+    constraintMessage: profile.summaryNote,
+    constraintStatus: 'compatible',
+    disabledReason: '',
+    isDisabled: false,
+    key: profile.id,
+    label: profile.label,
+    priceDelta: 0,
+    productionConstraintSeverity: 'info',
+    productionNextStep: profile.interiorPackageNote,
+  })) satisfies readonly HomeConfigUiOption<'roomUseProfile'>[];
+
+  return [
+    { key: 'template', label: 'Home product', options: templateOptions },
+    { key: 'layoutVariant', label: 'Layout variant', options: layoutOptions },
+    { key: 'dimensionPreset', label: 'Dimension preset', options: dimensionPresetOptions },
+    { key: 'roomUseProfile', label: 'Room use', options: roomUseOptions },
+    createOptionGroup(product, config, 'facade', 'Facade', 'facade'),
+    createOptionGroup(product, config, 'roof', 'Roof', 'roof'),
+    createOptionGroup(product, config, 'terrace', 'Terrace', 'terrace'),
+    createOptionGroup(product, config, 'finishLevel', 'Finish level', 'finish'),
+    createOptionGroup(product, config, 'furniturePackage', 'Furniture package', 'furniturePackage'),
+    createOptionGroup(product, config, 'sofa', 'Sofa', 'sofa'),
+    createOptionGroup(product, config, 'table', 'Table', 'table'),
+    createOptionGroup(product, config, 'bed', 'Bed', 'bed'),
+    createOptionGroup(product, config, 'kitchenLine', 'Kitchen line', 'kitchenLine'),
+    createOptionGroup(product, config, 'wardrobePlaceholder', 'Wardrobe placeholder', 'wardrobePlaceholder'),
+    createOptionGroup(product, config, 'interiorWallFinish', 'Interior wall finish', 'interiorWallFinish'),
+    createOptionGroup(product, config, 'floorFinish', 'Floor finish', 'floorFinish'),
+    createOptionGroup(product, config, 'windowPackage', 'Window package', 'windowPackage'),
+    createOptionGroup(product, config, 'windowPlacement', 'Window placement', 'windowPlacement'),
+    createOptionGroup(product, config, 'doorPackage', 'Door package', 'doorPackage'),
+    createOptionGroup(product, config, 'doorPlacement', 'Door placement', 'doorPlacement'),
+    createOptionGroup(product, config, 'facadeBoardOrientation', 'Facade board orientation', 'facadeBoardOrientation'),
+    createOptionGroup(product, config, 'facadeBoardWidth', 'Facade board width', 'facadeBoardWidth'),
+    createOptionGroup(product, config, 'facadeBoardProfile', 'Facade board profile', 'facadeBoardProfile'),
+    createOptionGroup(product, config, 'facadeBoardSpacing', 'Facade board spacing', 'facadeBoardSpacing'),
+    createOptionGroup(product, config, 'trimColor', 'Trim color', 'trimColor'),
+    createOptionGroup(product, config, 'roofEdgeColor', 'Roof edge color', 'roofEdgeColor'),
+    createOptionGroup(product, config, 'roofGutterStyle', 'Roof edge/gutter style', 'roofGutterStyle'),
+    createOptionGroup(product, config, 'windowFrameColor', 'Window frame color', 'windowFrameColor'),
+    createOptionGroup(product, config, 'windowFrameType', 'Window frame type', 'windowFrameType'),
+    createOptionGroup(product, config, 'interiorFloorStyle', 'Interior floor style', 'interiorFloorStyle'),
+    createOptionGroup(product, config, 'wallPanelStyle', 'Wall panel style', 'wallPanelStyle'),
+  ];
+}
+
+type ConfiguratorOptionsPanelProps = {
+  config: ModularHomeConfiguratorState;
+  configSummary: ModularHomeProductConfigSummary;
+  invalidConfigReasons: readonly string[];
+  invalidShareKeys: readonly string[];
+  isTouchDevice: boolean;
+  onConfigInteraction: () => void;
+  onStartInside: () => void;
+  product: ModularHomeProduct;
+  reset: () => void;
+  reviewConfigWarnings: readonly ModularHomeProductionConstraint[];
+  setActiveHomeDemoTab: Dispatch<SetStateAction<ModularHomeDemoTabId>>;
+  setConfig: ReturnType<typeof useModularHomeConfigurator>['setConfig'];
+  setOption: ReturnType<typeof useModularHomeConfigurator>['setOption'];
+  updateStudioViewMode: (nextViewMode: ModularHomeViewModeOption) => void;
+  viewMode: ModularHomeViewModeOption;
+  visibleProductionConstraints: readonly ModularHomeProductionConstraint[];
+};
+
+export function ConfiguratorOptionsPanel({
+  config,
+  configSummary,
+  invalidConfigReasons,
+  invalidShareKeys,
+  isTouchDevice,
+  onConfigInteraction,
+  onStartInside,
+  product,
+  reset,
+  reviewConfigWarnings,
+  setActiveHomeDemoTab,
+  setConfig,
+  setOption,
+  updateStudioViewMode,
+  viewMode,
+  visibleProductionConstraints,
+}: ConfiguratorOptionsPanelProps) {
+  const configuratorGroups = createConfiguratorGroups(product, config);
+  const [shareCopyStatus, setShareCopyStatus] = useState('');
+  const [showMoreOptions, setShowMoreOptions] = useState(false);
+  const sharedConfigFromUrl = { invalidKeys: invalidShareKeys };
+  const shareUrl = createModularHomeShareUrl(config, undefined, viewMode);
+  const primaryConfiguratorGroups = MODULAR_HOME_PRIMARY_CONFIGURATOR_GROUP_KEYS
+    .map((key) => configuratorGroups.find((group) => group.key === key))
+    .filter((group): group is HomeConfigUiGroup => group !== undefined);
+  const moreConfiguratorGroups = configuratorGroups.filter((group) => !PRIMARY_CONFIGURATOR_GROUP_KEY_SET.has(group.key));
+
+  const copyPrimaryShareUrl = async () => {
+    if (typeof navigator === 'undefined' || typeof navigator.clipboard?.writeText !== 'function') {
+      setShareCopyStatus('Share link is ready below.');
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setShareCopyStatus('Link copied.');
+    } catch {
+      setShareCopyStatus('Share link is ready below.');
+    }
+  };
+
+  const renderConfiguratorGroup = (group: HomeConfigUiGroup) => (
+    <div key={group.key} data-home-config-group={group.key}>
+      <div
+        style={{
+          color: '#fed7aa',
+          fontSize: isTouchDevice ? '0.58rem' : '0.62rem',
+          fontWeight: 950,
+          letterSpacing: '0.1em',
+          marginBottom: '6px',
+          textTransform: 'uppercase',
+        }}
+      >
+        {group.label}
+      </div>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: isTouchDevice ? '7px' : '8px' }}>
+        {group.options.map((option) => {
+          const selected = config[group.key] === option.key;
+          const isDisabled = option.isDisabled;
+
+          return (
+            <button
+              key={option.key}
+              type="button"
+              aria-disabled={isDisabled}
+              aria-pressed={selected}
+              data-home-config-option={`${group.key}:${option.key}`}
+              data-home-config-constraint-message={option.constraintMessage}
+              data-home-config-constraint-status={option.constraintStatus}
+              data-home-config-disabled={isDisabled ? 'true' : 'false'}
+              data-home-config-disabled-reason={option.disabledReason}
+              data-home-config-production-next-step={option.productionNextStep}
+              data-home-config-production-severity={option.productionConstraintSeverity}
+              data-home-config-selected={selected ? 'true' : 'false'}
+              disabled={isDisabled}
+              title={option.label}
+              onClick={(event) => {
+                event.stopPropagation();
+                if (isDisabled) {
+                  return;
+                }
+
+                if (selected) {
+                  return;
+                }
+
+                if (group.key === 'template') {
+                  const nextProduct = getModularHomeProductForTemplate(option.key as ModularHomeTemplateId);
+                  if (nextProduct) {
+                    setConfig(getDefaultHomeConfig(nextProduct.id));
+                    onConfigInteraction();
+                    return;
+                  }
+                }
+
+                setConfiguratorOption(setOption, group.key, option.key);
+                onConfigInteraction();
+              }}
+              style={{
+                background: selected ? 'linear-gradient(135deg, rgba(251, 191, 36, 0.28), rgba(34, 197, 94, 0.2))' : 'rgba(15, 23, 42, 0.5)',
+                border: selected ? '1px solid rgba(251, 191, 36, 0.5)' : '1px solid rgba(255, 255, 255, 0.14)',
+                borderRadius: '999px',
+                color: isDisabled ? '#64748b' : selected ? '#fff7ed' : '#cbd5e1',
+                cursor: isDisabled ? 'not-allowed' : 'pointer',
+                display: 'inline-grid',
+                font: 'inherit',
+                fontSize: isTouchDevice ? '0.61rem' : '0.64rem',
+                fontWeight: selected ? 950 : 850,
+                gap: '5px',
+                justifyItems: 'start',
+                lineHeight: 1.12,
+                minHeight: isTouchDevice ? '44px' : '38px',
+                opacity: isDisabled ? 0.52 : 1,
+                padding: isTouchDevice ? '8px 9px' : '8px 10px',
+                whiteSpace: 'normal',
+              }}
+            >
+              <span>{option.label}{formatOptionPriceDelta(option.priceDelta)}</span>
+              <span data-home-config-constraint-label={`${group.key}:${option.key}:${option.constraintStatus}`} hidden />
+              {option.productionConstraintSeverity !== 'info' ? (
+                <span data-home-config-production-label={`${group.key}:${option.key}:${option.productionConstraintSeverity}`} hidden />
+              ) : null}
+            </button>
+          );
+        })}
+      </div>
+      {group.options.some((option) => option.isDisabled) ? (
+        <div
+          data-home-config-disabled-note={group.key}
+          style={{
+            color: '#94a3b8',
+            fontSize: isTouchDevice ? '0.54rem' : '0.58rem',
+            fontWeight: 760,
+            lineHeight: 1.3,
+            marginTop: '5px',
+          }}
+        >
+          Muted options are unavailable for {product.name}.
+        </div>
+      ) : null}
+      {group.options.some((option) => option.constraintStatus === 'requiresReview') ? (
+        <span data-home-config-review-note={group.key} hidden />
+      ) : null}
+    </div>
+  );
+
+  return (
+    <>
+            <section
+              aria-label={`${product.name} configurator`}
+              data-home-configurator-panel="true"
+              data-home-config-product-id={product.id}
+              style={{
+                background: 'rgba(2, 6, 23, 0.34)',
+                border: '1px solid rgba(34, 197, 94, 0.22)',
+                borderRadius: isTouchDevice ? '15px' : '17px',
+                marginTop: isTouchDevice ? '10px' : '12px',
+                padding: isTouchDevice ? '10px' : '12px',
+              }}
+            >
+              <style>
+                {`
+                  [data-home-configurator-panel="true"] button:focus-visible {
+                    border-color: rgba(250, 204, 21, 0.78);
+                    outline: 2px solid #facc15;
+                    outline-offset: 2px;
+                  }
+                `}
+              </style>
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', alignItems: 'center' }}>
+                <div>
+                  <div style={{ color: '#86efac', fontSize: '0.58rem', fontWeight: 950, letterSpacing: '0.14em', textTransform: 'uppercase' }}>
+                    Preview configurator
+                  </div>
+                  <div style={{ color: '#f0fdf4', fontSize: isTouchDevice ? '0.78rem' : '0.84rem', fontWeight: 900, marginTop: '4px' }}>
+                    Configure {product.name}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  data-home-config-reset="true"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    reset();
+                  }}
+                  style={{
+                    background: 'rgba(15, 23, 42, 0.58)',
+                    border: '1px solid rgba(255, 255, 255, 0.18)',
+                    borderRadius: '999px',
+                    color: '#e2e8f0',
+                    cursor: 'pointer',
+                    font: 'inherit',
+                    fontSize: '0.55rem',
+                    fontWeight: 900,
+                    letterSpacing: '0.1em',
+                    minHeight: isTouchDevice ? '44px' : '36px',
+                    padding: '5px 8px',
+                    textTransform: 'uppercase',
+                  }}
+                >
+                  Reset
+                </button>
+              </div>
+      
+              <div style={{ display: 'grid', gap: isTouchDevice ? '11px' : '12px', marginTop: isTouchDevice ? '11px' : '12px' }}>
+                {primaryConfiguratorGroups.map(renderConfiguratorGroup)}
+
+                <div
+                  data-home-style-presets="true"
+                  style={{
+                    background: 'linear-gradient(180deg, rgba(251, 191, 36, 0.16), rgba(2, 6, 23, 0.34))',
+                    border: '1px solid rgba(251, 191, 36, 0.24)',
+                    borderRadius: '13px',
+                    display: 'grid',
+                    gap: '8px',
+                    padding: isTouchDevice ? '9px 10px' : '10px 11px',
+                  }}
+                >
+                  <div style={{ color: '#fde68a', fontSize: isTouchDevice ? '0.54rem' : '0.58rem', fontWeight: 950, letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+                    Start from a style
+                  </div>
+                  <div style={{ display: 'grid', gap: '7px', gridTemplateColumns: isTouchDevice ? '1fr' : '1fr' }}>
+                    {CONFIGURATOR_STYLE_PRESETS.map((preset) => (
+                      <button
+                        key={preset.id}
+                        type="button"
+                        data-home-style-preset={preset.id}
+                        title={preset.helper}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          setConfig(createConfiguratorStylePresetConfig(product, preset.overrides));
+                          onConfigInteraction();
+                        }}
+                        style={{
+                          alignItems: 'center',
+                          background: 'rgba(15, 23, 42, 0.58)',
+                          border: '1px solid rgba(251, 191, 36, 0.22)',
+                          borderRadius: '11px',
+                          color: '#fff7ed',
+                          cursor: 'pointer',
+                          display: 'grid',
+                          font: 'inherit',
+                          gap: '3px',
+                          justifyItems: 'start',
+                          minHeight: isTouchDevice ? '44px' : '40px',
+                          padding: isTouchDevice ? '8px 9px' : '8px 10px',
+                          textAlign: 'left',
+                        }}
+                      >
+                        <span style={{ fontSize: isTouchDevice ? '0.64rem' : '0.68rem', fontWeight: 950, lineHeight: 1.08 }}>
+                          {preset.label}
+                        </span>
+                        <span style={{ color: '#fed7aa', fontSize: isTouchDevice ? '0.54rem' : '0.57rem', fontWeight: 780, lineHeight: 1.22 }}>
+                          {preset.helper}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div
+                  style={{
+                    background: 'rgba(2, 6, 23, 0.28)',
+                    border: '1px solid rgba(125, 211, 252, 0.18)',
+                    borderRadius: '13px',
+                    display: 'grid',
+                    gap: '7px',
+                    padding: isTouchDevice ? '9px 10px' : '10px 11px',
+                  }}
+                >
+                  <div style={{ color: '#7dd3fc', fontSize: isTouchDevice ? '0.54rem' : '0.58rem', fontWeight: 950, letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+                    Instance actions
+                  </div>
+                  <div style={{ color: '#e2e8f0', fontSize: isTouchDevice ? '0.58rem' : '0.62rem', fontWeight: 800, lineHeight: 1.28 }}>
+                    {viewMode === 'interior'
+                      ? 'You are inside the same modular home scene.'
+                      : 'You are outside the same modular home scene.'}
+                  </div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                    <button
+                      type="button"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        updateStudioViewMode('exterior');
+                      }}
+                      style={{
+                        background: 'rgba(15, 23, 42, 0.56)',
+                        border: '1px solid rgba(125, 211, 252, 0.18)',
+                        borderRadius: '999px',
+                        color: '#bae6fd',
+                        cursor: 'pointer',
+                        font: 'inherit',
+                        fontSize: isTouchDevice ? '0.56rem' : '0.6rem',
+                        fontWeight: 900,
+                        minHeight: isTouchDevice ? '44px' : '38px',
+                        padding: '8px 10px',
+                      }}
+                    >
+                      Start outside
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        onStartInside();
+                      }}
+                      style={{
+                        background: 'rgba(15, 23, 42, 0.56)',
+                        border: '1px solid rgba(34, 197, 94, 0.2)',
+                        borderRadius: '999px',
+                        color: '#bbf7d0',
+                        cursor: 'pointer',
+                        font: 'inherit',
+                        fontSize: isTouchDevice ? '0.56rem' : '0.6rem',
+                        fontWeight: 900,
+                        minHeight: isTouchDevice ? '44px' : '38px',
+                        padding: '8px 10px',
+                      }}
+                    >
+                      Start inside
+                    </button>
+                    <button
+                      type="button"
+                      data-home-share-primary-copy="true"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        void copyPrimaryShareUrl();
+                      }}
+                      style={{
+                        background: 'linear-gradient(135deg, rgba(96, 165, 250, 0.92), rgba(45, 212, 191, 0.82))',
+                        border: '1px solid rgba(191, 219, 254, 0.34)',
+                        borderRadius: '999px',
+                        color: '#082f49',
+                        cursor: 'pointer',
+                        font: 'inherit',
+                        fontSize: isTouchDevice ? '0.56rem' : '0.6rem',
+                        fontWeight: 950,
+                        minHeight: isTouchDevice ? '44px' : '38px',
+                        padding: '8px 10px',
+                      }}
+                    >
+                      Save / share this home
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        setActiveHomeDemoTab('quote');
+                      }}
+                      style={{
+                        background: 'rgba(15, 23, 42, 0.56)',
+                        border: '1px solid rgba(251, 191, 36, 0.2)',
+                        borderRadius: '999px',
+                        color: '#fde68a',
+                        cursor: 'pointer',
+                        font: 'inherit',
+                        fontSize: isTouchDevice ? '0.56rem' : '0.6rem',
+                        fontWeight: 900,
+                        minHeight: isTouchDevice ? '44px' : '38px',
+                        padding: '8px 10px',
+                      }}
+                    >
+                      Request quote
+                    </button>
+                  </div>
+                  {shareCopyStatus ? (
+                    <div data-home-share-primary-status="true" style={{ color: '#bfdbfe', fontSize: isTouchDevice ? '0.54rem' : '0.58rem', fontWeight: 880, lineHeight: 1.28 }}>
+                      {shareCopyStatus}
+                    </div>
+                  ) : null}
+                </div>
+      
+                {moreConfiguratorGroups.length > 0 ? (
+                  <div
+                    data-home-config-more-options="true"
+                    data-home-config-more-options-expanded={showMoreOptions ? 'true' : 'false'}
+                    style={{
+                      borderTop: '1px solid rgba(251, 191, 36, 0.14)',
+                      display: 'grid',
+                      gap: showMoreOptions ? (isTouchDevice ? '10px' : '11px') : 0,
+                      paddingTop: isTouchDevice ? '10px' : '11px',
+                    }}
+                  >
+                    <button
+                      type="button"
+                      aria-expanded={showMoreOptions}
+                      data-home-config-more-options-toggle="true"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        setShowMoreOptions((current) => !current);
+                      }}
+                      style={{
+                        alignItems: 'center',
+                        background: showMoreOptions ? 'rgba(251, 191, 36, 0.16)' : 'rgba(15, 23, 42, 0.5)',
+                        border: showMoreOptions ? '1px solid rgba(251, 191, 36, 0.32)' : '1px solid rgba(255, 255, 255, 0.14)',
+                        borderRadius: '999px',
+                        color: '#fef3c7',
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        font: 'inherit',
+                        fontSize: isTouchDevice ? '0.61rem' : '0.64rem',
+                        fontWeight: 930,
+                        justifyContent: 'space-between',
+                        lineHeight: 1.08,
+                        maxWidth: '100%',
+                        minHeight: isTouchDevice ? '44px' : '38px',
+                        padding: isTouchDevice ? '9px 11px' : '9px 12px',
+                        width: 'fit-content',
+                      }}
+                    >
+                      More options
+                    </button>
+
+                    {showMoreOptions ? (
+                      <div style={{ display: 'grid', gap: isTouchDevice ? '11px' : '12px' }}>
+                        {moreConfiguratorGroups.map(renderConfiguratorGroup)}
+                      </div>
+                    ) : null}
+                  </div>
+                ) : null}
+              </div>
+      
+              <div
+                data-home-config-summary="true"
+                style={{
+                  borderTop: '1px solid rgba(34, 197, 94, 0.18)',
+                  color: '#bbf7d0',
+                  fontSize: isTouchDevice ? '0.58rem' : '0.62rem',
+                  fontWeight: 850,
+                  lineHeight: 1.45,
+                  marginTop: isTouchDevice ? '10px' : '11px',
+                  paddingTop: isTouchDevice ? '10px' : '11px',
+                }}
+              >
+                Selected: {configSummary.product} / {configSummary.layoutVariant} / {configSummary.roomUseProfile} / {configSummary.facade} / {configSummary.roof} / {configSummary.terrace} / {configSummary.finishLevel}
+                <br />
+                Details: {configSummary.facadeBoardProfile} / {configSummary.facadeBoardSpacing} / {configSummary.trimColor} / {configSummary.roofGutterStyle} / {configSummary.windowFrameType} / {configSummary.wallPanelStyle} / {configSummary.interiorFloorStyle}
+                <br />
+                Interior: {configSummary.furniturePackage} / sofa {configSummary.sofa} / table {configSummary.table} / bed {configSummary.bed} / kitchen {configSummary.kitchenLine} / wardrobe {configSummary.wardrobePlaceholder}
+              </div>
+      
+              {visibleProductionConstraints.length > 0 ? (
+                <div
+                  aria-hidden="true"
+                  data-home-config-production-constraints="true"
+                  data-home-config-production-constraint-count={visibleProductionConstraints.length}
+                  hidden
+                >
+                  {visibleProductionConstraints.map((constraint) => (
+                    <span
+                      key={constraint.id}
+                      data-home-production-constraint={constraint.id}
+                      data-home-production-constraint-affected={constraint.affectedOptions.join(',')}
+                      data-home-production-constraint-next-step={constraint.nextStep}
+                      data-home-production-constraint-severity={constraint.severity}
+                      hidden
+                    />
+                  ))}
+                </div>
+              ) : null}
+      
+              {invalidConfigReasons.length > 0 ? (
+                <div
+                  data-home-config-validation="invalid"
+                  style={{
+                    background: 'rgba(127, 29, 29, 0.24)',
+                    border: '1px solid rgba(248, 113, 113, 0.26)',
+                    borderRadius: '12px',
+                    color: '#fecaca',
+                    display: 'grid',
+                    gap: '4px',
+                    fontSize: isTouchDevice ? '0.56rem' : '0.6rem',
+                    fontWeight: 800,
+                    lineHeight: 1.3,
+                    marginTop: isTouchDevice ? '8px' : '9px',
+                    padding: isTouchDevice ? '7px 8px' : '8px 9px',
+                  }}
+                >
+                  {invalidConfigReasons.map((reason) => (
+                    <span key={reason}>{reason}</span>
+                  ))}
+                </div>
+              ) : null}
+              {reviewConfigWarnings.length > 0 ? (
+                <div data-home-config-validation="requires-review" hidden>
+                  {reviewConfigWarnings.map((warning) => (
+                    <span key={warning.id} data-home-config-review-warning={warning.id} hidden>
+                      {warning.message}
+                    </span>
+                  ))}
+                </div>
+              ) : null}
+            </section>
+      
+            <ModularHomeShareLinkPanel
+              config={config}
+              invalidShareKeys={sharedConfigFromUrl.invalidKeys}
+              isTouchDevice={isTouchDevice}
+              viewMode={viewMode}
+            />
+    </>
+  );
+}

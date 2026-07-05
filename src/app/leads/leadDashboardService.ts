@@ -1,5 +1,5 @@
 import { LeadsAPI } from '../../services/leads';
-import { logger } from '../../backend/logging/logger';
+import { clientLogger as logger } from '../../lib/clientLogger';
 import { supabaseClient } from '../../lib/supabaseClient';
 
 export const leadDashboardService = {

@@ -1,4 +1,4 @@
-import { serverApiPost } from './serverApi';
+import { serverApiPost } from './serverApi.js';
 
 export const GrowthAPI = {
   findProfitableNiches: async (payload: unknown) => serverApiPost('/api/growth/niches', payload),

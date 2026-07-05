@@ -47,7 +47,7 @@ function normalizeOptionalText(value: unknown) {
 }
 
 function normalizeEmail(value: unknown) {
-  const normalized = normalizeRequiredText(value, 'CALCULATOR_LEAD_EMAIL_REQUIRED');
+  const normalized = normalizeRequiredText(value, 'CALCULATOR_LEAD_EMAIL_REQUIRED').toLowerCase();
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized)) {
     throw new Error('CALCULATOR_LEAD_EMAIL_INVALID');
   }

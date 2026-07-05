@@ -2,6 +2,7 @@ import { useState, type CSSProperties, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import {
   INITIAL_SPONSOR_PACKAGE_REQUEST_FORM,
+  getSponsorPackageInterestLabel,
   getPendingSponsorPackageRequestQueue,
   readSponsorPackageRequestQueue,
   saveSponsorPackageRequest,
@@ -36,111 +37,115 @@ type PackageCard = {
 const SPONSOR_PACKAGES: PackageCard[] = [
   {
     accent: '#38bdf8',
-    audience: 'Piemērots uzņēmumam, kam vajag kvalitatīvu digitālu klātbūtni bez lielas kampaņas sarežģītības.',
-    bestFor: 'Pirmais Web3D expo stends vai produkta vitrīna.',
-    cta: 'Pieteikt Standard',
+    audience: 'Best for a team that wants a polished Web3D presence without a large campaign buildout.',
+    bestFor: 'First sponsor booth, product showcase, or event presence.',
+    cta: 'Choose Standard',
     demoHref: '/expo-3d?salesDemo=1&salesDemoStep=standard',
-    description: 'Redzams stends ar produkta stāstu, demo virsmu un vienkāršu intereses savākšanu.',
-    deliverables: ['Sponsor stends', 'Produkta pitch karte', 'Demo ekrāna saturs', 'Intereses pieteikums'],
-    features: ['Produkta profils un īss pitch', 'Demo-ready showcase ekrāns', 'Sponsor interest pieteikums'],
+    description: 'A visible sponsor booth with a clear offer, brand media, and a simple request path.',
+    deliverables: ['Sponsor booth', 'Product headline', 'Demo screen content', 'Lead request path'],
+    features: ['Brand profile and short offer', 'Demo-ready booth screen', 'Sponsor request form'],
     id: 'standard',
     label: 'Standard Booth',
-    outcome: 'Ātri palaist stendu un sākt vākt interesi no apmeklētājiem.',
-    priceRange: 'Sākot no 1.5k-3k / kampaņa',
-    priceSignal: 'Ieejas pakete',
-    proof: 'Skatāms sales demo kā Immersive Fabric Labs piemērs.',
-    salesMetric: 'Intereses pieteikumi un demo skatījumi',
+    outcome: 'Launch a booth quickly and start collecting interest from expo visitors.',
+    priceRange: 'From EUR 1.5k-3k / campaign',
+    priceSignal: 'Entry package',
+    proof: 'Preview a standard sponsor booth in the guided sales demo.',
+    salesMetric: 'Booth visits, screen views, and request submissions',
     title: 'Standard Booth',
   },
   {
     accent: '#fbbf24',
-    audience: 'Piemērots sponsoram, kam svarīgas tikšanās, kvalificēti lead signāli un sekojošs pārdošanas darbs.',
-    bestFor: 'Sponsors, kuram vajag kvalificētas sarunas, ne tikai redzamību.',
-    cta: 'Pieteikt Premium',
+    audience: 'Best for sponsors that care about qualified conversations, meetings, and follow-up.',
+    bestFor: 'B2B sponsors, product launches, and partner teams that need more than visibility.',
+    cta: 'Choose Premium',
     demoHref: '/expo-3d?salesDemo=1&salesDemoStep=premium',
-    description: 'Augstākas vērtības sponsor stends ar fokusētu konversiju, kvalifikāciju un atskaiti.',
-    deliverables: ['Premium stends', 'Meeting CTA plūsma', 'AI kvalifikācijas preview', 'Lead report pakete'],
-    features: ['Meeting-ready sponsor pakete', 'AI kvalifikācijas preview', 'Lead report pakete'],
+    description: 'A stronger sponsor booth with contact actions, screen ownership, and lead follow-up support.',
+    deliverables: ['Premium booth', 'Meeting CTA', 'Sponsor screen placement', 'Lead report package'],
+    features: ['Meeting-ready sponsor profile', 'Premium booth media surface', 'Lead follow-up package'],
     id: 'premium',
     label: 'Premium Booth',
-    outcome: 'Pārvērst expo uzmanību konkrētās sarunās un pieteikumos.',
-    priceRange: 'Sākot no 5k-15k / kampaņa',
-    priceSignal: 'Lead-gen pakete',
-    proof: 'Skatāms sales demo kā Sponsor Concierge piemērs.',
-    salesMetric: 'Pieteiktas sarunas, kvalifikācijas signāli un follow-up statuss',
+    outcome: 'Turn expo attention into concrete meetings and qualified sponsor requests.',
+    priceRange: 'From EUR 5k-15k / campaign',
+    priceSignal: 'Lead-gen package',
+    proof: 'Preview a premium booth and sponsor screen in the guided sales demo.',
+    salesMetric: 'Booked meetings, qualified requests, and follow-up status',
     title: 'Premium Booth',
   },
   {
     accent: '#34d399',
-    audience: 'Piemērots anchor sponsoram, kurš grib dominēt zonā, event programmā un sponsor komunikācijā.',
-    bestFor: 'Anchor sponsors, partneru programmas un lielāki event launch.',
-    cta: 'Pieteikt Landmark',
+    audience: 'Best for anchor sponsors that want to own a destination, event moment, or category story.',
+    bestFor: 'Anchor sponsorships, partner programs, and larger event launches.',
+    cta: 'Choose Landmark',
     demoHref: '/expo-3d?salesDemo=1&salesDemoStep=landmark',
-    description: 'Flagship sponsora pakete ar zonas nosaukumu, hero virsmām un piesaisti Demo Arena programmām.',
-    deliverables: ['Zonas nosaukums', 'Hero sponsor virsmas', 'Demo Arena sponsor slots', 'Mēneša sponsor report'],
-    features: ['Zonas naming rights', 'Hero sponsor klātbūtne', 'Demo Arena sponsor slots', 'Mēneša sponsor report'],
+    description: 'A flagship sponsor package with zone identity, hero surfaces, and event-level visibility.',
+    deliverables: ['Zone sponsorship', 'Hero city screens', 'Event sponsor moment', 'Monthly sponsor report'],
+    features: ['Zone naming rights', 'Hero sponsor presence', 'Event screen inventory', 'Sponsor report'],
     id: 'landmark',
-    label: 'Landmark Zone Sponsor',
-    outcome: 'Iegūt redzamāko sponsor stāstu visā Web3D expo pilsētā.',
-    priceRange: 'Sākot no 15k-50k+ / kampaņa',
-    priceSignal: 'Flagship pakete',
-    proof: 'Skatāms sales demo kā AI District Sponsor piemērs.',
-    salesMetric: 'Zonas redzamība, event inventory un sponsor report',
+    label: 'Landmark Zone',
+    outcome: 'Own the most visible sponsor story in the Web3D expo city.',
+    priceRange: 'From EUR 15k-50k+ / campaign',
+    priceSignal: 'Flagship package',
+    proof: 'Preview landmark city placement in the guided sales demo.',
+    salesMetric: 'Zone visibility, event inventory, and sponsor reporting',
     title: 'Landmark Zone Sponsor',
   },
 ];
 
 const PACKAGE_COMPARISON_ROWS = [
-  ['Primārais mērķis', 'Produkta redzamība', 'Kvalificētas sarunas', 'Zonas ownership'],
-  ['Ko pērk sponsors', 'Stendu + demo ekrānu', 'Konversijas stendu + lead report', 'Hero zonu + event inventory'],
-  ['Labākais pielietojums', 'Produkta launch vai showcase', 'B2B demand-gen un tikšanās', 'Anchor sponsorship vai partneru programma'],
-  ['Nākamais upsell', 'Premium lead-gen', 'AI diagnostic + booking', 'Demo Arena / event sponsor bundle'],
+  ['Main goal', 'Product visibility', 'Qualified conversations', 'Category ownership'],
+  ['What you buy', 'Booth and demo screen', 'Conversion booth and screen placement', 'Hero zone and event inventory'],
+  ['Best use', 'Product launch or showcase', 'B2B demand generation and meetings', 'Anchor sponsorship or partner program'],
+  ['Natural upgrade', 'Premium lead generation', 'Screen ownership and meeting flow', 'Event sponsor bundle'],
 ];
 
 const SALES_ASSET_ROWS = [
-  ['Sales demo', 'Landmark, Premium, Standard un Demo Arena sponsor preview vienā URL', '/expo-3d?salesDemo=1'],
-  ['3D/Web3D tāmes kalkulators', 'Ātrs budžeta signāls vizualizācijām, expo stendam vai Web3D demo', '/visuals-calculator'],
-  ['Sponsor lead inbox', 'Aizsargāta iekšējā rinda pieteikumu apstrādei', '/expo/sponsor-leads?sponsor=sponsor-concierge'],
-  ['Kalkulatoru lead funnels', 'Būvniecības un servisu piemēri, kas savāc kvalificētus pieprasījumus', '/calculators'],
+  ['Walk the city', 'Explore the sponsor boulevard, booths, screens, and modular-home destination.', '/expo-3d'],
+  ['Guided sponsor demo', 'Open the package walkthrough for Standard, Premium, and Landmark examples.', '/expo-3d?salesDemo=1'],
+  ['Booth marketplace', 'Choose a specific booth position, see a price signal, and continue to checkout.', '/expo/booth-marketplace'],
+  ['3D/Web3D estimate', 'Get a fast budget signal for expo booths, Web3D demos, or visual configurators.', '/visuals-calculator'],
+  ['Request quote', 'Send package interest, sponsor goal, budget range, and optional media links.', '/expo/sponsor-packages#request-quote'],
 ];
 
 const FUNNEL_STEPS = [
-  ['1', 'Atver sales demo', 'Sponsors redz Web3D pilsētu, trīs paketes un Demo Arena potenciālu.'],
-  ['2', 'Izvēlas sponsor līmeni', 'Standard, Premium vai Landmark tiek sasaistīts ar konkrētu pieteikumu.'],
-  ['3', 'Nosūta sponsor interesi', 'Forma saglabā pieteikumu backendā un lokālā backup rindā.'],
-  ['4', 'Komanda sagatavo nākamo soli', 'Var sekot sponsor walkthrough, piedāvājums vai demo zvans.'],
+  ['1', 'Walk the city', 'See the sponsor boulevard, booth types, screen surfaces, and modular-home proof case.'],
+  ['2', 'Choose a package', 'Pick Standard, Premium, or Landmark based on visibility, meetings, and ownership.'],
+  ['3', 'Send booth details', 'Share your contact, sponsor goal, budget signal, timeline, and current website.'],
+  ['4', 'Get the next step', 'Warpala follows up with a booth location, asset checklist, preview path, and quote.'],
 ];
 
 const PACKAGE_INTEREST_OPTIONS: Array<{ label: string; value: SponsorPackageInterest }> = [
   { label: 'Premium Booth', value: 'premium' },
   { label: 'Standard Booth', value: 'standard' },
   { label: 'Landmark Zone Sponsor', value: 'landmark' },
-  { label: 'Demo Arena Sponsor', value: 'arena' },
-  { label: 'Vajag palīdzību izvēlēties', value: 'unsure' },
+  { label: 'Event / Arena Sponsor', value: 'arena' },
+  { label: 'Help me choose', value: 'unsure' },
 ];
 
 const BUDGET_OPTIONS = [
-  'Līdz 5k',
-  '5k-15k',
-  '15k-50k',
-  '50k+',
-  'Vajag paketes ieteikumu',
+  'Up to EUR 5k',
+  'EUR 5k-15k',
+  'EUR 15k-50k',
+  'EUR 50k+',
+  'Need a package recommendation',
 ];
 
 const TIMELINE_OPTIONS = [
-  'Šomēnes',
-  'Nākammēnes',
-  'Šajā ceturksnī',
-  'Plānojam vēlāk',
+  'This month',
+  'Next month',
+  'This quarter',
+  'Planning for later',
 ];
 
 const inputStyle: CSSProperties = {
   background: 'rgba(2, 6, 23, 0.78)',
   border: '1px solid rgba(148, 163, 184, 0.24)',
-  borderRadius: '15px',
+  borderRadius: '8px',
+  boxSizing: 'border-box',
   color: '#f8fafc',
   font: 'inherit',
+  minWidth: 0,
   padding: '13px 14px',
+  textOverflow: 'ellipsis',
   width: '100%',
 };
 
@@ -150,6 +155,11 @@ const labelStyle: CSSProperties = {
   fontSize: '0.78rem',
   fontWeight: 800,
   gap: '8px',
+  minWidth: 0,
+};
+
+const sectionStyle: CSSProperties = {
+  marginBottom: '28px',
 };
 
 function getStatusColor(tone: 'error' | 'idle' | 'submitting' | 'success') {
@@ -165,15 +175,38 @@ function getStatusColor(tone: 'error' | 'idle' | 'submitting' | 'success') {
   }
 }
 
+function requestPlural(count: number) {
+  return count === 1 ? 'request' : 'requests';
+}
+
+function getSelectedPackageCard(packageInterest: SponsorPackageInterest) {
+  return SPONSOR_PACKAGES.find((entry) => entry.id === packageInterest) ?? null;
+}
+
 export default function SponsorPackages() {
   const [requestForm, setRequestForm] = useState<SponsorPackageRequestForm>(INITIAL_SPONSOR_PACKAGE_REQUEST_FORM);
   const [requestStatus, setRequestStatus] = useState<{ text: string; tone: 'error' | 'idle' | 'submitting' | 'success' }>({
-    text: 'Izvēlies sponsor paketi un nosūti pieteikumu. Pieprasījums tiek sūtīts sponsor komandai un saglabāts ar lokālu backup.',
+    text: 'Choose a package, add contact details, and send a sponsor quote request.',
     tone: 'idle',
   });
   const [queuedRequestCount, setQueuedRequestCount] = useState(() => readSponsorPackageRequestQueue().length);
   const [pendingRequestCount, setPendingRequestCount] = useState(() => getPendingSponsorPackageRequestQueue().length);
   const [isSyncingBackups, setIsSyncingBackups] = useState(false);
+  const selectedPackage = getSelectedPackageCard(requestForm.packageInterest);
+  const previewAccent = selectedPackage?.accent ?? '#a78bfa';
+  const previewPackageLabel = selectedPackage?.title ?? getSponsorPackageInterestLabel(requestForm.packageInterest);
+  const previewHeadline = requestForm.sponsorHeadline.trim() || selectedPackage?.outcome || 'Sponsor presence, booth setup, and quote request.';
+  const previewCta = requestForm.ctaLabel.trim() || 'Request quote';
+  const hasLogo = Boolean(requestForm.logoUrl.trim());
+  const hasMedia = Boolean(requestForm.mediaUrl.trim());
+  const hasSavedRequests = queuedRequestCount > 0 || pendingRequestCount > 0;
+  const setupReadiness = [
+    ['Package', previewPackageLabel],
+    ['Headline', requestForm.sponsorHeadline.trim() ? 'Ready' : 'Add headline'],
+    ['Logo', hasLogo ? 'URL added' : 'Can add later'],
+    ['Media', hasMedia ? 'URL added' : 'Can add later'],
+    ['CTA', requestForm.ctaLabel.trim() ? requestForm.ctaLabel.trim() : 'Request quote'],
+  ];
 
   function updateRequestField<Field extends keyof SponsorPackageRequestForm>(
     field: Field,
@@ -186,7 +219,7 @@ export default function SponsorPackages() {
     const selectedPackage = SPONSOR_PACKAGES.find((entry) => entry.id === packageInterest);
     setRequestForm((current) => ({ ...current, packageInterest }));
     setRequestStatus({
-      text: `${selectedPackage?.title ?? 'Sponsor pakete'} izvēlēta. Pievieno kontaktus un sponsor mērķi, lai sagatavotu pareizo walkthrough.`,
+      text: `${selectedPackage?.title ?? 'Sponsor package'} selected. Add contact details and your sponsor goal so we can prepare the right walkthrough.`,
       tone: 'idle',
     });
 
@@ -208,11 +241,11 @@ export default function SponsorPackages() {
       return;
     }
 
-    setRequestStatus({ text: 'Sūtu sponsor pieteikumu...', tone: 'submitting' });
+    setRequestStatus({ text: 'Sending sponsor request...', tone: 'submitting' });
 
     try {
       await submitSponsorPackageRequestToBackend(requestForm);
-      let backupText = 'Lokālais pārlūka backup šajā ierīcē nebija pieejams.';
+      let backupText = 'Request was sent to the sponsor team.';
 
       try {
         const result = saveSponsorPackageRequest(requestForm, {
@@ -221,9 +254,9 @@ export default function SponsorPackages() {
         });
         setQueuedRequestCount(result.queueCount);
         setPendingRequestCount(getPendingSponsorPackageRequestQueue().length);
-        backupText = `Lokālais backup #${result.queueCount} saglabāts.`;
+        backupText = `A copy was kept on this device as request #${result.queueCount}.`;
       } catch (localError) {
-        backupText = `Pieteikums saņemts, bet lokālais backup neizdevās: ${localError instanceof Error ? localError.message : String(localError)}`;
+        backupText = `Request received, but this device could not keep a copy: ${localError instanceof Error ? localError.message : String(localError)}`;
       }
 
       setRequestForm({
@@ -231,7 +264,7 @@ export default function SponsorPackages() {
         packageInterest: requestForm.packageInterest,
       });
       setRequestStatus({
-        text: `Sponsor pieteikums saņemts. ${backupText}`,
+        text: `Sponsor request received. ${backupText} Next step: Warpala reviews the package, booth location, assets, and quote path.`,
         tone: 'success',
       });
     } catch {
@@ -240,12 +273,12 @@ export default function SponsorPackages() {
         setQueuedRequestCount(result.queueCount);
         setPendingRequestCount(getPendingSponsorPackageRequestQueue().length);
         setRequestStatus({
-          text: `Savienojums pārtrūka, tāpēc pieteikums saglabāts šajā pārlūkā kā backup #${result.queueCount}. To var sinhronizēt, kad backend ir pieejams.`,
+          text: `Connection dropped. This request was saved on this device as draft #${result.queueCount}. Send it when the connection is back.`,
           tone: 'error',
         });
       } catch (localError) {
         setRequestStatus({
-          text: `Pieteikumu nevarēja saglabāt šajā pārlūkā: ${localError instanceof Error ? localError.message : String(localError)}`,
+          text: `The request could not be saved on this device: ${localError instanceof Error ? localError.message : String(localError)}`,
           tone: 'error',
         });
       }
@@ -258,7 +291,7 @@ export default function SponsorPackages() {
     }
 
     setIsSyncingBackups(true);
-    setRequestStatus({ text: 'Sinhronizēju lokālos sponsor pieteikumu backupus...', tone: 'submitting' });
+    setRequestStatus({ text: 'Sending saved sponsor requests...', tone: 'submitting' });
 
     try {
       const result = await syncPendingSponsorPackageRequests();
@@ -267,7 +300,7 @@ export default function SponsorPackages() {
 
       if (result.failedCount > 0) {
         setRequestStatus({
-          text: `Sinhronizēti ${result.syncedCount} backupi, bet ${result.failedCount} vēl neizdevās nosūtīt. Pārbaudi savienojumu un mēģini vēlreiz.`,
+          text: `Sent ${result.syncedCount} saved ${requestPlural(result.syncedCount)}, but ${result.failedCount} still need connection. Try again later.`,
           tone: 'error',
         });
         return;
@@ -275,15 +308,15 @@ export default function SponsorPackages() {
 
       setRequestStatus({
         text: result.syncedCount > 0
-          ? `Sinhronizēti ${result.syncedCount} lokālie sponsor pieteikumi. Tie tagad ir backend lead plūsmā.`
-          : 'Nav pending lokālo backupu, ko sinhronizēt.',
+          ? `Sent ${result.syncedCount} saved sponsor ${requestPlural(result.syncedCount)}. They are now in the sponsor team queue.`
+          : 'No saved requests are waiting to sync.',
         tone: 'success',
       });
     } catch (syncError) {
       setRequestStatus({
-        text: `Lokālo backupu sinhronizācija neizdevās: ${syncError instanceof Error ? syncError.message : String(syncError)}`,
-        tone: 'error',
-      });
+          text: `Saved request send failed: ${syncError instanceof Error ? syncError.message : String(syncError)}`,
+          tone: 'error',
+        });
     } finally {
       setIsSyncingBackups(false);
     }
@@ -300,91 +333,70 @@ export default function SponsorPackages() {
       }}
     >
       <div style={{ margin: '0 auto', maxWidth: '1180px' }}>
-        <header
-          style={{
-            alignItems: 'center',
-            display: 'grid',
-            gap: '22px',
-            gridTemplateColumns: 'minmax(0, 1fr)',
-            marginBottom: '34px',
-          }}
-        >
-          <div style={{ alignItems: 'center', display: 'flex', flexWrap: 'wrap', gap: '16px', justifyContent: 'space-between' }}>
-            <div style={{ alignItems: 'center', display: 'flex', gap: '16px' }}>
+        <header style={{ marginBottom: '34px' }}>
+          <div style={{ alignItems: 'center', display: 'flex', flexWrap: 'wrap', gap: '18px', justifyContent: 'space-between' }}>
+            <div style={{ alignItems: 'center', display: 'flex', gap: '16px', minWidth: 0 }}>
               <WarpalaLogo size={48} />
               <div>
-                <div
-                  style={{
-                    color: '#38bdf8',
-                    fontSize: '0.75rem',
-                    fontWeight: 900,
-                    letterSpacing: '0.14em',
-                    textTransform: 'uppercase',
-                  }}
-                >
+                <div style={{ color: '#38bdf8', fontSize: '0.75rem', fontWeight: 900, letterSpacing: 0, textTransform: 'uppercase' }}>
                   Web3D Expo Sponsorship
                 </div>
-                <h1 style={{ fontSize: 'clamp(2.25rem, 6vw, 5rem)', letterSpacing: '-0.055em', lineHeight: 0.96, margin: '6px 0 0' }}>
-                  Sponsorē Web3D expo pilsētu, nevis statisku reklāmas baneri.
+                <h1 style={{ fontSize: 'clamp(2.1rem, 6vw, 4.8rem)', letterSpacing: 0, lineHeight: 0.98, margin: '6px 0 0', maxWidth: 860 }}>
+                  Sponsor a Web3D expo city, not a static banner.
                 </h1>
               </div>
             </div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
-              <Link className="btn-glass" to="/expo-3d?salesDemo=1" style={{ textDecoration: 'none' }}>
-                ATVĒRT SALES DEMO
+              <Link className="btn-glass" to="/expo-3d" style={{ textDecoration: 'none' }}>
+                Walk city
+              </Link>
+              <Link className="btn-glass" to="/expo/booth-marketplace" style={{ textDecoration: 'none' }}>
+                Rent booth
               </Link>
               <Link className="btn-glass" to="/visuals-calculator" style={{ textDecoration: 'none' }}>
-                APRĒĶINĀT 3D DEMO
+                Estimate 3D demo
               </Link>
             </div>
           </div>
         </header>
 
-        <section className="glass-card" style={{ borderRadius: '28px', marginBottom: '24px', padding: '28px' }}>
-          <div style={{ display: 'grid', gap: '24px', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))' }}>
+        <section style={sectionStyle}>
+          <div style={{ display: 'grid', gap: '22px', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))' }}>
             <div>
-              <p style={{ color: '#dbeafe', fontSize: '1.14rem', fontWeight: 850, lineHeight: 1.48, margin: '0 0 14px', maxWidth: '800px' }}>
-                Trīs pārdodamas sponsor paketes: Standard Booth, Premium Booth un Landmark Zone Sponsor.
+              <p style={{ color: '#dbeafe', fontSize: '1.14rem', fontWeight: 850, lineHeight: 1.48, margin: '0 0 14px', maxWidth: 800 }}>
+                Choose a booth package, provide your brand assets, preview the sponsor surface, and request a quote.
               </p>
-              <p style={{ color: '#cbd5e1', fontSize: '1.02rem', lineHeight: 1.62, margin: 0, maxWidth: '820px' }}>
-                Lapa ir domāta klientam: sponsors var apskatīt sales demo, saprast paketes atšķirību un nosūtīt pieteikumu,
-                kas nonāk sponsor lead plūsmā. Tas nav tikai 3D dekors, bet pārdošanas ceļš no demo līdz sarunai.
+              <p style={{ color: '#cbd5e1', fontSize: '1.02rem', lineHeight: 1.62, margin: 0, maxWidth: 820 }}>
+                Warpala sells sponsor space as a live Web3D city: booths, city screens, event surfaces, and destination proof cases such as the modular-home studio.
               </p>
             </div>
-            <div
-              style={{
-                background: 'rgba(15, 23, 42, 0.72)',
-                border: '1px solid rgba(125, 211, 252, 0.22)',
-                borderRadius: '20px',
-                padding: '18px',
-              }}
-            >
-              <div style={{ color: '#93c5fd', fontSize: '0.72rem', fontWeight: 900, letterSpacing: '0.12em', textTransform: 'uppercase' }}>
-                Pārdošanas loģika
+            <div style={{ background: 'rgba(15, 23, 42, 0.72)', border: '1px solid rgba(125, 211, 252, 0.22)', borderRadius: 8, padding: 18 }}>
+              <div style={{ color: '#93c5fd', fontSize: '0.72rem', fontWeight: 900, letterSpacing: 0, textTransform: 'uppercase' }}>
+                Buyer flow
               </div>
-              <div style={{ color: '#f8fafc', fontSize: '1.45rem', fontWeight: 950, marginTop: '8px' }}>
-                Demo → pakete → pieteikums → sponsor follow-up
+              <div style={{ color: '#f8fafc', fontSize: '1.38rem', fontWeight: 950, marginTop: 8 }}>
+                City tour - package - assets - preview - quote
               </div>
               <p style={{ color: '#94a3b8', lineHeight: 1.45, margin: '8px 0 0' }}>
-                Standard, Premium un Landmark pieteikumi saglabā paketes interesi, kontaktus, budžeta signālu un sponsor mērķi.
+                Bring a goal, rough budget, and timeline. Warpala confirms the right package, booth location, assets, preview path, and quote.
               </p>
             </div>
           </div>
         </section>
 
-        <section style={{ display: 'grid', gap: '12px', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', marginBottom: '24px' }}>
+        <section style={{ ...sectionStyle, display: 'grid', gap: 12, gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' }}>
           {FUNNEL_STEPS.map(([step, title, copy]) => (
             <div
               key={step}
               style={{
                 background: 'linear-gradient(145deg, rgba(15, 23, 42, 0.86), rgba(2, 6, 23, 0.68))',
                 border: '1px solid rgba(148, 163, 184, 0.16)',
-                borderRadius: '20px',
-                padding: '18px',
+                borderRadius: 8,
+                padding: 18,
               }}
             >
-              <div style={{ color: '#38bdf8', fontSize: '0.72rem', fontWeight: 950, letterSpacing: '0.12em', textTransform: 'uppercase' }}>
-                Solis {step}
+              <div style={{ color: '#38bdf8', fontSize: '0.72rem', fontWeight: 950, letterSpacing: 0, textTransform: 'uppercase' }}>
+                Step {step}
               </div>
               <h2 style={{ fontSize: '1.12rem', margin: '8px 0 7px' }}>{title}</h2>
               <p style={{ color: '#94a3b8', fontSize: '0.9rem', lineHeight: 1.45, margin: 0 }}>{copy}</p>
@@ -392,63 +404,42 @@ export default function SponsorPackages() {
           ))}
         </section>
 
-        <section style={{ display: 'grid', gap: '16px', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', marginBottom: '24px' }}>
+        <section style={{ ...sectionStyle, display: 'grid', gap: 16, gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))' }}>
           {SPONSOR_PACKAGES.map((entry) => (
             <article
               key={entry.id}
               className="glass-card"
               style={{
                 borderColor: `${entry.accent}55`,
-                borderRadius: '24px',
+                borderRadius: 8,
                 display: 'flex',
                 flexDirection: 'column',
-                minHeight: '420px',
-                padding: '22px',
+                minHeight: 420,
+                padding: 22,
               }}
             >
-              <div style={{ color: entry.accent, fontSize: '0.68rem', fontWeight: 950, letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+              <div style={{ color: entry.accent, fontSize: '0.68rem', fontWeight: 950, letterSpacing: 0, textTransform: 'uppercase' }}>
                 {entry.priceSignal}
               </div>
-              <h2 style={{ fontSize: '1.55rem', letterSpacing: '-0.035em', lineHeight: 1.05, margin: '10px 0 10px' }}>{entry.title}</h2>
-              <div
-                style={{
-                  background: `${entry.accent}18`,
-                  border: `1px solid ${entry.accent}44`,
-                  borderRadius: '14px',
-                  color: '#f8fafc',
-                  fontSize: '0.92rem',
-                  fontWeight: 900,
-                  marginBottom: '12px',
-                  padding: '10px 12px',
-                }}
-              >
+              <h2 style={{ fontSize: '1.55rem', letterSpacing: 0, lineHeight: 1.05, margin: '10px 0' }}>{entry.title}</h2>
+              <div style={{ background: `${entry.accent}18`, border: `1px solid ${entry.accent}44`, borderRadius: 8, color: '#f8fafc', fontSize: '0.92rem', fontWeight: 900, marginBottom: 12, padding: '10px 12px' }}>
                 {entry.priceRange}
               </div>
               <p style={{ color: '#cbd5e1', lineHeight: 1.48, margin: 0 }}>{entry.description}</p>
               <p style={{ color: '#e2e8f0', fontSize: '0.92rem', fontWeight: 800, lineHeight: 1.45, margin: '12px 0 0' }}>
                 {entry.bestFor}
               </p>
-              <ul style={{ display: 'grid', gap: '10px', listStyle: 'none', margin: '18px 0', padding: 0 }}>
+              <ul style={{ display: 'grid', gap: 10, listStyle: 'none', margin: '18px 0', padding: 0 }}>
                 {entry.features.map((feature) => (
-                  <li key={feature} style={{ alignItems: 'center', color: '#f8fafc', display: 'flex', gap: '10px', fontSize: '0.93rem' }}>
-                    <span style={{ background: entry.accent, borderRadius: '999px', display: 'inline-block', height: '7px', width: '7px' }} />
+                  <li key={feature} style={{ alignItems: 'center', color: '#f8fafc', display: 'flex', gap: 10, fontSize: '0.93rem' }}>
+                    <span style={{ background: entry.accent, borderRadius: 999, display: 'inline-block', height: 7, width: 7 }} />
                     {feature}
                   </li>
                 ))}
               </ul>
-              <div
-                style={{
-                  background: 'rgba(2, 6, 23, 0.42)',
-                  border: '1px solid rgba(148, 163, 184, 0.16)',
-                  borderRadius: '16px',
-                  display: 'grid',
-                  gap: '9px',
-                  marginBottom: '14px',
-                  padding: '13px',
-                }}
-              >
-                <div style={{ color: entry.accent, fontSize: '0.68rem', fontWeight: 950, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
-                  Iekļauts paketē
+              <div style={{ background: 'rgba(2, 6, 23, 0.42)', border: '1px solid rgba(148, 163, 184, 0.16)', borderRadius: 8, display: 'grid', gap: 9, marginBottom: 14, padding: 13 }}>
+                <div style={{ color: entry.accent, fontSize: '0.68rem', fontWeight: 950, letterSpacing: 0, textTransform: 'uppercase' }}>
+                  Included
                 </div>
                 {entry.deliverables.map((item) => (
                   <div key={item} style={{ color: '#cbd5e1', fontSize: '0.84rem', fontWeight: 750 }}>
@@ -458,22 +449,22 @@ export default function SponsorPackages() {
               </div>
               <p style={{ color: '#f8fafc', fontWeight: 850, lineHeight: 1.45, margin: 'auto 0 8px' }}>{entry.outcome}</p>
               <p style={{ color: '#dbeafe', fontSize: '0.86rem', fontWeight: 850, lineHeight: 1.42, margin: '0 0 8px' }}>
-                Mērījums: {entry.salesMetric}
+                Metric: {entry.salesMetric}
               </p>
               <p style={{ color: '#94a3b8', lineHeight: 1.45, margin: '0 0 10px' }}>{entry.audience}</p>
               <p style={{ color: entry.accent, fontSize: '0.82rem', fontWeight: 850, lineHeight: 1.4, margin: '0 0 16px' }}>{entry.proof}</p>
-              <div style={{ display: 'grid', gap: '9px', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))' }}>
+              <div style={{ display: 'grid', gap: 9, gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))' }}>
                 <button
                   onClick={() => selectPackage(entry.id)}
                   style={{
                     background: `linear-gradient(135deg, ${entry.accent}, #f8fafc)`,
                     border: 'none',
-                    borderRadius: '13px',
+                    borderRadius: 8,
                     color: '#020617',
                     cursor: 'pointer',
                     fontSize: '0.76rem',
                     fontWeight: 950,
-                    letterSpacing: '0.04em',
+                    letterSpacing: 0,
                     padding: '11px 12px',
                     textTransform: 'uppercase',
                   }}
@@ -487,7 +478,7 @@ export default function SponsorPackages() {
                     alignItems: 'center',
                     background: 'rgba(15, 23, 42, 0.72)',
                     border: `1px solid ${entry.accent}55`,
-                    borderRadius: '13px',
+                    borderRadius: 8,
                     color: '#e0f2fe',
                     display: 'flex',
                     fontSize: '0.76rem',
@@ -498,23 +489,11 @@ export default function SponsorPackages() {
                     textTransform: 'uppercase',
                   }}
                 >
-                  Skatīt demo
+                  View demo
                 </Link>
               </div>
-              <div style={{ marginTop: '12px' }}>
-                <span
-                  style={{
-                    background: `${entry.accent}1c`,
-                    border: `1px solid ${entry.accent}55`,
-                    borderRadius: '999px',
-                    color: entry.accent,
-                    fontSize: '0.68rem',
-                    fontWeight: 950,
-                    letterSpacing: '0.06em',
-                    padding: '7px 10px',
-                    textTransform: 'uppercase',
-                  }}
-                >
+              <div style={{ marginTop: 12 }}>
+                <span style={{ background: `${entry.accent}1c`, border: `1px solid ${entry.accent}55`, borderRadius: 999, color: entry.accent, fontSize: '0.68rem', fontWeight: 950, letterSpacing: 0, padding: '7px 10px', textTransform: 'uppercase' }}>
                   {entry.label}
                 </span>
               </div>
@@ -522,34 +501,23 @@ export default function SponsorPackages() {
           ))}
         </section>
 
-        <section className="glass-card" style={{ borderRadius: '26px', marginBottom: '24px', padding: '24px' }}>
-          <div style={{ alignItems: 'baseline', display: 'flex', flexWrap: 'wrap', gap: '12px', justifyContent: 'space-between', marginBottom: '16px' }}>
+        <section style={{ ...sectionStyle, background: 'rgba(15, 23, 42, 0.42)', border: '1px solid rgba(148, 163, 184, 0.16)', borderRadius: 8, padding: 24 }}>
+          <div style={{ alignItems: 'baseline', display: 'flex', flexWrap: 'wrap', gap: 12, justifyContent: 'space-between', marginBottom: 16 }}>
             <div>
-              <div style={{ color: '#fbbf24', fontSize: '0.72rem', fontWeight: 950, letterSpacing: '0.12em', textTransform: 'uppercase' }}>
-                Paketes salīdzinājums
+              <div style={{ color: '#fbbf24', fontSize: '0.72rem', fontWeight: 950, letterSpacing: 0, textTransform: 'uppercase' }}>
+                Package comparison
               </div>
-              <h2 style={{ fontSize: '1.7rem', letterSpacing: '-0.04em', margin: '6px 0 0' }}>
-                No stenda līdz zonas ownership.
+              <h2 style={{ fontSize: '1.7rem', letterSpacing: 0, margin: '6px 0 0' }}>
+                From booth to boulevard ownership.
               </h2>
             </div>
             <Link className="btn-glass" to="/expo-3d?salesDemo=1" style={{ textDecoration: 'none' }}>
-              ATVĒRT KOPĒJO DEMO
+              Open demo
             </Link>
           </div>
-          <div style={{ display: 'grid', gap: '10px' }}>
-            <div
-              style={{
-                color: '#94a3b8',
-                display: 'grid',
-                fontSize: '0.72rem',
-                fontWeight: 950,
-                gap: '10px',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
-                letterSpacing: '0.08em',
-                textTransform: 'uppercase',
-              }}
-            >
-              <span>Jautājums</span>
+          <div style={{ display: 'grid', gap: 10 }}>
+            <div style={{ color: '#94a3b8', display: 'grid', fontSize: '0.72rem', fontWeight: 950, gap: 10, gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', letterSpacing: 0, textTransform: 'uppercase' }}>
+              <span>Question</span>
               <span>Standard</span>
               <span>Premium</span>
               <span>Landmark</span>
@@ -560,11 +528,11 @@ export default function SponsorPackages() {
                 style={{
                   background: 'rgba(15, 23, 42, 0.58)',
                   border: '1px solid rgba(148, 163, 184, 0.16)',
-                  borderRadius: '17px',
+                  borderRadius: 8,
                   display: 'grid',
-                  gap: '10px',
+                  gap: 10,
                   gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
-                  padding: '14px',
+                  padding: 14,
                 }}
               >
                 <strong style={{ color: '#f8fafc' }}>{label}</strong>
@@ -577,130 +545,176 @@ export default function SponsorPackages() {
         </section>
 
         <section
-          className="glass-card"
           data-sponsor-package-request-form="true"
-          style={{ borderRadius: '28px', marginBottom: '24px', padding: '26px' }}
+          id="request-quote"
+          style={{ ...sectionStyle, background: 'rgba(2, 6, 23, 0.38)', border: '1px solid rgba(52, 211, 153, 0.2)', borderRadius: 8, padding: 26 }}
         >
-          <div style={{ display: 'grid', gap: '24px', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))' }}>
+          <div style={{ display: 'grid', gap: 24, gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))' }}>
             <div>
-              <div style={{ color: '#34d399', fontSize: '0.74rem', fontWeight: 950, letterSpacing: '0.12em', textTransform: 'uppercase' }}>
-                Sponsor paketes pieteikums
+              <div style={{ color: '#34d399', fontSize: '0.74rem', fontWeight: 950, letterSpacing: 0, textTransform: 'uppercase' }}>
+                Sponsor request
               </div>
-              <h2 style={{ fontSize: 'clamp(1.9rem, 4vw, 3.2rem)', letterSpacing: '-0.05em', lineHeight: 1, margin: '10px 0 12px' }}>
-                Pieteikt sponsor walkthrough.
+              <h2 style={{ fontSize: 'clamp(1.9rem, 4vw, 3.2rem)', letterSpacing: 0, lineHeight: 1, margin: '10px 0 12px' }}>
+                Request a sponsor quote.
               </h2>
               <p style={{ color: '#cbd5e1', fontSize: '1rem', lineHeight: 1.58, margin: 0 }}>
-                Izvēlies paketi un pieraksti sponsor mērķi. Pieteikums nonāk sponsor follow-up plūsmā ar izvēlēto paketi,
-                telefonu, budžeta signālu un termiņu.
+                Tell us what you want to promote. We will reply with the right package, booth or screen setup path, asset checklist, preview path, and quote.
               </p>
+              {hasSavedRequests ? (
+                <div style={{ background: 'rgba(15, 23, 42, 0.72)', border: '1px solid rgba(52, 211, 153, 0.26)', borderRadius: 8, color: '#bbf7d0', fontSize: '0.85rem', fontWeight: 800, lineHeight: 1.45, marginTop: 18, padding: '14px 15px' }}>
+                  <div>
+                    Saved on this device: {queuedRequestCount} {requestPlural(queuedRequestCount)}.
+                  </div>
+                  <div style={{ color: pendingRequestCount > 0 ? '#fde68a' : '#bbf7d0', marginTop: 8 }}>
+                    Waiting to send: {pendingRequestCount}
+                  </div>
+                  {pendingRequestCount > 0 && (
+                    <button
+                      disabled={isSyncingBackups}
+                      onClick={handleSyncPendingBackups}
+                      style={{
+                        background: 'rgba(250, 204, 21, 0.14)',
+                        border: '1px solid rgba(250, 204, 21, 0.38)',
+                        borderRadius: 8,
+                        color: '#fef3c7',
+                        cursor: isSyncingBackups ? 'wait' : 'pointer',
+                        font: 'inherit',
+                        fontSize: '0.76rem',
+                        fontWeight: 950,
+                        letterSpacing: 0,
+                        marginTop: 12,
+                        padding: '10px 12px',
+                        textTransform: 'uppercase',
+                      }}
+                      type="button"
+                    >
+                      {isSyncingBackups ? 'Sending...' : 'Send saved requests'}
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <div style={{ background: 'rgba(15, 23, 42, 0.72)', border: '1px solid rgba(52, 211, 153, 0.22)', borderRadius: 8, color: '#bbf7d0', fontSize: '0.85rem', fontWeight: 800, lineHeight: 1.45, marginTop: 18, padding: '14px 15px' }}>
+                  After you send the request, Warpala reviews fit, inventory, assets, and quote options before the booth or screen is published.
+                </div>
+              )}
               <div
+                data-sponsor-setup-preview="true"
                 style={{
-                  background: 'rgba(15, 23, 42, 0.72)',
-                  border: '1px solid rgba(52, 211, 153, 0.26)',
-                  borderRadius: '18px',
-                  color: '#bbf7d0',
-                  fontSize: '0.85rem',
-                  fontWeight: 800,
-                  lineHeight: 1.45,
-                  marginTop: '18px',
-                  padding: '14px 15px',
+                  background: 'linear-gradient(145deg, rgba(15, 23, 42, 0.9), rgba(2, 6, 23, 0.74))',
+                  border: `1px solid ${previewAccent}55`,
+                  borderRadius: 8,
+                  display: 'grid',
+                  gap: 13,
+                  marginTop: 18,
+                  padding: 18,
                 }}
               >
-                <div>
-                  Lokālais backup: {queuedRequestCount} pieteikum{queuedRequestCount === 1 ? 's' : 'i'} saglabāti šajā ierīcē.
+                <div style={{ alignItems: 'center', display: 'flex', gap: 10, justifyContent: 'space-between' }}>
+                  <span style={{ color: previewAccent, fontSize: '0.7rem', fontWeight: 950, letterSpacing: 0, textTransform: 'uppercase' }}>
+                    Booth preview
+                  </span>
+                  <span style={{ background: `${previewAccent}18`, border: `1px solid ${previewAccent}44`, borderRadius: 999, color: '#f8fafc', fontSize: '0.68rem', fontWeight: 950, padding: '6px 9px', textTransform: 'uppercase' }}>
+                    {previewPackageLabel}
+                  </span>
                 </div>
-                <div style={{ color: pendingRequestCount > 0 ? '#fde68a' : '#bbf7d0', marginTop: '8px' }}>
-                  Jānosūta uz backend: {pendingRequestCount}
+                <div style={{ background: 'rgba(2, 6, 23, 0.68)', border: '1px solid rgba(148, 163, 184, 0.16)', borderRadius: 8, minHeight: 138, padding: 16 }}>
+                  <div style={{ alignItems: 'center', display: 'flex', gap: 10, marginBottom: 12 }}>
+                    <div style={{ alignItems: 'center', background: hasLogo ? '#e0f2fe' : `${previewAccent}24`, border: `1px solid ${previewAccent}55`, borderRadius: 8, color: hasLogo ? '#0f172a' : previewAccent, display: 'flex', fontSize: '0.72rem', fontWeight: 950, height: 44, justifyContent: 'center', width: 44 }}>
+                      {hasLogo ? 'LOGO' : 'ADD'}
+                    </div>
+                    <div>
+                      <div style={{ color: '#f8fafc', fontSize: '1rem', fontWeight: 950, lineHeight: 1.15 }}>
+                        {requestForm.company.trim() || 'Sponsor company'}
+                      </div>
+                      <div style={{ color: previewAccent, fontSize: '0.72rem', fontWeight: 900, marginTop: 3 }}>
+                        {hasMedia ? 'Media ready for screen preview' : 'Generated booth card until media is supplied'}
+                      </div>
+                    </div>
+                  </div>
+                  <div style={{ color: '#ffffff', fontSize: '1.28rem', fontWeight: 950, lineHeight: 1.12, marginBottom: 10 }}>
+                    {previewHeadline}
+                  </div>
+                  <div style={{ color: '#cbd5e1', fontSize: '0.86rem', lineHeight: 1.42, marginBottom: 12 }}>
+                    {requestForm.message.trim() || selectedPackage?.description || 'Share your campaign goal so the booth can be configured around the right offer.'}
+                  </div>
+                  <span style={{ background: previewAccent, borderRadius: 8, color: '#020617', display: 'inline-block', fontSize: '0.72rem', fontWeight: 950, padding: '8px 11px', textTransform: 'uppercase' }}>
+                    {previewCta}
+                  </span>
                 </div>
-                {pendingRequestCount > 0 && (
-                  <button
-                    disabled={isSyncingBackups}
-                    onClick={handleSyncPendingBackups}
-                    style={{
-                      background: 'rgba(250, 204, 21, 0.14)',
-                      border: '1px solid rgba(250, 204, 21, 0.38)',
-                      borderRadius: '13px',
-                      color: '#fef3c7',
-                      cursor: isSyncingBackups ? 'wait' : 'pointer',
-                      font: 'inherit',
-                      fontSize: '0.76rem',
-                      fontWeight: 950,
-                      letterSpacing: '0.05em',
-                      marginTop: '12px',
-                      padding: '10px 12px',
-                      textTransform: 'uppercase',
-                    }}
-                    type="button"
-                  >
-                    {isSyncingBackups ? 'Sinhronizē...' : 'Sinhronizēt backupus'}
-                  </button>
-                )}
+                <div style={{ display: 'grid', gap: 8 }}>
+                  {setupReadiness.map(([label, value]) => (
+                    <div key={label} style={{ alignItems: 'center', display: 'flex', gap: 10, justifyContent: 'space-between' }}>
+                      <span style={{ color: '#94a3b8', fontSize: '0.76rem', fontWeight: 850 }}>{label}</span>
+                      <span style={{ color: '#e2e8f0', fontSize: '0.76rem', fontWeight: 900, textAlign: 'right' }}>{value}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
 
-            <form onSubmit={handleRequestSubmit} style={{ display: 'grid', gap: '13px' }}>
-              <div style={{ display: 'grid', gap: '13px', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))' }}>
+            <form onSubmit={handleRequestSubmit} style={{ display: 'grid', gap: 13 }}>
+              <div style={{ display: 'grid', gap: 13, gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))' }}>
                 <label style={labelStyle}>
-                  Kontaktpersona
+                  Contact name
                   <input
                     autoComplete="name"
                     onChange={(event) => updateRequestField('name', event.target.value)}
-                    placeholder="Vārds Uzvārds"
+                    placeholder="Name Surname"
                     style={inputStyle}
                     type="text"
                     value={requestForm.name}
                   />
                 </label>
                 <label style={labelStyle}>
-                  Darba e-pasts
+                  Work email
                   <input
                     autoComplete="email"
                     onChange={(event) => updateRequestField('email', event.target.value)}
-                    placeholder="vards@uznemums.lv"
+                    placeholder="name@company.com"
                     style={inputStyle}
                     type="email"
                     value={requestForm.email}
                   />
                 </label>
               </div>
-              <div style={{ display: 'grid', gap: '13px', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))' }}>
+              <div style={{ display: 'grid', gap: 13, gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))' }}>
                 <label style={labelStyle}>
-                  Uzņēmums
+                  Company
                   <input
                     autoComplete="organization"
                     onChange={(event) => updateRequestField('company', event.target.value)}
-                    placeholder="Uzņēmuma nosaukums"
+                    placeholder="Company name"
                     style={inputStyle}
                     type="text"
                     value={requestForm.company}
                   />
                 </label>
                 <label style={labelStyle}>
-                  Tālrunis / WhatsApp
+                  Phone / WhatsApp
                   <input
                     autoComplete="tel"
                     onChange={(event) => updateRequestField('phone', event.target.value)}
-                    placeholder="+371 20000000"
+                    placeholder="+1 555 0100"
                     style={inputStyle}
                     type="tel"
                     value={requestForm.phone}
                   />
                 </label>
                 <label style={labelStyle}>
-                  Mājaslapa
+                  Website
                   <input
                     autoComplete="url"
                     onChange={(event) => updateRequestField('website', event.target.value)}
-                    placeholder="https://uznemums.lv"
+                    placeholder="https://company.com"
                     style={inputStyle}
                     type="url"
                     value={requestForm.website}
                   />
                 </label>
               </div>
-              <div style={{ display: 'grid', gap: '13px', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))' }}>
+              <div style={{ display: 'grid', gap: 13, gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))' }}>
                 <label style={labelStyle}>
-                  Interesējošā pakete
+                  Package
                   <select
                     onChange={(event) => updateRequestField('packageInterest', event.target.value as SponsorPackageInterest)}
                     style={inputStyle}
@@ -712,37 +726,83 @@ export default function SponsorPackages() {
                   </select>
                 </label>
                 <label style={labelStyle}>
-                  Budžeta signāls
+                  Budget range
                   <select
                     onChange={(event) => updateRequestField('budgetRange', event.target.value)}
                     style={inputStyle}
                     value={requestForm.budgetRange}
                   >
-                    <option value="">Izvēlies diapazonu</option>
+                    <option value="">Choose range</option>
                     {BUDGET_OPTIONS.map((option) => (
                       <option key={option} value={option}>{option}</option>
                     ))}
                   </select>
                 </label>
                 <label style={labelStyle}>
-                  Termiņš
+                  Timeline
                   <select
                     onChange={(event) => updateRequestField('timeline', event.target.value)}
                     style={inputStyle}
                     value={requestForm.timeline}
                   >
-                    <option value="">Izvēlies termiņu</option>
+                    <option value="">Choose timeline</option>
                     {TIMELINE_OPTIONS.map((option) => (
                       <option key={option} value={option}>{option}</option>
                     ))}
                   </select>
                 </label>
               </div>
+              <div style={{ display: 'grid', gap: 13, gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))' }}>
+                <label style={labelStyle}>
+                  Booth headline
+                  <input
+                    onChange={(event) => updateRequestField('sponsorHeadline', event.target.value)}
+                    placeholder="What should visitors remember?"
+                    style={inputStyle}
+                    type="text"
+                    value={requestForm.sponsorHeadline}
+                  />
+                </label>
+                <label style={labelStyle}>
+                  CTA label
+                  <input
+                    onChange={(event) => updateRequestField('ctaLabel', event.target.value)}
+                    placeholder="Request demo"
+                    style={inputStyle}
+                    type="text"
+                    value={requestForm.ctaLabel}
+                  />
+                </label>
+              </div>
+              <div style={{ display: 'grid', gap: 13, gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))' }}>
+                <label style={labelStyle}>
+                  Logo link (optional)
+                  <input
+                    autoComplete="url"
+                    onChange={(event) => updateRequestField('logoUrl', event.target.value)}
+                    placeholder="https://cdn.company.com/logo.webp"
+                    style={inputStyle}
+                    type="url"
+                    value={requestForm.logoUrl}
+                  />
+                </label>
+                <label style={labelStyle}>
+                  Screen media link (optional)
+                  <input
+                    autoComplete="url"
+                    onChange={(event) => updateRequestField('mediaUrl', event.target.value)}
+                    placeholder="https://cdn.company.com/screen.webp"
+                    style={inputStyle}
+                    type="url"
+                    value={requestForm.mediaUrl}
+                  />
+                </label>
+              </div>
               <label style={labelStyle}>
-                Sponsor mērķis
+                Sponsor goal
                 <textarea
                   onChange={(event) => updateRequestField('message', event.target.value)}
-                  placeholder="Ko vēlaties sponsorēt, palaist, izmērīt vai reklamēt?"
+                  placeholder="What do you want to promote, launch, measure, or sponsor?"
                   rows={4}
                   style={{ ...inputStyle, resize: 'vertical' }}
                   value={requestForm.message}
@@ -754,18 +814,18 @@ export default function SponsorPackages() {
                 style={{
                   background: 'linear-gradient(135deg, #22c55e, #0ea5e9)',
                   border: 'none',
-                  borderRadius: '16px',
+                  borderRadius: 8,
                   color: '#03131a',
                   cursor: requestStatus.tone === 'submitting' ? 'wait' : 'pointer',
                   fontSize: '0.92rem',
                   fontWeight: 950,
-                  letterSpacing: '0.04em',
+                  letterSpacing: 0,
                   opacity: requestStatus.tone === 'submitting' ? 0.72 : 1,
                   padding: '15px 18px',
                   textTransform: 'uppercase',
                 }}
               >
-                {requestStatus.tone === 'submitting' ? 'Sūtu pieteikumu...' : 'Nosūtīt sponsor pieteikumu'}
+                {requestStatus.tone === 'submitting' ? 'Sending request...' : 'Request quote'}
               </button>
               <div
                 data-sponsor-package-request-status={requestStatus.tone}
@@ -782,14 +842,14 @@ export default function SponsorPackages() {
           </div>
         </section>
 
-        <section className="glass-card" style={{ borderRadius: '26px', padding: '24px' }}>
-          <div style={{ alignItems: 'baseline', display: 'flex', flexWrap: 'wrap', gap: '12px', justifyContent: 'space-between', marginBottom: '16px' }}>
-            <h2 style={{ fontSize: '1.65rem', letterSpacing: '-0.035em', margin: 0 }}>Ko sponsors var apskatīt jau tagad</h2>
-            <span style={{ color: '#94a3b8', fontSize: '0.76rem', fontWeight: 900, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
-              Pārdošanas aktīvi
+        <section style={{ background: 'rgba(15, 23, 42, 0.42)', border: '1px solid rgba(148, 163, 184, 0.16)', borderRadius: 8, padding: 24 }}>
+          <div style={{ alignItems: 'baseline', display: 'flex', flexWrap: 'wrap', gap: 12, justifyContent: 'space-between', marginBottom: 16 }}>
+            <h2 style={{ fontSize: '1.65rem', letterSpacing: 0, margin: 0 }}>What buyers can open now</h2>
+            <span style={{ color: '#94a3b8', fontSize: '0.76rem', fontWeight: 900, letterSpacing: 0, textTransform: 'uppercase' }}>
+              Buyer links
             </span>
           </div>
-          <div style={{ display: 'grid', gap: '10px' }}>
+          <div style={{ display: 'grid', gap: 10 }}>
             {SALES_ASSET_ROWS.map(([name, status, href]) => (
               <Link
                 key={name}
@@ -798,10 +858,10 @@ export default function SponsorPackages() {
                   alignItems: 'center',
                   background: 'rgba(15, 23, 42, 0.58)',
                   border: '1px solid rgba(148, 163, 184, 0.18)',
-                  borderRadius: '16px',
+                  borderRadius: 8,
                   color: '#f8fafc',
                   display: 'grid',
-                  gap: '10px',
+                  gap: 10,
                   gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
                   padding: '14px 16px',
                   textDecoration: 'none',

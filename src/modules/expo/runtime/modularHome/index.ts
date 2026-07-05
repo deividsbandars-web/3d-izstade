@@ -2,6 +2,7 @@ export {
   getHomeDemoMode,
   getHomeDemoSummary,
   isHomeDemoEnabled,
+  isHomeStudioEnabled,
 } from './homeDemoFlags';
 export {
   getHomeQuoteBackendMode,
@@ -17,6 +18,12 @@ export {
   isHomeUploadPreviewEnabled,
   isHomeUploadPreviewRequested,
 } from './homeUploadPreviewFlags';
+export {
+  HomeDesignInstanceShell,
+} from './HomeDesignInstanceShell';
+export {
+  RoomPanoramaWalkthroughPanel,
+} from './RoomPanoramaWalkthroughPanel';
 export {
   ModularHomeDemoOverlay,
 } from './ModularHomeDemoOverlay';
@@ -91,6 +98,7 @@ export {
   formatHomeEstimateEur,
   getModularHomeEstimateConfidenceLabel,
   getModularHomeEstimatePriceSourceLabel,
+  getModularHomeEstimateSourceTypeLabel,
   getModularHomeScopeOfSupply,
   MODULAR_HOME_ESTIMATE_CONFIG,
 } from './modularHomeEstimate';
@@ -98,6 +106,13 @@ export {
   calculateModularHomeQuantities,
   MODULAR_HOME_QUANTITY_TAKEOFF_DISCLAIMER,
 } from './modularHomeQuantities';
+export {
+  calculateMaterialTakeoff,
+  MODULAR_HOME_MATERIAL_TAKEOFF_DISCLAIMER,
+} from './modularHomeMaterialTakeoff';
+export {
+  buildModularHomeProfessionalQuoteExportData,
+} from './modularHomeProfessionalQuoteExport';
 export {
   allocateModularHomePricingAmount,
   createComponentPricingBreakdown,
@@ -108,6 +123,7 @@ export {
   createTransportPricingBreakdown,
   createVatPricingBreakdown,
   getModularHomePricingCategoryTotals,
+  getModularHomePricingSourceTypeLabel,
   getPricingCategoriesForComponentCategory,
   getPricingCategoriesForModuleType,
   getPricingCategoriesForOptionGroup,
@@ -118,13 +134,27 @@ export {
   sumModularHomePricingBreakdowns,
 } from './modularHomePricing';
 export {
+  getCostItemForComponent,
+  getCostItemsByCategory,
+  mapSupplierCostToPricingDatabase,
+  MODULAR_HOME_DEFAULT_SUPPLIER_COST_MAP,
+  MODULAR_HOME_SUPPLIER_COST_DATASET_NOTE,
+  MODULAR_HOME_SUPPLIER_COST_ITEMS,
+  validateSupplierCostItems,
+} from './modularHomeSupplierCosts';
+export {
   getDefaultHomeConfig,
+  getDefaultDimensionPresetForProduct,
+  getDefaultRoomUseProfileForLayout,
   getDefaultLayoutVariantForProduct,
   getBomModuleSummary,
   getCompatibleOptions,
   getInvalidConfigReasons,
   getModularHomeConfigurationWarnings,
   getModularHomeDimensionSummary,
+  getModularHomeDimensionPreset,
+  getModularHomeDimensionPresetForConfig,
+  getModularHomeDimensionPresetsForProduct,
   getModularHomeLayoutVariant,
   getModularHomeLayoutVariantForConfig,
   getModularHomeLayoutVariantsForProduct,
@@ -137,6 +167,9 @@ export {
   getModularHomeProducts,
   getModularHomeRoomMeasurementSummary,
   getModularHomeRoomMeasurements,
+  getModularHomeRoomUseChoices,
+  getModularHomeRoomUseProfile,
+  getModularHomeRoomUseProfileForConfig,
   getModuleInstancesForProduct,
   getModuleQuantitySummary,
   getModulesForConfig,
@@ -145,10 +178,13 @@ export {
   getSelectedModularHomeMaterials,
   getSelectedModularHomeOptions,
   isModularHomeLayoutVariantCompatible,
+  isModularHomeDimensionPresetCompatible,
+  MODULAR_HOME_DIMENSION_PRESETS,
   MODULAR_HOME_LAYOUT_VARIANTS,
   MODULAR_HOME_MODULES,
   MODULAR_HOME_OPTIONS,
   MODULAR_HOME_PRODUCTS,
+  MODULAR_HOME_ROOM_USE_PROFILES,
   MODULAR_HOME_ROOM_MEASUREMENT_DISCLAIMER,
   MODULAR_HOME_ROOM_MEASUREMENTS,
   validateHomeConfiguration,
@@ -166,6 +202,7 @@ export {
   MODULAR_HOME_ROOF_MATERIAL_BY_OPTION,
 } from './modularHomeMaterials';
 export {
+  calculateOpeningSchedule,
   calculateManufacturingBom,
   calculateManufacturingBomPreview,
   calculateComponentBom,
@@ -207,6 +244,7 @@ export {
   MODULAR_HOME_INTERIOR_WALL_FINISH_OPTIONS,
   MODULAR_HOME_INTERIOR_WALL_FINISH_VISUALS,
   MODULAR_HOME_LAYOUT_VARIANT_OPTIONS,
+  MODULAR_HOME_ROOM_USE_PROFILE_OPTIONS,
   MODULAR_HOME_ROOF_EDGE_COLOR_OPTIONS,
   MODULAR_HOME_ROOF_EDGE_COLOR_VISUALS,
   MODULAR_HOME_ROOF_OPTIONS,
@@ -230,6 +268,9 @@ export {
   useModularHomeViewMode,
 } from './modularHomeConfigurator';
 
+export type {
+  HomeDesignInstanceSectionId,
+} from './HomeDesignInstanceShell';
 export type {
   HomeDemoMode,
   HomeDemoSearchInput,
@@ -287,6 +328,7 @@ export type {
   ModularHomeEstimateLineItem,
   ModularHomeEstimateLineItemCategory,
   ModularHomeEstimatePriceSource,
+  ModularHomeEstimatePricingAssumptions,
   ModularHomeEstimateReliabilityMetadata,
   ModularHomeEstimateScenario,
   ModularHomeEstimateScenarioId,
@@ -300,6 +342,11 @@ export type {
   ModularHomeQuantityTakeoff,
 } from './modularHomeQuantities';
 export type {
+  ModularHomeProfessionalQuoteExportData,
+  ModularHomeProfessionalQuoteExportInput,
+  ModularHomeProfessionalQuoteExportRow,
+} from './modularHomeProfessionalQuoteExport';
+export type {
   ModularHomeCostRegion,
   ModularHomeCurrency,
   ModularHomePricingConfidenceLevel,
@@ -307,6 +354,7 @@ export type {
   ModularHomePricingCategory,
   ModularHomePricingCategoryTotal,
   ModularHomePricingContext,
+  ModularHomePricingSourceType,
   ModularHomePricingSummary,
 } from './modularHomePricing';
 export type {
@@ -345,6 +393,10 @@ export type {
   ModularHomeComponent,
   ModularHomeComponentCategory,
   ModularHomeComponentId,
+  ModularHomeOpeningScheduleItem,
+  ModularHomeOpeningScheduleSummary,
+  ModularHomeOpeningType,
+  ModularHomeOpeningWallSide,
   ModularHomeComponentSummaryItem,
   ModularHomeComponentUnit,
   ModularHomeManufacturingBom,

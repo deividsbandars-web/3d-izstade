@@ -1,0 +1,29 @@
+{
+  "baseExteriorWallOwner": "src/modules/expo/runtime/modularHome/construction/GalaWallAssembly.tsx:140-183",
+  "exteriorCladdingOwner": "src/modules/expo/runtime/modularHome/construction/GalaCladdingAssembly.tsx:33-154",
+  "exteriorBoardGeometryOwner": "src/modules/expo/runtime/modularHome/construction/GalaCladdingAssembly.tsx:40-127, with gable adapter in src/modules/expo/runtime/modularHome/construction/GalaConstructionRenderer.tsx:167-275",
+  "exteriorBoardMaterialOwner": "src/modules/expo/runtime/modularHome/construction/GalaWallSkinModel.ts:53-86",
+  "exteriorRevealOwner": "src/modules/expo/runtime/modularHome/construction/GalaWallSkinModel.ts:53-86 for material and src/modules/expo/runtime/modularHome/construction/GalaCladdingAssembly.tsx:82-98 for wall reveal geometry",
+  "exteriorTrimOwner": "src/modules/expo/runtime/modularHome/construction/GalaWallSkinModel.ts:53-86 consumed by src/modules/expo/runtime/modularHome/construction/GalaWallAssembly.tsx:258-268, src/modules/expo/runtime/modularHome/construction/GalaOpeningAssembly.tsx:75-168, and src/modules/expo/runtime/modularHome/construction/GalaConstructionRenderer.tsx:33-105",
+  "plainWallOwner": "src/modules/expo/runtime/modularHome/construction/GalaWallAssembly.tsx:140-183 renders the structural core/backing, but active product-facing exterior surfaces are covered by GalaCladdingAssembly and use GalaWallSkinModel material tokens",
+  "interiorWallOwner": "src/modules/expo/runtime/modularHome/construction/GalaWallAssembly.tsx:187-241",
+  "interiorPanelGeometryOwner": "src/modules/expo/runtime/modularHome/construction/GalaWallAssembly.tsx:108-160 and src/modules/expo/runtime/modularHome/construction/GalaFloorCeilingAssembly.tsx:87-206",
+  "interiorPanelMaterialOwner": "src/modules/expo/runtime/modularHome/construction/GalaWallSkinModel.ts:53-86",
+  "wallSegmentsWithoutCladding": [],
+  "componentsBypassingCladdingSystem": [],
+  "materialOverridePaths": [],
+  "duplicateBoardDimensionConstants": [],
+  "duplicateMaterialConstants": [],
+  "activeWallSkinComponents": [
+    "src/modules/expo/runtime/modularHome/construction/GalaWallSkinModel.ts",
+    "src/modules/expo/runtime/modularHome/construction/GalaCladdingAssembly.tsx",
+    "src/modules/expo/runtime/modularHome/construction/GalaWallAssembly.tsx",
+    "src/modules/expo/runtime/modularHome/construction/GalaOpeningAssembly.tsx",
+    "src/modules/expo/runtime/modularHome/construction/GalaFloorCeilingAssembly.tsx",
+    "src/modules/expo/runtime/modularHome/construction/GalaConstructionRenderer.tsx",
+    "src/modules/expo/runtime/modularHome/construction/GalaConstructionModel.ts"
+  ],
+  "legacyWallSkinComponentsStillMounted": [],
+  "risk": "low",
+  "notes": "The rejected partial facade came from split visible ownership: opening-aware base wall cells remained product-visible while additive cladding was treated as a separate overlay. The remediation makes GalaWallSkinModel the single owner for wall-skin dimensions, material tokens, and controlled timber palette. GalaCladdingAssembly covers every visible exterior wall segment; gable cladding remains an adapter but consumes the same wall-skin model. Runtime QA reports all expected exterior wall IDs clad and no material override conflicts. Global singleSourceRendererProven remains false by product-owner constraint."
+}

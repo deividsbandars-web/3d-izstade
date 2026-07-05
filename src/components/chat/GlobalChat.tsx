@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useSyncExternalStore } from 'react';
 import { expoService } from '../../services/expoService';
 import '../../components/calculator/styles/CalculatorPro.css';
 import {
@@ -8,13 +8,45 @@ import {
 
 interface GlobalChatProps {
   expoMobileCompact?: boolean;
+  hideClosedOnCompact?: boolean;
 }
 
-export default function GlobalChat({ expoMobileCompact = false }: GlobalChatProps = {}) {
+const COMPACT_CHAT_DOCK_QUERY = '(max-width: 720px), (pointer: coarse)';
+
+function getCompactChatDockSnapshot() {
+  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+    return false;
+  }
+
+  return window.matchMedia(COMPACT_CHAT_DOCK_QUERY).matches;
+}
+
+function subscribeCompactChatDock(onStoreChange: () => void) {
+  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+    return () => {};
+  }
+
+  const mediaQuery = window.matchMedia(COMPACT_CHAT_DOCK_QUERY);
+
+  if (typeof mediaQuery.addEventListener === 'function') {
+    mediaQuery.addEventListener('change', onStoreChange);
+    return () => mediaQuery.removeEventListener('change', onStoreChange);
+  }
+
+  mediaQuery.addListener(onStoreChange);
+  return () => mediaQuery.removeListener(onStoreChange);
+}
+
+export default function GlobalChat({ expoMobileCompact = false, hideClosedOnCompact = false }: GlobalChatProps = {}) {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<any[]>([]);
   const [input, setInput] = useState('');
   const [isListening, setIsListening] = useState(false);
+  const isCompactViewport = useSyncExternalStore(
+    subscribeCompactChatDock,
+    getCompactChatDockSnapshot,
+    () => false,
+  );
   const [shouldFocusInput, setShouldFocusInput] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -119,12 +151,20 @@ export default function GlobalChat({ expoMobileCompact = false }: GlobalChatProp
     recognition.start();
   };
 
+  const useCompactChatDock = expoMobileCompact && isCompactViewport;
+  const hideClosedButton = hideClosedOnCompact && useCompactChatDock && !isOpen;
+
+  if (hideClosedButton) {
+    return null;
+  }
+
   return (
     <div
+      data-global-chat="true"
       style={{
         position: 'fixed',
-        bottom: expoMobileCompact ? 'calc(env(safe-area-inset-bottom) + 94px)' : '30px',
-        right: expoMobileCompact ? 'max(12px, env(safe-area-inset-right))' : '30px',
+        bottom: useCompactChatDock ? 'calc(env(safe-area-inset-bottom) + 94px)' : '30px',
+        right: useCompactChatDock ? 'max(12px, env(safe-area-inset-right))' : '30px',
         zIndex: 9999,
       }}
     >
@@ -133,7 +173,7 @@ export default function GlobalChat({ expoMobileCompact = false }: GlobalChatProp
         <button 
           onClick={() => setIsOpen(true)}
           aria-label="Open global chat"
-          style={{ width: expoMobileCompact ? '52px' : '60px', height: expoMobileCompact ? '44px' : '60px', borderRadius: expoMobileCompact ? '16px' : '50%', background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)', border: 'none', color: '#fff', fontSize: expoMobileCompact ? '0.62rem' : '0.82rem', fontWeight: 900, letterSpacing: expoMobileCompact ? '0.08em' : '0.04em', cursor: 'pointer', boxShadow: '0 10px 30px rgba(59, 130, 246, 0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          style={{ width: useCompactChatDock ? '52px' : '60px', height: useCompactChatDock ? '44px' : '60px', borderRadius: useCompactChatDock ? '16px' : '50%', background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)', border: 'none', color: '#fff', fontSize: useCompactChatDock ? '0.62rem' : '0.82rem', fontWeight: 900, letterSpacing: useCompactChatDock ? '0.08em' : '0.04em', cursor: 'pointer', boxShadow: '0 10px 30px rgba(59, 130, 246, 0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
         >
           CHAT
         </button>
@@ -141,7 +181,7 @@ export default function GlobalChat({ expoMobileCompact = false }: GlobalChatProp
 
       {/* CHAT WINDOW */}
       {isOpen && (
-        <div className="glass-card" style={{ width: expoMobileCompact ? 'min(330px, calc(100vw - 24px))' : '350px', height: expoMobileCompact ? 'min(420px, 58vh)' : '500px', display: 'flex', flexDirection: 'column', overflow: 'hidden', background: 'rgba(15, 23, 42, 0.95)', borderColor: 'rgba(59, 130, 246, 0.3)' }}>
+        <div className="glass-card" style={{ width: useCompactChatDock ? 'min(330px, calc(100vw - 24px))' : '350px', height: useCompactChatDock ? 'min(420px, 58vh)' : '500px', display: 'flex', flexDirection: 'column', overflow: 'hidden', background: 'rgba(15, 23, 42, 0.95)', borderColor: 'rgba(59, 130, 246, 0.3)' }}>
           <div style={{ padding: '15px 20px', background: 'rgba(59, 130, 246, 0.1)', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div style={{ fontWeight: 800, fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
               <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#10b981' }}></div>

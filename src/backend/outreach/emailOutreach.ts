@@ -1,4 +1,4 @@
-import { llmService } from '../ai/llmService.js';
+import { createSystemLlmMetering, llmService } from '../ai/llmService.js';
 import { logger } from '../logging/logger.js';
 import { Resend } from 'resend';
 import { supabaseClient } from '../../lib/supabaseClient.js';
@@ -38,7 +38,10 @@ export const emailOutreach = {
       Keep it professional but human. Include a clear Call to Action.
       Format the output as a valid JSON object with "subject" and "body" fields.`;
       
-      const { text, error } = await llmService.generateText(prompt, { temperature: 0.7 });
+      const { text, error } = await llmService.generateText(prompt, {
+        metering: createSystemLlmMetering('email-outreach', 'generate-email-pitch'),
+        temperature: 0.7,
+      });
       if (error) throw new Error(error);
 
       // Simple JSON extraction logic

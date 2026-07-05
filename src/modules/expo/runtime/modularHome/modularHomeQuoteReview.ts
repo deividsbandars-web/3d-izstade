@@ -8,6 +8,16 @@ export type ModularHomeQuoteReviewStatus =
   | 'won'
   | 'lost';
 
+export type ModularHomeQuoteStatusHistoryEntry = {
+  changedAt: string;
+  changedBy: string | null;
+  consultantAssignment: string;
+  followUpRequired: boolean;
+  fromStatus: ModularHomeQuoteReviewStatus;
+  internalNote: string;
+  toStatus: ModularHomeQuoteReviewStatus;
+};
+
 export type ModularHomeQuoteReviewRow = {
   budgetRange: string;
   config: {
@@ -27,7 +37,11 @@ export type ModularHomeQuoteReviewRow = {
     wardrobePlaceholder: string;
     interiorFloorStyle: string;
     interiorWallFinish: string;
+    kitchenFinish: string;
+    furnitureMood: string;
+    interiorZoneFocus: string;
     layoutVariant: string;
+    presetId: string;
     roof: string;
     roofEdgeColor: string;
     roofGutterStyle: string;
@@ -49,6 +63,8 @@ export type ModularHomeQuoteReviewRow = {
     label: string;
     total: number;
   };
+  consultantAssignment: string;
+  followUpRequired: boolean;
   id: string;
   internalNote: string;
   landOwned: string;
@@ -56,6 +72,7 @@ export type ModularHomeQuoteReviewRow = {
   model: string;
   source: ModularHomeQuoteReviewSource;
   status: ModularHomeQuoteReviewStatus;
+  statusHistory: readonly ModularHomeQuoteStatusHistoryEntry[];
   targetBuildDate: string;
 };
 
@@ -88,7 +105,11 @@ const MOCK_QUOTE_ROWS = [
       wardrobePlaceholder: 'Wardrobe on',
       interiorFloorStyle: 'Warm plank lines',
       interiorWallFinish: 'Warm panel walls',
+      kitchenFinish: 'Wood kitchen finish',
+      furnitureMood: 'Warm furniture mood',
+      interiorZoneFocus: 'Living',
       layoutVariant: 'Two bedroom',
+      presetId: 'familyStandard',
       roof: 'Pitched',
       roofEdgeColor: 'Graphite roof edge',
       roofGutterStyle: 'Minimal edge gutter',
@@ -111,6 +132,8 @@ const MOCK_QUOTE_ROWS = [
       label: 'EUR 142,000',
       total: 142000,
     },
+    consultantAssignment: '',
+    followUpRequired: false,
     id: 'mock-family-timber-80-review',
     internalNote: '',
     landOwned: 'yes',
@@ -118,6 +141,7 @@ const MOCK_QUOTE_ROWS = [
     model: 'Family Timber 80',
     source: 'mock-review',
     status: 'mock-review',
+    statusHistory: [],
     targetBuildDate: '6-12-months',
   },
   {
@@ -138,7 +162,11 @@ const MOCK_QUOTE_ROWS = [
       wardrobePlaceholder: 'Wardrobe off',
       interiorFloorStyle: 'Utility plywood boards',
       interiorWallFinish: 'Plywood walls',
+      kitchenFinish: 'Dark kitchen finish',
+      furnitureMood: 'Minimal furniture mood',
+      interiorZoneFocus: 'Overview',
       layoutVariant: 'Sauna + rest room',
+      presetId: 'saunaDeepTerrace',
       roof: 'Flat',
       roofEdgeColor: 'Graphite roof edge',
       roofGutterStyle: 'Round gutter placeholder',
@@ -161,6 +189,8 @@ const MOCK_QUOTE_ROWS = [
       label: 'EUR 58,500',
       total: 58500,
     },
+    consultantAssignment: '',
+    followUpRequired: false,
     id: 'mock-sauna-cabin-25-review',
     internalNote: '',
     landOwned: 'no',
@@ -168,6 +198,7 @@ const MOCK_QUOTE_ROWS = [
     model: 'Sauna Cabin 25',
     source: 'mock-review',
     status: 'mock-review',
+    statusHistory: [],
     targetBuildDate: 'research-phase',
   },
 ] as const satisfies readonly ModularHomeQuoteReviewRow[];
@@ -208,6 +239,31 @@ function normalizeStatus(value: unknown, fallback: ModularHomeQuoteReviewStatus)
   return allowed.has(normalized as ModularHomeQuoteReviewStatus)
     ? normalized as ModularHomeQuoteReviewStatus
     : fallback;
+}
+
+function normalizeStatusHistoryEntry(value: unknown, fallbackStatus: ModularHomeQuoteReviewStatus): ModularHomeQuoteStatusHistoryEntry | null {
+  const record = asRecord(value);
+  if (!record) {
+    return null;
+  }
+
+  return {
+    changedAt: normalizeText(record.changedAt, new Date(0).toISOString()),
+    changedBy: normalizeText(record.changedBy) || null,
+    consultantAssignment: normalizeText(record.consultantAssignment, ''),
+    followUpRequired: Boolean(record.followUpRequired),
+    fromStatus: normalizeStatus(record.fromStatus, fallbackStatus),
+    internalNote: normalizeText(record.internalNote, ''),
+    toStatus: normalizeStatus(record.toStatus, fallbackStatus),
+  };
+}
+
+function normalizeStatusHistory(value: unknown, fallbackStatus: ModularHomeQuoteReviewStatus): ModularHomeQuoteStatusHistoryEntry[] {
+  return Array.isArray(value)
+    ? value
+      .map((entry) => normalizeStatusHistoryEntry(entry, fallbackStatus))
+      .filter((entry): entry is ModularHomeQuoteStatusHistoryEntry => entry !== null)
+    : [];
 }
 
 function formatFallbackEstimate(total: number) {
@@ -254,7 +310,11 @@ export function normalizeModularHomeQuoteReviewRow(
       wardrobePlaceholder: normalizeText(selectedOptions.wardrobePlaceholder, normalizeText(config.wardrobePlaceholder, 'Unknown wardrobe toggle')),
       interiorFloorStyle: normalizeText(selectedOptions.interiorFloorStyle, normalizeText(config.interiorFloorStyle, 'Unknown floor style')),
       interiorWallFinish: normalizeText(selectedOptions.interiorWallFinish, normalizeText(config.interiorWallFinish, 'Unknown wall finish')),
+      kitchenFinish: normalizeText(selectedOptions.kitchenFinish, normalizeText(config.kitchenFinish, 'Unknown kitchen finish')),
+      furnitureMood: normalizeText(selectedOptions.furnitureMood, normalizeText(config.furnitureMood, 'Unknown furniture mood')),
+      interiorZoneFocus: normalizeText(selectedOptions.interiorZoneFocus, normalizeText(config.interiorZoneFocus, 'Unknown interior zone focus')),
       layoutVariant: normalizeText(selectedOptions.layoutVariant, normalizeText(config.layoutVariant, 'Unknown layout')),
+      presetId: normalizeText(selectedOptions.dimensionPreset, normalizeText(config.presetId, normalizeText(config.layoutVariant, 'Unknown preset'))),
       roof: normalizeText(selectedOptions.roof, normalizeText(config.roof, 'Unknown roof')),
       roofEdgeColor: normalizeText(selectedOptions.roofEdgeColor, normalizeText(config.roofEdgeColor, 'Unknown roof edge')),
       roofGutterStyle: normalizeText(selectedOptions.roofGutterStyle, normalizeText(config.roofGutterStyle, 'Unknown gutter style')),
@@ -277,6 +337,8 @@ export function normalizeModularHomeQuoteReviewRow(
       label: normalizeText(record.estimatedTotalLabel, formatFallbackEstimate(estimatedTotal)),
       total: estimatedTotal,
     },
+    consultantAssignment: normalizeText(record.consultantAssignment, ''),
+    followUpRequired: Boolean(record.followUpRequired),
     id: normalizeText(record.id, `quote-${source}-${Date.now()}`),
     internalNote: normalizeText(record.internalNote, ''),
     landOwned: normalizeText(record.landOwned, 'unknown'),
@@ -284,6 +346,7 @@ export function normalizeModularHomeQuoteReviewRow(
     model: normalizeText(record.model, 'Modular Home'),
     source,
     status: normalizeStatus(record.status, fallbackStatus),
+    statusHistory: normalizeStatusHistory(record.statusHistory, fallbackStatus),
     targetBuildDate: normalizeText(record.targetBuildDate, 'not-sure'),
   };
 }
@@ -318,7 +381,11 @@ export function normalizeModularHomeQuoteAdminRow(value: unknown): ModularHomeQu
       wardrobePlaceholder: normalizeText(config.wardrobePlaceholder, 'Unknown wardrobe toggle'),
       interiorFloorStyle: normalizeText(config.interiorFloorStyle, 'Unknown floor style'),
       interiorWallFinish: normalizeText(config.interiorWallFinish, 'Unknown wall finish'),
+      kitchenFinish: normalizeText(config.kitchenFinish, 'Unknown kitchen finish'),
+      furnitureMood: normalizeText(config.furnitureMood, 'Unknown furniture mood'),
+      interiorZoneFocus: normalizeText(config.interiorZoneFocus, 'Unknown interior zone focus'),
       layoutVariant: normalizeText(config.layoutVariant, 'Unknown layout'),
+      presetId: normalizeText(config.presetId, normalizeText(config.layoutVariant, 'Unknown preset')),
       roof: normalizeText(config.roof, 'Unknown roof'),
       roofEdgeColor: normalizeText(config.roofEdgeColor, 'Unknown roof edge'),
       roofGutterStyle: normalizeText(config.roofGutterStyle, 'Unknown gutter style'),
@@ -341,6 +408,8 @@ export function normalizeModularHomeQuoteAdminRow(value: unknown): ModularHomeQu
       label: formatFallbackEstimate(estimatedTotal),
       total: estimatedTotal,
     },
+    consultantAssignment: normalizeText(record.consultant_assignment, ''),
+    followUpRequired: Boolean(record.follow_up_required),
     id: normalizeText(record.id, `quote-backend-${Date.now()}`),
     internalNote: normalizeText(record.internal_note, ''),
     landOwned: normalizeText(requester.landOwned, 'unknown'),
@@ -348,6 +417,7 @@ export function normalizeModularHomeQuoteAdminRow(value: unknown): ModularHomeQu
     model: normalizeText(project.modelName, 'Modular Home'),
     source: 'backend-staging',
     status: normalizeStatus(record.status, 'new'),
+    statusHistory: normalizeStatusHistory(record.status_history, 'new'),
     targetBuildDate: normalizeText(requester.targetBuildDate, 'not-sure'),
   };
 }
@@ -419,16 +489,23 @@ export function serializeModularHomeQuoteReviewCsv(rows: readonly ModularHomeQuo
     'Floor Finish',
     'Interior Floor Style',
     'Wall Panel Style',
+    'Kitchen Finish',
+    'Furniture Mood',
+    'Interior Zone Focus',
     'Furniture Package',
     'Sofa',
     'Table',
     'Bed',
     'Kitchen Line',
     'Wardrobe Placeholder',
+    'Preset ID',
     'Window Placement',
     'Window Frame Color',
     'Window Frame Type',
     'Door Placement',
+    'Consultant Assignment',
+    'Follow-up Required',
+    'Status History Count',
     'Message',
     'Internal Note',
   ];
@@ -460,16 +537,23 @@ export function serializeModularHomeQuoteReviewCsv(rows: readonly ModularHomeQuo
     row.config.floorFinish,
     row.config.interiorFloorStyle,
     row.config.wallPanelStyle,
+    row.config.kitchenFinish,
+    row.config.furnitureMood,
+    row.config.interiorZoneFocus,
     row.config.furniturePackage,
     row.config.sofa,
     row.config.table,
     row.config.bed,
     row.config.kitchenLine,
     row.config.wardrobePlaceholder,
+    row.config.presetId,
     row.config.windowPlacement,
     row.config.windowFrameColor,
     row.config.windowFrameType,
     row.config.doorPlacement,
+    row.consultantAssignment,
+    row.followUpRequired ? 'yes' : 'no',
+    row.statusHistory.length,
     row.message,
     row.internalNote,
   ]);

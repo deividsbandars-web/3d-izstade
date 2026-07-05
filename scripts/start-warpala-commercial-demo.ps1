@@ -98,7 +98,7 @@ if (-not (Test-Path -LiteralPath $stackScript)) {
 }
 
 if (-not (Test-Path -LiteralPath $unrealScript)) {
-  Stop-WithMessage "Missing Unreal streamer script: $unrealScript"
+  Stop-WithMessage "Missing legacy streamer script: $unrealScript"
 }
 
 if (-not (Test-Path -LiteralPath $healthScript)) {
@@ -162,7 +162,7 @@ if ($Strict) {
 }
 Invoke-CheckedScript $stackArgs
 
-Write-Step "launching Unreal streamer in a separate PowerShell window"
+Write-Step "launching legacy streamer in a separate PowerShell window"
 $unrealArgs = @(
   '-NoProfile',
   '-ExecutionPolicy',
@@ -197,10 +197,10 @@ $argumentList = ($unrealArgs | ForEach-Object { Quote-ProcessArg $_ }) -join ' '
 Start-Process -FilePath 'powershell.exe' -ArgumentList $argumentList -WorkingDirectory $repoRoot
 
 if (-not $SkipStreamerWait) {
-  Write-Step "waiting for Unreal streamer registration"
+  Write-Step "waiting for legacy streamer registration"
   if (-not (Wait-StreamerReady -StatusUrl $streamStatusUrl -ExpectedStreamerId $StreamerId -TimeoutSeconds 180)) {
-    Write-Host "[warpala-commercial] Gateway is running, but the Unreal streamer was not detected yet." -ForegroundColor Yellow
-    Write-Host "[warpala-commercial] Check the Unreal window logs and keep it open. The stream page may show degraded until the streamer connects." -ForegroundColor Yellow
+    Write-Host "[warpala-commercial] Gateway is running, but the legacy streamer was not detected yet." -ForegroundColor Yellow
+    Write-Host "[warpala-commercial] Check the streamer window logs and keep it open. The stream page may show a temporary fallback until the streamer connects." -ForegroundColor Yellow
   }
 
   if ($PostLaunchStabilitySeconds -gt 0) {

@@ -1,8 +1,9 @@
 import assert from 'node:assert/strict';
-import { resolveFrontendRuntimeEnv } from '../config/runtimeEnv.js';
+import { resolveFrontendRuntimeEnv, resolveFrontendSupabaseAuthEnv } from '../config/runtimeEnv.js';
 
 const validEnv = resolveFrontendRuntimeEnv({
   VITE_PUBLIC_API_BASE_URL: 'https://api.30sek24.com/',
+  VITE_PUBLIC_APP_URL: 'https://staging.30sek24.com/',
   VITE_SIGNALING_SERVER_URL: 'wss://api.30sek24.com/ws/',
   VITE_SUPABASE_URL: 'https://example.supabase.co',
   VITE_SUPABASE_ANON_KEY: 'anon-key',
@@ -14,11 +15,19 @@ const validEnv = resolveFrontendRuntimeEnv({
 });
 
 assert.equal(validEnv.apiBaseUrl, 'https://api.30sek24.com');
+assert.equal(validEnv.publicAppUrl, 'https://staging.30sek24.com');
 assert.equal(validEnv.signalingUrl, 'wss://api.30sek24.com/ws');
 assert.equal(validEnv.supabaseUrl, 'https://example.supabase.co');
 assert.equal(validEnv.pixelStreamingProbeTimeoutMs, 3000);
 assert.deepEqual(validEnv.stunServerUrls, ['stun:stun.example.com:3478']);
 assert.deepEqual(validEnv.turnServerUrls, ['turn:turn.example.com:3478?transport=udp']);
+assert.deepEqual(resolveFrontendSupabaseAuthEnv({
+  VITE_SUPABASE_URL: 'https://example.supabase.co/',
+  VITE_SUPABASE_ANON_KEY: 'anon-key',
+}), {
+  supabaseAnonKey: 'anon-key',
+  supabaseUrl: 'https://example.supabase.co',
+});
 
 assert.throws(() => resolveFrontendRuntimeEnv({
   VITE_SIGNALING_SERVER_URL: 'wss://api.30sek24.com/ws/',
@@ -26,12 +35,22 @@ assert.throws(() => resolveFrontendRuntimeEnv({
   VITE_SUPABASE_ANON_KEY: 'anon-key',
 }), /FRONTEND_ENV_MISSING:VITE_PUBLIC_API_BASE_URL/);
 
+const derivedPublicAppEnv = resolveFrontendRuntimeEnv({
+  VITE_PUBLIC_API_BASE_URL: 'https://api-staging.30sek24.com',
+  VITE_SUPABASE_URL: 'https://example.supabase.co',
+  VITE_SUPABASE_ANON_KEY: 'anon-key',
+});
+
+assert.equal(derivedPublicAppEnv.publicAppUrl, 'https://staging.30sek24.com');
+
 assert.throws(() => resolveFrontendRuntimeEnv({
   VITE_PUBLIC_API_BASE_URL: 'https://api.30sek24.com',
   VITE_SUPABASE_URL: 'https://example.supabase.co',
   VITE_SUPABASE_ANON_KEY: 'anon-key',
   VITE_TURN_USERNAME: 'turn-user',
 }), /FRONTEND_ENV_INVALID_TURN_CREDENTIALS/);
+
+assert.throws(() => resolveFrontendSupabaseAuthEnv({}), /FRONTEND_SUPABASE_ENV_MISSING:VITE_SUPABASE_URL/);
 
 const optionalSignalingEnv = resolveFrontendRuntimeEnv({
   VITE_PUBLIC_API_BASE_URL: 'https://api.30sek24.com',
@@ -73,10 +92,7 @@ Object.defineProperty(globalThis, 'window', {
   },
 });
 
-const vercelPreviewFallbackEnv = resolveFrontendRuntimeEnv({});
-assert.equal(vercelPreviewFallbackEnv.apiBaseUrl, 'https://api-staging.30sek24.com');
-assert.equal(vercelPreviewFallbackEnv.supabaseUrl, 'https://gbmxrposlrhctyaaznmj.supabase.co');
-assert.notEqual(vercelPreviewFallbackEnv.supabaseAnonKey, 'dummy-key');
+assert.throws(() => resolveFrontendRuntimeEnv({}), /FRONTEND_ENV_MISSING:VITE_PUBLIC_API_BASE_URL/);
 
 Object.defineProperty(globalThis, 'window', {
   configurable: true,

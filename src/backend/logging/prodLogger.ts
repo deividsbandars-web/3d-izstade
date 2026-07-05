@@ -1,41 +1,16 @@
-import fs from 'fs';
-import path from 'path';
+import { logger } from './logger.js';
 
-// Advanced production logger extending Phase 7 logger
+const MODULE = 'PlatformSecurity';
+
+// Compatibility surface for the legacy platform security middleware.
 export const prodLogger = {
-  _logToFile(level: string, message: string, meta: any) {
-    const logDir = path.resolve(process.cwd(), 'logs');
-    if (!fs.existsSync(logDir)) {
-       try { fs.mkdirSync(logDir, { recursive: true }); } catch (dirErr) {
-         console.error('Failed to create log directory', dirErr);
-       }
-    }
-
-    const timestamp = new Date().toISOString();
-    const logEntry = `${timestamp} [${level}]: ${message} ${meta ? JSON.stringify(meta) : ''}\n`;
-    
-    // Choose file based on level
-    const fileName = level === 'ERROR' ? 'error.log' : 'system.log';
-    
-    try {
-      fs.appendFileSync(path.join(logDir, fileName), logEntry);
-    } catch (fileErr) {
-      console.error('Failed to write to log file', fileErr);
-    }
+  info(message: string, metadata?: unknown) {
+    logger.info(MODULE, message, metadata);
   },
-
-  info(msg: string, meta?: any) {
-    console.log(`INFO: ${msg}`, meta || '');
-    this._logToFile('INFO', msg, meta);
+  warn(message: string, metadata?: unknown) {
+    logger.warn(MODULE, message, metadata);
   },
-
-  warn(msg: string, meta?: any) {
-    console.warn(`WARN: ${msg}`, meta || '');
-    this._logToFile('WARN', msg, meta);
+  error(message: string, metadata?: unknown) {
+    logger.error(MODULE, message, metadata);
   },
-
-  error(msg: string, meta?: any) {
-    console.error(`ERROR: ${msg}`, meta || '');
-    this._logToFile('ERROR', msg, meta);
-  }
 };

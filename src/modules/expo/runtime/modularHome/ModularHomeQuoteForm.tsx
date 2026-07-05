@@ -74,7 +74,7 @@ type ModularHomeQuoteFormProps = {
 
 const EMPTY_FORM: ModularHomeQuoteFormFields = {
   budgetRange: '',
-  consentGiven: false,
+  consentGiven: true,
   countryCity: '',
   email: '',
   landOwned: '',
@@ -157,6 +157,7 @@ export function ModularHomeQuoteForm({ config, estimate, isTouchDevice = false }
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [queueCount, setQueueCount] = useState(() => readPreviewQueue().length);
+  const [showOptionalFields, setShowOptionalFields] = useState(false);
   const [success, setSuccess] = useState('');
 
   const updateField = <Key extends keyof ModularHomeQuoteFormFields>(
@@ -171,11 +172,6 @@ export function ModularHomeQuoteForm({ config, estimate, isTouchDevice = false }
   const submitQuote = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     event.stopPropagation();
-
-    if (!fields.name.trim()) {
-      setError('Name is required.');
-      return;
-    }
 
     if (!fields.email.trim()) {
       setError('Email is required.');
@@ -192,37 +188,12 @@ export function ModularHomeQuoteForm({ config, estimate, isTouchDevice = false }
       return;
     }
 
-    if (!fields.countryCity.trim()) {
-      setError('Country / city is required.');
-      return;
-    }
-
-    if (!fields.landOwned) {
-      setError('Land owned status is required.');
-      return;
-    }
-
-    if (!fields.targetBuildDate) {
-      setError('Target build date is required.');
-      return;
-    }
-
-    if (!fields.budgetRange) {
-      setError('Budget range is required.');
-      return;
-    }
-
-    if (!fields.message.trim()) {
-      setError('Project message is required.');
-      return;
-    }
-
     if (!fields.consentGiven) {
-      setError(backendSubmissionEnabled
-        ? 'Consent is required before submitting this backend quote request.'
-        : 'Consent is required for this local preview request.');
+      setError('Consent is required to request a quote.');
       return;
     }
+
+    const submissionFields = { ...fields };
 
     if (backendSubmissionEnabled) {
       setIsSubmitting(true);
@@ -230,7 +201,7 @@ export function ModularHomeQuoteForm({ config, estimate, isTouchDevice = false }
       setError('');
 
       try {
-        const result = await submitModularHomeQuoteBackend(fields, config, estimate);
+        const result = await submitModularHomeQuoteBackend(submissionFields, config, estimate);
         setFields(EMPTY_FORM);
         setSuccess(result.id
           ? `Quote request submitted. Reference: ${result.id}.`
@@ -245,7 +216,7 @@ export function ModularHomeQuoteForm({ config, estimate, isTouchDevice = false }
       return;
     }
 
-    const request = createPreviewRequest(fields, config, estimate);
+    const request = createPreviewRequest(submissionFields, config, estimate);
     const nextQueue = [...readPreviewQueue(), request];
     const saved = writePreviewQueue(nextQueue);
     if (!saved) {
@@ -268,6 +239,7 @@ export function ModularHomeQuoteForm({ config, estimate, isTouchDevice = false }
     font: 'inherit',
     fontSize: isTouchDevice ? '0.72rem' : '0.74rem',
     fontWeight: 780,
+    minHeight: isTouchDevice ? '44px' : '40px',
     minWidth: 0,
     outline: 'none',
     padding: isTouchDevice ? '10px 11px' : '10px 11px',
@@ -285,6 +257,7 @@ export function ModularHomeQuoteForm({ config, estimate, isTouchDevice = false }
 
   const attachedSummaryHighlights = [
     ['Model', estimate.baseModel],
+    ['Preset', estimate.selectedOptions.dimensionPreset],
     ['Layout', estimate.selectedOptions.layoutVariant],
     ['Facade', estimate.selectedOptions.facade],
     ['Roof', estimate.selectedOptions.roof],
@@ -302,6 +275,9 @@ export function ModularHomeQuoteForm({ config, estimate, isTouchDevice = false }
     ['Gutter', estimate.selectedOptions.roofGutterStyle],
     ['Frames', `${estimate.selectedOptions.windowFrameColor} / ${estimate.selectedOptions.windowFrameType}`],
     ['Interior', `${estimate.selectedOptions.wallPanelStyle} / ${estimate.selectedOptions.interiorFloorStyle}`],
+    ['Kitchen', estimate.selectedOptions.kitchenFinish],
+    ['Mood', estimate.selectedOptions.furnitureMood],
+    ['Focus', estimate.selectedOptions.interiorZoneFocus],
   ] as const;
 
   return (
@@ -316,6 +292,18 @@ export function ModularHomeQuoteForm({ config, estimate, isTouchDevice = false }
         padding: isTouchDevice ? '12px' : '14px',
       }}
     >
+      <style>
+        {`
+          [data-home-quote-form="true"] input:focus-visible,
+          [data-home-quote-form="true"] select:focus-visible,
+          [data-home-quote-form="true"] textarea:focus-visible,
+          [data-home-quote-form="true"] button:focus-visible {
+            border-color: rgba(250, 204, 21, 0.78);
+            outline: 2px solid #facc15;
+            outline-offset: 2px;
+          }
+        `}
+      </style>
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', alignItems: 'start' }}>
         <div>
           <div style={{ color: '#67e8f9', fontSize: '0.58rem', fontWeight: 950, letterSpacing: '0.14em', textTransform: 'uppercase' }}>
@@ -404,6 +392,7 @@ export function ModularHomeQuoteForm({ config, estimate, isTouchDevice = false }
         </div>
         <div style={{ color: '#99f6e4', fontSize: isTouchDevice ? '0.54rem' : '0.57rem', fontWeight: 780, lineHeight: 1.35 }}>
           Interior toggles: sofa {estimate.selectedOptions.sofa}, table {estimate.selectedOptions.table}, bed {estimate.selectedOptions.bed}, kitchen {estimate.selectedOptions.kitchenLine}, wardrobe {estimate.selectedOptions.wardrobePlaceholder}.
+          Kitchen finish: {estimate.selectedOptions.kitchenFinish}. Furniture mood: {estimate.selectedOptions.furnitureMood}. Interior focus: {estimate.selectedOptions.interiorZoneFocus}.
         </div>
       </div>
 
@@ -418,20 +407,10 @@ export function ModularHomeQuoteForm({ config, estimate, isTouchDevice = false }
       >
         <div style={{ display: 'grid', gap: isTouchDevice ? '10px' : '11px', gridTemplateColumns: isTouchDevice ? '1fr' : '1fr 1fr' }}>
           <label style={labelStyle}>
-            Name
-            <input
-              data-home-quote-field="name"
-              value={fields.name}
-              onChange={(event) => updateField('name', event.target.value)}
-              placeholder="Your name"
-              style={inputStyle}
-              type="text"
-            />
-          </label>
-          <label style={labelStyle}>
-            Email
+            Email *
             <input
               data-home-quote-field="email"
+              required
               value={fields.email}
               onChange={(event) => updateField('email', event.target.value)}
               placeholder="name@example.com"
@@ -439,13 +418,11 @@ export function ModularHomeQuoteForm({ config, estimate, isTouchDevice = false }
               type="email"
             />
           </label>
-        </div>
-
-        <div style={{ display: 'grid', gap: isTouchDevice ? '10px' : '11px', gridTemplateColumns: isTouchDevice ? '1fr' : '1fr 1fr' }}>
           <label style={labelStyle}>
-            Phone
+            Phone *
             <input
               data-home-quote-field="phone"
+              required
               value={fields.phone}
               onChange={(event) => updateField('phone', event.target.value)}
               placeholder="+371 ..."
@@ -453,117 +430,184 @@ export function ModularHomeQuoteForm({ config, estimate, isTouchDevice = false }
               type="tel"
             />
           </label>
+        </div>
+
+        <div style={{ color: '#a5f3fc', fontSize: isTouchDevice ? '0.58rem' : '0.61rem', fontWeight: 820, lineHeight: 1.32 }}>
+          The current configuration and live estimate are attached automatically.
+        </div>
+
+        <button
+          type="button"
+          aria-expanded={showOptionalFields}
+          data-home-quote-optional-toggle="true"
+          onClick={(event) => {
+            event.stopPropagation();
+            setShowOptionalFields((current) => !current);
+          }}
+          style={{
+            background: 'rgba(15, 23, 42, 0.5)',
+            border: showOptionalFields ? '1px solid rgba(45, 212, 191, 0.32)' : '1px solid rgba(148, 163, 184, 0.18)',
+            borderRadius: '999px',
+            color: showOptionalFields ? '#ccfbf1' : '#bfdbfe',
+            cursor: 'pointer',
+            font: 'inherit',
+            fontSize: isTouchDevice ? '0.6rem' : '0.63rem',
+            fontWeight: 920,
+            justifySelf: 'start',
+            minHeight: isTouchDevice ? '44px' : '38px',
+            padding: isTouchDevice ? '8px 10px' : '8px 11px',
+          }}
+        >
+          {showOptionalFields ? 'Hide optional details' : 'Add optional project details'}
+        </button>
+
+        <div
+          data-home-quote-optional-fields="true"
+          hidden={!showOptionalFields}
+          style={{
+            display: showOptionalFields ? 'grid' : 'none',
+            gap: isTouchDevice ? '10px' : '11px',
+          }}
+        >
+          <div style={{ display: 'grid', gap: isTouchDevice ? '10px' : '11px', gridTemplateColumns: isTouchDevice ? '1fr' : '1fr 1fr' }}>
+            <label style={labelStyle}>
+              Name
+              <input
+                data-home-quote-field="name"
+                value={fields.name}
+                onChange={(event) => updateField('name', event.target.value)}
+                placeholder="Your name"
+                style={inputStyle}
+                type="text"
+              />
+            </label>
+            <label style={labelStyle}>
+              Country / city
+              <input
+                data-home-quote-field="countryCity"
+                value={fields.countryCity}
+                onChange={(event) => updateField('countryCity', event.target.value)}
+                placeholder="Latvia / Riga"
+                style={inputStyle}
+                type="text"
+              />
+            </label>
+          </div>
+
+          <div style={{ display: 'grid', gap: isTouchDevice ? '10px' : '11px', gridTemplateColumns: isTouchDevice ? '1fr' : '1fr 1fr' }}>
+            <label style={labelStyle}>
+              Land owned
+              <select
+                data-home-quote-field="landOwned"
+                value={fields.landOwned}
+                onChange={(event) => updateField('landOwned', event.target.value)}
+                style={inputStyle}
+              >
+                {LAND_OWNED_OPTIONS.map((option) => (
+                  <option key={option.value || 'empty-land-owned'} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label style={labelStyle}>
+              Target build date
+              <select
+                data-home-quote-field="targetBuildDate"
+                value={fields.targetBuildDate}
+                onChange={(event) => updateField('targetBuildDate', event.target.value)}
+                style={inputStyle}
+              >
+                {TARGET_BUILD_DATE_OPTIONS.map((option) => (
+                  <option key={option.value || 'empty-target-build-date'} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+
           <label style={labelStyle}>
-            Country / city
-            <input
-              data-home-quote-field="countryCity"
-              value={fields.countryCity}
-              onChange={(event) => updateField('countryCity', event.target.value)}
-              placeholder="Latvia / Riga"
+            Budget range
+            <select
+              data-home-quote-field="budgetRange"
+              value={fields.budgetRange}
+              onChange={(event) => updateField('budgetRange', event.target.value)}
               style={inputStyle}
-              type="text"
+            >
+              {BUDGET_RANGE_OPTIONS.map((option) => (
+                <option key={option.value || 'empty-budget-range'} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label style={labelStyle}>
+            Message
+            <textarea
+              data-home-quote-field="message"
+              value={fields.message}
+              onChange={(event) => updateField('message', event.target.value)}
+              placeholder="Tell us about the plot, timing or finish level."
+              rows={3}
+              style={{ ...inputStyle, lineHeight: 1.3, resize: 'vertical' }}
             />
           </label>
         </div>
 
-        <div style={{ display: 'grid', gap: isTouchDevice ? '10px' : '11px', gridTemplateColumns: isTouchDevice ? '1fr' : '1fr 1fr' }}>
-          <label style={labelStyle}>
-            Land owned
-            <select
-              data-home-quote-field="landOwned"
-              value={fields.landOwned}
-              onChange={(event) => updateField('landOwned', event.target.value)}
-              style={inputStyle}
-            >
-              {LAND_OWNED_OPTIONS.map((option) => (
-                <option key={option.value || 'empty-land-owned'} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label style={labelStyle}>
-            Target build date
-            <select
-              data-home-quote-field="targetBuildDate"
-              value={fields.targetBuildDate}
-              onChange={(event) => updateField('targetBuildDate', event.target.value)}
-              style={inputStyle}
-            >
-              {TARGET_BUILD_DATE_OPTIONS.map((option) => (
-                <option key={option.value || 'empty-target-build-date'} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
-
-        <label style={labelStyle}>
-          Budget range
-          <select
-            data-home-quote-field="budgetRange"
-            value={fields.budgetRange}
-            onChange={(event) => updateField('budgetRange', event.target.value)}
-            style={inputStyle}
-          >
-            {BUDGET_RANGE_OPTIONS.map((option) => (
-              <option key={option.value || 'empty-budget-range'} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <label style={labelStyle}>
-          Message
-          <textarea
-            data-home-quote-field="message"
-            value={fields.message}
-            onChange={(event) => updateField('message', event.target.value)}
-            placeholder="Tell us about the plot, timing or finish level."
-            rows={3}
-            style={{ ...inputStyle, lineHeight: 1.3, resize: 'vertical' }}
-          />
-        </label>
-
         <label
           data-home-quote-consent-row="true"
           style={{
-            alignItems: 'start',
-            background: 'rgba(15, 23, 42, 0.5)',
-            border: '1px solid rgba(45, 212, 191, 0.18)',
+            alignItems: 'flex-start',
+            background: 'rgba(15, 23, 42, 0.42)',
+            border: '1px solid rgba(45, 212, 191, 0.16)',
             borderRadius: '12px',
             color: '#cffafe',
-            display: 'grid',
-            fontSize: isTouchDevice ? '0.62rem' : '0.65rem',
-            fontWeight: 820,
+            cursor: 'pointer',
+            display: 'flex',
+            fontSize: isTouchDevice ? '0.58rem' : '0.61rem',
+            fontWeight: 800,
             gap: '9px',
-            gridTemplateColumns: '16px 1fr',
-            lineHeight: 1.3,
-            padding: isTouchDevice ? '10px 11px' : '10px 11px',
+            lineHeight: 1.32,
+            padding: isTouchDevice ? '9px 10px' : '9px 10px',
           }}
         >
           <input
             checked={fields.consentGiven}
             data-home-quote-field="consentGiven"
             onChange={(event) => updateField('consentGiven', event.target.checked)}
-            style={{ marginTop: '2px' }}
+            required
+            style={{
+              accentColor: '#14b8a6',
+              flex: '0 0 auto',
+              height: '20px',
+              margin: '1px 0 0',
+              width: '20px',
+            }}
             type="checkbox"
           />
-          <span>
-            {consentText}
-          </span>
+          <span>{consentText}</span>
         </label>
 
         {error ? (
-          <div data-home-quote-error="true" style={{ color: '#fecaca', fontSize: '0.62rem', fontWeight: 900 }}>
+          <div
+            aria-live="assertive"
+            data-home-quote-error="true"
+            role="alert"
+            style={{ color: '#fecaca', fontSize: '0.62rem', fontWeight: 900 }}
+          >
             {error}
           </div>
         ) : null}
 
         {success ? (
-          <div data-home-quote-success="true" style={{ color: '#bbf7d0', fontSize: '0.62rem', fontWeight: 900 }}>
+          <div
+            aria-live="polite"
+            data-home-quote-success="true"
+            role="status"
+            style={{ color: '#bbf7d0', fontSize: '0.62rem', fontWeight: 900 }}
+          >
             {success}
           </div>
         ) : null}
@@ -582,6 +626,7 @@ export function ModularHomeQuoteForm({ config, estimate, isTouchDevice = false }
             fontSize: isTouchDevice ? '0.72rem' : '0.76rem',
             fontWeight: 950,
             letterSpacing: '0.04em',
+            minHeight: isTouchDevice ? '44px' : '42px',
             opacity: isSubmitting ? 0.74 : 1,
             padding: isTouchDevice ? '11px 12px' : '11px 13px',
             textTransform: 'uppercase',

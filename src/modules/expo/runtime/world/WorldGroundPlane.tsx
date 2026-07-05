@@ -11,6 +11,8 @@ import {
 } from './WorldGroundLayout';
 import type { GroundDetailRibbon } from './WorldGroundLayout';
 import { FLOOR_LAYER_ORDER, FLOOR_MATERIAL_INTENTS } from './floor/FloorVisualLanguage';
+import { GalaConstructionBox } from '../modularHome/construction/GalaConstructionPrimitives';
+import { useGalaConstructionPbrTextures } from '../modularHome/construction/GalaConstructionPbrTextures';
 
 const GROUND_BASE_POLYGON_OFFSET = {
   factor: 1,
@@ -27,51 +29,149 @@ const GROUND_DETAIL_POLYGON_OFFSET = {
   units: -8,
 } as const;
 
+function mixHex(hex: string, targetHex: string, ratio: number) {
+  const normalized = hex.replace('#', '').padStart(6, '0').slice(0, 6);
+  const target = targetHex.replace('#', '').padStart(6, '0').slice(0, 6);
+  const channel = (value: string, index: number) => parseInt(value.slice(index, index + 2), 16);
+  const mix = (value: number, targetValue: number) => Math.max(0, Math.min(255, Math.round(value + ((targetValue - value) * ratio))));
+  return `#${[
+    mix(channel(normalized, 0), channel(target, 0)),
+    mix(channel(normalized, 2), channel(target, 2)),
+    mix(channel(normalized, 4), channel(target, 4)),
+  ].map((value) => value.toString(16).padStart(2, '0')).join('')}`;
+}
+
 function resolveGroundRibbonVisual(ribbon: GroundDetailRibbon) {
+  if (ribbon.id === 'arrival-to-seam-spine') {
+    return { color: '#90a4aa', emissive: '#7dd3fc', emissiveIntensity: 0.016 };
+  }
+
+  if (ribbon.id.includes('arrival-clear-lane')) {
+    return { color: '#b8e4e8', emissive: '#7dd3fc', emissiveIntensity: 0.022 };
+  }
+
+  if (ribbon.id.includes('arrival-commercial-apron')) {
+    return { color: ribbon.color, emissive: '#7dd3fc', emissiveIntensity: 0.016 };
+  }
+
   if (ribbon.id.includes('sponsor')) {
-    return { color: '#46d7ad', emissive: '#2dd4bf', emissiveIntensity: 0.016 };
+    return { color: '#4f9e91', emissive: '#2dd4bf', emissiveIntensity: 0.009 };
   }
 
   if (ribbon.id.includes('stadium-transition') || ribbon.groundOwner === 'transition') {
-    return { color: '#ffbf5f', emissive: '#ffb84d', emissiveIntensity: 0.018 };
+    return { color: '#927b56', emissive: '#fbbf24', emissiveIntensity: 0.007 };
   }
 
   if (ribbon.groundOwner === 'stadium') {
-    return { color: '#c084fc', emissive: '#c084fc', emissiveIntensity: 0.016 };
+    return { color: '#716f91', emissive: '#a78bfa', emissiveIntensity: 0.006 };
   }
 
   if (ribbon.id.includes('left-edge') || ribbon.id.includes('right-edge')) {
-    return { color: '#a78bfa', emissive: '#c084fc', emissiveIntensity: 0.014 };
+    return { color: '#5c7185', emissive: '#93c5fd', emissiveIntensity: 0.005 };
   }
 
-  return { color: '#38bdf8', emissive: '#22e7ff', emissiveIntensity: 0.015 };
+  return { color: '#617986', emissive: '#38bdf8', emissiveIntensity: 0.006 };
 }
 
 function resolveGroundRibbonOpacity(ribbon: GroundDetailRibbon) {
   if (ribbon.id === 'arrival-to-seam-spine') {
-    return 0.18;
+    return 0.22;
   }
 
   if (ribbon.id.includes('arrival-to-seam') || ribbon.id === 'arrival-forecourt-wide-band') {
-    return 0.14;
+    return 0.155;
+  }
+
+  if (ribbon.id.includes('arrival-clear-lane')) {
+    return Math.min(ribbon.opacity ?? 0.28, 0.3);
+  }
+
+  if (ribbon.id === 'arrival-commercial-apron') {
+    return Math.min(ribbon.opacity ?? 0.2, 0.22);
+  }
+
+  if (ribbon.id.includes('arrival-commercial-apron')) {
+    return Math.min(ribbon.opacity ?? 0.22, 0.26);
   }
 
   if (ribbon.id.includes('sponsor-left') || ribbon.id.includes('sponsor-right')) {
-    return 0.13;
+    return 0.11;
   }
 
-  return Math.min(resolveGroundDetailOpacity(ribbon) * 1.85, 0.145);
+  if (ribbon.groundOwner === 'transition') {
+    return Math.min(resolveGroundDetailOpacity(ribbon) * 1.05, 0.13);
+  }
+
+  return Math.min(resolveGroundDetailOpacity(ribbon) * 1.35, 0.105);
 }
 
-export function WorldGroundPlane({ visualProfile }: { visualProfile: ExpoWorldVisualProfile }) {
-  const globalBaseMaterial = FLOOR_MATERIAL_INTENTS.globalBase;
+function HomeStudioGroundPlane({
+  color,
+  position,
+}: {
+  color: string;
+  position: [number, number, number];
+}) {
+  const groundPbrTextures = useGalaConstructionPbrTextures('ground');
+  const groundThicknessM = 0.04;
 
   return (
-    <group name="world-ground:global">
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={GLOBAL_GROUND_POSITION} receiveShadow={false} name="world-ground:global-base">
+    <GalaConstructionBox
+      {...groundPbrTextures}
+      castShadow={false}
+      color={color}
+      name="world-ground:global-base"
+      position={[position[0], position[1] - groundThicknessM * 0.5, position[2]]}
+      receiveShadow={false}
+      roughness={0.92}
+      size={[GLOBAL_GROUND_SIZE[0], groundThicknessM, GLOBAL_GROUND_SIZE[1]]}
+      userData={{
+        homeStudioGroundPbrMaterialApplied: true,
+        worldGroundMaskedFromInterior: true,
+      }}
+    />
+  );
+}
+
+export function WorldGroundPlane({
+  homeStudioMode = false,
+  lowDetail = false,
+  visualProfile,
+}: {
+  homeStudioMode?: boolean;
+  lowDetail?: boolean;
+  visualProfile: ExpoWorldVisualProfile;
+}) {
+  const globalBaseMaterial = FLOOR_MATERIAL_INTENTS.globalBase;
+  const globalGroundPosition: [number, number, number] = homeStudioMode
+    ? [GLOBAL_GROUND_POSITION[0], -0.34, GLOBAL_GROUND_POSITION[2]]
+    : GLOBAL_GROUND_POSITION;
+  const globalGroundColor = homeStudioMode ? '#4f5f57' : mixHex(visualProfile.global.groundBase, '#9cacad', 0.5);
+  const visibleGroundDetailRibbons = lowDetail
+    ? GROUND_DETAIL_RIBBONS.filter((ribbon) => (
+        ribbon.id === 'arrival-forecourt-wide-band'
+        || ribbon.id === 'arrival-to-seam-spine'
+        || ribbon.id.includes('arrival-commercial-apron')
+        || ribbon.id.includes('sponsor-left')
+        || ribbon.id.includes('sponsor-right')
+      ))
+    : GROUND_DETAIL_RIBBONS;
+
+  return (
+    <group
+      name="world-ground:global"
+      userData={{
+        homeStudioGroundDetailDisabled: homeStudioMode,
+        worldGroundMaskedFromInterior: homeStudioMode,
+      }}
+    >
+      {homeStudioMode ? (
+        <HomeStudioGroundPlane color={globalGroundColor} position={globalGroundPosition} />
+      ) : (
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={globalGroundPosition} receiveShadow={false} name="world-ground:global-base">
         <planeGeometry args={GLOBAL_GROUND_SIZE} />
         <meshStandardMaterial
-          color={visualProfile.global.groundBase}
+          color={globalGroundColor}
           emissive={globalBaseMaterial.emissive}
           emissiveIntensity={globalBaseMaterial.emissiveIntensity}
           metalness={globalBaseMaterial.metalness}
@@ -81,8 +181,11 @@ export function WorldGroundPlane({ visualProfile }: { visualProfile: ExpoWorldVi
           roughness={globalBaseMaterial.roughness}
         />
       </mesh>
-      {GROUND_DETAIL_RIBBONS.map((ribbon) => {
+      )}
+      {!homeStudioMode && visibleGroundDetailRibbons.map((ribbon) => {
         const ribbonVisual = resolveGroundRibbonVisual(ribbon);
+        const ribbonOpacity = resolveGroundRibbonOpacity(ribbon);
+        const useUnlitArrivalMarker = ribbon.id.includes('arrival-commercial-apron') || ribbon.id.includes('arrival-clear-lane');
 
         return (
           <mesh
@@ -101,22 +204,36 @@ export function WorldGroundPlane({ visualProfile }: { visualProfile: ExpoWorldVi
             }}
           >
             <planeGeometry args={ribbon.size} />
-            <meshStandardMaterial
-              color={ribbonVisual.color}
-              depthWrite={false}
-              emissive={ribbonVisual.emissive}
-              emissiveIntensity={ribbonVisual.emissiveIntensity}
-              metalness={0.018}
-              opacity={resolveGroundRibbonOpacity(ribbon)}
-              polygonOffset
-              polygonOffsetFactor={GROUND_DETAIL_POLYGON_OFFSET.factor}
-              polygonOffsetUnits={GROUND_DETAIL_POLYGON_OFFSET.units}
-              roughness={0.84}
-              transparent
-            />
+            {useUnlitArrivalMarker ? (
+              <meshBasicMaterial
+                color={ribbonVisual.color}
+                depthWrite={false}
+                opacity={ribbonOpacity}
+                polygonOffset
+                polygonOffsetFactor={GROUND_DETAIL_POLYGON_OFFSET.factor}
+                polygonOffsetUnits={GROUND_DETAIL_POLYGON_OFFSET.units}
+                toneMapped={false}
+                transparent
+              />
+            ) : (
+              <meshStandardMaterial
+                color={ribbonVisual.color}
+                depthWrite={false}
+                emissive={ribbonVisual.emissive}
+                emissiveIntensity={ribbonVisual.emissiveIntensity}
+                metalness={0.018}
+                opacity={ribbonOpacity}
+                polygonOffset
+                polygonOffsetFactor={GROUND_DETAIL_POLYGON_OFFSET.factor}
+                polygonOffsetUnits={GROUND_DETAIL_POLYGON_OFFSET.units}
+                roughness={0.84}
+                transparent
+              />
+            )}
           </mesh>
         );
       })}
+      {!homeStudioMode && !lowDetail ? (
       <mesh
         name={`world-ground:${GROUND_SEAM_TRANSITION_PLATE.id}`}
         position={GROUND_SEAM_TRANSITION_PLATE.position}
@@ -145,6 +262,8 @@ export function WorldGroundPlane({ visualProfile }: { visualProfile: ExpoWorldVi
           roughness={globalBaseMaterial.roughness}
         />
       </mesh>
+      ) : null}
+      {!homeStudioMode ? (
       <mesh
         name={`world-ground:${SPONSOR_BOULEVARD_RIGHT_FLOOR_ANCHOR.id}`}
         position={SPONSOR_BOULEVARD_RIGHT_FLOOR_ANCHOR.position}
@@ -173,6 +292,8 @@ export function WorldGroundPlane({ visualProfile }: { visualProfile: ExpoWorldVi
           roughness={globalBaseMaterial.roughness}
         />
       </mesh>
+      ) : null}
+      {!homeStudioMode ? (
       <mesh
         name={`world-ground:${ARRIVAL_GATE_FLOOR_ANCHOR.id}`}
         position={ARRIVAL_GATE_FLOOR_ANCHOR.position}
@@ -201,6 +322,8 @@ export function WorldGroundPlane({ visualProfile }: { visualProfile: ExpoWorldVi
           roughness={globalBaseMaterial.roughness}
         />
       </mesh>
+      ) : null}
+      {!homeStudioMode ? (
       <mesh
         name={`world-ground:${CENTER_SPINE_FLOOR_GUIDE.id}`}
         position={CENTER_SPINE_FLOOR_GUIDE.position}
@@ -229,6 +352,7 @@ export function WorldGroundPlane({ visualProfile }: { visualProfile: ExpoWorldVi
           roughness={globalBaseMaterial.roughness}
         />
       </mesh>
+      ) : null}
     </group>
   );
 }

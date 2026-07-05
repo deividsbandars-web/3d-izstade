@@ -1,5 +1,5 @@
 import { supabaseClient } from '../../lib/supabaseClient';
-import { logger } from '../../backend/logging/logger';
+import { clientLogger as logger } from '../../lib/clientLogger';
 import { AgentSystemAPI } from '../../services/agents';
 
 export const agentControlService = {

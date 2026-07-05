@@ -1,5 +1,6 @@
 import type { ModularHomeConfiguratorState } from './modularHomeConfigurator';
 import {
+  getModularHomeDimensionPresetForConfig,
   getModularHomeProductForConfig,
   getModulesForConfig,
   getModuleQuantitySummary,
@@ -141,8 +142,17 @@ export function calculateModularHomeQuantities(
   config: ModularHomeConfiguratorState,
 ): ModularHomeQuantityTakeoff {
   const product = getModularHomeProductForConfig(config);
+  const dimensionPreset = getModularHomeDimensionPresetForConfig(config);
   const quantityByModuleId = moduleQuantityLookup(config);
   const modules = getModulesForConfig(config);
+  const baseFloorArea = product?.floorAreaM2 ?? 0;
+  const targetFloorArea = dimensionPreset?.floorAreaM2 ?? baseFloorArea;
+  const areaScale = baseFloorArea > 0 ? targetFloorArea / baseFloorArea : 1;
+  const baseFootprint = product?.footprint ?? dimensionPreset?.footprint ?? { widthM: 0, lengthM: 0 };
+  const targetFootprint = dimensionPreset?.footprint ?? baseFootprint;
+  const basePerimeter = 2 * (baseFootprint.widthM + baseFootprint.lengthM);
+  const targetPerimeter = 2 * (targetFootprint.widthM + targetFootprint.lengthM);
+  const perimeterScale = basePerimeter > 0 ? targetPerimeter / basePerimeter : areaScale;
   let grossFloorAreaM2 = 0;
   let exteriorWallAreaM2 = 0;
   let interiorPartitionEstimateM2 = 0;
@@ -160,13 +170,13 @@ export function calculateModularHomeQuantities(
     const floorArea = moduleFloorArea(module) * quantity;
 
     if (module.type === 'terrace') {
-      terraceAreaM2 += floorArea;
+      terraceAreaM2 += floorArea * (dimensionPreset?.terraceAreaMultiplier ?? 1);
       continue;
     }
 
     if (module.type === 'roof') {
-      const roofBaseArea = product
-        ? product.footprint.widthM * product.footprint.lengthM
+      const roofBaseArea = targetFootprint.widthM > 0 && targetFootprint.lengthM > 0
+        ? targetFootprint.widthM * targetFootprint.lengthM
         : floorArea;
       roofAreaM2 += roofBaseArea * (module.id === 'roof-pitched-module' ? 1.18 : 1);
       continue;
@@ -174,7 +184,7 @@ export function calculateModularHomeQuantities(
 
     if (module.type === 'facade') {
       facadeAreaM2 += product
-        ? 2 * (product.footprint.widthM + product.footprint.lengthM) * product.ceilingHeightM
+        ? 2 * (targetFootprint.widthM + targetFootprint.lengthM) * product.ceilingHeightM
         : module.dimensions.widthM * module.dimensions.heightM * 4 * quantity;
       continue;
     }
@@ -207,6 +217,12 @@ export function calculateModularHomeQuantities(
     }
   }
 
+  grossFloorAreaM2 = targetFloorArea || grossFloorAreaM2;
+  exteriorWallAreaM2 *= perimeterScale;
+  interiorPartitionEstimateM2 *= areaScale;
+  windowCount += dimensionPreset?.windowCountDelta ?? 0;
+  doorCount += dimensionPreset?.doorCountDelta ?? 0;
+
   return {
     bathroomCoreCount,
     disclaimer: MODULAR_HOME_QUANTITY_TAKEOFF_DISCLAIMER,
@@ -214,13 +230,13 @@ export function calculateModularHomeQuantities(
     exteriorWallAreaM2: roundQuantity(exteriorWallAreaM2),
     facadeAreaM2: roundQuantity(facadeAreaM2),
     furniturePackageItemCount,
-    grossFloorAreaM2: roundQuantity(grossFloorAreaM2 || product?.floorAreaM2 || 0),
+    grossFloorAreaM2: roundQuantity(grossFloorAreaM2 || targetFloorArea || 0),
     interiorPartitionEstimateM2: roundQuantity(interiorPartitionEstimateM2),
-    moduleCount: product?.moduleInstances.reduce((total, instance) => total + instance.quantity, 0) ?? 0,
+    moduleCount: dimensionPreset?.moduleCount ?? product?.moduleInstances.reduce((total, instance) => total + instance.quantity, 0) ?? 0,
     roofAreaM2: roundQuantity(roofAreaM2),
     saunaCoreCount,
     terraceAreaM2: roundQuantity(terraceAreaM2),
-    transportModuleCount: product?.transportModuleCount ?? 0,
+    transportModuleCount: dimensionPreset?.transportModuleCount ?? product?.transportModuleCount ?? 0,
     windowCount,
   };
 }

@@ -65,6 +65,19 @@ const DEMO_ARENA_PREVIEW_TIER_LABELS = {
   stage: 'STAGE',
 } as const;
 
+function getDemoArenaPreviewValueTier(target: DemoArenaScreenTarget): NonNullable<CityScreenAssignment['commercial']>['valueTier'] {
+  switch (target.purpose) {
+    case 'mainStage':
+      return 'landmark';
+    case 'leaderboard':
+      return 'hero';
+    case 'sponsorBanner':
+      return 'premium';
+    default:
+      return 'standard';
+  }
+}
+
 let runtimeSummary: DemoArenaPreviewRuntimeSummary = createDisabledDemoArenaPreviewRuntimeSummary();
 
 function createDisabledDemoArenaPreviewRuntimeSummary(): DemoArenaPreviewRuntimeSummary {
@@ -302,6 +315,19 @@ export function buildDemoArenaPreviewAssignment(
     assignment: {
       ...assignment,
       accentColor: content.accentColor,
+      commercial: {
+        fallbackImageUrl: content.textureUrl,
+        mediaMode: 'generated-card',
+        mediaUrl: content.textureUrl,
+        ownerId: event.id,
+        ownerKind: 'event',
+        ownerLabel: event.title,
+        priority: 1000,
+        qualityTierBehavior: 'static-billboard',
+        screenSlotId: target.id,
+        source: 'demo-preview',
+        valueTier: getDemoArenaPreviewValueTier(target),
+      },
       imageUrl: content.textureUrl,
       label: content.label,
       renderIntent: {

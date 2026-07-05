@@ -1,4 +1,7 @@
-import type { ModularHomeConfiguratorState } from './modularHomeConfigurator';
+import {
+  normalizeModularHomeConfig,
+  type ModularHomeConfiguratorState,
+} from './modularHomeConfigurator';
 import {
   calculateComponentBom,
   type ModularHomeComponentSummaryItem,
@@ -108,6 +111,7 @@ export type ModularHomeProjectComparisonConfidenceSummary = {
 export type ModularHomeProjectComparisonSideSummary = {
   componentSubtotal: number;
   confidenceSummary: ModularHomeProjectComparisonConfidenceSummary;
+  dimensionPreset: string;
   doorPackage: string;
   doorPlacement: string;
   estimateTotal: number;
@@ -126,6 +130,9 @@ export type ModularHomeProjectComparisonSideSummary = {
   wardrobePlaceholder: string;
   interiorFloorStyle: string;
   interiorWallFinish: string;
+  kitchenFinish: string;
+  furnitureMood: string;
+  interiorZoneFocus: string;
   layoutVariant: string;
   moduleCount: number;
   product: string;
@@ -223,6 +230,7 @@ function normalizeProjects(value: unknown): ModularHomeLocalProject[] {
 
     return [{
       ...project,
+      config: normalizeModularHomeConfig(project.config),
       projectName: normalizeProjectName(
         (item as Partial<ModularHomeLocalProject>).projectName,
         project.productId,
@@ -336,6 +344,7 @@ const COMPARE_OPTION_LABELS = {
   facadeBoardProfile: 'Facade board profile',
   facadeBoardSpacing: 'Facade board spacing',
   facadeBoardWidth: 'Facade board width',
+  dimensionPreset: 'Dimension preset',
   finishLevel: 'Finish level',
   floorFinish: 'Floor finish',
   furniturePackage: 'Furniture package',
@@ -346,7 +355,11 @@ const COMPARE_OPTION_LABELS = {
   wardrobePlaceholder: 'Wardrobe placeholder',
   interiorFloorStyle: 'Interior floor style',
   interiorWallFinish: 'Interior wall finish',
+  kitchenFinish: 'Kitchen finish',
+  furnitureMood: 'Furniture mood',
+  interiorZoneFocus: 'Interior zone focus',
   layoutVariant: 'Layout variant',
+  roomUseProfile: 'Room use profile',
   roof: 'Roof',
   roofEdgeColor: 'Roof edge color',
   roofGutterStyle: 'Roof edge/gutter style',
@@ -656,6 +669,7 @@ function createSideSummary(
   return {
     componentSubtotal,
     confidenceSummary: summarizeEstimateConfidence(project),
+    dimensionPreset: configSummary.dimensionPreset,
     doorPackage: configSummary.doorPackage,
     doorPlacement: configSummary.doorPlacement,
     estimateTotal: project.estimateTotal,
@@ -674,6 +688,9 @@ function createSideSummary(
     wardrobePlaceholder: configSummary.wardrobePlaceholder,
     interiorFloorStyle: configSummary.interiorFloorStyle,
     interiorWallFinish: configSummary.interiorWallFinish,
+    kitchenFinish: configSummary.kitchenFinish,
+    furnitureMood: configSummary.furnitureMood,
+    interiorZoneFocus: configSummary.interiorZoneFocus,
     layoutVariant: configSummary.layoutVariant,
     moduleCount,
     product: getProductLabel(project),

@@ -1,12 +1,12 @@
-import { getFrontendRuntimeEnv } from '../config/runtimeEnv';
-import { supabaseClient } from '../lib/supabaseClient';
+import { getFrontendRuntimeEnv } from '../config/runtimeEnv.js';
+import { supabaseClient } from '../lib/supabaseClient.js';
 
 function buildServerApiUrl(path: string) {
   const normalizedPath = path.startsWith('/') ? path : `/${path}`;
   return `${getFrontendRuntimeEnv().apiBaseUrl}${normalizedPath}`;
 }
 
-async function buildServerApiHeaders(includeJsonBody: boolean) {
+async function buildServerApiHeaders(includeJsonBody: boolean, accessToken?: string) {
   const headers: Record<string, string> = {
     Accept: 'application/json',
   };
@@ -16,16 +16,32 @@ async function buildServerApiHeaders(includeJsonBody: boolean) {
   }
 
   try {
-    const { data } = await supabaseClient.auth.getSession();
-    const accessToken = data.session?.access_token;
     if (accessToken) {
       headers.Authorization = `Bearer ${accessToken}`;
+    } else {
+      const { data } = await supabaseClient.auth.getSession();
+      const sessionAccessToken = data.session?.access_token;
+      if (sessionAccessToken) {
+        headers.Authorization = `Bearer ${sessionAccessToken}`;
+      }
     }
   } catch (error) {
     console.warn('SERVER_API_AUTH_SESSION_UNAVAILABLE', error);
   }
 
   return headers;
+}
+
+async function buildServerApiError(response: Response) {
+  let detail = '';
+  try {
+    const payload = await response.clone().json() as { error?: unknown; message?: unknown };
+    detail = String(payload.error || payload.message || '').trim();
+  } catch {
+    detail = '';
+  }
+
+  return new Error(`SERVER_API_HTTP_${response.status}${detail ? `: ${detail}` : ''}`);
 }
 
 export async function serverApiGet<T>(path: string): Promise<T> {
@@ -35,7 +51,7 @@ export async function serverApiGet<T>(path: string): Promise<T> {
   });
 
   if (!response.ok) {
-    throw new Error(`SERVER_API_HTTP_${response.status}`);
+    throw await buildServerApiError(response);
   }
 
   return await response.json() as T;
@@ -54,7 +70,7 @@ export async function serverApiGetText(path: string): Promise<{
   });
 
   if (!response.ok) {
-    throw new Error(`SERVER_API_HTTP_${response.status}`);
+    throw await buildServerApiError(response);
   }
 
   return {
@@ -63,15 +79,15 @@ export async function serverApiGetText(path: string): Promise<{
   };
 }
 
-export async function serverApiPost<T>(path: string, body: unknown): Promise<T> {
+export async function serverApiPost<T>(path: string, body: unknown, accessToken?: string): Promise<T> {
   const response = await fetch(buildServerApiUrl(path), {
     method: 'POST',
-    headers: await buildServerApiHeaders(true),
+    headers: await buildServerApiHeaders(true, accessToken),
     body: JSON.stringify(body),
   });
 
   if (!response.ok) {
-    throw new Error(`SERVER_API_HTTP_${response.status}`);
+    throw await buildServerApiError(response);
   }
 
   return await response.json() as T;
@@ -85,7 +101,35 @@ export async function serverApiPatch<T>(path: string, body: unknown): Promise<T>
   });
 
   if (!response.ok) {
-    throw new Error(`SERVER_API_HTTP_${response.status}`);
+    throw await buildServerApiError(response);
+  }
+
+  return await response.json() as T;
+}
+
+export async function serverApiUploadBinary<T>(
+  path: string,
+  body: Blob,
+  options: {
+    contentType: string;
+    headers?: Record<string, string>;
+  },
+): Promise<T> {
+  const headers = await buildServerApiHeaders(false);
+  headers['Content-Type'] = options.contentType;
+
+  Object.entries(options.headers || {}).forEach(([key, value]) => {
+    headers[key] = value;
+  });
+
+  const response = await fetch(buildServerApiUrl(path), {
+    method: 'POST',
+    headers,
+    body,
+  });
+
+  if (!response.ok) {
+    throw await buildServerApiError(response);
   }
 
   return await response.json() as T;

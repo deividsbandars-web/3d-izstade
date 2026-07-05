@@ -1,5 +1,6 @@
 import { getSalesDemoStep, isSalesDemoEnabled, type SalesDemoStep } from './salesDemoFlags';
 import type { ExpoMode } from '../../state/expoRuntime';
+import { createCanonicalModularHomeStudioPath } from '../modularHome/modularHomeShareUrl';
 
 type SalesDemoGuideOverlayProps = {
   isTouchDevice?: boolean;
@@ -14,8 +15,8 @@ const GUIDE_ITEMS = [
     step: 'landmark',
   },
   {
-    body: 'Meetings, diagnostics and lead reports',
-    label: 'Premium Booth',
+    body: 'Sponsor booth profile, contact path and lead follow-up',
+    label: 'Booth Profile',
     step: 'premium',
   },
   {
@@ -80,6 +81,10 @@ const CTA_LINKS = [
   {
     href: '/expo-3d?salesDemo=1',
     label: 'Sponsor Walkthrough',
+  },
+  {
+    href: createCanonicalModularHomeStudioPath('exterior'),
+    label: 'Apskatīt modulāro māju',
   },
   {
     href: '/expo/sponsor-packages',
@@ -364,7 +369,7 @@ export function SalesDemoGuideOverlay({ isTouchDevice = false, mode = 'walk', on
             marginTop: '4px',
           }}
         >
-          Start with a Premium Booth, sponsor the Demo Arena, or own a Landmark Zone.
+          Start with a booth profile, sponsor the Demo Arena, or own a Landmark Zone.
         </div>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '8px' }}>
           {CTA_LINKS.map((link) => (

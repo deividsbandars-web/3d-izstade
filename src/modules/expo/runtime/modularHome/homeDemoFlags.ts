@@ -53,6 +53,10 @@ export function getHomeDemoMode(input?: HomeDemoSearchInput): HomeDemoMode {
     return 'homes';
   }
 
+  if (params.get('homeStudio') === '1') {
+    return 'homes';
+  }
+
   if (params.get('demo') === 'homes') {
     return 'homes';
   }
@@ -69,6 +73,11 @@ export function getHomeDemoMode(input?: HomeDemoSearchInput): HomeDemoMode {
 
 export function isHomeDemoEnabled(input?: HomeDemoSearchInput): boolean {
   return getHomeDemoMode(input) === 'homes';
+}
+
+export function isHomeStudioEnabled(input?: HomeDemoSearchInput): boolean {
+  const params = new URLSearchParams(readSearchInput(input));
+  return params.get('homeStudio') === '1';
 }
 
 export function getHomeDemoSummary(input?: HomeDemoSearchInput): HomeDemoSummary {

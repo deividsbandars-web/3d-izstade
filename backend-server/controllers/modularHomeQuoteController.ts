@@ -1,17 +1,53 @@
 import { Request, Response } from 'express';
+import crypto from 'node:crypto';
 import { getSupabase } from '../services/supabase.js';
+import {
+  checkRedisBackedRateLimit,
+  isRedisRateLimitConfigured,
+  resetRedisRateLimitForTests,
+  type RedisBackedRateLimitStore,
+} from '../services/redisRateLimit.js';
+import { enqueueModularHomeQuoteEmailHandoff } from '../services/modularHomeQuoteNotifier.js';
+import { getClientIpRateLimitKey } from '../middleware/clientIp.js';
+import {
+  MODULAR_HOME_QUOTE_BACKEND_CONSENT_TEXT,
+  MODULAR_HOME_QUOTE_CONSENT_VERSION,
+  MODULAR_HOME_QUOTE_PRIVACY_VERSION,
+  asRecord,
+  normalizeOptionalText,
+  validateModularHomeQuoteRequest,
+  type ValidModularHomeQuoteRequest,
+} from '../schemas/quoteValidation.js';
+
+export {
+  MODULAR_HOME_QUOTE_BACKEND_CONSENT_TEXT,
+  MODULAR_HOME_QUOTE_CONSENT_VERSION,
+  MODULAR_HOME_QUOTE_PRIVACY_VERSION,
+  validateModularHomeQuoteRequest,
+} from '../schemas/quoteValidation.js';
+export type {
+  ModularHomeQuoteRequestBody,
+  ValidModularHomeQuoteRequest,
+} from '../schemas/quoteValidation.js';
 
 export type ModularHomeQuoteSubmissionConfig = {
   enabled: boolean;
   emailHandoffEnabled: boolean;
   hardeningPlan: ModularHomeQuoteBackendHardeningPlan;
-  productionReady: false;
+  production: {
+    allowedHosts: string[];
+    enabledByEnvironment: boolean;
+    redisConfigured: boolean;
+    turnstileConfigured: boolean;
+    turnstileRequired: boolean;
+  };
+  productionReady: boolean;
   rateLimit: {
     maxRequests: number;
     windowMs: number;
   };
   requiresExplicitRequestFlag: true;
-  requiresStagingEnvironment: true;
+  requiresStagingEnvironment: boolean;
   staging: {
     allowedHosts: string[];
     allowedPreviewHostPattern: string;
@@ -38,7 +74,7 @@ export type ModularHomeQuoteBackendHardeningPlan = {
     envFlag: 'MODULAR_HOME_QUOTE_SUBMISSION_ENABLED';
     requestFlag: 'homeQuoteBackend=1';
     defaultMode: 'disabled';
-    stagingRequirement: 'staging host or staging/preview environment';
+    stagingRequirement: string;
   };
   rateLimitingPlan: {
     currentGlobalLimit: string;
@@ -48,20 +84,13 @@ export type ModularHomeQuoteBackendHardeningPlan = {
   supabasePolicyNotes: string[];
 };
 
-type ModularHomeQuoteRequestBody = {
-  attribution?: unknown;
-  config?: unknown;
-  consent?: unknown;
-  estimate?: unknown;
-  project?: unknown;
-  requester?: unknown;
-  source?: unknown;
-};
-
 export type ModularHomeQuoteFailureStage =
   | 'disabled'
+  | 'duplicate'
   | 'flag'
+  | 'host'
   | 'rateLimit'
+  | 'spam'
   | 'staging'
   | 'validation'
   | 'storage';
@@ -77,6 +106,7 @@ export type ModularHomeQuoteSafeLogEvent = {
   path: string | null;
   requestFlagEnabled: boolean;
   sourceVertical: string | null;
+  productionRequest: boolean;
   stage: ModularHomeQuoteFailureStage;
   stagingRequest: boolean;
   status: number;
@@ -84,74 +114,9 @@ export type ModularHomeQuoteSafeLogEvent = {
   timestamp: string;
 };
 
-export type ValidModularHomeQuoteRequest = {
-  attribution: {
-    companySlug: string;
-    salesOwner: string;
-    sourceSurface: string;
-    sponsorSlug: string | null;
-  };
-  config: {
-    doorPlacement: string;
-    facade: string;
-    facadeBoardOrientation: string;
-    facadeBoardWidth: string;
-    finishLevel: string;
-    floorFinish: string;
-    furniturePackage: string;
-    sofa: string;
-    table: string;
-    bed: string;
-    kitchenLine: string;
-    wardrobePlaceholder: string;
-    interiorWallFinish: string;
-    layoutVariant: string;
-    roof: string;
-    roofEdgeColor: string;
-    terrace: string;
-    windowFrameColor: string;
-    windowPlacement: string;
-  };
-  consent: {
-    accepted: true;
-    acceptedAt: string;
-    consentText: string;
-    consentVersion: string;
-    privacyVersion: string;
-  };
-  estimate: {
-    currency: 'EUR';
-    estimatedTotal: number;
-    lineItems: Array<{ amount: number; label: string }>;
-    scopeSummary: string[];
-  };
-  project: {
-    floorAreaM2: number;
-    modelName: string;
-    productId: string;
-    projectId: string | null;
-    shareUrl: string | null;
-  };
-  requester: {
-    budgetRange: string;
-    countryCity: string;
-    email: string;
-    landOwned: 'yes' | 'no' | 'unknown';
-    message: string;
-    name: string;
-    phone: string;
-    targetBuildDate: string;
-  };
-  source: {
-    path: string | null;
-    referrer: string | null;
-    userAgent: string | null;
-    vertical: 'modular-home';
-  };
-};
-
 export type ModularHomeQuoteStorageClient = {
   from: (table: string) => {
+    select: (columns: string) => ModularHomeQuoteSelectBuilder;
     insert: (rows: unknown[]) => {
       select: (columns: string) => {
         single: () => Promise<{
@@ -163,19 +128,21 @@ export type ModularHomeQuoteStorageClient = {
   };
 };
 
-const ALLOWED_PRODUCTS = new Set(['compact-timber-40', 'family-timber-80', 'sauna-cabin-25']);
-const ALLOWED_LAND_OWNED = new Set<ValidModularHomeQuoteRequest['requester']['landOwned']>(['yes', 'no', 'unknown']);
-const ALLOWED_BUDGET_RANGES = new Set(['under-50k', '50k-100k', '100k-150k', '150k-plus', 'not-sure'] as const);
-const ALLOWED_TARGET_BUILD_DATES = new Set(['0-3-months', '3-6-months', '6-12-months', '12-plus-months', 'research-phase'] as const);
-export const MODULAR_HOME_QUOTE_BACKEND_CONSENT_TEXT =
-  'I agree that Warpala/30sek24 may store this Modular Home quote request and contact me for manual follow-up. Estimate is not a final quote.';
-export const MODULAR_HOME_QUOTE_CONSENT_VERSION = 'modular-home-quote-consent-v1';
-export const MODULAR_HOME_QUOTE_PRIVACY_VERSION = 'privacy-v1';
+export type ModularHomeQuoteSelectBuilder = {
+  eq: (column: string, value: string) => ModularHomeQuoteSelectBuilder;
+  maybeSingle: () => Promise<{
+    data: { id?: string | null } | null;
+    error: { message?: string } | null;
+  }>;
+};
 
-const MAX_MESSAGE_LENGTH = 4000;
-const MAX_TEXT_LENGTH = 600;
-const MAX_LINE_ITEMS = 24;
-const MAX_SCOPE_ITEMS = 16;
+export type ModularHomeQuoteSubmitDependencies = {
+  emailHandoff?: typeof enqueueModularHomeQuoteEmailHandoff;
+  fetchImpl?: typeof fetch;
+  rateLimitStore?: RedisBackedRateLimitStore;
+  storage?: ModularHomeQuoteStorageClient;
+};
+
 const DEFAULT_STAGING_HOSTS = [
   'staging.30sek24.com',
   'localhost',
@@ -184,11 +151,6 @@ const DEFAULT_STAGING_HOSTS = [
 const STAGING_PREVIEW_HOST_PATTERN = /^app-staging-[a-z0-9-]+\.vercel\.app$/;
 const MODULAR_HOME_QUOTE_RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000;
 const MODULAR_HOME_QUOTE_RATE_LIMIT_MAX_REQUESTS = 5;
-
-const modularHomeQuoteRateLimitBuckets = new Map<string, {
-  count: number;
-  resetAt: number;
-}>();
 
 export function getModularHomeQuoteBackendHardeningPlan(): ModularHomeQuoteBackendHardeningPlan {
   return {
@@ -222,19 +184,20 @@ export function getModularHomeQuoteBackendHardeningPlan(): ModularHomeQuoteBacke
       defaultMode: 'disabled',
       envFlag: 'MODULAR_HOME_QUOTE_SUBMISSION_ENABLED',
       requestFlag: 'homeQuoteBackend=1',
-      stagingRequirement: 'staging host or staging/preview environment',
+      stagingRequirement: 'staging host, staging/preview environment, or explicit production host allowlist',
     },
     rateLimitingPlan: {
-      currentGlobalLimit: 'Route-specific staging guard applies 5 Modular Home quote backend attempts / 10 minutes / IP before Supabase insert. Existing global API middleware may also apply.',
+      currentGlobalLimit: 'Route-specific Redis-backed guard applies 5 Modular Home quote backend attempts / 10 minutes / IP before Supabase insert. Existing global API middleware also uses the Redis-backed limiter in production.',
       productionRequirement: [
-        'Add route-specific distributed limit before enabling production: e.g. 5 quote submissions / 10 minutes / IP.',
-        'Add duplicate guard by normalized email + product/config hash.',
-        'Store counters in Redis or Supabase, not process memory, for multi-instance deployments.',
+        'Keep distributed Redis rate limiting via REDIS_URL configured before enabling production hosts.',
+        'Keep duplicate guard by normalized email + product/config hash.',
+        'Store production counters in Redis, not process memory, for multi-instance deployments.',
       ],
     },
     spamPreventionPlan: [
       'Keep strict server-side length limits and enum validation.',
-      'Add honeypot/timing field or Turnstile before public promotion.',
+      'Reject filled honeypot fields before Supabase insert.',
+      'Verify Turnstile tokens when MODULAR_HOME_QUOTE_TURNSTILE_SECRET_KEY is configured.',
       'Reject obvious automated submissions before Supabase insert.',
       'Never trust frontend consent or estimate fields without server validation.',
     ],
@@ -302,6 +265,15 @@ function getModularHomeQuoteAllowedStagingHosts(): string[] {
   return Array.from(new Set(hosts));
 }
 
+function getModularHomeQuoteAllowedProductionHosts(): string[] {
+  const configured = process.env.MODULAR_HOME_QUOTE_PRODUCTION_HOSTS;
+  const hosts = configured
+    ? configured.split(',').map((host) => normalizeHost(host)).filter((host): host is string => Boolean(host))
+    : [];
+
+  return Array.from(new Set(hosts));
+}
+
 function isModularHomeQuoteAllowedPreviewHost(host: string): boolean {
   return STAGING_PREVIEW_HOST_PATTERN.test(host);
 }
@@ -320,6 +292,10 @@ function isModularHomeQuoteStagingEnvironmentName(environmentName: string | null
   return environmentName === 'staging' || environmentName === 'preview';
 }
 
+function isModularHomeQuoteProductionEnvironmentName(environmentName: string | null): boolean {
+  return environmentName === 'production';
+}
+
 export function isModularHomeQuoteStagingRequest(req: Request): boolean {
   const environmentName = getModularHomeQuoteEnvironmentName();
   const allowedHosts = getModularHomeQuoteAllowedStagingHosts();
@@ -334,6 +310,20 @@ export function isModularHomeQuoteStagingRequest(req: Request): boolean {
 
   // Environment alone is not enough for a live submission if request headers identify production.
   return isModularHomeQuoteStagingEnvironmentName(environmentName) && hostCandidates.length === 0;
+}
+
+export function isModularHomeQuoteProductionRequest(req: Request): boolean {
+  const allowedHosts = getModularHomeQuoteAllowedProductionHosts();
+  if (allowedHosts.length === 0) {
+    return false;
+  }
+
+  const hostCandidates = getModularHomeQuoteRequestHostCandidates(req);
+  return hostCandidates.some((candidate) => allowedHosts.includes(candidate));
+}
+
+function isModularHomeQuoteAllowedSubmissionHost(req: Request): boolean {
+  return isModularHomeQuoteStagingRequest(req) || isModularHomeQuoteProductionRequest(req);
 }
 
 export function createModularHomeQuoteSafeLogEvent(
@@ -357,6 +347,7 @@ export function createModularHomeQuoteSafeLogEvent(
     path: typeof req.path === 'string' ? req.path : null,
     requestFlagEnabled: isModularHomeQuoteBackendRequestEnabled(req.query),
     sourceVertical: normalizeOptionalText(source.vertical, 80),
+    productionRequest: isModularHomeQuoteProductionRequest(req),
     stage,
     stagingRequest: isModularHomeQuoteStagingRequest(req),
     status,
@@ -369,132 +360,34 @@ function logModularHomeQuoteFailure(event: ModularHomeQuoteSafeLogEvent): void {
   console.warn('[modular-home-quote]', event);
 }
 
-function asRecord(value: unknown): Record<string, unknown> | null {
-  return value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : null;
-}
-
-function normalizeRequiredText(value: unknown, code: string, maxLength = MAX_TEXT_LENGTH): string {
-  const normalized = typeof value === 'string' ? value.trim() : '';
-  if (!normalized) {
-    throw new Error(code);
-  }
-
-  return normalized.slice(0, maxLength);
-}
-
-function normalizeOptionalText(value: unknown, maxLength = MAX_TEXT_LENGTH): string | null {
-  const normalized = typeof value === 'string' ? value.trim() : '';
-  return normalized ? normalized.slice(0, maxLength) : null;
-}
-
-function normalizeEmail(value: unknown): string {
-  const email = normalizeRequiredText(value, 'MODULAR_HOME_QUOTE_EMAIL_REQUIRED', 320).toLowerCase();
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    throw new Error('MODULAR_HOME_QUOTE_EMAIL_INVALID');
-  }
-
-  return email;
-}
-
-function normalizePositiveNumber(value: unknown, code: string, maxValue: number): number {
-  const numeric = Number(value);
-  if (!Number.isFinite(numeric) || numeric < 0 || numeric > maxValue) {
-    throw new Error(code);
-  }
-
-  return Math.round(numeric);
-}
-
-function normalizeEnum<T extends string>(value: unknown, allowed: Set<T>, fallback: T | null, code: string): T {
-  const normalized = typeof value === 'string' ? value.trim() : '';
-  if (allowed.has(normalized as T)) {
-    return normalized as T;
-  }
-
-  if (fallback) {
-    return fallback;
-  }
-
-  throw new Error(code);
-}
-
-function normalizeIsoDate(value: unknown, code: string): string {
-  const raw = normalizeRequiredText(value, code, 80);
-  const date = new Date(raw);
-  if (Number.isNaN(date.getTime())) {
-    throw new Error(code);
-  }
-
-  return date.toISOString();
-}
-
-function normalizeExpectedValue(value: unknown, expected: string, code: string, maxLength = MAX_TEXT_LENGTH): string {
-  const normalized = normalizeRequiredText(value, code, maxLength);
-  if (normalized !== expected) {
-    throw new Error(code);
-  }
-
-  return normalized;
-}
-
-function normalizeLineItems(value: unknown): Array<{ amount: number; label: string }> {
-  if (!Array.isArray(value)) {
-    return [];
-  }
-
-  return value
-    .map((item) => {
-      const record = asRecord(item);
-      if (!record) {
-        return null;
-      }
-
-      const label = normalizeOptionalText(record.label, 140);
-      const amount = Number(record.amount);
-      if (!label || !Number.isFinite(amount) || amount < 0 || amount > 1_000_000) {
-        return null;
-      }
-
-      return { amount: Math.round(amount), label };
-    })
-    .filter((item): item is { amount: number; label: string } => item !== null)
-    .slice(0, MAX_LINE_ITEMS);
-}
-
-function normalizeScopeSummary(value: unknown): string[] {
-  if (!Array.isArray(value)) {
-    return [];
-  }
-
-  return value
-    .map((item) => normalizeOptionalText(item, 180))
-    .filter((item): item is string => item !== null)
-    .slice(0, MAX_SCOPE_ITEMS);
-}
-
-function normalizeProductId(value: unknown): string {
-  const productId = normalizeRequiredText(value, 'MODULAR_HOME_QUOTE_PRODUCT_REQUIRED', 120);
-  if (!ALLOWED_PRODUCTS.has(productId)) {
-    throw new Error('MODULAR_HOME_QUOTE_PRODUCT_INVALID');
-  }
-
-  return productId;
-}
-
 export function getModularHomeQuoteSubmissionConfig(): ModularHomeQuoteSubmissionConfig {
   const environmentName = getModularHomeQuoteEnvironmentName();
+  const productionAllowedHosts = getModularHomeQuoteAllowedProductionHosts();
+  const redisConfigured = isRedisRateLimitConfigured();
+  const turnstileConfigured = Boolean(process.env.MODULAR_HOME_QUOTE_TURNSTILE_SECRET_KEY?.trim());
+  const turnstileRequired = process.env.MODULAR_HOME_QUOTE_TURNSTILE_REQUIRED === 'true';
 
   return {
     emailHandoffEnabled: process.env.MODULAR_HOME_QUOTE_EMAIL_HANDOFF_ENABLED === 'true',
     enabled: process.env.MODULAR_HOME_QUOTE_SUBMISSION_ENABLED === 'true',
     hardeningPlan: getModularHomeQuoteBackendHardeningPlan(),
-    productionReady: false,
+    production: {
+      allowedHosts: productionAllowedHosts,
+      enabledByEnvironment: isModularHomeQuoteProductionEnvironmentName(environmentName),
+      redisConfigured,
+      turnstileConfigured,
+      turnstileRequired,
+    },
+    productionReady: process.env.MODULAR_HOME_QUOTE_SUBMISSION_ENABLED === 'true'
+      && productionAllowedHosts.length > 0
+      && redisConfigured
+      && (!turnstileRequired || turnstileConfigured),
     rateLimit: {
       maxRequests: MODULAR_HOME_QUOTE_RATE_LIMIT_MAX_REQUESTS,
       windowMs: MODULAR_HOME_QUOTE_RATE_LIMIT_WINDOW_MS,
     },
     requiresExplicitRequestFlag: true,
-    requiresStagingEnvironment: true,
+    requiresStagingEnvironment: productionAllowedHosts.length === 0,
     staging: {
       allowedHosts: getModularHomeQuoteAllowedStagingHosts(),
       allowedPreviewHostPattern: STAGING_PREVIEW_HOST_PATTERN.source,
@@ -520,174 +413,161 @@ export type ModularHomeQuoteRateLimitResult = {
   remaining: number;
   resetAt: string;
   retryAfterSeconds: number;
+  store: 'redis' | 'memory' | 'unavailable';
+  unavailable: boolean;
 };
 
 function getModularHomeQuoteRateLimitKey(req: Request): string {
-  const forwardedFor = readFirstHeaderValue(req, 'x-forwarded-for')?.split(',')[0]?.trim();
-  const realIp = readFirstHeaderValue(req, 'x-real-ip');
-  const directIp = typeof req.ip === 'string' ? req.ip : '';
-  const socketIp = typeof req.socket?.remoteAddress === 'string' ? req.socket.remoteAddress : '';
-  const candidate = forwardedFor || realIp || directIp || socketIp || 'unknown';
-
-  return candidate.slice(0, 96);
+  return getClientIpRateLimitKey(req);
 }
 
 export function resetModularHomeQuoteRateLimitForTests(): void {
-  modularHomeQuoteRateLimitBuckets.clear();
+  resetRedisRateLimitForTests();
 }
 
-export function checkModularHomeQuoteRateLimit(
+export async function checkModularHomeQuoteRateLimit(
   req: Request,
   nowMs = Date.now(),
   submissionConfig = getModularHomeQuoteSubmissionConfig(),
-): ModularHomeQuoteRateLimitResult {
+  store?: RedisBackedRateLimitStore,
+): Promise<ModularHomeQuoteRateLimitResult> {
   const key = getModularHomeQuoteRateLimitKey(req);
-  const current = modularHomeQuoteRateLimitBuckets.get(key);
-
-  if (!current || current.resetAt <= nowMs) {
-    const resetAt = nowMs + submissionConfig.rateLimit.windowMs;
-    modularHomeQuoteRateLimitBuckets.set(key, { count: 1, resetAt });
-
-    return {
-      allowed: true,
-      remaining: Math.max(0, submissionConfig.rateLimit.maxRequests - 1),
-      resetAt: new Date(resetAt).toISOString(),
-      retryAfterSeconds: 0,
-    };
-  }
-
-  if (current.count >= submissionConfig.rateLimit.maxRequests) {
-    return {
-      allowed: false,
-      remaining: 0,
-      resetAt: new Date(current.resetAt).toISOString(),
-      retryAfterSeconds: Math.max(1, Math.ceil((current.resetAt - nowMs) / 1000)),
-    };
-  }
-
-  current.count += 1;
-
-  return {
-    allowed: true,
-    remaining: Math.max(0, submissionConfig.rateLimit.maxRequests - current.count),
-    resetAt: new Date(current.resetAt).toISOString(),
-    retryAfterSeconds: 0,
-  };
+  return checkRedisBackedRateLimit({
+    key,
+    limit: submissionConfig.rateLimit.maxRequests,
+    namespace: 'modular-home-quote',
+    nowMs,
+    requireRedis: isModularHomeQuoteProductionRequest(req),
+    store,
+    windowMs: submissionConfig.rateLimit.windowMs,
+  });
 }
 
-export function validateModularHomeQuoteRequest(body: ModularHomeQuoteRequestBody): ValidModularHomeQuoteRequest {
-  const requester = asRecord(body.requester);
-  const project = asRecord(body.project);
-  const config = asRecord(body.config);
-  const estimate = asRecord(body.estimate);
-  const consent = asRecord(body.consent);
-  const attribution = asRecord(body.attribution) ?? {};
-  const source = asRecord(body.source) ?? {};
-
-  if (!requester) {
-    throw new Error('MODULAR_HOME_QUOTE_REQUESTER_REQUIRED');
-  }
-  if (!project) {
-    throw new Error('MODULAR_HOME_QUOTE_PROJECT_REQUIRED');
-  }
-  if (!config) {
-    throw new Error('MODULAR_HOME_QUOTE_CONFIG_REQUIRED');
-  }
-  if (!estimate) {
-    throw new Error('MODULAR_HOME_QUOTE_ESTIMATE_REQUIRED');
-  }
-  if (!consent) {
-    throw new Error('MODULAR_HOME_QUOTE_CONSENT_REQUIRED');
-  }
-  if (consent.accepted !== true) {
-    throw new Error('MODULAR_HOME_QUOTE_CONSENT_REQUIRED');
+function stableJsonStringify(value: unknown): string {
+  if (value === null || typeof value !== 'object') {
+    return JSON.stringify(value);
   }
 
-  const currency = normalizeRequiredText(estimate.currency, 'MODULAR_HOME_QUOTE_CURRENCY_REQUIRED', 12);
-  if (currency !== 'EUR') {
-    throw new Error('MODULAR_HOME_QUOTE_CURRENCY_INVALID');
+  if (Array.isArray(value)) {
+    return `[${value.map((item) => stableJsonStringify(item)).join(',')}]`;
   }
 
-  return {
-    attribution: {
-      companySlug: normalizeOptionalText(attribution.companySlug, 120) ?? 'warpala',
-      salesOwner: normalizeOptionalText(attribution.salesOwner, 120) ?? 'modular-home-sales',
-      sourceSurface: normalizeOptionalText(attribution.sourceSurface, 120) ?? 'homeDemo',
-      sponsorSlug: normalizeOptionalText(attribution.sponsorSlug, 120),
-    },
-    config: {
-      doorPlacement: normalizeOptionalText(config.doorPlacement, 80) ?? 'Door placement not provided',
-      facade: normalizeRequiredText(config.facade, 'MODULAR_HOME_QUOTE_FACADE_REQUIRED', 80),
-      facadeBoardOrientation: normalizeOptionalText(config.facadeBoardOrientation, 80) ?? 'Facade board orientation not provided',
-      facadeBoardWidth: normalizeOptionalText(config.facadeBoardWidth, 80) ?? 'Facade board width not provided',
-      finishLevel: normalizeRequiredText(config.finishLevel, 'MODULAR_HOME_QUOTE_FINISH_REQUIRED', 80),
-      floorFinish: normalizeOptionalText(config.floorFinish, 80) ?? 'Floor finish not provided',
-      furniturePackage: normalizeOptionalText(config.furniturePackage, 80) ?? 'Furniture package not provided',
-      sofa: normalizeOptionalText(config.sofa, 40) ?? 'Sofa toggle not provided',
-      table: normalizeOptionalText(config.table, 40) ?? 'Table toggle not provided',
-      bed: normalizeOptionalText(config.bed, 40) ?? 'Bed toggle not provided',
-      kitchenLine: normalizeOptionalText(config.kitchenLine, 40) ?? 'Kitchen line toggle not provided',
-      wardrobePlaceholder: normalizeOptionalText(config.wardrobePlaceholder, 40) ?? 'Wardrobe toggle not provided',
-      interiorWallFinish: normalizeOptionalText(config.interiorWallFinish, 80) ?? 'Interior wall finish not provided',
-      layoutVariant: normalizeOptionalText(config.layoutVariant, 80) ?? 'Layout not provided',
-      roof: normalizeRequiredText(config.roof, 'MODULAR_HOME_QUOTE_ROOF_REQUIRED', 80),
-      roofEdgeColor: normalizeOptionalText(config.roofEdgeColor, 80) ?? 'Roof edge color not provided',
-      terrace: normalizeRequiredText(config.terrace, 'MODULAR_HOME_QUOTE_TERRACE_REQUIRED', 80),
-      windowFrameColor: normalizeOptionalText(config.windowFrameColor, 80) ?? 'Window frame color not provided',
-      windowPlacement: normalizeOptionalText(config.windowPlacement, 80) ?? 'Window placement not provided',
-    },
-    consent: {
-      accepted: true,
-      acceptedAt: normalizeIsoDate(consent.acceptedAt, 'MODULAR_HOME_QUOTE_CONSENT_DATE_INVALID'),
-      consentText: normalizeExpectedValue(
-        consent.consentText,
-        MODULAR_HOME_QUOTE_BACKEND_CONSENT_TEXT,
-        'MODULAR_HOME_QUOTE_CONSENT_TEXT_INVALID',
-        1000,
-      ),
-      consentVersion: normalizeExpectedValue(
-        consent.consentVersion,
-        MODULAR_HOME_QUOTE_CONSENT_VERSION,
-        'MODULAR_HOME_QUOTE_CONSENT_VERSION_INVALID',
-        80,
-      ),
-      privacyVersion: normalizeExpectedValue(
-        consent.privacyVersion,
-        MODULAR_HOME_QUOTE_PRIVACY_VERSION,
-        'MODULAR_HOME_QUOTE_PRIVACY_VERSION_INVALID',
-        80,
-      ),
-    },
-    estimate: {
-      currency: 'EUR',
-      estimatedTotal: normalizePositiveNumber(estimate.estimatedTotal, 'MODULAR_HOME_QUOTE_ESTIMATE_TOTAL_INVALID', 1_000_000),
-      lineItems: normalizeLineItems(estimate.lineItems),
-      scopeSummary: normalizeScopeSummary(estimate.scopeSummary),
-    },
-    project: {
-      floorAreaM2: normalizePositiveNumber(project.floorAreaM2, 'MODULAR_HOME_QUOTE_AREA_INVALID', 500),
-      modelName: normalizeRequiredText(project.modelName, 'MODULAR_HOME_QUOTE_MODEL_REQUIRED', 180),
-      productId: normalizeProductId(project.productId),
-      projectId: normalizeOptionalText(project.projectId, 160),
-      shareUrl: normalizeOptionalText(project.shareUrl, 1200),
-    },
-    requester: {
-      budgetRange: normalizeEnum(requester.budgetRange, ALLOWED_BUDGET_RANGES, null, 'MODULAR_HOME_QUOTE_BUDGET_INVALID'),
-      countryCity: normalizeRequiredText(requester.countryCity, 'MODULAR_HOME_QUOTE_LOCATION_REQUIRED', 180),
-      email: normalizeEmail(requester.email),
-      landOwned: normalizeEnum(requester.landOwned, ALLOWED_LAND_OWNED, 'unknown', 'MODULAR_HOME_QUOTE_LAND_INVALID'),
-      message: normalizeRequiredText(requester.message, 'MODULAR_HOME_QUOTE_MESSAGE_REQUIRED', MAX_MESSAGE_LENGTH),
-      name: normalizeRequiredText(requester.name, 'MODULAR_HOME_QUOTE_NAME_REQUIRED', 180),
-      phone: normalizeRequiredText(requester.phone, 'MODULAR_HOME_QUOTE_PHONE_REQUIRED', 80),
-      targetBuildDate: normalizeEnum(requester.targetBuildDate, ALLOWED_TARGET_BUILD_DATES, null, 'MODULAR_HOME_QUOTE_TARGET_DATE_INVALID'),
-    },
-    source: {
-      path: normalizeOptionalText(source.path, 600),
-      referrer: normalizeOptionalText(source.referrer, 1200),
-      userAgent: normalizeOptionalText(source.userAgent, 600),
-      vertical: 'modular-home',
-    },
-  };
+  const record = value as Record<string, unknown>;
+  return `{${Object.keys(record).sort().map((key) => (
+    `${JSON.stringify(key)}:${stableJsonStringify(record[key])}`
+  )).join(',')}}`;
+}
+
+export function createModularHomeQuoteConfigHash(payload: ValidModularHomeQuoteRequest): string {
+  return crypto
+    .createHash('sha256')
+    .update(stableJsonStringify({
+      config: payload.config,
+      productId: payload.project.productId,
+    }))
+    .digest('hex');
+}
+
+export function createModularHomeQuoteDuplicateGuardKey(payload: ValidModularHomeQuoteRequest): string {
+  const normalizedEmail = payload.requester.email.trim().toLowerCase();
+  const configHash = createModularHomeQuoteConfigHash(payload);
+  return crypto
+    .createHash('sha256')
+    .update(`${normalizedEmail}:${payload.project.productId}:${configHash}`)
+    .digest('hex');
+}
+
+function getHoneypotValues(body: unknown): string[] {
+  const record = asRecord(body) ?? {};
+  const spam = asRecord(record.spam) ?? {};
+  const antiSpam = asRecord(record.antiSpam) ?? {};
+
+  return [
+    record.website,
+    record.companyWebsite,
+    record.homepage,
+    spam.website,
+    spam.companyWebsite,
+    spam.homepage,
+    antiSpam.website,
+    antiSpam.companyWebsite,
+    antiSpam.homepage,
+  ]
+    .map((value) => typeof value === 'string' ? value.trim() : '')
+    .filter(Boolean);
+}
+
+export function hasFilledModularHomeQuoteHoneypot(body: unknown): boolean {
+  return getHoneypotValues(body).length > 0;
+}
+
+function getTurnstileToken(body: unknown): string | null {
+  const record = asRecord(body) ?? {};
+  const spam = asRecord(record.spam) ?? {};
+  const antiSpam = asRecord(record.antiSpam) ?? {};
+
+  return normalizeOptionalText(
+    record.turnstileToken ?? spam.turnstileToken ?? antiSpam.turnstileToken,
+    4096,
+  );
+}
+
+export async function verifyModularHomeQuoteTurnstile(
+  body: unknown,
+  req: Request,
+  fetchImpl: typeof fetch = fetch,
+): Promise<{ ok: true } | { code: string; ok: false }> {
+  const secret = process.env.MODULAR_HOME_QUOTE_TURNSTILE_SECRET_KEY?.trim();
+  const required = process.env.MODULAR_HOME_QUOTE_TURNSTILE_REQUIRED === 'true';
+  if (!secret) {
+    return { ok: true };
+  }
+
+  const token = getTurnstileToken(body);
+  if (!token) {
+    return required
+      ? { code: 'MODULAR_HOME_QUOTE_TURNSTILE_REQUIRED', ok: false }
+      : { ok: true };
+  }
+
+  const params = new URLSearchParams({
+    remoteip: getModularHomeQuoteRateLimitKey(req),
+    response: token,
+    secret,
+  });
+  const response = await fetchImpl('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+    body: params,
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    method: 'POST',
+  });
+
+  if (!response.ok) {
+    return { code: 'MODULAR_HOME_QUOTE_TURNSTILE_FAILED', ok: false };
+  }
+
+  const result = await response.json() as { success?: boolean };
+  return result.success === true
+    ? { ok: true }
+    : { code: 'MODULAR_HOME_QUOTE_TURNSTILE_FAILED', ok: false };
+}
+
+export async function findDuplicateModularHomeQuoteRequest(
+  payload: ValidModularHomeQuoteRequest,
+  submissionConfig = getModularHomeQuoteSubmissionConfig(),
+  storage: ModularHomeQuoteStorageClient = getSupabase() as unknown as ModularHomeQuoteStorageClient,
+): Promise<string | null> {
+  const duplicateGuardKey = createModularHomeQuoteDuplicateGuardKey(payload);
+  const { data, error } = await storage
+    .from(submissionConfig.storageTable)
+    .select('id')
+    .eq('attribution->>duplicateGuardKey', duplicateGuardKey)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error('MODULAR_HOME_QUOTE_DUPLICATE_CHECK_FAILED');
+  }
+
+  return data?.id ?? null;
 }
 
 export async function insertModularHomeQuoteRequest(
@@ -695,10 +575,16 @@ export async function insertModularHomeQuoteRequest(
   submissionConfig = getModularHomeQuoteSubmissionConfig(),
   storage: ModularHomeQuoteStorageClient = getSupabase() as unknown as ModularHomeQuoteStorageClient,
 ): Promise<string | null> {
+  const configHash = createModularHomeQuoteConfigHash(payload);
+  const duplicateGuardKey = createModularHomeQuoteDuplicateGuardKey(payload);
   const { data, error } = await storage
     .from(submissionConfig.storageTable)
     .insert([{
-      attribution: payload.attribution,
+      attribution: {
+        ...payload.attribution,
+        configHash,
+        duplicateGuardKey,
+      },
       config: payload.config,
       consent: payload.consent,
       estimate: payload.estimate,
@@ -717,7 +603,11 @@ export async function insertModularHomeQuoteRequest(
   return data?.id ?? null;
 }
 
-export async function submitModularHomeQuote(req: Request, res: Response) {
+export async function submitModularHomeQuoteWithDependencies(
+  req: Request,
+  res: Response,
+  dependencies: ModularHomeQuoteSubmitDependencies = {},
+) {
   const submissionConfig = getModularHomeQuoteSubmissionConfig();
 
   if (!submissionConfig.enabled) {
@@ -753,23 +643,49 @@ export async function submitModularHomeQuote(req: Request, res: Response) {
     });
   }
 
-  if (!isModularHomeQuoteStagingRequest(req)) {
+  if (!isModularHomeQuoteAllowedSubmissionHost(req)) {
     logModularHomeQuoteFailure(createModularHomeQuoteSafeLogEvent(
       req,
-      'MODULAR_HOME_QUOTE_STAGING_ONLY',
+      'MODULAR_HOME_QUOTE_HOST_NOT_ALLOWED',
       403,
-      'staging',
+      'host',
       submissionConfig,
     ));
 
     return res.status(403).json({
-      error: 'MODULAR_HOME_QUOTE_STAGING_ONLY',
-      message: 'Real Modular Home quote submission is currently allowed only on staging/review hosts.',
+      error: 'MODULAR_HOME_QUOTE_HOST_NOT_ALLOWED',
+      message: 'Real Modular Home quote submission is allowed only on configured staging/review or production hosts.',
       success: false,
     });
   }
 
-  const rateLimit = checkModularHomeQuoteRateLimit(req, Date.now(), submissionConfig);
+  const rateLimit = await checkModularHomeQuoteRateLimit(
+    req,
+    Date.now(),
+    submissionConfig,
+    dependencies.rateLimitStore,
+  );
+  if (rateLimit.unavailable) {
+    logModularHomeQuoteFailure(createModularHomeQuoteSafeLogEvent(
+      req,
+      'MODULAR_HOME_QUOTE_RATE_LIMIT_UNAVAILABLE',
+      503,
+      'rateLimit',
+      submissionConfig,
+    ));
+
+    if (typeof res.setHeader === 'function') {
+      res.setHeader('Retry-After', String(rateLimit.retryAfterSeconds));
+    }
+
+    return res.status(503).json({
+      error: 'MODULAR_HOME_QUOTE_RATE_LIMIT_UNAVAILABLE',
+      message: 'Quote rate limiting is unavailable. Configure REDIS_URL before accepting production quote submissions.',
+      retryAfterSeconds: rateLimit.retryAfterSeconds,
+      success: false,
+    });
+  }
+
   if (!rateLimit.allowed) {
     logModularHomeQuoteFailure(createModularHomeQuoteSafeLogEvent(
       req,
@@ -792,27 +708,71 @@ export async function submitModularHomeQuote(req: Request, res: Response) {
   }
 
   try {
+    if (hasFilledModularHomeQuoteHoneypot(req.body)) {
+      throw new Error('MODULAR_HOME_QUOTE_SPAM_REJECTED');
+    }
+
+    const turnstile = await verifyModularHomeQuoteTurnstile(
+      req.body,
+      req,
+      dependencies.fetchImpl,
+    );
+    if (!turnstile.ok) {
+      throw new Error(turnstile.code);
+    }
+
     const payload = validateModularHomeQuoteRequest(req.body);
-    const id = await insertModularHomeQuoteRequest(payload, submissionConfig);
+    const duplicateId = await findDuplicateModularHomeQuoteRequest(
+      payload,
+      submissionConfig,
+      dependencies.storage,
+    );
+    if (duplicateId) {
+      throw new Error('MODULAR_HOME_QUOTE_DUPLICATE');
+    }
+
+    const id = await insertModularHomeQuoteRequest(payload, submissionConfig, dependencies.storage);
+    const emailHandoffQueued = (dependencies.emailHandoff ?? enqueueModularHomeQuoteEmailHandoff)({
+      payload,
+      quoteId: id,
+    });
 
     res.status(201).json({
-      emailHandoffQueued: false,
+      emailHandoffQueued,
       id,
       success: true,
     });
   } catch (error: any) {
     const rawCode = String(error?.message || 'MODULAR_HOME_QUOTE_UNKNOWN');
     const code = rawCode.startsWith('MODULAR_HOME_QUOTE_') ? rawCode : 'MODULAR_HOME_QUOTE_STORAGE_FAILED';
-    const status = code.startsWith('MODULAR_HOME_QUOTE_') ? 400 : 500;
-    const failureStatus = code === 'MODULAR_HOME_QUOTE_STORAGE_FAILED' ? 500 : status;
+    const failureStatus = code === 'MODULAR_HOME_QUOTE_STORAGE_FAILED'
+      || code === 'MODULAR_HOME_QUOTE_DUPLICATE_CHECK_FAILED'
+      ? 500
+      : code === 'MODULAR_HOME_QUOTE_DUPLICATE'
+        ? 409
+        : code === 'MODULAR_HOME_QUOTE_TURNSTILE_REQUIRED' || code === 'MODULAR_HOME_QUOTE_TURNSTILE_FAILED'
+          ? 403
+          : 400;
     logModularHomeQuoteFailure(createModularHomeQuoteSafeLogEvent(
       req,
       code,
       failureStatus,
-      failureStatus === 500 ? 'storage' : 'validation',
+      failureStatus === 500
+        ? 'storage'
+        : code === 'MODULAR_HOME_QUOTE_DUPLICATE'
+          ? 'duplicate'
+          : code === 'MODULAR_HOME_QUOTE_SPAM_REJECTED'
+            || code === 'MODULAR_HOME_QUOTE_TURNSTILE_REQUIRED'
+            || code === 'MODULAR_HOME_QUOTE_TURNSTILE_FAILED'
+            ? 'spam'
+            : 'validation',
       submissionConfig,
     ));
 
     res.status(failureStatus).json({ error: code, success: false });
   }
+}
+
+export async function submitModularHomeQuote(req: Request, res: Response) {
+  return submitModularHomeQuoteWithDependencies(req, res);
 }

@@ -63,6 +63,10 @@ type ScreenAssignmentContent = {
   companyId: string | null;
   imageUrl: string | null;
   label: string;
+  ownerKind: NonNullable<CityScreenAssignment['commercial']>['ownerKind'];
+  ownerLabel: string;
+  priority: number;
+  source: NonNullable<CityScreenAssignment['commercial']>['source'];
   subtitle: string;
   tier: CityScreenAssignment['tier'];
 };
@@ -70,32 +74,32 @@ type ScreenAssignmentContent = {
 const FALLBACK_SCREEN_CONTENT: Record<ExpoPlanningZoneId, ScreenAssignmentContent[]> = {
   arrival: [],
   'left-district': [
-    { accentColor: '#2563eb', companyId: null, imageUrl: null, label: 'Left Showcase', subtitle: 'Innovation demos and partner stories', tier: 'premium' },
-    { accentColor: '#7c3aed', companyId: null, imageUrl: null, label: 'Creator Stack', subtitle: 'Digital twin, content and launch assets', tier: 'elite' },
-    { accentColor: '#0891b2', companyId: null, imageUrl: null, label: 'Live Product Row', subtitle: 'Rotating product demos and service previews', tier: 'premium' },
-    { accentColor: '#1d4ed8', companyId: null, imageUrl: null, label: 'Partner Route', subtitle: 'Follow the left district sponsor trail', tier: 'premium' },
+    { accentColor: '#2563eb', companyId: null, imageUrl: null, label: 'Left Showcase', ownerKind: 'platform', ownerLabel: 'Available sponsor screen', priority: 34, source: 'scene-fallback', subtitle: 'Innovation demos and partner stories', tier: 'premium' },
+    { accentColor: '#7c3aed', companyId: null, imageUrl: null, label: 'Creator Stack', ownerKind: 'platform', ownerLabel: 'Available sponsor screen', priority: 33, source: 'scene-fallback', subtitle: 'Digital twin, content and launch assets', tier: 'elite' },
+    { accentColor: '#0891b2', companyId: null, imageUrl: null, label: 'Live Product Row', ownerKind: 'platform', ownerLabel: 'Available sponsor screen', priority: 32, source: 'scene-fallback', subtitle: 'Rotating product demos and service previews', tier: 'premium' },
+    { accentColor: '#1d4ed8', companyId: null, imageUrl: null, label: 'Partner Route', ownerKind: 'platform', ownerLabel: 'Available sponsor screen', priority: 31, source: 'scene-fallback', subtitle: 'Follow the left district sponsor trail', tier: 'premium' },
   ],
   'center-spine': [
-    { accentColor: '#0ea5e9', companyId: null, imageUrl: null, label: 'Center Signal', subtitle: 'Main boulevard orientation and expo highlights', tier: 'hero' },
-    { accentColor: '#2563eb', companyId: null, imageUrl: null, label: 'Platform Pulse', subtitle: 'Warpala platform, sponsor discovery and rooms', tier: 'premium' },
-    { accentColor: '#06b6d4', companyId: null, imageUrl: null, label: 'Visitor Flow', subtitle: 'Navigate city, stadium and premium showcases', tier: 'premium' },
+    { accentColor: '#0ea5e9', companyId: null, imageUrl: null, label: 'Center Signal', ownerKind: 'platform', ownerLabel: 'Warpala Expo', priority: 54, source: 'scene-fallback', subtitle: 'Main boulevard orientation and expo highlights', tier: 'hero' },
+    { accentColor: '#2563eb', companyId: null, imageUrl: null, label: 'Platform Pulse', ownerKind: 'platform', ownerLabel: 'Warpala Expo', priority: 53, source: 'scene-fallback', subtitle: 'Warpala platform, sponsor discovery and rooms', tier: 'premium' },
+    { accentColor: '#06b6d4', companyId: null, imageUrl: null, label: 'Visitor Flow', ownerKind: 'platform', ownerLabel: 'Warpala Expo', priority: 52, source: 'scene-fallback', subtitle: 'Navigate city, stadium and premium showcases', tier: 'premium' },
   ],
   'right-district': [
-    { accentColor: '#0f766e', companyId: null, imageUrl: null, label: 'Right District Live', subtitle: 'Premium meetings, sponsor routes and live demos', tier: 'premium' },
-    { accentColor: '#0284c7', companyId: null, imageUrl: null, label: 'Demo Slot Open', subtitle: 'Book a visible screen position in this district', tier: 'premium' },
-    { accentColor: '#2563eb', companyId: null, imageUrl: null, label: 'Investor Route', subtitle: 'Featured offers, services and discovery paths', tier: 'elite' },
-    { accentColor: '#0d9488', companyId: null, imageUrl: null, label: 'Meeting Pods', subtitle: 'Fast sponsor meetings and guided next steps', tier: 'premium' },
-    { accentColor: '#155e75', companyId: null, imageUrl: null, label: 'Signal Tower', subtitle: 'High-visibility sponsor beacon and route marker', tier: 'premium' },
-    { accentColor: '#1e40af', companyId: null, imageUrl: null, label: 'Marketplace Drop', subtitle: 'Promote launches, offers and premium activations', tier: 'premium' },
+    { accentColor: '#0f766e', companyId: null, imageUrl: null, label: 'Right District Live', ownerKind: 'platform', ownerLabel: 'Available sponsor screen', priority: 44, source: 'scene-fallback', subtitle: 'Premium meetings, sponsor routes and live demos', tier: 'premium' },
+    { accentColor: '#0284c7', companyId: null, imageUrl: null, label: 'Demo Slot Open', ownerKind: 'platform', ownerLabel: 'Available sponsor screen', priority: 43, source: 'scene-fallback', subtitle: 'Book a visible screen position in this district', tier: 'premium' },
+    { accentColor: '#2563eb', companyId: null, imageUrl: null, label: 'Investor Route', ownerKind: 'platform', ownerLabel: 'Available sponsor screen', priority: 42, source: 'scene-fallback', subtitle: 'Featured offers, services and discovery paths', tier: 'elite' },
+    { accentColor: '#0d9488', companyId: null, imageUrl: null, label: 'Meeting Pods', ownerKind: 'platform', ownerLabel: 'Available sponsor screen', priority: 41, source: 'scene-fallback', subtitle: 'Fast sponsor meetings and guided next steps', tier: 'premium' },
+    { accentColor: '#155e75', companyId: null, imageUrl: null, label: 'Signal Tower', ownerKind: 'platform', ownerLabel: 'Available sponsor screen', priority: 40, source: 'scene-fallback', subtitle: 'High-visibility sponsor beacon and route marker', tier: 'premium' },
+    { accentColor: '#1e40af', companyId: null, imageUrl: null, label: 'Marketplace Drop', ownerKind: 'platform', ownerLabel: 'Available sponsor screen', priority: 39, source: 'scene-fallback', subtitle: 'Promote launches, offers and premium activations', tier: 'premium' },
   ],
   'tower-cluster': [
-    { accentColor: '#38bdf8', companyId: null, imageUrl: null, label: 'Tower Beacon', subtitle: 'High-rise sponsor visibility signal', tier: 'premium' },
-    { accentColor: '#60a5fa', companyId: null, imageUrl: null, label: 'Skyline Pulse', subtitle: 'District-wide brand and navigation marker', tier: 'premium' },
+    { accentColor: '#38bdf8', companyId: null, imageUrl: null, label: 'Tower Beacon', ownerKind: 'platform', ownerLabel: 'Available sponsor screen', priority: 24, source: 'scene-fallback', subtitle: 'High-rise sponsor visibility signal', tier: 'premium' },
+    { accentColor: '#60a5fa', companyId: null, imageUrl: null, label: 'Skyline Pulse', ownerKind: 'platform', ownerLabel: 'Available sponsor screen', priority: 23, source: 'scene-fallback', subtitle: 'District-wide brand and navigation marker', tier: 'premium' },
   ],
   'rear-campus': [
-    { accentColor: '#0ea5e9', companyId: null, imageUrl: null, label: 'Arena Feed', subtitle: 'Event program, sponsor highlights and show signals', tier: 'premium' },
-    { accentColor: '#2563eb', companyId: null, imageUrl: null, label: 'Stage Signal', subtitle: 'Live sessions, demos and rear campus routes', tier: 'premium' },
-    { accentColor: '#0891b2', companyId: null, imageUrl: null, label: 'Campus Guide', subtitle: 'Navigate event areas, screens and premium rooms', tier: 'premium' },
+    { accentColor: '#0ea5e9', companyId: null, imageUrl: null, label: 'Arena Feed', ownerKind: 'event', ownerLabel: 'Event program', priority: 64, source: 'scene-fallback', subtitle: 'Event program, sponsor highlights and show signals', tier: 'premium' },
+    { accentColor: '#2563eb', companyId: null, imageUrl: null, label: 'Stage Signal', ownerKind: 'event', ownerLabel: 'Event program', priority: 63, source: 'scene-fallback', subtitle: 'Live sessions, demos and rear campus routes', tier: 'premium' },
+    { accentColor: '#0891b2', companyId: null, imageUrl: null, label: 'Campus Guide', ownerKind: 'event', ownerLabel: 'Event program', priority: 62, source: 'scene-fallback', subtitle: 'Navigate event areas, screens and premium rooms', tier: 'premium' },
   ],
 };
 
@@ -110,6 +114,10 @@ function buildPlacementScreenContent(placement: ExpoBoothPlacement): ScreenAssig
     companyId: placement.company?.id ?? null,
     imageUrl: placement.company?.posterUrl || placement.company?.heroAssetUrl || placement.company?.logo_url || null,
     label: placement.company?.name || placement.sectorName || 'Sponsor',
+    ownerKind: 'sponsor',
+    ownerLabel: placement.company?.name || placement.sectorName || 'Sponsor',
+    priority: rankPlacementForScreens(placement),
+    source: 'scene-sponsor',
     subtitle: placement.company?.tagline || placement.sectorName || 'Expo partner',
     tier,
   };
@@ -286,6 +294,7 @@ function buildFullBleedBillboardDataUrl({
 
 function buildAssignmentPrimitives(args: {
   accentColor: string;
+  fallbackBillboardUrl?: string;
   imageUrl: string | null;
   intent: NonNullable<CityScreenAssignment['renderIntent']>;
   label: string;
@@ -293,7 +302,7 @@ function buildAssignmentPrimitives(args: {
   subtitle: string;
   tier: CityScreenAssignment['tier'];
 }): CanonicalPrimitive[] {
-  const { accentColor, imageUrl, intent, label, preferImageFullBleed = false, subtitle, tier } = args;
+  const { accentColor, fallbackBillboardUrl, imageUrl, intent, label, preferImageFullBleed = false, subtitle, tier } = args;
   const frameWidth = intent.frameWidth;
   const frameHeight = intent.frameHeight;
   const headerHeight = intent.headerHeight;
@@ -303,7 +312,7 @@ function buildAssignmentPrimitives(args: {
   const useTexturePlane = Boolean(imageUrl && !isFullBleed);
   const useImageFullBleed = Boolean(imageUrl && isFullBleed && preferImageFullBleed);
   const fullBleedBillboardUrl = isFullBleed && !useImageFullBleed
-    ? buildFullBleedBillboardDataUrl({
+    ? fallbackBillboardUrl ?? buildFullBleedBillboardDataUrl({
         accentColor,
         frameHeight,
         frameWidth,
@@ -396,8 +405,8 @@ export function buildZoneScreenAssignmentPlan(args: {
       return [];
     }
 
-    const { accentColor, companyId, imageUrl, label, subtitle, tier } = content;
-    const preferImageFullBleed = companyId === 'sponsor-concierge';
+    const { accentColor, companyId, imageUrl, label, ownerKind, ownerLabel, priority, source, subtitle, tier } = content;
+    const preferImageFullBleed = false;
     const semantic = getWorldScreenSemantic(socket.kind);
     const tierAccent = getTierAccent(tier);
     const isHeroComposition = socket.kind === 'hero_wall' && (
@@ -460,10 +469,34 @@ export function buildZoneScreenAssignmentPlan(args: {
       tierAccent,
       topStripWidth: isSideArraySocket ? frameWidth * 0.9 : isCenterSpineHero ? frameWidth * 0.86 : isHeroComposition ? frameWidth * 0.78 : isRearCampusWall ? frameWidth * 0.82 : isHeroTowerSocket ? frameWidth * 0.6 : semantic.mode === 'beacon' ? frameWidth * 0.4 : semantic.mode === 'signal' ? frameWidth * 0.52 : frameWidth * 0.66,
     } satisfies NonNullable<CityScreenAssignment['renderIntent']>;
+    const fallbackImageUrl = buildFullBleedBillboardDataUrl({
+      accentColor,
+      frameHeight,
+      frameWidth,
+      label,
+      semanticChip: renderIntent.semanticChip,
+      subtitle,
+      tier,
+      tierAccent,
+    });
+    const mediaMode: NonNullable<CityScreenAssignment['commercial']>['mediaMode'] = preferImageFullBleed && imageUrl ? 'image' : 'generated-card';
 
     return [{
       accentColor,
       companyId,
+      commercial: {
+        fallbackImageUrl,
+        mediaMode,
+        mediaUrl: mediaMode === 'image' ? imageUrl : fallbackImageUrl,
+        ownerId: companyId,
+        ownerKind,
+        ownerLabel,
+        priority,
+        qualityTierBehavior: 'static-billboard',
+        screenSlotId: null,
+        source,
+        valueTier: tier === 'hero' ? 'hero' : tier === 'elite' ? 'premium' : 'standard',
+      },
       id: `${socket.id}-assignment`,
       imageUrl,
       label,
@@ -471,6 +504,7 @@ export function buildZoneScreenAssignmentPlan(args: {
         ...renderIntent,
         primitives: buildAssignmentPrimitives({
           accentColor,
+          fallbackBillboardUrl: fallbackImageUrl,
           imageUrl,
           intent: renderIntent,
           label,

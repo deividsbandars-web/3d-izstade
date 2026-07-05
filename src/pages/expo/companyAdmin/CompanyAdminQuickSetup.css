@@ -1,0 +1,375 @@
+.company-admin-quick-setup label {
+  color: #cbd5e1;
+  display: block;
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
+.company-admin-quick-setup input:not([type='file']),
+.company-admin-quick-setup select,
+.company-admin-quick-setup textarea {
+  background: rgba(15, 23, 42, 0.84);
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 8px;
+  box-sizing: border-box;
+  color: #f8fafc;
+  display: block;
+  font: inherit;
+  margin-top: 7px;
+  min-height: 42px;
+  padding: 10px 12px;
+  width: 100%;
+}
+
+.company-admin-quick-setup textarea {
+  line-height: 1.45;
+  resize: vertical;
+}
+
+.company-admin-quick-setup input::placeholder,
+.company-admin-quick-setup textarea::placeholder {
+  color: #64748b;
+}
+
+.company-admin-quick-setup input:focus,
+.company-admin-quick-setup select:focus,
+.company-admin-quick-setup textarea:focus {
+  border-color: #67e8f9;
+  outline: 2px solid rgba(103, 232, 249, 0.14);
+  outline-offset: 1px;
+}
+
+.company-admin-campaign-status {
+  border: 1px solid rgba(148, 163, 184, 0.32);
+  border-radius: 999px;
+  color: #cbd5e1;
+  font-size: 0.72rem;
+  font-weight: 900;
+  padding: 6px 10px;
+}
+
+.company-admin-campaign-status.status-submitted {
+  border-color: rgba(250, 204, 21, 0.48);
+  color: #fde68a;
+}
+
+.company-admin-campaign-status.status-approved,
+.company-admin-campaign-status.status-live {
+  border-color: rgba(52, 211, 153, 0.48);
+  color: #86efac;
+}
+
+.company-admin-campaign-status.status-rejected {
+  border-color: rgba(248, 113, 113, 0.48);
+  color: #fca5a5;
+}
+
+.company-admin-scope-banner {
+  align-items: start;
+  background: rgba(8, 47, 73, 0.24);
+  border: 1px solid rgba(103, 232, 249, 0.22);
+  border-radius: 8px;
+  display: grid;
+  gap: 16px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  margin-top: 20px;
+  padding: 14px;
+}
+
+.company-admin-scope-title {
+  color: #f8fafc;
+  font-size: 0.96rem;
+  font-weight: 950;
+}
+
+.company-admin-scope-banner p {
+  color: #94a3b8;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  margin: 6px 0 0;
+}
+
+.company-admin-scope-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 12px;
+}
+
+.company-admin-scope-pills span {
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 999px;
+  color: #bae6fd;
+  font-size: 0.68rem;
+  font-weight: 900;
+  padding: 5px 9px;
+}
+
+.company-admin-scope-actions {
+  align-self: center;
+}
+
+.company-admin-help-grid {
+  border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+  border-top: 1px solid rgba(148, 163, 184, 0.18);
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  margin-top: 18px;
+  padding: 16px 0;
+}
+
+.company-admin-help-grid span {
+  color: #67e8f9;
+  display: block;
+  font-size: 0.68rem;
+  font-weight: 950;
+}
+
+.company-admin-help-grid strong {
+  color: #f8fafc;
+  display: block;
+  font-size: 0.86rem;
+  margin-top: 5px;
+}
+
+.company-admin-help-grid p {
+  color: #94a3b8;
+  font-size: 0.72rem;
+  line-height: 1.45;
+  margin: 5px 0 0;
+}
+
+.company-admin-selected-screen {
+  background: rgba(15, 23, 42, 0.58);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 8px;
+  margin-bottom: 14px;
+  padding: 14px;
+}
+
+.company-admin-selected-screen-layout {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: minmax(180px, 0.72fr) minmax(0, 1fr);
+}
+
+.company-admin-selected-screen-window {
+  background: linear-gradient(180deg, rgba(186, 230, 253, 0.84), rgba(51, 65, 85, 0.78) 42%, rgba(2, 6, 23, 0.96) 43%, rgba(15, 23, 42, 0.98));
+  border: 5px solid rgba(2, 6, 23, 0.92);
+  border-radius: 8px;
+  min-height: 158px;
+  overflow: hidden;
+  position: relative;
+}
+
+.company-admin-selected-screen-window::before,
+.company-admin-selected-screen-window::after {
+  background: rgba(15, 23, 42, 0.82);
+  content: '';
+  position: absolute;
+}
+
+.company-admin-selected-screen-window::before {
+  bottom: 0;
+  left: 49%;
+  top: 0;
+  width: 3px;
+}
+
+.company-admin-selected-screen-window::after {
+  height: 3px;
+  left: 0;
+  right: 0;
+  top: 48%;
+}
+
+.company-admin-selected-screen-road {
+  background: linear-gradient(180deg, rgba(148, 163, 184, 0.16), rgba(15, 23, 42, 0.78));
+  bottom: 0;
+  clip-path: polygon(43% 0, 57% 0, 88% 100%, 12% 100%);
+  left: 0;
+  position: absolute;
+  right: 0;
+  top: 48%;
+}
+
+.company-admin-selected-screen-frame {
+  background: linear-gradient(145deg, rgba(2, 6, 23, 0.98), rgba(8, 47, 73, 0.96));
+  border: 2px solid #67e8f9;
+  border-radius: 5px;
+  display: grid;
+  overflow: hidden;
+  padding: 7px;
+  position: absolute;
+  text-align: center;
+}
+
+.company-admin-selected-screen-frame span {
+  color: #bae6fd;
+  font-size: 0.5rem;
+}
+
+.company-admin-selected-screen-frame strong {
+  align-self: center;
+  color: #f8fafc;
+  font-size: 0.74rem;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.company-admin-selected-screen.is-empty {
+  border-color: rgba(250, 204, 21, 0.3);
+}
+
+.company-admin-selected-screen span {
+  color: #67e8f9;
+  display: block;
+  font-size: 0.68rem;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.company-admin-selected-screen strong {
+  color: #f8fafc;
+  display: block;
+  font-size: 1rem;
+  margin-top: 5px;
+}
+
+.company-admin-selected-screen dl {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(135px, 1fr));
+  margin: 14px 0 0;
+}
+
+.company-admin-selected-screen dt {
+  color: #94a3b8;
+  font-size: 0.66rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.company-admin-selected-screen dd {
+  color: #e2e8f0;
+  font-size: 0.78rem;
+  font-weight: 850;
+  margin: 4px 0 0;
+}
+
+.company-admin-selected-screen p,
+.company-admin-screen-distinction span {
+  color: #94a3b8;
+  display: block;
+  font-size: 0.74rem;
+  line-height: 1.45;
+  margin: 10px 0 0;
+}
+
+.company-admin-screen-distinction {
+  background: rgba(15, 23, 42, 0.5);
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  border-radius: 8px;
+  margin-bottom: 16px;
+  padding: 12px 14px;
+}
+
+.company-admin-city-slot-choice {
+  align-items: center;
+  border-radius: 6px;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(0, 1fr) minmax(104px, auto);
+  padding: 13px 14px;
+  text-align: left;
+  width: 100%;
+}
+
+.company-admin-screen-distinction strong {
+  color: #f8fafc;
+  display: block;
+  font-size: 0.82rem;
+}
+
+.company-admin-campaign-schedule {
+  align-items: end;
+  background: rgba(15, 23, 42, 0.56);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 8px;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(150px, 0.75fr) minmax(150px, 0.75fr) minmax(210px, 1fr);
+  margin-bottom: 18px;
+  padding: 14px;
+}
+
+.company-admin-campaign-estimate {
+  align-self: stretch;
+  border-left: 1px solid rgba(148, 163, 184, 0.2);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding-left: 14px;
+}
+
+.company-admin-campaign-estimate span,
+.company-admin-campaign-estimate small {
+  color: #94a3b8;
+  font-size: 0.7rem;
+}
+
+.company-admin-campaign-estimate strong {
+  color: #f8fafc;
+  font-size: 0.95rem;
+  margin: 4px 0;
+}
+
+@media (max-width: 680px) {
+  .company-admin-scope-banner {
+    grid-template-columns: 1fr;
+  }
+
+  .company-admin-scope-actions {
+    align-self: stretch;
+  }
+
+  .company-admin-scope-actions .btn-glass {
+    width: 100%;
+  }
+
+  .company-admin-selected-screen-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .company-admin-campaign-schedule {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .company-admin-campaign-estimate {
+    border-left: 0;
+    border-top: 1px solid rgba(148, 163, 184, 0.2);
+    grid-column: 1 / -1;
+    padding-left: 0;
+    padding-top: 12px;
+  }
+}
+
+@media (max-width: 440px) {
+  .company-admin-city-slot-choice {
+    grid-template-columns: 1fr;
+  }
+
+  .company-admin-city-slot-choice > span:last-child {
+    justify-items: start !important;
+    text-align: left !important;
+  }
+
+  .company-admin-campaign-schedule {
+    grid-template-columns: 1fr;
+  }
+
+  .company-admin-campaign-estimate {
+    grid-column: auto;
+  }
+}

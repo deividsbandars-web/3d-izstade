@@ -311,6 +311,59 @@ export function resolveExpoZoneRuntimeState(input: ResolveExpoZoneRuntimeStateIn
   };
 }
 
+const buildZoneRuntimeMapSignature = <T extends string>(record: Record<string, T>) => (
+  Object.entries(record)
+    .sort(([leftId], [rightId]) => leftId.localeCompare(rightId))
+    .map(([id, value]) => `${id}:${value}`)
+);
+
+const buildZoneRuntimeDetailSignature = (record: Record<string, ExpoZoneGroupDetailState>) => (
+  Object.entries(record)
+    .sort(([leftId], [rightId]) => leftId.localeCompare(rightId))
+    .map(([id, detail]) => [
+      id,
+      detail.detailMode,
+      detail.hidden,
+      detail.hiddenCandidate,
+      detail.reduced,
+    ].join(':'))
+);
+
+export function buildExpoZoneRuntimeStateSignature(state: ExpoZoneRuntimeState) {
+  return JSON.stringify({
+    activeZoneId: state.activeZoneId,
+    adjacentZoneIds: state.adjacentZoneIds,
+    allowLowQualityCull: state.allowLowQualityCull,
+    alwaysVisibleGroupCount: state.alwaysVisibleGroupCount,
+    fullGroupCount: state.fullGroupCount,
+    hiddenCandidateGroupIds: state.hiddenCandidateGroupIds,
+    hiddenGroupIds: state.hiddenGroupIds,
+    operatorZoneId: state.operatorZoneId,
+    previousActiveZoneId: state.previousActiveZoneId,
+    qualityTier: state.qualityTier,
+    reducedGroupIds: state.reducedGroupIds,
+    registeredZoneGroupCount: state.registeredZoneGroupCount,
+    runtimeCaptureSafe: state.runtimeCaptureSafe,
+    visibilityPolicyLabel: state.visibilityPolicyLabel,
+    visibleZoneGroupCount: state.visibleZoneGroupCount,
+    zoneCullBlockedReason: state.zoneCullBlockedReason,
+    zoneCullEnabled: state.zoneCullEnabled,
+    zoneCullRequested: state.zoneCullRequested,
+    zoneDetailPolicyLabel: state.zoneDetailPolicyLabel,
+    zoneGroupDetails: buildZoneRuntimeDetailSignature(state.zoneGroupDetails),
+    zoneVisibilityMap: buildZoneRuntimeMapSignature(state.zoneVisibilityMap),
+  });
+}
+
+export function resolveStableExpoZoneRuntimeState(
+  current: ExpoZoneRuntimeState,
+  next: ExpoZoneRuntimeState,
+) {
+  return buildExpoZoneRuntimeStateSignature(current) === buildExpoZoneRuntimeStateSignature(next)
+    ? current
+    : next;
+}
+
 export function useExpoZoneRuntimeState(input: UseExpoZoneRuntimeStateInput): ExpoZoneRuntimeState {
   const latestInputRef = useRef(input);
   latestInputRef.current = input;
@@ -325,20 +378,24 @@ export function useExpoZoneRuntimeState(input: UseExpoZoneRuntimeStateInput): Ex
     [],
   );
   const [state, setState] = useState<ExpoZoneRuntimeState>(initialState);
+  const stateRef = useRef(initialState);
 
   useEffect(() => {
     const update = () => {
-      setState((current) => {
-        const effectiveInput = resolveEffectiveRuntimeInput(latestInputRef.current);
-        const nextActiveZoneId = nextActiveZoneProbe(effectiveInput);
-        const next = resolveExpoZoneRuntimeState({
-          ...effectiveInput,
-          previousActiveZoneId: current.activeZoneId === nextActiveZoneId
-            ? current.previousActiveZoneId
-            : current.activeZoneId,
-        });
-        return next;
+      const current = stateRef.current;
+      const effectiveInput = resolveEffectiveRuntimeInput(latestInputRef.current);
+      const nextActiveZoneId = nextActiveZoneProbe(effectiveInput);
+      const next = resolveExpoZoneRuntimeState({
+        ...effectiveInput,
+        previousActiveZoneId: current.activeZoneId === nextActiveZoneId
+          ? current.previousActiveZoneId
+          : current.activeZoneId,
       });
+      const stable = resolveStableExpoZoneRuntimeState(current, next);
+      if (stable !== current) {
+        stateRef.current = stable;
+        setState(stable);
+      }
     };
 
     const timer = window.setInterval(update, 400);

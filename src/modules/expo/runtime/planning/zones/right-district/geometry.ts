@@ -17,11 +17,11 @@ function createRightDistrictPlanningSource(
 }
 
 function isRightDistrictPlane(plane: CityPlane) {
-  return plane.position[0] > 40 && plane.position[2] > -2200;
+  return plane.position[0] > 260 && plane.position[2] > -2200;
 }
 
 function isRightDistrictMass(mass: CityMass) {
-  return mass.position[0] > 40 && mass.position[2] > -2200;
+  return mass.position[0] > 260 && mass.position[2] > -2200;
 }
 
 function foundryVerticalPlacement({

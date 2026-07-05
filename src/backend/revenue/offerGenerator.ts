@@ -1,4 +1,4 @@
-import { llmService } from '../ai/llmService.js';
+import { createSystemLlmMetering, llmService } from '../ai/llmService.js';
 import { websiteScraper } from '../dataSources/websiteScraper.js';
 import { logger } from '../logging/logger.js';
 import { supabaseClient } from '../../lib/supabaseClient.js';
@@ -44,7 +44,10 @@ Respond with a JSON object:
   "monetization_hook": "Specific value proposition"
 }`;
 
-      const { text, error: llmError } = await llmService.generateText(prompt, { temperature: 0.6 });
+      const { text, error: llmError } = await llmService.generateText(prompt, {
+        metering: createSystemLlmMetering('offer-generator', 'generate-personalized-offer'),
+        temperature: 0.6,
+      });
       if (llmError || !text) throw new Error(llmError || 'LLM failed to generate offer');
 
       const jsonMatch = text.match(/\{[\s\S]*\}/);

@@ -59,7 +59,11 @@ export interface PixelStreamingStatusRequestContext {
 }
 
 function getStatusBaseUrl() {
-  return getBackendRuntimeEnv().signalingStatusBaseUrl;
+  const { signalingStatusBaseUrl } = getBackendRuntimeEnv();
+  if (!signalingStatusBaseUrl) {
+    throw new Error('PIXEL_STREAMING_RUNTIME_DISABLED:SIGNALING_STATUS_BASE_URL');
+  }
+  return signalingStatusBaseUrl;
 }
 
 function getTimeoutMs() {

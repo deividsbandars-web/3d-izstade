@@ -38,9 +38,12 @@ type ModularHomeQuoteAdminDetailResponse = {
 
 type ModularHomeQuoteAdminStatusResponse = {
   quote?: {
+    consultant_assignment?: string | null;
+    follow_up_required?: boolean | null;
     id?: string | null;
     internal_note?: string | null;
     status?: string | null;
+    status_history?: unknown;
   } | null;
   success?: boolean;
   updatedBy?: string | null;
@@ -107,9 +110,14 @@ export async function updateModularHomeQuoteAdminStatus(
   quoteId: string,
   status: ModularHomeQuoteAdminStatus,
   internalNote?: string,
+  consultantAssignment?: string,
+  followUpRequired?: boolean,
 ): Promise<{
+  consultantAssignment: string;
+  followUpRequired: boolean;
   id: string | null;
   internalNote: string;
+  statusHistory: unknown[];
   status: ModularHomeQuoteAdminStatus;
   updatedBy: string | null;
 }> {
@@ -119,14 +127,50 @@ export async function updateModularHomeQuoteAdminStatus(
 
   const response = await serverApiPatch<ModularHomeQuoteAdminStatusResponse>(
     `/api/modular-home/quotes/${encodeURIComponent(quoteId)}/status`,
-    { internalNote, status },
+    { consultantAssignment, followUpRequired, internalNote, status },
   );
   const normalizedStatus = String(response.quote?.status || status).toLowerCase() as ModularHomeQuoteAdminStatus;
 
   return {
+    consultantAssignment: response.quote?.consultant_assignment ?? consultantAssignment ?? '',
+    followUpRequired: Boolean(response.quote?.follow_up_required ?? followUpRequired ?? false),
     id: response.quote?.id ?? null,
     internalNote: response.quote?.internal_note ?? internalNote ?? '',
+    statusHistory: Array.isArray(response.quote?.status_history) ? response.quote.status_history : [],
     status: normalizedStatus,
+    updatedBy: response.updatedBy ?? null,
+  };
+}
+
+export async function updateModularHomeQuoteAdminOps(
+  quoteId: string,
+  input: {
+    consultantAssignment?: string;
+    followUpRequired?: boolean;
+    internalNote?: string;
+  },
+): Promise<{
+  consultantAssignment: string;
+  followUpRequired: boolean;
+  id: string | null;
+  internalNote: string;
+  status: ModularHomeQuoteAdminStatus;
+  statusHistory: unknown[];
+  updatedBy: string | null;
+}> {
+  const response = await serverApiPatch<ModularHomeQuoteAdminStatusResponse>(
+    `/api/modular-home/quotes/${encodeURIComponent(quoteId)}/ops`,
+    input,
+  );
+  const normalizedStatus = String(response.quote?.status || 'new').toLowerCase() as ModularHomeQuoteAdminStatus;
+
+  return {
+    consultantAssignment: response.quote?.consultant_assignment ?? input.consultantAssignment ?? '',
+    followUpRequired: Boolean(response.quote?.follow_up_required ?? input.followUpRequired ?? false),
+    id: response.quote?.id ?? null,
+    internalNote: response.quote?.internal_note ?? input.internalNote ?? '',
+    status: normalizedStatus,
+    statusHistory: Array.isArray(response.quote?.status_history) ? response.quote.status_history : [],
     updatedBy: response.updatedBy ?? null,
   };
 }

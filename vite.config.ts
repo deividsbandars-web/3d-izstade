@@ -1,7 +1,12 @@
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 import { execSync } from 'node:child_process'
+import { rmSync } from 'node:fs'
+import path from 'node:path'
+import type { Plugin, ResolvedConfig } from 'vite'
+
+const RELEASE_PRUNED_PUBLIC_PATHS = ['textures/expo']
 
 function resolveBuildStamp() {
   const commit =
@@ -20,15 +25,43 @@ function resolveBuildStamp() {
   return `${target}:${commit.slice(0, 12)}`
 }
 
-export default defineConfig({
+function isFeatureFlagEnabled(value: string | undefined) {
+  return ['1', 'true', 'yes', 'on'].includes(value?.trim().toLowerCase() ?? '')
+}
+
+function releasePublicAssetPrunePlugin(): Plugin {
+  let resolvedConfig: ResolvedConfig
+
+  return {
+    name: 'warpala-release-public-asset-prune',
+    apply: 'build',
+    enforce: 'post',
+    configResolved(config) {
+      resolvedConfig = config
+    },
+    closeBundle() {
+      const outDir = path.resolve(resolvedConfig.root, resolvedConfig.build.outDir)
+      for (const relativePath of RELEASE_PRUNED_PUBLIC_PATHS) {
+        rmSync(path.join(outDir, relativePath), { recursive: true, force: true })
+      }
+    },
+  }
+}
+
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), '')
+
+  return {
   define: {
     global: 'window',
     __WARPALA_EXPO_BUILD_STAMP__: JSON.stringify(resolveBuildStamp()),
+    __WARPALA_ENABLE_DEMO_ROUTES__: JSON.stringify(isFeatureFlagEnabled(env.VITE_ENABLE_DEMO)),
   },
   optimizeDeps: {
     entries: ['index.html'],
   },
   resolve: {
+    dedupe: ['three', '@react-three/fiber', '@react-three/drei', 'react', 'react-dom'],
     alias: {
       ioredis: '/src/shims/ioredis-browser.ts',
     },
@@ -39,9 +72,9 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
       manifest: {
-        name: 'Platformu Centrs',
-        short_name: 'PCentrs',
-        description: 'Būvniecības Metaversa Izstāde un PRO Kalkulatori',
+        name: 'Warpala Sponsor Expo',
+        short_name: 'Warpala',
+        description: 'Web3D sponsor expo, city screens, booths, and modular-home studio',
         theme_color: '#0f172a',
         background_color: '#0f172a',
         display: 'standalone',
@@ -65,12 +98,14 @@ export default defineConfig({
         ]
       },
       workbox: {
-        maximumFileSizeToCacheInBytes: 5000000
+        maximumFileSizeToCacheInBytes: 5000000,
+        globIgnores: ['**/textures/expo/**']
       },
       devOptions: {
-        enabled: false // IZSLEEDZAM CACHING IZSTRĀDES LAIKĀ!!!
+        enabled: false // Disable dev caching during expo iteration.
       }
-    })
+    }),
+    releasePublicAssetPrunePlugin()
   ],
   server: {
     proxy: {
@@ -82,19 +117,28 @@ export default defineConfig({
     }
   },
   build: {
+    chunkSizeWarningLimit: 1450,
     rollupOptions: {
       output: {
         manualChunks(id) {
+          const normalizedId = id.replaceAll('\\', '/')
+          if (normalizedId.includes('/src/modules/expo/runtime/modularHome/')) {
+            return 'modular-home'
+          }
+
           if (id.includes('node_modules')) {
+            if (normalizedId.includes('/node_modules/three/')) {
+              return 'three-core'
+            }
+
             if (
-              id.includes('/three/') ||
               id.includes('@react-three') ||
               id.includes('three-stdlib') ||
               id.includes('@pmndrs') ||
               id.includes('troika-') ||
               id.includes('suspend-react')
             ) {
-              return 'three-vendor'
+              return 'react-three-vendor'
             }
 
             if (
@@ -110,14 +154,12 @@ export default defineConfig({
               return 'supabase-vendor'
             }
 
-            if (id.includes('@stripe') || id.includes('/stripe/')) {
-              return 'stripe-vendor'
-            }
           }
 
           return undefined
         }
       }
     }
+  }
   }
 })

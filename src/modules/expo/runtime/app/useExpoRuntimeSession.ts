@@ -3,7 +3,7 @@ import type { ExpoMode } from '../../state/expoRuntime';
 import { resolveExpoOperatorSession } from '../operator';
 import { isSalesDemoEnabled } from '../salesDemo/salesDemoFlags';
 import { isBoothProductPreviewEnabled } from '../boothProduct/boothProductPreviewFlags';
-import { isHomeDemoEnabled } from '../modularHome/homeDemoFlags';
+import { isHomeDemoEnabled, isHomeStudioEnabled } from '../modularHome/homeDemoFlags';
 import { isHomeUploadPreviewEnabled, isHomeUploadPreviewRequested } from '../modularHome/homeUploadPreviewFlags';
 
 export type ExpoMobileMoveIntent = {
@@ -52,13 +52,27 @@ export function useExpoRuntimeSession() {
   const operatorSession = useMemo(() => resolveExpoOperatorSession(), []);
   const salesDemoEnabled = useMemo(() => isSalesDemoEnabled(), []);
   const homeDemoEnabled = useMemo(() => isHomeDemoEnabled(), []);
+  const homeStudioEnabled = useMemo(() => isHomeStudioEnabled(), []);
   const homeUploadPreviewRequested = useMemo(() => isHomeUploadPreviewRequested(), []);
   const homeUploadPreviewEnabled = useMemo(() => isHomeUploadPreviewEnabled(), []);
   const boothProductPreviewEnabled = useMemo(() => isBoothProductPreviewEnabled(), []);
+  const communityQaEnabled = useMemo(() => (
+    import.meta.env.DEV
+    && typeof window !== 'undefined'
+    && new URLSearchParams(window.location.search).get('communityQa') === '1'
+  ), []);
   const previewSessionEnabled = salesDemoEnabled || boothProductPreviewEnabled || homeDemoEnabled || homeUploadPreviewRequested;
   const [mode, setModeState] = useState<ExpoMode>(() => {
     if (operatorSession.enabled) {
       return 'fly';
+    }
+
+    if (homeStudioEnabled) {
+      return 'walk';
+    }
+
+    if (communityQaEnabled) {
+      return 'walk';
     }
 
     if (salesDemoEnabled || homeDemoEnabled || homeUploadPreviewRequested) {
@@ -71,8 +85,8 @@ export function useExpoRuntimeSession() {
   const [isTouchDevice, setIsTouchDevice] = useState(() => detectTouchDevice());
   const setMode = useCallback((nextMode: ExpoMode) => {
     setMobileMoveIntent(EXPO_MOBILE_MOVE_IDLE);
-    setModeState(nextMode);
-  }, []);
+    setModeState(homeStudioEnabled && nextMode === 'fly' ? 'walk' : nextMode);
+  }, [homeStudioEnabled]);
 
   const initialUrlFocus = useMemo(() => {
     if (typeof window === 'undefined') {

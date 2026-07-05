@@ -1,7 +1,7 @@
 import { getSupabaseAdminClient } from '../../lib/supabaseAdmin.js';
-import { logger } from '../../logging/logger';
+import { logger } from '../../logging/logger.js';
 import { EXPO_SCENE_CANONICAL_DISTRICTS } from '../../../shared/expo/sceneContract.js';
-import { listExpoBooths } from '../data/expoBoothStore';
+import { listExpoBooths } from '../data/expoBoothStore.js';
 
 export const cityMapService = {
   /**

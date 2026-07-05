@@ -1,5 +1,30 @@
 # Launch Dossier
 
+## 2026-06-30 Phase 6.2 Preflight Update
+
+Latest production go/no-go preflight: [PRODUCTION_GO_NO_GO_20260630.md](/C:/3d/docs/PRODUCTION_GO_NO_GO_20260630.md)
+
+Current status: Phase 6.2 production promotion is `NO-GO`. Local/staging technical
+gates checked in the preflight are green where listed, but production remains blocked
+on explicit production authorization, CI run evidence, live production RLS verification,
+constrained-mobile FPS evidence, and human product visual acceptance.
+
+CI note: `release/v1-stabilization` is published, but manual dispatch of
+`release-gate.yml` is blocked by GitHub because the workflow is not on the default branch.
+
+Performance note: fresh staging constrained-mobile static QA passed, but constrained-mobile
+motion QA failed on >50ms stutter count in two runs. Production remains blocked on that
+evidence.
+
+## 2026-06-30 Phase 6.1 Update
+
+Latest staging snapshot: [LAUNCH_READINESS_SNAPSHOT_20260630.md](/C:/3d/docs/LAUNCH_READINESS_SNAPSHOT_20260630.md)
+
+Current status: Phase 6.1 staging deploy and verification are complete. The prebuilt
+frontend deployment is promoted to `staging.30sek24.com`, backend staging is healthy, and
+staging readiness, browser smoke, and quote round-trip gates are green. No production
+promotion was performed and `productVisualAccepted=false` remains.
+
 Date: 2026-04-17  
 Phase: `P9-T2`  
 Branch snapshot: `work/launch-dossier-p9`  

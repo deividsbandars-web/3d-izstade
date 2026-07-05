@@ -7,11 +7,12 @@ import type {
 } from '../world-contract';
 import { ExpoWorldSceneRoot } from '../runtime/world/scene/ExpoWorldSceneRoot';
 import { setWorldSceneUserData } from '../runtime/world/scene/worldSceneUserData';
+import type { ExpoPresenceGuest } from '../runtime/community/expoPresencePolicy';
 
 interface ExpoWorldSceneProps {
   activeZone: any;
   debug: boolean;
-  guests: any[];
+  guests: ExpoPresenceGuest[];
   inspectionEnabled: boolean;
   isTouchDevice: boolean;
   mobileMoveIntent?: { f: boolean; b: boolean; l: boolean; r: boolean; s?: boolean; turnL?: boolean; turnR?: boolean; jump?: boolean; lift?: boolean; lookX?: number; lookY?: number };
@@ -43,7 +44,7 @@ interface ExpoWorldSceneProps {
 export function ExpoWorldScene({
   activeZone,
   debug,
-  guests: _guests,
+  guests,
   inspectionEnabled,
   isTouchDevice,
   mobileMoveIntent,
@@ -63,6 +64,7 @@ export function ExpoWorldScene({
     <ExpoWorldSceneRoot
       activeZone={activeZone}
       debug={debug}
+      guests={guests}
       inspectionEnabled={inspectionEnabled}
       isTouchDevice={isTouchDevice}
       mobileMoveIntent={mobileMoveIntent}

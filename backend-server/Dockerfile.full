@@ -23,8 +23,19 @@ RUN --mount=type=cache,target=/root/.npm npm ci --no-audit --no-fund --prefer-of
 RUN --mount=type=cache,target=/root/.npm cd backend-server && npm ci --no-audit --no-fund --prefer-offline
 
 # Copy only the backend/full-platform inputs needed by backend-server/tsconfig.json.
-COPY backend-server ./backend-server
+# Keep local env files, tests, dist output, and worker smoke logs out of build layers.
+COPY backend-server/env.ts backend-server/server.ts backend-server/worker.ts backend-server/types.d.ts backend-server/tsconfig.json ./backend-server/
+COPY backend-server/config ./backend-server/config
+COPY backend-server/controllers ./backend-server/controllers
+COPY backend-server/events ./backend-server/events
+COPY backend-server/lib ./backend-server/lib
+COPY backend-server/middleware ./backend-server/middleware
+COPY backend-server/observability ./backend-server/observability
+COPY backend-server/routes/api.ts backend-server/routes/landing.ts ./backend-server/routes/
+COPY backend-server/schemas ./backend-server/schemas
+COPY backend-server/services ./backend-server/services
 COPY src ./src
+COPY docs/booth-slot-bank.json ./docs/booth-slot-bank.json
 COPY tsconfig.json tsconfig.app.json tsconfig.node.json ./
 
 RUN cd backend-server && npm run build
@@ -35,17 +46,15 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 
-# Runtime keeps the source tree plus installed dependencies so staging can run
-# the full backend through tsx without being blocked by the current ESM output
-# layout in backend-server/dist.
+# Runtime ships the compiled full backend. The source tree is intentionally not
+# copied into the release image so production cannot drift back to tsx.
 COPY --from=builder /app/package.json /app/package-lock.json ./
 COPY --from=builder /app/backend-server/package.json /app/backend-server/package-lock.json ./backend-server/
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/backend-server/node_modules ./backend-server/node_modules
-COPY --from=builder /app/backend-server ./backend-server
-COPY --from=builder /app/src ./src
-COPY --from=builder /app/tsconfig.json /app/tsconfig.app.json /app/tsconfig.node.json ./
+COPY --from=builder /app/backend-server/dist ./backend-server/dist
+COPY --from=builder /app/docs/booth-slot-bank.json ./docs/booth-slot-bank.json
 
-EXPOSE 3001
+EXPOSE 3000 3001
 
-CMD ["./node_modules/.bin/tsx", "backend-server/server.ts"]
+CMD ["node", "backend-server/dist/backend-server/server.js"]

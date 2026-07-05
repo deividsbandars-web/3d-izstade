@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 
 interface Project {
   id: string;
@@ -11,11 +11,7 @@ export default function Dashboard({ user, onOpenProject }: { user: any, onOpenPr
   const [newProjectName, setNewProjectName] = useState('');
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    fetchProjects();
-  }, [user]);
-
-  const fetchProjects = async () => {
+  const fetchProjects = useCallback(async () => {
     try {
       const res = await fetch(`http://localhost:3000/api/projects?userId=${user.id}`);
       const data = await res.json();
@@ -25,7 +21,11 @@ export default function Dashboard({ user, onOpenProject }: { user: any, onOpenPr
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [user.id]);
+
+  useEffect(() => {
+    fetchProjects();
+  }, [fetchProjects]);
 
   const handleCreateProject = async (e: React.FormEvent) => {
     e.preventDefault();

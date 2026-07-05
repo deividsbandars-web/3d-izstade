@@ -1,10 +1,12 @@
-import Redis from 'ioredis';
+import { Redis } from 'ioredis';
 import { logger } from '../logging/logger.js';
 import { supabaseClient } from '../../lib/supabaseClient.js';
 import { socialPublisher } from './socialPublisher.js';
 import { communityPublisher } from './communityPublisher.js';
+import { getRedisTlsOptions, resolveRedisConnectionPolicy } from '../infrastructure/redisConnectionPolicy.js';
 
-const redis = new Redis(process.env.REDIS_URL || 'redis://localhost:6379');
+const redisPolicy = resolveRedisConnectionPolicy(process.env.REDIS_URL || 'redis://localhost:6379');
+const redis = new Redis(redisPolicy.url, getRedisTlsOptions(redisPolicy));
 
 /**
  * Manages scheduled content publishing across multiple platforms.

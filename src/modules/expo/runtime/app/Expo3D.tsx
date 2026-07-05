@@ -1,10 +1,13 @@
 import { useEffect, useMemo, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { configureTextBuilder } from 'troika-three-text';
+import { WebGLUnsupported } from '../../../../components/WebGLUnsupported';
+import { useWebGLSupport } from '../../../../components/webglSupport';
 import { useZoneSystem } from '../../../../hooks/useZoneSystem';
+import type { ExpoStartView } from '../../../../shared/expo/worldContract';
 import { ExpoWorldHud } from './ExpoWorldHud';
 import { useExpoPresence } from '../../hooks/useExpoPresence';
 import { useExpoSceneData } from '../../hooks/useExpoSceneData';
-import { usePixelStreamingStatus } from '../../hooks/usePixelStreamingStatus';
 import { buildExpoWorldContract } from '../../world-contract';
 import { useExpoOperatorLayer } from '../operator';
 import { ExpoRuntimeShell } from './ExpoRuntimeShell';
@@ -16,11 +19,66 @@ import { useExpoRuntimeSession } from './useExpoRuntimeSession';
 import { WorldInspectionProvider } from '../world/inspection/worldInspectionState';
 import { SalesDemoGuideOverlay } from '../salesDemo';
 import { SponsorConciergeLeadCaptureOverlay } from '../boothProduct';
-import { ModularHomeDemoOverlay, ModularHomeUploadPreviewPanel } from '../modularHome';
+import { isHomeStudioEnabled, ModularHomeDemoOverlay, ModularHomeUploadPreviewPanel } from '../modularHome';
+import { createCanonicalModularHomeStudioPath } from '../modularHome/modularHomeShareUrl';
+import { GALA_PREVIEW_POSITION, GALA_PREVIEW_SCALE } from '../modularHome/GalaHouseDimensions';
+import { GALA_GEOMETRY_LEVELS, planXToLocalX } from '../modularHome/GalaFloorplan';
+import { MODULAR_HOME_PREVIEW_CONFIG } from '../modularHome/modularHomeConfig';
+import { ExpoCommunityOverlay } from '../community';
+
+configureTextBuilder({ defaultFontURL: '/fonts/LiberationSans-Regular.ttf' });
+
+function galaPlanPointToWorld(planX: number, planY: number, planZ: number): [number, number, number] {
+  const unrotatedX = GALA_PREVIEW_POSITION.x + (planXToLocalX(planX) * GALA_PREVIEW_SCALE);
+  const unrotatedZ = GALA_PREVIEW_POSITION.z + (planZ * GALA_PREVIEW_SCALE);
+  const cos = Math.cos(MODULAR_HOME_PREVIEW_CONFIG.rotationY);
+  const sin = Math.sin(MODULAR_HOME_PREVIEW_CONFIG.rotationY);
+
+  return [
+    (unrotatedX * cos) + (unrotatedZ * sin),
+    GALA_PREVIEW_POSITION.y + (planY * GALA_PREVIEW_SCALE),
+    (-unrotatedX * sin) + (unrotatedZ * cos),
+  ];
+}
+
+function galaPlanToWorld(planX: number, planZ: number): [number, number, number] {
+  return galaPlanPointToWorld(planX, GALA_GEOMETRY_LEVELS.cameraEyeHeightMeters, planZ);
+}
+
+const HOME_STUDIO_EXTERIOR_START_VIEW: ExpoStartView = {
+  // Home studio walk mode starts at human eye height; QA shot presets remain separate and unchanged.
+  // Start farther back and off-axis so first load reads as a complete house, not a facade close-up.
+  lookAt: galaPlanPointToWorld(5.1, 1.45, 0.05),
+  position: galaPlanToWorld(2.0, -16.8),
+  source: 'arrival-main',
+};
+
+const HOME_STUDIO_INTERIOR_START_VIEW: ExpoStartView = {
+  lookAt: galaPlanToWorld(5.55, -0.35),
+  position: galaPlanToWorld(2.1, 1.55),
+  source: 'arrival-main',
+};
+
+const COMMUNITY_QA_START_VIEW: ExpoStartView = {
+  lookAt: [-30, 3.2, -36],
+  position: [-5, 4.6, 8],
+  source: 'arrival-main',
+};
 
 export default function Expo3D() {
+  const webglSupport = useWebGLSupport();
   const runtimeSession = useExpoRuntimeSession();
   const { data, isLoading } = useExpoSceneData();
+
+  if (!webglSupport.available) {
+    return (
+      <WebGLUnsupported
+        reason={webglSupport.reason}
+        routeLabel="Web3D Expo"
+        variant="expo"
+      />
+    );
+  }
 
   return (
     <WorldInspectionProvider>
@@ -43,13 +101,29 @@ function ExpoRuntimeExperience({
   runtimeSession: ReturnType<typeof useExpoRuntimeSession>;
 }) {
   const nav = useNavigate();
+  const location = useLocation();
+  const homeStudioEnabled = useMemo(() => isHomeStudioEnabled(), []);
+  const homeStudioViewMode = useMemo(() => {
+    const params = new URLSearchParams(location.search);
+    return params.get('view') === 'interior' ? 'interior' : 'exterior';
+  }, [location.search]);
   const worldContract = useMemo(() => buildExpoWorldContract(data), [data]);
+  const communityQaEnabled = import.meta.env.DEV && new URLSearchParams(location.search).get('communityQa') === '1';
   const inspectionEnabled = import.meta.env.DEV || runtimeSession.operatorSession.enabled;
-  const pixelStreamingStatus = usePixelStreamingStatus();
-  const { guests, playerPos, isMicOn, isSpeaking, setIsMicOn, handlePlayerMove } = useExpoPresence(
+  const { guests, playerPos, isMicOn, isSpeaking, setIsMicOn, presenceStatus, handlePlayerMove } = useExpoPresence(
     runtimeSession.mode,
-    { enabled: !runtimeSession.salesDemoEnabled && !runtimeSession.boothProductPreviewEnabled && !runtimeSession.homeDemoEnabled && !runtimeSession.homeUploadPreviewRequested },
+    { enabled: !homeStudioEnabled && !runtimeSession.salesDemoEnabled && !runtimeSession.boothProductPreviewEnabled && !runtimeSession.homeDemoEnabled && !runtimeSession.homeUploadPreviewRequested },
   );
+  const visibleGuests = useMemo(() => {
+    if (!import.meta.env.DEV || new URLSearchParams(location.search).get('communityQa') !== '1') {
+      return guests;
+    }
+
+    return [
+      { color: '#22d3ee', id: 'qa-visitor-one', isSpeaking: false, position: [-7, 2, -24] as [number, number, number] },
+      { color: '#f59e0b', id: 'qa-visitor-two', isSpeaking: true, position: [8, 2, -35] as [number, number, number] },
+    ];
+  }, [guests, location.search]);
   const { activeZone, zoneSystem } = useZoneSystem(playerPos as any);
   const operatorSceneLayer = useExpoOperatorLayer({
     activeZoneId: activeZone?.id ? String(activeZone.id) : null,
@@ -60,6 +134,11 @@ function ExpoRuntimeExperience({
     setMode: runtimeSession.setMode,
     worldContract,
   });
+  const sceneStartViewOverride = communityQaEnabled
+    ? COMMUNITY_QA_START_VIEW
+    : homeStudioEnabled
+    ? (homeStudioViewMode === 'interior' ? HOME_STUDIO_INTERIOR_START_VIEW : HOME_STUDIO_EXTERIOR_START_VIEW)
+    : operatorSceneLayer.effectiveStartViewOverride;
   const lastOperatorStartViewSignature = useRef<string | null>(null);
 
   useEffect(() => {
@@ -77,7 +156,7 @@ function ExpoRuntimeExperience({
   }, [runtimeSession.operatorSession]);
 
   useEffect(() => {
-    const startView = operatorSceneLayer.effectiveStartViewOverride;
+    const startView = sceneStartViewOverride;
     if (!operatorSceneLayer.session.enabled || !startView) {
       return;
     }
@@ -89,7 +168,7 @@ function ExpoRuntimeExperience({
 
     lastOperatorStartViewSignature.current = signature;
     handlePlayerMove(startView.position);
-  }, [handlePlayerMove, operatorSceneLayer.effectiveStartViewOverride, operatorSceneLayer.session.enabled]);
+  }, [handlePlayerMove, operatorSceneLayer.session.enabled, sceneStartViewOverride]);
 
   // Web3D failures in production should not silently degrade into a black canvas.
   useExpoRuntimeErrorBridge(true);
@@ -98,45 +177,56 @@ function ExpoRuntimeExperience({
     <ExpoRuntimeShell
       hudLayer={(
         <>
-          <ExpoWorldHud
-            guests={guests}
-            isMicOn={isMicOn}
-            isSpeaking={isSpeaking}
-            isTouchDevice={runtimeSession.isTouchDevice}
-            mode={runtimeSession.mode}
-            onMoveTouch={runtimeSession.setMobileMoveIntent}
-            playerPos={playerPos}
-            sectorMarkers={worldContract.sectorMarkers}
-            visualProfile={worldContract.visualProfile}
-            onToggleMic={() => setIsMicOn((value) => !value)}
-            operatorBuildStamp={runtimeSession.operatorSession.enabled ? EXPO_REVIEW_BUILD_STAMP : null}
-            onExit={() => {
-              document.exitPointerLock();
-              runtimeSession.setMode('menu');
-            }}
-          />
-          <SalesDemoGuideOverlay
-            isTouchDevice={runtimeSession.isTouchDevice}
-            mode={runtimeSession.mode}
-            onSetMode={runtimeSession.setMode}
-          />
+          {!homeStudioEnabled ? (
+            <ExpoWorldHud
+              guests={visibleGuests}
+              isMicOn={isMicOn}
+              isSpeaking={isSpeaking}
+              isTouchDevice={runtimeSession.isTouchDevice}
+              mode={runtimeSession.mode}
+              onOpenBoothMarketplace={() => nav('/expo/booth-marketplace')}
+              onOpenCityBoard={() => window.dispatchEvent(new Event('expo:open-community-board'))}
+              onOpenCityScreens={() => nav('/expo/city-screens')}
+              onOpenModularHomes={() => nav(createCanonicalModularHomeStudioPath('exterior'))}
+              onMoveTouch={runtimeSession.setMobileMoveIntent}
+              playerPos={playerPos}
+              presenceStatus={communityQaEnabled ? 'live' : presenceStatus}
+              onRequestSponsorQuote={() => nav('/expo/sponsor-packages#request-quote')}
+              sectorMarkers={worldContract.sectorMarkers}
+              visualProfile={worldContract.visualProfile}
+              onToggleMic={() => setIsMicOn((value) => !value)}
+              operatorBuildStamp={runtimeSession.operatorSession.enabled ? EXPO_REVIEW_BUILD_STAMP : null}
+              onExit={() => {
+                document.exitPointerLock();
+                runtimeSession.setMode('menu');
+              }}
+            />
+          ) : null}
+          {!homeStudioEnabled ? (
+            <SalesDemoGuideOverlay
+              isTouchDevice={runtimeSession.isTouchDevice}
+              mode={runtimeSession.mode}
+              onSetMode={runtimeSession.setMode}
+            />
+          ) : null}
           <ModularHomeDemoOverlay isTouchDevice={runtimeSession.isTouchDevice} />
-          <ModularHomeUploadPreviewPanel isTouchDevice={runtimeSession.isTouchDevice} />
-          <SponsorConciergeLeadCaptureOverlay isTouchDevice={runtimeSession.isTouchDevice} />
+          {!homeStudioEnabled ? <ModularHomeUploadPreviewPanel isTouchDevice={runtimeSession.isTouchDevice} /> : null}
+          {!homeStudioEnabled ? <SponsorConciergeLeadCaptureOverlay isTouchDevice={runtimeSession.isTouchDevice} /> : null}
+          {!homeStudioEnabled ? <ExpoCommunityOverlay isTouchDevice={runtimeSession.isTouchDevice} playerPosition={playerPos as [number, number, number]} /> : null}
         </>
       )}
       isTouchDevice={runtimeSession.isTouchDevice}
       isLoading={isLoading}
       mode={runtimeSession.mode}
       onBack={() => nav('/')}
+      onOpenModularHomes={() => nav(createCanonicalModularHomeStudioPath('exterior'))}
       onSetMode={runtimeSession.setMode}
       operatorLayer={operatorSceneLayer.layer}
-      pixelStreamingStatus={pixelStreamingStatus}
       sceneLayer={(
         <ExpoSceneShell
           activeZone={activeZone}
           debug={operatorSceneLayer.debug}
-          guests={guests}
+          guests={visibleGuests}
           mobileMoveIntent={runtimeSession.mobileMoveIntent}
           isTouchDevice={runtimeSession.isTouchDevice}
           mode={runtimeSession.mode}
@@ -147,7 +237,7 @@ function ExpoRuntimeExperience({
           runtimeLayerToggles={(import.meta.env.DEV || operatorSceneLayer.session.enabled) ? operatorSceneLayer.runtimeLayerToggles : undefined}
           runtimeSectionToggles={(import.meta.env.DEV || operatorSceneLayer.session.enabled) ? operatorSceneLayer.runtimeSectionToggles : undefined}
           sceneVersion={data?.sceneVersion ? String(data.sceneVersion) : null}
-          startViewOverride={operatorSceneLayer.effectiveStartViewOverride}
+          startViewOverride={sceneStartViewOverride}
           worldContract={worldContract}
           zoneSystem={zoneSystem}
         />

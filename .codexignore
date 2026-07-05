@@ -1,0 +1,27 @@
+# Codex token-savings ignore list
+# Read these trees only when the task explicitly targets them.
+
+node_modules/
+dist/
+dist-ssr/
+build/
+coverage/
+.vercel/
+handoff/
+diagnostics/
+review_artifacts/
+assets-intake/
+docs/recovery/
+WarpalaUE5/
+GALA_*/
+apps/frontend/
+public/videos/
+public/assets/heavy/
+public/uploads/
+supabase/.temp/
+tmp/
+tmp-*/
+.tmp*/
+*.zip
+*.7z
+*.rar

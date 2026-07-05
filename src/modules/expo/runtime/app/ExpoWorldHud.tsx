@@ -4,6 +4,18 @@ import { EXPO_CITY_QUALITY_TIER, EXPO_MODE_COPY, type ExpoMode } from '../../sta
 import type { ExpoSectorMarker } from '../../layout-engine';
 import type { ExpoWorldVisualProfile } from '../../world-contract';
 import { EXPO_MOBILE_MOVE_IDLE, type ExpoMobileMoveIntent } from './useExpoRuntimeSession';
+import type { ExpoPresenceStatus } from '../../hooks/useExpoPresence';
+import { getExpoCalculatorMapPins } from '../../../../app/expo/expoCalculatorCatalog';
+
+const EXPO_CALCULATOR_MAP_PINS = getExpoCalculatorMapPins();
+
+function openCalculatorRoute(route: string) {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  window.location.assign(route);
+}
 
 interface ExpoWorldHudProps {
   guests: any[];
@@ -11,9 +23,15 @@ interface ExpoWorldHudProps {
   isSpeaking: boolean;
   isTouchDevice?: boolean;
   mode: ExpoMode;
+  onOpenBoothMarketplace: () => void;
+  onOpenCityBoard: () => void;
+  onOpenCityScreens: () => void;
+  onOpenModularHomes: () => void;
   onMoveTouch?: (intent: ExpoMobileMoveIntent) => void;
   operatorBuildStamp?: string | null;
   playerPos: number[];
+  presenceStatus: ExpoPresenceStatus;
+  onRequestSponsorQuote: () => void;
   sectorMarkers: ExpoSectorMarker[];
   visualProfile: ExpoWorldVisualProfile;
   onToggleMic: () => void;
@@ -26,9 +44,15 @@ export function ExpoWorldHud({
   isSpeaking,
   isTouchDevice = false,
   mode,
+  onOpenBoothMarketplace,
+  onOpenCityBoard,
+  onOpenCityScreens,
+  onOpenModularHomes,
   onMoveTouch,
   operatorBuildStamp = null,
   playerPos,
+  presenceStatus,
+  onRequestSponsorQuote,
   sectorMarkers,
   visualProfile,
   onToggleMic,
@@ -45,8 +69,14 @@ export function ExpoWorldHud({
   const lookAnchorRef = useRef<{ x: number; y: number } | null>(null);
   const mobileIntentRef = useRef<ExpoMobileMoveIntent>(EXPO_MOBILE_MOVE_IDLE);
   const isWalkMode = mode === 'walk';
+  const showOperatorControls = Boolean(operatorBuildStamp);
   const radarSize = isTouchDevice ? 156 : 208;
   const orderedMarkers = [...sectorMarkers].sort((left, right) => {
+    const leftDistance = Math.hypot(left.position[0] - playerPos[0], left.position[2] - playerPos[2]);
+    const rightDistance = Math.hypot(right.position[0] - playerPos[0], right.position[2] - playerPos[2]);
+    return leftDistance - rightDistance;
+  });
+  const orderedCalculatorPins = [...EXPO_CALCULATOR_MAP_PINS].sort((left, right) => {
     const leftDistance = Math.hypot(left.position[0] - playerPos[0], left.position[2] - playerPos[2]);
     const rightDistance = Math.hypot(right.position[0] - playerPos[0], right.position[2] - playerPos[2]);
     return leftDistance - rightDistance;
@@ -69,6 +99,52 @@ export function ExpoWorldHud({
     id: marker.id,
     label: marker.label,
   }));
+  const calculatorLegend = orderedCalculatorPins.slice(0, 3).map((pin) => ({
+    color: pin.accent,
+    distance: Math.round(Math.hypot(pin.position[0] - playerPos[0], pin.position[2] - playerPos[2])),
+    id: pin.id,
+    label: pin.shortTitle,
+    route: pin.route,
+  }));
+  const presenceLabel = presenceStatus === 'live'
+    ? 'Live visitors'
+    : presenceStatus === 'connecting'
+    ? 'Finding visitors'
+    : presenceStatus === 'offline'
+    ? 'Solo preview'
+    : 'Solo mode';
+  const cityGuideActions = [
+    {
+      body: 'Booths to buy or rent',
+      label: 'Sponsor booths',
+      onClick: onOpenBoothMarketplace,
+    },
+    {
+      body: 'Public ad placements',
+      label: 'Rent city screen',
+      onClick: onOpenCityScreens,
+    },
+    {
+      body: 'Messages, voice notes and graffiti',
+      label: 'City board',
+      onClick: onOpenCityBoard,
+    },
+    {
+      body: 'Estimator stands around the map',
+      label: 'Calculators',
+      onClick: () => openCalculatorRoute('/calculators'),
+    },
+    {
+      body: 'Premium proof case',
+      label: 'Modular home',
+      onClick: onOpenModularHomes,
+    },
+    {
+      body: 'Booth or screen help',
+      label: 'Request quote',
+      onClick: onRequestSponsorQuote,
+    },
+  ];
 
   const primaryPanelStyle: CSSProperties = {
     backdropFilter: 'blur(14px)',
@@ -206,6 +282,52 @@ export function ExpoWorldHud({
     emitMobileIntent({ [key]: active } as Partial<ExpoMobileMoveIntent>);
   };
 
+  const runCityGuideAction = (action: () => void) => {
+    setMobileOptionsOpen(false);
+    setMobileMapOpen(false);
+    action();
+  };
+
+  const renderCityGuide = (compact = false) => (
+    <div
+      data-expo-city-guide="true"
+      style={{
+        ...primaryPanelStyle,
+        alignItems: 'stretch',
+        display: 'grid',
+        gap: compact ? '8px' : '10px',
+        gridTemplateColumns: compact ? '1fr' : 'repeat(6, minmax(108px, 1fr))',
+        padding: compact ? '10px' : '11px',
+        pointerEvents: 'auto',
+      }}
+    >
+      {cityGuideActions.map((action, index) => (
+        <button
+          key={action.label}
+          type="button"
+          onClick={() => runCityGuideAction(action.onClick)}
+          style={{
+            background: index === 0 ? 'rgba(14, 116, 144, 0.34)' : 'rgba(15, 23, 42, 0.72)',
+            border: `1px solid ${index === 0 ? 'rgba(103, 232, 249, 0.5)' : 'rgba(148, 163, 184, 0.2)'}`,
+            borderRadius: '8px',
+            color: '#f8fafc',
+            cursor: 'pointer',
+            minHeight: compact ? '50px' : '58px',
+            padding: compact ? '8px 10px' : '9px 10px',
+            textAlign: 'left',
+          }}
+        >
+          <span style={{ display: 'block', fontSize: compact ? '0.78rem' : '0.8rem', fontWeight: 950 }}>
+            {action.label}
+          </span>
+          <span style={{ color: '#94a3b8', display: 'block', fontSize: '0.64rem', fontWeight: 750, lineHeight: 1.25, marginTop: '3px' }}>
+            {action.body}
+          </span>
+        </button>
+      ))}
+    </div>
+  );
+
   return (
     <>
       {operatorBuildStamp && (
@@ -236,6 +358,36 @@ export function ExpoWorldHud({
       {isTouchDevice && (
         <>
           <button
+            data-expo-mobile-top-control="true"
+            onClick={() => {
+              setMobileMapOpen(false);
+              setMobileOptionsOpen((value) => !value);
+            }}
+            style={{
+              position: 'absolute',
+              top: 'max(14px, env(safe-area-inset-top))',
+              left: '14px',
+              zIndex: 112,
+              minWidth: '86px',
+              height: '50px',
+              borderRadius: '999px',
+              border: '1px solid rgba(103, 232, 249, 0.28)',
+              background: mobileOptionsOpen ? 'rgba(14, 116, 144, 0.68)' : 'rgba(8, 47, 73, 0.58)',
+              color: '#ecfeff',
+              backdropFilter: 'blur(10px)',
+              boxShadow: '0 10px 24px rgba(2, 6, 23, 0.28)',
+              fontSize: '0.78rem',
+              fontWeight: 950,
+              opacity: mobileOptionsOpen ? 0.28 : 1,
+              pointerEvents: mobileOptionsOpen ? 'none' : 'auto',
+              visibility: mobileOptionsOpen ? 'hidden' : 'visible',
+              cursor: 'pointer',
+            }}
+          >
+            Explore
+          </button>
+          <button
+            data-expo-mobile-top-control="true"
             onClick={() => setMobileMapOpen((value) => !value)}
             style={{
               position: 'absolute',
@@ -258,6 +410,7 @@ export function ExpoWorldHud({
             MAP
           </button>
           <button
+            data-expo-mobile-top-control="true"
             onClick={() => setMobileOptionsOpen((value) => !value)}
             style={{
               position: 'absolute',
@@ -302,8 +455,8 @@ export function ExpoWorldHud({
               }}
             >
               {isWalkMode
-                ? 'LEFT STICK MOVE | SWIPE RIGHT SIDE TO LOOK UP/DOWN | AUTO WALK | JUMP/LIFT'
-                : 'DRAG TO ORBIT | PINCH TO ZOOM | MAP shows nearest zones'}
+                ? 'Move on the left. Look on the right. Tap Auto for a hands-free walk.'
+                : 'Drag to orbit. Pinch to zoom. Map shows nearby zones.'}
             </button>
           )}
         </>
@@ -314,11 +467,11 @@ export function ExpoWorldHud({
           data-expo-world-hud-top="true"
           style={isTouchDevice
             ? {
-              position: 'absolute',
+              position: 'fixed',
               top: 'max(74px, calc(env(safe-area-inset-top) + 70px))',
               left: '12px',
               right: '12px',
-              zIndex: 111,
+              zIndex: 124,
               display: 'grid',
               gap: '8px',
               maxHeight: '42vh',
@@ -326,40 +479,66 @@ export function ExpoWorldHud({
             }
             : { position: 'absolute', top: '26px', right: '26px', zIndex: 100, display: 'flex', gap: '14px', alignItems: 'stretch', maxWidth: 'calc(100vw - 52px)', flexWrap: 'wrap', justifyContent: 'flex-end' }}
         >
+          {isTouchDevice && renderCityGuide(true)}
           <div style={{ ...primaryPanelStyle, minWidth: isTouchDevice ? 0 : '280px', padding: isTouchDevice ? '11px 12px' : '14px 18px', display: 'flex', flexDirection: 'column', gap: isTouchDevice ? '7px' : '8px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
               <div>
-                <div style={{ fontSize: isTouchDevice ? '0.56rem' : '0.66rem', letterSpacing: '0.2em', fontWeight: 800, color: visualProfile.global.hudAccent }}>WARPALA EXPO CITY</div>
-                <div style={{ fontSize: isTouchDevice ? '0.92rem' : '1.02rem', fontWeight: 800, color: '#f8fafc' }}>Sponsor Boulevard Live</div>
+                <div style={{ fontSize: isTouchDevice ? '0.56rem' : '0.66rem', letterSpacing: '0.2em', fontWeight: 800, color: visualProfile.global.hudAccent }}>WARPALA EXPO</div>
+                <div style={{ fontSize: isTouchDevice ? '0.92rem' : '1.02rem', fontWeight: 800, color: '#f8fafc' }}>Sponsor Boulevard</div>
               </div>
               <div style={{ padding: '6px 10px', borderRadius: '999px', background: 'rgba(34, 197, 94, 0.14)', color: '#86efac', fontWeight: 800, fontSize: '0.72rem', letterSpacing: '0.08em' }}>
-                ONLINE {guests.length + 1}
+                Visitors {guests.length + 1}
               </div>
+            </div>
+            <div style={{ color: presenceStatus === 'live' ? '#86efac' : '#94a3b8', fontSize: '0.68rem', fontWeight: 800 }}>
+              {presenceLabel}
             </div>
             <div style={{ display: 'flex', gap: isTouchDevice ? '6px' : '10px', flexWrap: 'wrap' }}>
               <div style={{ padding: '7px 11px', borderRadius: '999px', background: 'rgba(15, 23, 42, 0.8)', color: '#cbd5e1', fontWeight: 700, fontSize: '0.75rem' }}>
                 {EXPO_MODE_COPY.publicModeBadge}
               </div>
-              <div style={{ padding: '7px 11px', borderRadius: '999px', background: `${visualProfile.global.hudAccent}22`, color: visualProfile.global.hudAccent, fontWeight: 700, fontSize: '0.75rem' }}>
-                QUALITY {EXPO_CITY_QUALITY_TIER.toUpperCase()}
-              </div>
-              <div style={{ padding: '7px 11px', borderRadius: '999px', background: isSpeaking ? 'rgba(16, 185, 129, 0.16)' : 'rgba(148, 163, 184, 0.12)', color: isSpeaking ? '#86efac' : '#cbd5e1', fontWeight: 700, fontSize: '0.75rem' }}>
-                {isSpeaking ? 'VOICE LIVE' : 'VOICE READY'}
-              </div>
+              {showOperatorControls && (
+                <div style={{ padding: '7px 11px', borderRadius: '999px', background: `${visualProfile.global.hudAccent}22`, color: visualProfile.global.hudAccent, fontWeight: 700, fontSize: '0.75rem' }}>
+                  QUALITY {EXPO_CITY_QUALITY_TIER.toUpperCase()}
+                </div>
+              )}
+              <button
+                type="button"
+                onClick={onOpenModularHomes}
+                style={{
+                  padding: '7px 11px',
+                  borderRadius: '999px',
+                  background: 'rgba(14, 165, 233, 0.16)',
+                  border: '1px solid rgba(125, 211, 252, 0.22)',
+                  color: '#7dd3fc',
+                  fontWeight: 850,
+                  fontSize: '0.75rem',
+                  cursor: 'pointer',
+                }}
+              >
+                Modular homes
+              </button>
+              {showOperatorControls && (
+                <div style={{ padding: '7px 11px', borderRadius: '999px', background: isSpeaking ? 'rgba(16, 185, 129, 0.16)' : 'rgba(148, 163, 184, 0.12)', color: isSpeaking ? '#86efac' : '#cbd5e1', fontWeight: 700, fontSize: '0.75rem' }}>
+                  {isSpeaking ? 'VOICE LIVE' : 'VOICE READY'}
+                </div>
+              )}
             </div>
-            {!isTouchDevice && (
+            {!isTouchDevice && showOperatorControls && (
               <div style={{ fontSize: '0.64rem', letterSpacing: '0.12em', color: '#9fb2c7', fontWeight: 800 }}>
                 WASD MOVE | MOUSE LOOK | Q/E OR LEFT/RIGHT TURN | F LIFT | SPACE JUMP/MANTLE
               </div>
             )}
           </div>
 
-          <button
-            onClick={onToggleMic}
-            style={{ ...primaryPanelStyle, background: isMicOn ? 'linear-gradient(180deg, rgba(16, 185, 129, 0.9), rgba(5, 150, 105, 0.88))' : 'linear-gradient(180deg, rgba(30, 41, 59, 0.92), rgba(15, 23, 42, 0.9))', padding: isTouchDevice ? '13px 14px' : '0 18px', minWidth: isTouchDevice ? 0 : '120px', minHeight: isTouchDevice ? '48px' : undefined, borderRadius: '16px', border: '1px solid rgba(255,255,255,0.08)', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', letterSpacing: '0.08em' }}
-          >
-            {isMicOn ? 'MIC ON' : 'MIC OFF'}
-          </button>
+          {showOperatorControls && (
+            <button
+              onClick={onToggleMic}
+              style={{ ...primaryPanelStyle, background: isMicOn ? 'linear-gradient(180deg, rgba(16, 185, 129, 0.9), rgba(5, 150, 105, 0.88))' : 'linear-gradient(180deg, rgba(30, 41, 59, 0.92), rgba(15, 23, 42, 0.9))', padding: isTouchDevice ? '13px 14px' : '0 18px', minWidth: isTouchDevice ? 0 : '120px', minHeight: isTouchDevice ? '48px' : undefined, borderRadius: '16px', border: '1px solid rgba(255,255,255,0.08)', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', letterSpacing: '0.08em' }}
+            >
+              {isMicOn ? 'MIC ON' : 'MIC OFF'}
+            </button>
+          )}
 
           <div style={{ ...primaryPanelStyle, padding: isTouchDevice ? '11px 12px' : '14px 18px', minWidth: isTouchDevice ? 0 : '140px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
             <div style={{ fontSize: '0.64rem', letterSpacing: '0.16em', color: '#b7c4d5', fontWeight: 800 }}>BOULEVARD</div>
@@ -376,7 +555,7 @@ export function ExpoWorldHud({
               <div style={{ fontSize: '0.9rem', fontWeight: 800, color: '#f8fafc' }}>{nearestMarker?.label || 'Arrival open'}</div>
             </div>
             <div style={{ marginTop: '4px', fontSize: '0.72rem', color: '#94a3b8', fontWeight: 700 }}>
-              {nearestMarkerDistance !== null ? `${nearestMarkerDistance}u ahead` : 'Move ahead, explore left and right'}
+              {nearestMarkerDistance !== null ? `About ${nearestMarkerDistance} steps away` : 'Move ahead, explore left and right'}
             </div>
             <div style={{ marginTop: '8px', display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
               {districtLegend.map((marker) => (
@@ -397,15 +576,70 @@ export function ExpoWorldHud({
                 >
                   <span style={{ width: '7px', height: '7px', borderRadius: '999px', background: marker.color, display: 'inline-block' }} />
                   <span>{marker.label.toUpperCase()}</span>
-                  <span style={{ color: marker.color }}>{marker.distance}u</span>
+                  <span style={{ color: marker.color }}>{marker.distance}</span>
                 </div>
+              ))}
+              {calculatorLegend.map((pin) => (
+                <button
+                  key={pin.id}
+                  onClick={() => openCalculatorRoute(pin.route)}
+                  style={{
+                    alignItems: 'center',
+                    background: 'rgba(15, 23, 42, 0.56)',
+                    border: `1px solid ${pin.color}55`,
+                    borderRadius: '999px',
+                    color: '#dbe7f4',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    fontSize: '0.64rem',
+                    fontWeight: 800,
+                    gap: '6px',
+                    padding: '4px 8px',
+                  }}
+                  type="button"
+                >
+                  <span style={{ background: pin.color, borderRadius: '3px', display: 'inline-block', height: '7px', width: '7px' }} />
+                  <span>{pin.label.toUpperCase()}</span>
+                  <span style={{ color: pin.color }}>{pin.distance}</span>
+                </button>
               ))}
             </div>
           </div>
 
-          <button onClick={onExit} style={{ background: 'linear-gradient(180deg, #f8fafc, #e2e8f0)', padding: isTouchDevice ? '13px 14px' : '0 22px', minHeight: isTouchDevice ? '48px' : undefined, borderRadius: '16px', border: 'none', fontWeight: 800, cursor: 'pointer', color: '#0f172a', boxShadow: '0 14px 32px rgba(226, 232, 240, 0.18)' }}>
+          <button
+            onClick={onExit}
+            style={{
+              ...primaryPanelStyle,
+              alignSelf: 'center',
+              background: 'rgba(15, 23, 42, 0.82)',
+              border: '1px solid rgba(226, 232, 240, 0.18)',
+              borderRadius: '16px',
+              boxShadow: '0 14px 32px rgba(2, 6, 23, 0.28)',
+              color: '#e2e8f0',
+              cursor: 'pointer',
+              fontWeight: 850,
+              minHeight: isTouchDevice ? '48px' : '52px',
+              padding: isTouchDevice ? '13px 14px' : '0 18px',
+            }}
+          >
             {EXPO_MODE_COPY.exitToLobby}
           </button>
+        </div>
+      )}
+
+      {!isTouchDevice && (
+        <div
+          style={{
+            bottom: '26px',
+            left: '50%',
+            maxWidth: 'min(760px, calc(100vw - 330px))',
+            position: 'absolute',
+            transform: 'translateX(-50%)',
+            width: 'fit-content',
+            zIndex: 101,
+          }}
+        >
+          {renderCityGuide(false)}
         </div>
       )}
 
@@ -431,6 +665,30 @@ export function ExpoWorldHud({
           <div style={{ width: '100%', height: '100%', position: 'relative', background: `radial-gradient(circle at center, ${visualProfile.global.hudAccent}30 0%, rgba(15, 23, 42, 0.04) 70%)` }}>
             <div style={{ position: 'absolute', top: '50%', left: '0', width: '100%', height: '1px', background: 'rgba(255,255,255,0.1)' }} />
             <div style={{ position: 'absolute', top: '0', left: '50%', width: '1px', height: '100%', background: 'rgba(255,255,255,0.1)' }} />
+            {EXPO_CALCULATOR_MAP_PINS.map((pin) => (
+              <button
+                aria-label={`Open ${pin.title}`}
+                key={pin.id}
+                onClick={() => openCalculatorRoute(pin.route)}
+                style={{
+                  background: pin.accent,
+                  border: '1px solid rgba(248,250,252,0.8)',
+                  borderRadius: '3px',
+                  boxShadow: `0 0 12px ${pin.accent}`,
+                  cursor: 'pointer',
+                  height: '9px',
+                  left: `${pin.mapXPercent}%`,
+                  opacity: 0.86,
+                  padding: 0,
+                  position: 'absolute',
+                  top: `${pin.mapYPercent}%`,
+                  transform: 'translate(-50%, -50%) rotate(45deg)',
+                  width: '9px',
+                }}
+                title={`${pin.title} stand`}
+                type="button"
+              />
+            ))}
             {sectorMarkers.slice(0, 12).map((marker) => (
               <div
                 key={marker.id}
@@ -454,13 +712,13 @@ export function ExpoWorldHud({
             ))}
           </div>
           <div style={{ position: 'absolute', top: '18px', width: '100%', textAlign: 'center', fontSize: '0.62rem', color: visualProfile.global.hudAccent, fontWeight: 900, letterSpacing: '0.16em' }}>
-            DISTRICT RADAR
+            CITY MAP
           </div>
           <div style={{ position: 'absolute', top: '38px', width: '100%', textAlign: 'center', fontSize: '0.54rem', color: '#94a3b8', fontWeight: 700, letterSpacing: '0.1em' }}>
-            MAIN AXIS
+            BOULEVARD
           </div>
           <div style={{ position: 'absolute', bottom: '12px', width: '100%', textAlign: 'center', fontSize: '0.62rem', color: '#cbd5e1', fontWeight: 800, letterSpacing: '0.08em' }}>
-            POSITION {Math.round(playerPos[0])}, {Math.round(playerPos[2])}
+            YOU ARE HERE
           </div>
         </div>
       )}
@@ -484,8 +742,8 @@ export function ExpoWorldHud({
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
             <div>
-              <div style={{ color: visualProfile.global.hudAccent, fontSize: '0.62rem', fontWeight: 950, letterSpacing: '0.16em' }}>MOBILE MAP</div>
-              <div style={{ marginTop: '4px', color: '#f8fafc', fontSize: '1rem', fontWeight: 900 }}>Nearest zones</div>
+              <div style={{ color: visualProfile.global.hudAccent, fontSize: '0.62rem', fontWeight: 950, letterSpacing: '0.16em' }}>CITY MAP</div>
+              <div style={{ marginTop: '4px', color: '#f8fafc', fontSize: '1rem', fontWeight: 900 }}>Nearest zones and stands</div>
             </div>
             <button
               type="button"
@@ -524,8 +782,47 @@ export function ExpoWorldHud({
                   <span style={{ minWidth: 0, color: '#e2e8f0', fontSize: '0.82rem', fontWeight: 850, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {marker.label}
                   </span>
-                  <span style={{ color: marker.color, fontSize: '0.76rem', fontWeight: 950 }}>{distance}u</span>
+                  <span style={{ color: marker.color, fontSize: '0.76rem', fontWeight: 950 }}>{distance}</span>
                 </div>
+              );
+            })}
+          </div>
+          <div style={{ color: '#facc15', fontSize: '0.64rem', fontWeight: 950, letterSpacing: '0.12em', marginTop: '14px', textTransform: 'uppercase' }}>
+            Calculator stands
+          </div>
+          <div style={{ marginTop: '8px', display: 'grid', gap: '8px' }}>
+            {orderedCalculatorPins.slice(0, 5).map((pin) => {
+              const distance = Math.round(Math.hypot(pin.position[0] - playerPos[0], pin.position[2] - playerPos[2]));
+              return (
+                <button
+                  key={pin.id}
+                  onClick={() => openCalculatorRoute(pin.route)}
+                  style={{
+                    alignItems: 'center',
+                    background: 'rgba(15, 23, 42, 0.62)',
+                    border: `1px solid ${pin.accent}55`,
+                    borderRadius: '14px',
+                    color: '#f8fafc',
+                    cursor: 'pointer',
+                    display: 'grid',
+                    gap: '10px',
+                    gridTemplateColumns: 'auto 1fr auto',
+                    padding: '10px 12px',
+                    textAlign: 'left',
+                  }}
+                  type="button"
+                >
+                  <span style={{ background: pin.accent, borderRadius: '3px', boxShadow: `0 0 12px ${pin.accent}`, height: '10px', transform: 'rotate(45deg)', width: '10px' }} />
+                  <span style={{ minWidth: 0 }}>
+                    <span style={{ display: 'block', fontSize: '0.82rem', fontWeight: 900, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {pin.title}
+                    </span>
+                    <span style={{ color: '#94a3b8', display: 'block', fontSize: '0.68rem', fontWeight: 750, marginTop: 2 }}>
+                      {pin.zoneLabel}
+                    </span>
+                  </span>
+                  <span style={{ color: pin.accent, fontSize: '0.76rem', fontWeight: 950 }}>{distance}</span>
+                </button>
               );
             })}
           </div>
@@ -535,6 +832,7 @@ export function ExpoWorldHud({
       {isTouchDevice && onMoveTouch && isWalkMode && (
         <>
         <div
+          data-expo-mobile-look-pad="true"
           ref={lookPadRef}
           onTouchStart={(event) => {
             event.preventDefault();
@@ -588,6 +886,7 @@ export function ExpoWorldHud({
           </div>
         </div>
         <div
+          data-expo-mobile-move-controls="true"
           style={{
             position: 'absolute',
             left: 'max(14px, env(safe-area-inset-left))',
@@ -720,6 +1019,7 @@ export function ExpoWorldHud({
           </div>
         </div>
         <div
+          data-expo-mobile-move-controls="true"
           style={{
             position: 'absolute',
             right: 'max(14px, env(safe-area-inset-right))',

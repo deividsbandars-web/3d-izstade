@@ -19,6 +19,10 @@ export type ModularHomePricingCategory =
 export type ModularHomeCostRegion = 'eu-preview';
 export type ModularHomeCurrency = 'EUR';
 export type ModularHomePricingConfidenceLevel = 'low' | 'medium' | 'high' | 'placeholder';
+export type ModularHomePricingSourceType =
+  | 'internalDatabase'
+  | 'supplierBudgetPlaceholder'
+  | 'manualReview';
 
 export type ModularHomePricingBreakdown = Record<ModularHomePricingCategory, number>;
 
@@ -42,6 +46,12 @@ export type ModularHomePricingSummary = ModularHomePricingContext & {
   categoryTotals: readonly ModularHomePricingCategoryTotal[];
   total: number;
 };
+
+export const MODULAR_HOME_PRICING_SOURCE_TYPE_LABELS = {
+  internalDatabase: 'Internal database',
+  manualReview: 'Manual review',
+  supplierBudgetPlaceholder: 'Supplier placeholder',
+} as const satisfies Record<ModularHomePricingSourceType, string>;
 
 type PricingDistribution = Partial<Record<ModularHomePricingCategory, number>>;
 
@@ -326,6 +336,9 @@ const OPTION_PRICING_DISTRIBUTION_BY_GROUP = {
     margin: 0.06,
     contingency: 0.03,
   },
+  kitchenFinish: {},
+  furnitureMood: {},
+  interiorZoneFocus: {},
   wallPanelStyle: {
     material: 0.48,
     factoryLabor: 0.34,
@@ -511,4 +524,10 @@ export function getPricingCategoriesForComponentCategory(
   componentCategory: ModularHomeComponentCategory,
 ): readonly ModularHomePricingCategory[] {
   return COMPONENT_PRICING_CATEGORY_BY_COMPONENT[componentCategory];
+}
+
+export function getModularHomePricingSourceTypeLabel(
+  sourceType: ModularHomePricingSourceType,
+): string {
+  return MODULAR_HOME_PRICING_SOURCE_TYPE_LABELS[sourceType];
 }

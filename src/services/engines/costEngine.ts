@@ -1,4 +1,4 @@
-import type { Task, Material } from '../../models';
+import type { Task, Material } from '../../models/index.js';
 
 /**
  * Aprēķina kopējo projekta pašizmaksu (Materiāli + Darbs)

@@ -1,4 +1,4 @@
-import { llmService } from '../../ai/llmService.js';
+import { createSystemLlmMetering, llmService } from '../../ai/llmService.js';
 import { logger } from '../../logging/logger.js';
 import { agentTools } from './agentTools.js';
 
@@ -39,7 +39,10 @@ Example Output:
   { "id": 1, "action": "Search for latest AI news", "tool": "search_web", "tool_args": { "query": "latest AI news" } }
 ]`;
 
-      const { text, error } = await llmService.generateText(prompt, { temperature: 0.2 });
+      const { text, error } = await llmService.generateText(prompt, {
+        metering: createSystemLlmMetering('agent-planner', 'create-agent-plan'),
+        temperature: 0.2,
+      });
       if (error || !text) throw new Error(error || 'Failed to generate plan');
 
       // Extract JSON from response

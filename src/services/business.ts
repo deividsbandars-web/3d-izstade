@@ -1,5 +1,5 @@
-import { supabaseClient } from '../lib/supabaseClient';
-import { serverApiPost } from './serverApi';
+import { supabaseClient } from '../lib/supabaseClient.js';
+import { serverApiPost } from './serverApi.js';
 
 export const BusinessSystemAPI = {
   generateBusiness: async (payload: unknown) => serverApiPost('/api/business/generate', payload),

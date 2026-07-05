@@ -13,6 +13,9 @@ export const ue5AuthMiddleware = async (req: Request, res: Response, next: NextF
     }
 
     const validKey = getBackendRuntimeEnv().ue5SecretKey;
+    if (!validKey) {
+        return res.status(503).json({ error: 'UE5 API disabled' });
+    }
 
     if (apiKey !== validKey) {
         return res.status(403).json({ error: 'Invalid UE5 API Key' });

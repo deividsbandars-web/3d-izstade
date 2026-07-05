@@ -55,16 +55,16 @@ export const ARRIVAL_GATE_FLOOR_ANCHOR: GroundPolishSurface = {
   ...FLOOR_SURFACE_TOKENS.arrivalGateAnchor,
   color: FLOOR_MATERIAL_INTENTS.arrivalAnchor.color,
   id: 'arrival-gate-floor-anchor',
-  position: [0, GROUND_ACCENT_Y, 250] as [number, number, number],
-  size: [1280, 360] as [number, number],
+  position: [0, GROUND_ACCENT_Y, 190] as [number, number, number],
+  size: [1320, 560] as [number, number],
 };
 
 export const CENTER_SPINE_FLOOR_GUIDE: GroundPolishSurface = {
   ...FLOOR_SURFACE_TOKENS.centerSpineGuide,
   color: FLOOR_MATERIAL_INTENTS.centerSpineGuide.color,
   id: 'center-spine-floor-guide',
-  position: [0, GROUND_ACCENT_Y, -350] as [number, number, number],
-  size: [180, 760] as [number, number],
+  position: [0, GROUND_ACCENT_Y, -340] as [number, number, number],
+  size: [340, 1320] as [number, number],
 };
 
 export function resolveGroundDetailOpacity(ribbon: Pick<GroundDetailRibbon, 'opacity' | 'position'>) {
@@ -78,7 +78,16 @@ export const GROUND_DETAIL_RIBBONS: GroundDetailRibbon[] = [
   { id: 'arrival-forecourt-wide-band', position: [0, GROUND_DETAIL_Y, 210], size: [1180, 86], color: '#949fa7', groundOwner: 'city' },
   { id: 'arrival-left-outer-pad', position: [-540, GROUND_DETAIL_Y, 64], size: [280, 520], color: '#858f98', groundOwner: 'city' },
   { id: 'arrival-right-outer-pad', position: [540, GROUND_DETAIL_Y, 64], size: [280, 520], color: '#858f98', groundOwner: 'city' },
-  { id: 'arrival-to-seam-spine', position: [0, GROUND_DETAIL_Y, -650], size: [150, 1980], color: '#929da5', groundOwner: 'city' },
+  { id: 'arrival-to-seam-spine', position: [0, GROUND_DETAIL_Y, -650], size: [220, 1980], color: '#a4b4ba', groundOwner: 'city' },
+  { id: 'arrival-commercial-apron', position: [0, GROUND_SURFACE_MARKER_Y, -136], size: [1080, 760], color: '#a6bab8', groundOwner: 'city', opacity: 0.2 },
+  { id: 'arrival-commercial-apron-front-edge', position: [0, GROUND_SURFACE_MARKER_Y, 254], size: [1180, 24], color: '#c5d6d2', groundOwner: 'city', opacity: 0.24 },
+  { id: 'arrival-commercial-apron-mid-crosswalk', position: [0, GROUND_SURFACE_MARKER_Y, 36], size: [940, 18], color: '#b8ccc8', groundOwner: 'city', opacity: 0.2 },
+  { id: 'arrival-commercial-apron-back-edge', position: [0, GROUND_SURFACE_MARKER_Y, -478], size: [860, 20], color: '#adc2bf', groundOwner: 'city', opacity: 0.18 },
+  { id: 'arrival-commercial-apron-left-edge', position: [-548, GROUND_SURFACE_MARKER_Y, -124], size: [18, 700], color: '#b8e4e8', groundOwner: 'city', opacity: 0.24 },
+  { id: 'arrival-commercial-apron-right-edge', position: [548, GROUND_SURFACE_MARKER_Y, -124], size: [18, 700], color: '#b8e4e8', groundOwner: 'city', opacity: 0.24 },
+  { id: 'arrival-clear-lane-left-edge', position: [-196, GROUND_SURFACE_MARKER_Y, -300], size: [18, 1260], color: '#b8e4e8', groundOwner: 'city', opacity: 0.28 },
+  { id: 'arrival-clear-lane-right-edge', position: [196, GROUND_SURFACE_MARKER_Y, -300], size: [18, 1260], color: '#b8e4e8', groundOwner: 'city', opacity: 0.28 },
+  { id: 'arrival-clear-lane-threshold', position: [0, GROUND_SURFACE_MARKER_Y, 210], size: [420, 20], color: '#b8e4e8', groundOwner: 'city', opacity: 0.28 },
   { id: 'arrival-to-seam-left-lane', position: [-270, GROUND_DETAIL_Y, -610], size: [48, 1640], color: '#838e97', groundOwner: 'city' },
   { id: 'arrival-to-seam-right-lane', position: [270, GROUND_DETAIL_Y, -610], size: [48, 1640], color: '#838e97', groundOwner: 'city' },
   { id: 'left-edge-observation-pad', position: [-900, GROUND_DETAIL_Y, -520], size: [640, 1460], color: '#828d96', groundOwner: 'city' },

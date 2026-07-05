@@ -1,5 +1,5 @@
 import { MarketplaceAPI } from '../../services/marketplace';
-import { logger } from '../../backend/logging/logger';
+import { clientLogger as logger } from '../../lib/clientLogger';
 
 export const marketplaceDashboardService = {
   /**

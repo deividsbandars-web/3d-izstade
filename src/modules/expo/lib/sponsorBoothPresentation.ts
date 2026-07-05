@@ -1,4 +1,4 @@
-import type { ExpoSceneBooth, ExpoSceneCompany, SponsorTier } from '../types/scene';
+﻿import type { ExpoSceneBooth, ExpoSceneCompany, SponsorTier } from '../types/scene';
 import { buildExpoBoothRoute } from './expoBoothRoutes';
 
 export type SponsorBoothTemplate =
@@ -20,7 +20,7 @@ export type SponsorCta = {
   url?: string | null;
 };
 
-export type SponsorManagedScreenMode = 'generated-card' | 'image' | 'video-placeholder';
+export type SponsorManagedScreenMode = 'generated-card' | 'image' | 'video' | 'video-placeholder';
 
 export type SponsorManagedScreenContent = {
   ctaLabel: string | null;
@@ -71,10 +71,10 @@ export function isPremiumStreamingTier(adTier: SponsorBoothPresentation['adTier'
 
 function buildBoothBadgeLabel(adTier: SponsorBoothPresentation['adTier'], sponsorTier: SponsorTier) {
   if (adTier === 'elite') {
-    return 'UNREAL ELITE';
+    return 'FEATURED SPONSOR';
   }
   if (adTier === 'premium') {
-    return 'PREMIUM LIVE';
+    return 'PREMIUM BOOTH';
   }
   return sponsorTier.toUpperCase();
 }
@@ -86,10 +86,10 @@ function buildPresentationTagline(
 ) {
   const sourceTagline = truncateSponsorText(company.tagline || fallbackIdentity.supportLine || 'Meet the team. Explore the offer.', 34);
   if (adTier === 'elite') {
-    return sourceTagline || 'UNREAL POWERED BUYER SUITE';
+    return sourceTagline || 'FEATURED SPONSOR OFFER';
   }
   if (adTier === 'premium') {
-    return sourceTagline || 'LIVE PREMIUM PRODUCT ROOM';
+    return sourceTagline || 'SPONSOR OFFER WITH CONTACT';
   }
   return truncateSponsorText(company.tagline || fallbackIdentity.supportLine || 'Meet the team. Explore the offer.', 30);
 }
@@ -131,7 +131,11 @@ function normalizeManagedScreenMode(value: unknown): SponsorManagedScreenMode {
     return 'image';
   }
 
-  if (normalized === 'video' || normalized === 'video-placeholder') {
+  if (normalized === 'video') {
+    return 'video';
+  }
+
+  if (normalized === 'video-placeholder') {
     return 'video-placeholder';
   }
 
@@ -140,6 +144,10 @@ function normalizeManagedScreenMode(value: unknown): SponsorManagedScreenMode {
 
 function normalizeManagedScreenStatus(value: unknown): SponsorManagedScreenContent['status'] {
   return String(value || '').trim().toLowerCase() === 'draft' ? 'draft' : 'published';
+}
+
+export function isSponsorManagedScreenVideoMode(mode: SponsorManagedScreenMode | string | null | undefined) {
+  return mode === 'video' || mode === 'video-placeholder';
 }
 
 function buildManagedScreenContent(
@@ -213,10 +221,10 @@ function buildFallbackIdentity(
   const sourceTagline = truncateSponsorText(company.tagline || String(boothRecord?.tagline || '') || 'Live demos and guided product sessions.', 44);
 
   return {
-    eyebrow: `${tierLine} • ${sectorLine}`.toUpperCase(),
+    eyebrow: `${tierLine} | ${sectorLine}`.toUpperCase(),
     headline: truncateSponsorText(displayName, 24).toUpperCase(),
     monogram: buildMonogram(displayName),
-    supportLine: sourceTagline || 'LIVE DEMOS • TEAM MEETUPS • PRODUCT STORIES',
+    supportLine: sourceTagline || 'LIVE DEMOS | TEAM MEETUPS | PRODUCT STORIES',
   };
 }
 
@@ -251,16 +259,16 @@ export function buildSponsorCtas(company: ExpoSceneCompany): SponsorCta[] {
   const isTopTier = sponsorTier === 'hero' || sponsorTier === 'platinum' || sponsorTier === 'gold';
 
   if (website) {
-    actions.push({ kind: 'website', label: isTopTier ? 'Open Website' : 'Visit Website', url: website });
+    actions.push({ kind: 'website', label: 'Visit Website', url: website });
   }
 
   if (booking) {
-    actions.push({ kind: 'booking', label: company.ctaLabel || (isTopTier ? 'Book Meeting' : 'Meet Team'), url: booking });
+    actions.push({ kind: 'booking', label: company.ctaLabel || (isTopTier ? 'Book Meeting' : 'Contact Team'), url: booking });
   }
 
-  actions.push({ kind: 'ai_chat', label: 'Ask AI', surface: 'feature' });
-  actions.push({ kind: 'calculators', label: isTopTier ? 'Open Calculators' : 'Get Estimate' });
-  actions.push({ kind: 'demo_room', label: isTopTier ? 'Launch Premium Room' : 'Open Showroom' });
+  actions.push({ kind: 'ai_chat', label: 'Ask Guide', surface: 'feature' });
+  actions.push({ kind: 'calculators', label: 'Get Estimate' });
+  actions.push({ kind: 'demo_room', label: 'View Booth' });
   return actions;
 }
 
@@ -309,7 +317,12 @@ function pickCustomInsertUrl(company: ExpoSceneCompany, booth: ExpoSceneBooth | 
 }
 
 function pickManagedHeroScreenImageUrl(booth: ExpoSceneBooth | null) {
-  if (booth?.heroScreenStatus !== 'published' || booth.heroScreenType !== 'image') {
+  if (booth?.heroScreenStatus !== 'published') {
+    return null;
+  }
+
+  const mode = normalizeManagedScreenMode(booth.heroScreenType);
+  if (mode !== 'image' && !isSponsorManagedScreenVideoMode(mode)) {
     return null;
   }
 
@@ -358,7 +371,7 @@ export function buildSponsorBoothPresentation(
   const demoRoomPath = buildExpoBoothRoute({
     companyId: company.id,
     companySlug: company.slug,
-    stream: isPremiumStreamingTier(adTier),
+    stream: false,
   }) ?? '/expo/booth/unknown';
 
   return {

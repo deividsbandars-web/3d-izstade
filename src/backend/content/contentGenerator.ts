@@ -1,5 +1,5 @@
-import { llmService } from '../ai/llmService';
-import { logger } from '../logging/logger';
+import { createSystemLlmMetering, llmService } from '../ai/llmService.js';
+import { logger } from '../logging/logger.js';
 
 export const contentGenerator = {
   /**
@@ -10,7 +10,9 @@ export const contentGenerator = {
       logger.info('ContentGenerator', 'Generating Landing Page', { brief });
       const prompt = `Create a high-converting landing page structure and copy for the following business: ${brief}. Include Hero, Features, Testimonials, and Call to Action.`;
       
-      const { text, error } = await llmService.generateText(prompt);
+      const { text, error } = await llmService.generateText(prompt, {
+        metering: createSystemLlmMetering('content-generator', 'generate-landing-page-copy'),
+      });
       if (error) throw new Error(error);
 
       return { data: text, error: null };
@@ -28,7 +30,9 @@ export const contentGenerator = {
       logger.info('ContentGenerator', 'Generating SEO Article', { topic });
       const prompt = `Write a professional, SEO-optimized blog article about "${topic}". Ensure the following keywords are naturally integrated: ${keywords.join(', ')}.`;
       
-      const { text, error } = await llmService.generateText(prompt);
+      const { text, error } = await llmService.generateText(prompt, {
+        metering: createSystemLlmMetering('content-generator', 'generate-seo-article'),
+      });
       if (error) throw new Error(error);
 
       return { data: text, error: null };
@@ -46,7 +50,9 @@ export const contentGenerator = {
       logger.info('ContentGenerator', 'Generating Ad Copy', { product });
       const prompt = `Write 3 variations of punchy, conversion-focused ad copy for a product called "${product}". The target audience is: ${targetAudience}. Provide a Headline, Primary Text, and CTA for each.`;
       
-      const { text, error } = await llmService.generateText(prompt);
+      const { text, error } = await llmService.generateText(prompt, {
+        metering: createSystemLlmMetering('content-generator', 'generate-ad-copy'),
+      });
       if (error) throw new Error(error);
 
       return { data: text, error: null };

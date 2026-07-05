@@ -2,16 +2,16 @@
 
 ## Frontend release env
 
-Required in staging and production:
+Required in staging and production for the core release path:
 
 - `VITE_PUBLIC_API_BASE_URL`
-- `VITE_SIGNALING_SERVER_URL`
 - `VITE_SUPABASE_URL`
 - `VITE_SUPABASE_ANON_KEY`
+
+Optional legacy runtime stack:
+
+- `VITE_SIGNALING_SERVER_URL`
 - `VITE_PIXEL_STREAMING_PROBE_TIMEOUT_MS`
-
-Optional but typed:
-
 - `VITE_STUN_SERVER_URLS`
 - `VITE_TURN_SERVER_URLS`
 - `VITE_TURN_USERNAME`
@@ -25,12 +25,15 @@ Rules:
 
 ## Backend release env
 
-Required:
+Required for the core release path:
 
 - `NODE_ENV`
 - `PORT`
 - `SUPABASE_URL`
 - `SUPABASE_SERVICE_KEY`
+
+Optional legacy runtime stack:
+
 - `SIGNALING_STATUS_BASE_URL`
 - `PIXEL_STREAMING_STATUS_TIMEOUT_MS`
 - `UE5_SECRET_KEY`
@@ -44,7 +47,7 @@ Rules:
 
 ## TURN / signaling release env
 
-Required for premium Pixel Streaming operation:
+Required for the optional legacy runtime stack:
 
 - `TURN_SERVER_URLS`
 - `TURN_USERNAME`

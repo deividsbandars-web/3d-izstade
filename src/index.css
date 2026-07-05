@@ -110,6 +110,7 @@ body {
   border-radius: 10px;
   align-items: center;
   justify-content: center;
+  line-height: 1;
 }
 
 @media (max-width: 1024px) {
@@ -144,6 +145,28 @@ body {
   nav {
     padding: 0 20px !important;
     height: 65px !important;
+  }
+
+  .release-brand {
+    font-size: 1.18rem !important;
+    white-space: nowrap;
+  }
+
+  .burger-btn {
+    font-size: 1.25rem;
+    height: 40px;
+    width: 40px;
+  }
+}
+
+@media (max-width: 420px) {
+  .release-nav {
+    gap: 8px;
+    padding: 0 12px !important;
+  }
+
+  .release-brand {
+    font-size: 1.05rem !important;
   }
 }
 

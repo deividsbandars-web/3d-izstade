@@ -117,3 +117,13 @@ At the end:
 - overall recommendation
 - blocking defects
 - acceptable warnings
+
+## GALA Modular-Home QA Suite
+
+For GALA `/modular-homes/studio?homeStudio=1`, run the consolidated suite before requesting human visual acceptance:
+
+```powershell
+node scripts/qa-gala-suite.mjs --base-url=<local-preview-url> --out-dir=artifacts/qa-gala-suite
+```
+
+The suite writes `qa-gala-suite-report.json` and `qa-gala-suite-report.md`, keeps one canonical active check per concern, and explicitly retires stale/diagnostic scripts from the release gate. It does not set or imply `productVisualAccepted=true`; product visual acceptance remains a human gate.

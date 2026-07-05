@@ -12,6 +12,7 @@ import type {
 import type { ExpoZoneRuntimeState } from '../zones/expoZoneRuntimeState';
 import { getExpoInstancingRuntimeStats } from '../performance/expoInstancingUtils';
 import { getExpoRaycastOptimizationRuntimeStats } from '../performance/expoRaycastUtils';
+import { getPlayerCollisionBroadphaseRuntimeStats } from '../WorldSceneSupport';
 import {
   getDemoArenaAnalyticsSummary,
   getDemoArenaCtaInteractionSummary,
@@ -185,6 +186,7 @@ export function ExpoPerformanceOverlay({
 
   const instancingStats = getExpoInstancingRuntimeStats();
   const raycastStats = getExpoRaycastOptimizationRuntimeStats();
+  const collisionBroadphaseStats = getPlayerCollisionBroadphaseRuntimeStats();
   const demoArenaPreviewStats = getDemoArenaPreviewRuntimeSummary();
   const demoArenaCtaStats = getDemoArenaAnalyticsSummary(undefined, demoArenaPreviewStats.enabled);
   const demoArenaCtaInteractionStats = getDemoArenaCtaInteractionSummary(undefined, demoArenaPreviewStats.enabled);
@@ -246,6 +248,8 @@ export function ExpoPerformanceOverlay({
     ['instancing ids', formatShortList(instancingStats.optimizedTargetIds, 2)],
     ['raycast opt', `${raycastStats.optimizedTargetCount} targets / ${raycastStats.optimizedObjectCount} objects`],
     ['raycast ids', formatShortList(raycastStats.optimizedTargetIds, 2)],
+    ['collision broadphase', `${collisionBroadphaseStats.candidateCount}/${collisionBroadphaseStats.targetCount} candidates`],
+    ['collision grid', `${collisionBroadphaseStats.cellCount} cells / ${collisionBroadphaseStats.dynamicTargetCount} dynamic`],
     ['salesDemo', salesDemoStats.enabled ? 'on' : 'off'],
     ['salesDemo step', salesDemoStats.step],
     ['demo arena', demoArenaPreviewStats.enabled ? 'preview' : 'off'],

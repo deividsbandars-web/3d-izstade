@@ -3,6 +3,58 @@ import { agentRegistry } from '../../src/backend/marketplace/agents/agentRegistr
 import { installService } from '../../src/backend/marketplace/installService.js';
 import { workflowMarketplace } from '../../src/backend/marketplace/workflows/workflowMarketplace.js';
 import { templateService } from '../../src/backend/marketplace/templates/templateService.js';
+import type { AuthRequest } from '../middleware/authMiddleware.js';
+
+type MarketplaceControllerError = Error & {
+  code?: string;
+  status?: number;
+};
+
+function createMarketplaceError(message: string, status = 400, code = 'MARKETPLACE_REQUEST_INVALID') {
+  const error = new Error(message) as MarketplaceControllerError;
+  error.status = status;
+  error.code = code;
+  return error;
+}
+
+function normalizeString(value: unknown) {
+  return typeof value === 'string' ? value.trim() : '';
+}
+
+function requireAuthenticatedMarketplaceUserId(req: AuthRequest) {
+  const userId = normalizeString(req.user?.id);
+  if (!userId) {
+    throw createMarketplaceError('Authenticated user id is required', 401, 'AUTHENTICATED_USER_REQUIRED');
+  }
+
+  return userId;
+}
+
+function resolveInstallUserId(req: AuthRequest) {
+  const authenticatedUserId = requireAuthenticatedMarketplaceUserId(req);
+  const requestedUserId = normalizeString(req.body?.userId);
+  if (requestedUserId && requestedUserId !== authenticatedUserId) {
+    throw createMarketplaceError('Cannot install marketplace items for another user', 403, 'MARKETPLACE_USER_FORBIDDEN');
+  }
+
+  return authenticatedUserId;
+}
+
+function sendMarketplaceError(res: Response, error: unknown) {
+  if (typeof error === 'object' && error) {
+    const marketplaceError = error as MarketplaceControllerError;
+    const status = Number(marketplaceError.status);
+    return res.status(Number.isInteger(status) && status >= 400 && status < 600 ? status : 500).json({
+      code: marketplaceError.code || 'MARKETPLACE_REQUEST_FAILED',
+      error: marketplaceError.message || 'Marketplace request failed',
+    });
+  }
+
+  return res.status(500).json({
+    code: 'MARKETPLACE_REQUEST_FAILED',
+    error: String(error || 'Marketplace request failed'),
+  });
+}
 
 export const getMarketplaceAgents = async (req: Request, res: Response) => {
   try {
@@ -13,18 +65,19 @@ export const getMarketplaceAgents = async (req: Request, res: Response) => {
   }
 };
 
-export const installAgent = async (req: Request, res: Response) => {
-  const { userId, agentId } = req.body;
+export const installAgent = async (req: AuthRequest, res: Response) => {
+  const agentId = normalizeString(req.body?.agentId);
 
-  if (!userId || !agentId) {
-    return res.status(400).json({ error: 'userId and agentId are required' });
+  if (!agentId) {
+    return res.status(400).json({ error: 'agentId is required' });
   }
 
   try {
+    const userId = resolveInstallUserId(req);
     const result = await installService.installAgent(userId, agentId);
-    res.json(result);
-  } catch (error: any) {
-    res.status(500).json({ error: error.message });
+    return res.json(result);
+  } catch (error) {
+    return sendMarketplaceError(res, error);
   }
 };
 
@@ -55,32 +108,34 @@ export const getMarketplaceTemplates = async (req: Request, res: Response) => {
   }
 };
 
-export const installWorkflow = async (req: Request, res: Response) => {
-  const { userId, workflowId } = req.body;
+export const installWorkflow = async (req: AuthRequest, res: Response) => {
+  const workflowId = normalizeString(req.body?.workflowId);
 
-  if (!userId || !workflowId) {
-    return res.status(400).json({ error: 'userId and workflowId are required' });
+  if (!workflowId) {
+    return res.status(400).json({ error: 'workflowId is required' });
   }
 
   try {
+    const userId = resolveInstallUserId(req);
     const result = await installService.installWorkflow(userId, workflowId);
-    res.json(result);
-  } catch (error: any) {
-    res.status(500).json({ error: error.message });
+    return res.json(result);
+  } catch (error) {
+    return sendMarketplaceError(res, error);
   }
 };
 
-export const installTemplate = async (req: Request, res: Response) => {
-  const { userId, templateId } = req.body;
+export const installTemplate = async (req: AuthRequest, res: Response) => {
+  const templateId = normalizeString(req.body?.templateId);
 
-  if (!userId || !templateId) {
-    return res.status(400).json({ error: 'userId and templateId are required' });
+  if (!templateId) {
+    return res.status(400).json({ error: 'templateId is required' });
   }
 
   try {
+    const userId = resolveInstallUserId(req);
     const result = await installService.installTemplate(userId, templateId);
-    res.json(result);
-  } catch (error: any) {
-    res.status(500).json({ error: error.message });
+    return res.json(result);
+  } catch (error) {
+    return sendMarketplaceError(res, error);
   }
 };

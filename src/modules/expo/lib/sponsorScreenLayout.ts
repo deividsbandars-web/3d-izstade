@@ -1,6 +1,5 @@
 import type { ExpoBoothPlacement, ExpoSectorMarker } from '../layout-engine';
 import type { ExpoDistrictProgramSummary } from '../world-contract';
-import { resolveExpoRuntimeTextureUrl } from './expoTexturePipeline';
 import { buildSponsorBoothPresentation } from './sponsorBoothPresentation';
 
 export type SponsorScreenKind = 'facade' | 'medium_billboard' | 'ground_pylon';
@@ -39,19 +38,19 @@ export type SponsorScreenLayout = {
 };
 
 const HORIZONTAL_PLACEHOLDERS = [
-  resolveExpoRuntimeTextureUrl('/textures/expo/screen-placeholders-4k/horizontal-16x9/screen_horizontal_01.png')!,
-  resolveExpoRuntimeTextureUrl('/textures/expo/screen-placeholders-4k/horizontal-16x9/screen_horizontal_02.png')!,
-  resolveExpoRuntimeTextureUrl('/textures/expo/screen-placeholders-4k/horizontal-16x9/screen_horizontal_03.png')!,
-  resolveExpoRuntimeTextureUrl('/textures/expo/screen-placeholders-4k/horizontal-16x9/screen_horizontal_04.png')!,
+  '/textures/expo-runtime/screen-placeholders-4k/horizontal-16x9/screen_horizontal_01.webp',
+  '/textures/expo-runtime/screen-placeholders-4k/horizontal-16x9/screen_horizontal_02.webp',
+  '/textures/expo-runtime/screen-placeholders-4k/horizontal-16x9/screen_horizontal_03.webp',
+  '/textures/expo-runtime/screen-placeholders-4k/horizontal-16x9/screen_horizontal_04.webp',
 ] as const;
 
 const VERTICAL_PLACEHOLDERS = [
-  resolveExpoRuntimeTextureUrl('/textures/expo/screen-placeholders-4k/vertical-9x16/screen_vertical_01.png')!,
-  resolveExpoRuntimeTextureUrl('/textures/expo/screen-placeholders-4k/vertical-9x16/screen_vertical_02.png')!,
-  resolveExpoRuntimeTextureUrl('/textures/expo/screen-placeholders-4k/vertical-9x16/screen_vertical_03.png')!,
+  '/textures/expo-runtime/screen-placeholders-4k/vertical-9x16/screen_vertical_01.webp',
+  '/textures/expo-runtime/screen-placeholders-4k/vertical-9x16/screen_vertical_02.webp',
+  '/textures/expo-runtime/screen-placeholders-4k/vertical-9x16/screen_vertical_03.webp',
 ] as const;
 
-const HERO_FACADE_SCREEN = resolveExpoRuntimeTextureUrl('/textures/expo/hero-facade-screen-8k/hero_facade_screen_01.png')!;
+const HERO_FACADE_SCREEN = '/textures/expo-runtime/hero-facade-screen-8k/hero_facade_screen_01.webp';
 
 const SPONSOR_TIER_WEIGHT: Record<string, number> = {
   hero: 6,

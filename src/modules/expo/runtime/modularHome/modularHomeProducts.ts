@@ -2,36 +2,16 @@ import type { ModularHomeTemplateId } from './modularHomeConfig';
 import {
   DEFAULT_MODULAR_HOME_CONFIG,
   type ModularHomeConfiguratorState,
-  type ModularHomeDoorPackageOption,
-  type ModularHomeDoorPlacementOption,
-  type ModularHomeFacadeBoardOrientationOption,
-  type ModularHomeFacadeBoardProfileOption,
-  type ModularHomeFacadeBoardSpacingOption,
-  type ModularHomeFacadeBoardWidthOption,
-  type ModularHomeFacadeOption,
-  type ModularHomeFinishLevelOption,
-  type ModularHomeFloorFinishOption,
-  type ModularHomeFurniturePackageOption,
-  type ModularHomeFurnitureToggleOption,
-  type ModularHomeInteriorFloorStyleOption,
-  type ModularHomeInteriorWallFinishOption,
+  type ModularHomeDimensionPresetOption,
   type ModularHomeLayoutVariantOption,
-  type ModularHomeRoofGutterStyleOption,
-  type ModularHomeRoofEdgeColorOption,
-  type ModularHomeRoofOption,
-  type ModularHomeTerraceOption,
-  type ModularHomeTrimColorOption,
-  type ModularHomeWindowFrameColorOption,
-  type ModularHomeWindowFrameTypeOption,
-  type ModularHomeWindowPlacementOption,
-  type ModularHomeWindowPackageOption,
-  type ModularHomeWallPanelStyleOption,
+  type ModularHomeRoomUseProfileOption,
 } from './modularHomeConfigurator';
 import {
   getModularHomeMaterial,
   type ModularHomeMaterial,
   type ModularHomeMaterialId,
 } from './modularHomeMaterials';
+import modularHomeProductData from './modularHomeProducts.json';
 
 export type ModularHomeProductId = 'compact-timber-40' | 'family-timber-80' | 'sauna-cabin-25';
 
@@ -41,6 +21,7 @@ export type ModularHomeProductCategory =
   | 'saunaCabin';
 
 export type ModularHomeLayoutVariantId = ModularHomeLayoutVariantOption;
+export type ModularHomeDimensionPresetId = ModularHomeDimensionPresetOption;
 
 export type ModularHomeLayoutVariant = {
   id: ModularHomeLayoutVariantId;
@@ -129,6 +110,9 @@ export type ModularHomeOptionGroup =
   | 'windowFrameType'
   | 'interiorFloorStyle'
   | 'wallPanelStyle'
+  | 'kitchenFinish'
+  | 'furnitureMood'
+  | 'interiorZoneFocus'
   | 'roofEdgeColor'
   | 'windowFrameColor'
   | 'interiorWallFinish'
@@ -183,6 +167,25 @@ export type ModularHomeProduct = {
   shortDescription: string;
   targetUseCase: string;
   productionNotes: readonly string[];
+};
+
+export type ModularHomeDimensionPreset = {
+  id: ModularHomeDimensionPresetId;
+  productId: ModularHomeProductId;
+  label: string;
+  shortLabel: string;
+  floorAreaM2: number;
+  footprint: ModularHomeFootprintDimensions;
+  moduleCount: number;
+  transportModuleCount: number;
+  summaryNote: string;
+  estimateNote: string;
+  bomNote: string;
+  floorplanNote: string;
+  moduleDimensionNote: string;
+  windowCountDelta?: number;
+  doorCountDelta?: number;
+  terraceAreaMultiplier?: number;
 };
 
 export type ModularHomeModuleInstance = {
@@ -253,6 +256,7 @@ export type ModularHomeConfigurationWarning = {
 export type ModularHomeProductionConstraint = ModularHomeConfigurationWarning;
 
 export type ModularHomeProductConfigSummary = {
+  dimensionPreset: string;
   doorPackage: string;
   doorPlacement: string;
   facade: string;
@@ -270,8 +274,12 @@ export type ModularHomeProductConfigSummary = {
   wardrobePlaceholder: string;
   interiorWallFinish: string;
   interiorFloorStyle: string;
+  kitchenFinish: string;
+  furnitureMood: string;
+  interiorZoneFocus: string;
   layoutVariant: string;
   product: string;
+  roomUseProfile: string;
   roof: string;
   roofEdgeColor: string;
   roofGutterStyle: string;
@@ -296,6 +304,9 @@ export type ModularHomeDimensionSummary = {
   buildCategoryNote: string;
   ceilingHeightLabel: string;
   ceilingHeightM: number;
+  dimensionPresetId: ModularHomeDimensionPresetId;
+  dimensionPresetLabel: string;
+  dimensionPresetNote: string;
   floorAreaLabel: string;
   floorAreaM2: number;
   footprintLabel: string;
@@ -307,1759 +318,42 @@ export type ModularHomeDimensionSummary = {
   transportModuleCountLabel: string;
 };
 
-const ALL_MODULAR_HOME_PRODUCT_IDS = [
-  'compact-timber-40',
-  'family-timber-80',
-  'sauna-cabin-25',
-] as const satisfies readonly ModularHomeProductId[];
+export type ModularHomeRoomUseProfile = {
+  id: ModularHomeRoomUseProfileOption;
+  label: string;
+  shortLabel: string;
+  summaryNote: string;
+  estimateNote: string;
+  bomNote: string;
+  interiorPackageNote: string;
+};
 
-export const MODULAR_HOME_LAYOUT_VARIANTS = [
-  {
-    id: 'openStudio',
-    productId: 'compact-timber-40',
-    label: 'Open studio',
-    shortLabel: 'Studio',
-    roomLabels: ['Studio living/sleeping', 'Kitchen wall', 'Bathroom core', 'Entry storage'],
-    summaryNote: 'Open studio layout prioritizes one flexible living/sleeping room with minimal partitions.',
-    estimateNote: 'Open studio keeps interior partition scope light; furniture and privacy packages still require review.',
-    bomNote: 'Preview BOM assumes reduced partition allowance for one-room compact planning.',
-  },
-  {
-    id: 'oneBedroom',
-    productId: 'compact-timber-40',
-    label: 'One bedroom',
-    shortLabel: '1 bed',
-    roomLabels: ['Living / kitchen', 'Bedroom', 'Bathroom core', 'Entrance / storage'],
-    summaryNote: 'One-bedroom layout separates the sleeping zone from the living/kitchen area.',
-    estimateNote: 'One-bedroom estimate uses the standard compact partition and door allowance.',
-    bomNote: 'Preview BOM assumes one private bedroom partition package.',
-  },
-  {
-    id: 'officeCabin',
-    productId: 'compact-timber-40',
-    label: 'Office cabin',
-    shortLabel: 'Office',
-    roomLabels: ['Living / work lounge', 'Office / guest room', 'Bathroom core', 'Entry storage'],
-    summaryNote: 'Office cabin layout adapts the private module for work, guest stays or studio use.',
-    estimateNote: 'Office cabin estimate keeps the same module package but flags work/guest fit-out for review.',
-    bomNote: 'Preview BOM uses the compact bedroom module as an office/guest module placeholder.',
-  },
-  {
-    id: 'twoBedroom',
-    productId: 'family-timber-80',
-    label: 'Two bedroom',
-    shortLabel: '2 bed',
-    roomLabels: ['Living / kitchen', 'Bedroom 1', 'Bedroom 2', 'Bathroom core', 'Technical / storage'],
-    summaryNote: 'Two-bedroom layout is the baseline family plan with a larger shared living zone.',
-    estimateNote: 'Two-bedroom estimate uses the baseline family module and partition package.',
-    bomNote: 'Preview BOM assumes two bedroom modules and one shared service core.',
-  },
-  {
-    id: 'threeBedroomCompact',
-    productId: 'family-timber-80',
-    label: 'Three-bedroom compact',
-    shortLabel: '3 bed compact',
-    roomLabels: ['Compact living / kitchen', 'Bedroom 1', 'Bedroom 2', 'Compact bedroom / office', 'Bathroom core'],
-    summaryNote: 'Three-bedroom compact layout converts storage/flex area into a small third room concept.',
-    estimateNote: 'Three-bedroom compact requires partition and layout review before a production quote.',
-    bomNote: 'Preview BOM notes extra partition planning but does not claim engineering-grade room quantities.',
-  },
-  {
-    id: 'largeLiving',
-    productId: 'family-timber-80',
-    label: 'Large living',
-    shortLabel: 'Large living',
-    roomLabels: ['Large living / kitchen', 'Bedroom suite', 'Guest room', 'Bathroom core', 'Utility storage'],
-    summaryNote: 'Large living layout prioritizes the shared social zone and keeps bedrooms more flexible.',
-    estimateNote: 'Large living estimate keeps module pricing stable while layout detailing remains review-only.',
-    bomNote: 'Preview BOM assumes the same modules with altered internal zoning notes.',
-  },
-  {
-    id: 'saunaOnly',
-    productId: 'sauna-cabin-25',
-    label: 'Sauna only',
-    shortLabel: 'Sauna',
-    roomLabels: ['Sauna room', 'Changing zone', 'Shower/service core', 'Terrace option'],
-    summaryNote: 'Sauna-only layout focuses on wellness use with a compact changing and service zone.',
-    estimateNote: 'Sauna-only estimate requires sauna equipment and wet-zone engineering review.',
-    bomNote: 'Preview BOM carries sauna/wellness component notes for future production refinement.',
-  },
-  {
-    id: 'guestCabin',
-    productId: 'sauna-cabin-25',
-    label: 'Guest cabin',
-    shortLabel: 'Guest',
-    roomLabels: ['Guest rest area', 'Compact kitchenette wall', 'Washroom/service core', 'Terrace option'],
-    summaryNote: 'Guest cabin layout turns the sauna core into a small overnight/rest module concept.',
-    estimateNote: 'Guest cabin estimate keeps sauna-cabin module pricing but flags guest fit-out for review.',
-    bomNote: 'Preview BOM treats the wellness core as a guest/rest module placeholder.',
-  },
-  {
-    id: 'saunaRestRoom',
-    productId: 'sauna-cabin-25',
-    label: 'Sauna + rest room',
-    shortLabel: 'Sauna + rest',
-    roomLabels: ['Sauna / rest area', 'Changing zone', 'Service core', 'Terrace option'],
-    summaryNote: 'Sauna + rest room layout balances wellness use with a small lounge/rest zone.',
-    estimateNote: 'Sauna + rest room estimate remains preview-only pending sauna equipment specification.',
-    bomNote: 'Preview BOM assumes the current sauna/rest module with service core.',
-  },
-] as const satisfies readonly ModularHomeLayoutVariant[];
+type ModularHomeProductsData = {
+  allProductIds: readonly ModularHomeProductId[];
+  defaultRoomUseProfileByLayout: Record<ModularHomeLayoutVariantId, ModularHomeRoomUseProfileOption>;
+  dimensionPresets: readonly ModularHomeDimensionPreset[];
+  layoutVariants: readonly ModularHomeLayoutVariant[];
+  modules: readonly ModularHomeModule[];
+  options: readonly ModularHomeOption[];
+  products: readonly ModularHomeProduct[];
+  roomMeasurementDisclaimer: string;
+  roomMeasurements: readonly ModularHomeRoomMeasurement[];
+  roomUseChoicesByLayout: Record<ModularHomeLayoutVariantId, readonly ModularHomeRoomUseProfileOption[]>;
+  roomUseProfiles: readonly ModularHomeRoomUseProfile[];
+};
 
-export const MODULAR_HOME_ROOM_MEASUREMENT_DISCLAIMER = 'Dimensions are preview estimates; final room schedule requires production verification.';
+const MODULAR_HOME_PRODUCT_DATA = modularHomeProductData as unknown as ModularHomeProductsData;
 
-export const MODULAR_HOME_ROOM_MEASUREMENTS = [
-  {
-    id: 'compact-open-studio-living-sleeping',
-    productId: 'compact-timber-40',
-    layoutVariantId: 'openStudio',
-    label: 'Studio living / sleeping',
-    areaM2: 23.2,
-    type: 'living',
-    note: 'Main flexible room for compact living, sleeping and lounge use.',
-  },
-  {
-    id: 'compact-open-studio-kitchen-wall',
-    productId: 'compact-timber-40',
-    layoutVariantId: 'openStudio',
-    label: 'Kitchen wall',
-    areaM2: 4.8,
-    type: 'kitchen',
-    note: 'Linear kitchen allowance inside the studio module.',
-  },
-  {
-    id: 'compact-open-studio-bathroom-core',
-    productId: 'compact-timber-40',
-    layoutVariantId: 'openStudio',
-    label: 'Bathroom core',
-    areaM2: 4.8,
-    type: 'bathroom',
-    note: 'Wet-room core placeholder.',
-  },
-  {
-    id: 'compact-open-studio-entry-storage',
-    productId: 'compact-timber-40',
-    layoutVariantId: 'openStudio',
-    label: 'Entry storage',
-    areaM2: 3.2,
-    type: 'storage',
-    note: 'Entrance/storage allowance.',
-  },
-  {
-    id: 'compact-open-studio-circulation',
-    productId: 'compact-timber-40',
-    layoutVariantId: 'openStudio',
-    label: 'Circulation / service allowance',
-    areaM2: 4,
-    type: 'circulation',
-    note: 'Preview allowance for wall thickness, circulation and service routing.',
-  },
-  {
-    id: 'compact-one-bedroom-living-kitchen',
-    productId: 'compact-timber-40',
-    layoutVariantId: 'oneBedroom',
-    label: 'Living / kitchen',
-    areaM2: 16.8,
-    type: 'living',
-    note: 'Shared living and kitchen zone.',
-  },
-  {
-    id: 'compact-one-bedroom-bedroom',
-    productId: 'compact-timber-40',
-    layoutVariantId: 'oneBedroom',
-    label: 'Bedroom',
-    areaM2: 10.4,
-    type: 'bedroom',
-    note: 'Private sleeping module.',
-  },
-  {
-    id: 'compact-one-bedroom-bathroom-core',
-    productId: 'compact-timber-40',
-    layoutVariantId: 'oneBedroom',
-    label: 'Bathroom core',
-    areaM2: 4.8,
-    type: 'bathroom',
-    note: 'Wet-room core placeholder.',
-  },
-  {
-    id: 'compact-one-bedroom-entry-storage',
-    productId: 'compact-timber-40',
-    layoutVariantId: 'oneBedroom',
-    label: 'Entrance / storage',
-    areaM2: 3.2,
-    type: 'storage',
-    note: 'Entry and storage allowance.',
-  },
-  {
-    id: 'compact-one-bedroom-circulation',
-    productId: 'compact-timber-40',
-    layoutVariantId: 'oneBedroom',
-    label: 'Circulation / service allowance',
-    areaM2: 4.8,
-    type: 'circulation',
-    note: 'Preview allowance for circulation, walls and service routing.',
-  },
-  {
-    id: 'compact-office-living-work-lounge',
-    productId: 'compact-timber-40',
-    layoutVariantId: 'officeCabin',
-    label: 'Living / work lounge',
-    areaM2: 15.8,
-    type: 'living',
-    note: 'Flexible lounge/work zone.',
-  },
-  {
-    id: 'compact-office-guest-room',
-    productId: 'compact-timber-40',
-    layoutVariantId: 'officeCabin',
-    label: 'Office / guest room',
-    areaM2: 10.8,
-    type: 'bedroom',
-    note: 'Private work or guest module.',
-  },
-  {
-    id: 'compact-office-bathroom-core',
-    productId: 'compact-timber-40',
-    layoutVariantId: 'officeCabin',
-    label: 'Bathroom core',
-    areaM2: 4.8,
-    type: 'bathroom',
-    note: 'Wet-room core placeholder.',
-  },
-  {
-    id: 'compact-office-entry-storage',
-    productId: 'compact-timber-40',
-    layoutVariantId: 'officeCabin',
-    label: 'Entry storage',
-    areaM2: 3.4,
-    type: 'storage',
-    note: 'Entry and storage allowance.',
-  },
-  {
-    id: 'compact-office-circulation',
-    productId: 'compact-timber-40',
-    layoutVariantId: 'officeCabin',
-    label: 'Circulation / service allowance',
-    areaM2: 5.2,
-    type: 'circulation',
-    note: 'Preview allowance for circulation, walls and service routing.',
-  },
-  {
-    id: 'family-two-bedroom-living-kitchen',
-    productId: 'family-timber-80',
-    layoutVariantId: 'twoBedroom',
-    label: 'Living / kitchen',
-    areaM2: 30,
-    type: 'living',
-    note: 'Baseline family living and kitchen zone.',
-  },
-  {
-    id: 'family-two-bedroom-bedroom-1',
-    productId: 'family-timber-80',
-    layoutVariantId: 'twoBedroom',
-    label: 'Bedroom 1',
-    areaM2: 12,
-    type: 'bedroom',
-    note: 'Primary bedroom preview area.',
-  },
-  {
-    id: 'family-two-bedroom-bedroom-2',
-    productId: 'family-timber-80',
-    layoutVariantId: 'twoBedroom',
-    label: 'Bedroom 2',
-    areaM2: 12,
-    type: 'bedroom',
-    note: 'Secondary bedroom preview area.',
-  },
-  {
-    id: 'family-two-bedroom-bathroom-core',
-    productId: 'family-timber-80',
-    layoutVariantId: 'twoBedroom',
-    label: 'Bathroom core',
-    areaM2: 5.6,
-    type: 'bathroom',
-    note: 'Shared wet-room core placeholder.',
-  },
-  {
-    id: 'family-two-bedroom-technical-storage',
-    productId: 'family-timber-80',
-    layoutVariantId: 'twoBedroom',
-    label: 'Technical / storage',
-    areaM2: 5,
-    type: 'technical',
-    note: 'Technical and storage allowance.',
-  },
-  {
-    id: 'family-two-bedroom-circulation',
-    productId: 'family-timber-80',
-    layoutVariantId: 'twoBedroom',
-    label: 'Hall / circulation allowance',
-    areaM2: 15.4,
-    type: 'circulation',
-    note: 'Preview allowance for circulation, partitions and service routing.',
-  },
-  {
-    id: 'family-three-bedroom-living',
-    productId: 'family-timber-80',
-    layoutVariantId: 'threeBedroomCompact',
-    label: 'Compact living / kitchen',
-    areaM2: 24,
-    type: 'living',
-    note: 'Reduced living area to allow a third room concept.',
-  },
-  {
-    id: 'family-three-bedroom-bedroom-1',
-    productId: 'family-timber-80',
-    layoutVariantId: 'threeBedroomCompact',
-    label: 'Bedroom 1',
-    areaM2: 11,
-    type: 'bedroom',
-    note: 'Primary compact bedroom preview.',
-  },
-  {
-    id: 'family-three-bedroom-bedroom-2',
-    productId: 'family-timber-80',
-    layoutVariantId: 'threeBedroomCompact',
-    label: 'Bedroom 2',
-    areaM2: 11,
-    type: 'bedroom',
-    note: 'Secondary compact bedroom preview.',
-  },
-  {
-    id: 'family-three-bedroom-office',
-    productId: 'family-timber-80',
-    layoutVariantId: 'threeBedroomCompact',
-    label: 'Compact bedroom / office',
-    areaM2: 8.5,
-    type: 'bedroom',
-    note: 'Small third room or office allowance.',
-  },
-  {
-    id: 'family-three-bedroom-bathroom-core',
-    productId: 'family-timber-80',
-    layoutVariantId: 'threeBedroomCompact',
-    label: 'Bathroom core',
-    areaM2: 5.6,
-    type: 'bathroom',
-    note: 'Shared wet-room core placeholder.',
-  },
-  {
-    id: 'family-three-bedroom-hall-storage',
-    productId: 'family-timber-80',
-    layoutVariantId: 'threeBedroomCompact',
-    label: 'Hall / storage allowance',
-    areaM2: 19.9,
-    type: 'circulation',
-    note: 'Preview allowance for hall, partitions and storage.',
-  },
-  {
-    id: 'family-large-living-kitchen',
-    productId: 'family-timber-80',
-    layoutVariantId: 'largeLiving',
-    label: 'Large living / kitchen',
-    areaM2: 38,
-    type: 'living',
-    note: 'Expanded social and kitchen zone.',
-  },
-  {
-    id: 'family-large-bedroom-suite',
-    productId: 'family-timber-80',
-    layoutVariantId: 'largeLiving',
-    label: 'Bedroom suite',
-    areaM2: 12.5,
-    type: 'bedroom',
-    note: 'Primary bedroom suite preview area.',
-  },
-  {
-    id: 'family-large-guest-room',
-    productId: 'family-timber-80',
-    layoutVariantId: 'largeLiving',
-    label: 'Guest room',
-    areaM2: 11,
-    type: 'bedroom',
-    note: 'Guest room preview area.',
-  },
-  {
-    id: 'family-large-bathroom-core',
-    productId: 'family-timber-80',
-    layoutVariantId: 'largeLiving',
-    label: 'Bathroom core',
-    areaM2: 5.6,
-    type: 'bathroom',
-    note: 'Shared wet-room core placeholder.',
-  },
-  {
-    id: 'family-large-utility-storage',
-    productId: 'family-timber-80',
-    layoutVariantId: 'largeLiving',
-    label: 'Utility storage',
-    areaM2: 5,
-    type: 'storage',
-    note: 'Utility/storage allowance.',
-  },
-  {
-    id: 'family-large-circulation',
-    productId: 'family-timber-80',
-    layoutVariantId: 'largeLiving',
-    label: 'Hall / circulation allowance',
-    areaM2: 7.9,
-    type: 'circulation',
-    note: 'Preview allowance for circulation and partitions.',
-  },
-  {
-    id: 'sauna-only-sauna-room',
-    productId: 'sauna-cabin-25',
-    layoutVariantId: 'saunaOnly',
-    label: 'Sauna room',
-    areaM2: 10,
-    type: 'sauna',
-    note: 'Primary sauna/wellness room.',
-  },
-  {
-    id: 'sauna-only-changing-zone',
-    productId: 'sauna-cabin-25',
-    layoutVariantId: 'saunaOnly',
-    label: 'Changing zone',
-    areaM2: 4,
-    type: 'storage',
-    note: 'Changing and towel/storage allowance.',
-  },
-  {
-    id: 'sauna-only-service-core',
-    productId: 'sauna-cabin-25',
-    layoutVariantId: 'saunaOnly',
-    label: 'Shower / service core',
-    areaM2: 5,
-    type: 'bathroom',
-    note: 'Wet/service core placeholder.',
-  },
-  {
-    id: 'sauna-only-terrace-transition',
-    productId: 'sauna-cabin-25',
-    layoutVariantId: 'saunaOnly',
-    label: 'Terrace transition',
-    areaM2: 2.5,
-    type: 'terrace',
-    note: 'Internal transition allowance near terrace access.',
-  },
-  {
-    id: 'sauna-only-circulation',
-    productId: 'sauna-cabin-25',
-    layoutVariantId: 'saunaOnly',
-    label: 'Circulation / utility allowance',
-    areaM2: 3.5,
-    type: 'circulation',
-    note: 'Preview allowance for circulation and service routing.',
-  },
-  {
-    id: 'sauna-guest-rest-area',
-    productId: 'sauna-cabin-25',
-    layoutVariantId: 'guestCabin',
-    label: 'Guest rest area',
-    areaM2: 10.5,
-    type: 'living',
-    note: 'Compact overnight/rest room preview.',
-  },
-  {
-    id: 'sauna-guest-kitchenette-wall',
-    productId: 'sauna-cabin-25',
-    layoutVariantId: 'guestCabin',
-    label: 'Compact kitchenette wall',
-    areaM2: 3.5,
-    type: 'kitchen',
-    note: 'Linear kitchenette allowance.',
-  },
-  {
-    id: 'sauna-guest-washroom',
-    productId: 'sauna-cabin-25',
-    layoutVariantId: 'guestCabin',
-    label: 'Washroom / service core',
-    areaM2: 4.8,
-    type: 'bathroom',
-    note: 'Wet/service core placeholder.',
-  },
-  {
-    id: 'sauna-guest-terrace-transition',
-    productId: 'sauna-cabin-25',
-    layoutVariantId: 'guestCabin',
-    label: 'Terrace transition',
-    areaM2: 2.2,
-    type: 'terrace',
-    note: 'Internal transition allowance near terrace access.',
-  },
-  {
-    id: 'sauna-guest-circulation',
-    productId: 'sauna-cabin-25',
-    layoutVariantId: 'guestCabin',
-    label: 'Storage / circulation allowance',
-    areaM2: 4,
-    type: 'circulation',
-    note: 'Preview allowance for circulation and storage.',
-  },
-  {
-    id: 'sauna-rest-room-main',
-    productId: 'sauna-cabin-25',
-    layoutVariantId: 'saunaRestRoom',
-    label: 'Sauna / rest area',
-    areaM2: 11.5,
-    type: 'sauna',
-    note: 'Combined sauna/rest preview area.',
-  },
-  {
-    id: 'sauna-rest-room-changing',
-    productId: 'sauna-cabin-25',
-    layoutVariantId: 'saunaRestRoom',
-    label: 'Changing zone',
-    areaM2: 4,
-    type: 'storage',
-    note: 'Changing and towel/storage allowance.',
-  },
-  {
-    id: 'sauna-rest-room-service',
-    productId: 'sauna-cabin-25',
-    layoutVariantId: 'saunaRestRoom',
-    label: 'Service core',
-    areaM2: 4.8,
-    type: 'bathroom',
-    note: 'Wet/service core placeholder.',
-  },
-  {
-    id: 'sauna-rest-room-terrace-transition',
-    productId: 'sauna-cabin-25',
-    layoutVariantId: 'saunaRestRoom',
-    label: 'Terrace transition',
-    areaM2: 2.2,
-    type: 'terrace',
-    note: 'Internal transition allowance near terrace access.',
-  },
-  {
-    id: 'sauna-rest-room-circulation',
-    productId: 'sauna-cabin-25',
-    layoutVariantId: 'saunaRestRoom',
-    label: 'Circulation / utility allowance',
-    areaM2: 2.5,
-    type: 'circulation',
-    note: 'Preview allowance for circulation and service routing.',
-  },
-] as const satisfies readonly ModularHomeRoomMeasurement[];
-
-export const MODULAR_HOME_PRODUCTS = [
-  {
-    id: 'compact-timber-40',
-    name: 'Compact Timber 40',
-    category: 'compactHome',
-    floorAreaM2: 40,
-    footprint: { widthM: 8, lengthM: 5 },
-    ceilingHeightM: 2.6,
-    moduleCount: 2,
-    transportModuleCount: 2,
-    buildCategoryNote: 'Transport-ready compact residential module concept.',
-    bedrooms: 1,
-    bathrooms: 1,
-    defaultTemplateId: 'compactTimber40',
-    moduleInstances: [
-      {
-        instanceId: 'compact-40-living-01',
-        moduleId: 'compact-living-module',
-        positionHint: 'front living/kitchen zone',
-        productionGroup: 'primary-shell',
-        quantity: 1,
-        role: 'Living and kitchen module',
-      },
-      {
-        instanceId: 'compact-40-bedroom-01',
-        moduleId: 'compact-bedroom-module',
-        positionHint: 'rear private zone',
-        productionGroup: 'primary-shell',
-        quantity: 1,
-        role: 'Bedroom module',
-      },
-      {
-        instanceId: 'compact-40-bathroom-core-01',
-        moduleId: 'bathroom-core-module',
-        positionHint: 'rear service corner',
-        productionGroup: 'service-core',
-        quantity: 1,
-        role: 'Bathroom core',
-      },
-    ],
-    baseModuleIds: [
-      'compact-living-module',
-      'compact-bedroom-module',
-      'bathroom-core-module',
-    ],
-    defaultConfig: {
-      doorPackage: 'standardEntry',
-      doorPlacement: 'frontEntry',
-      facade: 'naturalTimber',
-      facadeBoardOrientation: 'horizontal',
-      facadeBoardProfile: 'squareEdge',
-      facadeBoardSpacing: 'standard',
-      facadeBoardWidth: 'standard',
-      finishLevel: 'standard',
-      floorFinish: 'plywood',
-      furniturePackage: 'standardFurniture',
-      interiorFloorStyle: 'utilityPlywood',
-      interiorWallFinish: 'plywood',
-      layoutVariant: 'oneBedroom',
-      roof: 'pitched',
-      roofEdgeColor: 'graphite',
-      roofGutterStyle: 'minimalEdge',
-      template: 'compactTimber40',
-      terrace: 'frontDeck',
-      trimColor: 'timber',
-      windowFrameColor: 'timber',
-      windowFrameType: 'standardFrame',
-      windowPackage: 'standardWindows',
-      windowPlacement: 'balanced',
-      wallPanelStyle: 'plainPanel',
-      sofa: 'enabled',
-      table: 'enabled',
-      bed: 'enabled',
-      kitchenLine: 'enabled',
-      wardrobePlaceholder: 'enabled',
-    },
-    basePrice: 38000,
-    shortDescription: 'A compact one-bedroom timber module for fast deployment and flexible small-site use.',
-    targetUseCase: 'Starter home, guest house, rental cabin or compact backyard dwelling.',
-    productionNotes: [
-      'Designed around a transport-friendly timber module footprint.',
-      'Preview estimate excludes site works, transport, utility connections and local engineering.',
-      'Default preview assumes standard finish and front deck readiness.',
-    ],
-  },
-  {
-    id: 'family-timber-80',
-    name: 'Family Timber 80',
-    category: 'familyHome',
-    floorAreaM2: 80,
-    footprint: { widthM: 11.2, lengthM: 7.2 },
-    ceilingHeightM: 2.6,
-    moduleCount: 4,
-    transportModuleCount: 3,
-    buildCategoryNote: 'Family-scale multi-module transport concept.',
-    bedrooms: 2,
-    bathrooms: 1,
-    defaultTemplateId: 'familyTimber80',
-    moduleInstances: [
-      {
-        instanceId: 'family-80-living-01',
-        moduleId: 'family-living-module',
-        positionHint: 'front shared living/kitchen zone',
-        productionGroup: 'primary-shell',
-        quantity: 1,
-        role: 'Family living and kitchen module',
-      },
-      {
-        instanceId: 'family-80-bedroom-pair-01',
-        moduleId: 'family-bedroom-module',
-        positionHint: 'rear two-bedroom wing',
-        productionGroup: 'primary-shell',
-        quantity: 2,
-        role: 'Bedroom modules',
-      },
-      {
-        instanceId: 'family-80-bathroom-core-01',
-        moduleId: 'bathroom-core-module',
-        positionHint: 'central service core',
-        productionGroup: 'service-core',
-        quantity: 1,
-        role: 'Bathroom core',
-      },
-    ],
-    baseModuleIds: [
-      'family-living-module',
-      'family-bedroom-module',
-      'bathroom-core-module',
-    ],
-    defaultConfig: {
-      doorPackage: 'terraceSlider',
-      doorPlacement: 'terraceFacing',
-      facade: 'naturalTimber',
-      facadeBoardOrientation: 'horizontal',
-      facadeBoardProfile: 'squareEdge',
-      facadeBoardSpacing: 'standard',
-      facadeBoardWidth: 'standard',
-      finishLevel: 'standard',
-      floorFinish: 'plywood',
-      furniturePackage: 'standardFurniture',
-      interiorFloorStyle: 'utilityPlywood',
-      interiorWallFinish: 'plywood',
-      layoutVariant: 'twoBedroom',
-      roof: 'pitched',
-      roofEdgeColor: 'graphite',
-      roofGutterStyle: 'minimalEdge',
-      template: 'familyTimber80',
-      terrace: 'extendedTerrace',
-      trimColor: 'timber',
-      windowFrameColor: 'timber',
-      windowFrameType: 'standardFrame',
-      windowPackage: 'panoramicWindows',
-      windowPlacement: 'frontPanoramic',
-      wallPanelStyle: 'plainPanel',
-      sofa: 'enabled',
-      table: 'enabled',
-      bed: 'enabled',
-      kitchenLine: 'enabled',
-      wardrobePlaceholder: 'enabled',
-    },
-    basePrice: 72000,
-    shortDescription: 'A larger two-bedroom timber home with an open living zone and family-ready layout.',
-    targetUseCase: 'Primary residence, family holiday home or premium rental unit.',
-    productionNotes: [
-      'Uses a larger paired-module layout with shared service core.',
-      'Extended terrace is useful for sales preview but remains optional in estimate logic.',
-      'Final production planning requires site-specific transport and foundation review.',
-    ],
-  },
-  {
-    id: 'sauna-cabin-25',
-    name: 'Sauna Cabin 25',
-    category: 'saunaCabin',
-    floorAreaM2: 25,
-    footprint: { widthM: 6.4, lengthM: 4.2 },
-    ceilingHeightM: 2.4,
-    moduleCount: 2,
-    transportModuleCount: 1,
-    buildCategoryNote: 'Single-transport sauna and guest module concept.',
-    bedrooms: 0,
-    bathrooms: 1,
-    defaultTemplateId: 'saunaCabin25',
-    moduleInstances: [
-      {
-        instanceId: 'sauna-25-core-01',
-        moduleId: 'sauna-core-module',
-        positionHint: 'main wellness/rest zone',
-        productionGroup: 'wellness-core',
-        quantity: 1,
-        role: 'Sauna and guest core',
-      },
-      {
-        instanceId: 'sauna-25-bathroom-core-01',
-        moduleId: 'bathroom-core-module',
-        positionHint: 'compact bathroom/service zone',
-        productionGroup: 'service-core',
-        quantity: 1,
-        role: 'Bathroom and service core',
-      },
-    ],
-    baseModuleIds: [
-      'sauna-core-module',
-      'bathroom-core-module',
-    ],
-    defaultConfig: {
-      doorPackage: 'standardEntry',
-      doorPlacement: 'frontEntry',
-      facade: 'darkThermoWood',
-      facadeBoardOrientation: 'horizontal',
-      facadeBoardProfile: 'squareEdge',
-      facadeBoardSpacing: 'standard',
-      facadeBoardWidth: 'standard',
-      finishLevel: 'standard',
-      floorFinish: 'plywood',
-      furniturePackage: 'saunaPackage',
-      interiorFloorStyle: 'utilityPlywood',
-      interiorWallFinish: 'plywood',
-      layoutVariant: 'saunaRestRoom',
-      roof: 'flat',
-      roofEdgeColor: 'graphite',
-      roofGutterStyle: 'minimalEdge',
-      template: 'saunaCabin25',
-      terrace: 'frontDeck',
-      trimColor: 'timber',
-      windowFrameColor: 'timber',
-      windowFrameType: 'standardFrame',
-      windowPackage: 'compactPrivacy',
-      windowPlacement: 'sidePrivacy',
-      wallPanelStyle: 'plainPanel',
-      sofa: 'disabled',
-      table: 'enabled',
-      bed: 'disabled',
-      kitchenLine: 'disabled',
-      wardrobePlaceholder: 'disabled',
-    },
-    basePrice: 26000,
-    shortDescription: 'A compact sauna and guest module for outdoor retreats and add-on hospitality use.',
-    targetUseCase: 'Sauna cabin, guest retreat, garden wellness module or rental add-on.',
-    productionNotes: [
-      'Service core planning is required before quoting wet-room and sauna equipment.',
-      'Preview model communicates package shape, not final sauna engineering.',
-      'Terrace readiness is included as a product concept, with final decking priced separately.',
-    ],
-  },
-] as const satisfies readonly ModularHomeProduct[];
-
-export const MODULAR_HOME_MODULES = [
-  {
-    id: 'compact-living-module',
-    type: 'living',
-    dimensions: { widthM: 5.2, lengthM: 4.4, heightM: 2.7 },
-    price: 11200,
-    compatibleWith: ['compact-timber-40'],
-    requiredDependencies: [],
-    notes: 'Compact combined living and dining module for the 40 m2 product.',
-  },
-  {
-    id: 'compact-bedroom-module',
-    type: 'bedroom',
-    dimensions: { widthM: 3.2, lengthM: 3.4, heightM: 2.7 },
-    price: 7200,
-    compatibleWith: ['compact-timber-40'],
-    requiredDependencies: ['compact-living-module'],
-    notes: 'One private bedroom module sized for a compact double bed layout.',
-  },
-  {
-    id: 'bathroom-core-module',
-    type: 'bathroomCore',
-    dimensions: { widthM: 2.2, lengthM: 2.4, heightM: 2.7 },
-    price: 8200,
-    compatibleWith: ALL_MODULAR_HOME_PRODUCT_IDS,
-    requiredDependencies: [],
-    notes: 'Shared wet-room service core used by all current preview products.',
-  },
-  {
-    id: 'terrace-small-module',
-    type: 'terrace',
-    dimensions: { widthM: 5.4, lengthM: 2.2, heightM: 0.25 },
-    price: 4500,
-    compatibleWith: ALL_MODULAR_HOME_PRODUCT_IDS,
-    requiredDependencies: [],
-    notes: 'Front deck extension module for compact outdoor activation.',
-  },
-  {
-    id: 'terrace-side-module',
-    type: 'terrace',
-    dimensions: { widthM: 5.8, lengthM: 2.2, heightM: 0.25 },
-    price: 6200,
-    compatibleWith: ALL_MODULAR_HOME_PRODUCT_IDS,
-    requiredDependencies: [],
-    notes: 'Side terrace extension module for side-entry and service-side outdoor use.',
-  },
-  {
-    id: 'terrace-extended-module',
-    type: 'terrace',
-    dimensions: { widthM: 8.4, lengthM: 2.8, heightM: 0.25 },
-    price: 8000,
-    compatibleWith: ['compact-timber-40', 'family-timber-80'],
-    requiredDependencies: [],
-    notes: 'Extended terrace module for larger outdoor living packages.',
-  },
-  {
-    id: 'terrace-covered-placeholder-module',
-    type: 'terrace',
-    dimensions: { widthM: 7.4, lengthM: 3, heightM: 2.7 },
-    price: 12000,
-    compatibleWith: ALL_MODULAR_HOME_PRODUCT_IDS,
-    requiredDependencies: [],
-    notes: 'Covered terrace placeholder with roof/post allowance; final structure requires review.',
-  },
-  {
-    id: 'family-living-module',
-    type: 'living',
-    dimensions: { widthM: 6.8, lengthM: 5.6, heightM: 2.7 },
-    price: 19800,
-    compatibleWith: ['family-timber-80'],
-    requiredDependencies: [],
-    notes: 'Large open-plan living module for the family home product.',
-  },
-  {
-    id: 'family-bedroom-module',
-    type: 'bedroom',
-    dimensions: { widthM: 3.8, lengthM: 3.8, heightM: 2.7 },
-    price: 8800,
-    compatibleWith: ['family-timber-80'],
-    requiredDependencies: ['family-living-module'],
-    notes: 'Repeatable bedroom module for the two-bedroom family layout.',
-  },
-  {
-    id: 'sauna-core-module',
-    // TODO: add a sauna/wellness module category before production BOM/export work.
-    type: 'living',
-    dimensions: { widthM: 4.2, lengthM: 3.6, heightM: 2.5 },
-    price: 9200,
-    compatibleWith: ['sauna-cabin-25'],
-    requiredDependencies: ['bathroom-core-module'],
-    notes: 'Sauna and guest lounge core for the cabin product.',
-  },
-  {
-    id: 'roof-flat-module',
-    type: 'roof',
-    dimensions: { widthM: 7.2, lengthM: 7.2, heightM: 0.45 },
-    price: 0,
-    compatibleWith: ALL_MODULAR_HOME_PRODUCT_IDS,
-    requiredDependencies: [],
-    notes: 'Flat roof system placeholder for preview configuration.',
-  },
-  {
-    id: 'roof-pitched-module',
-    type: 'roof',
-    dimensions: { widthM: 7.2, lengthM: 7.2, heightM: 1.1 },
-    price: 0,
-    compatibleWith: ['compact-timber-40', 'family-timber-80'],
-    requiredDependencies: [],
-    notes: 'Pitched roof module used by the main timber home products.',
-  },
-  {
-    id: 'facade-natural-timber',
-    type: 'facade',
-    dimensions: { widthM: 7.2, lengthM: 0.24, heightM: 2.7 },
-    price: 0,
-    compatibleWith: ALL_MODULAR_HOME_PRODUCT_IDS,
-    requiredDependencies: [],
-    notes: 'Natural timber facade package for baseline commercial previews.',
-  },
-  {
-    id: 'facade-dark-thermo',
-    type: 'facade',
-    dimensions: { widthM: 7.2, lengthM: 0.24, heightM: 2.7 },
-    price: 3200,
-    compatibleWith: ALL_MODULAR_HOME_PRODUCT_IDS,
-    requiredDependencies: [],
-    notes: 'Dark thermo wood facade package for premium exterior expression.',
-  },
-  {
-    id: 'facade-light-painted',
-    type: 'facade',
-    dimensions: { widthM: 7.2, lengthM: 0.24, heightM: 2.7 },
-    price: 2400,
-    compatibleWith: ['compact-timber-40', 'family-timber-80'],
-    requiredDependencies: [],
-    notes: 'Light painted facade package for residential-friendly presentation.',
-  },
-] as const satisfies readonly ModularHomeModule[];
-
-export const MODULAR_HOME_OPTIONS = [
-  {
-    id: 'option-facade-natural-timber',
-    group: 'facade',
-    label: 'Natural timber',
-    materialIds: ['natural-timber-siding'],
-    priceDelta: 0,
-    visualToken: 'naturalTimber' satisfies ModularHomeFacadeOption,
-    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
-    requiredModuleIds: ['facade-natural-timber'],
-  },
-  {
-    id: 'option-facade-dark-thermo',
-    group: 'facade',
-    label: 'Dark thermo wood',
-    materialIds: ['dark-thermo-wood'],
-    priceDelta: 3200,
-    visualToken: 'darkThermoWood' satisfies ModularHomeFacadeOption,
-    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
-    requiredModuleIds: ['facade-dark-thermo'],
-  },
-  {
-    id: 'option-facade-light-painted',
-    group: 'facade',
-    label: 'Light painted',
-    materialIds: ['light-painted-facade'],
-    priceDelta: 2400,
-    visualToken: 'lightPainted' satisfies ModularHomeFacadeOption,
-    compatibleProducts: ['compact-timber-40', 'family-timber-80'],
-    requiredModuleIds: ['facade-light-painted'],
-  },
-  {
-    id: 'option-roof-flat',
-    group: 'roof',
-    label: 'Flat roof',
-    materialIds: ['metal-roof'],
-    priceDelta: 0,
-    visualToken: 'flat' satisfies ModularHomeRoofOption,
-    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
-    requiredModuleIds: ['roof-flat-module'],
-  },
-  {
-    id: 'option-roof-pitched',
-    group: 'roof',
-    label: 'Pitched roof',
-    materialIds: ['metal-roof'],
-    priceDelta: 0,
-    visualToken: 'pitched' satisfies ModularHomeRoofOption,
-    compatibleProducts: ['compact-timber-40', 'family-timber-80'],
-    requiredModuleIds: ['roof-pitched-module'],
-  },
-  {
-    id: 'option-roof-green-placeholder',
-    group: 'roof',
-    label: 'Green roof placeholder',
-    materialIds: ['green-roof-placeholder'],
-    priceDelta: 6500,
-    visualToken: 'greenRoofPlaceholder' satisfies ModularHomeRoofOption,
-    compatibleProducts: ['compact-timber-40', 'family-timber-80'],
-    requiredModuleIds: ['roof-flat-module'],
-  },
-  {
-    id: 'option-terrace-none',
-    group: 'terrace',
-    label: 'No terrace',
-    materialIds: [],
-    priceDelta: 0,
-    visualToken: 'none' satisfies ModularHomeTerraceOption,
-    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
-    requiredModuleIds: [],
-  },
-  {
-    id: 'option-terrace-front-deck',
-    group: 'terrace',
-    label: 'Front deck',
-    materialIds: ['natural-timber-siding'],
-    priceDelta: 4500,
-    visualToken: 'frontDeck' satisfies ModularHomeTerraceOption,
-    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
-    requiredModuleIds: ['terrace-small-module'],
-  },
-  {
-    id: 'option-terrace-side',
-    group: 'terrace',
-    label: 'Side terrace',
-    materialIds: ['natural-timber-siding'],
-    priceDelta: 6200,
-    visualToken: 'sideTerrace' satisfies ModularHomeTerraceOption,
-    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
-    requiredModuleIds: ['terrace-side-module'],
-  },
-  {
-    id: 'option-terrace-extended',
-    group: 'terrace',
-    label: 'Extended terrace',
-    materialIds: ['natural-timber-siding'],
-    priceDelta: 8000,
-    visualToken: 'extendedTerrace' satisfies ModularHomeTerraceOption,
-    compatibleProducts: ['compact-timber-40', 'family-timber-80'],
-    requiredModuleIds: ['terrace-extended-module'],
-  },
-  {
-    id: 'option-terrace-covered-placeholder',
-    group: 'terrace',
-    label: 'Covered terrace placeholder',
-    materialIds: ['natural-timber-siding', 'metal-roof'],
-    priceDelta: 12000,
-    visualToken: 'coveredTerracePlaceholder' satisfies ModularHomeTerraceOption,
-    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
-    requiredModuleIds: ['terrace-covered-placeholder-module'],
-  },
-  {
-    id: 'option-finish-shell',
-    group: 'finish',
-    label: 'Empty shell',
-    materialIds: ['interior-plywood'],
-    priceDelta: 0,
-    visualToken: 'shell' satisfies ModularHomeFinishLevelOption,
-    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
-    requiredModuleIds: [],
-  },
-  {
-    id: 'option-finish-standard',
-    group: 'finish',
-    label: 'Standard furnished preview',
-    materialIds: ['interior-plywood', 'bathroom-wet-core'],
-    priceDelta: 12000,
-    visualToken: 'standard' satisfies ModularHomeFinishLevelOption,
-    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
-    requiredModuleIds: [],
-  },
-  {
-    id: 'option-finish-premium',
-    group: 'finish',
-    label: 'Premium interior preview',
-    materialIds: ['interior-plywood', 'bathroom-wet-core'],
-    priceDelta: 24000,
-    visualToken: 'premium' satisfies ModularHomeFinishLevelOption,
-    compatibleProducts: ['compact-timber-40', 'family-timber-80'],
-    requiredModuleIds: [],
-  },
-  {
-    id: 'option-window-package-standard',
-    group: 'windowPackage',
-    label: 'Standard glazing',
-    materialIds: [],
-    priceDelta: 0,
-    visualToken: 'standardWindows' satisfies ModularHomeWindowPackageOption,
-    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
-    requiredModuleIds: [],
-  },
-  {
-    id: 'option-window-package-panoramic',
-    group: 'windowPackage',
-    label: 'Panoramic glazing',
-    materialIds: [],
-    priceDelta: 7800,
-    visualToken: 'panoramicWindows' satisfies ModularHomeWindowPackageOption,
-    compatibleProducts: ['compact-timber-40', 'family-timber-80'],
-    requiredModuleIds: [],
-  },
-  {
-    id: 'option-window-package-corner-glazing',
-    group: 'windowPackage',
-    label: 'Corner glazing',
-    materialIds: [],
-    priceDelta: 11500,
-    visualToken: 'cornerGlazing' satisfies ModularHomeWindowPackageOption,
-    compatibleProducts: ['compact-timber-40', 'family-timber-80'],
-    requiredModuleIds: [],
-  },
-  {
-    id: 'option-window-package-compact-privacy',
-    group: 'windowPackage',
-    label: 'Compact/privacy glazing',
-    materialIds: [],
-    priceDelta: 1800,
-    visualToken: 'compactPrivacy' satisfies ModularHomeWindowPackageOption,
-    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
-    requiredModuleIds: [],
-  },
-  {
-    id: 'option-door-package-standard-entry',
-    group: 'doorPackage',
-    label: 'Standard entry',
-    materialIds: [],
-    priceDelta: 0,
-    visualToken: 'standardEntry' satisfies ModularHomeDoorPackageOption,
-    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
-    requiredModuleIds: [],
-  },
-  {
-    id: 'option-door-package-terrace-slider',
-    group: 'doorPackage',
-    label: 'Terrace slider',
-    materialIds: [],
-    priceDelta: 4200,
-    visualToken: 'terraceSlider' satisfies ModularHomeDoorPackageOption,
-    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
-    requiredModuleIds: [],
-  },
-  {
-    id: 'option-door-package-premium-glazed-entry',
-    group: 'doorPackage',
-    label: 'Premium glazed entry',
-    materialIds: [],
-    priceDelta: 5200,
-    visualToken: 'premiumGlazedEntry' satisfies ModularHomeDoorPackageOption,
-    compatibleProducts: ['compact-timber-40', 'family-timber-80'],
-    requiredModuleIds: [],
-  },
-  {
-    id: 'option-window-placement-balanced',
-    group: 'windowPlacement',
-    label: 'Balanced openings',
-    materialIds: [],
-    priceDelta: 0,
-    visualToken: 'balanced' satisfies ModularHomeWindowPlacementOption,
-    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
-    requiredModuleIds: [],
-  },
-  {
-    id: 'option-window-placement-front-panoramic',
-    group: 'windowPlacement',
-    label: 'Front panoramic placement',
-    materialIds: [],
-    priceDelta: 2400,
-    visualToken: 'frontPanoramic' satisfies ModularHomeWindowPlacementOption,
-    compatibleProducts: ['compact-timber-40', 'family-timber-80'],
-    requiredModuleIds: [],
-  },
-  {
-    id: 'option-window-placement-side-privacy',
-    group: 'windowPlacement',
-    label: 'Side privacy placement',
-    materialIds: [],
-    priceDelta: 900,
-    visualToken: 'sidePrivacy' satisfies ModularHomeWindowPlacementOption,
-    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
-    requiredModuleIds: [],
-  },
-  {
-    id: 'option-window-placement-corner-feature',
-    group: 'windowPlacement',
-    label: 'Corner feature placement',
-    materialIds: [],
-    priceDelta: 4800,
-    visualToken: 'cornerFeature' satisfies ModularHomeWindowPlacementOption,
-    compatibleProducts: ['compact-timber-40', 'family-timber-80'],
-    requiredModuleIds: [],
-  },
-  {
-    id: 'option-door-placement-front-entry',
-    group: 'doorPlacement',
-    label: 'Front entry placement',
-    materialIds: [],
-    priceDelta: 0,
-    visualToken: 'frontEntry' satisfies ModularHomeDoorPlacementOption,
-    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
-    requiredModuleIds: [],
-  },
-  {
-    id: 'option-door-placement-side-entry',
-    group: 'doorPlacement',
-    label: 'Side entry placement',
-    materialIds: [],
-    priceDelta: 1200,
-    visualToken: 'sideEntry' satisfies ModularHomeDoorPlacementOption,
-    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
-    requiredModuleIds: [],
-  },
-  {
-    id: 'option-door-placement-terrace-facing',
-    group: 'doorPlacement',
-    label: 'Terrace-facing placement',
-    materialIds: [],
-    priceDelta: 2800,
-    visualToken: 'terraceFacing' satisfies ModularHomeDoorPlacementOption,
-    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
-    requiredModuleIds: [],
-  },
-  {
-    id: 'option-facade-board-orientation-horizontal',
-    group: 'facadeBoardOrientation',
-    label: 'Horizontal boards',
-    materialIds: [],
-    priceDelta: 0,
-    visualToken: 'horizontal' satisfies ModularHomeFacadeBoardOrientationOption,
-    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
-    requiredModuleIds: [],
-  },
-  {
-    id: 'option-facade-board-orientation-vertical',
-    group: 'facadeBoardOrientation',
-    label: 'Vertical boards',
-    materialIds: [],
-    priceDelta: 650,
-    visualToken: 'vertical' satisfies ModularHomeFacadeBoardOrientationOption,
-    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
-    requiredModuleIds: [],
-  },
-  {
-    id: 'option-facade-board-width-narrow',
-    group: 'facadeBoardWidth',
-    label: 'Narrow boards',
-    materialIds: [],
-    priceDelta: 950,
-    visualToken: 'narrow' satisfies ModularHomeFacadeBoardWidthOption,
-    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
-    requiredModuleIds: [],
-  },
-  {
-    id: 'option-facade-board-width-standard',
-    group: 'facadeBoardWidth',
-    label: 'Standard boards',
-    materialIds: [],
-    priceDelta: 0,
-    visualToken: 'standard' satisfies ModularHomeFacadeBoardWidthOption,
-    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
-    requiredModuleIds: [],
-  },
-  {
-    id: 'option-facade-board-width-wide',
-    group: 'facadeBoardWidth',
-    label: 'Wide boards',
-    materialIds: [],
-    priceDelta: 450,
-    visualToken: 'wide' satisfies ModularHomeFacadeBoardWidthOption,
-    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
-    requiredModuleIds: [],
-  },
-  {
-    id: 'option-facade-board-profile-square-edge',
-    group: 'facadeBoardProfile',
-    label: 'Square-edge boards',
-    materialIds: [],
-    priceDelta: 0,
-    visualToken: 'squareEdge' satisfies ModularHomeFacadeBoardProfileOption,
-    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
-    requiredModuleIds: [],
-  },
-  {
-    id: 'option-facade-board-profile-shadow-gap',
-    group: 'facadeBoardProfile',
-    label: 'Shadow-gap boards',
-    materialIds: [],
-    priceDelta: 1250,
-    visualToken: 'shadowGap' satisfies ModularHomeFacadeBoardProfileOption,
-    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
-    requiredModuleIds: [],
-  },
-  {
-    id: 'option-facade-board-profile-tongue-groove',
-    group: 'facadeBoardProfile',
-    label: 'Tongue-and-groove boards',
-    materialIds: [],
-    priceDelta: 980,
-    visualToken: 'tongueGroove' satisfies ModularHomeFacadeBoardProfileOption,
-    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
-    requiredModuleIds: [],
-  },
-  {
-    id: 'option-facade-board-spacing-tight',
-    group: 'facadeBoardSpacing',
-    label: 'Tight spacing',
-    materialIds: [],
-    priceDelta: 650,
-    visualToken: 'tight' satisfies ModularHomeFacadeBoardSpacingOption,
-    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
-    requiredModuleIds: [],
-  },
-  {
-    id: 'option-facade-board-spacing-standard',
-    group: 'facadeBoardSpacing',
-    label: 'Standard spacing',
-    materialIds: [],
-    priceDelta: 0,
-    visualToken: 'standard' satisfies ModularHomeFacadeBoardSpacingOption,
-    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
-    requiredModuleIds: [],
-  },
-  {
-    id: 'option-facade-board-spacing-expressive',
-    group: 'facadeBoardSpacing',
-    label: 'Expressive spacing',
-    materialIds: [],
-    priceDelta: 450,
-    visualToken: 'expressive' satisfies ModularHomeFacadeBoardSpacingOption,
-    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
-    requiredModuleIds: [],
-  },
-  {
-    id: 'option-trim-color-timber',
-    group: 'trimColor',
-    label: 'Timber trim',
-    materialIds: [],
-    priceDelta: 0,
-    visualToken: 'timber' satisfies ModularHomeTrimColorOption,
-    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
-    requiredModuleIds: [],
-  },
-  {
-    id: 'option-trim-color-graphite',
-    group: 'trimColor',
-    label: 'Graphite trim',
-    materialIds: [],
-    priceDelta: 520,
-    visualToken: 'graphite' satisfies ModularHomeTrimColorOption,
-    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
-    requiredModuleIds: [],
-  },
-  {
-    id: 'option-trim-color-bronze',
-    group: 'trimColor',
-    label: 'Bronze trim',
-    materialIds: ['metal-roof'],
-    priceDelta: 820,
-    visualToken: 'bronze' satisfies ModularHomeTrimColorOption,
-    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
-    requiredModuleIds: [],
-  },
-  {
-    id: 'option-trim-color-white',
-    group: 'trimColor',
-    label: 'White trim',
-    materialIds: [],
-    priceDelta: 380,
-    visualToken: 'white' satisfies ModularHomeTrimColorOption,
-    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
-    requiredModuleIds: [],
-  },
-  {
-    id: 'option-roof-edge-graphite',
-    group: 'roofEdgeColor',
-    label: 'Graphite roof edge',
-    materialIds: ['metal-roof'],
-    priceDelta: 0,
-    visualToken: 'graphite' satisfies ModularHomeRoofEdgeColorOption,
-    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
-    requiredModuleIds: [],
-  },
-  {
-    id: 'option-roof-edge-bronze',
-    group: 'roofEdgeColor',
-    label: 'Bronze roof edge',
-    materialIds: ['metal-roof'],
-    priceDelta: 650,
-    visualToken: 'bronze' satisfies ModularHomeRoofEdgeColorOption,
-    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
-    requiredModuleIds: [],
-  },
-  {
-    id: 'option-roof-edge-light-metal',
-    group: 'roofEdgeColor',
-    label: 'Light metal roof edge',
-    materialIds: ['metal-roof'],
-    priceDelta: 450,
-    visualToken: 'lightMetal' satisfies ModularHomeRoofEdgeColorOption,
-    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
-    requiredModuleIds: [],
-  },
-  {
-    id: 'option-roof-gutter-minimal-edge',
-    group: 'roofGutterStyle',
-    label: 'Minimal edge gutter',
-    materialIds: ['metal-roof'],
-    priceDelta: 0,
-    visualToken: 'minimalEdge' satisfies ModularHomeRoofGutterStyleOption,
-    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
-    requiredModuleIds: [],
-  },
-  {
-    id: 'option-roof-gutter-box',
-    group: 'roofGutterStyle',
-    label: 'Box gutter',
-    materialIds: ['metal-roof'],
-    priceDelta: 1050,
-    visualToken: 'boxGutter' satisfies ModularHomeRoofGutterStyleOption,
-    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
-    requiredModuleIds: [],
-  },
-  {
-    id: 'option-roof-gutter-round',
-    group: 'roofGutterStyle',
-    label: 'Round gutter placeholder',
-    materialIds: ['metal-roof'],
-    priceDelta: 760,
-    visualToken: 'roundGutter' satisfies ModularHomeRoofGutterStyleOption,
-    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
-    requiredModuleIds: [],
-  },
-  {
-    id: 'option-window-frame-timber',
-    group: 'windowFrameColor',
-    label: 'Timber frames',
-    materialIds: [],
-    priceDelta: 0,
-    visualToken: 'timber' satisfies ModularHomeWindowFrameColorOption,
-    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
-    requiredModuleIds: [],
-  },
-  {
-    id: 'option-window-frame-graphite',
-    group: 'windowFrameColor',
-    label: 'Graphite frames',
-    materialIds: [],
-    priceDelta: 850,
-    visualToken: 'graphite' satisfies ModularHomeWindowFrameColorOption,
-    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
-    requiredModuleIds: [],
-  },
-  {
-    id: 'option-window-frame-white',
-    group: 'windowFrameColor',
-    label: 'White frames',
-    materialIds: [],
-    priceDelta: 450,
-    visualToken: 'white' satisfies ModularHomeWindowFrameColorOption,
-    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
-    requiredModuleIds: [],
-  },
-  {
-    id: 'option-window-frame-type-standard',
-    group: 'windowFrameType',
-    label: 'Standard frame',
-    materialIds: [],
-    priceDelta: 0,
-    visualToken: 'standardFrame' satisfies ModularHomeWindowFrameTypeOption,
-    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
-    requiredModuleIds: [],
-  },
-  {
-    id: 'option-window-frame-type-slimline',
-    group: 'windowFrameType',
-    label: 'Slimline frame',
-    materialIds: [],
-    priceDelta: 1100,
-    visualToken: 'slimline' satisfies ModularHomeWindowFrameTypeOption,
-    compatibleProducts: ['compact-timber-40', 'family-timber-80'],
-    requiredModuleIds: [],
-  },
-  {
-    id: 'option-window-frame-type-deep-reveal',
-    group: 'windowFrameType',
-    label: 'Deep reveal frame',
-    materialIds: [],
-    priceDelta: 1450,
-    visualToken: 'deepReveal' satisfies ModularHomeWindowFrameTypeOption,
-    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
-    requiredModuleIds: [],
-  },
-  {
-    id: 'option-interior-wall-plywood',
-    group: 'interiorWallFinish',
-    label: 'Plywood walls',
-    materialIds: ['interior-plywood'],
-    priceDelta: 0,
-    visualToken: 'plywood' satisfies ModularHomeInteriorWallFinishOption,
-    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
-    requiredModuleIds: [],
-  },
-  {
-    id: 'option-interior-wall-painted-white',
-    group: 'interiorWallFinish',
-    label: 'Painted white walls',
-    materialIds: ['interior-plywood'],
-    priceDelta: 1600,
-    visualToken: 'paintedWhite' satisfies ModularHomeInteriorWallFinishOption,
-    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
-    requiredModuleIds: [],
-  },
-  {
-    id: 'option-interior-wall-warm-panel',
-    group: 'interiorWallFinish',
-    label: 'Warm panel walls',
-    materialIds: ['interior-plywood'],
-    priceDelta: 2200,
-    visualToken: 'warmPanel' satisfies ModularHomeInteriorWallFinishOption,
-    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
-    requiredModuleIds: [],
-  },
-  {
-    id: 'option-floor-finish-plywood',
-    group: 'floorFinish',
-    label: 'Plywood floor',
-    materialIds: ['interior-plywood'],
-    priceDelta: 0,
-    visualToken: 'plywood' satisfies ModularHomeFloorFinishOption,
-    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
-    requiredModuleIds: [],
-  },
-  {
-    id: 'option-floor-finish-oak-laminate',
-    group: 'floorFinish',
-    label: 'Oak laminate floor',
-    materialIds: ['interior-plywood'],
-    priceDelta: 2800,
-    visualToken: 'oakLaminate' satisfies ModularHomeFloorFinishOption,
-    compatibleProducts: ['compact-timber-40', 'family-timber-80'],
-    requiredModuleIds: [],
-  },
-  {
-    id: 'option-floor-finish-polished-concrete',
-    group: 'floorFinish',
-    label: 'Polished concrete floor',
-    materialIds: ['interior-plywood'],
-    priceDelta: 2400,
-    visualToken: 'polishedConcrete' satisfies ModularHomeFloorFinishOption,
-    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
-    requiredModuleIds: [],
-  },
-  {
-    id: 'option-interior-floor-style-utility-plywood',
-    group: 'interiorFloorStyle',
-    label: 'Utility plywood boards',
-    materialIds: ['interior-plywood'],
-    priceDelta: 0,
-    visualToken: 'utilityPlywood' satisfies ModularHomeInteriorFloorStyleOption,
-    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
-    requiredModuleIds: [],
-  },
-  {
-    id: 'option-interior-floor-style-warm-plank',
-    group: 'interiorFloorStyle',
-    label: 'Warm plank lines',
-    materialIds: ['interior-plywood'],
-    priceDelta: 1350,
-    visualToken: 'warmPlank' satisfies ModularHomeInteriorFloorStyleOption,
-    compatibleProducts: ['compact-timber-40', 'family-timber-80'],
-    requiredModuleIds: [],
-  },
-  {
-    id: 'option-interior-floor-style-polished-slab',
-    group: 'interiorFloorStyle',
-    label: 'Polished slab grid',
-    materialIds: ['interior-plywood'],
-    priceDelta: 1700,
-    visualToken: 'polishedSlab' satisfies ModularHomeInteriorFloorStyleOption,
-    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
-    requiredModuleIds: [],
-  },
-  {
-    id: 'option-wall-panel-style-plain',
-    group: 'wallPanelStyle',
-    label: 'Plain wall panels',
-    materialIds: ['interior-plywood'],
-    priceDelta: 0,
-    visualToken: 'plainPanel' satisfies ModularHomeWallPanelStyleOption,
-    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
-    requiredModuleIds: [],
-  },
-  {
-    id: 'option-wall-panel-style-ribbed',
-    group: 'wallPanelStyle',
-    label: 'Ribbed wall panels',
-    materialIds: ['interior-plywood'],
-    priceDelta: 1250,
-    visualToken: 'ribbedPanel' satisfies ModularHomeWallPanelStyleOption,
-    compatibleProducts: ['compact-timber-40', 'family-timber-80'],
-    requiredModuleIds: [],
-  },
-  {
-    id: 'option-wall-panel-style-paint-ready',
-    group: 'wallPanelStyle',
-    label: 'Paint-ready boards',
-    materialIds: ['interior-plywood'],
-    priceDelta: 950,
-    visualToken: 'paintReadyBoard' satisfies ModularHomeWallPanelStyleOption,
-    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
-    requiredModuleIds: [],
-  },
-  {
-    id: 'option-furniture-package-empty-shell',
-    group: 'furniturePackage',
-    label: 'Empty shell',
-    materialIds: [],
-    priceDelta: 0,
-    visualToken: 'emptyShell' satisfies ModularHomeFurniturePackageOption,
-    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
-    requiredModuleIds: [],
-  },
-  {
-    id: 'option-furniture-package-standard',
-    group: 'furniturePackage',
-    label: 'Standard furniture',
-    materialIds: ['interior-plywood'],
-    priceDelta: 4200,
-    visualToken: 'standardFurniture' satisfies ModularHomeFurniturePackageOption,
-    compatibleProducts: ['compact-timber-40', 'family-timber-80'],
-    requiredModuleIds: [],
-  },
-  {
-    id: 'option-furniture-package-premium',
-    group: 'furniturePackage',
-    label: 'Premium furniture',
-    materialIds: ['interior-plywood'],
-    priceDelta: 9800,
-    visualToken: 'premiumFurniture' satisfies ModularHomeFurniturePackageOption,
-    compatibleProducts: ['compact-timber-40', 'family-timber-80'],
-    requiredModuleIds: [],
-  },
-  {
-    id: 'option-furniture-package-kitchen',
-    group: 'furniturePackage',
-    label: 'Kitchen package',
-    materialIds: ['interior-plywood'],
-    priceDelta: 3600,
-    visualToken: 'kitchenPackage' satisfies ModularHomeFurniturePackageOption,
-    compatibleProducts: ['compact-timber-40', 'family-timber-80'],
-    requiredModuleIds: [],
-  },
-  {
-    id: 'option-furniture-package-bathroom',
-    group: 'furniturePackage',
-    label: 'Bathroom package',
-    materialIds: ['bathroom-wet-core'],
-    priceDelta: 2900,
-    visualToken: 'bathroomPackage' satisfies ModularHomeFurniturePackageOption,
-    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
-    requiredModuleIds: [],
-  },
-  {
-    id: 'option-furniture-package-sauna',
-    group: 'furniturePackage',
-    label: 'Sauna package',
-    materialIds: ['interior-plywood'],
-    priceDelta: 3800,
-    visualToken: 'saunaPackage' satisfies ModularHomeFurniturePackageOption,
-    compatibleProducts: ['sauna-cabin-25'],
-    requiredModuleIds: [],
-  },
-  {
-    id: 'option-furniture-sofa-disabled',
-    group: 'sofa',
-    label: 'Sofa off',
-    materialIds: [],
-    priceDelta: 0,
-    visualToken: 'disabled' satisfies ModularHomeFurnitureToggleOption,
-    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
-    requiredModuleIds: [],
-  },
-  {
-    id: 'option-furniture-sofa-enabled',
-    group: 'sofa',
-    label: 'Sofa on',
-    materialIds: [],
-    priceDelta: 850,
-    visualToken: 'enabled' satisfies ModularHomeFurnitureToggleOption,
-    compatibleProducts: ['compact-timber-40', 'family-timber-80'],
-    requiredModuleIds: [],
-  },
-  {
-    id: 'option-furniture-table-disabled',
-    group: 'table',
-    label: 'Table off',
-    materialIds: [],
-    priceDelta: 0,
-    visualToken: 'disabled' satisfies ModularHomeFurnitureToggleOption,
-    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
-    requiredModuleIds: [],
-  },
-  {
-    id: 'option-furniture-table-enabled',
-    group: 'table',
-    label: 'Table on',
-    materialIds: [],
-    priceDelta: 450,
-    visualToken: 'enabled' satisfies ModularHomeFurnitureToggleOption,
-    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
-    requiredModuleIds: [],
-  },
-  {
-    id: 'option-furniture-bed-disabled',
-    group: 'bed',
-    label: 'Bed off',
-    materialIds: [],
-    priceDelta: 0,
-    visualToken: 'disabled' satisfies ModularHomeFurnitureToggleOption,
-    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
-    requiredModuleIds: [],
-  },
-  {
-    id: 'option-furniture-bed-enabled',
-    group: 'bed',
-    label: 'Bed on',
-    materialIds: [],
-    priceDelta: 950,
-    visualToken: 'enabled' satisfies ModularHomeFurnitureToggleOption,
-    compatibleProducts: ['compact-timber-40', 'family-timber-80'],
-    requiredModuleIds: [],
-  },
-  {
-    id: 'option-furniture-kitchen-line-disabled',
-    group: 'kitchenLine',
-    label: 'Kitchen line off',
-    materialIds: [],
-    priceDelta: 0,
-    visualToken: 'disabled' satisfies ModularHomeFurnitureToggleOption,
-    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
-    requiredModuleIds: [],
-  },
-  {
-    id: 'option-furniture-kitchen-line-enabled',
-    group: 'kitchenLine',
-    label: 'Kitchen line on',
-    materialIds: [],
-    priceDelta: 2400,
-    visualToken: 'enabled' satisfies ModularHomeFurnitureToggleOption,
-    compatibleProducts: ['compact-timber-40', 'family-timber-80'],
-    requiredModuleIds: [],
-  },
-  {
-    id: 'option-furniture-wardrobe-disabled',
-    group: 'wardrobePlaceholder',
-    label: 'Wardrobe off',
-    materialIds: [],
-    priceDelta: 0,
-    visualToken: 'disabled' satisfies ModularHomeFurnitureToggleOption,
-    compatibleProducts: ALL_MODULAR_HOME_PRODUCT_IDS,
-    requiredModuleIds: [],
-  },
-  {
-    id: 'option-furniture-wardrobe-enabled',
-    group: 'wardrobePlaceholder',
-    label: 'Wardrobe on',
-    materialIds: [],
-    priceDelta: 700,
-    visualToken: 'enabled' satisfies ModularHomeFurnitureToggleOption,
-    compatibleProducts: ['compact-timber-40', 'family-timber-80'],
-    requiredModuleIds: [],
-  },
-] as const satisfies readonly ModularHomeOption[];
+export const MODULAR_HOME_DIMENSION_PRESETS = MODULAR_HOME_PRODUCT_DATA.dimensionPresets;
+export const MODULAR_HOME_ROOM_USE_PROFILES = MODULAR_HOME_PRODUCT_DATA.roomUseProfiles;
+const MODULAR_HOME_ROOM_USE_CHOICES_BY_LAYOUT = MODULAR_HOME_PRODUCT_DATA.roomUseChoicesByLayout;
+const MODULAR_HOME_DEFAULT_ROOM_USE_PROFILE_BY_LAYOUT = MODULAR_HOME_PRODUCT_DATA.defaultRoomUseProfileByLayout;
+export const MODULAR_HOME_LAYOUT_VARIANTS = MODULAR_HOME_PRODUCT_DATA.layoutVariants;
+export const MODULAR_HOME_ROOM_MEASUREMENT_DISCLAIMER = MODULAR_HOME_PRODUCT_DATA.roomMeasurementDisclaimer;
+export const MODULAR_HOME_ROOM_MEASUREMENTS = MODULAR_HOME_PRODUCT_DATA.roomMeasurements;
+export const MODULAR_HOME_PRODUCTS = MODULAR_HOME_PRODUCT_DATA.products;
+export const MODULAR_HOME_MODULES = MODULAR_HOME_PRODUCT_DATA.modules;
+export const MODULAR_HOME_OPTIONS = MODULAR_HOME_PRODUCT_DATA.options;
 
 const DEFAULT_MODULAR_HOME_PRODUCT_ID: ModularHomeProductId = 'compact-timber-40';
 
@@ -2086,6 +380,9 @@ function getSelectedOptionForGroup(
     finish: config.finishLevel,
     floorFinish: config.floorFinish,
     furniturePackage: config.furniturePackage,
+    kitchenFinish: config.kitchenFinish,
+    furnitureMood: config.furnitureMood,
+    interiorZoneFocus: config.interiorZoneFocus,
     interiorFloorStyle: config.interiorFloorStyle,
     interiorWallFinish: config.interiorWallFinish,
     trimColor: config.trimColor,
@@ -2137,6 +434,9 @@ function getConfigKeyForOptionGroup(
     furniturePackage: 'furniturePackage',
     interiorFloorStyle: 'interiorFloorStyle',
     interiorWallFinish: 'interiorWallFinish',
+    kitchenFinish: 'kitchenFinish',
+    furnitureMood: 'furnitureMood',
+    interiorZoneFocus: 'interiorZoneFocus',
     trimColor: 'trimColor',
     sofa: 'sofa',
     table: 'table',
@@ -2271,6 +571,9 @@ function getRequiredOptionModuleIds(config: ModularHomeConfiguratorState): reado
     getSelectedOptionForGroup(config, 'floorFinish'),
     getSelectedOptionForGroup(config, 'interiorFloorStyle'),
     getSelectedOptionForGroup(config, 'wallPanelStyle'),
+    getSelectedOptionForGroup(config, 'kitchenFinish'),
+    getSelectedOptionForGroup(config, 'furnitureMood'),
+    getSelectedOptionForGroup(config, 'interiorZoneFocus'),
     getSelectedOptionForGroup(config, 'furniturePackage'),
     getSelectedOptionForGroup(config, 'sofa'),
     getSelectedOptionForGroup(config, 'table'),
@@ -2765,6 +1068,53 @@ export function getModulesForConfig(config: ModularHomeConfiguratorState): reado
     .filter((module): module is ModularHomeModule => Boolean(module));
 }
 
+export function getModularHomeDimensionPresetsForProduct(productId: string): readonly ModularHomeDimensionPreset[] {
+  return MODULAR_HOME_DIMENSION_PRESETS.filter((preset) => preset.productId === productId);
+}
+
+export function isModularHomeDimensionPresetCompatible(
+  productId: string,
+  dimensionPreset: string,
+): dimensionPreset is ModularHomeDimensionPresetId {
+  return getModularHomeDimensionPresetsForProduct(productId).some((preset) => preset.id === dimensionPreset);
+}
+
+export function getDefaultDimensionPresetForProduct(productId: string): ModularHomeDimensionPresetId {
+  const product = getModularHomeProduct(productId) ?? getModularHomeProduct(DEFAULT_MODULAR_HOME_PRODUCT_ID);
+  const defaultPreset = product?.defaultConfig.dimensionPreset;
+
+  if (product && defaultPreset && isModularHomeDimensionPresetCompatible(product.id, defaultPreset)) {
+    return defaultPreset;
+  }
+
+  return getModularHomeDimensionPresetsForProduct(product?.id ?? DEFAULT_MODULAR_HOME_PRODUCT_ID)[0]?.id ?? 'compactStandard';
+}
+
+export function getModularHomeDimensionPreset(
+  productId: string,
+  dimensionPreset?: string,
+): ModularHomeDimensionPreset | null {
+  const presets = getModularHomeDimensionPresetsForProduct(productId);
+  const selectedPreset = presets.find((preset) => preset.id === dimensionPreset);
+
+  return selectedPreset
+    ?? presets.find((preset) => preset.id === getDefaultDimensionPresetForProduct(productId))
+    ?? presets[0]
+    ?? null;
+}
+
+export function getModularHomeDimensionPresetForConfig(
+  config: ModularHomeConfiguratorState,
+): ModularHomeDimensionPreset | null {
+  const product = getProductForConfig(config);
+
+  if (!product) {
+    return getModularHomeDimensionPreset(DEFAULT_MODULAR_HOME_PRODUCT_ID, DEFAULT_MODULAR_HOME_CONFIG.dimensionPreset);
+  }
+
+  return getModularHomeDimensionPreset(product.id, config.dimensionPreset);
+}
+
 export function getDefaultHomeConfig(productId: string): ModularHomeConfiguratorState {
   const product = getModularHomeProduct(productId) ?? getModularHomeProduct(DEFAULT_MODULAR_HOME_PRODUCT_ID);
 
@@ -2817,6 +1167,73 @@ export function getModularHomeLayoutVariantForConfig(
   return getModularHomeLayoutVariant(product.id, config.layoutVariant);
 }
 
+export function getDefaultRoomUseProfileForLayout(
+  layoutVariantId: ModularHomeLayoutVariantId,
+): ModularHomeRoomUseProfileOption {
+  return MODULAR_HOME_DEFAULT_ROOM_USE_PROFILE_BY_LAYOUT[layoutVariantId];
+}
+
+export function getModularHomeRoomUseChoices(
+  productId: string,
+  layoutVariantId?: string,
+): readonly ModularHomeRoomUseProfile[] {
+  const product = getModularHomeProduct(productId);
+  const resolvedLayoutVariant = product
+    ? getModularHomeLayoutVariant(product.id, layoutVariantId)?.id
+    : null;
+
+  if (!resolvedLayoutVariant) {
+    return [];
+  }
+
+  const allowed = MODULAR_HOME_ROOM_USE_CHOICES_BY_LAYOUT[resolvedLayoutVariant] ?? [];
+  const profiles: ModularHomeRoomUseProfile[] = [];
+
+  for (const id of allowed) {
+    const profile = MODULAR_HOME_ROOM_USE_PROFILES.find((item) => item.id === id);
+    if (profile) {
+      profiles.push(profile);
+    }
+  }
+
+  return profiles;
+}
+
+export function getModularHomeRoomUseProfile(
+  productId: string,
+  layoutVariantId: string | undefined,
+  roomUseProfileId?: string,
+): ModularHomeRoomUseProfile | null {
+  const choices = getModularHomeRoomUseChoices(productId, layoutVariantId);
+  const selected = choices.find((profile) => profile.id === roomUseProfileId);
+
+  if (selected) {
+    return selected;
+  }
+
+  const fallbackId = layoutVariantId && layoutVariantId in MODULAR_HOME_DEFAULT_ROOM_USE_PROFILE_BY_LAYOUT
+    ? MODULAR_HOME_DEFAULT_ROOM_USE_PROFILE_BY_LAYOUT[layoutVariantId as ModularHomeLayoutVariantId]
+    : null;
+
+  return (
+    choices.find((profile) => profile.id === fallbackId)
+    ?? choices[0]
+    ?? null
+  );
+}
+
+export function getModularHomeRoomUseProfileForConfig(
+  config: ModularHomeConfiguratorState,
+): ModularHomeRoomUseProfile | null {
+  const product = getProductForConfig(config);
+
+  if (!product) {
+    return getModularHomeRoomUseProfile(DEFAULT_MODULAR_HOME_PRODUCT_ID, DEFAULT_MODULAR_HOME_CONFIG.layoutVariant, DEFAULT_MODULAR_HOME_CONFIG.roomUseProfile);
+  }
+
+  return getModularHomeRoomUseProfile(product.id, config.layoutVariant, config.roomUseProfile);
+}
+
 export function getModularHomeRoomMeasurements(
   productId: string,
   layoutVariant?: string,
@@ -2839,19 +1256,111 @@ export function getModularHomeRoomMeasurements(
   ));
 }
 
+function getAdjustedRoomMeasurementLabel(
+  room: ModularHomeRoomMeasurement,
+  roomUseProfileId: ModularHomeRoomUseProfileOption,
+): string {
+  if (room.productId === 'compact-timber-40') {
+    if (room.id === 'compact-open-studio-living-sleeping') {
+      const labelByProfile: Partial<Record<ModularHomeRoomUseProfileOption, string>> = {
+        bedroom: 'Studio sleeping / living',
+        guestRoom: 'Guest studio / lounge',
+        largerLiving: 'Larger living / lounge',
+        office: 'Studio office / lounge',
+      };
+      return labelByProfile[roomUseProfileId] ?? room.label;
+    }
+
+    if (room.id === 'compact-one-bedroom-bedroom' || room.id === 'compact-office-guest-room') {
+      const labelByProfile: Partial<Record<ModularHomeRoomUseProfileOption, string>> = {
+        bedroom: 'Bedroom',
+        guestRoom: 'Guest room',
+        office: 'Office',
+        storage: 'Storage room',
+      };
+      return labelByProfile[roomUseProfileId] ?? room.label;
+    }
+  }
+
+  if (room.productId === 'family-timber-80') {
+    if (room.id === 'family-two-bedroom-bedroom-2' || room.id === 'family-large-guest-room' || room.id === 'family-three-bedroom-office') {
+      const labelByProfile: Partial<Record<ModularHomeRoomUseProfileOption, string>> = {
+        bedroom: 'Bedroom',
+        guestRoom: 'Guest room',
+        office: 'Office',
+        storage: 'Storage / utility room',
+      };
+      return labelByProfile[roomUseProfileId] ?? room.label;
+    }
+
+    if ((room.id === 'family-two-bedroom-living-kitchen' || room.id === 'family-large-living-kitchen') && roomUseProfileId === 'largerLiving') {
+      return 'Larger living / kitchen';
+    }
+
+    if (room.id === 'family-two-bedroom-technical-storage' && roomUseProfileId === 'largerLiving') {
+      return 'Service / storage wall';
+    }
+  }
+
+  if (room.productId === 'sauna-cabin-25') {
+    if (room.id === 'sauna-only-sauna-room' || room.id === 'sauna-guest-rest-area' || room.id === 'sauna-rest-room-main') {
+      const labelByProfile: Partial<Record<ModularHomeRoomUseProfileOption, string>> = {
+        guestRoom: 'Guest room / rest area',
+        saunaRestRoom: 'Sauna rest room',
+        storage: 'Storage / support room',
+      };
+      return labelByProfile[roomUseProfileId] ?? room.label;
+    }
+  }
+
+  return room.label;
+}
+
+function getAdjustedRoomMeasurementNote(
+  room: ModularHomeRoomMeasurement,
+  roomUseProfile: ModularHomeRoomUseProfile | null,
+): string {
+  if (!roomUseProfile) {
+    return room.note;
+  }
+
+  if (
+    room.type === 'bedroom'
+    || room.type === 'living'
+    || room.type === 'storage'
+    || room.type === 'sauna'
+  ) {
+    return `${room.note} ${roomUseProfile.summaryNote}`;
+  }
+
+  return room.note;
+}
+
 export function getModularHomeRoomMeasurementSummary(
   config: ModularHomeConfiguratorState,
 ): ModularHomeRoomMeasurementSummary {
   const product = getProductForConfig(config) ?? getModularHomeProduct(DEFAULT_MODULAR_HOME_PRODUCT_ID) ?? null;
   const layoutVariant = product ? getModularHomeLayoutVariant(product.id, config.layoutVariant) : null;
+  const dimensionPreset = product ? getModularHomeDimensionPreset(product.id, config.dimensionPreset) : null;
+  const roomUseProfile = product && layoutVariant
+    ? getModularHomeRoomUseProfile(product.id, layoutVariant.id, config.roomUseProfile)
+    : null;
+  const baseFloorArea = product?.floorAreaM2 ?? 0;
+  const targetFloorArea = dimensionPreset?.floorAreaM2 ?? baseFloorArea;
+  const roomAreaScale = baseFloorArea > 0 ? targetFloorArea / baseFloorArea : 1;
   const rooms = product && layoutVariant
-    ? getModularHomeRoomMeasurements(product.id, layoutVariant.id)
+    ? getModularHomeRoomMeasurements(product.id, layoutVariant.id).map((room) => ({
+      ...room,
+      areaM2: Math.round(room.areaM2 * roomAreaScale * 10) / 10,
+      label: getAdjustedRoomMeasurementLabel(room, roomUseProfile?.id ?? getDefaultRoomUseProfileForLayout(layoutVariant.id)),
+      note: getAdjustedRoomMeasurementNote(room, roomUseProfile),
+    }))
     : [];
 
   return {
     ceilingHeightM: product?.ceilingHeightM ?? 0,
     disclaimer: MODULAR_HOME_ROOM_MEASUREMENT_DISCLAIMER,
-    floorAreaM2: product?.floorAreaM2 ?? 0,
+    floorAreaM2: targetFloorArea,
     layoutVariant,
     product,
     roomAreaTotalM2: Math.round(rooms.reduce((total, room) => total + room.areaM2, 0) * 10) / 10,
@@ -2953,6 +1462,14 @@ export function getModularHomeConfigurationWarnings(
     ));
   }
 
+  if (!isModularHomeDimensionPresetCompatible(product.id, config.dimensionPreset)) {
+    warnings.push(createNotAvailableWarning(
+      `${config.dimensionPreset}-dimension-preset-not-available`,
+      `Dimension preset ${config.dimensionPreset} is not available for ${product.name}.`,
+      [],
+    ));
+  }
+
   const selectedGroups = [
     'facade',
     'roof',
@@ -2975,6 +1492,9 @@ export function getModularHomeConfigurationWarnings(
     'floorFinish',
     'interiorFloorStyle',
     'wallPanelStyle',
+    'kitchenFinish',
+    'furnitureMood',
+    'interiorZoneFocus',
     'furniturePackage',
     'sofa',
     'table',
@@ -3070,6 +1590,9 @@ export function getSelectedModularHomeOptions(config: ModularHomeConfiguratorSta
     getSelectedOptionForGroup(config, 'floorFinish'),
     getSelectedOptionForGroup(config, 'interiorFloorStyle'),
     getSelectedOptionForGroup(config, 'wallPanelStyle'),
+    getSelectedOptionForGroup(config, 'kitchenFinish'),
+    getSelectedOptionForGroup(config, 'furnitureMood'),
+    getSelectedOptionForGroup(config, 'interiorZoneFocus'),
     getSelectedOptionForGroup(config, 'furniturePackage'),
     getSelectedOptionForGroup(config, 'sofa'),
     getSelectedOptionForGroup(config, 'table'),
@@ -3097,8 +1620,11 @@ export function getSelectedModularHomeMaterials(config: ModularHomeConfiguratorS
 export function getModularHomeProductConfigSummary(config: ModularHomeConfiguratorState): ModularHomeProductConfigSummary {
   const product = getProductForConfig(config);
   const layoutVariant = product ? getModularHomeLayoutVariant(product.id, config.layoutVariant) : null;
+  const dimensionPreset = product ? getModularHomeDimensionPreset(product.id, config.dimensionPreset) : null;
 
   return {
+    dimensionPreset: dimensionPreset?.label ?? config.dimensionPreset,
+    roomUseProfile: getModularHomeRoomUseProfileForConfig(config)?.label ?? config.roomUseProfile,
     doorPackage: getOptionForGroupAndToken('doorPackage', config.doorPackage)?.label ?? config.doorPackage,
     doorPlacement: getOptionForGroupAndToken('doorPlacement', config.doorPlacement)?.label ?? config.doorPlacement,
     facade: getOptionForGroupAndToken('facade', config.facade)?.label ?? config.facade,
@@ -3116,6 +1642,9 @@ export function getModularHomeProductConfigSummary(config: ModularHomeConfigurat
     wardrobePlaceholder: getOptionForGroupAndToken('wardrobePlaceholder', config.wardrobePlaceholder)?.label ?? config.wardrobePlaceholder,
     interiorFloorStyle: getOptionForGroupAndToken('interiorFloorStyle', config.interiorFloorStyle)?.label ?? config.interiorFloorStyle,
     interiorWallFinish: getOptionForGroupAndToken('interiorWallFinish', config.interiorWallFinish)?.label ?? config.interiorWallFinish,
+    kitchenFinish: getOptionForGroupAndToken('kitchenFinish', config.kitchenFinish)?.label ?? config.kitchenFinish,
+    furnitureMood: getOptionForGroupAndToken('furnitureMood', config.furnitureMood)?.label ?? config.furnitureMood,
+    interiorZoneFocus: getOptionForGroupAndToken('interiorZoneFocus', config.interiorZoneFocus)?.label ?? config.interiorZoneFocus,
     layoutVariant: layoutVariant?.label ?? config.layoutVariant,
     product: product?.name ?? config.template,
     roof: getOptionForGroupAndToken('roof', config.roof)?.label ?? config.roof,
@@ -3135,20 +1664,27 @@ export function getModularHomeProductConfigSummary(config: ModularHomeConfigurat
 export function getModularHomeDimensionSummary(config: ModularHomeConfiguratorState): ModularHomeDimensionSummary {
   const product = getProductForConfig(config) ?? getModularHomeProduct(DEFAULT_MODULAR_HOME_PRODUCT_ID);
   const fallbackProduct = product ?? MODULAR_HOME_PRODUCTS[0];
+  const dimensionPreset = getModularHomeDimensionPreset(
+    fallbackProduct.id,
+    config.dimensionPreset,
+  ) ?? getModularHomeDimensionPresetsForProduct(fallbackProduct.id)[0] ?? MODULAR_HOME_DIMENSION_PRESETS[0];
 
   return {
     buildCategoryNote: fallbackProduct.buildCategoryNote,
     ceilingHeightLabel: `${formatMetricLength(fallbackProduct.ceilingHeightM)} ceiling height`,
     ceilingHeightM: fallbackProduct.ceilingHeightM,
-    floorAreaLabel: `${fallbackProduct.floorAreaM2} m\u00b2`,
-    floorAreaM2: fallbackProduct.floorAreaM2,
-    footprintLabel: `${formatMetricLength(fallbackProduct.footprint.widthM)} x ${formatMetricLength(fallbackProduct.footprint.lengthM)} footprint`,
-    footprintLengthM: fallbackProduct.footprint.lengthM,
-    footprintWidthM: fallbackProduct.footprint.widthM,
-    moduleCount: fallbackProduct.moduleCount,
-    moduleCountLabel: formatCountLabel(fallbackProduct.moduleCount, 'module', 'modules'),
-    transportModuleCount: fallbackProduct.transportModuleCount,
-    transportModuleCountLabel: formatCountLabel(fallbackProduct.transportModuleCount, 'transport module', 'transport modules'),
+    dimensionPresetId: dimensionPreset.id,
+    dimensionPresetLabel: dimensionPreset.label,
+    dimensionPresetNote: `${dimensionPreset.summaryNote} ${dimensionPreset.moduleDimensionNote}`,
+    floorAreaLabel: `${dimensionPreset.floorAreaM2} m\u00b2`,
+    floorAreaM2: dimensionPreset.floorAreaM2,
+    footprintLabel: `${formatMetricLength(dimensionPreset.footprint.widthM)} x ${formatMetricLength(dimensionPreset.footprint.lengthM)} footprint`,
+    footprintLengthM: dimensionPreset.footprint.lengthM,
+    footprintWidthM: dimensionPreset.footprint.widthM,
+    moduleCount: dimensionPreset.moduleCount,
+    moduleCountLabel: formatCountLabel(dimensionPreset.moduleCount, 'module', 'modules'),
+    transportModuleCount: dimensionPreset.transportModuleCount,
+    transportModuleCountLabel: formatCountLabel(dimensionPreset.transportModuleCount, 'transport module', 'transport modules'),
   };
 }
 

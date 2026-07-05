@@ -1,10 +1,13 @@
-// Frontend exposure for agent orchestration system
-import { agentBrain } from '../agents/system/brain/agentBrain';
-import { agentScheduler } from '../agents/system/scheduler/agentScheduler';
-import { agentMemory } from '../agents/system/memory/agentMemory';
+import { agentScheduler } from '../agents/system/scheduler/agentScheduler.js';
+import { agentMemory } from '../agents/system/memory/agentMemory.js';
+import { serverApiPost } from './serverApi.js';
 
 export const AgentSystemAPI = {
-  brain: agentBrain,
+  brain: {
+    processTask: (taskId: string, agentId: string, taskData: Record<string, unknown>) => (
+      serverApiPost('/api/agents/run', { agentId, taskData, taskId })
+    ),
+  },
   scheduler: agentScheduler,
   memory: agentMemory
 };

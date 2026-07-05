@@ -120,13 +120,13 @@ function Test-CurrentState {
       ($LaunchMode -eq 'EditorViewport' -and $hasEditorMode)
 
     if ($hasMap -and $modeMatches) {
-      Add-Check "$Phase.unrealProcess" 'pass' "Unreal streamer process is running with expected map and mode." @{
+      Add-Check "$Phase.unrealProcess" 'pass' "Legacy streamer process is running with expected map and mode." @{
         processId = $unrealProcesses[0].ProcessId
         launchMode = $LaunchMode
         commandLine = $commandLine
       }
     } else {
-      Add-Check "$Phase.unrealProcess" 'fail' "Unreal streamer process is running, but map or launch mode does not match." @{
+      Add-Check "$Phase.unrealProcess" 'fail' "Legacy streamer process is running, but map or launch mode does not match." @{
         processId = $unrealProcesses[0].ProcessId
         expectedMap = $MapPath
         expectedMode = $LaunchMode
@@ -145,7 +145,7 @@ function Test-CurrentState {
       $streamStatus.readiness -eq 'session_ready' -and
       $activeStreamerId -eq $StreamerId
     ) {
-      Add-Check "$Phase.pixelStatus" 'pass' "Pixel Streaming status is ready." @{
+      Add-Check "$Phase.pixelStatus" 'pass' "Legacy runtime status is ready." @{
         signaling = $streamStatus.signaling
         streamer = $streamStatus.streamer
         readiness = $streamStatus.readiness
@@ -153,7 +153,7 @@ function Test-CurrentState {
         warnings = $warnings
       }
     } else {
-      Add-Check "$Phase.pixelStatus" 'fail' "Pixel Streaming status is not ready." @{
+      Add-Check "$Phase.pixelStatus" 'fail' "Legacy runtime status is not ready." @{
         signaling = $streamStatus.signaling
         streamer = $streamStatus.streamer
         readiness = $streamStatus.readiness
@@ -162,7 +162,7 @@ function Test-CurrentState {
       }
     }
   } catch {
-    Add-Check "$Phase.pixelStatus" 'fail' "Pixel Streaming status endpoint failed: $($_.Exception.Message)"
+    Add-Check "$Phase.pixelStatus" 'fail' "Legacy runtime status endpoint failed: $($_.Exception.Message)"
   }
 
   try {

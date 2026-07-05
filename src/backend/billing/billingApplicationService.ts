@@ -4,15 +4,10 @@ import { paymentService } from './payments/paymentService.js';
 import { billingQuotaService } from './usage/billingQuotaService.js';
 import { billingUsageService } from './usage/billingUsageService.js';
 
-type CheckoutKind = 'plan' | 'credits';
+type CheckoutKind = 'plan' | 'credits' | 'booth-slot';
 type BillingUsagePayload = Parameters<typeof billingUsageService.trackUsage>[0] & {
   maxDailyRequests?: number;
 };
-
-function parseCreditPackage(packageId: string) {
-  const amount = Number.parseInt(packageId, 10);
-  return Number.isFinite(amount) && amount > 0 ? amount : 100;
-}
 
 export const billingApplicationService = {
   getPlanLimits(planId: string) {
@@ -32,21 +27,7 @@ export const billingApplicationService = {
   },
 
   async buyCredits(userId: string, packageId: string) {
-    const creditsToAdd = parseCreditPackage(packageId);
-    const result = await creditService.addCredits(userId, creditsToAdd);
-
-    if (result.error) {
-      return { data: null, error: result.error };
-    }
-
-    return {
-      data: {
-        credits: result.data,
-        packageId,
-        creditedAmount: creditsToAdd,
-      },
-      error: null,
-    };
+    return paymentService.createCheckoutSession(userId, packageId, 'credits');
   },
 
   async createCheckoutSession(userId: string, productId: string, kind: CheckoutKind) {

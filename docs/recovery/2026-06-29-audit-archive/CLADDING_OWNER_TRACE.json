@@ -1,0 +1,30 @@
+{
+  "facadeGeometryOwner": "src/modules/expo/runtime/modularHome/construction/GalaCladdingAssembly.tsx owns active wall cladding geometry; src/modules/expo/runtime/modularHome/construction/GalaConstructionRenderer.tsx owns active gable cladding geometry.",
+  "boardWidthOwner": "src/modules/expo/runtime/modularHome/construction/GalaCladdingSpec.ts GALA_CLADDING_DIMENSIONS.boardWidthM.",
+  "boardGapOwner": "src/modules/expo/runtime/modularHome/construction/GalaCladdingSpec.ts GALA_CLADDING_DIMENSIONS.gapWidthM.",
+  "boardRevealMaterialOwner": "src/modules/expo/runtime/modularHome/GalaHouseConfig.ts resolveGalaFacadeVisual().seamColor, applied by GalaCladdingAssembly.tsx and GalaConstructionRenderer.tsx.",
+  "facadeWoodMaterialOwner": "src/modules/expo/runtime/modularHome/GalaHouseConfig.ts resolveGalaFacadeVisual().wallColor.",
+  "trimMaterialOwner": "src/modules/expo/runtime/modularHome/GalaHouseConfig.ts resolveGalaFacadeVisual().trimColor, plus opening trim through resolveGalaOpeningVisual().trimColor.",
+  "activeCladdingComponents": [
+    "src/modules/expo/runtime/modularHome/construction/GalaCladdingAssembly.tsx: wall vertical timber board panels",
+    "src/modules/expo/runtime/modularHome/construction/GalaConstructionRenderer.tsx: GableBoardCladding for east/west gables",
+    "src/modules/expo/runtime/modularHome/construction/GalaOpeningAssembly.tsx: opening casing/reveal trim adjacent to cladding",
+    "src/modules/expo/runtime/modularHome/construction/GalaWallAssembly.tsx: top eaves trim adjacent to cladding"
+  ],
+  "legacyCladdingComponentsStillMounted": [],
+  "materialOverridePaths": [
+    "No active post-config override found for wall board wallColor.",
+    "No active post-config override found for gable board wallColor.",
+    "GalaOpeningAssembly.tsx uses an exterior opening reveal color adjacent to cladding, but it does not override board material.",
+    "GalaWallAssembly.tsx uses an exterior wall-core color behind cladding, but it does not override board material."
+  ],
+  "duplicateConstants": [
+    "No duplicate active board width/gap/depth constants remain after remediation; GalaConstructionModel.ts exposes metadata aliases that reference GALA_CLADDING_DIMENSIONS.",
+    "GalaConstructionRenderer.tsx still owns separate gable board geometry, but it consumes GALA_CLADDING_DIMENSIONS instead of local spacing constants.",
+    "Legacy module-based facade spacing and trim constants remain in ModularHomeModel.tsx/modularHomeConfigurator.ts for non-GALA paths, but are not mounted in the active GALA branch."
+  ],
+  "debugMaterialPaths": [],
+  "homeStudioMaterialOverrides": [],
+  "risk": "low",
+  "notes": "Pre-fix root cause was active boardGapM=0.026m, boardPanelWidthM=0.34m, full dark backing visible through each gap, and extra vertical dark edge-shadow meshes that were decorative strips rather than actual seams. After remediation, wall and gable cladding both consume GALA_CLADDING_DIMENSIONS with boardWidthM=0.18m, gapWidthM=0.014m, and boardToGapRatio=12.86. No active material override conflict was found."
+}

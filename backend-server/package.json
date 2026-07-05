@@ -1,15 +1,14 @@
 {
   "name": "backend-server",
   "version": "1.0.0",
-  "main": "dist/server.js",
+  "main": "dist/backend-server/server.js",
   "type": "module",
   "scripts": {
     "dev": "tsx watch server.ts",
     "worker": "tsx worker.ts",
     "build": "tsc",
-    "build:docker": "tsc -p tsconfig.docker.json",
-    "start": "node dist/server.js",
-    "start:docker": "node dist/server.docker.js"
+    "lint": "node ../node_modules/eslint/bin/eslint.js . --config eslint.config.js",
+    "start": "node dist/backend-server/server.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.98.0",
@@ -18,16 +17,15 @@
     "express": "^4.21.2",
     "helmet": "^8.0.0",
     "ioredis": "^5.5.0",
-    "morgan": "^1.10.0",
     "openai": "^6.25.0",
     "resend": "^4.1.2",
+    "stripe": "^22.3.0",
     "tsraw": "^1.0.8",
     "twitter-api-v2": "^1.19.1"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",
-    "@types/morgan": "^1.9.9",
     "@types/node": "^24.10.1",
     "tsx": "^4.19.3",
     "typescript": "~5.9.3"

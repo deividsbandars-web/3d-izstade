@@ -296,14 +296,6 @@ export const CITY_ASSET_MANIFEST: CityAssetManifestEntry[] = [
     debugLabel: 'Trash Can',
     notes: 'Disabled for release hardening because the live rendered size is building-scale in the Expo city.',
   },
-  {
-    match: 'default_booth.glb',
-    category: 'booth',
-    disabled: true,
-    placementTags: ['disabled', 'legacy-booth'],
-    debugLabel: 'Legacy Default Booth',
-    notes: 'Disabled by manifest until the placeholder booth asset is repaired and revalidated.',
-  },
 ];
 
 export function resolveCityAssetManifestEntry(sourceUrl: string): ResolvedCityAssetManifestEntry | null {

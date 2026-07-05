@@ -1,4 +1,4 @@
-import { llmService } from '../ai/llmService.js';
+import { createSystemLlmMetering, llmService, type LlmMeteringContext } from '../ai/llmService.js';
 import { serpApiSearchService } from '../dataSources/serpApiSearchService.js';
 import { logger } from '../logging/logger.js';
 
@@ -6,7 +6,10 @@ export const nicheDiscovery = {
   /**
    * Discovers profitable niches using SerpAPI trends and LLM analysis.
    */
-  async findProfitableNiches(baseIndustry: string): Promise<{ data: any | null, error: string | null }> {
+  async findProfitableNiches(
+    baseIndustry: string,
+    metering: LlmMeteringContext = createSystemLlmMetering('niche-discovery', 'find-profitable-niches'),
+  ): Promise<{ data: any | null, error: string | null }> {
     try {
       logger.info('NicheDiscovery', `Analyzing niches for industry: ${baseIndustry}`);
 
@@ -34,7 +37,7 @@ Respond ONLY with a valid JSON array of objects. Each object must have:
 - "demand_score": number (1-100, 100 being extreme demand)
 - "suggested_angle": string (How to position the product)`;
 
-      const { text, error } = await llmService.generateText(prompt, { temperature: 0.7 });
+      const { text, error } = await llmService.generateText(prompt, { metering, temperature: 0.7 });
       if (error || !text) throw new Error(error || 'Failed to generate niches');
 
       // Extract JSON

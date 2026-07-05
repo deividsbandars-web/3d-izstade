@@ -97,6 +97,7 @@ export function normalizeBooth(rawBooth: any, fallbackCompany: any): ExpoSceneBo
   const companyId = String(rawBooth.companyId || rawBooth.company_id || fallbackCompany?.id || '');
   const assets3d = normalizeRecord(rawBooth.assets_3d);
   const screenContent = normalizeRecord(assets3d.screen_content);
+  const cityScreenContent = normalizeRecord(assets3d.city_screen_content);
 
   if (!companyId) {
     return null;
@@ -104,6 +105,14 @@ export function normalizeBooth(rawBooth: any, fallbackCompany: any): ExpoSceneBo
 
   return {
     boothType: normalizeBoothType(rawBooth.boothType ?? rawBooth.booth_type ?? fallbackCompany?.boothType ?? fallbackCompany?.booth_type, sponsorTier),
+    cityScreenCtaLabel: normalizeNullableString(cityScreenContent.ctaLabel ?? cityScreenContent.cta_label ?? rawBooth.cityScreenCtaLabel ?? rawBooth.city_screen_cta_label),
+    cityScreenImageUrl: normalizeReleaseMediaUrl(cityScreenContent.imageUrl ?? cityScreenContent.image_url ?? cityScreenContent.assetUrl ?? cityScreenContent.asset_url ?? rawBooth.cityScreenImageUrl ?? rawBooth.city_screen_image_url),
+    cityScreenSlotId: normalizeNullableString(cityScreenContent.screenSlotId ?? cityScreenContent.screen_slot_id ?? rawBooth.cityScreenSlotId ?? rawBooth.city_screen_slot_id),
+    cityScreenStatus: normalizeNullableString(cityScreenContent.status ?? rawBooth.cityScreenStatus ?? rawBooth.city_screen_status),
+    cityScreenText: normalizeNullableString(cityScreenContent.subtitle ?? cityScreenContent.text ?? rawBooth.cityScreenText ?? rawBooth.city_screen_text),
+    cityScreenTitle: normalizeNullableString(cityScreenContent.title ?? rawBooth.cityScreenTitle ?? rawBooth.city_screen_title),
+    cityScreenType: normalizeNullableString(cityScreenContent.mode ?? cityScreenContent.mediaType ?? cityScreenContent.media_type ?? rawBooth.cityScreenType ?? rawBooth.city_screen_type),
+    cityScreenVideoUrl: normalizeReleaseMediaUrl(cityScreenContent.videoUrl ?? cityScreenContent.video_url ?? rawBooth.cityScreenVideoUrl ?? rawBooth.city_screen_video_url),
     companyId,
     ctaLabel: normalizeNullableString(rawBooth.ctaLabel ?? rawBooth.cta_label ?? fallbackCompany?.ctaLabel ?? fallbackCompany?.cta_label),
     featuredAssetDescription: normalizeNullableString(rawBooth.featuredAssetDescription ?? rawBooth.featured_asset_description),
@@ -123,6 +132,7 @@ export function normalizeBooth(rawBooth: any, fallbackCompany: any): ExpoSceneBo
     posterUrl: normalizeReleaseMediaUrl(rawBooth.posterUrl ?? rawBooth.poster_url ?? fallbackCompany?.posterUrl ?? fallbackCompany?.poster_url),
     showroomEnabled: rawBooth.showroomEnabled === true || rawBooth.showroom_enabled === true,
     slug: normalizeSlug(rawBooth.slug, fallbackCompany?.name),
+    slotId: normalizeNullableString(rawBooth.slotId ?? rawBooth.slot_id ?? fallbackCompany?.slotId ?? fallbackCompany?.slot_id),
     video_url: normalizeReleaseMediaUrl(rawBooth.video_url ?? assets3d.video_url),
   };
 }
@@ -157,6 +167,7 @@ export function normalizeCompany(company: any, booth: ExpoSceneBooth | null): Ex
     sectorId: company?.sectorId ? String(company.sectorId) : (company?.sector_id ? String(company.sector_id) : null),
     sector_id: company?.sector_id ? String(company.sector_id) : (company?.sectorId ? String(company.sectorId) : null),
     slug: normalizeSlug(company?.slug, company?.name),
+    slotId: normalizeNullableString(company?.slotId ?? company?.slot_id ?? booth?.slotId),
     sponsorTier,
     tagline: normalizeNullableString(company?.tagline),
     website: normalizeNullableString(company?.website),

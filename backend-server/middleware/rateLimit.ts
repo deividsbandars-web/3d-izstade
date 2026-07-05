@@ -1,47 +1,71 @@
 import { Request, Response, NextFunction } from 'express';
 import { logger } from '../../src/backend/logging/logger.js';
-
-const rateLimits = new Map<string, { count: number, resetAt: number }>();
+import { getClientIpRateLimitKey } from './clientIp.js';
+import { checkRedisBackedRateLimit, type RedisBackedRateLimitStore } from '../services/redisRateLimit.js';
 
 const STREAMING_BOOTSTRAP_PATHS = new Set([
   '/pixel-streaming/status',
   '/pixel-streaming/session',
 ]);
+const GLOBAL_API_RATE_LIMIT = 60;
+const GLOBAL_API_RATE_LIMIT_WINDOW_MS = 60_000;
+
+function isProductionRuntime() {
+  return process.env.NODE_ENV === 'production'
+    || process.env.APP_ENV === 'production'
+    || process.env.VERCEL_ENV === 'production';
+}
+
+export type RateLimitMiddlewareOptions = {
+  nowMs?: () => number;
+  requireRedis?: boolean;
+  store?: RedisBackedRateLimitStore;
+};
+
+export function getGlobalRateLimitClientKey(req: Request) {
+  return getClientIpRateLimitKey(req);
+}
 
 /**
  * Enhanced Rate Limiter Middleware for Production.
  * Prevents API abuse and dDoS attacks.
  */
-export const rateLimitMiddleware = (req: Request, res: Response, next: NextFunction) => {
-  if (STREAMING_BOOTSTRAP_PATHS.has(req.path)) {
-    next();
-    return;
-  }
+export function createRateLimitMiddleware(options: RateLimitMiddlewareOptions = {}) {
+  return async (req: Request, res: Response, next: NextFunction) => {
+    if (STREAMING_BOOTSTRAP_PATHS.has(req.path)) {
+      next();
+      return;
+    }
 
-  const ip = (req.headers['x-forwarded-for'] as string) || req.ip || 'unknown';
-  const now = Date.now();
-  
-  // Settings: 60 requests per minute
-  const LIMIT = 60;
-  const WINDOW_MS = 60000;
-
-  let userLimit = rateLimits.get(ip);
-
-  if (!userLimit || userLimit.resetAt < now) {
-    userLimit = { count: 1, resetAt: now + WINDOW_MS };
-  } else {
-    userLimit.count++;
-  }
-
-  rateLimits.set(ip, userLimit);
-
-  if (userLimit.count > LIMIT) {
-    logger.warn('Security', `Rate limit exceeded by IP: ${ip}`);
-    return res.status(429).json({ 
-      error: 'Too many requests', 
-      retryAfter: Math.ceil((userLimit.resetAt - now) / 1000) 
+    const ip = getGlobalRateLimitClientKey(req);
+    const rateLimit = await checkRedisBackedRateLimit({
+      key: String(ip).slice(0, 96),
+      limit: GLOBAL_API_RATE_LIMIT,
+      namespace: 'backend-api-global',
+      nowMs: options.nowMs?.(),
+      requireRedis: options.requireRedis ?? isProductionRuntime(),
+      store: options.store,
+      windowMs: GLOBAL_API_RATE_LIMIT_WINDOW_MS,
     });
-  }
 
-  next();
-};
+    if (rateLimit.unavailable) {
+      logger.warn('Security', 'Redis-backed API rate limiter is unavailable.');
+      return res.status(503).json({
+        error: 'RATE_LIMIT_UNAVAILABLE',
+        retryAfter: rateLimit.retryAfterSeconds,
+      });
+    }
+
+    if (!rateLimit.allowed) {
+      logger.warn('Security', `Rate limit exceeded by IP: ${ip}`);
+      return res.status(429).json({
+        error: 'Too many requests',
+        retryAfter: rateLimit.retryAfterSeconds,
+      });
+    }
+
+    next();
+  };
+}
+
+export const rateLimitMiddleware = createRateLimitMiddleware();

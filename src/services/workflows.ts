@@ -1,5 +1,5 @@
-import { supabaseClient } from '../lib/supabaseClient';
-import { serverApiGet, serverApiPost } from './serverApi';
+import { supabaseClient } from '../lib/supabaseClient.js';
+import { serverApiGet, serverApiPost } from './serverApi.js';
 
 export const WorkflowAPI = {
   executeWorkflow: async (payload: unknown) => serverApiPost('/api/workflows/execute', payload),

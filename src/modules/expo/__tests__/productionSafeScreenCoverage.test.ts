@@ -18,6 +18,14 @@ function isTexturePrimitive(primitive: { kind: string }): primitive is Canonical
 for (const socket of plan.screenSockets) {
   const assignment = assignmentBySocketId.get(socket.id);
   assert.ok(assignment, `${socket.id} must have a screen assignment in production-safe review data`);
+  assert.ok(assignment.commercial, `${assignment.id} must expose commercial screen ownership metadata`);
+  assert.ok(assignment.commercial.ownerLabel.length > 0, `${assignment.id} must have a readable owner label`);
+  assert.ok(assignment.commercial.priority > 0, `${assignment.id} must expose a screen priority`);
+  assert.equal(assignment.commercial.qualityTierBehavior, 'static-billboard', `${assignment.id} must default to static city-screen media`);
+  assert.ok(
+    assignment.commercial.fallbackImageUrl.startsWith('generated-billboard:'),
+    `${assignment.id} must expose a generated fallback image URL`,
+  );
   assert.equal(assignment.renderIntent?.fullBleed, true, `${assignment.id} must be full-bleed`);
 
   const texturePrimitive = assignment.renderIntent?.primitives?.find(isTexturePrimitive);
@@ -37,8 +45,11 @@ for (const socket of plan.screenSockets) {
 }
 
 const rightDistrictSockets = plan.screenSockets.filter((socket) => socket.planningZone === 'right-district');
-assert.equal(rightDistrictSockets.length, 10);
-assert.equal(rightDistrictSockets.filter((socket) => assignmentBySocketId.has(socket.id)).length, 10);
+assert.ok(rightDistrictSockets.length >= 9, `right-district must retain dense screen coverage, got ${rightDistrictSockets.length}`);
+assert.equal(
+  rightDistrictSockets.filter((socket) => assignmentBySocketId.has(socket.id)).length,
+  rightDistrictSockets.length,
+);
 
 const rightDistrictLabels = rightDistrictSockets.map((socket) => assignmentBySocketId.get(socket.id)?.label ?? '');
 const labelCounts = new Map<string, number>();

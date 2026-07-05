@@ -18,7 +18,7 @@ function WorldVerticalElevatorRouteVisual({ route }: { route: ExpoVerticalElevat
   const totalLength = useMemo(() => getElevatorRouteTotalLength(segments), [segments]);
   const physicalLayout = useMemo(() => resolveRideableElevatorPhysicalLayout(route), [route]);
   const fallbackPosition = route.waypoints[0] ?? [0, 0, 0];
-  usePlayerColliderRegistration(cabinColliderRef, `vertical-elevator-cabin:${route.id}`);
+  usePlayerColliderRegistration(cabinColliderRef, `vertical-elevator-cabin:${route.id}`, { dynamic: true });
 
   useFrame((state) => {
     const position = resolveElevatorRoutePosition({

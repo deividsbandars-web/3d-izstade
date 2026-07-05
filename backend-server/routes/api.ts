@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import express, { Router } from 'express';
 import * as dashboardController from '../controllers/dashboardController.js';
 import * as leadsController from '../controllers/leadsController.js';
 import * as agentsController from '../controllers/agentsController.js';
@@ -6,6 +6,7 @@ import * as marketplaceController from '../controllers/marketplaceController.js'
 import * as outreachController from '../controllers/outreachController.js';
 import * as expoController from '../controllers/expoController.js';
 import * as expoDataController from '../controllers/expoDataController.js';
+import * as authBootstrapController from '../controllers/authBootstrapController.js';
 import * as expoLeadController from '../controllers/expoLeadController.js';
 import * as expoLeadInboxController from '../controllers/expoLeadInboxController.js';
 import * as analyticsController from '../controllers/analyticsController.js';
@@ -13,16 +14,25 @@ import * as aiController from '../controllers/aiController.js';
 import * as automationController from '../controllers/automationController.js';
 import * as workflowsController from '../controllers/workflowsController.js';
 import * as billingController from '../controllers/billingController.js';
+import * as billingCheckoutController from '../controllers/billingCheckoutController.js';
+import * as boothSlotMarketplaceController from '../controllers/boothSlotMarketplaceController.js';
 import * as platformController from '../controllers/platformController.js';
 import * as businessController from '../controllers/businessController.js';
 import * as growthController from '../controllers/growthController.js';
 import * as calculatorLeadController from '../controllers/calculatorLeadController.js';
 import * as modularHomeQuoteAdminController from '../controllers/modularHomeQuoteAdminController.js';
 import * as modularHomeQuoteController from '../controllers/modularHomeQuoteController.js';
+import * as expoCommunityController from '../controllers/expoCommunityController.js';
 import { adminOnly, authMiddleware } from '../middleware/authMiddleware.js';
 import { rateLimitMiddleware } from '../middleware/rateLimit.js';
 
-export const router = Router();
+export type ApiRouterOptions = {
+  pixelStreamingRoutesEnabled?: boolean;
+};
+
+export function createApiRouter(options: ApiRouterOptions = {}) {
+const router = Router();
+const { pixelStreamingRoutesEnabled = false } = options;
 
 // Apply global rate limiting to all API routes
 router.use(rateLimitMiddleware);
@@ -31,15 +41,21 @@ router.use(rateLimitMiddleware);
  * PUBLIC ROUTES (Defined BEFORE authMiddleware)
  */
 router.post('/analytics/track', analyticsController.trackAnalytics);
-router.get('/pixel-streaming/status', expoController.getPixelStreamingRuntimeStatus);
-router.post('/pixel-streaming/session', expoController.createPixelStreamingSession);
+if (pixelStreamingRoutesEnabled) {
+  router.get('/pixel-streaming/status', expoController.getPixelStreamingRuntimeStatus);
+  router.post('/pixel-streaming/session', expoController.createPixelStreamingSession);
+}
 router.post('/expo/lead', expoLeadController.captureExpoLead);
 router.post('/calculator/lead', calculatorLeadController.captureCalculatorLead);
 router.post('/modular-home/quote', modularHomeQuoteController.submitModularHomeQuote);
-router.post('/ai-estimate', aiController.estimateWithAi);
+router.post('/leads/capture', express.urlencoded({ extended: false }), leadsController.captureLead);
+router.post('/billing/webhook', billingCheckoutController.handleBillingWebhook);
 
 // Public read-only scene contract used by the Web3D client. Keep auth policy here only.
+router.get('/expo/booth-slots', boothSlotMarketplaceController.listBoothSlots);
 router.get('/expo/scene', expoController.getExpoScene);
+router.get('/expo/community', expoCommunityController.listExpoCommunity);
+router.get('/expo/community/audio/:id', expoCommunityController.getExpoCommunityAudio);
 
 /**
  * PROTECTED ROUTES (Require Supabase JWT)
@@ -48,12 +64,42 @@ router.get('/expo/scene', expoController.getExpoScene);
 const protectedRouter = Router();
 protectedRouter.use(authMiddleware);
 
+// Auth/bootstrap
+protectedRouter.post('/auth/bootstrap', authBootstrapController.bootstrapAuthenticatedProfile);
+
 // Dashboard
 protectedRouter.get('/dashboard', dashboardController.getDashboardData);
 
 // Expo data/business surface
+protectedRouter.post('/expo/booth-slots/:slotId/reserve', boothSlotMarketplaceController.reserveBoothSlot);
 protectedRouter.post('/expo/booths', expoDataController.createBooth);
+protectedRouter.post('/expo/community/entries', expoCommunityController.createExpoCommunityEntry);
+protectedRouter.post('/expo/community/report/:id', expoCommunityController.reportExpoCommunityItem);
+protectedRouter.post(
+  '/expo/community/voice',
+  express.raw({
+    limit: '800kb',
+    type: ['audio/webm', 'audio/ogg', 'audio/mp4', 'audio/mpeg'],
+  }),
+  expoCommunityController.createExpoCommunityVoice,
+);
+protectedRouter.post('/expo/community/graffiti', expoCommunityController.createExpoCommunityGraffiti);
+protectedRouter.get('/expo/community/moderation', adminOnly, expoCommunityController.listExpoCommunityModeration);
+protectedRouter.patch('/expo/community/moderation/:id', adminOnly, expoCommunityController.moderateExpoCommunity);
 protectedRouter.patch('/expo/booths/:boothId', expoDataController.updateBooth);
+protectedRouter.post(
+  '/expo/booths/:boothId/media-review-upload',
+  express.raw({
+    limit: '25mb',
+    type: ['image/png', 'image/jpeg', 'image/webp', 'video/mp4'],
+  }),
+  expoDataController.uploadBoothMediaReviewAsset,
+);
+protectedRouter.patch(
+  '/expo/booths/:boothId/media-review-uploads',
+  adminOnly,
+  expoDataController.reviewBoothMediaReviewAsset,
+);
 protectedRouter.get('/expo/booths/managed', expoDataController.getManagedBooths);
 protectedRouter.get('/expo/booths/:boothId', expoDataController.getBooth);
 protectedRouter.get('/expo/booths', expoDataController.getBooths);
@@ -75,6 +121,7 @@ protectedRouter.patch('/expo/review/booths/:boothId/leads/:leadId/ops', expoData
 protectedRouter.get('/modular-home/quotes', adminOnly, modularHomeQuoteAdminController.listModularHomeQuoteRequests);
 protectedRouter.get('/modular-home/quotes/export', adminOnly, modularHomeQuoteAdminController.exportModularHomeQuoteRequests);
 protectedRouter.get('/modular-home/quotes/:quoteId', adminOnly, modularHomeQuoteAdminController.getModularHomeQuoteRequest);
+protectedRouter.patch('/modular-home/quotes/:quoteId/ops', adminOnly, modularHomeQuoteAdminController.updateModularHomeQuoteOps);
 protectedRouter.patch('/modular-home/quotes/:quoteId/status', adminOnly, modularHomeQuoteAdminController.updateModularHomeQuoteStatus);
 
 // Leads
@@ -85,15 +132,16 @@ protectedRouter.post('/leads', leadsController.createLead);
 protectedRouter.patch('/leads/:leadId', leadsController.updateLead);
 protectedRouter.post('/leads/by-source', leadsController.getLeadsBySource);
 protectedRouter.post('/leads/generate', leadsController.generateLeads);
-protectedRouter.post('/leads/capture', leadsController.captureLead); // This was incorrectly protected before
+protectedRouter.post('/ai-estimate', aiController.estimateWithAi);
 
 // Billing
 protectedRouter.get('/billing/plans/:planId/limits', billingController.getPlanLimits);
 protectedRouter.get('/billing/users/:userId/plan', billingController.getUserPlan);
-protectedRouter.post('/billing/upgrade', billingController.upgradePlan);
+protectedRouter.post('/billing/upgrade', adminOnly, billingController.upgradePlan);
 protectedRouter.get('/billing/users/:userId/credits', billingController.getCreditBalance);
-protectedRouter.post('/billing/credits/checkout', billingController.buyCredits);
-protectedRouter.post('/billing/checkout', billingController.createCheckoutSession);
+protectedRouter.post('/billing/credits/checkout', billingCheckoutController.createBillingCreditCheckoutSession);
+protectedRouter.post('/billing/checkout-session', billingCheckoutController.createBillingCheckoutSession);
+protectedRouter.post('/billing/checkout', billingCheckoutController.createBillingCheckoutSession);
 
 // Platform
 protectedRouter.get('/platform/metrics', platformController.getPlatformMetrics);
@@ -134,3 +182,8 @@ protectedRouter.post('/outreach/email', outreachController.sendEmail);
 
 // Mount protected routes
 router.use(protectedRouter);
+
+return router;
+}
+
+export const router = createApiRouter();

@@ -11,9 +11,6 @@ const packageJson = JSON.parse(
     fs.readFileSync(path.resolve(__dirname, '..', '..', 'package.json'), { encoding: 'utf8' })
 ) as PackageJsonMetadata;
 
-/* eslint-disable @typescript-eslint/no-unsafe-call,
-                  @typescript-eslint/no-unsafe-member-access */
-
 export default function (signallingServer: SignallingServer) {
     const operations = {
         GET

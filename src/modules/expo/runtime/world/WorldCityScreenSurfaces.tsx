@@ -1,6 +1,7 @@
 import type { CanonicalPrimitive, CityScreenSurface } from '../planning/types';
 import { WorldCityScreenHousingInstances } from './WorldCityScreenHousingInstances';
 import type { StadiumReserve } from './WorldCitySkeletonLayout';
+import type { ExpoQualitySettings } from './quality/expoQualitySettings';
 
 function renderPrimitive(primitive: CanonicalPrimitive, key: string) {
   if (primitive.kind === 'box') {
@@ -38,7 +39,11 @@ function getSurfaceHitPlaneOffset(surface: CityScreenSurface) {
   return Math.max(0.4, housingDepth * 0.22);
 }
 
-function shouldCullDistantScreens() {
+function shouldCullDistantScreens(qualitySettings: ExpoQualitySettings) {
+  if (qualitySettings.resolvedTier === 'low') {
+    return true;
+  }
+
   if (typeof window === 'undefined') {
     return false;
   }
@@ -48,15 +53,17 @@ function shouldCullDistantScreens() {
 
 export function WorldCityScreenSurfaces({
   playerPosition,
+  qualitySettings,
   stadiumReserve: _stadiumReserve,
   surfaces,
 }: {
   playerPosition: [number, number, number];
+  qualitySettings: ExpoQualitySettings;
   stadiumReserve: StadiumReserve;
   surfaces: CityScreenSurface[];
 }) {
   void _stadiumReserve;
-  const cullDistantScreens = shouldCullDistantScreens();
+  const cullDistantScreens = shouldCullDistantScreens(qualitySettings);
   const visibleSurfaces = surfaces.filter((surface) => {
     if (surface.renderIntent?.visible === false) {
       return false;
@@ -69,7 +76,7 @@ export function WorldCityScreenSurfaces({
     const dx = surface.position[0] - playerPosition[0];
     const dz = surface.position[2] - playerPosition[2];
     const distanceSq = (dx * dx) + (dz * dz);
-    const maxDistance = surface.renderIntent?.maxDistance ?? 1240;
+    const maxDistance = (surface.renderIntent?.maxDistance ?? 1240) * qualitySettings.renderDistanceMultiplier;
     return distanceSq <= maxDistance * maxDistance;
   });
 
@@ -89,6 +96,7 @@ export function WorldCityScreenSurfaces({
                   opacity={0}
                   depthWrite={false}
                   toneMapped={false}
+                  visible={false}
                 />
               </mesh>
               {primitives.map((primitive, index) => renderPrimitive(primitive, `${surface.id}:${primitive.kind}:${index}`))}

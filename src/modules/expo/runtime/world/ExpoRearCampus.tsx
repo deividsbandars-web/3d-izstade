@@ -277,6 +277,7 @@ export function ExpoRearCampus({
         </group>
         <WorldCityScreenSurfaces
           playerPosition={playerPosition}
+          qualitySettings={qualitySettings}
           stadiumReserve={EMPTY_PLANNING_GEOMETRY.stadiumReserve}
           surfaces={rearCampusPlan.screenSurfaces}
         />

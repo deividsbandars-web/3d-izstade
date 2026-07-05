@@ -1,6 +1,6 @@
-import { llmService } from '../../ai/llmService';
-import { logger } from '../../logging/logger';
-import { agentScheduler } from '../../../agents/system/scheduler/agentScheduler';
+import { createSystemLlmMetering, llmService } from '../../ai/llmService.js';
+import { logger } from '../../logging/logger.js';
+import { agentScheduler } from '../../../agents/system/scheduler/agentScheduler.js';
 
 export const leadRunner = {
   async execute(taskId: string, _agentId: string, taskData: any) {
@@ -16,7 +16,11 @@ export const leadRunner = {
       
       Identify the target B2B audience profiles, suggest scraping parameters, and list 3 ideal customer personas.`;
 
-      const { text, error } = await llmService.generateText(prompt, { provider: 'openai', temperature: 0.5 });
+      const { text, error } = await llmService.generateText(prompt, {
+        metering: createSystemLlmMetering('lead-runner', 'execute-lead-task'),
+        provider: 'openai',
+        temperature: 0.5,
+      });
 
       if (error || !text) throw new Error(String(error));
 

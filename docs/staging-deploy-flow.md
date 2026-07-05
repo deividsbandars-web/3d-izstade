@@ -6,15 +6,27 @@ Do not use plain `vercel --prod` for normal staging review builds. A production 
 
 ## Safe Flow
 
-1. Create a staging candidate deployment that does not move the staging alias:
+1. Verify that the Vercel source context contains every remote-build input and no operator/QA scripts:
+
+```bash
+npm run check:vercel-source-context
+```
+
+2. Create a staging candidate deployment that does not move the staging alias:
 
 ```bash
 npm run deploy:staging:preview
 ```
 
-2. Open the generated `app-staging-...vercel.app` URL and verify it.
+The source-deploy wrapper runs the same context check before linking or uploading. The prebuilt command remains available as a fallback and does not require the source-context preflight:
 
-3. Only after verification, promote it to the staging domain:
+```bash
+npm run deploy:staging:preview:prebuilt
+```
+
+3. Open the generated `app-staging-...vercel.app` URL and verify it.
+
+4. Only after verification, promote it to the staging domain:
 
 ```bash
 npm run promote:staging -- https://app-staging-<id>-esaukans-6934s-projects.vercel.app

@@ -8,6 +8,7 @@ import path from 'node:path';
 const DEFAULTS = {
   adminEmail: 'modular-home-quote-smoke-admin@30sek24.local',
   backendUrl: 'https://api-staging.30sek24.com',
+  expectedSupabaseRef: 'aasovfczmqytdtugcrmh',
   productionUrl: 'https://api.30sek24.com',
   timeoutMs: 12000,
   userEmail: 'modular-home-quote-smoke-user@30sek24.local',
@@ -50,6 +51,7 @@ function parseArgs(argv) {
   const options = {
     adminEmail: process.env.MODULAR_HOME_QUOTE_SMOKE_ADMIN_EMAIL || DEFAULTS.adminEmail,
     backendUrl: process.env.MODULAR_HOME_QUOTE_SMOKE_BACKEND_URL || DEFAULTS.backendUrl,
+    expectedSupabaseRef: process.env.MODULAR_HOME_QUOTE_SMOKE_EXPECTED_SUPABASE_REF || DEFAULTS.expectedSupabaseRef,
     help: false,
     json: false,
     productionUrl: process.env.MODULAR_HOME_QUOTE_SMOKE_PRODUCTION_URL || DEFAULTS.productionUrl,
@@ -66,6 +68,8 @@ function parseArgs(argv) {
       options.adminEmail = arg.slice('--admin-email='.length);
     } else if (arg.startsWith('--backend-url=')) {
       options.backendUrl = arg.slice('--backend-url='.length);
+    } else if (arg.startsWith('--expected-supabase-ref=')) {
+      options.expectedSupabaseRef = arg.slice('--expected-supabase-ref='.length);
     } else if (arg.startsWith('--production-url=')) {
       options.productionUrl = arg.slice('--production-url='.length);
     } else if (arg.startsWith('--timeout-ms=')) {
@@ -79,6 +83,7 @@ function parseArgs(argv) {
 
   options.backendUrl = normalizeBaseUrl(options.backendUrl);
   options.productionUrl = normalizeBaseUrl(options.productionUrl);
+  options.expectedSupabaseRef = safeProjectRef(options.expectedSupabaseRef);
   options.adminEmail = safeEmail(options.adminEmail, 'admin smoke email');
   options.userEmail = safeEmail(options.userEmail, 'user smoke email');
   options.timeoutMs = Number.isFinite(options.timeoutMs) && options.timeoutMs > 0
@@ -99,6 +104,7 @@ Required env from shell, Doppler or local .env:
   SUPABASE_URL
   SUPABASE_SERVICE_KEY
   VITE_SUPABASE_ANON_KEY or SUPABASE_ANON_KEY
+  MODULAR_HOME_QUOTE_SMOKE_EXPECTED_SUPABASE_REF (defaults to ${DEFAULTS.expectedSupabaseRef})
 
 Checks:
   - staging quote backend requires ?homeQuoteBackend=1
@@ -115,6 +121,38 @@ The script does not print service keys, anon keys, passwords, or JWTs.
 
 function normalizeBaseUrl(value) {
   return String(value || '').trim().replace(/\/+$/, '');
+}
+
+function getSupabaseProjectRef(value) {
+  const normalized = normalizeBaseUrl(value);
+  try {
+    const hostname = new URL(normalized).hostname.toLowerCase();
+    const match = hostname.match(/^([a-z0-9]+)\.supabase\.co$/i);
+    return match?.[1] ?? '';
+  } catch {
+    return '';
+  }
+}
+
+function safeProjectRef(value) {
+  const normalized = String(value || '').trim().toLowerCase();
+  if (!/^[a-z0-9]+$/.test(normalized)) {
+    throw new Error(`Invalid MODULAR_HOME_QUOTE_SMOKE_EXPECTED_SUPABASE_REF: ${value}`);
+  }
+  return normalized;
+}
+
+function assertExpectedSupabaseProject({ expectedSupabaseRef, supabaseUrl }) {
+  const actualRef = getSupabaseProjectRef(supabaseUrl);
+  if (!actualRef) {
+    throw new Error('SUPABASE_URL must be a Supabase project URL for the staging quote smoke check.');
+  }
+  if (actualRef !== expectedSupabaseRef) {
+    throw new Error(
+      `Staging quote smoke Supabase project mismatch: expected ${expectedSupabaseRef}, got ${actualRef}. `
+      + 'Run with staging env, for example via scripts/run-with-doppler.ps1, and do not use production/local Supabase env for this staging gate.',
+    );
+  }
 }
 
 function requiredEnv(name) {
@@ -346,6 +384,10 @@ async function run(options) {
 
   const supabaseUrl = requiredEnv('SUPABASE_URL');
   const supabaseServiceKey = requiredEnv('SUPABASE_SERVICE_KEY');
+  assertExpectedSupabaseProject({
+    expectedSupabaseRef: options.expectedSupabaseRef,
+    supabaseUrl,
+  });
   // Browser/admin-review auth uses the frontend anon key. Prefer it when both
   // frontend and docker env files are present locally.
   const supabaseAnonKey = optionalEnv('VITE_SUPABASE_ANON_KEY', 'SUPABASE_ANON_KEY');

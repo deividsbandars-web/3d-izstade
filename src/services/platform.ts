@@ -1,4 +1,4 @@
-import { serverApiGet, serverApiPost } from './serverApi';
+import { serverApiGet, serverApiPost } from './serverApi.js';
 
 export const PlatformAPI = {
   getPlatformMetrics: async (): Promise<any> => serverApiGet('/api/platform/metrics'),

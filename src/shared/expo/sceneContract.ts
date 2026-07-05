@@ -25,6 +25,14 @@ export interface ExpoSceneSector {
 
 export interface ExpoSceneBooth {
   boothType: BoothType;
+  cityScreenCtaLabel?: string | null;
+  cityScreenImageUrl?: string | null;
+  cityScreenSlotId?: string | null;
+  cityScreenStatus?: string | null;
+  cityScreenText?: string | null;
+  cityScreenTitle?: string | null;
+  cityScreenType?: string | null;
+  cityScreenVideoUrl?: string | null;
   companyId: string;
   ctaLabel: string | null;
   featuredAssetDescription?: string | null;
@@ -44,6 +52,7 @@ export interface ExpoSceneBooth {
   posterUrl: string | null;
   showroomEnabled?: boolean;
   slug: string | null;
+  slotId?: string | null;
   video_url: string | null;
 }
 
@@ -64,6 +73,7 @@ export interface ExpoSceneCompany {
   sectorId?: string | null;
   sector_id?: string | null;
   slug: string | null;
+  slotId?: string | null;
   sponsorTier: SponsorTier;
   tagline: string | null;
   website: string | null;

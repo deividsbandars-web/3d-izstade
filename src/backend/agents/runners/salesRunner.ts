@@ -1,6 +1,6 @@
-import { llmService } from '../../ai/llmService';
-import { logger } from '../../logging/logger';
-import { agentScheduler } from '../../../agents/system/scheduler/agentScheduler';
+import { createSystemLlmMetering, llmService } from '../../ai/llmService.js';
+import { logger } from '../../logging/logger.js';
+import { agentScheduler } from '../../../agents/system/scheduler/agentScheduler.js';
 
 export const salesRunner = {
   async execute(taskId: string, _agentId: string, taskData: any) {
@@ -16,7 +16,11 @@ export const salesRunner = {
       
       Create cold email outreach templates, objection handling scripts, and define the conversion pipeline stages.`;
 
-      const { text, error } = await llmService.generateText(prompt, { provider: 'openai', temperature: 0.7 });
+      const { text, error } = await llmService.generateText(prompt, {
+        metering: createSystemLlmMetering('sales-runner', 'execute-sales-task'),
+        provider: 'openai',
+        temperature: 0.7,
+      });
 
       if (error || !text) throw new Error(String(error));
 

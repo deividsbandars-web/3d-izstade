@@ -1107,7 +1107,7 @@ export function useExpoOperatorState({
     zones,
   ]);
 
-  const buildSnapshot = () => buildExpoReviewOperatorSnapshot({
+  const buildSnapshot = useCallback(() => buildExpoReviewOperatorSnapshot({
     activeZoneId,
     centerStack,
     centerTarget,
@@ -1127,9 +1127,29 @@ export function useExpoOperatorState({
     sectionStates,
     targetBasket,
     zones,
-  });
+  }), [
+    activeZoneId,
+    centerStack,
+    centerTarget,
+    clickStack,
+    clickTarget,
+    dataMode,
+    diagnosticReport,
+    focusSlug,
+    inspector,
+    layerStates,
+    markedPoint,
+    mode,
+    operatorZoneId,
+    playerPos,
+    registryEntries,
+    sceneVersion,
+    sectionStates,
+    targetBasket,
+    zones,
+  ]);
 
-  const buildReviewFallbackSnapshot = (zone: ReviewOperatorZone) => {
+  const buildReviewFallbackSnapshot = useCallback((zone: ReviewOperatorZone) => {
     const fallbackRegistryById = buildRegistryById([
       ...registryEntries.city,
       ...registryEntries.stadium,
@@ -1160,7 +1180,21 @@ export function useExpoOperatorState({
       targetBasket,
       zones,
     });
-  };
+  }, [
+    activeZoneId,
+    dataMode,
+    diagnosticReport,
+    focusSlug,
+    inspector,
+    layerStates,
+    markedPoint,
+    mode,
+    registryEntries,
+    sceneVersion,
+    sectionStates,
+    targetBasket,
+    zones,
+  ]);
 
   const goToZone = (zoneId: string) => {
     const zone = resolveOperatorZone(zones, zoneId);

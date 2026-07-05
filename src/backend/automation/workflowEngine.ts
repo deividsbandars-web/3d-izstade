@@ -1,5 +1,5 @@
-import { supabaseClient, handleSupabaseError } from '../../lib/supabaseClient';
-import { agentScheduler } from '../../agents/system/scheduler/agentScheduler';
+import { supabaseClient, handleSupabaseError } from '../../lib/supabaseClient.js';
+import { agentScheduler } from '../../agents/system/scheduler/agentScheduler.js';
 
 export const workflowEngine = {
   /**

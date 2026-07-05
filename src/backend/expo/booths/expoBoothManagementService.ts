@@ -1,6 +1,10 @@
 import { getExpoBoothById, listExpoBooths, type ExpoBoothRecord } from '../data/expoBoothStore.js';
 import { sanitizeExpoManagedBoothAssets } from '../../../shared/expo/screenContentMedia.js';
 import {
+  normalizeExpoMediaReviewReferencesForSave,
+  type ExpoMediaReviewReferencesInput,
+} from '../../../shared/expo/mediaReviewReferences.js';
+import {
   normalizeExpoSponsorAssetPackForSave,
   type ExpoSponsorAssetPackInput,
 } from '../../../shared/expo/sponsorAssetPack.js';
@@ -31,6 +35,16 @@ export function mergeOwnedBoothPayload(
     } else {
       delete sanitizedAssets.sponsor_asset_pack;
       delete sanitizedAssets.sponsorAssetPack;
+    }
+
+    const rawMediaReview = sanitizedAssets.media_review || sanitizedAssets.mediaReview;
+    const mediaReviewResult = normalizeExpoMediaReviewReferencesForSave(rawMediaReview as ExpoMediaReviewReferencesInput);
+
+    if (mediaReviewResult.ok) {
+      sanitizedAssets.media_review = mediaReviewResult.mediaReview;
+    } else {
+      delete sanitizedAssets.media_review;
+      delete sanitizedAssets.mediaReview;
     }
 
     nextPayload.assets_3d = sanitizedAssets;

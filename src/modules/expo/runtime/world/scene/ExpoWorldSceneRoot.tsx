@@ -7,10 +7,12 @@ import { ExpoWorldAnalyticsProvider } from './ExpoWorldAnalyticsProvider';
 import { ExpoWorldCanvasShell } from './ExpoWorldCanvasShell';
 import { useExpoWorldSceneRuntime } from './useExpoWorldSceneRuntime';
 import { ExpoWorldSceneErrorBoundary } from './ExpoWorldSceneErrorBoundary';
+import type { ExpoPresenceGuest } from '../../community/expoPresencePolicy';
 
 export function ExpoWorldSceneRoot({
   activeZone,
   debug,
+  guests,
   inspectionEnabled,
   isTouchDevice,
   mobileMoveIntent,
@@ -29,6 +31,7 @@ export function ExpoWorldSceneRoot({
 }: {
   activeZone: { id?: string | null } | null | undefined;
   debug: boolean;
+  guests: ExpoPresenceGuest[];
   inspectionEnabled: boolean;
   isTouchDevice: boolean;
   mobileMoveIntent?: { f: boolean; b: boolean; l: boolean; r: boolean; s?: boolean; turnL?: boolean; turnR?: boolean; jump?: boolean; lift?: boolean; lookX?: number; lookY?: number };
@@ -62,6 +65,7 @@ export function ExpoWorldSceneRoot({
       <ExpoWorldSceneRootView
         activeZone={activeZone}
         debug={debug}
+        guests={guests}
         inspectionEnabled={inspectionEnabled}
         isTouchDevice={isTouchDevice}
         mobileMoveIntent={mobileMoveIntent}
@@ -85,6 +89,7 @@ export function ExpoWorldSceneRoot({
 function ExpoWorldSceneRootView({
   activeZone,
   debug,
+  guests,
   inspectionEnabled,
   isTouchDevice,
   mobileMoveIntent,
@@ -103,6 +108,7 @@ function ExpoWorldSceneRootView({
 }: {
   activeZone: { id?: string | null } | null | undefined;
   debug: boolean;
+  guests: ExpoPresenceGuest[];
   inspectionEnabled: boolean;
   isTouchDevice: boolean;
   mobileMoveIntent?: { f: boolean; b: boolean; l: boolean; r: boolean; s?: boolean; turnL?: boolean; turnR?: boolean; jump?: boolean; lift?: boolean; lookX?: number; lookY?: number };
@@ -163,6 +169,7 @@ function ExpoWorldSceneRootView({
         <ExpoWorldCanvasShell
           activeZoneId={activeZone?.id ? String(activeZone.id) : null}
           debug={debug}
+          guests={guests}
           districtPrograms={runtime.districtPrograms}
           effectiveStartView={runtime.effectiveStartView}
           highlightedTargets={runtimeHighlightedTargets}

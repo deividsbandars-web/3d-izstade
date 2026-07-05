@@ -1,17 +1,41 @@
+import { resolvePublicLeadAbuseConfig, type PublicLeadAbuseConfig } from './publicLeadAbuse.js';
+import { resolveRedisConnectionPolicy } from '../../src/backend/infrastructure/redisConnectionPolicy.js';
+
 export type BackendRuntimeEnv = {
   nodeEnv: string;
   port: number;
+  pixelStreamingRoutesEnabled: boolean;
   supabaseUrl: string;
   supabaseServiceKey: string;
-  signalingStatusBaseUrl: string;
+  signalingStatusBaseUrl: string | null;
   pixelStreamingStatusTimeoutMs: number;
-  ue5SecretKey: string;
+  ue5SecretKey: string | null;
+  stripeSecretKey: string | null;
+  stripeWebhookSecret: string | null;
+  billingCheckoutSuccessUrl: string | null;
+  billingCheckoutCancelUrl: string | null;
+  billingPublicAppUrl: string | null;
+  corsAllowedOrigins: string[];
+  trustProxyHops: number;
+  publicLeadAbuse: PublicLeadAbuseConfig;
+  redisUrl: string | null;
 };
 
 type RawBackendEnv = Record<string, string | undefined>;
 
 const DEFAULT_PORT = 3000;
 const DEFAULT_TIMEOUT_MS = 2500;
+const DEFAULT_RELEASE_CORS_ORIGINS = [
+  'https://www.30sek24.com',
+  'https://staging.30sek24.com',
+] as const;
+const DEFAULT_DEVELOPMENT_CORS_ORIGINS = [
+  ...DEFAULT_RELEASE_CORS_ORIGINS,
+  'http://localhost:5173',
+  'http://127.0.0.1:5173',
+  'http://localhost:4173',
+  'http://127.0.0.1:4173',
+] as const;
 
 function normalizeRequiredString(rawEnv: RawBackendEnv, key: string) {
   const normalized = rawEnv[key]?.trim();
@@ -19,6 +43,20 @@ function normalizeRequiredString(rawEnv: RawBackendEnv, key: string) {
     throw new Error(`BACKEND_ENV_MISSING:${key}`);
   }
   return normalized;
+}
+
+function normalizeOptionalString(rawEnv: RawBackendEnv, key: string) {
+  return rawEnv[key]?.trim() || null;
+}
+
+function normalizeBooleanFlag(rawEnv: RawBackendEnv, key: string) {
+  const normalized = rawEnv[key]?.trim().toLowerCase();
+  return normalized === '1' || normalized === 'true' || normalized === 'yes' || normalized === 'on';
+}
+
+function normalizePixelStreamingRoutesEnabled(rawEnv: RawBackendEnv) {
+  return normalizeBooleanFlag(rawEnv, 'PIXEL_STREAMING_ROUTES_ENABLED')
+    || normalizeBooleanFlag(rawEnv, 'PIXEL_STREAMING_ENABLED');
 }
 
 function normalizePort(rawEnv: RawBackendEnv) {
@@ -49,6 +87,56 @@ function normalizeTimeout(rawEnv: RawBackendEnv) {
   return parsed;
 }
 
+function normalizeTrustProxyHops(rawEnv: RawBackendEnv) {
+  const rawValue = rawEnv.BACKEND_TRUST_PROXY_HOPS?.trim();
+  if (!rawValue) {
+    return 0;
+  }
+
+  const parsed = Number(rawValue);
+  if (!Number.isInteger(parsed) || parsed < 0) {
+    throw new Error('BACKEND_ENV_INVALID_NUMBER:BACKEND_TRUST_PROXY_HOPS');
+  }
+
+  return parsed;
+}
+
+function normalizeCorsOrigin(value: string) {
+  let parsed: URL;
+
+  try {
+    parsed = new URL(value);
+  } catch {
+    throw new Error('BACKEND_ENV_INVALID_ORIGIN:BACKEND_CORS_ALLOWED_ORIGINS');
+  }
+
+  if (!['http:', 'https:'].includes(parsed.protocol)) {
+    throw new Error('BACKEND_ENV_INVALID_ORIGIN:BACKEND_CORS_ALLOWED_ORIGINS');
+  }
+  if (
+    parsed.username
+    || parsed.password
+    || parsed.pathname !== '/'
+    || parsed.search
+    || parsed.hash
+  ) {
+    throw new Error('BACKEND_ENV_INVALID_ORIGIN:BACKEND_CORS_ALLOWED_ORIGINS');
+  }
+
+  return parsed.origin;
+}
+
+function normalizeCorsAllowedOrigins(rawEnv: RawBackendEnv, nodeEnv: string) {
+  const configured = rawEnv.BACKEND_CORS_ALLOWED_ORIGINS?.trim();
+  const candidates = configured
+    ? configured.split(',').map((value) => value.trim()).filter(Boolean)
+    : nodeEnv === 'production'
+      ? [...DEFAULT_RELEASE_CORS_ORIGINS]
+      : [...DEFAULT_DEVELOPMENT_CORS_ORIGINS];
+
+  return Array.from(new Set(candidates.map(normalizeCorsOrigin)));
+}
+
 function normalizeUrl(value: string, key: string, allowedProtocols: string[]) {
   let parsed: URL;
 
@@ -67,25 +155,43 @@ function normalizeUrl(value: string, key: string, allowedProtocols: string[]) {
 
 export function resolveBackendRuntimeEnv(rawEnv: RawBackendEnv): BackendRuntimeEnv {
   const nodeEnv = rawEnv.NODE_ENV?.trim() || 'development';
+  const pixelStreamingRoutesEnabled = normalizePixelStreamingRoutesEnabled(rawEnv);
   const supabaseUrl = normalizeUrl(
     normalizeRequiredString(rawEnv, 'SUPABASE_URL'),
     'SUPABASE_URL',
     ['http:', 'https:']
   );
-  const signalingStatusBaseUrl = normalizeUrl(
-    normalizeRequiredString(rawEnv, 'SIGNALING_STATUS_BASE_URL'),
-    'SIGNALING_STATUS_BASE_URL',
-    ['http:', 'https:']
-  );
+  const rawSignalingStatusBaseUrl = pixelStreamingRoutesEnabled
+    ? normalizeRequiredString(rawEnv, 'SIGNALING_STATUS_BASE_URL')
+    : normalizeOptionalString(rawEnv, 'SIGNALING_STATUS_BASE_URL');
+  const signalingStatusBaseUrl = rawSignalingStatusBaseUrl
+    ? normalizeUrl(rawSignalingStatusBaseUrl, 'SIGNALING_STATUS_BASE_URL', ['http:', 'https:'])
+    : null;
+  const rawRedisUrl = normalizeOptionalString(rawEnv, 'REDIS_URL');
+  const redisUrl = rawRedisUrl
+    ? resolveRedisConnectionPolicy(rawRedisUrl, rawEnv).url
+    : null;
 
   return {
     nodeEnv,
     port: normalizePort(rawEnv),
+    pixelStreamingRoutesEnabled,
     supabaseUrl,
     supabaseServiceKey: normalizeRequiredString(rawEnv, 'SUPABASE_SERVICE_KEY'),
     signalingStatusBaseUrl,
     pixelStreamingStatusTimeoutMs: normalizeTimeout(rawEnv),
-    ue5SecretKey: normalizeRequiredString(rawEnv, 'UE5_SECRET_KEY'),
+    ue5SecretKey: pixelStreamingRoutesEnabled
+      ? normalizeRequiredString(rawEnv, 'UE5_SECRET_KEY')
+      : normalizeOptionalString(rawEnv, 'UE5_SECRET_KEY'),
+    stripeSecretKey: normalizeOptionalString(rawEnv, 'STRIPE_SECRET_KEY'),
+    stripeWebhookSecret: normalizeOptionalString(rawEnv, 'STRIPE_WEBHOOK_SECRET'),
+    billingCheckoutSuccessUrl: normalizeOptionalString(rawEnv, 'BILLING_CHECKOUT_SUCCESS_URL'),
+    billingCheckoutCancelUrl: normalizeOptionalString(rawEnv, 'BILLING_CHECKOUT_CANCEL_URL'),
+    billingPublicAppUrl: normalizeOptionalString(rawEnv, 'BILLING_PUBLIC_APP_URL'),
+    corsAllowedOrigins: normalizeCorsAllowedOrigins(rawEnv, nodeEnv),
+    trustProxyHops: normalizeTrustProxyHops(rawEnv),
+    publicLeadAbuse: resolvePublicLeadAbuseConfig(rawEnv),
+    redisUrl,
   };
 }
 

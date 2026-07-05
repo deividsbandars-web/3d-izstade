@@ -11,6 +11,15 @@ const payload = {
       ctaLabel: null,
       assets_3d: {
         screen_content: {
+          assetUrl: 'https://cdn.example.com/booth-screen.png',
+          mode: 'image',
+          screenSlotId: 'booth-company-1-main-screen',
+          status: 'published',
+          subtitle: 'Booth screen message',
+          title: 'Booth Screen',
+          videoUrl: 'https://cdn.example.com/booth-screen.mp4',
+        },
+        city_screen_content: {
           assetUrl: 'https://cdn.example.com/owner-screen.png',
           mode: 'image',
           screenSlotId: 'city-right-marquee-hero',
@@ -78,13 +87,20 @@ assert.equal(normalized.companies[0].logo_url, null);
 assert.equal(normalized.companies[0].booth?.posterUrl, null);
 assert.equal(normalized.companies[0].booth?.video_url, null);
 assert.equal(normalized.companies[0].booth?.heroAssetUrl, 'https://cdn.example.com/hero.png');
-assert.equal(normalized.companies[0].booth?.heroScreenImageUrl, 'https://cdn.example.com/owner-screen.png');
-assert.equal(normalized.companies[0].booth?.heroScreenSlotId, 'city-right-marquee-hero');
+assert.equal(normalized.companies[0].booth?.heroScreenImageUrl, 'https://cdn.example.com/booth-screen.png');
+assert.equal(normalized.companies[0].booth?.heroScreenSlotId, 'booth-company-1-main-screen');
 assert.equal(normalized.companies[0].booth?.heroScreenStatus, 'published');
-assert.equal(normalized.companies[0].booth?.heroScreenText, 'Owner managed campaign line');
-assert.equal(normalized.companies[0].booth?.heroScreenTitle, 'Owner Managed Screen');
+assert.equal(normalized.companies[0].booth?.heroScreenText, 'Booth screen message');
+assert.equal(normalized.companies[0].booth?.heroScreenTitle, 'Booth Screen');
 assert.equal(normalized.companies[0].booth?.heroScreenType, 'image');
-assert.equal(normalized.companies[0].booth?.heroScreenVideoUrl, 'https://cdn.example.com/owner-screen.mp4');
+assert.equal(normalized.companies[0].booth?.cityScreenImageUrl, 'https://cdn.example.com/owner-screen.png');
+assert.equal(normalized.companies[0].booth?.cityScreenSlotId, 'city-right-marquee-hero');
+assert.equal(normalized.companies[0].booth?.cityScreenStatus, 'published');
+assert.equal(normalized.companies[0].booth?.cityScreenText, 'Owner managed campaign line');
+assert.equal(normalized.companies[0].booth?.cityScreenTitle, 'Owner Managed Screen');
+assert.equal(normalized.companies[0].booth?.cityScreenType, 'image');
+assert.equal(normalized.companies[0].booth?.cityScreenVideoUrl, 'https://cdn.example.com/owner-screen.mp4');
+assert.equal(normalized.companies[0].booth?.heroScreenVideoUrl, 'https://cdn.example.com/booth-screen.mp4');
 assert.equal(normalized.companies[1].booth, null);
 
 assert.throws(() => adaptBackendScenePayload({

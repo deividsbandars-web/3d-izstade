@@ -1,5 +1,5 @@
-import { supabaseClient } from '../../../lib/supabaseClient';
-import { logger } from '../../logging/logger';
+import { supabaseClient } from '../../../lib/supabaseClient.js';
+import { logger } from '../../logging/logger.js';
 
 export const platformMetrics = {
   /**

@@ -31,6 +31,14 @@ export type ExpoAnalyticsTarget = {
   persist?: (detail: ExpoAnalyticsDetail) => void;
 };
 
+export type ExpoAnalyticsPersistenceOptions = {
+  apiBaseUrl?: string;
+  browserAvailable?: boolean;
+  dev?: boolean;
+  fetchImpl?: typeof fetch;
+  sendBeacon?: ((url: string, data?: BodyInit | null) => boolean) | null;
+};
+
 function createExpoSessionId() {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
     return crypto.randomUUID();
@@ -55,35 +63,48 @@ function getExpoSessionId() {
   return next;
 }
 
-function persistExpoAnalytics(detail: ExpoAnalyticsDetail) {
-  if (typeof window === 'undefined') {
+export function buildExpoAnalyticsEndpoint(apiBaseUrl: string) {
+  return new URL('/api/analytics/track', `${apiBaseUrl.replace(/\/+$/, '')}/`).toString();
+}
+
+export function persistExpoAnalytics(
+  detail: ExpoAnalyticsDetail,
+  options: ExpoAnalyticsPersistenceOptions = {}
+) {
+  const browserAvailable = options.browserAvailable ?? typeof window !== 'undefined';
+  if (!browserAvailable) {
     return;
   }
 
-  if (import.meta.env.DEV) {
+  const isDev = options.dev ?? Boolean(import.meta.env?.DEV);
+  if (isDev) {
     return;
   }
 
-  const endpoint = `${getFrontendRuntimeEnv().apiBaseUrl}/api/analytics/track`;
-  const endpointOrigin = (() => {
-    try {
-      return new URL(endpoint).origin;
-    } catch {
-      return null;
-    }
-  })();
-  if (!endpointOrigin || endpointOrigin !== window.location.origin) {
+  let endpoint: string;
+  try {
+    endpoint = buildExpoAnalyticsEndpoint(options.apiBaseUrl ?? getFrontendRuntimeEnv().apiBaseUrl);
+  } catch {
     return;
   }
   const payload = JSON.stringify({ payload: detail });
 
-  if (typeof navigator !== 'undefined' && typeof navigator.sendBeacon === 'function') {
+  const sendBeacon = options.sendBeacon
+    ?? (typeof navigator !== 'undefined' && typeof navigator.sendBeacon === 'function'
+      ? navigator.sendBeacon.bind(navigator)
+      : null);
+  if (typeof sendBeacon === 'function') {
     const body = new Blob([payload], { type: 'application/json' });
-    navigator.sendBeacon(endpoint, body);
+    sendBeacon(endpoint, body);
     return;
   }
 
-  void fetch(endpoint, {
+  const fetchImpl = options.fetchImpl ?? (typeof fetch !== 'undefined' ? fetch : null);
+  if (!fetchImpl) {
+    return;
+  }
+
+  void fetchImpl(endpoint, {
     body: payload,
     headers: { 'Content-Type': 'application/json' },
     keepalive: true,

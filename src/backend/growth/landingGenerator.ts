@@ -1,4 +1,4 @@
-import { llmService } from '../ai/llmService.js';
+import { createSystemLlmMetering, llmService, type LlmMeteringContext } from '../ai/llmService.js';
 import { supabaseClient } from '../../lib/supabaseClient.js';
 import { logger } from '../logging/logger.js';
 import { eventPublisher } from '../events/eventPublisher.js';
@@ -8,7 +8,12 @@ export const landingGenerator = {
   /**
    * Generates a complete landing page copy and structure, then stores it in Supabase.
    */
-  async generateLandingPage(projectId: string, niche: string, productAngle: string) {
+  async generateLandingPage(
+    projectId: string,
+    niche: string,
+    productAngle: string,
+    metering: LlmMeteringContext = createSystemLlmMetering('landing-generator', 'generate-landing-page'),
+  ) {
     try {
       logger.info('LandingGenerator', `Generating landing page for niche: ${niche}`);
 
@@ -27,7 +32,7 @@ Return ONLY a valid JSON object with the following structure:
 }
 Ensure the HTML is semantic, uses modern classes, and includes a clear Call To Action (CTA) form section.`;
 
-      const { text, error } = await llmService.generateText(prompt, { temperature: 0.4 });
+      const { text, error } = await llmService.generateText(prompt, { metering, temperature: 0.4 });
       if (error || !text) throw new Error(error || 'Failed to generate landing page');
 
       const jsonMatch = text.match(/\{[\s\S]*\}/);
